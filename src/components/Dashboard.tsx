@@ -437,10 +437,24 @@ export default function Dashboard({ user }: DashboardProps) {
     }
   };
 
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+
+  const handleCloseSidebar = () => {
+    setIsSidebarOpen(false);
+  };
+
   return (
     <div className="main-layout">
+      {/* Sidebar Overlay */}
+      <div 
+        className={`sidebar-overlay ${isSidebarOpen ? 'active' : ''}`}
+        onClick={handleCloseSidebar}
+      />
+
       {/* Sidebar */}
-      <div className="sidebar">
+      <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-section">
           <div className="user-profile flex items-center gap-3 mb-6 p-3 rounded-lg bg-gray-50">
             <div className="user-avatar">
@@ -485,7 +499,10 @@ export default function Dashboard({ user }: DashboardProps) {
               <div 
                 key={index} 
                 className="quick-start-item"
-                onClick={() => handleSendMessage(template.prompt)}
+                onClick={() => {
+                  handleSendMessage(template.prompt);
+                  handleCloseSidebar();
+                }}
               >
                 <div className="quick-start-title">
                   <template.icon size={16} />
@@ -507,7 +524,10 @@ export default function Dashboard({ user }: DashboardProps) {
               <div 
                 key={index} 
                 className="recent-chat-item"
-                onClick={() => handleLoadChat(chat)}
+                onClick={() => {
+                  handleLoadChat(chat);
+                  handleCloseSidebar();
+                }}
               >
                 <div className="chat-title">{chat.title}</div>
                 <div className="chat-preview">{chat.lastMessage}</div>
@@ -525,13 +545,21 @@ export default function Dashboard({ user }: DashboardProps) {
         {/* Header */}
         <header className="header">
           <div className="header-left">
-            <div className="flex items-center gap-3">
-              <div className="header-brain-icon">
-                <img src="/lovable-uploads/636eb1d6-bee9-4ea8-a6bf-748bd267d05f.png" alt="Brain" width="24" height="24" />
-              </div>
-              <div>
-                <h1 className="app-title">AYN AI Business Consultant</h1>
-                <p className="app-subtitle">Your AI-powered business advisor</p>
+            <button 
+              className="hamburger-button"
+              onClick={toggleSidebar}
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <div className="header-center">
+              <div className="flex items-center gap-3">
+                <div className="header-brain-icon">
+                  <img src="/lovable-uploads/636eb1d6-bee9-4ea8-a6bf-748bd267d05f.png" alt="Brain" width="24" height="24" />
+                </div>
+                <div>
+                  <h1 className="app-title">AYN AI Business Consultant</h1>
+                  <p className="app-subtitle">Your AI-powered business advisor</p>
+                </div>
               </div>
             </div>
           </div>
