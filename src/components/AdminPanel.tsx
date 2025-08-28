@@ -347,19 +347,23 @@ export const AdminPanel = () => {
             
             <div>
               <label className="text-sm font-medium mb-2 block">
-                Monthly Usage Limit (optional)
+                Monthly Message Limit
               </label>
               <Input
                 type="number"
-                placeholder="e.g., 100 messages per month"
+                placeholder="Enter number of messages (e.g., 50, 100, 500)"
                 value={monthlyLimit}
                 onChange={(e) => setMonthlyLimit(e.target.value)}
                 className="glass"
-                min="0"
+                min="1"
               />
-              <p className="text-xs text-muted-foreground mt-1">
-                Leave empty for unlimited usage
-              </p>
+              <div className="text-xs text-muted-foreground mt-2 space-y-1">
+                <p><strong>Examples:</strong></p>
+                <p>• Trial: 10-20 messages/month</p>
+                <p>• Starter: 50-100 messages/month</p>
+                <p>• Business: 200-500 messages/month</p>
+                <p>• Leave empty for unlimited usage</p>
+              </div>
             </div>
             
             <div className="flex gap-3">
