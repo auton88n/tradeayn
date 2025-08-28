@@ -3,7 +3,6 @@ import { Brain, TrendingUp, Target, BarChart3, Zap, Users, Shield, ArrowRight } 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { AuthModal } from './auth/AuthModal';
-import heroBackground from '@/assets/ayn-hero-bg.jpg';
 
 const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -87,13 +86,8 @@ const LandingPage = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="relative py-20 overflow-hidden">
-        <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30"
-          style={{ backgroundImage: `url(${heroBackground})` }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-br from-background/80 via-background/60 to-background/80" />
-        <div className="container mx-auto px-6 relative z-10">
+      <section className="py-20">
+        <div className="container mx-auto px-6">
           <div className="text-center max-w-4xl mx-auto">
             <div className="animate-fade-in-up">
               <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
