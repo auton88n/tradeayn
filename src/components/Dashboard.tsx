@@ -663,13 +663,9 @@ export default function Dashboard({ user }: DashboardProps) {
             <div className="flex-1 min-w-0">
               <p className="font-medium text-sm">AYN AI Consultant</p>
               <p className="text-xs text-muted-foreground">
-                {isTyping ? 'Thinking...' : 'Ready to help'}
+                {isTyping ? 'Thinking...' : (hasAccess ? 'Active' : 'Inactive')}
               </p>
             </div>
-            <Badge variant={hasAccess ? "default" : "secondary"} className="ml-2">
-              <div className={`w-2 h-2 rounded-full mr-2 ${hasAccess ? 'bg-green-500' : 'bg-gray-400'}`} />
-              {hasAccess ? 'Active' : 'Inactive'}
-            </Badge>
           </div>
 
           {/* Quick Start */}
