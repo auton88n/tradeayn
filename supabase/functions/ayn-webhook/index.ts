@@ -79,10 +79,13 @@ serve(async (req) => {
       normalized = String(pickContent(parsed) ?? rawText).trim();
     } else if (ndjsonItems.length) {
       const contents = ndjsonItems.map(pickContent).filter(Boolean) as string[];
-      normalized = (contents.length ? contents.join('\n') : rawText).toString().trim();
+      normalized = (contents.length ? contents.join(' ') : rawText).toString().trim();
     } else {
       normalized = (rawText || '').toString().trim();
     }
+    
+    // Clean up excessive newlines and whitespace
+    normalized = normalized.replace(/\n+/g, ' ').replace(/\s+/g, ' ').trim();
 
     console.log('Upstream status:', upstream.status, 'content-type:', contentType);
     console.log('Upstream body (first 200 chars):', (rawText || '').slice(0, 200));
