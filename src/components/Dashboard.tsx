@@ -810,6 +810,7 @@ export default function Dashboard({ user }: DashboardProps) {
                       {message.sender === 'ayn' && (
                         <Avatar className="w-8 h-8 flex-shrink-0">
                           <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                            <Brain className="w-4 h-4" />
                           </AvatarFallback>
                          </Avatar>
                        )}
