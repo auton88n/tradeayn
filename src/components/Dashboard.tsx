@@ -470,7 +470,7 @@ export default function Dashboard({ user }: DashboardProps) {
                   variant="ghost"
                   size="sm"
                   onClick={() => handleSendMessage(template.prompt)}
-                  className="w-full justify-start h-auto p-3 text-left hover:bg-muted/50"
+                  className="w-full justify-start h-auto p-3 text-left hover:bg-muted hover:text-foreground transition-colors duration-200"
                   disabled={!hasAccess || !hasAcceptedTerms}
                 >
                   <template.icon className={`w-4 h-4 mr-3 flex-shrink-0 ${template.color}`} />
@@ -492,7 +492,7 @@ export default function Dashboard({ user }: DashboardProps) {
                   variant="ghost"
                   size="sm"
                   onClick={() => handleLoadChat(chat)}
-                  className="w-full justify-start text-sm text-muted-foreground hover:text-foreground h-auto p-3 text-left"
+                  className="w-full justify-start text-sm text-muted-foreground hover:text-foreground hover:bg-muted h-auto p-3 text-left transition-colors duration-200"
                 >
                   <div className="min-w-0">
                     <p className="font-medium truncate">{chat.title}</p>
@@ -561,7 +561,7 @@ export default function Dashboard({ user }: DashboardProps) {
 
             <ThemeToggle />
             
-            <Button variant="ghost" size="sm" className="text-muted-foreground">
+            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground transition-colors duration-200">
               <Settings className="w-4 h-4" />
             </Button>
           </div>
@@ -680,7 +680,7 @@ export default function Dashboard({ user }: DashboardProps) {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="w-8 h-8 p-0 text-muted-foreground hover:text-foreground"
+                          className="w-8 h-8 p-0 text-muted-foreground hover:text-foreground transition-colors duration-200"
                           disabled={!hasAccess || !hasAcceptedTerms}
                           title="Attach file (coming soon)"
                         >
@@ -691,7 +691,7 @@ export default function Dashboard({ user }: DashboardProps) {
                           variant="ghost"
                           size="sm"
                           onClick={handleVoiceRecording}
-                          className={`w-8 h-8 p-0 ${isRecording ? 'text-red-500' : 'text-muted-foreground hover:text-foreground'}`}
+                          className={`w-8 h-8 p-0 transition-colors duration-200 ${isRecording ? 'text-red-500 hover:text-red-600' : 'text-muted-foreground hover:text-foreground'}`}
                           disabled={!hasAccess || !hasAcceptedTerms}
                           title={isRecording ? "Stop recording" : "Start voice recording"}
                         >
