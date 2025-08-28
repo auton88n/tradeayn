@@ -26,21 +26,21 @@ export const TermsModal = ({ open, onAccept }: TermsModalProps) => {
         <DialogHeader>
           <DialogTitle className="text-center gradient-text-hero text-2xl flex items-center justify-center gap-3">
             <Shield className="w-6 h-6" />
-            Terms of Use & AI Disclaimer
+            Welcome to AYN AI
           </DialogTitle>
         </DialogHeader>
 
         <ScrollArea className="max-h-96 pr-4">
           <div className="space-y-6 text-sm">
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
               <div className="flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                <Brain className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <div>
-                  <h3 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">
-                    Important Legal Notice
+                  <h3 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">
+                    Your AI Business Partner
                   </h3>
-                  <p className="text-yellow-700 dark:text-yellow-300">
-                    Please read this disclaimer carefully before using AYN AI Business Consulting services.
+                  <p className="text-blue-700 dark:text-blue-300">
+                    Welcome! Please take a moment to review our service terms and privacy policy.
                   </p>
                 </div>
               </div>
@@ -48,56 +48,66 @@ export const TermsModal = ({ open, onAccept }: TermsModalProps) => {
 
             <div className="space-y-4">
               <div>
-                <h3 className="font-semibold flex items-center gap-2 mb-2">
+                <h3 className="font-semibold flex items-center gap-2 mb-3">
                   <Brain className="w-4 h-4 text-primary" />
-                  AI Limitations & Accuracy
+                  How AYN AI Works
                 </h3>
-                <ul className="space-y-2 text-muted-foreground pl-6">
-                  <li>• AYN AI is an artificial intelligence system that can make mistakes, provide inaccurate information, or give incomplete analysis</li>
-                  <li>• AI responses should be considered as suggestions and starting points, not definitive business advice</li>
-                  <li>• Always verify AI-generated information through independent research and professional consultation</li>
-                  <li>• Market data and trends provided may not reflect real-time conditions or future performance</li>
-                </ul>
+                <div className="text-muted-foreground space-y-2">
+                  <p>AYN AI is designed to help you with business insights and strategic thinking. Here's what you should know:</p>
+                  <ul className="space-y-2 pl-6">
+                    <li>• Our AI provides suggestions and recommendations based on available data and patterns</li>
+                    <li>• Responses are meant to support your decision-making process, not replace professional judgment</li>
+                    <li>• We recommend verifying important information through additional research</li>
+                    <li>• Market insights are based on historical data and trends, not real-time guarantees</li>
+                  </ul>
+                </div>
               </div>
 
               <div>
-                <h3 className="font-semibold flex items-center gap-2 mb-2">
-                  <AlertTriangle className="w-4 h-4 text-destructive" />
-                  Financial Responsibility Disclaimer
+                <h3 className="font-semibold flex items-center gap-2 mb-3">
+                  <Shield className="w-4 h-4 text-primary" />
+                  Privacy & Data Protection
                 </h3>
-                <ul className="space-y-2 text-muted-foreground pl-6">
-                  <li>• <strong>AYN and its operators are NOT responsible for any financial losses</strong> resulting from decisions made based on AI-generated advice</li>
-                  <li>• Users assume full responsibility for all business decisions and their consequences</li>
-                  <li>• Investment and business strategy recommendations should be reviewed by qualified financial professionals</li>
-                  <li>• No guarantee is provided regarding the accuracy, completeness, or profitability of any advice given</li>
-                </ul>
+                <div className="text-muted-foreground space-y-2">
+                  <ul className="space-y-2 pl-6">
+                    <li>• Your conversations are processed securely and used to improve our service</li>
+                    <li>• We do not share your personal business information with third parties</li>
+                    <li>• Data is stored with industry-standard encryption and security measures</li>
+                    <li>• You can request data deletion by contacting our support team</li>
+                    <li>• We comply with applicable data protection regulations</li>
+                  </ul>
+                </div>
               </div>
 
               <div>
-                <h3 className="font-semibold mb-2">User Responsibilities</h3>
-                <ul className="space-y-2 text-muted-foreground pl-6">
-                  <li>• Conduct independent due diligence on all AI suggestions</li>
-                  <li>• Consult with qualified professionals for important business decisions</li>
-                  <li>• Use AYN AI as a research tool, not a replacement for professional judgment</li>
-                  <li>• Understand that final decisions and their outcomes remain your responsibility</li>
-                </ul>
+                <h3 className="font-semibold mb-3">Best Practices for Success</h3>
+                <div className="text-muted-foreground space-y-2">
+                  <ul className="space-y-2 pl-6">
+                    <li>• Use AYN AI as a powerful research and brainstorming tool</li>
+                    <li>• Cross-reference important suggestions with industry experts</li>
+                    <li>• Consider AI recommendations as one input in your decision-making process</li>
+                    <li>• Feel free to ask follow-up questions to explore different perspectives</li>
+                  </ul>
+                </div>
               </div>
 
               <div>
-                <h3 className="font-semibold mb-2">Service Terms</h3>
-                <ul className="space-y-2 text-muted-foreground pl-6">
-                  <li>• Usage is subject to monthly limits as defined in your access grant</li>
-                  <li>• Service availability is not guaranteed and may be interrupted</li>
-                  <li>• AYN reserves the right to modify or discontinue service at any time</li>
-                  <li>• All conversations and data may be logged for quality and security purposes</li>
-                </ul>
+                <h3 className="font-semibold mb-3">Service Information</h3>
+                <div className="text-muted-foreground space-y-2">
+                  <ul className="space-y-2 pl-6">
+                    <li>• Your account includes monthly message limits as specified in your access plan</li>
+                    <li>• Service updates and improvements are made regularly</li>
+                    <li>• We strive for high availability but cannot guarantee 100% uptime</li>
+                    <li>• Support is available if you encounter any issues</li>
+                  </ul>
+                </div>
               </div>
 
-              <div className="bg-muted/50 rounded-lg p-4">
+              <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-4 border border-primary/20">
                 <p className="text-sm">
-                  <strong>By using AYN AI:</strong> You acknowledge that you understand these limitations, 
-                  accept full responsibility for your decisions, and agree that AYN cannot be held liable 
-                  for any consequences resulting from your use of this service.
+                  <strong>Important:</strong> While AYN AI is a powerful business tool, all final decisions 
+                  remain yours to make. We recommend using our insights alongside your expertise and, 
+                  when appropriate, professional consultation for major business decisions.
                 </p>
               </div>
             </div>
