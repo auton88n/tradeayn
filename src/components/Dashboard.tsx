@@ -449,7 +449,7 @@ export default function Dashboard({ user }: DashboardProps) {
 
       {/* Sidebar */}
       <div className={`
-        fixed lg:static inset-y-0 left-0 z-50 lg:z-0
+        sidebar fixed lg:static inset-y-0 left-0 z-50 lg:z-0
         w-72 lg:w-80 bg-card border-r border-border
         transform transition-transform duration-300 ease-in-out
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
@@ -494,16 +494,19 @@ export default function Dashboard({ user }: DashboardProps) {
               <Brain className="w-4 h-4 text-primary-foreground" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm">AYN AI Consultant</p>
-              <p className="text-xs text-muted-foreground">
-                {isTyping ? 'Thinking...' : 'Ready to help'}
-              </p>
+              <p className="title-primary font-medium text-sm">AYN AI Consultant</p>
+              <div className="flex items-center gap-2">
+                <div className="status-active" />
+                <p className="text-xs text-muted-foreground">
+                  {isTyping ? 'Thinking...' : 'Ready to help'}
+                </p>
+              </div>
             </div>
           </div>
 
           {/* Quick Start */}
           <div className="mb-6">
-            <h3 className="font-semibold text-sm mb-3 text-muted-foreground uppercase tracking-wide">
+            <h3 className="title-primary font-semibold text-sm mb-3 text-muted-foreground uppercase tracking-wide">
               Quick Start
             </h3>
             <div className="space-y-2">
@@ -513,11 +516,11 @@ export default function Dashboard({ user }: DashboardProps) {
                   variant="ghost"
                   size="sm"
                   onClick={() => handleSendMessage(template.prompt)}
-                  className="w-full justify-start h-auto p-3 text-left hover:bg-muted hover:text-foreground transition-colors duration-200"
+                  className="quick-start-item sidebar-item-enhanced w-full justify-start h-auto p-3 text-left hover:bg-muted hover:text-foreground"
                   disabled={!hasAccess || !hasAcceptedTerms}
                 >
                   <template.icon className={`w-4 h-4 mr-3 flex-shrink-0 ${template.color}`} />
-                  <span className="text-sm font-medium">{template.name}</span>
+                  <span className="body-text text-sm font-medium">{template.name}</span>
                 </Button>
               ))}
             </div>
@@ -525,7 +528,7 @@ export default function Dashboard({ user }: DashboardProps) {
 
           {/* Recent Chats */}
           <div className="flex-1">
-            <h3 className="font-semibold text-sm mb-3 text-muted-foreground uppercase tracking-wide">
+            <h3 className="title-primary font-semibold text-sm mb-3 text-muted-foreground uppercase tracking-wide">
               Recent Chats
             </h3>
             <div className="space-y-1">
@@ -535,11 +538,11 @@ export default function Dashboard({ user }: DashboardProps) {
                   variant="ghost"
                   size="sm"
                   onClick={() => handleLoadChat(chat)}
-                  className="w-full justify-start text-sm text-muted-foreground hover:text-foreground hover:bg-muted h-auto p-3 text-left transition-colors duration-200"
+                  className="sidebar-item-enhanced w-full justify-start text-sm text-muted-foreground hover:text-foreground hover:bg-muted h-auto p-3 text-left"
                 >
                   <div className="min-w-0">
-                    <p className="font-medium truncate">{chat.title}</p>
-                    <p className="text-xs text-muted-foreground truncate">{chat.lastMessage}</p>
+                    <p className="subtitle font-medium truncate">{chat.title}</p>
+                    <p className="body-text text-xs text-muted-foreground truncate">{chat.lastMessage}</p>
                     <p className="text-xs text-muted-foreground">
                       {chat.timestamp.toLocaleDateString()}
                     </p>
@@ -552,7 +555,7 @@ export default function Dashboard({ user }: DashboardProps) {
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="chat-container flex-1 flex flex-col min-w-0">
         {/* Header */}
         <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 lg:px-6 flex-shrink-0">
           <div className="flex items-center gap-3">
@@ -649,13 +652,13 @@ export default function Dashboard({ user }: DashboardProps) {
                       )}
                       
                       <div className={`
-                        max-w-xs lg:max-w-md xl:max-w-lg rounded-lg px-4 py-3
+                        message-bubble max-w-xs lg:max-w-md xl:max-w-lg
                         ${message.sender === 'user' 
                           ? 'bg-primary text-primary-foreground ml-12' 
-                          : 'bg-muted text-foreground mr-12'
+                          : 'ai-message bg-muted text-foreground mr-12'
                         }
                       `}>
-                        <div className="text-sm whitespace-normal break-words">
+                        <div className="body-text text-sm whitespace-normal break-words">
                           {message.content}
                         </div>
                         <div className={`
@@ -705,13 +708,13 @@ export default function Dashboard({ user }: DashboardProps) {
               {/* Message Input Area */}
               <div className="bg-gray-50 dark:bg-gray-900/50 border-t border-border p-4 lg:p-6 flex-shrink-0">
                 <div className="max-w-4xl mx-auto">
-                  <div className="flex items-center gap-3 bg-white dark:bg-gray-800 rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 p-4 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all duration-300">
+                  <div className="input-container flex items-center gap-3 bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 p-4 focus-within:ring-2 focus-within:ring-blue-500/20">
                     
                     {/* Attachment Button */}
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="w-9 h-9 p-0 text-gray-400 hover:text-blue-500 transition-colors duration-200 flex-shrink-0"
+                      className="interactive-element w-9 h-9 p-0 text-gray-400 hover:text-blue-500 flex-shrink-0"
                       disabled={!hasAccess || !hasAcceptedTerms}
                       title="Attach file (coming soon)"
                     >
@@ -729,13 +732,13 @@ export default function Dashboard({ user }: DashboardProps) {
                         onBlur={() => setIsInputFocused(false)}
                         placeholder=""
                         disabled={!hasAccess || !hasAcceptedTerms || isTyping}
-                        className="border-0 bg-transparent text-base outline-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 h-auto min-h-[28px]"
+                        className="enhanced-input border-0 bg-transparent text-base outline-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 h-auto min-h-[28px]"
                       />
                       
                       {/* Typewriter Animation Placeholder */}
                       {!inputMessage && !isInputFocused && (
                         <div className="absolute inset-0 flex items-center pointer-events-none">
-                          <span className="text-gray-400 select-none typewriter-text">
+                          <span className="body-text text-gray-400 select-none typewriter-text">
                             {!hasAccess 
                               ? "Access required to send messages..."
                               : !hasAcceptedTerms 
@@ -752,7 +755,7 @@ export default function Dashboard({ user }: DashboardProps) {
                       variant="blue"
                       onClick={() => handleSendMessage()}
                       disabled={!inputMessage.trim() || !hasAccess || !hasAcceptedTerms || isTyping}
-                      className="h-10 px-5 rounded-xl text-sm font-medium shadow-md disabled:opacity-50"
+                      className="send-button interactive-element h-10 px-5 rounded-xl text-sm font-medium shadow-md disabled:opacity-50"
                     >
                       <Send className="w-4 h-4 mr-2" />
                       Send
