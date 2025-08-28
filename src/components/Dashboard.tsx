@@ -616,7 +616,7 @@ export default function Dashboard({ user }: DashboardProps) {
     <SidebarProvider>
       <div className="flex h-screen w-full bg-background">
         {/* Sidebar */}
-        <Sidebar collapsible="icon" className="w-64">
+        <Sidebar collapsible="offcanvas" className="w-64">
           <SidebarHeader className="p-4">
             {/* User Profile */}
             <div className="flex items-center gap-3">
