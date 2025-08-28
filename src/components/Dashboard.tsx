@@ -142,6 +142,42 @@ const Dashboard = ({ user }: DashboardProps) => {
     const content = messageContent || inputMessage.trim();
     if (!content) return;
 
+    // Check and increment usage
+    try {
+      const { data: canUse, error: usageError } = await supabase.rpc('increment_usage', {
+        _user_id: user.id,
+        _action_type: 'message',
+        _count: 1
+      });
+
+      if (usageError) {
+        console.error('Usage check error:', usageError);
+        toast({
+          title: "Usage Error",
+          description: "Unable to verify usage limits. Please try again.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (!canUse) {
+        toast({
+          title: "Usage Limit Reached",
+          description: "You've reached your monthly message limit. Please contact support or wait for next month's reset.",
+          variant: "destructive"
+        });
+        return;
+      }
+    } catch (error) {
+      console.error('Usage tracking error:', error);
+      toast({
+        title: "System Error",
+        description: "Unable to process your request. Please try again.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     const userMessage: Message = {
       id: Date.now().toString(),
       content,

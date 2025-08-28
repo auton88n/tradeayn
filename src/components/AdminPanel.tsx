@@ -57,6 +57,7 @@ export const AdminPanel = () => {
   const [selectedRequest, setSelectedRequest] = useState<AccessGrantWithProfile | null>(null);
   const [notes, setNotes] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
+  const [monthlyLimit, setMonthlyLimit] = useState('');
   const { toast } = useToast();
 
   const fetchAccessRequests = async () => {
@@ -109,6 +110,10 @@ export const AdminPanel = () => {
         updateData.expires_at = new Date(expiresAt).toISOString();
       }
 
+      if (monthlyLimit && parseInt(monthlyLimit) > 0) {
+        updateData.monthly_limit = parseInt(monthlyLimit);
+      }
+
       const { error } = await supabase
         .from('access_grants')
         .update(updateData)
@@ -128,6 +133,7 @@ export const AdminPanel = () => {
         setSelectedRequest(null);
         setNotes('');
         setExpiresAt('');
+        setMonthlyLimit('');
         fetchAccessRequests();
       }
     } catch (error) {
@@ -158,6 +164,7 @@ export const AdminPanel = () => {
         });
         setSelectedRequest(null);
         setNotes('');
+        setMonthlyLimit('');
         fetchAccessRequests();
       }
     } catch (error) {
@@ -338,6 +345,23 @@ export const AdminPanel = () => {
               />
             </div>
             
+            <div>
+              <label className="text-sm font-medium mb-2 block">
+                Monthly Usage Limit (optional)
+              </label>
+              <Input
+                type="number"
+                placeholder="e.g., 100 messages per month"
+                value={monthlyLimit}
+                onChange={(e) => setMonthlyLimit(e.target.value)}
+                className="glass"
+                min="0"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Leave empty for unlimited usage
+              </p>
+            </div>
+            
             <div className="flex gap-3">
               <Button
                 variant="default"
@@ -361,6 +385,7 @@ export const AdminPanel = () => {
                   setSelectedRequest(null);
                   setNotes('');
                   setExpiresAt('');
+                  setMonthlyLimit('');
                 }}
               >
                 Cancel

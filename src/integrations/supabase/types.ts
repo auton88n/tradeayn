@@ -17,35 +17,44 @@ export type Database = {
       access_grants: {
         Row: {
           created_at: string
+          current_month_usage: number | null
           expires_at: string | null
           granted_at: string | null
           granted_by: string | null
           id: string
           is_active: boolean
+          monthly_limit: number | null
           notes: string | null
           updated_at: string
+          usage_reset_date: string | null
           user_id: string
         }
         Insert: {
           created_at?: string
+          current_month_usage?: number | null
           expires_at?: string | null
           granted_at?: string | null
           granted_by?: string | null
           id?: string
           is_active?: boolean
+          monthly_limit?: number | null
           notes?: string | null
           updated_at?: string
+          usage_reset_date?: string | null
           user_id: string
         }
         Update: {
           created_at?: string
+          current_month_usage?: number | null
           expires_at?: string | null
           granted_at?: string | null
           granted_by?: string | null
           id?: string
           is_active?: boolean
+          monthly_limit?: number | null
           notes?: string | null
           updated_at?: string
+          usage_reset_date?: string | null
           user_id?: string
         }
         Relationships: []
@@ -80,6 +89,33 @@ export type Database = {
         }
         Relationships: []
       }
+      usage_logs: {
+        Row: {
+          action_type: string
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          usage_count: number | null
+          user_id: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          usage_count?: number | null
+          user_id: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          usage_count?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -106,6 +142,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_usage_limit: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
+      get_usage_stats: {
+        Args: { _user_id?: string }
+        Returns: {
+          company_name: string
+          current_usage: number
+          monthly_limit: number
+          reset_date: string
+          usage_percentage: number
+          user_email: string
+          user_id: string
+        }[]
+      }
       has_active_access: {
         Args: { _user_id: string }
         Returns: boolean
@@ -115,6 +167,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      increment_usage: {
+        Args: { _action_type?: string; _count?: number; _user_id: string }
         Returns: boolean
       }
     }
