@@ -1124,14 +1124,14 @@
   }
 
   /* Mobile-Style Floating Input Bar */
-  .input-area {
+.input-area {
     position: fixed;
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
     width: calc(100% - 40px);
-    max-width: 600px;
-    z-index: 1000;
+    max-width: 700px;
+    z-index: 1100; /* above sidebar overlay */
   }
 
   .input-container {
