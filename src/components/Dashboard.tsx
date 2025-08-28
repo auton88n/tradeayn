@@ -20,6 +20,7 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
+  useSidebar,
 } from '@/components/ui/sidebar';
 import { MaintenanceBanner } from '@/components/MaintenanceBanner';
 import { 
@@ -615,11 +616,11 @@ export default function Dashboard({ user }: DashboardProps) {
     <SidebarProvider>
       <div className="flex h-screen w-full bg-background">
         {/* Sidebar */}
-        <Sidebar className="w-60" collapsible="icon">
-          <SidebarHeader>
-            {/* User Profile - Collapsed Version */}
-            <div className="flex items-center gap-3 p-4">
-              <Avatar className="w-8 h-8 ring-2 ring-primary/20">
+        <Sidebar collapsible="icon" className="w-64">
+          <SidebarHeader className="p-4">
+            {/* User Profile */}
+            <div className="flex items-center gap-3">
+              <Avatar className="h-8 w-8 ring-2 ring-primary/20">
                 <AvatarImage src="" />
                 <AvatarFallback className="bg-gradient-primary text-white font-semibold text-sm">
                   {user?.user_metadata?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
@@ -639,8 +640,8 @@ export default function Dashboard({ user }: DashboardProps) {
               </Button>
             </div>
 
-            {/* AYN Status - Simplified for collapsed state */}
-            <div className="flex items-center gap-3 p-3 mx-4 rounded-lg bg-primary/10 border border-primary/20">
+            {/* AYN Status */}
+            <div className="flex items-center gap-3 p-3 mt-2 rounded-lg bg-primary/10 border border-primary/20">
               <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
                 <Brain className="w-3 h-3 text-primary-foreground" />
               </div>
@@ -716,7 +717,7 @@ export default function Dashboard({ user }: DashboardProps) {
               </div>
             </div>
 
-          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3">
 
             {/* Admin Tab Switcher */}
             {isAdmin && (
