@@ -756,6 +756,7 @@ export default function Dashboard({ user }: DashboardProps) {
                     console.log('Input clicked');
                   }}
                   placeholder="Ask AYN anything about your business..."
+                  disabled={isTyping}
                   className="message-input"
                 />
                 <button
