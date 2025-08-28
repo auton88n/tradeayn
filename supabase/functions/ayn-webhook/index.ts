@@ -26,7 +26,7 @@ serve(async (req) => {
     console.log('Calling AYN webhook with message:', message);
 
     // Call the webhook
-    const upstream = await fetch('https://n8n.srv846714.hstgr.cloud/webhook-test/d8453419-8880-4bc4-b351-a0d0376b1fce', {
+    const upstream = await fetch('https://n8n.srv846714.hstgr.cloud/webhook/d8453419-8880-4bc4-b351-a0d0376b1fce', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
