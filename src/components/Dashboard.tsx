@@ -122,7 +122,6 @@ export default function Dashboard({ user }: DashboardProps) {
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [activeTab, setActiveTab] = useState<'chat' | 'admin'>('chat');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   // Maintenance mode state
   const [maintenanceConfig, setMaintenanceConfig] = useState({
@@ -419,7 +418,6 @@ export default function Dashboard({ user }: DashboardProps) {
 
   const handleLoadChat = (chatHistory: ChatHistory) => {
     setMessages(chatHistory.messages);
-    setIsSidebarOpen(false);
     toast({
       title: "Chat Loaded",
       description: `Loaded conversation: ${chatHistory.title}`,
@@ -437,43 +435,19 @@ export default function Dashboard({ user }: DashboardProps) {
     }
   };
 
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
-
-  const handleCloseSidebar = () => {
-    setIsSidebarOpen(false);
-  };
-
   return (
     <div className="main-layout">
-      {/* Sidebar Overlay */}
-      <div 
-        className={`sidebar-overlay ${isSidebarOpen ? 'active' : ''}`}
-        onClick={handleCloseSidebar}
-      />
-
-      {/* Sidebar */}
-      <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
-        {/* Close Button */}
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Menu</h2>
-          <button 
-            className="hamburger-button"
-            onClick={handleCloseSidebar}
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <div className="sidebar-section">
-          <div className="user-profile flex items-center gap-3 mb-6 p-3 rounded-lg bg-gray-50">
+      {/* Fixed Sidebar */}
+      <div className="sidebar">
+        {/* User Profile Section */}
+        <div className="user-profile-section">
+          <div className="flex items-center gap-3 mb-4">
             <div className="user-avatar">
               {user?.user_metadata?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
             </div>
-            <div className="user-info flex-1 min-w-0">
-              <div className="user-name font-semibold text-sm truncate">{user?.user_metadata?.name || 'User'}</div>
-              <div className="user-email text-xs text-gray-500 truncate">{user?.email}</div>
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold text-gray-900 text-sm">{user?.user_metadata?.name || 'User'}</div>
+              <div className="text-sm text-gray-500">{user?.email}</div>
             </div>
             <Button 
               variant="ghost" 
@@ -484,67 +458,53 @@ export default function Dashboard({ user }: DashboardProps) {
               <LogOut className="w-4 h-4" />
             </Button>
           </div>
-        </div>
-
-        {/* AYN Status */}
-        <div className="sidebar-section">
-          <div className="ayn-consultant-card flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200 mb-6">
-            <div className="ayn-avatar">
-              <img src="/lovable-uploads/636eb1d6-bee9-4ea8-a6bf-748bd267d05f.png" alt="Brain" width="24" height="24" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm text-gray-900">AYN AI Consultant</p>
-              <div className="flex items-center gap-2">
-                <div className="status-active"></div>
-                <p className="text-xs text-gray-500">Online & Ready</p>
+          
+          <div className="ayn-consultant-status">
+            <div className="flex items-center gap-3">
+              <div className="ayn-avatar">
+                <img src="/lovable-uploads/636eb1d6-bee9-4ea8-a6bf-748bd267d05f.png" alt="Brain" width="16" height="16" />
+              </div>
+              <div className="flex-1">
+                <div className="font-medium text-gray-900 text-sm">AYN AI Consultant</div>
+                <div className="text-sm text-green-600 flex items-center gap-1">
+                  <div className="status-dot"></div>
+                  Ready to help
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Quick Start Templates */}
-        <div className="sidebar-section">
-          <h3 className="section-title">Quick Start</h3>
-          <div className="space-y-2">
+        {/* Quick Start Section */}
+        <div className="quick-start-section">
+          <h3 className="section-header">QUICK START</h3>
+          <div className="space-y-1">
             {templates.map((template, index) => (
               <div 
                 key={index} 
                 className="quick-start-item"
-                onClick={() => {
-                  handleSendMessage(template.prompt);
-                  handleCloseSidebar();
-                }}
+                onClick={() => handleSendMessage(template.prompt)}
               >
-                <div className="quick-start-title">
-                  <template.icon size={16} />
-                  {template.name}
-                </div>
-                <div className="quick-start-description">
-                  {template.prompt}
-                </div>
+                <template.icon className={`w-4 h-4 ${template.color}`} />
+                <span className="text-gray-700 text-sm">{template.name}</span>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Recent Chats */}
-        <div className="sidebar-section">
-          <h3 className="section-title">Recent Chats</h3>
-          <div className="space-y-2">
+        {/* Recent Chats Section */}
+        <div className="recent-chats-section">
+          <h3 className="section-header">RECENT CHATS</h3>
+          <div className="space-y-3">
             {recentChats.map((chat, index) => (
               <div 
                 key={index} 
                 className="recent-chat-item"
-                onClick={() => {
-                  handleLoadChat(chat);
-                  handleCloseSidebar();
-                }}
+                onClick={() => handleLoadChat(chat)}
               >
                 <div className="chat-title">{chat.title}</div>
                 <div className="chat-preview">{chat.lastMessage}</div>
-                <div className="chat-date">
-                  {chat.timestamp.toLocaleDateString()}
-                </div>
+                <div className="chat-date">{chat.timestamp.toLocaleDateString()}</div>
               </div>
             ))}
           </div>
@@ -556,33 +516,22 @@ export default function Dashboard({ user }: DashboardProps) {
         {/* Header */}
         <header className="header">
           <div className="header-left">
-            <button 
-              className="hamburger-button"
-              onClick={toggleSidebar}
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-            <div className="header-center">
-              <div className="flex items-center gap-3">
-                <div className="header-brain-icon">
-                  <img src="/lovable-uploads/636eb1d6-bee9-4ea8-a6bf-748bd267d05f.png" alt="Brain" width="24" height="24" />
-                </div>
-                <div>
-                  <h1 className="app-title">AYN AI Business Consultant</h1>
-                  <p className="app-subtitle">Your AI-powered business advisor</p>
-                </div>
-              </div>
+            <div className="header-brain-icon">
+              <img src="/lovable-uploads/636eb1d6-bee9-4ea8-a6bf-748bd267d05f.png" alt="Brain" width="16" height="16" />
+            </div>
+            <div>
+              <h1 className="app-title">AYN Business Console</h1>
+              <p className="app-subtitle">Your AI-powered business advisor</p>
             </div>
           </div>
-
+          
           <div className="nav-buttons">
-            <Badge variant={hasAccess ? "default" : "secondary"} className="hidden sm:inline-flex">
-              <div className={`w-2 h-2 rounded-full mr-2 ${hasAccess ? 'bg-green-500' : 'bg-gray-400'}`} />
+            <div className="status-badge">
+              <div className="status-dot"></div>
               {hasAccess ? 'Active' : 'Inactive'}
-            </Badge>
-
+            </div>
             {isAdmin && (
-              <div className="nav-buttons">
+              <>
                 <button
                   className={`nav-button ${activeTab === 'chat' ? 'active' : ''}`}
                   onClick={() => setActiveTab('chat')}
@@ -593,12 +542,10 @@ export default function Dashboard({ user }: DashboardProps) {
                   className={`nav-button ${activeTab === 'admin' ? 'active' : ''}`}
                   onClick={() => setActiveTab('admin')}
                 >
-                  <Shield className="w-3 h-3 mr-1" />
                   Admin
                 </button>
-              </div>
+              </>
             )}
-
             <ThemeToggle />
           </div>
         </header>
@@ -636,7 +583,7 @@ export default function Dashboard({ user }: DashboardProps) {
                       <>
                         <div className="message-header">
                           <div className="message-brain-icon">
-                            <img src="/lovable-uploads/636eb1d6-bee9-4ea8-a6bf-748bd267d05f.png" alt="Brain" width="24" height="24" />
+                            <img src="/lovable-uploads/636eb1d6-bee9-4ea8-a6bf-748bd267d05f.png" alt="Brain" width="12" height="12" />
                           </div>
                           <div>
                             <div className="sender-name">AYN AI Consultant</div>
@@ -664,7 +611,7 @@ export default function Dashboard({ user }: DashboardProps) {
                             if (line.trim().match(/^[🔍📈📊🎯]/)) {
                               return (
                                 <div key={i} className="capability-item">
-                                  <span className="capability-title">{line.split(' - ')[0]}</span>
+                                  <span>{line.split(' - ')[0]}</span>
                                   {line.split(' - ')[1] && (
                                     <span className="capability-description"> - {line.split(' - ')[1]}</span>
                                   )}
@@ -704,7 +651,7 @@ export default function Dashboard({ user }: DashboardProps) {
                   <div className="chat-message">
                     <div className="message-header">
                       <div className="message-brain-icon">
-                        <img src="/lovable-uploads/636eb1d6-bee9-4ea8-a6bf-748bd267d05f.png" alt="Brain" width="24" height="24" />
+                        <img src="/lovable-uploads/636eb1d6-bee9-4ea8-a6bf-748bd267d05f.png" alt="Brain" width="12" height="12" />
                       </div>
                       <div>
                         <div className="sender-name">AYN AI Consultant</div>
@@ -727,10 +674,7 @@ export default function Dashboard({ user }: DashboardProps) {
             {/* Input Area */}
             <div className="input-area">
               <div className="input-container">
-                <button className="attachment-button">
-                  <Paperclip className="w-4 h-4" />
-                </button>
-                
+                <Paperclip className="w-5 h-5 text-gray-400 cursor-pointer hover:text-gray-600" />
                 <input
                   ref={inputRef}
                   type="text"
@@ -744,18 +688,18 @@ export default function Dashboard({ user }: DashboardProps) {
                       ? "Access required to send messages..."
                       : !hasAcceptedTerms 
                         ? "Please accept terms to start chatting..."
-                        : inputMessage || isInputFocused ? "Type your message..." : currentText
+                        : inputMessage || isInputFocused ? "Ask AYN anything about your business..." : currentText
                   }
                   disabled={!hasAccess || !hasAcceptedTerms || isTyping}
                   className="message-input"
                 />
-                
                 <button
                   onClick={() => handleSendMessage()}
                   disabled={!inputMessage.trim() || !hasAccess || !hasAcceptedTerms || isTyping}
                   className="send-button"
                 >
                   <Send className="w-4 h-4" />
+                  <span className="ml-2 font-medium">Send</span>
                 </button>
               </div>
             </div>
