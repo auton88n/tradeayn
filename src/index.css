@@ -17,17 +17,17 @@
     --popover: 240 10% 7%;
     --popover-foreground: 0 0% 98%;
     
-    /* AYN Brand Colors */
-    --primary: 262 83% 58%;  /* Purple */
+    /* Professional Black & White Theme */
+    --primary: 0 0% 9%;  /* Near Black */
     --primary-foreground: 0 0% 98%;
     
-    --secondary: 217 91% 60%;  /* Blue */
+    --secondary: 0 0% 20%;  /* Dark Gray */
     --secondary-foreground: 0 0% 98%;
     
-    --accent: 158 64% 52%;  /* Teal */
+    --accent: 0 0% 15%;  /* Charcoal */
     --accent-foreground: 0 0% 98%;
     
-    --warning: 43 96% 56%;  /* Orange */
+    --warning: 0 0% 25%;  /* Medium Gray */
     --warning-foreground: 0 0% 98%;
     
     --muted: 240 6% 15%;
@@ -38,34 +38,34 @@
     
     --border: 240 6% 20%;
     --input: 240 6% 15%;
-    --ring: 262 83% 58%;
+    --ring: 0 0% 50%;
     
     --radius: 0.75rem;
     
-    /* AYN Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(262 83% 58%), hsl(217 91% 60%));
-    --gradient-secondary: linear-gradient(135deg, hsl(217 91% 60%), hsl(158 64% 52%));
-    --gradient-accent: linear-gradient(135deg, hsl(158 64% 52%), hsl(43 96% 56%));
-    --gradient-hero: linear-gradient(135deg, hsl(262 83% 58%) 0%, hsl(217 91% 60%) 50%, hsl(158 64% 52%) 100%);
+    /* Professional Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(0 0% 9%), hsl(0 0% 15%));
+    --gradient-secondary: linear-gradient(135deg, hsl(0 0% 15%), hsl(0 0% 20%));
+    --gradient-accent: linear-gradient(135deg, hsl(0 0% 20%), hsl(0 0% 25%));
+    --gradient-hero: linear-gradient(135deg, hsl(0 0% 9%) 0%, hsl(0 0% 15%) 50%, hsl(0 0% 20%) 100%);
     
-    /* Glassmorphism */
-    --glass-bg: hsla(240, 10%, 7%, 0.8);
-    --glass-border: hsla(262, 83%, 58%, 0.2);
-    --glass-shadow: 0 8px 32px hsla(262, 83%, 58%, 0.12);
+    /* Professional Glassmorphism */
+    --glass-bg: hsla(0, 0%, 10%, 0.8);
+    --glass-border: hsla(0, 0%, 50%, 0.2);
+    --glass-shadow: 0 8px 32px hsla(0, 0%, 0%, 0.25);
     
-    /* Neon Effects */
-    --neon-purple: 0 0 20px hsla(262, 83%, 58%, 0.6);
-    --neon-blue: 0 0 20px hsla(217, 91%, 60%, 0.6);
-    --neon-teal: 0 0 20px hsla(158, 64%, 52%, 0.6);
+    /* Professional Shadows */
+    --neon-purple: 0 0 20px hsla(0, 0%, 80%, 0.3);
+    --neon-blue: 0 0 20px hsla(0, 0%, 70%, 0.3);
+    --neon-teal: 0 0 20px hsla(0, 0%, 60%, 0.3);
     
     --sidebar-background: 240 10% 5%;
     --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 262 83% 58%;
+    --sidebar-primary: 0 0% 15%;
     --sidebar-primary-foreground: 0 0% 98%;
     --sidebar-accent: 240 6% 15%;
     --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-border: 240 6% 20%;
-    --sidebar-ring: 262 83% 58%;
+    --sidebar-ring: 0 0% 50%;
   }
 }
 
@@ -95,9 +95,9 @@
   }
   
   .glass-hover:hover {
-    background: hsla(240, 10%, 9%, 0.8);
-    border-color: hsla(262, 83%, 58%, 0.4);
-    box-shadow: 0 12px 40px hsla(262, 83%, 58%, 0.2);
+    background: hsla(0, 0%, 12%, 0.8);
+    border-color: hsla(0, 0%, 60%, 0.4);
+    box-shadow: 0 12px 40px hsla(0, 0%, 0%, 0.3);
   }
   
   /* Neon glow effects */
@@ -128,14 +128,14 @@
     background-clip: text;
   }
   
-  /* Animated gradient backgrounds */
+  /* Professional animated gradient backgrounds */
   .animated-gradient {
     background: linear-gradient(
       -45deg,
-      hsl(262 83% 58%),
-      hsl(217 91% 60%),
-      hsl(158 64% 52%),
-      hsl(43 96% 56%)
+      hsl(0 0% 9%),
+      hsl(0 0% 15%),
+      hsl(0 0% 20%),
+      hsl(0 0% 25%)
     );
     background-size: 400% 400%;
     animation: gradient-shift 15s ease infinite;
@@ -162,11 +162,11 @@
   }
   
   ::-webkit-scrollbar-thumb {
-    background: hsl(262 83% 58%);
+    background: hsl(0 0% 50%);
     border-radius: 4px;
   }
   
   ::-webkit-scrollbar-thumb:hover {
-    background: hsl(262 83% 48%);
+    background: hsl(0 0% 60%);
   }
 }
