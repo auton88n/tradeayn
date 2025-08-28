@@ -15,6 +15,7 @@ import {
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
+  SidebarInset,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -704,7 +705,7 @@ export default function Dashboard({ user }: DashboardProps) {
         </Sidebar>
 
         {/* Main Chat Area */}
-        <div className="flex-1 flex flex-col min-w-0">
+        <SidebarInset>
           {/* Header */}
           <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 lg:px-6 flex-shrink-0">
             <div className="flex items-center gap-3">
@@ -1009,7 +1010,7 @@ export default function Dashboard({ user }: DashboardProps) {
             </>
           )}
           </div>
-        </div>
+        </SidebarInset>
       </div>
     </SidebarProvider>
   );
