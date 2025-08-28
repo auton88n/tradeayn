@@ -438,7 +438,55 @@ export default function Dashboard({ user }: DashboardProps) {
   };
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="main-layout">
+      {/* Enhanced Header */}
+      <header className="enhanced-header">
+        <div className="logo-section">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="lg:hidden mr-2"
+            onClick={() => setIsSidebarOpen(true)}
+          >
+            <Menu className="w-4 h-4" />
+          </Button>
+          <div className="logo-icon">
+            <Brain className="w-5 h-5" />
+          </div>
+          <span className="app-title">AYN AI Business Consulting</span>
+        </div>
+        
+        <div className="flex items-center gap-4">
+          <ThemeToggle />
+          {isAdmin && (
+            <div className="flex bg-muted rounded-lg p-1">
+              <Button
+                variant={activeTab === 'chat' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setActiveTab('chat')}
+                className="rounded-md"
+              >
+                Chat
+              </Button>
+              <Button
+                variant={activeTab === 'admin' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setActiveTab('admin')}
+                className="rounded-md"
+              >
+                <Shield className="w-4 h-4 mr-1" />
+                Admin
+              </Button>
+            </div>
+          )}
+          <Avatar className="w-8 h-8">
+            <AvatarFallback>
+              {user?.user_metadata?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+            </AvatarFallback>
+          </Avatar>
+        </div>
+      </header>
+
       {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
         <div 
@@ -554,218 +602,140 @@ export default function Dashboard({ user }: DashboardProps) {
         </div>
       </div>
 
-      {/* Main Chat Area */}
-      <div className="chat-container flex-1 flex flex-col min-w-0">
-        {/* Header */}
-        <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 lg:px-6 flex-shrink-0">
-          <div className="flex items-center gap-3">
-            {/* Mobile Menu Button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsSidebarOpen(true)}
-              className="lg:hidden"
-            >
-              <Menu className="w-4 h-4" />
-            </Button>
-            
-            <div className="flex items-center gap-2">
-              <Brain className="w-6 h-6 text-primary" />
-              <h1 className="font-bold text-lg">AYN Business Console</h1>
-            </div>
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-h-0">
+        {/* Maintenance Banner */}
+        <MaintenanceBanner 
+          isEnabled={maintenanceConfig.enableMaintenance}
+          message={maintenanceConfig.maintenanceMessage}
+          startTime={maintenanceConfig.maintenanceStartTime}
+          endTime={maintenanceConfig.maintenanceEndTime}
+        />
+
+        {/* Terms Modal */}
+        <TermsModal 
+          open={hasAccess && !hasAcceptedTerms} 
+          onAccept={handleAcceptTerms}
+        />
+
+        {/* Admin Panel */}
+        {isAdmin && activeTab === 'admin' && (
+          <div className="flex-1 overflow-y-auto p-6">
+            <AdminPanel />
           </div>
+        )}
 
-          <div className="flex items-center gap-3">
-            {/* Access Status Badge */}
-            <Badge variant={hasAccess ? "default" : "secondary"} className="hidden sm:inline-flex">
-              <div className={`w-2 h-2 rounded-full mr-2 ${hasAccess ? 'bg-green-500' : 'bg-gray-400'}`} />
-              {hasAccess ? 'Active' : 'Inactive'}
-            </Badge>
-
-            {/* Admin Tab Switcher */}
-            {isAdmin && (
-              <div className="flex gap-1 bg-muted rounded-lg p-1">
-                <Button
-                  variant={activeTab === 'chat' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setActiveTab('chat')}
-                  className="h-8 px-3"
-                >
-                  Chat
-                </Button>
-                <Button
-                  variant={activeTab === 'admin' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setActiveTab('admin')}
-                  className="h-8 px-3"
-                >
-                  <Shield className="w-3 h-3 mr-1" />
-                  Admin
-                </Button>
-              </div>
-            )}
-
-            <ThemeToggle />
-          </div>
-        </header>
-
-        {/* Content Area */}
-        <div className="flex-1 flex flex-col min-h-0">
-          {/* Maintenance Banner */}
-          <MaintenanceBanner 
-            isEnabled={maintenanceConfig.enableMaintenance}
-            message={maintenanceConfig.maintenanceMessage}
-            startTime={maintenanceConfig.maintenanceStartTime}
-            endTime={maintenanceConfig.maintenanceEndTime}
-          />
-
-          {/* Terms Modal */}
-          <TermsModal 
-            open={hasAccess && !hasAcceptedTerms} 
-            onAccept={handleAcceptTerms}
-          />
-
-          {/* Admin Panel */}
-          {isAdmin && activeTab === 'admin' && (
-            <div className="flex-1 overflow-y-auto p-6">
-              <AdminPanel />
-            </div>
-          )}
-
-          {/* Chat Interface */}
-          {(activeTab === 'chat' || !isAdmin) && (
-            <>
-              {/* Messages Area */}
-              <ScrollArea className="flex-1 px-4 lg:px-6">
-                <div className="max-w-4xl mx-auto py-6 space-y-4">
-                  {messages.map((message) => (
-                    <div
-                      key={message.id}
-                      className={`flex gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
-                      {message.sender === 'ayn' && (
-                        <Avatar className="w-8 h-8 flex-shrink-0">
-                          <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                            <Brain className="w-4 h-4" />
-                          </AvatarFallback>
-                        </Avatar>
-                      )}
-                      
-                      <div className={`
-                        message-bubble max-w-xs lg:max-w-md xl:max-w-lg
-                        ${message.sender === 'user' 
-                          ? 'bg-primary text-primary-foreground ml-12' 
-                          : 'ai-message bg-muted text-foreground mr-12'
-                        }
-                      `}>
-                        <div className="body-text text-sm whitespace-normal break-words">
-                          {message.content}
+        {/* Chat Interface */}
+        {(activeTab === 'chat' || !isAdmin) && (
+          <>
+            {/* Messages Area - Enhanced */}
+            <div className="chat-area">
+              <div className="message-container px-6 py-6 max-w-4xl mx-auto">
+                {messages.map((message) => (
+                  <div key={message.id} className="message-bubble">
+                    {message.sender === 'ayn' ? (
+                      <div className="flex gap-3 items-start">
+                        <div className="ai-avatar">
+                          <Brain className="w-4 h-4" />
                         </div>
-                        <div className={`
-                          text-xs mt-2 opacity-70
-                          ${message.sender === 'user' ? 'text-primary-foreground/70' : 'text-muted-foreground'}
-                        `}>
-                          {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          {message.status === 'sending' && ' • Sending...'}
-                          {message.status === 'error' && ' • Failed'}
+                        <div className="ai-message-bubble">
+                          <div className="message-content">
+                            {message.content.split('\n').map((line, i) => (
+                              <div key={i}>
+                                {line.includes('**') ? (
+                                  <span dangerouslySetInnerHTML={{
+                                    __html: line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                                  }} />
+                                ) : (
+                                  line
+                                )}
+                                {i < message.content.split('\n').length - 1 && <br />}
+                              </div>
+                            ))}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-2 opacity-70">
+                            {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </div>
                         </div>
                       </div>
-                      
-                      {message.sender === 'user' && (
+                    ) : (
+                      <div className="flex gap-3 items-start justify-end">
+                        <div className="bg-primary text-primary-foreground rounded-2xl px-4 py-3 max-w-sm">
+                          <div className="message-content text-sm">
+                            {message.content}
+                          </div>
+                          <div className="text-xs mt-2 opacity-70 text-primary-foreground/70">
+                            {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            {message.status === 'sending' && ' • Sending...'}
+                            {message.status === 'error' && ' • Failed'}
+                          </div>
+                        </div>
                         <Avatar className="w-8 h-8 flex-shrink-0">
-                          <AvatarImage src="" />
                           <AvatarFallback className="text-xs">
                             {user?.user_metadata?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
                           </AvatarFallback>
                         </Avatar>
-                      )}
-                    </div>
-                  ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
 
-                  {/* Typing Indicator */}
-                  {isTyping && (
-                    <div className="flex gap-3 justify-start">
-                      <Avatar className="w-8 h-8 flex-shrink-0">
-                        <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                          <Brain className="w-4 h-4" />
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="bg-muted text-foreground rounded-lg px-4 py-3 mr-12">
-                        <div className="flex items-center gap-1">
-                          <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-                          <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
-                          <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
-                          <span className="ml-2 text-sm text-muted-foreground">AYN is typing...</span>
+                {/* Enhanced Typing Indicator */}
+                {isTyping && (
+                  <div className="message-bubble">
+                    <div className="flex gap-3 items-start">
+                      <div className="ai-avatar">
+                        <Brain className="w-4 h-4" />
+                      </div>
+                      <div className="typing-indicator ai-message-bubble">
+                        <div className="flex items-center gap-2">
+                          <div className="typing-dot"></div>
+                          <div className="typing-dot"></div>
+                          <div className="typing-dot"></div>
+                          <span className="ml-2">AYN is analyzing...</span>
                         </div>
                       </div>
                     </div>
-                  )}
-                  
-                  <div ref={messagesEndRef} />
-                </div>
-              </ScrollArea>
-
-              {/* Message Input Area */}
-              <div className="bg-gray-50 dark:bg-gray-900/50 border-t border-border p-4 lg:p-6 flex-shrink-0">
-                <div className="max-w-4xl mx-auto">
-                  <div className="input-container flex items-center gap-3 bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 p-4 focus-within:ring-2 focus-within:ring-blue-500/20">
-                    
-                    {/* Attachment Button */}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="interactive-element w-9 h-9 p-0 text-gray-400 hover:text-blue-500 flex-shrink-0"
-                      disabled={!hasAccess || !hasAcceptedTerms}
-                      title="Attach file (coming soon)"
-                    >
-                      <Paperclip className="w-4 h-4" />
-                    </Button>
-                    
-                    {/* Input Container */}
-                    <div className="flex-1 relative">
-                      <Input
-                        ref={inputRef}
-                        value={inputMessage}
-                        onChange={(e) => setInputMessage(e.target.value)}
-                        onKeyPress={handleKeyPress}
-                        onFocus={() => setIsInputFocused(true)}
-                        onBlur={() => setIsInputFocused(false)}
-                        placeholder=""
-                        disabled={!hasAccess || !hasAcceptedTerms || isTyping}
-                        className="enhanced-input border-0 bg-transparent text-base outline-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 h-auto min-h-[28px]"
-                      />
-                      
-                      {/* Typewriter Animation Placeholder */}
-                      {!inputMessage && !isInputFocused && (
-                        <div className="absolute inset-0 flex items-center pointer-events-none">
-                          <span className="body-text text-gray-400 select-none typewriter-text">
-                            {!hasAccess 
-                              ? "Access required to send messages..."
-                              : !hasAcceptedTerms 
-                                ? "Please accept terms to start chatting..."
-                                : currentText
-                            }
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Send Button */}
-                    <Button
-                      variant="blue"
-                      onClick={() => handleSendMessage()}
-                      disabled={!inputMessage.trim() || !hasAccess || !hasAcceptedTerms || isTyping}
-                      className="send-button interactive-element h-10 px-5 rounded-xl text-sm font-medium shadow-md disabled:opacity-50"
-                    >
-                      <Send className="w-4 h-4 mr-2" />
-                      Send
-                    </Button>
                   </div>
-                </div>
+                )}
+
+                <div ref={messagesEndRef} />
               </div>
-            </>
-          )}
-        </div>
+            </div>
+
+            {/* Enhanced Input Area */}
+            <div className="improved-input-container">
+              <div className="input-wrapper">
+                <input
+                  ref={inputRef}
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  onFocus={() => setIsInputFocused(true)}
+                  onBlur={() => setIsInputFocused(false)}
+                  placeholder={
+                    !hasAccess 
+                      ? "Access required to send messages..."
+                      : !hasAcceptedTerms 
+                        ? "Please accept terms to start chatting..."
+                        : inputMessage || isInputFocused ? "" : currentText
+                  }
+                  disabled={!hasAccess || !hasAcceptedTerms || isTyping}
+                  className="enhanced-input"
+                />
+                
+                <button
+                  onClick={() => handleSendMessage()}
+                  disabled={!inputMessage.trim() || !hasAccess || !hasAcceptedTerms || isTyping}
+                  className="premium-send-button"
+                >
+                  <Send className="w-4 h-4" />
+                  Send Message
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
