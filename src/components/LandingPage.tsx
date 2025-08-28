@@ -87,42 +87,58 @@ const LandingPage = () => {
 
       {/* Hero Section */}
       <section className="relative py-20 overflow-hidden">
-        {/* Particle Field Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-background via-primary/3 to-background" />
+        {/* Geometric Mesh Background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-background via-primary/2 to-accent/3" />
         
-        {/* Floating Particles */}
+        {/* 3D Geometric Shapes */}
         <div className="absolute inset-0">
-          {/* Large Particles */}
-          <div className="absolute top-1/6 left-1/5 w-2 h-2 rounded-full bg-primary/40 animate-bounce" style={{ animationDuration: '3s', animationDelay: '0s' }} />
-          <div className="absolute top-1/4 right-1/4 w-1.5 h-1.5 rounded-full bg-accent/50 animate-bounce" style={{ animationDuration: '4s', animationDelay: '0.5s' }} />
-          <div className="absolute top-1/3 left-1/3 w-3 h-3 rounded-full bg-primary/30 animate-bounce" style={{ animationDuration: '5s', animationDelay: '1s' }} />
+          {/* Large Hexagon */}
+          <div className="absolute top-1/4 left-1/5 w-32 h-32 transform rotate-12 animate-spin" style={{ animationDuration: '20s' }}>
+            <div className="w-full h-full bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/20" style={{ clipPath: 'polygon(30% 0%, 70% 0%, 100% 50%, 70% 100%, 30% 100%, 0% 50%)' }} />
+          </div>
           
-          {/* Medium Particles */}
-          <div className="absolute top-2/5 right-1/6 w-1 h-1 rounded-full bg-accent/60 animate-bounce" style={{ animationDuration: '3.5s', animationDelay: '1.5s' }} />
-          <div className="absolute top-1/2 left-1/4 w-1.5 h-1.5 rounded-full bg-primary/45 animate-bounce" style={{ animationDuration: '4.5s', animationDelay: '2s' }} />
-          <div className="absolute top-3/5 right-1/3 w-2 h-2 rounded-full bg-accent/35 animate-bounce" style={{ animationDuration: '3.8s', animationDelay: '2.5s' }} />
+          {/* Diamond Shape */}
+          <div className="absolute top-1/3 right-1/4 w-24 h-24 transform rotate-45 animate-bounce" style={{ animationDuration: '6s' }}>
+            <div className="w-full h-full bg-gradient-to-tr from-accent/20 to-accent/5 border border-accent/25" />
+          </div>
           
-          {/* Small Particles */}
-          <div className="absolute top-2/3 left-1/6 w-0.5 h-0.5 rounded-full bg-primary/70 animate-bounce" style={{ animationDuration: '2.5s', animationDelay: '3s' }} />
-          <div className="absolute top-3/4 right-1/5 w-1 h-1 rounded-full bg-accent/55 animate-bounce" style={{ animationDuration: '3.2s', animationDelay: '3.5s' }} />
-          <div className="absolute top-4/5 left-1/3 w-0.5 h-0.5 rounded-full bg-primary/80 animate-bounce" style={{ animationDuration: '2.8s', animationDelay: '4s' }} />
+          {/* Triangle */}
+          <div className="absolute bottom-1/3 left-1/3 w-20 h-20 transform -rotate-12 animate-pulse" style={{ animationDuration: '8s' }}>
+            <div className="w-full h-full bg-gradient-to-b from-primary/18 to-transparent border-l border-primary/30" style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }} />
+          </div>
           
-          {/* Horizontal Floating Particles */}
-          <div className="absolute top-1/5 left-0 w-1 h-1 rounded-full bg-accent/40 animate-pulse" style={{ animation: 'float-horizontal 8s infinite linear' }} />
-          <div className="absolute top-2/5 left-0 w-1.5 h-1.5 rounded-full bg-primary/35 animate-pulse" style={{ animation: 'float-horizontal 12s infinite linear', animationDelay: '2s' }} />
-          <div className="absolute top-3/5 left-0 w-0.5 h-0.5 rounded-full bg-accent/60 animate-pulse" style={{ animation: 'float-horizontal 10s infinite linear', animationDelay: '4s' }} />
+          {/* Octagon */}
+          <div className="absolute top-1/2 right-1/6 w-16 h-16 transform rotate-45 animate-spin" style={{ animationDuration: '15s', animationDirection: 'reverse' }}>
+            <div className="w-full h-full bg-gradient-to-bl from-accent/12 to-accent/3 border border-accent/18" style={{ clipPath: 'polygon(20% 0%, 80% 0%, 100% 20%, 100% 80%, 80% 100%, 20% 100%, 0% 80%, 0% 20%)' }} />
+          </div>
           
-          {/* Additional scattered particles */}
-          <div className="absolute top-1/8 right-1/8 w-1 h-1 rounded-full bg-primary/50 animate-ping" style={{ animationDuration: '4s' }} />
-          <div className="absolute top-7/8 left-1/8 w-1.5 h-1.5 rounded-full bg-accent/40 animate-ping" style={{ animationDuration: '5s', animationDelay: '1s' }} />
-          <div className="absolute top-5/6 right-1/7 w-0.5 h-0.5 rounded-full bg-primary/75 animate-ping" style={{ animationDuration: '3s', animationDelay: '2s' }} />
+          {/* Parallelogram */}
+          <div className="absolute bottom-1/4 right-1/3 w-28 h-16 transform skew-x-12 animate-pulse" style={{ animationDuration: '5s' }}>
+            <div className="w-full h-full bg-gradient-to-r from-primary/10 to-primary/3 border border-primary/15" />
+          </div>
+          
+          {/* Small geometric accents */}
+          <div className="absolute top-1/6 right-1/7 w-8 h-8 transform rotate-12 animate-bounce" style={{ animationDuration: '4s' }}>
+            <div className="w-full h-full bg-accent/25 border border-accent/40" style={{ clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' }} />
+          </div>
+          
+          <div className="absolute bottom-1/6 left-1/8 w-12 h-12 transform -rotate-45 animate-spin" style={{ animationDuration: '12s' }}>
+            <div className="w-full h-full bg-primary/15 border border-primary/25" style={{ clipPath: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)' }} />
+          </div>
         </div>
         
-        {/* Particle Trails Effect */}
+        {/* Mesh Connection Lines */}
         <div className="absolute inset-0">
-          <div className="absolute top-1/4 left-1/4 w-32 h-0.5 bg-gradient-to-r from-transparent via-primary/20 to-transparent animate-pulse" style={{ animationDuration: '6s' }} />
-          <div className="absolute top-2/3 right-1/4 w-24 h-0.5 bg-gradient-to-l from-transparent via-accent/15 to-transparent animate-pulse" style={{ animationDuration: '7s', animationDelay: '1s' }} />
+          <svg className="w-full h-full opacity-20" viewBox="0 0 800 600">
+            <line x1="150" y1="120" x2="300" y2="200" stroke="hsl(var(--primary))" strokeWidth="1" opacity="0.3" className="animate-pulse" style={{ animationDuration: '6s' }} />
+            <line x1="600" y1="150" x2="400" y2="300" stroke="hsl(var(--accent))" strokeWidth="1" opacity="0.3" className="animate-pulse" style={{ animationDuration: '8s', animationDelay: '1s' }} />
+            <line x1="200" y1="400" x2="500" y2="250" stroke="hsl(var(--primary))" strokeWidth="1" opacity="0.2" className="animate-pulse" style={{ animationDuration: '7s', animationDelay: '2s' }} />
+            <line x1="650" y1="400" x2="300" y2="500" stroke="hsl(var(--accent))" strokeWidth="1" opacity="0.2" className="animate-pulse" style={{ animationDuration: '9s', animationDelay: '0.5s' }} />
+          </svg>
         </div>
+        
+        {/* Depth gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-background/40 via-transparent to-background/20" />
         
         <div className="container mx-auto px-6 relative z-10">
           <div className="text-center max-w-4xl mx-auto">
