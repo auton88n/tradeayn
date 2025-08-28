@@ -398,6 +398,14 @@
     color: white !important;
   }
 
+  .ayn-avatar img,
+  .ayn-message-avatar img,
+  .ayn-consultant-avatar img,
+  .brain-logo img,
+  .ayn-header-logo img {
+    filter: brightness(0) invert(1);
+  }
+
   .ayn-avatar svg,
   .ayn-message-avatar svg,
   .ayn-consultant-avatar svg,
