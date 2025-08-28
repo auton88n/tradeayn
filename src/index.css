@@ -88,6 +88,14 @@
     --border: 0 0% 14.9%;
     --input: 0 0% 14.9%;
     --ring: 0 0% 83.1%;
+    --sidebar-background: 0 0% 3.9%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 0 0% 98%;
+    --sidebar-primary-foreground: 0 0% 9%;
+    --sidebar-accent: 0 0% 14.9%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 0 0% 14.9%;
+    --sidebar-ring: 0 0% 83.1%;
   }
 }
 
@@ -99,8 +107,15 @@
   body {
     @apply bg-background text-foreground font-sans;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    background: radial-gradient(ellipse at top, hsl(0 0% 100%) 0%, hsl(0 0% 98%) 100%);
     min-height: 100vh;
+  }
+
+  .dark body {
+    background: hsl(0 0% 3.9%);
+  }
+
+  body:not(.dark) {
+    background: radial-gradient(ellipse at top, hsl(0 0% 100%) 0%, hsl(0 0% 98%) 100%);
   }
   
   /* Glass morphism effects */
@@ -194,17 +209,17 @@
   ::-webkit-scrollbar {
     width: 8px;
   }
-  
+
   ::-webkit-scrollbar-track {
-    background: hsl(0 0% 96%);
+    background: hsl(var(--muted));
   }
-  
+
   ::-webkit-scrollbar-thumb {
-    background: hsl(0 0% 50%);
+    background: hsl(var(--muted-foreground));
     border-radius: 4px;
   }
-  
+
   ::-webkit-scrollbar-thumb:hover {
-    background: hsl(0 0% 60%);
+    background: hsl(var(--foreground));
   }
 }
