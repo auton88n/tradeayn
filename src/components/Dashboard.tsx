@@ -794,9 +794,11 @@ export default function Dashboard({ user }: DashboardProps) {
                            ? 'bg-primary text-primary-foreground' 
                            : 'bg-muted text-foreground'
                        }`}>
-                         <p className="text-sm whitespace-pre-wrap break-words">
-                           {message.content}
-                         </p>
+                          <div className="text-sm leading-relaxed whitespace-pre-wrap break-words transition-all duration-200 hover:scale-[1.01] cursor-default select-text">
+                            <span className={`inline-block ${message.sender === 'user' ? 'text-primary-foreground/90' : 'text-foreground/90'} hover:${message.sender === 'user' ? 'text-primary-foreground' : 'text-foreground'} transition-colors duration-200`}>
+                              {message.content}
+                            </span>
+                          </div>
                          {message.attachment && (
                            <div className="mt-2 p-2 bg-muted/50 rounded-lg flex items-center gap-2">
                              <Paperclip className="w-3 h-3" />
