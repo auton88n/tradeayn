@@ -259,6 +259,16 @@
     align-items: center;
     gap: 12px;
     transition: all 0.3s ease;
+    position: relative;
+  }
+
+  .input-container.drag-over {
+    border-color: hsl(var(--primary));
+    box-shadow: 
+      0 8px 30px hsla(var(--primary), 0.15),
+      0 3px 8px hsla(var(--primary), 0.1),
+      0 0 0 2px hsla(var(--primary), 0.2);
+    transform: translateY(-2px);
   }
 
   .input-container:hover {

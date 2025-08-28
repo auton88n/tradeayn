@@ -146,6 +146,7 @@ export default function Dashboard({ user }: DashboardProps) {
   // File attachment state
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
   
   const { toast } = useToast();
   
@@ -422,41 +423,98 @@ export default function Dashboard({ user }: DashboardProps) {
     }
   };
 
+  const validateAndSetFile = (file: File) => {
+    // Check file type
+    const allowedTypes = [
+      'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
+      'application/pdf', 'application/msword', 
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain'
+    ];
+    
+    if (!allowedTypes.includes(file.type)) {
+      toast({
+        title: "Invalid File Type",
+        description: "Please select a PDF, Word document, or image file.",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    // Check file size (10MB limit)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "File Too Large",
+        description: "Please select a file smaller than 10MB.",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    setSelectedFile(file);
+    toast({
+      title: "File Selected",
+      description: `${file.name} is ready to send.`,
+    });
+    return true;
+  };
+
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // Check file type
-      const allowedTypes = [
-        'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
-        'application/pdf', 'application/msword', 
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'text/plain'
-      ];
-      
-      if (!allowedTypes.includes(file.type)) {
-        toast({
-          title: "Invalid File Type",
-          description: "Please select a PDF, Word document, or image file.",
-          variant: "destructive"
-        });
-        return;
-      }
+      validateAndSetFile(file);
+    }
+  };
 
-      // Check file size (10MB limit)
-      if (file.size > 10 * 1024 * 1024) {
-        toast({
-          title: "File Too Large",
-          description: "Please select a file smaller than 10MB.",
-          variant: "destructive"
-        });
-        return;
-      }
+  // Drag and drop handlers
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  };
 
-      setSelectedFile(file);
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Only set dragOver to false if we're leaving the drop zone entirely
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDragOver(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+
+    if (!hasAccess || !hasAcceptedTerms) {
       toast({
-        title: "File Selected",
-        description: `${file.name} is ready to send.`,
+        title: "Access Required",
+        description: "You need active access to upload files.",
+        variant: "destructive"
       });
+      return;
+    }
+
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 1) {
+      toast({
+        title: "Multiple Files",
+        description: "Please drop only one file at a time.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const file = files[0];
+    if (file) {
+      validateAndSetFile(file);
     }
   };
 
