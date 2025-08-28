@@ -239,15 +239,23 @@ const Dashboard = ({ user }: DashboardProps) => {
     }, 1000);
 
     try {
-      // Simulate API call to N8N webhook
-      await new Promise(resolve => setTimeout(resolve, 4000));
+      // Call AYN webhook through edge function
+      const { data: webhookResponse, error: webhookError } = await supabase.functions.invoke('ayn-webhook', {
+        body: { 
+          message: content,
+          userId: user.id 
+        }
+      });
       
       clearInterval(statusInterval);
       setCurrentStatus('');
       setIsTyping(false);
 
-      // Generate a realistic AYN response based on the message content
-      let response = generateAYNResponse(content);
+      if (webhookError) {
+        throw new Error(webhookError.message || 'Webhook call failed');
+      }
+
+      const response = webhookResponse?.response || 'I received your message and I\'m processing it. Please try again if you don\'t see a proper response.';
 
       const aynMessage: Message = {
         id: (Date.now() + 1).toString(),
