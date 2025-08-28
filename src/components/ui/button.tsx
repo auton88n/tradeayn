@@ -22,6 +22,7 @@ const buttonVariants = cva(
         glass: "glass glass-hover border border-primary/20 text-foreground hover:border-primary/40",
         gradient: "bg-gradient-secondary text-white hover:bg-gradient-accent transition-all duration-300",
         neon: "bg-transparent border-2 border-primary text-primary hover:bg-primary hover:text-white transition-all duration-300 shadow-neon-purple hover:shadow-lg",
+        blue: "bg-blue-600 text-white hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-800 transition-colors duration-200",
       },
       size: {
         default: "h-10 px-4 py-2",

@@ -10,7 +10,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Send, 
   Paperclip, 
-  Mic, 
   TrendingUp, 
   Target, 
   Search, 
@@ -20,8 +19,7 @@ import {
   Settings,
   Menu,
   X,
-  Shield,
-  MicOff
+  Shield
 } from 'lucide-react';
 import { ThemeToggle } from './theme-toggle';
 import { TermsModal } from './TermsModal';
@@ -124,7 +122,6 @@ export default function Dashboard({ user }: DashboardProps) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [activeTab, setActiveTab] = useState<'chat' | 'admin'>('chat');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
   
   const { toast } = useToast();
   
@@ -326,51 +323,6 @@ export default function Dashboard({ user }: DashboardProps) {
         description: "Unable to reach AYN. Please try again.",
         variant: "destructive"
       });
-    }
-  };
-
-  const handleVoiceRecording = async () => {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      toast({
-        title: "Voice Not Supported",
-        description: "Voice recording is not supported in your browser.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (isRecording) {
-      // Stop recording
-      setIsRecording(false);
-      toast({
-        title: "Recording Stopped",
-        description: "Voice recording feature will be available soon.",
-      });
-    } else {
-      // Start recording
-      try {
-        setIsRecording(true);
-        toast({
-          title: "Recording Started",
-          description: "Speak your message. Click the microphone again to stop.",
-        });
-        
-        // For now, just show a demo - actual voice recording would require additional setup
-        setTimeout(() => {
-          setIsRecording(false);
-          toast({
-            title: "Recording Stopped", 
-            description: "Voice recording feature coming soon!",
-          });
-        }, 3000);
-      } catch (error) {
-        setIsRecording(false);
-        toast({
-          title: "Recording Error",
-          description: "Could not access microphone. Please check permissions.",
-          variant: "destructive"
-        });
-      }
     }
   };
 
@@ -686,21 +638,11 @@ export default function Dashboard({ user }: DashboardProps) {
                         >
                           <Paperclip className="w-4 h-4" />
                         </Button>
-                        
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={handleVoiceRecording}
-                          className={`w-8 h-8 p-0 transition-colors duration-200 ${isRecording ? 'text-red-500 hover:text-red-600' : 'text-muted-foreground hover:text-foreground'}`}
-                          disabled={!hasAccess || !hasAcceptedTerms}
-                          title={isRecording ? "Stop recording" : "Start voice recording"}
-                        >
-                          {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-                        </Button>
                       </div>
                     </div>
                     
                     <Button
+                      variant="blue"
                       onClick={() => handleSendMessage()}
                       disabled={!inputMessage.trim() || !hasAccess || !hasAcceptedTerms || isTyping}
                       className="h-12 px-6"
