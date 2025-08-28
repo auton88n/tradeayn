@@ -810,6 +810,22 @@ export default function Dashboard({ user }: DashboardProps) {
                          </Avatar>
                        )}
                        
+                       <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                         message.sender === 'user' 
+                           ? 'bg-primary text-primary-foreground' 
+                           : 'bg-muted text-foreground'
+                       }`}>
+                         <p className="text-sm whitespace-pre-wrap break-words">
+                           {message.content}
+                         </p>
+                         {message.attachment && (
+                           <div className="mt-2 p-2 bg-muted/50 rounded-lg flex items-center gap-2">
+                             <Paperclip className="w-3 h-3" />
+                             <span className="text-xs">{message.attachment.name}</span>
+                           </div>
+                         )}
+                       </div>
+                       
                        {message.sender === 'user' && (
                         <Avatar className="w-8 h-8 flex-shrink-0">
                           <AvatarImage src="" />
