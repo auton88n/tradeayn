@@ -338,12 +338,14 @@
     z-index: 999;
     opacity: 0;
     visibility: hidden;
+    pointer-events: none; /* do not block clicks when hidden */
     transition: all 0.3s ease;
   }
 
   .sidebar-overlay.active {
     opacity: 1;
     visibility: visible;
+    pointer-events: auto; /* enable clicks when visible */
   }
 
   /* User Profile Section */
