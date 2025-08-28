@@ -122,6 +122,14 @@ interface SystemConfig {
 }
 
 export const AdminPanel = () => {
+  // Helper function to safely calculate percentages
+  const safePercentage = (numerator: number | null | undefined, denominator: number | null | undefined, decimals = 1): string => {
+    const num = numerator || 0;
+    const denom = denominator || 1;
+    if (denom === 0) return '0';
+    return ((num / denom) * 100).toFixed(decimals);
+  };
+
   // Core State
   const [accessRequests, setAccessRequests] = useState<AccessGrantWithProfile[]>([]);
   const [allUsers, setAllUsers] = useState<AccessGrantWithProfile[]>([]);
@@ -220,13 +228,13 @@ export const AdminPanel = () => {
         totalMessages: usageData?.reduce((sum: number, stat: any) => sum + (stat.current_usage || 0), 0) || 0,
         todayMessages,
         avgResponseTime: parseFloat((Math.random() * 0.5 + 0.8).toFixed(2)), // 0.8-1.3s
-        systemHealth,
+        systemHealth: systemHealth || 95,
         uptime: '99.9%',
-        errorRate,
+        errorRate: errorRate || 0,
         resourceUsage: {
-          cpu: Math.floor(Math.random() * 30) + 15, // 15-45%
-          memory: Math.floor(Math.random() * 40) + 30, // 30-70%
-          disk: Math.floor(Math.random() * 20) + 25   // 25-45%
+          cpu: Math.floor(Math.random() * 30) + 15 || 15, // 15-45%
+          memory: Math.floor(Math.random() * 40) + 30 || 30, // 30-70%
+          disk: Math.floor(Math.random() * 20) + 25 || 25   // 25-45%
         }
       });
 
@@ -459,7 +467,7 @@ export const AdminPanel = () => {
             user.is_active ? 'Active' : 'Inactive',
             user.monthly_limit || 'Unlimited',
             user.current_month_usage || 0,
-            user.monthly_limit ? ((user.current_month_usage / user.monthly_limit) * 100).toFixed(1) + '%' : 'N/A',
+            user.monthly_limit ? (((user.current_month_usage || 0) / user.monthly_limit) * 100).toFixed(1) + '%' : 'N/A',
             new Date(user.created_at).toLocaleDateString(),
             user.granted_at ? new Date(user.granted_at).toLocaleDateString() : 'Never'
           ].join(','))
@@ -523,7 +531,7 @@ export const AdminPanel = () => {
           active_users: systemMetrics?.activeUsers || 0,
           total_messages: systemMetrics?.totalMessages || 0,
           avg_usage_percentage: usageStats.length > 0 ? 
-            (usageStats.reduce((sum, stat) => sum + stat.usage_percentage, 0) / usageStats.length).toFixed(2) : 0
+            ((usageStats.reduce((sum, stat) => sum + (stat.usage_percentage || 0), 0) / usageStats.length) || 0).toFixed(2) : '0'
         }
       };
 
@@ -792,7 +800,7 @@ export const AdminPanel = () => {
               <CardContent>
                 <div className="text-2xl font-bold text-green-700">{systemMetrics?.activeUsers || 0}</div>
                 <p className="text-xs text-green-600">
-                  {((systemMetrics?.activeUsers || 0) / (systemMetrics?.totalUsers || 1) * 100).toFixed(1)}% active
+                  {safePercentage(systemMetrics?.activeUsers, systemMetrics?.totalUsers)}% active
                 </p>
               </CardContent>
             </Card>
@@ -885,7 +893,7 @@ export const AdminPanel = () => {
                     <div className="text-sm text-blue-600">Avg Response</div>
                   </div>
                   <div className="text-center p-3 rounded-lg bg-red-50">
-                    <div className="text-lg font-bold text-red-700">{systemMetrics?.errorRate.toFixed(2)}%</div>
+                    <div className="text-lg font-bold text-red-700">{(systemMetrics?.errorRate || 0).toFixed(2)}%</div>
                     <div className="text-sm text-red-600">Error Rate</div>
                   </div>
                 </div>
@@ -1055,7 +1063,7 @@ export const AdminPanel = () => {
                     const StatusIcon = status.icon;
                     const isSelected = selectedUsers.includes(user.user_id);
                     const usagePercent = user.monthly_limit ? 
-                      (user.current_month_usage / user.monthly_limit * 100) : 0;
+                      parseFloat(safePercentage(user.current_month_usage, user.monthly_limit)) : 0;
                     
                     return (
                       <Card 
@@ -1365,7 +1373,7 @@ export const AdminPanel = () => {
                           <div className="flex items-center gap-2">
                             <Badge variant={stat.usage_percentage > 90 ? 'destructive' : 
                                            stat.usage_percentage > 75 ? 'secondary' : 'default'}>
-                              {stat.usage_percentage.toFixed(1)}%
+                              {safePercentage(stat.usage_percentage, 100, 1)}%
                             </Badge>
                             {stat.usage_percentage > 90 && (
                               <AlertTriangle className="w-4 h-4 text-red-500" />
