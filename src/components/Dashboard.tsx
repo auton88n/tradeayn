@@ -466,7 +466,7 @@ This will help me provide more targeted and valuable insights for your business.
                       <p className="text-xs text-muted-foreground">{getStatusText(currentStatus)}</p>
                     </div>
                   ) : (
-                    <p className="text-xs text-accent">Ready to help</p>
+                    <p className="text-xs text-foreground">Ready to help</p>
                   )}
                 </div>
               </div>
