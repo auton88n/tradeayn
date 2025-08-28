@@ -438,55 +438,7 @@ export default function Dashboard({ user }: DashboardProps) {
   };
 
   return (
-    <div className="main-layout">
-      {/* Enhanced Header */}
-      <header className="enhanced-header">
-        <div className="logo-section">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="lg:hidden mr-2"
-            onClick={() => setIsSidebarOpen(true)}
-          >
-            <Menu className="w-4 h-4" />
-          </Button>
-          <div className="logo-icon">
-            <Brain className="w-5 h-5" />
-          </div>
-          <span className="app-title">AYN AI Business Consulting</span>
-        </div>
-        
-        <div className="flex items-center gap-4">
-          <ThemeToggle />
-          {isAdmin && (
-            <div className="flex bg-muted rounded-lg p-1">
-              <Button
-                variant={activeTab === 'chat' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setActiveTab('chat')}
-                className="rounded-md"
-              >
-                Chat
-              </Button>
-              <Button
-                variant={activeTab === 'admin' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setActiveTab('admin')}
-                className="rounded-md"
-              >
-                <Shield className="w-4 h-4 mr-1" />
-                Admin
-              </Button>
-            </div>
-          )}
-          <Avatar className="w-8 h-8">
-            <AvatarFallback>
-              {user?.user_metadata?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
-            </AvatarFallback>
-          </Avatar>
-        </div>
-      </header>
-
+    <div className="main-container">
       {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
         <div 
@@ -498,11 +450,11 @@ export default function Dashboard({ user }: DashboardProps) {
       {/* Sidebar */}
       <div className={`
         sidebar fixed lg:static inset-y-0 left-0 z-50 lg:z-0
-        w-72 lg:w-80 bg-card border-r border-border
+        w-72 lg:w-80 bg-white border-r border-gray-200
         transform transition-transform duration-300 ease-in-out
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
-        <div className="flex flex-col h-full p-6">
+        <div className="flex flex-col h-full p-5">
           {/* Mobile Close Button */}
           <div className="lg:hidden flex justify-end mb-4">
             <Button
@@ -515,95 +467,140 @@ export default function Dashboard({ user }: DashboardProps) {
           </div>
 
           {/* User Profile */}
-          <div className="flex items-center gap-3 mb-6">
-            <Avatar className="w-12 h-12 ring-2 ring-primary/20">
-              <AvatarImage src="" />
-              <AvatarFallback className="bg-gradient-primary text-white font-semibold">
-                {user?.user_metadata?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold truncate">{user?.user_metadata?.name || 'User'}</p>
-              <p className="text-sm text-muted-foreground truncate">{user?.email}</p>
+          <div className="user-profile flex items-center gap-3 mb-6 p-3 rounded-lg bg-gray-50">
+            <div className="avatar w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold">
+              {user?.user_metadata?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+            </div>
+            <div className="user-info flex-1 min-w-0">
+              <div className="user-name font-semibold text-sm truncate">{user?.user_metadata?.name || 'User'}</div>
+              <div className="user-email text-xs text-gray-500 truncate">{user?.email}</div>
             </div>
             <Button 
               variant="ghost" 
               size="sm" 
               onClick={handleLogout}
-              className="text-muted-foreground hover:text-foreground flex-shrink-0"
+              className="text-gray-400 hover:text-gray-600 flex-shrink-0"
             >
               <LogOut className="w-4 h-4" />
             </Button>
           </div>
 
           {/* AYN Status */}
-          <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/10 border border-primary/20 mb-6">
-            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-              <Brain className="w-4 h-4 text-primary-foreground" />
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-blue-50 border border-blue-100 mb-6">
+            <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center">
+              <Brain className="w-4 h-4 text-white" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="title-primary font-medium text-sm">AYN AI Consultant</p>
+              <p className="font-medium text-sm text-gray-900">AYN AI Consultant</p>
               <div className="flex items-center gap-2">
-                <div className="status-active" />
-                <p className="text-xs text-muted-foreground">
-                  {isTyping ? 'Thinking...' : 'Ready to help'}
-                </p>
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <p className="text-xs text-gray-500">Online & Ready</p>
               </div>
             </div>
           </div>
 
           {/* Quick Start */}
-          <div className="mb-6">
-            <h3 className="title-primary font-semibold text-sm mb-3 text-muted-foreground uppercase tracking-wide">
-              Quick Start
-            </h3>
+          <div className="quick-start mb-6">
+            <h3 className="text-sm font-semibold mb-3 text-gray-900">Quick Start</h3>
             <div className="space-y-2">
-              {templates.map((template) => (
-                <Button
-                  key={template.name}
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleSendMessage(template.prompt)}
-                  className="quick-start-item sidebar-item-enhanced w-full justify-start h-auto p-3 text-left hover:bg-muted hover:text-foreground"
-                  disabled={!hasAccess || !hasAcceptedTerms}
+              {templates.map((template, index) => (
+                <div
+                  key={index}
+                  className="quick-item cursor-pointer p-3 rounded-lg hover:bg-gray-50 border border-gray-100 transition-colors"
+                  onClick={() => {
+                    if (hasAccess && hasAcceptedTerms) {
+                      handleSendMessage(template.prompt);
+                      setIsSidebarOpen(false);
+                    }
+                  }}
                 >
-                  <template.icon className={`w-4 h-4 mr-3 flex-shrink-0 ${template.color}`} />
-                  <span className="body-text text-sm font-medium">{template.name}</span>
-                </Button>
+                  <div className="flex items-center gap-2">
+                    <template.icon className={`w-4 h-4 ${template.color}`} />
+                    <span className="font-medium text-sm text-gray-700">{template.name}</span>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
 
           {/* Recent Chats */}
-          <div className="flex-1">
-            <h3 className="title-primary font-semibold text-sm mb-3 text-muted-foreground uppercase tracking-wide">
-              Recent Chats
-            </h3>
-            <div className="space-y-1">
-              {recentChats.map((chat, index) => (
-                <Button
-                  key={index}
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleLoadChat(chat)}
-                  className="sidebar-item-enhanced w-full justify-start text-sm text-muted-foreground hover:text-foreground hover:bg-muted h-auto p-3 text-left"
-                >
-                  <div className="min-w-0">
-                    <p className="subtitle font-medium truncate">{chat.title}</p>
-                    <p className="body-text text-xs text-muted-foreground truncate">{chat.lastMessage}</p>
-                    <p className="text-xs text-muted-foreground">
+          <div className="recent-chats flex-1 min-h-0">
+            <h3 className="text-sm font-semibold mb-3 text-gray-900">Recent Chats</h3>
+            <ScrollArea className="h-full">
+              <div className="space-y-2">
+                {recentChats.map((chat, index) => (
+                  <div
+                    key={index}
+                    className="chat-item cursor-pointer p-3 rounded-lg hover:bg-gray-50 border border-gray-100 transition-colors"
+                    onClick={() => handleLoadChat(chat)}
+                  >
+                    <div className="font-medium text-sm text-gray-900 truncate mb-1">{chat.title}</div>
+                    <div className="text-xs text-gray-500 truncate">{chat.lastMessage}</div>
+                    <div className="text-xs text-gray-400 mt-1">
                       {chat.timestamp.toLocaleDateString()}
-                    </p>
+                    </div>
                   </div>
-                </Button>
-              ))}
-            </div>
+                ))}
+              </div>
+            </ScrollArea>
           </div>
         </div>
       </div>
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-h-0">
+      {/* Chat Area */}
+      <div className="chat-area">
+        {/* Header */}
+        <header className="header">
+          <div className="logo-section">
+            {/* Mobile Menu Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsSidebarOpen(true)}
+              className="lg:hidden mr-2"
+            >
+              <Menu className="w-4 h-4" />
+            </Button>
+            <div className="flex items-center gap-2">
+              <Brain className="w-6 h-6 text-blue-500" />
+              <span className="font-bold text-lg text-gray-900">AYN Business Console</span>
+            </div>
+          </div>
+          
+          <div className="nav-buttons">
+            {/* Access Status Badge */}
+            <Badge variant={hasAccess ? "default" : "secondary"} className="hidden sm:inline-flex">
+              <div className={`w-2 h-2 rounded-full mr-2 ${hasAccess ? 'bg-green-500' : 'bg-gray-400'}`} />
+              {hasAccess ? 'Active' : 'Inactive'}
+            </Badge>
+
+            {/* Admin Tab Switcher */}
+            {isAdmin && (
+              <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+                <Button
+                  variant={activeTab === 'chat' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setActiveTab('chat')}
+                  className="h-8 px-3 rounded-md"
+                >
+                  Chat
+                </Button>
+                <Button
+                  variant={activeTab === 'admin' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setActiveTab('admin')}
+                  className="h-8 px-3 rounded-md"
+                >
+                  <Shield className="w-3 h-3 mr-1" />
+                  Admin
+                </Button>
+              </div>
+            )}
+
+            <ThemeToggle />
+          </div>
+        </header>
+
         {/* Maintenance Banner */}
         <MaintenanceBanner 
           isEnabled={maintenanceConfig.enableMaintenance}
@@ -628,73 +625,95 @@ export default function Dashboard({ user }: DashboardProps) {
         {/* Chat Interface */}
         {(activeTab === 'chat' || !isAdmin) && (
           <>
-            {/* Messages Area - Enhanced */}
-            <div className="chat-area">
-              <div className="message-container px-6 py-6 max-w-4xl mx-auto">
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto px-6 py-6">
+              <div className="max-w-4xl mx-auto space-y-6">
                 {messages.map((message) => (
                   <div key={message.id} className="message-bubble">
                     {message.sender === 'ayn' ? (
-                      <div className="flex gap-3 items-start">
-                        <div className="ai-avatar">
-                          <Brain className="w-4 h-4" />
+                      <>
+                        <div className="message-header">
+                          <div className="avatar">
+                            <Brain className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <div className="font-semibold text-gray-900 text-sm">AYN AI Consultant</div>
+                            <div className="text-xs text-gray-500">
+                              {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                          </div>
                         </div>
-                        <div className="ai-message-bubble">
-                          <div className="message-content">
-                            {message.content.split('\n').map((line, i) => (
-                              <div key={i}>
-                                {line.includes('**') ? (
+                        <div className="message-content">
+                          {message.content.split('\n').map((line, i) => {
+                            if (line.trim() === '') return <br key={i} />;
+                            
+                            // Handle bold text
+                            if (line.includes('**')) {
+                              return (
+                                <div key={i}>
                                   <span dangerouslySetInnerHTML={{
-                                    __html: line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                                    __html: line.replace(/\*\*(.*?)\*\*/g, '<strong class="capability-title">$1</strong>')
                                   }} />
-                                ) : (
-                                  line
-                                )}
-                                {i < message.content.split('\n').length - 1 && <br />}
-                              </div>
-                            ))}
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-2 opacity-70">
-                            {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </div>
+                                </div>
+                              );
+                            }
+                            
+                            // Handle bullet points
+                            if (line.trim().match(/^[🔍📈📊🎯]/)) {
+                              return (
+                                <div key={i} className="capability-item">
+                                  <span className="capability-title">{line.split(' - ')[0]}</span>
+                                  {line.split(' - ')[1] && (
+                                    <span className="capability-description"> - {line.split(' - ')[1]}</span>
+                                  )}
+                                </div>
+                              );
+                            }
+                            
+                            return <div key={i}>{line}</div>;
+                          })}
                         </div>
-                      </div>
+                      </>
                     ) : (
-                      <div className="flex gap-3 items-start justify-end">
-                        <div className="bg-primary text-primary-foreground rounded-2xl px-4 py-3 max-w-sm">
-                          <div className="message-content text-sm">
-                            {message.content}
+                      <>
+                        <div className="message-header justify-end">
+                          <div>
+                            <div className="font-semibold text-gray-900 text-sm text-right">You</div>
+                            <div className="text-xs text-gray-500 text-right">
+                              {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              {message.status === 'sending' && ' • Sending...'}
+                              {message.status === 'error' && ' • Failed'}
+                            </div>
                           </div>
-                          <div className="text-xs mt-2 opacity-70 text-primary-foreground/70">
-                            {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            {message.status === 'sending' && ' • Sending...'}
-                            {message.status === 'error' && ' • Failed'}
+                          <div className="avatar bg-gray-600">
+                            {user?.user_metadata?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
                           </div>
                         </div>
-                        <Avatar className="w-8 h-8 flex-shrink-0">
-                          <AvatarFallback className="text-xs">
-                            {user?.user_metadata?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
-                          </AvatarFallback>
-                        </Avatar>
-                      </div>
+                        <div className="message-content text-right">
+                          {message.content}
+                        </div>
+                      </>
                     )}
                   </div>
                 ))}
 
-                {/* Enhanced Typing Indicator */}
+                {/* Typing Indicator */}
                 {isTyping && (
                   <div className="message-bubble">
-                    <div className="flex gap-3 items-start">
-                      <div className="ai-avatar">
+                    <div className="message-header">
+                      <div className="avatar">
                         <Brain className="w-4 h-4" />
                       </div>
-                      <div className="typing-indicator ai-message-bubble">
-                        <div className="flex items-center gap-2">
-                          <div className="typing-dot"></div>
-                          <div className="typing-dot"></div>
-                          <div className="typing-dot"></div>
-                          <span className="ml-2">AYN is analyzing...</span>
-                        </div>
+                      <div>
+                        <div className="font-semibold text-gray-900 text-sm">AYN AI Consultant</div>
+                        <div className="text-xs text-gray-500">typing...</div>
                       </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                      <span className="text-gray-500 text-sm ml-2">AYN is analyzing your request...</span>
                     </div>
                   </div>
                 )}
@@ -703,8 +722,8 @@ export default function Dashboard({ user }: DashboardProps) {
               </div>
             </div>
 
-            {/* Enhanced Input Area */}
-            <div className="improved-input-container">
+            {/* Input Container */}
+            <div className="input-container">
               <div className="input-wrapper">
                 <input
                   ref={inputRef}
@@ -718,19 +737,18 @@ export default function Dashboard({ user }: DashboardProps) {
                       ? "Access required to send messages..."
                       : !hasAcceptedTerms 
                         ? "Please accept terms to start chatting..."
-                        : inputMessage || isInputFocused ? "" : currentText
+                        : inputMessage || isInputFocused ? "Type your message..." : currentText
                   }
                   disabled={!hasAccess || !hasAcceptedTerms || isTyping}
-                  className="enhanced-input"
+                  className="message-input"
                 />
                 
                 <button
                   onClick={() => handleSendMessage()}
                   disabled={!inputMessage.trim() || !hasAccess || !hasAcceptedTerms || isTyping}
-                  className="premium-send-button"
+                  className="send-button"
                 >
-                  <Send className="w-4 h-4" />
-                  Send Message
+                  Send
                 </button>
               </div>
             </div>
