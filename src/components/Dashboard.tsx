@@ -32,6 +32,11 @@ interface Message {
   sender: 'user' | 'ayn';
   timestamp: Date;
   status?: 'sending' | 'sent' | 'error';
+  attachment?: {
+    url: string;
+    name: string;
+    type: string;
+  };
 }
 
 interface DashboardProps {
@@ -118,8 +123,6 @@ export default function Dashboard({ user }: DashboardProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [hasAccess, setHasAccess] = useState(false);
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -139,6 +142,10 @@ export default function Dashboard({ user }: DashboardProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isInputFocused, setIsInputFocused] = useState(false);
+  
+  // File attachment state
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   
   const { toast } = useToast();
   
@@ -288,12 +295,6 @@ export default function Dashboard({ user }: DashboardProps) {
   };
 
   const handleSendMessage = async (messageContent?: string) => {
-    // If there's a selected file, upload it instead
-    if (selectedFile) {
-      await handleFileUpload();
-      return;
-    }
-
     if (!hasAcceptedTerms) {
       toast({
         title: "Terms Required",
@@ -313,7 +314,14 @@ export default function Dashboard({ user }: DashboardProps) {
     }
 
     const content = messageContent || inputMessage.trim();
-    if (!content) return;
+    if (!content && !selectedFile) return;
+
+    // Upload file if selected
+    let attachment = null;
+    if (selectedFile) {
+      attachment = await uploadFile(selectedFile);
+      if (!attachment) return; // Upload failed
+    }
 
     // Check and increment usage
     try {
@@ -353,14 +361,19 @@ export default function Dashboard({ user }: DashboardProps) {
 
     const userMessage: Message = {
       id: Date.now().toString(),
-      content,
+      content: content || (attachment ? `📎 ${attachment.name}` : ''),
       sender: 'user',
       timestamp: new Date(),
-      status: 'sent'
+      status: 'sent',
+      attachment
     };
 
     setMessages(prev => [...prev, userMessage]);
     setInputMessage('');
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
     setIsTyping(true);
 
     try {
@@ -412,131 +425,90 @@ export default function Dashboard({ user }: DashboardProps) {
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      setSelectedFile(file);
-      
-      // Validate file type and size
+      // Check file type
       const allowedTypes = [
-        'application/pdf',
-        'application/msword',
+        'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
+        'application/pdf', 'application/msword', 
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'image/jpeg',
-        'image/jpg',
-        'image/png',
-        'image/gif',
-        'image/webp',
         'text/plain'
       ];
-
+      
       if (!allowedTypes.includes(file.type)) {
         toast({
-          title: "Unsupported file type",
-          description: "Please upload PDF, Word documents, or images.",
+          title: "Invalid File Type",
+          description: "Please select a PDF, Word document, or image file.",
           variant: "destructive"
         });
-        setSelectedFile(null);
-        if (fileInputRef.current) fileInputRef.current.value = '';
         return;
       }
 
       // Check file size (10MB limit)
-      const maxFileSize = 10 * 1024 * 1024; // 10MB
-      if (file.size > maxFileSize) {
+      if (file.size > 10 * 1024 * 1024) {
         toast({
-          title: "File too large",
-          description: "Maximum file size is 10MB.",
+          title: "File Too Large",
+          description: "Please select a file smaller than 10MB.",
           variant: "destructive"
         });
-        setSelectedFile(null);
-        if (fileInputRef.current) fileInputRef.current.value = '';
         return;
       }
 
+      setSelectedFile(file);
       toast({
-        title: "File selected",
-        description: `${file.name} is ready to upload.`,
+        title: "File Selected",
+        description: `${file.name} is ready to send.`,
       });
     }
   };
 
-  const handleFileUpload = async () => {
-    if (!selectedFile) return;
-    if (!hasAccess || !hasAcceptedTerms) return;
-
-    setIsUploading(true);
-
+  const uploadFile = async (file: File): Promise<{ url: string; name: string; type: string } | null> => {
     try {
-      // Get the session for authorization
-      const { data: { session } } = await supabase.auth.getSession();
+      setIsUploading(true);
       
-      if (!session) {
-        throw new Error('No active session');
-      }
+      // Convert file to base64
+      const base64 = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result as string;
+          resolve(result.split(',')[1]); // Remove data:type;base64, prefix
+        };
+        reader.readAsDataURL(file);
+      });
 
-      // Create form data
-      const formData = new FormData();
-      formData.append('file', selectedFile);
-      formData.append('message', inputMessage.trim() || `Uploaded file: ${selectedFile.name}`);
-
-      console.log('Uploading file:', selectedFile.name);
-
-      // Call the file upload edge function
-      const { data: uploadResponse, error: uploadError } = await supabase.functions.invoke('file-upload', {
-        body: formData,
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`
+      // Upload via edge function
+      const { data, error } = await supabase.functions.invoke('file-upload', {
+        body: {
+          file: base64,
+          fileName: file.name,
+          fileType: file.type,
+          userId: user.id
         }
       });
 
-      if (uploadError) {
-        throw new Error(uploadError.message || 'Upload failed');
+      if (error) {
+        throw error;
       }
 
-      console.log('Upload response:', uploadResponse);
-
-      // Add user message with attachment
-      const userMessage: Message = {
-        id: Date.now().toString(),
-        content: uploadResponse.message.content,
-        sender: 'user',
-        timestamp: new Date(),
-        status: 'sent'
+      return {
+        url: data.fileUrl,
+        name: data.fileName,
+        type: data.fileType
       };
-
-      setMessages(prev => [...prev, userMessage]);
-
-      // Add AI response
-      if (uploadResponse.ai_response) {
-        const aynMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          content: uploadResponse.ai_response,
-          sender: 'ayn',
-          timestamp: new Date(),
-        };
-
-        setMessages(prev => [...prev, aynMessage]);
-      }
-
-      // Clear the file input and message
-      setSelectedFile(null);
-      setInputMessage('');
-      if (fileInputRef.current) fileInputRef.current.value = '';
-
-      toast({
-        title: "File uploaded successfully",
-        description: `${selectedFile.name} has been processed.`,
-      });
-
     } catch (error) {
       console.error('File upload error:', error);
-      
       toast({
-        title: "Upload failed",
-        description: error instanceof Error ? error.message : "Failed to upload file. Please try again.",
+        title: "Upload Failed",
+        description: "Failed to upload file. Please try again.",
         variant: "destructive"
       });
+      return null;
     } finally {
       setIsUploading(false);
     }
+  };
+
+  const removeSelectedFile = () => {
+    setSelectedFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleAttachmentClick = () => {
@@ -550,11 +522,6 @@ export default function Dashboard({ user }: DashboardProps) {
     }
     
     fileInputRef.current?.click();
-  };
-
-  const removeSelectedFile = () => {
-    setSelectedFile(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleLoadChat = (chatHistory: ChatHistory) => {
@@ -798,6 +765,33 @@ export default function Dashboard({ user }: DashboardProps) {
                         <div className="text-sm whitespace-normal break-words">
                           {message.content}
                         </div>
+                        
+                        {/* Attachment Display */}
+                        {message.attachment && (
+                          <div className="mt-2 border border-white/20 rounded-lg p-2">
+                            {message.attachment.type.startsWith('image/') ? (
+                              <img 
+                                src={message.attachment.url} 
+                                alt={message.attachment.name}
+                                className="max-w-full h-auto rounded"
+                                style={{ maxHeight: '200px' }}
+                              />
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <Paperclip className="w-4 h-4" />
+                                <a 
+                                  href={message.attachment.url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-sm underline hover:no-underline"
+                                >
+                                  {message.attachment.name}
+                                </a>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        
                         <div className={`
                           text-xs mt-2 opacity-70
                           ${message.sender === 'user' ? 'text-primary-foreground/70' : 'text-muted-foreground'}
@@ -900,6 +894,23 @@ export default function Dashboard({ user }: DashboardProps) {
                       disabled={!hasAccess || !hasAcceptedTerms || isTyping || isUploading}
                     />
                     
+                    {/* File Selected Indicator */}
+                    {selectedFile && (
+                      <div className="absolute -top-12 left-0 bg-primary text-primary-foreground px-3 py-1 rounded-lg text-sm flex items-center gap-2">
+                        <Paperclip className="w-3 h-3" />
+                        <span>{selectedFile.name}</span>
+                        <button 
+                          onClick={() => {
+                            setSelectedFile(null);
+                            if (fileInputRef.current) fileInputRef.current.value = '';
+                          }}
+                          className="text-primary-foreground hover:text-primary-foreground/80"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    )}
+                    
                     {/* Typewriter Animation Placeholder */}
                     {!inputMessage && !isInputFocused && !selectedFile && (
                       <div className="absolute inset-0 flex items-center pointer-events-none">
@@ -910,15 +921,6 @@ export default function Dashboard({ user }: DashboardProps) {
                               ? "Please accept terms to start chatting..."
                               : currentText
                           }
-                        </span>
-                      </div>
-                    )}
-
-                    {/* File Upload Placeholder */}
-                    {selectedFile && !inputMessage && !isInputFocused && (
-                      <div className="absolute inset-0 flex items-center pointer-events-none">
-                        <span className="text-muted-foreground select-none">
-                          Add a message about this file (optional)...
                         </span>
                       </div>
                     )}
