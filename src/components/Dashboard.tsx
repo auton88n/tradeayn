@@ -437,7 +437,7 @@ This will help me provide more targeted and valuable insights for your business.
         {/* Main Chat Area */}
         <div className="flex-1 flex flex-col">
           {/* Header */}
-          <header className="border-b border-border bg-card p-4 flex items-center justify-between">
+          <header className="border-b border-border bg-transparent backdrop-blur-sm p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg brain-container flex items-center justify-center">
                 <Brain className="w-5 h-5 text-white" />
