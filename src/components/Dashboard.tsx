@@ -615,7 +615,7 @@ export default function Dashboard({ user }: DashboardProps) {
     <SidebarProvider>
       <div className="flex h-screen w-full bg-background">
         {/* Sidebar */}
-        <Sidebar className="w-72 lg:w-80" collapsible="offcanvas">
+        <Sidebar className="w-60" collapsible="icon">
           <SidebarHeader className="p-6">
             {/* User Profile */}
             <div className="flex items-center gap-3">
@@ -708,7 +708,7 @@ export default function Dashboard({ user }: DashboardProps) {
           <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 lg:px-6 flex-shrink-0">
             <div className="flex items-center gap-3">
               {/* Mobile Menu Button */}
-              <SidebarTrigger className="lg:hidden" />
+              <SidebarTrigger />
               
               <div className="flex items-center gap-2">
                 <Brain className="w-6 h-6 text-primary" />
