@@ -722,11 +722,16 @@ export default function Dashboard({ user }: DashboardProps) {
               </div>
             </div>
 
-            {/* Input Container */}
-            <div className="input-container">
-              <div className="input-wrapper">
+            {/* Mobile-Style Floating Input Bar */}
+            <div className="input-area">
+              <div className="input-container">
+                <button className="attachment-button">
+                  <Paperclip className="w-4 h-4" />
+                </button>
+                
                 <input
                   ref={inputRef}
+                  type="text"
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
                   onKeyPress={handleKeyPress}
@@ -748,7 +753,7 @@ export default function Dashboard({ user }: DashboardProps) {
                   disabled={!inputMessage.trim() || !hasAccess || !hasAcceptedTerms || isTyping}
                   className="send-button"
                 >
-                  Send
+                  <Send className="w-4 h-4" />
                 </button>
               </div>
             </div>

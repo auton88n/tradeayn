@@ -373,56 +373,134 @@
     color: #6b7280;
   }
 
-  /* Fixed Input Field & Button */
-  .input-container {
+  /* Mobile-Style Floating Input Bar */
+  .input-area {
     position: fixed;
-    bottom: 0;
-    left: 300px;
-    right: 0;
-    background: white;
-    border-top: 1px solid #e5e7eb;
-    padding: 20px;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 40px);
+    max-width: 600px;
+    z-index: 1000;
   }
 
-  .input-wrapper {
-    max-width: 700px;
-    margin: 0 auto;
+  .input-container {
+    background: hsl(var(--background));
+    border-radius: 25px;
+    padding: 12px 16px;
+    box-shadow: 
+      0 4px 20px hsla(var(--foreground) / 0.1),
+      0 1px 3px hsla(var(--foreground) / 0.1);
+    border: 1px solid hsl(var(--border));
     display: flex;
+    align-items: center;
     gap: 12px;
+    transition: all 0.2s ease;
+  }
+
+  .input-container:hover {
+    box-shadow: 
+      0 6px 25px hsla(var(--foreground) / 0.12),
+      0 2px 6px hsla(var(--foreground) / 0.1);
+    transform: translateY(-1px);
+  }
+
+  .input-container:focus-within {
+    box-shadow: 
+      0 8px 30px hsla(var(--primary) / 0.15),
+      0 3px 8px hsla(var(--primary) / 0.1),
+      0 0 0 2px hsla(var(--primary) / 0.2);
+    transform: translateY(-1px);
+  }
+
+  .attachment-button {
+    width: 28px;
+    height: 28px;
+    background: transparent;
+    border: none;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: hsl(var(--muted-foreground));
+    transition: all 0.2s ease;
+  }
+
+  .attachment-button:hover {
+    background: hsla(var(--foreground) / 0.05);
+    color: hsl(var(--primary));
   }
 
   .message-input {
     flex: 1;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    padding: 12px 16px;
-    font-size: 14px;
+    background: transparent;
+    border: none;
     outline: none;
+    font-size: 16px;
+    color: hsl(var(--foreground));
+    padding: 8px 0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   }
 
-  .message-input:focus {
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  .message-input::placeholder {
+    color: hsl(var(--muted-foreground));
+    font-weight: 400;
   }
 
   .send-button {
-    background: #3b82f6;
-    color: white;
+    width: 36px;
+    height: 36px;
+    background: hsl(var(--primary));
     border: none;
-    border-radius: 8px;
-    padding: 12px 20px;
-    font-weight: 500;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
-    white-space: nowrap;
+    transition: all 0.2s ease;
+    color: hsl(var(--primary-foreground));
+    font-size: 14px;
   }
 
   .send-button:hover {
-    background: #2563eb;
+    background: hsl(var(--primary) / 0.9);
+    transform: scale(1.05);
+  }
+
+  .send-button:active {
+    transform: scale(0.95);
   }
 
   .send-button:disabled {
-    background: #9ca3af;
+    background: hsl(var(--muted));
+    color: hsl(var(--muted-foreground));
     cursor: not-allowed;
+    transform: none;
+  }
+
+  /* Responsive Adjustments */
+  @media (max-width: 768px) {
+    .input-area {
+      bottom: 10px;
+      width: calc(100% - 20px);
+    }
+    
+    .input-container {
+      padding: 10px 14px;
+    }
+    
+    .send-button {
+      width: 32px;
+      height: 32px;
+      border-radius: 16px;
+    }
+
+    .attachment-button {
+      width: 24px;
+      height: 24px;
+      border-radius: 12px;
+    }
   }
 
   /* Fixed Header Navigation */
