@@ -156,6 +156,13 @@
     100% { background-position: 0% 50%; }
   }
   
+  @keyframes float-horizontal {
+    0% { transform: translateX(-100px); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { transform: translateX(calc(100vw + 100px)); opacity: 0; }
+  }
+  
   /* Smooth scrolling */
   html {
     scroll-behavior: smooth;

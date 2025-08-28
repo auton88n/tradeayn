@@ -87,32 +87,42 @@ const LandingPage = () => {
 
       {/* Hero Section */}
       <section className="relative py-20 overflow-hidden">
-        {/* Glass Morphism Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/10" />
+        {/* Particle Field Background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-background via-primary/3 to-background" />
         
-        {/* Glass Elements */}
+        {/* Floating Particles */}
         <div className="absolute inset-0">
-          {/* Large Glass Orb */}
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-white/5 backdrop-blur-sm border border-white/10 animate-float" style={{ animationDuration: '6s' }} />
+          {/* Large Particles */}
+          <div className="absolute top-1/6 left-1/5 w-2 h-2 rounded-full bg-primary/40 animate-bounce" style={{ animationDuration: '3s', animationDelay: '0s' }} />
+          <div className="absolute top-1/4 right-1/4 w-1.5 h-1.5 rounded-full bg-accent/50 animate-bounce" style={{ animationDuration: '4s', animationDelay: '0.5s' }} />
+          <div className="absolute top-1/3 left-1/3 w-3 h-3 rounded-full bg-primary/30 animate-bounce" style={{ animationDuration: '5s', animationDelay: '1s' }} />
           
-          {/* Medium Glass Orb */}
-          <div className="absolute top-1/2 right-1/5 w-64 h-64 rounded-full bg-primary/10 backdrop-blur-md border border-primary/20 animate-float" style={{ animationDuration: '8s', animationDelay: '1s' }} />
+          {/* Medium Particles */}
+          <div className="absolute top-2/5 right-1/6 w-1 h-1 rounded-full bg-accent/60 animate-bounce" style={{ animationDuration: '3.5s', animationDelay: '1.5s' }} />
+          <div className="absolute top-1/2 left-1/4 w-1.5 h-1.5 rounded-full bg-primary/45 animate-bounce" style={{ animationDuration: '4.5s', animationDelay: '2s' }} />
+          <div className="absolute top-3/5 right-1/3 w-2 h-2 rounded-full bg-accent/35 animate-bounce" style={{ animationDuration: '3.8s', animationDelay: '2.5s' }} />
           
-          {/* Small Glass Orb */}
-          <div className="absolute bottom-1/3 left-1/6 w-48 h-48 rounded-full bg-accent/8 backdrop-blur-lg border border-accent/15 animate-float" style={{ animationDuration: '7s', animationDelay: '2s' }} />
+          {/* Small Particles */}
+          <div className="absolute top-2/3 left-1/6 w-0.5 h-0.5 rounded-full bg-primary/70 animate-bounce" style={{ animationDuration: '2.5s', animationDelay: '3s' }} />
+          <div className="absolute top-3/4 right-1/5 w-1 h-1 rounded-full bg-accent/55 animate-bounce" style={{ animationDuration: '3.2s', animationDelay: '3.5s' }} />
+          <div className="absolute top-4/5 left-1/3 w-0.5 h-0.5 rounded-full bg-primary/80 animate-bounce" style={{ animationDuration: '2.8s', animationDelay: '4s' }} />
           
-          {/* Glass Cards */}
-          <div className="absolute top-1/3 right-1/4 w-32 h-24 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 rotate-12 animate-pulse" style={{ animationDuration: '4s' }} />
+          {/* Horizontal Floating Particles */}
+          <div className="absolute top-1/5 left-0 w-1 h-1 rounded-full bg-accent/40 animate-pulse" style={{ animation: 'float-horizontal 8s infinite linear' }} />
+          <div className="absolute top-2/5 left-0 w-1.5 h-1.5 rounded-full bg-primary/35 animate-pulse" style={{ animation: 'float-horizontal 12s infinite linear', animationDelay: '2s' }} />
+          <div className="absolute top-3/5 left-0 w-0.5 h-0.5 rounded-full bg-accent/60 animate-pulse" style={{ animation: 'float-horizontal 10s infinite linear', animationDelay: '4s' }} />
           
-          <div className="absolute bottom-1/4 right-1/3 w-24 h-32 rounded-xl bg-primary/5 backdrop-blur-md border border-primary/15 -rotate-12 animate-pulse" style={{ animationDuration: '5s', animationDelay: '1s' }} />
+          {/* Additional scattered particles */}
+          <div className="absolute top-1/8 right-1/8 w-1 h-1 rounded-full bg-primary/50 animate-ping" style={{ animationDuration: '4s' }} />
+          <div className="absolute top-7/8 left-1/8 w-1.5 h-1.5 rounded-full bg-accent/40 animate-ping" style={{ animationDuration: '5s', animationDelay: '1s' }} />
+          <div className="absolute top-5/6 right-1/7 w-0.5 h-0.5 rounded-full bg-primary/75 animate-ping" style={{ animationDuration: '3s', animationDelay: '2s' }} />
         </div>
         
-        {/* Frosted Glass Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-background/30 via-transparent to-background/30 backdrop-blur-[1px]" />
-        
-        {/* Subtle Light Rays */}
-        <div className="absolute top-0 left-1/2 w-px h-32 bg-gradient-to-b from-primary/30 to-transparent transform -translate-x-1/2 animate-pulse" style={{ animationDuration: '3s' }} />
-        <div className="absolute top-0 right-1/3 w-px h-24 bg-gradient-to-b from-accent/25 to-transparent animate-pulse" style={{ animationDuration: '4s', animationDelay: '1s' }} />
+        {/* Particle Trails Effect */}
+        <div className="absolute inset-0">
+          <div className="absolute top-1/4 left-1/4 w-32 h-0.5 bg-gradient-to-r from-transparent via-primary/20 to-transparent animate-pulse" style={{ animationDuration: '6s' }} />
+          <div className="absolute top-2/3 right-1/4 w-24 h-0.5 bg-gradient-to-l from-transparent via-accent/15 to-transparent animate-pulse" style={{ animationDuration: '7s', animationDelay: '1s' }} />
+        </div>
         
         <div className="container mx-auto px-6 relative z-10">
           <div className="text-center max-w-4xl mx-auto">
