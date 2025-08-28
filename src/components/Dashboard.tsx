@@ -464,7 +464,7 @@ export default function Dashboard({ user }: DashboardProps) {
           {/* AYN Status */}
           <div className="ayn-consultant-card flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200 mb-6">
             <div className="ayn-avatar">
-              <img src="/lovable-uploads/636eb1d6-bee9-4ea8-a6bf-748bd267d05f.png" alt="Brain" width="20" height="20" />
+              <img src="/lovable-uploads/636eb1d6-bee9-4ea8-a6bf-748bd267d05f.png" alt="Brain" width="32" height="32" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-medium text-sm text-gray-900">AYN AI Consultant</p>
@@ -524,7 +524,7 @@ export default function Dashboard({ user }: DashboardProps) {
           <div className="logo-section">
             <div className="flex items-center gap-3">
               <div className="ayn-message-avatar">
-                <img src="/lovable-uploads/636eb1d6-bee9-4ea8-a6bf-748bd267d05f.png" alt="Brain" width="16" height="16" />
+                <img src="/lovable-uploads/636eb1d6-bee9-4ea8-a6bf-748bd267d05f.png" alt="Brain" width="24" height="24" />
               </div>
               <div>
                 <h1 className="font-bold text-lg text-gray-900">AYN AI Business Consultant</h1>
@@ -598,7 +598,7 @@ export default function Dashboard({ user }: DashboardProps) {
                       <>
                         <div className="message-header">
                           <div className="ayn-message-avatar">
-                            <img src="/lovable-uploads/636eb1d6-bee9-4ea8-a6bf-748bd267d05f.png" alt="Brain" width="16" height="16" />
+                            <img src="/lovable-uploads/636eb1d6-bee9-4ea8-a6bf-748bd267d05f.png" alt="Brain" width="20" height="20" />
                           </div>
                           <div>
                             <div className="font-semibold text-gray-900 text-sm">AYN AI Consultant</div>
@@ -666,7 +666,7 @@ export default function Dashboard({ user }: DashboardProps) {
                   <div className="message-bubble">
                     <div className="message-header">
                       <div className="ayn-message-avatar">
-                        <img src="/lovable-uploads/636eb1d6-bee9-4ea8-a6bf-748bd267d05f.png" alt="Brain" width="16" height="16" />
+                        <img src="/lovable-uploads/636eb1d6-bee9-4ea8-a6bf-748bd267d05f.png" alt="Brain" width="20" height="20" />
                       </div>
                       <div>
                         <div className="font-semibold text-gray-900 text-sm">AYN AI Consultant</div>
