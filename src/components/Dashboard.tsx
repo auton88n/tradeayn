@@ -625,7 +625,7 @@ export default function Dashboard({ user }: DashboardProps) {
                               : "Ask AYN anything about your business..."
                         }
                         disabled={!hasAccess || !hasAcceptedTerms || isTyping}
-                        className="pr-24 py-3 text-base resize-none min-h-[48px]"
+                        className="pr-16 py-3 text-base resize-none min-h-[48px] focus:ring-2 focus:ring-blue-500/20 transition-all duration-300 placeholder:animate-placeholder-pulse"
                       />
                       
                       <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-1">
