@@ -109,25 +109,25 @@ const Dashboard = ({ user }: DashboardProps) => {
   const templates = [
     {
       title: "Market Analysis",
-      description: "Analyze market size, competition, and opportunities",
+      description: "Market insights & competition",
       icon: TrendingUp,
       prompt: "I need a comprehensive market analysis for my industry. Can you help me understand the market size, key competitors, and emerging opportunities?"
     },
     {
       title: "Sales Funnel Audit",
-      description: "Review and optimize your sales process",
+      description: "Optimize sales process",
       icon: FileText,
       prompt: "I'd like you to audit my current sales funnel and suggest optimizations to improve conversion rates."
     },
     {
       title: "Competitor Research",
-      description: "Deep dive into competitor strategies",
+      description: "Competitor analysis",
       icon: Brain,
       prompt: "Can you research my top 3 competitors and analyze their strategies, strengths, and weaknesses?"
     },
     {
       title: "Growth Strategy",
-      description: "Plan your next growth phase",
+      description: "Growth planning",
       icon: MessageCircle,
       prompt: "Help me develop a comprehensive growth strategy for the next 12 months, including market expansion and revenue targets."
     }
