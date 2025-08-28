@@ -846,7 +846,7 @@ export default function Dashboard({ user }: DashboardProps) {
 
               {/* Mobile-Style Floating Input Bar */}
               <div 
-                className={`input-area ${isSidebarOpen ? 'sidebar-open' : ''}`}
+                className={`input-area ${isSidebarOpen ? 'sidebar-open' : ''} ${messages.length > 1 ? 'bottom-position' : 'center-position'}`}
                 onDragEnter={handleDragEnter}
                 onDragLeave={handleDragLeave}
                 onDragOver={handleDragOver}

@@ -239,20 +239,37 @@
   /* Mobile-Style Floating Input Bar */
   .input-area {
     position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
     width: calc(100% - 40px);
     max-width: 600px;
     z-index: 1000;
-    transition: all 0.3s ease;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Center position for initial state */
+  .input-area.center-position {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  /* Bottom position after first message */
+  .input-area.bottom-position {
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
   }
 
   /* Adjust input area when sidebar is open on mobile */
   @media (max-width: 1023px) {
-    .input-area.sidebar-open {
+    .input-area.sidebar-open.bottom-position {
       left: calc(50% + 144px); /* Half sidebar width (288px / 2) */
       width: calc(100% - 328px); /* Account for sidebar width + margins */
+      max-width: 400px;
+    }
+    
+    .input-area.sidebar-open.center-position {
+      left: calc(50% + 144px);
+      width: calc(100% - 328px);
       max-width: 400px;
     }
   }
