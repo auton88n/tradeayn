@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { AccessStatusCard } from '@/components/AccessStatusCard';
 import { AdminPanel } from '@/components/AdminPanel';
+import { TermsModal } from '@/components/TermsModal';
 import type { User } from '@supabase/supabase-js';
 
 interface Message {
@@ -33,22 +34,30 @@ const Dashboard = ({ user }: DashboardProps) => {
   const [hasAccess, setHasAccess] = useState<boolean | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [activeTab, setActiveTab] = useState<'chat' | 'admin'>('chat');
+  const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     checkUserAccess();
     checkAdminRole();
 
-    // Welcome message
-    const welcomeMessage: Message = {
-      id: 'welcome',
-      content: `Hello! I'm AYN, your AI business consultant. I can help you with:\n\n🔍 **Market Research** - Comprehensive analysis and competitive intelligence\n📈 **Sales Optimization** - Improve conversions and revenue\n📊 **Trend Analysis** - Identify emerging opportunities\n🎯 **Strategic Planning** - Business strategy and growth planning\n\nWhat would you like to explore first?`,
-      sender: 'ayn',
-      timestamp: new Date(),
-      status: 'complete'
-    };
-    setMessages([welcomeMessage]);
-  }, [user.id]);
+    // Check if user has accepted terms
+    const termsKey = `ayn_terms_accepted_${user.id}`;
+    const acceptedTerms = localStorage.getItem(termsKey);
+    setHasAcceptedTerms(acceptedTerms === 'true');
+
+    // Welcome message (only set after terms are accepted)
+    if (acceptedTerms === 'true') {
+      const welcomeMessage: Message = {
+        id: 'welcome',
+        content: `Hello! I'm AYN, your AI business consultant. I can help you with:\n\n🔍 **Market Research** - Comprehensive analysis and competitive intelligence\n📈 **Sales Optimization** - Improve conversions and revenue\n📊 **Trend Analysis** - Identify emerging opportunities\n🎯 **Strategic Planning** - Business strategy and growth planning\n\nWhat would you like to explore first?`,
+        sender: 'ayn',
+        timestamp: new Date(),
+        status: 'complete'
+      };
+      setMessages([welcomeMessage]);
+    }
+  }, [user.id, hasAcceptedTerms]);
 
   const checkUserAccess = async () => {
     try {
@@ -129,7 +138,37 @@ const Dashboard = ({ user }: DashboardProps) => {
     { id: '3', title: 'Competitor Analysis Report', lastMessage: '3 days ago' },
   ];
 
+  const handleAcceptTerms = () => {
+    const termsKey = `ayn_terms_accepted_${user.id}`;
+    localStorage.setItem(termsKey, 'true');
+    setHasAcceptedTerms(true);
+    
+    // Set welcome message after accepting terms
+    const welcomeMessage: Message = {
+      id: 'welcome',
+      content: `Hello! I'm AYN, your AI business consultant. I can help you with:\n\n🔍 **Market Research** - Comprehensive analysis and competitive intelligence\n📈 **Sales Optimization** - Improve conversions and revenue\n📊 **Trend Analysis** - Identify emerging opportunities\n🎯 **Strategic Planning** - Business strategy and growth planning\n\nWhat would you like to explore first?`,
+      sender: 'ayn',
+      timestamp: new Date(),
+      status: 'complete'
+    };
+    setMessages([welcomeMessage]);
+    
+    toast({
+      title: "Welcome to AYN!",
+      description: "You can now start using AYN AI Business Consulting services."
+    });
+  };
+
   const handleSendMessage = async (messageContent?: string) => {
+    if (!hasAcceptedTerms) {
+      toast({
+        title: "Terms Required",
+        description: "Please accept the terms and conditions before using AYN AI.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (!hasAccess) {
       toast({
         title: "Access Required",
@@ -491,6 +530,12 @@ This will help me provide more targeted and valuable insights for your business.
 
           {/* Messages */}
           <ScrollArea className="flex-1 p-6">
+            {/* Terms Modal */}
+            <TermsModal 
+              open={hasAccess && !hasAcceptedTerms} 
+              onAccept={handleAcceptTerms}
+            />
+
             {/* Access Status Card */}
             <AccessStatusCard user={user} />
 
