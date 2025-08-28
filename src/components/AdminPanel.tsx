@@ -163,26 +163,37 @@ export const AdminPanel = () => {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Fetch access requests with enhanced data
+      // Fetch access requests
       const { data: accessData, error: accessError } = await supabase
         .from('access_grants')
-        .select(`
-          *,
-          profiles (
-            id,
-            user_id,
-            company_name,
-            contact_person,
-            phone,
-            created_at
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (accessError) throw accessError;
+
+      // Fetch profiles for all users referenced in access_grants
+      const userIds = accessData?.map(grant => grant.user_id) || [];
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*')
+        .in('user_id', userIds);
+
+      if (profilesError) throw profilesError;
+
+      // Create a map of user_id to profile for easy lookup
+      const profilesMap = profilesData?.reduce((acc, profile) => {
+        acc[profile.user_id] = profile;
+        return acc;
+      }, {} as Record<string, any>) || {};
+
+      // Enrich access data with profile information
+      const enrichedAccessData = accessData?.map(grant => ({
+        ...grant,
+        profiles: profilesMap[grant.user_id] || null
+      })) || [];
       
-      setAccessRequests((accessData as any) || []);
-      setAllUsers((accessData as any) || []);
+      setAccessRequests(enrichedAccessData);
+      setAllUsers(enrichedAccessData);
 
       // Fetch enhanced usage statistics
       const { data: usageData, error: usageError } = await supabase
@@ -193,9 +204,9 @@ export const AdminPanel = () => {
       }
 
       // Calculate advanced system metrics
-      const totalUsers = accessData?.length || 0;
-      const activeUsers = accessData?.filter(u => u.is_active).length || 0;
-      const pendingRequests = accessData?.filter(u => !u.is_active && !u.granted_at).length || 0;
+      const totalUsers = enrichedAccessData?.length || 0;
+      const activeUsers = enrichedAccessData?.filter(u => u.is_active).length || 0;
+      const pendingRequests = enrichedAccessData?.filter(u => !u.is_active && !u.granted_at).length || 0;
       
       // Get usage logs for today with time-based analysis
       const today = new Date().toISOString().split('T')[0];
