@@ -275,13 +275,8 @@ export default function Dashboard({ user }: DashboardProps) {
   };
 
   const setWelcomeMessage = () => {
-    const welcomeMessage: Message = {
-      id: 'welcome',
-      content: `Hello! I'm AYN, your AI business consultant. I can help you with:\n\n🔍 **Market Research** - Comprehensive analysis and competitive intelligence\n📈 **Sales Optimization** - Improve conversions and revenue\n📊 **Trend Analysis** - Identify emerging opportunities\n🎯 **Strategic Planning** - Business strategy and growth planning\n\nWhat would you like to explore first?`,
-      sender: 'ayn',
-      timestamp: new Date(),
-    };
-    setMessages([welcomeMessage]);
+    // No welcome message - start with empty chat
+    setMessages([]);
   };
 
   const handleAcceptTerms = () => {
