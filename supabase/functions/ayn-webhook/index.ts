@@ -85,7 +85,9 @@ serve(async (req) => {
     }
     
     // Clean up excessive newlines and whitespace
+    console.log('Before cleaning:', JSON.stringify(normalized));
     normalized = normalized.replace(/\n+/g, ' ').replace(/\s+/g, ' ').trim();
+    console.log('After cleaning:', JSON.stringify(normalized));
 
     console.log('Upstream status:', upstream.status, 'content-type:', contentType);
     console.log('Upstream body (first 200 chars):', (rawText || '').slice(0, 200));
