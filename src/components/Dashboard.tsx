@@ -822,9 +822,6 @@ export default function Dashboard({ user }: DashboardProps) {
                           : 'bg-muted text-foreground mr-12'
                         }
                       `}>
-                        <div className="text-sm whitespace-normal break-words">
-                          {message.content}
-                        </div>
                         
                         {/* Attachment Display */}
                         {message.attachment && (
