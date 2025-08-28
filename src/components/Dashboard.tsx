@@ -442,17 +442,6 @@ export default function Dashboard({ user }: DashboardProps) {
       {/* Sidebar */}
       <div className="sidebar">
         <div className="flex flex-col h-full p-5">
-          {/* Mobile Close Button */}
-          <div className="lg:hidden flex justify-end mb-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsSidebarOpen(false)}
-            >
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
-
           {/* User Profile */}
           <div className="user-profile flex items-center gap-3 mb-6 p-3 rounded-lg bg-gray-50">
             <div className="user-avatar">
@@ -486,50 +475,44 @@ export default function Dashboard({ user }: DashboardProps) {
             </div>
           </div>
 
-          {/* Quick Start */}
+          {/* Quick Start Templates */}
           <div className="quick-start mb-6">
-            <h3 className="text-sm font-semibold mb-3 text-gray-900">Quick Start</h3>
+            <h3 className="font-semibold text-sm text-gray-900 mb-3">Quick Start</h3>
             <div className="space-y-2">
               {templates.map((template, index) => (
-                <div
-                  key={index}
-                  className="quick-item cursor-pointer p-3 rounded-lg hover:bg-gray-50 border border-gray-100 transition-colors"
-                  onClick={() => {
-                    if (hasAccess && hasAcceptedTerms) {
-                      handleSendMessage(template.prompt);
-                      setIsSidebarOpen(false);
-                    }
-                  }}
+                <div 
+                  key={index} 
+                  className="quick-item p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                  onClick={() => handleSendMessage(template.prompt)}
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 mb-1">
                     <template.icon className={`w-4 h-4 ${template.color}`} />
-                    <span className="font-medium text-sm text-gray-700">{template.name}</span>
+                    <span className="font-medium text-sm text-gray-900">{template.name}</span>
                   </div>
+                  <p className="text-xs text-gray-500 line-clamp-2">{template.prompt}</p>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Recent Chats */}
-          <div className="recent-chats flex-1 min-h-0">
-            <h3 className="text-sm font-semibold mb-3 text-gray-900">Recent Chats</h3>
-            <ScrollArea className="h-full">
-              <div className="space-y-2">
-                {recentChats.map((chat, index) => (
-                  <div
-                    key={index}
-                    className="chat-item cursor-pointer p-3 rounded-lg hover:bg-gray-50 border border-gray-100 transition-colors"
-                    onClick={() => handleLoadChat(chat)}
-                  >
-                    <div className="font-medium text-sm text-gray-900 truncate mb-1">{chat.title}</div>
-                    <div className="text-xs text-gray-500 truncate">{chat.lastMessage}</div>
-                    <div className="text-xs text-gray-400 mt-1">
-                      {chat.timestamp.toLocaleDateString()}
-                    </div>
+          <div className="recent-chats">
+            <h3 className="font-semibold text-sm text-gray-900 mb-3">Recent Chats</h3>
+            <div className="space-y-2">
+              {recentChats.map((chat, index) => (
+                <div 
+                  key={index} 
+                  className="chat-item p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                  onClick={() => handleLoadChat(chat)}
+                >
+                  <div className="font-medium text-sm text-gray-900 mb-1 line-clamp-1">{chat.title}</div>
+                  <div className="text-xs text-gray-500 line-clamp-2 mb-1">{chat.lastMessage}</div>
+                  <div className="text-xs text-gray-400">
+                    {chat.timestamp.toLocaleDateString()}
                   </div>
-                ))}
-              </div>
-            </ScrollArea>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -539,29 +522,23 @@ export default function Dashboard({ user }: DashboardProps) {
         {/* Header */}
         <header className="header">
           <div className="logo-section">
-            {/* Mobile Menu Button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsSidebarOpen(true)}
-              className="lg:hidden mr-2"
-            >
-              <Menu className="w-4 h-4" />
-            </Button>
-            <div className="flex items-center gap-2">
-              <Brain className="w-6 h-6 text-blue-500" />
-              <span className="font-bold text-lg text-gray-900">AYN Business Console</span>
+            <div className="flex items-center gap-3">
+              <div className="ayn-message-avatar">
+                <Brain className="w-4 h-4" />
+              </div>
+              <div>
+                <h1 className="font-bold text-lg text-gray-900">AYN AI Business Consultant</h1>
+                <p className="text-xs text-gray-500">Your AI-powered business advisor</p>
+              </div>
             </div>
           </div>
-          
+
           <div className="nav-buttons">
-            {/* Access Status Badge */}
             <Badge variant={hasAccess ? "default" : "secondary"} className="hidden sm:inline-flex">
               <div className={`w-2 h-2 rounded-full mr-2 ${hasAccess ? 'bg-green-500' : 'bg-gray-400'}`} />
               {hasAccess ? 'Active' : 'Inactive'}
             </Badge>
 
-            {/* Admin Tab Switcher */}
             {isAdmin && (
               <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
                 <Button
@@ -619,10 +596,10 @@ export default function Dashboard({ user }: DashboardProps) {
                   <div key={message.id} className="message-bubble">
                     {message.sender === 'ayn' ? (
                       <>
-                         <div className="message-header">
-                           <div className="ayn-message-avatar">
-                             <Brain className="w-4 h-4" />
-                           </div>
+                        <div className="message-header">
+                          <div className="ayn-message-avatar">
+                            <Brain className="w-4 h-4" />
+                          </div>
                           <div>
                             <div className="font-semibold text-gray-900 text-sm">AYN AI Consultant</div>
                             <div className="text-xs text-gray-500">
@@ -687,10 +664,10 @@ export default function Dashboard({ user }: DashboardProps) {
                 {/* Typing Indicator */}
                 {isTyping && (
                   <div className="message-bubble">
-                     <div className="message-header">
-                       <div className="ayn-message-avatar">
-                         <Brain className="w-4 h-4" />
-                       </div>
+                    <div className="message-header">
+                      <div className="ayn-message-avatar">
+                        <Brain className="w-4 h-4" />
+                      </div>
                       <div>
                         <div className="font-semibold text-gray-900 text-sm">AYN AI Consultant</div>
                         <div className="text-xs text-gray-500">typing...</div>
