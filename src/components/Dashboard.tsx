@@ -115,6 +115,7 @@ const recentChats: ChatHistory[] = [
 ];
 
 export default function Dashboard({ user }: DashboardProps) {
+  // State management
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -124,6 +125,7 @@ export default function Dashboard({ user }: DashboardProps) {
   const [activeTab, setActiveTab] = useState<'chat' | 'admin'>('chat');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  
   const { toast } = useToast();
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
