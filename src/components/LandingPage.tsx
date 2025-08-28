@@ -88,7 +88,7 @@ const LandingPage = () => {
       {/* Hero Section */}
       <section className="relative py-20 overflow-hidden">
         {/* Soft Radial Gradient Background */}
-        <div className="absolute inset-0 bg-gradient-radial from-primary/8 via-background to-accent/5" />
+        
         
         {/* Background Icons - Static, proportional */}
         <div className="absolute inset-0 opacity-10 pointer-events-none select-none">
