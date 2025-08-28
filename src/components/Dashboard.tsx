@@ -3,10 +3,10 @@ import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { 
   Send, 
+  Paperclip,
   TrendingUp, 
   Target, 
   Search, 
@@ -451,10 +451,14 @@ export default function Dashboard({ user }: DashboardProps) {
           </div>
         </div>
 
-        {/* Input Area */}
+        {/* Floating Input Area */}
         <div className="input-area">
           <div className="input-container">
-            <Input
+            <button className="attachment-button" disabled={isTyping}>
+              <Paperclip className="w-4 h-4" />
+            </button>
+            
+            <input 
               type="text"
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
@@ -463,13 +467,14 @@ export default function Dashboard({ user }: DashboardProps) {
               disabled={isTyping}
               className="message-input"
             />
-            <Button
+            
+            <button
               onClick={() => handleSendMessage()}
               disabled={!inputMessage.trim() || isTyping}
               className="send-button"
             >
               <Send className="w-4 h-4" />
-            </Button>
+            </button>
           </div>
         </div>
       </div>
