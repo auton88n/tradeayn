@@ -3,19 +3,28 @@ import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Input } from '@/components/ui/input';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { MaintenanceBanner } from '@/components/MaintenanceBanner';
 import { 
   Send, 
-  Paperclip,
+  Paperclip, 
   TrendingUp, 
   Target, 
   Search, 
   Rocket,
+  Brain,
   LogOut,
+  Settings,
   Menu,
-  X
+  X,
+  Shield
 } from 'lucide-react';
 import { ThemeToggle } from './theme-toggle';
+import { TermsModal } from './TermsModal';
+import { AdminPanel } from './AdminPanel';
 
 interface Message {
   id: string;
@@ -105,13 +114,34 @@ const recentChats: ChatHistory[] = [
 ];
 
 export default function Dashboard({ user }: DashboardProps) {
+  // State management
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [hasAccess, setHasAccess] = useState(false);
+  const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [activeTab, setActiveTab] = useState<'chat' | 'admin'>('chat');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
+  // Maintenance mode state
+  const [maintenanceConfig, setMaintenanceConfig] = useState({
+    enableMaintenance: false,
+    maintenanceMessage: 'System is currently under maintenance. We apologize for any inconvenience.',
+    maintenanceStartTime: '',
+    maintenanceEndTime: ''
+  });
+  
+  // Typewriter animation state
+  const [currentText, setCurrentText] = useState('');
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isInputFocused, setIsInputFocused] = useState(false);
+  
   const { toast } = useToast();
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -122,8 +152,115 @@ export default function Dashboard({ user }: DashboardProps) {
   }, [messages]);
 
   useEffect(() => {
-    setWelcomeMessage();
-  }, []);
+    checkUserAccess();
+    checkAdminRole();
+    checkMaintenanceStatus();
+    
+    const termsKey = `ayn_terms_accepted_${user.id}`;
+    const accepted = localStorage.getItem(termsKey) === 'true';
+    setHasAcceptedTerms(accepted);
+    
+    if (accepted) {
+      setWelcomeMessage();
+    }
+
+    // Set up maintenance status polling
+    const maintenanceInterval = setInterval(checkMaintenanceStatus, 5000); // Check every 5 seconds
+
+    return () => clearInterval(maintenanceInterval);
+  }, [user.id]);
+
+  const checkMaintenanceStatus = () => {
+    try {
+      const storedConfig = localStorage.getItem('ayn_maintenance_config');
+      if (storedConfig) {
+        const config = JSON.parse(storedConfig);
+        setMaintenanceConfig(config);
+      }
+    } catch (error) {
+      console.error('Error checking maintenance status:', error);
+    }
+  };
+
+  // Typewriter animation effect
+  useEffect(() => {
+    if (isInputFocused || inputMessage.length > 0) return;
+
+    const messages = [
+      "Ask AYN anything about your business...",
+      "How can I increase my revenue?",
+      "What are the latest market trends?", 
+      "Analyze my competition strategy...",
+      "How do I optimize my sales funnel?",
+      "What growth opportunities exist?",
+      "Help me with pricing strategy...",
+      "Research my target market..."
+    ];
+
+    const typeSpeed = 100;
+    const deleteSpeed = 50;
+    const pauseTime = 2000;
+
+    const timer = setTimeout(() => {
+      const currentMessage = messages[currentIndex];
+      
+      if (!isDeleting) {
+        setCurrentText(currentMessage.substring(0, currentText.length + 1));
+        
+        if (currentText === currentMessage) {
+          setTimeout(() => setIsDeleting(true), pauseTime);
+        }
+      } else {
+        setCurrentText(currentMessage.substring(0, currentText.length - 1));
+        
+        if (currentText === '') {
+          setIsDeleting(false);
+          setCurrentIndex((prevIndex) => (prevIndex + 1) % messages.length);
+        }
+      }
+    }, isDeleting ? deleteSpeed : typeSpeed);
+
+    return () => clearTimeout(timer);
+  }, [currentText, isDeleting, currentIndex, isInputFocused, inputMessage]);
+
+  const checkUserAccess = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('access_grants')
+        .select('is_active, expires_at')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error checking access:', error);
+        return;
+      }
+
+      const isActive = data.is_active && (!data.expires_at || new Date(data.expires_at) > new Date());
+      setHasAccess(isActive);
+    } catch (error) {
+      console.error('Access check error:', error);
+    }
+  };
+
+  const checkAdminRole = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error checking role:', error);
+        return;
+      }
+
+      setIsAdmin(data.role === 'admin');
+    } catch (error) {
+      console.error('Role check error:', error);
+    }
+  };
 
   const setWelcomeMessage = () => {
     const welcomeMessage: Message = {
@@ -135,9 +272,75 @@ export default function Dashboard({ user }: DashboardProps) {
     setMessages([welcomeMessage]);
   };
 
+  const handleAcceptTerms = () => {
+    const termsKey = `ayn_terms_accepted_${user.id}`;
+    localStorage.setItem(termsKey, 'true');
+    setHasAcceptedTerms(true);
+    setWelcomeMessage();
+    
+    toast({
+      title: "Welcome to AYN!",
+      description: "You can now start using AYN AI Business Consulting services."
+    });
+  };
+
   const handleSendMessage = async (messageContent?: string) => {
+    if (!hasAcceptedTerms) {
+      toast({
+        title: "Terms Required",
+        description: "Please accept the terms and conditions before using AYN AI.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!hasAccess) {
+      toast({
+        title: "Access Required",
+        description: "You need active access to use AYN. Please contact our team.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     const content = messageContent || inputMessage.trim();
     if (!content) return;
+
+    // Check and increment usage
+    try {
+      const { data: canUse, error: usageError } = await supabase.rpc('increment_usage', {
+        _user_id: user.id,
+        _action_type: 'message',
+        _count: 1
+      });
+
+      if (usageError) {
+        console.error('Usage check error:', usageError);
+        toast({
+          title: "Usage Error",
+          description: "Unable to verify usage limits. Please try again.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (!canUse) {
+        toast({
+          title: "Usage Limit Reached",
+          description: "You've reached your monthly message limit. Please contact support or wait for next month's reset.",
+          variant: "destructive"
+        });
+        return;
+      }
+    } catch (error) {
+      console.error('Usage tracking error:', error);
+      toast({
+        title: "System Error",
+        description: "Unable to process your request. Please try again.",
+        variant: "destructive"
+      });
+      return;
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -152,6 +355,7 @@ export default function Dashboard({ user }: DashboardProps) {
     setIsTyping(true);
 
     try {
+      // Call AYN webhook through edge function
       const { data: webhookResponse, error: webhookError } = await supabase.functions.invoke('ayn-webhook', {
         body: { 
           message: content,
@@ -198,6 +402,7 @@ export default function Dashboard({ user }: DashboardProps) {
 
   const handleLoadChat = (chatHistory: ChatHistory) => {
     setMessages(chatHistory.messages);
+    setIsSidebarOpen(false);
     toast({
       title: "Chat Loaded",
       description: `Loaded conversation: ${chatHistory.title}`,
@@ -215,267 +420,331 @@ export default function Dashboard({ user }: DashboardProps) {
     }
   };
 
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
-
-  const handleCloseSidebar = () => {
-    setIsSidebarOpen(false);
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex flex-col">
-      {/* Sidebar Overlay */}
-      <div 
-        className={`sidebar-overlay ${isSidebarOpen ? 'active' : ''}`}
-        onClick={handleCloseSidebar}
-      />
+    <div className="flex h-screen bg-background">
+      {/* Mobile Sidebar Overlay */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
 
       {/* Sidebar */}
-      <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
-        <div className="flex justify-between items-center mb-4 px-6 pt-4">
-          <h2 className="text-lg font-semibold">Menu</h2>
-          <button 
-            className="hamburger-button"
-            onClick={handleCloseSidebar}
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+      <div className={`
+        fixed lg:static inset-y-0 left-0 z-50 lg:z-0
+        w-72 lg:w-80 bg-card border-r border-border
+        transform transition-transform duration-300 ease-in-out
+        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
+        <div className="flex flex-col h-full p-6">
+          {/* Mobile Close Button */}
+          <div className="lg:hidden flex justify-end mb-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsSidebarOpen(false)}
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
 
-        {/* User Profile Section */}
-        <div className="user-profile-section">
-          <div className="flex items-center gap-3 mb-4">
-            <Avatar className="h-10 w-10">
-              <AvatarFallback>
+          {/* User Profile */}
+          <div className="flex items-center gap-3 mb-6">
+            <Avatar className="w-12 h-12 ring-2 ring-primary/20">
+              <AvatarImage src="" />
+              <AvatarFallback className="bg-gradient-primary text-white font-semibold">
                 {user?.user_metadata?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <div className="font-semibold text-sm">{user?.user_metadata?.name || 'User'}</div>
-              <div className="text-sm text-muted-foreground">{user?.email}</div>
+              <p className="font-semibold truncate">{user?.user_metadata?.name || 'User'}</p>
+              <p className="text-sm text-muted-foreground truncate">{user?.email}</p>
             </div>
             <Button 
               variant="ghost" 
               size="sm" 
               onClick={handleLogout}
-              className="text-gray-400 hover:text-gray-600 flex-shrink-0"
+              className="text-muted-foreground hover:text-foreground flex-shrink-0"
             >
               <LogOut className="w-4 h-4" />
             </Button>
           </div>
-          
-          <div className="ayn-consultant-status">
-            <div className="flex items-center gap-3">
-              <div className="ayn-avatar">
-                <img src="/lovable-uploads/636eb1d6-bee9-4ea8-a6bf-748bd267d05f.png" alt="Brain" width="16" height="16" />
-              </div>
-              <div className="flex-1">
-                <div className="font-medium text-sm">AYN AI Consultant</div>
-                <div className="text-sm text-green-600 flex items-center gap-1">
-                  <div className="status-dot"></div>
-                  Ready to help
-                </div>
-              </div>
+
+          {/* AYN Status */}
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/10 border border-primary/20 mb-6">
+            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+              <Brain className="w-4 h-4 text-primary-foreground" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-sm">AYN AI Consultant</p>
+              <p className="text-xs text-muted-foreground">
+                {isTyping ? 'Thinking...' : 'Ready to help'}
+              </p>
             </div>
           </div>
-        </div>
 
-        {/* Quick Start Section */}
-        <div className="quick-start-section">
-          <h3 className="section-header">QUICK START</h3>
-          <div className="space-y-1">
-            {templates.map((template, index) => (
-              <div 
-                key={index} 
-                className="quick-start-item"
-                onClick={() => {
-                  handleSendMessage(template.prompt);
-                  handleCloseSidebar();
-                }}
-              >
-                <template.icon className={`w-4 h-4 ${template.color}`} />
-                <span className="text-sm">{template.name}</span>
-              </div>
-            ))}
+          {/* Quick Start */}
+          <div className="mb-6">
+            <h3 className="font-semibold text-sm mb-3 text-muted-foreground uppercase tracking-wide">
+              Quick Start
+            </h3>
+            <div className="space-y-2">
+              {templates.map((template) => (
+                <Button
+                  key={template.name}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleSendMessage(template.prompt)}
+                  className="w-full justify-start h-auto p-3 text-left hover:bg-muted hover:text-foreground transition-colors duration-200"
+                  disabled={!hasAccess || !hasAcceptedTerms}
+                >
+                  <template.icon className={`w-4 h-4 mr-3 flex-shrink-0 ${template.color}`} />
+                  <span className="text-sm font-medium">{template.name}</span>
+                </Button>
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/* Recent Chats Section */}
-        <div className="recent-chats-section">
-          <h3 className="section-header">RECENT CHATS</h3>
-          <div className="space-y-3">
-            {recentChats.map((chat, index) => (
-              <div 
-                key={index} 
-                className="recent-chat-item"
-                onClick={() => {
-                  handleLoadChat(chat);
-                  handleCloseSidebar();
-                }}
-              >
-                <div className="chat-title">{chat.title}</div>
-                <div className="chat-preview">{chat.lastMessage}</div>
-                <div className="chat-date">{chat.timestamp.toLocaleDateString()}</div>
-              </div>
-            ))}
+          {/* Recent Chats */}
+          <div className="flex-1">
+            <h3 className="font-semibold text-sm mb-3 text-muted-foreground uppercase tracking-wide">
+              Recent Chats
+            </h3>
+            <div className="space-y-1">
+              {recentChats.map((chat, index) => (
+                <Button
+                  key={index}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleLoadChat(chat)}
+                  className="w-full justify-start text-sm text-muted-foreground hover:text-foreground hover:bg-muted h-auto p-3 text-left transition-colors duration-200"
+                >
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">{chat.title}</p>
+                    <p className="text-xs text-muted-foreground truncate">{chat.lastMessage}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {chat.timestamp.toLocaleDateString()}
+                    </p>
+                  </div>
+                </Button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="main-content">
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <header className="header">
-          <div className="header-left">
-            <button 
-              className="hamburger-button"
-              onClick={toggleSidebar}
+        <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 lg:px-6 flex-shrink-0">
+          <div className="flex items-center gap-3">
+            {/* Mobile Menu Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsSidebarOpen(true)}
+              className="lg:hidden"
             >
-              <Menu className="w-5 h-5" />
-            </button>
-            <div className="header-brain-icon">
-              <img src="/lovable-uploads/636eb1d6-bee9-4ea8-a6bf-748bd267d05f.png" alt="Brain" width="16" height="16" />
-            </div>
-            <div>
-              <h1 className="app-title">AYN Business Console</h1>
-              <p className="app-subtitle">Your AI-powered business advisor</p>
+              <Menu className="w-4 h-4" />
+            </Button>
+            
+            <div className="flex items-center gap-2">
+              <Brain className="w-6 h-6 text-primary" />
+              <h1 className="font-bold text-lg">AYN Business Console</h1>
             </div>
           </div>
-          
-          <div className="nav-buttons">
-            <div className="status-badge">
-              <div className="status-dot"></div>
-              Active
-            </div>
+
+          <div className="flex items-center gap-3">
+            {/* Access Status Badge */}
+            <Badge variant={hasAccess ? "default" : "secondary"} className="hidden sm:inline-flex">
+              <div className={`w-2 h-2 rounded-full mr-2 ${hasAccess ? 'bg-green-500' : 'bg-gray-400'}`} />
+              {hasAccess ? 'Active' : 'Inactive'}
+            </Badge>
+
+            {/* Admin Tab Switcher */}
+            {isAdmin && (
+              <div className="flex gap-1 bg-muted rounded-lg p-1">
+                <Button
+                  variant={activeTab === 'chat' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setActiveTab('chat')}
+                  className="h-8 px-3"
+                >
+                  Chat
+                </Button>
+                <Button
+                  variant={activeTab === 'admin' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setActiveTab('admin')}
+                  className="h-8 px-3"
+                >
+                  <Shield className="w-3 h-3 mr-1" />
+                  Admin
+                </Button>
+              </div>
+            )}
+
             <ThemeToggle />
           </div>
         </header>
 
-        {/* Chat Area */}
-        <div className="chat-area">
-          <div className="message-container">
-            {messages.map((message) => (
-              <div key={message.id} className="chat-message">
-                {message.sender === 'ayn' ? (
-                  <>
-                    <div className="message-header">
-                      <div className="message-brain-icon">
-                        <img src="/lovable-uploads/636eb1d6-bee9-4ea8-a6bf-748bd267d05f.png" alt="Brain" width="12" height="12" />
-                      </div>
-                      <div>
-                        <div className="sender-name">AYN AI Consultant</div>
-                        <div className="message-time">
-                          {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        {/* Content Area */}
+        <div className="flex-1 flex flex-col min-h-0">
+          {/* Maintenance Banner */}
+          <MaintenanceBanner 
+            isEnabled={maintenanceConfig.enableMaintenance}
+            message={maintenanceConfig.maintenanceMessage}
+            startTime={maintenanceConfig.maintenanceStartTime}
+            endTime={maintenanceConfig.maintenanceEndTime}
+          />
+
+          {/* Terms Modal */}
+          <TermsModal 
+            open={hasAccess && !hasAcceptedTerms} 
+            onAccept={handleAcceptTerms}
+          />
+
+          {/* Admin Panel */}
+          {isAdmin && activeTab === 'admin' && (
+            <div className="flex-1 overflow-y-auto p-6">
+              <AdminPanel />
+            </div>
+          )}
+
+          {/* Chat Interface */}
+          {(activeTab === 'chat' || !isAdmin) && (
+            <>
+              {/* Messages Area */}
+              <ScrollArea className="flex-1 px-4 lg:px-6">
+                <div className="max-w-4xl mx-auto py-6 space-y-4">
+                  {messages.map((message) => (
+                    <div
+                      key={message.id}
+                      className={`flex gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                    >
+                      {message.sender === 'ayn' && (
+                        <Avatar className="w-8 h-8 flex-shrink-0">
+                          <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                            <Brain className="w-4 h-4" />
+                          </AvatarFallback>
+                        </Avatar>
+                      )}
+                      
+                      <div className={`
+                        max-w-xs lg:max-w-md xl:max-w-lg rounded-lg px-4 py-3
+                        ${message.sender === 'user' 
+                          ? 'bg-primary text-primary-foreground ml-12' 
+                          : 'bg-muted text-foreground mr-12'
+                        }
+                      `}>
+                        <div className="text-sm whitespace-normal break-words">
+                          {message.content}
                         </div>
-                      </div>
-                    </div>
-                    <div className="message-content">
-                      {message.content.split('\n').map((line, i) => {
-                        if (line.trim() === '') return <br key={i} />;
-                        
-                        // Handle bold text
-                        if (line.includes('**')) {
-                          return (
-                            <div key={i}>
-                              <span dangerouslySetInnerHTML={{
-                                __html: line.replace(/\*\*(.*?)\*\*/g, '<strong class="capability-title">$1</strong>')
-                              }} />
-                            </div>
-                          );
-                        }
-                        
-                        // Handle bullet points
-                        if (line.trim().match(/^[🔍📈📊🎯]/)) {
-                          return (
-                            <div key={i} className="capability-item">
-                              <span>{line.split(' - ')[0]}</span>
-                              {line.split(' - ')[1] && (
-                                <span className="capability-description"> - {line.split(' - ')[1]}</span>
-                              )}
-                            </div>
-                          );
-                        }
-                        
-                        return <div key={i}>{line}</div>;
-                      })}
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="message-header justify-end">
-                      <div>
-                        <div className="sender-name text-right">You</div>
-                        <div className="message-time text-right">
+                        <div className={`
+                          text-xs mt-2 opacity-70
+                          ${message.sender === 'user' ? 'text-primary-foreground/70' : 'text-muted-foreground'}
+                        `}>
                           {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           {message.status === 'sending' && ' • Sending...'}
                           {message.status === 'error' && ' • Failed'}
                         </div>
                       </div>
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback>
-                          {user?.user_metadata?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                      
+                      {message.sender === 'user' && (
+                        <Avatar className="w-8 h-8 flex-shrink-0">
+                          <AvatarImage src="" />
+                          <AvatarFallback className="text-xs">
+                            {user?.user_metadata?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                          </AvatarFallback>
+                        </Avatar>
+                      )}
+                    </div>
+                  ))}
+
+                  {/* Typing Indicator */}
+                  {isTyping && (
+                    <div className="flex gap-3 justify-start">
+                      <Avatar className="w-8 h-8 flex-shrink-0">
+                        <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                          <Brain className="w-4 h-4" />
                         </AvatarFallback>
                       </Avatar>
+                      <div className="bg-muted text-foreground rounded-lg px-4 py-3 mr-12">
+                        <div className="flex items-center gap-1">
+                          <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+                          <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
+                          <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
+                          <span className="ml-2 text-sm text-muted-foreground">AYN is typing...</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="message-content text-right">
-                      {message.content}
-                    </div>
-                  </>
-                )}
-              </div>
-            ))}
+                  )}
+                  
+                  <div ref={messagesEndRef} />
+                </div>
+              </ScrollArea>
 
-            {/* Typing Indicator */}
-            {isTyping && (
-              <div className="chat-message">
-                <div className="message-header">
-                  <div className="message-brain-icon">
-                    <img src="/lovable-uploads/636eb1d6-bee9-4ea8-a6bf-748bd267d05f.png" alt="Brain" width="12" height="12" />
-                  </div>
-                  <div>
-                    <div className="sender-name">AYN AI Consultant</div>
-                    <div className="message-time">typing...</div>
+              {/* Message Input Area */}
+              <div className="bg-gray-50 dark:bg-gray-900/50 border-t border-border p-4 lg:p-6 flex-shrink-0">
+                <div className="max-w-4xl mx-auto">
+                  <div className="flex items-center gap-3 bg-white dark:bg-gray-800 rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 p-4 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all duration-300">
+                    
+                    {/* Attachment Button */}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-9 h-9 p-0 text-gray-400 hover:text-blue-500 transition-colors duration-200 flex-shrink-0"
+                      disabled={!hasAccess || !hasAcceptedTerms}
+                      title="Attach file (coming soon)"
+                    >
+                      <Paperclip className="w-4 h-4" />
+                    </Button>
+                    
+                    {/* Input Container */}
+                    <div className="flex-1 relative">
+                      <Input
+                        ref={inputRef}
+                        value={inputMessage}
+                        onChange={(e) => setInputMessage(e.target.value)}
+                        onKeyPress={handleKeyPress}
+                        onFocus={() => setIsInputFocused(true)}
+                        onBlur={() => setIsInputFocused(false)}
+                        placeholder=""
+                        disabled={!hasAccess || !hasAcceptedTerms || isTyping}
+                        className="border-0 bg-transparent text-base outline-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 h-auto min-h-[28px]"
+                      />
+                      
+                      {/* Typewriter Animation Placeholder */}
+                      {!inputMessage && !isInputFocused && (
+                        <div className="absolute inset-0 flex items-center pointer-events-none">
+                          <span className="text-gray-400 select-none typewriter-text">
+                            {!hasAccess 
+                              ? "Access required to send messages..."
+                              : !hasAcceptedTerms 
+                                ? "Please accept terms to start chatting..."
+                                : currentText
+                            }
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Send Button */}
+                    <Button
+                      variant="blue"
+                      onClick={() => handleSendMessage()}
+                      disabled={!inputMessage.trim() || !hasAccess || !hasAcceptedTerms || isTyping}
+                      className="h-10 px-5 rounded-xl text-sm font-medium shadow-md disabled:opacity-50"
+                    >
+                      <Send className="w-4 h-4 mr-2" />
+                      Send
+                    </Button>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                  <span className="text-muted-foreground text-sm ml-2">AYN is analyzing your request...</span>
-                </div>
               </div>
-            )}
-
-            <div ref={messagesEndRef} />
-          </div>
-        </div>
-
-        {/* Floating Input Area */}
-        <div className="input-area">
-          <div className="input-container">
-            <button className="attachment-button" disabled={isTyping}>
-              <Paperclip className="w-4 h-4" />
-            </button>
-            
-            <input 
-              type="text"
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Ask AYN anything about your business..."
-              disabled={isTyping}
-              className="message-input"
-            />
-            
-            <button
-              onClick={() => handleSendMessage()}
-              disabled={!inputMessage.trim() || isTyping}
-              className="send-button"
-            >
-              <Send className="w-4 h-4" />
-            </button>
-          </div>
+            </>
+          )}
         </div>
       </div>
     </div>
