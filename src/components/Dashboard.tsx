@@ -668,7 +668,7 @@ export default function Dashboard({ user }: DashboardProps) {
                         tooltip={template.name}
                       >
                         <template.icon className={`w-4 h-4 flex-shrink-0 ${template.color}`} />
-                        <span>{template.name}</span>
+                        <span className="group-data-[collapsible=icon]:hidden">{template.name}</span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   ))}
@@ -691,8 +691,8 @@ export default function Dashboard({ user }: DashboardProps) {
                           {chat.title.charAt(0)}
                         </div>
                         <div className="flex flex-col min-w-0">
-                          <span className="font-medium truncate text-sm">{chat.title}</span>
-                          <span className="text-xs text-muted-foreground truncate">{chat.lastMessage}</span>
+                          <span className="font-medium truncate text-sm group-data-[collapsible=icon]:hidden">{chat.title}</span>
+                          <span className="text-xs text-muted-foreground truncate group-data-[collapsible=icon]:hidden">{chat.lastMessage}</span>
                         </div>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
