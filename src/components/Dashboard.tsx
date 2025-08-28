@@ -428,7 +428,7 @@ This will help me provide more targeted and valuable insights for your business.
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
         {/* Sidebar */}
-        <Sidebar className="w-80 bg-card">
+        <Sidebar className="w-80 bg-card border-r border-border">
           <SidebarContent className="p-6">
             {/* User Profile */}
             <div className="flex items-center gap-3 mb-8">
