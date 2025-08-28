@@ -1,21 +1,32 @@
 import { useState, useEffect } from 'react';
 import LandingPage from '@/components/LandingPage';
 import Dashboard from '@/components/Dashboard';
+import { supabase } from '@/integrations/supabase/client';
+import type { User, Session } from '@supabase/supabase-js';
 
 const Index = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is authenticated
-    const authToken = localStorage.getItem('ayn_auth_token');
-    const userData = localStorage.getItem('ayn_user');
-    
-    if (authToken && userData) {
-      setIsAuthenticated(true);
-    }
-    
-    setLoading(false);
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+      }
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   if (loading) {
@@ -34,7 +45,7 @@ const Index = () => {
     );
   }
 
-  return isAuthenticated ? <Dashboard /> : <LandingPage />;
+  return user ? <Dashboard user={user} /> : <LandingPage />;
 };
 
 export default Index;

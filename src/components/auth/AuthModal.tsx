@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { Brain, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AuthModalProps {
   open: boolean;
@@ -34,9 +35,6 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
     setLoading(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
       if (isSignUp) {
         if (formData.password !== formData.confirmPassword) {
           toast({
@@ -47,24 +45,44 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
           return;
         }
         
-        // Store user data in localStorage for demo
-        localStorage.setItem('ayn_user', JSON.stringify({
-          name: formData.name,
+        const { error } = await supabase.auth.signUp({
           email: formData.email,
-          joinedAt: new Date().toISOString()
-        }));
+          password: formData.password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/`,
+            data: {
+              name: formData.name,
+            }
+          }
+        });
+
+        if (error) {
+          toast({
+            title: "Sign Up Error",
+            description: error.message,
+            variant: "destructive"
+          });
+          return;
+        }
         
         toast({
           title: "Welcome to AYN!",
-          description: "Your account has been created successfully.",
+          description: "Please check your email to confirm your account.",
         });
       } else {
-        // Sign in logic
-        localStorage.setItem('ayn_user', JSON.stringify({
-          name: formData.name || 'AYN User',
+        const { error } = await supabase.auth.signInWithPassword({
           email: formData.email,
-          lastLogin: new Date().toISOString()
-        }));
+          password: formData.password,
+        });
+
+        if (error) {
+          toast({
+            title: "Sign In Error",
+            description: error.message,
+            variant: "destructive"
+          });
+          return;
+        }
         
         toast({
           title: "Welcome back!",
@@ -72,13 +90,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
         });
       }
       
-      localStorage.setItem('ayn_auth_token', 'demo_token_' + Date.now());
       onOpenChange(false);
-      
-      // Trigger page reload to show dashboard
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
       
     } catch (error) {
       toast({

@@ -8,6 +8,8 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Sidebar, SidebarContent, SidebarProvider } from '@/components/ui/sidebar';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import type { User } from '@supabase/supabase-js';
 
 interface Message {
   id: string;
@@ -17,27 +19,18 @@ interface Message {
   status?: 'researching' | 'analyzing' | 'optimizing' | 'strategizing' | 'complete';
 }
 
-interface UserProfile {
-  name: string;
-  email: string;
-  joinedAt?: string;
-  lastLogin?: string;
+interface DashboardProps {
+  user: User;
 }
 
-const Dashboard = () => {
+const Dashboard = ({ user }: DashboardProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [currentStatus, setCurrentStatus] = useState<string>('');
-  const [user, setUser] = useState<UserProfile | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    // Load user data
-    const userData = localStorage.getItem('ayn_user');
-    if (userData) {
-      setUser(JSON.parse(userData));
-    }
 
     // Welcome message
     const welcomeMessage: Message = {
@@ -261,10 +254,8 @@ I'd be happy to dive deeper into specific aspects of your question. Could you pr
 This will help me provide more targeted and valuable insights for your business.`;
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('ayn_user');
-    localStorage.removeItem('ayn_auth_token');
-    window.location.reload();
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
   };
 
   const getStatusColor = (status: string) => {
@@ -298,11 +289,11 @@ This will help me provide more targeted and valuable insights for your business.
               <Avatar className="w-12 h-12 ring-2 ring-primary/20">
                 <AvatarImage src="" />
                 <AvatarFallback className="bg-gradient-primary text-white font-semibold">
-                  {user?.name?.charAt(0) || 'U'}
+                  {user?.user_metadata?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
-                <p className="font-semibold">{user?.name || 'User'}</p>
+                <p className="font-semibold">{user?.user_metadata?.name || 'User'}</p>
                 <p className="text-sm text-muted-foreground">{user?.email}</p>
               </div>
               <Button 
@@ -446,7 +437,7 @@ This will help me provide more targeted and valuable insights for your business.
                     <Avatar className="w-8 h-8 flex-shrink-0">
                       <AvatarImage src="" />
                       <AvatarFallback className="bg-muted text-xs">
-                        {user?.name?.charAt(0) || 'U'}
+                        {user?.user_metadata?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
                       </AvatarFallback>
                     </Avatar>
                   )}
