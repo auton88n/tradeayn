@@ -662,7 +662,7 @@ export default function Dashboard({ user }: DashboardProps) {
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-medium text-sm">AYN AI Consultant</p>
-              <p className="text-xs text-muted-foreground">
+              <p className={`text-xs ${isTyping ? 'text-muted-foreground' : (hasAccess ? 'text-green-500 font-medium' : 'text-muted-foreground')}`}>
                 {isTyping ? 'Thinking...' : (hasAccess ? 'Active' : 'Inactive')}
               </p>
             </div>
