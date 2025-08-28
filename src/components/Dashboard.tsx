@@ -118,6 +118,8 @@ export default function Dashboard({ user }: DashboardProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [hasAccess, setHasAccess] = useState(false);
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -142,6 +144,7 @@ export default function Dashboard({ user }: DashboardProps) {
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -285,6 +288,12 @@ export default function Dashboard({ user }: DashboardProps) {
   };
 
   const handleSendMessage = async (messageContent?: string) => {
+    // If there's a selected file, upload it instead
+    if (selectedFile) {
+      await handleFileUpload();
+      return;
+    }
+
     if (!hasAcceptedTerms) {
       toast({
         title: "Terms Required",
@@ -398,6 +407,154 @@ export default function Dashboard({ user }: DashboardProps) {
         variant: "destructive"
       });
     }
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      
+      // Validate file type and size
+      const allowedTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'image/gif',
+        'image/webp',
+        'text/plain'
+      ];
+
+      if (!allowedTypes.includes(file.type)) {
+        toast({
+          title: "Unsupported file type",
+          description: "Please upload PDF, Word documents, or images.",
+          variant: "destructive"
+        });
+        setSelectedFile(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        return;
+      }
+
+      // Check file size (10MB limit)
+      const maxFileSize = 10 * 1024 * 1024; // 10MB
+      if (file.size > maxFileSize) {
+        toast({
+          title: "File too large",
+          description: "Maximum file size is 10MB.",
+          variant: "destructive"
+        });
+        setSelectedFile(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        return;
+      }
+
+      toast({
+        title: "File selected",
+        description: `${file.name} is ready to upload.`,
+      });
+    }
+  };
+
+  const handleFileUpload = async () => {
+    if (!selectedFile) return;
+    if (!hasAccess || !hasAcceptedTerms) return;
+
+    setIsUploading(true);
+
+    try {
+      // Get the session for authorization
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('No active session');
+      }
+
+      // Create form data
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      formData.append('message', inputMessage.trim() || `Uploaded file: ${selectedFile.name}`);
+
+      console.log('Uploading file:', selectedFile.name);
+
+      // Call the file upload edge function
+      const { data: uploadResponse, error: uploadError } = await supabase.functions.invoke('file-upload', {
+        body: formData,
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+
+      if (uploadError) {
+        throw new Error(uploadError.message || 'Upload failed');
+      }
+
+      console.log('Upload response:', uploadResponse);
+
+      // Add user message with attachment
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        content: uploadResponse.message.content,
+        sender: 'user',
+        timestamp: new Date(),
+        status: 'sent'
+      };
+
+      setMessages(prev => [...prev, userMessage]);
+
+      // Add AI response
+      if (uploadResponse.ai_response) {
+        const aynMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: uploadResponse.ai_response,
+          sender: 'ayn',
+          timestamp: new Date(),
+        };
+
+        setMessages(prev => [...prev, aynMessage]);
+      }
+
+      // Clear the file input and message
+      setSelectedFile(null);
+      setInputMessage('');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+
+      toast({
+        title: "File uploaded successfully",
+        description: `${selectedFile.name} has been processed.`,
+      });
+
+    } catch (error) {
+      console.error('File upload error:', error);
+      
+      toast({
+        title: "Upload failed",
+        description: error instanceof Error ? error.message : "Failed to upload file. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleAttachmentClick = () => {
+    if (!hasAccess || !hasAcceptedTerms) {
+      toast({
+        title: "Access Required",
+        description: "You need active access to upload files.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    fileInputRef.current?.click();
+  };
+
+  const removeSelectedFile = () => {
+    setSelectedFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleLoadChat = (chatHistory: ChatHistory) => {
@@ -687,15 +844,46 @@ export default function Dashboard({ user }: DashboardProps) {
 
               {/* Mobile-Style Floating Input Bar */}
               <div className="input-area">
+                {/* Selected File Preview */}
+                {selectedFile && (
+                  <div className="mb-2 p-3 bg-muted rounded-xl border flex items-center gap-3">
+                    <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                      <Paperclip className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{selectedFile.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    </div>
+                    <button
+                      onClick={removeSelectedFile}
+                      className="w-6 h-6 rounded-full bg-destructive/10 text-destructive hover:bg-destructive/20 flex items-center justify-center transition-colors"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                )}
+
                 <div className="input-container">
                   {/* Attachment Button */}
                   <button 
                     className="attachment-button"
-                    disabled={!hasAccess || !hasAcceptedTerms}
-                    title="Attach file (coming soon)"
+                    onClick={handleAttachmentClick}
+                    disabled={!hasAccess || !hasAcceptedTerms || isUploading}
+                    title="Attach PDF, Word doc, or image"
                   >
                     <Paperclip className="w-4 h-4" />
                   </button>
+                  
+                  {/* Hidden File Input */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp,.txt"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
                   
                   {/* Input Field */}
                   <div className="flex-1 relative">
@@ -709,11 +897,11 @@ export default function Dashboard({ user }: DashboardProps) {
                       onFocus={() => setIsInputFocused(true)}
                       onBlur={() => setIsInputFocused(false)}
                       placeholder=""
-                      disabled={!hasAccess || !hasAcceptedTerms || isTyping}
+                      disabled={!hasAccess || !hasAcceptedTerms || isTyping || isUploading}
                     />
                     
                     {/* Typewriter Animation Placeholder */}
-                    {!inputMessage && !isInputFocused && (
+                    {!inputMessage && !isInputFocused && !selectedFile && (
                       <div className="absolute inset-0 flex items-center pointer-events-none">
                         <span className="text-muted-foreground select-none typewriter-text">
                           {!hasAccess 
@@ -725,15 +913,28 @@ export default function Dashboard({ user }: DashboardProps) {
                         </span>
                       </div>
                     )}
+
+                    {/* File Upload Placeholder */}
+                    {selectedFile && !inputMessage && !isInputFocused && (
+                      <div className="absolute inset-0 flex items-center pointer-events-none">
+                        <span className="text-muted-foreground select-none">
+                          Add a message about this file (optional)...
+                        </span>
+                      </div>
+                    )}
                   </div>
                   
                   {/* Send Button */}
                   <button
                     className="send-button"
                     onClick={() => handleSendMessage()}
-                    disabled={!inputMessage.trim() || !hasAccess || !hasAcceptedTerms || isTyping}
+                    disabled={(!inputMessage.trim() && !selectedFile) || !hasAccess || !hasAcceptedTerms || isTyping || isUploading}
                   >
-                    <Send className="w-4 h-4" />
+                    {isUploading ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4" />
+                    )}
                   </button>
                 </div>
               </div>
