@@ -591,10 +591,8 @@ This will help me provide more targeted and valuable insights for your business.
                         ? 'bg-primary text-primary-foreground' 
                         : 'bg-card border border-border'
                     }`}>
-                      <div className="prose prose-sm max-w-none">
-                        <div className="whitespace-pre-wrap leading-relaxed">
-                          {message.content}
-                        </div>
+                      <div className="text-sm leading-relaxed">
+                        {message.content}
                       </div>
                       
                       <div className={`flex items-center justify-between mt-3 pt-3 border-t ${
