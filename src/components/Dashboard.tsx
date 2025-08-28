@@ -7,6 +7,20 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { 
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+} from '@/components/ui/sidebar';
 import { MaintenanceBanner } from '@/components/MaintenanceBanner';
 import { 
   Send, 
@@ -127,7 +141,6 @@ export default function Dashboard({ user }: DashboardProps) {
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [activeTab, setActiveTab] = useState<'chat' | 'admin'>('chat');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   // Maintenance mode state
   const [maintenanceConfig, setMaintenanceConfig] = useState({
@@ -581,7 +594,6 @@ export default function Dashboard({ user }: DashboardProps) {
 
   const handleLoadChat = (chatHistory: ChatHistory) => {
     setMessages(chatHistory.messages);
-    setIsSidebarOpen(false);
     toast({
       title: "Chat Loaded",
       description: `Loaded conversation: ${chatHistory.title}`,
@@ -600,139 +612,109 @@ export default function Dashboard({ user }: DashboardProps) {
   };
 
   return (
-    <div className="flex h-screen bg-background">
-      {/* Mobile Sidebar Overlay */}
-      {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
-      <div className={`
-        fixed lg:static inset-y-0 left-0 z-50 lg:z-0
-        w-72 lg:w-80 bg-card border-r border-border
-        transform transition-transform duration-300 ease-in-out
-        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-      `}>
-        <div className="flex flex-col h-full p-6">
-          {/* Mobile Close Button */}
-          <div className="lg:hidden flex justify-end mb-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsSidebarOpen(false)}
-            >
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
-
-          {/* User Profile */}
-          <div className="flex items-center gap-3 mb-6">
-            <Avatar className="w-12 h-12 ring-2 ring-primary/20">
-              <AvatarImage src="" />
-              <AvatarFallback className="bg-gradient-primary text-white font-semibold">
-                {user?.user_metadata?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold truncate">{user?.user_metadata?.name || 'User'}</p>
-              <p className="text-sm text-muted-foreground truncate">{user?.email}</p>
+    <SidebarProvider>
+      <div className="flex h-screen w-full bg-background">
+        {/* Sidebar */}
+        <Sidebar className="w-72 lg:w-80" collapsible="offcanvas">
+          <SidebarHeader className="p-6">
+            {/* User Profile */}
+            <div className="flex items-center gap-3">
+              <Avatar className="w-12 h-12 ring-2 ring-primary/20">
+                <AvatarImage src="" />
+                <AvatarFallback className="bg-gradient-primary text-white font-semibold">
+                  {user?.user_metadata?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold truncate">{user?.user_metadata?.name || 'User'}</p>
+                <p className="text-sm text-muted-foreground truncate">{user?.email}</p>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleLogout}
+                className="text-muted-foreground hover:text-foreground flex-shrink-0"
+              >
+                <LogOut className="w-4 h-4" />
+              </Button>
             </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={handleLogout}
-              className="text-muted-foreground hover:text-foreground flex-shrink-0"
-            >
-              <LogOut className="w-4 h-4" />
-            </Button>
-          </div>
 
-          {/* AYN Status */}
-          <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/10 border border-primary/20 mb-6">
-            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-              <Brain className="w-4 h-4 text-primary-foreground" />
+            {/* AYN Status */}
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/10 border border-primary/20 mt-4">
+              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                <Brain className="w-4 h-4 text-primary-foreground" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm">AYN AI Consultant</p>
+                <p className={`text-xs ${isTyping ? 'text-muted-foreground' : (hasAccess ? 'text-green-500 font-medium' : 'text-muted-foreground')}`}>
+                  {isTyping ? 'Thinking...' : (hasAccess ? 'Active' : 'Inactive')}
+                </p>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm">AYN AI Consultant</p>
-              <p className={`text-xs ${isTyping ? 'text-muted-foreground' : (hasAccess ? 'text-green-500 font-medium' : 'text-muted-foreground')}`}>
-                {isTyping ? 'Thinking...' : (hasAccess ? 'Active' : 'Inactive')}
-              </p>
-            </div>
-          </div>
+          </SidebarHeader>
 
-          {/* Quick Start */}
-          <div className="mb-6">
-            <h3 className="font-semibold text-sm mb-3 text-muted-foreground uppercase tracking-wide">
-              Quick Start
-            </h3>
-            <div className="space-y-2">
-              {templates.map((template) => (
-                <Button
-                  key={template.name}
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleSendMessage(template.prompt)}
-                  className="w-full justify-start h-auto p-3 text-left hover:bg-muted hover:text-foreground transition-colors duration-200"
-                  disabled={!hasAccess || !hasAcceptedTerms}
-                >
-                  <template.icon className={`w-4 h-4 mr-3 flex-shrink-0 ${template.color}`} />
-                  <span className="text-sm font-medium">{template.name}</span>
-                </Button>
-              ))}
-            </div>
-          </div>
+          <SidebarContent className="px-6">
+            {/* Quick Start */}
+            <SidebarGroup>
+              <SidebarGroupLabel>Quick Start</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {templates.map((template) => (
+                    <SidebarMenuItem key={template.name}>
+                      <SidebarMenuButton
+                        onClick={() => handleSendMessage(template.prompt)}
+                        className="h-auto p-3 text-left"
+                        disabled={!hasAccess || !hasAcceptedTerms}
+                      >
+                        <template.icon className={`w-4 h-4 mr-3 flex-shrink-0 ${template.color}`} />
+                        <span className="text-sm font-medium">{template.name}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
 
-          {/* Recent Chats */}
-          <div className="flex-1">
-            <h3 className="font-semibold text-sm mb-3 text-muted-foreground uppercase tracking-wide">
-              Recent Chats
-            </h3>
-            <div className="space-y-1">
-              {recentChats.map((chat, index) => (
-                <Button
-                  key={index}
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleLoadChat(chat)}
-                  className="w-full justify-start text-sm text-muted-foreground hover:text-foreground hover:bg-muted h-auto p-3 text-left transition-colors duration-200"
-                >
-                  <div className="min-w-0">
-                    <p className="font-medium truncate">{chat.title}</p>
-                    <p className="text-xs text-muted-foreground truncate">{chat.lastMessage}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {chat.timestamp.toLocaleDateString()}
-                    </p>
-                  </div>
-                </Button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
+            {/* Recent Chats */}
+            <SidebarGroup>
+              <SidebarGroupLabel>Recent Chats</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {recentChats.map((chat, index) => (
+                    <SidebarMenuItem key={index}>
+                      <SidebarMenuButton
+                        onClick={() => handleLoadChat(chat)}
+                        className="h-auto p-3 text-left"
+                      >
+                        <div className="min-w-0">
+                          <p className="font-medium truncate">{chat.title}</p>
+                          <p className="text-xs text-muted-foreground truncate">{chat.lastMessage}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {chat.timestamp.toLocaleDateString()}
+                          </p>
+                        </div>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </SidebarContent>
+        </Sidebar>
 
-      {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Header */}
-        <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 lg:px-6 flex-shrink-0">
-          <div className="flex items-center gap-3">
-            {/* Mobile Menu Button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsSidebarOpen(true)}
-              className="lg:hidden"
-            >
-              <Menu className="w-4 h-4" />
-            </Button>
-            
-            <div className="flex items-center gap-2">
-              <Brain className="w-6 h-6 text-primary" />
-              <h1 className="font-bold text-lg">AYN Business Console</h1>
+        {/* Main Chat Area */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Header */}
+          <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 lg:px-6 flex-shrink-0">
+            <div className="flex items-center gap-3">
+              {/* Mobile Menu Button */}
+              <SidebarTrigger className="lg:hidden" />
+              
+              <div className="flex items-center gap-2">
+                <Brain className="w-6 h-6 text-primary" />
+                <h1 className="font-bold text-lg">AYN Business Console</h1>
+              </div>
             </div>
-          </div>
 
           <div className="flex items-center gap-3">
 
@@ -857,7 +839,7 @@ export default function Dashboard({ user }: DashboardProps) {
 
               {/* Mobile-Style Floating Input Bar */}
               <div 
-                className={`input-area ${isSidebarOpen ? 'sidebar-open' : ''} ${messages.length > 1 ? 'bottom-position' : 'center-position'}`}
+                className={`input-area ${messages.length > 1 ? 'bottom-position' : 'center-position'}`}
                 onDragEnter={handleDragEnter}
                 onDragLeave={handleDragLeave}
                 onDragOver={handleDragOver}
@@ -1025,8 +1007,9 @@ export default function Dashboard({ user }: DashboardProps) {
               </div>
             </>
           )}
+          </div>
         </div>
       </div>
-    </div>
+    </SidebarProvider>
   );
 }
