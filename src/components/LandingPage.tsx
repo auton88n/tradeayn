@@ -87,39 +87,32 @@ const LandingPage = () => {
 
       {/* Hero Section */}
       <section className="relative py-20 overflow-hidden">
-        {/* Neural Network Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-background via-primary/5 to-background" />
+        {/* Glass Morphism Background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/10" />
         
-        {/* Neural Network Nodes */}
+        {/* Glass Elements */}
         <div className="absolute inset-0">
-          {/* Node 1 */}
-          <div className="absolute top-1/4 left-1/6 w-3 h-3 rounded-full bg-primary/60 animate-pulse" />
-          <div className="absolute top-1/4 left-1/6 w-6 h-6 rounded-full bg-primary/20 animate-ping" style={{ animationDelay: '0.5s' }} />
+          {/* Large Glass Orb */}
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-white/5 backdrop-blur-sm border border-white/10 animate-float" style={{ animationDuration: '6s' }} />
           
-          {/* Node 2 */}
-          <div className="absolute top-1/3 right-1/5 w-2 h-2 rounded-full bg-accent/60 animate-pulse" style={{ animationDelay: '1s' }} />
-          <div className="absolute top-1/3 right-1/5 w-4 h-4 rounded-full bg-accent/20 animate-ping" style={{ animationDelay: '1.5s' }} />
+          {/* Medium Glass Orb */}
+          <div className="absolute top-1/2 right-1/5 w-64 h-64 rounded-full bg-primary/10 backdrop-blur-md border border-primary/20 animate-float" style={{ animationDuration: '8s', animationDelay: '1s' }} />
           
-          {/* Node 3 */}
-          <div className="absolute bottom-1/3 left-1/4 w-4 h-4 rounded-full bg-primary/50 animate-pulse" style={{ animationDelay: '2s' }} />
-          <div className="absolute bottom-1/3 left-1/4 w-8 h-8 rounded-full bg-primary/15 animate-ping" style={{ animationDelay: '2.5s' }} />
+          {/* Small Glass Orb */}
+          <div className="absolute bottom-1/3 left-1/6 w-48 h-48 rounded-full bg-accent/8 backdrop-blur-lg border border-accent/15 animate-float" style={{ animationDuration: '7s', animationDelay: '2s' }} />
           
-          {/* Node 4 */}
-          <div className="absolute top-1/2 right-1/3 w-2 h-2 rounded-full bg-accent/70 animate-pulse" style={{ animationDelay: '0.8s' }} />
-          <div className="absolute top-1/2 right-1/3 w-5 h-5 rounded-full bg-accent/25 animate-ping" style={{ animationDelay: '1.3s' }} />
+          {/* Glass Cards */}
+          <div className="absolute top-1/3 right-1/4 w-32 h-24 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 rotate-12 animate-pulse" style={{ animationDuration: '4s' }} />
           
-          {/* Node 5 */}
-          <div className="absolute bottom-1/4 right-1/6 w-3 h-3 rounded-full bg-primary/60 animate-pulse" style={{ animationDelay: '1.5s' }} />
-          <div className="absolute bottom-1/4 right-1/6 w-6 h-6 rounded-full bg-primary/20 animate-ping" style={{ animationDelay: '2s' }} />
-          
-          {/* Connecting Lines - Using CSS gradients to simulate connections */}
-          <div className="absolute top-1/4 left-1/6 w-48 h-0.5 bg-gradient-to-r from-primary/30 via-transparent to-accent/30 transform rotate-12 animate-pulse" style={{ animationDelay: '3s' }} />
-          <div className="absolute top-1/3 right-1/5 w-64 h-0.5 bg-gradient-to-l from-accent/25 via-transparent to-primary/25 transform -rotate-45 animate-pulse" style={{ animationDelay: '3.5s' }} />
-          <div className="absolute bottom-1/3 left-1/4 w-56 h-0.5 bg-gradient-to-r from-primary/20 via-transparent to-accent/20 transform rotate-45 animate-pulse" style={{ animationDelay: '4s' }} />
+          <div className="absolute bottom-1/4 right-1/3 w-24 h-32 rounded-xl bg-primary/5 backdrop-blur-md border border-primary/15 -rotate-12 animate-pulse" style={{ animationDuration: '5s', animationDelay: '1s' }} />
         </div>
         
-        {/* Subtle overlay for depth */}
-        <div className="absolute inset-0 bg-gradient-to-t from-background/20 via-transparent to-background/20" />
+        {/* Frosted Glass Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-background/30 via-transparent to-background/30 backdrop-blur-[1px]" />
+        
+        {/* Subtle Light Rays */}
+        <div className="absolute top-0 left-1/2 w-px h-32 bg-gradient-to-b from-primary/30 to-transparent transform -translate-x-1/2 animate-pulse" style={{ animationDuration: '3s' }} />
+        <div className="absolute top-0 right-1/3 w-px h-24 bg-gradient-to-b from-accent/25 to-transparent animate-pulse" style={{ animationDuration: '4s', animationDelay: '1s' }} />
         
         <div className="container mx-auto px-6 relative z-10">
           <div className="text-center max-w-4xl mx-auto">
