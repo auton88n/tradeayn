@@ -89,6 +89,51 @@ export type Database = {
         }
         Relationships: []
       }
+      system_reports: {
+        Row: {
+          created_at: string
+          generated_at: string
+          id: string
+          issues: Json | null
+          issues_fixed: number
+          issues_requiring_attention: number
+          performance_metrics: Json | null
+          recommendations: string[] | null
+          report_data: Json | null
+          report_id: string
+          system_status: string
+          total_issues: number
+        }
+        Insert: {
+          created_at?: string
+          generated_at?: string
+          id?: string
+          issues?: Json | null
+          issues_fixed?: number
+          issues_requiring_attention?: number
+          performance_metrics?: Json | null
+          recommendations?: string[] | null
+          report_data?: Json | null
+          report_id: string
+          system_status: string
+          total_issues?: number
+        }
+        Update: {
+          created_at?: string
+          generated_at?: string
+          id?: string
+          issues?: Json | null
+          issues_fixed?: number
+          issues_requiring_attention?: number
+          performance_metrics?: Json | null
+          recommendations?: string[] | null
+          report_data?: Json | null
+          report_id?: string
+          system_status?: string
+          total_issues?: number
+        }
+        Relationships: []
+      }
       usage_logs: {
         Row: {
           action_type: string
@@ -145,6 +190,10 @@ export type Database = {
       check_usage_limit: {
         Args: { _user_id: string }
         Returns: boolean
+      }
+      cleanup_old_system_reports: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       get_usage_stats: {
         Args: { _user_id?: string }

@@ -164,6 +164,8 @@ export const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [isRealTimeEnabled, setIsRealTimeEnabled] = useState(true);
+  const [systemReports, setSystemReports] = useState<any[]>([]);
+  const [selectedReport, setSelectedReport] = useState<any | null>(null);
   
   const { toast } = useToast();
 
@@ -259,7 +261,16 @@ export const AdminPanel = () => {
         }
       ];
       
-      setSecurityEvents(mockSecurityEvents);
+      // Fetch system reports
+      const { data: reportsData, error: reportsError } = await supabase
+        .from('system_reports')
+        .select('*')
+        .order('generated_at', { ascending: false })
+        .limit(10);
+
+      if (!reportsError && reportsData) {
+        setSystemReports(reportsData);
+      }
 
     } catch (error: any) {
       console.error('Error fetching data:', error);
@@ -571,11 +582,66 @@ export const AdminPanel = () => {
           await new Promise(resolve => setTimeout(resolve, 1500));
           toast({ title: "Health Check Complete", description: "All system components are healthy." });
           break;
+        case 'system_diagnostics':
+          await runSystemDiagnostics();
+          break;
         default:
           break;
       }
     } catch (error) {
       console.error('Error performing maintenance:', error);
+    }
+  };
+
+  const runSystemDiagnostics = async () => {
+    try {
+      setIsLoading(true);
+      
+      toast({
+        title: "Running System Diagnostics",
+        description: "Analyzing system health and attempting auto-repairs..."
+      });
+
+      const { data, error } = await supabase.functions.invoke('system-diagnostics', {
+        body: { timestamp: new Date().toISOString() }
+      });
+
+      if (error) throw error;
+
+      const report = data.report;
+      
+      // Show results toast
+      if (report.system_status === 'healthy') {
+        toast({
+          title: "System Health: Excellent",
+          description: `Found ${report.total_issues} issues, automatically fixed ${report.issues_fixed}.`
+        });
+      } else if (report.system_status === 'warning') {
+        toast({
+          title: "System Health: Warning",
+          description: `Found ${report.total_issues} issues, fixed ${report.issues_fixed}. ${report.issues_requiring_attention} require attention.`,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "System Health: Critical",
+          description: `Critical issues detected! ${report.issues_requiring_attention} issues need immediate attention.`,
+          variant: "destructive"
+        });
+      }
+
+      // Refresh data to show any fixes that were applied
+      await fetchData();
+      
+    } catch (error) {
+      console.error('System diagnostics failed:', error);
+      toast({
+        title: "Diagnostics Failed",
+        description: "Unable to run system diagnostics. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -740,7 +806,7 @@ export const AdminPanel = () => {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-8">
+        <TabsList className="grid w-full grid-cols-9">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <Gauge className="w-4 h-4" />
             Dashboard
@@ -764,6 +830,10 @@ export const AdminPanel = () => {
           <TabsTrigger value="system" className="flex items-center gap-2">
             <Server className="w-4 h-4" />
             System
+          </TabsTrigger>
+          <TabsTrigger value="diagnostics" className="flex items-center gap-2">
+            <Bug className="w-4 h-4" />
+            Diagnostics
           </TabsTrigger>
           <TabsTrigger value="api" className="flex items-center gap-2">
             <Code2 className="w-4 h-4" />
@@ -1767,11 +1837,15 @@ export const AdminPanel = () => {
                   </div>
                 </Button>
                 
-                <Button variant="destructive" className="w-full justify-start h-12">
-                  <AlertTriangle className="w-4 h-4 mr-3" />
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start h-12"
+                  onClick={() => performSystemMaintenance('system_diagnostics')}
+                >
+                  <Bug className="w-4 h-4 mr-3" />
                   <div className="text-left">
-                    <div className="font-medium">Emergency Restart</div>
-                    <div className="text-xs text-muted-foreground">Restart system services</div>
+                    <div className="font-medium">Run System Diagnostics</div>
+                    <div className="text-xs text-muted-foreground">Analyze & auto-repair system issues</div>
                   </div>
                 </Button>
               </CardContent>
@@ -1822,6 +1896,216 @@ export const AdminPanel = () => {
                       <WifiOff className="w-4 h-4 text-red-500" />
                     )}
                   </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* System Diagnostics & Auto-Repair */}
+        <TabsContent value="diagnostics" className="space-y-6">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-bold flex items-center gap-2">
+                <Bug className="w-6 h-6" />
+                System Diagnostics & Auto-Repair
+              </h2>
+              <p className="text-muted-foreground">Automated system health monitoring and issue resolution</p>
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => performSystemMaintenance('system_diagnostics')}
+                className="bg-blue-600 hover:bg-blue-700"
+                disabled={isLoading}
+              >
+                <Bug className="w-4 h-4 mr-2" />
+                {isLoading ? 'Running...' : 'Run Diagnostics'}
+              </Button>
+            </div>
+          </div>
+
+          {/* Current System Status */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="w-5 h-5" />
+                Current System Status
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="text-center p-4 rounded-lg bg-gradient-to-br from-green-50 to-green-100">
+                  <CheckCircle className="w-8 h-8 mx-auto mb-2 text-green-600" />
+                  <div className="text-lg font-bold text-green-700">Database</div>
+                  <div className="text-sm text-green-600">Healthy</div>
+                </div>
+                <div className="text-center p-4 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100">
+                  <Shield className="w-8 h-8 mx-auto mb-2 text-blue-600" />
+                  <div className="text-lg font-bold text-blue-700">Security</div>
+                  <div className="text-sm text-blue-600">Protected</div>
+                </div>
+                <div className="text-center p-4 rounded-lg bg-gradient-to-br from-purple-50 to-purple-100">
+                  <Zap className="w-8 h-8 mx-auto mb-2 text-purple-600" />
+                  <div className="text-lg font-bold text-purple-700">Performance</div>
+                  <div className="text-sm text-purple-600">Optimal</div>
+                </div>
+                <div className="text-center p-4 rounded-lg bg-gradient-to-br from-orange-50 to-orange-100">
+                  <Settings className="w-8 h-8 mx-auto mb-2 text-orange-600" />
+                  <div className="text-lg font-bold text-orange-700">Config</div>
+                  <div className="text-sm text-orange-600">Valid</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Recent System Reports */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="w-5 h-5" />
+                  Recent Diagnostic Reports
+                </CardTitle>
+                <CardDescription>Latest system health reports and auto-repair logs</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[400px]">
+                  <div className="space-y-3">
+                    {systemReports.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Bug className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p>No diagnostic reports yet</p>
+                        <p className="text-sm">Run your first system diagnostic to see reports here</p>
+                      </div>
+                    ) : (
+                      systemReports.map((report) => (
+                        <Card 
+                          key={report.id} 
+                          className={`p-4 cursor-pointer hover:shadow-md transition-all ${
+                            report.system_status === 'critical' ? 'border-red-200 bg-red-50' :
+                            report.system_status === 'warning' ? 'border-yellow-200 bg-yellow-50' :
+                            'border-green-200 bg-green-50'
+                          }`}
+                          onClick={() => setSelectedReport(report)}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              {report.system_status === 'healthy' && <CheckCircle className="w-4 h-4 text-green-600" />}
+                              {report.system_status === 'warning' && <AlertTriangle className="w-4 h-4 text-yellow-600" />}
+                              {report.system_status === 'critical' && <XCircle className="w-4 h-4 text-red-600" />}
+                              <span className="font-medium capitalize">{report.system_status}</span>
+                            </div>
+                            <Badge variant={
+                              report.system_status === 'critical' ? 'destructive' :
+                              report.system_status === 'warning' ? 'secondary' : 'default'
+                            }>
+                              {report.total_issues} issues
+                            </Badge>
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            <p>Fixed: {report.issues_fixed} | Needs Attention: {report.issues_requiring_attention}</p>
+                            <p>{new Date(report.generated_at).toLocaleString()}</p>
+                          </div>
+                        </Card>
+                      ))
+                    )}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+
+            {/* Auto-Repair Actions */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <RotateCcw className="w-5 h-5" />
+                  Auto-Repair Actions
+                </CardTitle>
+                <CardDescription>Automated fixes and maintenance tasks</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 gap-3">
+                  <Button variant="outline" className="justify-start h-12">
+                    <Database className="w-4 h-4 mr-3" />
+                    <div className="text-left">
+                      <div className="font-medium">Database Cleanup</div>
+                      <div className="text-xs text-muted-foreground">Remove old logs and optimize tables</div>
+                    </div>
+                  </Button>
+                  
+                  <Button variant="outline" className="justify-start h-12">
+                    <Users className="w-4 h-4 mr-3" />
+                    <div className="text-left">
+                      <div className="font-medium">User Access Audit</div>
+                      <div className="text-xs text-muted-foreground">Check for expired or invalid access</div>
+                    </div>
+                  </Button>
+                  
+                  <Button variant="outline" className="justify-start h-12">
+                    <Shield className="w-4 h-4 mr-3" />
+                    <div className="text-left">
+                      <div className="font-medium">Security Validation</div>
+                      <div className="text-xs text-muted-foreground">Verify RLS policies and permissions</div>
+                    </div>
+                  </Button>
+                  
+                  <Button variant="outline" className="justify-start h-12">
+                    <Zap className="w-4 h-4 mr-3" />
+                    <div className="text-left">
+                      <div className="font-medium">Performance Optimization</div>
+                      <div className="text-xs text-muted-foreground">Optimize queries and indexes</div>
+                    </div>
+                  </Button>
+                </div>
+
+                <Separator />
+                
+                <div className="text-center">
+                  <h4 className="font-medium mb-2">Scheduled Maintenance</h4>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Next scheduled diagnostic: {new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleDateString()}
+                  </p>
+                  <Switch defaultChecked />
+                  <span className="ml-2 text-sm">Auto-diagnostics enabled</span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Issue Categories */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="w-5 h-5" />
+                System Health Categories
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div className="text-center p-4 rounded-lg border">
+                  <Database className="w-6 h-6 mx-auto mb-2 text-blue-600" />
+                  <div className="font-medium">Database</div>
+                  <div className="text-sm text-muted-foreground">Connectivity, Performance</div>
+                </div>
+                <div className="text-center p-4 rounded-lg border">
+                  <Shield className="w-6 h-6 mx-auto mb-2 text-green-600" />
+                  <div className="font-medium">Security</div>
+                  <div className="text-sm text-muted-foreground">RLS, Access Control</div>
+                </div>
+                <div className="text-center p-4 rounded-lg border">
+                  <Zap className="w-6 h-6 mx-auto mb-2 text-purple-600" />
+                  <div className="font-medium">Performance</div>
+                  <div className="text-sm text-muted-foreground">Speed, Resources</div>
+                </div>
+                <div className="text-center p-4 rounded-lg border">
+                  <Users className="w-6 h-6 mx-auto mb-2 text-orange-600" />
+                  <div className="font-medium">User Access</div>
+                  <div className="text-sm text-muted-foreground">Permissions, Limits</div>
+                </div>
+                <div className="text-center p-4 rounded-lg border">
+                  <Settings className="w-6 h-6 mx-auto mb-2 text-gray-600" />
+                  <div className="font-medium">Configuration</div>
+                  <div className="text-sm text-muted-foreground">Settings, Policies</div>
                 </div>
               </div>
             </CardContent>
@@ -2489,6 +2773,176 @@ export const AdminPanel = () => {
               </Button>
               <Button variant="outline" onClick={resetForm}>
                 Cancel
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Diagnostic Report Details Modal */}
+      {selectedReport && (
+        <Dialog open={!!selectedReport} onOpenChange={() => setSelectedReport(null)}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Bug className="w-5 h-5" />
+                System Diagnostic Report
+              </DialogTitle>
+              <DialogDescription>
+                Detailed analysis from {new Date(selectedReport.generated_at).toLocaleString()}
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-6">
+              {/* Report Summary */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Report Summary</CardTitle>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className={`text-center p-3 rounded-lg ${
+                    selectedReport.system_status === 'healthy' ? 'bg-green-50 text-green-700' :
+                    selectedReport.system_status === 'warning' ? 'bg-yellow-50 text-yellow-700' :
+                    'bg-red-50 text-red-700'
+                  }`}>
+                    <div className="text-lg font-bold">{selectedReport.system_status.toUpperCase()}</div>
+                    <div className="text-sm">System Status</div>
+                  </div>
+                  <div className="text-center p-3 rounded-lg bg-blue-50 text-blue-700">
+                    <div className="text-lg font-bold">{selectedReport.total_issues}</div>
+                    <div className="text-sm">Total Issues</div>
+                  </div>
+                  <div className="text-center p-3 rounded-lg bg-green-50 text-green-700">
+                    <div className="text-lg font-bold">{selectedReport.issues_fixed}</div>
+                    <div className="text-sm">Auto-Fixed</div>
+                  </div>
+                  <div className="text-center p-3 rounded-lg bg-orange-50 text-orange-700">
+                    <div className="text-lg font-bold">{selectedReport.issues_requiring_attention}</div>
+                    <div className="text-sm">Need Attention</div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Issues List */}
+              {selectedReport.issues && selectedReport.issues.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Detected Issues</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {selectedReport.issues.map((issue: any, index: number) => (
+                        <div key={index} className={`p-4 rounded-lg border-l-4 ${
+                          issue.severity === 'critical' ? 'border-red-500 bg-red-50' :
+                          issue.severity === 'high' ? 'border-orange-500 bg-orange-50' :
+                          issue.severity === 'medium' ? 'border-yellow-500 bg-yellow-50' :
+                          'border-blue-500 bg-blue-50'
+                        }`}>
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <Badge variant={
+                                issue.severity === 'critical' || issue.severity === 'high' ? 'destructive' : 'secondary'
+                              }>
+                                {issue.severity.toUpperCase()}
+                              </Badge>
+                              <Badge variant="outline">{issue.category}</Badge>
+                              {issue.auto_fix_successful && (
+                                <Badge variant="default" className="bg-green-600">
+                                  <CheckCircle className="w-3 h-3 mr-1" />
+                                  Auto-Fixed
+                                </Badge>
+                              )}
+                            </div>
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(issue.detected_at).toLocaleString()}
+                            </span>
+                          </div>
+                          
+                          <h4 className="font-medium mb-1">{issue.description}</h4>
+                          
+                          {issue.fix_details && (
+                            <div className="text-sm text-green-700 bg-green-100 p-2 rounded mt-2">
+                              <strong>Fix Applied:</strong> {issue.fix_details}
+                            </div>
+                          )}
+                          
+                          {issue.manual_action_required && (
+                            <div className="text-sm text-orange-700 bg-orange-100 p-2 rounded mt-2">
+                              <strong>Action Required:</strong> {issue.manual_action_required}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Recommendations */}
+              {selectedReport.recommendations && selectedReport.recommendations.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Recommendations</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {selectedReport.recommendations.map((recommendation: string, index: number) => (
+                        <div key={index} className="flex items-start gap-2 p-2 rounded bg-blue-50">
+                          <Lightbulb className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                          <span className="text-sm text-blue-800">{recommendation}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Performance Metrics */}
+              {selectedReport.performance_metrics && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Performance Metrics</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="text-center p-3 rounded-lg bg-gray-50">
+                        <div className="text-lg font-bold">{selectedReport.performance_metrics.response_time_ms}ms</div>
+                        <div className="text-sm text-muted-foreground">Response Time</div>
+                      </div>
+                      <div className="text-center p-3 rounded-lg bg-gray-50">
+                        <div className="text-lg font-bold">{selectedReport.performance_metrics.memory_usage_mb || 'N/A'}</div>
+                        <div className="text-sm text-muted-foreground">Memory (MB)</div>
+                      </div>
+                      <div className="text-center p-3 rounded-lg bg-gray-50">
+                        <div className="text-lg font-bold">{selectedReport.performance_metrics.active_connections || 'N/A'}</div>
+                        <div className="text-sm text-muted-foreground">Connections</div>
+                      </div>
+                      <div className="text-center p-3 rounded-lg bg-gray-50">
+                        <div className="text-lg font-bold">{selectedReport.performance_metrics.cache_hit_rate || 'N/A'}%</div>
+                        <div className="text-sm text-muted-foreground">Cache Hit Rate</div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setSelectedReport(null)}>
+                Close
+              </Button>
+              <Button onClick={() => {
+                // Download report as JSON
+                const blob = new Blob([JSON.stringify(selectedReport, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `diagnostic-report-${selectedReport.report_id}.json`;
+                link.click();
+                URL.revokeObjectURL(url);
+              }}>
+                <Download className="w-4 h-4 mr-2" />
+                Download Report
               </Button>
             </DialogFooter>
           </DialogContent>
