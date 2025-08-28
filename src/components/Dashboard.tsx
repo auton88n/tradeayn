@@ -559,10 +559,6 @@ export default function Dashboard({ user }: DashboardProps) {
             )}
 
             <ThemeToggle />
-            
-            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground transition-colors duration-200">
-              <Settings className="w-4 h-4" />
-            </Button>
           </div>
         </header>
 
