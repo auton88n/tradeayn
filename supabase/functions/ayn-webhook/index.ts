@@ -5,117 +5,202 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+interface WebhookRequest {
+  message?: string;
+  userId?: string;
+}
+
+interface WebhookResponse {
+  response: string;
+  status: 'success' | 'error' | 'upstream_error';
+  upstream?: {
+    status: number;
+    contentType: string;
+  };
+  error?: string;
+}
+
+// Enhanced text processing utilities
+const textProcessor = {
+  // Extract content from various object structures
+  extractContent(obj: any): string | undefined {
+    if (!obj || typeof obj !== 'object') return undefined;
+    
+    const contentFields = ['output', 'response', 'message', 'content', 'text', 'data'];
+    for (const field of contentFields) {
+      if (obj[field] && typeof obj[field] === 'string') {
+        return obj[field];
+      }
+    }
+    return undefined;
+  },
+
+  // Parse NDJSON (newline-delimited JSON)
+  parseNDJSON(text: string): any[] {
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+    const items: any[] = [];
+    
+    for (const line of lines) {
+      try {
+        const parsed = JSON.parse(line);
+        items.push(parsed);
+      } catch {
+        // Skip invalid JSON lines
+      }
+    }
+    return items;
+  },
+
+  // Clean and normalize text
+  normalizeText(text: string): string {
+    if (!text) return '';
+    
+    return text
+      // Replace multiple newlines with single spaces
+      .replace(/\n+/g, ' ')
+      // Replace multiple spaces/tabs with single space
+      .replace(/[\s\t]+/g, ' ')
+      // Remove leading/trailing whitespace
+      .trim()
+      // Ensure proper sentence spacing
+      .replace(/([.!?])\s+/g, '$1 ')
+      // Fix common formatting issues
+      .replace(/\s+([,.!?;:])/g, '$1');
+  },
+
+  // Process raw response into clean text
+  processResponse(rawText: string, contentType: string): string {
+    let normalized = '';
+
+    // Try single JSON first
+    if (contentType.includes('application/json') || rawText.trim().startsWith('{')) {
+      try {
+        const parsed = JSON.parse(rawText);
+        const content = this.extractContent(parsed);
+        if (content) {
+          normalized = content;
+        }
+      } catch {
+        // Not single JSON, continue to NDJSON parsing
+      }
+    }
+
+    // If no single JSON content found, try NDJSON
+    if (!normalized && rawText.includes('\n')) {
+      const ndjsonItems = this.parseNDJSON(rawText);
+      if (ndjsonItems.length > 0) {
+        const contents = ndjsonItems
+          .map(item => this.extractContent(item))
+          .filter(Boolean) as string[];
+        
+        if (contents.length > 0) {
+          normalized = contents.join(' ');
+        }
+      }
+    }
+
+    // Fallback to raw text
+    if (!normalized) {
+      normalized = rawText;
+    }
+
+    return this.normalizeText(normalized);
+  }
+};
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
-  try {
-    let message: string | undefined;
-    let userId: string | undefined;
+  const requestId = crypto.randomUUID().slice(0, 8);
+  console.log(`[${requestId}] Processing webhook request`);
 
+  try {
+    // Parse request body
+    let requestData: WebhookRequest = {};
+    
     try {
       const body = await req.json();
-      message = body?.message;
-      userId = body?.userId;
+      requestData = {
+        message: body?.message || '',
+        userId: body?.userId || ''
+      };
     } catch (e) {
-      console.warn('Request body was not valid JSON, proceeding with empty values.');
+      console.warn(`[${requestId}] Request body was not valid JSON, using defaults`);
     }
 
-    console.log('Calling AYN webhook with message:', message);
+    console.log(`[${requestId}] Request data:`, {
+      message: requestData.message?.slice(0, 100) + (requestData.message?.length > 100 ? '...' : ''),
+      userId: requestData.userId
+    });
 
-    // Call the webhook
-    const upstream = await fetch('https://n8n.srv846714.hstgr.cloud/webhook/d8453419-8880-4bc4-b351-a0d0376b1fce', {
+    // Call upstream webhook
+    const upstreamUrl = 'https://n8n.srv846714.hstgr.cloud/webhook/d8453419-8880-4bc4-b351-a0d0376b1fce';
+    
+    const upstream = await fetch(upstreamUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        message: message ?? '',
-        userId: userId ?? '',
-        timestamp: new Date().toISOString()
+        message: requestData.message,
+        userId: requestData.userId,
+        timestamp: new Date().toISOString(),
+        requestId
       }),
     });
 
     const contentType = upstream.headers.get('content-type') || '';
     const rawText = await upstream.text();
 
-    // Robust parsing: handle JSON, NDJSON (newline-delimited JSON), or plain text
-    let parsed: any = null;
-    let ndjsonItems: any[] = [];
+    console.log(`[${requestId}] Upstream response:`, {
+      status: upstream.status,
+      contentType,
+      bodyLength: rawText.length,
+      bodyPreview: rawText.slice(0, 200) + (rawText.length > 200 ? '...' : '')
+    });
 
-    // Try parse as single JSON first when appropriate
-    if (rawText) {
-      try {
-        if (contentType.includes('application/json') || rawText.trim().startsWith('{')) {
-          parsed = JSON.parse(rawText);
-        }
-      } catch {
-        // Not a single JSON object
+    // Process the response
+    const processedText = textProcessor.processResponse(rawText, contentType);
+    
+    console.log(`[${requestId}] Text processing:`, {
+      original: rawText.slice(0, 100),
+      processed: processedText.slice(0, 100),
+      lengthChange: `${rawText.length} -> ${processedText.length}`
+    });
+
+    // Prepare response
+    const response: WebhookResponse = {
+      response: processedText || 'I received your message but got an empty response. Please try again.',
+      status: upstream.ok ? 'success' : 'upstream_error',
+      upstream: {
+        status: upstream.status,
+        contentType
       }
-    }
-
-    // If not single JSON, try NDJSON
-    if (!parsed && rawText && rawText.includes('\n')) {
-      const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
-      for (const line of lines) {
-        try {
-          const obj = JSON.parse(line);
-          ndjsonItems.push(obj);
-        } catch {
-          // Ignore non-JSON lines
-        }
-      }
-    }
-
-    const pickContent = (obj: any): string | undefined => {
-      if (!obj || typeof obj !== 'object') return undefined;
-      return obj.output ?? obj.response ?? obj.message ?? obj.content ?? undefined;
     };
 
-    let normalized = '';
-    if (parsed) {
-      normalized = String(pickContent(parsed) ?? rawText).trim();
-    } else if (ndjsonItems.length) {
-      const contents = ndjsonItems.map(pickContent).filter(Boolean) as string[];
-      normalized = (contents.length ? contents.join(' ') : rawText).toString().trim();
-    } else {
-      normalized = (rawText || '').toString().trim();
+    if (!upstream.ok) {
+      response.error = `Upstream returned ${upstream.status}: ${processedText || 'No response body'}`;
     }
-    
-    // Clean up excessive newlines and whitespace
-    console.log('Before cleaning:', JSON.stringify(normalized));
-    normalized = normalized.replace(/\n+/g, ' ').replace(/\s+/g, ' ').trim();
-    console.log('After cleaning:', JSON.stringify(normalized));
 
-    console.log('Upstream status:', upstream.status, 'content-type:', contentType);
-    console.log('Upstream body (first 200 chars):', (rawText || '').slice(0, 200));
+    console.log(`[${requestId}] Final response prepared, length: ${response.response.length}`);
 
-    if (upstream.ok) {
-      return new Response(JSON.stringify({
-        response: normalized || 'Received empty response from webhook.',
-        status: 'success',
-        upstream: { status: upstream.status, contentType }
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    } else {
-      // Do not fail hard; surface the upstream error to the client while keeping 200 to avoid UI crash
-      return new Response(JSON.stringify({
-        response: `Upstream webhook error (${upstream.status}). ${normalized || 'No response body.'}`,
-        status: 'upstream_error',
-        upstream: { status: upstream.status, contentType }
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    return new Response(JSON.stringify(response), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+
   } catch (error) {
-    console.error('Error calling AYN webhook:', error);
-    return new Response(JSON.stringify({
-      error: error instanceof Error ? error.message : String(error),
-      status: 'error'
-    }), {
+    console.error(`[${requestId}] Error processing webhook:`, error);
+    
+    const errorResponse: WebhookResponse = {
+      response: 'I encountered an error while processing your request. Please try again.',
+      status: 'error',
+      error: error instanceof Error ? error.message : String(error)
+    };
+
+    return new Response(JSON.stringify(errorResponse), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

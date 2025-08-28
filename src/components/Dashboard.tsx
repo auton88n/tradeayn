@@ -253,13 +253,10 @@ const Dashboard = ({ user }: DashboardProps) => {
       setIsTyping(false);
 
       if (webhookError) {
-        console.error('Webhook error:', webhookError);
         throw new Error(webhookError.message || 'Webhook call failed');
       }
 
-      console.log('Webhook response received:', webhookResponse);
       const response = webhookResponse?.response || 'I received your message and I\'m processing it. Please try again if you don\'t see a proper response.';
-      console.log('Using response:', response);
 
       const aynMessage: Message = {
         id: (Date.now() + 1).toString(),
