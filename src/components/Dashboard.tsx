@@ -666,6 +666,10 @@ export default function Dashboard({ user }: DashboardProps) {
                 {isTyping ? 'Thinking...' : 'Ready to help'}
               </p>
             </div>
+            <Badge variant={hasAccess ? "default" : "secondary"} className="ml-2">
+              <div className={`w-2 h-2 rounded-full mr-2 ${hasAccess ? 'bg-green-500' : 'bg-gray-400'}`} />
+              {hasAccess ? 'Active' : 'Inactive'}
+            </Badge>
           </div>
 
           {/* Quick Start */}
@@ -740,11 +744,6 @@ export default function Dashboard({ user }: DashboardProps) {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Access Status Badge */}
-            <Badge variant={hasAccess ? "default" : "secondary"} className="hidden sm:inline-flex">
-              <div className={`w-2 h-2 rounded-full mr-2 ${hasAccess ? 'bg-green-500' : 'bg-gray-400'}`} />
-              {hasAccess ? 'Active' : 'Inactive'}
-            </Badge>
 
             {/* Admin Tab Switcher */}
             {isAdmin && (
