@@ -530,7 +530,7 @@ Please provide more details about your specific goals, timeline, and success cri
                         ? 'bg-primary text-primary-foreground' 
                         : 'bg-card border border-border'
                     }`}>
-                      <div className="text-sm leading-normal whitespace-pre-line">
+                      <div className="text-sm leading-normal whitespace-normal">
                         {message.content}
                       </div>
                       
