@@ -794,11 +794,20 @@ export default function Dashboard({ user }: DashboardProps) {
                            ? 'bg-primary text-primary-foreground' 
                            : 'bg-muted text-foreground'
                        }`}>
-                          <div className="text-sm leading-relaxed whitespace-pre-wrap break-words transition-all duration-200 hover:scale-[1.01] cursor-default select-text">
-                            <span className={`inline-block ${message.sender === 'user' ? 'text-primary-foreground/90' : 'text-foreground/90'} hover:${message.sender === 'user' ? 'text-primary-foreground' : 'text-foreground'} transition-colors duration-200`}>
-                              {message.content}
-                            </span>
-                          </div>
+                           <div className="text-sm leading-relaxed whitespace-pre-wrap break-words group cursor-default select-text">
+                             <span className={`inline-block transition-all duration-300 hover:tracking-wide ${
+                               message.sender === 'user' 
+                                 ? 'text-primary-foreground hover:text-white hover:drop-shadow-sm' 
+                                 : 'text-foreground hover:text-primary hover:drop-shadow-sm'
+                             } group-hover:scale-[1.02] transform-gpu`}>
+                               {message.content.split('\n').map((line, index, array) => (
+                                 <span key={index} className="block hover:bg-primary/5 hover:px-1 hover:py-0.5 hover:rounded transition-all duration-200">
+                                   {line}
+                                   {index < array.length - 1 && <br />}
+                                 </span>
+                               ))}
+                             </span>
+                           </div>
                          {message.attachment && (
                            <div className="mt-2 p-2 bg-muted/50 rounded-lg flex items-center gap-2">
                              <Paperclip className="w-3 h-3" />
@@ -960,7 +969,7 @@ export default function Dashboard({ user }: DashboardProps) {
                       onFocus={() => setIsInputFocused(true)}
                       onBlur={() => setIsInputFocused(false)}
                       placeholder=""
-                      disabled={!hasAccess || !hasAcceptedTerms || isTyping || isUploading}
+                      disabled={!hasAccess || !hasAcceptedTerms || isUploading}
                     />
                     
                     {/* File Selected Indicator */}
