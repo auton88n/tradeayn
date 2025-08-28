@@ -50,7 +50,7 @@ serve(async (req) => {
       }
     }
 
-    const normalized = (parsed?.response || parsed?.message || rawText || '').toString().trim();
+    const normalized = (parsed?.output || parsed?.response || parsed?.message || rawText || '').toString().trim();
 
     console.log('Upstream status:', upstream.status, 'content-type:', contentType);
     console.log('Upstream body (first 200 chars):', (rawText || '').slice(0, 200));
