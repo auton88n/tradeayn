@@ -87,23 +87,39 @@ const LandingPage = () => {
 
       {/* Hero Section */}
       <section className="relative py-20 overflow-hidden">
-        {/* Modern Gradient Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/5" />
+        {/* Neural Network Background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-background via-primary/5 to-background" />
         
-        {/* Geometric Elements */}
+        {/* Neural Network Nodes */}
         <div className="absolute inset-0">
-          <div className="absolute top-1/4 left-1/4 w-32 h-32 rounded-full bg-gradient-to-r from-primary/10 to-transparent blur-xl animate-pulse" />
-          <div className="absolute top-3/4 right-1/4 w-48 h-48 rounded-full bg-gradient-to-l from-accent/10 to-transparent blur-xl animate-pulse" style={{ animationDelay: '1s' }} />
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full bg-gradient-to-r from-primary/5 to-accent/5 blur-2xl animate-pulse" style={{ animationDelay: '2s' }} />
+          {/* Node 1 */}
+          <div className="absolute top-1/4 left-1/6 w-3 h-3 rounded-full bg-primary/60 animate-pulse" />
+          <div className="absolute top-1/4 left-1/6 w-6 h-6 rounded-full bg-primary/20 animate-ping" style={{ animationDelay: '0.5s' }} />
+          
+          {/* Node 2 */}
+          <div className="absolute top-1/3 right-1/5 w-2 h-2 rounded-full bg-accent/60 animate-pulse" style={{ animationDelay: '1s' }} />
+          <div className="absolute top-1/3 right-1/5 w-4 h-4 rounded-full bg-accent/20 animate-ping" style={{ animationDelay: '1.5s' }} />
+          
+          {/* Node 3 */}
+          <div className="absolute bottom-1/3 left-1/4 w-4 h-4 rounded-full bg-primary/50 animate-pulse" style={{ animationDelay: '2s' }} />
+          <div className="absolute bottom-1/3 left-1/4 w-8 h-8 rounded-full bg-primary/15 animate-ping" style={{ animationDelay: '2.5s' }} />
+          
+          {/* Node 4 */}
+          <div className="absolute top-1/2 right-1/3 w-2 h-2 rounded-full bg-accent/70 animate-pulse" style={{ animationDelay: '0.8s' }} />
+          <div className="absolute top-1/2 right-1/3 w-5 h-5 rounded-full bg-accent/25 animate-ping" style={{ animationDelay: '1.3s' }} />
+          
+          {/* Node 5 */}
+          <div className="absolute bottom-1/4 right-1/6 w-3 h-3 rounded-full bg-primary/60 animate-pulse" style={{ animationDelay: '1.5s' }} />
+          <div className="absolute bottom-1/4 right-1/6 w-6 h-6 rounded-full bg-primary/20 animate-ping" style={{ animationDelay: '2s' }} />
+          
+          {/* Connecting Lines - Using CSS gradients to simulate connections */}
+          <div className="absolute top-1/4 left-1/6 w-48 h-0.5 bg-gradient-to-r from-primary/30 via-transparent to-accent/30 transform rotate-12 animate-pulse" style={{ animationDelay: '3s' }} />
+          <div className="absolute top-1/3 right-1/5 w-64 h-0.5 bg-gradient-to-l from-accent/25 via-transparent to-primary/25 transform -rotate-45 animate-pulse" style={{ animationDelay: '3.5s' }} />
+          <div className="absolute bottom-1/3 left-1/4 w-56 h-0.5 bg-gradient-to-r from-primary/20 via-transparent to-accent/20 transform rotate-45 animate-pulse" style={{ animationDelay: '4s' }} />
         </div>
         
-        {/* Subtle Grid Pattern */}
-        <div className="absolute inset-0 opacity-30">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `radial-gradient(circle at 1px 1px, hsl(var(--primary)) 1px, transparent 0)`,
-            backgroundSize: '40px 40px'
-          }} />
-        </div>
+        {/* Subtle overlay for depth */}
+        <div className="absolute inset-0 bg-gradient-to-t from-background/20 via-transparent to-background/20" />
         
         <div className="container mx-auto px-6 relative z-10">
           <div className="text-center max-w-4xl mx-auto">
