@@ -429,7 +429,7 @@ This will help me provide more targeted and valuable insights for your business.
       <div className="flex min-h-screen w-full">
         {/* Sidebar */}
         <Sidebar className="w-80 bg-card border-r border-border">
-          <SidebarContent className="p-6">
+          <SidebarContent className="p-8">
             {/* User Profile */}
             <div className="flex items-center gap-3 mb-8">
               <Avatar className="w-12 h-12 ring-2 ring-primary/20">
@@ -453,7 +453,7 @@ This will help me provide more targeted and valuable insights for your business.
             </div>
 
             {/* AYN Status */}
-            <Card className="p-4 mb-6 bg-card border border-border">
+            <Card className="p-6 mb-8 bg-card border border-border">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full brain-container flex items-center justify-center">
                   <Brain className="w-4 h-4 text-primary-foreground" />
@@ -473,9 +473,9 @@ This will help me provide more targeted and valuable insights for your business.
             </Card>
 
             {/* Quick Templates */}
-            <div className="mb-6">
+            <div className="mb-8">
               <h3 className="font-semibold mb-3 text-sm uppercase tracking-wide">Quick Start</h3>
-              <div className="space-y-2">
+                <div className="space-y-3">
                 {templates.map((template, index) => (
                   <Button
                     key={index}
@@ -541,7 +541,7 @@ This will help me provide more targeted and valuable insights for your business.
           </header>
 
           {/* Messages */}
-          <ScrollArea className="flex-1 p-6">
+          <ScrollArea className="flex-1 p-8">
             {/* Terms Modal */}
             <TermsModal 
               open={hasAccess && !hasAcceptedTerms} 
@@ -578,7 +578,7 @@ This will help me provide more targeted and valuable insights for your business.
 
             {/* Chat Interface - only show if not admin panel */}
             {(activeTab === 'chat' || !isAdmin) && (
-              <div className="max-w-4xl mx-auto space-y-6">
+              <div className="max-w-4xl mx-auto space-y-8">
                 {messages.map((message) => (
                   <div
                     key={message.id}
