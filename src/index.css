@@ -292,39 +292,58 @@
     height: 60%;
   }
 
-  /* Professional AYN Interface Layout */
+  /* Hidden Sidebar Layout with Professional Styling */
   .main-layout {
     display: flex;
     height: 100vh;
     background: #f9fafb;
   }
 
-  /* Fixed Sidebar Design */
+  /* Hidden Sidebar Design */
   .sidebar {
-    position: static !important;
-    left: auto !important;
-    width: 320px;
+    position: fixed !important;
+    left: -350px; /* Hidden by default */
+    top: 0;
+    width: 350px;
     height: 100vh;
     background: white;
     border-right: 1px solid #e5e7eb;
     display: flex;
     flex-direction: column;
-    transition: none;
-    z-index: auto;
-    transform: none !important;
+    transition: left 0.3s ease;
+    z-index: 1000;
+    overflow-y: auto;
+  }
+
+  .sidebar.open {
+    left: 0; /* Slide in when opened */
   }
 
   .main-content {
     flex: 1;
+    width: 100%;
     display: flex;
     flex-direction: column;
     background: white;
-    overflow: hidden;
   }
 
-  /* Remove overlay - not needed for fixed sidebar */
+  /* Sidebar Overlay */
   .sidebar-overlay {
-    display: none !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+  }
+
+  .sidebar-overlay.active {
+    opacity: 1;
+    visibility: visible;
   }
 
   /* User Profile Section */
@@ -431,7 +450,7 @@
     color: #9ca3af;
   }
 
-  /* Header Design */
+  /* Header with Hamburger Menu */
   .header {
     background: white;
     border-bottom: 1px solid #e5e7eb;
@@ -439,6 +458,20 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+  }
+
+  .hamburger-button {
+    background: none;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.2s ease;
+    margin-right: 16px;
+  }
+
+  .hamburger-button:hover {
+    background: #f3f4f6;
   }
 
   .header-left {
@@ -545,10 +578,15 @@
     color: #6b7280;
   }
 
-  /* Input Area */
+  /* Input Area - Centered for hidden sidebar */
   .input-area {
-    padding: 24px;
-    background: white;
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 48px);
+    max-width: 700px;
+    z-index: 100;
   }
 
   .input-container {

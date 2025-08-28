@@ -122,6 +122,7 @@ export default function Dashboard({ user }: DashboardProps) {
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [activeTab, setActiveTab] = useState<'chat' | 'admin'>('chat');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   // Maintenance mode state
   const [maintenanceConfig, setMaintenanceConfig] = useState({
@@ -435,10 +436,35 @@ export default function Dashboard({ user }: DashboardProps) {
     }
   };
 
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+
+  const handleCloseSidebar = () => {
+    setIsSidebarOpen(false);
+  };
+
   return (
     <div className="main-layout">
-      {/* Fixed Sidebar */}
-      <div className="sidebar">
+      {/* Sidebar Overlay */}
+      <div 
+        className={`sidebar-overlay ${isSidebarOpen ? 'active' : ''}`}
+        onClick={handleCloseSidebar}
+      />
+
+      {/* Hidden Sidebar */}
+      <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
+        {/* Close Button */}
+        <div className="flex justify-between items-center mb-4 px-6 pt-4">
+          <h2 className="text-lg font-semibold text-gray-900">Menu</h2>
+          <button 
+            className="hamburger-button"
+            onClick={handleCloseSidebar}
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
         {/* User Profile Section */}
         <div className="user-profile-section">
           <div className="flex items-center gap-3 mb-4">
@@ -483,7 +509,10 @@ export default function Dashboard({ user }: DashboardProps) {
               <div 
                 key={index} 
                 className="quick-start-item"
-                onClick={() => handleSendMessage(template.prompt)}
+                onClick={() => {
+                  handleSendMessage(template.prompt);
+                  handleCloseSidebar();
+                }}
               >
                 <template.icon className={`w-4 h-4 ${template.color}`} />
                 <span className="text-gray-700 text-sm">{template.name}</span>
@@ -500,7 +529,10 @@ export default function Dashboard({ user }: DashboardProps) {
               <div 
                 key={index} 
                 className="recent-chat-item"
-                onClick={() => handleLoadChat(chat)}
+                onClick={() => {
+                  handleLoadChat(chat);
+                  handleCloseSidebar();
+                }}
               >
                 <div className="chat-title">{chat.title}</div>
                 <div className="chat-preview">{chat.lastMessage}</div>
@@ -516,6 +548,12 @@ export default function Dashboard({ user }: DashboardProps) {
         {/* Header */}
         <header className="header">
           <div className="header-left">
+            <button 
+              className="hamburger-button"
+              onClick={toggleSidebar}
+            >
+              <Menu className="w-5 h-5" />
+            </button>
             <div className="header-brain-icon">
               <img src="/lovable-uploads/636eb1d6-bee9-4ea8-a6bf-748bd267d05f.png" alt="Brain" width="16" height="16" />
             </div>
