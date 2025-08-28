@@ -619,10 +619,10 @@ export default function Dashboard({ user }: DashboardProps) {
                   <div key={message.id} className="message-bubble">
                     {message.sender === 'ayn' ? (
                       <>
-                        <div className="message-header">
-                          <div className="avatar">
-                            <Brain className="w-4 h-4" />
-                          </div>
+                         <div className="message-header">
+                           <div className="ayn-message-avatar">
+                             <Brain className="w-4 h-4" />
+                           </div>
                           <div>
                             <div className="font-semibold text-gray-900 text-sm">AYN AI Consultant</div>
                             <div className="text-xs text-gray-500">
@@ -687,10 +687,10 @@ export default function Dashboard({ user }: DashboardProps) {
                 {/* Typing Indicator */}
                 {isTyping && (
                   <div className="message-bubble">
-                    <div className="message-header">
-                      <div className="avatar">
-                        <Brain className="w-4 h-4" />
-                      </div>
+                     <div className="message-header">
+                       <div className="ayn-message-avatar">
+                         <Brain className="w-4 h-4" />
+                       </div>
                       <div>
                         <div className="font-semibold text-gray-900 text-sm">AYN AI Consultant</div>
                         <div className="text-xs text-gray-500">typing...</div>

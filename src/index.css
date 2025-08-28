@@ -349,8 +349,8 @@
 
   /* AYN Avatar - Black Design */
   .ayn-avatar {
-    background: #000000;
-    color: white;
+    background: #000000 !important;
+    color: white !important;
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -359,6 +359,19 @@
     justify-content: center;
     font-weight: 700;
     font-size: 16px;
+  }
+
+  /* AYN Message Avatar - Black Design */
+  .ayn-message-avatar {
+    background: #000000 !important;
+    color: white !important;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
   }
 
   /* User Avatar - Keep Blue */
@@ -373,6 +386,26 @@
     justify-content: center;
     font-weight: 600;
     font-size: 16px;
+  }
+
+  /* All AYN logo instances */
+  .ayn-avatar, 
+  .ayn-message-avatar,
+  .ayn-consultant-avatar,
+  .brain-logo,
+  .ayn-header-logo {
+    background: #000000 !important;
+    color: white !important;
+  }
+
+  .ayn-avatar svg,
+  .ayn-message-avatar svg,
+  .ayn-consultant-avatar svg,
+  .brain-logo svg,
+  .ayn-header-logo svg {
+    color: white !important;
+    fill: white !important;
+    stroke: white !important;
   }
 
   .message-content {
