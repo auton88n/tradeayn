@@ -115,6 +115,9 @@ interface SystemConfig {
   maxConcurrentSessions: number;
   rateLimitPerMinute: number;
   enableMaintenance: boolean;
+  maintenanceMessage: string;
+  maintenanceStartTime: string;
+  maintenanceEndTime: string;
   notificationEmail: string;
 }
 
@@ -134,6 +137,9 @@ export const AdminPanel = () => {
     maxConcurrentSessions: 5,
     rateLimitPerMinute: 60,
     enableMaintenance: false,
+    maintenanceMessage: 'System is currently under maintenance. We apologize for any inconvenience.',
+    maintenanceStartTime: '',
+    maintenanceEndTime: '',
     notificationEmail: ''
   });
   
@@ -554,7 +560,17 @@ export const AdminPanel = () => {
   // Configuration management
   const updateSystemConfig = async (newConfig: Partial<SystemConfig>) => {
     try {
-      setSystemConfig(prev => ({ ...prev, ...newConfig }));
+      const updatedConfig = { ...systemConfig, ...newConfig };
+      setSystemConfig(updatedConfig);
+      
+      // Save maintenance config to localStorage for dashboard access
+      const maintenanceConfig = {
+        enableMaintenance: updatedConfig.enableMaintenance,
+        maintenanceMessage: updatedConfig.maintenanceMessage,
+        maintenanceStartTime: updatedConfig.maintenanceStartTime,
+        maintenanceEndTime: updatedConfig.maintenanceEndTime
+      };
+      localStorage.setItem('ayn_maintenance_config', JSON.stringify(maintenanceConfig));
       
       await logSecurityEvent('config_change', `System configuration updated: ${Object.keys(newConfig).join(', ')}`, 'medium');
       
@@ -1953,7 +1969,77 @@ export const AdminPanel = () => {
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Maintenance Mode Configuration */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Power className="w-5 h-5" />
+                  Maintenance Mode
+                </CardTitle>
+                <CardDescription>Configure system maintenance notifications</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Enable Maintenance Mode</label>
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      checked={systemConfig.enableMaintenance}
+                      onCheckedChange={(checked) => updateSystemConfig({ enableMaintenance: checked })}
+                    />
+                    <span className="text-sm text-muted-foreground">
+                      Show maintenance banner to all users
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Maintenance Message</label>
+                  <Textarea 
+                    value={systemConfig.maintenanceMessage}
+                    onChange={(e) => updateSystemConfig({ maintenanceMessage: e.target.value })}
+                    placeholder="Enter message to display to users..."
+                    rows={3}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Start Time (optional)</label>
+                    <Input 
+                      type="datetime-local" 
+                      value={systemConfig.maintenanceStartTime}
+                      onChange={(e) => updateSystemConfig({ maintenanceStartTime: e.target.value })}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">End Time (optional)</label>
+                    <Input 
+                      type="datetime-local" 
+                      value={systemConfig.maintenanceEndTime}
+                      onChange={(e) => updateSystemConfig({ maintenanceEndTime: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <AlertTriangle className="w-4 h-4 text-yellow-600" />
+                    <span className="text-sm font-medium text-yellow-800">Preview</span>
+                  </div>
+                  <div className="text-sm text-yellow-700">
+                    {systemConfig.maintenanceMessage || 'Your maintenance message will appear here'}
+                  </div>
+                  {systemConfig.maintenanceStartTime && systemConfig.maintenanceEndTime && (
+                    <div className="text-xs text-yellow-600 mt-1">
+                      {new Date(systemConfig.maintenanceStartTime).toLocaleString()} - {new Date(systemConfig.maintenanceEndTime).toLocaleString()}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Default Settings */}
             <Card>
               <CardHeader>

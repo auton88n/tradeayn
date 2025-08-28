@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { MaintenanceBanner } from '@/components/MaintenanceBanner';
 import { 
   Send, 
   Paperclip, 
@@ -123,6 +124,14 @@ export default function Dashboard({ user }: DashboardProps) {
   const [activeTab, setActiveTab] = useState<'chat' | 'admin'>('chat');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
+  // Maintenance mode state
+  const [maintenanceConfig, setMaintenanceConfig] = useState({
+    enableMaintenance: false,
+    maintenanceMessage: 'System is currently under maintenance. We apologize for any inconvenience.',
+    maintenanceStartTime: '',
+    maintenanceEndTime: ''
+  });
+  
   // Typewriter animation state
   const [currentText, setCurrentText] = useState('');
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -145,6 +154,7 @@ export default function Dashboard({ user }: DashboardProps) {
   useEffect(() => {
     checkUserAccess();
     checkAdminRole();
+    checkMaintenanceStatus();
     
     const termsKey = `ayn_terms_accepted_${user.id}`;
     const accepted = localStorage.getItem(termsKey) === 'true';
@@ -153,7 +163,24 @@ export default function Dashboard({ user }: DashboardProps) {
     if (accepted) {
       setWelcomeMessage();
     }
+
+    // Set up maintenance status polling
+    const maintenanceInterval = setInterval(checkMaintenanceStatus, 5000); // Check every 5 seconds
+
+    return () => clearInterval(maintenanceInterval);
   }, [user.id]);
+
+  const checkMaintenanceStatus = () => {
+    try {
+      const storedConfig = localStorage.getItem('ayn_maintenance_config');
+      if (storedConfig) {
+        const config = JSON.parse(storedConfig);
+        setMaintenanceConfig(config);
+      }
+    } catch (error) {
+      console.error('Error checking maintenance status:', error);
+    }
+  };
 
   // Typewriter animation effect
   useEffect(() => {
@@ -564,6 +591,14 @@ export default function Dashboard({ user }: DashboardProps) {
 
         {/* Content Area */}
         <div className="flex-1 flex flex-col min-h-0">
+          {/* Maintenance Banner */}
+          <MaintenanceBanner 
+            isEnabled={maintenanceConfig.enableMaintenance}
+            message={maintenanceConfig.maintenanceMessage}
+            startTime={maintenanceConfig.maintenanceStartTime}
+            endTime={maintenanceConfig.maintenanceEndTime}
+          />
+
           {/* Terms Modal */}
           <TermsModal 
             open={hasAccess && !hasAcceptedTerms} 
