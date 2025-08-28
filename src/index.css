@@ -148,15 +148,15 @@
   
   /* Solid background for brain containers */
   .brain-container {
-    background: hsl(0 0% 9%);
-    border: 2px solid hsl(0 0% 15%);
-    box-shadow: 0 4px 16px hsla(0, 0%, 0%, 0.1);
+    background: hsl(var(--primary));
+    border: 2px solid hsl(var(--primary));
+    box-shadow: 0 4px 16px hsla(var(--primary), 0.1);
   }
-  
+
   .brain-container-lg {
-    background: hsl(0 0% 9%);
-    border: 2px solid hsl(0 0% 15%);
-    box-shadow: 0 8px 24px hsla(0, 0%, 0%, 0.15);
+    background: hsl(var(--primary));
+    border: 2px solid hsl(var(--primary));
+    box-shadow: 0 8px 24px hsla(var(--primary), 0.15);
   }
   
   /* Gradient text */

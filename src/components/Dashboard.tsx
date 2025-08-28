@@ -456,7 +456,7 @@ This will help me provide more targeted and valuable insights for your business.
             <Card className="p-4 mb-6 bg-card border border-border">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full brain-container flex items-center justify-center">
-                  <Brain className="w-4 h-4 text-white" />
+                  <Brain className="w-4 h-4 text-primary-foreground" />
                 </div>
                 <div>
                   <p className="font-medium">AYN AI Consultant</p>
@@ -521,11 +521,11 @@ This will help me provide more targeted and valuable insights for your business.
         {/* Main Chat Area */}
         <div className="flex-1 flex flex-col">
           {/* Header */}
-          <header className="border-b border-border bg-transparent backdrop-blur-sm p-4 flex items-center justify-between">
+          <header className="border-b border-border bg-background/80 backdrop-blur-sm p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg brain-container flex items-center justify-center">
-                <Brain className="w-5 h-5 text-white" />
-              </div>
+                <div className="w-8 h-8 rounded-lg brain-container flex items-center justify-center">
+                  <Brain className="w-5 h-5 text-primary-foreground" />
+                </div>
               <div>
                 <h1 className="text-xl font-bold">AYN Business Console</h1>
                 <p className="text-sm text-muted-foreground">AI-Powered Business Intelligence</p>
@@ -586,7 +586,7 @@ This will help me provide more targeted and valuable insights for your business.
                   >
                     {message.sender === 'ayn' && (
                       <div className="w-8 h-8 rounded-full brain-container flex items-center justify-center flex-shrink-0">
-                        <Brain className="w-4 h-4 text-white" />
+                        <Brain className="w-4 h-4 text-primary-foreground" />
                       </div>
                     )}
                     
@@ -630,7 +630,7 @@ This will help me provide more targeted and valuable insights for your business.
                 {isTyping && (
                   <div className="flex gap-3 justify-start">
                     <div className="w-8 h-8 rounded-full brain-container flex items-center justify-center flex-shrink-0">
-                      <Brain className="w-4 h-4 text-white" />
+                      <Brain className="w-4 h-4 text-primary-foreground" />
                     </div>
                     
                     <Card className="bg-card border border-border p-4 max-w-xs">
@@ -655,7 +655,7 @@ This will help me provide more targeted and valuable insights for your business.
 
           {/* Message Input - only show for chat and if user has access */}
           {(activeTab === 'chat' || !isAdmin) && (
-            <div className="border-t border-border bg-card p-6">
+            <div className="border-t border-border bg-background p-6">
               <div className="max-w-4xl mx-auto">
                 <form onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }} className="flex gap-3">
                   <div className="flex-1 relative">
