@@ -245,6 +245,16 @@
     width: calc(100% - 40px);
     max-width: 600px;
     z-index: 1000;
+    transition: all 0.3s ease;
+  }
+
+  /* Adjust input area when sidebar is open on mobile */
+  @media (max-width: 1023px) {
+    .input-area.sidebar-open {
+      left: calc(50% + 144px); /* Half sidebar width (288px / 2) */
+      width: calc(100% - 328px); /* Account for sidebar width + margins */
+      max-width: 400px;
+    }
   }
 
   .input-container {
