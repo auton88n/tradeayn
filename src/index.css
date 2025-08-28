@@ -274,6 +274,15 @@
     }
   }
 
+  /* Desktop: shift input to the right when sidebar is expanded (offcanvas) */
+  @media (min-width: 768px) {
+    [data-state="expanded"] ~ main .input-area.bottom-position,
+    [data-state="expanded"] ~ main .input-area.center-position {
+      left: calc(50% + (var(--sidebar-width) / 2));
+    }
+  }
+
+
   .input-container {
     background: hsl(var(--background));
     border-radius: 25px;
