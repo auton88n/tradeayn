@@ -41,15 +41,33 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
       });
 
       if (error) {
-        toast({
-          title: "Authentication Error",
-          description: error.message,
-          variant: "destructive"
-        });
+        // Special handling: email not confirmed
+        const code = (error as any).code as string | undefined;
+        if (code === 'email_not_confirmed' || /email not confirmed/i.test(error.message)) {
+          try {
+            await supabase.auth.resend({
+              type: 'signup',
+              email,
+              options: { emailRedirectTo: `${window.location.origin}/` }
+            });
+            toast({
+              title: 'Verify your email',
+              description: 'Confirmation email re-sent. Please verify, then sign in.',
+            });
+          } catch (e) {
+            toast({ title: 'Verification email error', description: 'Could not resend email. Please try again.' , variant: 'destructive'});
+          }
+        } else {
+          toast({
+            title: 'Authentication Error',
+            description: error.message,
+            variant: 'destructive'
+          });
+        }
       } else {
         toast({
-          title: "Welcome back!",
-          description: "You have been successfully logged in."
+          title: 'Welcome back!',
+          description: 'You have been successfully logged in.'
         });
         onOpenChange(false);
         // Reset form
