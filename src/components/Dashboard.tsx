@@ -148,16 +148,24 @@ export default function Dashboard({ user }: DashboardProps) {
   };
 
   useEffect(() => {
+    console.log('Dashboard mounted. User:', user);
+    console.log('Has access:', hasAccess);
+    console.log('Has accepted terms:', hasAcceptedTerms);
+    console.log('Is typing:', isTyping);
+    console.log('Input message:', inputMessage);
+    
     scrollToBottom();
   }, [messages]);
 
   useEffect(() => {
+    console.log('Checking user access and admin role...');
     checkUserAccess();
     checkAdminRole();
     checkMaintenanceStatus();
     
     const termsKey = `ayn_terms_accepted_${user.id}`;
     const accepted = localStorage.getItem(termsKey) === 'true';
+    console.log('Terms accepted from localStorage:', accepted);
     setHasAcceptedTerms(accepted);
     
     if (accepted) {
@@ -302,7 +310,11 @@ export default function Dashboard({ user }: DashboardProps) {
   };
 
   const handleSendMessage = async (messageContent?: string) => {
+    console.log('handleSendMessage called with:', messageContent);
+    console.log('Current state - hasAcceptedTerms:', hasAcceptedTerms, 'hasAccess:', hasAccess);
+    
     if (!hasAcceptedTerms) {
+      console.log('Terms not accepted - showing toast');
       toast({
         title: "Terms Required",
         description: "Please accept the terms and conditions before using AYN AI.",
@@ -312,6 +324,7 @@ export default function Dashboard({ user }: DashboardProps) {
     }
 
     if (!hasAccess) {
+      console.log('No access - showing toast');
       toast({
         title: "Access Required",
         description: "You need active access to use AYN. Please contact our team.",
@@ -321,7 +334,13 @@ export default function Dashboard({ user }: DashboardProps) {
     }
 
     const content = messageContent || inputMessage.trim();
-    if (!content) return;
+    console.log('Message content:', content);
+    if (!content) {
+      console.log('No content to send');
+      return;
+    }
+
+    console.log('Proceeding to send message...');
 
     // Check and increment usage
     try {
@@ -717,15 +736,33 @@ export default function Dashboard({ user }: DashboardProps) {
                   ref={inputRef}
                   type="text"
                   value={inputMessage}
-                  onChange={(e) => setInputMessage(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  onFocus={() => setIsInputFocused(true)}
-                  onBlur={() => setIsInputFocused(false)}
+                  onChange={(e) => {
+                    console.log('Input onChange called with:', e.target.value);
+                    setInputMessage(e.target.value);
+                  }}
+                  onKeyPress={(e) => {
+                    console.log('Input onKeyPress called with key:', e.key);
+                    handleKeyPress(e);
+                  }}
+                  onFocus={() => {
+                    console.log('Input focused');
+                    setIsInputFocused(true);
+                  }}
+                  onBlur={() => {
+                    console.log('Input blurred');
+                    setIsInputFocused(false);
+                  }}
+                  onClick={() => {
+                    console.log('Input clicked');
+                  }}
                   placeholder="Ask AYN anything about your business..."
                   className="message-input"
                 />
                 <button
-                  onClick={() => handleSendMessage()}
+                  onClick={() => {
+                    console.log('Send button clicked');
+                    handleSendMessage();
+                  }}
                   disabled={!inputMessage.trim() || isTyping}
                   className="send-button"
                 >
