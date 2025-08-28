@@ -441,90 +441,87 @@ export default function Dashboard({ user }: DashboardProps) {
     <div className="main-layout">
       {/* Sidebar */}
       <div className="sidebar">
-        <div className="flex flex-col h-full">
-          {/* User Profile */}
-          <div className="sidebar-section">
-            <div className="user-profile flex items-center gap-3 mb-6 p-3 rounded-lg bg-gray-50">
-              <div className="user-avatar">
-                {user?.user_metadata?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+        <div className="sidebar-section">
+          <div className="user-profile flex items-center gap-3 mb-6 p-3 rounded-lg bg-gray-50">
+            <div className="user-avatar">
+              {user?.user_metadata?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+            </div>
+            <div className="user-info flex-1 min-w-0">
+              <div className="user-name font-semibold text-sm truncate">{user?.user_metadata?.name || 'User'}</div>
+              <div className="user-email text-xs text-gray-500 truncate">{user?.email}</div>
+            </div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleLogout}
+              className="text-gray-400 hover:text-gray-600 flex-shrink-0"
+            >
+              <LogOut className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* AYN Status */}
+        <div className="sidebar-section">
+          <div className="ayn-consultant-card flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200 mb-6">
+            <div className="ayn-avatar">
+              <img src="/lovable-uploads/636eb1d6-bee9-4ea8-a6bf-748bd267d05f.png" alt="Brain" width="24" height="24" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-sm text-gray-900">AYN AI Consultant</p>
+              <div className="flex items-center gap-2">
+                <div className="status-active"></div>
+                <p className="text-xs text-gray-500">Online & Ready</p>
               </div>
-              <div className="user-info flex-1 min-w-0">
-                <div className="user-name font-semibold text-sm truncate">{user?.user_metadata?.name || 'User'}</div>
-                <div className="user-email text-xs text-gray-500 truncate">{user?.email}</div>
-              </div>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={handleLogout}
-                className="text-gray-400 hover:text-gray-600 flex-shrink-0"
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Start Templates */}
+        <div className="sidebar-section">
+          <h3 className="section-title">Quick Start</h3>
+          <div className="space-y-2">
+            {templates.map((template, index) => (
+              <div 
+                key={index} 
+                className="quick-start-item"
+                onClick={() => handleSendMessage(template.prompt)}
               >
-                <LogOut className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-
-          {/* AYN Status */}
-          <div className="sidebar-section">
-            <div className="ayn-consultant-card flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200 mb-6">
-              <div className="ayn-avatar">
-                <img src="/lovable-uploads/636eb1d6-bee9-4ea8-a6bf-748bd267d05f.png" alt="Brain" width="24" height="24" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm text-gray-900">AYN AI Consultant</p>
-                <div className="flex items-center gap-2">
-                  <div className="status-active"></div>
-                  <p className="text-xs text-gray-500">Online & Ready</p>
+                <div className="quick-start-title">
+                  <template.icon size={16} />
+                  {template.name}
+                </div>
+                <div className="quick-start-description">
+                  {template.prompt}
                 </div>
               </div>
-            </div>
+            ))}
           </div>
+        </div>
 
-          {/* Quick Start Templates */}
-          <div className="sidebar-section">
-            <h3 className="section-title">Quick Start</h3>
-            <div className="space-y-2">
-              {templates.map((template, index) => (
-                <div 
-                  key={index} 
-                  className="quick-start-item"
-                  onClick={() => handleSendMessage(template.prompt)}
-                >
-                  <div className="quick-start-title">
-                    <template.icon size={16} />
-                    {template.name}
-                  </div>
-                  <div className="quick-start-description">
-                    {template.prompt}
-                  </div>
+        {/* Recent Chats */}
+        <div className="sidebar-section">
+          <h3 className="section-title">Recent Chats</h3>
+          <div className="space-y-2">
+            {recentChats.map((chat, index) => (
+              <div 
+                key={index} 
+                className="recent-chat-item"
+                onClick={() => handleLoadChat(chat)}
+              >
+                <div className="chat-title">{chat.title}</div>
+                <div className="chat-preview">{chat.lastMessage}</div>
+                <div className="chat-date">
+                  {chat.timestamp.toLocaleDateString()}
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Recent Chats */}
-          <div className="sidebar-section">
-            <h3 className="section-title">Recent Chats</h3>
-            <div className="space-y-2">
-              {recentChats.map((chat, index) => (
-                <div 
-                  key={index} 
-                  className="recent-chat-item"
-                  onClick={() => handleLoadChat(chat)}
-                >
-                  <div className="chat-title">{chat.title}</div>
-                  <div className="chat-preview">{chat.lastMessage}</div>
-                  <div className="chat-date">
-                    {chat.timestamp.toLocaleDateString()}
-                  </div>
-                </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Chat Area */}
-      <div className="chat-area">
+      {/* Main Content */}
+      <div className="main-content">
         {/* Header */}
         <header className="header">
           <div className="header-left">
@@ -591,9 +588,9 @@ export default function Dashboard({ user }: DashboardProps) {
         {/* Chat Interface */}
         {(activeTab === 'chat' || !isAdmin) && (
           <>
-            {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto px-6 py-6">
-              <div className="max-w-4xl mx-auto space-y-6">
+            {/* Chat Area */}
+            <div className="chat-area">
+              <div className="message-container">
                 {messages.map((message) => (
                   <div key={message.id} className="chat-message">
                     {message.sender === 'ayn' ? (
@@ -688,7 +685,7 @@ export default function Dashboard({ user }: DashboardProps) {
               </div>
             </div>
 
-            {/* Mobile-Style Floating Input Bar */}
+            {/* Input Area */}
             <div className="input-area">
               <div className="input-container">
                 <button className="attachment-button">
