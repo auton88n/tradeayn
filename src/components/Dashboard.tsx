@@ -430,13 +430,14 @@ export default function Dashboard({ user }: DashboardProps) {
       'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
       'application/pdf', 'application/msword', 
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'text/plain'
+      'text/plain',
+      'application/json'
     ];
     
     if (!allowedTypes.includes(file.type)) {
       toast({
         title: "Invalid File Type",
-        description: "Please select a PDF, Word document, or image file.",
+        description: "Please select a PDF, Word document, image, text, or JSON file.",
         variant: "destructive"
       });
       return false;
@@ -910,12 +911,13 @@ export default function Dashboard({ user }: DashboardProps) {
                       <Paperclip className="w-12 h-12 mx-auto mb-4 text-primary" />
                       <p className="text-lg font-medium text-primary mb-2">Drop your file here</p>
                       <p className="text-sm text-muted-foreground mb-4">
-                        Images, PDFs, Word docs, or text files (max 10MB)
+                        Images, PDFs, Word docs, text, or JSON files (max 10MB)
                       </p>
                       <div className="text-xs text-muted-foreground space-y-1">
                         <div>• Images: JPG, PNG, GIF, WebP</div>
                         <div>• Documents: PDF, DOC, DOCX</div>
                         <div>• Text: TXT files</div>
+                        <div>• Data: JSON files</div>
                       </div>
                     </div>
                   </div>
@@ -976,6 +978,11 @@ export default function Dashboard({ user }: DashboardProps) {
                             <span className="text-muted-foreground">Text:</span>
                             <span className="text-foreground font-medium">TXT files</span>
                           </div>
+                          <div className="flex items-center gap-2 text-xs">
+                            <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                            <span className="text-muted-foreground">Data:</span>
+                            <span className="text-foreground font-medium">JSON files</span>
+                          </div>
                         </div>
                         <div className="mt-3 pt-2 border-t border-border">
                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -991,7 +998,7 @@ export default function Dashboard({ user }: DashboardProps) {
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp,.txt"
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp,.txt,.json"
                     onChange={handleFileSelect}
                     className="hidden"
                   />
