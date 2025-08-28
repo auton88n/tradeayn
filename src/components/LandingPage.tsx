@@ -92,39 +92,42 @@ const LandingPage = () => {
         
         {/* Brain and Lightning Background Elements */}
         <div className="absolute inset-0 opacity-10">
-          {/* Floating Brain Icons */}
-          <div className="absolute top-1/4 left-1/6 animate-float" style={{ animationDuration: '8s' }}>
-            <Brain className="w-16 h-16 text-primary animate-pulse" style={{ animationDuration: '4s' }} />
+          {/* Horizontally Moving Brain Icons */}
+          <div className="absolute top-1/6 left-0" style={{ animation: 'float-horizontal 20s infinite linear' }}>
+            <Brain className="w-12 h-12 text-primary animate-pulse" style={{ animationDuration: '4s' }} />
           </div>
           
-          <div className="absolute top-2/3 right-1/5 animate-float" style={{ animationDuration: '10s', animationDelay: '2s' }}>
-            <Brain className="w-12 h-12 text-accent animate-pulse" style={{ animationDuration: '5s', animationDelay: '1s' }} />
+          <div className="absolute top-2/6 left-0" style={{ animation: 'float-horizontal 25s infinite linear', animationDelay: '5s' }}>
+            <Brain className="w-8 h-8 text-accent animate-pulse" style={{ animationDuration: '3s', animationDelay: '1s' }} />
           </div>
           
-          <div className="absolute top-1/2 left-1/3 animate-float" style={{ animationDuration: '9s', animationDelay: '4s' }}>
-            <Brain className="w-8 h-8 text-primary animate-pulse" style={{ animationDuration: '3s', animationDelay: '2s' }} />
+          <div className="absolute top-3/6 left-0" style={{ animation: 'float-horizontal 18s infinite linear', animationDelay: '10s' }}>
+            <Brain className="w-16 h-16 text-primary animate-pulse" style={{ animationDuration: '5s' }} />
           </div>
           
-          {/* Lightning Elements */}
-          <div className="absolute top-1/5 right-1/3 animate-bounce" style={{ animationDuration: '6s' }}>
-            <Zap className="w-14 h-14 text-accent animate-pulse" style={{ animationDuration: '3.5s' }} />
+          <div className="absolute top-4/6 left-0" style={{ animation: 'float-horizontal 22s infinite linear', animationDelay: '15s' }}>
+            <Brain className="w-10 h-10 text-accent animate-pulse" style={{ animationDuration: '3.5s', animationDelay: '2s' }} />
           </div>
           
-          <div className="absolute bottom-1/4 left-1/4 animate-bounce" style={{ animationDuration: '7s', animationDelay: '1s' }}>
-            <Zap className="w-10 h-10 text-primary animate-pulse" style={{ animationDuration: '4s', animationDelay: '0.5s' }} />
+          <div className="absolute top-5/6 left-0" style={{ animation: 'float-horizontal 28s infinite linear', animationDelay: '2s' }}>
+            <Brain className="w-14 h-14 text-primary animate-pulse" style={{ animationDuration: '4.5s', animationDelay: '0.5s' }} />
           </div>
           
-          <div className="absolute top-3/5 right-1/7 animate-bounce" style={{ animationDuration: '5s', animationDelay: '3s' }}>
-            <Zap className="w-6 h-6 text-accent animate-pulse" style={{ animationDuration: '2.5s', animationDelay: '1.5s' }} />
+          {/* Horizontally Moving Lightning Elements */}
+          <div className="absolute top-1/8 left-0" style={{ animation: 'float-horizontal 16s infinite linear', animationDelay: '3s' }}>
+            <Zap className="w-10 h-10 text-accent animate-pulse" style={{ animationDuration: '3s' }} />
           </div>
           
-          {/* Moving Elements */}
-          <div className="absolute top-1/3 left-0 animate-pulse" style={{ animation: 'float-horizontal 15s infinite linear' }}>
-            <Brain className="w-8 h-8 text-primary/60" />
+          <div className="absolute top-3/8 left-0" style={{ animation: 'float-horizontal 24s infinite linear', animationDelay: '8s' }}>
+            <Zap className="w-6 h-6 text-primary animate-pulse" style={{ animationDuration: '2.5s', animationDelay: '1s' }} />
           </div>
           
-          <div className="absolute top-2/5 left-0 animate-pulse" style={{ animation: 'float-horizontal 20s infinite linear', animationDelay: '5s' }}>
-            <Zap className="w-6 h-6 text-accent/60" />
+          <div className="absolute top-5/8 left-0" style={{ animation: 'float-horizontal 19s infinite linear', animationDelay: '12s' }}>
+            <Zap className="w-12 h-12 text-accent animate-pulse" style={{ animationDuration: '4s', animationDelay: '1.5s' }} />
+          </div>
+          
+          <div className="absolute top-7/8 left-0" style={{ animation: 'float-horizontal 26s infinite linear', animationDelay: '6s' }}>
+            <Zap className="w-8 h-8 text-primary animate-pulse" style={{ animationDuration: '3.5s' }} />
           </div>
         </div>
         
