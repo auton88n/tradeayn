@@ -204,35 +204,6 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20">
-        <div className="container mx-auto px-6 text-center">
-          <Card className="bg-card border border-border max-w-4xl mx-auto p-12">
-            <h2 className="text-4xl font-bold mb-6">
-              Ready to Transform Your Business?
-            </h2>
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Join thousands of entrepreneurs and executives who trust AYN for strategic business insights
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Button 
-                onClick={() => setShowAuthModal(true)}
-                variant="hero"
-                size="lg"
-              >
-                Start Your Free Consultation
-              </Button>
-              
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Shield className="w-4 h-4" />
-                <span>Free • No Credit Card Required</span>
-              </div>
-            </div>
-          </Card>
-        </div>
-      </section>
-
       {/* Footer */}
       <footer className="bg-card border-t border-border py-12">
         <div className="container mx-auto px-6">
