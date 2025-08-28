@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Brain, MessageCircle, Clock, TrendingUp, FileText, Settings, LogOut, Send, Paperclip, Mic } from 'lucide-react';
+import { Brain, MessageCircle, Clock, TrendingUp, FileText, Settings, LogOut, Send, Paperclip, Mic, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Sidebar, SidebarContent, SidebarProvider } from '@/components/ui/sidebar';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { AccessStatusCard } from '@/components/AccessStatusCard';
+import { AdminPanel } from '@/components/AdminPanel';
 import type { User } from '@supabase/supabase-js';
 
 interface Message {
@@ -28,9 +30,14 @@ const Dashboard = ({ user }: DashboardProps) => {
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [currentStatus, setCurrentStatus] = useState<string>('');
+  const [hasAccess, setHasAccess] = useState<boolean | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [activeTab, setActiveTab] = useState<'chat' | 'admin'>('chat');
   const { toast } = useToast();
 
   useEffect(() => {
+    checkUserAccess();
+    checkAdminRole();
 
     // Welcome message
     const welcomeMessage: Message = {
@@ -41,7 +48,53 @@ const Dashboard = ({ user }: DashboardProps) => {
       status: 'complete'
     };
     setMessages([welcomeMessage]);
-  }, []);
+  }, [user.id]);
+
+  const checkUserAccess = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('access_grants')
+        .select('is_active, expires_at')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error checking access:', error);
+        setHasAccess(false);
+        return;
+      }
+
+      if (!data) {
+        setHasAccess(false);
+        return;
+      }
+
+      const isActive = data.is_active;
+      const isNotExpired = !data.expires_at || new Date(data.expires_at) > new Date();
+      
+      setHasAccess(isActive && isNotExpired);
+    } catch (error) {
+      console.error('Unexpected error checking access:', error);
+      setHasAccess(false);
+    }
+  };
+
+  const checkAdminRole = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .maybeSingle();
+
+      if (!error && data) {
+        setIsAdmin(true);
+      }
+    } catch (error) {
+      console.error('Error checking admin role:', error);
+    }
+  };
 
   const templates = [
     {
@@ -77,6 +130,15 @@ const Dashboard = ({ user }: DashboardProps) => {
   ];
 
   const handleSendMessage = async (messageContent?: string) => {
+    if (!hasAccess) {
+      toast({
+        title: "Access Required",
+        description: "You need active access to use AYN. Please contact our team.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     const content = messageContent || inputMessage.trim();
     if (!content) return;
 
@@ -393,122 +455,154 @@ This will help me provide more targeted and valuable insights for your business.
 
           {/* Messages */}
           <ScrollArea className="flex-1 p-6">
-            <div className="max-w-4xl mx-auto space-y-6">
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  {message.sender === 'ayn' && (
+            {/* Access Status Card */}
+            <AccessStatusCard user={user} />
+
+            {/* Admin Panel */}
+            {isAdmin && (
+              <div className="mb-8">
+                <div className="flex gap-2 mb-4">
+                  <Button
+                    variant={activeTab === 'chat' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setActiveTab('chat')}
+                  >
+                    Chat
+                  </Button>
+                  <Button
+                    variant={activeTab === 'admin' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setActiveTab('admin')}
+                  >
+                    <Shield className="w-4 h-4 mr-2" />
+                    Admin Panel
+                  </Button>
+                </div>
+                
+                {activeTab === 'admin' && <AdminPanel />}
+              </div>
+            )}
+
+            {/* Chat Interface - only show if not admin panel */}
+            {(activeTab === 'chat' || !isAdmin) && (
+              <div className="max-w-4xl mx-auto space-y-6">
+                {messages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`flex gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    {message.sender === 'ayn' && (
+                      <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center flex-shrink-0 animate-pulse-glow">
+                        <Brain className="w-4 h-4 text-white" />
+                      </div>
+                    )}
+                    
+                    <Card className={`max-w-2xl p-4 ${
+                      message.sender === 'user' 
+                        ? 'bg-primary text-primary-foreground' 
+                        : 'glass'
+                    }`}>
+                      <div className="prose prose-sm max-w-none">
+                        <div className="whitespace-pre-wrap leading-relaxed">
+                          {message.content}
+                        </div>
+                      </div>
+                      
+                      <div className={`flex items-center justify-between mt-3 pt-3 border-t ${
+                        message.sender === 'user' ? 'border-primary-foreground/20' : 'border-border/50'
+                      }`}>
+                        <span className={`text-xs ${
+                          message.sender === 'user' ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                        }`}>
+                          {message.timestamp.toLocaleTimeString()}
+                        </span>
+                        
+                        {message.sender === 'ayn' && message.status && (
+                          <Badge variant="outline" className="text-xs">
+                            AYN Analysis
+                          </Badge>
+                        )}
+                      </div>
+                    </Card>
+                    
+                    {message.sender === 'user' && (
+                      <Avatar className="w-8 h-8 flex-shrink-0">
+                        <AvatarImage src="" />
+                        <AvatarFallback className="bg-muted text-xs">
+                          {user?.user_metadata?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                    )}
+                  </div>
+                ))}
+                
+                {isTyping && (
+                  <div className="flex gap-3 justify-start">
                     <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center flex-shrink-0 animate-pulse-glow">
                       <Brain className="w-4 h-4 text-white" />
                     </div>
-                  )}
-                  
-                  <Card className={`max-w-2xl p-4 ${
-                    message.sender === 'user' 
-                      ? 'bg-primary text-primary-foreground' 
-                      : 'glass'
-                  }`}>
-                    <div className="prose prose-sm max-w-none">
-                      <div className="whitespace-pre-wrap leading-relaxed">
-                        {message.content}
-                      </div>
-                    </div>
                     
-                    <div className={`flex items-center justify-between mt-3 pt-3 border-t ${
-                      message.sender === 'user' ? 'border-primary-foreground/20' : 'border-border/50'
-                    }`}>
-                      <span className={`text-xs ${
-                        message.sender === 'user' ? 'text-primary-foreground/70' : 'text-muted-foreground'
-                      }`}>
-                        {message.timestamp.toLocaleTimeString()}
-                      </span>
-                      
-                      {message.sender === 'ayn' && message.status && (
-                        <Badge variant="outline" className="text-xs">
-                          AYN Analysis
-                        </Badge>
-                      )}
-                    </div>
-                  </Card>
-                  
-                  {message.sender === 'user' && (
-                    <Avatar className="w-8 h-8 flex-shrink-0">
-                      <AvatarImage src="" />
-                      <AvatarFallback className="bg-muted text-xs">
-                        {user?.user_metadata?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                  )}
-                </div>
-              ))}
-              
-              {isTyping && (
-                <div className="flex gap-3 justify-start">
-                  <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center animate-pulse-glow">
-                    <Brain className="w-4 h-4 text-white" />
-                  </div>
-                  <Card className="glass p-4">
-                    <div className="flex items-center gap-2">
-                      <div className="flex space-x-1">
-                        <div className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                        <div className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                        <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
+                    <Card className="glass p-4 max-w-xs">
+                      <div className="flex items-center gap-2">
+                        <div className="flex gap-1">
+                          <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                          <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>  
+                          <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                        </div>
+                        {currentStatus && (
+                          <span className="text-xs text-muted-foreground capitalize">
+                            {getStatusText(currentStatus)}
+                          </span>
+                        )}
                       </div>
-                      <span className="text-sm text-muted-foreground ml-2">
-                        {getStatusText(currentStatus) || 'AYN is thinking...'}
-                      </span>
-                    </div>
-                  </Card>
-                </div>
-              )}
-            </div>
+                    </Card>
+                  </div>
+                )}
+              </div>
+            )}
           </ScrollArea>
 
-          {/* Input Area */}
-          <div className="glass border-t border-border/50 p-4">
-            <div className="max-w-4xl mx-auto">
-              <form onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }} className="flex gap-3">
-                <div className="flex-1 relative">
-                  <Input
-                    value={inputMessage}
-                    onChange={(e) => setInputMessage(e.target.value)}
-                    placeholder="Ask AYN about market research, sales optimization, trends, or business strategy..."
-                    className="glass border-primary/20 focus:border-primary/40 pr-20"
-                    disabled={isTyping}
-                  />
-                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex gap-1">
-                    <Button 
-                      type="button" 
-                      variant="ghost" 
-                      size="sm" 
-                      className="text-muted-foreground hover:text-foreground p-1"
-                    >
-                      <Paperclip className="w-4 h-4" />
-                    </Button>
-                    <Button 
-                      type="button" 
-                      variant="ghost" 
-                      size="sm" 
-                      className="text-muted-foreground hover:text-foreground p-1"
-                    >
-                      <Mic className="w-4 h-4" />
-                    </Button>
+          {/* Message Input - only show for chat and if user has access */}
+          {(activeTab === 'chat' || !isAdmin) && (
+            <div className="border-t border-border/50 p-6">
+              <div className="max-w-4xl mx-auto">
+                <form onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }} className="flex gap-3">
+                  <div className="flex-1 relative">
+                    <Input
+                      value={inputMessage}
+                      onChange={(e) => setInputMessage(e.target.value)}
+                      placeholder={hasAccess ? "Ask AYN anything about your business..." : "Access required to send messages"}
+                      disabled={isTyping || !hasAccess}
+                      className="glass pr-20"
+                    />
+                    <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex gap-1">
+                      <Button type="button" variant="ghost" size="sm" disabled={!hasAccess}>
+                        <Paperclip className="w-4 h-4" />
+                      </Button>
+                      <Button type="button" variant="ghost" size="sm" disabled={!hasAccess}>
+                        <Mic className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
+                  
+                  <Button 
+                    type="submit" 
+                    variant="hero" 
+                    disabled={isTyping || !inputMessage.trim() || !hasAccess}
+                    className="px-6"
+                  >
+                    <Send className="w-4 h-4" />
+                  </Button>
+                </form>
                 
-                <Button 
-                  type="submit" 
-                  disabled={!inputMessage.trim() || isTyping}
-                  variant="hero"
-                  className="px-6"
-                >
-                  <Send className="w-4 h-4" />
-                </Button>
-              </form>
+                {!hasAccess && (
+                  <p className="text-xs text-muted-foreground mt-2 text-center">
+                    Contact our team to get access to AYN AI Business Consulting
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </SidebarProvider>
