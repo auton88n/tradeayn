@@ -147,6 +147,7 @@ export default function Dashboard({ user }: DashboardProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [showFileTypes, setShowFileTypes] = useState(false);
   
   const { toast } = useToast();
   
@@ -895,7 +896,31 @@ export default function Dashboard({ user }: DashboardProps) {
               </ScrollArea>
 
               {/* Mobile-Style Floating Input Bar */}
-              <div className="input-area">
+              <div 
+                className="input-area"
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+              >
+                {/* Drag Overlay */}
+                {isDragOver && (
+                  <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-sm flex items-center justify-center">
+                    <div className="bg-background border-2 border-dashed border-primary rounded-2xl p-8 text-center max-w-sm mx-4">
+                      <Paperclip className="w-12 h-12 mx-auto mb-4 text-primary" />
+                      <p className="text-lg font-medium text-primary mb-2">Drop your file here</p>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Images, PDFs, Word docs, or text files (max 10MB)
+                      </p>
+                      <div className="text-xs text-muted-foreground space-y-1">
+                        <div>• Images: JPG, PNG, GIF, WebP</div>
+                        <div>• Documents: PDF, DOC, DOCX</div>
+                        <div>• Text: TXT files</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
                 {/* Selected File Preview */}
                 {selectedFile && (
                   <div className="mb-2 p-3 bg-muted rounded-xl border flex items-center gap-3">
@@ -917,16 +942,50 @@ export default function Dashboard({ user }: DashboardProps) {
                   </div>
                 )}
 
-                <div className="input-container">
-                  {/* Attachment Button */}
-                  <button 
-                    className="attachment-button"
-                    onClick={handleAttachmentClick}
-                    disabled={!hasAccess || !hasAcceptedTerms || isUploading}
-                    title="Attach PDF, Word doc, or image"
-                  >
-                    <Paperclip className="w-4 h-4" />
-                  </button>
+                <div className={`input-container ${isDragOver ? 'drag-over' : ''}`}>
+                  {/* Attachment Button with File Types Dropdown */}
+                  <div className="relative">
+                    <button 
+                      className="attachment-button group"
+                      onClick={handleAttachmentClick}
+                      onMouseEnter={() => setShowFileTypes(true)}
+                      onMouseLeave={() => setShowFileTypes(false)}
+                      disabled={!hasAccess || !hasAcceptedTerms || isUploading}
+                      title="Attach file"
+                    >
+                      <Paperclip className="w-4 h-4" />
+                    </button>
+                    
+                    {/* File Types Dropdown */}
+                    {showFileTypes && !isDragOver && (
+                      <div className="absolute bottom-full left-0 mb-2 bg-background border border-border rounded-lg shadow-lg p-3 min-w-[220px] z-50">
+                        <div className="text-xs font-semibold text-foreground mb-2">📎 Accepted file types:</div>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-xs">
+                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                            <span className="text-muted-foreground">Images:</span>
+                            <span className="text-foreground font-medium">JPG, PNG, GIF, WebP</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs">
+                            <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                            <span className="text-muted-foreground">Documents:</span>
+                            <span className="text-foreground font-medium">PDF, DOC, DOCX</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs">
+                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                            <span className="text-muted-foreground">Text:</span>
+                            <span className="text-foreground font-medium">TXT files</span>
+                          </div>
+                        </div>
+                        <div className="mt-3 pt-2 border-t border-border">
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                            <span>Maximum file size: <strong>10MB</strong></span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   
                   {/* Hidden File Input */}
                   <input
