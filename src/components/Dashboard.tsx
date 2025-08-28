@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Sidebar, SidebarContent, SidebarProvider } from '@/components/ui/sidebar';
+import { Sidebar, SidebarContent, SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { AccessStatusCard } from '@/components/AccessStatusCard';
@@ -519,7 +519,7 @@ This will help me provide more targeted and valuable insights for your business.
         </Sidebar>
 
         {/* Main Chat Area */}
-        <div className="flex-1 flex flex-col">
+        <SidebarInset>
           {/* Header */}
           <header className="border-b border-border bg-background/80 backdrop-blur-sm p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -694,7 +694,7 @@ This will help me provide more targeted and valuable insights for your business.
               </div>
             </div>
           )}
-        </div>
+        </SidebarInset>
       </div>
     </SidebarProvider>
   );
