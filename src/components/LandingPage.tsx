@@ -96,7 +96,7 @@ const LandingPage = () => {
             <div className="animate-fade-in-up">
               <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
                 Your AI-Powered
-                <span className="gradient-text-hero block mt-2">
+                <span className="text-foreground block mt-2">
                   Business Growth Partner
                 </span>
               </h1>
