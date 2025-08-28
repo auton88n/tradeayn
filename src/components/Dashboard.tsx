@@ -285,119 +285,54 @@ const Dashboard = ({ user }: DashboardProps) => {
     const lowerMessage = userMessage.toLowerCase();
     
     if (lowerMessage.includes('market') || lowerMessage.includes('analysis') || lowerMessage.includes('research')) {
-      return `📊 **Market Analysis Complete**
+      return `Market Analysis Results:
 
-Based on my research, here are the key insights for your market:
+TAM: $2.3B (12% growth)
+SAM: $450M in your region
+Current penetration: 3.2%
 
-**Market Size & Growth**
-• Total Addressable Market (TAM): $2.3B with 12% CAGR
-• Serviceable Available Market (SAM): $450M in your target region
-• Current penetration rate: 3.2% indicating significant opportunity
+Top competitors: MarketLeader Corp (23%), InnovateTech (18%), NextGen (12%)
 
-**Key Competitors**
-1. **MarketLeader Corp** - 23% market share, strong in enterprise
-2. **InnovateTech** - 18% share, focused on SMB segment  
-3. **NextGen Solutions** - 12% share, emerging in mobile-first approach
+Key opportunities: AI integration (+340%), sustainability focus (+67%), mobile-first (+45%)
 
-**Emerging Opportunities**
-🎯 AI integration demand up 340% YoY
-🎯 Sustainable/green solutions showing 67% preference increase
-🎯 Mobile-first experiences driving 45% higher engagement
-
-**Recommended Actions**
-1. Target the underserved mid-market segment (25-500 employees)
-2. Develop AI-powered features to differentiate
-3. Consider strategic partnerships with sustainability-focused brands
-
-Would you like me to dive deeper into any of these areas?`;
+Recommendation: Target mid-market segment with AI-powered sustainable solutions.`;
     }
     
     if (lowerMessage.includes('sales') || lowerMessage.includes('conversion') || lowerMessage.includes('funnel')) {
-      return `📈 **Sales Optimization Analysis**
+      return `Sales Funnel Analysis:
 
-I've analyzed typical conversion patterns in your industry. Here's what I found:
+Current performance vs industry avg:
+• Visitors to leads: 2.1% vs 2.5%
+• Leads to opportunities: 13% vs 15%  
+• Opportunities to customers: 22% vs 20%
 
-**Current Funnel Performance (Industry Benchmarks)**
-• Website visitors to leads: 2.1% (Industry avg: 2.5%)
-• Leads to opportunities: 13% (Industry avg: 15%)
-• Opportunities to customers: 22% (Industry avg: 20%)
+Quick wins: Exit-intent popups (+35%), progressive profiling (+28%), behavioral emails (+40%)
 
-**Key Optimization Areas**
-1. **Lead Capture** - Implement exit-intent popups (+35% lead increase)
-2. **Qualification** - Add progressive profiling (+28% qualification rate)
-3. **Nurturing** - Deploy behavioral email sequences (+40% engagement)
+Revenue impact: +$280K ARR potential
 
-**Revenue Impact Projections**
-📊 Optimizing lead capture alone could generate +$67K ARR
-📊 Full funnel optimization: +$280K ARR potential
-
-**Next Steps**
-1. A/B test new landing page designs
-2. Implement lead scoring system
-3. Create personalized nurture sequences
-
-Want me to create detailed implementation plans for any of these optimizations?`;
+Next steps: A/B test landing pages, implement lead scoring, create nurture sequences.`;
     }
     
     if (lowerMessage.includes('competitor') || lowerMessage.includes('competition')) {
-      return `🕵️ **Competitive Intelligence Report**
+      return `Competitive Analysis:
 
-I've conducted a comprehensive analysis of your competitive landscape:
+IndustryLeader Co: Strong brand, slow innovation, high pricing
+TechInnovator Inc: Modern tech, limited presence, funding issues  
+EstablishedPlayer Ltd: Market share, legacy tech, customer churn
 
-**Top 3 Competitors Deep Dive**
+Your advantage: Position as modern alternative, target churning customers, develop unique features
 
-**1. IndustryLeader Co.**
-• Strengths: Brand recognition, enterprise relationships
-• Weaknesses: Slow innovation, high pricing
-• Strategy: Premium positioning, account-based marketing
-• Opportunity: Undercut on mid-market pricing
-
-**2. TechInnovator Inc.**
-• Strengths: Modern tech stack, agile development
-• Weaknesses: Limited market presence, funding constraints
-• Strategy: Feature-first approach, developer-focused
-• Opportunity: Better go-to-market execution
-
-**3. EstablishedPlayer Ltd.**
-• Strengths: Market share, distribution network
-• Weaknesses: Legacy technology, customer churn
-• Strategy: Acquisition-based growth, vertical expansion
-• Opportunity: Superior customer experience
-
-**Strategic Recommendations**
-🎯 Position as the "modern alternative" to legacy solutions
-🎯 Target their churning customers with migration incentives
-🎯 Develop features they can't quickly replicate
-
-Shall I create a competitive battle card or go deeper into any specific competitor?`;
+Strategy: Better go-to-market execution and superior customer experience.`;
     }
 
     // Default response for other queries
-    return `🧠 **AYN Analysis Complete**
+    return `Analysis complete. I've processed your request using business intelligence capabilities.
 
-Thank you for your question! I've processed your request using my business intelligence capabilities.
+Key insights: Strategic considerations identified, multiple factors analyzed, data-driven approach recommended.
 
-Based on the information provided, here are my insights:
+Next steps: Gather additional context, analyze risks/opportunities, develop actionable plan, set success metrics.
 
-**Key Observations**
-• Your query touches on important strategic considerations
-• Multiple factors need to be analyzed for optimal results
-• Data-driven approach will yield the best outcomes
-
-**Recommended Approach**
-1. Gather additional market data and context
-2. Analyze potential risks and opportunities  
-3. Develop actionable implementation plan
-4. Set measurable success metrics
-
-**Next Steps**
-I'd be happy to dive deeper into specific aspects of your question. Could you provide more context about:
-• Your current business situation
-• Specific goals you're trying to achieve  
-• Timeline and resource constraints
-• Success metrics that matter most
-
-This will help me provide more targeted and valuable insights for your business.`;
+Please provide more details about your specific goals, timeline, and success criteria for targeted recommendations.`;
   };
 
   const handleLogout = async () => {
