@@ -4,27 +4,18 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { MaintenanceBanner } from '@/components/MaintenanceBanner';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { 
   Send, 
-  Paperclip, 
   TrendingUp, 
   Target, 
   Search, 
   Rocket,
-  Brain,
   LogOut,
-  Settings,
   Menu,
-  X,
-  Shield
+  X
 } from 'lucide-react';
 import { ThemeToggle } from './theme-toggle';
-import { TermsModal } from './TermsModal';
-import { AdminPanel } from './AdminPanel';
 
 interface Message {
   id: string;
@@ -114,178 +105,25 @@ const recentChats: ChatHistory[] = [
 ];
 
 export default function Dashboard({ user }: DashboardProps) {
-  // State management
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [hasAccess, setHasAccess] = useState(false);
-  const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [activeTab, setActiveTab] = useState<'chat' | 'admin'>('chat');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
-  // Maintenance mode state
-  const [maintenanceConfig, setMaintenanceConfig] = useState({
-    enableMaintenance: false,
-    maintenanceMessage: 'System is currently under maintenance. We apologize for any inconvenience.',
-    maintenanceStartTime: '',
-    maintenanceEndTime: ''
-  });
-  
-  // Typewriter animation state
-  const [currentText, setCurrentText] = useState('');
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [isInputFocused, setIsInputFocused] = useState(false);
-  
   const { toast } = useToast();
-  
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
-    console.log('Dashboard mounted. User:', user);
-    console.log('Has access:', hasAccess);
-    console.log('Has accepted terms:', hasAcceptedTerms);
-    console.log('Is typing:', isTyping);
-    console.log('Input message:', inputMessage);
-    
     scrollToBottom();
   }, [messages]);
 
   useEffect(() => {
-    console.log('Checking user access and admin role...');
-    checkUserAccess();
-    checkAdminRole();
-    checkMaintenanceStatus();
-    
-    const termsKey = `ayn_terms_accepted_${user.id}`;
-    const accepted = localStorage.getItem(termsKey) === 'true';
-    console.log('Terms accepted from localStorage:', accepted);
-    setHasAcceptedTerms(accepted);
-    
-    if (accepted) {
-      setWelcomeMessage();
-    }
-
-    // Set up maintenance status polling
-    const maintenanceInterval = setInterval(checkMaintenanceStatus, 5000); // Check every 5 seconds
-
-    // Listen for maintenance config changes from admin panel
-    const handleMaintenanceConfigChange = (event: CustomEvent) => {
-      setMaintenanceConfig(event.detail);
-    };
-
-    window.addEventListener('maintenanceConfigChanged', handleMaintenanceConfigChange as EventListener);
-
-    return () => {
-      clearInterval(maintenanceInterval);
-      window.removeEventListener('maintenanceConfigChanged', handleMaintenanceConfigChange as EventListener);
-    };
-  }, [user.id]);
-
-  const checkMaintenanceStatus = () => {
-    try {
-      const storedConfig = localStorage.getItem('ayn_maintenance_config');
-      if (storedConfig) {
-        const config = JSON.parse(storedConfig);
-        setMaintenanceConfig(config);
-      }
-    } catch (error) {
-      console.error('Error checking maintenance status:', error);
-      // Reset to default if there's an error
-      setMaintenanceConfig({
-        enableMaintenance: false,
-        maintenanceMessage: 'System is currently under maintenance. We apologize for any inconvenience.',
-        maintenanceStartTime: '',
-        maintenanceEndTime: ''
-      });
-    }
-  };
-
-  // Typewriter animation effect
-  useEffect(() => {
-    if (isInputFocused || inputMessage.length > 0) return;
-
-    const messages = [
-      "Ask AYN anything about your business...",
-      "How can I increase my revenue?",
-      "What are the latest market trends?", 
-      "Analyze my competition strategy...",
-      "How do I optimize my sales funnel?",
-      "What growth opportunities exist?",
-      "Help me with pricing strategy...",
-      "Research my target market..."
-    ];
-
-    const typeSpeed = 100;
-    const deleteSpeed = 50;
-    const pauseTime = 2000;
-
-    const timer = setTimeout(() => {
-      const currentMessage = messages[currentIndex];
-      
-      if (!isDeleting) {
-        setCurrentText(currentMessage.substring(0, currentText.length + 1));
-        
-        if (currentText === currentMessage) {
-          setTimeout(() => setIsDeleting(true), pauseTime);
-        }
-      } else {
-        setCurrentText(currentMessage.substring(0, currentText.length - 1));
-        
-        if (currentText === '') {
-          setIsDeleting(false);
-          setCurrentIndex((prevIndex) => (prevIndex + 1) % messages.length);
-        }
-      }
-    }, isDeleting ? deleteSpeed : typeSpeed);
-
-    return () => clearTimeout(timer);
-  }, [currentText, isDeleting, currentIndex, isInputFocused, inputMessage]);
-
-  const checkUserAccess = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('access_grants')
-        .select('is_active, expires_at')
-        .eq('user_id', user.id)
-        .single();
-
-      if (error) {
-        console.error('Error checking access:', error);
-        return;
-      }
-
-      const isActive = data.is_active && (!data.expires_at || new Date(data.expires_at) > new Date());
-      setHasAccess(isActive);
-    } catch (error) {
-      console.error('Access check error:', error);
-    }
-  };
-
-  const checkAdminRole = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .single();
-
-      if (error) {
-        console.error('Error checking role:', error);
-        return;
-      }
-
-      setIsAdmin(data.role === 'admin');
-    } catch (error) {
-      console.error('Role check error:', error);
-    }
-  };
+    setWelcomeMessage();
+  }, []);
 
   const setWelcomeMessage = () => {
     const welcomeMessage: Message = {
@@ -297,86 +135,9 @@ export default function Dashboard({ user }: DashboardProps) {
     setMessages([welcomeMessage]);
   };
 
-  const handleAcceptTerms = () => {
-    const termsKey = `ayn_terms_accepted_${user.id}`;
-    localStorage.setItem(termsKey, 'true');
-    setHasAcceptedTerms(true);
-    setWelcomeMessage();
-    
-    toast({
-      title: "Welcome to AYN!",
-      description: "You can now start using AYN AI Business Consulting services."
-    });
-  };
-
   const handleSendMessage = async (messageContent?: string) => {
-    console.log('handleSendMessage called with:', messageContent);
-    console.log('Current state - hasAcceptedTerms:', hasAcceptedTerms, 'hasAccess:', hasAccess);
-    
-    if (!hasAcceptedTerms) {
-      console.log('Terms not accepted - showing toast');
-      toast({
-        title: "Terms Required",
-        description: "Please accept the terms and conditions before using AYN AI.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!hasAccess) {
-      console.log('No access - showing toast');
-      toast({
-        title: "Access Required",
-        description: "You need active access to use AYN. Please contact our team.",
-        variant: "destructive"
-      });
-      return;
-    }
-
     const content = messageContent || inputMessage.trim();
-    console.log('Message content:', content);
-    if (!content) {
-      console.log('No content to send');
-      return;
-    }
-
-    console.log('Proceeding to send message...');
-
-    // Check and increment usage
-    try {
-      const { data: canUse, error: usageError } = await supabase.rpc('increment_usage', {
-        _user_id: user.id,
-        _action_type: 'message',
-        _count: 1
-      });
-
-      if (usageError) {
-        console.error('Usage check error:', usageError);
-        toast({
-          title: "Usage Error",
-          description: "Unable to verify usage limits. Please try again.",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      if (!canUse) {
-        toast({
-          title: "Usage Limit Reached",
-          description: "You've reached your monthly message limit. Please contact support or wait for next month's reset.",
-          variant: "destructive"
-        });
-        return;
-      }
-    } catch (error) {
-      console.error('Usage tracking error:', error);
-      toast({
-        title: "System Error",
-        description: "Unable to process your request. Please try again.",
-        variant: "destructive"
-      });
-      return;
-    }
+    if (!content) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -391,7 +152,6 @@ export default function Dashboard({ user }: DashboardProps) {
     setIsTyping(true);
 
     try {
-      // Call AYN webhook through edge function
       const { data: webhookResponse, error: webhookError } = await supabase.functions.invoke('ayn-webhook', {
         body: { 
           message: content,
@@ -464,18 +224,17 @@ export default function Dashboard({ user }: DashboardProps) {
   };
 
   return (
-    <div className="main-layout">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex flex-col">
       {/* Sidebar Overlay */}
       <div 
         className={`sidebar-overlay ${isSidebarOpen ? 'active' : ''}`}
         onClick={handleCloseSidebar}
       />
 
-      {/* Hidden Sidebar */}
+      {/* Sidebar */}
       <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
-        {/* Close Button */}
         <div className="flex justify-between items-center mb-4 px-6 pt-4">
-          <h2 className="text-lg font-semibold text-gray-900">Menu</h2>
+          <h2 className="text-lg font-semibold">Menu</h2>
           <button 
             className="hamburger-button"
             onClick={handleCloseSidebar}
@@ -487,12 +246,14 @@ export default function Dashboard({ user }: DashboardProps) {
         {/* User Profile Section */}
         <div className="user-profile-section">
           <div className="flex items-center gap-3 mb-4">
-            <div className="user-avatar">
-              {user?.user_metadata?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
-            </div>
+            <Avatar className="h-10 w-10">
+              <AvatarFallback>
+                {user?.user_metadata?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+              </AvatarFallback>
+            </Avatar>
             <div className="flex-1 min-w-0">
-              <div className="font-semibold text-gray-900 text-sm">{user?.user_metadata?.name || 'User'}</div>
-              <div className="text-sm text-gray-500">{user?.email}</div>
+              <div className="font-semibold text-sm">{user?.user_metadata?.name || 'User'}</div>
+              <div className="text-sm text-muted-foreground">{user?.email}</div>
             </div>
             <Button 
               variant="ghost" 
@@ -510,7 +271,7 @@ export default function Dashboard({ user }: DashboardProps) {
                 <img src="/lovable-uploads/636eb1d6-bee9-4ea8-a6bf-748bd267d05f.png" alt="Brain" width="16" height="16" />
               </div>
               <div className="flex-1">
-                <div className="font-medium text-gray-900 text-sm">AYN AI Consultant</div>
+                <div className="font-medium text-sm">AYN AI Consultant</div>
                 <div className="text-sm text-green-600 flex items-center gap-1">
                   <div className="status-dot"></div>
                   Ready to help
@@ -534,7 +295,7 @@ export default function Dashboard({ user }: DashboardProps) {
                 }}
               >
                 <template.icon className={`w-4 h-4 ${template.color}`} />
-                <span className="text-gray-700 text-sm">{template.name}</span>
+                <span className="text-sm">{template.name}</span>
               </div>
             ))}
           </div>
@@ -585,194 +346,132 @@ export default function Dashboard({ user }: DashboardProps) {
           <div className="nav-buttons">
             <div className="status-badge">
               <div className="status-dot"></div>
-              {hasAccess ? 'Active' : 'Inactive'}
+              Active
             </div>
-            {isAdmin && (
-              <>
-                <button
-                  className={`nav-button ${activeTab === 'chat' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('chat')}
-                >
-                  Chat
-                </button>
-                <button
-                  className={`nav-button ${activeTab === 'admin' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('admin')}
-                >
-                  Admin
-                </button>
-              </>
-            )}
             <ThemeToggle />
           </div>
         </header>
 
-        {/* Maintenance Banner */}
-        <MaintenanceBanner 
-          isEnabled={maintenanceConfig.enableMaintenance}
-          message={maintenanceConfig.maintenanceMessage}
-          startTime={maintenanceConfig.maintenanceStartTime}
-          endTime={maintenanceConfig.maintenanceEndTime}
-        />
-
-        {/* Terms Modal */}
-        <TermsModal 
-          open={hasAccess && !hasAcceptedTerms} 
-          onAccept={handleAcceptTerms}
-        />
-
-        {/* Admin Panel */}
-        {isAdmin && activeTab === 'admin' && (
-          <div className="flex-1 overflow-y-auto p-6">
-            <AdminPanel />
-          </div>
-        )}
-
-        {/* Chat Interface */}
-        {(activeTab === 'chat' || !isAdmin) && (
-          <>
-            {/* Chat Area */}
-            <div className="chat-area">
-              <div className="message-container">
-                {messages.map((message) => (
-                  <div key={message.id} className="chat-message">
-                    {message.sender === 'ayn' ? (
-                      <>
-                        <div className="message-header">
-                          <div className="message-brain-icon">
-                            <img src="/lovable-uploads/636eb1d6-bee9-4ea8-a6bf-748bd267d05f.png" alt="Brain" width="12" height="12" />
-                          </div>
-                          <div>
-                            <div className="sender-name">AYN AI Consultant</div>
-                            <div className="message-time">
-                              {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="message-content">
-                          {message.content.split('\n').map((line, i) => {
-                            if (line.trim() === '') return <br key={i} />;
-                            
-                            // Handle bold text
-                            if (line.includes('**')) {
-                              return (
-                                <div key={i}>
-                                  <span dangerouslySetInnerHTML={{
-                                    __html: line.replace(/\*\*(.*?)\*\*/g, '<strong class="capability-title">$1</strong>')
-                                  }} />
-                                </div>
-                              );
-                            }
-                            
-                            // Handle bullet points
-                            if (line.trim().match(/^[🔍📈📊🎯]/)) {
-                              return (
-                                <div key={i} className="capability-item">
-                                  <span>{line.split(' - ')[0]}</span>
-                                  {line.split(' - ')[1] && (
-                                    <span className="capability-description"> - {line.split(' - ')[1]}</span>
-                                  )}
-                                </div>
-                              );
-                            }
-                            
-                            return <div key={i}>{line}</div>;
-                          })}
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="message-header justify-end">
-                          <div>
-                            <div className="sender-name text-right">You</div>
-                            <div className="message-time text-right">
-                              {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                              {message.status === 'sending' && ' • Sending...'}
-                              {message.status === 'error' && ' • Failed'}
-                            </div>
-                          </div>
-                          <div className="avatar bg-gray-600">
-                            {user?.user_metadata?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
-                          </div>
-                        </div>
-                        <div className="message-content text-right">
-                          {message.content}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                ))}
-
-                {/* Typing Indicator */}
-                {isTyping && (
-                  <div className="chat-message">
+        {/* Chat Area */}
+        <div className="chat-area">
+          <div className="message-container">
+            {messages.map((message) => (
+              <div key={message.id} className="chat-message">
+                {message.sender === 'ayn' ? (
+                  <>
                     <div className="message-header">
                       <div className="message-brain-icon">
                         <img src="/lovable-uploads/636eb1d6-bee9-4ea8-a6bf-748bd267d05f.png" alt="Brain" width="12" height="12" />
                       </div>
                       <div>
                         <div className="sender-name">AYN AI Consultant</div>
-                        <div className="message-time">typing...</div>
+                        <div className="message-time">
+                          {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                      <span className="text-gray-500 text-sm ml-2">AYN is analyzing your request...</span>
+                    <div className="message-content">
+                      {message.content.split('\n').map((line, i) => {
+                        if (line.trim() === '') return <br key={i} />;
+                        
+                        // Handle bold text
+                        if (line.includes('**')) {
+                          return (
+                            <div key={i}>
+                              <span dangerouslySetInnerHTML={{
+                                __html: line.replace(/\*\*(.*?)\*\*/g, '<strong class="capability-title">$1</strong>')
+                              }} />
+                            </div>
+                          );
+                        }
+                        
+                        // Handle bullet points
+                        if (line.trim().match(/^[🔍📈📊🎯]/)) {
+                          return (
+                            <div key={i} className="capability-item">
+                              <span>{line.split(' - ')[0]}</span>
+                              {line.split(' - ')[1] && (
+                                <span className="capability-description"> - {line.split(' - ')[1]}</span>
+                              )}
+                            </div>
+                          );
+                        }
+                        
+                        return <div key={i}>{line}</div>;
+                      })}
                     </div>
-                  </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="message-header justify-end">
+                      <div>
+                        <div className="sender-name text-right">You</div>
+                        <div className="message-time text-right">
+                          {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {message.status === 'sending' && ' • Sending...'}
+                          {message.status === 'error' && ' • Failed'}
+                        </div>
+                      </div>
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback>
+                          {user?.user_metadata?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                    </div>
+                    <div className="message-content text-right">
+                      {message.content}
+                    </div>
+                  </>
                 )}
-
-                <div ref={messagesEndRef} />
               </div>
-            </div>
+            ))}
 
-            {/* Input Area */}
-            <div className="input-area">
-              <div className="input-container">
-                <Paperclip className="w-5 h-5 text-gray-400 cursor-pointer hover:text-gray-600" />
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={inputMessage}
-                  onChange={(e) => {
-                    console.log('Input onChange called with:', e.target.value);
-                    setInputMessage(e.target.value);
-                  }}
-                  onKeyPress={(e) => {
-                    console.log('Input onKeyPress called with key:', e.key);
-                    handleKeyPress(e);
-                  }}
-                  onFocus={() => {
-                    console.log('Input focused');
-                    setIsInputFocused(true);
-                  }}
-                  onBlur={() => {
-                    console.log('Input blurred');
-                    setIsInputFocused(false);
-                  }}
-                  onClick={() => {
-                    console.log('Input clicked');
-                  }}
-                  placeholder="Ask AYN anything about your business..."
-                  disabled={isTyping}
-                  className="message-input"
-                />
-                <button
-                  onClick={() => {
-                    console.log('Send button clicked');
-                    handleSendMessage();
-                  }}
-                  disabled={!inputMessage.trim() || isTyping}
-                  className="send-button"
-                >
-                  <Send className="w-4 h-4" />
-                </button>
+            {/* Typing Indicator */}
+            {isTyping && (
+              <div className="chat-message">
+                <div className="message-header">
+                  <div className="message-brain-icon">
+                    <img src="/lovable-uploads/636eb1d6-bee9-4ea8-a6bf-748bd267d05f.png" alt="Brain" width="12" height="12" />
+                  </div>
+                  <div>
+                    <div className="sender-name">AYN AI Consultant</div>
+                    <div className="message-time">typing...</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  <span className="text-muted-foreground text-sm ml-2">AYN is analyzing your request...</span>
+                </div>
               </div>
-            </div>
-          </>
-        )}
+            )}
+
+            <div ref={messagesEndRef} />
+          </div>
+        </div>
+
+        {/* Input Area */}
+        <div className="input-area">
+          <div className="input-container">
+            <Input
+              type="text"
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Ask AYN anything about your business..."
+              disabled={isTyping}
+              className="message-input"
+            />
+            <Button
+              onClick={() => handleSendMessage()}
+              disabled={!inputMessage.trim() || isTyping}
+              className="send-button"
+            >
+              <Send className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );
