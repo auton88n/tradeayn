@@ -222,4 +222,17 @@
   ::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--foreground));
   }
+
+  /* Typewriter Animation */
+  .typewriter-text::after {
+    content: '|';
+    animation: blink 1s step-end infinite;
+    color: #3b82f6;
+    margin-left: 2px;
+  }
+
+  @keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+  }
 }

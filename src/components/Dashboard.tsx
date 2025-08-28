@@ -123,6 +123,12 @@ export default function Dashboard({ user }: DashboardProps) {
   const [activeTab, setActiveTab] = useState<'chat' | 'admin'>('chat');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
+  // Typewriter animation state
+  const [currentText, setCurrentText] = useState('');
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isInputFocused, setIsInputFocused] = useState(false);
+  
   const { toast } = useToast();
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -148,6 +154,47 @@ export default function Dashboard({ user }: DashboardProps) {
       setWelcomeMessage();
     }
   }, [user.id]);
+
+  // Typewriter animation effect
+  useEffect(() => {
+    if (isInputFocused || inputMessage.length > 0) return;
+
+    const messages = [
+      "Ask AYN anything about your business...",
+      "How can I increase my revenue?",
+      "What are the latest market trends?", 
+      "Analyze my competition strategy...",
+      "How do I optimize my sales funnel?",
+      "What growth opportunities exist?",
+      "Help me with pricing strategy...",
+      "Research my target market..."
+    ];
+
+    const typeSpeed = 100;
+    const deleteSpeed = 50;
+    const pauseTime = 2000;
+
+    const timer = setTimeout(() => {
+      const currentMessage = messages[currentIndex];
+      
+      if (!isDeleting) {
+        setCurrentText(currentMessage.substring(0, currentText.length + 1));
+        
+        if (currentText === currentMessage) {
+          setTimeout(() => setIsDeleting(true), pauseTime);
+        }
+      } else {
+        setCurrentText(currentMessage.substring(0, currentText.length - 1));
+        
+        if (currentText === '') {
+          setIsDeleting(false);
+          setCurrentIndex((prevIndex) => (prevIndex + 1) % messages.length);
+        }
+      }
+    }, isDeleting ? deleteSpeed : typeSpeed);
+
+    return () => clearTimeout(timer);
+  }, [currentText, isDeleting, currentIndex, isInputFocused, inputMessage]);
 
   const checkUserAccess = async () => {
     try {
@@ -608,44 +655,56 @@ export default function Dashboard({ user }: DashboardProps) {
               </ScrollArea>
 
               {/* Message Input Area */}
-              <div className="border-t border-border p-4 lg:p-6 flex-shrink-0">
+              <div className="bg-gray-50 dark:bg-gray-900/50 border-t border-border p-4 lg:p-6 flex-shrink-0">
                 <div className="max-w-4xl mx-auto">
-                  <div className="flex items-end gap-3">
+                  <div className="flex items-center gap-3 bg-white dark:bg-gray-800 rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 p-4 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all duration-300">
+                    
+                    {/* Attachment Button */}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-9 h-9 p-0 text-gray-400 hover:text-blue-500 transition-colors duration-200 flex-shrink-0"
+                      disabled={!hasAccess || !hasAcceptedTerms}
+                      title="Attach file (coming soon)"
+                    >
+                      <Paperclip className="w-4 h-4" />
+                    </Button>
+                    
+                    {/* Input Container */}
                     <div className="flex-1 relative">
                       <Input
                         ref={inputRef}
                         value={inputMessage}
                         onChange={(e) => setInputMessage(e.target.value)}
                         onKeyPress={handleKeyPress}
-                        placeholder={
-                          !hasAccess 
-                            ? "Access required to send messages..."
-                            : !hasAcceptedTerms 
-                              ? "Please accept terms to start chatting..."
-                              : "Ask AYN anything about your business..."
-                        }
+                        onFocus={() => setIsInputFocused(true)}
+                        onBlur={() => setIsInputFocused(false)}
+                        placeholder=""
                         disabled={!hasAccess || !hasAcceptedTerms || isTyping}
-                        className="pr-16 py-3 text-base resize-none min-h-[48px] focus:ring-2 focus:ring-blue-500/20 transition-all duration-300 placeholder:animate-placeholder-pulse"
+                        className="border-0 bg-transparent text-base outline-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 h-auto min-h-[28px]"
                       />
                       
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="w-8 h-8 p-0 text-muted-foreground hover:text-foreground transition-colors duration-200"
-                          disabled={!hasAccess || !hasAcceptedTerms}
-                          title="Attach file (coming soon)"
-                        >
-                          <Paperclip className="w-4 h-4" />
-                        </Button>
-                      </div>
+                      {/* Typewriter Animation Placeholder */}
+                      {!inputMessage && !isInputFocused && (
+                        <div className="absolute inset-0 flex items-center pointer-events-none">
+                          <span className="text-gray-400 select-none typewriter-text">
+                            {!hasAccess 
+                              ? "Access required to send messages..."
+                              : !hasAcceptedTerms 
+                                ? "Please accept terms to start chatting..."
+                                : currentText
+                            }
+                          </span>
+                        </div>
+                      )}
                     </div>
                     
+                    {/* Send Button */}
                     <Button
                       variant="blue"
                       onClick={() => handleSendMessage()}
                       disabled={!inputMessage.trim() || !hasAccess || !hasAcceptedTerms || isTyping}
-                      className="h-12 px-6"
+                      className="h-10 px-5 rounded-xl text-sm font-medium shadow-md disabled:opacity-50"
                     >
                       <Send className="w-4 h-4 mr-2" />
                       Send
