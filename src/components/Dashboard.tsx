@@ -464,7 +464,10 @@ export default function Dashboard({ user }: DashboardProps) {
           {/* AYN Status */}
           <div className="ayn-consultant-card flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200 mb-6">
             <div className="ayn-avatar">
-              <Brain className="w-5 h-5" />
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+                <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="2" fill="none"/>
+                <path d="M12 2v20M12 12l-7.07 7.07M12 12l7.07 7.07" stroke="white" strokeWidth="2"/>
+              </svg>
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-medium text-sm text-gray-900">AYN AI Consultant</p>
@@ -524,7 +527,10 @@ export default function Dashboard({ user }: DashboardProps) {
           <div className="logo-section">
             <div className="flex items-center gap-3">
               <div className="ayn-message-avatar">
-                <Brain className="w-4 h-4" />
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+                  <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="2" fill="none"/>
+                  <path d="M12 2v20M12 12l-7.07 7.07M12 12l7.07 7.07" stroke="white" strokeWidth="2"/>
+                </svg>
               </div>
               <div>
                 <h1 className="font-bold text-lg text-gray-900">AYN AI Business Consultant</h1>
@@ -598,7 +604,10 @@ export default function Dashboard({ user }: DashboardProps) {
                       <>
                         <div className="message-header">
                           <div className="ayn-message-avatar">
-                            <Brain className="w-4 h-4" />
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+                              <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="2" fill="none"/>
+                              <path d="M12 2v20M12 12l-7.07 7.07M12 12l7.07 7.07" stroke="white" strokeWidth="2"/>
+                            </svg>
                           </div>
                           <div>
                             <div className="font-semibold text-gray-900 text-sm">AYN AI Consultant</div>
@@ -666,7 +675,10 @@ export default function Dashboard({ user }: DashboardProps) {
                   <div className="message-bubble">
                     <div className="message-header">
                       <div className="ayn-message-avatar">
-                        <Brain className="w-4 h-4" />
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+                          <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="2" fill="none"/>
+                          <path d="M12 2v20M12 12l-7.07 7.07M12 12l7.07 7.07" stroke="white" strokeWidth="2"/>
+                        </svg>
                       </div>
                       <div>
                         <div className="font-semibold text-gray-900 text-sm">AYN AI Consultant</div>
