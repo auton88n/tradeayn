@@ -167,7 +167,17 @@ export default function Dashboard({ user }: DashboardProps) {
     // Set up maintenance status polling
     const maintenanceInterval = setInterval(checkMaintenanceStatus, 5000); // Check every 5 seconds
 
-    return () => clearInterval(maintenanceInterval);
+    // Listen for maintenance config changes from admin panel
+    const handleMaintenanceConfigChange = (event: CustomEvent) => {
+      setMaintenanceConfig(event.detail);
+    };
+
+    window.addEventListener('maintenanceConfigChanged', handleMaintenanceConfigChange as EventListener);
+
+    return () => {
+      clearInterval(maintenanceInterval);
+      window.removeEventListener('maintenanceConfigChanged', handleMaintenanceConfigChange as EventListener);
+    };
   }, [user.id]);
 
   const checkMaintenanceStatus = () => {
@@ -179,6 +189,13 @@ export default function Dashboard({ user }: DashboardProps) {
       }
     } catch (error) {
       console.error('Error checking maintenance status:', error);
+      // Reset to default if there's an error
+      setMaintenanceConfig({
+        enableMaintenance: false,
+        maintenanceMessage: 'System is currently under maintenance. We apologize for any inconvenience.',
+        maintenanceStartTime: '',
+        maintenanceEndTime: ''
+      });
     }
   };
 

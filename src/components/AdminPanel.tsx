@@ -163,26 +163,29 @@ export const AdminPanel = () => {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Fetch access requests with enhanced data
+      // Fetch access requests first
       const { data: accessData, error: accessError } = await supabase
         .from('access_grants')
-        .select(`
-          *,
-          profiles (
-            id,
-            user_id,
-            company_name,
-            contact_person,
-            phone,
-            created_at
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (accessError) throw accessError;
+
+      // Fetch profiles data separately
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, user_id, company_name, contact_person, phone, created_at');
+
+      if (profilesError) throw profilesError;
+
+      // Combine the data manually
+      const combinedData = (accessData || []).map(access => ({
+        ...access,
+        profiles: profilesData?.find(profile => profile.user_id === access.user_id) || null
+      }));
       
-      setAccessRequests((accessData as any) || []);
-      setAllUsers((accessData as any) || []);
+      setAccessRequests(combinedData || []);
+      setAllUsers(combinedData || []);
 
       // Fetch enhanced usage statistics
       const { data: usageData, error: usageError } = await supabase
@@ -193,9 +196,9 @@ export const AdminPanel = () => {
       }
 
       // Calculate advanced system metrics
-      const totalUsers = accessData?.length || 0;
-      const activeUsers = accessData?.filter(u => u.is_active).length || 0;
-      const pendingRequests = accessData?.filter(u => !u.is_active && !u.granted_at).length || 0;
+      const totalUsers = combinedData?.length || 0;
+      const activeUsers = combinedData?.filter(u => u.is_active).length || 0;
+      const pendingRequests = combinedData?.filter(u => !u.is_active && !u.granted_at).length || 0;
       
       // Get usage logs for today with time-based analysis
       const today = new Date().toISOString().split('T')[0];
@@ -250,13 +253,24 @@ export const AdminPanel = () => {
       
       setSecurityEvents(mockSecurityEvents);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching data:', error);
-      toast({
-        title: "Error",
-        description: "Unable to fetch admin data.",
-        variant: "destructive"
-      });
+      
+      // More specific error handling
+      const errorMessage = error?.message || 'Unknown error occurred';
+      if (errorMessage.includes('relationship')) {
+        toast({
+          title: "Database Configuration Issue",
+          description: "There's an issue with database relationships. Please refresh the page.",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Unable to fetch admin data. Please try again.",
+          variant: "destructive"
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -563,14 +577,23 @@ export const AdminPanel = () => {
       const updatedConfig = { ...systemConfig, ...newConfig };
       setSystemConfig(updatedConfig);
       
-      // Save maintenance config to localStorage for dashboard access
-      const maintenanceConfig = {
-        enableMaintenance: updatedConfig.enableMaintenance,
-        maintenanceMessage: updatedConfig.maintenanceMessage,
-        maintenanceStartTime: updatedConfig.maintenanceStartTime,
-        maintenanceEndTime: updatedConfig.maintenanceEndTime
-      };
-      localStorage.setItem('ayn_maintenance_config', JSON.stringify(maintenanceConfig));
+      // Validate maintenance configuration
+      if (newConfig.enableMaintenance !== undefined || newConfig.maintenanceMessage || newConfig.maintenanceStartTime || newConfig.maintenanceEndTime) {
+        const maintenanceConfig = {
+          enableMaintenance: updatedConfig.enableMaintenance,
+          maintenanceMessage: updatedConfig.maintenanceMessage || 'System is currently under maintenance. We apologize for any inconvenience.',
+          maintenanceStartTime: updatedConfig.maintenanceStartTime || '',
+          maintenanceEndTime: updatedConfig.maintenanceEndTime || ''
+        };
+        
+        // Save to localStorage for real-time updates
+        localStorage.setItem('ayn_maintenance_config', JSON.stringify(maintenanceConfig));
+        
+        // Dispatch custom event to notify dashboard component
+        window.dispatchEvent(new CustomEvent('maintenanceConfigChanged', { 
+          detail: maintenanceConfig 
+        }));
+      }
       
       await logSecurityEvent('config_change', `System configuration updated: ${Object.keys(newConfig).join(', ')}`, 'medium');
       
@@ -580,6 +603,11 @@ export const AdminPanel = () => {
       });
     } catch (error) {
       console.error('Error updating config:', error);
+      toast({
+        title: "Configuration Error",
+        description: "Failed to update system configuration. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -652,12 +680,17 @@ export const AdminPanel = () => {
 
   if (isLoading) {
     return (
-      <Card className="p-6">
-        <div className="flex items-center gap-3">
-          <Shield className="w-5 h-5 animate-spin" />
-          <span>Loading enterprise admin panel...</span>
-        </div>
-      </Card>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Card className="p-8 max-w-md mx-auto">
+          <div className="flex flex-col items-center gap-4">
+            <Shield className="w-12 h-12 animate-spin text-primary" />
+            <div className="text-center">
+              <h3 className="font-semibold text-lg mb-2">Loading Admin Panel</h3>
+              <p className="text-muted-foreground">Fetching system data and user information...</p>
+            </div>
+          </div>
+        </Card>
+      </div>
     );
   }
 
