@@ -41,16 +41,48 @@ serve(async (req) => {
     const contentType = upstream.headers.get('content-type') || '';
     const rawText = await upstream.text();
 
+    // Robust parsing: handle JSON, NDJSON (newline-delimited JSON), or plain text
     let parsed: any = null;
-    if (contentType.includes('application/json') && rawText) {
+    let ndjsonItems: any[] = [];
+
+    // Try parse as single JSON first when appropriate
+    if (rawText) {
       try {
-        parsed = JSON.parse(rawText);
-      } catch (e) {
-        console.warn('Upstream responded with invalid JSON. Falling back to text.');
+        if (contentType.includes('application/json') || rawText.trim().startsWith('{')) {
+          parsed = JSON.parse(rawText);
+        }
+      } catch {
+        // Not a single JSON object
       }
     }
 
-    const normalized = (parsed?.output || parsed?.response || parsed?.message || rawText || '').toString().trim();
+    // If not single JSON, try NDJSON
+    if (!parsed && rawText && rawText.includes('\n')) {
+      const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
+      for (const line of lines) {
+        try {
+          const obj = JSON.parse(line);
+          ndjsonItems.push(obj);
+        } catch {
+          // Ignore non-JSON lines
+        }
+      }
+    }
+
+    const pickContent = (obj: any): string | undefined => {
+      if (!obj || typeof obj !== 'object') return undefined;
+      return obj.output ?? obj.response ?? obj.message ?? obj.content ?? undefined;
+    };
+
+    let normalized = '';
+    if (parsed) {
+      normalized = String(pickContent(parsed) ?? rawText).trim();
+    } else if (ndjsonItems.length) {
+      const contents = ndjsonItems.map(pickContent).filter(Boolean) as string[];
+      normalized = (contents.length ? contents.join('\n') : rawText).toString().trim();
+    } else {
+      normalized = (rawText || '').toString().trim();
+    }
 
     console.log('Upstream status:', upstream.status, 'content-type:', contentType);
     console.log('Upstream body (first 200 chars):', (rawText || '').slice(0, 200));
