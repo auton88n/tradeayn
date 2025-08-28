@@ -616,36 +616,36 @@ export default function Dashboard({ user }: DashboardProps) {
       <div className="flex h-screen w-full bg-background">
         {/* Sidebar */}
         <Sidebar className="w-60" collapsible="icon">
-          <SidebarHeader className="p-6">
-            {/* User Profile */}
-            <div className="flex items-center gap-3">
-              <Avatar className="w-12 h-12 ring-2 ring-primary/20">
+          <SidebarHeader>
+            {/* User Profile - Collapsed Version */}
+            <div className="flex items-center gap-3 p-4">
+              <Avatar className="w-8 h-8 ring-2 ring-primary/20">
                 <AvatarImage src="" />
-                <AvatarFallback className="bg-gradient-primary text-white font-semibold">
+                <AvatarFallback className="bg-gradient-primary text-white font-semibold text-sm">
                   {user?.user_metadata?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
                 </AvatarFallback>
               </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold truncate">{user?.user_metadata?.name || 'User'}</p>
-                <p className="text-sm text-muted-foreground truncate">{user?.email}</p>
+              <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
+                <p className="font-semibold truncate text-sm">{user?.user_metadata?.name || 'User'}</p>
+                <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
               </div>
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={handleLogout}
-                className="text-muted-foreground hover:text-foreground flex-shrink-0"
+                className="text-muted-foreground hover:text-foreground group-data-[collapsible=icon]:hidden"
               >
                 <LogOut className="w-4 h-4" />
               </Button>
             </div>
 
-            {/* AYN Status */}
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/10 border border-primary/20 mt-4">
-              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                <Brain className="w-4 h-4 text-primary-foreground" />
+            {/* AYN Status - Simplified for collapsed state */}
+            <div className="flex items-center gap-3 p-3 mx-4 rounded-lg bg-primary/10 border border-primary/20">
+              <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                <Brain className="w-3 h-3 text-primary-foreground" />
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm">AYN AI Consultant</p>
+              <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
+                <p className="font-medium text-xs">AYN AI</p>
                 <p className={`text-xs ${isTyping ? 'text-muted-foreground' : (hasAccess ? 'text-green-500 font-medium' : 'text-muted-foreground')}`}>
                   {isTyping ? 'Thinking...' : (hasAccess ? 'Active' : 'Inactive')}
                 </p>
@@ -653,7 +653,7 @@ export default function Dashboard({ user }: DashboardProps) {
             </div>
           </SidebarHeader>
 
-          <SidebarContent className="px-6">
+          <SidebarContent>
             {/* Quick Start */}
             <SidebarGroup>
               <SidebarGroupLabel>Quick Start</SidebarGroupLabel>
@@ -663,11 +663,11 @@ export default function Dashboard({ user }: DashboardProps) {
                     <SidebarMenuItem key={template.name}>
                       <SidebarMenuButton
                         onClick={() => handleSendMessage(template.prompt)}
-                        className="h-auto p-3 text-left"
                         disabled={!hasAccess || !hasAcceptedTerms}
+                        tooltip={template.name}
                       >
-                        <template.icon className={`w-4 h-4 mr-3 flex-shrink-0 ${template.color}`} />
-                        <span className="text-sm font-medium">{template.name}</span>
+                        <template.icon className={`w-4 h-4 flex-shrink-0 ${template.color}`} />
+                        <span>{template.name}</span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   ))}
@@ -684,14 +684,14 @@ export default function Dashboard({ user }: DashboardProps) {
                     <SidebarMenuItem key={index}>
                       <SidebarMenuButton
                         onClick={() => handleLoadChat(chat)}
-                        className="h-auto p-3 text-left"
+                        tooltip={chat.title}
                       >
-                        <div className="min-w-0">
-                          <p className="font-medium truncate">{chat.title}</p>
-                          <p className="text-xs text-muted-foreground truncate">{chat.lastMessage}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {chat.timestamp.toLocaleDateString()}
-                          </p>
+                        <div className="w-4 h-4 rounded bg-muted flex items-center justify-center text-xs font-medium">
+                          {chat.title.charAt(0)}
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <span className="font-medium truncate text-sm">{chat.title}</span>
+                          <span className="text-xs text-muted-foreground truncate">{chat.lastMessage}</span>
                         </div>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
