@@ -89,20 +89,7 @@ const LandingPage = () => {
       <section className="relative py-20 overflow-hidden">
         {/* Soft Radial Gradient Background */}
         
-        
-        {/* Background Icons - Static, proportional */}
-        <div className="absolute inset-0 opacity-10 pointer-events-none select-none">
-          <Brain className="absolute top-1/8 left-1/6 w-12 h-12 text-primary" />
-          <Brain className="absolute top-2/8 right-1/5 w-8 h-8 text-accent" />
-          <Brain className="absolute top-1/2 left-1/3 w-16 h-16 text-primary" />
-          <Brain className="absolute top-4/8 right-1/4 w-10 h-10 text-accent" />
-          <Brain className="absolute top-5/8 left-1/5 w-14 h-14 text-primary" />
-
-          <Zap className="absolute top-1/12 right-1/3 w-10 h-10 text-accent" />
-          <Zap className="absolute top-3/12 left-1/4 w-6 h-6 text-primary" />
-          <Zap className="absolute top-5/12 right-1/6 w-12 h-12 text-accent" />
-          <Zap className="absolute top-7/12 left-1/7 w-8 h-8 text-primary" />
-        </div>
+        <div className="absolute inset-0 bg-gradient-radial from-primary/8 via-background to-accent/5" />
         
         <div className="container mx-auto px-6 relative z-10">
           <div className="text-center max-w-4xl mx-auto">
