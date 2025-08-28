@@ -616,7 +616,7 @@ export default function Dashboard({ user }: DashboardProps) {
           {(activeTab === 'chat' || !isAdmin) && (
             <>
               {/* Messages Area */}
-              <ScrollArea className="flex-1 px-4 lg:px-6">
+              <ScrollArea className="flex-1 px-4 lg:px-6 pb-24">
                 <div className="max-w-4xl mx-auto py-6 space-y-4">
                   {messages.map((message) => (
                     <div
@@ -685,62 +685,56 @@ export default function Dashboard({ user }: DashboardProps) {
                 </div>
               </ScrollArea>
 
-              {/* Message Input Area */}
-              <div className="bg-gray-50 dark:bg-gray-900/50 border-t border-border p-4 lg:p-6 flex-shrink-0">
-                <div className="max-w-4xl mx-auto">
-                  <div className="flex items-center gap-3 bg-white dark:bg-gray-800 rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 p-4 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all duration-300">
+              {/* Mobile-Style Floating Input Bar */}
+              <div className="input-area">
+                <div className="input-container">
+                  {/* Attachment Button */}
+                  <button 
+                    className="attachment-button"
+                    disabled={!hasAccess || !hasAcceptedTerms}
+                    title="Attach file (coming soon)"
+                  >
+                    <Paperclip className="w-4 h-4" />
+                  </button>
+                  
+                  {/* Input Field */}
+                  <div className="flex-1 relative">
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      className="message-input"
+                      value={inputMessage}
+                      onChange={(e) => setInputMessage(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      onFocus={() => setIsInputFocused(true)}
+                      onBlur={() => setIsInputFocused(false)}
+                      placeholder=""
+                      disabled={!hasAccess || !hasAcceptedTerms || isTyping}
+                    />
                     
-                    {/* Attachment Button */}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="w-9 h-9 p-0 text-gray-400 hover:text-blue-500 transition-colors duration-200 flex-shrink-0"
-                      disabled={!hasAccess || !hasAcceptedTerms}
-                      title="Attach file (coming soon)"
-                    >
-                      <Paperclip className="w-4 h-4" />
-                    </Button>
-                    
-                    {/* Input Container */}
-                    <div className="flex-1 relative">
-                      <Input
-                        ref={inputRef}
-                        value={inputMessage}
-                        onChange={(e) => setInputMessage(e.target.value)}
-                        onKeyPress={handleKeyPress}
-                        onFocus={() => setIsInputFocused(true)}
-                        onBlur={() => setIsInputFocused(false)}
-                        placeholder=""
-                        disabled={!hasAccess || !hasAcceptedTerms || isTyping}
-                        className="border-0 bg-transparent text-base outline-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 h-auto min-h-[28px]"
-                      />
-                      
-                      {/* Typewriter Animation Placeholder */}
-                      {!inputMessage && !isInputFocused && (
-                        <div className="absolute inset-0 flex items-center pointer-events-none">
-                          <span className="text-gray-400 select-none typewriter-text">
-                            {!hasAccess 
-                              ? "Access required to send messages..."
-                              : !hasAcceptedTerms 
-                                ? "Please accept terms to start chatting..."
-                                : currentText
-                            }
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Send Button */}
-                    <Button
-                      variant="blue"
-                      onClick={() => handleSendMessage()}
-                      disabled={!inputMessage.trim() || !hasAccess || !hasAcceptedTerms || isTyping}
-                      className="h-10 px-5 rounded-xl text-sm font-medium shadow-md disabled:opacity-50"
-                    >
-                      <Send className="w-4 h-4 mr-2" />
-                      Send
-                    </Button>
+                    {/* Typewriter Animation Placeholder */}
+                    {!inputMessage && !isInputFocused && (
+                      <div className="absolute inset-0 flex items-center pointer-events-none">
+                        <span className="text-muted-foreground select-none typewriter-text">
+                          {!hasAccess 
+                            ? "Access required to send messages..."
+                            : !hasAcceptedTerms 
+                              ? "Please accept terms to start chatting..."
+                              : currentText
+                          }
+                        </span>
+                      </div>
+                    )}
                   </div>
+                  
+                  {/* Send Button */}
+                  <button
+                    className="send-button"
+                    onClick={() => handleSendMessage()}
+                    disabled={!inputMessage.trim() || !hasAccess || !hasAcceptedTerms || isTyping}
+                  >
+                    <Send className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             </>
