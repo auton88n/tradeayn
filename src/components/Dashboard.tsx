@@ -20,7 +20,8 @@ import {
   Settings,
   Menu,
   X,
-  Shield
+  Shield,
+  MicOff
 } from 'lucide-react';
 import { ThemeToggle } from './theme-toggle';
 import { TermsModal } from './TermsModal';
@@ -36,6 +37,13 @@ interface Message {
 
 interface DashboardProps {
   user: User;
+}
+
+interface ChatHistory {
+  title: string;
+  lastMessage: string;
+  timestamp: Date;
+  messages: Message[];
 }
 
 const templates = [
@@ -65,11 +73,45 @@ const templates = [
   },
 ];
 
-const recentChats = [
-  'Q3 Revenue Analysis',
-  'Customer Acquisition Strategy',
-  'Product Launch Planning',
-  'Market Expansion Research',
+const recentChats: ChatHistory[] = [
+  { 
+    title: 'Q3 Revenue Analysis',
+    lastMessage: 'Based on your Q3 data, I recommend focusing on...',
+    timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+    messages: [
+      {
+        id: '1',
+        content: 'Can you analyze my Q3 revenue performance?',
+        sender: 'user',
+        timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
+      },
+      {
+        id: '2',
+        content: 'Based on your Q3 data, I recommend focusing on customer retention strategies. Your revenue grew 15% but customer acquisition costs increased by 23%.',
+        sender: 'ayn',
+        timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
+      }
+    ]
+  },
+  { 
+    title: 'Customer Acquisition Strategy',
+    lastMessage: 'Your CAC has improved by 23% with the new...',
+    timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+    messages: [
+      {
+        id: '3',
+        content: 'How can I improve my customer acquisition strategy?',
+        sender: 'user',
+        timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
+      },
+      {
+        id: '4',
+        content: 'Your CAC has improved by 23% with the new digital marketing campaigns. I recommend expanding your social media presence and implementing referral programs.',
+        sender: 'ayn',
+        timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
+      }
+    ]
+  },
 ];
 
 export default function Dashboard({ user }: DashboardProps) {
@@ -81,6 +123,7 @@ export default function Dashboard({ user }: DashboardProps) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [activeTab, setActiveTab] = useState<'chat' | 'admin'>('chat');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
   const { toast } = useToast();
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -284,6 +327,60 @@ export default function Dashboard({ user }: DashboardProps) {
     }
   };
 
+  const handleVoiceRecording = async () => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      toast({
+        title: "Voice Not Supported",
+        description: "Voice recording is not supported in your browser.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (isRecording) {
+      // Stop recording
+      setIsRecording(false);
+      toast({
+        title: "Recording Stopped",
+        description: "Voice recording feature will be available soon.",
+      });
+    } else {
+      // Start recording
+      try {
+        setIsRecording(true);
+        toast({
+          title: "Recording Started",
+          description: "Speak your message. Click the microphone again to stop.",
+        });
+        
+        // For now, just show a demo - actual voice recording would require additional setup
+        setTimeout(() => {
+          setIsRecording(false);
+          toast({
+            title: "Recording Stopped", 
+            description: "Voice recording feature coming soon!",
+          });
+        }, 3000);
+      } catch (error) {
+        setIsRecording(false);
+        toast({
+          title: "Recording Error",
+          description: "Could not access microphone. Please check permissions.",
+          variant: "destructive"
+        });
+      }
+    }
+  };
+
+  const handleLoadChat = (chatHistory: ChatHistory) => {
+    setMessages(chatHistory.messages);
+    setIsSidebarOpen(false);
+    toast({
+      title: "Chat Loaded",
+      description: `Loaded conversation: ${chatHistory.title}`,
+    });
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
   };
@@ -392,9 +489,16 @@ export default function Dashboard({ user }: DashboardProps) {
                   key={index}
                   variant="ghost"
                   size="sm"
-                  className="w-full justify-start text-sm text-muted-foreground hover:text-foreground"
+                  onClick={() => handleLoadChat(chat)}
+                  className="w-full justify-start text-sm text-muted-foreground hover:text-foreground h-auto p-3 text-left"
                 >
-                  {chat}
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">{chat.title}</p>
+                    <p className="text-xs text-muted-foreground truncate">{chat.lastMessage}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {chat.timestamp.toLocaleDateString()}
+                    </p>
+                  </div>
                 </Button>
               ))}
             </div>
@@ -576,6 +680,7 @@ export default function Dashboard({ user }: DashboardProps) {
                           size="sm"
                           className="w-8 h-8 p-0 text-muted-foreground hover:text-foreground"
                           disabled={!hasAccess || !hasAcceptedTerms}
+                          title="Attach file (coming soon)"
                         >
                           <Paperclip className="w-4 h-4" />
                         </Button>
@@ -583,10 +688,12 @@ export default function Dashboard({ user }: DashboardProps) {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="w-8 h-8 p-0 text-muted-foreground hover:text-foreground"
+                          onClick={handleVoiceRecording}
+                          className={`w-8 h-8 p-0 ${isRecording ? 'text-red-500' : 'text-muted-foreground hover:text-foreground'}`}
                           disabled={!hasAccess || !hasAcceptedTerms}
+                          title={isRecording ? "Stop recording" : "Start voice recording"}
                         >
-                          <Mic className="w-4 h-4" />
+                          {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
                         </Button>
                       </div>
                     </div>
