@@ -7,15 +7,15 @@
 
 @layer base {
   :root {
-    /* AYN Dark Theme with Neon Accents */
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
+    /* Professional White Background Theme */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 9%;
     
-    --card: 240 10% 7%;
-    --card-foreground: 0 0% 98%;
+    --card: 0 0% 98%;
+    --card-foreground: 0 0% 9%;
     
-    --popover: 240 10% 7%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 9%;
     
     /* Professional Black & White Theme */
     --primary: 0 0% 9%;  /* Near Black */
@@ -30,14 +30,14 @@
     --warning: 0 0% 25%;  /* Medium Gray */
     --warning-foreground: 0 0% 98%;
     
-    --muted: 240 6% 15%;
-    --muted-foreground: 240 5% 64.9%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
     
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     
-    --border: 240 6% 20%;
-    --input: 240 6% 15%;
+    --border: 0 0% 90%;
+    --input: 0 0% 96%;
     --ring: 0 0% 50%;
     
     --radius: 0.75rem;
@@ -48,23 +48,23 @@
     --gradient-accent: linear-gradient(135deg, hsl(0 0% 20%), hsl(0 0% 25%));
     --gradient-hero: linear-gradient(135deg, hsl(0 0% 9%) 0%, hsl(0 0% 15%) 50%, hsl(0 0% 20%) 100%);
     
-    /* Professional Glassmorphism */
-    --glass-bg: hsla(0, 0%, 10%, 0.8);
-    --glass-border: hsla(0, 0%, 50%, 0.2);
-    --glass-shadow: 0 8px 32px hsla(0, 0%, 0%, 0.25);
+    /* Professional White Background Glassmorphism */
+    --glass-bg: hsla(0, 0%, 100%, 0.8);
+    --glass-border: hsla(0, 0%, 20%, 0.2);
+    --glass-shadow: 0 8px 32px hsla(0, 0%, 0%, 0.1);
     
     /* Professional Shadows */
     --neon-purple: 0 0 20px hsla(0, 0%, 80%, 0.3);
     --neon-blue: 0 0 20px hsla(0, 0%, 70%, 0.3);
     --neon-teal: 0 0 20px hsla(0, 0%, 60%, 0.3);
     
-    --sidebar-background: 240 10% 5%;
-    --sidebar-foreground: 0 0% 98%;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 0 0% 9%;
     --sidebar-primary: 0 0% 15%;
     --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 6% 15%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 240 6% 20%;
+    --sidebar-accent: 0 0% 96%;
+    --sidebar-accent-foreground: 0 0% 9%;
+    --sidebar-border: 0 0% 90%;
     --sidebar-ring: 0 0% 50%;
   }
 }
@@ -77,7 +77,7 @@
   body {
     @apply bg-background text-foreground font-sans;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    background: radial-gradient(ellipse at top, hsl(240 10% 7%) 0%, hsl(240 10% 3.9%) 100%);
+    background: radial-gradient(ellipse at top, hsl(0 0% 100%) 0%, hsl(0 0% 98%) 100%);
     min-height: 100vh;
   }
   
@@ -95,9 +95,9 @@
   }
   
   .glass-hover:hover {
-    background: hsla(0, 0%, 12%, 0.8);
-    border-color: hsla(0, 0%, 60%, 0.4);
-    box-shadow: 0 12px 40px hsla(0, 0%, 0%, 0.3);
+    background: hsla(0, 0%, 98%, 0.9);
+    border-color: hsla(0, 0%, 30%, 0.4);
+    box-shadow: 0 12px 40px hsla(0, 0%, 0%, 0.15);
   }
   
   /* Neon glow effects */
@@ -158,7 +158,7 @@
   }
   
   ::-webkit-scrollbar-track {
-    background: hsl(240 6% 15%);
+    background: hsl(0 0% 96%);
   }
   
   ::-webkit-scrollbar-thumb {
