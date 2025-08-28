@@ -812,54 +812,10 @@ export default function Dashboard({ user }: DashboardProps) {
                           <AvatarFallback className="bg-primary text-primary-foreground text-xs">
                             <Brain className="w-4 h-4" />
                           </AvatarFallback>
-                        </Avatar>
-                      )}
-                      
-                      <div className={`
-                        max-w-xs lg:max-w-md xl:max-w-lg rounded-lg px-4 py-3
-                        ${message.sender === 'user' 
-                          ? 'bg-primary text-primary-foreground ml-12' 
-                          : 'bg-muted text-foreground mr-12'
-                        }
-                      `}>
-                        
-                        {/* Attachment Display */}
-                        {message.attachment && (
-                          <div className="mt-2 border border-white/20 rounded-lg p-2">
-                            {message.attachment.type.startsWith('image/') ? (
-                              <img 
-                                src={message.attachment.url} 
-                                alt={message.attachment.name}
-                                className="max-w-full h-auto rounded"
-                                style={{ maxHeight: '200px' }}
-                              />
-                            ) : (
-                              <div className="flex items-center gap-2">
-                                <Paperclip className="w-4 h-4" />
-                                <a 
-                                  href={message.attachment.url} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  className="text-sm underline hover:no-underline"
-                                >
-                                  {message.attachment.name}
-                                </a>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                        
-                        <div className={`
-                          text-xs mt-2 opacity-70
-                          ${message.sender === 'user' ? 'text-primary-foreground/70' : 'text-muted-foreground'}
-                        `}>
-                          {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          {message.status === 'sending' && ' • Sending...'}
-                          {message.status === 'error' && ' • Failed'}
-                        </div>
-                      </div>
-                      
-                      {message.sender === 'user' && (
+                         </Avatar>
+                       )}
+                       
+                       {message.sender === 'user' && (
                         <Avatar className="w-8 h-8 flex-shrink-0">
                           <AvatarImage src="" />
                           <AvatarFallback className="text-xs">
