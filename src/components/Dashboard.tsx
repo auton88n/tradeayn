@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { AccessStatusCard } from '@/components/AccessStatusCard';
 import { AdminPanel } from '@/components/AdminPanel';
 import { TermsModal } from '@/components/TermsModal';
+import { ThemeToggle } from '@/components/theme-toggle';
 import type { User } from '@supabase/supabase-js';
 
 interface Message {
@@ -531,9 +532,12 @@ This will help me provide more targeted and valuable insights for your business.
               </div>
             </div>
             
-            <Button variant="ghost" size="sm" className="text-muted-foreground">
-              <Settings className="w-4 h-4" />
-            </Button>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <Button variant="ghost" size="sm" className="text-muted-foreground">
+                <Settings className="w-4 h-4" />
+              </Button>
+            </div>
           </header>
 
           {/* Messages */}
