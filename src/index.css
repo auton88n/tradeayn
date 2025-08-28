@@ -49,9 +49,9 @@
     --gradient-hero: linear-gradient(135deg, hsl(0 0% 9%) 0%, hsl(0 0% 15%) 50%, hsl(0 0% 20%) 100%);
     
     /* Professional White Background Glassmorphism - Fixed */
-    --glass-bg: hsla(0, 0%, 98%, 0.95);
-    --glass-border: hsla(0, 0%, 85%, 0.8);
-    --glass-shadow: 0 8px 32px hsla(0, 0%, 0%, 0.08);
+    --glass-bg: hsla(0, 0%, 97%, 0.98);
+    --glass-border: hsla(0, 0%, 85%, 0.9);
+    --glass-shadow: 0 8px 32px hsla(0, 0%, 0%, 0.06);
     
     /* Professional Shadows */
     --neon-purple: 0 0 20px hsla(0, 0%, 80%, 0.3);
@@ -95,9 +95,9 @@
   }
   
   .glass-hover:hover {
-    background: hsla(0, 0%, 96%, 0.98);
-    border-color: hsla(0, 0%, 80%, 0.8);
-    box-shadow: 0 12px 40px hsla(0, 0%, 0%, 0.12);
+    background: hsla(0, 0%, 95%, 1);
+    border-color: hsla(0, 0%, 80%, 1);
+    box-shadow: 0 12px 40px hsla(0, 0%, 0%, 0.1);
   }
   
   /* Neon glow effects */
@@ -109,8 +109,17 @@
     box-shadow: var(--neon-blue);
   }
   
-  .neon-teal {
-    box-shadow: var(--neon-teal);
+  /* Solid background for brain containers */
+  .brain-container {
+    background: hsl(0 0% 9%);
+    border: 2px solid hsl(0 0% 15%);
+    box-shadow: 0 4px 16px hsla(0, 0%, 0%, 0.1);
+  }
+  
+  .brain-container-lg {
+    background: hsl(0 0% 9%);
+    border: 2px solid hsl(0 0% 15%);
+    box-shadow: 0 8px 24px hsla(0, 0%, 0%, 0.15);
   }
   
   /* Gradient text */

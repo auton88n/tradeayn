@@ -103,7 +103,7 @@ export const AccessStatusCard = ({ user }: AccessStatusCardProps) => {
 
   if (isLoading) {
     return (
-      <Card className="glass p-6">
+    <Card className="bg-card border border-border p-6">
         <div className="flex items-center gap-3">
           <RefreshCw className="w-5 h-5 animate-spin" />
           <span>Checking access status...</span>
@@ -116,7 +116,7 @@ export const AccessStatusCard = ({ user }: AccessStatusCardProps) => {
   const StatusIcon = status.icon;
 
   return (
-    <Card className="glass p-6">
+    <Card className="bg-card border border-border p-6">
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-4">
           <StatusIcon className={`w-6 h-6 ${status.color} flex-shrink-0 mt-1`} />

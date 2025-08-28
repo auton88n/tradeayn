@@ -55,15 +55,15 @@ const LandingPage = () => {
   return (
     <div className="min-h-screen">
       {/* Navigation Header */}
-      <header className="glass border-b border-border/50 sticky top-0 z-50">
+      <header className="bg-card border-b border-border sticky top-0 z-50">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg brain-container flex items-center justify-center">
                   <Brain className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-2xl font-bold gradient-text-hero">AYN</span>
+                <span className="text-2xl font-bold">AYN</span>
               </div>
             </div>
             
@@ -128,14 +128,14 @@ const LandingPage = () => {
             
             {/* Floating AYN Agent Preview */}
             <div className="mt-16 animate-float">
-              <Card className="glass max-w-md mx-auto p-6">
+              <Card className="bg-card border border-border max-w-md mx-auto p-6">
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 rounded-full bg-gradient-primary flex items-center justify-center animate-pulse-glow">
+                  <div className="w-12 h-12 rounded-full brain-container-lg flex items-center justify-center">
                     <Brain className="w-6 h-6 text-white" />
                   </div>
                   <div>
                     <h3 className="font-semibold">AYN AI Consultant</h3>
-                    <p className="text-sm text-accent">Ready to analyze your business</p>
+                    <p className="text-sm text-muted-foreground">Ready to analyze your business</p>
                   </div>
                 </div>
                 <p className="text-sm text-muted-foreground italic">
@@ -161,8 +161,8 @@ const LandingPage = () => {
           
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {features.map((feature, index) => (
-              <Card key={index} className="glass glass-hover p-6 text-center group">
-                <div className="w-16 h-16 rounded-full bg-gradient-primary mx-auto mb-4 flex items-center justify-center group-hover:animate-pulse-glow transition-all">
+              <Card key={index} className="bg-card border border-border glass-hover p-6 text-center group">
+                <div className="w-16 h-16 rounded-full brain-container-lg mx-auto mb-4 flex items-center justify-center group-hover:scale-105 transition-transform">
                   <feature.icon className="w-8 h-8 text-white" />
                 </div>
                 <h3 className="text-xl font-semibold mb-3">{feature.title}</h3>
@@ -187,7 +187,7 @@ const LandingPage = () => {
           
           <div className="grid md:grid-cols-3 gap-8">
             {testimonials.map((testimonial, index) => (
-              <Card key={index} className="glass p-6">
+              <Card key={index} className="bg-card border border-border p-6">
                 <div className="flex items-center gap-4 mb-4">
                   <div className="text-3xl">{testimonial.avatar}</div>
                   <div>
@@ -207,8 +207,8 @@ const LandingPage = () => {
       {/* CTA Section */}
       <section className="py-20">
         <div className="container mx-auto px-6 text-center">
-          <Card className="glass max-w-4xl mx-auto p-12">
-            <h2 className="text-4xl font-bold mb-6 gradient-text-hero">
+          <Card className="bg-card border border-border max-w-4xl mx-auto p-12">
+            <h2 className="text-4xl font-bold mb-6">
               Ready to Transform Your Business?
             </h2>
             <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
@@ -234,14 +234,14 @@ const LandingPage = () => {
       </section>
 
       {/* Footer */}
-      <footer className="glass border-t border-border/50 py-12">
+      <footer className="bg-card border-t border-border py-12">
         <div className="container mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center gap-3 mb-4 md:mb-0">
-              <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg brain-container flex items-center justify-center">
                 <Brain className="w-5 h-5 text-white" />
               </div>
-              <span className="text-2xl font-bold gradient-text-hero">AYN</span>
+              <span className="text-2xl font-bold">AYN</span>
             </div>
             
             <p className="text-muted-foreground text-center md:text-right">

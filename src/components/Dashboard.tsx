@@ -344,7 +344,7 @@ This will help me provide more targeted and valuable insights for your business.
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
         {/* Sidebar */}
-        <Sidebar className="w-80 glass border-r border-border/50">
+        <Sidebar className="w-80 bg-card border-r border-border">
           <SidebarContent className="p-6">
             {/* User Profile */}
             <div className="flex items-center gap-3 mb-8">
@@ -369,9 +369,9 @@ This will help me provide more targeted and valuable insights for your business.
             </div>
 
             {/* AYN Status */}
-            <Card className="glass p-4 mb-6">
+            <Card className="p-4 mb-6 bg-card border border-border">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center animate-pulse-glow">
+                <div className="w-8 h-8 rounded-full brain-container flex items-center justify-center">
                   <Brain className="w-4 h-4 text-white" />
                 </div>
                 <div>
@@ -437,13 +437,13 @@ This will help me provide more targeted and valuable insights for your business.
         {/* Main Chat Area */}
         <div className="flex-1 flex flex-col">
           {/* Header */}
-          <header className="glass border-b border-border/50 p-4 flex items-center justify-between">
+          <header className="border-b border-border bg-card p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg brain-container flex items-center justify-center">
                 <Brain className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold gradient-text-hero">AYN Business Console</h1>
+                <h1 className="text-xl font-bold">AYN Business Console</h1>
                 <p className="text-sm text-muted-foreground">AI-Powered Business Intelligence</p>
               </div>
             </div>
@@ -492,7 +492,7 @@ This will help me provide more targeted and valuable insights for your business.
                     className={`flex gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     {message.sender === 'ayn' && (
-                      <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center flex-shrink-0 animate-pulse-glow">
+                      <div className="w-8 h-8 rounded-full brain-container flex items-center justify-center flex-shrink-0">
                         <Brain className="w-4 h-4 text-white" />
                       </div>
                     )}
@@ -500,7 +500,7 @@ This will help me provide more targeted and valuable insights for your business.
                     <Card className={`max-w-2xl p-4 ${
                       message.sender === 'user' 
                         ? 'bg-primary text-primary-foreground' 
-                        : 'glass'
+                        : 'bg-card border border-border'
                     }`}>
                       <div className="prose prose-sm max-w-none">
                         <div className="whitespace-pre-wrap leading-relaxed">
@@ -538,11 +538,11 @@ This will help me provide more targeted and valuable insights for your business.
                 
                 {isTyping && (
                   <div className="flex gap-3 justify-start">
-                    <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center flex-shrink-0 animate-pulse-glow">
+                    <div className="w-8 h-8 rounded-full brain-container flex items-center justify-center flex-shrink-0">
                       <Brain className="w-4 h-4 text-white" />
                     </div>
                     
-                    <Card className="glass p-4 max-w-xs">
+                    <Card className="bg-card border border-border p-4 max-w-xs">
                       <div className="flex items-center gap-2">
                         <div className="flex gap-1">
                           <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
@@ -564,7 +564,7 @@ This will help me provide more targeted and valuable insights for your business.
 
           {/* Message Input - only show for chat and if user has access */}
           {(activeTab === 'chat' || !isAdmin) && (
-            <div className="border-t border-border/50 p-6">
+            <div className="border-t border-border bg-card p-6">
               <div className="max-w-4xl mx-auto">
                 <form onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }} className="flex gap-3">
                   <div className="flex-1 relative">
@@ -573,7 +573,7 @@ This will help me provide more targeted and valuable insights for your business.
                       onChange={(e) => setInputMessage(e.target.value)}
                       placeholder={hasAccess ? "Ask AYN anything about your business..." : "Access required to send messages"}
                       disabled={isTyping || !hasAccess}
-                      className="glass pr-20"
+                      className="bg-input border-border"
                     />
                     <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex gap-1">
                       <Button type="button" variant="ghost" size="sm" disabled={!hasAccess}>
