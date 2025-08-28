@@ -455,6 +455,17 @@ export default function Dashboard({ user }: DashboardProps) {
 
       {/* Sidebar */}
       <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
+        {/* Close Button */}
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">Menu</h2>
+          <button 
+            className="hamburger-button"
+            onClick={handleCloseSidebar}
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
         <div className="sidebar-section">
           <div className="user-profile flex items-center gap-3 mb-6 p-3 rounded-lg bg-gray-50">
             <div className="user-avatar">
