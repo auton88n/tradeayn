@@ -464,12 +464,7 @@ export default function Dashboard({ user }: DashboardProps) {
           {/* AYN Status */}
           <div className="ayn-consultant-card flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200 mb-6">
             <div className="ayn-avatar">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
-                <path d="M12 2C8.5 2 6 4.5 6 7.5c0 1.54.5 2.85 1.2 3.6-.45.2-.7.65-.7 1.15 0 .83.67 1.5 1.5 1.5.17 0 .33-.03.48-.08C8.96 14.72 10.38 16 12 16s3.04-1.28 3.52-2.33c.15.05.31.08.48.08.83 0 1.5-.67 1.5-1.5 0-.5-.25-.95-.7-1.15.7-.75 1.2-2.06 1.2-3.6C18 4.5 15.5 2 12 2z"/>
-                <path d="M12 4c2.21 0 4 1.79 4 4 0 1.1-.45 2.1-1.17 2.83-.15-.05-.31-.08-.48-.08-.83 0-1.5.67-1.5 1.5 0 .2.04.39.11.56C12.66 12.34 12.34 12 12 12s-.66.34-.96.81c.07-.17.11-.36.11-.56 0-.83-.67-1.5-1.5-1.5-.17 0-.33.03-.48.08C8.45 10.1 8 9.1 8 8c0-2.21 1.79-4 4-4z"/>
-                <circle cx="10" cy="8.5" r="1" fill="black"/>
-                <circle cx="14" cy="8.5" r="1" fill="black"/>
-              </svg>
+              <Brain className="w-5 h-5" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-medium text-sm text-gray-900">AYN AI Consultant</p>
@@ -529,12 +524,7 @@ export default function Dashboard({ user }: DashboardProps) {
           <div className="logo-section">
             <div className="flex items-center gap-3">
               <div className="ayn-message-avatar">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-                  <path d="M12 2C8.5 2 6 4.5 6 7.5c0 1.54.5 2.85 1.2 3.6-.45.2-.7.65-.7 1.15 0 .83.67 1.5 1.5 1.5.17 0 .33-.03.48-.08C8.96 14.72 10.38 16 12 16s3.04-1.28 3.52-2.33c.15.05.31.08.48.08.83 0 1.5-.67 1.5-1.5 0-.5-.25-.95-.7-1.15.7-.75 1.2-2.06 1.2-3.6C18 4.5 15.5 2 12 2z"/>
-                  <path d="M12 4c2.21 0 4 1.79 4 4 0 1.1-.45 2.1-1.17 2.83-.15-.05-.31-.08-.48-.08-.83 0-1.5.67-1.5 1.5 0 .2.04.39.11.56C12.66 12.34 12.34 12 12 12s-.66.34-.96.81c.07-.17.11-.36.11-.56 0-.83-.67-1.5-1.5-1.5-.17 0-.33.03-.48.08C8.45 10.1 8 9.1 8 8c0-2.21 1.79-4 4-4z"/>
-                  <circle cx="10" cy="8.5" r="1" fill="black"/>
-                  <circle cx="14" cy="8.5" r="1" fill="black"/>
-                </svg>
+                <Brain className="w-4 h-4" />
               </div>
               <div>
                 <h1 className="font-bold text-lg text-gray-900">AYN AI Business Consultant</h1>
@@ -608,12 +598,7 @@ export default function Dashboard({ user }: DashboardProps) {
                       <>
                         <div className="message-header">
                           <div className="ayn-message-avatar">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-                              <path d="M12 2C8.5 2 6 4.5 6 7.5c0 1.54.5 2.85 1.2 3.6-.45.2-.7.65-.7 1.15 0 .83.67 1.5 1.5 1.5.17 0 .33-.03.48-.08C8.96 14.72 10.38 16 12 16s3.04-1.28 3.52-2.33c.15.05.31.08.48.08.83 0 1.5-.67 1.5-1.5 0-.5-.25-.95-.7-1.15.7-.75 1.2-2.06 1.2-3.6C18 4.5 15.5 2 12 2z"/>
-                              <path d="M12 4c2.21 0 4 1.79 4 4 0 1.1-.45 2.1-1.17 2.83-.15-.05-.31-.08-.48-.08-.83 0-1.5.67-1.5 1.5 0 .2.04.39.11.56C12.66 12.34 12.34 12 12 12s-.66.34-.96.81c.07-.17.11-.36.11-.56 0-.83-.67-1.5-1.5-1.5-.17 0-.33.03-.48.08C8.45 10.1 8 9.1 8 8c0-2.21 1.79-4 4-4z"/>
-                              <circle cx="10" cy="8.5" r="1" fill="black"/>
-                              <circle cx="14" cy="8.5" r="1" fill="black"/>
-                            </svg>
+                            <Brain className="w-4 h-4" />
                           </div>
                           <div>
                             <div className="font-semibold text-gray-900 text-sm">AYN AI Consultant</div>
@@ -681,12 +666,7 @@ export default function Dashboard({ user }: DashboardProps) {
                   <div className="message-bubble">
                     <div className="message-header">
                       <div className="ayn-message-avatar">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-                          <path d="M12 2C8.5 2 6 4.5 6 7.5c0 1.54.5 2.85 1.2 3.6-.45.2-.7.65-.7 1.15 0 .83.67 1.5 1.5 1.5.17 0 .33-.03.48-.08C8.96 14.72 10.38 16 12 16s3.04-1.28 3.52-2.33c.15.05.31.08.48.08.83 0 1.5-.67 1.5-1.5 0-.5-.25-.95-.7-1.15.7-.75 1.2-2.06 1.2-3.6C18 4.5 15.5 2 12 2z"/>
-                          <path d="M12 4c2.21 0 4 1.79 4 4 0 1.1-.45 2.1-1.17 2.83-.15-.05-.31-.08-.48-.08-.83 0-1.5.67-1.5 1.5 0 .2.04.39.11.56C12.66 12.34 12.34 12 12 12s-.66.34-.96.81c.07-.17.11-.36.11-.56 0-.83-.67-1.5-1.5-1.5-.17 0-.33.03-.48.08C8.45 10.1 8 9.1 8 8c0-2.21 1.79-4 4-4z"/>
-                          <circle cx="10" cy="8.5" r="1" fill="black"/>
-                          <circle cx="14" cy="8.5" r="1" fill="black"/>
-                        </svg>
+                        <Brain className="w-4 h-4" />
                       </div>
                       <div>
                         <div className="font-semibold text-gray-900 text-sm">AYN AI Consultant</div>
