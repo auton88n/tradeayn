@@ -721,23 +721,15 @@ export default function Dashboard({ user }: DashboardProps) {
                   onKeyPress={handleKeyPress}
                   onFocus={() => setIsInputFocused(true)}
                   onBlur={() => setIsInputFocused(false)}
-                  placeholder={
-                    !hasAccess 
-                      ? "Access required to send messages..."
-                      : !hasAcceptedTerms 
-                        ? "Please accept terms to start chatting..."
-                        : inputMessage || isInputFocused ? "Ask AYN anything about your business..." : currentText
-                  }
-                  disabled={!hasAccess || !hasAcceptedTerms || isTyping}
+                  placeholder="Ask AYN anything about your business..."
                   className="message-input"
                 />
                 <button
                   onClick={() => handleSendMessage()}
-                  disabled={!inputMessage.trim() || !hasAccess || !hasAcceptedTerms || isTyping}
+                  disabled={!inputMessage.trim() || isTyping}
                   className="send-button"
                 >
                   <Send className="w-4 h-4" />
-                  <span className="ml-2 font-medium">Send</span>
                 </button>
               </div>
             </div>
