@@ -205,7 +205,37 @@ serve(async (req) => {
       return textProcessor.normalizeText(t);
     };
 
-    const sanitizedText = requestData.allowPersonalization ? processedText : sanitizeNonPersonalized(processedText);
+    // When personalization is enabled, normalize greetings to the user's contact person
+    const applyPersonalization = (text: string) => {
+      if (!requestData.contactPerson) return text;
+
+      const name = requestData.contactPerson.trim();
+      if (!name) return text;
+
+      // Title-case the name for greetings
+      const titleCase = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+      let t = text;
+
+      // Replace greeting at start of text like "Hi Sara," -> "Hi Ghazi,"
+      t = t.replace(/^(hello|hi|hey)\s+[A-Z][a-z]{1,30}([,!])?/i, (_m, g1, g2) => {
+        const greet = String(g1);
+        const punct = g2 ?? ',';
+        const greetCap = greet.charAt(0).toUpperCase() + greet.slice(1).toLowerCase();
+        return `${greetCap} ${titleCase(name)}${punct} `;
+      });
+
+      // Replace greetings at the start of sentences
+      t = t.replace(/([.!?]\s+)(hello|hi|hey)\s+[A-Z][a-z]{1,30}([,!])?/g, (_m, p1, g1, g3) => {
+        const greetCap = String(g1).charAt(0).toUpperCase() + String(g1).slice(1).toLowerCase();
+        const punct = g3 ?? ',';
+        return `${p1}${greetCap} ${titleCase(name)}${punct} `;
+      });
+
+      return textProcessor.normalizeText(t);
+    };
+
+    const sanitizedText = requestData.allowPersonalization ? applyPersonalization(processedText) : sanitizeNonPersonalized(processedText);
 
     // Log name stripping if it occurred
     if (!requestData.allowPersonalization && processedText !== sanitizedText) {
