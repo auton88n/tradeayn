@@ -41,6 +41,7 @@ import {
 import { ThemeToggle } from './theme-toggle';
 import { TermsModal } from './TermsModal';
 import { AdminPanel } from './AdminPanel';
+import { TypewriterText } from './TypewriterText';
 
 interface Message {
   id: string;
@@ -48,6 +49,7 @@ interface Message {
   sender: 'user' | 'ayn';
   timestamp: Date;
   status?: 'sending' | 'sent' | 'error';
+  isTyping?: boolean;
   attachment?: {
     url: string;
     name: string;
@@ -410,6 +412,7 @@ export default function Dashboard({ user }: DashboardProps) {
         content: response,
         sender: 'ayn',
         timestamp: new Date(),
+        isTyping: true,
       };
 
       setMessages(prev => [...prev, aynMessage]);
@@ -707,18 +710,18 @@ export default function Dashboard({ user }: DashboardProps) {
         {/* Main Chat Area */}
         <SidebarInset>
           {/* Header */}
-          <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 lg:px-6 flex-shrink-0">
-            <div className="flex items-center gap-3">
+          <header className="h-14 sm:h-16 bg-card border-b border-border flex items-center justify-between px-3 sm:px-4 lg:px-6 flex-shrink-0">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               {/* Mobile Menu Button */}
               <SidebarTrigger />
               
-              <div className="flex items-center gap-2">
-                <Brain className="w-6 h-6 text-primary" />
-                <h1 className="font-bold text-lg">AYN Business Console</h1>
+              <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                <Brain className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
+                <h1 className="font-bold text-sm sm:text-lg truncate">AYN Business Console</h1>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
 
             {/* Admin Tab Switcher */}
             {isAdmin && (
@@ -727,18 +730,19 @@ export default function Dashboard({ user }: DashboardProps) {
                   variant={activeTab === 'chat' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setActiveTab('chat')}
-                  className="h-8 px-3"
+                  className="h-7 sm:h-8 px-2 sm:px-3 text-xs sm:text-sm"
                 >
-                  Chat
+                  <span className="hidden sm:inline">Chat</span>
+                  <span className="sm:hidden">💬</span>
                 </Button>
                 <Button
                   variant={activeTab === 'admin' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setActiveTab('admin')}
-                  className="h-8 px-3"
+                  className="h-7 sm:h-8 px-2 sm:px-3 text-xs sm:text-sm"
                 >
-                  <Shield className="w-3 h-3 mr-1" />
-                  Admin
+                  <Shield className="w-3 h-3 mr-0 sm:mr-1" />
+                  <span className="hidden sm:inline">Admin</span>
                 </Button>
               </div>
             )}
@@ -774,39 +778,56 @@ export default function Dashboard({ user }: DashboardProps) {
           {(activeTab === 'chat' || !isAdmin) && (
             <>
               {/* Messages Area */}
-              <ScrollArea className="flex-1 px-4 lg:px-6 pb-24">
-                <div className="max-w-4xl mx-auto py-6 space-y-4">
+              <ScrollArea className="flex-1 px-3 sm:px-4 lg:px-6 pb-20 sm:pb-24">
+                <div className="max-w-4xl mx-auto py-4 sm:py-6 space-y-3 sm:space-y-4">
                   {messages.map((message) => (
                     <div
                       key={message.id}
-                      className={`flex gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                      className={`flex gap-2 sm:gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                       {message.sender === 'ayn' && (
-                        <Avatar className="w-8 h-8 flex-shrink-0">
+                        <Avatar className="w-7 h-7 sm:w-8 sm:h-8 flex-shrink-0">
                           <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                            <Brain className="w-4 h-4" />
+                            <Brain className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                           </AvatarFallback>
                          </Avatar>
                        )}
                        
-                       <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                       <div className={`max-w-[85%] sm:max-w-[80%] rounded-xl sm:rounded-2xl px-3 py-2 sm:px-4 sm:py-3 ${
                          message.sender === 'user' 
                            ? 'bg-primary text-primary-foreground' 
                            : 'bg-muted text-foreground'
                        }`}>
                            <div className="text-sm leading-relaxed whitespace-pre-wrap break-words group cursor-default select-text">
-                             <span className={`inline-block transition-all duration-300 hover:tracking-wide ${
-                               message.sender === 'user' 
-                                 ? 'text-primary-foreground hover:text-white hover:drop-shadow-sm' 
-                                 : 'text-foreground hover:text-primary hover:drop-shadow-sm'
-                             } group-hover:scale-[1.02] transform-gpu`}>
-                               {message.content.split('\n').map((line, index, array) => (
-                                 <span key={index} className="block hover:bg-primary/5 hover:px-1 hover:py-0.5 hover:rounded transition-all duration-200">
-                                   {line}
-                                   {index < array.length - 1 && <br />}
-                                 </span>
-                               ))}
-                             </span>
+                             {message.sender === 'ayn' && message.isTyping ? (
+                               <TypewriterText
+                                 text={message.content}
+                                 speed={40}
+                                 className={`inline-block transition-all duration-300 hover:tracking-wide text-foreground hover:text-primary hover:drop-shadow-sm group-hover:scale-[1.02] transform-gpu`}
+                                 onComplete={() => {
+                                   setMessages(prev => 
+                                     prev.map(msg => 
+                                       msg.id === message.id 
+                                         ? { ...msg, isTyping: false }
+                                         : msg
+                                     )
+                                   );
+                                 }}
+                               />
+                             ) : (
+                               <span className={`inline-block transition-all duration-300 hover:tracking-wide ${
+                                 message.sender === 'user' 
+                                   ? 'text-primary-foreground hover:text-white hover:drop-shadow-sm' 
+                                   : 'text-foreground hover:text-primary hover:drop-shadow-sm'
+                               } group-hover:scale-[1.02] transform-gpu`}>
+                                 {message.content.split('\n').map((line, index, array) => (
+                                   <span key={index} className="block hover:bg-primary/5 hover:px-1 hover:py-0.5 hover:rounded transition-all duration-200">
+                                     {line}
+                                     {index < array.length - 1 && <br />}
+                                   </span>
+                                 ))}
+                               </span>
+                             )}
                            </div>
                          {message.attachment && (
                            <div className="mt-2 p-2 bg-muted/50 rounded-lg flex items-center gap-2">
@@ -816,31 +837,31 @@ export default function Dashboard({ user }: DashboardProps) {
                          )}
                        </div>
                        
-                       {message.sender === 'user' && (
-                        <Avatar className="w-8 h-8 flex-shrink-0">
-                          <AvatarImage src="" />
-                          <AvatarFallback className="text-xs">
-                            {user?.user_metadata?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
-                          </AvatarFallback>
-                        </Avatar>
-                      )}
+                        {message.sender === 'user' && (
+                         <Avatar className="w-7 h-7 sm:w-8 sm:h-8 flex-shrink-0">
+                           <AvatarImage src="" />
+                           <AvatarFallback className="text-xs">
+                             {user?.user_metadata?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                           </AvatarFallback>
+                         </Avatar>
+                       )}
                     </div>
                   ))}
 
                   {/* Typing Indicator */}
                   {isTyping && (
-                    <div className="flex gap-3 justify-start">
-                      <Avatar className="w-8 h-8 flex-shrink-0">
+                    <div className="flex gap-2 sm:gap-3 justify-start">
+                      <Avatar className="w-7 h-7 sm:w-8 sm:h-8 flex-shrink-0">
                         <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                          <Brain className="w-4 h-4" />
+                          <Brain className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         </AvatarFallback>
                       </Avatar>
-                      <div className="bg-muted text-foreground rounded-lg px-4 py-3 mr-12">
+                      <div className="bg-muted text-foreground rounded-xl sm:rounded-lg px-3 py-2 sm:px-4 sm:py-3 mr-8 sm:mr-12">
                         <div className="flex items-center gap-1">
-                          <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-                          <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
-                          <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
-                          <span className="ml-2 text-sm text-muted-foreground">AYN is typing...</span>
+                          <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-primary rounded-full animate-pulse" />
+                          <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
+                          <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
+                          <span className="ml-2 text-xs sm:text-sm text-muted-foreground">AYN is typing...</span>
                         </div>
                       </div>
                     </div>
