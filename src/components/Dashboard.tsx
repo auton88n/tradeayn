@@ -687,17 +687,18 @@ export default function Dashboard({ user }: DashboardProps) {
               <SidebarGroupContent>
                 <SidebarMenu>
                   {recentChats.map((chat, index) => (
-                    <SidebarMenuItem key={index}>
+                    <SidebarMenuItem key={index} className="mb-2">
                       <SidebarMenuButton
                         onClick={() => handleLoadChat(chat)}
                         tooltip={chat.title}
+                        className="py-4 px-3 h-auto"
                       >
-                        <div className="w-4 h-4 rounded bg-muted flex items-center justify-center text-xs font-medium">
+                        <div className="w-5 h-5 rounded bg-muted flex items-center justify-center text-xs font-medium mr-3">
                           {chat.title.charAt(0)}
                         </div>
-                        <div className="flex flex-col min-w-0">
+                        <div className="flex flex-col min-w-0 gap-1">
                           <span className="font-medium truncate text-sm group-data-[collapsible=icon]:hidden">{chat.title}</span>
-                          <span className="text-xs text-muted-foreground truncate group-data-[collapsible=icon]:hidden">{chat.lastMessage}</span>
+                          <span className="text-xs text-muted-foreground truncate group-data-[collapsible=icon]:hidden leading-relaxed">{chat.lastMessage}</span>
                         </div>
                       </SidebarMenuButton>
                     </SidebarMenuItem>

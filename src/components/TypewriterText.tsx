@@ -11,7 +11,7 @@ interface TypewriterTextProps {
 
 export const TypewriterText = ({ 
   text, 
-  speed = 10, 
+  speed = 5,
   onComplete, 
   onSkip,
   showCursor = false,
