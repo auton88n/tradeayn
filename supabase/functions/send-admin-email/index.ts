@@ -24,7 +24,14 @@ interface EmailRequest {
   template_type?: 'password_reset' | 'email_confirmation'; // Template type for React Email
 }
 
-const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
+const resendApiKey = Deno.env.get('RESEND_API_KEY');
+console.log('RESEND_API_KEY available:', resendApiKey ? 'Yes' : 'No');
+
+if (!resendApiKey) {
+  throw new Error('RESEND_API_KEY environment variable is not set');
+}
+
+const resend = new Resend(resendApiKey);
 
 serve(async (req) => {
   // Handle CORS preflight requests
