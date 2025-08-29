@@ -15,6 +15,7 @@ import { SystemMonitoring } from './admin/SystemMonitoring';
 import { EmailManagement } from './admin/EmailManagement';
 import { EmailCampaigns } from './admin/EmailCampaigns';
 import { EmailTemplateLibrary } from './admin/EmailTemplateLibrary';
+import { WorkerEmailManagement } from './admin/WorkerEmailManagement';
 
 interface Profile {
   id: string;
@@ -356,11 +357,15 @@ export const AdminPanel = () => {
           <Tabs defaultValue="management" className="space-y-4">
             <TabsList>
               <TabsTrigger value="management">Email Management</TabsTrigger>
+              <TabsTrigger value="workers">Worker Emails</TabsTrigger>
               <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
               <TabsTrigger value="templates">Template Library</TabsTrigger>
             </TabsList>
             <TabsContent value="management">
               <EmailManagement />
+            </TabsContent>
+            <TabsContent value="workers">
+              <WorkerEmailManagement />
             </TabsContent>
             <TabsContent value="campaigns">
               <EmailCampaigns />

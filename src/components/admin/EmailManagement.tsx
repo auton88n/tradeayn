@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { 
   Mail, Send, Inbox, FileText, Plus, Edit, Trash2, Eye, Search, 
-  Filter, RefreshCw, Download, Upload, Settings, User
+  Filter, RefreshCw, Download, Upload, Settings, User, Bot, Sparkles, Wand2
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -56,6 +56,8 @@ export const EmailManagement = () => {
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
   const [showComposeDialog, setShowComposeDialog] = useState(false);
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
+  const [showAIAssistantDialog, setShowAIAssistantDialog] = useState(false);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   
   // Compose form state
   const [composeForm, setComposeForm] = useState({
@@ -79,6 +81,18 @@ export const EmailManagement = () => {
     is_active: true,
     variables: [] as string[]
   });
+
+  // AI Assistant form state
+  const [aiForm, setAIForm] = useState({
+    purpose: '',
+    tone: 'professional',
+    audience: 'users',
+    subject: '',
+    key_points: [] as string[],
+    improve_content: ''
+  });
+  
+  const [currentKeyPoint, setCurrentKeyPoint] = useState('');
 
   const { toast } = useToast();
 
@@ -271,6 +285,112 @@ export const EmailManagement = () => {
     }));
   };
 
+  const generateAIEmail = async (type: 'generate' | 'improve' | 'template') => {
+    setIsGeneratingAI(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      let requestBody: any = { type };
+
+      if (type === 'generate') {
+        if (!aiForm.purpose.trim()) {
+          toast({
+            title: "Missing Information",
+            description: "Please provide the purpose of the email",
+            variant: "destructive"
+          });
+          return;
+        }
+        requestBody.context = {
+          purpose: aiForm.purpose,
+          tone: aiForm.tone,
+          audience: aiForm.audience,
+          subject: aiForm.subject,
+          key_points: aiForm.key_points
+        };
+      } else if (type === 'improve') {
+        if (!aiForm.improve_content.trim()) {
+          toast({
+            title: "Missing Content",
+            description: "Please provide content to improve",
+            variant: "destructive"
+          });
+          return;
+        }
+        requestBody.content = aiForm.improve_content;
+        requestBody.context = {
+          tone: aiForm.tone,
+          audience: aiForm.audience
+        };
+      }
+
+      const response = await supabase.functions.invoke('ai-email-assistant', {
+        body: requestBody,
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (response.error) throw response.error;
+
+      const aiResult = response.data;
+      if (aiResult.success) {
+        if (type === 'generate' || type === 'improve') {
+          setComposeForm(prev => ({
+            ...prev,
+            subject: aiResult.subject || prev.subject,
+            content: aiResult.content
+          }));
+          setShowAIAssistantDialog(false);
+          setShowComposeDialog(true);
+        } else if (type === 'template') {
+          setTemplateForm(prev => ({
+            ...prev,
+            subject: aiResult.subject || prev.subject,
+            content: aiResult.content,
+            variables: aiResult.variables || []
+          }));
+          setShowAIAssistantDialog(false);
+          setShowTemplateDialog(true);
+        }
+        
+        toast({
+          title: "AI Content Generated",
+          description: `Your email ${type === 'improve' ? 'has been improved' : 'has been generated'} successfully!`,
+        });
+      } else {
+        throw new Error(aiResult.error);
+      }
+    } catch (error) {
+      console.error('Error generating AI content:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate AI content",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
+  const addKeyPoint = () => {
+    if (currentKeyPoint.trim() && !aiForm.key_points.includes(currentKeyPoint.trim())) {
+      setAIForm(prev => ({
+        ...prev,
+        key_points: [...prev.key_points, currentKeyPoint.trim()]
+      }));
+      setCurrentKeyPoint('');
+    }
+  };
+
+  const removeKeyPoint = (index: number) => {
+    setAIForm(prev => ({
+      ...prev,
+      key_points: prev.key_points.filter((_, i) => i !== index)
+    }));
+  };
+
   const filteredEmails = emails.filter(email => {
     const matchesSearch = email.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          email.sender_email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -327,6 +447,10 @@ export const EmailManagement = () => {
           <Button onClick={() => setShowTemplateDialog(true)} variant="outline">
             <FileText className="w-4 h-4 mr-2" />
             Templates
+          </Button>
+          <Button onClick={() => setShowAIAssistantDialog(true)} variant="outline">
+            <Bot className="w-4 h-4 mr-2" />
+            AI Assistant
           </Button>
           <Button onClick={() => setShowComposeDialog(true)}>
             <Plus className="w-4 h-4 mr-2" />
@@ -746,6 +870,216 @@ export const EmailManagement = () => {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* AI Assistant Dialog */}
+      <Dialog open={showAIAssistantDialog} onOpenChange={setShowAIAssistantDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Bot className="w-5 h-5" />
+              AI Email Assistant
+            </DialogTitle>
+            <DialogDescription>
+              Let AI help you create, improve, or generate email templates
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* AI Action Tabs */}
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => {
+                  setAIForm(prev => ({ ...prev, purpose: '', key_points: [] }));
+                }}
+              >
+                <Wand2 className="w-4 h-4 mr-2" />
+                Generate New
+              </Button>
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => {
+                  setAIForm(prev => ({ ...prev, improve_content: composeForm.content }));
+                }}
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                Improve Existing
+              </Button>
+            </div>
+
+            {/* Generate New Email Form */}
+            {!aiForm.improve_content && (
+              <div className="space-y-4">
+                <div>
+                  <Label>What's the purpose of this email?</Label>
+                  <Textarea
+                    value={aiForm.purpose}
+                    onChange={(e) => setAIForm(prev => ({ ...prev, purpose: e.target.value }))}
+                    placeholder="e.g., Welcome new users, announce updates, send notifications..."
+                    rows={3}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Tone</Label>
+                    <Select 
+                      value={aiForm.tone} 
+                      onValueChange={(value) => setAIForm(prev => ({ ...prev, tone: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="professional">Professional</SelectItem>
+                        <SelectItem value="friendly">Friendly</SelectItem>
+                        <SelectItem value="formal">Formal</SelectItem>
+                        <SelectItem value="casual">Casual</SelectItem>
+                        <SelectItem value="urgent">Urgent</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Audience</Label>
+                    <Select 
+                      value={aiForm.audience} 
+                      onValueChange={(value) => setAIForm(prev => ({ ...prev, audience: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="users">Users</SelectItem>
+                        <SelectItem value="admins">Administrators</SelectItem>
+                        <SelectItem value="new_users">New Users</SelectItem>
+                        <SelectItem value="customers">Customers</SelectItem>
+                        <SelectItem value="team">Team Members</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div>
+                  <Label>Subject Line (Optional)</Label>
+                  <Input
+                    value={aiForm.subject}
+                    onChange={(e) => setAIForm(prev => ({ ...prev, subject: e.target.value }))}
+                    placeholder="Leave blank to let AI suggest a subject"
+                  />
+                </div>
+
+                <div>
+                  <Label>Key Points to Include</Label>
+                  <div className="flex gap-2 mb-2">
+                    <Input
+                      value={currentKeyPoint}
+                      onChange={(e) => setCurrentKeyPoint(e.target.value)}
+                      placeholder="Add a key point..."
+                      onKeyPress={(e) => e.key === 'Enter' && addKeyPoint()}
+                    />
+                    <Button onClick={addKeyPoint} size="sm">
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {aiForm.key_points.map((point, index) => (
+                      <Badge 
+                        key={index} 
+                        variant="secondary" 
+                        className="cursor-pointer"
+                        onClick={() => removeKeyPoint(index)}
+                      >
+                        {point} ×
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Improve Existing Email Form */}
+            {aiForm.improve_content && (
+              <div className="space-y-4">
+                <div>
+                  <Label>Content to Improve</Label>
+                  <Textarea
+                    value={aiForm.improve_content}
+                    onChange={(e) => setAIForm(prev => ({ ...prev, improve_content: e.target.value }))}
+                    placeholder="Paste your email content here to improve it..."
+                    rows={8}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Desired Tone</Label>
+                    <Select 
+                      value={aiForm.tone} 
+                      onValueChange={(value) => setAIForm(prev => ({ ...prev, tone: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="professional">Professional</SelectItem>
+                        <SelectItem value="friendly">Friendly</SelectItem>
+                        <SelectItem value="formal">Formal</SelectItem>
+                        <SelectItem value="casual">Casual</SelectItem>
+                        <SelectItem value="urgent">Urgent</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Target Audience</Label>
+                    <Select 
+                      value={aiForm.audience} 
+                      onValueChange={(value) => setAIForm(prev => ({ ...prev, audience: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="users">Users</SelectItem>
+                        <SelectItem value="admins">Administrators</SelectItem>
+                        <SelectItem value="new_users">New Users</SelectItem>
+                        <SelectItem value="customers">Customers</SelectItem>
+                        <SelectItem value="team">Team Members</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => {
+                setShowAIAssistantDialog(false);
+                setAIForm(prev => ({ ...prev, improve_content: '', purpose: '', key_points: [] }));
+              }}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => generateAIEmail(aiForm.improve_content ? 'improve' : 'generate')}
+                disabled={isGeneratingAI}
+              >
+                {isGeneratingAI ? (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Wand2 className="w-4 h-4 mr-2" />
+                    {aiForm.improve_content ? 'Improve Email' : 'Generate Email'}
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
