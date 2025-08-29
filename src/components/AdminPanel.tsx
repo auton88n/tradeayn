@@ -12,9 +12,8 @@ import { AdminDashboard } from './admin/AdminDashboard';
 import { UserManagement } from './admin/UserManagement';
 import { SystemSettings } from './admin/SystemSettings';
 import { SystemMonitoring } from './admin/SystemMonitoring';
-import { EmailManagement } from './admin/EmailManagement';
-import { EmailCampaigns } from './admin/EmailCampaigns';
-import { EmailTemplateLibrary } from './admin/EmailTemplateLibrary';
+import { SimpleEmailManagement } from './admin/SimpleEmailManagement';
+import { MarketingEmails } from './admin/MarketingEmails';
 import { WorkerEmailManagement } from './admin/WorkerEmailManagement';
 
 interface Profile {
@@ -354,24 +353,20 @@ export const AdminPanel = () => {
         </TabsContent>
 
         <TabsContent value="emails">
-          <Tabs defaultValue="management" className="space-y-4">
+          <Tabs defaultValue="simple" className="space-y-4">
             <TabsList>
-              <TabsTrigger value="management">Email Management</TabsTrigger>
+              <TabsTrigger value="simple">Email Management</TabsTrigger>
+              <TabsTrigger value="marketing">Marketing Campaigns</TabsTrigger>
               <TabsTrigger value="workers">Worker Emails</TabsTrigger>
-              <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
-              <TabsTrigger value="templates">Template Library</TabsTrigger>
             </TabsList>
-            <TabsContent value="management">
-              <EmailManagement />
+            <TabsContent value="simple">
+              <SimpleEmailManagement />
+            </TabsContent>
+            <TabsContent value="marketing">
+              <MarketingEmails />
             </TabsContent>
             <TabsContent value="workers">
               <WorkerEmailManagement />
-            </TabsContent>
-            <TabsContent value="campaigns">
-              <EmailCampaigns />
-            </TabsContent>
-            <TabsContent value="templates">
-              <EmailTemplateLibrary />
             </TabsContent>
           </Tabs>
         </TabsContent>
