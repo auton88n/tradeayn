@@ -109,22 +109,16 @@ export const AdminPanel = () => {
     
     setIsLoading(true);
     try {
-      // Fetch all data in parallel for better performance
-      const [accessResult, usageResult, todayUsageResult] = await Promise.all([
+      // Fetch access grants and profiles separately, then join them
+      const [accessResult, profilesResult, usageResult, todayUsageResult] = await Promise.all([
         supabase
           .from('access_grants')
-          .select(`
-            *,
-            profiles:user_id (
-              id,
-              user_id,
-              company_name,
-              contact_person,
-              phone,
-              created_at
-            )
-          `)
+          .select('*')
           .order('created_at', { ascending: false }),
+        
+        supabase
+          .from('profiles')
+          .select('id, user_id, company_name, contact_person, phone, created_at'),
         
         supabase.rpc('get_usage_stats'),
         
@@ -135,8 +129,20 @@ export const AdminPanel = () => {
       ]);
 
       if (accessResult.error) throw accessResult.error;
+      if (profilesResult.error) throw profilesResult.error;
       
-      const enrichedAccessData = accessResult.data || [];
+      // Create a map of user_id to profile for efficient lookup
+      const profilesMap = (profilesResult.data || []).reduce((acc, profile) => {
+        acc[profile.user_id] = profile;
+        return acc;
+      }, {} as Record<string, Profile>);
+
+      // Enrich access data with profile information
+      const enrichedAccessData = (accessResult.data || []).map(grant => ({
+        ...grant,
+        profiles: profilesMap[grant.user_id] || null
+      }));
+      
       setAllUsers(enrichedAccessData);
 
       if (!usageResult.error && usageResult.data) {
