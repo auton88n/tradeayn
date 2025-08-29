@@ -456,7 +456,7 @@ export const AdminPanel = () => {
             user.is_active ? 'Active' : 'Inactive',
             user.monthly_limit || 'Unlimited',
             user.current_month_usage || 0,
-            user.monthly_limit ? ((user.current_month_usage / user.monthly_limit) * 100).toFixed(1) + '%' : 'N/A',
+            user.monthly_limit && user.current_month_usage !== null ? ((user.current_month_usage / user.monthly_limit) * 100).toFixed(1) + '%' : 'N/A',
             new Date(user.created_at).toLocaleDateString(),
             user.granted_at ? new Date(user.granted_at).toLocaleDateString() : 'Never'
           ].join(','))
@@ -520,7 +520,7 @@ export const AdminPanel = () => {
           active_users: systemMetrics?.activeUsers || 0,
           total_messages: systemMetrics?.totalMessages || 0,
           avg_usage_percentage: usageStats.length > 0 ? 
-            (usageStats.reduce((sum, stat) => sum + stat.usage_percentage, 0) / usageStats.length).toFixed(2) : 0
+            (usageStats.reduce((sum, stat) => sum + (stat.usage_percentage || 0), 0) / usageStats.length).toFixed(2) : 0
         }
       };
 
@@ -863,7 +863,7 @@ export const AdminPanel = () => {
                     <div className="text-sm text-blue-600">Avg Response</div>
                   </div>
                   <div className="text-center p-3 rounded-lg bg-red-50">
-                    <div className="text-lg font-bold text-red-700">{systemMetrics?.errorRate.toFixed(2)}%</div>
+                    <div className="text-lg font-bold text-red-700">{(systemMetrics?.errorRate || 0).toFixed(2)}%</div>
                     <div className="text-sm text-red-600">Error Rate</div>
                   </div>
                 </div>
@@ -1341,11 +1341,11 @@ export const AdminPanel = () => {
                         <div className="flex items-center justify-between mb-3">
                           <span className="font-medium">{stat.company_name || 'Unknown Company'}</span>
                           <div className="flex items-center gap-2">
-                            <Badge variant={stat.usage_percentage > 90 ? 'destructive' : 
-                                           stat.usage_percentage > 75 ? 'secondary' : 'default'}>
-                              {stat.usage_percentage.toFixed(1)}%
+                            <Badge variant={(stat.usage_percentage || 0) > 90 ? 'destructive' : 
+                                           (stat.usage_percentage || 0) > 75 ? 'secondary' : 'default'}>
+                              {(stat.usage_percentage || 0).toFixed(1)}%
                             </Badge>
-                            {stat.usage_percentage > 90 && (
+                            {(stat.usage_percentage || 0) > 90 && (
                               <AlertTriangle className="w-4 h-4 text-red-500" />
                             )}
                           </div>
@@ -1353,15 +1353,15 @@ export const AdminPanel = () => {
                         <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
                           <div 
                             className={`h-3 rounded-full transition-all ${
-                              stat.usage_percentage > 90 ? 'bg-red-500' : 
-                              stat.usage_percentage > 75 ? 'bg-yellow-500' : 
-                              stat.usage_percentage > 50 ? 'bg-blue-500' : 'bg-green-500'
+                              (stat.usage_percentage || 0) > 90 ? 'bg-red-500' : 
+                              (stat.usage_percentage || 0) > 75 ? 'bg-yellow-500' : 
+                              (stat.usage_percentage || 0) > 50 ? 'bg-blue-500' : 'bg-green-500'
                             }`}
-                            style={{ width: `${Math.min(stat.usage_percentage, 100)}%` }}
+                            style={{ width: `${Math.min(stat.usage_percentage || 0, 100)}%` }}
                           />
                         </div>
                         <div className="flex justify-between text-sm text-muted-foreground">
-                          <span>{stat.current_usage} / {stat.monthly_limit || '∞'} messages</span>
+                          <span>{stat.current_usage || 0} / {stat.monthly_limit || '∞'} messages</span>
                           <span>Resets: {new Date(stat.reset_date).toLocaleDateString()}</span>
                         </div>
                       </div>
