@@ -703,7 +703,7 @@ export const EmailTemplateLibrary = () => {
       {/* Template View Dialog */}
       {selectedTemplate && (
         <Dialog open={!!selectedTemplate} onOpenChange={() => setSelectedTemplate(null)}>
-          <DialogContent className="max-w-4xl max-h-[80vh] flex flex-col">
+          <DialogContent className="max-w-4xl h-[80vh] flex flex-col">
             <DialogHeader className="flex-shrink-0 pb-4">
               <DialogTitle>{selectedTemplate.name}</DialogTitle>
               <DialogDescription>
@@ -711,7 +711,7 @@ export const EmailTemplateLibrary = () => {
               </DialogDescription>
             </DialogHeader>
             
-            <ScrollArea className="flex-1 max-h-[60vh]">
+            <ScrollArea className="flex-1 h-full">
               <div className="space-y-6 pr-4">
                 <div className="flex gap-2">
                   <Badge variant={selectedTemplate.is_active ? 'default' : 'secondary'}>
