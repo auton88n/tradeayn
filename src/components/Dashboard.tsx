@@ -720,7 +720,7 @@ export default function Dashboard({ user }: DashboardProps) {
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       onClick={handleNewChat}
-                      className="w-full justify-start font-medium bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20"
+                      className="w-full justify-start font-medium"
                     >
                       <Plus className="w-4 h-4 flex-shrink-0" />
                       <span className="group-data-[collapsible=icon]:hidden">New Chat</span>
