@@ -187,9 +187,10 @@ serve(async (req) => {
     }
 
     try {
-      // Send email via Resend
+      // Send email via Resend (primary domain)
+      const primaryFrom = fromEmail || 'AYN Admin <admin@aynn.io>';
       const emailResponse = await resend.emails.send({
-        from: fromEmail || 'AYN Admin <admin@aynn.io>',
+        from: primaryFrom,
         to: [to],
         subject: finalSubject,
         text: finalContent,
@@ -207,7 +208,8 @@ serve(async (req) => {
           metadata: { 
             ...emailRecord.metadata, 
             resend_id: emailResponse.data?.id,
-            resend_response: emailResponse 
+            resend_response: emailResponse,
+            sender_used: primaryFrom
           }
         })
         .eq('id', emailRecord.id);
@@ -225,20 +227,85 @@ serve(async (req) => {
         }
       );
 
-    } catch (emailError) {
-      console.error('Error sending email:', emailError);
+    } catch (emailError: any) {
+      console.error('Error sending email (primary):', emailError);
 
-      // Update email record as failed
+      // If domain is not verified or similar sender issue, try fallback Resend sandbox domain
+      const errorMessage = emailError?.message || JSON.stringify(emailError);
+      const shouldFallback = /domain.*not.*verified|not verified|blocked.*sending|from address/i.test(errorMessage);
+
+      if (shouldFallback) {
+        try {
+          console.log('Attempting fallback sender with Resend sandbox domain...');
+          const fallbackFrom = 'Lovable Sandbox <onboarding@resend.dev>';
+          const fallbackResponse = await resend.emails.send({
+            from: fallbackFrom,
+            to: [to],
+            subject: finalSubject,
+            text: finalContent,
+            html: finalHtmlContent || `<div style="white-space: pre-wrap;">${finalContent}</div>`,
+          });
+
+          await supabaseClient
+            .from('admin_emails')
+            .update({
+              status: 'sent',
+              sent_at: new Date().toISOString(),
+              metadata: { 
+                ...emailRecord.metadata, 
+                resend_id: fallbackResponse.data?.id,
+                resend_response: fallbackResponse,
+                fallback_used: true,
+                sender_used: fallbackFrom,
+                primary_error: errorMessage
+              }
+            })
+            .eq('id', emailRecord.id);
+
+          return new Response(
+            JSON.stringify({ 
+              success: true, 
+              emailId: emailRecord.id,
+              resendId: fallbackResponse.data?.id,
+              message: 'Email sent successfully (fallback sender)'
+            }),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/json', ...corsHeaders },
+            }
+          );
+        } catch (fallbackError: any) {
+          console.error('Fallback send failed:', fallbackError);
+          await supabaseClient
+            .from('admin_emails')
+            .update({
+              status: 'failed',
+              error_message: `Primary: ${errorMessage} | Fallback: ${fallbackError?.message || JSON.stringify(fallbackError)}`,
+              metadata: { ...emailRecord.metadata, error_primary: emailError, error_fallback: fallbackError }
+            })
+            .eq('id', emailRecord.id);
+
+          return new Response(
+            JSON.stringify({ success: false, error: 'Email sending failed for both primary and fallback senders' }),
+            { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+          );
+        }
+      }
+
+      // Update email record as failed (no fallback)
       await supabaseClient
         .from('admin_emails')
         .update({
           status: 'failed',
-          error_message: emailError.message,
+          error_message: errorMessage,
           metadata: { ...emailRecord.metadata, error: emailError }
         })
         .eq('id', emailRecord.id);
 
-      throw emailError;
+      return new Response(
+        JSON.stringify({ success: false, error: errorMessage }),
+        { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      );
     }
 
   } catch (error) {
