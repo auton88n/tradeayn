@@ -147,6 +147,8 @@ serve(async (req) => {
       body: JSON.stringify({
         message: requestData.message,
         userId: requestData.userId,
+        conversationKey: requestData.userId, // isolate memory per user
+        system: 'Do not assume or use personal names unless provided in the current message. Treat each request as stateless and scoped to this conversationKey only.',
         timestamp: new Date().toISOString(),
         requestId
       }),
@@ -164,16 +166,19 @@ serve(async (req) => {
 
     // Process the response
     const processedText = textProcessor.processResponse(rawText, contentType);
+    const sanitizedText = processedText
+      .replace(/^(?:hello|hi|hey)\s+[^,!]{0,40}[,!]?\s*/i, '')
+      .trim();
     
     console.log(`[${requestId}] Text processing:`, {
       original: rawText.slice(0, 100),
-      processed: processedText.slice(0, 100),
-      lengthChange: `${rawText.length} -> ${processedText.length}`
+      processed: sanitizedText.slice(0, 100),
+      lengthChange: `${rawText.length} -> ${sanitizedText.length}`
     });
 
     // Prepare response
     const response: WebhookResponse = {
-      response: processedText || 'I received your message but got an empty response. Please try again.',
+      response: sanitizedText || 'I received your message but got an empty response. Please try again.',
       status: upstream.ok ? 'success' : 'upstream_error',
       upstream: {
         status: upstream.status,
@@ -182,7 +187,7 @@ serve(async (req) => {
     };
 
     if (!upstream.ok) {
-      response.error = `Upstream returned ${upstream.status}: ${processedText || 'No response body'}`;
+      response.error = `Upstream returned ${upstream.status}: ${sanitizedText || 'No response body'}`;
     }
 
     console.log(`[${requestId}] Final response prepared, length: ${response.response.length}`);
