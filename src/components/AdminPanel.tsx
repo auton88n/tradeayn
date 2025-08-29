@@ -15,7 +15,6 @@ import { SystemMonitoring } from './admin/SystemMonitoring';
 import { SimpleEmailManagement } from './admin/SimpleEmailManagement';
 import { MarketingEmails } from './admin/MarketingEmails';
 import { AuthEmailTemplates } from './admin/AuthEmailTemplates';
-import { WorkerEmailManagement } from './admin/WorkerEmailManagement';
 
 interface Profile {
   id: string;

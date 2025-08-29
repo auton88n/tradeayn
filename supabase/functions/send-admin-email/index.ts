@@ -15,6 +15,7 @@ interface EmailRequest {
   fromEmail?: string;
   templateId?: string;
   templateVariables?: Record<string, string>;
+  email_type?: string; // Add support for marketing emails
 }
 
 const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
@@ -65,7 +66,7 @@ serve(async (req) => {
     }
 
     const emailRequest: EmailRequest = await req.json();
-    const { to, subject, content, htmlContent, fromEmail, templateId, templateVariables } = emailRequest;
+    const { to, subject, content, htmlContent, fromEmail, templateId, templateVariables, email_type } = emailRequest;
 
     let finalSubject = subject;
     let finalContent = content;
@@ -109,7 +110,7 @@ serve(async (req) => {
         subject: finalSubject,
         content: finalContent,
         html_content: finalHtmlContent,
-        email_type: 'outbound',
+        email_type: email_type || 'outbound',
         status: 'draft',
         created_by: user.id,
         metadata: { template_id: templateId, template_variables: templateVariables }
