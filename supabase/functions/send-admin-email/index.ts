@@ -104,7 +104,7 @@ serve(async (req) => {
     const { data: emailRecord, error: insertError } = await supabaseClient
       .from('admin_emails')
       .insert({
-        sender_email: fromEmail || 'admin@yourcompany.com',
+        sender_email: fromEmail || 'admin@update.aynn.io',
         recipient_email: to,
         subject: finalSubject,
         content: finalContent,
@@ -125,7 +125,7 @@ serve(async (req) => {
     try {
       // Send email via Resend
       const emailResponse = await resend.emails.send({
-        from: fromEmail || 'Admin <admin@yourcompany.com>',
+        from: fromEmail || 'Admin <admin@update.aynn.io>',
         to: [to],
         subject: finalSubject,
         text: finalContent,
