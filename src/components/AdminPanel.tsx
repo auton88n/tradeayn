@@ -107,20 +107,22 @@ export const AdminPanel = () => {
   
   const { toast } = useToast();
 
-  // Optimized data fetching with better error handling  
+  // Optimized data fetching with better error handling and memoization
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Fetch access grants and profiles separately, then join them
+      // Fetch access grants and profiles with optimized queries
       const [accessResult, profilesResult, usageResult, todayUsageResult] = await Promise.all([
         supabase
           .from('access_grants')
           .select('*')
-          .order('created_at', { ascending: false }),
+          .order('created_at', { ascending: false })
+          .limit(1000), // Add limit for better performance
         
         supabase
           .from('profiles')
-          .select('id, user_id, company_name, contact_person, phone, created_at'),
+          .select('id, user_id, company_name, contact_person, phone, created_at')
+          .limit(1000), // Add limit for better performance
         
         supabase.rpc('get_usage_stats'),
         
@@ -128,6 +130,7 @@ export const AdminPanel = () => {
           .from('usage_logs')
           .select('usage_count, created_at')
           .gte('created_at', new Date().toISOString().split('T')[0])
+          .limit(500) // Add limit for better performance
       ]);
 
       if (accessResult.error) {
@@ -204,10 +207,11 @@ export const AdminPanel = () => {
   useEffect(() => {
     fetchData();
     
-    // Set up optimized real-time refresh
+    // Set up optimized real-time refresh with cleanup
     let interval: NodeJS.Timeout;
     if (isRealTimeEnabled) {
-      interval = setInterval(fetchData, 60000); // Reduced frequency to 60 seconds for better performance
+      // Increased to 90 seconds for better performance and reduced server load
+      interval = setInterval(fetchData, 90000);
     }
     
     return () => {

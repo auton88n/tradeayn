@@ -55,16 +55,16 @@ export const MarketingEmails = () => {
 
   const fetchUsers = async () => {
     try {
-      // Get profiles, access grants, and auth users
+      // Optimized query with limits
       const [profilesResult, grantsResult] = await Promise.all([
-        supabase.from('profiles').select('*'),
-        supabase.from('access_grants').select('*')
+        supabase.from('profiles').select('*').limit(1000),
+        supabase.from('access_grants').select('*').limit(1000)
       ]);
 
       if (profilesResult.error) throw profilesResult.error;
       if (grantsResult.error) throw grantsResult.error;
 
-      // Get auth users (requires admin privileges)
+      // Get auth users (requires admin privileges) - with error handling
       let authUsers: any[] = [];
       try {
         const { data: { users: fetchedUsers }, error } = await supabase.auth.admin.listUsers();
@@ -75,7 +75,7 @@ export const MarketingEmails = () => {
         console.error('Error fetching auth users:', error);
       }
 
-      // Combine data
+      // Combine data efficiently
       const combinedUsers: User[] = authUsers.map(authUser => {
         const profile = profilesResult.data?.find(p => p.user_id === authUser.id);
         const grant = grantsResult.data?.find(g => g.user_id === authUser.id);
@@ -108,7 +108,8 @@ export const MarketingEmails = () => {
         .from('admin_emails')
         .select('*')
         .eq('email_type', 'marketing')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(100); // Add limit for better performance
 
       if (error) throw error;
 
