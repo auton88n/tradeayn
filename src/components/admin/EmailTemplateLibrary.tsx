@@ -703,46 +703,49 @@ export const EmailTemplateLibrary = () => {
       {/* Template View Dialog */}
       {selectedTemplate && (
         <Dialog open={!!selectedTemplate} onOpenChange={() => setSelectedTemplate(null)}>
-          <DialogContent className="max-w-2xl h-[70vh] flex flex-col">
-            <DialogHeader className="flex-shrink-0">
+          <DialogContent className="max-w-4xl max-h-[80vh] flex flex-col">
+            <DialogHeader className="flex-shrink-0 pb-4">
               <DialogTitle>{selectedTemplate.name}</DialogTitle>
               <DialogDescription>
                 Template preview and details
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 overflow-y-auto flex-1 pr-2 scroll-smooth">
-              <div className="flex gap-2">
-                <Badge variant={selectedTemplate.is_active ? 'default' : 'secondary'}>
-                  {selectedTemplate.is_active ? 'Active' : 'Inactive'}
-                </Badge>
-                <Badge variant="outline">{getCategoryInfo(selectedTemplate.category).label}</Badge>
-              </div>
-              
-              <div>
-                <Label>Subject</Label>
-                <p className="font-medium">{selectedTemplate.subject}</p>
-              </div>
-
-              <div>
-                <Label>Content</Label>
-                <div className="border rounded-lg p-4 bg-muted/30">
-                  <pre className="whitespace-pre-wrap text-sm">{selectedTemplate.content}</pre>
+            
+            <ScrollArea className="flex-1 max-h-[60vh]">
+              <div className="space-y-6 pr-4">
+                <div className="flex gap-2">
+                  <Badge variant={selectedTemplate.is_active ? 'default' : 'secondary'}>
+                    {selectedTemplate.is_active ? 'Active' : 'Inactive'}
+                  </Badge>
+                  <Badge variant="outline">{getCategoryInfo(selectedTemplate.category).label}</Badge>
                 </div>
-              </div>
-
-              {selectedTemplate.variables.length > 0 && (
+                
                 <div>
-                  <Label>Variables</Label>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {selectedTemplate.variables.map((variable) => (
-                      <Badge key={variable} variant="outline">
-                        {`{{${variable}}}`}
-                      </Badge>
-                    ))}
+                  <Label className="text-base font-semibold">Subject</Label>
+                  <p className="font-medium mt-1">{selectedTemplate.subject}</p>
+                </div>
+
+                <div>
+                  <Label className="text-base font-semibold">Content</Label>
+                  <div className="border rounded-lg p-4 bg-muted/30 mt-1">
+                    <pre className="whitespace-pre-wrap text-sm leading-relaxed">{selectedTemplate.content}</pre>
                   </div>
                 </div>
-              )}
-            </div>
+
+                {selectedTemplate.variables.length > 0 && (
+                  <div>
+                    <Label className="text-base font-semibold">Variables</Label>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {selectedTemplate.variables.map((variable) => (
+                        <Badge key={variable} variant="outline">
+                          {`{{${variable}}}`}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
           </DialogContent>
         </Dialog>
       )}
