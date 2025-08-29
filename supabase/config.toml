@@ -1,1 +1,4 @@
 project_id = "dfkoxuokfkttjhfjcecx"
+
+[functions.send-admin-email]
+verify_jwt = true

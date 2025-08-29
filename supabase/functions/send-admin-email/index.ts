@@ -32,12 +32,17 @@ serve(async (req) => {
   }
 
   try {
+    // Debug environment variables
+    console.log('All available env vars:', Object.keys(Deno.env.toObject()));
+    console.log('Looking for RESEND_API_KEY...');
+    
     // Initialize Resend client
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
-    console.log('RESEND_API_KEY available:', resendApiKey ? 'Yes' : 'No');
+    console.log('RESEND_API_KEY length:', resendApiKey ? resendApiKey.length : 'null/undefined');
     
     if (!resendApiKey) {
-      throw new Error('RESEND_API_KEY environment variable is not set');
+      console.error('RESEND_API_KEY is not available in environment');
+      throw new Error('RESEND_API_KEY environment variable is not set. Please check Supabase secrets configuration.');
     }
     
     const resend = new Resend(resendApiKey);
