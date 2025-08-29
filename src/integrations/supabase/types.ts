@@ -123,8 +123,10 @@ export type Database = {
           is_active: boolean
           name: string
           subject: string
+          tags: Json | null
           template_type: string
           updated_at: string
+          usage_count: number | null
           variables: Json | null
         }
         Insert: {
@@ -136,8 +138,10 @@ export type Database = {
           is_active?: boolean
           name: string
           subject: string
+          tags?: Json | null
           template_type?: string
           updated_at?: string
+          usage_count?: number | null
           variables?: Json | null
         }
         Update: {
@@ -149,8 +153,10 @@ export type Database = {
           is_active?: boolean
           name?: string
           subject?: string
+          tags?: Json | null
           template_type?: string
           updated_at?: string
+          usage_count?: number | null
           variables?: Json | null
         }
         Relationships: []
@@ -346,6 +352,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_template_usage: {
+        Args: { template_id: string }
+        Returns: undefined
       }
       increment_usage: {
         Args: { _action_type?: string; _count?: number; _user_id: string }
