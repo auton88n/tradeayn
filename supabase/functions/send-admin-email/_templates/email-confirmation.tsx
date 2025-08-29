@@ -37,14 +37,14 @@ export const EmailConfirmationEmail = ({
 
         {/* Main content */}
         <Section style={contentSection}>
-          <Text style={greeting}>Hello,</Text>
+          <Text style={greeting}>Welcome to the future of business consulting!</Text>
           
           <Text style={bodyText}>
-            Welcome to AYN! You're one step away from accessing your AI business consultant.
+            Thank you for joining AYN. Your AI-powered business consultant is ready to help you accelerate growth, optimize operations, and unlock new opportunities.
           </Text>
           
           <Text style={bodyText}>
-            Please confirm your email address to activate your account:
+            To get started and secure your account, please verify your email address:
           </Text>
 
           <Section style={buttonSection}>
@@ -57,14 +57,15 @@ export const EmailConfirmationEmail = ({
           </Section>
 
           <Text style={benefitsHeader}>
-            Once confirmed, you'll have full access to:
+            Your AI consultant is equipped to deliver:
           </Text>
 
           <Section style={benefitsList}>
-            <Text style={benefitItem}>• Market research and analysis</Text>
-            <Text style={benefitItem}>• Sales optimization strategies</Text>
-            <Text style={benefitItem}>• Growth planning assistance</Text>
-            <Text style={benefitItem}>• Competitor intelligence</Text>
+            <Text style={benefitItem}>• Comprehensive market research and competitive analysis</Text>
+            <Text style={benefitItem}>• Data-driven sales optimization and revenue growth strategies</Text>
+            <Text style={benefitItem}>• Strategic business planning and expansion roadmaps</Text>
+            <Text style={benefitItem}>• Real-time competitor intelligence and market insights</Text>
+            <Text style={benefitItem}>• Personalized recommendations tailored to your industry</Text>
           </Section>
 
           <Text style={expiryText}>
