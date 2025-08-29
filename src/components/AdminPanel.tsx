@@ -14,6 +14,7 @@ import { SystemSettings } from './admin/SystemSettings';
 import { SystemMonitoring } from './admin/SystemMonitoring';
 import { SimpleEmailManagement } from './admin/SimpleEmailManagement';
 import { MarketingEmails } from './admin/MarketingEmails';
+import { AuthEmailTemplates } from './admin/AuthEmailTemplates';
 import { WorkerEmailManagement } from './admin/WorkerEmailManagement';
 
 interface Profile {
@@ -357,7 +358,7 @@ export const AdminPanel = () => {
             <TabsList>
               <TabsTrigger value="simple">Email Management</TabsTrigger>
               <TabsTrigger value="marketing">Marketing Campaigns</TabsTrigger>
-              <TabsTrigger value="workers">Worker Emails</TabsTrigger>
+              <TabsTrigger value="auth">Auth Templates</TabsTrigger>
             </TabsList>
             <TabsContent value="simple">
               <SimpleEmailManagement />
@@ -365,8 +366,8 @@ export const AdminPanel = () => {
             <TabsContent value="marketing">
               <MarketingEmails />
             </TabsContent>
-            <TabsContent value="workers">
-              <WorkerEmailManagement />
+            <TabsContent value="auth">
+              <AuthEmailTemplates />
             </TabsContent>
           </Tabs>
         </TabsContent>
