@@ -111,6 +111,7 @@ export default function Dashboard({ user }: DashboardProps) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [activeTab, setActiveTab] = useState<'chat' | 'admin'>('chat');
   const [recentChats, setRecentChats] = useState<ChatHistory[]>([]);
+  const [userProfile, setUserProfile] = useState<any>(null);
   
   // Maintenance mode state
   const [maintenanceConfig, setMaintenanceConfig] = useState({
@@ -152,6 +153,7 @@ export default function Dashboard({ user }: DashboardProps) {
     checkAdminRole();
     checkMaintenanceStatus();
     loadRecentChats();
+    loadUserProfile();
     
     const termsKey = `ayn_terms_accepted_${user.id}`;
     const accepted = localStorage.getItem(termsKey) === 'true';
@@ -266,6 +268,25 @@ export default function Dashboard({ user }: DashboardProps) {
       setIsAdmin(data.role === 'admin');
     } catch (error) {
       console.error('Role check error:', error);
+    }
+  };
+
+  const loadUserProfile = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('contact_person, company_name')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error loading profile:', error);
+        return;
+      }
+
+      setUserProfile(data);
+    } catch (error) {
+      console.error('Profile loading error:', error);
     }
   };
 
@@ -435,7 +456,7 @@ export default function Dashboard({ user }: DashboardProps) {
           message: content,
           userId: user.id,
           allowPersonalization,
-          contactPerson: user?.user_metadata?.name || user?.user_metadata?.full_name
+          contactPerson: userProfile?.contact_person || ''
         }
       });
       
