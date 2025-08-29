@@ -47,6 +47,18 @@ interface AdminDashboardProps {
 }
 
 export const AdminDashboard = ({ systemMetrics, allUsers }: AdminDashboardProps) => {
+  // Calculate weekly growth based on actual data
+  const oneWeekAgo = new Date();
+  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+  
+  const usersThisWeek = allUsers.filter(user => 
+    new Date(user.created_at) >= oneWeekAgo
+  ).length;
+  
+  const activeUsersThisWeek = allUsers.filter(user => 
+    user.is_active && user.granted_at && new Date(user.granted_at) >= oneWeekAgo
+  ).length;
+
   return (
     <div className="space-y-6">
       {/* System Health Alert */}
@@ -71,7 +83,7 @@ export const AdminDashboard = ({ systemMetrics, allUsers }: AdminDashboardProps)
           <CardContent>
             <div className="text-2xl font-bold text-blue-700">{systemMetrics?.totalUsers || 0}</div>
             <p className="text-xs text-blue-600">
-              +{Math.floor(Math.random() * 5)} this week
+              +{usersThisWeek} this week
             </p>
           </CardContent>
         </Card>
@@ -84,7 +96,7 @@ export const AdminDashboard = ({ systemMetrics, allUsers }: AdminDashboardProps)
           <CardContent>
             <div className="text-2xl font-bold text-green-700">{systemMetrics?.activeUsers || 0}</div>
             <p className="text-xs text-green-600">
-              {((systemMetrics?.activeUsers || 0) / (systemMetrics?.totalUsers || 1) * 100).toFixed(1)}% active
+              +{activeUsersThisWeek} activated this week
             </p>
           </CardContent>
         </Card>
