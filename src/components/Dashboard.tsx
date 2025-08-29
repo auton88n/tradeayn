@@ -699,8 +699,8 @@ export default function Dashboard({ user }: DashboardProps) {
             </div>
 
             {/* AYN Status */}
-            <div className="flex items-center gap-3 p-3 mt-2 rounded-lg bg-primary/5 border border-primary/10 hover:bg-primary/10 transition-colors">
-              <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
+            <div className="flex items-center gap-3 px-3 py-2 mt-2">
+              <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
                 <Brain className="w-3 h-3 text-foreground" />
               </div>
               <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
