@@ -103,10 +103,8 @@ export const AdminPanel = () => {
   
   const { toast } = useToast();
 
-  // Optimized data fetching with better error handling
+  // Optimized data fetching with better error handling  
   const fetchData = useCallback(async () => {
-    if (isLoading) return; // Prevent overlapping requests
-    
     setIsLoading(true);
     try {
       // Fetch access grants and profiles separately, then join them
@@ -183,7 +181,7 @@ export const AdminPanel = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [toast, isLoading]);
+  }, [toast]);
 
   useEffect(() => {
     fetchData();
