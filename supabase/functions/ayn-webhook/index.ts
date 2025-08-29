@@ -141,15 +141,19 @@ serve(async (req) => {
       allowPersonalization: requestData.allowPersonalization
     });
 
-    // Prepare system message based on personalization settings
-    const systemMessage = requestData.allowPersonalization && requestData.contactPerson
-      ? `You can address the user as ${requestData.contactPerson} if appropriate. Keep conversations scoped to this conversationKey (${requestData.userId}).`
-      : 'Do not assume or use personal names unless explicitly provided in the current message. Treat each request as stateless and scoped to this conversationKey only.';
+  // Prepare conversation key and system message based on personalization settings
+  const conversationKey = requestData.allowPersonalization
+    ? requestData.userId
+    : `${requestData.userId}:np`; // separate non-personalized memory to avoid name bleed
 
-    // Call upstream webhook
-    const upstreamUrl = 'https://n8n.srv846714.hstgr.cloud/webhook/d8453419-8880-4bc4-b351-a0d0376b1fce';
-    
-    const upstream = await fetch(upstreamUrl, {
+  const systemMessage = requestData.allowPersonalization && requestData.contactPerson
+    ? `You may address the user as ${requestData.contactPerson}. Scope all context strictly to conversationKey (${conversationKey}).`
+    : `Do not use or infer personal names. Ignore any prior memory of names. Treat each request as stateless and scope strictly to conversationKey (${conversationKey}).`;
+
+  // Call upstream webhook
+  const upstreamUrl = 'https://n8n.srv846714.hstgr.cloud/webhook/d8453419-8880-4bc4-b351-a0d0376b1fce';
+  
+  const upstream = await fetch(upstreamUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -157,7 +161,8 @@ serve(async (req) => {
       body: JSON.stringify({
         message: requestData.message,
         userId: requestData.userId,
-        conversationKey: requestData.userId, // isolate memory per user
+        contactPerson: requestData.contactPerson,
+        conversationKey, // isolate memory per user and mode
         system: systemMessage,
         timestamp: new Date().toISOString(),
         requestId
@@ -176,22 +181,40 @@ serve(async (req) => {
 
     // Process the response
     const processedText = textProcessor.processResponse(rawText, contentType);
-    
-    // Apply sanitization based on personalization setting
-    const sanitizedText = requestData.allowPersonalization 
-      ? processedText // Keep names if personalization is enabled
-      : processedText
-          .replace(/^(?:hello|hi|hey)\s+[^,!]{0,40}[,!]?\s*/i, '')
-          .trim();
-    
+
+    // Enhanced sanitization when personalization is disabled
+    const sanitizeNonPersonalized = (text: string) => {
+      let t = text;
+
+      // Remove leading greetings with potential names
+      t = t.replace(/^(?:hello|hi|hey)\s+[^,!]{0,40}[,!]?\s*/i, '');
+
+      // Remove explicit statements about the user's name
+      t = t.replace(/\b(your name is|you are called|I'll call you|I will call you)\s+[A-Z][a-z]{1,30}[.!?]?/gi, '');
+
+      // Remove addressing patterns like 'Name,' at sentence start
+      t = t.replace(/^([A-Z][a-z]{1,30}),\s+/gm, '');
+
+      // If we know a contactPerson, strip it anywhere
+      if (requestData.contactPerson) {
+        const escaped = requestData.contactPerson.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const nameRegex = new RegExp(`\\b${escaped}\\b`, 'g');
+        t = t.replace(nameRegex, '');
+      }
+
+      return textProcessor.normalizeText(t);
+    };
+
+    const sanitizedText = requestData.allowPersonalization ? processedText : sanitizeNonPersonalized(processedText);
+
     // Log name stripping if it occurred
     if (!requestData.allowPersonalization && processedText !== sanitizedText) {
-      console.log(`[${requestId}] Stripped greeting with potential name:`, {
-        original: processedText.slice(0, 100),
-        sanitized: sanitizedText.slice(0, 100)
+      console.log(`[${requestId}] Stripped potential personalization:`, {
+        original: processedText.slice(0, 120),
+        sanitized: sanitizedText.slice(0, 120)
       });
     }
-    
+
     console.log(`[${requestId}] Text processing:`, {
       original: rawText.slice(0, 100),
       processed: sanitizedText.slice(0, 100),
