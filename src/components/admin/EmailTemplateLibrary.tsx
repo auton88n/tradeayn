@@ -703,14 +703,14 @@ export const EmailTemplateLibrary = () => {
       {/* Template View Dialog */}
       {selectedTemplate && (
         <Dialog open={!!selectedTemplate} onOpenChange={() => setSelectedTemplate(null)}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
+          <DialogContent className="max-w-2xl h-[70vh] flex flex-col">
+            <DialogHeader className="flex-shrink-0">
               <DialogTitle>{selectedTemplate.name}</DialogTitle>
               <DialogDescription>
                 Template preview and details
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4">
+            <div className="space-y-4 overflow-y-auto flex-1 pr-2 scroll-smooth">
               <div className="flex gap-2">
                 <Badge variant={selectedTemplate.is_active ? 'default' : 'secondary'}>
                   {selectedTemplate.is_active ? 'Active' : 'Inactive'}
