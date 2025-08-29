@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { 
   Sidebar,
   SidebarContent,
@@ -37,7 +39,8 @@ import {
   Menu,
   X,
   Shield,
-  Plus
+  Plus,
+  User as UserIcon
 } from 'lucide-react';
 import { ThemeToggle } from './theme-toggle';
 import { TermsModal } from './TermsModal';
@@ -128,6 +131,7 @@ export default function Dashboard({ user }: DashboardProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [showFileTypes, setShowFileTypes] = useState(false);
+  const [allowPersonalization, setAllowPersonalization] = useState(false);
   
   const { toast } = useToast();
   
@@ -429,7 +433,9 @@ export default function Dashboard({ user }: DashboardProps) {
       const { data: webhookResponse, error: webhookError } = await supabase.functions.invoke('ayn-webhook', {
         body: { 
           message: content,
-          userId: user.id 
+          userId: user.id,
+          allowPersonalization,
+          contactPerson: user?.user_metadata?.name || user?.user_metadata?.full_name
         }
       });
       
@@ -804,6 +810,20 @@ export default function Dashboard({ user }: DashboardProps) {
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+              
+            {/* Personalization Toggle */}
+            <div className="flex items-center gap-2 border border-border rounded-lg px-2 py-1">
+              <UserIcon className="w-3 h-3 text-muted-foreground" />
+              <Switch 
+                checked={allowPersonalization}
+                onCheckedChange={setAllowPersonalization}
+                className="scale-75"
+                disabled={!hasAccess}
+              />
+              <Label htmlFor="personalization" className="text-xs text-muted-foreground cursor-pointer sr-only">
+                Use my name
+              </Label>
+            </div>
 
             {/* Admin Tab Switcher */}
             {isAdmin && (

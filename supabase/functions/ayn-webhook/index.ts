@@ -8,6 +8,8 @@ const corsHeaders = {
 interface WebhookRequest {
   message?: string;
   userId?: string;
+  allowPersonalization?: boolean;
+  contactPerson?: string;
 }
 
 interface WebhookResponse {
@@ -125,7 +127,9 @@ serve(async (req) => {
       const body = await req.json();
       requestData = {
         message: body?.message || '',
-        userId: body?.userId || ''
+        userId: body?.userId || '',
+        allowPersonalization: body?.allowPersonalization || false,
+        contactPerson: body?.contactPerson || ''
       };
     } catch (e) {
       console.warn(`[${requestId}] Request body was not valid JSON, using defaults`);
@@ -133,8 +137,14 @@ serve(async (req) => {
 
     console.log(`[${requestId}] Request data:`, {
       message: requestData.message?.slice(0, 100) + (requestData.message?.length > 100 ? '...' : ''),
-      userId: requestData.userId
+      userId: requestData.userId,
+      allowPersonalization: requestData.allowPersonalization
     });
+
+    // Prepare system message based on personalization settings
+    const systemMessage = requestData.allowPersonalization && requestData.contactPerson
+      ? `You can address the user as ${requestData.contactPerson} if appropriate. Keep conversations scoped to this conversationKey (${requestData.userId}).`
+      : 'Do not assume or use personal names unless explicitly provided in the current message. Treat each request as stateless and scoped to this conversationKey only.';
 
     // Call upstream webhook
     const upstreamUrl = 'https://n8n.srv846714.hstgr.cloud/webhook/d8453419-8880-4bc4-b351-a0d0376b1fce';
@@ -148,7 +158,7 @@ serve(async (req) => {
         message: requestData.message,
         userId: requestData.userId,
         conversationKey: requestData.userId, // isolate memory per user
-        system: 'Do not assume or use personal names unless provided in the current message. Treat each request as stateless and scoped to this conversationKey only.',
+        system: systemMessage,
         timestamp: new Date().toISOString(),
         requestId
       }),
@@ -166,14 +176,27 @@ serve(async (req) => {
 
     // Process the response
     const processedText = textProcessor.processResponse(rawText, contentType);
-    const sanitizedText = processedText
-      .replace(/^(?:hello|hi|hey)\s+[^,!]{0,40}[,!]?\s*/i, '')
-      .trim();
+    
+    // Apply sanitization based on personalization setting
+    const sanitizedText = requestData.allowPersonalization 
+      ? processedText // Keep names if personalization is enabled
+      : processedText
+          .replace(/^(?:hello|hi|hey)\s+[^,!]{0,40}[,!]?\s*/i, '')
+          .trim();
+    
+    // Log name stripping if it occurred
+    if (!requestData.allowPersonalization && processedText !== sanitizedText) {
+      console.log(`[${requestId}] Stripped greeting with potential name:`, {
+        original: processedText.slice(0, 100),
+        sanitized: sanitizedText.slice(0, 100)
+      });
+    }
     
     console.log(`[${requestId}] Text processing:`, {
       original: rawText.slice(0, 100),
       processed: sanitizedText.slice(0, 100),
-      lengthChange: `${rawText.length} -> ${sanitizedText.length}`
+      lengthChange: `${rawText.length} -> ${sanitizedText.length}`,
+      personalizationEnabled: requestData.allowPersonalization
     });
 
     // Prepare response
