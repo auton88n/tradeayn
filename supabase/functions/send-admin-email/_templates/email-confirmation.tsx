@@ -43,6 +43,8 @@ export const EmailConfirmationEmail = ({
             Thank you for joining AYN. Your AI-powered business consultant is ready to help you accelerate growth, optimize operations, and unlock new opportunities.
           </Text>
           
+          <Section style={spacer} />
+          
           <Text style={bodyText}>
             To get started and secure your account, please verify your email address:
           </Text>
@@ -240,4 +242,8 @@ const footerText = {
   color: '#718096',
   textAlign: 'center' as const,
   margin: '4px 0',
+}
+
+const spacer = {
+  height: '24px',
 }
