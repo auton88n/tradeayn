@@ -1,6 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { Resend } from 'npm:resend@2.0.0';
+import { renderAsync } from 'npm:@react-email/components@0.0.22';
+import React from 'npm:react@18.3.1';
+import { PasswordResetEmail } from './_templates/password-reset.tsx';
+import { EmailConfirmationEmail } from './_templates/email-confirmation.tsx';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,6 +20,8 @@ interface EmailRequest {
   templateId?: string;
   templateVariables?: Record<string, string>;
   email_type?: string; // Add support for marketing emails
+  use_react_template?: boolean; // Add support for React Email templates
+  template_type?: 'password_reset' | 'email_confirmation'; // Template type for React Email
 }
 
 const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
@@ -66,14 +72,57 @@ serve(async (req) => {
     }
 
     const emailRequest: EmailRequest = await req.json();
-    const { to, subject, content, htmlContent, fromEmail, templateId, templateVariables, email_type } = emailRequest;
+    const { 
+      to, 
+      subject, 
+      content, 
+      htmlContent, 
+      fromEmail, 
+      templateId, 
+      templateVariables, 
+      email_type,
+      use_react_template,
+      template_type
+    } = emailRequest;
 
     let finalSubject = subject;
     let finalContent = content;
     let finalHtmlContent = htmlContent;
 
-    // If using a template, fetch and process it
-    if (templateId) {
+    // Handle React Email templates
+    if (use_react_template && template_type) {
+      const confirmationUrl = templateVariables?.confirmationUrl || '#';
+      const userEmail = to;
+
+      try {
+        if (template_type === 'password_reset') {
+          finalHtmlContent = await renderAsync(
+            React.createElement(PasswordResetEmail, {
+              confirmationUrl,
+              userEmail,
+            })
+          );
+          finalSubject = 'Reset your AYN password';
+        } else if (template_type === 'email_confirmation') {
+          finalHtmlContent = await renderAsync(
+            React.createElement(EmailConfirmationEmail, {
+              confirmationUrl,
+              userEmail,
+            })
+          );
+          finalSubject = 'Welcome to AYN - Confirm your email';
+        }
+        
+        // Set plain text content as fallback
+        finalContent = content || `Please click the link to ${template_type === 'password_reset' ? 'reset your password' : 'confirm your email'}: ${confirmationUrl}`;
+      } catch (renderError) {
+        console.error('Error rendering React email template:', renderError);
+        // Fall back to regular template processing
+      }
+    }
+
+    // If using a database template, fetch and process it
+    else if (templateId) {
       const { data: template, error: templateError } = await supabaseClient
         .from('email_templates')
         .select('*')
