@@ -259,10 +259,15 @@ export default function Dashboard({ user }: DashboardProps) {
         .from('access_grants')
         .select('is_active, expires_at')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error checking access:', error);
+        return;
+      }
+
+      if (!data) {
+        setHasAccess(false);
         return;
       }
 
@@ -279,10 +284,15 @@ export default function Dashboard({ user }: DashboardProps) {
         .from('user_roles')
         .select('role')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error checking role:', error);
+        return;
+      }
+
+      if (!data) {
+        setIsAdmin(false);
         return;
       }
 
