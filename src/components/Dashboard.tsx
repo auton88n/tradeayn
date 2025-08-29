@@ -96,46 +96,6 @@ const templates = [
   },
 ];
 
-const recentChats: ChatHistory[] = [
-  { 
-    title: 'Q3 Revenue Analysis',
-    lastMessage: 'Based on your Q3 data, I recommend focusing on...',
-    timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-    messages: [
-      {
-        id: '1',
-        content: 'Can you analyze my Q3 revenue performance?',
-        sender: 'user',
-        timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
-      },
-      {
-        id: '2',
-        content: 'Based on your Q3 data, I recommend focusing on customer retention strategies. Your revenue grew 15% but customer acquisition costs increased by 23%.',
-        sender: 'ayn',
-        timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
-      }
-    ]
-  },
-  { 
-    title: 'Customer Acquisition Strategy',
-    lastMessage: 'Your CAC has improved by 23% with the new...',
-    timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-    messages: [
-      {
-        id: '3',
-        content: 'How can I improve my customer acquisition strategy?',
-        sender: 'user',
-        timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
-      },
-      {
-        id: '4',
-        content: 'Your CAC has improved by 23% with the new digital marketing campaigns. I recommend expanding your social media presence and implementing referral programs.',
-        sender: 'ayn',
-        timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
-      }
-    ]
-  },
-];
 
 export default function Dashboard({ user }: DashboardProps) {
   // State management
@@ -146,6 +106,7 @@ export default function Dashboard({ user }: DashboardProps) {
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [activeTab, setActiveTab] = useState<'chat' | 'admin'>('chat');
+  const [recentChats, setRecentChats] = useState<ChatHistory[]>([]);
   
   // Maintenance mode state
   const [maintenanceConfig, setMaintenanceConfig] = useState({
@@ -185,6 +146,7 @@ export default function Dashboard({ user }: DashboardProps) {
     checkUserAccess();
     checkAdminRole();
     checkMaintenanceStatus();
+    loadRecentChats();
     
     const termsKey = `ayn_terms_accepted_${user.id}`;
     const accepted = localStorage.getItem(termsKey) === 'true';
@@ -299,6 +261,66 @@ export default function Dashboard({ user }: DashboardProps) {
       setIsAdmin(data.role === 'admin');
     } catch (error) {
       console.error('Role check error:', error);
+    }
+  };
+
+  const loadRecentChats = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('messages')
+        .select('id, content, created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) {
+        console.error('Error loading recent chats:', error);
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        setRecentChats([]);
+        return;
+      }
+
+      // Group messages into chat sessions (simplified - by day)
+      const chatGroups: { [key: string]: any[] } = {};
+      
+      data.forEach(message => {
+        const dateKey = new Date(message.created_at).toDateString();
+        if (!chatGroups[dateKey]) {
+          chatGroups[dateKey] = [];
+        }
+        chatGroups[dateKey].push({
+          id: message.id,
+          content: message.content,
+          sender: 'user', // Messages table only stores user messages
+          timestamp: new Date(message.created_at)
+        });
+      });
+
+      // Convert to ChatHistory format
+      const chatHistories: ChatHistory[] = Object.entries(chatGroups)
+        .slice(0, 5) // Limit to latest 5 chat sessions
+        .map(([dateKey, messages]) => {
+          const sortedMessages = messages.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+          const firstMessage = sortedMessages[0];
+          
+          return {
+            title: firstMessage.content.length > 30 
+              ? firstMessage.content.substring(0, 30) + '...'
+              : firstMessage.content,
+            lastMessage: firstMessage.content.length > 50
+              ? firstMessage.content.substring(0, 50) + '...'
+              : firstMessage.content,
+            timestamp: firstMessage.timestamp,
+            messages: sortedMessages
+          };
+        });
+
+      setRecentChats(chatHistories);
+    } catch (error) {
+      console.error('Error loading recent chats:', error);
     }
   };
 
@@ -427,6 +449,18 @@ export default function Dashboard({ user }: DashboardProps) {
       };
 
       setMessages(prev => [...prev, aynMessage]);
+
+      // Save user message to database
+      await supabase.from('messages').insert({
+        user_id: user.id,
+        content: content,
+        attachment_url: attachment?.url,
+        attachment_name: attachment?.name,
+        attachment_type: attachment?.type
+      });
+
+      // Refresh recent chats
+      loadRecentChats();
 
     } catch (error) {
       setIsTyping(false);
@@ -696,23 +730,33 @@ export default function Dashboard({ user }: DashboardProps) {
               <SidebarGroupLabel>Recent Chats</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {recentChats.map((chat, index) => (
-                    <SidebarMenuItem key={index} className="mb-2">
-                      <SidebarMenuButton
-                        onClick={() => handleLoadChat(chat)}
-                        tooltip={chat.title}
-                        className="py-4 px-3 h-auto"
-                      >
-                        <div className="w-5 h-5 rounded bg-muted flex items-center justify-center text-xs font-medium mr-3">
-                          {chat.title.charAt(0)}
-                        </div>
-                        <div className="flex flex-col min-w-0 gap-1">
-                          <span className="font-medium truncate text-sm group-data-[collapsible=icon]:hidden">{chat.title}</span>
-                          <span className="text-xs text-muted-foreground truncate group-data-[collapsible=icon]:hidden leading-relaxed">{chat.lastMessage}</span>
-                        </div>
-                      </SidebarMenuButton>
+                  {recentChats.length > 0 ? (
+                    recentChats.map((chat, index) => (
+                      <SidebarMenuItem key={index} className="mb-2">
+                        <SidebarMenuButton
+                          onClick={() => handleLoadChat(chat)}
+                          tooltip={chat.title}
+                          className="py-4 px-3 h-auto"
+                        >
+                          <div className="w-5 h-5 rounded bg-muted flex items-center justify-center text-xs font-medium mr-3">
+                            {chat.title.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="flex flex-col min-w-0 gap-1">
+                            <span className="font-medium truncate text-sm group-data-[collapsible=icon]:hidden">{chat.title}</span>
+                            <span className="text-xs text-muted-foreground truncate group-data-[collapsible=icon]:hidden leading-relaxed">{chat.lastMessage}</span>
+                          </div>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))
+                  ) : (
+                    <SidebarMenuItem>
+                      <div className="py-4 px-3 text-center">
+                        <p className="text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
+                          No conversations yet. Start chatting with AYN!
+                        </p>
+                      </div>
                     </SidebarMenuItem>
-                  ))}
+                  )}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
