@@ -36,7 +36,8 @@ import {
   Settings,
   Menu,
   X,
-  Shield
+  Shield,
+  Plus
 } from 'lucide-react';
 import { ThemeToggle } from './theme-toggle';
 import { TermsModal } from './TermsModal';
@@ -654,6 +655,14 @@ export default function Dashboard({ user }: DashboardProps) {
     await supabase.auth.signOut();
   };
 
+  const handleNewChat = () => {
+    setMessages([]);
+    toast({
+      title: "New Chat Started",
+      description: "You can now start a fresh conversation with AYN.",
+    });
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -704,6 +713,23 @@ export default function Dashboard({ user }: DashboardProps) {
           </SidebarHeader>
 
           <SidebarContent>
+            {/* New Chat Button */}
+            <SidebarGroup>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      onClick={handleNewChat}
+                      className="w-full justify-start font-medium bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20"
+                    >
+                      <Plus className="w-4 h-4 flex-shrink-0" />
+                      <span className="group-data-[collapsible=icon]:hidden">New Chat</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+
             {/* Quick Start */}
             <SidebarGroup>
               <SidebarGroupLabel>Quick Start</SidebarGroupLabel>
