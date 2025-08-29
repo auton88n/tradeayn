@@ -42,6 +42,7 @@ import { ThemeToggle } from './theme-toggle';
 import { TermsModal } from './TermsModal';
 import { AdminPanel } from './AdminPanel';
 import { TypewriterText } from './TypewriterText';
+import { TypingIndicator } from './TypingIndicator';
 
 interface Message {
   id: string;
@@ -856,14 +857,7 @@ export default function Dashboard({ user }: DashboardProps) {
                           <Brain className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         </AvatarFallback>
                       </Avatar>
-                      <div className="bg-muted text-foreground rounded-xl sm:rounded-lg px-3 py-2 sm:px-4 sm:py-3 mr-8 sm:mr-12">
-                        <div className="flex items-center gap-1">
-                          <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-primary rounded-full animate-pulse" />
-                          <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
-                          <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
-                          <span className="ml-2 text-xs sm:text-sm text-muted-foreground">AYN is typing...</span>
-                        </div>
-                      </div>
+                      <TypingIndicator />
                     </div>
                   )}
                   

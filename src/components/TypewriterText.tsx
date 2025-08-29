@@ -11,10 +11,10 @@ interface TypewriterTextProps {
 
 export const TypewriterText = ({ 
   text, 
-  speed = 40, 
+  speed = 20, 
   onComplete, 
   onSkip,
-  showCursor = true,
+  showCursor = false,
   className = "" 
 }: TypewriterTextProps) => {
   const [displayedText, setDisplayedText] = useState('');
