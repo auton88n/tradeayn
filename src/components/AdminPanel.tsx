@@ -11,6 +11,7 @@ import {
 import { AdminDashboard } from './admin/AdminDashboard';
 import { UserManagement } from './admin/UserManagement';
 import { SystemSettings } from './admin/SystemSettings';
+import { SystemMonitoring } from './admin/SystemMonitoring';
 
 interface Profile {
   id: string;
@@ -345,11 +346,7 @@ export const AdminPanel = () => {
         </TabsContent>
 
         <TabsContent value="system">
-          <div className="text-center py-12">
-            <Code2 className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium">System Monitoring</h3>
-            <p className="text-muted-foreground">Advanced system monitoring features coming soon.</p>
-          </div>
+          <SystemMonitoring systemMetrics={systemMetrics} />
         </TabsContent>
       </Tabs>
     </div>
