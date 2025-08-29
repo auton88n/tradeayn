@@ -34,6 +34,7 @@ interface AccessGrantWithProfile {
   created_at: string;
   monthly_limit: number | null;
   current_month_usage: number;
+  user_email?: string;
   profiles: {
     company_name: string | null;
     contact_person: string | null;

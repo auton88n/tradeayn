@@ -35,6 +35,7 @@ interface AccessGrantWithProfile {
   created_at: string;
   monthly_limit: number | null;
   current_month_usage: number;
+  user_email?: string;
   profiles: Profile | null;
 }
 
@@ -111,6 +112,8 @@ export const AdminPanel = () => {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
+      console.log('AdminPanel: Starting data fetch...');
+      
       // Fetch access grants and profiles with optimized queries
       const [accessResult, profilesResult, usageResult, todayUsageResult] = await Promise.all([
         supabase
@@ -133,6 +136,12 @@ export const AdminPanel = () => {
           .limit(500) // Add limit for better performance
       ]);
 
+      console.log('AdminPanel: Data fetched:', {
+        accessGrants: accessResult.data?.length || 0,
+        profiles: profilesResult.data?.length || 0,
+        usageStats: usageResult.data?.length || 0
+      });
+
       if (accessResult.error) {
         console.error('Access grants error:', accessResult.error);
         throw accessResult.error;
@@ -148,12 +157,24 @@ export const AdminPanel = () => {
         return acc;
       }, {} as Record<string, Profile>);
 
-      // Enrich access data with profile information
+      // Create a map of user_id to email from usage stats
+      const emailsMap = (usageResult.data || []).reduce((acc: Record<string, string>, stat: any) => {
+        if (stat.user_id && stat.user_email) {
+          acc[stat.user_id] = stat.user_email;
+        }
+        return acc;
+      }, {} as Record<string, string>);
+
+      console.log('AdminPanel: Email mapping created:', Object.keys(emailsMap).length, 'emails');
+
+      // Enrich access data with profile information and email
       const enrichedAccessData = (accessResult.data || []).map(grant => ({
         ...grant,
-        profiles: profilesMap[grant.user_id] || null
+        profiles: profilesMap[grant.user_id] || null,
+        user_email: emailsMap[grant.user_id] || null
       }));
       
+      console.log('AdminPanel: Enriched data created:', enrichedAccessData.length, 'users with emails');
       setAllUsers(enrichedAccessData);
 
       if (!usageResult.error && usageResult.data) {

@@ -32,6 +32,7 @@ interface AccessGrantWithProfile {
   created_at: string;
   monthly_limit: number | null;
   current_month_usage: number;
+  user_email?: string;
   profiles: Profile | null;
 }
 
@@ -86,7 +87,8 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
     return allUsers.filter(user => {
       const matchesSearch = !searchTerm || 
         user.profiles?.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.profiles?.contact_person?.toLowerCase().includes(searchTerm.toLowerCase());
+        user.profiles?.contact_person?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.user_email?.toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesStatus = statusFilter === 'all' || 
         (statusFilter === 'active' && user.is_active) ||
@@ -152,8 +154,9 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
 
   const exportUserData = () => {
     const csvContent = [
-      ['Company', 'Contact Person', 'Status', 'Monthly Limit', 'Current Usage', 'Usage %', 'Created Date'].join(','),
+      ['Email', 'Company', 'Contact Person', 'Status', 'Monthly Limit', 'Current Usage', 'Usage %', 'Created Date'].join(','),
       ...filteredUsers.map(user => [
+        user.user_email || 'N/A',
         user.profiles?.company_name || 'N/A',
         user.profiles?.contact_person || 'N/A',
         user.is_active ? 'Active' : 'Inactive',
@@ -210,7 +213,7 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                 <Input
-                  placeholder="Search by company name or contact person..."
+                  placeholder="Search by email, company name or contact person..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -269,28 +272,34 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
                           <Building className="w-5 h-5" />
                         </div>
                         
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-semibold">{user.profiles?.company_name || 'Unknown Company'}</h3>
-                            <Badge variant={statusInfo.variant} className="flex items-center gap-1">
-                              <StatusIcon className="w-3 h-3" />
-                              {statusInfo.label}
-                            </Badge>
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-semibold">{user.profiles?.company_name || 'Unknown Company'}</h3>
+                              <Badge variant={statusInfo.variant} className="flex items-center gap-1">
+                                <StatusIcon className="w-3 h-3" />
+                                {statusInfo.label}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <Mail className="w-3 h-3" />
+                                {user.user_email || 'No email'}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Phone className="w-3 h-3" />
+                                {user.profiles?.contact_person || 'No contact'}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                              <span>
+                                Usage: {user.current_month_usage || 0}
+                                {user.monthly_limit ? ` / ${user.monthly_limit}` : ' / Unlimited'}
+                              </span>
+                              <span>
+                                Created: {new Date(user.created_at).toLocaleDateString()}
+                              </span>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <Phone className="w-3 h-3" />
-                              {user.profiles?.contact_person || 'No contact'}
-                            </span>
-                            <span>
-                              Usage: {user.current_month_usage || 0}
-                              {user.monthly_limit ? ` / ${user.monthly_limit}` : ' / Unlimited'}
-                            </span>
-                            <span>
-                              Created: {new Date(user.created_at).toLocaleDateString()}
-                            </span>
-                          </div>
-                        </div>
                       </div>
                       
                       <div className="flex items-center gap-2">
