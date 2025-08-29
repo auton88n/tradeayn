@@ -6,12 +6,13 @@ import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { 
-  Crown, RefreshCw, Activity, Shield, BarChart3, Settings, Code2, Users
+  Crown, RefreshCw, Activity, Shield, BarChart3, Settings, Code2, Users, Mail
 } from 'lucide-react';
 import { AdminDashboard } from './admin/AdminDashboard';
 import { UserManagement } from './admin/UserManagement';
 import { SystemSettings } from './admin/SystemSettings';
 import { SystemMonitoring } from './admin/SystemMonitoring';
+import { EmailManagement } from './admin/EmailManagement';
 
 interface Profile {
   id: string;
@@ -310,7 +311,7 @@ export const AdminPanel = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <BarChart3 className="w-4 h-4" />
             Dashboard
@@ -318,6 +319,10 @@ export const AdminPanel = () => {
           <TabsTrigger value="users" className="flex items-center gap-2">
             <Users className="w-4 h-4" />
             Users
+          </TabsTrigger>
+          <TabsTrigger value="emails" className="flex items-center gap-2">
+            <Mail className="w-4 h-4" />
+            Emails
           </TabsTrigger>
           <TabsTrigger value="settings" className="flex items-center gap-2">
             <Settings className="w-4 h-4" />
@@ -343,6 +348,10 @@ export const AdminPanel = () => {
             onUpdateConfig={updateSystemConfig}
             onPerformMaintenance={performSystemMaintenance}
           />
+        </TabsContent>
+
+        <TabsContent value="emails">
+          <EmailManagement />
         </TabsContent>
 
         <TabsContent value="system">

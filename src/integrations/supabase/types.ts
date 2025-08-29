@@ -59,6 +59,102 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_emails: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string | null
+          email_type: string
+          error_message: string | null
+          html_content: string | null
+          id: string
+          metadata: Json | null
+          received_at: string | null
+          recipient_email: string
+          sender_email: string
+          sent_at: string | null
+          status: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by?: string | null
+          email_type?: string
+          error_message?: string | null
+          html_content?: string | null
+          id?: string
+          metadata?: Json | null
+          received_at?: string | null
+          recipient_email: string
+          sender_email: string
+          sent_at?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          email_type?: string
+          error_message?: string | null
+          html_content?: string | null
+          id?: string
+          metadata?: Json | null
+          received_at?: string | null
+          recipient_email?: string
+          sender_email?: string
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      email_templates: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string | null
+          html_content: string | null
+          id: string
+          is_active: boolean
+          name: string
+          subject: string
+          template_type: string
+          updated_at: string
+          variables: Json | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by?: string | null
+          html_content?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          subject: string
+          template_type?: string
+          updated_at?: string
+          variables?: Json | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          html_content?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          subject?: string
+          template_type?: string
+          updated_at?: string
+          variables?: Json | null
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           attachment_name: string | null
