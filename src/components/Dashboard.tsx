@@ -699,12 +699,12 @@ export default function Dashboard({ user }: DashboardProps) {
             </div>
 
             {/* AYN Status */}
-            <div className="flex items-center gap-3 p-3 mt-2 rounded-lg">
-              <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
-                <Brain className="w-3 h-3 text-muted-foreground" />
+            <div className="flex items-center gap-3 p-3 mt-2 rounded-lg bg-primary/5 border border-primary/10 hover:bg-primary/10 transition-colors">
+              <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
+                <Brain className="w-3 h-3 text-primary" />
               </div>
               <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
-                <p className="font-medium text-xs">AYN AI</p>
+                <p className="font-medium text-xs text-foreground">AYN AI</p>
                 <p className={`text-xs ${isTyping ? 'text-muted-foreground' : (hasAccess ? 'text-green-500 font-medium' : 'text-muted-foreground')}`}>
                   {isTyping ? 'Thinking...' : (hasAccess ? 'Active' : 'Inactive')}
                 </p>
