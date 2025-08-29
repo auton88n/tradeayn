@@ -63,7 +63,7 @@ export const EmailManagement = () => {
     subject: '',
     content: '',
     htmlContent: '',
-    fromEmail: 'admin@yourcompany.com',
+        fromEmail: 'admin@aynn.io',
     templateId: '',
     templateVariables: {} as Record<string, string>
   });
@@ -157,7 +157,7 @@ export const EmailManagement = () => {
         subject: '',
         content: '',
         htmlContent: '',
-        fromEmail: 'admin@yourcompany.com',
+        fromEmail: 'admin@aynn.io',
         templateId: '',
         templateVariables: {}
       });
