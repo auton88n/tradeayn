@@ -48,6 +48,8 @@ import { TermsModal } from './TermsModal';
 import { AdminPanel } from './AdminPanel';
 import { TypewriterText } from './TypewriterText';
 import { TypingIndicator } from './TypingIndicator';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { LanguageSwitcher } from './LanguageSwitcher';
 
 interface Message {
   id: string;
@@ -76,26 +78,26 @@ interface ChatHistory {
 
 const templates = [
   { 
-    name: 'Market Analysis', 
-    prompt: 'Analyze the current market trends and opportunities in my industry', 
+    name: 'dashboard.templates.marketAnalysis', 
+    prompt: 'dashboard.templates.marketAnalysisPrompt', 
     icon: TrendingUp,
     color: 'text-blue-500'
   },
   { 
-    name: 'Sales Funnel Audit', 
-    prompt: 'Review my sales process and identify conversion bottlenecks', 
+    name: 'dashboard.templates.salesFunnel', 
+    prompt: 'dashboard.templates.salesFunnelPrompt', 
     icon: Target,
     color: 'text-green-500'
   },
   { 
-    name: 'Competitor Research', 
-    prompt: 'Research my main competitors and their strategies', 
+    name: 'dashboard.templates.competitorResearch', 
+    prompt: 'dashboard.templates.competitorResearchPrompt', 
     icon: Search,
     color: 'text-purple-500'
   },
   { 
-    name: 'Growth Strategy', 
-    prompt: 'Develop a comprehensive growth strategy for scaling my business', 
+    name: 'dashboard.templates.growthStrategy', 
+    prompt: 'dashboard.templates.growthStrategyPrompt', 
     icon: Rocket,
     color: 'text-orange-500'
   },
@@ -115,6 +117,7 @@ export default function Dashboard({ user }: DashboardProps) {
   const [selectedChats, setSelectedChats] = useState<Set<number>>(new Set());
   const [showChatSelection, setShowChatSelection] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const { t } = useLanguage();
   
   // Maintenance mode state
   const [maintenanceConfig, setMaintenanceConfig] = useState({
@@ -189,14 +192,14 @@ export default function Dashboard({ user }: DashboardProps) {
     if (isInputFocused || inputMessage.length > 0) return;
 
     const messages = [
-      "Ask AYN anything about your business...",
-      "How can I increase my revenue?",
-      "What are the latest market trends?", 
-      "Analyze my competition strategy...",
-      "How do I optimize my sales funnel?",
-      "What growth opportunities exist?",
-      "Help me with pricing strategy...",
-      "Research my target market..."
+      t('dashboard.placeholders.askAyn'),
+      t('dashboard.placeholders.increaseRevenue'),
+      t('dashboard.placeholders.marketTrends'), 
+      t('dashboard.placeholders.competitionStrategy'),
+      t('dashboard.placeholders.optimizeSales'),
+      t('dashboard.placeholders.growthOpportunities'),
+      t('dashboard.placeholders.pricingStrategy'),
+      t('dashboard.placeholders.targetMarket')
     ];
 
     const typeSpeed = 100;
@@ -365,16 +368,16 @@ export default function Dashboard({ user }: DashboardProps) {
     setWelcomeMessage();
     
     toast({
-      title: "Welcome to AYN!",
-      description: "You can now start using AYN AI Business Consulting services."
+      title: t('auth.welcomeTitle'),
+      description: t('auth.welcomeDesc')
     });
   };
 
   const handleSendMessage = async (messageContent?: string) => {
     if (!hasAcceptedTerms) {
       toast({
-        title: "Terms Required",
-        description: "Please accept the terms and conditions before using AYN AI.",
+        title: t('auth.termsRequired'),
+        description: t('auth.termsRequiredDesc'),
         variant: "destructive"
       });
       return;
@@ -382,8 +385,8 @@ export default function Dashboard({ user }: DashboardProps) {
 
     if (!hasAccess) {
       toast({
-        title: "Access Required",
-        description: "You need active access to use AYN. Please contact our team.",
+        title: t('auth.accessRequired'),
+        description: t('auth.accessRequiredDesc'),
         variant: "destructive"
       });
       return;
@@ -419,8 +422,8 @@ export default function Dashboard({ user }: DashboardProps) {
 
       if (!canUse) {
         toast({
-          title: "Usage Limit Reached",
-          description: "You've reached your monthly message limit. Please contact support or wait for next month's reset.",
+          title: t('error.usageLimit'),
+          description: t('error.usageLimitDesc'),
           variant: "destructive"
         });
         return;
@@ -428,8 +431,8 @@ export default function Dashboard({ user }: DashboardProps) {
     } catch (error) {
       console.error('Usage tracking error:', error);
       toast({
-        title: "System Error",
-        description: "Unable to process your request. Please try again.",
+        title: t('error.systemError'),
+        description: t('error.systemErrorDesc'),
         variant: "destructive"
       });
       return;
@@ -835,15 +838,15 @@ export default function Dashboard({ user }: DashboardProps) {
               <SidebarGroupLabel>Quick Start</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {templates.map((template) => (
+                   {templates.map((template) => (
                     <SidebarMenuItem key={template.name}>
                       <SidebarMenuButton
-                        onClick={() => handleSendMessage(template.prompt)}
+                        onClick={() => handleSendMessage(t(template.prompt))}
                         disabled={!hasAccess || !hasAcceptedTerms}
-                        tooltip={template.name}
+                        tooltip={t(template.name)}
                       >
                         <template.icon className={`w-4 h-4 flex-shrink-0 ${template.color}`} />
-                        <span className="group-data-[collapsible=icon]:hidden">{template.name}</span>
+                        <span className="group-data-[collapsible=icon]:hidden">{t(template.name)}</span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   ))}

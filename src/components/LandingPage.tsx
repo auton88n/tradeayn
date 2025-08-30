@@ -3,30 +3,33 @@ import { Brain, TrendingUp, Target, BarChart3, Zap, Users, Shield, ArrowRight } 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { AuthModal } from './auth/AuthModal';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { LanguageSwitcher } from './LanguageSwitcher';
 
 const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const { t } = useLanguage();
 
   const features = [
     {
       icon: BarChart3,
-      title: "Market Research",
-      description: "Get strategic business insights with comprehensive market analysis and competitive intelligence."
+      title: t('features.marketResearch.title'),
+      description: t('features.marketResearch.description')
     },
     {
       icon: Target,
-      title: "Sales Optimization", 
-      description: "Optimize your sales funnel and conversion rates with data-driven recommendations."
+      title: t('features.salesOptimization.title'), 
+      description: t('features.salesOptimization.description')
     },
     {
       icon: TrendingUp,
-      title: "Trend Analysis",
-      description: "Analyze market trends and identify emerging opportunities before your competitors."
+      title: t('features.trendAnalysis.title'),
+      description: t('features.trendAnalysis.description')
     },
     {
       icon: Zap,
-      title: "Strategic Planning",
-      description: "Comprehensive business consulting and strategic planning powered by advanced AI."
+      title: t('features.strategicPlanning.title'),
+      description: t('features.strategicPlanning.description')
     }
   ];
 
@@ -34,19 +37,19 @@ const LandingPage = () => {
     {
       name: "Sarah Chen",
       role: "CEO, TechStart",
-      quote: "AYN transformed our business strategy. The insights were game-changing.",
+      quote: t('testimonials.sarah.quote'),
       avatar: "👩‍💼"
     },
     {
       name: "Marcus Rodriguez", 
       role: "Founder, GrowthCo",
-      quote: "The market analysis capabilities are incredibly detailed and actionable.",
+      quote: t('testimonials.marcus.quote'),
       avatar: "👨‍💼"
     },
     {
       name: "Emma Thompson",
       role: "CMO, InnovateX",
-      quote: "AYN's trend predictions helped us pivot our strategy at the perfect time.",
+      quote: t('testimonials.emma.quote'),
       avatar: "👩‍🚀"
     }
   ];
@@ -68,19 +71,22 @@ const LandingPage = () => {
             
             <nav className="hidden md:flex items-center gap-8">
               <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">
-                Features
+                {t('nav.features')}
               </a>
               <a href="#testimonials" className="text-muted-foreground hover:text-foreground transition-colors">
-                Testimonials  
+                {t('nav.testimonials')}
               </a>
             </nav>
             
-            <Button 
-              onClick={() => setShowAuthModal(true)}
-              variant="hero"
-            >
-              Get Started
-            </Button>
+            <div className="flex items-center gap-3">
+              <LanguageSwitcher />
+              <Button 
+                onClick={() => setShowAuthModal(true)}
+                variant="hero"
+              >
+                {t('nav.getStarted')}
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -95,15 +101,14 @@ const LandingPage = () => {
           <div className="text-center max-w-4xl mx-auto">
             <div className="animate-fade-in-up">
               <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
-                Your AI-Powered
+                {t('hero.title')}
                 <span className="text-foreground block mt-2">
-                  Business Growth Partner
+                  {t('hero.titleHighlight')}
                 </span>
               </h1>
               
               <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-                Get strategic business insights, market research, sales optimization, and trend analysis 
-                - all from one intelligent AI consultant.
+                {t('hero.description')}
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -113,13 +118,13 @@ const LandingPage = () => {
                   size="xl"
                   className="group"
                 >
-                  Start Consulting with AYN
+                  {t('hero.cta')}
                   <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Button>
                 
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Users className="w-4 h-4" />
-                  <span>Join 10,000+ growing businesses</span>
+                  <span>{t('hero.joinBusiness')}</span>
                 </div>
               </div>
             </div>
@@ -133,11 +138,11 @@ const LandingPage = () => {
                   </div>
                   <div>
                     <h3 className="font-semibold">AYN AI Consultant</h3>
-                    <p className="text-sm text-muted-foreground">Ready to analyze your business</p>
+                    <p className="text-sm text-muted-foreground">{t('hero.readyToAnalyze')}</p>
                   </div>
                 </div>
                 <p className="text-sm text-muted-foreground italic">
-                  "I can help you with market research, competitive analysis, sales optimization, and strategic planning. What would you like to explore first?"
+                  "{t('hero.aiConsultantQuote')}"
                 </p>
               </Card>
             </div>
@@ -150,10 +155,10 @@ const LandingPage = () => {
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold mb-4 gradient-text">
-              Comprehensive Business Intelligence
+              {t('features.title')}
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              One AI agent with multiple specialized capabilities to accelerate your business growth
+              {t('features.subtitle')}
             </p>
           </div>
           
@@ -176,10 +181,10 @@ const LandingPage = () => {
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold mb-4 gradient-text">
-              Trusted by Industry Leaders
+              {t('testimonials.title')}
             </h2>
             <p className="text-xl text-muted-foreground">
-              See how AYN is transforming businesses worldwide
+              {t('testimonials.subtitle')}
             </p>
           </div>
           
@@ -214,7 +219,7 @@ const LandingPage = () => {
             </div>
             
             <p className="text-muted-foreground text-center md:text-right">
-              © 2024 AYN AI Business Consulting. All rights reserved.
+              {t('footer.copyright')}
             </p>
           </div>
         </div>
