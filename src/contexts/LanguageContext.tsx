@@ -98,6 +98,13 @@ const translations = {
     'common.user': 'User',
     'common.quickStart': 'Quick Start',
     'common.recentChats': 'Recent Chats',
+    'common.select': 'Select',
+    'common.all': 'All',
+    'common.none': 'None',
+    'common.cancel': 'Cancel',
+    'common.delete': 'Delete',
+    'common.deleteChat': 'Delete Chat',
+    'common.deleteChats': 'Delete Chats',
     
     // Auth Modal
     'auth.welcomeToAyn': 'Welcome to AYN',
@@ -249,6 +256,13 @@ const translations = {
     'common.user': 'المستخدم',
     'common.quickStart': 'البداية السريعة',
     'common.recentChats': 'المحادثات الأخيرة',
+    'common.select': 'تحديد',
+    'common.all': 'الكل',
+    'common.none': 'لا شيء',
+    'common.cancel': 'إلغاء',
+    'common.delete': 'حذف',
+    'common.deleteChat': 'حذف محادثة',
+    'common.deleteChats': 'حذف محادثات',
     
     // Auth Modal
     'auth.welcomeToAyn': 'مرحباً بك في AYN',

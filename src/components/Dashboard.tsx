@@ -861,14 +861,14 @@ export default function Dashboard({ user }: DashboardProps) {
                 {recentChats.length > 0 && (
                   <div className="flex items-center gap-1">
                     {!showChatSelection ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowChatSelection(true)}
-                        className="h-6 px-2 text-xs"
-                      >
-                        Select
-                      </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowChatSelection(true)}
+                          className="h-6 px-2 text-xs"
+                        >
+                          {t('common.select')}
+                        </Button>
                     ) : (
                       <>
                         <Button
@@ -877,7 +877,7 @@ export default function Dashboard({ user }: DashboardProps) {
                           onClick={selectAllChats}
                           className="h-6 px-2 text-xs"
                         >
-                          {selectedChats.size === recentChats.length ? 'None' : 'All'}
+                          {selectedChats.size === recentChats.length ? t('common.none') : t('common.all')}
                         </Button>
                         <Button
                           variant="ghost"
@@ -888,7 +888,7 @@ export default function Dashboard({ user }: DashboardProps) {
                           }}
                           className="h-6 px-2 text-xs"
                         >
-                          Cancel
+                          {t('common.cancel')}
                         </Button>
                       </>
                     )}
@@ -904,7 +904,7 @@ export default function Dashboard({ user }: DashboardProps) {
                     onClick={handleDeleteSelectedChats}
                     className="w-full h-8 text-xs"
                   >
-                    Delete {selectedChats.size} Chat{selectedChats.size > 1 ? 's' : ''}
+                    {t('common.delete')} {selectedChats.size} {selectedChats.size > 1 ? t('common.deleteChats').split(' ')[1] : t('common.deleteChat').split(' ')[1]}
                   </Button>
                 </div>
               )}
