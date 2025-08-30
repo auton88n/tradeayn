@@ -858,10 +858,10 @@ export default function Dashboard({ user }: DashboardProps) {
             {/* Recent Chats */}
             <SidebarGroup>
               <div className={`flex items-center justify-between px-4 py-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-                <SidebarGroupLabel className={language === 'ar' ? 'text-right' : ''}>{t('common.recentChats')}</SidebarGroupLabel>
-                {recentChats.length > 0 && (
-                  <div className="flex items-center gap-1">
-                    {!showChatSelection ? (
+                {language === 'ar' ? (
+                  <>
+                    <div className="flex items-center gap-1">
+                      {!showChatSelection ? (
                         <Button
                           variant="ghost"
                           size="sm"
@@ -870,30 +870,72 @@ export default function Dashboard({ user }: DashboardProps) {
                         >
                           {t('common.select')}
                         </Button>
-                    ) : (
-                      <>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={selectAllChats}
-                          className="h-6 px-2 text-xs"
-                        >
-                          {selectedChats.size === recentChats.length ? t('common.none') : t('common.all')}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setShowChatSelection(false);
-                            setSelectedChats(new Set());
-                          }}
-                          className="h-6 px-2 text-xs"
-                        >
-                          {t('common.cancel')}
-                        </Button>
-                      </>
+                      ) : (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={selectAllChats}
+                            className="h-6 px-2 text-xs"
+                          >
+                            {selectedChats.size === recentChats.length ? t('common.none') : t('common.all')}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setShowChatSelection(false);
+                              setSelectedChats(new Set());
+                            }}
+                            className="h-6 px-2 text-xs"
+                          >
+                            {t('common.cancel')}
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                    <SidebarGroupLabel className="text-right">{t('common.recentChats')}</SidebarGroupLabel>
+                  </>
+                ) : (
+                  <>
+                    <SidebarGroupLabel>{t('common.recentChats')}</SidebarGroupLabel>
+                    {recentChats.length > 0 && (
+                      <div className="flex items-center gap-1">
+                        {!showChatSelection ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setShowChatSelection(true)}
+                            className="h-6 px-2 text-xs"
+                          >
+                            {t('common.select')}
+                          </Button>
+                        ) : (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={selectAllChats}
+                              className="h-6 px-2 text-xs"
+                            >
+                              {selectedChats.size === recentChats.length ? t('common.none') : t('common.all')}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setShowChatSelection(false);
+                                setSelectedChats(new Set());
+                              }}
+                              className="h-6 px-2 text-xs"
+                            >
+                              {t('common.cancel')}
+                            </Button>
+                          </>
+                        )}
+                      </div>
                     )}
-                  </div>
+                  </>
                 )}
               </div>
               
