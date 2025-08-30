@@ -10,6 +10,7 @@ interface WebhookRequest {
   userId?: string;
   allowPersonalization?: boolean;
   contactPerson?: string;
+  language?: 'en' | 'ar';
 }
 
 interface WebhookResponse {
@@ -129,7 +130,8 @@ serve(async (req) => {
         message: body?.message || '',
         userId: body?.userId || '',
         allowPersonalization: body?.allowPersonalization || false,
-        contactPerson: body?.contactPerson || ''
+        contactPerson: body?.contactPerson || '',
+        language: body?.language || 'en'
       };
     } catch (e) {
       console.warn(`[${requestId}] Request body was not valid JSON, using defaults`);
@@ -138,7 +140,8 @@ serve(async (req) => {
     console.log(`[${requestId}] Request data:`, {
       message: requestData.message?.slice(0, 100) + (requestData.message?.length > 100 ? '...' : ''),
       userId: requestData.userId,
-      allowPersonalization: requestData.allowPersonalization
+      allowPersonalization: requestData.allowPersonalization,
+      language: requestData.language
     });
 
   // Prepare conversation key and system message based on personalization settings
@@ -147,8 +150,8 @@ serve(async (req) => {
     : `${requestData.userId}:np`; // separate non-personalized memory to avoid name bleed
 
   const systemMessage = requestData.allowPersonalization && requestData.contactPerson
-    ? `You may address the user as ${requestData.contactPerson}. Scope all context strictly to conversationKey (${conversationKey}).`
-    : `Do not use or infer personal names. Ignore any prior memory of names. Treat each request as stateless and scope strictly to conversationKey (${conversationKey}).`;
+    ? `You may address the user as ${requestData.contactPerson}. Respond in ${requestData.language === 'ar' ? 'Arabic' : 'English'}. Scope all context strictly to conversationKey (${conversationKey}).`
+    : `Do not use or infer personal names. Ignore any prior memory of names. Treat each request as stateless and respond in ${requestData.language === 'ar' ? 'Arabic' : 'English'}. Scope strictly to conversationKey (${conversationKey}).`;
 
   // Call upstream webhook
   const upstreamUrl = 'https://n8n.srv846714.hstgr.cloud/webhook/d8453419-8880-4bc4-b351-a0d0376b1fce';
@@ -164,6 +167,7 @@ serve(async (req) => {
         contactPerson: requestData.contactPerson,
         conversationKey, // isolate memory per user and mode
         system: systemMessage,
+        language: requestData.language, // Pass detected language to AYN
         timestamp: new Date().toISOString(),
         requestId
       }),

@@ -395,6 +395,15 @@ export default function Dashboard({ user }: DashboardProps) {
     const content = messageContent || inputMessage.trim();
     if (!content && !selectedFile) return;
 
+    // Detect language of the input message
+    const detectLanguage = (text: string): 'en' | 'ar' => {
+      // Simple Arabic detection - check for Arabic characters
+      const arabicRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/;
+      return arabicRegex.test(text) ? 'ar' : 'en';
+    };
+
+    const detectedLanguage = detectLanguage(content);
+
     // Upload file if selected
     let attachment = null;
     if (selectedFile) {
@@ -462,7 +471,8 @@ export default function Dashboard({ user }: DashboardProps) {
           message: content,
           userId: user.id,
           allowPersonalization,
-          contactPerson: userProfile?.contact_person || ''
+          contactPerson: userProfile?.contact_person || '',
+          language: detectedLanguage // Pass detected language to AYN
         }
       });
       
