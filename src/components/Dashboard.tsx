@@ -802,11 +802,11 @@ export default function Dashboard({ user }: DashboardProps) {
             </div>
 
             {/* AYN Status */}
-            <div className="flex items-center gap-3 px-3 py-2 mt-2">
+            <div className={`flex items-center gap-3 px-3 py-2 mt-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
               <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
                 <Brain className="w-5 h-5 text-foreground" />
               </div>
-              <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
+              <div className={`flex-1 min-w-0 group-data-[collapsible=icon]:hidden ${language === 'ar' ? 'text-right' : ''}`}>
                 <p className="font-medium text-xs text-foreground">AYN AI</p>
                 <p className={`text-xs ${isTyping ? 'text-muted-foreground' : (hasAccess ? 'text-green-500 font-medium' : 'text-muted-foreground')}`}>
                   {isTyping ? t('common.thinking') : (hasAccess ? t('common.active') : t('common.inactive'))}
