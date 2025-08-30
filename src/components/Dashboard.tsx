@@ -788,7 +788,7 @@ export default function Dashboard({ user }: DashboardProps) {
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
-                <p className="font-semibold truncate text-sm">{user?.user_metadata?.name || 'User'}</p>
+                <p className="font-semibold truncate text-sm">{user?.user_metadata?.name || t('common.user')}</p>
                 <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
               </div>
               <Button 

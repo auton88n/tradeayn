@@ -95,6 +95,7 @@ const translations = {
     'common.active': 'Active',
     'common.inactive': 'Inactive',
     'common.thinking': 'Thinking...',
+    'common.user': 'User',
     
     // Auth Modal
     'auth.welcomeToAyn': 'Welcome to AYN',
@@ -243,6 +244,7 @@ const translations = {
     'common.active': 'نشط',
     'common.inactive': 'غير نشط',
     'common.thinking': 'يفكر...',
+    'common.user': 'المستخدم',
     
     // Auth Modal
     'auth.welcomeToAyn': 'مرحباً بك في AYN',
