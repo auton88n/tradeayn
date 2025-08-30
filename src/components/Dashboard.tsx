@@ -117,7 +117,7 @@ export default function Dashboard({ user }: DashboardProps) {
   const [selectedChats, setSelectedChats] = useState<Set<number>>(new Set());
   const [showChatSelection, setShowChatSelection] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   
   // Maintenance mode state
   const [maintenanceConfig, setMaintenanceConfig] = useState({
@@ -1266,8 +1266,8 @@ export default function Dashboard({ user }: DashboardProps) {
                     
                     {/* Typewriter Animation Placeholder */}
                     {!inputMessage && !isInputFocused && !selectedFile && (
-                      <div className="absolute inset-0 flex items-center pointer-events-none">
-                        <span className="text-muted-foreground select-none typewriter-text">
+                      <div className={`absolute inset-0 flex items-center pointer-events-none ${language === 'ar' ? 'justify-end pr-12' : 'justify-start pl-12'}`}>
+                        <span className={`text-muted-foreground select-none typewriter-text ${language === 'ar' ? 'text-right' : 'text-left'}`} style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}>
                           {!hasAccess 
                             ? "Access required to send messages..."
                             : !hasAcceptedTerms 

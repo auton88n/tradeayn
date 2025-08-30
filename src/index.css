@@ -439,10 +439,72 @@
     justify-content: flex-start;
   }
 
+  /* RTL Input Field Alignment */
+  [dir="rtl"] .message-input {
+    text-align: right;
+    direction: rtl;
+    padding-left: 44px;
+    padding-right: 44px;
+  }
+
+  [dir="rtl"] .message-input::placeholder {
+    text-align: right;
+    direction: rtl;
+  }
+
+  /* RTL Button Positioning in Input Container */
+  [dir="rtl"] .input-container {
+    direction: ltr; /* Keep container LTR to properly position buttons */
+  }
+
+  /* RTL Send Button - Move to Left Side */
+  [dir="rtl"] .send-button {
+    position: absolute;
+    left: 12px;
+    right: auto;
+  }
+
+  /* RTL Attachment Button - Move to Right Side */
+  [dir="rtl"] .attachment-button {
+    position: absolute;
+    right: 12px;
+    left: auto;
+  }
+
+  /* RTL File Types Dropdown Positioning */
+  [dir="rtl"] .attachment-button + div .absolute {
+    right: 0;
+    left: auto;
+  }
+
+  /* RTL Typewriter Text Alignment */
+  [dir="rtl"] .typewriter-text {
+    text-align: right;
+    direction: rtl;
+    right: 44px;
+    left: auto;
+  }
+
+  /* RTL File Selected Indicator */
+  [dir="rtl"] .absolute.-top-12 {
+    right: 0;
+    left: auto;
+  }
+
   /* RTL Sidebar Responsive Adjustments */
   @media (max-width: 1023px) {
     [dir="rtl"] .sidebar {
       right: 0;
+      left: auto;
+    }
+    
+    [dir="rtl"] .send-button {
+      left: 8px;
+      right: auto;
+    }
+    
+    [dir="rtl"] .attachment-button {
+      right: 8px;
       left: auto;
     }
   }
