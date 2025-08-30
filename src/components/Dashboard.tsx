@@ -835,7 +835,7 @@ export default function Dashboard({ user }: DashboardProps) {
 
             {/* Quick Start */}
             <SidebarGroup>
-              <SidebarGroupLabel>Quick Start</SidebarGroupLabel>
+              <SidebarGroupLabel>{t('common.quickStart')}</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
                    {templates.map((template) => (
@@ -857,7 +857,7 @@ export default function Dashboard({ user }: DashboardProps) {
             {/* Recent Chats */}
             <SidebarGroup>
               <div className="flex items-center justify-between px-4 py-2">
-                <SidebarGroupLabel>Recent Chats</SidebarGroupLabel>
+                <SidebarGroupLabel>{t('common.recentChats')}</SidebarGroupLabel>
                 {recentChats.length > 0 && (
                   <div className="flex items-center gap-1">
                     {!showChatSelection ? (
