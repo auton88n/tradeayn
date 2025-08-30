@@ -809,7 +809,7 @@ export default function Dashboard({ user }: DashboardProps) {
               <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
                 <p className="font-medium text-xs text-foreground">AYN AI</p>
                 <p className={`text-xs ${isTyping ? 'text-muted-foreground' : (hasAccess ? 'text-green-500 font-medium' : 'text-muted-foreground')}`}>
-                  {isTyping ? 'Thinking...' : (hasAccess ? 'Active' : 'Inactive')}
+                  {isTyping ? t('common.thinking') : (hasAccess ? t('common.active') : t('common.inactive'))}
                 </p>
               </div>
             </div>
@@ -826,7 +826,7 @@ export default function Dashboard({ user }: DashboardProps) {
                       className="w-full justify-start font-medium"
                     >
                       <Plus className="w-4 h-4 flex-shrink-0" />
-                      <span className="group-data-[collapsible=icon]:hidden">New Chat</span>
+                      <span className="group-data-[collapsible=icon]:hidden">{t('common.newChat')}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 </SidebarMenu>

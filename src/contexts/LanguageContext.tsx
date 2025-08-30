@@ -91,6 +91,10 @@ const translations = {
     'common.chat': 'Chat',
     'common.language': 'Language',
     'common.noConversations': 'No conversations yet. Start chatting with AYN!',
+    'common.newChat': 'New Chat',
+    'common.active': 'Active',
+    'common.inactive': 'Inactive',
+    'common.thinking': 'Thinking...',
     
     // Auth Modal
     'auth.welcomeToAyn': 'Welcome to AYN',
@@ -235,6 +239,10 @@ const translations = {
     'common.chat': 'المحادثة',
     'common.language': 'اللغة',
     'common.noConversations': 'لا توجد محادثات بعد. ابدأ المحادثة مع AYN!',
+    'common.newChat': 'محادثة جديدة',
+    'common.active': 'نشط',
+    'common.inactive': 'غير نشط',
+    'common.thinking': 'يفكر...',
     
     // Auth Modal
     'auth.welcomeToAyn': 'مرحباً بك في AYN',
