@@ -145,7 +145,7 @@ const translations = {
     'terms.serviceUpdates': 'Service updates and improvements are made regularly',
     'terms.availability': 'We strive for high availability but cannot guarantee 100% uptime',
     'terms.support': 'Support is available if you encounter any issues',
-    'terms.importantNote': 'Important: While AYN AI is a powerful business tool, all final decisions remain yours to make. We recommend using our insights alongside your expertise and, when appropriate, professional consultation for major business decisions.',
+    'terms.importantNote': 'While AYN AI is a powerful business tool, all final decisions remain yours to make. We recommend using our insights alongside your expertise and, when appropriate, professional consultation for major business decisions.',
     'terms.hasRead': 'I have read and understood the above terms and disclaimer',
     'terms.acceptTerms': 'I accept these terms and agree to use AYN AI at my own risk and discretion',
     'terms.acceptContinue': 'Accept Terms & Continue to AYN AI',
