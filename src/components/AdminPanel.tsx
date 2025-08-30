@@ -6,15 +6,12 @@ import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { 
-  Crown, RefreshCw, Activity, Shield, BarChart3, Settings, Code2, Users, Mail
+  Crown, RefreshCw, Activity, Shield, BarChart3, Settings, Code2, Users
 } from 'lucide-react';
 import { AdminDashboard } from './admin/AdminDashboard';
 import { UserManagement } from './admin/UserManagement';
 import { SystemSettings } from './admin/SystemSettings';
 import { SystemMonitoring } from './admin/SystemMonitoring';
-import { SimpleEmailManagement } from './admin/SimpleEmailManagement';
-import { MarketingEmails } from './admin/MarketingEmails';
-import { AuthEmailTemplates } from './admin/AuthEmailTemplates';
 
 interface Profile {
   id: string;
@@ -338,7 +335,7 @@ export const AdminPanel = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <BarChart3 className="w-4 h-4" />
             Dashboard
@@ -346,10 +343,6 @@ export const AdminPanel = () => {
           <TabsTrigger value="users" className="flex items-center gap-2">
             <Users className="w-4 h-4" />
             Users
-          </TabsTrigger>
-          <TabsTrigger value="emails" className="flex items-center gap-2">
-            <Mail className="w-4 h-4" />
-            Emails
           </TabsTrigger>
           <TabsTrigger value="settings" className="flex items-center gap-2">
             <Settings className="w-4 h-4" />
@@ -375,25 +368,6 @@ export const AdminPanel = () => {
             onUpdateConfig={updateSystemConfig}
             onPerformMaintenance={performSystemMaintenance}
           />
-        </TabsContent>
-
-        <TabsContent value="emails">
-          <Tabs defaultValue="simple" className="space-y-4">
-            <TabsList>
-              <TabsTrigger value="simple">Email Management</TabsTrigger>
-              <TabsTrigger value="marketing">Marketing Campaigns</TabsTrigger>
-              <TabsTrigger value="auth">Auth Templates</TabsTrigger>
-            </TabsList>
-            <TabsContent value="simple">
-              <SimpleEmailManagement />
-            </TabsContent>
-            <TabsContent value="marketing">
-              <MarketingEmails />
-            </TabsContent>
-            <TabsContent value="auth">
-              <AuthEmailTemplates />
-            </TabsContent>
-          </Tabs>
         </TabsContent>
 
         <TabsContent value="system">
