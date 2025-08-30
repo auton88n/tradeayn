@@ -942,8 +942,8 @@ export default function Dashboard({ user }: DashboardProps) {
                   ) : (
                     <SidebarMenuItem>
                       <div className="py-4 px-3 text-center">
-                        <p className="text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
-                          No conversations yet. Start chatting with AYN!
+                        <p className={`text-xs text-muted-foreground group-data-[collapsible=icon]:hidden ${language === 'ar' ? 'text-right' : 'text-left'}`} style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}>
+                          {t('common.noConversations')}
                         </p>
                       </div>
                     </SidebarMenuItem>

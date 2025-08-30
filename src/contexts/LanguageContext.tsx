@@ -90,6 +90,7 @@ const translations = {
     'common.admin': 'Admin',
     'common.chat': 'Chat',
     'common.language': 'Language',
+    'common.noConversations': 'No conversations yet. Start chatting with AYN!',
     
     // Auth Modal
     'auth.welcomeToAyn': 'Welcome to AYN',
@@ -233,6 +234,7 @@ const translations = {
     'common.admin': 'المشرف',
     'common.chat': 'المحادثة',
     'common.language': 'اللغة',
+    'common.noConversations': 'لا توجد محادثات بعد. ابدأ المحادثة مع AYN!',
     
     // Auth Modal
     'auth.welcomeToAyn': 'مرحباً بك في AYN',

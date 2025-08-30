@@ -464,10 +464,10 @@
     right: auto;
   }
 
-  /* RTL Attachment Button - Move to Right Side */
+  /* RTL Attachment Button - Move to Right Side with Better Spacing */
   [dir="rtl"] .attachment-button {
     position: absolute;
-    right: 12px;
+    right: 16px;
     left: auto;
   }
 
@@ -504,7 +504,7 @@
     }
     
     [dir="rtl"] .attachment-button {
-      right: 8px;
+      right: 16px;
       left: auto;
     }
   }
