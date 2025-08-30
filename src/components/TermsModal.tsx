@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertTriangle, Shield, Brain } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface TermsModalProps {
   open: boolean;
@@ -13,6 +14,7 @@ interface TermsModalProps {
 export const TermsModal = ({ open, onAccept }: TermsModalProps) => {
   const [hasRead, setHasRead] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
+  const { t } = useLanguage();
 
   const handleAccept = () => {
     if (hasRead && acceptTerms) {
@@ -26,7 +28,7 @@ export const TermsModal = ({ open, onAccept }: TermsModalProps) => {
         <DialogHeader>
           <DialogTitle className="text-center gradient-text-hero text-2xl flex items-center justify-center gap-3">
             <Shield className="w-6 h-6" />
-            Welcome to AYN AI
+            {t('terms.welcomeToAynAI')}
           </DialogTitle>
         </DialogHeader>
 
@@ -37,10 +39,10 @@ export const TermsModal = ({ open, onAccept }: TermsModalProps) => {
                 <Brain className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <div>
                   <h3 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">
-                    Your AI Business Partner
+                    {t('terms.businessPartner')}
                   </h3>
                   <p className="text-blue-700 dark:text-blue-300">
-                    Welcome! Please take a moment to review our service terms and privacy policy.
+                    {t('terms.reviewTerms')}
                   </p>
                 </div>
               </div>
@@ -50,15 +52,15 @@ export const TermsModal = ({ open, onAccept }: TermsModalProps) => {
               <div>
                 <h3 className="font-semibold flex items-center gap-2 mb-3">
                   <Brain className="w-4 h-4 text-primary" />
-                  How AYN AI Works
+                  {t('terms.howAynWorks')}
                 </h3>
                 <div className="text-muted-foreground space-y-2">
-                  <p>AYN AI is designed to help you with business insights and strategic thinking. Here's what you should know:</p>
+                  <p>{t('terms.aynDescription')}</p>
                   <ul className="space-y-2 pl-6">
-                    <li>• Our AI provides suggestions and recommendations based on available data and patterns</li>
-                    <li>• Responses are meant to support your decision-making process, not replace professional judgment</li>
-                    <li>• We recommend verifying important information through additional research</li>
-                    <li>• Market insights are based on historical data and trends, not real-time guarantees</li>
+                    <li>• {t('terms.aiSuggestions')}</li>
+                    <li>• {t('terms.supportDecisions')}</li>
+                    <li>• {t('terms.verifyInfo')}</li>
+                    <li>• {t('terms.marketInsights')}</li>
                   </ul>
                 </div>
               </div>
@@ -66,48 +68,46 @@ export const TermsModal = ({ open, onAccept }: TermsModalProps) => {
               <div>
                 <h3 className="font-semibold flex items-center gap-2 mb-3">
                   <Shield className="w-4 h-4 text-primary" />
-                  Privacy & Data Protection
+                  {t('terms.privacyProtection')}
                 </h3>
                 <div className="text-muted-foreground space-y-2">
                   <ul className="space-y-2 pl-6">
-                    <li>• Your conversations are processed securely and used to improve our service</li>
-                    <li>• We do not share your personal business information with third parties</li>
-                    <li>• Data is stored with industry-standard encryption and security measures</li>
-                    <li>• You can request data deletion by contacting our support team</li>
-                    <li>• We comply with applicable data protection regulations</li>
+                    <li>• {t('terms.secureProcessing')}</li>
+                    <li>• {t('terms.noSharing')}</li>
+                    <li>• {t('terms.encryption')}</li>
+                    <li>• {t('terms.dataDeletion')}</li>
+                    <li>• {t('terms.compliance')}</li>
                   </ul>
                 </div>
               </div>
 
               <div>
-                <h3 className="font-semibold mb-3">Best Practices for Success</h3>
+                <h3 className="font-semibold mb-3">{t('terms.bestPractices')}</h3>
                 <div className="text-muted-foreground space-y-2">
                   <ul className="space-y-2 pl-6">
-                    <li>• Use AYN AI as a powerful research and brainstorming tool</li>
-                    <li>• Cross-reference important suggestions with industry experts</li>
-                    <li>• Consider AI recommendations as one input in your decision-making process</li>
-                    <li>• Feel free to ask follow-up questions to explore different perspectives</li>
+                    <li>• {t('terms.researchTool')}</li>
+                    <li>• {t('terms.crossReference')}</li>
+                    <li>• {t('terms.oneInput')}</li>
+                    <li>• {t('terms.followUp')}</li>
                   </ul>
                 </div>
               </div>
 
               <div>
-                <h3 className="font-semibold mb-3">Service Information</h3>
+                <h3 className="font-semibold mb-3">{t('terms.serviceInfo')}</h3>
                 <div className="text-muted-foreground space-y-2">
                   <ul className="space-y-2 pl-6">
-                    <li>• Your account includes monthly message limits as specified in your access plan</li>
-                    <li>• Service updates and improvements are made regularly</li>
-                    <li>• We strive for high availability but cannot guarantee 100% uptime</li>
-                    <li>• Support is available if you encounter any issues</li>
+                    <li>• {t('terms.messageLimits')}</li>
+                    <li>• {t('terms.serviceUpdates')}</li>
+                    <li>• {t('terms.availability')}</li>
+                    <li>• {t('terms.support')}</li>
                   </ul>
                 </div>
               </div>
 
               <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-4 border border-primary/20">
                 <p className="text-sm">
-                  <strong>Important:</strong> While AYN AI is a powerful business tool, all final decisions 
-                  remain yours to make. We recommend using our insights alongside your expertise and, 
-                  when appropriate, professional consultation for major business decisions.
+                  <strong>Important:</strong> {t('terms.importantNote')}
                 </p>
               </div>
             </div>
@@ -122,7 +122,7 @@ export const TermsModal = ({ open, onAccept }: TermsModalProps) => {
               onCheckedChange={(checked) => setHasRead(checked as boolean)}
             />
             <label htmlFor="hasRead" className="text-sm leading-5">
-              I have read and understood the above terms and disclaimer
+              {t('terms.hasRead')}
             </label>
           </div>
 
@@ -134,7 +134,7 @@ export const TermsModal = ({ open, onAccept }: TermsModalProps) => {
               disabled={!hasRead}
             />
             <label htmlFor="acceptTerms" className="text-sm leading-5">
-              I accept these terms and agree to use AYN AI at my own risk and discretion
+              {t('terms.acceptTerms')}
             </label>
           </div>
 
@@ -144,7 +144,7 @@ export const TermsModal = ({ open, onAccept }: TermsModalProps) => {
             className="w-full"
             variant="hero"
           >
-            Accept Terms & Continue to AYN AI
+            {t('terms.acceptContinue')}
           </Button>
         </div>
       </DialogContent>

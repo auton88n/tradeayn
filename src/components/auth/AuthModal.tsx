@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Building, User } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface AuthModalProps {
   open: boolean;
@@ -21,13 +22,14 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
   const [companyName, setCompanyName] = useState('');
   const [phone, setPhone] = useState('');
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
       toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields.",
+        title: t('auth.missingInfo'),
+        description: t('auth.missingInfoDesc'),
         variant: "destructive"
       });
       return;
@@ -51,23 +53,23 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
               options: { emailRedirectTo: `${window.location.origin}/` }
             });
             toast({
-              title: 'Verify your email',
-              description: 'Confirmation email re-sent. Please verify, then sign in.',
+              title: t('auth.verifyEmail'),
+              description: t('auth.verifyEmailDesc'),
             });
           } catch (e) {
-            toast({ title: 'Verification email error', description: 'Could not resend email. Please try again.' , variant: 'destructive'});
+            toast({ title: t('auth.verificationError'), description: t('auth.verificationErrorDesc') , variant: 'destructive'});
           }
         } else {
           toast({
-            title: 'Authentication Error',
+            title: t('auth.authError'),
             description: error.message,
             variant: 'destructive'
           });
         }
       } else {
         toast({
-          title: 'Welcome back!',
-          description: 'You have been successfully logged in.'
+          title: t('auth.welcomeBack'),
+          description: t('auth.welcomeBackDesc')
         });
         onOpenChange(false);
         // Reset form
@@ -76,8 +78,8 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
+        title: t('error.systemError'),
+        description: t('error.systemErrorDesc'),
         variant: "destructive"
       });
     } finally {
@@ -89,8 +91,8 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
     e.preventDefault();
     if (!email || !password || !fullName || !companyName) {
       toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields.",
+        title: t('auth.missingInfo'),
+        description: t('auth.missingInfoDesc'),
         variant: "destructive"
       });
       return;
@@ -113,14 +115,14 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
 
       if (error) {
         toast({
-          title: "Registration Error",
+          title: t('auth.registrationError'),
           description: error.message,
           variant: "destructive"
         });
       } else {
         toast({
-          title: "Registration Successful!",
-          description: "Please check your email to verify your account. Your access will be reviewed by our team."
+          title: t('auth.registrationSuccess'),
+          description: t('auth.registrationSuccessDesc')
         });
         onOpenChange(false);
         // Reset form
@@ -132,8 +134,8 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
+        title: t('error.systemError'),
+        description: t('error.systemErrorDesc'),
         variant: "destructive"
       });
     } finally {
@@ -146,24 +148,24 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
       <DialogContent className="glass sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-center gradient-text-hero text-2xl">
-            Welcome to AYN
+            {t('auth.welcomeToAyn')}
           </DialogTitle>
         </DialogHeader>
 
         <Tabs defaultValue="signin" className="w-full">
           <TabsList className="grid w-full grid-cols-2 glass">
-            <TabsTrigger value="signin">Sign In</TabsTrigger>
-            <TabsTrigger value="signup">Request Access</TabsTrigger>
+            <TabsTrigger value="signin">{t('auth.signIn')}</TabsTrigger>
+            <TabsTrigger value="signup">{t('auth.requestAccess')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="signin" className="space-y-4 mt-6">
             <form onSubmit={handleSignIn} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="signin-email">Email</Label>
+                <Label htmlFor="signin-email">{t('auth.email')}</Label>
                 <Input
                   id="signin-email"
                   type="email"
-                  placeholder="Enter your email"
+                  placeholder={t('auth.enterEmail')}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
@@ -172,11 +174,11 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="signin-password">Password</Label>
+                <Label htmlFor="signin-password">{t('auth.password')}</Label>
                 <Input
                   id="signin-password"
                   type="password"
-                  placeholder="Enter your password"
+                  placeholder={t('auth.enterPassword')}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}
@@ -191,20 +193,20 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                 disabled={isLoading}
               >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Sign In
+                {t('auth.signIn')}
               </Button>
             </form>
           </TabsContent>
 
           <TabsContent value="signup" className="space-y-4 mt-6">
             <div className="text-center text-sm text-muted-foreground mb-4">
-              Request access to AYN AI Business Consulting Platform
+              {t('auth.requestAccessDesc')}
             </div>
             
             <form onSubmit={handleSignUp} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="signup-name">Full Name *</Label>
+                  <Label htmlFor="signup-name">{t('auth.fullName')} *</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -220,7 +222,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="signup-company">Company *</Label>
+                  <Label htmlFor="signup-company">{t('auth.company')} *</Label>
                   <div className="relative">
                     <Building className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -237,7 +239,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="signup-email">Business Email *</Label>
+                <Label htmlFor="signup-email">{t('auth.businessEmail')} *</Label>
                 <Input
                   id="signup-email"
                   type="email"
@@ -250,7 +252,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="signup-phone">Phone Number</Label>
+                <Label htmlFor="signup-phone">{t('auth.phoneNumber')}</Label>
                 <Input
                   id="signup-phone"
                   type="tel"
@@ -263,11 +265,11 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="signup-password">Password *</Label>
+                <Label htmlFor="signup-password">{t('auth.password')} *</Label>
                 <Input
                   id="signup-password"
                   type="password"
-                  placeholder="Create a secure password"
+                  placeholder={t('auth.createPassword')}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}
@@ -282,11 +284,11 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                 disabled={isLoading}
               >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Request Access
+                {t('auth.requestAccess')}
               </Button>
 
               <div className="text-xs text-muted-foreground text-center">
-                Access will be reviewed and granted by the AYN team within 24 hours
+                {t('auth.accessReviewDesc')}
               </div>
             </form>
           </TabsContent>

@@ -3,9 +3,11 @@ import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Brain, Home, ArrowLeft } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const NotFound = () => {
   const location = useLocation();
+  const { t } = useLanguage();
 
   useEffect(() => {
     console.error(
@@ -22,10 +24,9 @@ const NotFound = () => {
         </div>
         
         <h1 className="text-6xl font-bold mb-4 gradient-text-hero">404</h1>
-        <h2 className="text-2xl font-semibold mb-4">Page Not Found</h2>
+        <h2 className="text-2xl font-semibold mb-4">{t('notFound.pageNotFound')}</h2>
         <p className="text-muted-foreground mb-8 leading-relaxed">
-          Oops! It seems like AYN couldn't locate the page you're looking for. 
-          Let's get you back to exploring business insights.
+          {t('notFound.description')}
         </p>
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -35,7 +36,7 @@ const NotFound = () => {
             className="glass glass-hover"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Go Back
+            {t('notFound.goBack')}
           </Button>
           
           <Button 
@@ -43,13 +44,13 @@ const NotFound = () => {
             className="bg-gradient-primary hover:scale-105 transition-all neon-purple"
           >
             <Home className="w-4 h-4 mr-2" />
-            Return Home
+            {t('notFound.returnHome')}
           </Button>
         </div>
         
         <div className="mt-8 pt-6 border-t border-border/50">
           <p className="text-sm text-muted-foreground">
-            Need help? AYN is always ready to assist with your business questions.
+            {t('notFound.needHelp')}
           </p>
         </div>
       </Card>
