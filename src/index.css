@@ -626,12 +626,8 @@
     justify-content: center;
     cursor: pointer;
     color: hsl(var(--muted-foreground));
-    position: absolute;
-    top: 50%;
-    left: 16px;
-    transform: translateY(-50%);
+    position: static;
     transition: all 0.2s ease;
-    z-index: 10;
   }
 
   .attachment-button:hover:not(:disabled) {
