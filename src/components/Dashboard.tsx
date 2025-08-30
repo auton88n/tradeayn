@@ -940,13 +940,13 @@ export default function Dashboard({ user }: DashboardProps) {
                       </SidebarMenuItem>
                     ))
                   ) : (
-                    <SidebarMenuItem>
-                      <div className="py-4 px-3 text-center">
-                        <p className={`text-xs text-muted-foreground group-data-[collapsible=icon]:hidden ${language === 'ar' ? 'text-right' : 'text-left'}`} style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}>
-                          {t('common.noConversations')}
-                        </p>
-                      </div>
-                    </SidebarMenuItem>
+                     <SidebarMenuItem>
+                       <div className={`py-4 px-3 ${language === 'ar' ? 'text-right' : 'text-center'}`} style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}>
+                         <p className={`text-xs text-muted-foreground group-data-[collapsible=icon]:hidden`}>
+                           {t('common.noConversations')}
+                         </p>
+                       </div>
+                     </SidebarMenuItem>
                   )}
                 </SidebarMenu>
               </SidebarGroupContent>

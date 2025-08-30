@@ -469,6 +469,7 @@
     position: absolute;
     right: 16px;
     left: auto;
+    transform: translateY(-50%);
   }
 
   /* RTL File Types Dropdown Positioning */
@@ -627,9 +628,10 @@
     color: hsl(var(--muted-foreground));
     position: absolute;
     top: 50%;
-    left: 12px;
+    left: 16px;
     transform: translateY(-50%);
     transition: all 0.2s ease;
+    z-index: 10;
   }
 
   .attachment-button:hover:not(:disabled) {
