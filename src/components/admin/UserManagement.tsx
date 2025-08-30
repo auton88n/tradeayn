@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Profile {
   id: string;
@@ -46,12 +47,13 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const { toast } = useToast();
+  const { t, language } = useLanguage();
 
   const getStatusInfo = (grant: AccessGrantWithProfile) => {
     if (!grant.is_active && !grant.granted_at) {
       return {
         icon: Clock,
-        label: 'Pending',
+        label: t('admin.pending'),
         variant: 'secondary' as const,
         color: 'text-yellow-600'
       };
@@ -60,7 +62,7 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
     if (!grant.is_active) {
       return {
         icon: XCircle,
-        label: 'Denied/Revoked',
+        label: t('admin.deniedRevoked'),
         variant: 'destructive' as const,
         color: 'text-red-600'
       };
@@ -69,7 +71,7 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
     if (grant.expires_at && new Date(grant.expires_at) < new Date()) {
       return {
         icon: XCircle,
-        label: 'Expired',
+        label: t('admin.expired'),
         variant: 'destructive' as const,
         color: 'text-red-600'
       };
@@ -77,7 +79,7 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
 
     return {
       icon: CheckCircle,
-      label: 'Active',
+      label: t('admin.active'),
       variant: 'default' as const,
       color: 'text-green-600'
     };
@@ -112,8 +114,8 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
       if (error) throw error;
 
       toast({
-        title: "Access Revoked",
-        description: "User access has been revoked successfully."
+        title: t('admin.accessRevoked'),
+        description: t('admin.accessRevokedDesc')
       });
       
       onRefresh();
@@ -137,8 +139,8 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
       if (error) throw error;
 
       toast({
-        title: "Limits Updated",
-        description: "User limits have been updated successfully."
+        title: t('admin.limitsUpdated'),
+        description: t('admin.limitsUpdatedDesc')
       });
       
       onRefresh();
@@ -178,23 +180,23 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
     URL.revokeObjectURL(url);
 
     toast({
-      title: "Export Complete",
-      description: "User data has been exported successfully."
+      title: t('admin.exportComplete'),
+      description: t('admin.exportCompleteDesc')
     });
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       {/* Header and Controls */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">User Management</h2>
-          <p className="text-muted-foreground">Manage user accounts and access permissions</p>
+      <div className={`flex items-center justify-between ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+        <div className={language === 'ar' ? 'text-right' : ''}>
+          <h2 className="text-2xl font-bold">{t('admin.userManagement')}</h2>
+          <p className="text-muted-foreground">{t('admin.userManagementDesc')}</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className={`flex items-center gap-3 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
           <Button onClick={exportUserData} variant="outline" size="sm">
-            <Download className="w-4 h-4 mr-2" />
-            Export
+            <Download className={`w-4 h-4 ${language === 'ar' ? 'ml-2' : 'mr-2'}`} />
+            {t('admin.export')}
           </Button>
         </div>
       </div>
@@ -202,33 +204,33 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
       {/* Filters and Search */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
             <Filter className="w-5 h-5" />
-            Filters & Search
+            {t('admin.filtersSearch')}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className={`flex flex-col sm:flex-row gap-4 ${language === 'ar' ? 'sm:flex-row-reverse' : ''}`}>
             <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Search className={`absolute ${language === 'ar' ? 'right-3' : 'left-3'} top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4`} />
                 <Input
-                  placeholder="Search by email, company name or contact person..."
+                  placeholder={t('admin.searchPlaceholder')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className={language === 'ar' ? 'pr-10 text-right' : 'pl-10'}
                 />
               </div>
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-48">
-                <SelectValue placeholder="Filter by status" />
+                <SelectValue placeholder={t('admin.filterStatus')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Users</SelectItem>
-                <SelectItem value="active">Active Only</SelectItem>
-                <SelectItem value="inactive">Inactive Only</SelectItem>
-                <SelectItem value="pending">Pending Only</SelectItem>
+                <SelectItem value="all">{t('admin.allUsers')}</SelectItem>
+                <SelectItem value="active">{t('admin.activeOnly')}</SelectItem>
+                <SelectItem value="inactive">{t('admin.inactiveOnly')}</SelectItem>
+                <SelectItem value="pending">{t('admin.pendingOnly')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -238,12 +240,12 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
       {/* User List */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
             <Users className="w-5 h-5" />
-            Users ({filteredUsers.length})
+            {t('admin.usersCount')} ({filteredUsers.length})
           </CardTitle>
           <CardDescription>
-            Manage user access and permissions
+            {t('admin.managePermissions')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -255,8 +257,8 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
                 
                 return (
                   <div key={user.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
+                    <div className={`flex items-center justify-between ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+                      <div className={`flex items-center gap-4 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
                         <Checkbox
                           checked={selectedUsers.includes(user.user_id)}
                           onCheckedChange={(checked) => {
@@ -272,37 +274,37 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
                           <Building className="w-5 h-5" />
                         </div>
                         
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-semibold">{user.profiles?.company_name || 'Unknown Company'}</h3>
-                              <Badge variant={statusInfo.variant} className="flex items-center gap-1">
-                                <StatusIcon className="w-3 h-3" />
-                                {statusInfo.label}
-                              </Badge>
-                            </div>
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                              <span className="flex items-center gap-1">
-                                <Mail className="w-3 h-3" />
-                                {user.user_email || 'No email'}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Phone className="w-3 h-3" />
-                                {user.profiles?.contact_person || 'No contact'}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                              <span>
-                                Usage: {user.current_month_usage || 0}
-                                {user.monthly_limit ? ` / ${user.monthly_limit}` : ' / Unlimited'}
-                              </span>
-                              <span>
-                                Created: {new Date(user.created_at).toLocaleDateString()}
-                              </span>
-                            </div>
+                        <div className={`space-y-1 ${language === 'ar' ? 'text-right' : ''}`}>
+                          <div className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+                            <h3 className="font-semibold">{user.profiles?.company_name || t('admin.unknownCompany')}</h3>
+                            <Badge variant={statusInfo.variant} className={`flex items-center gap-1 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+                              <StatusIcon className="w-3 h-3" />
+                              {statusInfo.label}
+                            </Badge>
                           </div>
+                          <div className={`flex items-center gap-4 text-sm text-muted-foreground ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+                            <span className={`flex items-center gap-1 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+                              <Mail className="w-3 h-3" />
+                              {user.user_email || t('admin.noEmail')}
+                            </span>
+                            <span className={`flex items-center gap-1 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+                              <Phone className="w-3 h-3" />
+                              {user.profiles?.contact_person || t('admin.noContact')}
+                            </span>
+                          </div>
+                          <div className={`flex items-center gap-4 text-xs text-muted-foreground ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+                            <span>
+                              {t('admin.usage')}: {user.current_month_usage || 0}
+                              {user.monthly_limit ? ` / ${user.monthly_limit}` : ` / ${t('admin.unlimited')}`}
+                            </span>
+                            <span>
+                              {t('admin.created')}: {new Date(user.created_at).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                       
-                      <div className="flex items-center gap-2">
+                      <div className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
                         {user.is_active && (
                           <Button
                             variant="outline"
@@ -310,13 +312,13 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
                             onClick={() => handleRevokeAccess(user.user_id)}
                             className="text-red-600 hover:text-red-700"
                           >
-                            <UserMinus className="w-4 h-4 mr-1" />
-                            Revoke
+                            <UserMinus className={`w-4 h-4 ${language === 'ar' ? 'ml-1' : 'mr-1'}`} />
+                            {t('admin.revoke')}
                           </Button>
                         )}
                         <Button variant="outline" size="sm">
-                          <Eye className="w-4 h-4 mr-1" />
-                          View
+                          <Eye className={`w-4 h-4 ${language === 'ar' ? 'ml-1' : 'mr-1'}`} />
+                          {t('admin.view')}
                         </Button>
                       </div>
                     </div>
@@ -325,10 +327,10 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
               })}
               
               {filteredUsers.length === 0 && (
-                <div className="text-center py-8">
+                <div className={`text-center py-8 ${language === 'ar' ? 'text-right' : ''}`}>
                   <Users className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium">No users found</h3>
-                  <p className="text-muted-foreground">Try adjusting your search or filter criteria.</p>
+                  <h3 className="text-lg font-medium">{t('admin.noUsersFound')}</h3>
+                  <p className="text-muted-foreground">{t('admin.adjustCriteria')}</p>
                 </div>
               )}
             </div>

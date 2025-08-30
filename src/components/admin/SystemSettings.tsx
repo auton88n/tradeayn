@@ -7,6 +7,7 @@ import {
   Settings, Shield, AlertTriangle, Server, Target, Info, Zap
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface SystemConfig {
   defaultMonthlyLimit: number;
@@ -35,50 +36,54 @@ export const SystemSettings = ({
   onPerformMaintenance 
 }: SystemSettingsProps) => {
   const { toast } = useToast();
+  const { t, language } = useLanguage();
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">System Configuration</h2>
-        <p className="text-muted-foreground">Configure system-wide settings and maintenance options</p>
+    <div className="space-y-6" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+      <div className={language === 'ar' ? 'text-right' : ''}>
+        <h2 className="text-2xl font-bold">{t('admin.systemConfiguration')}</h2>
+        <p className="text-muted-foreground">{t('admin.systemConfigDesc')}</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Maintenance Mode */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
               <AlertTriangle className="w-5 h-5" />
-              Maintenance Mode
+              {t('admin.maintenanceMode')}
             </CardTitle>
-            <CardDescription>Control system maintenance and user notifications</CardDescription>
+            <CardDescription>{t('admin.maintenanceModeDesc')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
+            <div className={`flex items-center justify-between ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+              <div className={`flex items-center space-x-2 ${language === 'ar' ? 'flex-row-reverse space-x-reverse' : ''}`}>
                 <Switch 
                   checked={systemConfig.enableMaintenance}
                   onCheckedChange={(checked) => onUpdateConfig({ enableMaintenance: checked })}
+                  size="sm"
+                  rtl={language === 'ar'}
                 />
                 <span className="text-sm text-muted-foreground">
-                  Show maintenance banner to all users
+                  {t('admin.showMaintenance')}
                 </span>
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Maintenance Message</label>
+              <label className={`text-sm font-medium ${language === 'ar' ? 'text-right' : ''}`}>{t('admin.maintenanceMessage')}</label>
               <Textarea 
                 value={systemConfig.maintenanceMessage}
                 onChange={(e) => onUpdateConfig({ maintenanceMessage: e.target.value })}
-                placeholder="Enter message to display to users..."
+                placeholder={t('admin.maintenancePlaceholder')}
                 rows={3}
+                className={language === 'ar' ? 'text-right' : ''}
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Start Time (optional)</label>
+                <label className={`text-sm font-medium ${language === 'ar' ? 'text-right' : ''}`}>{t('admin.startTime')}</label>
                 <Input 
                   type="datetime-local" 
                   value={systemConfig.maintenanceStartTime}
@@ -87,7 +92,7 @@ export const SystemSettings = ({
               </div>
               
               <div className="space-y-2">
-                <label className="text-sm font-medium">End Time (optional)</label>
+                <label className={`text-sm font-medium ${language === 'ar' ? 'text-right' : ''}`}>{t('admin.endTime')}</label>
                 <Input 
                   type="datetime-local" 
                   value={systemConfig.maintenanceEndTime}
@@ -97,9 +102,9 @@ export const SystemSettings = ({
             </div>
 
             <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
+              <div className={`flex items-center gap-2 mb-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
                 <AlertTriangle className="w-4 h-4 text-yellow-600" />
-                <span className="text-sm font-medium text-yellow-800">Preview</span>
+                <span className="text-sm font-medium text-yellow-800">{t('admin.preview')}</span>
               </div>
               <div className="text-sm text-yellow-700">
                 {systemConfig.maintenanceMessage || 'Your maintenance message will appear here'}

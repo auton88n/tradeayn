@@ -7,6 +7,7 @@ import {
   Server, Database, Zap, Shield, Activity, AlertTriangle, CheckCircle, 
   Clock, Network, HardDrive, Cpu, MemoryStick, TrendingUp, Eye
 } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface SystemMetrics {
   totalUsers: number;
@@ -30,25 +31,27 @@ interface SystemMonitoringProps {
 }
 
 export const SystemMonitoring = ({ systemMetrics }: SystemMonitoringProps) => {
+  const { t, language } = useLanguage();
+  
   const getHealthStatus = (health: number) => {
-    if (health >= 98) return { label: 'Excellent', color: 'bg-green-600', variant: 'default' as const };
-    if (health >= 95) return { label: 'Good', color: 'bg-blue-600', variant: 'default' as const };
-    if (health >= 90) return { label: 'Fair', color: 'bg-yellow-600', variant: 'secondary' as const };
-    return { label: 'Poor', color: 'bg-red-600', variant: 'destructive' as const };
+    if (health >= 98) return { label: t('admin.excellent'), color: 'bg-green-600', variant: 'default' as const };
+    if (health >= 95) return { label: t('admin.good'), color: 'bg-blue-600', variant: 'default' as const };
+    if (health >= 90) return { label: t('admin.fair'), color: 'bg-yellow-600', variant: 'secondary' as const };
+    return { label: t('admin.poor'), color: 'bg-red-600', variant: 'destructive' as const };
   };
 
   const getResourceStatus = (usage: number) => {
-    if (usage >= 90) return 'critical';
-    if (usage >= 75) return 'warning';
-    if (usage >= 50) return 'moderate';
-    return 'normal';
+    if (usage >= 90) return t('admin.critical');
+    if (usage >= 75) return t('admin.warning');
+    if (usage >= 50) return t('admin.moderate');
+    return t('admin.normal');
   };
 
   const getResourceColor = (status: string) => {
     switch (status) {
-      case 'critical': return 'bg-red-500';
-      case 'warning': return 'bg-yellow-500';
-      case 'moderate': return 'bg-blue-500';
+      case t('admin.critical'): return 'bg-red-500';
+      case t('admin.warning'): return 'bg-yellow-500';
+      case t('admin.moderate'): return 'bg-blue-500';
       default: return 'bg-green-500';
     }
   };
@@ -56,10 +59,10 @@ export const SystemMonitoring = ({ systemMetrics }: SystemMonitoringProps) => {
   const healthStatus = getHealthStatus(systemMetrics?.systemHealth || 0);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">System Monitoring</h2>
-        <p className="text-muted-foreground">Real-time system performance and health monitoring</p>
+    <div className="space-y-6" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+      <div className={language === 'ar' ? 'text-right' : ''}>
+        <h2 className="text-2xl font-bold">{t('admin.systemMonitoring')}</h2>
+        <p className="text-muted-foreground">{t('admin.systemMonitoringDesc')}</p>
       </div>
 
       {/* System Status Overview */}
