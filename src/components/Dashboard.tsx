@@ -835,8 +835,8 @@ export default function Dashboard({ user }: DashboardProps) {
 
             {/* Quick Start */}
             <SidebarGroup>
-              <div className={`flex items-center px-4 py-2 ${language === 'ar' ? 'flex-row-reverse justify-end' : ''}`}>
-                <SidebarGroupLabel className={language === 'ar' ? 'text-right' : ''}>{t('common.quickStart')}</SidebarGroupLabel>
+              <div className={`w-full flex px-4 py-2 ${language === 'ar' ? 'justify-end' : 'justify-start'}`}>
+                <SidebarGroupLabel className={language === 'ar' ? 'text-right' : 'text-left'}>{t('common.quickStart')}</SidebarGroupLabel>
               </div>
               <SidebarGroupContent>
                 <SidebarMenu>
