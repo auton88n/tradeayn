@@ -1031,8 +1031,8 @@ export default function Dashboard({ user }: DashboardProps) {
               <Switch 
                 checked={allowPersonalization}
                 onCheckedChange={setAllowPersonalization}
-                className="scale-75"
                 disabled={!hasAccess}
+                className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted"
               />
               <Label htmlFor="personalization" className="text-xs text-muted-foreground cursor-pointer sr-only">
                 Use my name
