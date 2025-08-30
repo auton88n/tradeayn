@@ -616,18 +616,19 @@
   }
 
   .attachment-button {
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     background: transparent;
     border: none;
-    border-radius: 14px;
+    border-radius: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     color: hsl(var(--muted-foreground));
-    position: static;
     transition: all 0.2s ease;
+    flex-shrink: 0;
+    z-index: 10;
   }
 
   .attachment-button:hover:not(:disabled) {
