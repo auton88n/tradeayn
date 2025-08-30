@@ -835,7 +835,7 @@ export default function Dashboard({ user }: DashboardProps) {
 
             {/* Quick Start */}
             <SidebarGroup>
-              <SidebarGroupLabel>{t('common.quickStart')}</SidebarGroupLabel>
+              <SidebarGroupLabel className={language === 'ar' ? 'text-right' : ''}>{t('common.quickStart')}</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
                    {templates.map((template) => (
@@ -844,9 +844,10 @@ export default function Dashboard({ user }: DashboardProps) {
                         onClick={() => handleSendMessage(t(template.prompt))}
                         disabled={!hasAccess || !hasAcceptedTerms}
                         tooltip={t(template.name)}
+                        className={language === 'ar' ? 'flex-row-reverse justify-start' : ''}
                       >
-                        <template.icon className={`w-4 h-4 flex-shrink-0 ${template.color}`} />
-                        <span className="group-data-[collapsible=icon]:hidden">{t(template.name)}</span>
+                        <template.icon className={`w-4 h-4 flex-shrink-0 ${template.color} ${language === 'ar' ? 'ml-0 mr-2' : ''}`} />
+                        <span className={`group-data-[collapsible=icon]:hidden ${language === 'ar' ? 'text-right' : ''}`}>{t(template.name)}</span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   ))}
@@ -856,8 +857,8 @@ export default function Dashboard({ user }: DashboardProps) {
 
             {/* Recent Chats */}
             <SidebarGroup>
-              <div className="flex items-center justify-between px-4 py-2">
-                <SidebarGroupLabel>{t('common.recentChats')}</SidebarGroupLabel>
+              <div className={`flex items-center justify-between px-4 py-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+                <SidebarGroupLabel className={language === 'ar' ? 'text-right' : ''}>{t('common.recentChats')}</SidebarGroupLabel>
                 {recentChats.length > 0 && (
                   <div className="flex items-center gap-1">
                     {!showChatSelection ? (
@@ -925,13 +926,13 @@ export default function Dashboard({ user }: DashboardProps) {
                           <SidebarMenuButton
                             onClick={() => !showChatSelection && handleLoadChat(chat)}
                             tooltip={chat.title}
-                            className={`py-4 px-3 h-auto flex-1 ${showChatSelection ? 'cursor-default' : ''}`}
+                            className={`py-4 px-3 h-auto flex-1 ${showChatSelection ? 'cursor-default' : ''} ${language === 'ar' ? 'flex-row-reverse justify-start' : ''}`}
                             disabled={showChatSelection}
                           >
-                            <div className="w-5 h-5 rounded bg-muted flex items-center justify-center text-xs font-medium mr-3">
+                            <div className={`w-5 h-5 rounded bg-muted flex items-center justify-center text-xs font-medium ${language === 'ar' ? 'ml-0 mr-3' : 'mr-3'}`}>
                               {chat.title.charAt(0).toUpperCase()}
                             </div>
-                            <div className="flex flex-col min-w-0 gap-1">
+                            <div className={`flex flex-col min-w-0 gap-1 ${language === 'ar' ? 'text-right' : ''}`}>
                               <span className="font-medium truncate text-sm group-data-[collapsible=icon]:hidden">{chat.title}</span>
                               <span className="text-xs text-muted-foreground truncate group-data-[collapsible=icon]:hidden leading-relaxed">{chat.lastMessage}</span>
                             </div>
