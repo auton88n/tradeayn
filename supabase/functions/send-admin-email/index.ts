@@ -1,169 +1,93 @@
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
-import { Resend } from 'npm:resend@2.0.0';
-import { renderAsync } from 'npm:@react-email/components@0.0.22';
-import React from 'npm:react@18.3.1';
-import { PasswordResetEmail } from './_templates/password-reset.tsx';
-import { EmailConfirmationEmail } from './_templates/email-confirmation.tsx';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
+import { Resend } from "npm:resend@2.0.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface EmailRequest {
-  to: string;
-  subject: string;
-  content: string;
-  htmlContent?: string;
-  fromEmail?: string;
-  templateId?: string;
-  templateVariables?: Record<string, string>;
-  email_type?: string; // Add support for marketing emails
-  use_react_template?: boolean; // Add support for React Email templates
-  template_type?: 'password_reset' | 'email_confirmation'; // Template type for React Email
-}
-
-
-serve(async (req) => {
+serve(async (req: Request): Promise<Response> => {
+  console.log('send-admin-email function invoked');
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Get and validate API key
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
-    console.log('Looking for RESEND_API_KEY...');
+    console.log('Checking RESEND_API_KEY availability...');
+    console.log('Available environment variables:', Object.keys(Deno.env.toObject()));
     console.log('RESEND_API_KEY exists:', !!resendApiKey);
-    console.log('RESEND_API_KEY length:', resendApiKey?.length || 'null/undefined');
+    
+    if (!resendApiKey) {
+      const errorMsg = 'RESEND_API_KEY environment variable is not set. Please check Supabase secrets configuration.';
+      console.error(errorMsg);
+      return new Response(
+        JSON.stringify({ success: false, error: errorMsg }),
+        { 
+          status: 500, 
+          headers: { 'Content-Type': 'application/json', ...corsHeaders } 
+        }
+      );
+    }
 
-    if (!resendApiKey || resendApiKey.trim() === '') {
-      console.error('RESEND_API_KEY is not available in environment');
-      throw new Error('RESEND_API_KEY environment variable is not set. Please check Supabase secrets configuration.');
+    const resend = new Resend(resendApiKey);
+    
+    // Get Supabase environment variables
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error('Missing Supabase configuration');
     }
     
-    const resend = new Resend(resendApiKey);
+    const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
+    
+    // Parse request body
+    const body = await req.json();
+    const { to, subject, content, fromEmail, htmlContent } = body;
+    
+    if (!to || !subject || !content) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Missing required fields: to, subject, content' }),
+        { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      );
+    }
 
-    // Initialize Supabase client
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        }
-      }
-    );
+    console.log('Parsed request:', { to, subject, fromEmail });
 
-    // Get the authorization header
+    // Get current user
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      throw new Error('Missing authorization header');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Authorization header required' }),
+        { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      );
     }
 
-    // Verify the user is authenticated and is an admin
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    );
-
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
+    
     if (userError || !user) {
-      throw new Error('Unauthorized');
+      console.error('Authentication error:', userError);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid authentication' }),
+        { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      );
     }
 
-    // Check if user has admin role
-    const { data: roleData, error: roleError } = await supabaseClient
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .single();
+    console.log('Authenticated user:', user.id);
 
-    if (roleError || roleData?.role !== 'admin') {
-      throw new Error('Admin access required');
-    }
+    // Process subject and content for variables
+    const finalSubject = subject;
+    const finalContent = content;
+    const finalHtmlContent = htmlContent || `<div style="white-space: pre-wrap;">${content}</div>`;
 
-    const emailRequest: EmailRequest = await req.json();
-    const { 
-      to, 
-      subject, 
-      content, 
-      htmlContent, 
-      fromEmail, 
-      templateId, 
-      templateVariables, 
-      email_type,
-      use_react_template,
-      template_type
-    } = emailRequest;
-
-    let finalSubject = subject;
-    let finalContent = content;
-    let finalHtmlContent = htmlContent;
-
-    // Handle React Email templates
-    if (use_react_template && template_type) {
-      const confirmationUrl = templateVariables?.confirmationUrl || '#';
-      const userEmail = to;
-
-      try {
-        if (template_type === 'password_reset') {
-          finalHtmlContent = await renderAsync(
-            React.createElement(PasswordResetEmail, {
-              confirmationUrl,
-              userEmail,
-            })
-          );
-          finalSubject = 'Reset your AYN password';
-        } else if (template_type === 'email_confirmation') {
-          finalHtmlContent = await renderAsync(
-            React.createElement(EmailConfirmationEmail, {
-              confirmationUrl,
-              userEmail,
-            })
-          );
-          finalSubject = 'Welcome to AYN - Confirm your email';
-        }
-        
-        // Set plain text content as fallback
-        finalContent = content || `Please click the link to ${template_type === 'password_reset' ? 'reset your password' : 'confirm your email'}: ${confirmationUrl}`;
-      } catch (renderError) {
-        console.error('Error rendering React email template:', renderError);
-        // Fall back to regular template processing
-      }
-    }
-
-    // If using a database template, fetch and process it
-    else if (templateId) {
-      const { data: template, error: templateError } = await supabaseClient
-        .from('email_templates')
-        .select('*')
-        .eq('id', templateId)
-        .single();
-
-      if (templateError) {
-        throw new Error('Template not found');
-      }
-
-      // Replace template variables
-      finalSubject = template.subject;
-      finalContent = template.content;
-      finalHtmlContent = template.html_content;
-
-      if (templateVariables) {
-        Object.entries(templateVariables).forEach(([key, value]) => {
-          const placeholder = `{{${key}}}`;
-          finalSubject = finalSubject.replace(new RegExp(placeholder, 'g'), value);
-          finalContent = finalContent.replace(new RegExp(placeholder, 'g'), value);
-          if (finalHtmlContent) {
-            finalHtmlContent = finalHtmlContent.replace(new RegExp(placeholder, 'g'), value);
-          }
-        });
-      }
-    }
-
-    // Create email record in database (draft initially)
-    const { data: emailRecord, error: insertError } = await supabaseClient
+    // Create email record in database
+    const { data: emailRecord, error: emailError } = await supabaseClient
       .from('admin_emails')
       .insert({
         sender_email: fromEmail || 'admin@aynn.io',
@@ -171,31 +95,42 @@ serve(async (req) => {
         subject: finalSubject,
         content: finalContent,
         html_content: finalHtmlContent,
-        email_type: email_type || 'outbound',
-        status: 'draft',
+        status: 'pending',
         created_by: user.id,
-        metadata: { template_id: templateId, template_variables: templateVariables }
+        email_type: 'outbound',
+        metadata: { sent_from: 'admin_panel' }
       })
       .select()
       .single();
 
-    if (insertError) {
-      console.error('Error creating email record:', insertError);
-      throw new Error('Failed to create email record');
+    if (emailError) {
+      console.error('Database error:', emailError);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Failed to create email record' }),
+        { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      );
     }
 
+    console.log('Email record created:', emailRecord.id);
+
+    // Send email via Resend
     try {
-      // Send email via Resend (primary domain)
+      console.log('Attempting to send email via Resend...');
       const primaryFrom = fromEmail || 'AYN Admin <admin@aynn.io>';
+      
       const emailResponse = await resend.emails.send({
         from: primaryFrom,
         to: [to],
         subject: finalSubject,
         text: finalContent,
-        html: finalHtmlContent || `<div style="white-space: pre-wrap;">${finalContent}</div>`,
+        html: finalHtmlContent,
       });
 
-      console.log('Email sent successfully:', emailResponse);
+      console.log('Resend response:', emailResponse);
+
+      if (emailResponse.error) {
+        throw new Error(`Resend API error: ${emailResponse.error.message}`);
+      }
 
       // Update email record as sent
       await supabaseClient
@@ -212,12 +147,14 @@ serve(async (req) => {
         })
         .eq('id', emailRecord.id);
 
+      console.log('Email sent successfully');
+
       return new Response(
         JSON.stringify({ 
           success: true, 
           emailId: emailRecord.id,
           resendId: emailResponse.data?.id,
-          message: 'Email sent successfully' 
+          message: 'Email sent successfully'
         }),
         {
           status: 200,
@@ -226,23 +163,26 @@ serve(async (req) => {
       );
 
     } catch (emailError: any) {
-      console.error('Error sending email (primary):', emailError);
+      console.error('Error sending email:', emailError);
 
-      // If domain is not verified or similar sender issue, try fallback Resend sandbox domain
+      // If domain is not verified, try fallback
       const errorMessage = emailError?.message || JSON.stringify(emailError);
       const shouldFallback = /domain.*not.*verified|not verified|blocked.*sending|from address/i.test(errorMessage);
 
       if (shouldFallback) {
         try {
-          console.log('Attempting fallback sender with Resend sandbox domain...');
+          console.log('Attempting fallback with Resend sandbox...');
           const fallbackFrom = 'Lovable Sandbox <onboarding@resend.dev>';
+          
           const fallbackResponse = await resend.emails.send({
             from: fallbackFrom,
             to: [to],
             subject: finalSubject,
             text: finalContent,
-            html: finalHtmlContent || `<div style="white-space: pre-wrap;">${finalContent}</div>`,
+            html: finalHtmlContent,
           });
+
+          console.log('Fallback response:', fallbackResponse);
 
           await supabaseClient
             .from('admin_emails')
@@ -274,6 +214,7 @@ serve(async (req) => {
           );
         } catch (fallbackError: any) {
           console.error('Fallback send failed:', fallbackError);
+          
           await supabaseClient
             .from('admin_emails')
             .update({
@@ -290,7 +231,7 @@ serve(async (req) => {
         }
       }
 
-      // Update email record as failed (no fallback)
+      // Update email record as failed
       await supabaseClient
         .from('admin_emails')
         .update({
@@ -307,16 +248,10 @@ serve(async (req) => {
     }
 
   } catch (error) {
-    console.error('Error in send-admin-email function:', error);
+    console.error('Unexpected error in send-admin-email function:', error);
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error.message || 'Failed to send email' 
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      }
+      JSON.stringify({ success: false, error: error.message }),
+      { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
     );
   }
 });
