@@ -19,17 +19,20 @@ export const LanguageSwitcher = () => {
           <span className="sr-only">{t('common.language')}</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="min-w-[120px]">
+      <DropdownMenuContent 
+        align="end" 
+        className="min-w-[120px] bg-background border border-border shadow-lg z-50"
+      >
         <DropdownMenuItem
           onClick={() => setLanguage('en')}
-          className={language === 'en' ? 'bg-accent' : ''}
+          className={`text-foreground hover:bg-accent hover:text-accent-foreground ${language === 'en' ? 'bg-accent text-accent-foreground' : ''}`}
         >
           <span className="mr-2">🇺🇸</span>
           English
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => setLanguage('ar')}
-          className={language === 'ar' ? 'bg-accent' : ''}
+          className={`text-foreground hover:bg-accent hover:text-accent-foreground ${language === 'ar' ? 'bg-accent text-accent-foreground' : ''}`}
         >
           <span className="mr-2">🇸🇦</span>
           العربية
