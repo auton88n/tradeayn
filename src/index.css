@@ -625,6 +625,10 @@
     justify-content: center;
     cursor: pointer;
     color: hsl(var(--muted-foreground));
+    position: absolute;
+    top: 50%;
+    left: 12px;
+    transform: translateY(-50%);
     transition: all 0.2s ease;
   }
 
