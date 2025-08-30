@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Sidebar,
   SidebarContent,
@@ -111,6 +112,8 @@ export default function Dashboard({ user }: DashboardProps) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [activeTab, setActiveTab] = useState<'chat' | 'admin'>('chat');
   const [recentChats, setRecentChats] = useState<ChatHistory[]>([]);
+  const [selectedChats, setSelectedChats] = useState<Set<number>>(new Set());
+  const [showChatSelection, setShowChatSelection] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
   
   // Maintenance mode state
@@ -690,6 +693,76 @@ export default function Dashboard({ user }: DashboardProps) {
     });
   };
 
+  const handleDeleteSelectedChats = async () => {
+    if (selectedChats.size === 0) return;
+
+    try {
+      const chatIndicesToDelete = Array.from(selectedChats);
+      const messageIdsToDelete: string[] = [];
+
+      // Collect message IDs from selected chats
+      chatIndicesToDelete.forEach(index => {
+        if (recentChats[index]) {
+          messageIdsToDelete.push(...recentChats[index].messages.map(m => m.id));
+        }
+      });
+
+      // Delete messages from database
+      if (messageIdsToDelete.length > 0) {
+        const { error } = await supabase
+          .from('messages')
+          .delete()
+          .in('id', messageIdsToDelete);
+
+        if (error) {
+          console.error('Error deleting messages:', error);
+          toast({
+            title: "Error",
+            description: "Failed to delete some chat messages.",
+            variant: "destructive"
+          });
+          return;
+        }
+      }
+
+      // Update local state
+      const updatedChats = recentChats.filter((_, index) => !selectedChats.has(index));
+      setRecentChats(updatedChats);
+      setSelectedChats(new Set());
+      setShowChatSelection(false);
+
+      toast({
+        title: "Chats Deleted",
+        description: `Successfully deleted ${selectedChats.size} conversation(s).`,
+      });
+    } catch (error) {
+      console.error('Error deleting chats:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete selected chats.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const toggleChatSelection = (index: number) => {
+    const newSelected = new Set(selectedChats);
+    if (newSelected.has(index)) {
+      newSelected.delete(index);
+    } else {
+      newSelected.add(index);
+    }
+    setSelectedChats(newSelected);
+  };
+
+  const selectAllChats = () => {
+    if (selectedChats.size === recentChats.length) {
+      setSelectedChats(new Set());
+    } else {
+      setSelectedChats(new Set(recentChats.map((_, index) => index)));
+    }
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -780,25 +853,87 @@ export default function Dashboard({ user }: DashboardProps) {
 
             {/* Recent Chats */}
             <SidebarGroup>
-              <SidebarGroupLabel>Recent Chats</SidebarGroupLabel>
+              <div className="flex items-center justify-between px-4 py-2">
+                <SidebarGroupLabel>Recent Chats</SidebarGroupLabel>
+                {recentChats.length > 0 && (
+                  <div className="flex items-center gap-1">
+                    {!showChatSelection ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowChatSelection(true)}
+                        className="h-6 px-2 text-xs"
+                      >
+                        Select
+                      </Button>
+                    ) : (
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={selectAllChats}
+                          className="h-6 px-2 text-xs"
+                        >
+                          {selectedChats.size === recentChats.length ? 'None' : 'All'}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setShowChatSelection(false);
+                            setSelectedChats(new Set());
+                          }}
+                          className="h-6 px-2 text-xs"
+                        >
+                          Cancel
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+              
+              {showChatSelection && selectedChats.size > 0 && (
+                <div className="px-4 pb-2">
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={handleDeleteSelectedChats}
+                    className="w-full h-8 text-xs"
+                  >
+                    Delete {selectedChats.size} Chat{selectedChats.size > 1 ? 's' : ''}
+                  </Button>
+                </div>
+              )}
+              
               <SidebarGroupContent>
                 <SidebarMenu>
                   {recentChats.length > 0 ? (
                     recentChats.map((chat, index) => (
                       <SidebarMenuItem key={index} className="mb-2">
-                        <SidebarMenuButton
-                          onClick={() => handleLoadChat(chat)}
-                          tooltip={chat.title}
-                          className="py-4 px-3 h-auto"
-                        >
-                          <div className="w-5 h-5 rounded bg-muted flex items-center justify-center text-xs font-medium mr-3">
-                            {chat.title.charAt(0).toUpperCase()}
-                          </div>
-                          <div className="flex flex-col min-w-0 gap-1">
-                            <span className="font-medium truncate text-sm group-data-[collapsible=icon]:hidden">{chat.title}</span>
-                            <span className="text-xs text-muted-foreground truncate group-data-[collapsible=icon]:hidden leading-relaxed">{chat.lastMessage}</span>
-                          </div>
-                        </SidebarMenuButton>
+                        <div className="flex items-center gap-2 px-3">
+                          {showChatSelection && (
+                            <Checkbox
+                              checked={selectedChats.has(index)}
+                              onCheckedChange={() => toggleChatSelection(index)}
+                              className="flex-shrink-0"
+                            />
+                          )}
+                          <SidebarMenuButton
+                            onClick={() => !showChatSelection && handleLoadChat(chat)}
+                            tooltip={chat.title}
+                            className={`py-4 px-3 h-auto flex-1 ${showChatSelection ? 'cursor-default' : ''}`}
+                            disabled={showChatSelection}
+                          >
+                            <div className="w-5 h-5 rounded bg-muted flex items-center justify-center text-xs font-medium mr-3">
+                              {chat.title.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="flex flex-col min-w-0 gap-1">
+                              <span className="font-medium truncate text-sm group-data-[collapsible=icon]:hidden">{chat.title}</span>
+                              <span className="text-xs text-muted-foreground truncate group-data-[collapsible=icon]:hidden leading-relaxed">{chat.lastMessage}</span>
+                            </div>
+                          </SidebarMenuButton>
+                        </div>
                       </SidebarMenuItem>
                     ))
                   ) : (

@@ -1,18 +1,17 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { 
-  Mail, Send, Users, Plus, RefreshCw, Download
-} from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Mail, Send, Plus, Download, Loader2 } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 interface Email {
   id: string;
@@ -38,7 +37,16 @@ export const SimpleEmailManagement = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showComposeDialog, setShowComposeDialog] = useState(false);
   const [showCreateUserDialog, setShowCreateUserDialog] = useState(false);
+  const [selectedEmails, setSelectedEmails] = useState<Set<string>>(new Set());
+  const [showEmailSelection, setShowEmailSelection] = useState(false);
   
+  const [newUser, setNewUser] = useState({
+    email: '',
+    companyName: '',
+    contactPerson: '',
+    temporaryPassword: ''
+  });
+
   // Email form
   const [emailForm, setEmailForm] = useState({
     to: '',
@@ -46,16 +54,6 @@ export const SimpleEmailManagement = () => {
     content: '',
     type: 'single' // single or bulk
   });
-
-  // Create user form
-  const [userForm, setUserForm] = useState({
-    email: '',
-    password: '',
-    company_name: '',
-    contact_person: ''
-  });
-
-  const { toast } = useToast();
 
   const fetchEmails = async () => {
     try {
@@ -178,7 +176,7 @@ export const SimpleEmailManagement = () => {
   };
 
   const createUser = async () => {
-    if (!userForm.email.includes('@aynn.io')) {
+    if (!newUser.email.includes('@aynn.io')) {
       toast({
         title: "Invalid Email",
         description: "Email must be from @aynn.io domain",
@@ -193,11 +191,11 @@ export const SimpleEmailManagement = () => {
 
       // Create user
       const { data, error } = await supabase.auth.admin.createUser({
-        email: userForm.email,
-        password: userForm.password,
+        email: newUser.email,
+        password: newUser.temporaryPassword,
         user_metadata: {
-          company_name: userForm.company_name,
-          full_name: userForm.contact_person
+          company_name: newUser.companyName,
+          full_name: newUser.contactPerson
         },
         email_confirm: true
       });
@@ -206,11 +204,11 @@ export const SimpleEmailManagement = () => {
 
       toast({
         title: "User Created",
-        description: `Successfully created user ${userForm.email}`,
+        description: `Successfully created user ${newUser.email}`,
       });
 
       setShowCreateUserDialog(false);
-      setUserForm({ email: '', password: '', company_name: '', contact_person: '' });
+      setNewUser({ email: '', companyName: '', contactPerson: '', temporaryPassword: '' });
       await fetchUsers();
     } catch (error) {
       console.error('Error creating user:', error);
@@ -226,16 +224,73 @@ export const SimpleEmailManagement = () => {
     const emailList = users.map(u => u.email).filter(Boolean).join('\n');
     const blob = new Blob([emailList], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `ayn-user-emails-${new Date().toISOString().split('T')[0]}.txt`;
-    link.click();
+    const downloadElement = document.createElement('a');
+    downloadElement.href = url;
+    downloadElement.download = `ayn-user-emails-${new Date().toISOString().split('T')[0]}.txt`;
+    downloadElement.click();
+    downloadElement.remove();
     URL.revokeObjectURL(url);
 
     toast({
       title: "Export Complete",
       description: "User emails exported successfully"
     });
+  };
+
+  const handleDeleteSelectedEmails = async () => {
+    if (selectedEmails.size === 0) return;
+
+    try {
+      const { error } = await supabase
+        .from('admin_emails')
+        .delete()
+        .in('id', Array.from(selectedEmails));
+
+      if (error) {
+        console.error('Error deleting emails:', error);
+        toast({
+          title: "Error",
+          description: "Failed to delete selected emails.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Update local state
+      setEmails(prev => prev.filter(email => !selectedEmails.has(email.id)));
+      setSelectedEmails(new Set());
+      setShowEmailSelection(false);
+
+      toast({
+        title: "Emails Deleted",
+        description: `Successfully deleted ${selectedEmails.size} email(s).`,
+      });
+    } catch (error) {
+      console.error('Error deleting emails:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete selected emails.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const toggleEmailSelection = (emailId: string) => {
+    const newSelected = new Set(selectedEmails);
+    if (newSelected.has(emailId)) {
+      newSelected.delete(emailId);
+    } else {
+      newSelected.add(emailId);
+    }
+    setSelectedEmails(newSelected);
+  };
+
+  const selectAllEmails = () => {
+    if (selectedEmails.size === emails.length) {
+      setSelectedEmails(new Set());
+    } else {
+      setSelectedEmails(new Set(emails.map(email => email.id)));
+    }
   };
 
   if (isLoading) {
@@ -280,8 +335,54 @@ export const SimpleEmailManagement = () => {
         <TabsContent value="emails">
           <Card>
             <CardHeader>
-              <CardTitle>Recent Emails ({emails.length})</CardTitle>
-              <CardDescription>Latest sent emails</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Recent Emails ({emails.length})</CardTitle>
+                  <CardDescription>Latest sent emails</CardDescription>
+                </div>
+                {emails.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    {!showEmailSelection ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowEmailSelection(true)}
+                      >
+                        Select Emails
+                      </Button>
+                    ) : (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={selectAllEmails}
+                        >
+                          {selectedEmails.size === emails.length ? 'Select None' : 'Select All'}
+                        </Button>
+                        {selectedEmails.size > 0 && (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={handleDeleteSelectedEmails}
+                          >
+                            Delete ({selectedEmails.size})
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setShowEmailSelection(false);
+                            setSelectedEmails(new Set());
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[400px]">
@@ -289,7 +390,15 @@ export const SimpleEmailManagement = () => {
                   {emails.map((email) => (
                     <div key={email.id} className="border rounded-lg p-3">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium">{email.subject}</span>
+                        <div className="flex items-center gap-3 flex-1">
+                          {showEmailSelection && (
+                            <Checkbox
+                              checked={selectedEmails.has(email.id)}
+                              onCheckedChange={() => toggleEmailSelection(email.id)}
+                            />
+                          )}
+                          <span className="font-medium flex-1">{email.subject}</span>
+                        </div>
                         <Badge variant={email.status === 'sent' ? 'default' : 'secondary'}>
                           {email.status}
                         </Badge>
@@ -440,8 +549,8 @@ export const SimpleEmailManagement = () => {
               <Label>Email (must be @aynn.io)</Label>
               <Input
                 type="email"
-                value={userForm.email}
-                onChange={(e) => setUserForm(prev => ({ ...prev, email: e.target.value }))}
+                value={newUser.email}
+                onChange={(e) => setNewUser(prev => ({ ...prev, email: e.target.value }))}
                 placeholder="user@aynn.io"
               />
             </div>
@@ -450,8 +559,8 @@ export const SimpleEmailManagement = () => {
               <Label>Temporary Password</Label>
               <Input
                 type="password"
-                value={userForm.password}
-                onChange={(e) => setUserForm(prev => ({ ...prev, password: e.target.value }))}
+                value={newUser.temporaryPassword}
+                onChange={(e) => setNewUser(prev => ({ ...prev, temporaryPassword: e.target.value }))}
                 placeholder="Temporary password"
               />
             </div>
@@ -459,8 +568,8 @@ export const SimpleEmailManagement = () => {
             <div>
               <Label>Company Name</Label>
               <Input
-                value={userForm.company_name}
-                onChange={(e) => setUserForm(prev => ({ ...prev, company_name: e.target.value }))}
+                value={newUser.companyName}
+                onChange={(e) => setNewUser(prev => ({ ...prev, companyName: e.target.value }))}
                 placeholder="Company name"
               />
             </div>
@@ -468,8 +577,8 @@ export const SimpleEmailManagement = () => {
             <div>
               <Label>Contact Person</Label>
               <Input
-                value={userForm.contact_person}
-                onChange={(e) => setUserForm(prev => ({ ...prev, contact_person: e.target.value }))}
+                value={newUser.contactPerson}
+                onChange={(e) => setNewUser(prev => ({ ...prev, contactPerson: e.target.value }))}
                 placeholder="Contact person name"
               />
             </div>
