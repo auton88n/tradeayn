@@ -1032,6 +1032,8 @@ export default function Dashboard({ user }: DashboardProps) {
                 checked={allowPersonalization}
                 onCheckedChange={setAllowPersonalization}
                 disabled={!hasAccess}
+                size="sm"
+                rtl={language === 'ar'}
                 className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted"
               />
               <Label htmlFor="personalization" className="text-xs text-muted-foreground cursor-pointer sr-only">
