@@ -12,6 +12,7 @@ import { AdminDashboard } from './admin/AdminDashboard';
 import { UserManagement } from './admin/UserManagement';
 import { SystemSettings } from './admin/SystemSettings';
 import { SystemMonitoring } from './admin/SystemMonitoring';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Profile {
   id: string;
@@ -79,6 +80,7 @@ interface SystemConfig {
 }
 
 export const AdminPanel = () => {
+  const { t, language } = useLanguage();
   // Core State
   const [allUsers, setAllUsers] = useState<AccessGrantWithProfile[]>([]);
   const [usageStats, setUsageStats] = useState<UsageStats[]>([]);
@@ -299,58 +301,60 @@ export const AdminPanel = () => {
   if (isLoading) {
     return (
       <Card className="p-6">
-        <div className="flex items-center gap-3">
+        <div className={`flex items-center gap-3 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
           <Activity className="w-5 h-5 animate-spin" />
-          <span>Loading admin panel...</span>
+          <span>{t('admin.loading')}</span>
         </div>
       </Card>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       {/* Header with Real-time Controls */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-3">
+      <div className={`flex items-center justify-between ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+        <div className={language === 'ar' ? 'text-right' : ''}>
+          <h1 className={`text-3xl font-bold flex items-center gap-3 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
             <Crown className="w-8 h-8 text-primary" />
-            Admin Control Center
+            {t('admin.title')}
           </h1>
-          <p className="text-muted-foreground">System administration and monitoring</p>
+          <p className="text-muted-foreground">{t('admin.subtitle')}</p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
+        <div className={`flex items-center gap-3 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+          <div className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
             <Activity className={`w-4 h-4 ${isRealTimeEnabled ? 'text-green-500' : 'text-gray-400'}`} />
             <Switch 
               checked={isRealTimeEnabled}
               onCheckedChange={setIsRealTimeEnabled}
+              size="sm"
+              rtl={language === 'ar'}
             />
-            <span className="text-sm">Real-time</span>
+            <span className="text-sm">{t('admin.realTime')}</span>
           </div>
           <Button onClick={fetchData} variant="outline" size="sm" disabled={isLoading}>
-            <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
+            <RefreshCw className={`w-4 h-4 ${language === 'ar' ? 'ml-2' : 'mr-2'} ${isLoading ? 'animate-spin' : ''}`} />
+            {t('admin.refresh')}
           </Button>
         </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview" className="flex items-center gap-2">
+          <TabsTrigger value="overview" className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
             <BarChart3 className="w-4 h-4" />
-            Dashboard
+            {t('admin.dashboard')}
           </TabsTrigger>
-          <TabsTrigger value="users" className="flex items-center gap-2">
+          <TabsTrigger value="users" className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
             <Users className="w-4 h-4" />
-            Users
+            {t('admin.users')}
           </TabsTrigger>
-          <TabsTrigger value="settings" className="flex items-center gap-2">
+          <TabsTrigger value="settings" className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
             <Settings className="w-4 h-4" />
-            Settings
+            {t('admin.settings')}
           </TabsTrigger>
-          <TabsTrigger value="system" className="flex items-center gap-2">
+          <TabsTrigger value="system" className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
             <Code2 className="w-4 h-4" />
-            System
+            {t('admin.system')}
           </TabsTrigger>
         </TabsList>
 

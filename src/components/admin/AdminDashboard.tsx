@@ -6,6 +6,7 @@ import {
   Users, Activity, Clock, MessageSquare, Gauge, Monitor, Building, Bell,
   CheckCircle, AlertTriangle
 } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface SystemMetrics {
   totalUsers: number;
@@ -48,6 +49,7 @@ interface AdminDashboardProps {
 }
 
 export const AdminDashboard = ({ systemMetrics, allUsers }: AdminDashboardProps) => {
+  const { t, language } = useLanguage();
   // Calculate weekly growth based on actual data
   const oneWeekAgo = new Date();
   oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
@@ -61,11 +63,11 @@ export const AdminDashboard = ({ systemMetrics, allUsers }: AdminDashboardProps)
   ).length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       {/* System Health Alert */}
       {systemMetrics && systemMetrics.systemHealth < 98 && (
         <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
-          <div className="flex items-center gap-2">
+          <div className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
             <AlertTriangle className="h-4 w-4 text-orange-600" />
             <span className="text-orange-800">
               System health is at {systemMetrics.systemHealth}%. Please check system monitoring for details.
@@ -77,8 +79,8 @@ export const AdminDashboard = ({ systemMetrics, allUsers }: AdminDashboardProps)
       {/* Key Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+          <CardHeader className={`flex flex-row items-center justify-between space-y-0 pb-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+            <CardTitle className="text-sm font-medium">{t('admin.totalUsers')}</CardTitle>
             <Users className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
@@ -90,8 +92,8 @@ export const AdminDashboard = ({ systemMetrics, allUsers }: AdminDashboardProps)
         </Card>
 
         <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Users</CardTitle>
+          <CardHeader className={`flex flex-row items-center justify-between space-y-0 pb-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+            <CardTitle className="text-sm font-medium">{t('admin.activeUsers')}</CardTitle>
             <Activity className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
@@ -103,21 +105,21 @@ export const AdminDashboard = ({ systemMetrics, allUsers }: AdminDashboardProps)
         </Card>
 
         <Card className="bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Requests</CardTitle>
+          <CardHeader className={`flex flex-row items-center justify-between space-y-0 pb-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+            <CardTitle className="text-sm font-medium">{t('admin.pendingRequests')}</CardTitle>
             <Clock className="h-4 w-4 text-yellow-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-yellow-700">{systemMetrics?.pendingRequests || 0}</div>
             <p className="text-xs text-yellow-600">
-              Needs review
+              {t('admin.needsReview')}
             </p>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Messages Today</CardTitle>
+          <CardHeader className={`flex flex-row items-center justify-between space-y-0 pb-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+            <CardTitle className="text-sm font-medium">{t('admin.messagesToday')}</CardTitle>
             <MessageSquare className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
@@ -129,14 +131,14 @@ export const AdminDashboard = ({ systemMetrics, allUsers }: AdminDashboardProps)
         </Card>
 
         <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">System Health</CardTitle>
+          <CardHeader className={`flex flex-row items-center justify-between space-y-0 pb-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+            <CardTitle className="text-sm font-medium">{t('admin.systemHealth')}</CardTitle>
             <Gauge className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-700">{systemMetrics?.systemHealth || 0}%</div>
             <p className="text-xs text-green-600">
-              Uptime: {systemMetrics?.uptime || '0%'}
+              {t('admin.uptime')}: {systemMetrics?.uptime || '0%'}
             </p>
           </CardContent>
         </Card>
@@ -146,29 +148,29 @@ export const AdminDashboard = ({ systemMetrics, allUsers }: AdminDashboardProps)
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
               <Monitor className="w-5 h-5" />
-              Resource Usage
+              {t('admin.resourceUsage')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <div className="flex justify-between text-sm mb-2">
-                <span>CPU Usage</span>
+              <div className={`flex justify-between text-sm mb-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+                <span>{t('admin.cpuUsage')}</span>
                 <span>{systemMetrics?.resourceUsage.cpu || 0}%</span>
               </div>
               <Progress value={systemMetrics?.resourceUsage.cpu || 0} className="h-2" />
             </div>
             <div>
-              <div className="flex justify-between text-sm mb-2">
-                <span>Memory Usage</span>
+              <div className={`flex justify-between text-sm mb-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+                <span>{t('admin.memoryUsage')}</span>
                 <span>{systemMetrics?.resourceUsage.memory || 0}%</span>
               </div>
               <Progress value={systemMetrics?.resourceUsage.memory || 0} className="h-2" />
             </div>
             <div>
-              <div className="flex justify-between text-sm mb-2">
-                <span>Disk Usage</span>
+              <div className={`flex justify-between text-sm mb-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+                <span>{t('admin.diskUsage')}</span>
                 <span>{systemMetrics?.resourceUsage.disk || 0}%</span>
               </div>
               <Progress value={systemMetrics?.resourceUsage.disk || 0} className="h-2" />
@@ -178,34 +180,34 @@ export const AdminDashboard = ({ systemMetrics, allUsers }: AdminDashboardProps)
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
               <Activity className="w-5 h-5" />
-              Performance Metrics
+              {t('admin.performanceMetrics')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="text-center p-3 rounded-lg bg-blue-50">
                 <div className="text-lg font-bold text-blue-700">{systemMetrics?.avgResponseTime}s</div>
-                <div className="text-sm text-blue-600">Avg Response</div>
+                <div className="text-sm text-blue-600">{t('admin.avgResponse')}</div>
               </div>
               <div className="text-center p-3 rounded-lg bg-red-50">
                 <div className="text-lg font-bold text-red-700">{(systemMetrics?.errorRate || 0).toFixed(2)}%</div>
-                <div className="text-sm text-red-600">Error Rate</div>
+                <div className="text-sm text-red-600">{t('admin.errorRate')}</div>
               </div>
             </div>
             <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Database</span>
-                <Badge variant="default" className="bg-green-600">Healthy</Badge>
+              <div className={`flex justify-between items-center ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+                <span className="text-sm">{t('admin.database')}</span>
+                <Badge variant="default" className="bg-green-600">{t('admin.healthy')}</Badge>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm">API Gateway</span>
-                <Badge variant="default" className="bg-green-600">Online</Badge>
+              <div className={`flex justify-between items-center ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+                <span className="text-sm">{t('admin.apiGateway')}</span>
+                <Badge variant="default" className="bg-green-600">{t('admin.online')}</Badge>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Webhooks</span>
-                <Badge variant="default" className="bg-green-600">Active</Badge>
+              <div className={`flex justify-between items-center ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+                <span className="text-sm">{t('admin.webhooks')}</span>
+                <Badge variant="default" className="bg-green-600">{t('admin.active')}</Badge>
               </div>
             </div>
           </CardContent>
@@ -216,25 +218,25 @@ export const AdminDashboard = ({ systemMetrics, allUsers }: AdminDashboardProps)
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
+            <CardTitle>{t('admin.recentActivity')}</CardTitle>
             <CardDescription>Latest user activities and system events</CardDescription>
           </CardHeader>
           <CardContent>
             <ScrollArea className="h-[300px]">
               <div className="space-y-3">
                 {allUsers.slice(0, 8).map((user) => (
-                  <div key={user.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50">
+                  <div key={user.id} className={`flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
                     <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                       <Building className="w-4 h-4" />
                     </div>
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{user.profiles?.company_name || 'Unknown Company'}</p>
+                    <div className={`flex-1 ${language === 'ar' ? 'text-right' : ''}`}>
+                      <p className="font-medium text-sm">{user.profiles?.company_name || t('admin.unknownCompany')}</p>
                       <p className="text-xs text-muted-foreground">
-                        {user.is_active ? 'Access granted' : 'Pending review'} • {new Date(user.created_at).toLocaleString()}
+                        {user.is_active ? t('admin.accessGranted') : t('admin.pending')} • {new Date(user.created_at).toLocaleString()}
                       </p>
                     </div>
                     <Badge variant={user.is_active ? 'default' : 'secondary'}>
-                      {user.is_active ? 'Active' : 'Pending'}
+                      {user.is_active ? t('admin.active') : t('admin.pending')}
                     </Badge>
                   </div>
                 ))}
@@ -245,26 +247,26 @@ export const AdminDashboard = ({ systemMetrics, allUsers }: AdminDashboardProps)
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
               <Bell className="w-5 h-5" />
-              System Alerts
+              {t('admin.systemAlerts')}
             </CardTitle>
             <CardDescription>Recent alerts and notifications</CardDescription>
           </CardHeader>
           <CardContent>
             <ScrollArea className="h-[300px]">
               <div className="space-y-3">
-                <div className="flex items-center gap-3 p-2 rounded-lg bg-green-50">
+                <div className={`flex items-center gap-3 p-2 rounded-lg bg-green-50 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
                   <CheckCircle className="w-4 h-4 text-green-600" />
-                  <div>
-                    <p className="text-sm font-medium">System health check passed</p>
+                  <div className={language === 'ar' ? 'text-right' : ''}>
+                    <p className="text-sm font-medium">{t('admin.systemHealthCheck')}</p>
                     <p className="text-xs text-muted-foreground">2 minutes ago</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 p-2 rounded-lg bg-blue-50">
+                <div className={`flex items-center gap-3 p-2 rounded-lg bg-blue-50 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
                   <Activity className="w-4 h-4 text-blue-600" />
-                  <div>
-                    <p className="text-sm font-medium">Auto-backup completed</p>
+                  <div className={language === 'ar' ? 'text-right' : ''}>
+                    <p className="text-sm font-medium">{t('admin.autoBackup')}</p>
                     <p className="text-xs text-muted-foreground">1 hour ago</p>
                   </div>
                 </div>
