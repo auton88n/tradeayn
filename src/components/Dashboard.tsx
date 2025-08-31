@@ -771,10 +771,14 @@ export default function Dashboard({ user }: DashboardProps) {
   const handleNewChat = () => {
     const newSessionId = crypto.randomUUID();
     setCurrentSessionId(newSessionId);
-    setMessages([]); // Clear all messages immediately
     
-    // Prevent any auto-loading by temporarily setting a flag
-    const preventAutoLoad = true;
+    // Completely clear all messages immediately and forcefully
+    setMessages([]);
+    
+    // Also clear any potential message loading
+    setTimeout(() => {
+      setMessages([]);
+    }, 100);
     
     // Force reload of recent chats to update the sidebar
     loadRecentChats();
@@ -1180,7 +1184,8 @@ export default function Dashboard({ user }: DashboardProps) {
               {/* Messages Area */}
               <ScrollArea className="flex-1 px-3 sm:px-4 lg:px-6">
                 <div className="max-w-4xl mx-auto py-4 sm:py-6 space-y-3 sm:space-y-4">
-                  {messages.length > 0 ? messages.map((message) => (
+                  {/* Only render messages if we have a valid message array and it's not empty */}
+                  {messages && messages.length > 0 ? messages.map((message) => (
                     <div
                       key={message.id}
                       className={`flex gap-2 sm:gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
