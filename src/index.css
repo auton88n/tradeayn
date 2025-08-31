@@ -239,7 +239,7 @@
   /* Mobile-Style Floating Input Bar */
   .input-area {
     position: fixed;
-    z-index: 1000;
+    z-index: 9; /* Keep under sidebar (z-10) so it never covers it */
     transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     padding: 0 12px;
   }
@@ -342,18 +342,18 @@
     margin-left: 0;
   }
 
-  /* RTL Input Area Adjustments */
+  /* RTL Input Area Adjustments for small screens when sidebar is open */
   [dir="rtl"] .input-area.sidebar-open.bottom-position,
   [dir="rtl"] .input-area.sidebar-open.center-position {
-    right: calc(50% + 120px);
-    left: auto;
+    left: calc(50% - 120px);
+    right: auto;
   }
 
   @media (min-width: 1024px) {
     [dir="rtl"] [data-state="expanded"] ~ main .input-area.bottom-position,
     [dir="rtl"] [data-state="expanded"] ~ main .input-area.center-position {
-      right: calc(50% + (var(--sidebar-width) / 2));
-      left: auto;
+      left: calc(50% - (var(--sidebar-width) / 2));
+      right: auto;
     }
   }
 
@@ -509,17 +509,17 @@
   /* Desktop: shift input when sidebar is expanded */
   @media (min-width: 1024px) {
     /* LTR: shift input to the right when sidebar is expanded */
-    [dir="ltr"][data-state="expanded"] ~ main .input-area.bottom-position,
-    [dir="ltr"][data-state="expanded"] ~ main .input-area.center-position {
+    [dir="ltr"] [data-state="expanded"] ~ main .input-area.bottom-position,
+    [dir="ltr"] [data-state="expanded"] ~ main .input-area.center-position {
       left: calc(50% + (var(--sidebar-width) / 2));
       transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
     }
     
     /* RTL: shift input to the left when sidebar is expanded */
-    [dir="rtl"][data-state="expanded"] ~ main .input-area.bottom-position,
-    [dir="rtl"][data-state="expanded"] ~ main .input-area.center-position {
-      right: calc(50% + (var(--sidebar-width) / 2));
-      left: auto;
+    [dir="rtl"] [data-state="expanded"] ~ main .input-area.bottom-position,
+    [dir="rtl"] [data-state="expanded"] ~ main .input-area.center-position {
+      left: calc(50% - (var(--sidebar-width) / 2));
+      right: auto;
       transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
     }
     
