@@ -88,6 +88,7 @@ export const SystemSettings = ({
                   type="datetime-local" 
                   value={systemConfig.maintenanceStartTime}
                   onChange={(e) => onUpdateConfig({ maintenanceStartTime: e.target.value })}
+                  className={language === 'ar' ? 'text-right' : ''}
                 />
               </div>
               
@@ -97,11 +98,12 @@ export const SystemSettings = ({
                   type="datetime-local" 
                   value={systemConfig.maintenanceEndTime}
                   onChange={(e) => onUpdateConfig({ maintenanceEndTime: e.target.value })}
+                  className={language === 'ar' ? 'text-right' : ''}
                 />
               </div>
             </div>
 
-            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className={`p-3 bg-yellow-50 border border-yellow-200 rounded-lg ${language === 'ar' ? 'text-right' : ''}`}>
               <div className={`flex items-center gap-2 mb-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
                 <AlertTriangle className="w-4 h-4 text-yellow-600" />
                 <span className="text-sm font-medium text-yellow-800">{t('admin.preview')}</span>
@@ -121,57 +123,60 @@ export const SystemSettings = ({
         {/* Default Settings */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse text-right' : ''}`}>
               <Settings className="w-5 h-5" />
-              Default User Settings
+              {t('admin.defaultUserSettings')}
             </CardTitle>
-            <CardDescription>System-wide defaults for new users</CardDescription>
+            <CardDescription className={language === 'ar' ? 'text-right' : ''}>{t('admin.defaultUserSettingsDesc')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Default Monthly Limit</label>
+              <label className={`text-sm font-medium ${language === 'ar' ? 'text-right' : ''}`}>{t('admin.defaultMonthlyLimit')}</label>
               <Input 
                 type="number" 
                 value={systemConfig.defaultMonthlyLimit}
                 onChange={(e) => onUpdateConfig({ defaultMonthlyLimit: parseInt(e.target.value) })}
+                className={language === 'ar' ? 'text-right' : ''}
               />
-              <p className="text-xs text-muted-foreground">
-                Default message limit for new users (0 = unlimited)
+              <p className={`text-xs text-muted-foreground ${language === 'ar' ? 'text-right' : ''}`}>
+                {t('admin.defaultMonthlyLimitDesc')}
               </p>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Auto-approve New Requests</label>
-              <div className="flex items-center space-x-2">
+              <label className={`text-sm font-medium ${language === 'ar' ? 'text-right' : ''}`}>{t('admin.autoApproveRequests')}</label>
+              <div className={`flex items-center space-x-2 ${language === 'ar' ? 'flex-row-reverse space-x-reverse' : ''}`}>
                 <Switch 
                   checked={systemConfig.autoApproveRequests}
                   onCheckedChange={(checked) => onUpdateConfig({ autoApproveRequests: checked })}
                 />
                 <span className="text-sm text-muted-foreground">
-                  Automatically approve new access requests
+                  {t('admin.autoApproveRequestsDesc')}
                 </span>
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Notification Email</label>
+              <label className={`text-sm font-medium ${language === 'ar' ? 'text-right' : ''}`}>{t('admin.notificationEmail')}</label>
               <Input 
                 type="email" 
                 value={systemConfig.notificationEmail}
                 onChange={(e) => onUpdateConfig({ notificationEmail: e.target.value })}
-                placeholder="admin@company.com" 
+                placeholder={t('admin.notificationEmailPlaceholder')} 
+                className={language === 'ar' ? 'text-right' : ''}
               />
-              <p className="text-xs text-muted-foreground">
-                Email for system notifications and alerts
+              <p className={`text-xs text-muted-foreground ${language === 'ar' ? 'text-right' : ''}`}>
+                {t('admin.notificationEmailDesc')}
               </p>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Session Timeout (hours)</label>
+              <label className={`text-sm font-medium ${language === 'ar' ? 'text-right' : ''}`}>{t('admin.sessionTimeout')}</label>
               <Input 
                 type="number" 
                 value={systemConfig.sessionTimeout}
                 onChange={(e) => onUpdateConfig({ sessionTimeout: parseInt(e.target.value) })}
+                className={language === 'ar' ? 'text-right' : ''}
               />
             </div>
           </CardContent>
@@ -180,60 +185,62 @@ export const SystemSettings = ({
         {/* Security Settings */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse text-right' : ''}`}>
               <Shield className="w-5 h-5" />
-              Security & Access Control
+              {t('admin.securityAccessControl')}
             </CardTitle>
-            <CardDescription>Advanced security settings and policies</CardDescription>
+            <CardDescription className={language === 'ar' ? 'text-right' : ''}>{t('admin.securityAccessControlDesc')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Require Admin Approval</label>
-              <div className="flex items-center space-x-2">
+              <label className={`text-sm font-medium ${language === 'ar' ? 'text-right' : ''}`}>{t('admin.requireAdminApproval')}</label>
+              <div className={`flex items-center space-x-2 ${language === 'ar' ? 'flex-row-reverse space-x-reverse' : ''}`}>
                 <Switch 
                   checked={systemConfig.requireAdminApproval}
                   onCheckedChange={(checked) => onUpdateConfig({ requireAdminApproval: checked })}
                 />
                 <span className="text-sm text-muted-foreground">
-                  All new users require manual approval
+                  {t('admin.requireAdminApprovalDesc')}
                 </span>
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Enable Audit Logging</label>
-              <div className="flex items-center space-x-2">
+              <label className={`text-sm font-medium ${language === 'ar' ? 'text-right' : ''}`}>{t('admin.enableAuditLogging')}</label>
+              <div className={`flex items-center space-x-2 ${language === 'ar' ? 'flex-row-reverse space-x-reverse' : ''}`}>
                 <Switch 
                   checked={systemConfig.enableAuditLogging}
                   onCheckedChange={(checked) => onUpdateConfig({ enableAuditLogging: checked })}
                 />
                 <span className="text-sm text-muted-foreground">
-                  Log all administrative actions
+                  {t('admin.enableAuditLoggingDesc')}
                 </span>
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Rate Limit (per minute)</label>
+              <label className={`text-sm font-medium ${language === 'ar' ? 'text-right' : ''}`}>{t('admin.rateLimitPerMinute')}</label>
               <Input 
                 type="number" 
                 value={systemConfig.rateLimitPerMinute}
                 onChange={(e) => onUpdateConfig({ rateLimitPerMinute: parseInt(e.target.value) })}
+                className={language === 'ar' ? 'text-right' : ''}
               />
-              <p className="text-xs text-muted-foreground">
-                Maximum requests per minute per user
+              <p className={`text-xs text-muted-foreground ${language === 'ar' ? 'text-right' : ''}`}>
+                {t('admin.rateLimitPerMinuteDesc')}
               </p>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Max Concurrent Sessions</label>
+              <label className={`text-sm font-medium ${language === 'ar' ? 'text-right' : ''}`}>{t('admin.maxConcurrentSessions')}</label>
               <Input 
                 type="number" 
                 value={systemConfig.maxConcurrentSessions}
                 onChange={(e) => onUpdateConfig({ maxConcurrentSessions: parseInt(e.target.value) })}
+                className={language === 'ar' ? 'text-right' : ''}
               />
-              <p className="text-xs text-muted-foreground">
-                Maximum simultaneous sessions per user
+              <p className={`text-xs text-muted-foreground ${language === 'ar' ? 'text-right' : ''}`}>
+                {t('admin.maxConcurrentSessionsDesc')}
               </p>
             </div>
           </CardContent>
@@ -242,39 +249,39 @@ export const SystemSettings = ({
         {/* System Maintenance */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse text-right' : ''}`}>
               <Server className="w-5 h-5" />
-              System Maintenance
+              {t('admin.systemMaintenance')}
             </CardTitle>
-            <CardDescription>Perform system maintenance tasks</CardDescription>
+            <CardDescription className={language === 'ar' ? 'text-right' : ''}>{t('admin.systemMaintenanceDesc')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 gap-3">
               <Button
                 variant="outline"
                 onClick={() => onPerformMaintenance('backup')}
-                className="justify-start"
+                className={`${language === 'ar' ? 'flex-row-reverse' : ''} justify-start`}
               >
-                <Zap className="w-4 h-4 mr-2" />
-                Create Database Backup
+                <Zap className={`w-4 h-4 ${language === 'ar' ? 'ml-2' : 'mr-2'}`} />
+                {t('admin.createDatabaseBackup')}
               </Button>
               
               <Button
                 variant="outline"
                 onClick={() => onPerformMaintenance('clear_cache')}
-                className="justify-start"
+                className={`${language === 'ar' ? 'flex-row-reverse' : ''} justify-start`}
               >
-                <Zap className="w-4 h-4 mr-2" />
-                Clear System Cache
+                <Zap className={`w-4 h-4 ${language === 'ar' ? 'ml-2' : 'mr-2'}`} />
+                {t('admin.clearSystemCache')}
               </Button>
               
               <Button
                 variant="outline"
                 onClick={() => onPerformMaintenance('health_check')}
-                className="justify-start"
+                className={`${language === 'ar' ? 'flex-row-reverse' : ''} justify-start`}
               >
-                <Zap className="w-4 h-4 mr-2" />
-                Run Health Check
+                <Zap className={`w-4 h-4 ${language === 'ar' ? 'ml-2' : 'mr-2'}`} />
+                {t('admin.runHealthCheck')}
               </Button>
             </div>
           </CardContent>
@@ -284,61 +291,61 @@ export const SystemSettings = ({
       {/* Feature Toggles */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse text-right' : ''}`}>
             <Target className="w-5 h-5" />
-            Feature Toggles & Experimental Features
+            {t('admin.featureToggles')}
           </CardTitle>
-          <CardDescription>Enable or disable system features</CardDescription>
+          <CardDescription className={language === 'ar' ? 'text-right' : ''}>{t('admin.featureTogglesDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">Real-time Analytics</div>
-                  <div className="text-sm text-muted-foreground">Live usage monitoring</div>
+              <div className={`flex items-center justify-between ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+                <div className={language === 'ar' ? 'text-right' : ''}>
+                  <div className="font-medium">{t('admin.realtimeAnalytics')}</div>
+                  <div className="text-sm text-muted-foreground">{t('admin.realtimeAnalyticsDesc')}</div>
                 </div>
                 <Switch defaultChecked />
               </div>
               
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">Advanced User Filtering</div>
-                  <div className="text-sm text-muted-foreground">Enhanced search capabilities</div>
+              <div className={`flex items-center justify-between ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+                <div className={language === 'ar' ? 'text-right' : ''}>
+                  <div className="font-medium">{t('admin.advancedUserFiltering')}</div>
+                  <div className="text-sm text-muted-foreground">{t('admin.advancedUserFilteringDesc')}</div>
                 </div>
                 <Switch defaultChecked />
               </div>
               
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">Bulk Operations</div>
-                  <div className="text-sm text-muted-foreground">Multi-user actions</div>
+              <div className={`flex items-center justify-between ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+                <div className={language === 'ar' ? 'text-right' : ''}>
+                  <div className="font-medium">{t('admin.bulkOperations')}</div>
+                  <div className="text-sm text-muted-foreground">{t('admin.bulkOperationsDesc')}</div>
                 </div>
                 <Switch defaultChecked />
               </div>
             </div>
 
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">API Rate Limiting</div>
-                  <div className="text-sm text-muted-foreground">Automatic throttling</div>
+              <div className={`flex items-center justify-between ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+                <div className={language === 'ar' ? 'text-right' : ''}>
+                  <div className="font-medium">{t('admin.apiRateLimiting')}</div>
+                  <div className="text-sm text-muted-foreground">{t('admin.apiRateLimitingDesc')}</div>
                 </div>
                 <Switch defaultChecked />
               </div>
               
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">Security Alerts</div>
-                  <div className="text-sm text-muted-foreground">Instant notifications</div>
+              <div className={`flex items-center justify-between ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+                <div className={language === 'ar' ? 'text-right' : ''}>
+                  <div className="font-medium">{t('admin.securityAlerts')}</div>
+                  <div className="text-sm text-muted-foreground">{t('admin.securityAlertsDesc')}</div>
                 </div>
                 <Switch defaultChecked />
               </div>
               
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">Maintenance Mode</div>
-                  <div className="text-sm text-muted-foreground">System maintenance banner</div>
+              <div className={`flex items-center justify-between ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+                <div className={language === 'ar' ? 'text-right' : ''}>
+                  <div className="font-medium">{t('admin.maintenanceMode')}</div>
+                  <div className="text-sm text-muted-foreground">{t('admin.maintenanceBanner')}</div>
                 </div>
                 <Switch 
                   checked={systemConfig.enableMaintenance}
@@ -353,27 +360,27 @@ export const SystemSettings = ({
       {/* System Information */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse text-right' : ''}`}>
             <Info className="w-5 h-5" />
-            System Information
+            {t('admin.systemInformation')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center p-4 rounded-lg bg-blue-50">
-              <div className="font-medium">System Version</div>
+            <div className={`text-center p-4 rounded-lg bg-blue-50 ${language === 'ar' ? 'text-right' : ''}`}>
+              <div className="font-medium">{t('admin.systemVersion')}</div>
               <div className="text-2xl font-bold text-blue-600">v2.4.1</div>
-              <div className="text-xs text-blue-500">Latest stable</div>
+              <div className="text-xs text-blue-500">{t('admin.latestStable')}</div>
             </div>
-            <div className="text-center p-4 rounded-lg bg-green-50">
-              <div className="font-medium">Database Version</div>
+            <div className={`text-center p-4 rounded-lg bg-green-50 ${language === 'ar' ? 'text-right' : ''}`}>
+              <div className="font-medium">{t('admin.databaseVersion')}</div>
               <div className="text-2xl font-bold text-green-600">PostgreSQL 15</div>
-              <div className="text-xs text-green-500">Supabase hosted</div>
+              <div className="text-xs text-green-500">{t('admin.supabaseHosted')}</div>
             </div>
-            <div className="text-center p-4 rounded-lg bg-purple-50">
-              <div className="font-medium">Last Updated</div>
-              <div className="text-lg font-bold text-purple-600">2 days ago</div>
-              <div className="text-xs text-purple-500">Auto-updates enabled</div>
+            <div className={`text-center p-4 rounded-lg bg-purple-50 ${language === 'ar' ? 'text-right' : ''}`}>
+              <div className="font-medium">{t('admin.lastUpdated')}</div>
+              <div className="text-lg font-bold text-purple-600">{t('admin.twoDaysAgo')}</div>
+              <div className="text-xs text-purple-500">{t('admin.autoUpdatesEnabled')}</div>
             </div>
           </div>
         </CardContent>
