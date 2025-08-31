@@ -783,7 +783,7 @@ export default function Dashboard({ user }: DashboardProps) {
 
   return (
     <SidebarProvider>
-      <div className="flex h-screen w-full bg-background">
+      <div className="flex h-screen w-full bg-background" dir={language === 'ar' ? 'rtl' : 'ltr'}>
         {/* Sidebar */}
         <Sidebar collapsible="offcanvas" className="w-64">
           <SidebarHeader className="p-4">
@@ -1299,11 +1299,11 @@ export default function Dashboard({ user }: DashboardProps) {
                       value={inputMessage}
                       onChange={(e) => {
                         setInputMessage(e.target.value);
-                        // Auto-detect input direction based on content
                         const text = e.target.value;
-                        const isArabic = /[\u0600-\u06FF]/.test(text);
                         
-                        if (text.length > 0) {
+                        // Only apply auto-detection if there's actual text
+                        if (text.trim().length > 0) {
+                          const isArabic = /[\u0600-\u06FF]/.test(text);
                           if (isArabic) {
                             e.target.style.direction = 'rtl';
                             e.target.style.textAlign = 'right';
@@ -1312,7 +1312,7 @@ export default function Dashboard({ user }: DashboardProps) {
                             e.target.style.textAlign = 'left';
                           }
                         } else {
-                          // Reset to default language direction when empty
+                          // When empty, use the interface language setting
                           e.target.style.direction = language === 'ar' ? 'rtl' : 'ltr';
                           e.target.style.textAlign = language === 'ar' ? 'right' : 'left';
                         }
@@ -1343,7 +1343,7 @@ export default function Dashboard({ user }: DashboardProps) {
                     
                     {/* Typewriter Animation Placeholder */}
                     {!inputMessage && !isInputFocused && !selectedFile && (
-                      <div className={`absolute inset-0 flex items-center pointer-events-none ${language === 'ar' ? 'justify-end pr-12' : 'justify-start pl-12'}`}>
+                      <div className={`absolute inset-0 flex items-center pointer-events-none ${language === 'ar' ? 'justify-end pr-16' : 'justify-start pl-16'}`}>
                         <span className={`text-muted-foreground select-none typewriter-text ${language === 'ar' ? 'text-right' : 'text-left'}`} style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}>
                           {!hasAccess 
                             ? "Access required to send messages..."

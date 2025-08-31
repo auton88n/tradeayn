@@ -464,6 +464,21 @@
     direction: ltr;
   }
 
+  /* RTL-specific button positioning */
+  [dir="rtl"] .attachment-button {
+    right: 12px;
+    left: auto;
+  }
+
+  [dir="rtl"] .send-button {
+    left: 12px;
+    right: auto;
+  }
+
+  [dir="rtl"] .input-container {
+    direction: rtl;
+  }
+
   [dir="ltr"] .message-input::placeholder {
     text-align: left;
     direction: ltr;
