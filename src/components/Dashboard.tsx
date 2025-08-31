@@ -1304,10 +1304,6 @@ export default function Dashboard({ user }: DashboardProps) {
                       onFocus={() => setIsInputFocused(true)}
                       onBlur={() => setIsInputFocused(false)}
                       placeholder={language === 'ar' ? 'اكتب رسالتك هنا...' : 'Type your message here...'}
-                      dir={language === 'ar' ? 'rtl' : 'ltr'}
-                      style={{ 
-                        textAlign: language === 'ar' ? 'right' : 'left',
-                      }}
                       disabled={!hasAccess || !hasAcceptedTerms || isUploading}
                     />
                     

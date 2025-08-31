@@ -357,10 +357,7 @@
     }
   }
 
-  /* RTL Text direction for inputs */
-  [dir="rtl"] .message-input {
-    text-align: right;
-  }
+  /* RTL Text direction for inputs - removed duplicate */
 
   /* RTL Input Container - mirror layout with flex, keep icons inside */
   [dir="rtl"] .input-container {
@@ -444,13 +441,22 @@
   [dir="rtl"] .message-input {
     text-align: right;
     direction: rtl;
-    padding-left: 40px; /* space for send on left */
-    padding-right: 40px; /* space for attach on right */
   }
 
   [dir="rtl"] .message-input::placeholder {
     text-align: right;
     direction: rtl;
+  }
+
+  /* LTR Input Field Alignment */
+  [dir="ltr"] .message-input {
+    text-align: left;
+    direction: ltr;
+  }
+
+  [dir="ltr"] .message-input::placeholder {
+    text-align: left;
+    direction: ltr;
   }
 
 
