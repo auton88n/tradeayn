@@ -191,14 +191,24 @@ export default function Dashboard({ user }: DashboardProps) {
   useEffect(() => {
     if (isInputFocused || inputMessage.length > 0) return;
 
-    const messages = [
+    const arabicMessages = [
       "ما هي أحدث اتجاهات السوق؟",
       "كيف أحسن قمع المبيعات؟", 
       "ساعدني في استراتيجية التسعير؟",
+      "ساعدني في بحث المنافسين؟",
+      "كيف أطور استراتيجية النمو؟"
+    ];
+
+    const englishMessages = [
       "What are the latest market trends?",
       "How can I improve my sales funnel?",
-      "Help me with pricing strategy?"
+      "Help me with pricing strategy?",
+      "Research my competitors?",
+      "Help me develop growth strategy?"
     ];
+
+    // Use only the current language messages
+    const messages = language === 'ar' ? arabicMessages : englishMessages;
 
     const typeSpeed = 100;
     const deleteSpeed = 50;
@@ -1343,7 +1353,7 @@ export default function Dashboard({ user }: DashboardProps) {
                     
                     {/* Typewriter Animation Placeholder */}
                     {!inputMessage && !isInputFocused && !selectedFile && (
-                      <div className={`absolute inset-0 flex items-center pointer-events-none ${language === 'ar' ? 'justify-end pr-16' : 'justify-start pl-16'}`}>
+                      <div className={`absolute inset-0 flex items-center pointer-events-none ${language === 'ar' ? 'justify-end pr-12' : 'justify-start pl-12'}`}>
                         <span className={`text-muted-foreground select-none typewriter-text ${language === 'ar' ? 'text-right' : 'text-left'}`} style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}>
                           {!hasAccess 
                             ? "Access required to send messages..."
