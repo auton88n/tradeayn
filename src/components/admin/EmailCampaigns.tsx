@@ -15,6 +15,7 @@ import {
   Clock, CheckCircle, AlertCircle, Play, Pause, Settings
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 
 interface EmailCampaign {
@@ -48,6 +49,9 @@ export const EmailCampaigns = () => {
   const [showGroupDialog, setShowGroupDialog] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState<EmailCampaign | null>(null);
   
+  const { toast } = useToast();
+  const { t, language } = useLanguage();
+  
   // Campaign form state
   const [campaignForm, setCampaignForm] = useState({
     id: '',
@@ -72,7 +76,6 @@ export const EmailCampaigns = () => {
     }
   });
 
-  const { toast } = useToast();
 
   const fetchCampaigns = async () => {
     try {
@@ -107,8 +110,8 @@ export const EmailCampaigns = () => {
     } catch (error) {
       console.error('Error fetching campaigns:', error);
       toast({
-        title: "Error",
-        description: "Failed to fetch email campaigns",
+        title: t('admin.error'),
+        description: t('admin.fetchCampaignsError'),
         variant: "destructive"
       });
     }
@@ -144,8 +147,8 @@ export const EmailCampaigns = () => {
     } catch (error) {
       console.error('Error fetching recipient groups:', error);
       toast({
-        title: "Error",
-        description: "Failed to fetch recipient groups",
+        title: t('admin.error'),
+        description: t('admin.fetchGroupsError'),
         variant: "destructive"
       });
     }
@@ -175,8 +178,8 @@ export const EmailCampaigns = () => {
     
       return (
         <Badge variant={config.variant} className={className}>
-          <Icon className="w-3 h-3 mr-1" />
-          {status}
+          <Icon className={`w-3 h-3 ${language === 'ar' ? 'ml-1' : 'mr-1'}`} />
+          {t(`admin.${status}`)}
         </Badge>
       );
   };
@@ -190,38 +193,38 @@ export const EmailCampaigns = () => {
       announcement: 'bg-red-600'
     } as const;
     
-    return <Badge className={colors[type as keyof typeof colors] || 'bg-gray-600'}>{type}</Badge>;
+    return <Badge className={colors[type as keyof typeof colors] || 'bg-gray-600'}>{t(`admin.${type}`)}</Badge>;
   };
 
   if (isLoading) {
     return (
       <Card className="p-6">
-        <div className="flex items-center gap-3">
+        <div className={`flex items-center gap-3 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
           <Target className="w-5 h-5 animate-spin" />
-          <span>Loading email campaigns...</span>
+          <span>{t('admin.loadingCampaigns')}</span>
         </div>
       </Card>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold flex items-center gap-2">
+    <div className="space-y-6" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+      <div className={`flex items-center justify-between ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+        <div className={language === 'ar' ? 'text-right' : ''}>
+          <h2 className={`text-2xl font-bold flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
             <Target className="w-6 h-6" />
-            Email Campaigns
+            {t('admin.emailCampaigns')}
           </h2>
-          <p className="text-muted-foreground">Create and manage bulk email campaigns</p>
+          <p className="text-muted-foreground">{t('admin.emailCampaignsDesc')}</p>
         </div>
-        <div className="flex gap-2">
-          <Button onClick={() => setShowGroupDialog(true)} variant="outline">
-            <Users className="w-4 h-4 mr-2" />
-            Recipient Groups
+        <div className={`flex gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+          <Button onClick={() => setShowGroupDialog(true)} variant="outline" className={language === 'ar' ? 'flex-row-reverse' : ''}>
+            <Users className={`w-4 h-4 ${language === 'ar' ? 'ml-2' : 'mr-2'}`} />
+            {t('admin.recipientGroups')}
           </Button>
-          <Button onClick={() => setShowCampaignDialog(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            New Campaign
+          <Button onClick={() => setShowCampaignDialog(true)} className={language === 'ar' ? 'flex-row-reverse' : ''}>
+            <Plus className={`w-4 h-4 ${language === 'ar' ? 'ml-2' : 'mr-2'}`} />
+            {t('admin.newCampaign')}
           </Button>
         </div>
       </div>
@@ -230,38 +233,38 @@ export const EmailCampaigns = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Campaigns</CardTitle>
+            <CardTitle className={`text-sm font-medium ${language === 'ar' ? 'text-right' : ''}`}>{t('admin.totalCampaigns')}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{campaigns.length}</div>
+            <div className={`text-2xl font-bold ${language === 'ar' ? 'text-right' : ''}`}>{campaigns.length}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Active Campaigns</CardTitle>
+            <CardTitle className={`text-sm font-medium ${language === 'ar' ? 'text-right' : ''}`}>{t('admin.activeCampaigns')}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
+            <div className={`text-2xl font-bold text-blue-600 ${language === 'ar' ? 'text-right' : ''}`}>
               {campaigns.filter(c => c.status === 'sending' || c.status === 'scheduled').length}
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Recipients</CardTitle>
+            <CardTitle className={`text-sm font-medium ${language === 'ar' ? 'text-right' : ''}`}>{t('admin.totalRecipients')}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
+            <div className={`text-2xl font-bold text-green-600 ${language === 'ar' ? 'text-right' : ''}`}>
               {campaigns.reduce((sum, c) => sum + c.recipient_count, 0)}
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Emails Sent</CardTitle>
+            <CardTitle className={`text-sm font-medium ${language === 'ar' ? 'text-right' : ''}`}>{t('admin.emailsSent')}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600">
+            <div className={`text-2xl font-bold text-purple-600 ${language === 'ar' ? 'text-right' : ''}`}>
               {campaigns.reduce((sum, c) => sum + c.sent_count, 0)}
             </div>
           </CardContent>
@@ -271,8 +274,8 @@ export const EmailCampaigns = () => {
       {/* Campaigns List */}
       <Card>
         <CardHeader>
-          <CardTitle>Email Campaigns</CardTitle>
-          <CardDescription>Manage your email marketing and communication campaigns</CardDescription>
+          <CardTitle className={language === 'ar' ? 'text-right' : ''}>{t('admin.emailCampaigns')}</CardTitle>
+          <CardDescription className={language === 'ar' ? 'text-right' : ''}>{t('admin.manageCampaigns')}</CardDescription>
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-[500px]">
@@ -288,11 +291,11 @@ export const EmailCampaigns = () => {
                       {getStatusBadge(campaign.status)}
                       {getCampaignTypeBadge(campaign.campaign_type)}
                     </div>
-                    <p className="text-sm text-muted-foreground mb-1">{campaign.subject}</p>
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      <span>Recipients: {campaign.recipient_count}</span>
-                      <span>Sent: {campaign.sent_count}</span>
-                      <span>Created: {new Date(campaign.created_at).toLocaleDateString()}</span>
+                    <p className={`text-sm text-muted-foreground mb-1 ${language === 'ar' ? 'text-right' : ''}`}>{campaign.subject}</p>
+                    <div className={`flex items-center gap-4 text-xs text-muted-foreground ${language === 'ar' ? 'flex-row-reverse text-right' : ''}`}>
+                      <span>{t('admin.recipients')}: {campaign.recipient_count}</span>
+                      <span>{t('admin.sent')}: {campaign.sent_count}</span>
+                      <span>{t('admin.created')}: {new Date(campaign.created_at).toLocaleDateString()}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -315,25 +318,26 @@ export const EmailCampaigns = () => {
 
       {/* Campaign Dialog */}
       <Dialog open={showCampaignDialog} onOpenChange={setShowCampaignDialog}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-3xl" dir={language === 'ar' ? 'rtl' : 'ltr'}>
           <DialogHeader>
-            <DialogTitle>Create Email Campaign</DialogTitle>
-            <DialogDescription>
-              Set up a new bulk email campaign for your users
+            <DialogTitle className={language === 'ar' ? 'text-right' : ''}>{t('admin.createEmailCampaign')}</DialogTitle>
+            <DialogDescription className={language === 'ar' ? 'text-right' : ''}>
+              {t('admin.setupNewCampaign')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Campaign Name</Label>
+                <Label className={language === 'ar' ? 'text-right' : ''}>{t('admin.campaignName')}</Label>
                 <Input
                   value={campaignForm.name}
                   onChange={(e) => setCampaignForm(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="Monthly Newsletter"
+                  placeholder={t('admin.monthlyNewsletter')}
+                  className={language === 'ar' ? 'text-right' : ''}
                 />
               </div>
               <div>
-                <Label>Campaign Type</Label>
+                <Label className={language === 'ar' ? 'text-right' : ''}>{t('admin.campaignType')}</Label>
                 <Select 
                   value={campaignForm.campaign_type} 
                   onValueChange={(value) => setCampaignForm(prev => ({ ...prev, campaign_type: value }))}
@@ -342,40 +346,42 @@ export const EmailCampaigns = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="marketing">Marketing</SelectItem>
-                    <SelectItem value="newsletter">Newsletter</SelectItem>
-                    <SelectItem value="onboarding">Onboarding</SelectItem>
-                    <SelectItem value="notification">Notification</SelectItem>
-                    <SelectItem value="announcement">Announcement</SelectItem>
+                    <SelectItem value="marketing">{t('admin.marketing')}</SelectItem>
+                    <SelectItem value="newsletter">{t('admin.newsletter')}</SelectItem>
+                    <SelectItem value="onboarding">{t('admin.onboarding')}</SelectItem>
+                    <SelectItem value="notification">{t('admin.notification')}</SelectItem>
+                    <SelectItem value="announcement">{t('admin.announcement')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             
             <div>
-              <Label>Email Subject</Label>
+              <Label className={language === 'ar' ? 'text-right' : ''}>{t('admin.emailSubject')}</Label>
               <Input
                 value={campaignForm.subject}
                 onChange={(e) => setCampaignForm(prev => ({ ...prev, subject: e.target.value }))}
-                placeholder="Your monthly update from AYN"
+                placeholder={t('admin.monthlyUpdates')}
+                className={language === 'ar' ? 'text-right' : ''}
               />
             </div>
 
             <div>
-              <Label>Email Content</Label>
+              <Label className={language === 'ar' ? 'text-right' : ''}>{t('admin.emailContent')}</Label>
               <Textarea
                 value={campaignForm.content}
                 onChange={(e) => setCampaignForm(prev => ({ ...prev, content: e.target.value }))}
-                placeholder="Write your email content here..."
+                placeholder={t('admin.writeEmailContent')}
                 rows={8}
+                className={language === 'ar' ? 'text-right' : ''}
               />
             </div>
 
             <div>
-              <Label>Recipient Groups</Label>
+              <Label className={language === 'ar' ? 'text-right' : ''}>{t('admin.recipientGroupsSelect')}</Label>
               <div className="space-y-2 mt-2">
                 {recipientGroups.map((group) => (
-                  <div key={group.id} className="flex items-center space-x-2">
+                  <div key={group.id} className={`flex items-center space-x-2 ${language === 'ar' ? 'flex-row-reverse space-x-reverse' : ''}`}>
                     <Checkbox
                       id={group.id}
                       checked={campaignForm.recipient_group_ids.includes(group.id)}
@@ -393,8 +399,8 @@ export const EmailCampaigns = () => {
                         }
                       }}
                     />
-                    <Label htmlFor={group.id} className="flex-1">
-                      {group.name} ({group.recipient_count} recipients)
+                    <Label htmlFor={group.id} className={`flex-1 ${language === 'ar' ? 'text-right' : ''}`}>
+                      {group.name} ({group.recipient_count} {t('admin.recipients')})
                     </Label>
                   </div>
                 ))}
@@ -402,24 +408,25 @@ export const EmailCampaigns = () => {
             </div>
 
             <div>
-              <Label>Schedule (Optional)</Label>
+              <Label className={language === 'ar' ? 'text-right' : ''}>{t('admin.schedule')}</Label>
               <Input
                 type="datetime-local"
                 value={campaignForm.scheduled_at}
                 onChange={(e) => setCampaignForm(prev => ({ ...prev, scheduled_at: e.target.value }))}
+                className={language === 'ar' ? 'text-right' : ''}
               />
             </div>
 
-            <div className="flex justify-end gap-2">
+            <div className={`flex gap-2 ${language === 'ar' ? 'justify-start flex-row-reverse' : 'justify-end'}`}>
               <Button variant="outline" onClick={() => setShowCampaignDialog(false)}>
-                Cancel
+                {t('admin.cancel')}
               </Button>
               <Button variant="outline">
-                Save Draft
+                {t('admin.saveDraft')}
               </Button>
-              <Button>
-                <Send className="w-4 h-4 mr-2" />
-                {campaignForm.scheduled_at ? 'Schedule' : 'Send'} Campaign
+              <Button className={language === 'ar' ? 'flex-row-reverse' : ''}>
+                <Send className={`w-4 h-4 ${language === 'ar' ? 'ml-2' : 'mr-2'}`} />
+                {campaignForm.scheduled_at ? t('admin.scheduleCampaign') : t('admin.sendCampaign')}
               </Button>
             </div>
           </div>
@@ -429,11 +436,11 @@ export const EmailCampaigns = () => {
       {/* Campaign View Dialog */}
       {selectedCampaign && (
         <Dialog open={!!selectedCampaign} onOpenChange={() => setSelectedCampaign(null)}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl" dir={language === 'ar' ? 'rtl' : 'ltr'}>
             <DialogHeader>
-              <DialogTitle>{selectedCampaign.name}</DialogTitle>
-              <DialogDescription>
-                Campaign details and statistics
+              <DialogTitle className={language === 'ar' ? 'text-right' : ''}>{selectedCampaign.name}</DialogTitle>
+              <DialogDescription className={language === 'ar' ? 'text-right' : ''}>
+                {t('admin.campaignDetails')}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
@@ -443,25 +450,25 @@ export const EmailCampaigns = () => {
               </div>
               
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Recipients</Label>
+                <div className={language === 'ar' ? 'text-right' : ''}>
+                  <Label>{t('admin.recipients')}</Label>
                   <p className="text-2xl font-bold">{selectedCampaign.recipient_count}</p>
                 </div>
-                <div>
-                  <Label>Sent</Label>
+                <div className={language === 'ar' ? 'text-right' : ''}>
+                  <Label>{t('admin.sent')}</Label>
                   <p className="text-2xl font-bold text-green-600">{selectedCampaign.sent_count}</p>
                 </div>
               </div>
 
-              <div>
-                <Label>Subject</Label>
+              <div className={language === 'ar' ? 'text-right' : ''}>
+                <Label>{t('admin.subject')}</Label>
                 <p className="font-medium">{selectedCampaign.subject}</p>
               </div>
 
-              <div>
-                <Label>Content</Label>
+              <div className={language === 'ar' ? 'text-right' : ''}>
+                <Label>{t('admin.content')}</Label>
                 <div className="border rounded-lg p-4 bg-muted/30">
-                  <pre className="whitespace-pre-wrap text-sm">{selectedCampaign.content}</pre>
+                  <pre className={`whitespace-pre-wrap text-sm ${language === 'ar' ? 'text-right' : ''}`}>{selectedCampaign.content}</pre>
                 </div>
               </div>
             </div>
