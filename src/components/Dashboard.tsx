@@ -1293,7 +1293,7 @@ export default function Dashboard({ user }: DashboardProps) {
                   />
                   
                   {/* Input Field */}
-                  <div className="flex-1 relative" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+                  <div className="flex-1 relative">
                     <input
                       ref={inputRef}
                       type="text"
@@ -1303,7 +1303,11 @@ export default function Dashboard({ user }: DashboardProps) {
                       onKeyPress={handleKeyPress}
                       onFocus={() => setIsInputFocused(true)}
                       onBlur={() => setIsInputFocused(false)}
-                      placeholder=""
+                      placeholder={language === 'ar' ? 'اكتب رسالتك هنا...' : 'Type your message here...'}
+                      dir={language === 'ar' ? 'rtl' : 'ltr'}
+                      style={{ 
+                        textAlign: language === 'ar' ? 'right' : 'left',
+                      }}
                       disabled={!hasAccess || !hasAcceptedTerms || isUploading}
                     />
                     
