@@ -362,9 +362,10 @@
     text-align: right;
   }
 
-  /* RTL Input Container - Keep flex direction normal for proper button positioning */
+  /* RTL Input Container - mirror layout with flex, keep icons inside */
   [dir="rtl"] .input-container {
-    direction: ltr; /* Keep container LTR to properly position buttons */
+    direction: rtl;
+    flex-direction: row-reverse;
   }
 
   /* RTL Margin and Padding Adjustments */
@@ -443,8 +444,8 @@
   [dir="rtl"] .message-input {
     text-align: right;
     direction: rtl;
-    padding-left: 44px;
-    padding-right: 44px;
+    padding-left: 40px; /* space for send on left */
+    padding-right: 40px; /* space for attach on right */
   }
 
   [dir="rtl"] .message-input::placeholder {
@@ -453,19 +454,19 @@
   }
 
 
-  /* RTL Send Button - Move to Left Side */
+  /* RTL Send Button - keep inside on the left via flex order */
   [dir="rtl"] .send-button {
-    position: absolute;
-    left: 12px;
-    right: auto;
+    position: static;
+    margin-left: 8px;
+    margin-right: 0;
   }
 
-  /* RTL Attachment Button - Move to Right Side with Better Spacing */
+  /* RTL Attachment Button - keep inside on the right via flex order */
   [dir="rtl"] .attachment-button {
-    position: absolute;
-    right: 16px;
-    left: auto;
-    transform: translateY(-50%);
+    position: static;
+    margin-right: 8px;
+    margin-left: 0;
+    transform: none;
   }
 
   /* RTL File Types Dropdown Positioning */
@@ -496,13 +497,15 @@
     }
     
     [dir="rtl"] .send-button {
-      left: 8px;
-      right: auto;
+      position: static;
+      margin-left: 6px;
+      margin-right: 0;
     }
     
     [dir="rtl"] .attachment-button {
-      right: 16px;
-      left: auto;
+      position: static;
+      margin-right: 6px;
+      margin-left: 0;
     }
   }
 
