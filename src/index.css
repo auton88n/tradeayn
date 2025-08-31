@@ -290,19 +290,19 @@
     .input-area.bottom-position {
       bottom: 16px;
     }
-  }
 
-  /* Adjust input area when sidebar is open */
-  @media (max-width: 1023px) {
-    .input-area.sidebar-open.bottom-position {
-      left: calc(50% + 120px);
-      width: calc(100% - 280px);
+    /* Tablet sidebar adjustments */
+    .input-area.sidebar-open.center-position {
+      left: calc(50% + 140px);
+      transform: translateX(-50%);
+      width: calc(100% - 320px);
       max-width: 400px;
     }
     
-    .input-area.sidebar-open.center-position {
-      left: calc(50% + 120px);
-      width: calc(100% - 280px);
+    .input-area.sidebar-open.bottom-position {
+      left: calc(50% + 140px);
+      transform: translateX(-50%);
+      width: calc(100% - 320px);
       max-width: 400px;
     }
   }
