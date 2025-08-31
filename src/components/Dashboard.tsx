@@ -1233,7 +1233,7 @@ export default function Dashboard({ user }: DashboardProps) {
                   </div>
                 )}
 
-                <div className={`input-container ${isDragOver ? 'drag-over' : ''}`}>
+                <div className={`input-container ${isDragOver ? 'drag-over' : ''}`} dir={language === 'ar' ? 'rtl' : 'ltr'}>
                   {/* Attachment Button with File Types Dropdown */}
                   <div className="relative">
                     <button 
@@ -1297,7 +1297,7 @@ export default function Dashboard({ user }: DashboardProps) {
                     <input
                       ref={inputRef}
                       type="text"
-                      className="message-input"
+                      className={`message-input ${language === 'ar' ? 'text-right' : 'text-left'}`}
                       value={inputMessage}
                       onChange={(e) => setInputMessage(e.target.value)}
                       onKeyPress={handleKeyPress}
@@ -1305,6 +1305,8 @@ export default function Dashboard({ user }: DashboardProps) {
                       onBlur={() => setIsInputFocused(false)}
                       placeholder=""
                       disabled={!hasAccess || !hasAcceptedTerms || isUploading}
+                      dir={language === 'ar' ? 'rtl' : 'ltr'}
+                      style={{ textAlign: language === 'ar' ? 'right' : 'left' }}
                     />
                     
                     {/* File Selected Indicator */}
@@ -1329,9 +1331,9 @@ export default function Dashboard({ user }: DashboardProps) {
                       <div className={`absolute inset-0 flex items-center pointer-events-none ${language === 'ar' ? 'justify-end pr-12' : 'justify-start pl-12'}`}>
                         <span className={`text-muted-foreground select-none typewriter-text ${language === 'ar' ? 'text-right' : 'text-left'}`} style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}>
                           {!hasAccess 
-                            ? "Access required to send messages..."
+                            ? (language === 'ar' ? 'الوصول مطلوب لإرسال الرسائل...' : 'Access required to send messages...')
                             : !hasAcceptedTerms 
-                              ? "Please accept terms to start chatting..."
+                              ? (language === 'ar' ? 'يرجى قبول الشروط لبدء المحادثة...' : 'Please accept terms to start chatting...')
                               : currentText
                           }
                         </span>

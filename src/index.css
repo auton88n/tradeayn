@@ -360,11 +360,31 @@
   /* RTL Text direction for inputs */
   [dir="rtl"] .message-input {
     text-align: right;
+    direction: rtl;
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  /* RTL Input placeholder alignment */
+  [dir="rtl"] .message-input::placeholder {
+    text-align: right;
+  }
+
+  /* RTL Typewriter text alignment */
+  [dir="rtl"] .typewriter-text {
+    text-align: right;
+    direction: rtl;
   }
 
   /* RTL Button Positioning in Input Container */
   [dir="rtl"] .input-container {
     flex-direction: row-reverse;
+  }
+
+  /* RTL Input container spacing */
+  [dir="rtl"] .input-container > * + * {
+    margin-right: 0.5rem;
+    margin-left: 0;
   }
 
   /* RTL Margin and Padding Adjustments */
