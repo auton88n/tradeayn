@@ -262,8 +262,31 @@
     max-width: 600px;
   }
 
-  /* Mobile specific adjustments */
-  @media (max-width: 640px) {
+  /* Mobile portrait (320px - 480px) */
+  @media (max-width: 480px) {
+    .input-area {
+      padding: 0 6px;
+    }
+    
+    .input-area.center-position,
+    .input-area.bottom-position {
+      width: calc(100% - 12px);
+      max-width: none;
+    }
+    
+    .input-area.bottom-position {
+      bottom: 6px;
+    }
+    
+    .input-container {
+      padding: 6px 8px;
+      border-radius: 16px;
+      gap: 8px;
+    }
+  }
+
+  /* Mobile landscape / larger phones (481px - 640px) */
+  @media (min-width: 481px) and (max-width: 640px) {
     .input-area {
       padding: 0 8px;
     }
@@ -277,33 +300,97 @@
     .input-area.bottom-position {
       bottom: 8px;
     }
+    
+    .input-container {
+      padding: 8px 12px;
+      border-radius: 18px;
+      gap: 10px;
+    }
   }
 
-  /* Tablet adjustments */
-  @media (min-width: 641px) and (max-width: 1023px) {
+  /* Tablet portrait (641px - 768px) */
+  @media (min-width: 641px) and (max-width: 768px) {
     .input-area.center-position,
     .input-area.bottom-position {
       width: calc(100% - 32px);
-      max-width: 500px;
+      max-width: 480px;
+    }
+    
+    .input-area.bottom-position {
+      bottom: 12px;
+    }
+    
+    .input-container {
+      padding: 10px 14px;
+      border-radius: 22px;
+      gap: 12px;
+    }
+  }
+
+  /* Tablet landscape (769px - 1023px) */
+  @media (min-width: 769px) and (max-width: 1023px) {
+    .input-area.center-position,
+    .input-area.bottom-position {
+      width: calc(100% - 40px);
+      max-width: 520px;
     }
     
     .input-area.bottom-position {
       bottom: 16px;
     }
+    
+    .input-container {
+      padding: 12px 16px;
+      border-radius: 24px;
+      gap: 12px;
+    }
   }
 
-  /* Adjust input area when sidebar is open */
-  @media (max-width: 1023px) {
-    .input-area.sidebar-open.bottom-position {
-      left: calc(50% + 120px);
-      width: calc(100% - 280px);
-      max-width: 400px;
+  /* Desktop small (1024px - 1366px) */
+  @media (min-width: 1024px) and (max-width: 1366px) {
+    .input-area.center-position,
+    .input-area.bottom-position {
+      width: calc(100% - 48px);
+      max-width: 580px;
     }
     
+    .input-area.bottom-position {
+      bottom: 20px;
+    }
+  }
+
+  /* Desktop large (1367px+) */
+  @media (min-width: 1367px) {
+    .input-area.center-position,
+    .input-area.bottom-position {
+      width: calc(100% - 60px);
+      max-width: 600px;
+    }
+    
+    .input-area.bottom-position {
+      bottom: 24px;
+    }
+  }
+
+  /* Adjust input area when sidebar is open - Mobile */
+  @media (max-width: 640px) {
+    .input-area.sidebar-open.bottom-position,
+    .input-area.sidebar-open.center-position {
+      left: calc(50% + 100px);
+      width: calc(100% - 220px);
+      max-width: 300px;
+      min-width: 200px;
+    }
+  }
+
+  /* Adjust input area when sidebar is open - Tablet */
+  @media (min-width: 641px) and (max-width: 1023px) {
+    .input-area.sidebar-open.bottom-position,
     .input-area.sidebar-open.center-position {
       left: calc(50% + 120px);
-      width: calc(100% - 280px);
-      max-width: 400px;
+      width: calc(100% - 260px);
+      max-width: 380px;
+      min-width: 280px;
     }
   }
 
@@ -667,50 +754,113 @@
     cursor: not-allowed;
   }
 
-  /* Responsive Adjustments */
-  @media (max-width: 640px) {
-    .input-area.bottom-position {
-      bottom: 8px;
+  /* Mobile Portrait - Extra Small Phones */
+  @media (max-width: 480px) {
+    .send-button {
+      width: 28px;
+      height: 28px;
+      min-width: 28px;
+      border-radius: 14px;
     }
     
-    .input-container {
-      padding: 8px 10px;
-      border-radius: 18px;
+    .attachment-button {
+      width: 24px;
+      height: 24px;
+      min-width: 24px;
+      border-radius: 12px;
     }
     
+    .message-input {
+      font-size: 14px;
+      padding: 4px 0;
+    }
+  }
+
+  /* Mobile Landscape - Standard Phones */
+  @media (min-width: 481px) and (max-width: 640px) {
     .send-button {
       width: 32px;
       height: 32px;
       min-width: 32px;
+      border-radius: 16px;
     }
     
     .attachment-button {
       width: 28px;
       height: 28px;
       min-width: 28px;
+      border-radius: 14px;
     }
     
-    .chat-input {
-      font-size: 14px;
+    .message-input {
+      font-size: 15px;
       padding: 6px 0;
     }
   }
 
-  @media (min-width: 641px) and (max-width: 1023px) {
-    .input-area.bottom-position {
-      bottom: 12px;
+  /* Tablet Portrait */
+  @media (min-width: 641px) and (max-width: 768px) {
+    .send-button {
+      width: 34px;
+      height: 34px;
+      min-width: 34px;
+      border-radius: 17px;
     }
     
+    .attachment-button {
+      width: 30px;
+      height: 30px;
+      min-width: 30px;
+      border-radius: 15px;
+    }
+    
+    .message-input {
+      font-size: 15px;
+      padding: 7px 0;
+    }
+  }
+
+  /* Tablet Landscape */
+  @media (min-width: 769px) and (max-width: 1023px) {
     .send-button {
       width: 36px;
       height: 36px;
       min-width: 36px;
+      border-radius: 18px;
     }
     
     .attachment-button {
       width: 32px;
       height: 32px;
       min-width: 32px;
+      border-radius: 16px;
+    }
+    
+    .message-input {
+      font-size: 16px;
+      padding: 8px 0;
+    }
+  }
+
+  /* Desktop and larger screens */
+  @media (min-width: 1024px) {
+    .send-button {
+      width: 36px;
+      height: 36px;
+      min-width: 36px;
+      border-radius: 18px;
+    }
+    
+    .attachment-button {
+      width: 32px;
+      height: 32px;
+      min-width: 32px;
+      border-radius: 16px;
+    }
+    
+    .message-input {
+      font-size: 16px;
+      padding: 8px 0;
     }
   }
 }
