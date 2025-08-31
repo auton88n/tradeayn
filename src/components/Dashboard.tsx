@@ -1292,6 +1292,52 @@ export default function Dashboard({ user }: DashboardProps) {
                     className="hidden"
                   />
                   
+                  {/* Input Field */}
+                  <div className="flex-1 relative">
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      className="message-input"
+                      value={inputMessage}
+                      onChange={(e) => setInputMessage(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      onFocus={() => setIsInputFocused(true)}
+                      onBlur={() => setIsInputFocused(false)}
+                      placeholder=""
+                      disabled={!hasAccess || !hasAcceptedTerms || isUploading}
+                    />
+                    
+                    {/* File Selected Indicator */}
+                    {selectedFile && (
+                      <div className="absolute -top-12 left-0 bg-primary text-primary-foreground px-3 py-1 rounded-lg text-sm flex items-center gap-2">
+                        <Paperclip className="w-3 h-3" />
+                        <span>{selectedFile.name}</span>
+                        <button 
+                          onClick={() => {
+                            setSelectedFile(null);
+                            if (fileInputRef.current) fileInputRef.current.value = '';
+                          }}
+                          className="text-primary-foreground hover:text-primary-foreground/80"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    )}
+                    
+                    {/* Typewriter Animation Placeholder */}
+                    {!inputMessage && !isInputFocused && !selectedFile && (
+                      <div className={`absolute inset-0 flex items-center pointer-events-none ${language === 'ar' ? 'justify-end pr-12' : 'justify-start pl-12'}`}>
+                        <span className={`text-muted-foreground select-none typewriter-text ${language === 'ar' ? 'text-right' : 'text-left'}`} style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}>
+                          {!hasAccess 
+                            ? "Access required to send messages..."
+                            : !hasAcceptedTerms 
+                              ? "Please accept terms to start chatting..."
+                              : currentText
+                          }
+                        </span>
+                      </div>
+                    )}
+                  </div>
                   
                   {/* Send Button */}
                   <button
