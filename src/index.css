@@ -434,13 +434,27 @@
   [dir="rtl"] .input-area.sidebar-open.center-position {
     right: calc(50% + 120px);
     left: auto;
+    margin-right: 280px;
+    margin-left: 0;
+    width: calc(100% - 320px);
+    max-width: 500px;
   }
 
   @media (min-width: 1024px) {
     [dir="rtl"] [data-state="expanded"] ~ main .input-area.bottom-position,
     [dir="rtl"] [data-state="expanded"] ~ main .input-area.center-position {
-      right: calc(50% + (var(--sidebar-width) / 2));
+      right: calc(50% + 140px);
       left: auto;
+      width: calc(100% - 320px);
+      max-width: 500px;
+    }
+    
+    [dir="rtl"] .sidebar-open .input-area.bottom-position,
+    [dir="rtl"] .sidebar-open .input-area.center-position {
+      margin-right: 280px;
+      margin-left: 0;
+      width: calc(100% - 320px);
+      max-width: 500px;
     }
   }
 
@@ -623,16 +637,33 @@
     }
   }
 
-  /* Desktop: shift input to the right when sidebar is expanded */
+  /* Desktop: shift input to avoid sidebar overlap */
   @media (min-width: 1024px) {
+    /* When sidebar is expanded, shift input to the right */
     [data-state="expanded"] ~ main .input-area.bottom-position,
     [data-state="expanded"] ~ main .input-area.center-position {
-      left: calc(50% + (var(--sidebar-width) / 2));
+      left: calc(50% + 140px); /* Fixed offset to clear sidebar */
+      width: calc(100% - 320px); /* Reduce width to account for sidebar */
+      max-width: 500px;
       transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
     }
     
-    .input-area {
+    /* Default positioning when sidebar is collapsed */
+    .input-area.bottom-position,
+    .input-area.center-position {
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 48px);
+      max-width: 600px;
       transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+    
+    /* Ensure input area doesn't overlap sidebar when it's open */
+    .sidebar-open .input-area.bottom-position,
+    .sidebar-open .input-area.center-position {
+      margin-left: 280px; /* Add left margin to clear sidebar */
+      width: calc(100% - 320px);
+      max-width: 500px;
     }
   }
 
