@@ -1291,11 +1291,11 @@ export default function Dashboard({ user }: DashboardProps) {
                   </div>
                 )}
 
-                <div className={`input-container ${isDragOver ? 'drag-over' : ''}`}>
+                <div className={`input-container relative flex items-center bg-background border border-border rounded-2xl sm:rounded-3xl p-3 sm:p-4 gap-3 sm:gap-4 shadow-lg backdrop-blur-lg ${isDragOver ? 'drag-over border-primary bg-primary/5' : ''}`} dir={language === 'ar' ? 'rtl' : 'ltr'}>
                   {/* Attachment Button with File Types Dropdown */}
                   <div className="relative">
                     <button 
-                      className="attachment-button group"
+                      className={`flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-muted hover:bg-muted-foreground/10 transition-colors flex-shrink-0 ${language === 'ar' ? 'order-3' : 'order-1'}`}
                       onClick={handleAttachmentClick}
                       onMouseEnter={() => setShowFileTypes(true)}
                       onMouseLeave={() => setShowFileTypes(false)}
@@ -1307,7 +1307,7 @@ export default function Dashboard({ user }: DashboardProps) {
                     
                     {/* File Types Dropdown */}
                     {showFileTypes && !isDragOver && (
-                      <div className="absolute bottom-full left-0 mb-2 bg-background border border-border rounded-lg shadow-lg p-3 min-w-[220px] z-50">
+                      <div className={`absolute bottom-full mb-2 bg-background border border-border rounded-lg shadow-lg p-3 min-w-[220px] z-50 ${language === 'ar' ? 'right-0' : 'left-0'}`}>
                         <div className="text-xs font-semibold text-foreground mb-2">📎 Accepted file types:</div>
                         <div className="space-y-2">
                           <div className="flex items-center gap-2 text-xs">
@@ -1351,11 +1351,11 @@ export default function Dashboard({ user }: DashboardProps) {
                   />
                   
                   {/* Input Field */}
-                  <div className="flex-1 relative">
+                  <div className={`flex-1 relative ${language === 'ar' ? 'order-2' : 'order-2'}`}>
                     <input
                       ref={inputRef}
                       type="text"
-                      className="message-input"
+                      className={`w-full bg-transparent border-none outline-none text-sm sm:text-base placeholder:text-muted-foreground ${language === 'ar' ? 'text-right' : 'text-left'}`}
                       value={inputMessage}
                       onChange={(e) => setInputMessage(e.target.value)}
                       onKeyPress={handleKeyPress}
@@ -1363,6 +1363,7 @@ export default function Dashboard({ user }: DashboardProps) {
                       onBlur={() => setIsInputFocused(false)}
                       placeholder=""
                       disabled={!hasAccess || !hasAcceptedTerms || isUploading}
+                      style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}
                     />
                     
                     {/* File Selected Indicator */}
@@ -1384,8 +1385,8 @@ export default function Dashboard({ user }: DashboardProps) {
                     
                     {/* Typewriter Animation Placeholder */}
                     {!inputMessage && !isInputFocused && !selectedFile && (
-                      <div className={`absolute inset-0 flex items-center pointer-events-none ${language === 'ar' ? 'justify-end pr-12' : 'justify-start pl-12'}`}>
-                        <span className={`text-muted-foreground select-none typewriter-text ${language === 'ar' ? 'text-right' : 'text-left'}`} style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}>
+                      <div className={`absolute inset-0 flex items-center pointer-events-none ${language === 'ar' ? 'justify-end pr-2' : 'justify-start pl-2'}`}>
+                        <span className={`text-muted-foreground select-none ${language === 'ar' ? 'text-right' : 'text-left'}`} style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}>
                           {!hasAccess 
                             ? "Access required to send messages..."
                             : !hasAcceptedTerms 
@@ -1399,7 +1400,7 @@ export default function Dashboard({ user }: DashboardProps) {
                   
                   {/* Send Button */}
                   <button
-                    className="send-button"
+                    className={`flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 ${language === 'ar' ? 'order-1' : 'order-3'}`}
                     onClick={() => handleSendMessage()}
                     disabled={(!inputMessage.trim() && !selectedFile) || !hasAccess || !hasAcceptedTerms || isTyping || isUploading}
                   >

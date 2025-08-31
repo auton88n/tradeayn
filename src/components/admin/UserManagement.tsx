@@ -405,10 +405,10 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
 
       {/* Grant Access Dialog */}
       <Dialog open={grantDialogOpen} onOpenChange={setGrantDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md" aria-describedby="grant-access-description">
           <DialogHeader>
             <DialogTitle>{t('admin.grantAccess')}</DialogTitle>
-            <DialogDescription>
+            <DialogDescription id="grant-access-description">
               {t('admin.grantAccessDesc')} {selectedUserForGrant?.profiles?.company_name}
             </DialogDescription>
           </DialogHeader>
@@ -442,10 +442,13 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
 
       {/* View User Dialog */}
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{t('admin.userDetails')}</DialogTitle>
-          </DialogHeader>
+          <DialogContent className="sm:max-w-2xl" aria-describedby="view-user-description">
+            <DialogHeader>
+              <DialogTitle>{t('admin.userDetails')}</DialogTitle>
+              <DialogDescription id="view-user-description">
+                View detailed information about the selected user
+              </DialogDescription>
+            </DialogHeader>
           {selectedUserForView && (
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">

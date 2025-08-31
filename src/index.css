@@ -368,6 +368,75 @@
     flex-direction: row-reverse;
   }
 
+  /* Fix mobile RTL input positioning - ensure buttons stay inside */
+  @media (max-width: 640px) {
+    [dir="rtl"] .input-container {
+      position: relative;
+      display: flex;
+      align-items: center;
+      background: hsl(var(--background));
+      border: 1px solid hsl(var(--border));
+      border-radius: 1.5rem;
+      padding: 0.75rem;
+      gap: 0.75rem;
+      min-height: 48px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    [dir="rtl"] .message-input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      outline: none;
+      text-align: right;
+      direction: rtl;
+      padding: 0;
+      margin: 0;
+      font-size: 16px; /* Prevent zoom on iOS */
+    }
+
+    [dir="rtl"] .send-button,
+    [dir="rtl"] .attachment-button {
+      position: static !important;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: hsl(var(--primary));
+      color: hsl(var(--primary-foreground));
+      border: none;
+      outline: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    [dir="rtl"] .send-button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+  
+  /* Desktop RTL fixes */
+  @media (min-width: 641px) {
+    [dir="rtl"] .input-container {
+      position: relative;
+      display: flex;
+      align-items: center;
+      background: hsl(var(--background));
+      border: 1px solid hsl(var(--border));
+      border-radius: 1.75rem;
+      padding: 0.5rem;
+      gap: 0.5rem;
+      min-height: 56px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+  }
+
   /* RTL Margin and Padding Adjustments */
   [dir="rtl"] .ml-1 { margin-left: 0; margin-right: 0.25rem; }
   [dir="rtl"] .ml-2 { margin-left: 0; margin-right: 0.5rem; }
