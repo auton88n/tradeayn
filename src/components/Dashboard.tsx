@@ -187,19 +187,17 @@ export default function Dashboard({ user }: DashboardProps) {
     }
   };
 
-  // Typewriter animation effect
+  // Typewriter animation effect with dynamic placeholders
   useEffect(() => {
     if (isInputFocused || inputMessage.length > 0) return;
 
     const messages = [
-      t('dashboard.placeholders.askAyn'),
-      t('dashboard.placeholders.increaseRevenue'),
-      t('dashboard.placeholders.marketTrends'), 
-      t('dashboard.placeholders.competitionStrategy'),
-      t('dashboard.placeholders.optimizeSales'),
-      t('dashboard.placeholders.growthOpportunities'),
-      t('dashboard.placeholders.pricingStrategy'),
-      t('dashboard.placeholders.targetMarket')
+      "ما هي أحدث اتجاهات السوق؟",
+      "كيف أحسن قمع المبيعات؟", 
+      "ساعدني في استراتيجية التسعير؟",
+      "What are the latest market trends?",
+      "How can I improve my sales funnel?",
+      "Help me with pricing strategy?"
     ];
 
     const typeSpeed = 100;
@@ -1299,11 +1297,30 @@ export default function Dashboard({ user }: DashboardProps) {
                       type="text"
                       className="message-input"
                       value={inputMessage}
-                      onChange={(e) => setInputMessage(e.target.value)}
+                      onChange={(e) => {
+                        setInputMessage(e.target.value);
+                        // Auto-detect input direction based on content
+                        const text = e.target.value;
+                        const isArabic = /[\u0600-\u06FF]/.test(text);
+                        
+                        if (text.length > 0) {
+                          if (isArabic) {
+                            e.target.style.direction = 'rtl';
+                            e.target.style.textAlign = 'right';
+                          } else {
+                            e.target.style.direction = 'ltr';  
+                            e.target.style.textAlign = 'left';
+                          }
+                        } else {
+                          // Reset to default language direction when empty
+                          e.target.style.direction = language === 'ar' ? 'rtl' : 'ltr';
+                          e.target.style.textAlign = language === 'ar' ? 'right' : 'left';
+                        }
+                      }}
                       onKeyPress={handleKeyPress}
                       onFocus={() => setIsInputFocused(true)}
                       onBlur={() => setIsInputFocused(false)}
-                      placeholder={language === 'ar' ? 'اكتب رسالتك هنا...' : 'Type your message here...'}
+                      placeholder={currentText}
                       disabled={!hasAccess || !hasAcceptedTerms || isUploading}
                     />
                     

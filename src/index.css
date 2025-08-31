@@ -437,7 +437,18 @@
     justify-content: flex-start;
   }
 
-  /* RTL Input Field Alignment */
+  /* Dynamic placeholder direction based on content */
+  .message-input[style*="direction: rtl"]::placeholder {
+    text-align: right;
+    direction: rtl;
+  }
+
+  .message-input[style*="direction: ltr"]::placeholder {
+    text-align: left;
+    direction: ltr;
+  }
+
+  /* Default RTL/LTR styles */
   [dir="rtl"] .message-input {
     text-align: right;
     direction: rtl;
@@ -448,7 +459,6 @@
     direction: rtl;
   }
 
-  /* LTR Input Field Alignment */
   [dir="ltr"] .message-input {
     text-align: left;
     direction: ltr;
