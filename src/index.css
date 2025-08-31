@@ -362,9 +362,9 @@
     text-align: right;
   }
 
-  /* RTL Button Positioning in Input Container */
+  /* RTL Input Container - Keep flex direction normal for proper button positioning */
   [dir="rtl"] .input-container {
-    flex-direction: row-reverse;
+    direction: ltr; /* Keep container LTR to properly position buttons */
   }
 
   /* RTL Margin and Padding Adjustments */
@@ -452,10 +452,6 @@
     direction: rtl;
   }
 
-  /* RTL Button Positioning in Input Container */
-  [dir="rtl"] .input-container {
-    direction: ltr; /* Keep container LTR to properly position buttons */
-  }
 
   /* RTL Send Button - Move to Left Side */
   [dir="rtl"] .send-button {
@@ -510,11 +506,20 @@
     }
   }
 
-  /* Desktop: shift input to the right when sidebar is expanded */
+  /* Desktop: shift input when sidebar is expanded */
   @media (min-width: 1024px) {
-    [data-state="expanded"] ~ main .input-area.bottom-position,
-    [data-state="expanded"] ~ main .input-area.center-position {
+    /* LTR: shift input to the right when sidebar is expanded */
+    [dir="ltr"][data-state="expanded"] ~ main .input-area.bottom-position,
+    [dir="ltr"][data-state="expanded"] ~ main .input-area.center-position {
       left: calc(50% + (var(--sidebar-width) / 2));
+      transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+    
+    /* RTL: shift input to the left when sidebar is expanded */
+    [dir="rtl"][data-state="expanded"] ~ main .input-area.bottom-position,
+    [dir="rtl"][data-state="expanded"] ~ main .input-area.center-position {
+      right: calc(50% + (var(--sidebar-width) / 2));
+      left: auto;
       transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
     }
     
