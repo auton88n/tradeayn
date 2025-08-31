@@ -202,16 +202,32 @@ export default function Dashboard({ user }: DashboardProps) {
     const accepted = localStorage.getItem(termsKey) === 'true';
     setHasAcceptedTerms(accepted);
     
-    if (accepted) {
-      // Load current chat history instead of setting welcome message
-      loadCurrentChatHistory();
+    // Don't load any chat history for new sessions - start fresh
+    // Only load if there are no messages currently displayed
+    if (accepted && messages.length === 0) {
+      // Check if this is a fresh session by seeing if there are any messages for current session
+      const checkCurrentSession = async () => {
+        const { data } = await supabase
+          .from('messages')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('session_id', currentSessionId)
+          .limit(1);
+        
+        // Only load if this session has existing messages
+        if (data && data.length > 0) {
+          loadCurrentChatHistory();
+        }
+      };
+      
+      checkCurrentSession();
     }
 
     // Set up maintenance status polling
     const maintenanceInterval = setInterval(checkMaintenanceStatus, 5000); // Check every 5 seconds
 
     return () => clearInterval(maintenanceInterval);
-  }, [user.id]);
+  }, [user.id, currentSessionId]); // Added currentSessionId as dependency
 
   const checkMaintenanceStatus = () => {
     try {
@@ -755,9 +771,14 @@ export default function Dashboard({ user }: DashboardProps) {
   const handleNewChat = () => {
     const newSessionId = crypto.randomUUID();
     setCurrentSessionId(newSessionId);
-    setMessages([]);
+    setMessages([]); // Clear all messages immediately
+    
+    // Prevent any auto-loading by temporarily setting a flag
+    const preventAutoLoad = true;
+    
     // Force reload of recent chats to update the sidebar
     loadRecentChats();
+    
     toast({
       title: "New Chat Started", 
       description: "You can now start a fresh conversation with AYN.",
