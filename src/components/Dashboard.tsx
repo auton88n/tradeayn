@@ -1327,7 +1327,7 @@ export default function Dashboard({ user }: DashboardProps) {
                     
                     {/* Typewriter Animation Placeholder */}
                     {!inputMessage && !isInputFocused && !selectedFile && (
-                      <div className={`absolute inset-0 flex items-center pointer-events-none ${language === 'ar' ? 'justify-end pr-12' : 'justify-start pl-12'}`}>
+                      <div className={`absolute inset-0 flex items-center pointer-events-none ${language === 'ar' ? 'justify-end pr-6' : 'justify-start pl-6'}`}>
                         <span className={`text-muted-foreground select-none typewriter-text ${language === 'ar' ? 'text-right' : 'text-left'}`} style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}>
                           {!hasAccess 
                             ? (language === 'ar' ? 'الوصول مطلوب لإرسال الرسائل...' : 'Access required to send messages...')
