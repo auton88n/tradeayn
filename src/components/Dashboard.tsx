@@ -1177,27 +1177,11 @@ export default function Dashboard({ user }: DashboardProps) {
                            ? 'bg-primary text-primary-foreground' 
                            : 'bg-muted text-foreground'
                        }`}>
-                           <div className="text-sm leading-relaxed whitespace-pre-wrap break-words group cursor-default select-text">
-                             {message.sender === 'ayn' && message.isTyping ? (
-                               <TypewriterText
-                                 text={message.content}
-                                 speed={40}
-                                 className={`inline-block transition-all duration-300 hover:tracking-wide text-foreground hover:text-primary hover:drop-shadow-sm group-hover:scale-[1.02] transform-gpu`}
-                                 onComplete={() => {
-                                   setMessages(prev => 
-                                     prev.map(msg => 
-                                       msg.id === message.id 
-                                         ? { ...msg, isTyping: false }
-                                         : msg
-                                     )
-                                   );
-                                 }}
-                               />
-                             ) : (
-                               <span className={`inline-block transition-all duration-300 hover:tracking-wide ${
-                                 message.sender === 'user' 
-                                   ? 'text-primary-foreground hover:text-white hover:drop-shadow-sm' 
-                                   : 'text-foreground hover:text-primary hover:drop-shadow-sm'
+                            <div className="text-sm leading-relaxed whitespace-pre-wrap break-words group cursor-default select-text">
+                              <span className={`inline-block transition-all duration-300 hover:tracking-wide ${
+                                message.sender === 'user' 
+                                  ? 'text-primary-foreground hover:text-white hover:drop-shadow-sm' 
+                                  : 'text-foreground hover:text-primary hover:drop-shadow-sm'
                                } group-hover:scale-[1.02] transform-gpu`}>
                                  {message.content.split('\n').map((line, index, array) => (
                                    <span key={index} className="block hover:bg-primary/5 hover:px-1 hover:py-0.5 hover:rounded transition-all duration-200">
@@ -1205,9 +1189,8 @@ export default function Dashboard({ user }: DashboardProps) {
                                      {index < array.length - 1 && <br />}
                                    </span>
                                  ))}
-                               </span>
-                             )}
-                           </div>
+                                </span>
+                            </div>
                          {message.attachment && (
                            <div className="mt-2 p-2 bg-muted/50 rounded-lg flex items-center gap-2">
                              <Paperclip className="w-3 h-3" />
