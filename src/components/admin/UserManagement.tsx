@@ -129,6 +129,35 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
     }
   };
 
+  const handleGrantAccess = async (userId: string) => {
+    try {
+      const { error } = await supabase
+        .from('access_grants')
+        .update({
+          is_active: true,
+          granted_at: new Date().toISOString(),
+          notes: 'Access granted by administrator'
+        })
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      toast({
+        title: t('admin.accessGranted'),
+        description: t('admin.accessGrantedDesc')
+      });
+      
+      onRefresh();
+    } catch (error) {
+      console.error('Error granting access:', error);
+      toast({
+        title: "Error",
+        description: "Failed to grant user access.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleUpdateUserLimits = async (userId: string, newLimit: number | null) => {
     try {
       const { error } = await supabase
@@ -305,6 +334,17 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
                       </div>
                       
                       <div className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+                        {!user.is_active && !user.granted_at && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleGrantAccess(user.user_id)}
+                            className="text-green-600 hover:text-green-700"
+                          >
+                            <UserPlus className={`w-4 h-4 ${language === 'ar' ? 'ml-1' : 'mr-1'}`} />
+                            {t('admin.approve')}
+                          </Button>
+                        )}
                         {user.is_active && (
                           <Button
                             variant="outline"
