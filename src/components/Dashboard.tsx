@@ -1292,22 +1292,21 @@ export default function Dashboard({ user }: DashboardProps) {
                     className="hidden"
                   />
                   
-                  {/* Input Field */}
-                  <div className="flex-1 relative">
-                    <input
-                      ref={inputRef}
-                      type="text"
-                      className={`message-input ${language === 'ar' ? 'text-right' : 'text-left'}`}
-                      value={inputMessage}
-                      onChange={(e) => setInputMessage(e.target.value)}
-                      onKeyPress={handleKeyPress}
-                      onFocus={() => setIsInputFocused(true)}
-                      onBlur={() => setIsInputFocused(false)}
-                      placeholder=""
-                      disabled={!hasAccess || !hasAcceptedTerms || isUploading}
-                      dir={language === 'ar' ? 'rtl' : 'ltr'}
-                      style={{ textAlign: language === 'ar' ? 'right' : 'left' }}
-                    />
+                   {/* Input Field */}
+                   <div className="flex-1 relative">
+                     <input
+                       ref={inputRef}
+                       type="text"
+                       className={`message-input ${language === 'ar' ? 'rtl-input' : 'ltr-input'}`}
+                       value={inputMessage}
+                       onChange={(e) => setInputMessage(e.target.value)}
+                       onKeyPress={handleKeyPress}
+                       onFocus={() => setIsInputFocused(true)}
+                       onBlur={() => setIsInputFocused(false)}
+                       placeholder=""
+                       disabled={!hasAccess || !hasAcceptedTerms || isUploading}
+                       dir={language === 'ar' ? 'rtl' : 'ltr'}
+                     />
                     
                     {/* File Selected Indicator */}
                     {selectedFile && (
