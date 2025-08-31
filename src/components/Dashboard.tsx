@@ -756,8 +756,10 @@ export default function Dashboard({ user }: DashboardProps) {
     const newSessionId = crypto.randomUUID();
     setCurrentSessionId(newSessionId);
     setMessages([]);
+    // Force reload of recent chats to update the sidebar
+    loadRecentChats();
     toast({
-      title: "New Chat Started",
+      title: "New Chat Started", 
       description: "You can now start a fresh conversation with AYN.",
     });
   };
