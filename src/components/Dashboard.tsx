@@ -154,6 +154,45 @@ export default function Dashboard({ user }: DashboardProps) {
     scrollToBottom();
   }, [messages]);
 
+  const loadCurrentChatHistory = async () => {
+    try {
+      // Get today's messages
+      const today = new Date();
+      const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      
+      const { data, error } = await supabase
+        .from('messages')
+        .select('id, content, created_at, sender, attachment_url, attachment_name, attachment_type')
+        .eq('user_id', user.id)
+        .gte('created_at', startOfDay.toISOString())
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error loading current chat:', error);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        const chatMessages: Message[] = data.map(msg => ({
+          id: msg.id,
+          content: msg.content,
+          sender: msg.sender as 'user' | 'ayn',
+          timestamp: new Date(msg.created_at),
+          status: 'sent',
+          attachment: msg.attachment_url ? {
+            url: msg.attachment_url,
+            name: msg.attachment_name || 'Attachment',
+            type: msg.attachment_type || 'unknown'
+          } : undefined
+        }));
+        
+        setMessages(chatMessages);
+      }
+    } catch (error) {
+      console.error('Error loading current chat history:', error);
+    }
+  };
+
   useEffect(() => {
     checkUserAccess();
     checkAdminRole();
@@ -166,7 +205,8 @@ export default function Dashboard({ user }: DashboardProps) {
     setHasAcceptedTerms(accepted);
     
     if (accepted) {
-      setWelcomeMessage();
+      // Load current chat history instead of setting welcome message
+      loadCurrentChatHistory();
     }
 
     // Set up maintenance status polling
@@ -300,10 +340,10 @@ export default function Dashboard({ user }: DashboardProps) {
     try {
       const { data, error } = await supabase
         .from('messages')
-        .select('id, content, created_at')
+        .select('id, content, created_at, sender')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
-        .limit(10);
+        .limit(20);
 
       if (error) {
         console.error('Error loading recent chats:', error);
@@ -315,7 +355,7 @@ export default function Dashboard({ user }: DashboardProps) {
         return;
       }
 
-      // Group messages into chat sessions (simplified - by day)
+      // Group messages into chat sessions (by day, but also ensure conversation flow)
       const chatGroups: { [key: string]: any[] } = {};
       
       data.forEach(message => {
@@ -326,7 +366,7 @@ export default function Dashboard({ user }: DashboardProps) {
         chatGroups[dateKey].push({
           id: message.id,
           content: message.content,
-          sender: 'user', // Messages table only stores user messages
+          sender: message.sender as 'user' | 'ayn',
           timestamp: new Date(message.created_at)
         });
       });
@@ -335,17 +375,23 @@ export default function Dashboard({ user }: DashboardProps) {
       const chatHistories: ChatHistory[] = Object.entries(chatGroups)
         .slice(0, 5) // Limit to latest 5 chat sessions
         .map(([dateKey, messages]) => {
+          // Sort messages chronologically for proper conversation flow
           const sortedMessages = messages.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
-          const firstMessage = sortedMessages[0];
+          
+          // Find the first user message for the title
+          const firstUserMessage = sortedMessages.find(msg => msg.sender === 'user');
+          const lastMessage = sortedMessages[sortedMessages.length - 1];
           
           return {
-            title: firstMessage.content.length > 30 
-              ? firstMessage.content.substring(0, 30) + '...'
-              : firstMessage.content,
-            lastMessage: firstMessage.content.length > 50
-              ? firstMessage.content.substring(0, 50) + '...'
-              : firstMessage.content,
-            timestamp: firstMessage.timestamp,
+            title: firstUserMessage ? (
+              firstUserMessage.content.length > 30 
+                ? firstUserMessage.content.substring(0, 30) + '...'
+                : firstUserMessage.content
+            ) : 'Chat Session',
+            lastMessage: lastMessage.content.length > 50
+              ? lastMessage.content.substring(0, 50) + '...'
+              : lastMessage.content,
+            timestamp: lastMessage.timestamp,
             messages: sortedMessages
           };
         });
@@ -356,16 +402,13 @@ export default function Dashboard({ user }: DashboardProps) {
     }
   };
 
-  const setWelcomeMessage = () => {
-    // No welcome message - start with empty chat
-    setMessages([]);
-  };
+  // Removed setWelcomeMessage function as it's no longer needed
 
   const handleAcceptTerms = () => {
     const termsKey = `ayn_terms_accepted_${user.id}`;
     localStorage.setItem(termsKey, 'true');
     setHasAcceptedTerms(true);
-    setWelcomeMessage();
+    loadCurrentChatHistory();
     
     toast({
       title: t('auth.welcomeTitle'),
@@ -498,9 +541,17 @@ export default function Dashboard({ user }: DashboardProps) {
       await supabase.from('messages').insert({
         user_id: user.id,
         content: content,
+        sender: 'user',
         attachment_url: attachment?.url,
         attachment_name: attachment?.name,
         attachment_type: attachment?.type
+      });
+
+      // Save AI response to database
+      await supabase.from('messages').insert({
+        user_id: user.id,
+        content: response,
+        sender: 'ayn'
       });
 
       // Refresh recent chats
