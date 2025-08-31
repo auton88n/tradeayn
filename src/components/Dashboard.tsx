@@ -74,6 +74,7 @@ interface ChatHistory {
   lastMessage: string;
   timestamp: Date;
   messages: Message[];
+  sessionId: string;
 }
 
 const templates = [
@@ -117,6 +118,7 @@ export default function Dashboard({ user }: DashboardProps) {
   const [selectedChats, setSelectedChats] = useState<Set<number>>(new Set());
   const [showChatSelection, setShowChatSelection] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [currentSessionId, setCurrentSessionId] = useState<string>(() => crypto.randomUUID());
   const { t, language } = useLanguage();
   
   // Maintenance mode state
@@ -156,15 +158,11 @@ export default function Dashboard({ user }: DashboardProps) {
 
   const loadCurrentChatHistory = async () => {
     try {
-      // Get today's messages
-      const today = new Date();
-      const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      
       const { data, error } = await supabase
         .from('messages')
         .select('id, content, created_at, sender, attachment_url, attachment_name, attachment_type')
         .eq('user_id', user.id)
-        .gte('created_at', startOfDay.toISOString())
+        .eq('session_id', currentSessionId)
         .order('created_at', { ascending: true });
 
       if (error) {
@@ -340,10 +338,10 @@ export default function Dashboard({ user }: DashboardProps) {
     try {
       const { data, error } = await supabase
         .from('messages')
-        .select('id, content, created_at, sender')
+        .select('id, content, created_at, sender, session_id')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
-        .limit(20);
+        .limit(100);
 
       if (error) {
         console.error('Error loading recent chats:', error);
@@ -355,15 +353,15 @@ export default function Dashboard({ user }: DashboardProps) {
         return;
       }
 
-      // Group messages into chat sessions (by day, but also ensure conversation flow)
-      const chatGroups: { [key: string]: any[] } = {};
+      // Group messages by session_id
+      const sessionGroups: { [key: string]: any[] } = {};
       
       data.forEach(message => {
-        const dateKey = new Date(message.created_at).toDateString();
-        if (!chatGroups[dateKey]) {
-          chatGroups[dateKey] = [];
+        const sessionId = message.session_id;
+        if (!sessionGroups[sessionId]) {
+          sessionGroups[sessionId] = [];
         }
-        chatGroups[dateKey].push({
+        sessionGroups[sessionId].push({
           id: message.id,
           content: message.content,
           sender: message.sender as 'user' | 'ayn',
@@ -371,10 +369,9 @@ export default function Dashboard({ user }: DashboardProps) {
         });
       });
 
-      // Convert to ChatHistory format
-      const chatHistories: ChatHistory[] = Object.entries(chatGroups)
-        .slice(0, 5) // Limit to latest 5 chat sessions
-        .map(([dateKey, messages]) => {
+      // Convert to ChatHistory format, sorted by most recent session
+      const chatHistories: ChatHistory[] = Object.entries(sessionGroups)
+        .map(([sessionId, messages]) => {
           // Sort messages chronologically for proper conversation flow
           const sortedMessages = messages.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
           
@@ -392,9 +389,12 @@ export default function Dashboard({ user }: DashboardProps) {
               ? lastMessage.content.substring(0, 50) + '...'
               : lastMessage.content,
             timestamp: lastMessage.timestamp,
-            messages: sortedMessages
+            messages: sortedMessages,
+            sessionId: sessionId
           };
-        });
+        })
+        .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()) // Sort by most recent
+        .slice(0, 10); // Limit to latest 10 sessions
 
       setRecentChats(chatHistories);
     } catch (error) {
@@ -540,6 +540,7 @@ export default function Dashboard({ user }: DashboardProps) {
       // Save user message to database
       await supabase.from('messages').insert({
         user_id: user.id,
+        session_id: currentSessionId,
         content: content,
         sender: 'user',
         attachment_url: attachment?.url,
@@ -550,6 +551,7 @@ export default function Dashboard({ user }: DashboardProps) {
       // Save AI response to database
       await supabase.from('messages').insert({
         user_id: user.id,
+        session_id: currentSessionId,
         content: response,
         sender: 'ayn'
       });
@@ -738,6 +740,7 @@ export default function Dashboard({ user }: DashboardProps) {
   };
 
   const handleLoadChat = (chatHistory: ChatHistory) => {
+    setCurrentSessionId(chatHistory.sessionId);
     setMessages(chatHistory.messages);
     toast({
       title: "Chat Loaded",
@@ -750,6 +753,8 @@ export default function Dashboard({ user }: DashboardProps) {
   };
 
   const handleNewChat = () => {
+    const newSessionId = crypto.randomUUID();
+    setCurrentSessionId(newSessionId);
     setMessages([]);
     toast({
       title: "New Chat Started",
