@@ -1293,7 +1293,7 @@ export default function Dashboard({ user }: DashboardProps) {
                   />
                   
                   {/* Input Field */}
-                  <div className="flex-1 relative">
+                  <div className="flex-1 relative" dir={language === 'ar' ? 'rtl' : 'ltr'}>
                     <input
                       ref={inputRef}
                       type="text"
