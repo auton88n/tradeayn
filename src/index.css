@@ -239,11 +239,9 @@
   /* Mobile-Style Floating Input Bar */
   .input-area {
     position: fixed;
-    z-index: 5;
+    z-index: 1000;
     transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     padding: 0 12px;
-    margin-left: 280px; /* Clear sidebar space */
-    margin-right: 20px; /* Right spacing */
   }
 
   /* Center position for initial state */
@@ -251,16 +249,16 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: calc(100% - 324px); /* Account for sidebar + margins */
+    width: calc(100% - 24px);
     max-width: 600px;
   }
 
   /* Bottom position after first message */
   .input-area.bottom-position {
     bottom: 12px;
-    left: calc(50% + 140px); /* Offset for sidebar */
+    left: 50%;
     transform: translateX(-50%);
-    width: calc(100% - 324px); /* Account for sidebar + margins */
+    width: calc(100% - 24px);
     max-width: 600px;
   }
 
@@ -268,77 +266,29 @@
   @media (max-width: 640px) {
     .input-area {
       padding: 0 8px;
-      margin-left: 0; /* Remove sidebar margin on mobile */
-      margin-right: 0;
     }
     
     .input-area.center-position,
     .input-area.bottom-position {
       width: calc(100% - 16px);
       max-width: none;
-      left: 50%; /* Reset positioning on mobile */
-      right: auto;
     }
     
     .input-area.bottom-position {
       bottom: 8px;
     }
-
-    [dir="rtl"] .input-area {
-      margin-right: 0;
-      margin-left: 0;
-    }
-
-    [dir="rtl"] .input-area.center-position,
-    [dir="rtl"] .input-area.bottom-position {
-      right: 50%;
-      left: auto;
-    }
-
-    .main-content {
-      padding-left: 0;
-    }
-
-    [dir="rtl"] .main-content {
-      padding-right: 0;
-    }
   }
 
   /* Tablet adjustments */
   @media (min-width: 641px) and (max-width: 1023px) {
-    .input-area {
-      margin-left: 240px; /* Smaller sidebar margin on tablet */
-      margin-right: 16px;
-    }
-
     .input-area.center-position,
     .input-area.bottom-position {
-      width: calc(100% - 280px); /* Account for reduced margins */
+      width: calc(100% - 32px);
       max-width: 500px;
     }
     
     .input-area.bottom-position {
       bottom: 16px;
-      left: calc(50% + 120px); /* Adjust for smaller sidebar offset */
-    }
-
-    [dir="rtl"] .input-area {
-      margin-right: 240px;
-      margin-left: 16px;
-    }
-
-    [dir="rtl"] .input-area.bottom-position {
-      right: calc(50% + 120px);
-      left: auto;
-    }
-
-    .main-content {
-      padding-left: 260px;
-    }
-
-    [dir="rtl"] .main-content {
-      padding-right: 260px;
-      padding-left: 16px;
     }
   }
 
@@ -432,7 +382,7 @@
     direction: ltr !important;
   }
 
-  /* RTL Input Container Layout */
+  /* RTL Button Positioning in Input Container */
   [dir="rtl"] .input-container {
     flex-direction: row-reverse;
   }
@@ -528,6 +478,10 @@
     direction: rtl;
   }
 
+  /* RTL Button Positioning in Input Container */
+  [dir="rtl"] .input-container {
+    direction: ltr; /* Keep container LTR to properly position buttons */
+  }
 
   /* RTL Send Button - Move to Left Side */
   [dir="rtl"] .send-button {
@@ -596,21 +550,19 @@
   }
 
 
-  /* Input Container - Consolidated Styles */
   .input-container {
-    position: relative;
-    z-index: 5;
-    display: flex;
-    align-items: center;
-    gap: 12px;
     background: hsl(var(--background));
-    border: 1px solid hsl(var(--border));
     border-radius: 25px;
     padding: 12px 16px;
     box-shadow: 
       0 4px 20px hsla(var(--foreground), 0.1),
       0 1px 3px hsla(var(--foreground), 0.1);
+    border: 1px solid hsl(var(--border));
+    display: flex;
+    align-items: center;
+    gap: 12px;
     transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    position: relative;
   }
 
   .input-container.drag-over {
@@ -636,40 +588,6 @@
       0 0 0 2px hsla(var(--primary), 0.2);
     transform: translateY(-1px);
   }
-
-  /* Sidebar positioning */
-  .sidebar {
-    z-index: 10;
-  }
-
-  /* Main content spacing */
-  .main-content {
-    padding-left: 300px; /* Space for sidebar */
-  }
-
-  /* RTL Layout Adjustments */
-  [dir="rtl"] .input-area {
-    margin-right: 280px; /* Clear sidebar space in RTL */
-    margin-left: 20px;   /* Left spacing in RTL */
-  }
-
-  [dir="rtl"] .input-area.center-position {
-    right: 50%;
-    left: auto;
-    transform: translate(50%, -50%);
-  }
-
-  [dir="rtl"] .input-area.bottom-position {
-    right: calc(50% + 140px); /* Offset for sidebar in RTL */
-    left: auto;
-    transform: translateX(50%);
-  }
-
-  [dir="rtl"] .main-content {
-    padding-right: 300px; /* Space for sidebar in RTL */
-    padding-left: 20px;
-  }
-
 
   .message-input {
     flex: 1;
