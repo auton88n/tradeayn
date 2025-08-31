@@ -345,24 +345,26 @@
   /* RTL Input Area Adjustments for small screens when sidebar is open */
   [dir="rtl"] .input-area.sidebar-open.bottom-position,
   [dir="rtl"] .input-area.sidebar-open.center-position {
-    left: calc(50% + 120px);
-    right: auto;
+    right: calc(50% - 120px);
+    left: auto;
   }
 
   @media (min-width: 1024px) {
     [dir="rtl"] [data-state="expanded"] ~ main .input-area.bottom-position,
     [dir="rtl"] [data-state="expanded"] ~ main .input-area.center-position {
-      left: calc(50% + (var(--sidebar-width) / 2));
-      right: auto;
+      right: calc(50% - (var(--sidebar-width) / 2));
+      left: auto;
     }
   }
 
-  /* RTL Text direction for inputs - removed duplicate */
+  /* RTL Text direction for inputs */
+  [dir="rtl"] .message-input {
+    text-align: right;
+  }
 
-  /* RTL Input Container - mirror layout with flex, keep icons inside */
+  /* RTL Input Container - Keep flex direction normal for proper button positioning */
   [dir="rtl"] .input-container {
-    direction: rtl;
-    flex-direction: row-reverse;
+    direction: ltr; /* Keep container LTR to properly position buttons */
   }
 
   /* RTL Margin and Padding Adjustments */
@@ -437,21 +439,12 @@
     justify-content: flex-start;
   }
 
-  /* Dynamic placeholder direction based on content */
-  .message-input[style*="direction: rtl"]::placeholder {
-    text-align: right;
-    direction: rtl;
-  }
-
-  .message-input[style*="direction: ltr"]::placeholder {
-    text-align: left;
-    direction: ltr;
-  }
-
-  /* Default RTL/LTR styles */
+  /* RTL Input Field Alignment */
   [dir="rtl"] .message-input {
     text-align: right;
     direction: rtl;
+    padding-left: 44px;
+    padding-right: 44px;
   }
 
   [dir="rtl"] .message-input::placeholder {
@@ -459,45 +452,20 @@
     direction: rtl;
   }
 
-  [dir="ltr"] .message-input {
-    text-align: left;
-    direction: ltr;
-  }
 
-  /* RTL-specific button positioning */
-  [dir="rtl"] .attachment-button {
-    right: 12px;
-    left: auto;
-  }
-
+  /* RTL Send Button - Move to Left Side */
   [dir="rtl"] .send-button {
+    position: absolute;
     left: 12px;
     right: auto;
   }
 
-  [dir="rtl"] .input-container {
-    direction: rtl;
-  }
-
-  [dir="ltr"] .message-input::placeholder {
-    text-align: left;
-    direction: ltr;
-  }
-
-
-  /* RTL Send Button - keep inside on the left via flex order */
-  [dir="rtl"] .send-button {
-    position: static;
-    margin-left: 8px;
-    margin-right: 0;
-  }
-
-  /* RTL Attachment Button - keep inside on the right via flex order */
+  /* RTL Attachment Button - Move to Right Side with Better Spacing */
   [dir="rtl"] .attachment-button {
-    position: static;
-    margin-right: 8px;
-    margin-left: 0;
-    transform: none;
+    position: absolute;
+    right: 16px;
+    left: auto;
+    transform: translateY(-50%);
   }
 
   /* RTL File Types Dropdown Positioning */
@@ -528,15 +496,13 @@
     }
     
     [dir="rtl"] .send-button {
-      position: static;
-      margin-left: 6px;
-      margin-right: 0;
+      left: 8px;
+      right: auto;
     }
     
     [dir="rtl"] .attachment-button {
-      position: static;
-      margin-right: 6px;
-      margin-left: 0;
+      right: 16px;
+      left: auto;
     }
   }
 
@@ -549,11 +515,11 @@
       transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
     }
     
-    /* RTL: shift input away from left sidebar when expanded */
+    /* RTL: shift input to the left when sidebar is expanded */
     [dir="rtl"] [data-state="expanded"] ~ main .input-area.bottom-position,
     [dir="rtl"] [data-state="expanded"] ~ main .input-area.center-position {
-      left: calc(50% + (var(--sidebar-width) / 2));
-      right: auto;
+      right: calc(50% + (var(--sidebar-width) / 2));
+      left: auto;
       transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
     }
     

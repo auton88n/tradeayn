@@ -187,28 +187,20 @@ export default function Dashboard({ user }: DashboardProps) {
     }
   };
 
-  // Typewriter animation effect with dynamic placeholders
+  // Typewriter animation effect
   useEffect(() => {
     if (isInputFocused || inputMessage.length > 0) return;
 
-    const arabicMessages = [
-      "ما هي أحدث اتجاهات السوق؟",
-      "كيف أحسن قمع المبيعات؟", 
-      "ساعدني في استراتيجية التسعير؟",
-      "ساعدني في بحث المنافسين؟",
-      "كيف أطور استراتيجية النمو؟"
+    const messages = [
+      t('dashboard.placeholders.askAyn'),
+      t('dashboard.placeholders.increaseRevenue'),
+      t('dashboard.placeholders.marketTrends'), 
+      t('dashboard.placeholders.competitionStrategy'),
+      t('dashboard.placeholders.optimizeSales'),
+      t('dashboard.placeholders.growthOpportunities'),
+      t('dashboard.placeholders.pricingStrategy'),
+      t('dashboard.placeholders.targetMarket')
     ];
-
-    const englishMessages = [
-      "What are the latest market trends?",
-      "How can I improve my sales funnel?",
-      "Help me with pricing strategy?",
-      "Research my competitors?",
-      "Help me develop growth strategy?"
-    ];
-
-    // Use only the current language messages
-    const messages = language === 'ar' ? arabicMessages : englishMessages;
 
     const typeSpeed = 100;
     const deleteSpeed = 50;
@@ -793,7 +785,7 @@ export default function Dashboard({ user }: DashboardProps) {
 
   return (
     <SidebarProvider>
-      <div className="flex h-screen w-full bg-background" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+      <div className="flex h-screen w-full bg-background">
         {/* Sidebar */}
         <Sidebar collapsible="offcanvas" className="w-64">
           <SidebarHeader className="p-4">
@@ -1307,30 +1299,11 @@ export default function Dashboard({ user }: DashboardProps) {
                       type="text"
                       className="message-input"
                       value={inputMessage}
-                      onChange={(e) => {
-                        setInputMessage(e.target.value);
-                        const text = e.target.value;
-                        
-                        // Only apply auto-detection if there's actual text
-                        if (text.trim().length > 0) {
-                          const isArabic = /[\u0600-\u06FF]/.test(text);
-                          if (isArabic) {
-                            e.target.style.direction = 'rtl';
-                            e.target.style.textAlign = 'right';
-                          } else {
-                            e.target.style.direction = 'ltr';  
-                            e.target.style.textAlign = 'left';
-                          }
-                        } else {
-                          // When empty, use the interface language setting
-                          e.target.style.direction = language === 'ar' ? 'rtl' : 'ltr';
-                          e.target.style.textAlign = language === 'ar' ? 'right' : 'left';
-                        }
-                      }}
+                      onChange={(e) => setInputMessage(e.target.value)}
                       onKeyPress={handleKeyPress}
                       onFocus={() => setIsInputFocused(true)}
                       onBlur={() => setIsInputFocused(false)}
-                      placeholder={currentText}
+                      placeholder=""
                       disabled={!hasAccess || !hasAcceptedTerms || isUploading}
                     />
                     
