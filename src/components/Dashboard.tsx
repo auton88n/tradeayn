@@ -1233,7 +1233,7 @@ export default function Dashboard({ user }: DashboardProps) {
                   </div>
                 )}
 
-                <div className={`input-container ${isDragOver ? 'drag-over' : ''}`} dir={language === 'ar' ? 'rtl' : 'ltr'}>
+                <div className={`input-container ${isDragOver ? 'drag-over' : ''}`}>
                   {/* Attachment Button with File Types Dropdown */}
                   <div className="relative">
                     <button 
@@ -1292,21 +1292,20 @@ export default function Dashboard({ user }: DashboardProps) {
                     className="hidden"
                   />
                   
-                   {/* Input Field */}
-                   <div className="flex-1 relative">
-                     <input
-                       ref={inputRef}
-                       type="text"
-                       className={`message-input ${language === 'ar' ? 'rtl-input' : 'ltr-input'}`}
-                       value={inputMessage}
-                       onChange={(e) => setInputMessage(e.target.value)}
-                       onKeyPress={handleKeyPress}
-                       onFocus={() => setIsInputFocused(true)}
-                       onBlur={() => setIsInputFocused(false)}
-                       placeholder=""
-                       disabled={!hasAccess || !hasAcceptedTerms || isUploading}
-                       dir={language === 'ar' ? 'rtl' : 'ltr'}
-                     />
+                  {/* Input Field */}
+                  <div className="flex-1 relative">
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      className="message-input"
+                      value={inputMessage}
+                      onChange={(e) => setInputMessage(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      onFocus={() => setIsInputFocused(true)}
+                      onBlur={() => setIsInputFocused(false)}
+                      placeholder=""
+                      disabled={!hasAccess || !hasAcceptedTerms || isUploading}
+                    />
                     
                     {/* File Selected Indicator */}
                     {selectedFile && (
@@ -1327,12 +1326,12 @@ export default function Dashboard({ user }: DashboardProps) {
                     
                     {/* Typewriter Animation Placeholder */}
                     {!inputMessage && !isInputFocused && !selectedFile && (
-                      <div className={`absolute inset-0 flex items-center pointer-events-none ${language === 'ar' ? 'justify-end pr-6' : 'justify-start pl-6'}`}>
+                      <div className={`absolute inset-0 flex items-center pointer-events-none ${language === 'ar' ? 'justify-end pr-12' : 'justify-start pl-12'}`}>
                         <span className={`text-muted-foreground select-none typewriter-text ${language === 'ar' ? 'text-right' : 'text-left'}`} style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}>
                           {!hasAccess 
-                            ? (language === 'ar' ? 'الوصول مطلوب لإرسال الرسائل...' : 'Access required to send messages...')
+                            ? "Access required to send messages..."
                             : !hasAcceptedTerms 
-                              ? (language === 'ar' ? 'يرجى قبول الشروط لبدء المحادثة...' : 'Please accept terms to start chatting...')
+                              ? "Please accept terms to start chatting..."
                               : currentText
                           }
                         </span>

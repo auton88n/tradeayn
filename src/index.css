@@ -262,31 +262,8 @@
     max-width: 600px;
   }
 
-  /* Mobile portrait (320px - 480px) */
-  @media (max-width: 480px) {
-    .input-area {
-      padding: 0 6px;
-    }
-    
-    .input-area.center-position,
-    .input-area.bottom-position {
-      width: calc(100% - 12px);
-      max-width: none;
-    }
-    
-    .input-area.bottom-position {
-      bottom: 6px;
-    }
-    
-    .input-container {
-      padding: 6px 8px;
-      border-radius: 16px;
-      gap: 8px;
-    }
-  }
-
-  /* Mobile landscape / larger phones (481px - 640px) */
-  @media (min-width: 481px) and (max-width: 640px) {
+  /* Mobile specific adjustments */
+  @media (max-width: 640px) {
     .input-area {
       padding: 0 8px;
     }
@@ -300,101 +277,37 @@
     .input-area.bottom-position {
       bottom: 8px;
     }
-    
-    .input-container {
-      padding: 8px 12px;
-      border-radius: 18px;
-      gap: 10px;
-    }
   }
 
-  /* Tablet portrait (641px - 768px) */
-  @media (min-width: 641px) and (max-width: 768px) {
+  /* Tablet adjustments */
+  @media (min-width: 641px) and (max-width: 1023px) {
     .input-area.center-position,
     .input-area.bottom-position {
       width: calc(100% - 32px);
-      max-width: 480px;
-    }
-    
-    .input-area.bottom-position {
-      bottom: 12px;
-    }
-    
-    .input-container {
-      padding: 10px 14px;
-      border-radius: 22px;
-      gap: 12px;
-    }
-  }
-
-  /* Tablet landscape (769px - 1023px) */
-  @media (min-width: 769px) and (max-width: 1023px) {
-    .input-area.center-position,
-    .input-area.bottom-position {
-      width: calc(100% - 40px);
-      max-width: 520px;
+      max-width: 500px;
     }
     
     .input-area.bottom-position {
       bottom: 16px;
     }
-    
-    .input-container {
-      padding: 12px 16px;
-      border-radius: 24px;
-      gap: 12px;
-    }
   }
 
-  /* Desktop small (1024px - 1366px) */
-  @media (min-width: 1024px) and (max-width: 1366px) {
-    .input-area.center-position,
-    .input-area.bottom-position {
-      width: calc(100% - 48px);
-      max-width: 580px;
+  /* Adjust input area when sidebar is open */
+  @media (max-width: 1023px) {
+    .input-area.sidebar-open.bottom-position {
+      left: calc(50% + 120px);
+      width: calc(100% - 280px);
+      max-width: 400px;
     }
     
-    .input-area.bottom-position {
-      bottom: 20px;
-    }
-  }
-
-  /* Desktop large (1367px+) */
-  @media (min-width: 1367px) {
-    .input-area.center-position,
-    .input-area.bottom-position {
-      width: calc(100% - 60px);
-      max-width: 600px;
-    }
-    
-    .input-area.bottom-position {
-      bottom: 24px;
-    }
-  }
-
-  /* Adjust input area when sidebar is open - Mobile */
-  @media (max-width: 640px) {
-    .input-area.sidebar-open.bottom-position,
-    .input-area.sidebar-open.center-position {
-      left: calc(50% + 100px);
-      width: calc(100% - 220px);
-      max-width: 300px;
-      min-width: 200px;
-    }
-  }
-
-  /* Adjust input area when sidebar is open - Tablet */
-  @media (min-width: 641px) and (max-width: 1023px) {
-    .input-area.sidebar-open.bottom-position,
     .input-area.sidebar-open.center-position {
       left: calc(50% + 120px);
-      width: calc(100% - 260px);
-      max-width: 380px;
-      min-width: 280px;
+      width: calc(100% - 280px);
+      max-width: 400px;
     }
   }
 
-  /* RTL Base */
+  /* RTL Support */
   [dir="rtl"] {
     text-align: right;
   }
@@ -409,43 +322,50 @@
     text-align: right;
   }
 
-  /* RTL Layout - Removed global flex reversals to keep consistent positioning */
-  /* (Removed unused RTL sidebar position overrides; Sidebar component controls side via props) */
-
-  /* RTL Input Area - keep centered same as LTR */
-  [dir="rtl"] .input-area.bottom-position,
-  [dir="rtl"] .input-area.center-position {
-    left: 50%;
-    right: auto;
-    transform: translateX(-50%);
+  /* RTL Layout - Flex Direction Reversals */
+  [dir="rtl"] .flex {
+    flex-direction: row-reverse;
   }
 
-  /* RTL and LTR Input Field Classes */
-  .rtl-input {
-    text-align: right !important;
-    direction: rtl !important;
-    padding-right: 8px !important;
-    padding-left: 8px !important;
-  }
-  
-  .ltr-input {
-    text-align: left !important;
-    direction: ltr !important;
-    padding-left: 8px !important;
-    padding-right: 8px !important;
+  [dir="rtl"] .flex-col {
+    flex-direction: column;
   }
 
-  .rtl-input::placeholder {
-    text-align: right !important;
-    direction: rtl !important;
-  }
-  
-  .ltr-input::placeholder {
-    text-align: left !important;
-    direction: ltr !important;
+  /* RTL Sidebar Positioning */
+  [dir="rtl"] .sidebar {
+    right: 0;
+    left: auto;
   }
 
-  /* RTL: keep input-container layout LTR so icons and buttons stay consistent */
+  [dir="rtl"] .sidebar-inset {
+    margin-right: auto;
+    margin-left: 0;
+  }
+
+  /* RTL Input Area Adjustments */
+  [dir="rtl"] .input-area.sidebar-open.bottom-position,
+  [dir="rtl"] .input-area.sidebar-open.center-position {
+    right: calc(50% + 120px);
+    left: auto;
+  }
+
+  @media (min-width: 1024px) {
+    [dir="rtl"] [data-state="expanded"] ~ main .input-area.bottom-position,
+    [dir="rtl"] [data-state="expanded"] ~ main .input-area.center-position {
+      right: calc(50% + (var(--sidebar-width) / 2));
+      left: auto;
+    }
+  }
+
+  /* RTL Text direction for inputs */
+  [dir="rtl"] .message-input {
+    text-align: right;
+  }
+
+  /* RTL Button Positioning in Input Container */
+  [dir="rtl"] .input-container {
+    flex-direction: row-reverse;
+  }
 
   /* RTL Margin and Padding Adjustments */
   [dir="rtl"] .ml-1 { margin-left: 0; margin-right: 0.25rem; }
@@ -523,8 +443,8 @@
   [dir="rtl"] .message-input {
     text-align: right;
     direction: rtl;
-    padding-left: 8px;
-    padding-right: 8px;
+    padding-left: 44px;
+    padding-right: 44px;
   }
 
   [dir="rtl"] .message-input::placeholder {
@@ -537,7 +457,20 @@
     direction: ltr; /* Keep container LTR to properly position buttons */
   }
 
-  /* RTL: keep attachment and send buttons inline for consistent spacing */
+  /* RTL Send Button - Move to Left Side */
+  [dir="rtl"] .send-button {
+    position: absolute;
+    left: 12px;
+    right: auto;
+  }
+
+  /* RTL Attachment Button - Move to Right Side with Better Spacing */
+  [dir="rtl"] .attachment-button {
+    position: absolute;
+    right: 16px;
+    left: auto;
+    transform: translateY(-50%);
+  }
 
   /* RTL File Types Dropdown Positioning */
   [dir="rtl"] .attachment-button + div .absolute {
@@ -577,25 +510,15 @@
     }
   }
 
-  /* Desktop: shift input to avoid sidebar overlap */
+  /* Desktop: shift input to the right when sidebar is expanded */
   @media (min-width: 1024px) {
-    /* When sidebar is expanded, shift input to the right */
     [data-state="expanded"] ~ main .input-area.bottom-position,
     [data-state="expanded"] ~ main .input-area.center-position {
-      left: calc(50% + 140px); /* Fixed offset to clear sidebar */
-      transform: translateX(-50%);
-      width: calc(100% - 320px); /* Reduce width to account for sidebar */
-      max-width: 600px;
+      left: calc(50% + (var(--sidebar-width) / 2));
       transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
     }
     
-    /* Default positioning when sidebar is collapsed */
-    .input-area.bottom-position,
-    .input-area.center-position {
-      left: 50%;
-      transform: translateX(-50%);
-      width: calc(100% - 48px);
-      max-width: 600px;
+    .input-area {
       transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
     }
   }
@@ -604,14 +527,14 @@
   .input-container {
     background: hsl(var(--background));
     border-radius: 25px;
-    padding: 10px 12px;
+    padding: 12px 16px;
     box-shadow: 
       0 4px 20px hsla(var(--foreground), 0.1),
       0 1px 3px hsla(var(--foreground), 0.1);
     border: 1px solid hsl(var(--border));
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
     transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
     position: relative;
   }
@@ -718,113 +641,50 @@
     cursor: not-allowed;
   }
 
-  /* Mobile Portrait - Extra Small Phones */
-  @media (max-width: 480px) {
-    .send-button {
-      width: 28px;
-      height: 28px;
-      min-width: 28px;
-      border-radius: 14px;
+  /* Responsive Adjustments */
+  @media (max-width: 640px) {
+    .input-area.bottom-position {
+      bottom: 8px;
     }
     
-    .attachment-button {
-      width: 24px;
-      height: 24px;
-      min-width: 24px;
-      border-radius: 12px;
+    .input-container {
+      padding: 8px 10px;
+      border-radius: 18px;
     }
     
-    .message-input {
-      font-size: 14px;
-      padding: 4px 0;
-    }
-  }
-
-  /* Mobile Landscape - Standard Phones */
-  @media (min-width: 481px) and (max-width: 640px) {
     .send-button {
       width: 32px;
       height: 32px;
       min-width: 32px;
-      border-radius: 16px;
     }
     
     .attachment-button {
       width: 28px;
       height: 28px;
       min-width: 28px;
-      border-radius: 14px;
     }
     
-    .message-input {
-      font-size: 15px;
+    .chat-input {
+      font-size: 14px;
       padding: 6px 0;
     }
   }
 
-  /* Tablet Portrait */
-  @media (min-width: 641px) and (max-width: 768px) {
-    .send-button {
-      width: 34px;
-      height: 34px;
-      min-width: 34px;
-      border-radius: 17px;
+  @media (min-width: 641px) and (max-width: 1023px) {
+    .input-area.bottom-position {
+      bottom: 12px;
     }
     
-    .attachment-button {
-      width: 30px;
-      height: 30px;
-      min-width: 30px;
-      border-radius: 15px;
-    }
-    
-    .message-input {
-      font-size: 15px;
-      padding: 7px 0;
-    }
-  }
-
-  /* Tablet Landscape */
-  @media (min-width: 769px) and (max-width: 1023px) {
     .send-button {
       width: 36px;
       height: 36px;
       min-width: 36px;
-      border-radius: 18px;
     }
     
     .attachment-button {
       width: 32px;
       height: 32px;
       min-width: 32px;
-      border-radius: 16px;
-    }
-    
-    .message-input {
-      font-size: 16px;
-      padding: 8px 0;
-    }
-  }
-
-  /* Desktop and larger screens */
-  @media (min-width: 1024px) {
-    .send-button {
-      width: 36px;
-      height: 36px;
-      min-width: 36px;
-      border-radius: 18px;
-    }
-    
-    .attachment-button {
-      width: 32px;
-      height: 32px;
-      min-width: 32px;
-      border-radius: 16px;
-    }
-    
-    .message-input {
-      font-size: 16px;
-      padding: 8px 0;
     }
   }
 }
