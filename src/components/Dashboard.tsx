@@ -1176,11 +1176,11 @@ export default function Dashboard({ user }: DashboardProps) {
 
           {/* Chat Interface */}
           {(activeTab === 'chat' || !isAdmin) && (
-            <>
+            <div className="flex flex-col h-full">
               {/* Messages Area */}
-              <ScrollArea className="flex-1 px-3 sm:px-4 lg:px-6 pb-20 sm:pb-24">
+              <ScrollArea className="flex-1 px-3 sm:px-4 lg:px-6">
                 <div className="max-w-4xl mx-auto py-4 sm:py-6 space-y-3 sm:space-y-4">
-                  {messages.map((message) => (
+                  {messages.length > 0 ? messages.map((message) => (
                     <div
                       key={message.id}
                       className={`flex gap-2 sm:gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
@@ -1246,7 +1246,7 @@ export default function Dashboard({ user }: DashboardProps) {
                          </Avatar>
                        )}
                     </div>
-                  ))}
+                  )) : null}
 
                   {/* Typing Indicator */}
                   {isTyping && (
@@ -1264,175 +1264,144 @@ export default function Dashboard({ user }: DashboardProps) {
                 </div>
               </ScrollArea>
 
-              {/* Mobile-Style Floating Input Bar */}
-              <div 
-                className={`input-area ${messages.length > 1 ? 'bottom-position' : 'center-position'}`}
-                onDragEnter={handleDragEnter}
-                onDragLeave={handleDragLeave}
-                onDragOver={handleDragOver}
-                onDrop={handleDrop}
-              >
-                {/* Drag Overlay */}
-                {isDragOver && (
-                  <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-sm flex items-center justify-center">
-                    <div className="bg-background border-2 border-dashed border-primary rounded-2xl p-8 text-center max-w-sm mx-4">
-                      <Paperclip className="w-12 h-12 mx-auto mb-4 text-primary" />
-                      <p className="text-lg font-medium text-primary mb-2">Drop your file here</p>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Images, PDFs, Word docs, text, or JSON files (max 10MB)
-                      </p>
-                      <div className="text-xs text-muted-foreground space-y-1">
-                        <div>• Images: JPG, PNG, GIF, WebP</div>
-                        <div>• Documents: PDF, DOC, DOCX</div>
-                        <div>• Text: TXT files</div>
-                        <div>• Data: JSON files</div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
-                {/* Selected File Preview */}
-                {selectedFile && (
-                  <div className="mb-2 p-3 bg-muted rounded-xl border flex items-center gap-3">
-                    <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                      <Paperclip className="w-4 h-4 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{selectedFile.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                      </p>
-                    </div>
-                    <button
-                      onClick={removeSelectedFile}
-                      className="w-6 h-6 rounded-full bg-destructive/10 text-destructive hover:bg-destructive/20 flex items-center justify-center transition-colors"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                )}
-
-                <div className={`input-container ${isDragOver ? 'drag-over' : ''}`}>
-                  {/* Attachment Button with File Types Dropdown */}
-                  <div className="relative">
-                    <button 
-                      className="attachment-button group"
-                      onClick={handleAttachmentClick}
-                      onMouseEnter={() => setShowFileTypes(true)}
-                      onMouseLeave={() => setShowFileTypes(false)}
-                      disabled={!hasAccess || !hasAcceptedTerms || isUploading}
-                      title="Attach file"
-                    >
-                      <Paperclip className="w-4 h-4" />
-                    </button>
-                    
-                    {/* File Types Dropdown */}
-                    {showFileTypes && !isDragOver && (
-                      <div className="absolute bottom-full left-0 mb-2 bg-background border border-border rounded-lg shadow-lg p-3 min-w-[220px] z-50">
-                        <div className="text-xs font-semibold text-foreground mb-2">📎 Accepted file types:</div>
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2 text-xs">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                            <span className="text-muted-foreground">Images:</span>
-                            <span className="text-foreground font-medium">JPG, PNG, GIF, WebP</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-xs">
-                            <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                            <span className="text-muted-foreground">Documents:</span>
-                            <span className="text-foreground font-medium">PDF, DOC, DOCX</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-xs">
-                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                            <span className="text-muted-foreground">Text:</span>
-                            <span className="text-foreground font-medium">TXT files</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-xs">
-                            <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                            <span className="text-muted-foreground">Data:</span>
-                            <span className="text-foreground font-medium">JSON files</span>
-                          </div>
-                        </div>
-                        <div className="mt-3 pt-2 border-t border-border">
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                            <span>Maximum file size: <strong>10MB</strong></span>
-                          </div>
+              {/* Fixed Input Area */}
+              <div className="p-3 sm:p-4 lg:p-6 border-t border-border bg-background/95 backdrop-blur-sm">
+                <div className="max-w-4xl mx-auto">
+                  <div 
+                    className="relative"
+                    onDragEnter={handleDragEnter}
+                    onDragLeave={handleDragLeave}
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                  >
+                    {/* Drag Overlay */}
+                    {isDragOver && (
+                      <div className="absolute inset-0 z-50 bg-primary/10 border-2 border-dashed border-primary rounded-2xl flex items-center justify-center">
+                        <div className="text-center">
+                          <Paperclip className="w-8 h-8 mx-auto mb-2 text-primary" />
+                          <p className="text-sm font-medium text-primary">Drop your file here</p>
                         </div>
                       </div>
                     )}
-                  </div>
-                  
-                  {/* Hidden File Input */}
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp,.txt,.json"
-                    onChange={handleFileSelect}
-                    className="hidden"
-                  />
-                  
-                  {/* Input Field */}
-                  <div className="flex-1 relative">
-                    <input
-                      ref={inputRef}
-                      type="text"
-                      className="message-input"
-                      value={inputMessage}
-                      onChange={(e) => setInputMessage(e.target.value)}
-                      onKeyPress={handleKeyPress}
-                      onFocus={() => setIsInputFocused(true)}
-                      onBlur={() => setIsInputFocused(false)}
-                      placeholder=""
-                      disabled={!hasAccess || !hasAcceptedTerms || isUploading}
-                    />
                     
-                    {/* File Selected Indicator */}
+                    {/* Selected File Preview */}
                     {selectedFile && (
-                      <div className="absolute -top-12 left-0 bg-primary text-primary-foreground px-3 py-1 rounded-lg text-sm flex items-center gap-2">
-                        <Paperclip className="w-3 h-3" />
-                        <span>{selectedFile.name}</span>
-                        <button 
-                          onClick={() => {
-                            setSelectedFile(null);
-                            if (fileInputRef.current) fileInputRef.current.value = '';
-                          }}
-                          className="text-primary-foreground hover:text-primary-foreground/80"
+                      <div className="mb-3 p-3 bg-muted rounded-xl border flex items-center gap-3">
+                        <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                          <Paperclip className="w-4 h-4 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{selectedFile.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                          </p>
+                        </div>
+                        <button
+                          onClick={removeSelectedFile}
+                          className="w-6 h-6 rounded-full bg-destructive/10 text-destructive hover:bg-destructive/20 flex items-center justify-center transition-colors"
                         >
-                          ×
+                          <X className="w-3 h-3" />
                         </button>
                       </div>
                     )}
-                    
-                    {/* Typewriter Animation Placeholder */}
-                    {!inputMessage && !isInputFocused && !selectedFile && (
-                      <div className={`absolute inset-0 flex items-center pointer-events-none ${language === 'ar' ? 'justify-end pr-12' : 'justify-start pl-12'}`}>
-                        <span className={`text-muted-foreground select-none typewriter-text ${language === 'ar' ? 'text-right' : 'text-left'}`} style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}>
-                          {!hasAccess 
+
+                    <div className={`input-container ${isDragOver ? 'drag-over' : ''}`}>
+                      {/* Attachment Button */}
+                      <div className="relative">
+                        <button 
+                          className="attachment-button group"
+                          onClick={handleAttachmentClick}
+                          onMouseEnter={() => setShowFileTypes(true)}
+                          onMouseLeave={() => setShowFileTypes(false)}
+                          disabled={!hasAccess || !hasAcceptedTerms || isUploading}
+                          title="Attach file"
+                        >
+                          <Paperclip className="w-4 h-4" />
+                        </button>
+                        
+                        {/* File Types Dropdown */}
+                        {showFileTypes && !isDragOver && (
+                          <div className="absolute bottom-full left-0 mb-2 bg-background border border-border rounded-lg shadow-lg p-3 min-w-[220px] z-50">
+                            <div className="text-xs font-semibold text-foreground mb-2">📎 Accepted file types:</div>
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2 text-xs">
+                                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                <span className="text-muted-foreground">Images:</span>
+                                <span className="text-foreground font-medium">JPG, PNG, GIF, WebP</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-xs">
+                                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                                <span className="text-muted-foreground">Documents:</span>
+                                <span className="text-foreground font-medium">PDF, DOC, DOCX</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-xs">
+                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                <span className="text-muted-foreground">Text:</span>
+                                <span className="text-foreground font-medium">TXT files</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-xs">
+                                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                                <span className="text-muted-foreground">Data:</span>
+                                <span className="text-foreground font-medium">JSON files</span>
+                              </div>
+                            </div>
+                            <div className="mt-3 pt-2 border-t border-border">
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                                <span>Maximum file size: <strong>10MB</strong></span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Hidden File Input */}
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp,.txt,.json"
+                        onChange={handleFileSelect}
+                        className="hidden"
+                      />
+                      
+                      {/* Input Field */}
+                      <div className="flex-1 relative">
+                        <input
+                          ref={inputRef}
+                          type="text"
+                          className="message-input w-full"
+                          value={inputMessage}
+                          onChange={(e) => setInputMessage(e.target.value)}
+                          onKeyPress={handleKeyPress}
+                          onFocus={() => setIsInputFocused(true)}
+                          onBlur={() => setIsInputFocused(false)}
+                          placeholder={!hasAccess 
                             ? "Access required to send messages..."
                             : !hasAcceptedTerms 
                               ? "Please accept terms to start chatting..."
                               : currentText
                           }
-                        </span>
+                          disabled={!hasAccess || !hasAcceptedTerms || isUploading}
+                        />
                       </div>
-                    )}
+                      
+                      {/* Send Button */}
+                      <button
+                        className="send-button"
+                        onClick={() => handleSendMessage()}
+                        disabled={(!inputMessage.trim() && !selectedFile) || !hasAccess || !hasAcceptedTerms || isTyping || isUploading}
+                      >
+                        {isUploading ? (
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Send className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
                   </div>
-                  
-                  {/* Send Button */}
-                  <button
-                    className="send-button"
-                    onClick={() => handleSendMessage()}
-                    disabled={(!inputMessage.trim() && !selectedFile) || !hasAccess || !hasAcceptedTerms || isTyping || isUploading}
-                  >
-                    {isUploading ? (
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <Send className="w-4 h-4" />
-                    )}
-                  </button>
                 </div>
               </div>
-            </>
+            </div>
           )}
           </div>
         </SidebarInset>
