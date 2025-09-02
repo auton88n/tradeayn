@@ -34,12 +34,84 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // JWT Authentication check
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized: Missing or invalid authorization header' }),
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    // Verify JWT and get user
+    const jwt = authHeader.substring(7);
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(jwt);
+    
+    if (authError || !user) {
+      await supabaseClient.rpc('log_security_event', {
+        _action: 'unauthorized_file_upload_attempt',
+        _details: { error: authError?.message || 'Invalid JWT' },
+        _severity: 'high'
+      });
+      
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized: Invalid token' }),
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    // Rate limiting - 10 uploads per hour
+    const { data: rateLimitOk } = await supabaseClient.rpc('check_rate_limit', {
+      _action_type: 'file_upload',
+      _max_attempts: 10,
+      _window_minutes: 60
+    });
+
+    if (!rateLimitOk) {
+      await supabaseClient.rpc('log_security_event', {
+        _action: 'rate_limit_exceeded',
+        _details: { action: 'file_upload', user_id: user.id },
+        _severity: 'medium'
+      });
+      
+      return new Response(
+        JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
+        { 
+          status: 429, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
     const { file, fileName, fileType, userId }: FileUploadRequest = await req.json();
+    
+    // Verify userId matches authenticated user
+    if (userId !== user.id) {
+      await supabaseClient.rpc('log_security_event', {
+        _action: 'user_id_mismatch',
+        _details: { provided_user_id: userId, actual_user_id: user.id },
+        _severity: 'high'
+      });
+      
+      return new Response(
+        JSON.stringify({ error: 'Forbidden: User ID mismatch' }),
+        { 
+          status: 403, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
     
     console.log('Received file upload request:', { fileName, fileType, userId });
 
@@ -97,6 +169,18 @@ Deno.serve(async (req) => {
     }
 
     console.log('File uploaded successfully:', uploadData);
+
+    // Log successful upload
+    await supabaseClient.rpc('log_security_event', {
+      _action: 'file_upload_success',
+      _details: { 
+        file_name: fileName, 
+        file_type: fileType, 
+        file_size: fileBuffer.length,
+        user_id: user.id 
+      },
+      _severity: 'low'
+    });
 
     // Get signed URL for the uploaded file
     const { data: urlData } = await supabaseClient.storage

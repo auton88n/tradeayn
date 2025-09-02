@@ -299,6 +299,33 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_insights: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          id: string
+          insight_text: string
+          tags: string[] | null
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          insight_text: string
+          tags?: string[] | null
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          insight_text?: string
+          tags?: string[] | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       security_audit_logs: {
         Row: {
           action: string

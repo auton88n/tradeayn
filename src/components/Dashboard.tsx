@@ -51,6 +51,11 @@ import { TypingIndicator } from './TypingIndicator';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
 
+import { BusinessProfileSetup } from './BusinessProfileSetup';
+import { ProactiveInsights } from './ProactiveInsights';
+import { SavedInsights } from './SavedInsights';
+import { EnhancedChat } from './EnhancedChat';
+
 interface Message {
   id: string;
   content: string;
@@ -62,6 +67,13 @@ interface Message {
     url: string;
     name: string;
     type: string;
+  };
+  metadata?: {
+    mood?: string;
+    businessType?: string;
+    insights?: string[];
+    actionItems?: string[];
+    followUp?: string;
   };
 }
 
@@ -119,6 +131,7 @@ export default function Dashboard({ user }: DashboardProps) {
   const [showChatSelection, setShowChatSelection] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [currentSessionId, setCurrentSessionId] = useState<string>(() => crypto.randomUUID());
+  const [showBusinessSetup, setShowBusinessSetup] = useState(false);
   const { t, language } = useLanguage();
   
   // Maintenance mode state
@@ -319,7 +332,7 @@ export default function Dashboard({ user }: DashboardProps) {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('contact_person, company_name')
+        .select('contact_person, company_name, business_type, business_context')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -329,6 +342,11 @@ export default function Dashboard({ user }: DashboardProps) {
       }
 
       setUserProfile(data);
+      
+      // Check if business profile is complete
+      if (!data?.business_type || !data?.company_name) {
+        setShowBusinessSetup(true);
+      }
     } catch (error) {
       console.error('Profile loading error:', error);
     }
@@ -526,6 +544,7 @@ export default function Dashboard({ user }: DashboardProps) {
       }
 
       const response = webhookResponse?.response || 'I received your message and I\'m processing it. Please try again if you don\'t see a proper response.';
+      const metadata = webhookResponse?.metadata || {};
 
       const aynMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -533,6 +552,7 @@ export default function Dashboard({ user }: DashboardProps) {
         sender: 'ayn',
         timestamp: new Date(),
         isTyping: true,
+        metadata: metadata
       };
 
       setMessages(prev => [...prev, aynMessage]);
@@ -834,12 +854,59 @@ export default function Dashboard({ user }: DashboardProps) {
     }
   };
 
+  const handleQuickAction = (action: string, message: Message) => {
+    const actionPrompts = {
+      elaborate: `Tell me more about: "${message.content.slice(0, 100)}..."`,
+      disagree: `I disagree with this assessment: "${message.content.slice(0, 100)}..." Can you explain your reasoning?`,
+      implement: `How do I implement this advice: "${message.content.slice(0, 100)}..."`,
+      examples: `Can you show me specific examples for: "${message.content.slice(0, 100)}..."`,
+      roi: `What's the ROI on this strategy: "${message.content.slice(0, 100)}..."`
+    };
+    
+    const prompt = actionPrompts[action as keyof typeof actionPrompts] || `Follow up on: "${message.content.slice(0, 100)}..."`;
+    handleSendMessage(prompt);
+  };
+
+  const handleReplyToText = (selectedText: string, originalMessage: Message) => {
+    const replyPrompt = `Regarding your point about "${selectedText}" - can you elaborate on this?`;
+    handleSendMessage(replyPrompt);
+  };
+
+  const handleInsightAction = (insight: any) => {
+    const insightPrompts = {
+      opportunity: `Tell me more about this business opportunity: ${insight.title}`,
+      risk: `How can I mitigate this risk: ${insight.title}`,
+      trend: `How does this trend affect my business: ${insight.title}`,
+      action: `Help me implement this action: ${insight.title}`
+    };
+    
+    const prompt = insightPrompts[insight.type as keyof typeof insightPrompts] || `Tell me more about: ${insight.title}`;
+    handleSendMessage(prompt);
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
   };
+
+  // Check if business profile setup is needed
+  if (showBusinessSetup) {
+    return (
+      <BusinessProfileSetup 
+        userId={user.id}
+        onComplete={() => {
+          setShowBusinessSetup(false);
+          loadUserProfile();
+          toast({
+            title: "🎉 Welcome to AYN!",
+            description: "Your business profile is set up. Let's start optimizing your business!"
+          });
+        }}
+      />
+    );
+  }
 
   return (
     <SidebarProvider>
@@ -1155,93 +1222,46 @@ export default function Dashboard({ user }: DashboardProps) {
 
           {/* Chat Interface */}
           {(activeTab === 'chat' || !isAdmin) && (
-            <>
-              {/* Messages Area */}
-              <ScrollArea className="flex-1 px-3 sm:px-4 lg:px-6 pb-20 sm:pb-24">
-                <div className="max-w-4xl mx-auto py-4 sm:py-6 space-y-3 sm:space-y-4">
-                  {messages.map((message) => (
-                    <div
-                      key={message.id}
-                      className={`flex gap-2 sm:gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
-                      {message.sender === 'ayn' && (
+            <div className="flex flex-1 min-h-0">
+              {/* Main Chat Area */}
+              <div className="flex-1 flex flex-col min-h-0">
+                {/* Messages Area */}
+                <ScrollArea className="flex-1 px-3 sm:px-4 lg:px-6 pb-20 sm:pb-24">
+                  <div className="max-w-4xl mx-auto py-4 sm:py-6">
+                    <EnhancedChat
+                      messages={messages}
+                      onReplyToText={handleReplyToText}
+                      onQuickAction={handleQuickAction}
+                      userProfile={userProfile}
+                      userId={user.id}
+                    />
+                    
+                    {/* Typing Indicator */}
+                    {isTyping && (
+                      <div className="flex gap-2 sm:gap-3 justify-start mt-4">
                         <Avatar className="w-7 h-7 sm:w-8 sm:h-8 flex-shrink-0">
                           <AvatarFallback className="bg-primary text-primary-foreground text-xs">
                             <Brain className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                           </AvatarFallback>
-                         </Avatar>
-                       )}
-                       
-                       <div className={`max-w-[85%] sm:max-w-[80%] rounded-xl sm:rounded-2xl px-3 py-2 sm:px-4 sm:py-3 ${
-                         message.sender === 'user' 
-                           ? 'bg-primary text-primary-foreground' 
-                           : 'bg-muted text-foreground'
-                       }`}>
-                           <div className="text-sm leading-relaxed whitespace-pre-wrap break-words group cursor-default select-text">
-                             {message.sender === 'ayn' && message.isTyping ? (
-                               <TypewriterText
-                                 text={message.content}
-                                 speed={40}
-                                 className={`inline-block transition-all duration-300 hover:tracking-wide text-foreground hover:text-primary hover:drop-shadow-sm group-hover:scale-[1.02] transform-gpu`}
-                                 onComplete={() => {
-                                   setMessages(prev => 
-                                     prev.map(msg => 
-                                       msg.id === message.id 
-                                         ? { ...msg, isTyping: false }
-                                         : msg
-                                     )
-                                   );
-                                 }}
-                               />
-                             ) : (
-                               <span className={`inline-block transition-all duration-300 hover:tracking-wide ${
-                                 message.sender === 'user' 
-                                   ? 'text-primary-foreground hover:text-white hover:drop-shadow-sm' 
-                                   : 'text-foreground hover:text-primary hover:drop-shadow-sm'
-                               } group-hover:scale-[1.02] transform-gpu`}>
-                                 {message.content.split('\n').map((line, index, array) => (
-                                   <span key={index} className="block hover:bg-primary/5 hover:px-1 hover:py-0.5 hover:rounded transition-all duration-200">
-                                     {line}
-                                     {index < array.length - 1 && <br />}
-                                   </span>
-                                 ))}
-                               </span>
-                             )}
-                           </div>
-                         {message.attachment && (
-                           <div className="mt-2 p-2 bg-muted/50 rounded-lg flex items-center gap-2">
-                             <Paperclip className="w-3 h-3" />
-                             <span className="text-xs">{message.attachment.name}</span>
-                           </div>
-                         )}
-                       </div>
-                       
-                        {message.sender === 'user' && (
-                         <Avatar className="w-7 h-7 sm:w-8 sm:h-8 flex-shrink-0">
-                           <AvatarImage src="" />
-                           <AvatarFallback className="text-xs">
-                             {user?.user_metadata?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
-                           </AvatarFallback>
-                         </Avatar>
-                       )}
-                    </div>
-                  ))}
+                        </Avatar>
+                        <TypingIndicator />
+                      </div>
+                    )}
+                    
+                    <div ref={messagesEndRef} />
+                  </div>
+              </div>
 
-                  {/* Typing Indicator */}
-                  {isTyping && (
-                    <div className="flex gap-2 sm:gap-3 justify-start">
-                      <Avatar className="w-7 h-7 sm:w-8 sm:h-8 flex-shrink-0">
-                        <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                          <Brain className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                        </AvatarFallback>
-                      </Avatar>
-                      <TypingIndicator />
-                    </div>
-                  )}
-                  
-                  <div ref={messagesEndRef} />
-                </div>
-              </ScrollArea>
+              {/* Business Intelligence Sidebar */}
+              <div className="w-80 bg-card border-l border-border p-6 space-y-6 overflow-y-auto flex-shrink-0 hidden lg:block">
+                <ProactiveInsights 
+                  userProfile={userProfile}
+                  onActionClick={handleInsightAction}
+                />
+                <SavedInsights userId={user.id} />
+              </div>
+            </div>
+          )}
 
               {/* Mobile-Style Floating Input Bar */}
               <div 
@@ -1251,6 +1271,67 @@ export default function Dashboard({ user }: DashboardProps) {
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
               >
+                {/* ... keep existing input code ... */}
+                <div className={`input-container relative flex items-center bg-background border border-border rounded-2xl sm:rounded-3xl p-3 sm:p-4 gap-3 sm:gap-4 shadow-lg backdrop-blur-lg ${isDragOver ? 'drag-over border-primary bg-primary/5' : ''}`} dir={language === 'ar' ? 'rtl' : 'ltr'}>
+                  <input
+                    ref={inputRef}
+                    type="file"
+                    className="hidden"
+                    onChange={handleFileSelect}
+                    accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.txt,.json"
+                  />
+                  
+                  <button 
+                    className={`flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-muted hover:bg-muted-foreground/10 transition-colors flex-shrink-0 ${language === 'ar' ? 'order-3' : 'order-1'}`}
+                    onClick={handleAttachmentClick}
+                    disabled={!hasAccess || !hasAcceptedTerms || isUploading}
+                    title="Attach file"
+                  >
+                    <Paperclip className="w-4 h-4" />
+                  </button>
+                  
+                  <Input
+                    value={inputMessage}
+                    onChange={(e) => setInputMessage(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder={isInputFocused || inputMessage.length > 0 ? t('common.typeMessage') : currentText}
+                    disabled={!hasAccess || !hasAcceptedTerms || isUploading}
+                    onFocus={() => setIsInputFocused(true)}
+                    onBlur={() => setIsInputFocused(false)}
+                    className={`flex-1 bg-transparent border-0 focus-visible:ring-0 text-sm sm:text-base placeholder:text-muted-foreground/60 ${language === 'ar' ? 'order-2 text-right' : 'order-2 text-left'}`}
+                    dir={language === 'ar' ? 'rtl' : 'ltr'}
+                  />
+
+                  <button
+                    onClick={() => handleSendMessage()}
+                    disabled={(!inputMessage.trim() && !selectedFile) || !hasAccess || !hasAcceptedTerms || isUploading}
+                    className={`flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 ${language === 'ar' ? 'order-1' : 'order-3'}`}
+                  >
+                    {isUploading ? (
+                      <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+              
+              {/* Business Intelligence Sidebar */}
+              <div className="w-80 bg-card border-l border-border p-6 space-y-6 overflow-y-auto flex-shrink-0 hidden lg:block">
+                <ProactiveInsights 
+                  userProfile={userProfile}
+                  onActionClick={handleInsightAction}
+                />
+                <SavedInsights userId={user.id} />
+              </div>
+            </div>
+          )}
+        </div>
+      </SidebarInset>
+    </div>
+  </SidebarProvider>
+  );
+}
                 {/* Drag Overlay */}
                 {isDragOver && (
                   <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-sm flex items-center justify-center">

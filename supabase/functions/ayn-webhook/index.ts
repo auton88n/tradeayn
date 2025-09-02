@@ -260,14 +260,111 @@ serve(async (req) => {
       personalizationEnabled: requestData.allowPersonalization
     });
 
+    // Enhanced response formatting
+    const formatEnhancedResponse = (text: string, userProfile: any) => {
+      // Extract key insights from AI response
+      const extractInsights = (response: string) => {
+        const insights = [];
+        if (response.toLowerCase().includes('revenue')) insights.push('revenue');
+        if (response.toLowerCase().includes('pricing')) insights.push('pricing');
+        if (response.toLowerCase().includes('market')) insights.push('market');
+        if (response.toLowerCase().includes('customer')) insights.push('customer');
+        return insights;
+      };
+
+      const extractActionItems = (response: string) => {
+        const sentences = response.split('.').filter(s => s.trim().length > 10);
+        return sentences.slice(0, 3).map(s => s.trim());
+      };
+
+      const determineMood = (response: string) => {
+        if (response.toLowerCase().includes('concern') || response.toLowerCase().includes('risk')) return 'concerned';
+        if (response.toLowerCase().includes('opportunity') || response.toLowerCase().includes('growth')) return 'excited';
+        if (response.toLowerCase().includes('challenge') || response.toLowerCase().includes('difficult')) return 'realistic';
+        return 'analytical';
+      };
+
+      const insights = extractInsights(text);
+      const actionItems = extractActionItems(text);
+      const mood = determineMood(text);
+      const companyName = userProfile?.company_name || 'your business';
+      const contactPerson = userProfile?.contact_person || 'there';
+
+      return {
+        response: `## 🔥 AYN's Business Assessment for ${companyName}
+
+**Current Situation Analysis:**
+${text}
+
+### 📊 What I'm Seeing:
+- 🎯 **Business Type:** ${userProfile?.business_type || 'Not specified'}
+- 💡 **Key Insights:** ${insights.length > 0 ? insights.join(', ') : 'General business analysis'}
+
+### 🎯 Immediate Action Items:
+${actionItems.map((item, i) => `${i + 1}. **Priority ${i + 1}:** ${item}`).join('\n')}
+
+### 💡 Bottom Line:
+Keep pushing forward, ${contactPerson}. Every challenge is a growth opportunity.
+
+---
+*What's your next move?*`,
+        mood,
+        businessType: userProfile?.business_type,
+        insights,
+        actionItems,
+        followUp: "What specific area would you like to dive deeper into?"
+      };
+    };
+
+    // Get user profile for enhanced response
+    let userProfile = null;
+    if (requestData.userId) {
+      try {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+        
+        if (supabaseUrl && supabaseKey) {
+          const profileResponse = await fetch(`${supabaseUrl}/rest/v1/profiles?user_id=eq.${requestData.userId}&select=*`, {
+            headers: {
+              'apikey': supabaseKey,
+              'Authorization': `Bearer ${supabaseKey}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (profileResponse.ok) {
+            const profiles = await profileResponse.json();
+            if (profiles && profiles.length > 0) {
+              userProfile = profiles[0];
+            }
+          }
+        }
+      } catch (error) {
+        console.warn(`[${requestId}] Failed to fetch user profile:`, error);
+      }
+    }
+
+    // Create enhanced response
+    const enhancedData = formatEnhancedResponse(sanitizedText, userProfile);
+
     // Prepare response
     const response: WebhookResponse = {
-      response: sanitizedText || 'I received your message but got an empty response. Please try again.',
+      response: enhancedData.response,
       status: upstream.ok ? 'success' : 'upstream_error',
       upstream: {
         status: upstream.status,
         contentType
-      }
+      },
+      // Add enhanced metadata
+      ...(userProfile && {
+        metadata: {
+          mood: enhancedData.mood,
+          businessType: enhancedData.businessType,
+          insights: enhancedData.insights,
+          actionItems: enhancedData.actionItems,
+          followUp: enhancedData.followUp
+        }
+      })
     };
 
     if (!upstream.ok) {
