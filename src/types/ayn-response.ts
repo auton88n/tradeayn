@@ -51,6 +51,13 @@ export interface EnhancedMessage {
   timestamp: Date;
   status?: 'sending' | 'sent' | 'failed';
   
+  // File attachment support
+  attachment?: {
+    url: string;
+    name: string;
+    type: string;
+  };
+  
   // Enhanced AYN-specific fields
   aynResponse?: AYNResponse;
   businessPulse?: BusinessPulse;

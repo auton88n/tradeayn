@@ -58,26 +58,7 @@ import { EnhancedChat } from './EnhancedChat';
 
 import { EnhancedMessage } from '@/types/ayn-response';
 
-interface Message {
-  id: string;
-  content: string;
-  sender: 'user' | 'ayn';
-  timestamp: Date;
-  status?: 'sending' | 'sent' | 'failed';
-  isTyping?: boolean;
-  attachment?: {
-    url: string;
-    name: string;
-    type: string;
-  };
-  metadata?: {
-    mood?: string;
-    businessType?: string;
-    insights?: string[];
-    actionItems?: string[];
-    followUp?: string;
-  };
-}
+// Remove the old Message interface - use only EnhancedMessage
 
 interface DashboardProps {
   user: User;
@@ -87,7 +68,7 @@ interface ChatHistory {
   title: string;
   lastMessage: string;
   timestamp: Date;
-  messages: Message[];
+  messages: EnhancedMessage[];
   sessionId: string;
 }
 
@@ -186,7 +167,7 @@ export default function Dashboard({ user }: DashboardProps) {
       }
 
       if (data && data.length > 0) {
-        const chatMessages: Message[] = data.map(msg => ({
+        const chatMessages: EnhancedMessage[] = data.map(msg => ({
           id: msg.id,
           content: msg.content,
           sender: msg.sender as 'user' | 'ayn',
@@ -510,7 +491,7 @@ export default function Dashboard({ user }: DashboardProps) {
       return;
     }
 
-    const userMessage: Message = {
+    const userMessage: EnhancedMessage = {
       id: Date.now().toString(),
       content: content || (attachment ? `📎 ${attachment.name}` : ''),
       sender: 'user',
@@ -548,32 +529,32 @@ export default function Dashboard({ user }: DashboardProps) {
       const response = webhookResponse?.response || 'I received your message and I\'m processing it. Please try again if you don\'t see a proper response.';
       const metadata = webhookResponse?.metadata || {};
 
-          // Create enhanced message with AYN response
-          const aynResponse = responseData.enhancedResponse ? {
-            ...responseData.enhancedResponse,
-            content: {
-              ...responseData.enhancedResponse.content,
-              rawContent: responseData.response
-            }
-          } : undefined;
+      // Create enhanced message with AYN response
+      const aynResponse = webhookResponse?.enhancedResponse ? {
+        ...webhookResponse.enhancedResponse,
+        content: {
+          ...webhookResponse.enhancedResponse.content,
+          rawContent: webhookResponse.response
+        }
+      } : undefined;
 
-          const newMessage: EnhancedMessage = {
-            id: crypto.randomUUID(),
-            content: responseData.response,
-            sender: 'ayn',
-            timestamp: new Date(),
-            status: 'sent',
-            aynResponse,
-            businessPulse: responseData.businessPulse,
-            // Legacy metadata for backward compatibility
-            metadata: {
-              mood: responseData.enhancedResponse?.mood || 'analytical',
-              businessType: responseData.enhancedResponse?.visual.category || 'general',
-              insights: responseData.enhancedResponse?.predictions?.map(p => p.shortTerm) || [],
-              actionItems: responseData.enhancedResponse?.content.action ? [responseData.enhancedResponse.content.action] : [],
-              followUp: responseData.enhancedResponse?.contextualActions?.map(a => a.label) || []
-            }
-          };
+      const newMessage: EnhancedMessage = {
+        id: crypto.randomUUID(),
+        content: response,
+        sender: 'ayn',
+        timestamp: new Date(),
+        status: 'sent',
+        aynResponse,
+        businessPulse: webhookResponse?.businessPulse,
+        // Legacy metadata for backward compatibility
+        metadata: {
+          mood: webhookResponse?.enhancedResponse?.mood || 'analytical',
+          businessType: webhookResponse?.enhancedResponse?.visual.category || 'general',
+          insights: webhookResponse?.enhancedResponse?.predictions?.map(p => p.shortTerm) || [],
+          actionItems: webhookResponse?.enhancedResponse?.content.action ? [webhookResponse.enhancedResponse.content.action] : [],
+          followUp: webhookResponse?.enhancedResponse?.contextualActions?.map(a => a.label) || []
+        }
+      };
 
       setMessages(prev => [...prev, newMessage]);
 
@@ -602,11 +583,12 @@ export default function Dashboard({ user }: DashboardProps) {
     } catch (error) {
       setIsTyping(false);
       
-      const errorMessage: Message = {
+      const errorMessage: EnhancedMessage = {
         id: (Date.now() + 1).toString(),
         content: "I'm sorry, I'm having trouble connecting right now. Please try again in a moment.",
         sender: 'ayn',
         timestamp: new Date(),
+        status: 'sent'
       };
 
       setMessages(prev => [...prev, errorMessage]);
@@ -874,7 +856,7 @@ export default function Dashboard({ user }: DashboardProps) {
     }
   };
 
-  const handleQuickAction = (action: string, message: Message) => {
+  const handleQuickAction = (action: string, message: EnhancedMessage) => {
     const actionPrompts = {
       elaborate: `Tell me more about: "${message.content.slice(0, 100)}..."`,
       disagree: `I disagree with this assessment: "${message.content.slice(0, 100)}..." Can you explain your reasoning?`,
@@ -887,7 +869,7 @@ export default function Dashboard({ user }: DashboardProps) {
     handleSendMessage(prompt);
   };
 
-  const handleReplyToText = (selectedText: string, originalMessage: Message) => {
+  const handleReplyToText = (selectedText: string, originalMessage: EnhancedMessage) => {
     const replyPrompt = `Regarding your point about "${selectedText}" - can you elaborate on this?`;
     handleSendMessage(replyPrompt);
   };
@@ -1250,10 +1232,9 @@ export default function Dashboard({ user }: DashboardProps) {
                     <div className="max-w-4xl mx-auto py-4 sm:py-6">
                       <EnhancedChat
                         messages={messages}
-                        onReplyToText={handleReplyToText}
+                        onReply={(content) => handleSendMessage(content)}
                         onQuickAction={handleQuickAction}
                         userProfile={userProfile}
-                        userId={user.id}
                       />
                       
                       {/* Typing Indicator */}
