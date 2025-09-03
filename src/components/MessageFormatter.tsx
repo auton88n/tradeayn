@@ -77,7 +77,7 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
           currentList = null;
           currentListType = null;
         }
-        elements.push(<div key={`space-${i}`} className="h-4" />);
+        elements.push(<div key={`space-${i}`} className="h-3" />);
         continue;
       }
 
@@ -97,11 +97,10 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
           <HeaderTag 
             key={`header-${i}`} 
             className={cn(
-              "font-bold text-foreground mt-6 mb-3 first:mt-0",
-              headerLevel === 1 && "text-xl",
-              headerLevel === 2 && "text-lg",
-              headerLevel === 3 && "text-base",
-              headerLevel >= 4 && "text-sm"
+              "font-semibold text-foreground mt-4 mb-2 first:mt-0",
+              headerLevel === 1 && "text-lg",
+              headerLevel === 2 && "text-base",
+              headerLevel >= 3 && "text-sm"
             )}
           >
             {formatInlineText(headerText)}
@@ -115,8 +114,8 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
         if (currentListType !== 'ul') {
           if (currentList) elements.push(currentList);
           currentList = (
-            <ul key={`ul-${i}`} className="list-disc list-inside space-y-1 my-3 first:mt-0 last:mb-0 pl-4">
-              <li className="text-foreground leading-relaxed">{listContent}</li>
+            <ul key={`ul-${i}`} className="list-disc list-inside space-y-0.5 my-2 first:mt-0 last:mb-0 pl-4">
+              <li className="text-foreground leading-normal">{listContent}</li>
             </ul>
           );
           currentListType = 'ul';
@@ -126,7 +125,7 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
           currentList = React.cloneElement(existingList, {
             children: [
               ...React.Children.toArray(existingList.props.children),
-              <li key={`li-${i}`} className="text-foreground leading-relaxed">{listContent}</li>
+              <li key={`li-${i}`} className="text-foreground leading-normal">{listContent}</li>
             ]
           });
         }
@@ -138,8 +137,8 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
         if (currentListType !== 'ol') {
           if (currentList) elements.push(currentList);
           currentList = (
-            <ol key={`ol-${i}`} className="list-decimal list-inside space-y-1 my-3 first:mt-0 last:mb-0 pl-4">
-              <li className="text-foreground leading-relaxed">{listContent}</li>
+            <ol key={`ol-${i}`} className="list-decimal list-inside space-y-0.5 my-2 first:mt-0 last:mb-0 pl-4">
+              <li className="text-foreground leading-normal">{listContent}</li>
             </ol>
           );
           currentListType = 'ol';
@@ -149,7 +148,7 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
           currentList = React.cloneElement(existingList, {
             children: [
               ...React.Children.toArray(existingList.props.children),
-              <li key={`li-${i}`} className="text-foreground leading-relaxed">{listContent}</li>
+              <li key={`li-${i}`} className="text-foreground leading-normal">{listContent}</li>
             ]
           });
         }
@@ -163,7 +162,7 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
         }
         
         elements.push(
-          <p key={`p-${i}`} className="text-foreground leading-relaxed my-3 first:mt-0 last:mb-0">
+          <p key={`p-${i}`} className="text-foreground leading-normal mb-2 last:mb-0">
             {formatInlineText(line)}
           </p>
         );
