@@ -1194,307 +1194,127 @@ export default function Dashboard({ user }: DashboardProps) {
               <LanguageSwitcher />
               <ThemeToggle />
             </div>
-          </div>
-        </header>
-
-        {/* Content Area */}
-        <div className="flex-1 flex flex-col min-h-0">
-          {/* Maintenance Banner */}
-          <MaintenanceBanner 
-            isEnabled={maintenanceConfig.enableMaintenance}
-            message={maintenanceConfig.maintenanceMessage}
-            startTime={maintenanceConfig.maintenanceStartTime}
-            endTime={maintenanceConfig.maintenanceEndTime}
-          />
-
-          {/* Terms Modal */}
-          <TermsModal 
-            open={hasAccess && !hasAcceptedTerms} 
-            onAccept={handleAcceptTerms}
-          />
-
-          {/* Admin Panel */}
-          {isAdmin && activeTab === 'admin' && (
-            <div className="flex-1 overflow-y-auto p-6">
-              <AdminPanel />
             </div>
-          )}
+          </header>
 
-          {/* Chat Interface */}
-          {(activeTab === 'chat' || !isAdmin) && (
-            <div className="flex flex-1 min-h-0">
-              {/* Main Chat Area */}
-              <div className="flex-1 flex flex-col min-h-0">
-                {/* Messages Area */}
-                <ScrollArea className="flex-1 px-3 sm:px-4 lg:px-6 pb-20 sm:pb-24">
-                  <div className="max-w-4xl mx-auto py-4 sm:py-6">
-                    <EnhancedChat
-                      messages={messages}
-                      onReplyToText={handleReplyToText}
-                      onQuickAction={handleQuickAction}
-                      userProfile={userProfile}
-                      userId={user.id}
-                    />
-                    
-                    {/* Typing Indicator */}
-                    {isTyping && (
-                      <div className="flex gap-2 sm:gap-3 justify-start mt-4">
-                        <Avatar className="w-7 h-7 sm:w-8 sm:h-8 flex-shrink-0">
-                          <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                            <Brain className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                          </AvatarFallback>
-                        </Avatar>
-                        <TypingIndicator />
-                      </div>
-                    )}
-                    
-                    <div ref={messagesEndRef} />
-                  </div>
+          {/* Content Area */}
+          <div className="flex-1 flex flex-col min-h-0">
+            {/* Maintenance Banner */}
+            <MaintenanceBanner 
+              isEnabled={maintenanceConfig.enableMaintenance}
+              message={maintenanceConfig.maintenanceMessage}
+              startTime={maintenanceConfig.maintenanceStartTime}
+              endTime={maintenanceConfig.maintenanceEndTime}
+            />
+
+            {/* Terms Modal */}
+            <TermsModal 
+              open={hasAccess && !hasAcceptedTerms} 
+              onAccept={handleAcceptTerms}
+            />
+
+            {/* Admin Panel */}
+            {isAdmin && activeTab === 'admin' && (
+              <div className="flex-1 overflow-y-auto p-6">
+                <AdminPanel />
               </div>
+            )}
 
-              {/* Business Intelligence Sidebar */}
-              <div className="w-80 bg-card border-l border-border p-6 space-y-6 overflow-y-auto flex-shrink-0 hidden lg:block">
-                <ProactiveInsights 
-                  userProfile={userProfile}
-                  onActionClick={handleInsightAction}
-                />
-                <SavedInsights userId={user.id} />
-              </div>
-            </div>
-          )}
+            {/* Chat Interface */}
+            {(activeTab === 'chat' || !isAdmin) && (
+              <div className="flex flex-1 min-h-0">
+                {/* Main Chat Area */}
+                <div className="flex-1 flex flex-col min-h-0">
+                  {/* Messages Area */}
+                  <ScrollArea className="flex-1 px-3 sm:px-4 lg:px-6 pb-20 sm:pb-24">
+                    <div className="max-w-4xl mx-auto py-4 sm:py-6">
+                      <EnhancedChat
+                        messages={messages}
+                        onReplyToText={handleReplyToText}
+                        onQuickAction={handleQuickAction}
+                        userProfile={userProfile}
+                        userId={user.id}
+                      />
+                      
+                      {/* Typing Indicator */}
+                      {isTyping && (
+                        <div className="flex gap-2 sm:gap-3 justify-start mt-4">
+                          <Avatar className="w-7 h-7 sm:w-8 sm:h-8 flex-shrink-0">
+                            <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                              <Brain className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                            </AvatarFallback>
+                          </Avatar>
+                          <TypingIndicator />
+                        </div>
+                      )}
+                      
+                      <div ref={messagesEndRef} />
+                    </div>
+                  </ScrollArea>
+                </div>
 
-              {/* Mobile-Style Floating Input Bar */}
-              <div 
-                className={`input-area ${messages.length > 1 ? 'bottom-position' : 'center-position'}`}
-                onDragEnter={handleDragEnter}
-                onDragLeave={handleDragLeave}
-                onDragOver={handleDragOver}
-                onDrop={handleDrop}
-              >
-                {/* ... keep existing input code ... */}
-                <div className={`input-container relative flex items-center bg-background border border-border rounded-2xl sm:rounded-3xl p-3 sm:p-4 gap-3 sm:gap-4 shadow-lg backdrop-blur-lg ${isDragOver ? 'drag-over border-primary bg-primary/5' : ''}`} dir={language === 'ar' ? 'rtl' : 'ltr'}>
-                  <input
-                    ref={inputRef}
-                    type="file"
-                    className="hidden"
-                    onChange={handleFileSelect}
-                    accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.txt,.json"
+                {/* Business Intelligence Sidebar */}
+                <div className="w-80 bg-card border-l border-border p-6 space-y-6 overflow-y-auto flex-shrink-0 hidden lg:block">
+                  <ProactiveInsights 
+                    userProfile={userProfile}
+                    onActionClick={handleInsightAction}
                   />
-                  
-                  <button 
-                    className={`flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-muted hover:bg-muted-foreground/10 transition-colors flex-shrink-0 ${language === 'ar' ? 'order-3' : 'order-1'}`}
-                    onClick={handleAttachmentClick}
-                    disabled={!hasAccess || !hasAcceptedTerms || isUploading}
-                    title="Attach file"
-                  >
-                    <Paperclip className="w-4 h-4" />
-                  </button>
-                  
-                  <Input
-                    value={inputMessage}
-                    onChange={(e) => setInputMessage(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder={isInputFocused || inputMessage.length > 0 ? t('common.typeMessage') : currentText}
-                    disabled={!hasAccess || !hasAcceptedTerms || isUploading}
-                    onFocus={() => setIsInputFocused(true)}
-                    onBlur={() => setIsInputFocused(false)}
-                    className={`flex-1 bg-transparent border-0 focus-visible:ring-0 text-sm sm:text-base placeholder:text-muted-foreground/60 ${language === 'ar' ? 'order-2 text-right' : 'order-2 text-left'}`}
-                    dir={language === 'ar' ? 'rtl' : 'ltr'}
-                  />
-
-                  <button
-                    onClick={() => handleSendMessage()}
-                    disabled={(!inputMessage.trim() && !selectedFile) || !hasAccess || !hasAcceptedTerms || isUploading}
-                    className={`flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 ${language === 'ar' ? 'order-1' : 'order-3'}`}
-                  >
-                    {isUploading ? (
-                      <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                    ) : (
-                      <Send className="w-4 h-4" />
-                    )}
-                  </button>
+                  <SavedInsights userId={user.id} />
                 </div>
               </div>
-              
-              {/* Business Intelligence Sidebar */}
-              <div className="w-80 bg-card border-l border-border p-6 space-y-6 overflow-y-auto flex-shrink-0 hidden lg:block">
-                <ProactiveInsights 
-                  userProfile={userProfile}
-                  onActionClick={handleInsightAction}
+            )}
+
+            {/* Mobile-Style Floating Input Bar */}
+            <div 
+              className={`input-area ${messages.length > 1 ? 'bottom-position' : 'center-position'}`}
+              onDragEnter={handleDragEnter}
+              onDragLeave={handleDragLeave}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+            >
+              <div className={`input-container relative flex items-center bg-background border border-border rounded-2xl sm:rounded-3xl p-3 sm:p-4 gap-3 sm:gap-4 shadow-lg backdrop-blur-lg ${isDragOver ? 'drag-over border-primary bg-primary/5' : ''}`} dir={language === 'ar' ? 'rtl' : 'ltr'}>
+                <input
+                  ref={inputRef}
+                  type="file"
+                  className="hidden"
+                  onChange={handleFileSelect}
+                  accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.txt,.json"
                 />
-                <SavedInsights userId={user.id} />
-              </div>
-            </div>
-          )}
-        </div>
-      </SidebarInset>
-    </div>
-  </SidebarProvider>
-  );
-}
-                {/* Drag Overlay */}
-                {isDragOver && (
-                  <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-sm flex items-center justify-center">
-                    <div className="bg-background border-2 border-dashed border-primary rounded-2xl p-8 text-center max-w-sm mx-4">
-                      <Paperclip className="w-12 h-12 mx-auto mb-4 text-primary" />
-                      <p className="text-lg font-medium text-primary mb-2">Drop your file here</p>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Images, PDFs, Word docs, text, or JSON files (max 10MB)
-                      </p>
-                      <div className="text-xs text-muted-foreground space-y-1">
-                        <div>• Images: JPG, PNG, GIF, WebP</div>
-                        <div>• Documents: PDF, DOC, DOCX</div>
-                        <div>• Text: TXT files</div>
-                        <div>• Data: JSON files</div>
-                      </div>
-                    </div>
-                  </div>
-                )}
                 
-                {/* Selected File Preview */}
-                {selectedFile && (
-                  <div className="mb-2 p-3 bg-muted rounded-xl border flex items-center gap-3">
-                    <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                      <Paperclip className="w-4 h-4 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{selectedFile.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                      </p>
-                    </div>
-                    <button
-                      onClick={removeSelectedFile}
-                      className="w-6 h-6 rounded-full bg-destructive/10 text-destructive hover:bg-destructive/20 flex items-center justify-center transition-colors"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                )}
+                <button 
+                  className={`flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-muted hover:bg-muted-foreground/10 transition-colors flex-shrink-0 ${language === 'ar' ? 'order-3' : 'order-1'}`}
+                  onClick={handleAttachmentClick}
+                  disabled={!hasAccess || !hasAcceptedTerms || isUploading}
+                  title="Attach file"
+                >
+                  <Paperclip className="w-4 h-4" />
+                </button>
+                
+                <Input
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder={isInputFocused || inputMessage.length > 0 ? t('common.typeMessage') : currentText}
+                  disabled={!hasAccess || !hasAcceptedTerms || isUploading}
+                  onFocus={() => setIsInputFocused(true)}
+                  onBlur={() => setIsInputFocused(false)}
+                  className={`flex-1 bg-transparent border-0 focus-visible:ring-0 text-sm sm:text-base placeholder:text-muted-foreground/60 ${language === 'ar' ? 'order-2 text-right' : 'order-2 text-left'}`}
+                  dir={language === 'ar' ? 'rtl' : 'ltr'}
+                />
 
-                <div className={`input-container relative flex items-center bg-background border border-border rounded-2xl sm:rounded-3xl p-3 sm:p-4 gap-3 sm:gap-4 shadow-lg backdrop-blur-lg ${isDragOver ? 'drag-over border-primary bg-primary/5' : ''}`} dir={language === 'ar' ? 'rtl' : 'ltr'}>
-                  {/* Attachment Button with File Types Dropdown */}
-                  <div className="relative">
-                    <button 
-                      className={`flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-muted hover:bg-muted-foreground/10 transition-colors flex-shrink-0 ${language === 'ar' ? 'order-3' : 'order-1'}`}
-                      onClick={handleAttachmentClick}
-                      onMouseEnter={() => setShowFileTypes(true)}
-                      onMouseLeave={() => setShowFileTypes(false)}
-                      disabled={!hasAccess || !hasAcceptedTerms || isUploading}
-                      title="Attach file"
-                    >
-                      <Paperclip className="w-4 h-4" />
-                    </button>
-                    
-                    {/* File Types Dropdown */}
-                    {showFileTypes && !isDragOver && (
-                      <div className={`absolute bottom-full mb-2 bg-background border border-border rounded-lg shadow-lg p-3 min-w-[220px] z-50 ${language === 'ar' ? 'right-0' : 'left-0'}`}>
-                        <div className="text-xs font-semibold text-foreground mb-2">📎 Accepted file types:</div>
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2 text-xs">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                            <span className="text-muted-foreground">Images:</span>
-                            <span className="text-foreground font-medium">JPG, PNG, GIF, WebP</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-xs">
-                            <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                            <span className="text-muted-foreground">Documents:</span>
-                            <span className="text-foreground font-medium">PDF, DOC, DOCX</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-xs">
-                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                            <span className="text-muted-foreground">Text:</span>
-                            <span className="text-foreground font-medium">TXT files</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-xs">
-                            <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                            <span className="text-muted-foreground">Data:</span>
-                            <span className="text-foreground font-medium">JSON files</span>
-                          </div>
-                        </div>
-                        <div className="mt-3 pt-2 border-t border-border">
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                            <span>Maximum file size: <strong>10MB</strong></span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Hidden File Input */}
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp,.txt,.json"
-                    onChange={handleFileSelect}
-                    className="hidden"
-                  />
-                  
-                  {/* Input Field */}
-                  <div className={`flex-1 relative ${language === 'ar' ? 'order-2' : 'order-2'}`}>
-                    <input
-                      ref={inputRef}
-                      type="text"
-                      className={`w-full bg-transparent border-none outline-none text-sm sm:text-base placeholder:text-muted-foreground ${language === 'ar' ? 'text-right' : 'text-left'}`}
-                      value={inputMessage}
-                      onChange={(e) => setInputMessage(e.target.value)}
-                      onKeyPress={handleKeyPress}
-                      onFocus={() => setIsInputFocused(true)}
-                      onBlur={() => setIsInputFocused(false)}
-                      placeholder=""
-                      disabled={!hasAccess || !hasAcceptedTerms || isUploading}
-                      style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}
-                    />
-                    
-                    {/* File Selected Indicator */}
-                    {selectedFile && (
-                      <div className="absolute -top-12 left-0 bg-primary text-primary-foreground px-3 py-1 rounded-lg text-sm flex items-center gap-2">
-                        <Paperclip className="w-3 h-3" />
-                        <span>{selectedFile.name}</span>
-                        <button 
-                          onClick={() => {
-                            setSelectedFile(null);
-                            if (fileInputRef.current) fileInputRef.current.value = '';
-                          }}
-                          className="text-primary-foreground hover:text-primary-foreground/80"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    )}
-                    
-                    {/* Typewriter Animation Placeholder */}
-                    {!inputMessage && !isInputFocused && !selectedFile && (
-                      <div className={`absolute inset-0 flex items-center pointer-events-none ${language === 'ar' ? 'justify-end pr-2' : 'justify-start pl-2'}`}>
-                        <span className={`text-muted-foreground select-none ${language === 'ar' ? 'text-right' : 'text-left'}`} style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}>
-                          {!hasAccess 
-                            ? "Access required to send messages..."
-                            : !hasAcceptedTerms 
-                              ? "Please accept terms to start chatting..."
-                              : currentText
-                          }
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Send Button */}
-                  <button
-                    className={`flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 ${language === 'ar' ? 'order-1' : 'order-3'}`}
-                    onClick={() => handleSendMessage()}
-                    disabled={(!inputMessage.trim() && !selectedFile) || !hasAccess || !hasAcceptedTerms || isTyping || isUploading}
-                  >
-                    {isUploading ? (
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <Send className="w-4 h-4" />
-                    )}
-                  </button>
-                </div>
+                <button
+                  onClick={() => handleSendMessage()}
+                  disabled={(!inputMessage.trim() && !selectedFile) || !hasAccess || !hasAcceptedTerms || isUploading}
+                  className={`flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 ${language === 'ar' ? 'order-1' : 'order-3'}`}
+                >
+                  {isUploading ? (
+                    <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                </button>
               </div>
-            </>
-          )}
+            </div>
           </div>
         </SidebarInset>
       </div>
