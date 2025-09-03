@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Building, User, ArrowLeft, Mail } from 'lucide-react';
+import { Loader2, Building, User } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 interface AuthModalProps {
@@ -21,8 +21,6 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
   const [fullName, setFullName] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [phone, setPhone] = useState('');
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [resetEmail, setResetEmail] = useState('');
   const { toast } = useToast();
   const { t } = useLanguage();
 
@@ -145,48 +143,6 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
     }
   };
 
-  const handleForgotPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!resetEmail) {
-      toast({
-        title: "Email Required",
-        description: "Please enter your email address",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-        redirectTo: `${window.location.origin}/`,
-      });
-
-      if (error) {
-        toast({
-          title: "Reset Failed",
-          description: error.message,
-          variant: "destructive"
-        });
-      } else {
-        toast({
-          title: "Reset Email Sent",
-          description: "Please check your email for password reset instructions"
-        });
-        setShowForgotPassword(false);
-        setResetEmail('');
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to send reset email",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="glass sm:max-w-md">
@@ -196,12 +152,11 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
           </DialogTitle>
         </DialogHeader>
 
-        {!showForgotPassword ? (
-          <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 glass">
-              <TabsTrigger value="signin">{t('auth.signIn')}</TabsTrigger>
-              <TabsTrigger value="signup">{t('auth.requestAccess')}</TabsTrigger>
-            </TabsList>
+        <Tabs defaultValue="signin" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 glass">
+            <TabsTrigger value="signin">{t('auth.signIn')}</TabsTrigger>
+            <TabsTrigger value="signup">{t('auth.requestAccess')}</TabsTrigger>
+          </TabsList>
 
           <TabsContent value="signin" className="space-y-4 mt-6">
             <form onSubmit={handleSignIn} className="space-y-4">
@@ -239,15 +194,6 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
               >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {t('auth.signIn')}
-              </Button>
-
-              <Button
-                type="button"
-                variant="ghost"
-                className="w-full text-sm text-muted-foreground hover:text-foreground"
-                onClick={() => setShowForgotPassword(true)}
-              >
-                Forgot your password?
               </Button>
             </form>
           </TabsContent>
@@ -347,58 +293,6 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
             </form>
           </TabsContent>
         </Tabs>
-        ) : (
-          <div className="space-y-6">
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowForgotPassword(false)}
-                className="p-0 h-auto"
-              >
-                <ArrowLeft className="h-4 w-4 mr-1" />
-                Back to Sign In
-              </Button>
-            </div>
-            
-            <div className="text-center space-y-2">
-              <div className="flex justify-center">
-                <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
-                  <Mail className="h-6 w-6" />
-                </div>
-              </div>
-              <h3 className="text-lg font-semibold">Reset Your Password</h3>
-              <p className="text-sm text-muted-foreground">
-                Enter your email address and we'll send you a link to reset your password
-              </p>
-            </div>
-
-            <form onSubmit={handleForgotPassword} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="reset-email">Email Address</Label>
-                <Input
-                  id="reset-email"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={resetEmail}
-                  onChange={(e) => setResetEmail(e.target.value)}
-                  disabled={isLoading}
-                  className="glass"
-                />
-              </div>
-
-              <Button
-                type="submit"
-                variant="hero"
-                className="w-full"
-                disabled={isLoading}
-              >
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Send Reset Link
-              </Button>
-            </form>
-          </div>
-        )}
       </DialogContent>
     </Dialog>
   );
