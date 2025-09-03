@@ -11,6 +11,7 @@ interface WebhookRequest {
   allowPersonalization?: boolean;
   contactPerson?: string;
   detectedLanguage?: 'ar' | 'en';
+  concise?: boolean;
 }
 
 interface WebhookResponse {
@@ -111,6 +112,21 @@ const textProcessor = {
   }
 };
 
+// Enforce concise responses: limit to 3 sentences or ~320 characters and plain text style
+function enforceConciseness(text: string): string {
+  if (!text) return '';
+  // Remove bullet/numbered list formatting to keep plain text
+  let t = text.replace(/^[\s*-•]+\s*/gm, '').replace(/^\d+\.\s+/gm, '');
+  // Split into sentences (support Arabic question mark)
+  const parts = t.split(/(?<=[.!?؟])\s+/).filter(Boolean);
+  t = parts.slice(0, 3).join(' ');
+  // Hard cap length
+  if (t.length > 320) t = t.slice(0, 320).replace(/\s+\S*$/, '') + '...';
+  // Remove leading greetings
+  t = t.replace(/^(hello|hi|hey)[,!\s]*/i, '');
+  return t.trim();
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -131,7 +147,8 @@ serve(async (req) => {
         userId: body?.userId || '',
         allowPersonalization: body?.allowPersonalization || false,
         contactPerson: body?.contactPerson || '',
-        detectedLanguage: body?.detectedLanguage || 'en'
+        detectedLanguage: body?.detectedLanguage || 'en',
+        concise: body?.concise ?? true
       };
     } catch (e) {
       console.warn(`[${requestId}] Request body was not valid JSON, using defaults`);
@@ -141,7 +158,8 @@ serve(async (req) => {
       message: requestData.message?.slice(0, 100) + (requestData.message?.length > 100 ? '...' : ''),
       userId: requestData.userId,
       allowPersonalization: requestData.allowPersonalization,
-      detectedLanguage: requestData.detectedLanguage
+      detectedLanguage: requestData.detectedLanguage,
+      concise: requestData.concise
     });
 
   // Prepare conversation key and system message based on personalization settings
@@ -153,9 +171,13 @@ serve(async (req) => {
     ? 'Always respond in Arabic (العربية). Use proper Arabic grammar and natural expressions.'
     : 'Always respond in English. Use clear, professional English.';
 
+  const conciseInstruction = requestData.concise
+    ? 'Be concise: 1-3 short sentences. Answer directly. No greetings, no coaching tone, no fluff, no bullet points unless explicitly requested.'
+    : '';
+
   const systemMessage = requestData.allowPersonalization && requestData.contactPerson
-    ? `You may address the user as ${requestData.contactPerson}. ${languageInstruction} Scope all context strictly to conversationKey (${conversationKey}).`
-    : `Do not use or infer personal names. Ignore any prior memory of names. ${languageInstruction} Treat each request as stateless and scope strictly to conversationKey (${conversationKey}).`;
+    ? `You may address the user as ${requestData.contactPerson}. ${languageInstruction} ${conciseInstruction} Scope all context strictly to conversationKey (${conversationKey}).`
+    : `Do not use or infer personal names. Ignore any prior memory of names. ${languageInstruction} ${conciseInstruction} Treat each request as stateless and scope strictly to conversationKey (${conversationKey}).`;
 
   // Call upstream webhook
   const upstreamUrl = 'https://n8n.srv846714.hstgr.cloud/webhook/d8453419-8880-4bc4-b351-a0d0376b1fce';
@@ -172,6 +194,7 @@ serve(async (req) => {
         conversationKey, // isolate memory per user and mode
         system: systemMessage,
         detectedLanguage: requestData.detectedLanguage,
+        concise: requestData.concise,
         timestamp: new Date().toISOString(),
         requestId
       }),
@@ -253,16 +276,18 @@ serve(async (req) => {
       });
     }
 
+    const finalText = requestData.concise ? enforceConciseness(sanitizedText) : sanitizedText;
+
     console.log(`[${requestId}] Text processing:`, {
       original: rawText.slice(0, 100),
-      processed: sanitizedText.slice(0, 100),
-      lengthChange: `${rawText.length} -> ${sanitizedText.length}`,
+      processed: finalText.slice(0, 100),
+      lengthChange: `${rawText.length} -> ${finalText.length}`,
       personalizationEnabled: requestData.allowPersonalization
     });
 
     // Prepare response
     const response: WebhookResponse = {
-      response: sanitizedText || 'I received your message but got an empty response. Please try again.',
+      response: finalText || 'I received your message but got an empty response. Please try again.',
       status: upstream.ok ? 'success' : 'upstream_error',
       upstream: {
         status: upstream.status,

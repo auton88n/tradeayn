@@ -516,7 +516,8 @@ export default function Dashboard({ user }: DashboardProps) {
           userId: user.id,
           allowPersonalization,
           contactPerson: userProfile?.contact_person || '',
-          detectedLanguage: detectedLanguage
+          detectedLanguage: detectedLanguage,
+          concise: true
         }
       });
       
