@@ -479,7 +479,7 @@ const Dashboard = ({ user }: DashboardProps) => {
                       setCurrentSessionId(crypto.randomUUID());
                     }}>
                       <Plus className="w-4 h-4" />
-                      {t('common.newConversation')}
+                      {t('common.newChat')}
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 </SidebarMenu>
@@ -557,7 +557,7 @@ const Dashboard = ({ user }: DashboardProps) => {
                         {user?.user_metadata?.name || user?.email}
                       </p>
                       <Badge variant={hasAccess ? "default" : "secondary"} className="text-xs">
-                        {hasAccess ? t('common.activeAccess') : t('common.pendingApproval')}
+                        {hasAccess ? t('common.active') : t('common.inactive')}
                       </Badge>
                     </div>
                   </div>
@@ -623,13 +623,13 @@ const Dashboard = ({ user }: DashboardProps) => {
                 {messages.length === 0 ? (
                   <div className="text-center py-12">
                     <Brain className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-                    <h3 className="text-xl font-semibold mb-2">{t('chat.welcome')}</h3>
-                    <p className="text-muted-foreground mb-6">{t('chat.welcomeDesc')}</p>
+                    <h3 className="text-xl font-semibold mb-2">{t('auth.welcomeTitle')}</h3>
+                    <p className="text-muted-foreground mb-6">{t('auth.welcomeDesc')}</p>
                     
                     {!hasAccess && (
                       <div className="bg-muted/50 rounded-lg p-4 mb-6">
                         <p className="text-sm text-muted-foreground mb-3">
-                          {t('chat.accessRequired')}
+                          {t('auth.accessRequiredDesc')}
                         </p>
                         <Button 
                           onClick={() => setShowTermsModal(true)}
@@ -736,7 +736,7 @@ const Dashboard = ({ user }: DashboardProps) => {
                   <Input
                     value={inputMessage}
                     onChange={(e) => setInputMessage(e.target.value)}
-                    placeholder={hasAccess ? t('chat.typeMessage') : t('chat.accessRequiredPlaceholder')}
+                    placeholder={hasAccess ? t('dashboard.placeholders.askAyn') : t('auth.accessRequiredDesc')}
                     disabled={!hasAccess || !hasAcceptedTerms || isTyping}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && !e.shiftKey) {
