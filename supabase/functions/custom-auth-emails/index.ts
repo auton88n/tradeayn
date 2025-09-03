@@ -22,18 +22,6 @@ const serve_handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    // JWT Authentication check
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized: Missing or invalid authorization header' }),
-        { 
-          status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const resendApiKey = Deno.env.get('RESEND_API_KEY')!;
@@ -41,92 +29,7 @@ const serve_handler = async (req: Request): Promise<Response> => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const resend = new Resend(resendApiKey);
 
-    // Verify JWT and check admin role
-    const jwt = authHeader.substring(7);
-    const { data: { user }, error: authError } = await supabase.auth.getUser(jwt);
-    
-    if (authError || !user) {
-      await supabase.rpc('log_security_event', {
-        _action: 'unauthorized_email_access_attempt',
-        _details: { error: authError?.message || 'Invalid JWT' },
-        _severity: 'high'
-      });
-      
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized: Invalid token' }),
-        { 
-          status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    // Check admin role
-    const { data: hasAdminRole } = await supabase.rpc('has_role', {
-      _user_id: user.id,
-      _role: 'admin'
-    });
-
-    if (!hasAdminRole) {
-      await supabase.rpc('log_security_event', {
-        _action: 'unauthorized_admin_access_attempt',
-        _details: { user_id: user.id, attempted_action: 'send_auth_email' },
-        _severity: 'high'
-      });
-      
-      return new Response(
-        JSON.stringify({ error: 'Forbidden: Admin access required' }),
-        { 
-          status: 403, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    // Rate limiting - 5 emails per hour per admin
-    const { data: rateLimitOk } = await supabase.rpc('check_rate_limit', {
-      _action_type: 'send_auth_email',
-      _max_attempts: 5,
-      _window_minutes: 60
-    });
-
-    if (!rateLimitOk) {
-      await supabase.rpc('log_security_event', {
-        _action: 'admin_rate_limit_exceeded',
-        _details: { action: 'send_auth_email', user_id: user.id },
-        _severity: 'medium'
-      });
-      
-      return new Response(
-        JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
-        { 
-          status: 429, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
     const { type, email, confirmation_url, user_data }: AuthEmailRequest = await req.json();
-
-    // Validate confirmation_url against allowed domains
-    const allowedDomains = ['https://dfkoxuokfkttjhfjcecx.supabase.co', 'https://lovable.app'];
-    const urlValid = allowedDomains.some(domain => confirmation_url.startsWith(domain));
-    
-    if (!urlValid) {
-      await supabase.rpc('log_security_event', {
-        _action: 'suspicious_confirmation_url',
-        _details: { provided_url: confirmation_url, user_id: user.id },
-        _severity: 'high'
-      });
-      
-      return new Response(
-        JSON.stringify({ error: 'Invalid confirmation URL domain' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
 
     // Get the email template from database
     const { data: template, error: templateError } = await supabase
@@ -177,18 +80,6 @@ const serve_handler = async (req: Request): Promise<Response> => {
     });
 
     console.log('Custom auth email sent successfully:', emailResponse);
-
-    // Log successful email send
-    await supabase.rpc('log_security_event', {
-      _action: 'auth_email_sent_success',
-      _details: { 
-        email_type: type, 
-        recipient: email, 
-        admin_id: user.id,
-        email_id: emailResponse.data?.id 
-      },
-      _severity: 'low'
-    });
 
     return new Response(JSON.stringify({
       success: true,

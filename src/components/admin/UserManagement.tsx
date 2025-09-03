@@ -6,8 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
 import { 
   Users, CheckCircle, XCircle, Clock, Building, Mail, Phone, Shield, Eye, Edit,
   Search, Filter, Download, UserPlus, UserMinus, MoreVertical
@@ -48,11 +46,6 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
-  const [grantDialogOpen, setGrantDialogOpen] = useState(false);
-  const [selectedUserForGrant, setSelectedUserForGrant] = useState<AccessGrantWithProfile | null>(null);
-  const [monthlyLimit, setMonthlyLimit] = useState<string>('');
-  const [viewDialogOpen, setViewDialogOpen] = useState(false);
-  const [selectedUserForView, setSelectedUserForView] = useState<AccessGrantWithProfile | null>(null);
   const { toast } = useToast();
   const { t, language } = useLanguage();
 
@@ -131,43 +124,6 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
       toast({
         title: "Error",
         description: "Failed to revoke user access.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleGrantAccess = async () => {
-    if (!selectedUserForGrant) return;
-    
-    try {
-      const limit = monthlyLimit === '' ? null : parseInt(monthlyLimit);
-      
-      const { error } = await supabase
-        .from('access_grants')
-        .update({
-          is_active: true,
-          granted_at: new Date().toISOString(),
-          monthly_limit: limit,
-          notes: `Access granted by administrator${limit ? ` with ${limit} message limit` : ' with unlimited messages'}`
-        })
-        .eq('user_id', selectedUserForGrant.user_id);
-
-      if (error) throw error;
-
-      toast({
-        title: t('admin.accessGranted'),
-        description: t('admin.accessGrantedDesc')
-      });
-      
-      setGrantDialogOpen(false);
-      setSelectedUserForGrant(null);
-      setMonthlyLimit('');
-      onRefresh();
-    } catch (error) {
-      console.error('Error granting access:', error);
-      toast({
-        title: "Error",
-        description: "Failed to grant user access.",
         variant: "destructive"
       });
     }
@@ -349,20 +305,6 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
                       </div>
                       
                       <div className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-                        {!user.is_active && !user.granted_at && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedUserForGrant(user);
-                              setGrantDialogOpen(true);
-                            }}
-                            className="text-green-600 hover:text-green-700"
-                          >
-                            <UserPlus className={`w-4 h-4 ${language === 'ar' ? 'ml-1' : 'mr-1'}`} />
-                            {t('admin.approve')}
-                          </Button>
-                        )}
                         {user.is_active && (
                           <Button
                             variant="outline"
@@ -374,14 +316,7 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
                             {t('admin.revoke')}
                           </Button>
                         )}
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => {
-                            setSelectedUserForView(user);
-                            setViewDialogOpen(true);
-                          }}
-                        >
+                        <Button variant="outline" size="sm">
                           <Eye className={`w-4 h-4 ${language === 'ar' ? 'ml-1' : 'mr-1'}`} />
                           {t('admin.view')}
                         </Button>
@@ -402,110 +337,6 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
           </ScrollArea>
         </CardContent>
       </Card>
-
-      {/* Grant Access Dialog */}
-      <Dialog open={grantDialogOpen} onOpenChange={setGrantDialogOpen}>
-        <DialogContent className="sm:max-w-md" aria-describedby="grant-access-description">
-          <DialogHeader>
-            <DialogTitle>{t('admin.grantAccess')}</DialogTitle>
-            <DialogDescription id="grant-access-description">
-              {t('admin.grantAccessDesc')} {selectedUserForGrant?.profiles?.company_name}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="monthlyLimit">{t('admin.monthlyLimit')}</Label>
-              <Input
-                id="monthlyLimit"
-                type="number"
-                placeholder={t('admin.unlimitedPlaceholder')}
-                value={monthlyLimit}
-                onChange={(e) => setMonthlyLimit(e.target.value)}
-                className="mt-1"
-              />
-              <p className="text-sm text-muted-foreground mt-1">
-                {t('admin.limitDescription')}
-              </p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setGrantDialogOpen(false)}>
-              {t('admin.cancel')}
-            </Button>
-            <Button onClick={handleGrantAccess} className="text-green-600 hover:text-green-700">
-              <UserPlus className="w-4 h-4 mr-1" />
-              {t('admin.grantAccess')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* View User Dialog */}
-      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-          <DialogContent className="sm:max-w-2xl" aria-describedby="view-user-description">
-            <DialogHeader>
-              <DialogTitle>{t('admin.userDetails')}</DialogTitle>
-              <DialogDescription id="view-user-description">
-                View detailed information about the selected user
-              </DialogDescription>
-            </DialogHeader>
-          {selectedUserForView && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium">{t('admin.companyName')}</Label>
-                  <p className="mt-1">{selectedUserForView.profiles?.company_name || t('admin.notProvided')}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">{t('admin.contactPerson')}</Label>
-                  <p className="mt-1">{selectedUserForView.profiles?.contact_person || t('admin.notProvided')}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">{t('admin.email')}</Label>
-                  <p className="mt-1">{selectedUserForView.user_email || t('admin.notProvided')}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">{t('admin.phone')}</Label>
-                  <p className="mt-1">{selectedUserForView.profiles?.phone || t('admin.notProvided')}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">{t('admin.status')}</Label>
-                  <div className="mt-1">
-                    <Badge variant={getStatusInfo(selectedUserForView).variant}>
-                      {getStatusInfo(selectedUserForView).label}
-                    </Badge>
-                  </div>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">{t('admin.monthlyLimit')}</Label>
-                  <p className="mt-1">
-                    {selectedUserForView.monthly_limit ? `${selectedUserForView.monthly_limit} messages` : t('admin.unlimited')}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">{t('admin.currentUsage')}</Label>
-                  <p className="mt-1">{selectedUserForView.current_month_usage || 0} messages</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">{t('admin.memberSince')}</Label>
-                  <p className="mt-1">{new Date(selectedUserForView.created_at).toLocaleDateString()}</p>
-                </div>
-              </div>
-              {selectedUserForView.notes && (
-                <div>
-                  <Label className="text-sm font-medium">{t('admin.notes')}</Label>
-                  <p className="mt-1 text-sm bg-muted p-3 rounded-md">{selectedUserForView.notes}</p>
-                </div>
-              )}
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setViewDialogOpen(false)}>
-              {t('admin.close')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
