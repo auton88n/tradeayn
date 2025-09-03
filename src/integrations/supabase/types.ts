@@ -359,6 +359,39 @@ export type Database = {
         }
         Relationships: []
       }
+      security_logs: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          id: string
+          ip_address: unknown | null
+          severity: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          severity?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          severity?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       system_reports: {
         Row: {
           created_at: string
@@ -509,13 +542,20 @@ export type Database = {
         Returns: boolean
       }
       log_security_event: {
-        Args: {
-          _action: string
-          _details?: Json
-          _ip_address?: unknown
-          _severity?: string
-          _user_agent?: string
-        }
+        Args:
+          | {
+              _action: string
+              _details?: Json
+              _ip_address?: unknown
+              _severity?: string
+              _user_agent?: string
+            }
+          | {
+              _action: string
+              _details?: Json
+              _severity?: string
+              _user_agent?: string
+            }
         Returns: undefined
       }
       validate_input_sanitization: {
