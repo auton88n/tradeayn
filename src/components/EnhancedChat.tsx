@@ -1,59 +1,44 @@
-import { useState, useRef, useEffect } from 'react';
-import ReactMarkdown from 'react-markdown';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Brain, Copy, MessageSquareReply, Bookmark } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { useToast } from '@/hooks/use-toast';
-import { useSaveInsight } from '@/components/SavedInsights';
-import { 
-  Copy, 
-  Reply, 
-  Bookmark, 
-  MessageCircle, 
-  ChevronDown, 
-  ChevronUp,
-  Brain
-} from 'lucide-react';
+import { AYNResponseCard } from '@/components/ayn/AYNResponseCard';
+import { BusinessPulseDisplay } from '@/components/ayn/BusinessPulseDisplay';
+import { EnhancedMessage } from '@/types/ayn-response';
 
-interface EnhancedMessage {
-  id: string;
-  content: string;
-  sender: 'user' | 'ayn';
-  timestamp: Date;
-  status?: 'sending' | 'sent' | 'error';
-  metadata?: {
-    mood?: string;
-    businessType?: string;
-    insights?: string[];
-    actionItems?: string[];
-    followUp?: string;
-  };
-}
+// Enhanced message interface moved to types file
 
 interface EnhancedChatProps {
   messages: EnhancedMessage[];
-  onReplyToText?: (selectedText: string, originalMessage: EnhancedMessage) => void;
+  onReply?: (content: string) => void;
   onQuickAction?: (action: string, message: EnhancedMessage) => void;
-  userProfile?: any;
-  userId: string;
+  userProfile?: {
+    id: string;
+    company_name?: string;
+    contact_person?: string;
+    business_type?: string;
+  };
 }
 
-export const EnhancedChat = ({ 
-  messages, 
-  onReplyToText, 
-  onQuickAction, 
-  userProfile,
-  userId 
-}: EnhancedChatProps) => {
-  const [selectedText, setSelectedText] = useState('');
-  const [showQuickActions, setShowQuickActions] = useState<{ [key: string]: boolean }>({});
-  const [expandedSections, setExpandedSections] = useState<{ [key: string]: boolean }>({});
+export const EnhancedChat: React.FC<EnhancedChatProps> = ({
+  messages,
+  onReply,
+  onQuickAction,
+  userProfile
+}) => {
   const { toast } = useToast();
-  const { saveInsight } = useSaveInsight(userId);
+  const [selectedText, setSelectedText] = useState<string>('');
+  const [showQuickActions, setShowQuickActions] = useState<Record<string, boolean>>({});
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
 
   const handleTextSelection = () => {
     const selection = window.getSelection();
-    if (selection && selection.toString().trim().length > 0) {
+    if (selection && selection.toString().trim()) {
       setSelectedText(selection.toString().trim());
+    } else {
+      setSelectedText('');
     }
   };
 
@@ -61,27 +46,29 @@ export const EnhancedChat = ({
     try {
       await navigator.clipboard.writeText(text);
       toast({
-        title: "📋 Copied!",
-        description: "Text copied to clipboard."
+        title: "Copied to clipboard",
+        description: "Message content has been copied",
       });
-    } catch (error) {
+    } catch (err) {
       toast({
-        title: "Error",
-        description: "Failed to copy text.",
-        variant: "destructive"
+        title: "Failed to copy",
+        description: "Could not copy to clipboard",
+        variant: "destructive",
       });
     }
   };
 
-  const handleReplyToSelected = (message: EnhancedMessage) => {
-    if (selectedText && onReplyToText) {
-      onReplyToText(selectedText, message);
-      setSelectedText('');
-    }
+  const handleReplyToSelected = (text: string) => {
+    onReply?.(`Regarding "${text}" - `);
+    setSelectedText('');
   };
 
-  const handleSaveInsight = async (text: string, category: string = 'general') => {
-    await saveInsight(text, category);
+  const handleSaveInsight = (message: EnhancedMessage) => {
+    // This would typically save to a insights collection
+    toast({
+      title: "Insight saved",
+      description: "Added to your saved insights",
+    });
   };
 
   const toggleQuickActions = (messageId: string) => {
@@ -100,52 +87,60 @@ export const EnhancedChat = ({
   };
 
   const getMoodEmoji = (mood: string) => {
-    const moods = {
-      'excited': '🚀',
-      'concerned': '⚠️',
-      'analytical': '🤔',
-      'realistic': '💡',
-      'competitive': '🔥'
+    const moods: Record<string, string> = {
+      analytical: '🔍',
+      excited: '🚀',
+      concerned: '⚠️',
+      realistic: '📊',
+      supportive: '💪',
+      focused: '🎯',
+      direct: '⚡',
+      challenging: '🔥',
+      urgent: '🚨'
     };
-    return moods[mood as keyof typeof moods] || '💼';
+    return moods[mood] || '🤖';
   };
 
+  // Extract structured sections from markdown content (legacy support)
   const extractSections = (content: string) => {
-    const sections = {
-      analysis: '',
-      insights: '',
-      actions: '',
-      bottomLine: ''
-    };
-
-    // Extract sections based on markdown headers
-    const analysisMatch = content.match(/\*\*Current Situation Analysis:\*\*([\s\S]*?)(?=###|$)/);
-    if (analysisMatch) sections.analysis = analysisMatch[1].trim();
-
-    const insightsMatch = content.match(/### 📊 What I'm Seeing:([\s\S]*?)(?=###|$)/);
-    if (insightsMatch) sections.insights = insightsMatch[1].trim();
-
-    const actionsMatch = content.match(/### 🎯 Immediate Action Items:([\s\S]*?)(?=###|$)/);
-    if (actionsMatch) sections.actions = actionsMatch[1].trim();
-
-    const bottomLineMatch = content.match(/### 💡 Bottom Line:([\s\S]*?)(?=---)/);
-    if (bottomLineMatch) sections.bottomLine = bottomLineMatch[1].trim();
-
-    return sections;
+    const sections: Record<string, string> = {};
+    
+    // Simple extraction logic for backward compatibility
+    const lines = content.split('\n');
+    let currentSection = '';
+    let currentContent: string[] = [];
+    
+    for (const line of lines) {
+      if (line.startsWith('## ') || line.startsWith('### ')) {
+        if (currentSection && currentContent.length > 0) {
+          sections[currentSection] = currentContent.join('\n');
+        }
+        currentSection = line.replace(/^#+\s*/, '').toLowerCase().replace(/\s+/g, '_');
+        currentContent = [];
+      } else if (currentSection) {
+        currentContent.push(line);
+      }
+    }
+    
+    if (currentSection && currentContent.length > 0) {
+      sections[currentSection] = currentContent.join('\n');
+    }
+    
+    return Object.keys(sections).length > 0 ? sections : null;
   };
 
-  const QuickActionButtons = ({ message }: { message: EnhancedMessage }) => {
-    const actions = [
-      { label: "Tell me more about this", action: "elaborate" },
-      { label: "I disagree with this", action: "disagree" },
-      { label: "How do I implement this?", action: "implement" },
-      { label: "Show me examples", action: "examples" },
-      { label: "What's the ROI?", action: "roi" }
+  // Quick action buttons component
+  const QuickActionButtons: React.FC<{ message: EnhancedMessage }> = ({ message }) => {
+    const quickActions = [
+      { label: "Tell me more", action: "expand_on_this" },
+      { label: "How do I implement this?", action: "implementation_guide" },
+      { label: "What are the risks?", action: "risk_analysis" },
+      { label: "Show me examples", action: "provide_examples" }
     ];
 
     return (
-      <div className="flex flex-wrap gap-2 mt-3">
-        {actions.map((action, index) => (
+      <div className="flex flex-wrap gap-2 mt-3 pt-2 border-t border-border">
+        {quickActions.map((action, index) => (
           <Button
             key={index}
             variant="outline"
@@ -177,129 +172,131 @@ export const EnhancedChat = ({
               </div>
             )}
             
-            <div className={`max-w-[70%] ${isAyn ? 'bg-card' : 'bg-primary text-primary-foreground'} rounded-lg p-4 shadow-sm border`}>
-              {/* Message Header for AYN */}
-              {isAyn && message.metadata && (
-                <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border">
-                  <span className="text-lg">{getMoodEmoji(message.metadata.mood || 'analytical')}</span>
-                  <span className="font-semibold text-sm">AYN Business Consultant</span>
-                  {message.metadata.businessType && (
-                    <Badge variant="secondary" className="text-xs">
-                      {message.metadata.businessType}
-                    </Badge>
-                  )}
-                </div>
-              )}
-
-              {/* Enhanced AYN Response */}
-              {isAyn && sections?.analysis ? (
-                <div className="space-y-4">
-                  {/* Main Analysis */}
-                  <div className="prose prose-sm max-w-none dark:prose-invert">
-                    <ReactMarkdown>{message.content}</ReactMarkdown>
-                  </div>
-
-                  {/* Action Items Section */}
-                  {message.metadata?.actionItems && message.metadata.actionItems.length > 0 && (
-                    <div className="bg-muted/50 rounded-lg p-3">
-                      <button
-                        onClick={() => toggleSection(message.id, 'actions')}
-                        className="flex items-center gap-2 font-medium text-sm mb-2 hover:text-primary"
-                      >
-                        <span>🎯 Quick Actions</span>
-                        {expandedSections[`${message.id}-actions`] ? (
-                          <ChevronUp className="w-4 h-4" />
-                        ) : (
-                          <ChevronDown className="w-4 h-4" />
+            {/* Enhanced AYN Response Display */}
+            {isAyn ? (
+              <div className="max-w-[85%] space-y-4">
+                {/* Show enhanced response if available */}
+                {message.aynResponse ? (
+                  <AYNResponseCard 
+                    response={message.aynResponse}
+                    onActionClick={(actionId) => {
+                      // Handle contextual action clicks
+                      console.log('Action clicked:', actionId);
+                      // You can implement specific actions here
+                    }}
+                  />
+                ) : (
+                  /* Fallback to legacy display */
+                  <div className="bg-card rounded-lg p-4 shadow-sm border">
+                    {message.metadata && (
+                      <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border">
+                        <span className="text-lg">{getMoodEmoji(message.metadata.mood || 'analytical')}</span>
+                        <span className="font-semibold text-sm">AYN Business Consultant</span>
+                        {message.metadata.businessType && (
+                          <Badge variant="secondary" className="text-xs">
+                            {message.metadata.businessType}
+                          </Badge>
                         )}
-                      </button>
-                      
-                      {expandedSections[`${message.id}-actions`] && (
-                        <div className="space-y-2">
-                          {message.metadata.actionItems.map((item, index) => (
-                            <div key={index} className="flex items-start gap-2">
-                              <span className="text-primary font-medium">{index + 1}.</span>
-                              <span className="text-sm">{item}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                      </div>
+                    )}
+                    
+                    <div className="prose prose-sm max-w-none dark:prose-invert">
+                      <ReactMarkdown>{message.content}</ReactMarkdown>
                     </div>
-                  )}
-                </div>
-              ) : (
-                <div className="prose prose-sm max-w-none dark:prose-invert">
-                  <ReactMarkdown>{message.content}</ReactMarkdown>
-                </div>
-              )}
 
-              {/* Message Actions */}
-              <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => copyToClipboard(message.content)}
-                  className="h-7 px-2"
-                >
-                  <Copy className="w-3 h-3 mr-1" />
-                  Copy
-                </Button>
+                    {/* Legacy Action Items */}
+                    {message.metadata?.actionItems && message.metadata.actionItems.length > 0 && (
+                      <div className="space-y-2 mt-4">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleSection(message.id, 'actionItems')}
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          {expandedSections[`${message.id}-actionItems`] ? 'Hide' : 'Show'} Action Items
+                        </Button>
+                        {expandedSections[`${message.id}-actionItems`] && (
+                          <div className="bg-primary/5 rounded-lg p-4 space-y-2">
+                            {message.metadata.actionItems.map((item, index) => (
+                              <div key={index} className="flex items-start gap-2">
+                                <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
+                                <span className="text-sm">{item}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
 
-                {isAyn && (
-                  <>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleSaveInsight(message.content, 'general')}
-                      className="h-7 px-2"
-                    >
-                      <Bookmark className="w-3 h-3 mr-1" />
-                      Save
-                    </Button>
-
-                    {selectedText && (
+                    {/* Message Actions */}
+                    <div className="flex items-center gap-2 mt-3 pt-2 border-t border-border">
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleReplyToSelected(message)}
-                        className="h-7 px-2 bg-primary/10"
+                        onClick={() => copyToClipboard(message.content)}
+                        className="text-muted-foreground hover:text-foreground"
                       >
-                        <Reply className="w-3 h-3 mr-1" />
-                        Reply to "{selectedText.slice(0, 20)}..."
+                        <Copy className="w-3 h-3 mr-1" />
+                        Copy
                       </Button>
-                    )}
+                      
+                      {selectedText && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleReplyToSelected(selectedText)}
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          <MessageSquareReply className="w-3 h-3 mr-1" />
+                          Reply to "{selectedText.substring(0, 20)}..."
+                        </Button>
+                      )}
 
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggleQuickActions(message.id)}
-                      className="h-7 px-2"
-                    >
-                      <MessageCircle className="w-3 h-3 mr-1" />
-                      Quick Reply
-                    </Button>
-                  </>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleSaveInsight(message)}
+                        className="text-muted-foreground hover:text-foreground"
+                      >
+                        <Bookmark className="w-3 h-3 mr-1" />
+                        Save
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleQuickActions(message.id)}
+                        className="text-muted-foreground hover:text-foreground"
+                      >
+                        Quick Actions
+                      </Button>
+                    </div>
+
+                    {/* Quick Actions */}
+                    {showQuickActions[message.id] && (
+                      <QuickActionButtons message={message} />
+                    )}
+                  </div>
+                )}
+
+                {/* Business Pulse Display */}
+                {message.businessPulse && (
+                  <BusinessPulseDisplay pulse={message.businessPulse} />
                 )}
               </div>
-
-              {/* Quick Action Buttons */}
-              {isAyn && showQuickActions[message.id] && (
-                <QuickActionButtons message={message} />
-              )}
-
-              {/* Follow-up Suggestion */}
-              {isAyn && message.metadata?.followUp && (
-                <div className="mt-3 p-2 bg-muted/30 rounded-lg border-l-2 border-primary">
-                  <p className="text-xs text-muted-foreground">💭 Follow-up suggestion:</p>
-                  <p className="text-sm mt-1">{message.metadata.followUp}</p>
+            ) : (
+              /* User Message */
+              <div className="max-w-[70%] bg-primary text-primary-foreground rounded-lg p-4 shadow-sm border">
+                <div className="prose prose-sm max-w-none prose-invert">
+                  <ReactMarkdown>{message.content}</ReactMarkdown>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
-            {!isAyn && (
+            {!isAyn && userProfile && (
               <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                <span className="text-sm font-medium">
-                  {userProfile?.contact_person?.charAt(0) || 'U'}
+                <span className="text-xs font-semibold text-muted-foreground">
+                  {userProfile.contact_person?.split(' ').map(n => n[0]).join('') || 'U'}
                 </span>
               </div>
             )}

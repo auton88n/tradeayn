@@ -56,12 +56,14 @@ import { ProactiveInsights } from './ProactiveInsights';
 import { SavedInsights } from './SavedInsights';
 import { EnhancedChat } from './EnhancedChat';
 
+import { EnhancedMessage } from '@/types/ayn-response';
+
 interface Message {
   id: string;
   content: string;
   sender: 'user' | 'ayn';
   timestamp: Date;
-  status?: 'sending' | 'sent' | 'error';
+  status?: 'sending' | 'sent' | 'failed';
   isTyping?: boolean;
   attachment?: {
     url: string;
@@ -119,7 +121,7 @@ const templates = [
 
 export default function Dashboard({ user }: DashboardProps) {
   // State management
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<EnhancedMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [hasAccess, setHasAccess] = useState(false);
@@ -546,16 +548,34 @@ export default function Dashboard({ user }: DashboardProps) {
       const response = webhookResponse?.response || 'I received your message and I\'m processing it. Please try again if you don\'t see a proper response.';
       const metadata = webhookResponse?.metadata || {};
 
-      const aynMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: response,
-        sender: 'ayn',
-        timestamp: new Date(),
-        isTyping: true,
-        metadata: metadata
-      };
+          // Create enhanced message with AYN response
+          const aynResponse = responseData.enhancedResponse ? {
+            ...responseData.enhancedResponse,
+            content: {
+              ...responseData.enhancedResponse.content,
+              rawContent: responseData.response
+            }
+          } : undefined;
 
-      setMessages(prev => [...prev, aynMessage]);
+          const newMessage: EnhancedMessage = {
+            id: crypto.randomUUID(),
+            content: responseData.response,
+            sender: 'ayn',
+            timestamp: new Date(),
+            status: 'sent',
+            aynResponse,
+            businessPulse: responseData.businessPulse,
+            // Legacy metadata for backward compatibility
+            metadata: {
+              mood: responseData.enhancedResponse?.mood || 'analytical',
+              businessType: responseData.enhancedResponse?.visual.category || 'general',
+              insights: responseData.enhancedResponse?.predictions?.map(p => p.shortTerm) || [],
+              actionItems: responseData.enhancedResponse?.content.action ? [responseData.enhancedResponse.content.action] : [],
+              followUp: responseData.enhancedResponse?.contextualActions?.map(a => a.label) || []
+            }
+          };
+
+      setMessages(prev => [...prev, newMessage]);
 
       // Save user message to database
       await supabase.from('messages').insert({
