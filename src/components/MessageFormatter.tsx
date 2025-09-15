@@ -162,7 +162,7 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
         }
         
         elements.push(
-          <p key={`p-${i}`} className="text-foreground leading-normal mb-2 last:mb-0">
+          <p key={`p-${i}`} className="text-foreground leading-normal mb-2 last:mb-0 [&:not(:empty)]:block [&:empty]:hidden">
             {formatInlineText(line)}
           </p>
         );
@@ -269,7 +269,7 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
   };
 
   return (
-    <div className={cn("text-foreground space-y-2 leading-relaxed", className)}>
+    <div className={cn("text-foreground space-y-2 leading-relaxed [&_*]:text-foreground", className)}>
       {formatMessage(content)}
     </div>
   );
