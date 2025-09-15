@@ -45,7 +45,7 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
         return (
           <div key={index} className="my-4 first:mt-0 last:mb-0">
             <pre className="bg-muted border border-border rounded-lg p-4 overflow-x-auto">
-              <code className="text-sm font-mono text-foreground whitespace-pre">
+              <code className="text-sm font-mono text-current whitespace-pre">
                 {part.content}
               </code>
             </pre>
@@ -97,7 +97,7 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
           <HeaderTag 
             key={`header-${i}`} 
             className={cn(
-              "font-semibold text-foreground mt-4 mb-2 first:mt-0",
+              "font-semibold mt-4 mb-2 first:mt-0",
               headerLevel === 1 && "text-lg",
               headerLevel === 2 && "text-base",
               headerLevel >= 3 && "text-sm"
@@ -115,7 +115,7 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
           if (currentList) elements.push(currentList);
           currentList = (
             <ul key={`ul-${i}`} className="list-disc list-inside space-y-0.5 my-2 first:mt-0 last:mb-0 pl-4">
-              <li className="text-foreground leading-normal">{listContent}</li>
+              <li className="leading-normal">{listContent}</li>
             </ul>
           );
           currentListType = 'ul';
@@ -125,7 +125,7 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
           currentList = React.cloneElement(existingList, {
             children: [
               ...React.Children.toArray(existingList.props.children),
-              <li key={`li-${i}`} className="text-foreground leading-normal">{listContent}</li>
+              <li key={`li-${i}`} className="leading-normal">{listContent}</li>
             ]
           });
         }
@@ -138,7 +138,7 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
           if (currentList) elements.push(currentList);
           currentList = (
             <ol key={`ol-${i}`} className="list-decimal list-inside space-y-0.5 my-2 first:mt-0 last:mb-0 pl-4">
-              <li className="text-foreground leading-normal">{listContent}</li>
+              <li className="leading-normal">{listContent}</li>
             </ol>
           );
           currentListType = 'ol';
@@ -148,7 +148,7 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
           currentList = React.cloneElement(existingList, {
             children: [
               ...React.Children.toArray(existingList.props.children),
-              <li key={`li-${i}`} className="text-foreground leading-normal">{listContent}</li>
+              <li key={`li-${i}`} className="leading-normal">{listContent}</li>
             ]
           });
         }
@@ -162,7 +162,7 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
         }
         
         elements.push(
-          <p key={`p-${i}`} className="text-foreground leading-normal mb-2 last:mb-0 [&:not(:empty)]:block [&:empty]:hidden">
+          <p key={`p-${i}`} className="leading-normal mb-2 last:mb-0 [&:not(:empty)]:block [&:empty]:hidden">
             {formatInlineText(line)}
           </p>
         );
@@ -220,7 +220,7 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
         return (
           <code 
             key={index} 
-            className="bg-muted text-foreground px-1.5 py-0.5 rounded text-sm font-mono border"
+            className="bg-muted text-current px-1.5 py-0.5 rounded text-sm font-mono border"
           >
             {part.content}
           </code>
@@ -269,7 +269,7 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
   };
 
   return (
-    <div className={cn("text-foreground space-y-2 leading-relaxed [&_*]:text-foreground", className)}>
+    <div className={cn("space-y-2 leading-relaxed", className)}>
       {formatMessage(content)}
     </div>
   );
