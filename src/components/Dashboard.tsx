@@ -41,7 +41,9 @@ import {
   X,
   Shield,
   Plus,
-  User as UserIcon
+  User as UserIcon,
+  Copy,
+  Reply
 } from 'lucide-react';
 import { ThemeToggle } from './theme-toggle';
 import { TermsModal } from './TermsModal';
@@ -142,6 +144,7 @@ export default function Dashboard({ user }: DashboardProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [showFileTypes, setShowFileTypes] = useState(false);
   const [allowPersonalization, setAllowPersonalization] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   
   const { toast } = useToast();
   
@@ -645,6 +648,29 @@ export default function Dashboard({ user }: DashboardProps) {
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
+  };
+
+  // Copy message to clipboard
+  const handleCopyMessage = async (content: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      toast({
+        title: "Message Copied",
+        description: "Message copied to clipboard.",
+      });
+    } catch (err) {
+      toast({
+        title: "Copy Failed",
+        description: "Failed to copy message to clipboard.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Reply to message
+  const handleReplyToMessage = (message: Message) => {
+    setReplyingTo(message);
+    setInputMessage(`@${message.sender}: "${message.content.substring(0, 50)}${message.content.length > 50 ? '...' : ''}"\n\n`);
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -1162,10 +1188,10 @@ export default function Dashboard({ user }: DashboardProps) {
               <ScrollArea className="flex-1 px-3 sm:px-4 lg:px-6 pb-20 sm:pb-24">
                 <div className="max-w-4xl mx-auto py-4 sm:py-6 space-y-3 sm:space-y-4">
                   {messages.map((message) => (
-                    <div
-                      key={message.id}
-                      className={`flex gap-2 sm:gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
+                     <div
+                       key={message.id}
+                       className={`flex gap-2 sm:gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'} group relative`}
+                     >
                       {message.sender === 'ayn' && (
                         <Avatar className="w-7 h-7 sm:w-8 sm:h-8 flex-shrink-0">
                           <AvatarFallback className="bg-primary text-primary-foreground text-xs">
@@ -1183,7 +1209,7 @@ export default function Dashboard({ user }: DashboardProps) {
                             {message.sender === 'ayn' && message.isTyping ? (
                               <TypewriterText
                                 text={message.content}
-                                speed={40}
+                                speed={2}
                                 className={`inline-block transition-all duration-300 hover:tracking-wide text-foreground hover:text-primary hover:drop-shadow-sm group-hover:scale-[1.02] transform-gpu`}
                                 onComplete={() => {
                                   setMessages(prev => 
@@ -1212,8 +1238,26 @@ export default function Dashboard({ user }: DashboardProps) {
                              <span className="text-xs">{message.attachment.name}</span>
                            </div>
                          )}
-                       </div>
-                       
+                        </div>
+
+                        {/* Action buttons */}
+                        <div className="flex items-start gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                          <button
+                            onClick={() => handleCopyMessage(message.content)}
+                            className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                            title="Copy message"
+                          >
+                            <Copy className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleReplyToMessage(message)}
+                            className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                            title="Reply to message"
+                          >
+                            <Reply className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                        
                         {message.sender === 'user' && (
                          <Avatar className="w-7 h-7 sm:w-8 sm:h-8 flex-shrink-0">
                            <AvatarImage src="" />
@@ -1249,6 +1293,26 @@ export default function Dashboard({ user }: DashboardProps) {
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
               >
+                {/* Reply indicator */}
+                {replyingTo && (
+                  <div className="mb-2 p-2 bg-muted rounded-lg flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Reply className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">
+                        Replying to: "{replyingTo.content.substring(0, 50)}{replyingTo.content.length > 50 ? '...' : ''}"
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setReplyingTo(null);
+                        setInputMessage('');
+                      }}
+                      className="p-1 rounded-md hover:bg-background text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
                 {/* Drag Overlay */}
                 {isDragOver && (
                   <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-sm flex items-center justify-center">
