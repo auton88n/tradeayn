@@ -1417,28 +1417,19 @@ export default function Dashboard({ user }: DashboardProps) {
                   <div className="flex-1 relative">
                     <Textarea
                       ref={inputRef}
-                      className="message-input resize-none min-h-[56px] max-h-[240px] overflow-y-auto"
+                      className="message-input resize-none min-h-[44px] max-h-[200px] overflow-y-auto"
                       value={inputMessage}
                       onChange={(e) => {
                         setInputMessage(e.target.value);
-                        // Enhanced auto-resize with smooth animation
+                        // Auto-resize textarea
                         const textarea = e.target as HTMLTextAreaElement;
                         textarea.style.height = 'auto';
-                        const newHeight = Math.min(Math.max(textarea.scrollHeight, 56), 240);
-                        textarea.style.height = newHeight + 'px';
+                        textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
                       }}
                       onKeyPress={handleKeyPress}
                       onFocus={() => setIsInputFocused(true)}
                       onBlur={() => setIsInputFocused(false)}
-                      placeholder={
-                        !hasAccess 
-                          ? "Access required to chat..."
-                          : !hasAcceptedTerms 
-                          ? "Accept terms to continue..."
-                          : isUploading
-                          ? "Uploading file..."
-                          : "Ask AYN anything..."
-                      }
+                      placeholder=""
                       disabled={!hasAccess || !hasAcceptedTerms || isUploading}
                       rows={1}
                     />
