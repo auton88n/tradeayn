@@ -46,7 +46,8 @@ import {
   Plus,
   User as UserIcon,
   Copy,
-  Reply
+  Reply,
+  MessageSquare
 } from 'lucide-react';
 import { ThemeToggle } from './theme-toggle';
 import { TermsModal } from './TermsModal';
@@ -84,6 +85,13 @@ interface ChatHistory {
 }
 
 const modes = [
+  { 
+    name: 'General', 
+    description: 'General AI assistant for all your needs',
+    icon: MessageSquare,
+    color: 'text-slate-500',
+    webhookUrl: '' // Will be set by user
+  },
   { 
     name: 'Nen Mode ⚡', 
     description: 'Ultra-fast AI responses for quick insights',
@@ -1495,7 +1503,7 @@ export default function Dashboard({ user }: DashboardProps) {
                   <div className="flex-1 relative">
                     <Textarea
                       ref={inputRef}
-                      className={`message-input resize-none min-h-[44px] max-h-[200px] overflow-y-auto ${selectedMode.toLowerCase().includes('nen') ? 'nen-mode bg-transparent border-none shadow-none outline-none ring-0 ring-offset-0 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0' : ''}`}
+                      className={`message-input resize-none min-h-[44px] max-h-[200px] overflow-y-auto bg-transparent border-none shadow-none outline-none ring-0 ring-offset-0 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 ${selectedMode.toLowerCase().includes('nen') ? 'nen-mode' : ''}`}
                       value={inputMessage}
                       onChange={(e) => {
                         setInputMessage(e.target.value);
