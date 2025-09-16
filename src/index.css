@@ -678,24 +678,12 @@
     cursor: not-allowed;
   }
 
-  /* NEN Mode Textarea Overrides - Remove all default shadcn styling */
+  /* NEN Mode Textarea Overrides */
   .input-container.nen-mode textarea {
     background: transparent !important;
-    border: none !important;
+    border: 0 !important;
     outline: none !important;
     box-shadow: none !important;
-    ring: 0 !important;
-    ring-offset: 0 !important;
-  }
-
-  .input-container.nen-mode textarea:focus,
-  .input-container.nen-mode textarea:focus-visible {
-    background: transparent !important;
-    border: none !important;
-    outline: none !important;
-    box-shadow: none !important;
-    ring: 0 !important;
-    ring-offset: 0 !important;
   }
 
   .send-button {

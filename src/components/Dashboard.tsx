@@ -1503,6 +1503,7 @@ export default function Dashboard({ user }: DashboardProps) {
                   <div className="flex-1 relative">
                     <Textarea
                       ref={inputRef}
+                      unstyled={selectedMode.toLowerCase().includes('nen')}
                       className={`message-input resize-none min-h-[44px] max-h-[200px] overflow-y-auto ${selectedMode.toLowerCase().includes('nen') ? 'nen-mode' : ''}`}
                       value={inputMessage}
                       onChange={(e) => {
