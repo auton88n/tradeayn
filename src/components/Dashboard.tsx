@@ -537,19 +537,6 @@ export default function Dashboard({ user }: DashboardProps) {
     setIsTyping(true);
 
     try {
-      // Call the appropriate webhook based on selected mode
-      const webhookUrl = modeWebhooks[selectedMode];
-      
-      if (!webhookUrl) {
-        toast({
-          title: "Webhook Not Configured",
-          description: `Please configure the webhook URL for ${selectedMode}`,
-          variant: "destructive"
-        });
-        setIsTyping(false);
-        return;
-      }
-
       // Enhanced payload with user context for n8n
       const payload = { 
         message: content,
@@ -599,6 +586,7 @@ export default function Dashboard({ user }: DashboardProps) {
         session_id: currentSessionId,
         content: content,
         sender: 'user',
+        mode_used: selectedMode,
         attachment_url: attachment?.url,
         attachment_name: attachment?.name,
         attachment_type: attachment?.type
@@ -609,7 +597,8 @@ export default function Dashboard({ user }: DashboardProps) {
         user_id: user.id,
         session_id: currentSessionId,
         content: response,
-        sender: 'ayn'
+        sender: 'ayn',
+        mode_used: selectedMode
       });
 
       // Refresh recent chats

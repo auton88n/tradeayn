@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,6 +13,7 @@ interface WebhookRequest {
   contactPerson?: string;
   detectedLanguage?: 'ar' | 'en';
   concise?: boolean;
+  mode?: string;
 }
 
 interface WebhookResponse {
@@ -136,6 +138,12 @@ serve(async (req) => {
   const requestId = crypto.randomUUID().slice(0, 8);
   console.log(`[${requestId}] Processing webhook request`);
 
+  // Initialize Supabase client
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  );
+
   try {
     // Parse request body
     let requestData: WebhookRequest = {};
@@ -148,7 +156,8 @@ serve(async (req) => {
         allowPersonalization: body?.allowPersonalization || false,
         contactPerson: body?.contactPerson || '',
         detectedLanguage: body?.detectedLanguage || 'en',
-        concise: body?.concise ?? true
+        concise: body?.concise ?? true,
+        mode: body?.mode || 'nen mode'
       };
     } catch (e) {
       console.warn(`[${requestId}] Request body was not valid JSON, using defaults`);
@@ -159,8 +168,30 @@ serve(async (req) => {
       userId: requestData.userId,
       allowPersonalization: requestData.allowPersonalization,
       detectedLanguage: requestData.detectedLanguage,
-      concise: requestData.concise
+      concise: requestData.concise,
+      mode: requestData.mode
     });
+
+    // Get webhook URL for the selected mode
+    const { data: modeConfig, error: modeError } = await supabase
+      .from('ai_mode_configs')
+      .select('webhook_url')
+      .eq('mode_name', requestData.mode)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (modeError) {
+      console.error(`[${requestId}] Database error fetching mode config:`, modeError);
+      throw new Error(`Failed to fetch webhook configuration for mode: ${requestData.mode}`);
+    }
+
+    if (!modeConfig) {
+      console.error(`[${requestId}] No active webhook found for mode: ${requestData.mode}`);
+      throw new Error(`No active webhook configuration found for mode: ${requestData.mode}`);
+    }
+
+    const upstreamUrl = modeConfig.webhook_url;
+    console.log(`[${requestId}] Using webhook URL for mode '${requestData.mode}': ${upstreamUrl}`);
 
   // Prepare conversation key and system message based on personalization settings
   const conversationKey = requestData.allowPersonalization
@@ -180,8 +211,6 @@ serve(async (req) => {
     : `Do not use or infer personal names. Ignore any prior memory of names. ${languageInstruction} ${conciseInstruction} Treat each request as stateless and scope strictly to conversationKey (${conversationKey}).`;
 
   // Call upstream webhook
-  const upstreamUrl = 'https://n8n.srv846714.hstgr.cloud/webhook/d8453419-8880-4bc4-b351-a0d0376b1fce';
-  
   const upstream = await fetch(upstreamUrl, {
       method: 'POST',
       headers: {
@@ -195,6 +224,7 @@ serve(async (req) => {
         system: systemMessage,
         detectedLanguage: requestData.detectedLanguage,
         concise: requestData.concise,
+        mode: requestData.mode,
         timestamp: new Date().toISOString(),
         requestId
       }),

@@ -113,6 +113,33 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_mode_configs: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          mode_name: string
+          updated_at: string
+          webhook_url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          mode_name: string
+          updated_at?: string
+          webhook_url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          mode_name?: string
+          updated_at?: string
+          webhook_url?: string
+        }
+        Relationships: []
+      }
       auth_email_templates: {
         Row: {
           created_at: string
@@ -202,6 +229,7 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          mode_used: string | null
           sender: string
           session_id: string | null
           updated_at: string
@@ -214,6 +242,7 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          mode_used?: string | null
           sender?: string
           session_id?: string | null
           updated_at?: string
@@ -226,6 +255,7 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          mode_used?: string | null
           sender?: string
           session_id?: string | null
           updated_at?: string
@@ -235,6 +265,8 @@ export type Database = {
       }
       profiles: {
         Row: {
+          business_context: string | null
+          business_type: string | null
           company_name: string | null
           contact_person: string | null
           created_at: string
@@ -244,6 +276,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          business_context?: string | null
+          business_type?: string | null
           company_name?: string | null
           contact_person?: string | null
           created_at?: string
@@ -253,6 +287,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          business_context?: string | null
+          business_type?: string | null
           company_name?: string | null
           contact_person?: string | null
           created_at?: string
@@ -260,6 +296,129 @@ export type Database = {
           phone?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      rate_limits: {
+        Row: {
+          action_type: string
+          attempt_count: number | null
+          blocked_until: string | null
+          created_at: string | null
+          id: string
+          last_attempt: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action_type: string
+          attempt_count?: number | null
+          blocked_until?: string | null
+          created_at?: string | null
+          id?: string
+          last_attempt?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          attempt_count?: number | null
+          blocked_until?: string | null
+          created_at?: string | null
+          id?: string
+          last_attempt?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      saved_insights: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          id: string
+          insight_text: string
+          tags: string[] | null
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          insight_text: string
+          tags?: string[] | null
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          insight_text?: string
+          tags?: string[] | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      security_audit_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          ip_address: unknown | null
+          severity: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          severity?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          severity?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      security_logs: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          id: string
+          ip_address: unknown | null
+          severity: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          severity?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          severity?: string | null
+          user_agent?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -361,9 +520,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_rate_limit: {
+        Args: {
+          _action_type: string
+          _max_attempts?: number
+          _window_minutes?: number
+        }
+        Returns: boolean
+      }
       check_usage_limit: {
         Args: { _user_id: string }
         Returns: boolean
+      }
+      cleanup_old_security_logs: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       cleanup_old_system_reports: {
         Args: Record<PropertyKey, never>
@@ -398,6 +569,27 @@ export type Database = {
       }
       increment_usage: {
         Args: { _action_type?: string; _count?: number; _user_id: string }
+        Returns: boolean
+      }
+      log_security_event: {
+        Args:
+          | {
+              _action: string
+              _details?: Json
+              _ip_address?: unknown
+              _severity?: string
+              _user_agent?: string
+            }
+          | {
+              _action: string
+              _details?: Json
+              _severity?: string
+              _user_agent?: string
+            }
+        Returns: undefined
+      }
+      validate_input_sanitization: {
+        Args: { input_text: string }
         Returns: boolean
       }
     }
