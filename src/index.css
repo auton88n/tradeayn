@@ -491,7 +491,7 @@
   [dir="rtl"] .typewriter-text {
     text-align: right;
     direction: rtl;
-    right: 44px;
+    right: var(--input-left-offset);
     left: auto;
   }
 
@@ -545,6 +545,7 @@
 
 
   .input-container {
+    --input-left-offset: 56px; /* container padding + attach width + gap + textarea padding */
     background: hsl(var(--background));
     border-radius: 25px;
     padding: 8px 12px;
@@ -763,6 +764,7 @@
     }
     
     .input-container {
+      --input-left-offset: 50px;
       padding: 8px 10px;
       border-radius: 18px;
     }

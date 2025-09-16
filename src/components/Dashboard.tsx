@@ -1540,14 +1540,19 @@ export default function Dashboard({ user }: DashboardProps) {
                     
                     {/* Typewriter Animation Placeholder */}
                     {!inputMessage && !isInputFocused && !selectedFile && (
-                      <div className={`absolute inset-0 flex items-center pointer-events-none ${language === 'ar' ? 'justify-end pr-12' : 'justify-start pl-12'}`}>
-                        <span className={`text-muted-foreground select-none typewriter-text ${language === 'ar' ? 'text-right' : 'text-left'}`} style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}>
-                          {!hasAccess 
+                      <div
+                        className={`absolute inset-y-0 w-full flex items-center pointer-events-none ${language === 'ar' ? 'justify-end' : 'justify-start'}`}
+                        style={{ left: language === 'ar' ? undefined : 'var(--input-left-offset)', right: language === 'ar' ? 'var(--input-left-offset)' : undefined }}
+                      >
+                        <span
+                          className={`text-muted-foreground select-none typewriter-text ${language === 'ar' ? 'text-right' : 'text-left'}`}
+                          style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}
+                        >
+                          {!hasAccess
                             ? "Access required to send messages..."
-                            : !hasAcceptedTerms 
+                            : !hasAcceptedTerms
                               ? "Please accept terms to start chatting..."
-                              : currentText
-                          }
+                              : currentText}
                         </span>
                       </div>
                     )}
