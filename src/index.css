@@ -562,42 +562,57 @@
   /* NEN Mode Enhanced Input Container */
   .input-container.nen-mode {
     background: hsl(var(--nen-bg)) !important;
-    border: 2px solid transparent;
+    border: 2px solid hsl(var(--nen-border)) !important;
     border-radius: 25px;
-    background-image: linear-gradient(hsl(var(--nen-bg)), hsl(var(--nen-bg))),
-                      linear-gradient(45deg,
-                        hsl(var(--nen-border)),
-                        hsl(var(--nen-glow)),
-                        hsl(var(--nen-border)),
-                        hsl(var(--nen-glow))
-                      );
-    background-origin: border-box;
-    background-clip: padding-box, border-box;
-    background-size: 100% 100%, 200% 200%;
-    animation: nen-border-glow 4s ease infinite;
     position: relative;
+    overflow: hidden;
+  }
+
+  .input-container.nen-mode::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg,
+      hsl(var(--nen-border)),
+      hsl(var(--nen-glow)),
+      hsl(var(--nen-border)),
+      hsl(var(--nen-glow))
+    );
+    background-size: 200% 200%;
+    border-radius: 25px;
+    z-index: -1;
+    animation: nen-border-glow 4s ease infinite;
   }
 
   .input-container.nen-mode:hover {
+    border-color: hsl(var(--nen-glow)) !important;
+  }
+
+  .input-container.nen-mode:hover::before {
     animation-duration: 2s;
   }
 
   .input-container.nen-mode:focus-within {
+    border-color: hsl(var(--nen-glow)) !important;
     box-shadow: 
       0 0 20px hsl(var(--nen-glow) / 0.4), 
       0 0 40px hsl(var(--nen-glow) / 0.2),
       0 8px 30px hsl(var(--nen-glow) / 0.1);
+  }
+
+  .input-container.nen-mode:focus-within::before {
     animation-duration: 1.5s;
   }
 
   @keyframes nen-border-glow {
     0%, 100% { 
-      background-position: 0 0, 0% 50%; 
-      filter: brightness(1);
+      background-position: 0% 50%; 
     }
     50% { 
-      background-position: 0 0, 100% 50%; 
-      filter: brightness(1.2);
+      background-position: 100% 50%; 
     }
   }
 
