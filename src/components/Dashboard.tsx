@@ -249,7 +249,16 @@ export default function Dashboard({ user }: DashboardProps) {
   useEffect(() => {
     if (isInputFocused || inputMessage.length > 0) return;
 
-    const messages = [
+    // Special messages for NEN mode
+    const nenMessages = [
+      "⚡ Unleash the power of multiple AI minds...",
+      "🧠 Access collective intelligence from all AI models...",
+      "🚀 Supercharge your productivity with NEN mode...",
+      "✨ Experience the synergy of unified AI assistance...",
+      "💎 Harness the combined wisdom of AI networks..."
+    ];
+
+    const regularMessages = [
       t('dashboard.placeholders.askAyn'),
       t('dashboard.placeholders.increaseRevenue'),
       t('dashboard.placeholders.marketTrends'), 
@@ -259,6 +268,8 @@ export default function Dashboard({ user }: DashboardProps) {
       t('dashboard.placeholders.pricingStrategy'),
       t('dashboard.placeholders.targetMarket')
     ];
+
+    const messages = selectedMode === 'NEN' ? nenMessages : regularMessages;
 
     const typeSpeed = 100;
     const deleteSpeed = 50;
@@ -284,7 +295,7 @@ export default function Dashboard({ user }: DashboardProps) {
     }, isDeleting ? deleteSpeed : typeSpeed);
 
     return () => clearTimeout(timer);
-  }, [currentText, isDeleting, currentIndex, isInputFocused, inputMessage]);
+  }, [currentText, isDeleting, currentIndex, isInputFocused, inputMessage, selectedMode, t]);
 
   const checkUserAccess = async () => {
     try {
@@ -1421,7 +1432,7 @@ export default function Dashboard({ user }: DashboardProps) {
                   </div>
                 )}
 
-                <div className={`input-container ${isDragOver ? 'drag-over' : ''}`}>
+                <div className={`input-container ${isDragOver ? 'drag-over' : ''} ${selectedMode === 'NEN' ? 'nen-mode' : ''}`}>
                   {/* Attachment Button with File Types Dropdown */}
                   <div className="relative">
                     <button 
@@ -1484,7 +1495,7 @@ export default function Dashboard({ user }: DashboardProps) {
                   <div className="flex-1 relative">
                     <Textarea
                       ref={inputRef}
-                      className="message-input resize-none min-h-[44px] max-h-[200px] overflow-y-auto"
+                      className={`message-input resize-none min-h-[44px] max-h-[200px] overflow-y-auto ${selectedMode === 'NEN' ? 'nen-mode' : ''}`}
                       value={inputMessage}
                       onChange={(e) => {
                         setInputMessage(e.target.value);
