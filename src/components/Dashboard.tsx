@@ -1495,7 +1495,7 @@ export default function Dashboard({ user }: DashboardProps) {
                   <div className="flex-1 relative">
                     <Textarea
                       ref={inputRef}
-                      className={`message-input resize-none min-h-[44px] max-h-[200px] overflow-y-auto ${selectedMode.toLowerCase().includes('nen') ? 'nen-mode' : ''}`}
+                      className={`message-input resize-none min-h-[44px] max-h-[200px] overflow-y-auto ${selectedMode.toLowerCase().includes('nen') ? 'nen-mode bg-transparent border-none shadow-none outline-none ring-0 ring-offset-0 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0' : ''}`}
                       value={inputMessage}
                       onChange={(e) => {
                         setInputMessage(e.target.value);
