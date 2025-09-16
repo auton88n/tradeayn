@@ -1403,7 +1403,7 @@ export default function Dashboard({ user }: DashboardProps) {
 
               {/* Mobile-Style Floating Input Bar */}
               <div 
-                className={`input-area ${messages.length > 1 ? 'bottom-position' : 'center-position'}`}
+                className={`input-area ${messages.length > 1 ? 'bottom-position' : 'center-position'} ${getModeClass(selectedMode)}`}
                 onDragEnter={handleDragEnter}
                 onDragLeave={handleDragLeave}
                 onDragOver={handleDragOver}
@@ -1469,7 +1469,7 @@ export default function Dashboard({ user }: DashboardProps) {
                   </div>
                 )}
 
-                <div className={`input-container ${isDragOver ? 'drag-over' : ''}`}>
+                <div className={`input-container ${isDragOver ? 'drag-over' : ''} ${getModeClass(selectedMode)}`}>
                   {/* Attachment Button with File Types Dropdown */}
                   <div className="relative">
                     <button 
@@ -1533,7 +1533,7 @@ export default function Dashboard({ user }: DashboardProps) {
                     <Textarea
                       ref={inputRef}
                       unstyled={true}
-                      className={`message-input resize-none min-h-[44px] max-h-[200px] overflow-y-auto`}
+                      className={`message-input resize-none min-h-[44px] max-h-[200px] overflow-y-auto ${getModeClass(selectedMode)}`}
                       value={inputMessage}
                       onChange={(e) => {
                         setInputMessage(e.target.value);
@@ -1584,7 +1584,7 @@ export default function Dashboard({ user }: DashboardProps) {
                   
                   {/* Send Button */}
                   <button
-                    className="send-button"
+                    className={`send-button ${getModeClass(selectedMode)}`}
                     onClick={() => handleSendMessage()}
                     disabled={(!inputMessage.trim() && !selectedFile) || !hasAccess || !hasAcceptedTerms || isTyping || isUploading}
                   >
