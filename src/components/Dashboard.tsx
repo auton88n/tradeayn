@@ -38,6 +38,8 @@ import {
   Brain,
   LogOut,
   Settings,
+  FileText,
+  Eye,
   Menu,
   X,
   Shield,
@@ -81,30 +83,34 @@ interface ChatHistory {
   sessionId: string;
 }
 
-const templates = [
+const modes = [
   { 
-    name: 'dashboard.templates.marketAnalysis', 
-    prompt: 'dashboard.templates.marketAnalysisPrompt', 
+    name: 'Nen Mode ⚡', 
+    description: 'Ultra-fast AI responses for quick insights',
     icon: TrendingUp,
-    color: 'text-blue-500'
+    color: 'text-blue-500',
+    webhookUrl: '' // Will be set by user
   },
   { 
-    name: 'dashboard.templates.salesFunnel', 
-    prompt: 'dashboard.templates.salesFunnelPrompt', 
-    icon: Target,
-    color: 'text-green-500'
-  },
-  { 
-    name: 'dashboard.templates.competitorResearch', 
-    prompt: 'dashboard.templates.competitorResearchPrompt', 
+    name: 'Research Pro', 
+    description: 'Deep research and comprehensive analysis',
     icon: Search,
-    color: 'text-purple-500'
+    color: 'text-green-500',
+    webhookUrl: '' // Will be set by user
   },
   { 
-    name: 'dashboard.templates.growthStrategy', 
-    prompt: 'dashboard.templates.growthStrategyPrompt', 
-    icon: Rocket,
-    color: 'text-orange-500'
+    name: 'PDF Analyst', 
+    description: 'Specialized document analysis and insights',
+    icon: FileText,
+    color: 'text-purple-500',
+    webhookUrl: '' // Will be set by user
+  },
+  { 
+    name: 'Vision Lab', 
+    description: 'Advanced image and visual content analysis',
+    icon: Eye,
+    color: 'text-orange-500',
+    webhookUrl: '' // Will be set by user
   },
 ];
 
@@ -125,6 +131,15 @@ export default function Dashboard({ user }: DashboardProps) {
   const [currentSessionId, setCurrentSessionId] = useState<string>(() => crypto.randomUUID());
   const { t, language } = useLanguage();
   
+  // State for AI modes and webhooks
+  const [selectedMode, setSelectedMode] = useState<string>('Nen Mode ⚡');
+  const [modeWebhooks, setModeWebhooks] = useState<Record<string, string>>({
+    'Nen Mode ⚡': '',
+    'Research Pro': '',
+    'PDF Analyst': '',
+    'Vision Lab': ''
+  });
+
   // Maintenance mode state
   const [maintenanceConfig, setMaintenanceConfig] = useState({
     enableMaintenance: false,
@@ -421,6 +436,15 @@ export default function Dashboard({ user }: DashboardProps) {
     });
   };
 
+  const handleModeClick = (modeName: string) => {
+    setSelectedMode(modeName);
+    // Optional: Show a toast or indication that the mode was selected
+    toast({
+      title: `${modeName} Selected`,
+      description: `Now using ${modeName} for AI responses`,
+    });
+  };
+
   const handleSendMessage = async (messageContent?: string) => {
     if (!hasAcceptedTerms) {
       toast({
@@ -513,16 +537,42 @@ export default function Dashboard({ user }: DashboardProps) {
     setIsTyping(true);
 
     try {
+      // Call the appropriate webhook based on selected mode
+      const webhookUrl = modeWebhooks[selectedMode];
+      
+      if (!webhookUrl) {
+        toast({
+          title: "Webhook Not Configured",
+          description: `Please configure the webhook URL for ${selectedMode}`,
+          variant: "destructive"
+        });
+        setIsTyping(false);
+        return;
+      }
+
+      // Enhanced payload with user context for n8n
+      const payload = { 
+        message: content,
+        userId: user.id,
+        userEmail: user.email,
+        mode: selectedMode,
+        sessionId: currentSessionId,
+        conversationHistory: messages.slice(-5), // Last 5 messages for context
+        userProfile: {
+          companyName: userProfile?.company_name || '',
+          contactPerson: userProfile?.contact_person || '',
+          businessType: userProfile?.business_type || '',
+          businessContext: userProfile?.business_context || ''
+        },
+        allowPersonalization,
+        detectedLanguage: detectedLanguage,
+        concise: true,
+        timestamp: new Date().toISOString()
+      };
+
       // Call AYN webhook through edge function
       const { data: webhookResponse, error: webhookError } = await supabase.functions.invoke('ayn-webhook', {
-        body: { 
-          message: content,
-          userId: user.id,
-          allowPersonalization,
-          contactPerson: userProfile?.contact_person || '',
-          detectedLanguage: detectedLanguage,
-          concise: true
-        }
+        body: payload
       });
       
       setIsTyping(false);
@@ -937,16 +987,16 @@ export default function Dashboard({ user }: DashboardProps) {
               </div>
               <SidebarGroupContent className={language === 'ar' ? 'text-right' : ''}>
                 <SidebarMenu>
-                   {templates.map((template) => (
-                    <SidebarMenuItem key={template.name}>
+                   {modes.map((mode) => (
+                    <SidebarMenuItem key={mode.name}>
                       <SidebarMenuButton
-                        onClick={() => handleSendMessage(t(template.prompt))}
+                        onClick={() => handleModeClick(mode.name)}
                         disabled={!hasAccess || !hasAcceptedTerms}
-                        tooltip={t(template.name)}
-                        className={language === 'ar' ? 'flex-row-reverse justify-start' : ''}
+                        tooltip={mode.description}
+                        className={`${language === 'ar' ? 'flex-row-reverse justify-start' : ''} ${selectedMode === mode.name ? 'bg-accent' : ''}`}
                       >
-                        <template.icon className={`w-4 h-4 flex-shrink-0 ${template.color} ${language === 'ar' ? 'ml-0 mr-2' : ''}`} />
-                        <span className={`group-data-[collapsible=icon]:hidden ${language === 'ar' ? 'text-right' : ''}`}>{t(template.name)}</span>
+                        <mode.icon className={`w-4 h-4 flex-shrink-0 ${mode.color} ${language === 'ar' ? 'ml-0 mr-2' : ''}`} />
+                        <span className={`group-data-[collapsible=icon]:hidden ${language === 'ar' ? 'text-right' : ''}`}>{mode.name}</span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   ))}
@@ -1093,6 +1143,31 @@ export default function Dashboard({ user }: DashboardProps) {
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
+
+            {/* Webhook Configuration */}
+            <SidebarGroup>
+              <SidebarGroupLabel className={`px-4 py-2 ${language === 'ar' ? 'text-right' : 'text-left'}`}>
+                Webhook Configuration
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <div className="px-4 space-y-3">
+                  {modes.map((mode) => (
+                    <div key={mode.name} className="space-y-1">
+                      <Label className="text-xs font-medium">{mode.name}</Label>
+                      <Input
+                        placeholder={`Enter ${mode.name} webhook URL`}
+                        value={modeWebhooks[mode.name]}
+                        onChange={(e) => setModeWebhooks(prev => ({
+                          ...prev,
+                          [mode.name]: e.target.value
+                        }))}
+                        className="h-8 text-xs"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </SidebarGroupContent>
+            </SidebarGroup>
           </SidebarContent>
         </Sidebar>
 
@@ -1107,6 +1182,9 @@ export default function Dashboard({ user }: DashboardProps) {
               <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
                 <Brain className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
                 <h1 className="font-bold text-sm sm:text-lg truncate">AYN Business Console</h1>
+                <Badge variant="secondary" className="text-xs hidden sm:inline-flex">
+                  {selectedMode}
+                </Badge>
               </div>
             </div>
 
