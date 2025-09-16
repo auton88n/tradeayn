@@ -269,7 +269,7 @@ export default function Dashboard({ user }: DashboardProps) {
       t('dashboard.placeholders.targetMarket')
     ];
 
-    const messages = selectedMode === 'NEN' ? nenMessages : regularMessages;
+    const messages = selectedMode.toLowerCase().includes('nen') ? nenMessages : regularMessages;
 
     const typeSpeed = 100;
     const deleteSpeed = 50;
@@ -1432,7 +1432,7 @@ export default function Dashboard({ user }: DashboardProps) {
                   </div>
                 )}
 
-                <div className={`input-container ${isDragOver ? 'drag-over' : ''} ${selectedMode === 'NEN' ? 'nen-mode' : ''}`}>
+                <div className={`input-container ${isDragOver ? 'drag-over' : ''} ${selectedMode.toLowerCase().includes('nen') ? 'nen-mode' : ''}`}>
                   {/* Attachment Button with File Types Dropdown */}
                   <div className="relative">
                     <button 
@@ -1495,7 +1495,7 @@ export default function Dashboard({ user }: DashboardProps) {
                   <div className="flex-1 relative">
                     <Textarea
                       ref={inputRef}
-                      className={`message-input resize-none min-h-[44px] max-h-[200px] overflow-y-auto ${selectedMode === 'NEN' ? 'nen-mode' : ''}`}
+                      className={`message-input resize-none min-h-[44px] max-h-[200px] overflow-y-auto ${selectedMode.toLowerCase().includes('nen') ? 'nen-mode' : ''}`}
                       value={inputMessage}
                       onChange={(e) => {
                         setInputMessage(e.target.value);
