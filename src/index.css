@@ -240,7 +240,7 @@
     content: '|';
     animation: blink 1s step-end infinite;
     color: #3b82f6;
-    margin-left: 2px;
+    margin-left: 0px;
   }
 
   @keyframes blink {
