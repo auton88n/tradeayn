@@ -921,6 +921,18 @@ export default function Dashboard({ user }: DashboardProps) {
     }
   };
 
+  // Get mode class name for styling
+  const getModeClass = (mode: string) => {
+    const modeMap: { [key: string]: string } = {
+      'General': 'mode-general',
+      'Nen Mode ⚡': 'mode-nen',
+      'Research Pro': 'mode-research',
+      'PDF Analyst': 'mode-pdf',
+      'Vision Lab': 'mode-vision'
+    };
+    return modeMap[mode] || 'mode-general';
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -930,7 +942,7 @@ export default function Dashboard({ user }: DashboardProps) {
 
   return (
     <SidebarProvider>
-      <div className="flex h-screen w-full bg-background">
+      <div className={`flex h-screen w-full bg-background ${getModeClass(selectedMode)}`}>
         {/* Sidebar */}
         <Sidebar collapsible="offcanvas" className="w-64">
           <SidebarHeader className="p-4">
@@ -994,21 +1006,32 @@ export default function Dashboard({ user }: DashboardProps) {
                 <SidebarGroupLabel className={language === 'ar' ? 'text-right ml-auto' : 'text-left'}>{t('common.quickStart')}</SidebarGroupLabel>
               </div>
               <SidebarGroupContent className={language === 'ar' ? 'text-right' : ''}>
-                <SidebarMenu>
+                 <SidebarMenu>
                    {modes.map((mode) => (
                     <SidebarMenuItem key={mode.name}>
                       <SidebarMenuButton
                         onClick={() => handleModeClick(mode.name)}
                         disabled={!hasAccess || !hasAcceptedTerms}
                         tooltip={mode.description}
-                        className={`${language === 'ar' ? 'flex-row-reverse justify-start' : ''} ${selectedMode === mode.name ? 'bg-sidebar-accent text-sidebar-accent-foreground' : ''}`}
+                        className={`${language === 'ar' ? 'flex-row-reverse justify-start' : ''} ${
+                          selectedMode === mode.name 
+                            ? 'bg-sidebar-accent text-sidebar-accent-foreground border border-primary/20 shadow-lg' 
+                            : 'hover:bg-sidebar-accent/50'
+                        } transition-all duration-300 group relative overflow-hidden`}
                       >
-                        <mode.icon className={`w-4 h-4 flex-shrink-0 ${mode.color} ${language === 'ar' ? 'ml-0 mr-2' : ''}`} />
-                        <span className={`group-data-[collapsible=icon]:hidden ${language === 'ar' ? 'text-right' : ''}`}>{mode.name}</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
+                        <mode.icon className={`w-4 h-4 flex-shrink-0 ${
+                          selectedMode === mode.name ? 'text-primary' : mode.color
+                        } ${language === 'ar' ? 'ml-0 mr-2' : ''} transition-colors duration-300`} />
+                        <span className={`group-data-[collapsible=icon]:hidden ${language === 'ar' ? 'text-right' : ''} transition-colors duration-300`}>
+                          {mode.name}
+                        </span>
+                        {selectedMode === mode.name && (
+                          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-50 pointer-events-none" />
+                         )}
+                       </SidebarMenuButton>
+                     </SidebarMenuItem>
+                   ))}
+                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
 
@@ -1190,7 +1213,13 @@ export default function Dashboard({ user }: DashboardProps) {
               <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
                 <Brain className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
                 <h1 className="font-bold text-sm sm:text-lg truncate">AYN Business Console</h1>
-                <Badge variant="secondary" className="text-xs hidden sm:inline-flex">
+                <Badge variant="secondary" className={`text-xs hidden sm:inline-flex transition-all duration-300 ${
+                  selectedMode === 'Nen Mode ⚡' ? 'bg-nen-primary/20 text-nen-primary border-nen-primary/30' :
+                  selectedMode === 'Research Pro' ? 'bg-research-primary/20 text-research-primary border-research-primary/30' :
+                  selectedMode === 'PDF Analyst' ? 'bg-pdf-primary/20 text-pdf-primary border-pdf-primary/30' :
+                  selectedMode === 'Vision Lab' ? 'bg-vision-primary/20 text-vision-primary border-vision-primary/30' :
+                  'bg-general-primary/20 text-general-primary border-general-primary/30'
+                }`}>
                   {selectedMode}
                 </Badge>
               </div>
@@ -1440,7 +1469,7 @@ export default function Dashboard({ user }: DashboardProps) {
                   </div>
                 )}
 
-                <div className={`input-container ${isDragOver ? 'drag-over' : ''} ${selectedMode.toLowerCase().includes('nen') ? 'nen-mode' : ''}`}>
+                <div className={`input-container ${isDragOver ? 'drag-over' : ''}`}>
                   {/* Attachment Button with File Types Dropdown */}
                   <div className="relative">
                     <button 
@@ -1504,7 +1533,7 @@ export default function Dashboard({ user }: DashboardProps) {
                     <Textarea
                       ref={inputRef}
                       unstyled={true}
-                      className={`message-input resize-none min-h-[44px] max-h-[200px] overflow-y-auto ${selectedMode.toLowerCase().includes('nen') ? 'nen-mode' : ''}`}
+                      className={`message-input resize-none min-h-[44px] max-h-[200px] overflow-y-auto`}
                       value={inputMessage}
                       onChange={(e) => {
                         setInputMessage(e.target.value);

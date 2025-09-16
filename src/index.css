@@ -108,6 +108,45 @@
     --nen-text: 120 60% 25%;
     --nen-glow: 150 80% 40%;
     --nen-border: 140 70% 30%;
+
+    /* Mode-Specific Variables */
+    /* General Mode */
+    --general-bg: 240 5% 6%;
+    --general-text: 240 5% 90%;
+    --general-primary: 240 5% 64.9%;
+    --general-accent: 240 3.7% 15.9%;
+    --general-glow: 240 5% 64.9%;
+
+    /* NEN Mode - Matrix/Hacker Theme */
+    --nen-primary: 120 100% 50%;
+    --nen-particle: 120 100% 30%;
+
+    /* Research Pro - Academic/Lab Theme */
+    --research-bg: 210 100% 6%;
+    --research-text: 210 40% 90%;
+    --research-primary: 210 100% 56%;
+    --research-accent: 210 100% 12%;
+    --research-glow: 210 100% 45%;
+    --research-secondary: 200 100% 70%;
+
+    /* PDF Analyst - Professional Theme */
+    --pdf-bg: 270 100% 6%;
+    --pdf-text: 270 15% 90%;
+    --pdf-primary: 270 100% 60%;
+    --pdf-accent: 270 100% 10%;
+    --pdf-glow: 270 100% 50%;
+    --pdf-secondary: 280 100% 75%;
+
+    /* Vision Lab - Futuristic HUD Theme */
+    --vision-bg: 25 100% 6%;
+    --vision-text: 25 30% 90%;
+    --vision-primary: 25 100% 55%;
+    --vision-accent: 25 100% 10%;
+    --vision-glow: 25 100% 45%;
+    --vision-secondary: 35 100% 65%;
+
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 }
 
@@ -676,6 +715,241 @@
   .message-input:disabled {
     color: hsl(var(--muted-foreground));
     cursor: not-allowed;
+  }
+
+  /* Mode-Specific Styling Classes */
+  .mode-general .input-container {
+    background: hsl(var(--general-bg) / 0.8);
+    border: 1px solid hsl(var(--general-accent));
+    box-shadow: 0 4px 20px hsl(var(--general-glow) / 0.1);
+  }
+
+  .mode-nen .input-container {
+    background: hsl(var(--nen-bg) / 0.9);
+    border: 1px solid hsl(var(--nen-primary) / 0.3);
+    box-shadow: 0 0 30px hsl(var(--nen-glow) / 0.2), inset 0 1px 0 hsl(var(--nen-primary) / 0.1);
+    position: relative;
+  }
+
+  .mode-nen .input-container::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    right: -1px;
+    bottom: -1px;
+    background: linear-gradient(45deg, 
+      hsl(var(--nen-primary) / 0.3) 0%, 
+      transparent 25%, 
+      hsl(var(--nen-primary) / 0.2) 50%, 
+      transparent 75%, 
+      hsl(var(--nen-primary) / 0.3) 100%);
+    border-radius: inherit;
+    z-index: -1;
+    animation: matrix-border 3s ease-in-out infinite;
+  }
+
+  .mode-research .input-container {
+    background: hsl(var(--research-bg) / 0.85);
+    border: 1px solid hsl(var(--research-primary) / 0.3);
+    box-shadow: 0 8px 32px hsl(var(--research-glow) / 0.15);
+  }
+
+  .mode-pdf .input-container {
+    background: hsl(var(--pdf-bg) / 0.9);
+    border: 1px solid hsl(var(--pdf-primary) / 0.3);
+    box-shadow: 0 6px 24px hsl(var(--pdf-glow) / 0.12);
+  }
+
+  .mode-vision .input-container {
+    background: hsl(var(--vision-bg) / 0.85);
+    border: 1px solid hsl(var(--vision-primary) / 0.4);
+    box-shadow: 0 0 40px hsl(var(--vision-glow) / 0.2);
+    position: relative;
+  }
+
+  .mode-vision .input-container::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, 
+      transparent 0%, 
+      hsl(var(--vision-primary)) 50%, 
+      transparent 100%);
+    animation: scan-line 2s ease-in-out infinite;
+  }
+
+  /* Mode-Specific Send Button Styling */
+  .mode-general .send-button {
+    background: hsl(var(--general-primary));
+    border: 1px solid hsl(var(--general-accent));
+  }
+
+  .mode-nen .send-button {
+    background: hsl(var(--nen-primary));
+    box-shadow: 0 0 15px hsl(var(--nen-glow) / 0.5);
+    border: 1px solid hsl(var(--nen-primary));
+  }
+
+  .mode-research .send-button {
+    background: hsl(var(--research-primary));
+    border: 1px solid hsl(var(--research-secondary) / 0.5);
+  }
+
+  .mode-pdf .send-button {
+    background: hsl(var(--pdf-primary));
+    border: 1px solid hsl(var(--pdf-secondary) / 0.5);
+  }
+
+  .mode-vision .send-button {
+    background: hsl(var(--vision-primary));
+    box-shadow: 0 0 20px hsl(var(--vision-glow) / 0.4);
+    border: 1px solid hsl(var(--vision-primary));
+  }
+
+  /* Mode-Specific Text Styling */
+  .mode-nen .message-input {
+    color: hsl(var(--nen-text));
+    font-family: 'Courier New', monospace;
+    caret-color: hsl(var(--nen-primary));
+  }
+
+  .mode-research .message-input {
+    color: hsl(var(--research-text));
+    font-weight: 400;
+    caret-color: hsl(var(--research-primary));
+  }
+
+  .mode-pdf .message-input {
+    color: hsl(var(--pdf-text));
+    font-weight: 400;
+    caret-color: hsl(var(--pdf-primary));
+  }
+
+  .mode-vision .message-input {
+    color: hsl(var(--vision-text));
+    font-weight: 500;
+    caret-color: hsl(var(--vision-primary));
+  }
+
+  /* Animations */
+  @keyframes matrix-border {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.8; }
+  }
+
+  @keyframes scan-line {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  /* Mode Transition Effects */
+  .mode-general,
+  .mode-nen,
+  .mode-research,
+  .mode-pdf,
+  .mode-vision {
+    transition: var(--transition-smooth);
+  }
+
+  /* Enhanced Mode-Specific Background Effects */
+  .mode-nen::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 20% 80%, hsl(var(--nen-primary) / 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, hsl(var(--nen-glow) / 0.02) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .mode-research::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, hsl(var(--research-primary) / 0.02) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .mode-pdf::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(ellipse at center, hsl(var(--pdf-primary) / 0.02) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .mode-vision::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, hsl(var(--vision-primary) / 0.03) 0%, transparent 40%),
+                radial-gradient(circle at 70% 30%, hsl(var(--vision-glow) / 0.02) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Enhanced Send Button Hover Effects */
+  .mode-nen .send-button:hover {
+    background: hsl(var(--nen-primary) / 0.9);
+    box-shadow: 0 0 25px hsl(var(--nen-glow) / 0.7);
+    transform: scale(1.05);
+  }
+
+  .mode-research .send-button:hover {
+    background: hsl(var(--research-primary) / 0.9);
+    box-shadow: 0 0 20px hsl(var(--research-glow) / 0.4);
+    transform: scale(1.05);
+  }
+
+  .mode-pdf .send-button:hover {
+    background: hsl(var(--pdf-primary) / 0.9);
+    box-shadow: 0 0 20px hsl(var(--pdf-glow) / 0.4);
+    transform: scale(1.05);
+  }
+
+  .mode-vision .send-button:hover {
+    background: hsl(var(--vision-primary) / 0.9);
+    box-shadow: 0 0 30px hsl(var(--vision-glow) / 0.6);
+    transform: scale(1.05);
+  }
+
+  /* Enhanced Input Container Hover Effects */
+  .mode-nen .input-container:hover {
+    border-color: hsl(var(--nen-primary) / 0.5);
+    box-shadow: 0 0 40px hsl(var(--nen-glow) / 0.3);
+  }
+
+  .mode-research .input-container:hover {
+    border-color: hsl(var(--research-primary) / 0.4);
+    box-shadow: 0 12px 48px hsl(var(--research-glow) / 0.2);
+  }
+
+  .mode-pdf .input-container:hover {
+    border-color: hsl(var(--pdf-primary) / 0.4);
+    box-shadow: 0 8px 32px hsl(var(--pdf-glow) / 0.18);
+  }
+
+  .mode-vision .input-container:hover {
+    border-color: hsl(var(--vision-primary) / 0.5);
+    box-shadow: 0 0 50px hsl(var(--vision-glow) / 0.3);
   }
 
   .send-button {
