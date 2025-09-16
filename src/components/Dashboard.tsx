@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -149,7 +150,7 @@ export default function Dashboard({ user }: DashboardProps) {
   const { toast } = useToast();
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
@@ -1414,17 +1415,23 @@ export default function Dashboard({ user }: DashboardProps) {
                   
                   {/* Input Field */}
                   <div className="flex-1 relative">
-                    <input
+                    <Textarea
                       ref={inputRef}
-                      type="text"
-                      className="message-input"
+                      className="message-input resize-none min-h-[44px] max-h-[200px] overflow-y-auto"
                       value={inputMessage}
-                      onChange={(e) => setInputMessage(e.target.value)}
+                      onChange={(e) => {
+                        setInputMessage(e.target.value);
+                        // Auto-resize textarea
+                        const textarea = e.target as HTMLTextAreaElement;
+                        textarea.style.height = 'auto';
+                        textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
+                      }}
                       onKeyPress={handleKeyPress}
                       onFocus={() => setIsInputFocused(true)}
                       onBlur={() => setIsInputFocused(false)}
                       placeholder=""
                       disabled={!hasAccess || !hasAcceptedTerms || isUploading}
+                      rows={1}
                     />
                     
                     {/* File Selected Indicator */}
