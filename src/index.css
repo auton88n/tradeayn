@@ -395,9 +395,6 @@
     direction: rtl;
     flex-direction: row-reverse;
   }
-    direction: rtl;
-    flex-direction: row-reverse;
-  }
 
   /* RTL Margin and Padding Adjustments */
   [dir="rtl"] .ml-1 { margin-left: 0; margin-right: 0.25rem; }
@@ -784,3 +781,4 @@
       min-width: 32px;
     }
   }
+}

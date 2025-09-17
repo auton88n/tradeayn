@@ -1336,7 +1336,7 @@ function DashboardContent({ user }: DashboardProps) {
 
               {/* Mobile-Style Floating Input Bar */}
               <div 
-                className={`input-area ${messages.length > 1 ? 'bottom-position' : 'center-position'} ${!open ? 'sidebar-open' : ''}`}
+                className={`input-area ${messages.length > 1 ? 'bottom-position' : 'center-position'} ${open ? 'sidebar-open' : ''}`}
                 onDragEnter={handleDragEnter}
                 onDragLeave={handleDragLeave}
                 onDragOver={handleDragOver}
