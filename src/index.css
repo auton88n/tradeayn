@@ -386,15 +386,13 @@
     }
   }
 
-  /* RTL Text direction for inputs */
+  /* RTL Text direction for inputs - removed special handling */
   [dir="rtl"] .message-input {
-    text-align: right;
-    direction: rtl;
+    /* Use same styling as LTR */
   }
 
   [dir="rtl"] .message-input::placeholder {
-    text-align: right;
-    direction: rtl;
+    /* Use same styling as LTR */
   }
 
   /* RTL Input Container - mirror layout with flex, keep icons inside */
@@ -475,17 +473,13 @@
     justify-content: flex-start;
   }
 
-  /* RTL Input Field Alignment */
+  /* RTL Input Field Alignment - removed special handling */
   [dir="rtl"] .message-input {
-    text-align: right;
-    direction: rtl;
-    padding-left: 40px; /* space for send on left */
-    padding-right: 24px; /* tighter so text/placeholder sit more to the right */
+    /* Use same styling as LTR */
   }
 
   [dir="rtl"] .message-input::placeholder {
-    text-align: right;
-    direction: rtl;
+    /* Use same styling as LTR */
   }
 
 
