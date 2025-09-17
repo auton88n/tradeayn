@@ -134,6 +134,14 @@ const getSendButtonClass = (mode: string) => {
 };
 
 export default function Dashboard({ user }: DashboardProps) {
+  return (
+    <SidebarProvider>
+      <DashboardContent user={user} />
+    </SidebarProvider>
+  );
+}
+
+function DashboardContent({ user }: DashboardProps) {
   const { open } = useSidebar();
   // State management
   const [messages, setMessages] = useState<Message[]>([]);
@@ -884,10 +892,9 @@ export default function Dashboard({ user }: DashboardProps) {
   };
 
   return (
-    <SidebarProvider>
-      <div className="flex h-screen w-full bg-background">
-        {/* Sidebar */}
-        <Sidebar collapsible="offcanvas" className="w-64">
+    <div className="flex h-screen w-full bg-background">
+      {/* Sidebar */}
+      <Sidebar collapsible="offcanvas" className="w-64">
           <SidebarHeader className="p-4">
             {/* User Profile */}
             <div className="flex items-center gap-3">
@@ -1515,6 +1522,5 @@ export default function Dashboard({ user }: DashboardProps) {
           </div>
         </SidebarInset>
       </div>
-    </SidebarProvider>
   );
 }
