@@ -379,8 +379,9 @@
   @media (min-width: 1024px) {
     [dir="rtl"] [data-state="expanded"] ~ main .input-area.bottom-position,
     [dir="rtl"] [data-state="expanded"] ~ main .input-area.center-position {
-      right: calc(50% + (var(--sidebar-width) / 2));
-      left: auto;
+      left: 320px;
+      right: 24px;
+      transform: none;
       transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     }
   }
@@ -545,10 +546,11 @@
 
   /* Desktop: shift input when sidebar is expanded */
   @media (min-width: 1024px) {
-    /* LTR: shift input to the right when sidebar is expanded */
     [dir="ltr"] [data-state="expanded"] ~ main .input-area.bottom-position,
     [dir="ltr"] [data-state="expanded"] ~ main .input-area.center-position {
-      left: calc(50% + (var(--sidebar-width) / 2));
+      left: 320px;
+      right: 24px;
+      transform: none;
       transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
     }
     
