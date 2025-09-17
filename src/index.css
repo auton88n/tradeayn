@@ -309,6 +309,21 @@
       width: calc(100% - 280px);
       max-width: 400px;
     }
+    
+    /* RTL version */
+    [dir="rtl"] .input-area.sidebar-open.bottom-position {
+      right: calc(50% + 120px);
+      left: auto;
+      width: calc(100% - 280px);
+      max-width: 400px;
+    }
+    
+    [dir="rtl"] .input-area.sidebar-open.center-position {
+      right: calc(50% + 120px);
+      left: auto;
+      width: calc(100% - 280px);
+      max-width: 400px;
+    }
   }
 
   /* RTL Support */
@@ -349,25 +364,37 @@
   /* RTL Input Area Adjustments for small screens when sidebar is open */
   [dir="rtl"] .input-area.sidebar-open.bottom-position,
   [dir="rtl"] .input-area.sidebar-open.center-position {
-    right: calc(50% - 120px);
+    right: calc(50% + 120px);
     left: auto;
+    width: calc(100% - 280px);
+    max-width: 400px;
   }
 
   @media (min-width: 1024px) {
     [dir="rtl"] [data-state="expanded"] ~ main .input-area.bottom-position,
     [dir="rtl"] [data-state="expanded"] ~ main .input-area.center-position {
-      right: calc(50% - (var(--sidebar-width) / 2));
+      right: calc(50% + (var(--sidebar-width) / 2));
       left: auto;
+      transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     }
   }
 
   /* RTL Text direction for inputs */
   [dir="rtl"] .message-input {
     text-align: right;
+    direction: rtl;
+  }
+
+  [dir="rtl"] .message-input::placeholder {
+    text-align: right;
+    direction: rtl;
   }
 
   /* RTL Input Container - mirror layout with flex, keep icons inside */
   [dir="rtl"] .input-container {
+    direction: rtl;
+    flex-direction: row-reverse;
+  }
     direction: rtl;
     flex-direction: row-reverse;
   }
@@ -551,7 +578,6 @@
     gap: 8px;
     transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
     position: relative;
-  }
   }
 
 

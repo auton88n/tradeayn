@@ -134,6 +134,7 @@ const getSendButtonClass = (mode: string) => {
 };
 
 export default function Dashboard({ user }: DashboardProps) {
+  const { open } = useSidebar();
   // State management
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
@@ -1328,7 +1329,7 @@ export default function Dashboard({ user }: DashboardProps) {
 
               {/* Mobile-Style Floating Input Bar */}
               <div 
-                className={`input-area ${messages.length > 1 ? 'bottom-position' : 'center-position'}`}
+                className={`input-area ${messages.length > 1 ? 'bottom-position' : 'center-position'} ${!open ? 'sidebar-open' : ''}`}
                 onDragEnter={handleDragEnter}
                 onDragLeave={handleDragLeave}
                 onDragOver={handleDragOver}
