@@ -549,7 +549,7 @@
 
 
   .input-container {
-    --input-left-offset: 50px; /* Precise calculation: 8px + 32px + 8px + 2px buffer = 50px */
+    --input-left-offset: 4px; /* align placeholder with textarea text start */
     --input-vertical-offset: 10px; /* match .message-input padding-top exactly */
     background: hsl(var(--background));
     border-radius: 25px;
@@ -771,7 +771,7 @@
     }
     
     .input-container {
-      --input-left-offset: 44px; /* 8px container + 24px attach (mobile w-6) + 8px gap + 4px textarea = 44px */
+      --input-left-offset: 4px; /* mobile: align placeholder with textarea text start */
       --input-vertical-offset: 10px; /* keep in sync on mobile */
       padding: 8px 10px;
       border-radius: 18px;

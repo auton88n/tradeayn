@@ -1545,10 +1545,7 @@ export default function Dashboard({ user }: DashboardProps) {
                         style={{ 
                           left: language === 'ar' ? undefined : 'var(--input-left-offset)', 
                           right: language === 'ar' ? 'var(--input-left-offset)' : undefined,
-                          top: 'var(--input-vertical-offset)',
-                          height: '24px', // Match line-height * font-size
-                          display: 'flex',
-                          alignItems: 'center'
+                          top: 'var(--input-vertical-offset)'
                         }}
                       >
                         <span
