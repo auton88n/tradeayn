@@ -259,11 +259,11 @@ export default function Dashboard({ user }: DashboardProps) {
 
     // Special messages for NEN mode
     const nenMessages = [
-      "⚡ Unleash the power of multiple AI minds...",
-      "🧠 Access collective intelligence from all AI models...",
-      "🚀 Supercharge your productivity with NEN mode...",
-      "✨ Experience the synergy of unified AI assistance...",
-      "💎 Harness the combined wisdom of AI networks..."
+      "⚡ Multiple AI minds...",
+      "🧠 Collective intelligence...",
+      "🚀 Supercharged productivity...",
+      "✨ Unified AI assistance...",
+      "💎 AI network wisdom..."
     ];
 
     const regularMessages = [
