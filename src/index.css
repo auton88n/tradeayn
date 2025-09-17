@@ -311,24 +311,26 @@
     }
   }
 
-  /* Desktop adjustments when sidebar is open */
+  /* Desktop adjustments when sidebar is expanded */
   @media (min-width: 1024px) {
-    .input-area.sidebar-open.bottom-position,
-    .input-area.sidebar-open.center-position {
-      left: 320px; /* offset for sidebar width */
+    [data-state="expanded"] ~ main .input-area.bottom-position,
+    [data-state="expanded"] ~ main .input-area.center-position {
+      left: calc(var(--sidebar-width, 320px) + 24px); /* dynamic sidebar width + margin */
       right: 24px; /* page padding */
       transform: none;
       width: auto;
       max-width: none;
+      transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     }
 
-    [dir="rtl"] .input-area.sidebar-open.bottom-position,
-    [dir="rtl"] .input-area.sidebar-open.center-position {
-      left: 320px; /* sidebar is on the left in RTL too */
+    [dir="rtl"] [data-state="expanded"] ~ main .input-area.bottom-position,
+    [dir="rtl"] [data-state="expanded"] ~ main .input-area.center-position {
+      left: calc(var(--sidebar-width, 320px) + 24px); /* dynamic sidebar width + margin */
       right: 24px;
       transform: none;
       width: auto;
       max-width: none;
+      transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     }
   }
 
@@ -376,15 +378,7 @@
     max-width: 400px;
   }
 
-  @media (min-width: 1024px) {
-    [dir="rtl"] [data-state="expanded"] ~ main .input-area.bottom-position,
-    [dir="rtl"] [data-state="expanded"] ~ main .input-area.center-position {
-      left: 320px;
-      right: 24px;
-      transform: none;
-      transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    }
-  }
+  /* This rule is now handled above in the main desktop adjustments */
 
   /* RTL Text direction for inputs - removed special handling */
   [dir="rtl"] .message-input {
