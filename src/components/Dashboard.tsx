@@ -1541,8 +1541,15 @@ export default function Dashboard({ user }: DashboardProps) {
                     {/* Typewriter Animation Placeholder */}
                     {!inputMessage && !isInputFocused && !selectedFile && (
                       <div
-                        className={`absolute top-[var(--input-vertical-offset)] w-full pointer-events-none ${language === 'ar' ? 'text-right pr-0' : 'text-left pl-0'}`}
-                        style={{ left: language === 'ar' ? undefined : 'var(--input-left-offset)', right: language === 'ar' ? 'var(--input-left-offset)' : undefined }}
+                        className={`absolute pointer-events-none ${language === 'ar' ? 'text-right' : 'text-left'}`}
+                        style={{ 
+                          left: language === 'ar' ? undefined : 'var(--input-left-offset)', 
+                          right: language === 'ar' ? 'var(--input-left-offset)' : undefined,
+                          top: 'var(--input-vertical-offset)',
+                          height: '24px', // Match line-height * font-size
+                          display: 'flex',
+                          alignItems: 'center'
+                        }}
                       >
                         <span
                           className={`text-muted-foreground select-none typewriter-text ${selectedMode.toLowerCase().includes('nen') ? 'nen-mode' : ''}`}
@@ -1551,7 +1558,9 @@ export default function Dashboard({ user }: DashboardProps) {
                             fontFamily: selectedMode.toLowerCase().includes('nen') ? "'JetBrains Mono', 'Fira Code', 'Consolas', monospace" : "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
                             fontSize: selectedMode.toLowerCase().includes('nen') ? '15px' : '16px',
                             fontWeight: selectedMode.toLowerCase().includes('nen') ? '500' : '400',
-                            lineHeight: '1.4'
+                            lineHeight: '1.4',
+                            margin: 0,
+                            padding: 0
                           }}
                         >
                           {!hasAccess
