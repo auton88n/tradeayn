@@ -1545,8 +1545,14 @@ export default function Dashboard({ user }: DashboardProps) {
                         style={{ left: language === 'ar' ? undefined : 'var(--input-left-offset)', right: language === 'ar' ? 'var(--input-left-offset)' : undefined }}
                       >
                         <span
-                          className={`text-muted-foreground select-none typewriter-text ${selectedMode.toLowerCase().includes('nen') ? 'font-mono' : ''}`}
-                          style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}
+                          className={`text-muted-foreground select-none typewriter-text ${selectedMode.toLowerCase().includes('nen') ? 'nen-mode' : ''}`}
+                          style={{ 
+                            direction: language === 'ar' ? 'rtl' : 'ltr',
+                            fontFamily: selectedMode.toLowerCase().includes('nen') ? "'JetBrains Mono', 'Fira Code', 'Consolas', monospace" : "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+                            fontSize: selectedMode.toLowerCase().includes('nen') ? '15px' : '16px',
+                            fontWeight: selectedMode.toLowerCase().includes('nen') ? '500' : '400',
+                            lineHeight: '1.4'
+                          }}
                         >
                           {!hasAccess
                             ? "Access required to send messages..."

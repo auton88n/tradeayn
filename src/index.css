@@ -549,8 +549,8 @@
 
 
   .input-container {
-    --input-left-offset: 56px; /* container padding + attach width + gap + textarea padding */
-    --input-vertical-offset: 10px; /* match .message-input padding-top */
+    --input-left-offset: 52px; /* 8px container + 32px attach + 8px gap + 4px textarea = 52px */
+    --input-vertical-offset: 10px; /* match .message-input padding-top exactly */
     background: hsl(var(--background));
     border-radius: 25px;
     padding: 8px 12px;
@@ -771,7 +771,7 @@
     }
     
     .input-container {
-      --input-left-offset: 50px;
+      --input-left-offset: 48px; /* 8px container + 28px attach + 8px gap + 4px textarea = 48px */
       --input-vertical-offset: 10px; /* keep in sync on mobile */
       padding: 8px 10px;
       border-radius: 18px;
