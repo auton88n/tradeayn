@@ -255,7 +255,12 @@ export default function Dashboard({ user }: DashboardProps) {
 
   // Typewriter animation effect
   useEffect(() => {
-    if (isInputFocused || inputMessage.length > 0) return;
+    if (isInputFocused || inputMessage.length > 0) {
+      // Reset animation when user starts typing
+      setCurrentText('');
+      setIsDeleting(false);
+      return;
+    }
 
     // Special messages for NEN mode
     const nenMessages = [
@@ -278,8 +283,7 @@ export default function Dashboard({ user }: DashboardProps) {
     ];
 
     const messages = selectedMode.toLowerCase().includes('nen') ? nenMessages : regularMessages;
-
-    const typeSpeed = 100;
+    const typeSpeed = selectedMode.toLowerCase().includes('nen') ? 80 : 100; // Slightly faster for NEN mode
     const deleteSpeed = 50;
     const pauseTime = 2000;
 

@@ -581,6 +581,37 @@
     background-origin: border-box;
     background-clip: padding-box, border-box;
     background-size: 100% 100%, 200% 200%;
+    animation: nen-border-flow 3s ease infinite;
+    transition: all 0.3s ease;
+  }
+
+  @keyframes nen-border-flow {
+    0%, 100% { background-position: 0% 50%, 0% 50%; }
+    50% { background-position: 0% 50%, 100% 50%; }
+  }
+
+  /* NEN Mode Typewriter Text in Container */
+  .input-container.nen-mode .typewriter-text {
+    color: hsl(var(--nen-text)) !important;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace !important;
+    font-weight: 500;
+    font-size: 15px; /* match .message-input.nen-mode */
+    line-height: 1.4; /* keep same line-height */
+    opacity: 0.9;
+  }
+
+  .input-container.nen-mode .typewriter-text::after {
+    color: hsl(var(--nen-glow)) !important;
+    text-shadow: 0 0 5px hsl(var(--nen-glow) / 0.5);
+    animation: nen-cursor-blink 1s step-end infinite;
+  }
+
+  @keyframes nen-cursor-blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0.3; }
+  }
+    background-clip: padding-box, border-box;
+    background-size: 100% 100%, 200% 200%;
     animation: nen-border-glow 4s ease infinite;
     position: relative;
   }
@@ -813,4 +844,3 @@
       min-width: 32px;
     }
   }
-}
