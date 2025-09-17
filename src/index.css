@@ -236,6 +236,10 @@
   }
 
   /* Typewriter Animation */
+  .typewriter-text {
+    font-size: 16px; /* match textarea */
+    line-height: 1.4; /* match textarea */
+  }
   .typewriter-text::after {
     content: '|';
     animation: blink 1s step-end infinite;
@@ -546,6 +550,7 @@
 
   .input-container {
     --input-left-offset: 56px; /* container padding + attach width + gap + textarea padding */
+    --input-vertical-offset: 10px; /* match .message-input padding-top */
     background: hsl(var(--background));
     border-radius: 25px;
     padding: 8px 12px;
@@ -662,6 +667,8 @@
     color: hsl(var(--nen-text)) !important;
     font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace !important;
     font-weight: 500;
+    font-size: 15px; /* match .message-input.nen-mode */
+    line-height: 1.4; /* keep same line-height */
   }
 
   .input-container.nen-mode .typewriter-text::after {
@@ -765,6 +772,7 @@
     
     .input-container {
       --input-left-offset: 50px;
+      --input-vertical-offset: 10px; /* keep in sync on mobile */
       padding: 8px 10px;
       border-radius: 18px;
     }

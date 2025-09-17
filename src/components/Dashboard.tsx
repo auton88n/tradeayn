@@ -1541,11 +1541,11 @@ export default function Dashboard({ user }: DashboardProps) {
                     {/* Typewriter Animation Placeholder */}
                     {!inputMessage && !isInputFocused && !selectedFile && (
                       <div
-                        className={`absolute inset-y-0 w-full flex items-center pointer-events-none ${language === 'ar' ? 'justify-end' : 'justify-start'}`}
+                        className={`absolute top-[var(--input-vertical-offset)] w-full pointer-events-none ${language === 'ar' ? 'text-right pr-0' : 'text-left pl-0'}`}
                         style={{ left: language === 'ar' ? undefined : 'var(--input-left-offset)', right: language === 'ar' ? 'var(--input-left-offset)' : undefined }}
                       >
                         <span
-                          className={`text-muted-foreground select-none typewriter-text ${language === 'ar' ? 'text-right' : 'text-left'}`}
+                          className={`text-muted-foreground select-none typewriter-text ${selectedMode.toLowerCase().includes('nen') ? 'font-mono' : ''}`}
                           style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}
                         >
                           {!hasAccess
