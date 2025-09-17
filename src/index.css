@@ -4,7 +4,6 @@
 
 /* AYN AI Business Consulting Platform Design System */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@300;400;500;600;700;800;900&display=swap');
 
 @layer base {
   :root {
@@ -121,12 +120,6 @@
     @apply bg-background text-foreground font-sans;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     min-height: 100vh;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  /* Arabic font support */
-  html[lang="ar"] body {
-    font-family: 'Noto Sans Arabic', 'Inter', system-ui, -apple-system, sans-serif;
   }
 
   html.dark body {
@@ -246,22 +239,12 @@
   .typewriter-text {
     font-size: 16px; /* match textarea */
     line-height: 1.4; /* match textarea */
-    transition: opacity 0.3s ease;
   }
-  
   .typewriter-text::after {
     content: '|';
     animation: blink 1s step-end infinite;
-    opacity: 0.7;
     color: #3b82f6;
     margin-left: 0px;
-  }
-
-  /* RTL typewriter cursor */
-  html[dir="rtl"] .typewriter-text::after {
-    content: '|';
-    margin-right: 1px;
-    margin-left: 0;
   }
 
   @keyframes blink {
@@ -661,14 +644,6 @@
     line-height: 1.4;
     word-wrap: break-word;
     overflow-wrap: break-word;
-    transition: all 0.2s ease;
-  }
-
-  /* RTL message input */
-  html[dir="rtl"] .message-input {
-    text-align: right;
-    direction: rtl;
-    font-family: 'Noto Sans Arabic', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   }
 
   /* NEN Mode Message Input */
@@ -801,16 +776,6 @@
       padding: 8px 10px;
       border-radius: 18px;
     }
-
-    /* RTL mobile adjustments */
-    html[dir="rtl"] .input-container {
-      --input-left-offset: 50px;
-    }
-
-    /* RTL mobile adjustments */
-    html[dir="rtl"] .input-container {
-      --input-left-offset: 50px;
-    }
     
     .send-button {
       width: 32px;
@@ -846,76 +811,5 @@
       height: 32px;
       min-width: 32px;
     }
-  }
-  /* Additional RTL styling improvements */
-  html[dir="rtl"] {
-    text-align: right;
-  }
-  
-  html[dir="rtl"] .text-left {
-    text-align: right !important;
-  }
-  
-  html[dir="rtl"] .text-right {
-    text-align: left !important;
-  }
-  
-  /* Sidebar RTL adjustments */
-  html[dir="rtl"] .sidebar {
-    right: 0;
-    left: auto;
-  }
-  
-  /* Improved smooth transitions */
-  * {
-    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-    transition-duration: 150ms;
-  }
-  
-  /* Better focus styles */
-  *:focus-visible {
-    outline: 2px solid hsl(var(--primary));
-    outline-offset: 2px;
-  }
-  
-  /* Improved animations */
-  @keyframes slideInFromRight {
-    from {
-      transform: translateX(100%);
-      opacity: 0;
-    }
-    to {
-      transform: translateX(0);
-      opacity: 1;
-    }
-  }
-  
-  @keyframes slideInFromLeft {
-    from {
-      transform: translateX(-100%);
-      opacity: 0;
-    }
-    to {
-      transform: translateX(0);
-      opacity: 1;
-    }
-  }
-  
-  .animate-slide-in-right {
-    animation: slideInFromRight 0.3s ease-out;
-  }
-  
-  .animate-slide-in-left {
-    animation: slideInFromLeft 0.3s ease-out;
-  }
-  
-  /* RTL animations */
-  html[dir="rtl"] .animate-slide-in-right {
-    animation: slideInFromLeft 0.3s ease-out;
-  }
-  
-  html[dir="rtl"] .animate-slide-in-left {
-    animation: slideInFromRight 0.3s ease-out;
   }
 }

@@ -5,11 +5,10 @@ import { Card } from '@/components/ui/card';
 import { AuthModal } from './auth/AuthModal';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
-import { cn } from '@/lib/utils';
 
 const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
 
   const features = [
     {
@@ -58,23 +57,19 @@ const LandingPage = () => {
   return (
     <div className="min-h-screen">
       {/* Navigation Header */}
-      <header className="bg-card border-b border-border sticky top-0 z-50 backdrop-blur-sm bg-card/80">
+      <header className="bg-card border-b border-border sticky top-0 z-50">
         <div className="container mx-auto px-6 py-4">
-          <div className={cn("flex items-center justify-between", 
-            language === 'ar' && "flex-row-reverse")}>
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className={cn("flex items-center gap-3",
-                language === 'ar' && "flex-row-reverse")}>
+              <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg brain-container flex items-center justify-center">
                   <Brain className="w-5 h-5 text-white" />
                 </div>
-                <span className={cn("text-2xl font-bold", 
-                  language === 'ar' && "font-arabic")}>AYN</span>
+                <span className="text-2xl font-bold">AYN</span>
               </div>
             </div>
             
-            <nav className={cn("hidden md:flex items-center gap-8",
-              language === 'ar' && "flex-row-reverse")}>
+            <nav className="hidden md:flex items-center gap-8">
               <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">
                 {t('nav.features')}
               </a>
@@ -83,13 +78,11 @@ const LandingPage = () => {
               </a>
             </nav>
             
-            <div className={cn("flex items-center gap-3",
-              language === 'ar' && "flex-row-reverse")}>
+            <div className="flex items-center gap-3">
               <LanguageSwitcher />
               <Button 
                 onClick={() => setShowAuthModal(true)}
                 variant="hero"
-                className={language === 'ar' ? 'font-arabic' : ''}
               >
                 {t('nav.getStarted')}
               </Button>
@@ -105,19 +98,16 @@ const LandingPage = () => {
         <div className="absolute inset-0 bg-gradient-radial from-primary/8 via-background to-accent/5" />
         
         <div className="container mx-auto px-6 relative z-10">
-          <div className={cn("text-center max-w-4xl mx-auto", 
-            language === 'ar' && "text-right")}>
+          <div className="text-center max-w-4xl mx-auto">
             <div className="animate-fade-in-up">
-              <h1 className={cn("text-5xl md:text-7xl font-bold mb-6 leading-tight",
-                language === 'ar' && "font-arabic")}>
+              <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
                 {t('hero.title')}
                 <span className="text-foreground block mt-2">
                   {t('hero.titleHighlight')}
                 </span>
               </h1>
               
-              <p className={cn("text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto",
-                language === 'ar' && "font-arabic")}>
+              <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto">
                 {t('hero.description')}
               </p>
               
