@@ -1482,7 +1482,7 @@ function DashboardContent({ user }: DashboardProps) {
                         ? "Access required to send messages..."
                         : !hasAcceptedTerms
                           ? "Please accept terms to start chatting..."
-                          : (t('dashboard.placeholder.message') || 'Type your message...')}
+                          : t('dashboard.placeholders.askAyn')}
                       disabled={!hasAccess || !hasAcceptedTerms || isUploading}
                       rows={1}
                     />
