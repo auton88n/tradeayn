@@ -123,6 +123,16 @@ const modes = [
 ];
 
 
+// Helper function to get send button class based on mode
+const getSendButtonClass = (mode: string) => {
+  const modeName = mode.toLowerCase();
+  if (modeName.includes('nen')) return 'mode-blue';
+  if (modeName.includes('research')) return 'mode-green';
+  if (modeName.includes('pdf')) return 'mode-purple';
+  if (modeName.includes('vision')) return 'mode-orange';
+  return 'mode-default';
+};
+
 export default function Dashboard({ user }: DashboardProps) {
   // State management
   const [messages, setMessages] = useState<Message[]>([]);
@@ -156,10 +166,6 @@ export default function Dashboard({ user }: DashboardProps) {
     maintenanceEndTime: ''
   });
   
-  // Typewriter animation state
-  const [currentText, setCurrentText] = useState('');
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [isInputFocused, setIsInputFocused] = useState(false);
   
   // File attachment state
@@ -252,62 +258,6 @@ export default function Dashboard({ user }: DashboardProps) {
       console.error('Error checking maintenance status:', error);
     }
   };
-
-  // Typewriter animation effect
-  useEffect(() => {
-    if (isInputFocused || inputMessage.length > 0) {
-      // Reset animation when user starts typing
-      setCurrentText('');
-      setIsDeleting(false);
-      return;
-    }
-
-    // Special messages for NEN mode
-    const nenMessages = [
-      "⚡ Multiple AI minds...",
-      "🧠 Collective intelligence...",
-      "🚀 Supercharged productivity...",
-      "✨ Unified AI assistance...",
-      "💎 AI network wisdom..."
-    ];
-
-    const regularMessages = [
-      t('dashboard.placeholders.askAyn'),
-      t('dashboard.placeholders.increaseRevenue'),
-      t('dashboard.placeholders.marketTrends'), 
-      t('dashboard.placeholders.competitionStrategy'),
-      t('dashboard.placeholders.optimizeSales'),
-      t('dashboard.placeholders.growthOpportunities'),
-      t('dashboard.placeholders.pricingStrategy'),
-      t('dashboard.placeholders.targetMarket')
-    ];
-
-    const messages = selectedMode.toLowerCase().includes('nen') ? nenMessages : regularMessages;
-    const typeSpeed = selectedMode.toLowerCase().includes('nen') ? 80 : 100; // Slightly faster for NEN mode
-    const deleteSpeed = 50;
-    const pauseTime = 2000;
-
-    const timer = setTimeout(() => {
-      const currentMessage = messages[currentIndex];
-      
-      if (!isDeleting) {
-        setCurrentText(currentMessage.substring(0, currentText.length + 1));
-        
-        if (currentText === currentMessage) {
-          setTimeout(() => setIsDeleting(true), pauseTime);
-        }
-      } else {
-        setCurrentText(currentMessage.substring(0, currentText.length - 1));
-        
-        if (currentText === '') {
-          setIsDeleting(false);
-          setCurrentIndex((prevIndex) => (prevIndex + 1) % messages.length);
-        }
-      }
-    }, isDeleting ? deleteSpeed : typeSpeed);
-
-    return () => clearTimeout(timer);
-  }, [currentText, isDeleting, currentIndex, isInputFocused, inputMessage, selectedMode, t]);
 
   const checkUserAccess = async () => {
     try {
@@ -1444,7 +1394,7 @@ export default function Dashboard({ user }: DashboardProps) {
                   </div>
                 )}
 
-                <div className={`input-container ${isDragOver ? 'drag-over' : ''} ${selectedMode.toLowerCase().includes('nen') ? 'nen-mode' : ''}`}>
+                <div className={`input-container ${isDragOver ? 'drag-over' : ''}`}>
                   {/* Attachment Button with File Types Dropdown */}
                   <div className="relative">
                     <button 
@@ -1508,7 +1458,7 @@ export default function Dashboard({ user }: DashboardProps) {
                     <Textarea
                       ref={inputRef}
                       unstyled={true}
-                      className={`message-input resize-none min-h-[44px] max-h-[200px] overflow-y-auto ${selectedMode.toLowerCase().includes('nen') ? 'nen-mode' : ''}`}
+                      className="message-input resize-none min-h-[44px] max-h-[200px] overflow-y-auto"
                       value={inputMessage}
                       onChange={(e) => {
                         setInputMessage(e.target.value);
@@ -1543,40 +1493,11 @@ export default function Dashboard({ user }: DashboardProps) {
                     )}
                     
                     {/* Typewriter Animation Placeholder */}
-                    {!inputMessage && !isInputFocused && !selectedFile && (
-                      <div
-                        className={`absolute pointer-events-none ${language === 'ar' ? 'text-right' : 'text-left'}`}
-                        style={{ 
-                          left: language === 'ar' ? undefined : 'var(--input-left-offset)', 
-                          right: language === 'ar' ? 'var(--input-left-offset)' : undefined,
-                          top: 'var(--input-vertical-offset)'
-                        }}
-                      >
-                        <span
-                          className={`text-muted-foreground select-none typewriter-text ${selectedMode.toLowerCase().includes('nen') ? 'nen-mode' : ''}`}
-                          style={{ 
-                            direction: language === 'ar' ? 'rtl' : 'ltr',
-                            fontFamily: selectedMode.toLowerCase().includes('nen') ? "'JetBrains Mono', 'Fira Code', 'Consolas', monospace" : "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-                            fontSize: selectedMode.toLowerCase().includes('nen') ? '15px' : '16px',
-                            fontWeight: selectedMode.toLowerCase().includes('nen') ? '500' : '400',
-                            lineHeight: '1.4',
-                            margin: 0,
-                            padding: 0
-                          }}
-                        >
-                          {!hasAccess
-                            ? "Access required to send messages..."
-                            : !hasAcceptedTerms
-                              ? "Please accept terms to start chatting..."
-                              : currentText}
-                        </span>
-                      </div>
-                    )}
                   </div>
                   
                   {/* Send Button */}
                   <button
-                    className="send-button"
+                    className={`send-button ${getSendButtonClass(selectedMode)}`}
                     onClick={() => handleSendMessage()}
                     disabled={(!inputMessage.trim() && !selectedFile) || !hasAccess || !hasAcceptedTerms || isTyping || isUploading}
                   >

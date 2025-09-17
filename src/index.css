@@ -41,12 +41,6 @@
     --ring: 0 0% 50%;
 
     --radius: 0.75rem;
-
-    /* NEN Mode Colors */
-    --nen-bg: 0 0% 8%;
-    --nen-text: 120 60% 25%;
-    --nen-glow: 150 80% 40%;
-    --nen-border: 140 70% 30%;
     
     /* Professional Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(0 0% 9%), hsl(0 0% 15%));
@@ -102,12 +96,6 @@
     --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-border: 0 0% 14.9%;
     --sidebar-ring: 0 0% 83.1%;
-
-    /* NEN Mode Colors - same for dark theme */
-    --nen-bg: 0 0% 8%;
-    --nen-text: 120 60% 25%;
-    --nen-glow: 150 80% 40%;
-    --nen-border: 140 70% 30%;
   }
 }
 
@@ -564,80 +552,8 @@
     transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
     position: relative;
   }
-
-  /* NEN Mode Enhanced Input Container */
-  .input-container.nen-mode {
-    --input-vertical-offset: 9px; /* fine-tune to match caret baseline for mono font */
-    background: hsl(var(--nen-bg)) !important;
-    border: 2px solid transparent;
-    border-radius: 25px;
-    background-image: linear-gradient(hsl(var(--nen-bg)), hsl(var(--nen-bg))),
-                      linear-gradient(45deg,
-                        hsl(var(--nen-border)),
-                        hsl(var(--nen-glow)),
-                        hsl(var(--nen-border)),
-                        hsl(var(--nen-glow))
-                      );
-    background-origin: border-box;
-    background-clip: padding-box, border-box;
-    background-size: 100% 100%, 200% 200%;
-    animation: nen-border-flow 3s ease infinite;
-    transition: all 0.3s ease;
   }
 
-  @keyframes nen-border-flow {
-    0%, 100% { background-position: 0% 50%, 0% 50%; }
-    50% { background-position: 0% 50%, 100% 50%; }
-  }
-
-  /* NEN Mode Typewriter Text in Container */
-  .input-container.nen-mode .typewriter-text {
-    color: hsl(var(--nen-text)) !important;
-    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace !important;
-    font-weight: 500;
-    font-size: 15px; /* match .message-input.nen-mode */
-    line-height: 1.4; /* keep same line-height */
-    opacity: 0.9;
-  }
-
-  .input-container.nen-mode .typewriter-text::after {
-    color: hsl(var(--nen-glow)) !important;
-    text-shadow: 0 0 5px hsl(var(--nen-glow) / 0.5);
-    animation: nen-cursor-blink 1s step-end infinite;
-  }
-
-  @keyframes nen-cursor-blink {
-    0%, 50% { opacity: 1; }
-    51%, 100% { opacity: 0.3; }
-  }
-    background-clip: padding-box, border-box;
-    background-size: 100% 100%, 200% 200%;
-    animation: nen-border-glow 4s ease infinite;
-    position: relative;
-  }
-
-  .input-container.nen-mode:hover {
-    animation-duration: 2s;
-  }
-
-  .input-container.nen-mode:focus-within {
-    box-shadow: 
-      0 0 20px hsl(var(--nen-glow) / 0.4), 
-      0 0 40px hsl(var(--nen-glow) / 0.2),
-      0 8px 30px hsl(var(--nen-glow) / 0.1);
-    animation-duration: 1.5s;
-  }
-
-  @keyframes nen-border-glow {
-    0%, 100% { 
-      background-position: 0 0, 0% 50%; 
-      filter: brightness(1);
-    }
-    50% { 
-      background-position: 0 0, 100% 50%; 
-      filter: brightness(1.2);
-    }
-  }
 
   .input-container.drag-over {
     border-color: hsl(var(--primary));
@@ -678,36 +594,6 @@
     overflow-wrap: break-word;
   }
 
-  /* NEN Mode Message Input */
-  .message-input.nen-mode {
-    background: transparent !important;
-    color: hsl(var(--nen-text)) !important;
-    caret-color: hsl(var(--nen-glow));
-    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace !important;
-    font-weight: 500;
-    font-size: 15px;
-  }
-
-  .message-input.nen-mode::placeholder {
-    color: hsl(var(--nen-text)) !important;
-    font-weight: 500;
-    opacity: 0.8;
-  }
-
-  /* NEN Mode Typewriter Text in Container */
-  .input-container.nen-mode .typewriter-text {
-    color: hsl(var(--nen-text)) !important;
-    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace !important;
-    font-weight: 500;
-    font-size: 15px; /* match .message-input.nen-mode */
-    line-height: 1.4; /* keep same line-height */
-  }
-
-  .input-container.nen-mode .typewriter-text::after {
-    color: hsl(var(--nen-glow)) !important;
-    text-shadow: 0 0 5px hsl(var(--nen-glow) / 0.5);
-  }
-
   .message-input::placeholder {
     color: hsl(var(--muted-foreground));
     font-weight: 400;
@@ -732,10 +618,58 @@
     color: hsl(var(--primary-foreground));
     font-size: 14px;
   }
+  
+  /* Mode-specific send button variants */
+  .send-button.mode-blue {
+    background: hsl(217 91% 60%); /* blue-500 equivalent */
+    box-shadow: 0 0 15px hsl(217 91% 60% / 0.3);
+  }
+  
+  .send-button.mode-green {
+    background: hsl(142 71% 45%); /* green-500 equivalent */
+    box-shadow: 0 0 15px hsl(142 71% 45% / 0.3);
+  }
+  
+  .send-button.mode-purple {
+    background: hsl(262 83% 58%); /* purple-500 equivalent */
+    box-shadow: 0 0 15px hsl(262 83% 58% / 0.3);
+  }
+  
+  .send-button.mode-orange {
+    background: hsl(25 95% 53%); /* orange-500 equivalent */
+    box-shadow: 0 0 15px hsl(25 95% 53% / 0.3);
+  }
+  
+  .send-button.mode-default {
+    background: hsl(var(--primary));
+  }
 
   .send-button:hover:not(:disabled) {
-    background: hsl(var(--primary) / 0.9);
     transform: scale(1.05);
+  }
+  
+  .send-button.mode-blue:hover:not(:disabled) {
+    background: hsl(217 91% 55%);
+    box-shadow: 0 0 20px hsl(217 91% 60% / 0.4);
+  }
+  
+  .send-button.mode-green:hover:not(:disabled) {
+    background: hsl(142 71% 40%);
+    box-shadow: 0 0 20px hsl(142 71% 45% / 0.4);
+  }
+  
+  .send-button.mode-purple:hover:not(:disabled) {
+    background: hsl(262 83% 53%);
+    box-shadow: 0 0 20px hsl(262 83% 58% / 0.4);
+  }
+  
+  .send-button.mode-orange:hover:not(:disabled) {
+    background: hsl(25 95% 48%);
+    box-shadow: 0 0 20px hsl(25 95% 53% / 0.4);
+  }
+  
+  .send-button.mode-default:hover:not(:disabled) {
+    background: hsl(var(--primary) / 0.9);
   }
 
   .send-button:active:not(:disabled) {
@@ -775,26 +709,6 @@
     cursor: not-allowed;
   }
 
-  /* NEN Mode Button Styling */
-  .input-container.nen-mode .attachment-button {
-    color: hsl(var(--nen-text));
-  }
-
-  .input-container.nen-mode .attachment-button:hover:not(:disabled) {
-    background: hsl(var(--nen-glow) / 0.2);
-    color: hsl(var(--nen-glow));
-  }
-
-  .input-container.nen-mode .send-button {
-    background: hsl(var(--nen-text));
-    color: hsl(var(--nen-bg));
-  }
-
-  .input-container.nen-mode .send-button:hover:not(:disabled) {
-    background: hsl(var(--nen-glow));
-    color: hsl(var(--nen-bg));
-    box-shadow: 0 0 10px hsl(var(--nen-glow) / 0.3);
-  }
 
   /* Responsive Adjustments */
   @media (max-width: 640px) {
