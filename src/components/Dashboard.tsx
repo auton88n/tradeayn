@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { cn } from '@/lib/utils';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -57,6 +58,8 @@ import { TypingIndicator } from './TypingIndicator';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { MessageFormatter } from './MessageFormatter';
+import { LoadingSpinner } from './ui/loading-spinner';
+import { SmoothTransition } from './ui/smooth-transition';
 
 interface Message {
   id: string;
@@ -1238,10 +1241,11 @@ export default function Dashboard({ user }: DashboardProps) {
               </div>
             )}
 
-            <div className="flex items-center gap-2">
-              <LanguageSwitcher />
-              <ThemeToggle />
-            </div>
+              <div className={cn("flex items-center gap-2",
+                language === 'ar' && "flex-row-reverse")}>
+                <LanguageSwitcher />
+                <ThemeToggle />
+              </div>
           </div>
         </header>
 
@@ -1364,7 +1368,11 @@ export default function Dashboard({ user }: DashboardProps) {
                           <Brain className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         </AvatarFallback>
                       </Avatar>
-                      <TypingIndicator />
+                      <SmoothTransition show={isTyping}>
+                        <div className={cn("flex items-center", language === 'ar' && "flex-row-reverse")}>
+                          <TypingIndicator />
+                        </div>
+                      </SmoothTransition>
                     </div>
                   )}
                   
@@ -1541,17 +1549,20 @@ export default function Dashboard({ user }: DashboardProps) {
                     {/* Typewriter Animation Placeholder */}
                     {!inputMessage && !isInputFocused && !selectedFile && (
                       <div
-                        className={`absolute top-[var(--input-vertical-offset)] w-full pointer-events-none ${language === 'ar' ? 'text-right pr-0' : 'text-left pl-0'}`}
-                        style={{ left: language === 'ar' ? undefined : 'var(--input-left-offset)', right: language === 'ar' ? 'var(--input-left-offset)' : undefined }}
+                        className={`absolute top-[var(--input-vertical-offset)] w-full pointer-events-none transition-opacity duration-300 ${language === 'ar' ? 'text-right pr-0' : 'text-left pl-0'}`}
+                        style={{ 
+                          left: language === 'ar' ? undefined : 'var(--input-left-offset)', 
+                          right: language === 'ar' ? 'var(--input-left-offset)' : undefined 
+                        }}
                       >
                         <span
-                          className={`text-muted-foreground select-none typewriter-text ${selectedMode.toLowerCase().includes('nen') ? 'font-mono' : ''}`}
+                          className={`text-muted-foreground select-none typewriter-text ${selectedMode.toLowerCase().includes('nen') ? 'font-mono' : ''} ${language === 'ar' ? 'font-arabic' : ''}`}
                           style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}
                         >
                           {!hasAccess
-                            ? "Access required to send messages..."
+                            ? (language === 'ar' ? 'يتطلب الوصول لإرسال الرسائل...' : 'Access required to send messages...')
                             : !hasAcceptedTerms
-                              ? "Please accept terms to start chatting..."
+                              ? (language === 'ar' ? 'يرجى قبول الشروط لبدء المحادثة...' : 'Please accept terms to start chatting...')
                               : currentText}
                         </span>
                       </div>
@@ -1565,9 +1576,9 @@ export default function Dashboard({ user }: DashboardProps) {
                     disabled={(!inputMessage.trim() && !selectedFile) || !hasAccess || !hasAcceptedTerms || isTyping || isUploading}
                   >
                     {isUploading ? (
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <LoadingSpinner size="sm" className="text-white" />
                     ) : (
-                      <Send className="w-4 h-4" />
+                      <Send className={cn("w-4 h-4 transition-transform", language === 'ar' && "scale-x-[-1]")} />
                     )}
                   </button>
                 </div>
