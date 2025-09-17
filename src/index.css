@@ -309,20 +309,21 @@
       width: calc(100% - 280px);
       max-width: 400px;
     }
-    
-    /* RTL version */
-    [dir="rtl"] .input-area.sidebar-open.bottom-position {
-      right: calc(50% + 120px);
-      left: auto;
-      width: calc(100% - 280px);
-      max-width: 400px;
+  }
+
+  /* Desktop adjustments when sidebar is open */
+  @media (min-width: 1024px) {
+    .input-area.sidebar-open.bottom-position,
+    .input-area.sidebar-open.center-position {
+      left: calc(50% + (var(--sidebar-width) / 2));
+      transform: translateX(-50%);
     }
-    
+
+    [dir="rtl"] .input-area.sidebar-open.bottom-position,
     [dir="rtl"] .input-area.sidebar-open.center-position {
-      right: calc(50% + 120px);
+      right: calc(50% + (var(--sidebar-width) / 2));
       left: auto;
-      width: calc(100% - 280px);
-      max-width: 400px;
+      transform: none;
     }
   }
 

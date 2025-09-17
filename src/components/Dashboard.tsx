@@ -1478,7 +1478,11 @@ function DashboardContent({ user }: DashboardProps) {
                       onKeyPress={handleKeyPress}
                       onFocus={() => setIsInputFocused(true)}
                       onBlur={() => setIsInputFocused(false)}
-                      placeholder=""
+                      placeholder={!hasAccess
+                        ? "Access required to send messages..."
+                        : !hasAcceptedTerms
+                          ? "Please accept terms to start chatting..."
+                          : (t('dashboard.placeholder.message') || 'Type your message...')}
                       disabled={!hasAccess || !hasAcceptedTerms || isUploading}
                       rows={1}
                     />
