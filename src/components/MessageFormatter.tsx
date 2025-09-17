@@ -81,7 +81,7 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
         continue;
       }
 
-      // Check for headers
+      // Check for headers (# ## ### or ==== style)
       if (line.startsWith('#')) {
         if (currentList) {
           elements.push(currentList);
@@ -98,24 +98,33 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
             key={`header-${i}`} 
             className={cn(
               "font-semibold mt-4 mb-2 first:mt-0",
-              headerLevel === 1 && "text-lg",
-              headerLevel === 2 && "text-base",
-              headerLevel >= 3 && "text-sm"
+              headerLevel === 1 && "text-xl font-bold",
+              headerLevel === 2 && "text-lg font-semibold", 
+              headerLevel === 3 && "text-base font-medium",
+              headerLevel >= 4 && "text-sm font-medium"
             )}
           >
             {formatInlineText(headerText)}
           </HeaderTag>
         );
       }
-      // Check for unordered list
-      else if (line.match(/^[-*+]\s/)) {
-        const listContent = formatInlineText(line.replace(/^[-*+]\s/, ''));
+      // Check for alternative header styles (=== or ---)
+      else if (line.match(/^={3,}|^-{3,}$/)) {
+        elements.push(<hr key={`divider-${i}`} className="my-4 border-border" />);
+      }
+      // Check for various bullet styles (-, *, +, •, ▪, ►, →, ✓, ✗, 🔸, 🔹, etc.)
+      else if (line.match(/^[-*+•▪►→✓✗🔸🔹⭐🎯💡⚡🚀✨💎🔥📊📈📉🎨🛠️⚙️💰📝🎪🌟🎈]\s/)) {
+        const bullet = line.match(/^[-*+•▪►→✓✗🔸🔹⭐🎯💡⚡🚀✨💎🔥📊📈📉🎨🛠️⚙️💰📝🎪🌟🎈]/)?.[0] || '•';
+        const listContent = formatInlineText(line.replace(/^[-*+•▪►→✓✗🔸🔹⭐🎯💡⚡🚀✨💎🔥📊📈📉🎨🛠️⚙️💰📝🎪🌟🎈]\s/, ''));
         
         if (currentListType !== 'ul') {
           if (currentList) elements.push(currentList);
           currentList = (
-            <ul key={`ul-${i}`} className="list-disc list-inside space-y-0.5 my-2 first:mt-0 last:mb-0 pl-4">
-              <li className="leading-normal">{listContent}</li>
+            <ul key={`ul-${i}`} className="space-y-1 my-2 first:mt-0 last:mb-0 pl-2">
+              <li className="leading-relaxed flex items-start gap-2">
+                <span className="text-primary flex-shrink-0 mt-0.5 text-base leading-none">{bullet}</span>
+                <span className="flex-1">{listContent}</span>
+              </li>
             </ul>
           );
           currentListType = 'ul';
@@ -125,20 +134,28 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
           currentList = React.cloneElement(existingList, {
             children: [
               ...React.Children.toArray(existingList.props.children),
-              <li key={`li-${i}`} className="leading-normal">{listContent}</li>
+              <li key={`li-${i}`} className="leading-relaxed flex items-start gap-2">
+                <span className="text-primary flex-shrink-0 mt-0.5 text-base leading-none">{bullet}</span>
+                <span className="flex-1">{listContent}</span>
+              </li>
             ]
           });
         }
       }
-      // Check for ordered list
-      else if (line.match(/^\d+\.\s/)) {
-        const listContent = formatInlineText(line.replace(/^\d+\.\s/, ''));
+      // Check for numbered lists (1., 2., Step 1:, Phase 1, etc.)
+      else if (line.match(/^(\d+[\.\)\:]|Step\s+\d+[\:\.]|Phase\s+\d+[\:\.]|#\d+|\d+[\)|\.])\s/i)) {
+        const numberMatch = line.match(/^(\d+[\.\)\:]|Step\s+\d+[\:\.]|Phase\s+\d+[\:\.]|#\d+|\d+[\)|\.])\s/i);
+        const numberPart = numberMatch?.[1] || '';
+        const listContent = formatInlineText(line.replace(/^(\d+[\.\)\:]|Step\s+\d+[\:\.]|Phase\s+\d+[\:\.]|#\d+|\d+[\)|\.])\s/i, ''));
         
         if (currentListType !== 'ol') {
           if (currentList) elements.push(currentList);
           currentList = (
-            <ol key={`ol-${i}`} className="list-decimal list-inside space-y-0.5 my-2 first:mt-0 last:mb-0 pl-4">
-              <li className="leading-normal">{listContent}</li>
+            <ol key={`ol-${i}`} className="space-y-1 my-2 first:mt-0 last:mb-0 pl-2">
+              <li className="leading-relaxed flex items-start gap-2">
+                <span className="text-primary font-medium flex-shrink-0 mt-0.5 min-w-[2rem] text-sm">{numberPart}</span>
+                <span className="flex-1">{listContent}</span>
+              </li>
             </ol>
           );
           currentListType = 'ol';
@@ -148,12 +165,56 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
           currentList = React.cloneElement(existingList, {
             children: [
               ...React.Children.toArray(existingList.props.children),
-              <li key={`li-${i}`} className="leading-normal">{listContent}</li>
+              <li key={`li-${i}`} className="leading-relaxed flex items-start gap-2">
+                <span className="text-primary font-medium flex-shrink-0 mt-0.5 min-w-[2rem] text-sm">{numberPart}</span>
+                <span className="flex-1">{listContent}</span>
+              </li>
             ]
           });
         }
       }
-      // Regular paragraph
+      // Check for special formatted lines (quotes, notes, warnings, etc.)
+      else if (line.match(/^(>|Note:|Warning:|Important:|Tip:|💡|⚠️|❗|🔔)/i)) {
+        if (currentList) {
+          elements.push(currentList);
+          currentList = null;
+          currentListType = null;
+        }
+        
+        const isQuote = line.startsWith('>');
+        const isNote = line.match(/^(Note:|💡)/i);
+        const isWarning = line.match(/^(Warning:|⚠️|❗)/i);
+        const isImportant = line.match(/^(Important:|🔔)/i);
+        
+        const content = line.replace(/^(>|Note:|Warning:|Important:|Tip:|💡|⚠️|❗|🔔)\s?/i, '');
+        
+        let className = "p-3 rounded-lg border-l-4 my-2 first:mt-0 last:mb-0";
+        let icon = "";
+        
+        if (isQuote) {
+          className += " bg-muted/50 border-l-muted-foreground italic";
+        } else if (isNote) {
+          className += " bg-blue-50 dark:bg-blue-950/20 border-l-blue-500 text-blue-900 dark:text-blue-100";
+          icon = "💡 ";
+        } else if (isWarning) {
+          className += " bg-yellow-50 dark:bg-yellow-950/20 border-l-yellow-500 text-yellow-900 dark:text-yellow-100";
+          icon = "⚠️ ";
+        } else if (isImportant) {
+          className += " bg-red-50 dark:bg-red-950/20 border-l-red-500 text-red-900 dark:text-red-100";
+          icon = "❗ ";
+        } else {
+          className += " bg-primary/5 border-l-primary";
+          icon = "🔔 ";
+        }
+        
+        elements.push(
+          <div key={`special-${i}`} className={className}>
+            {icon && <span className="mr-2">{icon}</span>}
+            {formatInlineText(content)}
+          </div>
+        );
+      }
+      // Regular paragraph - preserve emojis and special characters
       else {
         if (currentList) {
           elements.push(currentList);
@@ -162,7 +223,7 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
         }
         
         elements.push(
-          <p key={`p-${i}`} className="leading-normal mb-2 last:mb-0 [&:not(:empty)]:block [&:empty]:hidden">
+          <p key={`p-${i}`} className="leading-relaxed mb-2 last:mb-0 [&:not(:empty)]:block [&:empty]:hidden">
             {formatInlineText(line)}
           </p>
         );
@@ -233,13 +294,13 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
   };
 
   const formatBoldItalic = (text: string, baseKey: number) => {
-    // Handle **bold** and *italic*
-    const boldItalicRegex = /(\*\*\*([^*]+)\*\*\*|\*\*([^*]+)\*\*|\*([^*]+)\*)/g;
+    // Handle **bold**, *italic*, __underline__, ~~strikethrough~~, and other formatting
+    const formatRegex = /(\*\*\*([^*]+)\*\*\*|\*\*([^*]+)\*\*|\*([^*]+)\*|__([^_]+)__|~~([^~]+)~~|==([^=]+)==|\|\|([^|]+)\|\|)/g;
     const parts = [];
     let lastIndex = 0;
     let match;
 
-    while ((match = boldItalicRegex.exec(text)) !== null) {
+    while ((match = formatRegex.exec(text)) !== null) {
       // Add text before formatting
       if (match.index > lastIndex) {
         parts.push(text.slice(lastIndex, match.index));
@@ -247,14 +308,30 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
       
       // Determine type and content
       if (match[2]) {
-        // Bold and italic
-        parts.push(<strong key={`bi-${baseKey}-${match.index}`} className="font-bold italic">{match[2]}</strong>);
+        // Bold and italic (***text***)
+        parts.push(<strong key={`bi-${baseKey}-${match.index}`} className="font-bold italic text-primary">{match[2]}</strong>);
       } else if (match[3]) {
-        // Bold
-        parts.push(<strong key={`b-${baseKey}-${match.index}`} className="font-bold">{match[3]}</strong>);
+        // Bold (**text**)
+        parts.push(<strong key={`b-${baseKey}-${match.index}`} className="font-bold text-primary">{match[3]}</strong>);
       } else if (match[4]) {
-        // Italic
-        parts.push(<em key={`i-${baseKey}-${match.index}`} className="italic">{match[4]}</em>);
+        // Italic (*text*)
+        parts.push(<em key={`i-${baseKey}-${match.index}`} className="italic text-muted-foreground">{match[4]}</em>);
+      } else if (match[5]) {
+        // Underline (__text__)
+        parts.push(<u key={`u-${baseKey}-${match.index}`} className="underline">{match[5]}</u>);
+      } else if (match[6]) {
+        // Strikethrough (~~text~~)
+        parts.push(<del key={`s-${baseKey}-${match.index}`} className="line-through opacity-75">{match[6]}</del>);
+      } else if (match[7]) {
+        // Highlight (==text==)
+        parts.push(<mark key={`h-${baseKey}-${match.index}`} className="bg-yellow-200 dark:bg-yellow-800 px-1 rounded">{match[7]}</mark>);
+      } else if (match[8]) {
+        // Spoiler (||text||)
+        parts.push(
+          <span key={`sp-${baseKey}-${match.index}`} className="bg-muted text-muted cursor-pointer hover:bg-transparent hover:text-foreground transition-all duration-200 px-1 rounded" title="Click to reveal">
+            {match[8]}
+          </span>
+        );
       }
       
       lastIndex = match.index + match[0].length;
