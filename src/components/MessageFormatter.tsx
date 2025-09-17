@@ -223,7 +223,7 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
         }
         
         elements.push(
-          <p key={`p-${i}`} className="leading-relaxed mb-2 last:mb-0 [&:not(:empty)]:block [&:empty]:hidden">
+          <p key={`p-${i}`} className="leading-relaxed mb-2 last:mb-0 text-current break-words">
             {formatInlineText(line)}
           </p>
         );
