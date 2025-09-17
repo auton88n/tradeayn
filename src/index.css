@@ -567,6 +567,7 @@
 
   /* NEN Mode Enhanced Input Container */
   .input-container.nen-mode {
+    --input-vertical-offset: 9px; /* fine-tune to match caret baseline for mono font */
     background: hsl(var(--nen-bg)) !important;
     border: 2px solid transparent;
     border-radius: 25px;
