@@ -1552,7 +1552,7 @@ export default function Dashboard({ user }: DashboardProps) {
                     {isUploading ? (
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     ) : (
-                      <Send className={`w-4 h-4 ${language === 'ar' ? 'rotate-180' : ''}`} />
+                      <Send className="w-4 h-4" />
                     )}
                   </button>
                 </div>
