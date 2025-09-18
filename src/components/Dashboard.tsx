@@ -83,9 +83,11 @@ interface ChatHistory {
   sessionId: string;
 }
 
-const modes = [
+// Mode definitions with translated names
+const getModes = (t: (key: string) => string) => [
   { 
     name: 'General', 
+    translatedName: t('modes.general'),
     description: 'General AI assistant for all your needs',
     icon: MessageSquare,
     color: 'text-slate-500',
@@ -93,6 +95,7 @@ const modes = [
   },
   { 
     name: 'Nen Mode ⚡', 
+    translatedName: t('modes.nenMode') + ' ⚡',
     description: 'Ultra-fast AI responses for quick insights',
     icon: TrendingUp,
     color: 'text-blue-500',
@@ -100,6 +103,7 @@ const modes = [
   },
   { 
     name: 'Research Pro', 
+    translatedName: t('modes.researchPro'),
     description: 'Deep research and comprehensive analysis',
     icon: Search,
     color: 'text-green-500',
@@ -107,6 +111,7 @@ const modes = [
   },
   { 
     name: 'PDF Analyst', 
+    translatedName: t('modes.pdfAnalyst'),
     description: 'Specialized document analysis and insights',
     icon: FileText,
     color: 'text-purple-500',
@@ -114,6 +119,7 @@ const modes = [
   },
   { 
     name: 'Vision Lab', 
+    translatedName: t('modes.visionLab'),
     description: 'Advanced image and visual content analysis',
     icon: Eye,
     color: 'text-orange-500',
@@ -183,17 +189,38 @@ export default function Dashboard({ user }: DashboardProps) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // Animated placeholder texts for business consulting
-  const placeholderTexts = [
-    t('dashboard.placeholders.askAyn'),
-    t('dashboard.placeholders.increaseRevenue'),
-    t('dashboard.placeholders.marketTrends'),
-    t('dashboard.placeholders.competitionStrategy'),
-    t('dashboard.placeholders.optimizeSales'),
-    t('dashboard.placeholders.growthOpportunities'),
-    t('dashboard.placeholders.pricingStrategy'),
-    t('dashboard.placeholders.targetMarket')
-  ];
+  // Get modes with translations
+  const modes = getModes(t);
+  
+  // Get mode-specific placeholder texts
+  const getPlaceholderTexts = () => {
+    try {
+      const placeholders = t(`placeholders.${selectedMode}`);
+      if (Array.isArray(placeholders)) {
+        return placeholders;
+      }
+      // Fallback to parsed array if it's stored as a string
+      if (typeof placeholders === 'string') {
+        return JSON.parse(placeholders);
+      }
+    } catch (error) {
+      console.error('Error getting placeholders:', error);
+    }
+    
+    // Fallback to legacy placeholders
+    return [
+      t('dashboard.placeholders.askAyn'),
+      t('dashboard.placeholders.increaseRevenue'),
+      t('dashboard.placeholders.marketTrends'),
+      t('dashboard.placeholders.competitionStrategy'),
+      t('dashboard.placeholders.optimizeSales'),
+      t('dashboard.placeholders.growthOpportunities'),
+      t('dashboard.placeholders.pricingStrategy'),
+      t('dashboard.placeholders.targetMarket')
+    ];
+  };
+  
+  const placeholderTexts = getPlaceholderTexts();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -989,7 +1016,7 @@ export default function Dashboard({ user }: DashboardProps) {
                         className={`${language === 'ar' ? 'flex-row-reverse justify-start' : ''} ${selectedMode === mode.name ? 'bg-sidebar-accent text-sidebar-accent-foreground' : ''}`}
                       >
                         <mode.icon className={`w-4 h-4 flex-shrink-0 ${mode.color} ${language === 'ar' ? 'ml-0 mr-2' : ''}`} />
-                        <span className={`group-data-[collapsible=icon]:hidden ${language === 'ar' ? 'text-right' : ''}`}>{mode.name}</span>
+                        <span className={`group-data-[collapsible=icon]:hidden ${language === 'ar' ? 'text-right' : ''}`}>{mode.translatedName}</span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   ))}
@@ -1150,7 +1177,7 @@ export default function Dashboard({ user }: DashboardProps) {
               
               <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
                 <Brain className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
-                <h1 className="font-bold text-sm sm:text-lg truncate">AYN Business Console</h1>
+                <h1 className="font-bold text-sm sm:text-lg truncate">{t('header.aynBusinessConsole')}</h1>
                 <Badge variant="secondary" className="text-xs hidden sm:inline-flex">
                   {selectedMode}
                 </Badge>
@@ -1184,7 +1211,7 @@ export default function Dashboard({ user }: DashboardProps) {
                   onClick={() => setActiveTab('chat')}
                   className="h-7 sm:h-8 px-2 sm:px-3 text-xs sm:text-sm"
                 >
-                  <span className="hidden sm:inline">Chat</span>
+                  <span className="hidden sm:inline">{t('header.chat')}</span>
                   <span className="sm:hidden">💬</span>
                 </Button>
                 <Button
@@ -1194,7 +1221,7 @@ export default function Dashboard({ user }: DashboardProps) {
                   className="h-7 sm:h-8 px-2 sm:px-3 text-xs sm:text-sm"
                 >
                   <Shield className="w-3 h-3 mr-0 sm:mr-1" />
-                  <span className="hidden sm:inline">Admin</span>
+                  <span className="hidden sm:inline">{t('header.admin')}</span>
                 </Button>
               </div>
             )}

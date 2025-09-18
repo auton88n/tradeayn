@@ -51,6 +51,18 @@ const translations = {
     // Footer
     'footer.copyright': '© 2024 AYN AI Business Consulting. All rights reserved.',
     
+    // Mode names
+    'modes.general': 'General',
+    'modes.nenMode': 'Nen Mode',
+    'modes.researchPro': 'Research Pro',
+    'modes.pdfAnalyst': 'PDF Analyst',
+    'modes.visionLab': 'Vision Lab',
+    
+    // Header elements
+    'header.aynBusinessConsole': 'AYN Business Console',
+    'header.chat': 'Chat',
+    'header.admin': 'Admin',
+    
     // Dashboard
     'dashboard.loading': 'Loading AYN...',
     'dashboard.templates.marketAnalysis': 'Market Analysis',
@@ -61,6 +73,15 @@ const translations = {
     'dashboard.templates.competitorResearchPrompt': 'Research my main competitors and their strategies',
     'dashboard.templates.growthStrategy': 'Growth Strategy',
     'dashboard.templates.growthStrategyPrompt': 'Develop a comprehensive growth strategy for scaling my business',
+    
+    // Mode-specific placeholders (stored as JSON strings)
+    'placeholders.General': '["Ask about your business...", "How can I help?", "What\'s on your mind?"]',
+    'placeholders.Nen Mode ⚡': '["Get expert insights...", "Ask for analysis...", "Need expert opinions?"]',
+    'placeholders.Research Pro': '["What to research?", "Find latest info...", "Which topic?"]',
+    'placeholders.PDF Analyst': '["Upload document...", "Review files...", "Ask about files..."]',
+    'placeholders.Vision Lab': '["Upload image...", "Analyze visuals...", "Share image..."]',
+    
+    // Legacy placeholders (keeping for backward compatibility)
     'dashboard.placeholders.askAyn': 'Ask AYN anything about your business...',
     'dashboard.placeholders.increaseRevenue': 'How can I increase my revenue?',
     'dashboard.placeholders.marketTrends': 'What are the latest market trends?',
@@ -402,6 +423,18 @@ const translations = {
     // Footer
     'footer.copyright': '© 2024 AYN للاستشارات التجارية بالذكاء الاصطناعي. جميع الحقوق محفوظة.',
     
+    // Mode names in Modern Standard Arabic
+    'modes.general': 'عام',
+    'modes.nenMode': 'وضع نين',
+    'modes.researchPro': 'بحث متقدم',
+    'modes.pdfAnalyst': 'محلل المستندات',
+    'modes.visionLab': 'مختبر الرؤية',
+    
+    // Header elements in Arabic
+    'header.aynBusinessConsole': 'منصة عين للأعمال',
+    'header.chat': 'محادثة',
+    'header.admin': 'المدير',
+    
     // Dashboard
     'dashboard.loading': 'جاري تحميل AYN...',
     'dashboard.templates.marketAnalysis': 'تحليل السوق',
@@ -412,6 +445,15 @@ const translations = {
     'dashboard.templates.competitorResearchPrompt': 'ابحث عن منافسيي الرئيسيين واستراتيجياتهم',
     'dashboard.templates.growthStrategy': 'استراتيجية النمو',
     'dashboard.templates.growthStrategyPrompt': 'طور استراتيجية نمو شاملة لتوسيع أعمالي',
+    
+    // Mode-specific placeholders in Modern Standard Arabic (stored as JSON strings)
+    'placeholders.General': '["اسأل عن عملك...", "كيف يمكنني المساعدة؟", "ما الذي تريده؟"]',
+    'placeholders.Nen Mode ⚡': '["رأي الخبراء...", "تحليل شامل...", "هل تحتاج رأي خبير؟"]',
+    'placeholders.Research Pro': '["ماذا تريد البحث عنه؟", "أحدث المعلومات...", "أي موضوع؟"]',
+    'placeholders.PDF Analyst': '["ارفع مستنداً...", "راجع الملفات...", "اسأل عن ملفك..."]',
+    'placeholders.Vision Lab': '["ارفع صورة...", "حلل الصور...", "شارك صورة..."]',
+    
+    // Legacy placeholders (keeping for backward compatibility)
     'dashboard.placeholders.askAyn': 'اسأل AYN أي شيء عن أعمالك...',
     'dashboard.placeholders.increaseRevenue': 'كيف يمكنني زيادة إيراداتي؟',
     'dashboard.placeholders.marketTrends': 'ما هي أحدث اتجاهات السوق؟',
