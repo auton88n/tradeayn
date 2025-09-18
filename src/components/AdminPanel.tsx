@@ -1,17 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { 
-  Crown, RefreshCw, Activity, Shield, BarChart3, Settings, Code2, Users
+  Crown, RefreshCw, Activity, BarChart3, Settings, Users
 } from 'lucide-react';
 import { AdminDashboard } from './admin/AdminDashboard';
 import { UserManagement } from './admin/UserManagement';
 import { SystemSettings } from './admin/SystemSettings';
-import { SystemMonitoring } from './admin/SystemMonitoring';
+import { ErrorBoundary } from './ErrorBoundary';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Profile {
@@ -103,7 +102,6 @@ export const AdminPanel = () => {
   // UI State
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
-  const [isRealTimeEnabled, setIsRealTimeEnabled] = useState(true);
   
   const { toast } = useToast();
 
@@ -226,18 +224,7 @@ export const AdminPanel = () => {
 
   useEffect(() => {
     fetchData();
-    
-    // Set up optimized real-time refresh with cleanup
-    let interval: NodeJS.Timeout;
-    if (isRealTimeEnabled) {
-      // Increased to 90 seconds for better performance and reduced server load
-      interval = setInterval(fetchData, 90000);
-    }
-    
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [fetchData, isRealTimeEnabled]);
+  }, [fetchData]);
 
   // System maintenance functions
   const performSystemMaintenance = async (action: string) => {
@@ -321,16 +308,6 @@ export const AdminPanel = () => {
           <p className="text-muted-foreground">{t('admin.subtitle')}</p>
         </div>
         <div className={`flex items-center gap-3 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-          <div className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-            <Activity className={`w-4 h-4 ${isRealTimeEnabled ? 'text-green-500' : 'text-gray-400'}`} />
-            <Switch 
-              checked={isRealTimeEnabled}
-              onCheckedChange={setIsRealTimeEnabled}
-              size="sm"
-              rtl={language === 'ar'}
-            />
-            <span className="text-sm">{t('admin.realTime')}</span>
-          </div>
           <Button onClick={fetchData} variant="outline" size="sm" disabled={isLoading}>
             <RefreshCw className={`w-4 h-4 ${language === 'ar' ? 'ml-2' : 'mr-2'} ${isLoading ? 'animate-spin' : ''}`} />
             {t('admin.refresh')}
@@ -339,7 +316,7 @@ export const AdminPanel = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="overview" className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
             <BarChart3 className="w-4 h-4" />
             {t('admin.dashboard')}
@@ -352,30 +329,28 @@ export const AdminPanel = () => {
             <Settings className="w-4 h-4" />
             {t('admin.settings')}
           </TabsTrigger>
-          <TabsTrigger value="system" className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-            <Code2 className="w-4 h-4" />
-            {t('admin.system')}
-          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
-          <AdminDashboard systemMetrics={systemMetrics} allUsers={allUsers} />
+          <ErrorBoundary>
+            <AdminDashboard systemMetrics={systemMetrics} allUsers={allUsers} />
+          </ErrorBoundary>
         </TabsContent>
 
         <TabsContent value="users">
-          <UserManagement allUsers={allUsers} onRefresh={fetchData} />
+          <ErrorBoundary>
+            <UserManagement allUsers={allUsers} onRefresh={fetchData} />
+          </ErrorBoundary>
         </TabsContent>
 
         <TabsContent value="settings">
-          <SystemSettings 
-            systemConfig={systemConfig}
-            onUpdateConfig={updateSystemConfig}
-            onPerformMaintenance={performSystemMaintenance}
-          />
-        </TabsContent>
-
-        <TabsContent value="system">
-          <SystemMonitoring systemMetrics={systemMetrics} />
+          <ErrorBoundary>
+            <SystemSettings 
+              systemConfig={systemConfig}
+              onUpdateConfig={updateSystemConfig}
+              onPerformMaintenance={performSystemMaintenance}
+            />
+          </ErrorBoundary>
         </TabsContent>
       </Tabs>
     </div>
