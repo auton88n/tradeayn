@@ -1179,7 +1179,7 @@ export default function Dashboard({ user }: DashboardProps) {
                 <Brain className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
                 <h1 className="font-bold text-sm sm:text-lg truncate">{t('header.aynBusinessConsole')}</h1>
                 <Badge variant="secondary" className="text-xs hidden sm:inline-flex">
-                  {selectedMode}
+                  {modes.find(mode => mode.name === selectedMode)?.translatedName || selectedMode}
                 </Badge>
               </div>
             </div>
