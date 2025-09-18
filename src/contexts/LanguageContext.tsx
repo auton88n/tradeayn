@@ -75,11 +75,11 @@ const translations = {
     'dashboard.templates.growthStrategyPrompt': 'Develop a comprehensive growth strategy for scaling my business',
     
     // Mode-specific placeholders (stored as JSON strings)
-    'placeholders.General': '["Ask about your business...", "How can I help?", "What\'s on your mind?"]',
-    'placeholders.Nen Mode ⚡': '["Get expert insights...", "Ask for analysis...", "Need expert opinions?"]',
-    'placeholders.Research Pro': '["What to research?", "Find latest info...", "Which topic?"]',
-    'placeholders.PDF Analyst': '["Upload document...", "Review files...", "Ask about files..."]',
-    'placeholders.Vision Lab': '["Upload image...", "Analyze visuals...", "Share image..."]',
+    'placeholders.General': '["Ask about your business strategy...", "How can I help optimize your operations?", "What business challenge are you facing?"]',
+    'placeholders.Nen Mode ⚡': '["Get expert strategic insights...", "Request comprehensive analysis...", "Need specialized consultation?"]',
+    'placeholders.Research Pro': '["What market trends should I research?", "Find the latest industry data...", "Which competitor should I analyze?"]',
+    'placeholders.PDF Analyst': '["Upload your business document...", "Let me review your files...", "Upload PDF for analysis..."]',
+    'placeholders.Vision Lab': '["Upload image for analysis...", "Analyze charts and visuals...", "Share visual content..."]',
     
     // Legacy placeholders (keeping for backward compatibility)
     'dashboard.placeholders.askAyn': 'Ask AYN anything about your business...',
@@ -447,11 +447,11 @@ const translations = {
     'dashboard.templates.growthStrategyPrompt': 'طور استراتيجية نمو شاملة لتوسيع أعمالي',
     
     // Mode-specific placeholders in Modern Standard Arabic (stored as JSON strings)
-    'placeholders.General': '["اسأل عن عملك...", "كيف يمكنني المساعدة؟", "ما الذي تريده؟"]',
-    'placeholders.Nen Mode ⚡': '["رأي الخبراء...", "تحليل شامل...", "هل تحتاج رأي خبير؟"]',
-    'placeholders.Research Pro': '["ماذا تريد البحث عنه؟", "أحدث المعلومات...", "أي موضوع؟"]',
-    'placeholders.PDF Analyst': '["ارفع مستنداً...", "راجع الملفات...", "اسأل عن ملفك..."]',
-    'placeholders.Vision Lab': '["ارفع صورة...", "حلل الصور...", "شارك صورة..."]',
+    'placeholders.General': '["اسأل عن استراتيجية عملك...", "كيف يمكنني تحسين عملياتك؟", "ما التحدي التجاري الذي تواجهه؟"]',
+    'placeholders.Nen Mode ⚡': '["احصل على رؤى استراتيجية متخصصة...", "اطلب تحليلاً شاملاً...", "تحتاج استشارة متخصصة؟"]',
+    'placeholders.Research Pro': '["ما اتجاهات السوق التي يجب بحثها؟", "ابحث عن أحدث بيانات الصناعة...", "أي منافس يجب تحليله؟"]',
+    'placeholders.PDF Analyst': '["ارفع مستند عملك...", "دعني أراجع ملفاتك...", "ارفع PDF للتحليل..."]',
+    'placeholders.Vision Lab': '["ارفع صورة للتحليل...", "حلل المخططات والصور...", "شارك المحتوى المرئي..."]',
     
     // Legacy placeholders (keeping for backward compatibility)
     'dashboard.placeholders.askAyn': 'اسأل AYN أي شيء عن أعمالك...',
