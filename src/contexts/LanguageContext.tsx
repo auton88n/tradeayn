@@ -447,21 +447,21 @@ const translations = {
     'dashboard.templates.growthStrategyPrompt': 'طور استراتيجية نمو شاملة لتوسيع أعمالي',
     
     // Mode-specific placeholders in Modern Standard Arabic (stored as JSON strings)
-    'placeholders.General': '["اسأل عن استراتيجية عملك...", "كيف يمكنني تحسين عملياتك؟", "ما التحدي التجاري الذي تواجهه؟"]',
-    'placeholders.Nen Mode ⚡': '["احصل على رؤى استراتيجية متخصصة...", "اطلب تحليلاً شاملاً...", "تحتاج استشارة متخصصة؟"]',
-    'placeholders.Research Pro': '["ما اتجاهات السوق التي يجب بحثها؟", "ابحث عن أحدث بيانات الصناعة...", "أي منافس يجب تحليله؟"]',
-    'placeholders.PDF Analyst': '["ارفع مستند عملك...", "دعني أراجع ملفاتك...", "ارفع PDF للتحليل..."]',
-    'placeholders.Vision Lab': '["ارفع صورة للتحليل...", "حلل المخططات والصور...", "شارك المحتوى المرئي..."]',
+    'placeholders.General': '["اسأل عن استراتيجية عملك", "كيف يمكنني تحسين عملياتك؟", "ما التحدي التجاري الذي تواجهه؟"]',
+    'placeholders.Nen Mode ⚡': '["احصل على رؤى استراتيجية متخصصة", "اطلب تحليلاً شاملاً", "تحتاج استشارة متخصصة؟"]',
+    'placeholders.Research Pro': '["ما اتجاهات السوق التي يجب بحثها؟", "ابحث عن أحدث بيانات الصناعة", "أي منافس يجب تحليله؟"]',
+    'placeholders.PDF Analyst': '["ارفع مستند عملك", "دعني أراجع ملفاتك", "ارفع PDF للتحليل"]',
+    'placeholders.Vision Lab': '["ارفع صورة للتحليل", "حلل المخططات والصور", "شارك المحتوى المرئي"]',
     
     // Legacy placeholders (keeping for backward compatibility)
-    'dashboard.placeholders.askAyn': 'اسأل AYN أي شيء عن أعمالك...',
+    'dashboard.placeholders.askAyn': 'اسأل AYN أي شيء عن أعمالك',
     'dashboard.placeholders.increaseRevenue': 'كيف يمكنني زيادة إيراداتي؟',
     'dashboard.placeholders.marketTrends': 'ما هي أحدث اتجاهات السوق؟',
-    'dashboard.placeholders.competitionStrategy': 'حلل استراتيجية منافستي...',
+    'dashboard.placeholders.competitionStrategy': 'حلل استراتيجية منافستي',
     'dashboard.placeholders.optimizeSales': 'كيف أحسن قمع المبيعات؟',
     'dashboard.placeholders.growthOpportunities': 'ما هي فرص النمو الموجودة؟',
-    'dashboard.placeholders.pricingStrategy': 'ساعدني في استراتيجية التسعير...',
-    'dashboard.placeholders.targetMarket': 'ابحث عن السوق المستهدف...',
+    'dashboard.placeholders.pricingStrategy': 'ساعدني في استراتيجية التسعير',
+    'dashboard.placeholders.targetMarket': 'ابحث عن السوق المستهدف',
     
     // Auth & Access
     'auth.termsRequired': 'الشروط مطلوبة',
