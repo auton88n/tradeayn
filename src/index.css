@@ -356,208 +356,80 @@
     }
   }
 
-  /* RTL Support */
-  [dir="rtl"] {
-    text-align: right;
-  }
-
-  [dir="rtl"] .brain-container,
-  [dir="rtl"] .brain-container-lg {
-    transform: scaleX(-1);
-  }
-
-  [dir="rtl"] .gradient-text,
-  [dir="rtl"] .gradient-text-hero {
-    text-align: right;
-  }
-
-  /* RTL Layout - Flex Direction Reversals */
-  [dir="rtl"] .flex {
-    flex-direction: row-reverse;
-  }
-
-  [dir="rtl"] .flex-col {
-    flex-direction: column;
-  }
-
-  /* RTL Sidebar Positioning */
-  [dir="rtl"] .sidebar {
-    right: 0;
-    left: auto;
-  }
-
-  [dir="rtl"] .sidebar-inset {
-    margin-right: auto;
-    margin-left: 0;
-  }
-
-
-  /* Force chat input to behave like LTR for consistency */
-  [dir="rtl"] .message-input {
-    direction: ltr !important;
-    text-align: left !important;
-  }
+  /* MINIMAL RTL - SURGICAL FIXES ONLY */
   
-  [dir="rtl"] .message-input::placeholder {
+  /* INPUT AREA - COMPLETE RTL ISOLATION */
+  .input-area {
+    position: fixed !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
     direction: ltr !important;
-    text-align: left !important;
-  }
-  
-  /* Force input container to use LTR layout for consistency */
-  [dir="rtl"] .input-container {
-    direction: ltr !important;
-    flex-direction: row !important;
+    unicode-bidi: isolate !important;
   }
 
-  /* Remove old RTL input container rules - now handled above */
-
-  /* RTL Margin and Padding Adjustments */
-  [dir="rtl"] .ml-1 { margin-left: 0; margin-right: 0.25rem; }
-  [dir="rtl"] .ml-2 { margin-left: 0; margin-right: 0.5rem; }
-  [dir="rtl"] .ml-3 { margin-left: 0; margin-right: 0.75rem; }
-  [dir="rtl"] .ml-4 { margin-left: 0; margin-right: 1rem; }
-  [dir="rtl"] .ml-6 { margin-left: 0; margin-right: 1.5rem; }
-  [dir="rtl"] .ml-8 { margin-left: 0; margin-right: 2rem; }
-
-  [dir="rtl"] .mr-1 { margin-right: 0; margin-left: 0.25rem; }
-  [dir="rtl"] .mr-2 { margin-right: 0; margin-left: 0.5rem; }
-  [dir="rtl"] .mr-3 { margin-right: 0; margin-left: 0.75rem; }
-  [dir="rtl"] .mr-4 { margin-right: 0; margin-left: 1rem; }
-  [dir="rtl"] .mr-6 { margin-right: 0; margin-left: 1.5rem; }
-  [dir="rtl"] .mr-8 { margin-right: 0; margin-left: 2rem; }
-
-  [dir="rtl"] .pl-1 { padding-left: 0; padding-right: 0.25rem; }
-  [dir="rtl"] .pl-2 { padding-left: 0; padding-right: 0.5rem; }
-  [dir="rtl"] .pl-3 { padding-left: 0; padding-right: 0.75rem; }
-  [dir="rtl"] .pl-4 { padding-left: 0; padding-right: 1rem; }
-  [dir="rtl"] .pl-6 { padding-left: 0; padding-right: 1.5rem; }
-  [dir="rtl"] .pl-8 { padding-left: 0; padding-right: 2rem; }
-
-  [dir="rtl"] .pr-1 { padding-right: 0; padding-left: 0.25rem; }
-  [dir="rtl"] .pr-2 { padding-right: 0; padding-left: 0.5rem; }
-  [dir="rtl"] .pr-3 { padding-right: 0; padding-left: 0.75rem; }
-  [dir="rtl"] .pr-4 { padding-right: 0; padding-left: 1rem; }
-  [dir="rtl"] .pr-6 { padding-right: 0; padding-left: 1.5rem; }
-  [dir="rtl"] .pr-8 { padding-right: 0; padding-left: 2rem; }
-
-  /* RTL Icon flipping */
-  [dir="rtl"] .lucide-arrow-right {
-    transform: scaleX(-1);
+  .input-area.center-position {
+    transform: translate(-50%, -50%) !important;
   }
 
-  [dir="rtl"] .lucide-chevron-right {
-    transform: scaleX(-1);
+  /* RTL NEUTRALIZERS - PREVENT RTL BLEEDING INTO INPUT AREA */
+  [dir="rtl"] .input-area {
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
   }
 
-  [dir="rtl"] .lucide-chevron-left {
-    transform: scaleX(-1);
+  [dir="rtl"] .input-area.center-position {
+    left: 50% !important;
+    right: auto !important;
+    transform: translate(-50%, -50%) !important;
   }
 
-  [dir="rtl"] .lucide-menu {
-    transform: scaleX(-1);
+  /* FIX BUTTON POSITIONING IN RTL */
+  [dir="rtl"] .input-area .send-button,
+  [dir="rtl"] .input-area .attachment-button {
+    transform: none !important;
   }
 
-  [dir="rtl"] .lucide-send {
-    transform: scaleX(-1);
+  /* PREVENT ICON FLIPPING IN INPUT AREA */
+  [dir="rtl"] .input-area .lucide-send,
+  [dir="rtl"] .input-area .lucide-paperclip {
+    transform: none !important;
   }
 
-  [dir="rtl"] .lucide-paperclip {
-    transform: scaleX(-1);
+  /* FIX DROPDOWN POSITIONING */
+  [dir="rtl"] .input-area .absolute {
+    left: 0 !important;
+    right: auto !important;
   }
 
-  /* RTL Text Alignment Classes */
-  [dir="rtl"] .text-left {
+  /* MESSAGE CONTENT DIRECTION ONLY */
+  [dir="rtl"] .message-content {
+    direction: rtl;
     text-align: right;
   }
 
-  [dir="rtl"] .text-right {
-    text-align: left;
-  }
-
-  /* RTL Flex Justify Content */
-  [dir="rtl"] .justify-start {
-    justify-content: flex-end;
-  }
-
-  [dir="rtl"] .justify-end {
-    justify-content: flex-start;
-  }
-
-  /* Remove old RTL input field rules - now handled in unified section above */
-
-
-  /* RTL Send Button - keep inside on the left via flex order */
-  [dir="rtl"] .send-button {
-    position: static;
-    margin-left: 8px;
-    margin-right: 0;
-  }
-
-  /* RTL Attachment Button - keep inside on the right via flex order */
-  [dir="rtl"] .attachment-button {
-    position: static;
-    margin-right: 8px;
-    margin-left: 0;
-    transform: none;
-  }
-
-  /* RTL File Types Dropdown Positioning */
-  [dir="rtl"] .attachment-button + div .absolute {
-    right: 0;
-    left: auto;
-  }
-
-  /* RTL Typewriter Text Alignment - keep consistent with LTR */
-  [dir="rtl"] .typewriter-text {
-    text-align: left;
+  [dir="ltr"] .message-content {
     direction: ltr;
+    text-align: left;
   }
 
-  /* RTL File Selected Indicator */
-  [dir="rtl"] .absolute.-top-12 {
-    right: 0;
-    left: auto;
+  /* KEEP SIDEBAR IN SAME PLACE */
+  [dir="rtl"] .sidebar {
+    left: 0 !important;
+    right: auto !important;
   }
 
-  /* RTL Sidebar Responsive Adjustments */
-  @media (max-width: 1023px) {
-    [dir="rtl"] .sidebar {
-      right: 0;
-      left: auto;
-    }
-    
-    [dir="rtl"] .send-button {
-      position: static;
-      margin-left: 6px;
-      margin-right: 0;
-    }
-    
-    [dir="rtl"] .attachment-button {
-      position: static;
-      margin-right: 6px;
-      margin-left: 0;
-    }
-  }
-
-  /* Desktop: shift input when sidebar is expanded */
+  /* DESKTOP SIDEBAR COMPENSATION */
   @media (min-width: 1024px) {
-    /* LTR: shift input to the right when sidebar is expanded */
-    [dir="ltr"] [data-state="expanded"] ~ main .input-area.bottom-position,
-    [dir="ltr"] [data-state="expanded"] ~ main .input-area.center-position {
-      left: calc(50% + (var(--sidebar-width) / 2));
-      transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
-    }
-    
-    /* RTL: shift input to the left when sidebar is expanded */
     [dir="rtl"] [data-state="expanded"] ~ main .input-area.bottom-position,
     [dir="rtl"] [data-state="expanded"] ~ main .input-area.center-position {
-      right: calc(50% + (var(--sidebar-width) / 2));
-      left: auto;
-      transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+      left: calc(50% + (var(--sidebar-width, 240px) / 2)) !important;
+      right: auto !important;
+      transform: translateX(-50%) !important;
     }
     
-    .input-area {
-      transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+    [dir="rtl"] [data-state="expanded"] ~ main .input-area.center-position {
+      transform: translate(-50%, -50%) !important;
     }
   }
 
