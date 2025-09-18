@@ -1009,15 +1009,15 @@ export default function Dashboard({ user }: DashboardProps) {
                 <SidebarMenu>
                    {modes.map((mode) => (
                     <SidebarMenuItem key={mode.name}>
-                      <SidebarMenuButton
-                        onClick={() => handleModeClick(mode.name)}
-                        disabled={!hasAccess || !hasAcceptedTerms}
-                        tooltip={mode.description}
-                        className={`${language === 'ar' ? 'flex-row-reverse justify-start' : ''} ${selectedMode === mode.name ? 'bg-sidebar-accent text-sidebar-accent-foreground' : ''}`}
-                      >
-                        <mode.icon className={`w-4 h-4 flex-shrink-0 ${mode.color} ${language === 'ar' ? 'ml-0 mr-2' : ''}`} />
-                        <span className={`group-data-[collapsible=icon]:hidden ${language === 'ar' ? 'text-right' : ''}`}>{mode.translatedName}</span>
-                      </SidebarMenuButton>
+                       <SidebarMenuButton
+                         onClick={() => handleModeClick(mode.name)}
+                         disabled={!hasAccess || !hasAcceptedTerms}
+                         tooltip={mode.description}
+                         className={`${selectedMode === mode.name ? 'bg-sidebar-accent text-sidebar-accent-foreground' : ''}`}
+                       >
+                         <mode.icon className={`w-4 h-4 flex-shrink-0 ${mode.color} mr-2`} />
+                         <span className={`group-data-[collapsible=icon]:hidden ${language === 'ar' ? 'text-right' : ''}`}>{mode.translatedName}</span>
+                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   ))}
                 </SidebarMenu>
