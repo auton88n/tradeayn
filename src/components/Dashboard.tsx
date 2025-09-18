@@ -1552,7 +1552,7 @@ export default function Dashboard({ user }: DashboardProps) {
                     {isUploading ? (
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     ) : (
-                      <Send className="w-4 h-4" />
+                      <Send className="w-4 h-4" style={{ transform: 'scaleX(1)' }} />
                     )}
                   </button>
                 </div>
