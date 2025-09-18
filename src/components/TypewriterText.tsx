@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface TypewriterTextProps {
   text: string;
@@ -21,6 +22,7 @@ export const TypewriterText = ({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
   const [showSkipButton, setShowSkipButton] = useState(false);
+  const { direction } = useLanguage();
 
   useEffect(() => {
     // Show skip option after 1 second of typing
@@ -70,7 +72,7 @@ export const TypewriterText = ({
           {displayedText}
         </span>
         {showCursor && !isComplete && (
-          <span className="inline-block w-0.5 h-4 bg-current ml-0.5 animate-pulse" />
+          <span className={`inline-block w-0.5 h-4 bg-current animate-pulse ${direction === 'rtl' ? 'mr-0.5' : 'ml-0.5'}`} />
         )}
       </div>
       
