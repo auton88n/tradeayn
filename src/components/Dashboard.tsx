@@ -1440,7 +1440,9 @@ export default function Dashboard({ user }: DashboardProps) {
                       disabled={!hasAccess || !hasAcceptedTerms || isUploading}
                       title="Attach file"
                     >
-                      <Paperclip className="w-4 h-4" />
+                      {(selectedMode.toLowerCase().includes('pdf') || selectedMode.toLowerCase().includes('vision')) && (
+                        <Paperclip className="w-4 h-4" />
+                      )}
                     </button>
                     
                     {/* File Types Dropdown */}
