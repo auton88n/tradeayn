@@ -148,6 +148,7 @@ export default function Dashboard({ user }: DashboardProps) {
   const [userProfile, setUserProfile] = useState<any>(null);
   const [currentSessionId, setCurrentSessionId] = useState<string>(() => crypto.randomUUID());
   const { t, language } = useLanguage();
+  const { isMobile, openMobile, state } = useSidebar();
   
   // State for AI modes and webhooks
   const [selectedMode, setSelectedMode] = useState<string>('Nen Mode ⚡');
@@ -1362,7 +1363,7 @@ export default function Dashboard({ user }: DashboardProps) {
 
               {/* Mobile-Style Floating Input Bar */}
               <div 
-                className={`input-area ${messages.length > 1 ? 'bottom-position' : 'center-position'}`}
+                className={`input-area ${messages.length > 1 ? 'bottom-position' : 'center-position'} ${(isMobile ? openMobile : state === 'expanded') ? 'sidebar-open' : ''}`}
                 onDragEnter={handleDragEnter}
                 onDragLeave={handleDragLeave}
                 onDragOver={handleDragOver}
