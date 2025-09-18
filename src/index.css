@@ -244,21 +244,22 @@
     51%, 100% { opacity: 0; }
   }
 
-  /* Mobile-Style Floating Input Bar */
+  /* INPUT AREA - COMPLETE RTL ISOLATION */
   .input-area {
-    position: fixed;
+    position: fixed !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
     z-index: 9; /* Keep under sidebar (z-10) so it never covers it */
     transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     padding: 0 12px;
-    direction: ltr; /* lock layout to LTR; text handled by dir="auto" on textarea */
-    unicode-bidi: isolate;
+    direction: ltr !important;
+    unicode-bidi: isolate !important;
   }
 
-  /* Center position for initial state */
   .input-area.center-position {
     top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
     width: calc(100% - 24px);
     max-width: 600px;
   }
@@ -266,8 +267,8 @@
   /* Bottom position after first message */
   .input-area.bottom-position {
     bottom: 12px;
-    left: 50%;
-    transform: translateX(-50%);
+    left: 50% !important;
+    transform: translateX(-50%) !important;
     width: calc(100% - 24px);
     max-width: 600px;
   }
@@ -294,10 +295,10 @@
   /* RTL Layout - Flex Direction Reversals */
   /* Removed global flex reversals to prevent layout shifts */
 
-  /* RTL Sidebar Positioning */
+  /* RTL Sidebar Positioning - KEEP SIDEBAR IN SAME PLACE */
   [dir="rtl"] .sidebar {
-    right: 0;
-    left: auto;
+    left: 0 !important;
+    right: auto !important;
   }
 
   [dir="rtl"] .sidebar-inset {
@@ -382,11 +383,36 @@
     justify-content: flex-start;
   }
 
-  /* Scoped RTL neutralizers for input module */
+  /* RTL NEUTRALIZERS - PREVENT RTL BLEEDING INTO INPUT AREA */
+  [dir="rtl"] .input-area {
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+  }
+
+  [dir="rtl"] .input-area.center-position {
+    left: 50% !important;
+    right: auto !important;
+    transform: translate(-50%, -50%) !important;
+  }
+
+  /* FIX BUTTON POSITIONING IN RTL */
+  [dir="rtl"] .input-area .send-button,
+  [dir="rtl"] .input-area .attachment-button {
+    transform: none !important;
+  }
+
+  /* PREVENT ICON FLIPPING IN INPUT AREA */
   [dir="rtl"] .input-area .lucide-send,
-  [dir="rtl"] .input-area .lucide-paperclip { transform: none !important; }
-  [dir="rtl"] .input-area .attachment-button + div .absolute { left: 0 !important; right: auto !important; }
-  [dir="rtl"] .input-area .absolute.-top-12 { left: 0 !important; right: auto !important; }
+  [dir="rtl"] .input-area .lucide-paperclip {
+    transform: none !important;
+  }
+
+  /* FIX DROPDOWN POSITIONING */
+  [dir="rtl"] .input-area .absolute {
+    left: 0 !important;
+    right: auto !important;
+  }
   /* Previously: global RTL input field rules removed */
   /* RTL Send Button - keep inside on the left via flex order */
   [dir="rtl"] .send-button {
@@ -448,6 +474,18 @@
       left: calc(50% + (var(--sidebar-width) / 2));
       transform: translateX(-50%);
       transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+    
+    /* DESKTOP SIDEBAR COMPENSATION FOR RTL */
+    [dir="rtl"] [data-state="expanded"] ~ main .input-area.bottom-position,
+    [dir="rtl"] [data-state="expanded"] ~ main .input-area.center-position {
+      left: calc(50% + (var(--sidebar-width, 240px) / 2)) !important;
+      right: auto !important;
+      transform: translateX(-50%) !important;
+    }
+    
+    [dir="rtl"] [data-state="expanded"] ~ main .input-area.center-position {
+      transform: translate(-50%, -50%) !important;
     }
     
     .input-area {
