@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { 
-  Settings, Shield, AlertTriangle, Server, Target, Info, Zap
+  Settings, Shield, AlertTriangle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -246,145 +246,7 @@ export const SystemSettings = ({
           </CardContent>
         </Card>
 
-        {/* System Maintenance */}
-        <Card>
-          <CardHeader>
-            <CardTitle className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse text-right' : ''}`}>
-              <Server className="w-5 h-5" />
-              {t('admin.systemMaintenance')}
-            </CardTitle>
-            <CardDescription className={language === 'ar' ? 'text-right' : ''}>{t('admin.systemMaintenanceDesc')}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 gap-3">
-              <Button
-                variant="outline"
-                onClick={() => onPerformMaintenance('backup')}
-                className={`${language === 'ar' ? 'flex-row-reverse' : ''} justify-start`}
-              >
-                <Zap className={`w-4 h-4 ${language === 'ar' ? 'ml-2' : 'mr-2'}`} />
-                {t('admin.createDatabaseBackup')}
-              </Button>
-              
-              <Button
-                variant="outline"
-                onClick={() => onPerformMaintenance('clear_cache')}
-                className={`${language === 'ar' ? 'flex-row-reverse' : ''} justify-start`}
-              >
-                <Zap className={`w-4 h-4 ${language === 'ar' ? 'ml-2' : 'mr-2'}`} />
-                {t('admin.clearSystemCache')}
-              </Button>
-              
-              <Button
-                variant="outline"
-                onClick={() => onPerformMaintenance('health_check')}
-                className={`${language === 'ar' ? 'flex-row-reverse' : ''} justify-start`}
-              >
-                <Zap className={`w-4 h-4 ${language === 'ar' ? 'ml-2' : 'mr-2'}`} />
-                {t('admin.runHealthCheck')}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
       </div>
-
-      {/* Feature Toggles */}
-      <Card>
-        <CardHeader>
-          <CardTitle className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse text-right' : ''}`}>
-            <Target className="w-5 h-5" />
-            {t('admin.featureToggles')}
-          </CardTitle>
-          <CardDescription className={language === 'ar' ? 'text-right' : ''}>{t('admin.featureTogglesDesc')}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div className={`flex items-center justify-between ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-                <div className={language === 'ar' ? 'text-right' : ''}>
-                  <div className="font-medium">{t('admin.realtimeAnalytics')}</div>
-                  <div className="text-sm text-muted-foreground">{t('admin.realtimeAnalyticsDesc')}</div>
-                </div>
-                <Switch defaultChecked />
-              </div>
-              
-              <div className={`flex items-center justify-between ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-                <div className={language === 'ar' ? 'text-right' : ''}>
-                  <div className="font-medium">{t('admin.advancedUserFiltering')}</div>
-                  <div className="text-sm text-muted-foreground">{t('admin.advancedUserFilteringDesc')}</div>
-                </div>
-                <Switch defaultChecked />
-              </div>
-              
-              <div className={`flex items-center justify-between ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-                <div className={language === 'ar' ? 'text-right' : ''}>
-                  <div className="font-medium">{t('admin.bulkOperations')}</div>
-                  <div className="text-sm text-muted-foreground">{t('admin.bulkOperationsDesc')}</div>
-                </div>
-                <Switch defaultChecked />
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div className={`flex items-center justify-between ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-                <div className={language === 'ar' ? 'text-right' : ''}>
-                  <div className="font-medium">{t('admin.apiRateLimiting')}</div>
-                  <div className="text-sm text-muted-foreground">{t('admin.apiRateLimitingDesc')}</div>
-                </div>
-                <Switch defaultChecked />
-              </div>
-              
-              <div className={`flex items-center justify-between ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-                <div className={language === 'ar' ? 'text-right' : ''}>
-                  <div className="font-medium">{t('admin.securityAlerts')}</div>
-                  <div className="text-sm text-muted-foreground">{t('admin.securityAlertsDesc')}</div>
-                </div>
-                <Switch defaultChecked />
-              </div>
-              
-              <div className={`flex items-center justify-between ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-                <div className={language === 'ar' ? 'text-right' : ''}>
-                  <div className="font-medium">{t('admin.maintenanceMode')}</div>
-                  <div className="text-sm text-muted-foreground">{t('admin.maintenanceBanner')}</div>
-                </div>
-                <Switch 
-                  checked={systemConfig.enableMaintenance}
-                  onCheckedChange={(checked) => onUpdateConfig({ enableMaintenance: checked })}
-                />
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* System Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse text-right' : ''}`}>
-            <Info className="w-5 h-5" />
-            {t('admin.systemInformation')}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className={`text-center p-4 rounded-lg bg-blue-50 ${language === 'ar' ? 'text-right' : ''}`}>
-              <div className="font-medium">{t('admin.systemVersion')}</div>
-              <div className="text-2xl font-bold text-blue-600">v2.4.1</div>
-              <div className="text-xs text-blue-500">{t('admin.latestStable')}</div>
-            </div>
-            <div className={`text-center p-4 rounded-lg bg-green-50 ${language === 'ar' ? 'text-right' : ''}`}>
-              <div className="font-medium">{t('admin.databaseVersion')}</div>
-              <div className="text-2xl font-bold text-green-600">PostgreSQL 15</div>
-              <div className="text-xs text-green-500">{t('admin.supabaseHosted')}</div>
-            </div>
-            <div className={`text-center p-4 rounded-lg bg-purple-50 ${language === 'ar' ? 'text-right' : ''}`}>
-              <div className="font-medium">{t('admin.lastUpdated')}</div>
-              <div className="text-lg font-bold text-purple-600">{t('admin.twoDaysAgo')}</div>
-              <div className="text-xs text-purple-500">{t('admin.autoUpdatesEnabled')}</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };

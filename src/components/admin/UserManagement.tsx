@@ -316,7 +316,16 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
                             {t('admin.revoke')}
                           </Button>
                         )}
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            toast({
+                              title: t('admin.userDetails'),
+                              description: `${user.profiles?.company_name || 'Unknown Company'} - ${user.user_email || 'No email'} - Usage: ${user.current_month_usage}/${user.monthly_limit || 'Unlimited'}`
+                            });
+                          }}
+                        >
                           <Eye className={`w-4 h-4 ${language === 'ar' ? 'ml-1' : 'mr-1'}`} />
                           {t('admin.view')}
                         </Button>

@@ -52,15 +52,6 @@ interface SystemMetrics {
   pendingRequests: number;
   totalMessages: number;
   todayMessages: number;
-  avgResponseTime: number;
-  systemHealth: number;
-  uptime: string;
-  errorRate: number;
-  resourceUsage: {
-    cpu: number;
-    memory: number;
-    disk: number;
-  };
 }
 
 interface SystemConfig {
@@ -187,27 +178,13 @@ export const AdminPanel = () => {
       const todayMessages = todayUsageResult.data?.reduce((sum, log) => sum + (log.usage_count || 0), 0) || 0;
       const totalMessages = usageResult.data?.reduce((sum: number, stat: any) => sum + (stat.current_usage || 0), 0) || 0;
       
-      // Calculate system health based on actual metrics
-      const systemHealth = Math.min(99, Math.max(95, 
-        100 - (pendingRequests * 2) - (totalUsers > 0 ? Math.max(0, (totalUsers - activeUsers) / totalUsers * 10) : 0)
-      ));
-      
       // Set system metrics with calculated values
       setSystemMetrics({
         totalUsers,
         activeUsers,
         pendingRequests,
         totalMessages,
-        todayMessages,
-        avgResponseTime: 1.2 + (Math.random() * 0.3), // Slight variation for realism
-        systemHealth: Math.round(systemHealth),
-        uptime: '99.9%',
-        errorRate: Math.max(0, 0.1 + (pendingRequests * 0.05)),
-        resourceUsage: {
-          cpu: Math.min(85, 20 + (activeUsers * 0.5) + (Math.random() * 10)),
-          memory: Math.min(90, 35 + (totalMessages * 0.001) + (Math.random() * 15)),
-          disk: Math.min(95, 25 + (totalUsers * 0.1) + (Math.random() * 5))
-        }
+        todayMessages
       });
 
     } catch (error) {
