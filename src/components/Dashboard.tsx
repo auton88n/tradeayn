@@ -1495,14 +1495,22 @@ export default function Dashboard({ user }: DashboardProps) {
                     <Textarea
                       ref={inputRef}
                       unstyled={true}
-                      className="message-input resize-none min-h-[40px] max-h-[200px] overflow-y-auto"
+                      className="message-input resize-none min-h-[40px] max-h-[200px] overflow-hidden"
                       value={inputMessage}
                       onChange={(e) => {
                         setInputMessage(e.target.value);
                         // Auto-resize textarea
                         const textarea = e.target as HTMLTextAreaElement;
                         textarea.style.height = 'auto';
-                        textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
+                        const newHeight = Math.min(textarea.scrollHeight, 200);
+                        textarea.style.height = newHeight + 'px';
+                        
+                        // Show scrollbar only when content exceeds max height
+                        if (textarea.scrollHeight > 200) {
+                          textarea.style.overflowY = 'auto';
+                        } else {
+                          textarea.style.overflowY = 'hidden';
+                        }
                       }}
                       onKeyPress={handleKeyPress}
                       onFocus={() => setIsInputFocused(true)}
