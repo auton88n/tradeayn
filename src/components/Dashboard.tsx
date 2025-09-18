@@ -1514,9 +1514,9 @@ export default function Dashboard({ user }: DashboardProps) {
                     
                     {/* Typewriter Animation Placeholder */}
                     {showPlaceholder && !inputMessage.trim() && (
-                      <div className={`absolute ${direction === 'rtl' ? 'right-[var(--input-left-offset)]' : 'left-[var(--input-left-offset)]'} top-[var(--input-vertical-offset)] pointer-events-none z-10 ${direction === 'rtl' ? 'text-right' : 'text-left'}`}>
+                      <div className={`absolute ${direction === 'rtl' ? 'right-[var(--input-left-offset)]' : 'left-[var(--input-left-offset)]'} top-[var(--input-vertical-offset)] pointer-events-none z-10 ${direction === 'rtl' ? 'text-right' : 'text-left'} transition-all duration-300 ease-in-out`}>
                         <TypewriterText
-                          key={placeholderIndex}
+                          key={`${placeholderIndex}-${language}-${direction}`}
                           text={placeholderTexts[placeholderIndex]}
                           speed={50}
                           className="typewriter-text text-muted-foreground"
