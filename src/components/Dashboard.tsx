@@ -1511,7 +1511,7 @@ export default function Dashboard({ user }: DashboardProps) {
                     
                     {/* Typewriter Animation Placeholder */}
                     {showPlaceholder && !inputMessage.trim() && (
-                      <div className="absolute left-[var(--input-left-offset)] top-[var(--input-vertical-offset)] pointer-events-none">
+                      <div className="absolute left-[var(--input-left-offset)] top-[var(--input-vertical-offset)] pointer-events-none z-10">
                         <TypewriterText
                           key={placeholderIndex}
                           text={placeholderTexts[placeholderIndex]}

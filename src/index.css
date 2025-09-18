@@ -480,12 +480,10 @@
     left: auto;
   }
 
-  /* RTL Typewriter Text Alignment */
+  /* RTL Typewriter Text Alignment - keep consistent with LTR */
   [dir="rtl"] .typewriter-text {
-    text-align: right;
-    direction: rtl;
-    right: var(--input-left-offset);
-    left: auto;
+    text-align: left;
+    direction: ltr;
   }
 
   /* RTL File Selected Indicator */
