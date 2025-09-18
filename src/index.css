@@ -301,6 +301,62 @@
   }
 
 
+  /* Mobile-Style Floating Input Bar */
+  .input-area {
+    position: fixed;
+    z-index: 9; /* Keep under sidebar (z-10) so it never covers it */
+    transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    padding: 0 12px;
+  }
+
+  /* Center position for initial state */
+  .input-area.center-position {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: calc(100% - 24px);
+    max-width: 600px;
+  }
+
+  /* Bottom position after first message */
+  .input-area.bottom-position {
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 24px);
+    max-width: 600px;
+  }
+
+  /* Mobile specific adjustments */
+  @media (max-width: 640px) {
+    .input-area {
+      padding: 0 8px;
+    }
+    
+    .input-area.center-position,
+    .input-area.bottom-position {
+      width: calc(100% - 16px);
+      max-width: none;
+    }
+    
+    .input-area.bottom-position {
+      bottom: 8px;
+    }
+  }
+
+  /* Tablet adjustments */
+  @media (min-width: 641px) and (max-width: 1023px) {
+    .input-area.center-position,
+    .input-area.bottom-position {
+      width: calc(100% - 32px);
+      max-width: 500px;
+    }
+    
+    .input-area.bottom-position {
+      bottom: 16px;
+    }
+  }
+
   /* RTL Support */
   [dir="rtl"] {
     text-align: right;
@@ -484,38 +540,45 @@
     }
   }
 
-  /* Desktop: shift input when sidebar is expanded */
+  /* SIDEBAR EXPANDED - INPUT AREA POSITIONING FIX */
   @media (min-width: 1024px) {
-    /* LTR: shift input to the right when sidebar is expanded */
-    [dir="ltr"] [data-state="expanded"] ~ main .input-area.bottom-position {
-      left: calc(50% + (var(--sidebar-width) / 2)) !important;
+    /* When sidebar is expanded, shift input to center of remaining space */
+    [data-state="expanded"] ~ main .input-area {
+      left: calc(240px + (100vw - 240px) / 2) !important;
       transform: translateX(-50%) !important;
-      transition: all 0.3s ease !important;
+      transition: left 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
     }
     
-    [dir="ltr"] [data-state="expanded"] ~ main .input-area.center-position {
-      left: calc(50% + (var(--sidebar-width) / 2)) !important;
+    /* Center position specific */  
+    [data-state="expanded"] ~ main .input-area.center-position {
+      left: calc(240px + (100vw - 240px) / 2) !important;
+      top: 50% !important;
       transform: translate(-50%, -50%) !important;
-      transition: all 0.3s ease !important;
+      transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
     }
     
-    /* RTL: shift input to the left when sidebar is expanded */
+    /* Bottom position specific */
+    [data-state="expanded"] ~ main .input-area.bottom-position {
+      left: calc(240px + (100vw - 240px) / 2) !important;
+      bottom: 24px !important;
+      transform: translateX(-50%) !important;
+      transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+    }
+    
+    /* RTL versions - same positioning since sidebar stays on left */
+    [dir="rtl"] [data-state="expanded"] ~ main .input-area,
+    [dir="rtl"] [data-state="expanded"] ~ main .input-area.center-position,
     [dir="rtl"] [data-state="expanded"] ~ main .input-area.bottom-position {
-      right: calc(50% + (var(--sidebar-width) / 2)) !important;
-      left: auto !important;
-      transform: translateX(50%) !important;
-      transition: all 0.3s ease !important;
+      left: calc(240px + (100vw - 240px) / 2) !important;
+      right: auto !important;
     }
     
     [dir="rtl"] [data-state="expanded"] ~ main .input-area.center-position {
-      right: calc(50% + (var(--sidebar-width) / 2)) !important;
-      left: auto !important;
-      transform: translate(50%, -50%) !important;
-      transition: all 0.3s ease !important;
+      transform: translate(-50%, -50%) !important;
     }
     
-    .input-area {
-      transition: all 0.3s ease !important;
+    [dir="rtl"] [data-state="expanded"] ~ main .input-area.bottom-position {
+      transform: translateX(-50%) !important;
     }
   }
 
