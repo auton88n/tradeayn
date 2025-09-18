@@ -65,7 +65,7 @@ export const TypewriterText = ({
   return (
     <div className="relative group">
       <div 
-        className={`${className} cursor-pointer transition-all duration-200 ${!isComplete ? 'hover:opacity-80' : ''}`}
+        className={`${className} cursor-pointer transition-all duration-200 ${!isComplete ? 'hover:opacity-80' : ''} ${direction === 'rtl' ? 'text-right' : 'text-left'}`}
         onClick={handleClick}
       >
         <span className="whitespace-pre-wrap break-words">

@@ -152,7 +152,7 @@ export default function Dashboard({ user }: DashboardProps) {
   const [showChatSelection, setShowChatSelection] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [currentSessionId, setCurrentSessionId] = useState<string>(() => crypto.randomUUID());
-  const { t, language } = useLanguage();
+  const { t, language, direction } = useLanguage();
   
   // State for AI modes and webhooks
   const [selectedMode, setSelectedMode] = useState<string>('Nen Mode ⚡');
@@ -1514,7 +1514,7 @@ export default function Dashboard({ user }: DashboardProps) {
                     
                     {/* Typewriter Animation Placeholder */}
                     {showPlaceholder && !inputMessage.trim() && (
-                      <div className="absolute left-[var(--input-left-offset)] top-[var(--input-vertical-offset)] pointer-events-none z-10">
+                      <div className={`absolute ${direction === 'rtl' ? 'right-[var(--input-left-offset)]' : 'left-[var(--input-left-offset)]'} top-[var(--input-vertical-offset)] pointer-events-none z-10 ${direction === 'rtl' ? 'text-right' : 'text-left'}`}>
                         <TypewriterText
                           key={placeholderIndex}
                           text={placeholderTexts[placeholderIndex]}
