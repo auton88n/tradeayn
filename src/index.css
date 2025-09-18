@@ -361,16 +361,24 @@
     }
   }
 
-  /* RTL Text direction for inputs */
+  /* Force chat input to behave like LTR for consistency */
   [dir="rtl"] .message-input {
-    text-align: right;
+    direction: ltr !important;
+    text-align: left !important;
+  }
+  
+  [dir="rtl"] .message-input::placeholder {
+    direction: ltr !important;
+    text-align: left !important;
+  }
+  
+  /* Force input container to use LTR layout for consistency */
+  [dir="rtl"] .input-container {
+    direction: ltr !important;
+    flex-direction: row !important;
   }
 
-  /* RTL Input Container - mirror layout with flex, keep icons inside */
-  [dir="rtl"] .input-container {
-    direction: rtl;
-    flex-direction: row-reverse;
-  }
+  /* Remove old RTL input container rules - now handled above */
 
   /* RTL Margin and Padding Adjustments */
   [dir="rtl"] .ml-1 { margin-left: 0; margin-right: 0.25rem; }
@@ -444,18 +452,7 @@
     justify-content: flex-start;
   }
 
-  /* RTL Input Field Alignment */
-  [dir="rtl"] .message-input {
-    text-align: right;
-    direction: rtl;
-    padding-left: 40px; /* space for send on left */
-    padding-right: 40px; /* space for attach on right */
-  }
-
-  [dir="rtl"] .message-input::placeholder {
-    text-align: right;
-    direction: rtl;
-  }
+  /* Remove old RTL input field rules - now handled in unified section above */
 
 
   /* RTL Send Button - keep inside on the left via flex order */

@@ -1470,7 +1470,7 @@ export default function Dashboard({ user }: DashboardProps) {
                       onKeyPress={handleKeyPress}
                       onFocus={() => setIsInputFocused(true)}
                       onBlur={() => setIsInputFocused(false)}
-                      placeholder=""
+                      placeholder={t('dashboard.placeholders.askAyn')}
                       disabled={!hasAccess || !hasAcceptedTerms || isUploading}
                       rows={1}
                     />
