@@ -1360,6 +1360,7 @@ export default function Dashboard({ user }: DashboardProps) {
 
               {/* Mobile-Style Floating Input Bar */}
               <div 
+                dir="ltr"
                 className={`input-area ${messages.length > 1 ? 'bottom-position' : 'center-position'}`}
                 onDragEnter={handleDragEnter}
                 onDragLeave={handleDragLeave}

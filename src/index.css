@@ -300,17 +300,20 @@
     }
   }
 
-/* Adjust input area positioning - use consistent centering approach */
-  @media (max-width: 1023px) {
-    .input-area {
-      left: 50%;
-      transform: translateX(-50%);
-      transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
-    }
-    
-    .input-area.bottom-position {
-      bottom: 16px;
-    }
+/* Simplified input area positioning - works consistently in both languages */
+  .input-area {
+    left: 50%;
+    transform: translateX(-50%);
+    transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  
+  .input-area.bottom-position {
+    bottom: 16px;
+  }
+  
+  .input-area.center-position {
+    top: 50%;
+    transform: translate(-50%, -50%);
   }
 
   /* RTL Support */
@@ -348,29 +351,6 @@
     margin-left: 0;
   }
 
-  /* RTL Input Area - always keep centered */
-  [dir="rtl"] .input-area {
-    left: 50%;
-    right: auto;
-    transform: translateX(-50%);
-  }
-  
-  [dir="rtl"] .input-area.center-position {
-    transform: translate(-50%, -50%);
-  }
-
-  @media (min-width: 1024px) {
-    /* RTL Desktop positioning - keep input centered relative to available space */
-    [dir="rtl"] [data-state="expanded"] ~ main .input-area {
-      left: 50%;
-      right: auto;
-      transform: translateX(-50%);
-    }
-    
-    [dir="rtl"] [data-state="expanded"] ~ main .input-area.center-position {
-      transform: translate(-50%, -50%);
-    }
-  }
 
   /* Force chat input to behave like LTR for consistency */
   [dir="rtl"] .message-input {
