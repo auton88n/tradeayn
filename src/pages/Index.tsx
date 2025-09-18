@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import LandingPage from '@/components/LandingPage';
 import Dashboard from '@/components/Dashboard';
 import { supabase } from '@/integrations/supabase/client';
+import { SidebarProvider } from '@/components/ui/sidebar';
 import type { User, Session } from '@supabase/supabase-js';
 
 const Index = () => {
@@ -45,7 +46,13 @@ const Index = () => {
     );
   }
 
-  return user ? <Dashboard user={user} /> : <LandingPage />;
+  return user ? (
+    <SidebarProvider>
+      <Dashboard user={user} />
+    </SidebarProvider>
+  ) : (
+    <LandingPage />
+  );
 };
 
 export default Index;
