@@ -563,10 +563,19 @@ export default function Dashboard({ user }: DashboardProps) {
         timestamp: new Date().toISOString()
       };
 
+      // Before calling the edge function, add this logging:
+      console.log('=== DEBUG: Message Send Debug ===');
+      console.log('Selected Mode:', selectedMode);
+      console.log('Full payload:', payload);
+
       // Call AYN webhook through edge function
       const { data: webhookResponse, error: webhookError } = await supabase.functions.invoke('ayn-webhook', {
         body: payload
       });
+
+      console.log('Webhook Response:', webhookResponse);
+      console.log('Webhook Error:', webhookError);
+      console.log('=== END DEBUG ===');
       
       setIsTyping(false);
 

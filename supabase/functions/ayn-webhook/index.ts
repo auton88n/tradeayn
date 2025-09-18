@@ -157,7 +157,7 @@ serve(async (req) => {
         contactPerson: body?.contactPerson || '',
         detectedLanguage: body?.detectedLanguage || 'en',
         concise: body?.concise ?? true,
-        mode: body?.mode || 'nen mode'
+        mode: body?.mode || 'General'
       };
     } catch (e) {
       console.warn(`[${requestId}] Request body was not valid JSON, using defaults`);
