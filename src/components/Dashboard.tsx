@@ -1168,14 +1168,14 @@ export default function Dashboard({ user }: DashboardProps) {
         {/* Main Chat Area */}
         <SidebarInset>
           {/* Header */}
-          <header className="h-14 sm:h-16 bg-card border-b border-border flex items-center justify-between px-3 sm:px-4 lg:px-6 flex-shrink-0">
+          <header className="header-container h-14 sm:h-16 bg-card border-b border-border flex items-center justify-between px-3 sm:px-4 lg:px-6 flex-shrink-0" dir="ltr">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               {/* Mobile Menu Button */}
               <SidebarTrigger />
               
               <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-                <Brain className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
-                <h1 className="font-bold text-sm sm:text-lg truncate">AYN Business Console</h1>
+                <Brain className="brain-icon w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
+                <h1 className="header-title font-bold text-sm sm:text-lg truncate">AYN Business Console</h1>
                 <Badge variant="secondary" className="text-xs hidden sm:inline-flex">
                   {selectedMode}
                 </Badge>
@@ -1218,7 +1218,7 @@ export default function Dashboard({ user }: DashboardProps) {
                   onClick={() => setActiveTab('admin')}
                   className="h-7 sm:h-8 px-2 sm:px-3 text-xs sm:text-sm"
                 >
-                  <Shield className="w-3 h-3 mr-0 sm:mr-1" />
+                  <Shield className="shield-icon w-3 h-3 sm:mr-1" />
                   <span className="hidden sm:inline">Admin</span>
                 </Button>
               </div>
