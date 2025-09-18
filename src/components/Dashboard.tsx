@@ -1137,30 +1137,6 @@ export default function Dashboard({ user }: DashboardProps) {
               </SidebarGroupContent>
             </SidebarGroup>
 
-            {/* Webhook Configuration */}
-            <SidebarGroup>
-              <SidebarGroupLabel className={`px-4 py-2 ${language === 'ar' ? 'text-right' : 'text-left'}`}>
-                Webhook Configuration
-              </SidebarGroupLabel>
-              <SidebarGroupContent>
-                <div className="px-4 space-y-3">
-                  {modes.map((mode) => (
-                    <div key={mode.name} className="space-y-1">
-                      <Label className="text-xs font-medium">{mode.name}</Label>
-                      <Input
-                        placeholder={`Enter ${mode.name} webhook URL`}
-                        value={modeWebhooks[mode.name]}
-                        onChange={(e) => setModeWebhooks(prev => ({
-                          ...prev,
-                          [mode.name]: e.target.value
-                        }))}
-                        className="h-8 text-xs"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </SidebarGroupContent>
-            </SidebarGroup>
           </SidebarContent>
         </Sidebar>
 
