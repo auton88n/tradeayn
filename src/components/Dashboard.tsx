@@ -452,6 +452,8 @@ export default function Dashboard({ user }: DashboardProps) {
   };
 
   const handleSendMessage = async (messageContent?: string) => {
+    console.log('handleSendMessage called with message:', messageContent ?? inputMessage);
+    console.log('Current selectedMode:', selectedMode);
     if (!hasAcceptedTerms) {
       toast({
         title: t('auth.termsRequired'),
@@ -563,6 +565,17 @@ export default function Dashboard({ user }: DashboardProps) {
         timestamp: new Date().toISOString()
       };
 
+      // Test Supabase and edge function connectivity
+      console.log('Testing Supabase connection...');
+      const { data: testData, error: testError } = await supabase.from('profiles').select('*').limit(1);
+      console.log('Supabase test result:', testData, testError);
+
+      console.log('Testing edge function call...');
+      const { data, error } = await supabase.functions.invoke('ayn-webhook', {
+        body: { message: 'test', mode: 'General', userId: 'test-123' }
+      });
+      console.log('Edge function test result:', data, error);
+
       // Before calling the edge function, add this logging:
       console.log('=== DEBUG: Message Send Debug ===');
       console.log('Selected Mode:', selectedMode);
@@ -620,8 +633,8 @@ export default function Dashboard({ user }: DashboardProps) {
       loadRecentChats();
 
     } catch (error) {
+      console.error('handleSendMessage error:', error);
       setIsTyping(false);
-      
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         content: "I'm sorry, I'm having trouble connecting right now. Please try again in a moment.",
