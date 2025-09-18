@@ -1,5 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { sanitizeUserInput, isValidUserInput } from '@/lib/security';
 
 interface MessageFormatterProps {
   content: string;
@@ -7,6 +8,9 @@ interface MessageFormatterProps {
 }
 
 export function MessageFormatter({ content, className }: MessageFormatterProps) {
+  // Sanitize content to prevent XSS attacks
+  const sanitizedContent = isValidUserInput(content) ? content : sanitizeUserInput(content);
+  
   const formatMessage = (text: string) => {
     // Split by code blocks first
     const codeBlockRegex = /```([\s\S]*?)```/g;
@@ -347,7 +351,7 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
 
   return (
     <div className={cn("space-y-2 leading-relaxed", className)}>
-      {formatMessage(content)}
+      {formatMessage(sanitizedContent)}
     </div>
   );
 }
