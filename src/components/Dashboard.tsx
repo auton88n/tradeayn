@@ -134,15 +134,6 @@ const getSendButtonClass = (mode: string) => {
 };
 
 export default function Dashboard({ user }: DashboardProps) {
-  return (
-    <SidebarProvider>
-      <DashboardContent user={user} />
-    </SidebarProvider>
-  );
-}
-
-function DashboardContent({ user }: DashboardProps) {
-  const { open } = useSidebar();
   // State management
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
@@ -892,9 +883,10 @@ function DashboardContent({ user }: DashboardProps) {
   };
 
   return (
-    <div className="flex h-screen w-full bg-background">
-      {/* Sidebar */}
-      <Sidebar collapsible="offcanvas" className="w-64">
+    <SidebarProvider>
+      <div className="flex h-screen w-full bg-background">
+        {/* Sidebar */}
+        <Sidebar collapsible="offcanvas" className="w-64">
           <SidebarHeader className="p-4">
             {/* User Profile */}
             <div className="flex items-center gap-3">
@@ -1336,7 +1328,7 @@ function DashboardContent({ user }: DashboardProps) {
 
               {/* Mobile-Style Floating Input Bar */}
               <div 
-                className={`input-area ${messages.length > 1 ? 'bottom-position' : 'center-position'} ${open ? 'sidebar-open' : ''}`}
+                className={`input-area ${messages.length > 1 ? 'bottom-position' : 'center-position'}`}
                 onDragEnter={handleDragEnter}
                 onDragLeave={handleDragLeave}
                 onDragOver={handleDragOver}
@@ -1478,11 +1470,7 @@ function DashboardContent({ user }: DashboardProps) {
                       onKeyPress={handleKeyPress}
                       onFocus={() => setIsInputFocused(true)}
                       onBlur={() => setIsInputFocused(false)}
-                      placeholder={!hasAccess
-                        ? "Access required to send messages..."
-                        : !hasAcceptedTerms
-                          ? "Please accept terms to start chatting..."
-                          : t('dashboard.placeholders.askAyn')}
+                      placeholder=""
                       disabled={!hasAccess || !hasAcceptedTerms || isUploading}
                       rows={1}
                     />
@@ -1526,5 +1514,6 @@ function DashboardContent({ user }: DashboardProps) {
           </div>
         </SidebarInset>
       </div>
+    </SidebarProvider>
   );
 }

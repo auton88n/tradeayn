@@ -311,29 +311,6 @@
     }
   }
 
-  /* Desktop adjustments when sidebar is expanded */
-  @media (min-width: 1024px) {
-    [data-state="expanded"] ~ main .input-area.bottom-position,
-    [data-state="expanded"] ~ main .input-area.center-position {
-      left: calc(var(--sidebar-width, 320px) + 24px); /* dynamic sidebar width + margin */
-      right: 24px; /* page padding */
-      transform: none;
-      width: auto;
-      max-width: none;
-      transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    }
-
-    [dir="rtl"] [data-state="expanded"] ~ main .input-area.bottom-position,
-    [dir="rtl"] [data-state="expanded"] ~ main .input-area.center-position {
-      left: calc(var(--sidebar-width, 320px) + 24px); /* dynamic sidebar width + margin */
-      right: 24px;
-      transform: none;
-      width: auto;
-      max-width: none;
-      transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    }
-  }
-
   /* RTL Support */
   [dir="rtl"] {
     text-align: right;
@@ -369,24 +346,24 @@
     margin-left: 0;
   }
 
-  /* RTL small screens: keep centered offset while sidebar open */
+  /* RTL Input Area Adjustments for small screens when sidebar is open */
   [dir="rtl"] .input-area.sidebar-open.bottom-position,
   [dir="rtl"] .input-area.sidebar-open.center-position {
-    left: calc(50% + 120px); /* same side as LTR because sidebar is on the left */
-    right: auto;
-    width: calc(100% - 280px);
-    max-width: 400px;
+    right: calc(50% - 120px);
+    left: auto;
   }
 
-  /* This rule is now handled above in the main desktop adjustments */
+  @media (min-width: 1024px) {
+    [dir="rtl"] [data-state="expanded"] ~ main .input-area.bottom-position,
+    [dir="rtl"] [data-state="expanded"] ~ main .input-area.center-position {
+      right: calc(50% - (var(--sidebar-width) / 2));
+      left: auto;
+    }
+  }
 
-  /* RTL Text direction for inputs - removed special handling */
+  /* RTL Text direction for inputs */
   [dir="rtl"] .message-input {
-    /* Use same styling as LTR */
-  }
-
-  [dir="rtl"] .message-input::placeholder {
-    /* Use same styling as LTR */
+    text-align: right;
   }
 
   /* RTL Input Container - mirror layout with flex, keep icons inside */
@@ -467,13 +444,17 @@
     justify-content: flex-start;
   }
 
-  /* RTL Input Field Alignment - removed special handling */
+  /* RTL Input Field Alignment */
   [dir="rtl"] .message-input {
-    /* Use same styling as LTR */
+    text-align: right;
+    direction: rtl;
+    padding-left: 40px; /* space for send on left */
+    padding-right: 40px; /* space for attach on right */
   }
 
   [dir="rtl"] .message-input::placeholder {
-    /* Use same styling as LTR */
+    text-align: right;
+    direction: rtl;
   }
 
 
@@ -534,11 +515,10 @@
 
   /* Desktop: shift input when sidebar is expanded */
   @media (min-width: 1024px) {
+    /* LTR: shift input to the right when sidebar is expanded */
     [dir="ltr"] [data-state="expanded"] ~ main .input-area.bottom-position,
     [dir="ltr"] [data-state="expanded"] ~ main .input-area.center-position {
-      left: 320px;
-      right: 24px;
-      transform: none;
+      left: calc(50% + (var(--sidebar-width) / 2));
       transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
     }
     
@@ -571,6 +551,7 @@
     gap: 8px;
     transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
     position: relative;
+  }
   }
 
 
@@ -777,4 +758,3 @@
       min-width: 32px;
     }
   }
-}
