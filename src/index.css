@@ -227,12 +227,16 @@
   .typewriter-text {
     font-size: 16px; /* match textarea */
     line-height: 1.4; /* match textarea */
+    caret-color: transparent; /* Hide browser cursor */
   }
-  .typewriter-text::after {
-    content: '|';
-    animation: blink 1s step-end infinite;
-    color: #3b82f6;
-    margin-left: 0px;
+  
+  /* Hide browser cursor in input when placeholder is showing */
+  .message-input:not(:focus) {
+    caret-color: transparent;
+  }
+  
+  .message-input:focus {
+    caret-color: hsl(var(--foreground));
   }
 
   @keyframes blink {
