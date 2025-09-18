@@ -23,9 +23,8 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarProvider,
+  
   SidebarTrigger,
-  useSidebar,
 } from '@/components/ui/sidebar';
 import { MaintenanceBanner } from '@/components/MaintenanceBanner';
 import { 
@@ -148,7 +147,6 @@ export default function Dashboard({ user }: DashboardProps) {
   const [userProfile, setUserProfile] = useState<any>(null);
   const [currentSessionId, setCurrentSessionId] = useState<string>(() => crypto.randomUUID());
   const { t, language } = useLanguage();
-  const { isMobile, openMobile, state } = useSidebar();
   
   // State for AI modes and webhooks
   const [selectedMode, setSelectedMode] = useState<string>('Nen Mode ⚡');
@@ -918,8 +916,7 @@ export default function Dashboard({ user }: DashboardProps) {
   };
 
   return (
-    <SidebarProvider>
-      <div className="flex h-screen w-full bg-background">
+    <div className="flex h-screen w-full bg-background">
         {/* Sidebar */}
         <Sidebar collapsible="offcanvas" className="w-64">
           <SidebarHeader className="p-4">
@@ -1363,7 +1360,7 @@ export default function Dashboard({ user }: DashboardProps) {
 
               {/* Mobile-Style Floating Input Bar */}
               <div 
-                className={`input-area ${messages.length > 1 ? 'bottom-position' : 'center-position'} ${(isMobile ? openMobile : state === 'expanded') ? 'sidebar-open' : ''}`}
+                className={`input-area ${messages.length > 1 ? 'bottom-position' : 'center-position'}`}
                 onDragEnter={handleDragEnter}
                 onDragLeave={handleDragLeave}
                 onDragOver={handleDragOver}
@@ -1562,6 +1559,5 @@ export default function Dashboard({ user }: DashboardProps) {
           </div>
         </SidebarInset>
       </div>
-    </SidebarProvider>
   );
 }
