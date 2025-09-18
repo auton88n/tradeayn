@@ -414,41 +414,17 @@
     right: auto !important;
   }
 
-  /* HEADER RTL FIXES - KEEP SAME LAYOUT */
-  [dir="rtl"] .header-container {
-    direction: ltr !important; /* Force LTR layout to keep same positioning */
+  /* MINIMAL RTL FIXES - NO CONFLICTS */
+
+  /* Message text direction only */
+  [dir="rtl"] .message-content {
+    direction: rtl;
+    text-align: right;
   }
 
-  /* Fix only the icon margins in RTL without changing positions */
-  [dir="rtl"] .mr-0 { margin-right: 0 !important; }
-  [dir="rtl"] .mr-1 { margin-right: 0.25rem !important; margin-left: 0 !important; }
-  [dir="rtl"] .sm\\:mr-1 { margin-right: 0.25rem !important; margin-left: 0 !important; }
-
-  /* Prevent any flex direction changes */
-  [dir="rtl"] .justify-between {
-    flex-direction: row !important;
-  }
-
-  /* Keep brain icon same in both languages */
-  [dir="rtl"] .brain-icon {
-    transform: none !important;
-  }
-
-  /* Keep shield icon positioning same */
-  [dir="rtl"] .shield-icon {
-    margin-right: 0.25rem !important;
-    margin-left: 0 !important;
-  }
-
-  /* Keep header text alignment same */
-  [dir="rtl"] .header-title {
-    text-align: left !important;
-  }
-
-  /* Keep gap spacing same */
-  [dir="rtl"] .gap-2,
-  [dir="rtl"] .gap-3 {
-    flex-direction: row !important;
+  [dir="ltr"] .message-content {
+    direction: ltr;
+    text-align: left;
   }
   /* Previously: global RTL input field rules removed */
   /* RTL Send Button - keep inside on the left via flex order */
