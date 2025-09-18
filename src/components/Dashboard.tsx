@@ -175,12 +175,26 @@ export default function Dashboard({ user }: DashboardProps) {
   const [showFileTypes, setShowFileTypes] = useState(false);
   const [allowPersonalization, setAllowPersonalization] = useState(false);
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const [showPlaceholder, setShowPlaceholder] = useState(true);
   
   const { toast } = useToast();
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Animated placeholder texts for business consulting
+  const placeholderTexts = [
+    t('dashboard.placeholders.askAyn'),
+    t('dashboard.placeholders.increaseRevenue'),
+    t('dashboard.placeholders.marketTrends'),
+    t('dashboard.placeholders.competitionStrategy'),
+    t('dashboard.placeholders.optimizeSales'),
+    t('dashboard.placeholders.growthOpportunities'),
+    t('dashboard.placeholders.pricingStrategy'),
+    t('dashboard.placeholders.targetMarket')
+  ];
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -189,6 +203,26 @@ export default function Dashboard({ user }: DashboardProps) {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Manage animated placeholder rotation
+  useEffect(() => {
+    if (!inputMessage.trim()) {
+      setShowPlaceholder(true);
+    } else {
+      setShowPlaceholder(false);
+    }
+  }, [inputMessage]);
+
+  // Rotate placeholder texts every few seconds
+  useEffect(() => {
+    if (!showPlaceholder || inputMessage.trim()) return;
+    
+    const interval = setInterval(() => {
+      setPlaceholderIndex(prev => (prev + 1) % placeholderTexts.length);
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [showPlaceholder, inputMessage, placeholderTexts.length]);
 
   const loadCurrentChatHistory = async () => {
     try {
@@ -1470,10 +1504,23 @@ export default function Dashboard({ user }: DashboardProps) {
                       onKeyPress={handleKeyPress}
                       onFocus={() => setIsInputFocused(true)}
                       onBlur={() => setIsInputFocused(false)}
-                      placeholder={t('dashboard.placeholders.askAyn')}
+                      placeholder=""
                       disabled={!hasAccess || !hasAcceptedTerms || isUploading}
                       rows={1}
                     />
+                    
+                    {/* Typewriter Animation Placeholder */}
+                    {showPlaceholder && !inputMessage.trim() && (
+                      <div className="absolute left-[var(--input-left-offset)] top-[var(--input-vertical-offset)] pointer-events-none">
+                        <TypewriterText
+                          key={placeholderIndex}
+                          text={placeholderTexts[placeholderIndex]}
+                          speed={50}
+                          className="typewriter-text text-muted-foreground"
+                          showCursor={true}
+                        />
+                      </div>
+                    )}
                     
                     {/* File Selected Indicator */}
                     {selectedFile && (
