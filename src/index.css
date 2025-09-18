@@ -250,6 +250,8 @@
     z-index: 9; /* Keep under sidebar (z-10) so it never covers it */
     transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     padding: 0 12px;
+    direction: ltr; /* lock layout to LTR; text handled by dir="auto" on textarea */
+    unicode-bidi: isolate;
   }
 
   /* Center position for initial state */
@@ -304,22 +306,7 @@
   }
 
 
-  /* Force chat input to behave like LTR for consistency */
-  [dir="rtl"] .message-input {
-    direction: ltr !important;
-    text-align: left !important;
-  }
-  
-  [dir="rtl"] .message-input::placeholder {
-    direction: ltr !important;
-    text-align: left !important;
-  }
-  
-  /* Force input container to use LTR layout for consistency */
-  [dir="rtl"] .input-container {
-    direction: ltr !important;
-    flex-direction: row !important;
-  }
+  /* Do not force LTR on inputs globally in RTL; the input module handles its own direction */
 
   /* Remove old RTL input container rules - now handled above */
 
@@ -395,9 +382,12 @@
     justify-content: flex-start;
   }
 
-  /* Remove old RTL input field rules - now handled in unified section above */
-
-
+  /* Scoped RTL neutralizers for input module */
+  [dir="rtl"] .input-area .lucide-send,
+  [dir="rtl"] .input-area .lucide-paperclip { transform: none !important; }
+  [dir="rtl"] .input-area .attachment-button + div .absolute { left: 0 !important; right: auto !important; }
+  [dir="rtl"] .input-area .absolute.-top-12 { left: 0 !important; right: auto !important; }
+  /* Previously: global RTL input field rules removed */
   /* RTL Send Button - keep inside on the left via flex order */
   [dir="rtl"] .send-button {
     position: static;

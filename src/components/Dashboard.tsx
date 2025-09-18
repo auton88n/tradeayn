@@ -1491,6 +1491,7 @@ export default function Dashboard({ user }: DashboardProps) {
                     <Textarea
                       ref={inputRef}
                       unstyled={true}
+                      dir="auto"
                       className="message-input resize-none min-h-[44px] max-h-[200px] overflow-y-auto"
                       value={inputMessage}
                       onChange={(e) => {
