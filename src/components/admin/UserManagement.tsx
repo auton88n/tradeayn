@@ -134,6 +134,35 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
     }
   };
 
+  const handleGrantAccess = async (userId: string) => {
+    try {
+      const { error } = await supabase
+        .from('access_grants')
+        .update({
+          is_active: true,
+          granted_at: new Date().toISOString(),
+          notes: 'Access granted by administrator'
+        })
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      toast({
+        title: t('admin.accessRestored'),
+        description: t('admin.accessRestoredDesc')
+      });
+      
+      onRefresh();
+    } catch (error) {
+      console.error('Error granting access:', error);
+      toast({
+        title: "Error",
+        description: "Failed to grant user access.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleUpdateUserLimits = async (userIds: string[], newLimit: number | null) => {
     try {
       const { error } = await supabase
@@ -362,7 +391,7 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
                           <Edit className={`w-4 h-4 ${language === 'ar' ? 'ml-1' : 'mr-1'}`} />
                           {t('admin.editLimit')}
                         </Button>
-                        {user.is_active && (
+                        {user.is_active ? (
                           <Button
                             variant="outline"
                             size="sm"
@@ -371,6 +400,16 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
                           >
                             <UserMinus className={`w-4 h-4 ${language === 'ar' ? 'ml-1' : 'mr-1'}`} />
                             {t('admin.revoke')}
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleGrantAccess(user.user_id)}
+                            className="text-green-600 hover:text-green-700"
+                          >
+                            <UserPlus className={`w-4 h-4 ${language === 'ar' ? 'ml-1' : 'mr-1'}`} />
+                            {t('admin.grantAccess')}
                           </Button>
                         )}
                         <Button 

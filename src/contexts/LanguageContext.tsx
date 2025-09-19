@@ -205,6 +205,9 @@ const translations = {
     'admin.enterLimit': 'Enter message limit',
     'admin.updateLimit': 'Update Limit',
     'admin.bulkEditLimits': 'Bulk Edit Limits',
+    'admin.grantAccess': 'Grant Access',
+    'admin.accessRestored': 'Access Restored',
+    'admin.accessRestoredDesc': 'User access has been restored successfully',
     'admin.userDetails': 'User Details',
     
     // System Settings
@@ -588,6 +591,9 @@ const translations = {
     'admin.enterLimit': 'أدخل حد الرسائل',
     'admin.updateLimit': 'تحديث الحد',
     'admin.bulkEditLimits': 'تعديل الحدود بالجملة',
+    'admin.grantAccess': 'منح الوصول',
+    'admin.accessRestored': 'تم استعادة الوصول',
+    'admin.accessRestoredDesc': 'تم استعادة وصول المستخدم بنجاح',
     'admin.userDetails': 'تفاصيل المستخدم',
     
     // System Settings
