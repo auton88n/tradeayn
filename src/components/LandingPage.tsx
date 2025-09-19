@@ -168,7 +168,7 @@ const LandingPage = () => {
             {features.map((feature, index) => (
               <Card key={index} className="bg-card border border-border glass-hover p-6 text-center group">
                 <div className="w-16 h-16 rounded-full brain-container-lg mx-auto mb-4 flex items-center justify-center group-hover:scale-105 transition-transform">
-                  <feature.icon className="w-8 h-8 text-white" />
+                  <feature.icon className="w-8 h-8 text-black" />
                 </div>
                 <h3 className="text-xl font-semibold mb-3">{feature.title}</h3>
                 <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
