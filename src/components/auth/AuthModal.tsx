@@ -169,7 +169,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
-                  className="glass text-black"
+                  className="glass auth-input-text"
                 />
               </div>
 
@@ -182,7 +182,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}
-                  className="glass text-black"
+                  className="glass auth-input-text"
                 />
               </div>
 
