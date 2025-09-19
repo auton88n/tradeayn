@@ -64,7 +64,7 @@ const LandingPage = () => {
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg brain-container flex items-center justify-center">
-                  <Brain className="w-5 h-5 text-white" />
+                  <Brain className="w-5 h-5 text-black" />
                 </div>
                 <span className="text-2xl font-bold">AYN</span>
               </div>
@@ -215,7 +215,7 @@ const LandingPage = () => {
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center gap-3 mb-4 md:mb-0">
               <div className="w-8 h-8 rounded-lg brain-container flex items-center justify-center">
-                <Brain className="w-5 h-5 text-white" />
+                <Brain className="w-5 h-5 text-black" />
               </div>
               <span className="text-2xl font-bold">AYN</span>
             </div>
