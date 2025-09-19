@@ -974,11 +974,11 @@ export default function Dashboard({ user }: DashboardProps) {
             </div>
 
             {/* AYN Status */}
-            <div className={`flex items-center gap-3 px-3 py-2 mt-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+            <div className="flex items-center gap-3 px-3 py-2 mt-2">
               <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
                 <Brain className="w-5 h-5 text-foreground" />
               </div>
-              <div className={`flex-1 min-w-0 group-data-[collapsible=icon]:hidden ${language === 'ar' ? 'text-right' : ''}`}>
+              <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
                 <p className="font-medium text-xs text-foreground">AYN AI</p>
                 <p className={`text-xs ${isTyping ? 'text-muted-foreground' : (hasAccess ? 'text-green-500 font-medium' : 'text-muted-foreground')}`}>
                   {isTyping ? t('common.thinking') : (hasAccess ? t('common.active') : t('common.inactive'))}
@@ -1006,11 +1006,11 @@ export default function Dashboard({ user }: DashboardProps) {
             </SidebarGroup>
 
             {/* Quick Start */}
-            <SidebarGroup dir={language === 'ar' ? 'rtl' : 'ltr'}>
-              <div className={`w-full flex px-4 py-2 ${language === 'ar' ? 'justify-end' : 'justify-start'}`} style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}>
-                <SidebarGroupLabel className={language === 'ar' ? 'text-right ml-auto' : 'text-left'}>{t('common.quickStart')}</SidebarGroupLabel>
+            <SidebarGroup>
+              <div className="w-full flex px-4 py-2 justify-start">
+                <SidebarGroupLabel className="text-left">{t('common.quickStart')}</SidebarGroupLabel>
               </div>
-              <SidebarGroupContent className={language === 'ar' ? 'text-right' : ''}>
+              <SidebarGroupContent>
                 <SidebarMenu>
                    {modes.map((mode) => (
                     <SidebarMenuItem key={mode.name}>
@@ -1021,7 +1021,7 @@ export default function Dashboard({ user }: DashboardProps) {
                          className={`${selectedMode === mode.name ? 'bg-sidebar-accent text-sidebar-accent-foreground' : ''}`}
                        >
                          <mode.icon className={`w-4 h-4 flex-shrink-0 ${mode.color} mr-2`} />
-                         <span className={`group-data-[collapsible=icon]:hidden ${language === 'ar' ? 'text-right' : ''}`}>{mode.translatedName}</span>
+                         <span className="group-data-[collapsible=icon]:hidden">{mode.translatedName}</span>
                        </SidebarMenuButton>
                     </SidebarMenuItem>
                   ))}
@@ -1031,7 +1031,7 @@ export default function Dashboard({ user }: DashboardProps) {
 
             {/* Recent Chats */}
             <SidebarGroup>
-              <div className={`flex items-center justify-between px-4 py-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+              <div className="flex items-center justify-between px-4 py-2">
                 {language === 'ar' ? (
                   <>
                     <div className="flex items-center gap-1">
@@ -1068,7 +1068,7 @@ export default function Dashboard({ user }: DashboardProps) {
                         </>
                       )}
                     </div>
-                    <SidebarGroupLabel className="text-right">{t('common.recentChats')}</SidebarGroupLabel>
+                    <SidebarGroupLabel>{t('common.recentChats')}</SidebarGroupLabel>
                   </>
                 ) : (
                   <>
@@ -1142,13 +1142,13 @@ export default function Dashboard({ user }: DashboardProps) {
                           <SidebarMenuButton
                             onClick={() => !showChatSelection && handleLoadChat(chat)}
                             tooltip={chat.title}
-                            className={`py-4 px-3 h-auto flex-1 ${showChatSelection ? 'cursor-default' : ''} ${language === 'ar' ? 'flex-row-reverse justify-start' : ''}`}
+                            className="py-4 px-3 h-auto flex-1"
                             disabled={showChatSelection}
                           >
-                            <div className={`w-5 h-5 rounded bg-muted flex items-center justify-center text-xs font-medium ${language === 'ar' ? 'ml-0 mr-3' : 'mr-3'}`}>
+                            <div className="w-5 h-5 rounded bg-muted flex items-center justify-center text-xs font-medium mr-3">
                               {chat.title.charAt(0).toUpperCase()}
                             </div>
-                            <div className={`flex flex-col min-w-0 gap-1 ${language === 'ar' ? 'text-right' : ''}`}>
+                            <div className="flex flex-col min-w-0 gap-1">
                               <span className="font-medium truncate text-sm group-data-[collapsible=icon]:hidden">{chat.title}</span>
                               <span className="text-xs text-muted-foreground truncate group-data-[collapsible=icon]:hidden leading-relaxed">{chat.lastMessage}</span>
                             </div>
@@ -1158,7 +1158,7 @@ export default function Dashboard({ user }: DashboardProps) {
                     ))
                   ) : (
                      <SidebarMenuItem>
-                       <div className={`py-4 px-3 ${language === 'ar' ? 'text-right' : 'text-center'}`} style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}>
+                       <div className="py-4 px-3 text-center">
                          <p className={`text-xs text-muted-foreground group-data-[collapsible=icon]:hidden`}>
                            {t('common.noConversations')}
                          </p>
@@ -1199,7 +1199,7 @@ export default function Dashboard({ user }: DashboardProps) {
                 onCheckedChange={setAllowPersonalization}
                 disabled={!hasAccess}
                 size="sm"
-                rtl={language === 'ar'}
+                rtl={false}
                 className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted"
               />
               <Label htmlFor="personalization" className="text-xs text-muted-foreground cursor-pointer sr-only">
@@ -1527,9 +1527,9 @@ export default function Dashboard({ user }: DashboardProps) {
                     
                     {/* Typewriter Animation Placeholder */}
                     {showPlaceholder && !inputMessage.trim() && !isInputFocused && (
-                      <div className={`absolute ${direction === 'rtl' ? 'right-[var(--input-left-offset)]' : 'left-[var(--input-left-offset)]'} top-[var(--input-vertical-offset)] pointer-events-none z-10 ${direction === 'rtl' ? 'text-right' : 'text-left'} transition-all duration-300 ease-in-out`}>
+                      <div className="absolute left-[var(--input-left-offset)] top-[var(--input-vertical-offset)] pointer-events-none z-10 text-left transition-all duration-300 ease-in-out">
                         <TypewriterText
-                          key={`${placeholderIndex}-${language}-${direction}`}
+                          key={`${placeholderIndex}-${language}`}
                           text={placeholderTexts[placeholderIndex]}
                           speed={50}
                           className="typewriter-text text-muted-foreground"

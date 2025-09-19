@@ -208,22 +208,22 @@ export const EmailCampaigns = () => {
   }
 
   return (
-    <div className="space-y-6" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-      <div className={`flex items-center justify-between ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-        <div className={language === 'ar' ? 'text-right' : ''}>
-          <h2 className={`text-2xl font-bold flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold flex items-center gap-2">
             <Target className="w-6 h-6" />
             {t('admin.emailCampaigns')}
           </h2>
           <p className="text-muted-foreground">{t('admin.emailCampaignsDesc')}</p>
         </div>
-        <div className={`flex gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-          <Button onClick={() => setShowGroupDialog(true)} variant="outline" className={language === 'ar' ? 'flex-row-reverse' : ''}>
-            <Users className={`w-4 h-4 ${language === 'ar' ? 'ml-2' : 'mr-2'}`} />
+        <div className="flex gap-2">
+          <Button onClick={() => setShowGroupDialog(true)} variant="outline">
+            <Users className="w-4 h-4 mr-2" />
             {t('admin.recipientGroups')}
           </Button>
-          <Button onClick={() => setShowCampaignDialog(true)} className={language === 'ar' ? 'flex-row-reverse' : ''}>
-            <Plus className={`w-4 h-4 ${language === 'ar' ? 'ml-2' : 'mr-2'}`} />
+          <Button onClick={() => setShowCampaignDialog(true)}>
+            <Plus className="w-4 h-4 mr-2" />
             {t('admin.newCampaign')}
           </Button>
         </div>

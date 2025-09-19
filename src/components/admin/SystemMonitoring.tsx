@@ -59,8 +59,8 @@ export const SystemMonitoring = ({ systemMetrics }: SystemMonitoringProps) => {
   const healthStatus = getHealthStatus(systemMetrics?.systemHealth || 0);
 
   return (
-    <div className="space-y-6" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-      <div className={language === 'ar' ? 'text-right' : ''}>
+    <div className="space-y-6">
+      <div>
         <h2 className="text-2xl font-bold">{t('admin.systemMonitoring')}</h2>
         <p className="text-muted-foreground">{t('admin.systemMonitoringDesc')}</p>
       </div>
