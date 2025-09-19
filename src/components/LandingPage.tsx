@@ -84,7 +84,7 @@ const LandingPage = () => {
               <ThemeToggle />
               <Button 
                 onClick={() => setShowAuthModal(true)}
-                variant="hero"
+                variant="white"
               >
                 {t('nav.getStarted')}
               </Button>
