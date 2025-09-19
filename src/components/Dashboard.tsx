@@ -1275,11 +1275,11 @@ export default function Dashboard({ user }: DashboardProps) {
                          </Avatar>
                        )}
                        
-                       <div className={`max-w-[85%] sm:max-w-[80%] rounded-xl sm:rounded-2xl px-3 py-2 sm:px-4 sm:py-3 ${
-                         message.sender === 'user' 
-                           ? 'bg-primary text-primary-foreground' 
-                           : 'bg-muted text-foreground'
-                       }`}>
+                        <div className={`message-bubble flex-1 min-w-0 rounded-xl sm:rounded-2xl px-3 py-2 sm:px-4 sm:py-3 ${
+                          message.sender === 'user' 
+                            ? 'bg-primary text-primary-foreground' 
+                            : 'bg-muted text-foreground'
+                        }`}>
                           <div className="text-sm leading-relaxed whitespace-pre-wrap break-words group cursor-default select-text">
                             {message.sender === 'ayn' && message.isTyping ? (
                               <TypewriterText

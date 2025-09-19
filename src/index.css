@@ -119,6 +119,21 @@
     background: radial-gradient(ellipse at top, hsl(0 0% 100%) 0%, hsl(0 0% 98%) 100%);
   }
   
+  /* Message bubble styling */
+  .message-bubble {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
+    max-width: 85%;
+  }
+
+  @media (min-width: 640px) {
+    .message-bubble {
+      max-width: 80%;
+    }
+  }
+  
   /* Glass morphism effects */
   .glass {
     background: var(--glass-bg);
@@ -460,6 +475,28 @@
   [dir="rtl"] .gradient-text,
   [dir="rtl"] .gradient-text-hero {
     text-align: right;
+  }
+
+  /* RTL Message bubbles */
+  [dir="rtl"] .message-bubble {
+    text-align: right;
+  }
+
+  [dir="rtl"] .whitespace-pre-wrap {
+    white-space: pre-wrap;
+    word-break: break-word;
+    direction: rtl;
+    text-align: right;
+  }
+
+  [dir="rtl"] .ml-2 {
+    margin-left: 0;
+    margin-right: 0.5rem;
+  }
+
+  [dir="rtl"] .mr-2 {
+    margin-right: 0;
+    margin-left: 0.5rem;
   }
 
   /* RTL Layout - Flex Direction Reversals */
