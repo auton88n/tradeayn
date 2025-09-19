@@ -152,7 +152,7 @@ export default function Dashboard({ user }: DashboardProps) {
   const [showChatSelection, setShowChatSelection] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [currentSessionId, setCurrentSessionId] = useState<string>(() => crypto.randomUUID());
-  const { t, language, direction } = useLanguage();
+  const { t, language, direction, setLanguage } = useLanguage();
   
   // State for AI modes and webhooks
   const [selectedMode, setSelectedMode] = useState<string>('Nen Mode ⚡');
@@ -508,6 +508,11 @@ export default function Dashboard({ user }: DashboardProps) {
 
     // Detect the language of user input
     const detectedLanguage = detectLanguage(content);
+    
+    // Auto-switch UI language if user types in different language
+    if (detectedLanguage !== language) {
+      setLanguage(detectedLanguage);
+    }
 
     // Upload file if selected
     let attachment = null;
@@ -1275,10 +1280,10 @@ export default function Dashboard({ user }: DashboardProps) {
                          </Avatar>
                        )}
                        
-                        <div className={`message-bubble flex-1 min-w-0 rounded-xl sm:rounded-2xl px-3 py-2 sm:px-4 sm:py-3 ${
+                        <div className={`message-bubble rounded-xl sm:rounded-2xl px-3 py-2 sm:px-4 sm:py-3 ${
                           message.sender === 'user' 
-                            ? 'bg-primary text-primary-foreground' 
-                            : 'bg-muted text-foreground'
+                            ? 'user-message bg-primary text-primary-foreground' 
+                            : 'ai-message bg-muted text-foreground'
                         }`}>
                           <div className="text-sm leading-relaxed whitespace-pre-wrap break-words group cursor-default select-text">
                             {message.sender === 'ayn' && message.isTyping ? (

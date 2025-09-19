@@ -125,11 +125,22 @@
     overflow-wrap: break-word;
     word-break: break-word;
     hyphens: auto;
+  }
+
+  .user-message {
+    max-width: 70%;
+  }
+
+  .ai-message {
     max-width: 85%;
   }
 
   @media (min-width: 640px) {
-    .message-bubble {
+    .user-message {
+      max-width: 65%;
+    }
+    
+    .ai-message {
       max-width: 80%;
     }
   }
