@@ -161,7 +161,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
           <TabsContent value="signin" className="space-y-4 mt-6">
             <form onSubmit={handleSignIn} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="signin-email">{t('auth.email')}</Label>
+                <Label htmlFor="signin-email" className="auth-label">{t('auth.email')}</Label>
                 <Input
                   id="signin-email"
                   type="email"
@@ -174,7 +174,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="signin-password">{t('auth.password')}</Label>
+                <Label htmlFor="signin-password" className="auth-label">{t('auth.password')}</Label>
                 <Input
                   id="signin-password"
                   type="password"
@@ -206,7 +206,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
             <form onSubmit={handleSignUp} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="signup-name">{t('auth.fullName')} *</Label>
+                  <Label htmlFor="signup-name" className="auth-label">{t('auth.fullName')} *</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -222,7 +222,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="signup-company">{t('auth.company')} *</Label>
+                  <Label htmlFor="signup-company" className="auth-label">{t('auth.company')} *</Label>
                   <div className="relative">
                     <Building className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -239,7 +239,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="signup-email">{t('auth.businessEmail')} *</Label>
+                <Label htmlFor="signup-email" className="auth-label">{t('auth.businessEmail')} *</Label>
                 <Input
                   id="signup-email"
                   type="email"
@@ -252,7 +252,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="signup-phone">{t('auth.phoneNumber')}</Label>
+                <Label htmlFor="signup-phone" className="auth-label">{t('auth.phoneNumber')}</Label>
                 <Input
                   id="signup-phone"
                   type="tel"
@@ -265,7 +265,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="signup-password">{t('auth.password')} *</Label>
+                <Label htmlFor="signup-password" className="auth-label">{t('auth.password')} *</Label>
                 <Input
                   id="signup-password"
                   type="password"
