@@ -6,13 +6,15 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Progress } from '@/components/ui/progress';
 import { 
   Users, CheckCircle, XCircle, Clock, Building, Mail, Phone, Shield, Eye, Edit,
-  Search, Filter, Download, UserPlus, UserMinus, MoreVertical
+  Search, Filter, Download, UserPlus, UserMinus, MoreVertical, Settings
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { EditLimitModal } from './EditLimitModal';
 
 interface Profile {
   id: string;
@@ -46,6 +48,9 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<AccessGrantWithProfile | null>(null);
+  const [bulkEditModalOpen, setBulkEditModalOpen] = useState(false);
   const { toast } = useToast();
   const { t, language } = useLanguage();
 
@@ -129,18 +134,18 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
     }
   };
 
-  const handleUpdateUserLimits = async (userId: string, newLimit: number | null) => {
+  const handleUpdateUserLimits = async (userIds: string[], newLimit: number | null) => {
     try {
       const { error } = await supabase
         .from('access_grants')
         .update({ monthly_limit: newLimit })
-        .eq('user_id', userId);
+        .in('user_id', userIds);
 
       if (error) throw error;
 
       toast({
         title: t('admin.limitsUpdated'),
-        description: t('admin.limitsUpdatedDesc')
+        description: `${t('admin.limitsUpdatedDesc')} (${userIds.length} ${t('admin.users')})`
       });
       
       onRefresh();
@@ -152,6 +157,31 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
         variant: "destructive"
       });
     }
+  };
+
+  const handleEditLimit = (user: AccessGrantWithProfile) => {
+    setEditingUser(user);
+    setEditModalOpen(true);
+  };
+
+  const handleBulkEditLimits = () => {
+    setBulkEditModalOpen(true);
+  };
+
+  const confirmUpdateLimit = async (newLimit: number | null) => {
+    if (editingUser) {
+      await handleUpdateUserLimits([editingUser.user_id], newLimit);
+    }
+  };
+
+  const confirmBulkUpdateLimits = async (newLimit: number | null) => {
+    await handleUpdateUserLimits(selectedUsers, newLimit);
+    setSelectedUsers([]);
+  };
+
+  const getUsagePercentage = (usage: number, limit: number | null) => {
+    if (!limit) return 0;
+    return Math.min((usage / limit) * 100, 100);
   };
 
   const exportUserData = () => {
@@ -194,6 +224,12 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
           <p className="text-muted-foreground">{t('admin.userManagementDesc')}</p>
         </div>
         <div className={`flex items-center gap-3 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+          {selectedUsers.length > 0 && (
+            <Button onClick={handleBulkEditLimits} variant="outline" size="sm">
+              <Settings className={`w-4 h-4 ${language === 'ar' ? 'ml-2' : 'mr-2'}`} />
+              {t('admin.bulkEditLimits')} ({selectedUsers.length})
+            </Button>
+          )}
           <Button onClick={exportUserData} variant="outline" size="sm">
             <Download className={`w-4 h-4 ${language === 'ar' ? 'ml-2' : 'mr-2'}`} />
             {t('admin.export')}
@@ -292,19 +328,40 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
                               {user.profiles?.contact_person || t('admin.noContact')}
                             </span>
                           </div>
-                          <div className={`flex items-center gap-4 text-xs text-muted-foreground ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-                            <span>
-                              {t('admin.usage')}: {user.current_month_usage || 0}
-                              {user.monthly_limit ? ` / ${user.monthly_limit}` : ` / ${t('admin.unlimited')}`}
-                            </span>
-                            <span>
-                              {t('admin.created')}: {new Date(user.created_at).toLocaleDateString()}
-                            </span>
+                          <div className="space-y-2">
+                            <div className={`flex items-center gap-4 text-xs text-muted-foreground ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+                              <span className={`flex items-center gap-1 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+                                {t('admin.usage')}: {user.current_month_usage || 0}
+                                {user.monthly_limit ? ` / ${user.monthly_limit}` : ` / ${t('admin.unlimited')}`}
+                                {user.monthly_limit && (
+                                  <Badge variant="outline" className="text-xs">
+                                    {Math.round(getUsagePercentage(user.current_month_usage, user.monthly_limit))}%
+                                  </Badge>
+                                )}
+                              </span>
+                              <span>
+                                {t('admin.created')}: {new Date(user.created_at).toLocaleDateString()}
+                              </span>
+                            </div>
+                            {user.monthly_limit && (
+                              <Progress 
+                                value={getUsagePercentage(user.current_month_usage, user.monthly_limit)} 
+                                className="h-1.5"
+                              />
+                            )}
                           </div>
                         </div>
                       </div>
                       
                       <div className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditLimit(user)}
+                        >
+                          <Edit className={`w-4 h-4 ${language === 'ar' ? 'ml-1' : 'mr-1'}`} />
+                          {t('admin.editLimit')}
+                        </Button>
                         {user.is_active && (
                           <Button
                             variant="outline"
@@ -346,6 +403,42 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
           </ScrollArea>
         </CardContent>
       </Card>
+
+      {/* Edit Limit Modals */}
+      {editingUser && (
+        <EditLimitModal
+          isOpen={editModalOpen}
+          onClose={() => {
+            setEditModalOpen(false);
+            setEditingUser(null);
+          }}
+          onConfirm={confirmUpdateLimit}
+          users={[{
+            user_id: editingUser.user_id,
+            user_email: editingUser.user_email,
+            company_name: editingUser.profiles?.company_name || undefined,
+            current_month_usage: editingUser.current_month_usage,
+            monthly_limit: editingUser.monthly_limit
+          }]}
+        />
+      )}
+
+      <EditLimitModal
+        isOpen={bulkEditModalOpen}
+        onClose={() => setBulkEditModalOpen(false)}
+        onConfirm={confirmBulkUpdateLimits}
+        users={selectedUsers.map(userId => {
+          const user = allUsers.find(u => u.user_id === userId);
+          return {
+            user_id: userId,
+            user_email: user?.user_email,
+            company_name: user?.profiles?.company_name || undefined,
+            current_month_usage: user?.current_month_usage || 0,
+            monthly_limit: user?.monthly_limit || null
+          };
+        })}
+        isBulk={true}
+      />
     </div>
   );
 };
