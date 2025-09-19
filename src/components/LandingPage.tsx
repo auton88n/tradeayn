@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { AuthModal } from './auth/AuthModal';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { ThemeToggle } from './theme-toggle';
 
 const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -80,6 +81,7 @@ const LandingPage = () => {
             
             <div className="flex items-center gap-3">
               <LanguageSwitcher />
+              <ThemeToggle />
               <Button 
                 onClick={() => setShowAuthModal(true)}
                 variant="hero"
