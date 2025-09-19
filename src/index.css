@@ -197,6 +197,17 @@
     background: white;
     border: 2px solid hsl(var(--primary) / 0.2);
   }
+
+  /* Ensure brain icons are always black for proper contrast */
+  .brain-container svg,
+  .brain-container-lg svg {
+    color: black !important;
+  }
+  
+  .dark .brain-container svg,
+  .dark .brain-container-lg svg {
+    color: black !important;
+  }
   
   /* Gradient text */
   .gradient-text {
