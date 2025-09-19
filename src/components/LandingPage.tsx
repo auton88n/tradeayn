@@ -116,7 +116,7 @@ const LandingPage = () => {
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                 <Button 
                   onClick={() => setShowAuthModal(true)}
-                  variant="hero"
+                  variant="white"
                   size="xl"
                   className="group"
                 >
@@ -136,7 +136,7 @@ const LandingPage = () => {
               <Card className="bg-card border border-border max-w-md mx-auto p-6">
                 <div className="flex items-center gap-4 mb-4">
                   <div className="w-12 h-12 rounded-full brain-container-lg flex items-center justify-center">
-                    <Brain className="w-6 h-6 text-white" />
+                    <Brain className="w-6 h-6 text-black" />
                   </div>
                   <div>
                     <h3 className="font-semibold">AYN AI Consultant</h3>
