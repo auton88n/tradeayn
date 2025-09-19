@@ -208,7 +208,7 @@ export const EmailCampaigns = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       <div className={`flex items-center justify-between ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
         <div className={language === 'ar' ? 'text-right' : ''}>
           <h2 className={`text-2xl font-bold flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
@@ -318,7 +318,7 @@ export const EmailCampaigns = () => {
 
       {/* Campaign Dialog */}
       <Dialog open={showCampaignDialog} onOpenChange={setShowCampaignDialog}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-3xl" dir={language === 'ar' ? 'rtl' : 'ltr'}>
           <DialogHeader>
             <DialogTitle className={language === 'ar' ? 'text-right' : ''}>{t('admin.createEmailCampaign')}</DialogTitle>
             <DialogDescription className={language === 'ar' ? 'text-right' : ''}>
@@ -436,7 +436,7 @@ export const EmailCampaigns = () => {
       {/* Campaign View Dialog */}
       {selectedCampaign && (
         <Dialog open={!!selectedCampaign} onOpenChange={() => setSelectedCampaign(null)}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl" dir={language === 'ar' ? 'rtl' : 'ltr'}>
             <DialogHeader>
               <DialogTitle className={language === 'ar' ? 'text-right' : ''}>{selectedCampaign.name}</DialogTitle>
               <DialogDescription className={language === 'ar' ? 'text-right' : ''}>

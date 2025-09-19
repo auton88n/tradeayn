@@ -1006,8 +1006,8 @@ export default function Dashboard({ user }: DashboardProps) {
             </SidebarGroup>
 
             {/* Quick Start */}
-            <SidebarGroup>
-              <div className="w-full flex px-4 py-2 justify-start">
+            <SidebarGroup dir={language === 'ar' ? 'rtl' : 'ltr'}>
+              <div className={`w-full flex px-4 py-2 ${language === 'ar' ? 'justify-end' : 'justify-start'}`} style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}>
                 <SidebarGroupLabel className={language === 'ar' ? 'text-right ml-auto' : 'text-left'}>{t('common.quickStart')}</SidebarGroupLabel>
               </div>
               <SidebarGroupContent className={language === 'ar' ? 'text-right' : ''}>
@@ -1158,7 +1158,7 @@ export default function Dashboard({ user }: DashboardProps) {
                     ))
                   ) : (
                      <SidebarMenuItem>
-                       <div className="py-4 px-3 text-center">
+                       <div className={`py-4 px-3 ${language === 'ar' ? 'text-right' : 'text-center'}`} style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}>
                          <p className={`text-xs text-muted-foreground group-data-[collapsible=icon]:hidden`}>
                            {t('common.noConversations')}
                          </p>
@@ -1527,7 +1527,7 @@ export default function Dashboard({ user }: DashboardProps) {
                     
                     {/* Typewriter Animation Placeholder */}
                     {showPlaceholder && !inputMessage.trim() && !isInputFocused && (
-                      <div className="absolute left-[var(--input-left-offset)] top-[var(--input-vertical-offset)] pointer-events-none z-10 text-left transition-all duration-300 ease-in-out">
+                      <div className={`absolute ${direction === 'rtl' ? 'right-[var(--input-left-offset)]' : 'left-[var(--input-left-offset)]'} top-[var(--input-vertical-offset)] pointer-events-none z-10 ${direction === 'rtl' ? 'text-right' : 'text-left'} transition-all duration-300 ease-in-out`}>
                         <TypewriterText
                           key={`${placeholderIndex}-${language}-${direction}`}
                           text={placeholderTexts[placeholderIndex]}

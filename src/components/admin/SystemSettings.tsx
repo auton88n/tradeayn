@@ -39,7 +39,7 @@ export const SystemSettings = ({
   const { t, language } = useLanguage();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       <div className={language === 'ar' ? 'text-right' : ''}>
         <h2 className="text-2xl font-bold">{t('admin.systemConfiguration')}</h2>
         <p className="text-muted-foreground">{t('admin.systemConfigDesc')}</p>
