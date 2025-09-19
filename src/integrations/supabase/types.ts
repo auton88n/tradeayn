@@ -540,6 +540,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      delete_user_chat_sessions: {
+        Args: { _session_ids: string[]; _user_id: string }
+        Returns: boolean
+      }
       get_usage_stats: {
         Args: { _user_id?: string }
         Returns: {
@@ -571,6 +575,10 @@ export type Database = {
         Args: { _action_type?: string; _count?: number; _user_id: string }
         Returns: boolean
       }
+      log_chat_security_event: {
+        Args: { _action: string; _details?: Json; _session_id?: string }
+        Returns: undefined
+      }
       log_security_event: {
         Args:
           | {
@@ -590,6 +598,10 @@ export type Database = {
       }
       validate_input_sanitization: {
         Args: { input_text: string }
+        Returns: boolean
+      }
+      validate_session_ownership: {
+        Args: { _session_id: string; _user_id: string }
         Returns: boolean
       }
     }

@@ -389,15 +389,27 @@ export default function Dashboard({ user }: DashboardProps) {
 
   const loadRecentChats = async () => {
     try {
+      // Security: Explicitly validate user ID and add user isolation
+      if (!user?.id) {
+        console.error('No user ID available for loading chats');
+        setRecentChats([]);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('messages')
         .select('id, content, created_at, sender, session_id')
-        .eq('user_id', user.id)
+        .eq('user_id', user.id) // Explicit user isolation
         .order('created_at', { ascending: false })
         .limit(100);
 
       if (error) {
         console.error('Error loading recent chats:', error);
+        // Log security event
+        await supabase.rpc('log_chat_security_event', {
+          _action: 'chat_load_failed',
+          _details: { error: error.message }
+        });
         return;
       }
 
@@ -406,10 +418,16 @@ export default function Dashboard({ user }: DashboardProps) {
         return;
       }
 
-      // Group messages by session_id
+      // Group messages by session_id with additional validation
       const sessionGroups: { [key: string]: any[] } = {};
       
       data.forEach(message => {
+        // Validate each message belongs to current user
+        if (!message.session_id) {
+          console.warn('Message without session_id found:', message.id);
+          return;
+        }
+        
         const sessionId = message.session_id;
         if (!sessionGroups[sessionId]) {
           sessionGroups[sessionId] = [];
@@ -618,7 +636,19 @@ export default function Dashboard({ user }: DashboardProps) {
 
       setMessages(prev => [...prev, aynMessage]);
 
-      // Save user message to database
+      // Save user message to database with security validation
+      // Security: Validate session ownership before inserting message
+      if (currentSessionId && messages.length > 0) {
+        const { data: isOwner, error: validationError } = await supabase.rpc('validate_session_ownership', {
+          _user_id: user.id,
+          _session_id: currentSessionId
+        });
+
+        if (validationError || !isOwner) {
+          throw new Error('Session validation failed - unauthorized access');
+        }
+      }
+
       await supabase.from('messages').insert({
         user_id: user.id,
         session_id: currentSessionId,
@@ -630,13 +660,20 @@ export default function Dashboard({ user }: DashboardProps) {
         attachment_type: attachment?.type
       });
 
-      // Save AI response to database
+      // Save AI response to database with same session validation
       await supabase.from('messages').insert({
         user_id: user.id,
         session_id: currentSessionId,
         content: response,
         sender: 'ayn',
         mode_used: selectedMode
+      });
+
+      // Log successful message exchange
+      await supabase.rpc('log_chat_security_event', {
+        _action: 'message_exchange_complete',
+        _session_id: currentSessionId,
+        _details: { mode_used: selectedMode, has_attachment: !!attachment }
       });
 
       // Refresh recent chats
@@ -844,13 +881,44 @@ export default function Dashboard({ user }: DashboardProps) {
     fileInputRef.current?.click();
   };
 
-  const handleLoadChat = (chatHistory: ChatHistory) => {
-    setCurrentSessionId(chatHistory.sessionId);
-    setMessages(chatHistory.messages);
-    toast({
-      title: "Chat Loaded",
-      description: `Loaded conversation: ${chatHistory.title}`,
-    });
+  const handleLoadChat = async (chatHistory: ChatHistory) => {
+    try {
+      // Security: Validate session ownership before loading
+      const { data: isOwner, error } = await supabase.rpc('validate_session_ownership', {
+        _user_id: user.id,
+        _session_id: chatHistory.sessionId
+      });
+
+      if (error || !isOwner) {
+        toast({
+          title: "Access Denied",
+          description: "You don't have permission to access this conversation.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      setCurrentSessionId(chatHistory.sessionId);
+      setMessages(chatHistory.messages);
+      
+      // Log chat access for security monitoring
+      await supabase.rpc('log_chat_security_event', {
+        _action: 'chat_loaded',
+        _session_id: chatHistory.sessionId
+      });
+
+      toast({
+        title: "Chat Loaded",
+        description: `Loaded conversation: ${chatHistory.title}`,
+      });
+    } catch (error) {
+      console.error('Error loading chat:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load conversation. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleLogout = async () => {
@@ -874,38 +942,57 @@ export default function Dashboard({ user }: DashboardProps) {
 
     try {
       const chatIndicesToDelete = Array.from(selectedChats);
-      const messageIdsToDelete: string[] = [];
+      const sessionIdsToDelete: string[] = [];
 
-      // Collect message IDs from selected chats
+      // Collect session IDs from selected chats (more secure than individual message IDs)
       chatIndicesToDelete.forEach(index => {
-        if (recentChats[index]) {
-          messageIdsToDelete.push(...recentChats[index].messages.map(m => m.id));
+        if (recentChats[index] && recentChats[index].sessionId) {
+          sessionIdsToDelete.push(recentChats[index].sessionId);
         }
       });
 
-      // Delete messages from database
-      if (messageIdsToDelete.length > 0) {
-        const { error } = await supabase
-          .from('messages')
-          .delete()
-          .in('id', messageIdsToDelete);
-
-        if (error) {
-          console.error('Error deleting messages:', error);
-          toast({
-            title: "Error",
-            description: "Failed to delete some chat messages.",
-            variant: "destructive"
-          });
-          return;
-        }
+      if (sessionIdsToDelete.length === 0) {
+        toast({
+          title: "Error",
+          description: "No valid sessions selected for deletion.",
+          variant: "destructive"
+        });
+        return;
       }
 
-      // Update local state
+      // Use secure deletion function that validates user ownership
+      const { data: deletionResult, error } = await supabase.rpc('delete_user_chat_sessions', {
+        _user_id: user.id,
+        _session_ids: sessionIdsToDelete
+      });
+
+      if (error) {
+        console.error('Error deleting chat sessions:', error);
+        toast({
+          title: "Error",
+          description: "Failed to delete selected conversations. Please try again.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (!deletionResult) {
+        toast({
+          title: "Access Denied", 
+          description: "You don't have permission to delete these conversations.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Update local state only after successful deletion
       const updatedChats = recentChats.filter((_, index) => !selectedChats.has(index));
       setRecentChats(updatedChats);
       setSelectedChats(new Set());
       setShowChatSelection(false);
+
+      // Reload chats from database to ensure consistency
+      await loadRecentChats();
 
       toast({
         title: "Chats Deleted",
