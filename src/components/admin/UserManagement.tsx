@@ -245,7 +245,7 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
   };
 
   return (
-    <div className="space-y-6" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+    <div className="space-y-6">
       {/* Header and Controls */}
       <div className={`flex items-center justify-between ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
         <div className={language === 'ar' ? 'text-right' : ''}>

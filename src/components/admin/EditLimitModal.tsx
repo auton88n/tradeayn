@@ -66,7 +66,7 @@ export const EditLimitModal = ({ isOpen, onClose, onConfirm, users, isBulk = fal
   
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
             <Users className="w-5 h-5" />
