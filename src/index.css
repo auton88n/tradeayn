@@ -187,8 +187,10 @@
   
   /* Brain containers - white background in both light and dark modes */
   .brain-container,
+  /* Brain containers with theme-specific design */
+  .brain-container,
   .brain-container-lg {
-    background: white;
+    background: black;
     border: 2px solid hsl(var(--primary) / 0.2);
   }
   
@@ -198,10 +200,10 @@
     border: 2px solid hsl(var(--primary) / 0.2);
   }
 
-  /* Ensure brain icons are always black for proper contrast */
+  /* Brain icons with theme-specific colors */
   .brain-container svg,
   .brain-container-lg svg {
-    color: black !important;
+    color: white !important;
   }
   
   .dark .brain-container svg,
