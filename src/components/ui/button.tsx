@@ -23,7 +23,7 @@ const buttonVariants = cva(
         gradient: "bg-gradient-secondary text-white hover:bg-gradient-accent transition-all duration-300",
         neon: "bg-transparent border-2 border-primary text-primary hover:bg-primary hover:text-white transition-all duration-300 shadow-neon-purple hover:shadow-lg",
         blue: "bg-blue-500 text-white hover:bg-blue-600 focus:bg-blue-600 active:bg-blue-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105",
-        white: "bg-white text-black hover:bg-gray-100 border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300",
+        white: "bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-100 border border-gray-200 dark:border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300",
       },
       size: {
         default: "h-10 px-4 py-2",
