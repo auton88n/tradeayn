@@ -141,7 +141,7 @@ export const EditLimitModal = ({ isOpen, onClose, onConfirm, users, isBulk = fal
               onClick={handleClose}
               disabled={isLoading}
             >
-              {t('admin.cancel')}
+              {t('common.cancel')}
             </Button>
             <Button
               type="submit"
