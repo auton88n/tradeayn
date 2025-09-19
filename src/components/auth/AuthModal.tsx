@@ -153,7 +153,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
         </DialogHeader>
 
         <Tabs defaultValue="signin" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-2 glass">
             <TabsTrigger value="signin">{t('auth.signIn')}</TabsTrigger>
             <TabsTrigger value="signup">{t('auth.requestAccess')}</TabsTrigger>
           </TabsList>
