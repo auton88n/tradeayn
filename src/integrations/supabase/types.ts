@@ -215,6 +215,48 @@ export type Database = {
         }
         Relationships: []
       }
+      device_fingerprints: {
+        Row: {
+          created_at: string
+          device_info: Json
+          fingerprint_hash: string
+          first_seen: string
+          id: string
+          is_trusted: boolean | null
+          last_seen: string
+          location_info: Json | null
+          login_count: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_info?: Json
+          fingerprint_hash: string
+          first_seen?: string
+          id?: string
+          is_trusted?: boolean | null
+          last_seen?: string
+          location_info?: Json | null
+          login_count?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_info?: Json
+          fingerprint_hash?: string
+          first_seen?: string
+          id?: string
+          is_trusted?: boolean | null
+          last_seen?: string
+          location_info?: Json | null
+          login_count?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       email_templates: {
         Row: {
           content: string
@@ -263,6 +305,99 @@ export type Database = {
         }
         Relationships: []
       }
+      emergency_alerts: {
+        Row: {
+          alert_level: string
+          alert_type: string
+          auto_triggered: boolean | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          mitigation_actions: Json | null
+          resolved_at: string | null
+          resolved_by: string | null
+          threat_assessment: Json | null
+          trigger_reason: string
+          triggered_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          alert_level: string
+          alert_type: string
+          auto_triggered?: boolean | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          mitigation_actions?: Json | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          threat_assessment?: Json | null
+          trigger_reason: string
+          triggered_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          alert_level?: string
+          alert_type?: string
+          auto_triggered?: boolean | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          mitigation_actions?: Json | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          threat_assessment?: Json | null
+          trigger_reason?: string
+          triggered_by?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ip_blocks: {
+        Row: {
+          block_reason: string
+          block_type: string
+          blocked_at: string
+          blocked_until: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          ip_address: unknown
+          is_active: boolean | null
+          metadata: Json | null
+          threat_level: string
+          updated_at: string
+        }
+        Insert: {
+          block_reason: string
+          block_type?: string
+          blocked_at?: string
+          blocked_until?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          ip_address: unknown
+          is_active?: boolean | null
+          metadata?: Json | null
+          threat_level?: string
+          updated_at?: string
+        }
+        Update: {
+          block_reason?: string
+          block_type?: string
+          blocked_at?: string
+          blocked_until?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          ip_address?: unknown
+          is_active?: boolean | null
+          metadata?: Json | null
+          threat_level?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           attachment_name: string | null
@@ -302,6 +437,33 @@ export type Database = {
           session_id?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      performance_metrics: {
+        Row: {
+          created_at: string
+          details: Json | null
+          id: string
+          measurement_time: string
+          metric_type: string
+          metric_value: number
+        }
+        Insert: {
+          created_at?: string
+          details?: Json | null
+          id?: string
+          measurement_time?: string
+          metric_type: string
+          metric_value: number
+        }
+        Update: {
+          created_at?: string
+          details?: Json | null
+          id?: string
+          measurement_time?: string
+          metric_type?: string
+          metric_value?: number
         }
         Relationships: []
       }
@@ -539,6 +701,57 @@ export type Database = {
         }
         Relationships: []
       }
+      threat_detection: {
+        Row: {
+          blocked_until: string | null
+          created_at: string
+          details: Json
+          detected_at: string
+          endpoint: string | null
+          id: string
+          is_blocked: boolean | null
+          request_count: number | null
+          severity: string
+          source_ip: unknown
+          threat_type: string
+          updated_at: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          blocked_until?: string | null
+          created_at?: string
+          details?: Json
+          detected_at?: string
+          endpoint?: string | null
+          id?: string
+          is_blocked?: boolean | null
+          request_count?: number | null
+          severity?: string
+          source_ip: unknown
+          threat_type: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          blocked_until?: string | null
+          created_at?: string
+          details?: Json
+          detected_at?: string
+          endpoint?: string | null
+          id?: string
+          is_blocked?: boolean | null
+          request_count?: number | null
+          severity?: string
+          source_ip?: unknown
+          threat_type?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       usage_logs: {
         Row: {
           action_type: string
@@ -689,12 +902,25 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      cleanup_security_tables: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       cleanup_webhook_logs: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
       delete_user_chat_sessions: {
         Args: { _session_ids: string[]; _user_id: string }
+        Returns: boolean
+      }
+      detect_suspicious_ip: {
+        Args: {
+          _details?: Json
+          _ip_address: unknown
+          _severity?: string
+          _threat_type: string
+        }
         Returns: boolean
       }
       get_usage_stats: {
@@ -728,6 +954,10 @@ export type Database = {
         Args: { _action_type?: string; _count?: number; _user_id: string }
         Returns: boolean
       }
+      is_ip_blocked: {
+        Args: { _ip_address: unknown }
+        Returns: boolean
+      }
       log_chat_security_event: {
         Args: { _action: string; _details?: Json; _session_id?: string }
         Returns: undefined
@@ -758,6 +988,23 @@ export type Database = {
           p_user_id?: string
         }
         Returns: undefined
+      }
+      record_device_fingerprint: {
+        Args: {
+          _device_info: Json
+          _fingerprint_hash: string
+          _user_id: string
+        }
+        Returns: string
+      }
+      trigger_emergency_alert: {
+        Args: {
+          _alert_level: string
+          _alert_type: string
+          _threat_assessment?: Json
+          _trigger_reason: string
+        }
+        Returns: string
       }
       validate_input_sanitization: {
         Args: { input_text: string }
