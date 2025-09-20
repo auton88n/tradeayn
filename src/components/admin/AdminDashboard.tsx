@@ -53,11 +53,11 @@ export const AdminDashboard = ({ systemMetrics, allUsers }: AdminDashboardProps)
   ).length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       {/* Key Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className={`flex flex-row items-center justify-between space-y-0 pb-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
             <CardTitle className="text-sm font-medium">{t('admin.totalUsers')}</CardTitle>
             <Users className="h-4 w-4 text-blue-600" />
           </CardHeader>
@@ -70,7 +70,7 @@ export const AdminDashboard = ({ systemMetrics, allUsers }: AdminDashboardProps)
         </Card>
 
         <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className={`flex flex-row items-center justify-between space-y-0 pb-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
             <CardTitle className="text-sm font-medium">{t('admin.activeUsers')}</CardTitle>
             <Activity className="h-4 w-4 text-green-600" />
           </CardHeader>
@@ -83,7 +83,7 @@ export const AdminDashboard = ({ systemMetrics, allUsers }: AdminDashboardProps)
         </Card>
 
         <Card className="bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className={`flex flex-row items-center justify-between space-y-0 pb-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
             <CardTitle className="text-sm font-medium">{t('admin.pendingRequests')}</CardTitle>
             <Clock className="h-4 w-4 text-yellow-600" />
           </CardHeader>
@@ -96,7 +96,7 @@ export const AdminDashboard = ({ systemMetrics, allUsers }: AdminDashboardProps)
         </Card>
 
         <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className={`flex flex-row items-center justify-between space-y-0 pb-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
             <CardTitle className="text-sm font-medium">{t('admin.messagesToday')}</CardTitle>
             <MessageSquare className="h-4 w-4 text-purple-600" />
           </CardHeader>
@@ -119,11 +119,11 @@ export const AdminDashboard = ({ systemMetrics, allUsers }: AdminDashboardProps)
           <ScrollArea className="h-[400px]">
             <div className="space-y-3">
               {allUsers.slice(0, 10).map((user) => (
-                <div key={user.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50">
+                <div key={user.id} className={`flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                     <Building className="w-4 h-4" />
                   </div>
-                  <div className="flex-1">
+                  <div className={`flex-1 ${language === 'ar' ? 'text-right' : ''}`}>
                     <p className="font-medium text-sm">{user.profiles?.company_name || t('admin.unknownCompany')}</p>
                     <p className="text-xs text-muted-foreground">
                       {user.user_email && `${user.user_email} • `}

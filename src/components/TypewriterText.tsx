@@ -65,21 +65,23 @@ export const TypewriterText = ({
   return (
     <div className="relative group">
       <div 
-        className={`${className} cursor-pointer transition-all duration-300 ease-in-out ${!isComplete ? 'hover:opacity-80' : ''}`}
-        style={{ direction: direction === 'rtl' ? 'rtl' : 'ltr', textAlign: direction === 'rtl' ? 'right' : 'left' }}
+        className={`${className} cursor-pointer transition-all duration-300 ease-in-out ${!isComplete ? 'hover:opacity-80' : ''} ${direction === 'rtl' ? 'text-right' : 'text-left'}`}
+        style={{ direction: direction === 'rtl' ? 'rtl' : 'ltr' }}
         onClick={handleClick}
       >
         <span className="whitespace-pre-wrap break-words">
           {displayedText}
         </span>
         {showCursor && !isComplete && (
-          <span className="inline-block w-0.5 h-4 bg-current animate-pulse transition-all duration-300 ml-0.5" />
+          <span className={`inline-block w-0.5 h-4 bg-current animate-pulse transition-all duration-300 ${
+            direction === 'rtl' ? 'mr-0.5 order-first' : 'ml-0.5 order-last'
+          }`} />
         )}
       </div>
       
       {/* Skip indicator */}
       {showSkipButton && !isComplete && (
-        <div className="absolute -right-2 -top-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+        <div className={`absolute ${direction === 'rtl' ? '-left-2' : '-right-2'} -top-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200`}>
           <div className="bg-muted text-muted-foreground text-xs px-2 py-1 rounded-md shadow-sm whitespace-nowrap">
             Click to skip
           </div>

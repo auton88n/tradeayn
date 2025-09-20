@@ -66,13 +66,13 @@ export const EditLimitModal = ({ isOpen, onClose, onConfirm, users, isBulk = fal
   
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" dir={language === 'ar' ? 'rtl' : 'ltr'}>
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
             <Users className="w-5 h-5" />
             {isBulk ? t('admin.editBulkLimits') : t('admin.editUserLimit')}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className={language === 'ar' ? 'text-right' : ''}>
             {isBulk 
               ? `${t('admin.editingLimitsFor')} ${users.length} ${t('admin.users')}`
               : `${t('admin.editingLimitFor')} ${user?.company_name || user?.user_email}`
@@ -82,8 +82,8 @@ export const EditLimitModal = ({ isOpen, onClose, onConfirm, users, isBulk = fal
 
         {!isBulk && user && (
           <div className="space-y-4 py-4">
-            <div className="p-3 bg-muted/50 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
+            <div className={`p-3 bg-muted/50 rounded-lg ${language === 'ar' ? 'text-right' : ''}`}>
+              <div className={`flex items-center justify-between mb-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
                 <span className="text-sm font-medium">{t('admin.currentUsage')}</span>
                 <Badge variant="outline">
                   {user.current_month_usage} / {user.monthly_limit || t('admin.unlimited')}
@@ -101,7 +101,7 @@ export const EditLimitModal = ({ isOpen, onClose, onConfirm, users, isBulk = fal
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="limit">
+            <Label htmlFor="limit" className={language === 'ar' ? 'text-right block' : ''}>
               {t('admin.monthlyLimit')}
             </Label>
             <div className="flex items-center gap-2">
@@ -114,7 +114,7 @@ export const EditLimitModal = ({ isOpen, onClose, onConfirm, users, isBulk = fal
                   disabled={isUnlimited || isLoading}
                   placeholder={t('admin.enterLimit')}
                   min="0"
-                  className="text-right"
+                  className={language === 'ar' ? 'text-right' : ''}
                 />
               </div>
               <Button
@@ -126,7 +126,7 @@ export const EditLimitModal = ({ isOpen, onClose, onConfirm, users, isBulk = fal
                   if (!isUnlimited) setNewLimit('');
                 }}
                 disabled={isLoading}
-                className="flex items-center gap-1"
+                className={`flex items-center gap-1 ${language === 'ar' ? 'flex-row-reverse' : ''}`}
               >
                 <Infinity className="w-4 h-4" />
                 {t('admin.unlimited')}
@@ -134,7 +134,7 @@ export const EditLimitModal = ({ isOpen, onClose, onConfirm, users, isBulk = fal
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className={language === 'ar' ? 'flex-row-reverse' : ''}>
             <Button
               type="button"
               variant="outline"
@@ -147,7 +147,7 @@ export const EditLimitModal = ({ isOpen, onClose, onConfirm, users, isBulk = fal
               type="submit"
               disabled={(!isUnlimited && (!newLimit || isNaN(Number(newLimit)) || Number(newLimit) < 0)) || isLoading}
             >
-              {isLoading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+              {isLoading && <Loader2 className={`w-4 h-4 animate-spin ${language === 'ar' ? 'ml-2' : 'mr-2'}`} />}
               {t('admin.updateLimit')}
             </Button>
           </DialogFooter>

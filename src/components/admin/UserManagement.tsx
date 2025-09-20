@@ -245,10 +245,10 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       {/* Header and Controls */}
-      <div className="flex items-center justify-between">
-        <div>
+      <div className={`flex items-center justify-between ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+        <div className={language === 'ar' ? 'text-right' : ''}>
           <h2 className="text-2xl font-bold">{t('admin.userManagement')}</h2>
           <p className="text-muted-foreground">{t('admin.userManagementDesc')}</p>
         </div>

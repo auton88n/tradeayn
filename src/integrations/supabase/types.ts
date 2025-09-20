@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.5"
+    PostgrestVersion: "13.0.4"
   }
   public: {
     Tables: {
@@ -515,75 +515,6 @@ export type Database = {
         }
         Relationships: []
       }
-      webhook_rate_limits: {
-        Row: {
-          created_at: string | null
-          endpoint: string
-          id: string
-          request_count: number | null
-          updated_at: string | null
-          user_id: string
-          window_start: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          endpoint: string
-          id?: string
-          request_count?: number | null
-          updated_at?: string | null
-          user_id: string
-          window_start?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          endpoint?: string
-          id?: string
-          request_count?: number | null
-          updated_at?: string | null
-          user_id?: string
-          window_start?: string | null
-        }
-        Relationships: []
-      }
-      webhook_security_logs: {
-        Row: {
-          action: string
-          created_at: string | null
-          details: Json | null
-          endpoint: string
-          id: string
-          ip_address: unknown | null
-          request_headers: Json | null
-          severity: string | null
-          user_agent: string | null
-          user_id: string | null
-        }
-        Insert: {
-          action: string
-          created_at?: string | null
-          details?: Json | null
-          endpoint: string
-          id?: string
-          ip_address?: unknown | null
-          request_headers?: Json | null
-          severity?: string | null
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          action?: string
-          created_at?: string | null
-          details?: Json | null
-          endpoint?: string
-          id?: string
-          ip_address?: unknown | null
-          request_headers?: Json | null
-          severity?: string | null
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never
@@ -601,10 +532,6 @@ export type Database = {
         Args: { _user_id: string }
         Returns: boolean
       }
-      check_webhook_rate_limit: {
-        Args: { p_endpoint: string; p_user_id: string }
-        Returns: boolean
-      }
       cleanup_old_security_logs: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -612,14 +539,6 @@ export type Database = {
       cleanup_old_system_reports: {
         Args: Record<PropertyKey, never>
         Returns: undefined
-      }
-      cleanup_webhook_logs: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      delete_user_chat_sessions: {
-        Args: { _session_ids: string[]; _user_id: string }
-        Returns: boolean
       }
       get_usage_stats: {
         Args: { _user_id?: string }
@@ -652,10 +571,6 @@ export type Database = {
         Args: { _action_type?: string; _count?: number; _user_id: string }
         Returns: boolean
       }
-      log_chat_security_event: {
-        Args: { _action: string; _details?: Json; _session_id?: string }
-        Returns: undefined
-      }
       log_security_event: {
         Args:
           | {
@@ -673,22 +588,8 @@ export type Database = {
             }
         Returns: undefined
       }
-      log_webhook_security_event: {
-        Args: {
-          p_action: string
-          p_details?: Json
-          p_endpoint: string
-          p_severity?: string
-          p_user_id?: string
-        }
-        Returns: undefined
-      }
       validate_input_sanitization: {
         Args: { input_text: string }
-        Returns: boolean
-      }
-      validate_session_ownership: {
-        Args: { _session_id: string; _user_id: string }
         Returns: boolean
       }
     }

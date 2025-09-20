@@ -853,11 +853,15 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
   useEffect(() => {
     // Update document direction and language
     document.documentElement.lang = language;
-    // Remove automatic document direction setting to prevent global layout changes
-    // Keep direction for text-only styling when needed
+    document.documentElement.dir = direction;
     
-    // Remove RTL class additions that change layout
-  }, [language]);
+    // Add/remove RTL class for styling
+    if (language === 'ar') {
+      document.documentElement.classList.add('rtl');
+    } else {
+      document.documentElement.classList.remove('rtl');
+    }
+  }, [language, direction]);
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);

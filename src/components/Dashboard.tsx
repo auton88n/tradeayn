@@ -389,27 +389,15 @@ export default function Dashboard({ user }: DashboardProps) {
 
   const loadRecentChats = async () => {
     try {
-      // Security: Explicitly validate user ID and add user isolation
-      if (!user?.id) {
-        console.error('No user ID available for loading chats');
-        setRecentChats([]);
-        return;
-      }
-
       const { data, error } = await supabase
         .from('messages')
         .select('id, content, created_at, sender, session_id')
-        .eq('user_id', user.id) // Explicit user isolation
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(100);
 
       if (error) {
         console.error('Error loading recent chats:', error);
-        // Log security event
-        await supabase.rpc('log_chat_security_event', {
-          _action: 'chat_load_failed',
-          _details: { error: error.message }
-        });
         return;
       }
 
@@ -418,16 +406,10 @@ export default function Dashboard({ user }: DashboardProps) {
         return;
       }
 
-      // Group messages by session_id with additional validation
+      // Group messages by session_id
       const sessionGroups: { [key: string]: any[] } = {};
       
       data.forEach(message => {
-        // Validate each message belongs to current user
-        if (!message.session_id) {
-          console.warn('Message without session_id found:', message.id);
-          return;
-        }
-        
         const sessionId = message.session_id;
         if (!sessionGroups[sessionId]) {
           sessionGroups[sessionId] = [];
@@ -593,24 +575,6 @@ export default function Dashboard({ user }: DashboardProps) {
     setIsTyping(true);
 
     try {
-      // Check usage limit first (before consuming credits)
-      const { data: canUse, error: usageCheckError } = await supabase.rpc('check_usage_limit', {
-        _user_id: user.id
-      });
-
-      if (usageCheckError) {
-        throw new Error('Unable to check usage limits');
-      }
-
-      if (!canUse) {
-        toast({
-          title: "Usage Limit Exceeded",
-          description: t('usage.limitExceeded'),
-          variant: "destructive"
-        });
-        return;
-      }
-
       // Enhanced payload with user context for n8n
       const payload = { 
         message: content,
@@ -633,32 +597,13 @@ export default function Dashboard({ user }: DashboardProps) {
 
       // Call AYN webhook through edge function
       const { data: webhookResponse, error: webhookError } = await supabase.functions.invoke('ayn-webhook', {
-        body: payload,
-        headers: {
-          'x-ayn-api-key': 'ayn-2024-secure-key-v1'
-        }
+        body: payload
       });
       
       setIsTyping(false);
 
       if (webhookError) {
-        console.error('ayn-webhook invoke error', webhookError, webhookResponse);
         throw new Error(webhookError.message || 'Webhook call failed');
-      }
-
-      if (!webhookResponse?.response) {
-        throw new Error('No response from AI');
-      }
-
-      // Only increment usage after successful webhook response
-      const { data: incrementSuccess, error: incrementError } = await supabase.rpc('increment_usage', {
-        _user_id: user.id,
-        _action_type: 'message',
-        _count: 1
-      });
-
-      if (incrementError) {
-        console.warn('Usage increment failed after successful webhook call:', incrementError);
       }
 
       const response = webhookResponse?.response || 'I received your message and I\'m processing it. Please try again if you don\'t see a proper response.';
@@ -673,19 +618,7 @@ export default function Dashboard({ user }: DashboardProps) {
 
       setMessages(prev => [...prev, aynMessage]);
 
-      // Save user message to database with security validation
-      // Security: Validate session ownership before inserting message
-      if (currentSessionId && messages.length > 0) {
-        const { data: isOwner, error: validationError } = await supabase.rpc('validate_session_ownership', {
-          _user_id: user.id,
-          _session_id: currentSessionId
-        });
-
-        if (validationError || !isOwner) {
-          throw new Error('Session validation failed - unauthorized access');
-        }
-      }
-
+      // Save user message to database
       await supabase.from('messages').insert({
         user_id: user.id,
         session_id: currentSessionId,
@@ -697,20 +630,13 @@ export default function Dashboard({ user }: DashboardProps) {
         attachment_type: attachment?.type
       });
 
-      // Save AI response to database with same session validation
+      // Save AI response to database
       await supabase.from('messages').insert({
         user_id: user.id,
         session_id: currentSessionId,
         content: response,
         sender: 'ayn',
         mode_used: selectedMode
-      });
-
-      // Log successful message exchange
-      await supabase.rpc('log_chat_security_event', {
-        _action: 'message_exchange_complete',
-        _session_id: currentSessionId,
-        _details: { mode_used: selectedMode, has_attachment: !!attachment }
       });
 
       // Refresh recent chats
@@ -918,44 +844,13 @@ export default function Dashboard({ user }: DashboardProps) {
     fileInputRef.current?.click();
   };
 
-  const handleLoadChat = async (chatHistory: ChatHistory) => {
-    try {
-      // Security: Validate session ownership before loading
-      const { data: isOwner, error } = await supabase.rpc('validate_session_ownership', {
-        _user_id: user.id,
-        _session_id: chatHistory.sessionId
-      });
-
-      if (error || !isOwner) {
-        toast({
-          title: "Access Denied",
-          description: "You don't have permission to access this conversation.",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      setCurrentSessionId(chatHistory.sessionId);
-      setMessages(chatHistory.messages);
-      
-      // Log chat access for security monitoring
-      await supabase.rpc('log_chat_security_event', {
-        _action: 'chat_loaded',
-        _session_id: chatHistory.sessionId
-      });
-
-      toast({
-        title: "Chat Loaded",
-        description: `Loaded conversation: ${chatHistory.title}`,
-      });
-    } catch (error) {
-      console.error('Error loading chat:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load conversation. Please try again.",
-        variant: "destructive"
-      });
-    }
+  const handleLoadChat = (chatHistory: ChatHistory) => {
+    setCurrentSessionId(chatHistory.sessionId);
+    setMessages(chatHistory.messages);
+    toast({
+      title: "Chat Loaded",
+      description: `Loaded conversation: ${chatHistory.title}`,
+    });
   };
 
   const handleLogout = async () => {
@@ -979,57 +874,38 @@ export default function Dashboard({ user }: DashboardProps) {
 
     try {
       const chatIndicesToDelete = Array.from(selectedChats);
-      const sessionIdsToDelete: string[] = [];
+      const messageIdsToDelete: string[] = [];
 
-      // Collect session IDs from selected chats (more secure than individual message IDs)
+      // Collect message IDs from selected chats
       chatIndicesToDelete.forEach(index => {
-        if (recentChats[index] && recentChats[index].sessionId) {
-          sessionIdsToDelete.push(recentChats[index].sessionId);
+        if (recentChats[index]) {
+          messageIdsToDelete.push(...recentChats[index].messages.map(m => m.id));
         }
       });
 
-      if (sessionIdsToDelete.length === 0) {
-        toast({
-          title: "Error",
-          description: "No valid sessions selected for deletion.",
-          variant: "destructive"
-        });
-        return;
+      // Delete messages from database
+      if (messageIdsToDelete.length > 0) {
+        const { error } = await supabase
+          .from('messages')
+          .delete()
+          .in('id', messageIdsToDelete);
+
+        if (error) {
+          console.error('Error deleting messages:', error);
+          toast({
+            title: "Error",
+            description: "Failed to delete some chat messages.",
+            variant: "destructive"
+          });
+          return;
+        }
       }
 
-      // Use secure deletion function that validates user ownership
-      const { data: deletionResult, error } = await supabase.rpc('delete_user_chat_sessions', {
-        _user_id: user.id,
-        _session_ids: sessionIdsToDelete
-      });
-
-      if (error) {
-        console.error('Error deleting chat sessions:', error);
-        toast({
-          title: "Error",
-          description: "Failed to delete selected conversations. Please try again.",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      if (!deletionResult) {
-        toast({
-          title: "Access Denied", 
-          description: "You don't have permission to delete these conversations.",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // Update local state only after successful deletion
+      // Update local state
       const updatedChats = recentChats.filter((_, index) => !selectedChats.has(index));
       setRecentChats(updatedChats);
       setSelectedChats(new Set());
       setShowChatSelection(false);
-
-      // Reload chats from database to ensure consistency
-      await loadRecentChats();
 
       toast({
         title: "Chats Deleted",
@@ -1098,11 +974,11 @@ export default function Dashboard({ user }: DashboardProps) {
             </div>
 
             {/* AYN Status */}
-            <div className="flex items-center gap-3 px-3 py-2 mt-2">
+            <div className={`flex items-center gap-3 px-3 py-2 mt-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
               <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
                 <Brain className="w-5 h-5 text-foreground" />
               </div>
-              <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
+              <div className={`flex-1 min-w-0 group-data-[collapsible=icon]:hidden ${language === 'ar' ? 'text-right' : ''}`}>
                 <p className="font-medium text-xs text-foreground">AYN AI</p>
                 <p className={`text-xs ${isTyping ? 'text-muted-foreground' : (hasAccess ? 'text-green-500 font-medium' : 'text-muted-foreground')}`}>
                   {isTyping ? t('common.thinking') : (hasAccess ? t('common.active') : t('common.inactive'))}
@@ -1130,11 +1006,11 @@ export default function Dashboard({ user }: DashboardProps) {
             </SidebarGroup>
 
             {/* Quick Start */}
-            <SidebarGroup>
-              <div className={`w-full flex px-4 py-2 ${language === 'ar' ? 'justify-end' : 'justify-start'}`}>
-                <SidebarGroupLabel className={language === 'ar' ? 'text-right' : 'text-left'}>{t('common.quickStart')}</SidebarGroupLabel>
+            <SidebarGroup dir={language === 'ar' ? 'rtl' : 'ltr'}>
+              <div className={`w-full flex px-4 py-2 ${language === 'ar' ? 'justify-end' : 'justify-start'}`} style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}>
+                <SidebarGroupLabel className={language === 'ar' ? 'text-right ml-auto' : 'text-left'}>{t('common.quickStart')}</SidebarGroupLabel>
               </div>
-              <SidebarGroupContent>
+              <SidebarGroupContent className={language === 'ar' ? 'text-right' : ''}>
                 <SidebarMenu>
                    {modes.map((mode) => (
                     <SidebarMenuItem key={mode.name}>
@@ -1145,7 +1021,7 @@ export default function Dashboard({ user }: DashboardProps) {
                          className={`${selectedMode === mode.name ? 'bg-sidebar-accent text-sidebar-accent-foreground' : ''}`}
                        >
                          <mode.icon className={`w-4 h-4 flex-shrink-0 ${mode.color} mr-2`} />
-                         <span className="group-data-[collapsible=icon]:hidden">{mode.translatedName}</span>
+                         <span className={`group-data-[collapsible=icon]:hidden ${language === 'ar' ? 'text-right' : ''}`}>{mode.translatedName}</span>
                        </SidebarMenuButton>
                     </SidebarMenuItem>
                   ))}
@@ -1155,7 +1031,7 @@ export default function Dashboard({ user }: DashboardProps) {
 
             {/* Recent Chats */}
             <SidebarGroup>
-              <div className="flex items-center justify-between px-4 py-2">
+              <div className={`flex items-center justify-between px-4 py-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
                 {language === 'ar' ? (
                   <>
                     <div className="flex items-center gap-1">
@@ -1192,7 +1068,7 @@ export default function Dashboard({ user }: DashboardProps) {
                         </>
                       )}
                     </div>
-                    <SidebarGroupLabel>{t('common.recentChats')}</SidebarGroupLabel>
+                    <SidebarGroupLabel className="text-right">{t('common.recentChats')}</SidebarGroupLabel>
                   </>
                 ) : (
                   <>
@@ -1266,13 +1142,13 @@ export default function Dashboard({ user }: DashboardProps) {
                           <SidebarMenuButton
                             onClick={() => !showChatSelection && handleLoadChat(chat)}
                             tooltip={chat.title}
-                            className="py-4 px-3 h-auto flex-1"
+                            className={`py-4 px-3 h-auto flex-1 ${showChatSelection ? 'cursor-default' : ''} ${language === 'ar' ? 'flex-row-reverse justify-start' : ''}`}
                             disabled={showChatSelection}
                           >
-                            <div className="w-5 h-5 rounded bg-muted flex items-center justify-center text-xs font-medium mr-3">
+                            <div className={`w-5 h-5 rounded bg-muted flex items-center justify-center text-xs font-medium ${language === 'ar' ? 'ml-0 mr-3' : 'mr-3'}`}>
                               {chat.title.charAt(0).toUpperCase()}
                             </div>
-                            <div className="flex flex-col min-w-0 gap-1">
+                            <div className={`flex flex-col min-w-0 gap-1 ${language === 'ar' ? 'text-right' : ''}`}>
                               <span className="font-medium truncate text-sm group-data-[collapsible=icon]:hidden">{chat.title}</span>
                               <span className="text-xs text-muted-foreground truncate group-data-[collapsible=icon]:hidden leading-relaxed">{chat.lastMessage}</span>
                             </div>
@@ -1282,7 +1158,7 @@ export default function Dashboard({ user }: DashboardProps) {
                     ))
                   ) : (
                      <SidebarMenuItem>
-                       <div className="py-4 px-3 text-center">
+                       <div className={`py-4 px-3 ${language === 'ar' ? 'text-right' : 'text-center'}`} style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}>
                          <p className={`text-xs text-muted-foreground group-data-[collapsible=icon]:hidden`}>
                            {t('common.noConversations')}
                          </p>
@@ -1323,7 +1199,7 @@ export default function Dashboard({ user }: DashboardProps) {
                 onCheckedChange={setAllowPersonalization}
                 disabled={!hasAccess}
                 size="sm"
-                rtl={false}
+                rtl={language === 'ar'}
                 className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted"
               />
               <Label htmlFor="personalization" className="text-xs text-muted-foreground cursor-pointer sr-only">
@@ -1651,9 +1527,9 @@ export default function Dashboard({ user }: DashboardProps) {
                     
                     {/* Typewriter Animation Placeholder */}
                     {showPlaceholder && !inputMessage.trim() && !isInputFocused && (
-                      <div className="absolute left-[var(--input-left-offset)] top-[var(--input-vertical-offset)] pointer-events-none z-10 text-left transition-all duration-300 ease-in-out">
+                      <div className={`absolute ${direction === 'rtl' ? 'right-[var(--input-left-offset)]' : 'left-[var(--input-left-offset)]'} top-[var(--input-vertical-offset)] pointer-events-none z-10 ${direction === 'rtl' ? 'text-right' : 'text-left'} transition-all duration-300 ease-in-out`}>
                         <TypewriterText
-                          key={`${placeholderIndex}-${language}`}
+                          key={`${placeholderIndex}-${language}-${direction}`}
                           text={placeholderTexts[placeholderIndex]}
                           speed={50}
                           className="typewriter-text text-muted-foreground"

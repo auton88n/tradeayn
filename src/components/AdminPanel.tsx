@@ -265,7 +265,7 @@ export const AdminPanel = () => {
   if (isLoading) {
     return (
       <Card className="p-6">
-        <div className="flex items-center gap-3">
+        <div className={`flex items-center gap-3 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
           <Activity className="w-5 h-5 animate-spin" />
           <span>{t('admin.loading')}</span>
         </div>
@@ -274,19 +274,19 @@ export const AdminPanel = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       {/* Header with Real-time Controls */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-3">
+      <div className={`flex items-center justify-between ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+        <div className={language === 'ar' ? 'text-right' : ''}>
+          <h1 className={`text-3xl font-bold flex items-center gap-3 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
             <Crown className="w-8 h-8 text-primary" />
             {t('admin.title')}
           </h1>
           <p className="text-muted-foreground">{t('admin.subtitle')}</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className={`flex items-center gap-3 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
           <Button onClick={fetchData} variant="outline" size="sm" disabled={isLoading}>
-            <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${language === 'ar' ? 'ml-2' : 'mr-2'} ${isLoading ? 'animate-spin' : ''}`} />
             {t('admin.refresh')}
           </Button>
         </div>
@@ -294,15 +294,15 @@ export const AdminPanel = () => {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="overview" className="flex items-center gap-2">
+          <TabsTrigger value="overview" className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
             <BarChart3 className="w-4 h-4" />
             {t('admin.dashboard')}
           </TabsTrigger>
-          <TabsTrigger value="users" className="flex items-center gap-2">
+          <TabsTrigger value="users" className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
             <Users className="w-4 h-4" />
             {t('admin.users')}
           </TabsTrigger>
-          <TabsTrigger value="settings" className="flex items-center gap-2">
+          <TabsTrigger value="settings" className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
             <Settings className="w-4 h-4" />
             {t('admin.settings')}
           </TabsTrigger>
