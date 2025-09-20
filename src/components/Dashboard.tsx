@@ -615,7 +615,10 @@ export default function Dashboard({ user }: DashboardProps) {
 
       // Call AYN webhook through edge function
       const { data: webhookResponse, error: webhookError } = await supabase.functions.invoke('ayn-webhook', {
-        body: payload
+        body: payload,
+        headers: {
+          'x-ayn-api-key': 'ayn-2024-secure-key-v1'
+        }
       });
       
       setIsTyping(false);
