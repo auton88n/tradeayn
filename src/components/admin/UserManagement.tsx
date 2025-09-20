@@ -42,9 +42,10 @@ interface AccessGrantWithProfile {
 interface UserManagementProps {
   allUsers: AccessGrantWithProfile[];
   onRefresh: () => void;
+  requireAuthentication?: (action: () => void) => void;
 }
 
-export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => {
+export const UserManagement = ({ allUsers, onRefresh, requireAuthentication }: UserManagementProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
@@ -107,84 +108,108 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
   }, [allUsers, searchTerm, statusFilter]);
 
   const handleRevokeAccess = async (userId: string) => {
-    try {
-      const { error } = await supabase
-        .from('access_grants')
-        .update({
-          is_active: false,
-          notes: 'Access revoked by administrator'
-        })
-        .eq('user_id', userId);
+    const action = async () => {
+      try {
+        const { error } = await supabase
+          .from('access_grants')
+          .update({
+            is_active: false,
+            notes: 'Access revoked by administrator'
+          })
+          .eq('user_id', userId);
 
-      if (error) throw error;
+        if (error) throw error;
 
-      toast({
-        title: t('admin.accessRevoked'),
-        description: t('admin.accessRevokedDesc')
-      });
-      
-      onRefresh();
-    } catch (error) {
-      console.error('Error revoking access:', error);
-      toast({
-        title: "Error",
-        description: "Failed to revoke user access.",
-        variant: "destructive"
-      });
+        toast({
+          title: t('admin.accessRevoked'),
+          description: t('admin.accessRevokedDesc')
+        });
+        
+        onRefresh();
+      } catch (error) {
+        console.error('Error revoking access:', error);
+        toast({
+          title: "Error",
+          description: "Failed to revoke user access.",
+          variant: "destructive"
+        });
+      }
+    };
+
+    if (requireAuthentication) {
+      requireAuthentication(action);
+    } else {
+      await action();
     }
   };
 
   const handleGrantAccess = async (userId: string) => {
-    try {
-      const { error } = await supabase
-        .from('access_grants')
-        .update({
-          is_active: true,
-          granted_at: new Date().toISOString(),
-          notes: 'Access granted by administrator'
-        })
-        .eq('user_id', userId);
+    const action = async () => {
+      try {
+        const { error } = await supabase
+          .from('access_grants')
+          .update({
+            is_active: true,
+            granted_at: new Date().toISOString(),
+            notes: 'Access granted by administrator'
+          })
+          .eq('user_id', userId);
 
-      if (error) throw error;
+        if (error) throw error;
 
-      toast({
-        title: t('admin.accessRestored'),
-        description: t('admin.accessRestoredDesc')
-      });
-      
-      onRefresh();
-    } catch (error) {
-      console.error('Error granting access:', error);
-      toast({
-        title: "Error",
-        description: "Failed to grant user access.",
-        variant: "destructive"
-      });
+        toast({
+          title: t('admin.accessRestored'),
+          description: t('admin.accessRestoredDesc')
+        });
+        
+        onRefresh();
+      } catch (error) {
+        console.error('Error granting access:', error);
+        toast({
+          title: "Error",
+          description: "Failed to grant user access.",
+          variant: "destructive"
+        });
+      }
+    };
+
+    if (requireAuthentication) {
+      requireAuthentication(action);
+    } else {
+      action();
     }
   };
 
   const handleUpdateUserLimits = async (userIds: string[], newLimit: number | null) => {
-    try {
-      const { error } = await supabase
-        .from('access_grants')
-        .update({ monthly_limit: newLimit })
-        .in('user_id', userIds);
+    const action = async () => {
+      try {
+        const { error } = await supabase
+          .from('access_grants')
+          .update({ monthly_limit: newLimit })
+          .in('user_id', userIds);
 
-      if (error) throw error;
+        if (error) throw error;
 
-      toast({
-        title: t('admin.limitsUpdated'),
-        description: `${t('admin.limitsUpdatedDesc')} (${userIds.length} ${t('admin.users')})`
-      });
-      
-      onRefresh();
-    } catch (error) {
-      console.error('Error updating limits:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update user limits.",
-        variant: "destructive"
-      });
+        toast({
+          title: t('admin.limitsUpdated'),
+          description: `${t('admin.limitsUpdatedDesc')} (${userIds.length} ${t('admin.users')})`
+        });
+        
+        onRefresh();
+      } catch (error) {
+        console.error('Error updating limits:', error);
+        toast({
+          title: "Error",
+          description: "Failed to update user limits.",
+          variant: "destructive"
+        });
+      }
+    };
+
+    if (requireAuthentication) {
+      requireAuthentication(action);
+    } else {
+      action();
     }
   };
 

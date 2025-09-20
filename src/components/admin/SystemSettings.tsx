@@ -27,9 +27,10 @@ interface SystemConfig {
 
 interface SystemSettingsProps {
   systemConfig: SystemConfig;
-  onUpdateConfig: (newConfig: Partial<SystemConfig>) => void;
+  onUpdateConfig: (config: Partial<SystemConfig>) => void;
   onPerformMaintenance: (action: string) => void;
   onRefresh?: () => void;
+  requireAuthentication?: (action: () => void) => void;
 }
 
 export const SystemSettings = ({ 

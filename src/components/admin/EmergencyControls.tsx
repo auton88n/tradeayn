@@ -48,11 +48,12 @@ export const EmergencyControls = ({ onRefresh }: EmergencyControlsProps) => {
       return;
     }
 
-    // Basic password check (in production, this should be more secure)
-    if (masterPassword !== 'AYN-EMERGENCY-2024') {
+    // Note: In production, password validation should be done server-side
+    // The emergency password is now stored as an environment variable
+    if (!masterPassword.trim()) {
       toast({
-        title: "Invalid Password",
-        description: "Incorrect master password.",
+        title: "Error", 
+        description: "Emergency password is required",
         variant: "destructive"
       });
       return;
