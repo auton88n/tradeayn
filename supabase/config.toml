@@ -1,1 +1,4 @@
 project_id = "dfkoxuokfkttjhfjcecx"
+
+[functions.ayn-webhook]
+verify_jwt = true

@@ -6,6 +6,14 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Webhook URL mapping for different modes
+const WEBHOOK_URLS = {
+  'General': Deno.env.get('WEBHOOK_URL_GENERAL') || '',
+  'Research Pro': Deno.env.get('WEBHOOK_URL_RESEARCH_PRO') || '',
+  'Copy Writer': Deno.env.get('WEBHOOK_URL_COPY_WRITER') || '',
+  'Email Assistant': Deno.env.get('WEBHOOK_URL_EMAIL_ASSISTANT') || '',
+};
+
 interface WebhookRequest {
   message?: string;
   userId?: string;
@@ -145,6 +153,71 @@ serve(async (req) => {
   );
 
   try {
+    // 1. Authentication Check - Verify user is logged in
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log(`[${requestId}] Missing or invalid authorization header`);
+      return new Response(JSON.stringify({
+        response: 'Authentication required. Please log in to use this service.',
+        status: 'error',
+        error: 'Missing authorization'
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Get user from token
+    const { data: { user }, error: authError } = await supabase.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    );
+
+    if (authError || !user) {
+      console.log(`[${requestId}] Invalid token:`, authError?.message);
+      return new Response(JSON.stringify({
+        response: 'Invalid authentication. Please log in again.',
+        status: 'error',
+        error: 'Invalid token'
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    console.log(`[${requestId}] Authenticated user:`, user.id);
+
+    // 2. Rate Limiting Check
+    const { data: rateLimitOk, error: rateLimitError } = await supabase.rpc(
+      'check_webhook_rate_limit',
+      { 
+        p_user_id: user.id,
+        p_endpoint: 'ayn-webhook'
+      }
+    );
+
+    if (rateLimitError) {
+      console.error(`[${requestId}] Rate limit check error:`, rateLimitError);
+      return new Response(JSON.stringify({
+        response: 'Rate limit service temporarily unavailable. Please try again.',
+        status: 'error',
+        error: 'Rate limit check failed'
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (!rateLimitOk) {
+      console.log(`[${requestId}] Rate limit exceeded for user:`, user.id);
+      return new Response(JSON.stringify({
+        response: 'Rate limit exceeded. You can make up to 50 requests per hour. Please wait and try again.',
+        status: 'error',
+        error: 'Rate limit exceeded'
+      }), {
+        status: 429,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
     // Parse request body
     let requestData: WebhookRequest = {};
     
@@ -152,7 +225,7 @@ serve(async (req) => {
       const body = await req.json();
       requestData = {
         message: body?.message || '',
-        userId: body?.userId || '',
+        userId: user.id, // Use authenticated user ID
         allowPersonalization: body?.allowPersonalization || false,
         contactPerson: body?.contactPerson || '',
         detectedLanguage: body?.detectedLanguage || 'en',
@@ -161,6 +234,7 @@ serve(async (req) => {
       };
     } catch (e) {
       console.warn(`[${requestId}] Request body was not valid JSON, using defaults`);
+      requestData.userId = user.id; // Ensure user ID is set even if parsing fails
     }
 
     console.log(`[${requestId}] Request data:`, {
@@ -172,26 +246,21 @@ serve(async (req) => {
       mode: requestData.mode
     });
 
-    // Get webhook URL for the selected mode
-    const { data: modeConfig, error: modeError } = await supabase
-      .from('ai_mode_configs')
-      .select('webhook_url')
-      .eq('mode_name', requestData.mode)
-      .eq('is_active', true)
-      .maybeSingle();
-
-    if (modeError) {
-      console.error(`[${requestId}] Database error fetching mode config:`, modeError);
-      throw new Error(`Failed to fetch webhook configuration for mode: ${requestData.mode}`);
+    // 3. Get webhook URL from environment variables
+    const upstreamUrl = WEBHOOK_URLS[requestData.mode as keyof typeof WEBHOOK_URLS];
+    if (!upstreamUrl) {
+      console.error(`[${requestId}] No webhook URL configured for mode: ${requestData.mode}`);
+      return new Response(JSON.stringify({
+        response: `Mode "${requestData.mode}" is not currently available. Please try a different mode.`,
+        status: 'error',
+        error: `No webhook configured for mode: ${requestData.mode}`
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    if (!modeConfig) {
-      console.error(`[${requestId}] No active webhook found for mode: ${requestData.mode}`);
-      throw new Error(`No active webhook configuration found for mode: ${requestData.mode}`);
-    }
-
-    const upstreamUrl = modeConfig.webhook_url;
-    console.log(`[${requestId}] Using webhook URL for mode '${requestData.mode}': ${upstreamUrl}`);
+    console.log(`[${requestId}] Using webhook URL for mode '${requestData.mode}': ${upstreamUrl.slice(0, 50)}...`);
 
   // Prepare conversation key and system message based on personalization settings
   const conversationKey = requestData.allowPersonalization
