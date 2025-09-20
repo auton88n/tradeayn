@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.0';
-import { createHash, createHmac } from "https://deno.land/std@0.190.0/node/crypto.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -45,7 +44,7 @@ const security = {
   },
 
   // Validate HMAC signature for request integrity
-  validateSignature(request: Request, body: string): boolean {
+  async validateSignature(request: Request, body: string): Promise<boolean> {
     const signature = request.headers.get('x-ayn-signature');
     const timestamp = request.headers.get('x-ayn-timestamp');
     const apiKey = Deno.env.get('AYN_WEBHOOK_API_KEY');
@@ -54,16 +53,35 @@ const security = {
       return false;
     }
 
-    // Create payload for signature verification
-    const payload = `${timestamp}.${body}`;
-    const expectedSignature = createHmac('sha256', apiKey)
-      .update(payload)
-      .digest('hex');
-    
-    const providedSignature = signature.replace('sha256=', '');
-    
-    // Use time-safe comparison
-    return this.timeSafeCompare(expectedSignature, providedSignature);
+    try {
+      // Create payload for signature verification
+      const payload = `${timestamp}.${body}`;
+      
+      // Use Web Crypto API for HMAC
+      const keyData = new TextEncoder().encode(apiKey);
+      const messageData = new TextEncoder().encode(payload);
+      
+      const cryptoKey = await crypto.subtle.importKey(
+        'raw', 
+        keyData, 
+        { name: 'HMAC', hash: 'SHA-256' }, 
+        false, 
+        ['sign']
+      );
+      
+      const signature = await crypto.subtle.sign('HMAC', cryptoKey, messageData);
+      const expectedSignature = Array.from(new Uint8Array(signature))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+      
+      const providedSignature = signature.replace('sha256=', '');
+      
+      // Use time-safe comparison
+      return this.timeSafeCompare(expectedSignature, providedSignature);
+    } catch (error) {
+      console.error('HMAC validation error:', error);
+      return false;
+    }
   },
 
   // Time-safe string comparison to prevent timing attacks
@@ -285,7 +303,7 @@ serve(async (req) => {
     const bodyText = await req.text();
     
     // 4. Validate HMAC signature - TEMPORARILY DISABLED
-    // if (!security.validateSignature(req, bodyText)) {
+    // if (!(await security.validateSignature(req, bodyText))) {
     //   await supabase.rpc('log_webhook_security_event', {
     //     p_endpoint: 'ayn-webhook',
     //     p_action: 'signature_validation_failed',
