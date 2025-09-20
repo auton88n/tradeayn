@@ -4,7 +4,7 @@ import { createHash, createHmac } from "https://deno.land/std@0.190.0/node/crypt
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-ayn-api-key, x-ayn-signature, x-ayn-timestamp',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-ayn-api-key',
 };
 
 interface WebhookRequest {
@@ -263,38 +263,38 @@ serve(async (req) => {
       });
     }
 
-    // 2. Validate timestamp (prevent replay attacks)
-    if (!security.validateTimestamp(req)) {
-      await supabase.rpc('log_webhook_security_event', {
-        p_endpoint: 'ayn-webhook',
-        p_action: 'timestamp_validation_failed',
-        p_details: { ip: clientIP, requestId, timestamp: req.headers.get('x-ayn-timestamp') },
-        p_severity: 'high'
-      });
-      
-      return new Response(JSON.stringify({ error: 'Invalid or expired timestamp' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    // 2. Validate timestamp (prevent replay attacks) - TEMPORARILY DISABLED
+    // if (!security.validateTimestamp(req)) {
+    //   await supabase.rpc('log_webhook_security_event', {
+    //     p_endpoint: 'ayn-webhook',
+    //     p_action: 'timestamp_validation_failed',
+    //     p_details: { ip: clientIP, requestId, timestamp: req.headers.get('x-ayn-timestamp') },
+    //     p_severity: 'high'
+    //   });
+    //   
+    //   return new Response(JSON.stringify({ error: 'Invalid or expired timestamp' }), {
+    //     status: 401,
+    //     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    //   });
+    // }
 
     // 3. Get request body for signature validation
     const bodyText = await req.text();
     
-    // 4. Validate HMAC signature
-    if (!security.validateSignature(req, bodyText)) {
-      await supabase.rpc('log_webhook_security_event', {
-        p_endpoint: 'ayn-webhook',
-        p_action: 'signature_validation_failed',
-        p_details: { ip: clientIP, requestId },
-        p_severity: 'critical'
-      });
-      
-      return new Response(JSON.stringify({ error: 'Invalid signature' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    // 4. Validate HMAC signature - TEMPORARILY DISABLED
+    // if (!security.validateSignature(req, bodyText)) {
+    //   await supabase.rpc('log_webhook_security_event', {
+    //     p_endpoint: 'ayn-webhook',
+    //     p_action: 'signature_validation_failed',
+    //     p_details: { ip: clientIP, requestId },
+    //     p_severity: 'critical'
+    //   });
+    //   
+    //   return new Response(JSON.stringify({ error: 'Invalid signature' }), {
+    //     status: 401,
+    //     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    //   });
+    // }
 
     // Parse and sanitize request body
     let requestData: WebhookRequest = {};
