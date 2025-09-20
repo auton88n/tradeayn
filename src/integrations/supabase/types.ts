@@ -113,39 +113,6 @@ export type Database = {
         }
         Relationships: []
       }
-      ai_cost_tracking: {
-        Row: {
-          cost_amount: number
-          created_at: string
-          id: string
-          metadata: Json | null
-          mode_used: string
-          request_timestamp: string
-          session_id: string | null
-          user_id: string
-        }
-        Insert: {
-          cost_amount: number
-          created_at?: string
-          id?: string
-          metadata?: Json | null
-          mode_used: string
-          request_timestamp?: string
-          session_id?: string | null
-          user_id: string
-        }
-        Update: {
-          cost_amount?: number
-          created_at?: string
-          id?: string
-          metadata?: Json | null
-          mode_used?: string
-          request_timestamp?: string
-          session_id?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
       ai_mode_configs: {
         Row: {
           created_at: string
@@ -245,57 +212,6 @@ export type Database = {
           template_type?: string
           text_content?: string | null
           updated_at?: string
-        }
-        Relationships: []
-      }
-      cost_thresholds: {
-        Row: {
-          alerts_enabled: boolean | null
-          created_at: string
-          current_daily_spend: number | null
-          current_monthly_spend: number | null
-          current_weekly_spend: number | null
-          daily_threshold: number | null
-          id: string
-          last_reset_daily: string | null
-          last_reset_monthly: string | null
-          last_reset_weekly: string | null
-          monthly_threshold: number | null
-          updated_at: string
-          user_id: string
-          weekly_threshold: number | null
-        }
-        Insert: {
-          alerts_enabled?: boolean | null
-          created_at?: string
-          current_daily_spend?: number | null
-          current_monthly_spend?: number | null
-          current_weekly_spend?: number | null
-          daily_threshold?: number | null
-          id?: string
-          last_reset_daily?: string | null
-          last_reset_monthly?: string | null
-          last_reset_weekly?: string | null
-          monthly_threshold?: number | null
-          updated_at?: string
-          user_id: string
-          weekly_threshold?: number | null
-        }
-        Update: {
-          alerts_enabled?: boolean | null
-          created_at?: string
-          current_daily_spend?: number | null
-          current_monthly_spend?: number | null
-          current_weekly_spend?: number | null
-          daily_threshold?: number | null
-          id?: string
-          last_reset_daily?: string | null
-          last_reset_monthly?: string | null
-          last_reset_weekly?: string | null
-          monthly_threshold?: number | null
-          updated_at?: string
-          user_id?: string
-          weekly_threshold?: number | null
         }
         Relationships: []
       }
@@ -452,39 +368,6 @@ export type Database = {
           id?: string
           last_attempt?: string | null
           user_id?: string | null
-        }
-        Relationships: []
-      }
-      resource_usage: {
-        Row: {
-          alert_threshold_percentage: number | null
-          created_at: string
-          current_value: number
-          id: string
-          last_alerted_at: string | null
-          limit_value: number
-          metric_type: string
-          usage_percentage: number
-        }
-        Insert: {
-          alert_threshold_percentage?: number | null
-          created_at?: string
-          current_value: number
-          id?: string
-          last_alerted_at?: string | null
-          limit_value: number
-          metric_type: string
-          usage_percentage: number
-        }
-        Update: {
-          alert_threshold_percentage?: number | null
-          created_at?: string
-          current_value?: number
-          id?: string
-          last_alerted_at?: string | null
-          limit_value?: number
-          metric_type?: string
-          usage_percentage?: number
         }
         Relationships: []
       }
@@ -814,14 +697,6 @@ export type Database = {
         Args: { _session_ids: string[]; _user_id: string }
         Returns: boolean
       }
-      get_active_connections: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      get_database_size_mb: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
       get_usage_stats: {
         Args: { _user_id?: string }
         Returns: {
@@ -883,10 +758,6 @@ export type Database = {
           p_user_id?: string
         }
         Returns: undefined
-      }
-      track_user_cost: {
-        Args: { p_cost_amount: number; p_mode_used?: string; p_user_id: string }
-        Returns: boolean
       }
       validate_input_sanitization: {
         Args: { input_text: string }

@@ -431,24 +431,6 @@ serve(async (req) => {
 
     console.log(`[${requestId}] Final response prepared, length: ${response.response.length}`);
 
-    // Track cost asynchronously (don't await to avoid blocking response)
-    const estimatedCost = requestData.mode === 'General' ? 0.02 : 
-                         requestData.mode === 'Research Pro' ? 0.05 :
-                         requestData.mode === 'Vision Lab' ? 0.08 : 
-                         requestData.mode === 'PDF Analyst' ? 0.04 :
-                         requestData.mode === 'Nen Mode' ? 0.06 : 0.03;
-
-    supabase.functions.invoke('cost-monitor', {
-      body: {
-        user_id: user.id,
-        cost_amount: estimatedCost,
-        mode_used: requestData.mode,
-        session_id: requestId
-      }
-    }).catch((error) => {
-      console.error(`[${requestId}] Failed to track cost:`, error);
-    });
-
     return new Response(JSON.stringify(response), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
