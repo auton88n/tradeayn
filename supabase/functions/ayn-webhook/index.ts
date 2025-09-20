@@ -9,10 +9,22 @@ const corsHeaders = {
 // Webhook URL mapping for different modes
 const WEBHOOK_URLS = {
   'General': Deno.env.get('WEBHOOK_URL_GENERAL') || '',
+  'Nen Mode': Deno.env.get('WEBHOOK_URL_NEN_MODE') || '',
   'Research Pro': Deno.env.get('WEBHOOK_URL_RESEARCH_PRO') || '',
-  'Copy Writer': Deno.env.get('WEBHOOK_URL_COPY_WRITER') || '',
-  'Email Assistant': Deno.env.get('WEBHOOK_URL_EMAIL_ASSISTANT') || '',
+  'PDF Analyst': Deno.env.get('WEBHOOK_URL_PDF_ANALYST') || '',
+  'Vision Lab': Deno.env.get('WEBHOOK_URL_VISION_LAB') || '',
 };
+
+// Validate webhook URL
+function isValidUrl(url: string): boolean {
+  if (!url || url.trim() === '') return false;
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 interface WebhookRequest {
   message?: string;
@@ -248,12 +260,12 @@ serve(async (req) => {
 
     // 3. Get webhook URL from environment variables
     const upstreamUrl = WEBHOOK_URLS[requestData.mode as keyof typeof WEBHOOK_URLS];
-    if (!upstreamUrl) {
-      console.error(`[${requestId}] No webhook URL configured for mode: ${requestData.mode}`);
+    if (!upstreamUrl || !isValidUrl(upstreamUrl)) {
+      console.error(`[${requestId}] Invalid webhook URL for mode: ${requestData.mode}, URL: ${upstreamUrl || 'undefined'}`);
       return new Response(JSON.stringify({
         response: `Mode "${requestData.mode}" is not currently available. Please try a different mode.`,
         status: 'error',
-        error: `No webhook configured for mode: ${requestData.mode}`
+        error: `Invalid or missing webhook URL for mode: ${requestData.mode}`
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
