@@ -165,7 +165,26 @@ serve(async (req) => {
   );
 
   try {
-    // 1. Authentication Check - Verify user is logged in
+    // 1. Check for emergency shutdown first
+    const { data: isShutdown, error: shutdownError } = await supabase.rpc('check_emergency_shutdown');
+    
+    if (shutdownError) {
+      console.error(`[${requestId}] Error checking emergency shutdown:`, shutdownError);
+    }
+
+    if (isShutdown) {
+      console.warn(`[${requestId}] Emergency shutdown is active`);
+      return new Response(JSON.stringify({
+        response: "The system is currently under emergency maintenance. Please try again later.",
+        status: 'error',
+        error: 'Emergency shutdown active'
+      }), {
+        status: 503,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // 2. Authentication Check - Verify user is logged in
     const authHeader = req.headers.get('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       console.log(`[${requestId}] Missing or invalid authorization header`);
@@ -258,7 +277,7 @@ serve(async (req) => {
       mode: requestData.mode
     });
 
-    // 3. Get webhook URL from environment variables
+    // 4. Get webhook URL from environment variables
     const upstreamUrl = WEBHOOK_URLS[requestData.mode as keyof typeof WEBHOOK_URLS];
     if (!upstreamUrl || !isValidUrl(upstreamUrl)) {
       console.error(`[${requestId}] Invalid webhook URL for mode: ${requestData.mode}, URL: ${upstreamUrl || 'undefined'}`);
@@ -411,6 +430,24 @@ serve(async (req) => {
     }
 
     console.log(`[${requestId}] Final response prepared, length: ${response.response.length}`);
+
+    // Track cost asynchronously (don't await to avoid blocking response)
+    const estimatedCost = requestData.mode === 'General' ? 0.02 : 
+                         requestData.mode === 'Research Pro' ? 0.05 :
+                         requestData.mode === 'Vision Lab' ? 0.08 : 
+                         requestData.mode === 'PDF Analyst' ? 0.04 :
+                         requestData.mode === 'Nen Mode' ? 0.06 : 0.03;
+
+    supabase.functions.invoke('cost-monitor', {
+      body: {
+        user_id: user.id,
+        cost_amount: estimatedCost,
+        mode_used: requestData.mode,
+        session_id: requestId
+      }
+    }).catch((error) => {
+      console.error(`[${requestId}] Failed to track cost:`, error);
+    });
 
     return new Response(JSON.stringify(response), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

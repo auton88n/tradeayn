@@ -326,6 +326,7 @@ export const AdminPanel = () => {
               systemConfig={systemConfig}
               onUpdateConfig={updateSystemConfig}
               onPerformMaintenance={performSystemMaintenance}
+              onRefresh={fetchData}
             />
           </ErrorBoundary>
         </TabsContent>

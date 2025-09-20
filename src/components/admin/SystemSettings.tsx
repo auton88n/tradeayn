@@ -4,10 +4,11 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { 
-  Settings, Shield, AlertTriangle
+  Settings, Shield, AlertTriangle, DollarSign
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { EmergencyControls } from './EmergencyControls';
 
 interface SystemConfig {
   defaultMonthlyLimit: number;
@@ -28,12 +29,14 @@ interface SystemSettingsProps {
   systemConfig: SystemConfig;
   onUpdateConfig: (newConfig: Partial<SystemConfig>) => void;
   onPerformMaintenance: (action: string) => void;
+  onRefresh?: () => void;
 }
 
 export const SystemSettings = ({ 
   systemConfig, 
   onUpdateConfig, 
-  onPerformMaintenance 
+  onPerformMaintenance,
+  onRefresh 
 }: SystemSettingsProps) => {
   const { toast } = useToast();
   const { t, language } = useLanguage();
@@ -43,6 +46,11 @@ export const SystemSettings = ({
       <div className={language === 'ar' ? 'text-right' : ''}>
         <h2 className="text-2xl font-bold">{t('admin.systemConfiguration')}</h2>
         <p className="text-muted-foreground">{t('admin.systemConfigDesc')}</p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6">
+        {/* Emergency Controls - Full Width */}
+        <EmergencyControls onRefresh={onRefresh} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.4"
+    PostgrestVersion: "13.0.5"
   }
   public: {
     Tables: {
@@ -140,6 +140,48 @@ export type Database = {
         }
         Relationships: []
       }
+      alert_history: {
+        Row: {
+          alert_type: string
+          content: string
+          created_at: string
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          recipient_email: string
+          sent_at: string | null
+          status: string | null
+          subject: string
+          user_id: string | null
+        }
+        Insert: {
+          alert_type: string
+          content: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          recipient_email: string
+          sent_at?: string | null
+          status?: string | null
+          subject: string
+          user_id?: string | null
+        }
+        Update: {
+          alert_type?: string
+          content?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          recipient_email?: string
+          sent_at?: string | null
+          status?: string | null
+          subject?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       auth_email_templates: {
         Row: {
           created_at: string
@@ -170,6 +212,57 @@ export type Database = {
           template_type?: string
           text_content?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      cost_thresholds: {
+        Row: {
+          alerts_enabled: boolean | null
+          created_at: string
+          current_daily_spend: number | null
+          current_monthly_spend: number | null
+          current_weekly_spend: number | null
+          daily_threshold: number | null
+          id: string
+          last_reset_daily: string | null
+          last_reset_monthly: string | null
+          last_reset_weekly: string | null
+          monthly_threshold: number | null
+          updated_at: string
+          user_id: string
+          weekly_threshold: number | null
+        }
+        Insert: {
+          alerts_enabled?: boolean | null
+          created_at?: string
+          current_daily_spend?: number | null
+          current_monthly_spend?: number | null
+          current_weekly_spend?: number | null
+          daily_threshold?: number | null
+          id?: string
+          last_reset_daily?: string | null
+          last_reset_monthly?: string | null
+          last_reset_weekly?: string | null
+          monthly_threshold?: number | null
+          updated_at?: string
+          user_id: string
+          weekly_threshold?: number | null
+        }
+        Update: {
+          alerts_enabled?: boolean | null
+          created_at?: string
+          current_daily_spend?: number | null
+          current_monthly_spend?: number | null
+          current_weekly_spend?: number | null
+          daily_threshold?: number | null
+          id?: string
+          last_reset_daily?: string | null
+          last_reset_monthly?: string | null
+          last_reset_weekly?: string | null
+          monthly_threshold?: number | null
+          updated_at?: string
+          user_id?: string
+          weekly_threshold?: number | null
         }
         Relationships: []
       }
@@ -329,6 +422,39 @@ export type Database = {
         }
         Relationships: []
       }
+      resource_usage: {
+        Row: {
+          alert_threshold_percentage: number | null
+          created_at: string
+          current_value: number
+          id: string
+          last_alerted_at: string | null
+          limit_value: number
+          metric_type: string
+          usage_percentage: number
+        }
+        Insert: {
+          alert_threshold_percentage?: number | null
+          created_at?: string
+          current_value: number
+          id?: string
+          last_alerted_at?: string | null
+          limit_value: number
+          metric_type: string
+          usage_percentage: number
+        }
+        Update: {
+          alert_threshold_percentage?: number | null
+          created_at?: string
+          current_value?: number
+          id?: string
+          last_alerted_at?: string | null
+          limit_value?: number
+          metric_type?: string
+          usage_percentage?: number
+        }
+        Relationships: []
+      }
       saved_insights: {
         Row: {
           category: string | null
@@ -467,6 +593,36 @@ export type Database = {
         }
         Relationships: []
       }
+      system_status: {
+        Row: {
+          created_at: string
+          id: string
+          is_emergency_shutdown: boolean
+          last_updated_at: string
+          shutdown_initiated_at: string | null
+          shutdown_initiated_by: string | null
+          shutdown_reason: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_emergency_shutdown?: boolean
+          last_updated_at?: string
+          shutdown_initiated_at?: string | null
+          shutdown_initiated_by?: string | null
+          shutdown_reason?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_emergency_shutdown?: boolean
+          last_updated_at?: string
+          shutdown_initiated_at?: string | null
+          shutdown_initiated_by?: string | null
+          shutdown_reason?: string | null
+        }
+        Relationships: []
+      }
       usage_logs: {
         Row: {
           action_type: string
@@ -515,11 +671,84 @@ export type Database = {
         }
         Relationships: []
       }
+      webhook_rate_limits: {
+        Row: {
+          created_at: string | null
+          endpoint: string
+          id: string
+          request_count: number | null
+          updated_at: string | null
+          user_id: string
+          window_start: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          endpoint: string
+          id?: string
+          request_count?: number | null
+          updated_at?: string | null
+          user_id: string
+          window_start?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          endpoint?: string
+          id?: string
+          request_count?: number | null
+          updated_at?: string | null
+          user_id?: string
+          window_start?: string | null
+        }
+        Relationships: []
+      }
+      webhook_security_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          details: Json | null
+          endpoint: string
+          id: string
+          ip_address: unknown | null
+          request_headers: Json | null
+          severity: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          details?: Json | null
+          endpoint: string
+          id?: string
+          ip_address?: unknown | null
+          request_headers?: Json | null
+          severity?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          details?: Json | null
+          endpoint?: string
+          id?: string
+          ip_address?: unknown | null
+          request_headers?: Json | null
+          severity?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      check_emergency_shutdown: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       check_rate_limit: {
         Args: {
           _action_type: string
@@ -532,6 +761,10 @@ export type Database = {
         Args: { _user_id: string }
         Returns: boolean
       }
+      check_webhook_rate_limit: {
+        Args: { p_endpoint: string; p_user_id: string }
+        Returns: boolean
+      }
       cleanup_old_security_logs: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -539,6 +772,14 @@ export type Database = {
       cleanup_old_system_reports: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      cleanup_webhook_logs: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      delete_user_chat_sessions: {
+        Args: { _session_ids: string[]; _user_id: string }
+        Returns: boolean
       }
       get_usage_stats: {
         Args: { _user_id?: string }
@@ -571,6 +812,10 @@ export type Database = {
         Args: { _action_type?: string; _count?: number; _user_id: string }
         Returns: boolean
       }
+      log_chat_security_event: {
+        Args: { _action: string; _details?: Json; _session_id?: string }
+        Returns: undefined
+      }
       log_security_event: {
         Args:
           | {
@@ -588,8 +833,26 @@ export type Database = {
             }
         Returns: undefined
       }
+      log_webhook_security_event: {
+        Args: {
+          p_action: string
+          p_details?: Json
+          p_endpoint: string
+          p_severity?: string
+          p_user_id?: string
+        }
+        Returns: undefined
+      }
+      track_user_cost: {
+        Args: { p_cost_amount: number; p_mode_used?: string; p_user_id: string }
+        Returns: boolean
+      }
       validate_input_sanitization: {
         Args: { input_text: string }
+        Returns: boolean
+      }
+      validate_session_ownership: {
+        Args: { _session_id: string; _user_id: string }
         Returns: boolean
       }
     }
