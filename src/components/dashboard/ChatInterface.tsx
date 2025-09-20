@@ -192,7 +192,7 @@ export const ChatInterface = ({
 
       // Update message status
       const updatedMessages = messages.map(msg => 
-        msg.id === newMessage.id ? { ...msg, status: 'sent' } : msg
+        msg.id === newMessage.id ? { ...msg, status: 'sent' as const } : msg
       );
       onMessagesChange(updatedMessages);
 
@@ -251,7 +251,7 @@ export const ChatInterface = ({
       console.error('Error sending message:', error);
       
       const errorMessages = messages.map(msg => 
-        msg.id === newMessage.id ? { ...msg, status: 'error' } : msg
+        msg.id === newMessage.id ? { ...msg, status: 'error' as const } : msg
       );
       onMessagesChange(errorMessages);
 
