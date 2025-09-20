@@ -31,10 +31,21 @@ const BUILD_VERSION = 'ayn-webhook v0.2 (api-key-only)';
 
 // Security utilities
 const security = {
-  // Validate API key with enhanced debugging
-  validateApiKey(request: Request): boolean {
+  // Validate API key with enhanced debugging and normalization
+  validateApiKey(request: Request): { isValid: boolean; debugInfo?: any } {
     const providedKey = request.headers.get('x-ayn-api-key');
     const expectedKey = Deno.env.get('AYN_WEBHOOK_API_KEY');
+    
+    // Stronger normalization function
+    const normalizeKey = (key: string): string => {
+      return key
+        .trim()
+        // Remove zero-width characters
+        .replace(/[\u200B-\u200D\uFEFF]/g, '')
+        // Remove control characters except newlines/tabs (then trim those too)
+        .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
+        .trim();
+    };
     
     // Enhanced debug logging
     const debugInfo = {
@@ -49,19 +60,21 @@ const security = {
         'x-ayn-api-key': request.headers.get('x-ayn-api-key'),
         'X-AYN-API-KEY': request.headers.get('X-AYN-API-KEY'),
         'X-Ayn-Api-Key': request.headers.get('X-Ayn-Api-Key')
-      }
+      },
+      provided_key_char_codes: providedKey ? providedKey.split('').map(c => c.charCodeAt(0)) : [],
+      expected_key_char_codes: expectedKey ? expectedKey.split('').map(c => c.charCodeAt(0)) : []
     };
     
     console.log('🔍 API Key Validation Debug:', JSON.stringify(debugInfo, null, 2));
     
     if (!providedKey || !expectedKey) {
       console.log('❌ API Key validation failed: Missing key(s)');
-      return false;
+      return { isValid: false, debugInfo };
     }
     
-    // Normalize keys (trim whitespace)
-    const normalizedProvided = providedKey.trim();
-    const normalizedExpected = expectedKey.trim();
+    // Apply stronger normalization
+    const normalizedProvided = normalizeKey(providedKey);
+    const normalizedExpected = normalizeKey(expectedKey);
     
     const comparisonResult = this.timeSafeCompare(normalizedProvided, normalizedExpected);
     
@@ -69,15 +82,31 @@ const security = {
     const comparisonDebug = {
       original_match: this.timeSafeCompare(providedKey, expectedKey),
       normalized_match: comparisonResult,
-      provided_has_whitespace: providedKey !== normalizedProvided,
-      expected_has_whitespace: expectedKey !== normalizedExpected,
+      provided_before_normalize: providedKey,
+      provided_after_normalize: normalizedProvided,
+      expected_before_normalize: expectedKey,
+      expected_after_normalize: normalizedExpected,
+      normalization_changed_provided: providedKey !== normalizedProvided,
+      normalization_changed_expected: expectedKey !== normalizedExpected,
       char_by_char_diff: this.findCharDifferences(normalizedProvided, normalizedExpected)
     };
     
     console.log('🔍 API Key Comparison Debug:', JSON.stringify(comparisonDebug, null, 2));
     console.log(comparisonResult ? '✅ API Key validation SUCCESS' : '❌ API Key validation FAILED');
     
-    return comparisonResult;
+    // Log to webhook security logs
+    supabase.from('webhook_security_logs').insert({
+      endpoint: 'ayn-webhook',
+      action: comparisonResult ? 'api_key_validation_success' : 'api_key_validation_failed',
+      details: {
+        ...debugInfo,
+        ...comparisonDebug,
+        timestamp: new Date().toISOString()
+      },
+      severity: comparisonResult ? 'info' : 'high'
+    }).then(() => {}).catch(console.error);
+    
+    return { isValid: comparisonResult, debugInfo: { ...debugInfo, ...comparisonDebug } };
   },
   
   // Helper method to find character differences
@@ -329,15 +358,23 @@ serve(async (req) => {
     // Security validation
     
     // 1. Validate API key
-    if (!security.validateApiKey(req)) {
+    const apiKeyResult = security.validateApiKey(req);
+    const isDebugMode = req.headers.get('x-ayn-debug') === '1';
+    
+    if (!apiKeyResult.isValid) {
       await supabase.rpc('log_webhook_security_event', {
         p_endpoint: 'ayn-webhook',
         p_action: 'api_key_validation_failed',
-        p_details: { ip: clientIP, requestId },
+        p_details: { ip: clientIP, requestId, debug_info: apiKeyResult.debugInfo },
         p_severity: 'high'
       });
       
-      return new Response(JSON.stringify({ error: 'Invalid API key' }), {
+      const errorResponse = { error: 'Invalid API key' };
+      if (isDebugMode) {
+        errorResponse.debug = apiKeyResult.debugInfo;
+      }
+      
+      return new Response(JSON.stringify(errorResponse), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
