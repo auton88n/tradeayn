@@ -42,6 +42,26 @@ serve(async (req) => {
       throw trackError;
     }
 
+    // Also insert detailed cost record into ai_cost_tracking table
+    const { error: insertError } = await supabase
+      .from('ai_cost_tracking')
+      .insert({
+        user_id: user_id,
+        cost_amount: cost_amount,
+        mode_used: mode_used,
+        request_timestamp: new Date().toISOString(),
+        session_id: session_id,
+        metadata: {
+          tracked_at: new Date().toISOString(),
+          alert_triggered: needsAlert
+        }
+      });
+
+    if (insertError) {
+      console.error('Error inserting cost tracking record:', insertError);
+      // Don't throw here as cost thresholds were already updated successfully
+    }
+
     // If alert is needed, get user details and send notification
     if (needsAlert) {
       console.log(`[cost-monitor] Alert needed for user: ${user_id}`);

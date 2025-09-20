@@ -113,6 +113,39 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_cost_tracking: {
+        Row: {
+          cost_amount: number
+          created_at: string
+          id: string
+          metadata: Json | null
+          mode_used: string
+          request_timestamp: string
+          session_id: string | null
+          user_id: string
+        }
+        Insert: {
+          cost_amount: number
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          mode_used: string
+          request_timestamp?: string
+          session_id?: string | null
+          user_id: string
+        }
+        Update: {
+          cost_amount?: number
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          mode_used?: string
+          request_timestamp?: string
+          session_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       ai_mode_configs: {
         Row: {
           created_at: string

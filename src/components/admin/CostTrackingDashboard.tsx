@@ -53,25 +53,77 @@ export function CostTrackingDashboard() {
 
   const fetchCostData = async () => {
     try {
-      // This would fetch from cost tracking tables
-      // For now, we'll simulate some data since the tables exist but may not have data yet
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('user_id, company_name')
-        .limit(10);
+      // Fetch real cost data from ai_cost_tracking table
+      const { data: costTrackingData, error: costError } = await supabase
+        .from('ai_cost_tracking')
+        .select(`
+          user_id,
+          cost_amount,
+          request_timestamp,
+          mode_used
+        `);
 
-      if (profiles) {
-        const simulatedData: CostData[] = profiles.map((profile, index) => ({
-          user_id: profile.user_id,
-          user_email: `user${index + 1}@example.com`,
-          company_name: profile.company_name || 'Unknown Company',
-          daily_cost: Math.random() * 10,
-          weekly_cost: Math.random() * 50,
-          monthly_cost: Math.random() * 200,
-          total_requests: Math.floor(Math.random() * 1000)
-        }));
-        setCostData(simulatedData);
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, company_name, contact_person');
+
+      if (costError || profilesError) {
+        console.error('Error fetching cost data:', costError || profilesError);
+        toast({
+          title: "Error",
+          description: "Failed to fetch cost data",
+          variant: "destructive"
+        });
+        return;
       }
+
+      // Create a map of user profiles
+      const userProfiles = new Map(
+        profilesData?.map(profile => [
+          profile.user_id, 
+          { 
+            company_name: profile.company_name || 'Unknown Company',
+            contact_person: profile.contact_person || 'Unknown User'
+          }
+        ]) || []
+      );
+
+      // Process the cost data by user
+      const userCostMap = new Map<string, CostData>();
+
+      costTrackingData?.forEach(record => {
+        const userId = record.user_id;
+        const cost = typeof record.cost_amount === 'string' ? parseFloat(record.cost_amount) : record.cost_amount;
+        const timestamp = new Date(record.request_timestamp);
+        const now = new Date();
+        
+        // Calculate time periods
+        const isToday = timestamp.toDateString() === now.toDateString();
+        const isThisWeek = timestamp >= new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        const isThisMonth = timestamp.getMonth() === now.getMonth() && timestamp.getFullYear() === now.getFullYear();
+
+        if (!userCostMap.has(userId)) {
+          const profile = userProfiles.get(userId);
+          userCostMap.set(userId, {
+            user_id: userId,
+            user_email: profile?.contact_person || 'Unknown User',
+            company_name: profile?.company_name || 'Unknown Company',
+            daily_cost: 0,
+            weekly_cost: 0,
+            monthly_cost: 0,
+            total_requests: 0,
+          });
+        }
+
+        const userData = userCostMap.get(userId)!;
+        userData.total_requests += 1;
+        
+        if (isToday) userData.daily_cost += cost;
+        if (isThisWeek) userData.weekly_cost += cost;
+        if (isThisMonth) userData.monthly_cost += cost;
+      });
+
+      setCostData(Array.from(userCostMap.values()));
     } catch (error) {
       console.error('Error fetching cost data:', error);
       toast({
