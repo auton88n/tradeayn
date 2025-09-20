@@ -31,104 +31,20 @@ const BUILD_VERSION = 'ayn-webhook v0.2 (api-key-only)';
 
 // Security utilities
 const security = {
-  // Validate API key with enhanced debugging and normalization
-  validateApiKey(request: Request): { isValid: boolean; debugInfo?: any } {
+  // Validate API key
+  validateApiKey(request: Request): boolean {
     const providedKey = request.headers.get('x-ayn-api-key');
     const expectedKey = Deno.env.get('AYN_WEBHOOK_API_KEY');
     
-    // Stronger normalization function
-    const normalizeKey = (key: string): string => {
-      return key
-        .trim()
-        // Remove zero-width characters
-        .replace(/[\u200B-\u200D\uFEFF]/g, '')
-        // Remove control characters except newlines/tabs (then trim those too)
-        .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
-        .trim();
-    };
-    
-    // Enhanced debug logging
-    const debugInfo = {
-      headers_present: Array.from(request.headers.keys()),
-      provided_key_exists: !!providedKey,
-      expected_key_exists: !!expectedKey,
-      provided_key_length: providedKey?.length || 0,
-      expected_key_length: expectedKey?.length || 0,
-      provided_key_preview: providedKey ? `${providedKey.substring(0, 8)}...${providedKey.substring(providedKey.length - 4)}` : 'null',
-      expected_key_preview: expectedKey ? `${expectedKey.substring(0, 8)}...${expectedKey.substring(expectedKey.length - 4)}` : 'null',
-      header_case_variants: {
-        'x-ayn-api-key': request.headers.get('x-ayn-api-key'),
-        'X-AYN-API-KEY': request.headers.get('X-AYN-API-KEY'),
-        'X-Ayn-Api-Key': request.headers.get('X-Ayn-Api-Key')
-      },
-      provided_key_char_codes: providedKey ? providedKey.split('').map(c => c.charCodeAt(0)) : [],
-      expected_key_char_codes: expectedKey ? expectedKey.split('').map(c => c.charCodeAt(0)) : []
-    };
-    
-    console.log('🔍 API Key Validation Debug:', JSON.stringify(debugInfo, null, 2));
-    
     if (!providedKey || !expectedKey) {
-      console.log('❌ API Key validation failed: Missing key(s)');
-      return { isValid: false, debugInfo };
+      return false;
     }
     
-    // Apply stronger normalization
-    const normalizedProvided = normalizeKey(providedKey);
-    const normalizedExpected = normalizeKey(expectedKey);
+    // Basic normalization (trim whitespace)
+    const normalizedProvided = providedKey.trim();
+    const normalizedExpected = expectedKey.trim();
     
-    const comparisonResult = this.timeSafeCompare(normalizedProvided, normalizedExpected);
-    
-    // Additional debug info
-    const comparisonDebug = {
-      original_match: this.timeSafeCompare(providedKey, expectedKey),
-      normalized_match: comparisonResult,
-      provided_before_normalize: providedKey,
-      provided_after_normalize: normalizedProvided,
-      expected_before_normalize: expectedKey,
-      expected_after_normalize: normalizedExpected,
-      normalization_changed_provided: providedKey !== normalizedProvided,
-      normalization_changed_expected: expectedKey !== normalizedExpected,
-      char_by_char_diff: this.findCharDifferences(normalizedProvided, normalizedExpected)
-    };
-    
-    console.log('🔍 API Key Comparison Debug:', JSON.stringify(comparisonDebug, null, 2));
-    console.log(comparisonResult ? '✅ API Key validation SUCCESS' : '❌ API Key validation FAILED');
-    
-    // Log to webhook security logs
-    supabase.from('webhook_security_logs').insert({
-      endpoint: 'ayn-webhook',
-      action: comparisonResult ? 'api_key_validation_success' : 'api_key_validation_failed',
-      details: {
-        ...debugInfo,
-        ...comparisonDebug,
-        timestamp: new Date().toISOString()
-      },
-      severity: comparisonResult ? 'info' : 'high'
-    }).then(() => {}).catch(console.error);
-    
-    return { isValid: comparisonResult, debugInfo: { ...debugInfo, ...comparisonDebug } };
-  },
-  
-  // Helper method to find character differences
-  findCharDifferences(str1: string, str2: string): any {
-    if (str1.length !== str2.length) {
-      return { length_mismatch: true, str1_length: str1.length, str2_length: str2.length };
-    }
-    
-    const differences = [];
-    for (let i = 0; i < str1.length; i++) {
-      if (str1[i] !== str2[i]) {
-        differences.push({
-          position: i,
-          str1_char: str1[i],
-          str2_char: str2[i],
-          str1_charCode: str1.charCodeAt(i),
-          str2_charCode: str2.charCodeAt(i)
-        });
-      }
-    }
-    
-    return differences.length > 0 ? differences : { identical: true };
+    return this.timeSafeCompare(normalizedProvided, normalizedExpected);
   },
 
   // Validate HMAC signature for request integrity
@@ -157,8 +73,8 @@ const security = {
         ['sign']
       );
       
-      const signature = await crypto.subtle.sign('HMAC', cryptoKey, messageData);
-      const expectedSignature = Array.from(new Uint8Array(signature))
+      const signatureBytes = await crypto.subtle.sign('HMAC', cryptoKey, messageData);
+      const expectedSignature = Array.from(new Uint8Array(signatureBytes))
         .map(b => b.toString(16).padStart(2, '0'))
         .join('');
       
@@ -358,23 +274,15 @@ serve(async (req) => {
     // Security validation
     
     // 1. Validate API key
-    const apiKeyResult = security.validateApiKey(req);
-    const isDebugMode = req.headers.get('x-ayn-debug') === '1';
-    
-    if (!apiKeyResult.isValid) {
+    if (!security.validateApiKey(req)) {
       await supabase.rpc('log_webhook_security_event', {
         p_endpoint: 'ayn-webhook',
         p_action: 'api_key_validation_failed',
-        p_details: { ip: clientIP, requestId, debug_info: apiKeyResult.debugInfo },
+        p_details: { ip: clientIP, requestId },
         p_severity: 'high'
       });
       
-      const errorResponse = { error: 'Invalid API key' };
-      if (isDebugMode) {
-        errorResponse.debug = apiKeyResult.debugInfo;
-      }
-      
-      return new Response(JSON.stringify(errorResponse), {
+      return new Response(JSON.stringify({ error: 'Invalid API key' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
