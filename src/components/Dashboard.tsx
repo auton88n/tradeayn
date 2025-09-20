@@ -624,6 +624,7 @@ export default function Dashboard({ user }: DashboardProps) {
       setIsTyping(false);
 
       if (webhookError) {
+        console.error('ayn-webhook invoke error', webhookError, webhookResponse);
         throw new Error(webhookError.message || 'Webhook call failed');
       }
 

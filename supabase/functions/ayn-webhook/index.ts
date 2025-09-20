@@ -27,7 +27,7 @@ interface WebhookResponse {
 }
 
 // Build version (for deployment verification)
-const BUILD_VERSION = 'ayn-webhook v0.2 (api-key-only)';
+const BUILD_VERSION = 'ayn-webhook v0.2.1 (api-key-only)';
 
 // Security utilities
 const security = {
@@ -275,10 +275,28 @@ serve(async (req) => {
     
     // 1. Validate API key
     if (!security.validateApiKey(req)) {
+      const providedKey = req.headers.get('x-ayn-api-key');
+      const expectedKey = Deno.env.get('AYN_WEBHOOK_API_KEY');
+
+      console.warn(`[${requestId}] API key validation failed`, {
+        hasProvidedHeader: !!providedKey,
+        providedKeyLength: providedKey?.trim().length ?? 0,
+        hasExpectedKey: !!expectedKey,
+        expectedKeyLength: expectedKey?.trim().length ?? 0,
+        headerKeys: Array.from(req.headers.keys()).slice(0, 10)
+      });
+
       await supabase.rpc('log_webhook_security_event', {
         p_endpoint: 'ayn-webhook',
         p_action: 'api_key_validation_failed',
-        p_details: { ip: clientIP, requestId },
+        p_details: { 
+          ip: clientIP, 
+          requestId,
+          hasProvidedHeader: !!providedKey,
+          providedKeyLength: providedKey?.trim().length ?? 0,
+          hasExpectedKey: !!expectedKey,
+          expectedKeyLength: expectedKey?.trim().length ?? 0
+        },
         p_severity: 'high'
       });
       
