@@ -6,12 +6,6 @@ verify_jwt = true
 [functions.send-notifications]
 verify_jwt = false
 
-[functions.cost-monitor]
-verify_jwt = false
-
-[functions.resource-monitor]
-verify_jwt = false
-
 [functions.custom-auth-emails]
 verify_jwt = true
 

@@ -5,13 +5,11 @@ import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { 
-  Crown, RefreshCw, Activity, BarChart3, Settings, Users, DollarSign, HardDrive
+  Crown, RefreshCw, Activity, BarChart3, Settings, Users
 } from 'lucide-react';
 import { AdminDashboard } from './admin/AdminDashboard';
 import { UserManagement } from './admin/UserManagement';
 import { SystemSettings } from './admin/SystemSettings';
-import { CostTrackingDashboard } from './admin/CostTrackingDashboard';
-import { ResourceMonitoringCard } from './admin/ResourceMonitoringCard';
 import { MasterPasswordModal } from './admin/MasterPasswordModal';
 import { ErrorBoundary } from './ErrorBoundary';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -320,7 +318,7 @@ export const AdminPanel = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="overview" className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
             <BarChart3 className="w-4 h-4" />
             {t('admin.dashboard')}
@@ -328,14 +326,6 @@ export const AdminPanel = () => {
           <TabsTrigger value="users" className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
             <Users className="w-4 h-4" />
             {t('admin.users')}
-          </TabsTrigger>
-          <TabsTrigger value="costs" className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-            <DollarSign className="w-4 h-4" />
-            Cost Tracking
-          </TabsTrigger>
-          <TabsTrigger value="resources" className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-            <HardDrive className="w-4 h-4" />
-            Resources
           </TabsTrigger>
           <TabsTrigger value="settings" className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
             <Settings className="w-4 h-4" />
@@ -359,17 +349,6 @@ export const AdminPanel = () => {
           </ErrorBoundary>
         </TabsContent>
 
-        <TabsContent value="costs">
-          <ErrorBoundary>
-            <CostTrackingDashboard />
-          </ErrorBoundary>
-        </TabsContent>
-
-        <TabsContent value="resources">
-          <ErrorBoundary>
-            <ResourceMonitoringCard />
-          </ErrorBoundary>
-        </TabsContent>
 
         <TabsContent value="settings">
           <ErrorBoundary>
