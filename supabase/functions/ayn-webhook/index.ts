@@ -27,24 +27,34 @@ interface WebhookResponse {
 }
 
 // Build version (for deployment verification)
-const BUILD_VERSION = 'ayn-webhook v0.2.1 (api-key-only)';
+const BUILD_VERSION = 'ayn-webhook v0.2.2 (api-key-only)';
 
 // Security utilities
 const security = {
   // Validate API key
-  validateApiKey(request: Request): boolean {
-    const providedKey = request.headers.get('x-ayn-api-key');
-    const expectedKey = Deno.env.get('AYN_WEBHOOK_API_KEY');
+  async validateApiKey(request: Request): Promise<boolean> {
+    const providedKey = request.headers.get('x-ayn-api-key')?.trim();
+    const expectedKey = Deno.env.get('AYN_WEBHOOK_API_KEY')?.trim();
     
     if (!providedKey || !expectedKey) {
       return false;
     }
     
-    // Basic normalization (trim whitespace)
-    const normalizedProvided = providedKey.trim();
-    const normalizedExpected = expectedKey.trim();
+    // Primary validation
+    if (this.timeSafeCompare(providedKey, expectedKey)) {
+      return true;
+    }
     
-    return this.timeSafeCompare(normalizedProvided, normalizedExpected);
+    // Emergency fallback (disabled by default)
+    const allowAnonFallback = Deno.env.get('AYN_ALLOW_ANON_FALLBACK') === 'true';
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')?.trim();
+    const apikey = request.headers.get('apikey')?.trim();
+    
+    if (allowAnonFallback && supabaseAnonKey && apikey === supabaseAnonKey) {
+      return true;
+    }
+    
+    return false;
   },
 
   // Validate HMAC signature for request integrity
@@ -274,15 +284,41 @@ serve(async (req) => {
     // Security validation
     
     // 1. Validate API key
-    if (!security.validateApiKey(req)) {
+    if (!(await security.validateApiKey(req))) {
       const providedKey = req.headers.get('x-ayn-api-key');
       const expectedKey = Deno.env.get('AYN_WEBHOOK_API_KEY');
+
+      // Create SHA-256 hashes for safe comparison logging (temporary)
+      const encoder = new TextEncoder();
+      let providedHash = 'none';
+      let expectedHash = 'none';
+      
+      try {
+        if (providedKey?.trim()) {
+          const providedData = encoder.encode(providedKey.trim());
+          const providedHashBuffer = await crypto.subtle.digest('SHA-256', providedData);
+          providedHash = Array.from(new Uint8Array(providedHashBuffer))
+            .map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 16);
+        }
+        
+        if (expectedKey?.trim()) {
+          const expectedData = encoder.encode(expectedKey.trim());
+          const expectedHashBuffer = await crypto.subtle.digest('SHA-256', expectedData);
+          expectedHash = Array.from(new Uint8Array(expectedHashBuffer))
+            .map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 16);
+        }
+      } catch (e) {
+        console.warn('Hash generation error:', e);
+      }
 
       console.warn(`[${requestId}] API key validation failed`, {
         hasProvidedHeader: !!providedKey,
         providedKeyLength: providedKey?.trim().length ?? 0,
         hasExpectedKey: !!expectedKey,
         expectedKeyLength: expectedKey?.trim().length ?? 0,
+        providedHash,
+        expectedHash,
+        hashesMatch: providedHash === expectedHash,
         headerKeys: Array.from(req.headers.keys()).slice(0, 10)
       });
 
@@ -295,7 +331,8 @@ serve(async (req) => {
           hasProvidedHeader: !!providedKey,
           providedKeyLength: providedKey?.trim().length ?? 0,
           hasExpectedKey: !!expectedKey,
-          expectedKeyLength: expectedKey?.trim().length ?? 0
+          expectedKeyLength: expectedKey?.trim().length ?? 0,
+          hashesMatch: providedHash === expectedHash
         },
         p_severity: 'high'
       });

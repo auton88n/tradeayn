@@ -593,6 +593,24 @@ export default function Dashboard({ user }: DashboardProps) {
     setIsTyping(true);
 
     try {
+      // Check usage limit first (before consuming credits)
+      const { data: canUse, error: usageCheckError } = await supabase.rpc('check_usage_limit', {
+        _user_id: user.id
+      });
+
+      if (usageCheckError) {
+        throw new Error('Unable to check usage limits');
+      }
+
+      if (!canUse) {
+        toast({
+          title: "Usage Limit Exceeded",
+          description: t('usage.limitExceeded'),
+          variant: "destructive"
+        });
+        return;
+      }
+
       // Enhanced payload with user context for n8n
       const payload = { 
         message: content,
@@ -626,6 +644,21 @@ export default function Dashboard({ user }: DashboardProps) {
       if (webhookError) {
         console.error('ayn-webhook invoke error', webhookError, webhookResponse);
         throw new Error(webhookError.message || 'Webhook call failed');
+      }
+
+      if (!webhookResponse?.response) {
+        throw new Error('No response from AI');
+      }
+
+      // Only increment usage after successful webhook response
+      const { data: incrementSuccess, error: incrementError } = await supabase.rpc('increment_usage', {
+        _user_id: user.id,
+        _action_type: 'message',
+        _count: 1
+      });
+
+      if (incrementError) {
+        console.warn('Usage increment failed after successful webhook call:', incrementError);
       }
 
       const response = webhookResponse?.response || 'I received your message and I\'m processing it. Please try again if you don\'t see a proper response.';
