@@ -27,6 +27,9 @@ interface WebhookResponse {
   error?: string;
 }
 
+// Build version (for deployment verification)
+const BUILD_VERSION = 'ayn-webhook v0.2 (api-key-only)';
+
 // Security utilities
 const security = {
   // Validate API key
@@ -237,7 +240,7 @@ serve(async (req) => {
 
   const requestId = crypto.randomUUID().slice(0, 8);
   const clientIP = security.getClientIP(req);
-  console.log(`[${requestId}] Processing webhook request from IP: ${clientIP}`);
+  console.log(`[${requestId}] ${BUILD_VERSION} - Processing webhook request from IP: ${clientIP}`);
 
   // Initialize Supabase client
   const supabase = createClient(
