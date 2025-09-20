@@ -814,6 +814,14 @@ export type Database = {
         Args: { _session_ids: string[]; _user_id: string }
         Returns: boolean
       }
+      get_active_connections: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      get_database_size_mb: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       get_usage_stats: {
         Args: { _user_id?: string }
         Returns: {

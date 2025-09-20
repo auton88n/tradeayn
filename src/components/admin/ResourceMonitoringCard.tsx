@@ -11,7 +11,9 @@ import {
   Zap, 
   AlertTriangle,
   CheckCircle,
-  RefreshCw
+  RefreshCw,
+  Wifi,
+  Link
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -50,12 +52,32 @@ export function ResourceMonitoringCard() {
 
   const fetchResourceMetrics = async () => {
     try {
+      // First check if we have any data
       const { data, error } = await supabase
         .from('resource_usage')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+
+      // If no data exists, trigger the resource monitor function
+      if (!data || data.length === 0) {
+        console.log('No resource data found, triggering resource monitor...');
+        try {
+          const { error: invokeError } = await supabase.functions.invoke('resource-monitor');
+          if (invokeError) {
+            console.error('Error invoking resource monitor:', invokeError);
+          } else {
+            // Wait a moment for the function to complete, then fetch again
+            setTimeout(() => {
+              fetchResourceMetrics();
+            }, 2000);
+            return;
+          }
+        } catch (invokeErr) {
+          console.error('Failed to invoke resource monitor:', invokeErr);
+        }
+      }
 
       setMetrics(data || []);
       setLastUpdated(new Date());
@@ -96,17 +118,17 @@ export function ResourceMonitoringCard() {
 
   const resourceTypes = [
     {
-      type: 'storage',
+      type: 'storage_mb',
       name: 'Database Storage',
       icon: Database,
-      description: 'Database storage usage',
-      format: (value: number) => formatBytes(value)
+      description: 'Database storage usage in MB',
+      format: (value: number) => formatBytes(value * 1024 * 1024)
     },
     {
-      type: 'mau',
+      type: 'mau_count',
       name: 'Monthly Active Users',
       icon: Users,
-      description: 'Active users this month',
+      description: 'Active users in the last 30 days',
       format: (value: number) => value.toLocaleString()
     },
     {
@@ -117,16 +139,16 @@ export function ResourceMonitoringCard() {
       format: (value: number) => value.toLocaleString()
     },
     {
-      type: 'bandwidth',
+      type: 'bandwidth_gb',
       name: 'Bandwidth Usage',
-      icon: Activity,
-      description: 'Data transfer this month',
-      format: (value: number) => formatBytes(value)
+      icon: Wifi,
+      description: 'Data transfer usage in GB this month',
+      format: (value: number) => `${value.toFixed(2)} GB`
     },
     {
-      type: 'db_connections',
+      type: 'database_connections',
       name: 'Database Connections',
-      icon: HardDrive,
+      icon: Link,
       description: 'Active database connections',
       format: (value: number) => value.toString()
     }
