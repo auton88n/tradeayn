@@ -31,16 +31,75 @@ const BUILD_VERSION = 'ayn-webhook v0.2 (api-key-only)';
 
 // Security utilities
 const security = {
-  // Validate API key
+  // Validate API key with enhanced debugging
   validateApiKey(request: Request): boolean {
-    const apiKey = request.headers.get('x-ayn-api-key');
+    const providedKey = request.headers.get('x-ayn-api-key');
     const expectedKey = Deno.env.get('AYN_WEBHOOK_API_KEY');
     
-    if (!apiKey || !expectedKey) {
+    // Enhanced debug logging
+    const debugInfo = {
+      headers_present: Array.from(request.headers.keys()),
+      provided_key_exists: !!providedKey,
+      expected_key_exists: !!expectedKey,
+      provided_key_length: providedKey?.length || 0,
+      expected_key_length: expectedKey?.length || 0,
+      provided_key_preview: providedKey ? `${providedKey.substring(0, 8)}...${providedKey.substring(providedKey.length - 4)}` : 'null',
+      expected_key_preview: expectedKey ? `${expectedKey.substring(0, 8)}...${expectedKey.substring(expectedKey.length - 4)}` : 'null',
+      header_case_variants: {
+        'x-ayn-api-key': request.headers.get('x-ayn-api-key'),
+        'X-AYN-API-KEY': request.headers.get('X-AYN-API-KEY'),
+        'X-Ayn-Api-Key': request.headers.get('X-Ayn-Api-Key')
+      }
+    };
+    
+    console.log('🔍 API Key Validation Debug:', JSON.stringify(debugInfo, null, 2));
+    
+    if (!providedKey || !expectedKey) {
+      console.log('❌ API Key validation failed: Missing key(s)');
       return false;
     }
     
-    return apiKey === expectedKey;
+    // Normalize keys (trim whitespace)
+    const normalizedProvided = providedKey.trim();
+    const normalizedExpected = expectedKey.trim();
+    
+    const comparisonResult = this.timeSafeCompare(normalizedProvided, normalizedExpected);
+    
+    // Additional debug info
+    const comparisonDebug = {
+      original_match: this.timeSafeCompare(providedKey, expectedKey),
+      normalized_match: comparisonResult,
+      provided_has_whitespace: providedKey !== normalizedProvided,
+      expected_has_whitespace: expectedKey !== normalizedExpected,
+      char_by_char_diff: this.findCharDifferences(normalizedProvided, normalizedExpected)
+    };
+    
+    console.log('🔍 API Key Comparison Debug:', JSON.stringify(comparisonDebug, null, 2));
+    console.log(comparisonResult ? '✅ API Key validation SUCCESS' : '❌ API Key validation FAILED');
+    
+    return comparisonResult;
+  },
+  
+  // Helper method to find character differences
+  findCharDifferences(str1: string, str2: string): any {
+    if (str1.length !== str2.length) {
+      return { length_mismatch: true, str1_length: str1.length, str2_length: str2.length };
+    }
+    
+    const differences = [];
+    for (let i = 0; i < str1.length; i++) {
+      if (str1[i] !== str2[i]) {
+        differences.push({
+          position: i,
+          str1_char: str1[i],
+          str2_char: str2[i],
+          str1_charCode: str1.charCodeAt(i),
+          str2_charCode: str2.charCodeAt(i)
+        });
+      }
+    }
+    
+    return differences.length > 0 ? differences : { identical: true };
   },
 
   // Validate HMAC signature for request integrity
