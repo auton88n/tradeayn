@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.4"
+    PostgrestVersion: "13.0.5"
   }
   public: {
     Tables: {
@@ -515,6 +515,75 @@ export type Database = {
         }
         Relationships: []
       }
+      webhook_rate_limits: {
+        Row: {
+          created_at: string | null
+          endpoint: string
+          id: string
+          request_count: number | null
+          updated_at: string | null
+          user_id: string
+          window_start: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          endpoint: string
+          id?: string
+          request_count?: number | null
+          updated_at?: string | null
+          user_id: string
+          window_start?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          endpoint?: string
+          id?: string
+          request_count?: number | null
+          updated_at?: string | null
+          user_id?: string
+          window_start?: string | null
+        }
+        Relationships: []
+      }
+      webhook_security_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          details: Json | null
+          endpoint: string
+          id: string
+          ip_address: unknown | null
+          request_headers: Json | null
+          severity: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          details?: Json | null
+          endpoint: string
+          id?: string
+          ip_address?: unknown | null
+          request_headers?: Json | null
+          severity?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          details?: Json | null
+          endpoint?: string
+          id?: string
+          ip_address?: unknown | null
+          request_headers?: Json | null
+          severity?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -532,11 +601,19 @@ export type Database = {
         Args: { _user_id: string }
         Returns: boolean
       }
+      check_webhook_rate_limit: {
+        Args: { p_endpoint: string; p_user_id: string }
+        Returns: boolean
+      }
       cleanup_old_security_logs: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
       cleanup_old_system_reports: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      cleanup_webhook_logs: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
@@ -594,6 +671,16 @@ export type Database = {
               _severity?: string
               _user_agent?: string
             }
+        Returns: undefined
+      }
+      log_webhook_security_event: {
+        Args: {
+          p_action: string
+          p_details?: Json
+          p_endpoint: string
+          p_severity?: string
+          p_user_id?: string
+        }
         Returns: undefined
       }
       validate_input_sanitization: {
