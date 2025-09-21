@@ -134,7 +134,7 @@ const textProcessor = {
   }
 };
 
-// Enforce concise responses: limit to 3 sentences or ~500 characters and plain text style
+// Enforce concise responses: limit to 3 sentences or ~500 characters and plain text style - Updated
 function enforceConciseness(text: string): string {
   if (!text) return '';
   // Remove bullet/numbered list formatting to keep plain text
