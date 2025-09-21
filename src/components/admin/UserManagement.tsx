@@ -99,12 +99,37 @@ export const UserManagement = ({ allUsers, onRefresh, requireAuthentication }: U
     setCurrentPage(1);
   }, [searchTerm, statusFilter]);
 
+  const handleGrantAccess = async (userId: string) => {
+    const action = async () => {
+      try {
+        const { error } = await supabase
+          .from('access_grants')
+          .update({
+            is_active: true,
+            granted_at: new Date().toISOString(),
+            notes: 'Access granted by administrator'
+          })
+          .eq('user_id', userId);
+        if (error) throw error;
+        toast({ title: t('admin.accessRestored'), description: t('admin.accessRestoredDesc') });
+        onRefresh();
+      } catch (error) {
+        toast({ title: "Error", description: "Failed to grant access.", variant: "destructive" });
+      }
+    };
+    if (requireAuthentication) requireAuthentication(action);
+    else await action();
+  };
+
   const handleRevokeAccess = async (userId: string) => {
     const action = async () => {
       try {
         const { error } = await supabase
           .from('access_grants')
-          .update({ is_active: false, notes: 'Access revoked by administrator' })
+          .update({ 
+            is_active: false, 
+            notes: 'Access revoked by administrator' 
+          })
           .eq('user_id', userId);
         if (error) throw error;
         toast({ title: t('admin.accessRevoked'), description: t('admin.accessRevokedDesc') });
@@ -115,6 +140,36 @@ export const UserManagement = ({ allUsers, onRefresh, requireAuthentication }: U
     };
     if (requireAuthentication) requireAuthentication(action);
     else await action();
+  };
+
+  const handleUpdateUserLimits = async (userIds: string[], newLimit: number | null) => {
+    const action = async () => {
+      try {
+        const { error } = await supabase
+          .from('access_grants')
+          .update({ monthly_limit: newLimit })
+          .in('user_id', userIds);
+        if (error) throw error;
+        toast({
+          title: t('admin.limitsUpdated'),
+          description: `${t('admin.limitsUpdatedDesc')} (${userIds.length} users)`
+        });
+        onRefresh();
+      } catch (error) {
+        toast({ title: "Error", description: "Failed to update limits.", variant: "destructive" });
+      }
+    };
+    if (requireAuthentication) requireAuthentication(action);
+    else await action();
+  };
+
+  const handleEditLimit = (user: AccessGrantWithProfile) => {
+    setEditingUser(user);
+    setEditModalOpen(true);
+  };
+
+  const handleBulkEditLimits = () => {
+    setBulkEditModalOpen(true);
   };
 
   const exportUserData = () => {
@@ -147,10 +202,18 @@ export const UserManagement = ({ allUsers, onRefresh, requireAuthentication }: U
           <h2 className="text-2xl font-bold">{t('admin.userManagement')}</h2>
           <p className="text-muted-foreground">{t('admin.userManagementDesc')}</p>
         </div>
-        <Button onClick={exportUserData} variant="outline" size="sm">
-          <Download className="w-4 h-4 mr-2" />
-          {t('admin.export')}
-        </Button>
+        <div className="flex items-center gap-3">
+          {selectedUsers.length > 0 && (
+            <Button onClick={handleBulkEditLimits} variant="outline" size="sm">
+              <Settings className="w-4 h-4 mr-2" />
+              Edit Limits ({selectedUsers.length})
+            </Button>
+          )}
+          <Button onClick={exportUserData} variant="outline" size="sm">
+            <Download className="w-4 h-4 mr-2" />
+            {t('admin.export')}
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -234,6 +297,16 @@ export const UserManagement = ({ allUsers, onRefresh, requireAuthentication }: U
                     <div key={user.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
+                          <Checkbox
+                            checked={selectedUsers.includes(user.user_id)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedUsers([...selectedUsers, user.user_id]);
+                              } else {
+                                setSelectedUsers(selectedUsers.filter(id => id !== user.user_id));
+                              }
+                            }}
+                          />
                           <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                             <Building className="w-5 h-5" />
                           </div>
@@ -258,17 +331,31 @@ export const UserManagement = ({ allUsers, onRefresh, requireAuthentication }: U
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditLimit(user)}
+                          >
+                            <Edit className="w-4 h-4 mr-1" />
+                            Edit Limit
+                          </Button>
                           {user.is_active ? (
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => handleRevokeAccess(user.user_id)}
+                              className="text-red-600 hover:text-red-700"
                             >
                               <UserMinus className="w-4 h-4 mr-1" />
                               Revoke
                             </Button>
                           ) : (
-                            <Button variant="outline" size="sm">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleGrantAccess(user.user_id)}
+                              className="text-green-600 hover:text-green-700"
+                            >
                               <UserPlus className="w-4 h-4 mr-1" />
                               Grant Access
                             </Button>
@@ -285,10 +372,48 @@ export const UserManagement = ({ allUsers, onRefresh, requireAuthentication }: U
       </Card>
 
       <EditLimitModal
-        open={editModalOpen}
-        onOpenChange={setEditModalOpen}
-        user={editingUser}
-        onConfirm={async () => {}}
+        isOpen={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        users={editingUser ? [{
+          user_id: editingUser.user_id,
+          user_email: editingUser.user_email,
+          company_name: editingUser.profiles?.company_name || undefined,
+          current_month_usage: editingUser.current_month_usage,
+          monthly_limit: editingUser.monthly_limit
+        }] : []}
+        onConfirm={async (newLimit: number | null) => {
+          if (editingUser) {
+            await handleUpdateUserLimits([editingUser.user_id], newLimit);
+            setEditModalOpen(false);
+            setEditingUser(null);
+          }
+        }}
+        isBulk={false}
+      />
+
+      <EditLimitModal
+        isOpen={bulkEditModalOpen}
+        onClose={() => setBulkEditModalOpen(false)}
+        users={selectedUsers.map(userId => {
+          const user = allUsers.find(u => u.user_id === userId);
+          return user ? {
+            user_id: user.user_id,
+            user_email: user.user_email,
+            company_name: user.profiles?.company_name || undefined,
+            current_month_usage: user.current_month_usage,
+            monthly_limit: user.monthly_limit
+          } : {
+            user_id: userId,
+            current_month_usage: 0,
+            monthly_limit: null
+          };
+        })}
+        onConfirm={async (newLimit: number | null) => {
+          await handleUpdateUserLimits(selectedUsers, newLimit);
+          setBulkEditModalOpen(false);
+          setSelectedUsers([]);
+        }}
+        isBulk={true}
       />
     </div>
   );
