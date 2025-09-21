@@ -11,6 +11,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Progress } from '@/components/ui/progress';
 import { Loader2, Download, MessageSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -39,6 +40,7 @@ export const ChatExportDialog = ({
   const [isLoading, setIsLoading] = useState(false);
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [selectedSessions, setSelectedSessions] = useState<Set<string>>(new Set());
+  const [exportProgress, setExportProgress] = useState(0);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -103,7 +105,12 @@ export const ChatExportDialog = ({
     }
 
     setIsExporting(true);
+    setExportProgress(0);
+    
     try {
+      // Simulate progress for better UX
+      setExportProgress(20);
+      
       const { data, error } = await supabase
         .from('messages')
         .select('*')
@@ -111,7 +118,21 @@ export const ChatExportDialog = ({
         .in('session_id', Array.from(selectedSessions))
         .order('created_at', { ascending: true });
 
+      setExportProgress(50);
+
       if (error) throw error;
+
+      if (!data || data.length === 0) {
+        toast({
+          title: 'No messages found',
+          description: 'No messages found for the selected sessions.',
+          variant: 'destructive'
+        });
+        setExportProgress(0);
+        return;
+      }
+
+      setExportProgress(70);
 
       let content: string;
       let filename: string;
@@ -126,6 +147,8 @@ export const ChatExportDialog = ({
         filename = `ayn-chats-export-${new Date().toISOString().split('T')[0]}.json`;
       }
 
+      setExportProgress(90);
+
       const blob = new Blob([content], { type: exportFormat === 'txt' ? 'text/plain' : 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -136,12 +159,17 @@ export const ChatExportDialog = ({
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
+      setExportProgress(100);
+
       toast({
         title: 'Export successful',
         description: `Exported ${selectedSessions.size} chat session(s)`,
       });
 
-      onClose();
+      setTimeout(() => {
+        onClose();
+        setExportProgress(0);
+      }, 1000);
     } catch (error) {
       console.error('Export error:', error);
       toast({
@@ -149,6 +177,7 @@ export const ChatExportDialog = ({
         description: 'Failed to export chat messages.',
         variant: 'destructive'
       });
+      setExportProgress(0);
     } finally {
       setIsExporting(false);
     }
@@ -213,11 +242,30 @@ export const ChatExportDialog = ({
             )}
           </ScrollArea>
           
+          {isExporting && exportProgress > 0 && (
+            <div className="space-y-2 mb-4">
+              <div className="flex items-center justify-between text-sm">
+                <span>Exporting...</span>
+                <span>{exportProgress}%</span>
+              </div>
+              <Progress value={exportProgress} className="w-full" />
+            </div>
+          )}
+          
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={onClose}>Cancel</Button>
+            <Button variant="outline" onClick={onClose} disabled={isExporting}>Cancel</Button>
             <Button onClick={handleExport} disabled={isExporting || selectedSessions.size === 0}>
-              {isExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
-              Export ({selectedSessions.size})
+              {isExporting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Exporting...
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4 mr-2" />
+                  Export ({selectedSessions.size})
+                </>
+              )}
             </Button>
           </div>
         </div>

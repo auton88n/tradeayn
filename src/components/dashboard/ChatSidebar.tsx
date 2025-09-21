@@ -23,6 +23,7 @@ import {
   MessageSquare, TrendingUp, Search, FileText, Eye,
   LogOut, Settings, Plus, X, Trash2, Download, Heart
 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -161,7 +162,8 @@ export const ChatSidebar = ({
   };
 
   return (
-    <Sidebar>
+    <TooltipProvider>
+      <Sidebar>
       <SidebarHeader className="border-b p-4">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
@@ -187,35 +189,60 @@ export const ChatSidebar = ({
           </Button>
           
           {/* Quick Action Buttons */}
-          <div className="grid grid-cols-3 gap-2">
-            <Button
-              onClick={onSearchClick}
-              variant="ghost"
-              size="sm"
-              className="flex flex-col items-center gap-1 h-auto py-2 px-1"
-            >
-              <Search className="w-4 h-4" />
-              <span className="text-xs">Search</span>
-            </Button>
-            <Button
-              onClick={onFavoritesClick}
-              variant="ghost"
-              size="sm"
-              className="flex flex-col items-center gap-1 h-auto py-2 px-1"
-            >
-              <Heart className="w-4 h-4" />
-              <span className="text-xs">Favorites</span>
-            </Button>
-            <Button
-              onClick={onExportClick}
-              variant="ghost"
-              size="sm"
-              className="flex flex-col items-center gap-1 h-auto py-2 px-1"
-            >
-              <Download className="w-4 h-4" />
-              <span className="text-xs">Export</span>
-            </Button>
-          </div>
+          <TooltipProvider>
+            <div className="grid grid-cols-3 gap-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={onSearchClick}
+                    variant="ghost"
+                    size="sm"
+                    className="flex flex-col items-center gap-1 h-auto py-2 px-1"
+                  >
+                    <Search className="w-4 h-4" />
+                    <span className="text-xs">Search</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Search chat history (Ctrl+K)</p>
+                </TooltipContent>
+              </Tooltip>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={onFavoritesClick}
+                    variant="ghost"
+                    size="sm"
+                    className="flex flex-col items-center gap-1 h-auto py-2 px-1"
+                  >
+                    <Heart className="w-4 h-4" />
+                    <span className="text-xs">Saved</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>View saved messages & chats</p>
+                </TooltipContent>
+              </Tooltip>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={onExportClick}
+                    variant="ghost"
+                    size="sm"
+                    className="flex flex-col items-center gap-1 h-auto py-2 px-1"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span className="text-xs">Export</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Export chat sessions</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </TooltipProvider>
         </div>
 
         {/* AI Modes */}
@@ -318,48 +345,55 @@ export const ChatSidebar = ({
                         </div>
                       </button>
                       {!showChatSelection && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            try {
-                              const { error } = await supabase
-                                .from('saved_insights')
-                                .insert({
-                                  user_id: user.id,
-                                  insight_text: `Chat: ${chat.title}\n\nLast message: ${chat.lastMessage}`,
-                                  category: 'chat_session',
-                                  tags: ['chat', 'conversation', chat.sessionId]
-                                });
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                try {
+                                  const { error } = await supabase
+                                    .from('saved_insights')
+                                    .insert({
+                                      user_id: user.id,
+                                      insight_text: `Chat: ${chat.title}\n\nLast message: ${chat.lastMessage}`,
+                                      category: 'chat_session',
+                                      tags: ['chat', 'conversation', chat.sessionId]
+                                    });
 
-                              if (error) {
-                                console.error('Error saving to favorites:', error);
-                                toast({
-                                  title: "Error",
-                                  description: "Failed to save chat to favorites",
-                                  variant: "destructive",
-                                });
-                                return;
-                              }
+                                  if (error) {
+                                    console.error('Error saving to favorites:', error);
+                                    toast({
+                                      title: "Error",
+                                      description: "Failed to save chat to favorites",
+                                      variant: "destructive",
+                                    });
+                                    return;
+                                  }
 
-                              toast({
-                                title: "Added to favorites",
-                                description: `"${chat.title}" saved to your favorites`,
-                              });
-                            } catch (error) {
-                              console.error('Error saving to favorites:', error);
-                              toast({
-                                title: "Error",
-                                description: "Failed to save chat to favorites",
-                                variant: "destructive",
-                              });
-                            }
-                          }}
-                          className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <Heart className="w-3 h-3" />
-                        </Button>
+                                  toast({
+                                    title: "Chat saved",
+                                    description: `"${chat.title}" saved to your collection`,
+                                  });
+                                } catch (error) {
+                                  console.error('Error saving to favorites:', error);
+                                  toast({
+                                    title: "Error",
+                                    description: "Failed to save chat to favorites",
+                                    variant: "destructive",
+                                  });
+                                }
+                              }}
+                              className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <Heart className="w-3 h-3" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Save this entire chat session</p>
+                          </TooltipContent>
+                        </Tooltip>
                       )}
                     </div>
                   </div>
@@ -409,6 +443,7 @@ export const ChatSidebar = ({
           {t('dashboard.signOut')}
         </Button>
       </SidebarFooter>
-    </Sidebar>
+      </Sidebar>
+    </TooltipProvider>
   );
 };

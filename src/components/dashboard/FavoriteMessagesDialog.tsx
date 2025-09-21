@@ -93,10 +93,10 @@ export const FavoriteMessagesDialog = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Heart className="w-5 h-5" />
-            Favorite Messages
+            Saved Collection
           </DialogTitle>
           <DialogDescription>
-            Your saved messages and insights from conversations.
+            Your saved messages, insights, and chat sessions. Individual messages are saved from chat responses, while entire conversations are saved from the chat history.
           </DialogDescription>
         </DialogHeader>
         

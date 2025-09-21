@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -10,7 +10,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Search, MessageSquare, Calendar } from 'lucide-react';
+import { Search, MessageSquare, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { User } from '@supabase/supabase-js';
@@ -48,18 +48,15 @@ export const ChatSearchDialog = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Message[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [resultCount, setResultCount] = useState(0);
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (searchQuery.trim()) {
-      handleSearch(searchQuery);
-    } else {
+  const handleSearch = useCallback(async (query: string) => {
+    if (!query.trim()) {
       setSearchResults([]);
+      setResultCount(0);
+      return;
     }
-  }, [searchQuery]);
-
-  const handleSearch = async (query: string) => {
-    if (!query.trim()) return;
 
     setIsSearching(true);
     try {
@@ -82,6 +79,7 @@ export const ChatSearchDialog = ({
       })) || [];
 
       setSearchResults(results);
+      setResultCount(results.length);
     } catch (error) {
       console.error('Search error:', error);
       toast({
@@ -92,7 +90,34 @@ export const ChatSearchDialog = ({
     } finally {
       setIsSearching(false);
     }
-  };
+  }, [user.id, toast]);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      handleSearch(searchQuery);
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, handleSearch]);
+
+  // Keyboard shortcut handler
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
+        event.preventDefault();
+        // Focus search input if dialog is open
+        if (isOpen) {
+          const input = document.querySelector('#search-input') as HTMLInputElement;
+          if (input) input.focus();
+        }
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [isOpen]);
 
   const handleMessageClick = (message: Message) => {
     if (onSessionLoad && message.sessionId) {
@@ -111,19 +136,32 @@ export const ChatSearchDialog = ({
           <DialogTitle className="flex items-center gap-2">
             <Search className="w-5 h-5" />
             Search Messages
+            {resultCount > 0 && (
+              <Badge variant="secondary" className="ml-auto">
+                {resultCount} result{resultCount !== 1 ? 's' : ''}
+              </Badge>
+            )}
           </DialogTitle>
           <DialogDescription>
-            Search through all your conversations with AYN.
+            Search through your conversation history with AYN. Use Ctrl+K to quickly access search.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
-          <Input
-            placeholder="Search your messages..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full"
-          />
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              id="search-input"
+              placeholder="Type to search your messages..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 pr-10"
+              autoFocus
+            />
+            {isSearching && (
+              <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
+            )}
+          </div>
 
           <ScrollArea className="h-[400px]">
             {isSearching ? (
