@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,7 +9,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { 
   Users, CheckCircle, XCircle, Clock, Building, Mail, Phone, Shield, Eye, Edit,
-  Search, Filter, Download, UserPlus, UserMinus, MoreVertical, Settings
+  Search, Filter, Download, UserPlus, UserMinus, MoreVertical, Settings,
+  ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -52,43 +53,23 @@ export const UserManagement = ({ allUsers, onRefresh, requireAuthentication }: U
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<AccessGrantWithProfile | null>(null);
   const [bulkEditModalOpen, setBulkEditModalOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(20);
+  
   const { toast } = useToast();
   const { t, language } = useLanguage();
 
   const getStatusInfo = (grant: AccessGrantWithProfile) => {
     if (!grant.is_active && !grant.granted_at) {
-      return {
-        icon: Clock,
-        label: t('admin.pending'),
-        variant: 'secondary' as const,
-        color: 'text-yellow-600'
-      };
+      return { icon: Clock, label: t('admin.pending'), variant: 'secondary' as const };
     }
-
     if (!grant.is_active) {
-      return {
-        icon: XCircle,
-        label: t('admin.deniedRevoked'),
-        variant: 'destructive' as const,
-        color: 'text-red-600'
-      };
+      return { icon: XCircle, label: t('admin.deniedRevoked'), variant: 'destructive' as const };
     }
-
     if (grant.expires_at && new Date(grant.expires_at) < new Date()) {
-      return {
-        icon: XCircle,
-        label: t('admin.expired'),
-        variant: 'destructive' as const,
-        color: 'text-red-600'
-      };
+      return { icon: XCircle, label: t('admin.expired'), variant: 'destructive' as const };
     }
-
-    return {
-      icon: CheckCircle,
-      label: t('admin.active'),
-      variant: 'default' as const,
-      color: 'text-green-600'
-    };
+    return { icon: CheckCircle, label: t('admin.active'), variant: 'default' as const };
   };
 
   const filteredUsers = useMemo(() => {
@@ -107,140 +88,38 @@ export const UserManagement = ({ allUsers, onRefresh, requireAuthentication }: U
     });
   }, [allUsers, searchTerm, statusFilter]);
 
+  const paginatedUsers = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredUsers.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredUsers, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
+
   const handleRevokeAccess = async (userId: string) => {
     const action = async () => {
       try {
         const { error } = await supabase
           .from('access_grants')
-          .update({
-            is_active: false,
-            notes: 'Access revoked by administrator'
-          })
+          .update({ is_active: false, notes: 'Access revoked by administrator' })
           .eq('user_id', userId);
-
         if (error) throw error;
-
-        toast({
-          title: t('admin.accessRevoked'),
-          description: t('admin.accessRevokedDesc')
-        });
-        
+        toast({ title: t('admin.accessRevoked'), description: t('admin.accessRevokedDesc') });
         onRefresh();
       } catch (error) {
-        console.error('Error revoking access:', error);
-        toast({
-          title: "Error",
-          description: "Failed to revoke user access.",
-          variant: "destructive"
-        });
+        toast({ title: "Error", description: "Failed to revoke access.", variant: "destructive" });
       }
     };
-
-    if (requireAuthentication) {
-      requireAuthentication(action);
-    } else {
-      await action();
-    }
-  };
-
-  const handleGrantAccess = async (userId: string) => {
-    const action = async () => {
-      try {
-        const { error } = await supabase
-          .from('access_grants')
-          .update({
-            is_active: true,
-            granted_at: new Date().toISOString(),
-            notes: 'Access granted by administrator'
-          })
-          .eq('user_id', userId);
-
-        if (error) throw error;
-
-        toast({
-          title: t('admin.accessRestored'),
-          description: t('admin.accessRestoredDesc')
-        });
-        
-        onRefresh();
-      } catch (error) {
-        console.error('Error granting access:', error);
-        toast({
-          title: "Error",
-          description: "Failed to grant user access.",
-          variant: "destructive"
-        });
-      }
-    };
-
-    if (requireAuthentication) {
-      requireAuthentication(action);
-    } else {
-      action();
-    }
-  };
-
-  const handleUpdateUserLimits = async (userIds: string[], newLimit: number | null) => {
-    const action = async () => {
-      try {
-        const { error } = await supabase
-          .from('access_grants')
-          .update({ monthly_limit: newLimit })
-          .in('user_id', userIds);
-
-        if (error) throw error;
-
-        toast({
-          title: t('admin.limitsUpdated'),
-          description: `${t('admin.limitsUpdatedDesc')} (${userIds.length} ${t('admin.users')})`
-        });
-        
-        onRefresh();
-      } catch (error) {
-        console.error('Error updating limits:', error);
-        toast({
-          title: "Error",
-          description: "Failed to update user limits.",
-          variant: "destructive"
-        });
-      }
-    };
-
-    if (requireAuthentication) {
-      requireAuthentication(action);
-    } else {
-      action();
-    }
-  };
-
-  const handleEditLimit = (user: AccessGrantWithProfile) => {
-    setEditingUser(user);
-    setEditModalOpen(true);
-  };
-
-  const handleBulkEditLimits = () => {
-    setBulkEditModalOpen(true);
-  };
-
-  const confirmUpdateLimit = async (newLimit: number | null) => {
-    if (editingUser) {
-      await handleUpdateUserLimits([editingUser.user_id], newLimit);
-    }
-  };
-
-  const confirmBulkUpdateLimits = async (newLimit: number | null) => {
-    await handleUpdateUserLimits(selectedUsers, newLimit);
-    setSelectedUsers([]);
-  };
-
-  const getUsagePercentage = (usage: number, limit: number | null) => {
-    if (!limit) return 0;
-    return Math.min((usage / limit) * 100, 100);
+    if (requireAuthentication) requireAuthentication(action);
+    else await action();
   };
 
   const exportUserData = () => {
     const csvContent = [
-      ['Email', 'Company', 'Contact Person', 'Status', 'Monthly Limit', 'Current Usage', 'Usage %', 'Created Date'].join(','),
+      ['Email', 'Company', 'Contact Person', 'Status', 'Monthly Limit', 'Current Usage', 'Created Date'].join(','),
       ...filteredUsers.map(user => [
         user.user_email || 'N/A',
         user.profiles?.company_name || 'N/A',
@@ -248,9 +127,6 @@ export const UserManagement = ({ allUsers, onRefresh, requireAuthentication }: U
         user.is_active ? 'Active' : 'Inactive',
         user.monthly_limit || 'Unlimited',
         user.current_month_usage || 0,
-        user.monthly_limit && user.current_month_usage !== null 
-          ? ((user.current_month_usage / user.monthly_limit) * 100).toFixed(1) + '%' 
-          : 'N/A',
         new Date(user.created_at).toLocaleDateString()
       ].join(','))
     ].join('\n');
@@ -262,53 +138,38 @@ export const UserManagement = ({ allUsers, onRefresh, requireAuthentication }: U
     link.download = `ayn-users-${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
     URL.revokeObjectURL(url);
-
-    toast({
-      title: t('admin.exportComplete'),
-      description: t('admin.exportCompleteDesc')
-    });
   };
 
   return (
-    <div className="space-y-6" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-      {/* Header and Controls */}
-      <div className={`flex items-center justify-between ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-        <div className={language === 'ar' ? 'text-right' : ''}>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
           <h2 className="text-2xl font-bold">{t('admin.userManagement')}</h2>
           <p className="text-muted-foreground">{t('admin.userManagementDesc')}</p>
         </div>
-        <div className={`flex items-center gap-3 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-          {selectedUsers.length > 0 && (
-            <Button onClick={handleBulkEditLimits} variant="outline" size="sm">
-              <Settings className={`w-4 h-4 ${language === 'ar' ? 'ml-2' : 'mr-2'}`} />
-              {t('admin.bulkEditLimits')} ({selectedUsers.length})
-            </Button>
-          )}
-          <Button onClick={exportUserData} variant="outline" size="sm">
-            <Download className={`w-4 h-4 ${language === 'ar' ? 'ml-2' : 'mr-2'}`} />
-            {t('admin.export')}
-          </Button>
-        </div>
+        <Button onClick={exportUserData} variant="outline" size="sm">
+          <Download className="w-4 h-4 mr-2" />
+          {t('admin.export')}
+        </Button>
       </div>
 
-      {/* Filters and Search */}
       <Card>
         <CardHeader>
-          <CardTitle className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+          <CardTitle className="flex items-center gap-2">
             <Filter className="w-5 h-5" />
             {t('admin.filtersSearch')}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className={`flex flex-col sm:flex-row gap-4 ${language === 'ar' ? 'sm:flex-row-reverse' : ''}`}>
+          <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
-                <Search className={`absolute ${language === 'ar' ? 'right-3' : 'left-3'} top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4`} />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                 <Input
                   placeholder={t('admin.searchPlaceholder')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className={language === 'ar' ? 'pr-10 text-right' : 'pl-10'}
+                  className="pl-10"
                 />
               </div>
             </div>
@@ -327,181 +188,107 @@ export const UserManagement = ({ allUsers, onRefresh, requireAuthentication }: U
         </CardContent>
       </Card>
 
-      {/* User List */}
       <Card>
         <CardHeader>
-          <CardTitle className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-            <Users className="w-5 h-5" />
-            {t('admin.usersCount')} ({filteredUsers.length})
-          </CardTitle>
-          <CardDescription>
-            {t('admin.managePermissions')}
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5" />
+              {t('admin.usersCount')} ({filteredUsers.length})
+            </CardTitle>
+            {totalPages > 1 && (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <span className="text-sm">{currentPage} / {totalPages}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-[600px]">
             <div className="space-y-4">
-              {filteredUsers.map((user) => {
-                const statusInfo = getStatusInfo(user);
-                const StatusIcon = statusInfo.icon;
-                
-                return (
-                  <div key={user.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
-                    <div className={`flex items-center justify-between ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-                      <div className={`flex items-center gap-4 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-                        <Checkbox
-                          checked={selectedUsers.includes(user.user_id)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedUsers([...selectedUsers, user.user_id]);
-                            } else {
-                              setSelectedUsers(selectedUsers.filter(id => id !== user.user_id));
-                            }
-                          }}
-                        />
-                        
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                          <Building className="w-5 h-5" />
-                        </div>
-                        
-                        <div className={`space-y-1 ${language === 'ar' ? 'text-right' : ''}`}>
-                          <div className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-                            <h3 className="font-semibold">{user.profiles?.company_name || t('admin.unknownCompany')}</h3>
-                            <Badge variant={statusInfo.variant} className={`flex items-center gap-1 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-                              <StatusIcon className="w-3 h-3" />
-                              {statusInfo.label}
-                            </Badge>
+              {paginatedUsers.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">No users found</p>
+                </div>
+              ) : (
+                paginatedUsers.map((user) => {
+                  const statusInfo = getStatusInfo(user);
+                  const StatusIcon = statusInfo.icon;
+                  
+                  return (
+                    <div key={user.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                            <Building className="w-5 h-5" />
                           </div>
-                          <div className={`flex items-center gap-4 text-sm text-muted-foreground ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-                            <span className={`flex items-center gap-1 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-                              <Mail className="w-3 h-3" />
-                              {user.user_email || t('admin.noEmail')}
-                            </span>
-                            <span className={`flex items-center gap-1 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-                              <Phone className="w-3 h-3" />
-                              {user.profiles?.contact_person || t('admin.noContact')}
-                            </span>
-                          </div>
-                          <div className="space-y-2">
-                            <div className={`flex items-center gap-4 text-xs text-muted-foreground ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-                              <span className={`flex items-center gap-1 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-                                {t('admin.usage')}: {user.current_month_usage || 0}
-                                {user.monthly_limit ? ` / ${user.monthly_limit}` : ` / ${t('admin.unlimited')}`}
-                                {user.monthly_limit && (
-                                  <Badge variant="outline" className="text-xs">
-                                    {Math.round(getUsagePercentage(user.current_month_usage, user.monthly_limit))}%
-                                  </Badge>
-                                )}
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-semibold">{user.profiles?.company_name || 'Unknown Company'}</h3>
+                              <Badge variant={statusInfo.variant} className="flex items-center gap-1">
+                                <StatusIcon className="w-3 h-3" />
+                                {statusInfo.label}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <Mail className="w-3 h-3" />
+                                {user.user_email || 'No email'}
                               </span>
-                              <span>
-                                {t('admin.created')}: {new Date(user.created_at).toLocaleDateString()}
+                              <span className="flex items-center gap-1">
+                                <Phone className="w-3 h-3" />
+                                {user.profiles?.contact_person || 'No contact'}
                               </span>
                             </div>
-                            {user.monthly_limit && (
-                              <Progress 
-                                value={getUsagePercentage(user.current_month_usage, user.monthly_limit)} 
-                                className="h-1.5"
-                              />
-                            )}
                           </div>
                         </div>
-                      </div>
-                      
-                      <div className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEditLimit(user)}
-                        >
-                          <Edit className={`w-4 h-4 ${language === 'ar' ? 'ml-1' : 'mr-1'}`} />
-                          {t('admin.editLimit')}
-                        </Button>
-                        {user.is_active ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleRevokeAccess(user.user_id)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <UserMinus className={`w-4 h-4 ${language === 'ar' ? 'ml-1' : 'mr-1'}`} />
-                            {t('admin.revoke')}
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleGrantAccess(user.user_id)}
-                            className="text-green-600 hover:text-green-700"
-                          >
-                            <UserPlus className={`w-4 h-4 ${language === 'ar' ? 'ml-1' : 'mr-1'}`} />
-                            {t('admin.grantAccess')}
-                          </Button>
-                        )}
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => {
-                            toast({
-                              title: t('admin.userDetails'),
-                              description: `${user.profiles?.company_name || 'Unknown Company'} - ${user.user_email || 'No email'} - Usage: ${user.current_month_usage}/${user.monthly_limit || 'Unlimited'}`
-                            });
-                          }}
-                        >
-                          <Eye className={`w-4 h-4 ${language === 'ar' ? 'ml-1' : 'mr-1'}`} />
-                          {t('admin.view')}
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          {user.is_active ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleRevokeAccess(user.user_id)}
+                            >
+                              <UserMinus className="w-4 h-4 mr-1" />
+                              Revoke
+                            </Button>
+                          ) : (
+                            <Button variant="outline" size="sm">
+                              <UserPlus className="w-4 h-4 mr-1" />
+                              Grant Access
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-              
-              {filteredUsers.length === 0 && (
-                <div className={`text-center py-8 ${language === 'ar' ? 'text-right' : ''}`}>
-                  <Users className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium">{t('admin.noUsersFound')}</h3>
-                  <p className="text-muted-foreground">{t('admin.adjustCriteria')}</p>
-                </div>
+                  );
+                })
               )}
             </div>
           </ScrollArea>
         </CardContent>
       </Card>
 
-      {/* Edit Limit Modals */}
-      {editingUser && (
-        <EditLimitModal
-          isOpen={editModalOpen}
-          onClose={() => {
-            setEditModalOpen(false);
-            setEditingUser(null);
-          }}
-          onConfirm={confirmUpdateLimit}
-          users={[{
-            user_id: editingUser.user_id,
-            user_email: editingUser.user_email,
-            company_name: editingUser.profiles?.company_name || undefined,
-            current_month_usage: editingUser.current_month_usage,
-            monthly_limit: editingUser.monthly_limit
-          }]}
-        />
-      )}
-
       <EditLimitModal
-        isOpen={bulkEditModalOpen}
-        onClose={() => setBulkEditModalOpen(false)}
-        onConfirm={confirmBulkUpdateLimits}
-        users={selectedUsers.map(userId => {
-          const user = allUsers.find(u => u.user_id === userId);
-          return {
-            user_id: userId,
-            user_email: user?.user_email,
-            company_name: user?.profiles?.company_name || undefined,
-            current_month_usage: user?.current_month_usage || 0,
-            monthly_limit: user?.monthly_limit || null
-          };
-        })}
-        isBulk={true}
+        open={editModalOpen}
+        onOpenChange={setEditModalOpen}
+        user={editingUser}
+        onConfirm={async () => {}}
       />
     </div>
   );
