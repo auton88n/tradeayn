@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Brain, TrendingUp, Target, BarChart3, Zap, Users, Shield, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { AuthModal } from './auth/AuthModal';
+import { EnhancedAuthModal } from './auth/EnhancedAuthModal';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ThemeToggle } from './theme-toggle';
@@ -228,7 +228,7 @@ const LandingPage = () => {
       </footer>
 
       {/* Auth Modal */}
-      <AuthModal 
+      <EnhancedAuthModal 
         open={showAuthModal} 
         onOpenChange={setShowAuthModal}
       />

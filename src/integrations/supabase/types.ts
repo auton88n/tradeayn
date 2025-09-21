@@ -665,6 +665,39 @@ export type Database = {
         }
         Relationships: []
       }
+      wallet_addresses: {
+        Row: {
+          created_at: string
+          id: string
+          is_primary: boolean | null
+          updated_at: string
+          user_id: string
+          verified: boolean | null
+          wallet_address: string
+          wallet_type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_primary?: boolean | null
+          updated_at?: string
+          user_id: string
+          verified?: boolean | null
+          wallet_address: string
+          wallet_type?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_primary?: boolean | null
+          updated_at?: string
+          user_id?: string
+          verified?: boolean | null
+          wallet_address?: string
+          wallet_type?: string
+        }
+        Relationships: []
+      }
       webhook_rate_limits: {
         Row: {
           created_at: string
@@ -700,6 +733,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      authenticate_or_create_solana_user: {
+        Args: { _user_metadata?: Json; _wallet_address: string }
+        Returns: string
+      }
       check_emergency_shutdown: {
         Args: Record<PropertyKey, never>
         Returns: boolean

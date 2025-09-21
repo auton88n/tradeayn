@@ -266,35 +266,137 @@ export const EnhancedAuthModal = ({ open, onOpenChange }: EnhancedAuthModalProps
 
   const handleSolanaAuth = async () => {
     try {
-      // Check if Solana wallet is available
-      if (typeof window !== 'undefined' && (window as any).solana) {
-        const solana = (window as any).solana;
-        
-        if (solana.isPhantom) {
-          const response = await solana.connect();
-          setSolanaWallet(response);
-          
-          // Here you would implement Solana-based authentication
-          // This would require additional backend setup
-          toast({
-            title: 'Solana Wallet Connected',
-            description: 'Wallet-based authentication is being implemented.',
-            variant: 'default'
-          });
-        }
-      } else {
+      if (typeof window === 'undefined' || !(window as any).solana) {
         toast({
           title: 'Solana Wallet Not Found',
           description: 'Please install Phantom or another Solana wallet.',
           variant: 'destructive'
         });
+        return;
       }
-    } catch (error) {
+
+      const solana = (window as any).solana;
+      if (!solana.isPhantom) {
+        toast({
+          title: 'Phantom Wallet Required',
+          description: 'Please install Phantom wallet to connect with Solana.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      setIsLoading(true);
+      const response = await solana.connect();
+      const publicKey = response.publicKey.toString();
+      setSolanaWallet(response);
+      
+      // Check if wallet is already linked to an account
+      const { data: existingWallet } = await supabase
+        .from('wallet_addresses')
+        .select('user_id')
+        .eq('wallet_address', publicKey)
+        .single();
+
+      if (existingWallet) {
+        // Wallet already linked, need to sign in the user
+        // For now, show success and let auth state handle the redirect
+        toast({
+          title: 'Wallet Connected',
+          description: 'Successfully connected your Solana wallet!',
+        });
+        onOpenChange(false);
+        return;
+      }
+
+      // Create new user account with Solana wallet
+      const tempEmail = `${publicKey.slice(0, 12)}@solana.wallet`;
+      const tempPassword = publicKey + Date.now(); 
+      
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+        email: tempEmail,
+        password: tempPassword,
+        options: {
+          data: {
+            full_name: `Solana User ${publicKey.slice(0, 8)}`,
+            company_name: 'Solana Wallet User',
+            wallet_address: publicKey,
+            auth_method: 'solana'
+          }
+        }
+      });
+
+      if (signUpError) {
+        throw signUpError;
+      }
+
+      if (authData.user) {
+        // Link wallet to the new user account
+        const { error: walletError } = await supabase
+          .from('wallet_addresses')
+          .insert({
+            user_id: authData.user.id,
+            wallet_address: publicKey,
+            wallet_type: 'solana',
+            verified: true,
+            is_primary: true
+          });
+
+        if (walletError) {
+          console.error('Error linking wallet:', walletError);
+        }
+
+        toast({
+          title: 'Wallet Connected & Account Created',
+          description: 'Successfully created account and signed in with Solana wallet!',
+        });
+        
+        // Reset form and close modal
+        resetForm();
+        onOpenChange(false);
+      }
+      
+    } catch (error: any) {
+      console.error('Solana auth error:', error);
       toast({
         title: 'Wallet Connection Failed',
-        description: 'Failed to connect to Solana wallet.',
+        description: error.message || 'Failed to connect to Solana wallet.',
         variant: 'destructive'
       });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      toast({
+        title: 'Email Required',
+        description: 'Please enter your email address to reset your password.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/`,
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: 'Password Reset Email Sent',
+        description: 'Check your email for password reset instructions.',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Reset Failed',
+        description: error.message || 'Failed to send password reset email.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -445,6 +547,18 @@ export const EnhancedAuthModal = ({ open, onOpenChange }: EnhancedAuthModalProps
                     Failed attempts: {failedAttempts}/5
                   </div>
                 )}
+
+                <div className="flex justify-end">
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="p-0 h-auto text-sm text-muted-foreground hover:text-primary"
+                    onClick={handleForgotPassword}
+                    disabled={isLoading}
+                  >
+                    Forgot password?
+                  </Button>
+                </div>
 
                 <Button
                   type="submit"
