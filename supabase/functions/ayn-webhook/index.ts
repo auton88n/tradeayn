@@ -134,7 +134,7 @@ const textProcessor = {
   }
 };
 
-// Enforce concise responses: limit to 3 sentences or ~320 characters and plain text style
+// Enforce concise responses: limit to 3 sentences or ~500 characters and plain text style
 function enforceConciseness(text: string): string {
   if (!text) return '';
   // Remove bullet/numbered list formatting to keep plain text
@@ -142,10 +142,10 @@ function enforceConciseness(text: string): string {
   // Split into sentences (support Arabic question mark)
   const parts = t.split(/(?<=[.!?؟])\s+/).filter(Boolean);
   t = parts.slice(0, 3).join(' ');
-  // Hard cap length
-  if (t.length > 320) t = t.slice(0, 320).replace(/\s+\S*$/, '') + '...';
-  // Remove leading greetings
-  t = t.replace(/^(hello|hi|hey)[,!\s]*/i, '');
+  // Hard cap length - increased from 320 to 500 for better context
+  if (t.length > 500) t = t.slice(0, 500).replace(/\s+\S*$/, '') + '...';
+  // Remove leading greetings with proper punctuation handling
+  t = t.replace(/^(hello|hi|hey)[,!\s?]*\s*/i, '');
   return t.trim();
 }
 
@@ -347,8 +347,8 @@ serve(async (req) => {
     const sanitizeNonPersonalized = (text: string) => {
       let t = text;
 
-      // Remove leading greetings with potential names
-      t = t.replace(/^(?:hello|hi|hey)\s+[^,!]{0,40}[,!]?\s*/i, '');
+      // Remove leading greetings with potential names and punctuation
+      t = t.replace(/^(?:hello|hi|hey)[,!\s?]*\s*[^,!]{0,40}[,!]?\s*/i, '');
 
       // Remove explicit statements about the user's name
       t = t.replace(/\b(your name is|you are called|I'll call you|I will call you)\s+[A-Z][a-z]{1,30}[.!?]?/gi, '');

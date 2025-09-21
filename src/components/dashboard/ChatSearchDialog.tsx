@@ -143,7 +143,7 @@ export const ChatSearchDialog = ({
             )}
           </DialogTitle>
           <DialogDescription>
-            Search through your conversation history with AYN. Use Ctrl+K to quickly access search.
+            Find messages in your chat history
           </DialogDescription>
         </DialogHeader>
 
@@ -185,18 +185,17 @@ export const ChatSearchDialog = ({
                   <div
                     key={message.id}
                     onClick={() => handleMessageClick(message)}
-                    className="p-4 rounded-lg border bg-card hover:bg-muted/50 cursor-pointer"
+                    className="p-3 rounded-lg border bg-card hover:bg-muted/50 cursor-pointer transition-colors"
                   >
-                    <div className="flex items-center gap-2 mb-2">
-                      <Badge variant={message.sender === 'user' ? 'default' : 'secondary'}>
-                        <MessageSquare className="w-3 h-3 mr-1" />
+                    <div className="flex items-center gap-2 mb-1">
+                      <Badge variant={message.sender === 'user' ? 'default' : 'secondary'} className="text-xs">
                         {message.sender === 'user' ? 'You' : 'AYN'}
                       </Badge>
                       <span className="text-xs text-muted-foreground">
                         {message.timestamp.toLocaleDateString()}
                       </span>
                     </div>
-                    <p className="text-sm line-clamp-3">{message.content}</p>
+                    <p className="text-sm line-clamp-2 text-foreground">{message.content}</p>
                   </div>
                 ))}
               </div>
