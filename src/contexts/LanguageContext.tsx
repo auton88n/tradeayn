@@ -668,18 +668,7 @@ const translations = {
     'admin.twoDaysAgo': 'منذ يومين',
     'admin.autoUpdatesEnabled': 'التحديثات التلقائية مفعلة',
     
-    // Email Campaigns
-    'admin.emailCampaigns': 'حملات البريد الإلكتروني',
-    'admin.emailCampaignsDesc': 'إنشاء وإدارة حملات البريد الإلكتروني المجمعة',
-    'admin.recipientGroups': 'مجموعات المستلمين',
-    'admin.newCampaign': 'حملة جديدة',
-    'admin.totalCampaigns': 'إجمالي الحملات',
-    'admin.activeCampaigns': 'الحملات النشطة',
-    'admin.totalRecipients': 'إجمالي المستلمين',
-    'admin.emailsSent': 'الإيميلات المرسلة',
-    'admin.manageCampaigns': 'إدارة حملات التسويق والتواصل عبر البريد الإلكتروني',
-    'admin.loadingCampaigns': 'جاري تحميل حملات البريد الإلكتروني...',
-    'admin.recipients': 'المستلمون',
+    // Removed unused email campaign translations
     'admin.sent': 'مرسل',
     'admin.createEmailCampaign': 'إنشاء حملة بريد إلكتروني',
     'admin.setupNewCampaign': 'إعداد حملة بريد إلكتروني جديدة للمستخدمين',
