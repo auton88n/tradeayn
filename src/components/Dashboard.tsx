@@ -998,7 +998,7 @@ export default function Dashboard({ user }: DashboardProps) {
   return (
     <div className="flex h-screen w-full bg-background">
         {/* Sidebar */}
-        <Sidebar collapsible="offcanvas" className="w-64 lg:w-80">
+        <Sidebar collapsible="offcanvas" className="w-48 lg:w-56">
           <SidebarHeader className="p-4">
             {/* User Profile */}
             <div className="flex items-center gap-3">

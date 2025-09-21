@@ -3,12 +3,14 @@ import LandingPage from '@/components/LandingPage';
 import Dashboard from '@/components/Dashboard';
 import { supabase } from '@/integrations/supabase/client';
 import { SidebarProvider } from '@/components/ui/sidebar';
+import { useIsMobile } from '@/hooks/use-mobile';
 import type { User, Session } from '@supabase/supabase-js';
 
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     // Set up auth state listener
@@ -47,7 +49,7 @@ const Index = () => {
   }
 
   return user ? (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={!isMobile}>
       <Dashboard user={user} />
     </SidebarProvider>
   ) : (
