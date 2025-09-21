@@ -46,7 +46,9 @@ import {
   User as UserIcon,
   Copy,
   Reply,
-  MessageSquare
+  MessageSquare,
+  Download,
+  Heart
 } from 'lucide-react';
 import { ThemeToggle } from './theme-toggle';
 import { TermsModal } from './TermsModal';
@@ -56,6 +58,7 @@ import { TypingIndicator } from './TypingIndicator';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { MessageFormatter } from './MessageFormatter';
+import { ChatActions } from './dashboard/ChatActions';
 
 interface Message {
   id: string;
@@ -182,6 +185,11 @@ export default function Dashboard({ user }: DashboardProps) {
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [showPlaceholder, setShowPlaceholder] = useState(true);
+  
+  // Dialog states
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [showSearchDialog, setShowSearchDialog] = useState(false);
+  const [showFavoritesDialog, setShowFavoritesDialog] = useState(false);
   
   const { toast } = useToast();
   
@@ -476,6 +484,44 @@ export default function Dashboard({ user }: DashboardProps) {
       title: `${modeName} Selected`,
       description: `Now using ${modeName} for AI responses`,
     });
+  };
+  
+  // Handle message selection from search dialog
+  const handleMessageSelect = (message: Message) => {
+    // Scroll to the message or highlight it
+    // For now, just show a toast with the message
+    toast({
+      title: 'Message found',
+      description: message.content.substring(0, 100) + (message.content.length > 100 ? '...' : ''),
+    });
+  };
+  
+  // Handle saving message to favorites
+  const handleSaveToFavorites = async (message: Message) => {
+    try {
+      const { error } = await supabase
+        .from('saved_insights')
+        .insert({
+          user_id: user.id,
+          category: 'Chat Message',
+          insight_text: message.content,
+          tags: ['chat', 'favorite']
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Message saved',
+        description: 'Message added to your favorites.',
+      });
+    } catch (error) {
+      console.error('Error saving to favorites:', error);
+      toast({
+        title: 'Error saving message',
+        description: 'Failed to save message to favorites.',
+        variant: 'destructive'
+      });
+    }
   };
 
   const handleSendMessage = async (messageContent?: string) => {
@@ -1002,6 +1048,41 @@ export default function Dashboard({ user }: DashboardProps) {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+
+            {/* Quick Actions */}
+            <SidebarGroup>
+              <SidebarGroupContent>
+                <div className="flex gap-2 px-2">
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    onClick={() => setShowSearchDialog(true)}
+                    className="flex-1 h-8"
+                    title="Search messages"
+                  >
+                    <Search className="w-4 h-4" />
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    onClick={() => setShowFavoritesDialog(true)}
+                    className="flex-1 h-8"
+                    title="Favorite messages"
+                  >
+                    <Heart className="w-4 h-4" />
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    onClick={() => setShowExportDialog(true)}
+                    className="flex-1 h-8"
+                    title="Export chat"
+                  >
+                    <Download className="w-4 h-4" />
+                  </Button>
+                </div>
               </SidebarGroupContent>
             </SidebarGroup>
 
@@ -1574,6 +1655,19 @@ export default function Dashboard({ user }: DashboardProps) {
           )}
           </div>
         </SidebarInset>
+        
+        {/* Chat Actions Dialogs */}
+        <ChatActions
+          messages={messages}
+          currentSessionId={currentSessionId}
+          showExportDialog={showExportDialog}
+          showSearchDialog={showSearchDialog}
+          showFavoritesDialog={showFavoritesDialog}
+          onExportClose={() => setShowExportDialog(false)}
+          onSearchClose={() => setShowSearchDialog(false)}
+          onFavoritesClose={() => setShowFavoritesDialog(false)}
+          onMessageSelect={handleMessageSelect}
+        />
       </div>
   );
 }
