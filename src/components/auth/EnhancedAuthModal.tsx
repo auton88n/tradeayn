@@ -1,19 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Eye, EyeOff, Loader2, Shield, AlertTriangle, CheckCircle, Wallet, Mail, User2, Building } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { 
+  Loader2, Building, User, Shield, Wallet, 
+  AlertTriangle, CheckCircle2, Eye, EyeOff 
+} from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { generateDeviceFingerprint, collectDeviceInfo, validateDeviceInfo } from '@/lib/deviceFingerprint';
 import { reportThreatEvent, checkIPBlocked } from '@/lib/threatDetection';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { PasswordResetModal } from './PasswordResetModal';
-import { SolanaWalletAuth } from './SolanaWalletAuth';
 
 interface EnhancedAuthModalProps {
   open: boolean;
@@ -33,8 +33,9 @@ export const EnhancedAuthModal = ({ open, onOpenChange }: EnhancedAuthModalProps
   const [ipBlocked, setIpBlocked] = useState(false);
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [authMethod, setAuthMethod] = useState<'email' | 'solana'>('email');
-  const [showPasswordReset, setShowPasswordReset] = useState(false);
+  const [solanaWallet, setSolanaWallet] = useState<any>(null);
   
+  const { toast } = useToast();
   const { t } = useLanguage();
 
   useEffect(() => {
@@ -265,9 +266,29 @@ export const EnhancedAuthModal = ({ open, onOpenChange }: EnhancedAuthModalProps
 
   const handleSolanaAuth = async () => {
     try {
-      // This method is being replaced by the new SolanaWalletAuth component
-      // Switch to solana auth method to show the new component
-      setAuthMethod('solana');
+      // Check if Solana wallet is available
+      if (typeof window !== 'undefined' && (window as any).solana) {
+        const solana = (window as any).solana;
+        
+        if (solana.isPhantom) {
+          const response = await solana.connect();
+          setSolanaWallet(response);
+          
+          // Here you would implement Solana-based authentication
+          // This would require additional backend setup
+          toast({
+            title: 'Solana Wallet Connected',
+            description: 'Wallet-based authentication is being implemented.',
+            variant: 'default'
+          });
+        }
+      } else {
+        toast({
+          title: 'Solana Wallet Not Found',
+          description: 'Please install Phantom or another Solana wallet.',
+          variant: 'destructive'
+        });
+      }
     } catch (error) {
       toast({
         title: 'Wallet Connection Failed',
@@ -333,7 +354,7 @@ export const EnhancedAuthModal = ({ open, onOpenChange }: EnhancedAuthModalProps
             </Badge>
             {deviceFingerprint && (
               <Badge variant="outline">
-                <CheckCircle className="w-3 h-3 mr-1" />
+                <CheckCircle2 className="w-3 h-3 mr-1" />
                 Verified Device
               </Badge>
             )}
@@ -348,8 +369,8 @@ export const EnhancedAuthModal = ({ open, onOpenChange }: EnhancedAuthModalProps
             onClick={() => setAuthMethod('email')}
             className="flex-1"
           >
-            <User2 className="w-4 h-4 mr-2" />
-            {t('auth.emailAuth')}
+            <User className="w-4 h-4 mr-2" />
+            Email
           </Button>
           <Button 
             variant={authMethod === 'solana' ? 'default' : 'outline'}
@@ -364,15 +385,16 @@ export const EnhancedAuthModal = ({ open, onOpenChange }: EnhancedAuthModalProps
 
         {authMethod === 'solana' ? (
           <div className="space-y-4">
-            <SolanaWalletAuth
-              onSuccess={() => {
-                onOpenChange(false);
-                resetForm();
-              }}
-              onError={(error) => {
-                console.error('Solana auth error:', error);
-              }}
-            />
+            <div className="text-center py-8">
+              <Wallet className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+              <p className="text-muted-foreground mb-4">
+                Connect your Solana wallet for secure, decentralized authentication
+              </p>
+              <Button onClick={handleSolanaAuth} disabled={isLoading} className="w-full">
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Connect Solana Wallet
+              </Button>
+            </div>
           </div>
         ) : (
           <Tabs defaultValue="signin" className="w-full">
@@ -424,17 +446,6 @@ export const EnhancedAuthModal = ({ open, onOpenChange }: EnhancedAuthModalProps
                   </div>
                 )}
 
-                <div className="flex justify-end">
-                  <Button 
-                    type="button"
-                    variant="link"
-                    onClick={() => setShowPasswordReset(true)}
-                    className="text-sm p-0 h-auto"
-                  >
-                    {t('auth.forgotPassword')}
-                  </Button>
-                </div>
-
                 <Button
                   type="submit"
                   variant="hero"
@@ -457,7 +468,7 @@ export const EnhancedAuthModal = ({ open, onOpenChange }: EnhancedAuthModalProps
                   <div className="space-y-2">
                     <Label htmlFor="signup-name" className="auth-label">{t('auth.fullName')} *</Label>
                     <div className="relative">
-                      <User2 className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="signup-name"
                         type="text"
@@ -552,15 +563,6 @@ export const EnhancedAuthModal = ({ open, onOpenChange }: EnhancedAuthModalProps
             </TabsContent>
           </Tabs>
         )}
-
-        <PasswordResetModal
-          open={showPasswordReset}
-          onOpenChange={setShowPasswordReset}
-          onBackToSignIn={() => {
-            setShowPasswordReset(false);
-            setAuthMethod('email');
-          }}
-        />
       </DialogContent>
     </Dialog>
   );

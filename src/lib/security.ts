@@ -76,24 +76,3 @@ export function checkRateLimit(
   
   return true;
 }
-
-/**
- * Log security events to Supabase
- */
-export async function logSecurityEvent(
-  action: string,
-  details: Record<string, any> = {},
-  severity: string = 'info'
-): Promise<void> {
-  try {
-    const { supabase } = await import('@/integrations/supabase/client');
-    
-    await supabase.rpc('log_security_event', {
-      _action: action,
-      _details: details,
-      _severity: severity
-    });
-  } catch (error) {
-    console.error('Failed to log security event:', error);
-  }
-}
