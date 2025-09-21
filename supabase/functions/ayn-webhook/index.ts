@@ -240,9 +240,6 @@ serve(async (req) => {
       bodyPreview: rawText.slice(0, 200) + (rawText.length > 200 ? '...' : '')
     });
 
-    // Process the response
-    const processedText = textProcessor.processResponse(rawText, contentType);
-
     // Extract response text without processing
     const finalText = extractResponseText(rawText, contentType);
 
