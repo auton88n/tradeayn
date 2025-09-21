@@ -1,6 +1,7 @@
 import { ChatExportDialog } from './ChatExportDialog';
 import { ChatSearchDialog } from './ChatSearchDialog';
 import { FavoriteMessagesDialog } from './FavoriteMessagesDialog';
+import { User } from '@supabase/supabase-js';
 
 interface Message {
   id: string;
@@ -17,8 +18,7 @@ interface Message {
 }
 
 interface ChatActionsProps {
-  messages: Message[];
-  currentSessionId: string;
+  user: User;
   showExportDialog: boolean;
   showSearchDialog: boolean;
   showFavoritesDialog: boolean;
@@ -26,33 +26,34 @@ interface ChatActionsProps {
   onSearchClose: () => void;
   onFavoritesClose: () => void;
   onMessageSelect?: (message: Message) => void;
+  onSessionLoad?: (sessionId: string) => void;
 }
 
 export const ChatActions = ({
-  messages,
-  currentSessionId,
+  user,
   showExportDialog,
   showSearchDialog,
   showFavoritesDialog,
   onExportClose,
   onSearchClose,
   onFavoritesClose,
-  onMessageSelect
+  onMessageSelect,
+  onSessionLoad
 }: ChatActionsProps) => {
   return (
     <>
       <ChatExportDialog
         isOpen={showExportDialog}
         onClose={onExportClose}
-        messages={messages}
-        sessionId={currentSessionId}
+        user={user}
       />
       
       <ChatSearchDialog
         isOpen={showSearchDialog}
         onClose={onSearchClose}
-        messages={messages}
+        user={user}
         onMessageSelect={onMessageSelect}
+        onSessionLoad={onSessionLoad}
       />
       
       <FavoriteMessagesDialog

@@ -6,7 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Send, Paperclip, Copy, Reply, Loader2, Heart 
+  Send, Paperclip, Copy, Reply, Loader2, Heart, HeartIcon
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -55,6 +55,7 @@ export const ChatInterface = ({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
+  const [favoriteMessages, setFavoriteMessages] = useState<Set<string>>(new Set());
   
   const { toast } = useToast();
   const { t } = useLanguage();
@@ -68,6 +69,79 @@ export const ChatInterface = ({
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const handleSaveToFavorites = async (message: Message) => {
+    try {
+      const { error } = await supabase
+        .from('saved_insights')
+        .insert({
+          user_id: user.id,
+          category: 'Chat Message',
+          insight_text: message.content,
+          tags: ['chat', 'favorite', selectedMode.toLowerCase()]
+        });
+
+      if (error) throw error;
+
+      setFavoriteMessages(prev => new Set([...prev, message.id]));
+      toast({
+        title: 'Message saved',
+        description: 'Message added to your favorites.',
+      });
+    } catch (error) {
+      console.error('Error saving to favorites:', error);
+      toast({
+        title: 'Error saving message',
+        description: 'Failed to save message to favorites.',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleCopyMessage = async (content: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      toast({
+        title: "Message Copied",
+        description: "Message copied to clipboard.",
+      });
+    } catch (err) {
+      toast({
+        title: "Copy Failed",
+        description: "Failed to copy message to clipboard.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleReply = (message: Message) => {
+    setReplyingTo(message);
+    setInputMessage(`@${message.sender}: "${message.content.substring(0, 50)}${message.content.length > 50 ? '...' : ''}"\n\n`);
+    inputRef.current?.focus();
+  };
+
+  const handleFileSelect = () => {
+    if (!hasAccess || !hasAcceptedTerms) {
+      toast({
+        title: "Access Required",
+        description: "You need active access to upload files.",
+        variant: "destructive"
+      });
+      return;
+    }
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      toast({
+        title: "File Selected",
+        description: `${file.name} is ready to send.`,
+      });
+    }
   };
 
   const handleSendMessage = async (messageContent?: string) => {
@@ -98,194 +172,183 @@ export const ChatInterface = ({
       if (maliciousCheck.isMalicious) {
         await reportThreatEvent({
           type: 'malicious_input',
-          severity: 'high',
-          details: {
-            threats_detected: maliciousCheck.threats,
-            input_content: content,
-            user_id: user.id
+          details: { 
+            content: content.substring(0, 100),
+            threats: maliciousCheck.threats,
+            sessionId: currentSessionId
           }
         });
-        
+
         toast({
-          title: 'Security Warning',
-          description: 'Your message contains potentially harmful content and has been blocked.',
-          variant: 'destructive'
+          title: "Security Alert",
+          description: "Your message contains potentially harmful content and cannot be sent.",
+          variant: "destructive"
         });
         return;
       }
     }
 
-    // Monitor for suspicious activity
-    const isSuspicious = globalThreatMonitor.trackRequest('/chat/send', user.id);
-    if (isSuspicious) {
-      toast({
-        title: 'Rate Limit Exceeded',
-        description: 'Please slow down your message sending.',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    const newMessage: Message = {
-      id: crypto.randomUUID(),
-      content,
-      sender: 'user',
-      timestamp: new Date(),
-      status: 'sending'
-    };
-
+    // Upload file if selected
+    let attachment = null;
     if (selectedFile) {
+      setIsUploading(true);
       try {
-        setIsUploading(true);
-        const fileExt = selectedFile.name.split('.').pop();
-        const fileName = `${Date.now()}.${fileExt}`;
-        const filePath = `${user.id}/${fileName}`;
+        const base64 = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const result = reader.result as string;
+            resolve(result.split(',')[1]);
+          };
+          reader.readAsDataURL(selectedFile);
+        });
 
-        const { error: uploadError } = await supabase.storage
-          .from('attachments')
-          .upload(filePath, selectedFile);
+        const { data, error } = await supabase.functions.invoke('file-upload', {
+          body: {
+            file: base64,
+            fileName: selectedFile.name,
+            fileType: selectedFile.type,
+            userId: user.id
+          }
+        });
 
-        if (uploadError) throw uploadError;
+        if (error) throw error;
 
-        const { data: { publicUrl } } = supabase.storage
-          .from('attachments')
-          .getPublicUrl(filePath);
-
-        newMessage.attachment = {
-          url: publicUrl,
-          name: selectedFile.name,
-          type: selectedFile.type
+        attachment = {
+          url: data.fileUrl,
+          name: data.fileName,
+          type: data.fileType
         };
       } catch (error) {
+        console.error('File upload error:', error);
         toast({
-          title: 'Upload Failed',
-          description: 'Failed to upload file. Please try again.',
-          variant: 'destructive'
+          title: "Upload Failed",
+          description: "Failed to upload file. Please try again.",
+          variant: "destructive"
         });
+        setIsUploading(false);
         return;
       } finally {
         setIsUploading(false);
       }
     }
 
-    onMessagesChange([...messages, newMessage]);
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      content: content || (attachment ? `📎 ${attachment.name}` : ''),
+      sender: 'user',
+      timestamp: new Date(),
+      status: 'sent',
+      attachment
+    };
+
+    const updatedMessages = [...messages, userMessage];
+    onMessagesChange(updatedMessages);
     setInputMessage('');
     setSelectedFile(null);
     setReplyingTo(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    setIsTyping(true);
 
     try {
-      // Save user message to database
-      const { error: saveError } = await supabase
-        .from('messages')
-        .insert({
-          user_id: user.id,
-          session_id: currentSessionId,
-          content,
-          sender: 'user',
-          attachment_url: newMessage.attachment?.url,
-          attachment_name: newMessage.attachment?.name,
-          attachment_type: newMessage.attachment?.type,
-          mode_used: selectedMode
-        });
-
-      if (saveError) throw saveError;
-
-      // Update message status
-      const updatedMessages = messages.map(msg => 
-        msg.id === newMessage.id ? { ...msg, status: 'sent' as const } : msg
-      );
-      onMessagesChange(updatedMessages);
-
-      // Increment usage
-      await supabase.rpc('increment_usage', {
+      // Check and increment usage
+      const { data: canUse, error: usageError } = await supabase.rpc('increment_usage', {
         _user_id: user.id,
         _action_type: 'message',
         _count: 1
       });
 
-      // Send to AI webhook
-      setIsTyping(true);
-      const webhookUrl = modeWebhooks[selectedMode];
-      
-      if (!webhookUrl) {
-        throw new Error('No webhook configured for selected mode');
+      if (usageError || !canUse) {
+        setIsTyping(false);
+        toast({
+          title: t('error.usageLimit'),
+          description: t('error.usageLimitDesc'),
+          variant: "destructive"
+        });
+        return;
       }
 
-      const { data, error } = await supabase.functions.invoke('ayn-webhook', {
-        body: {
-          message: content,
-          user_id: user.id,
-          session_id: currentSessionId,
-          mode: selectedMode,
-          webhook_url: webhookUrl,
-          attachment: newMessage.attachment,
-          reply_to: replyingTo?.content
-        }
-      });
-
-      if (error) throw error;
-
-      // Add AI response
-      const aiMessage: Message = {
-        id: crypto.randomUUID(),
-        content: data.response || 'I apologize, but I encountered an issue processing your request.',
-        sender: 'ayn',
-        timestamp: new Date(),
-        status: 'sent'
+      // Enhanced payload with user context
+      const payload = { 
+        message: content,
+        userId: user.id,
+        userEmail: user.email,
+        mode: selectedMode,
+        sessionId: currentSessionId,
+        conversationHistory: messages.slice(-5),
+        timestamp: new Date().toISOString()
       };
 
-      onMessagesChange([...messages, aiMessage]);
+      // Call AYN webhook through edge function
+      const { data: webhookResponse, error: webhookError } = await supabase.functions.invoke('ayn-webhook', {
+        body: payload
+      });
+      
+      setIsTyping(false);
 
-      // Save AI response
-      await supabase
-        .from('messages')
-        .insert({
+      if (webhookError) {
+        throw new Error(webhookError.message || 'Webhook call failed');
+      }
+
+      const response = webhookResponse?.response || 'I received your message and I\'m processing it. Please try again if you don\'t see a proper response.';
+
+      const aynMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: response,
+        sender: 'ayn',
+        timestamp: new Date(),
+        isTyping: true,
+      };
+
+      const finalMessages = [...updatedMessages, aynMessage];
+      onMessagesChange(finalMessages);
+
+      // Save messages to database
+      await supabase.from('messages').insert([
+        {
           user_id: user.id,
           session_id: currentSessionId,
-          content: aiMessage.content,
+          content: content,
+          sender: 'user',
+          mode_used: selectedMode,
+          attachment_url: attachment?.url,
+          attachment_name: attachment?.name,
+          attachment_type: attachment?.type
+        },
+        {
+          user_id: user.id,
+          session_id: currentSessionId,
+          content: response,
           sender: 'ayn',
           mode_used: selectedMode
-        });
+        }
+      ]);
 
     } catch (error) {
-      console.error('Error sending message:', error);
-      
-      const errorMessages = messages.map(msg => 
-        msg.id === newMessage.id ? { ...msg, status: 'error' as const } : msg
-      );
-      onMessagesChange(errorMessages);
-
-      toast({
-        title: 'Message Failed',
-        description: 'Failed to send message. Please try again.',
-        variant: 'destructive'
-      });
-    } finally {
       setIsTyping(false);
+      console.error('Send message error:', error);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: "I'm sorry, I'm having trouble connecting right now. Please try again in a moment.",
+        sender: 'ayn',
+        timestamp: new Date(),
+      };
+
+      onMessagesChange([...updatedMessages, errorMessage]);
+      
+      toast({
+        title: "Connection Error",
+        description: "Unable to reach AYN. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
-  const handleCopyMessage = (content: string) => {
-    navigator.clipboard.writeText(content);
-    toast({
-      title: 'Copied',
-      description: 'Message copied to clipboard'
-    });
-  };
-
-  const handleReply = (message: Message) => {
-    setReplyingTo(message);
-    inputRef.current?.focus();
-  };
-
-  const handleFileSelect = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
     }
   };
 
@@ -293,76 +356,88 @@ export const ChatInterface = ({
     <div className="flex flex-col h-full">
       {/* Messages Area */}
       <ScrollArea className="flex-1 p-4">
-        <div className="space-y-4 max-w-4xl mx-auto">
+        <div className="space-y-4 pb-4">
           {messages.map((message) => (
             <div
               key={message.id}
-              className={`flex gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+              className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} gap-2`}
             >
               {message.sender === 'ayn' && (
                 <Avatar className="w-8 h-8 shrink-0">
-                  <AvatarImage src="/placeholder.svg" />
-                  <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-xs">
-                    AYN
-                  </AvatarFallback>
+                  <AvatarImage src="/favicon-brain.png" alt="AYN" />
+                  <AvatarFallback>AI</AvatarFallback>
                 </Avatar>
               )}
               
-              <div className={`group max-w-[80%] ${message.sender === 'user' ? 'order-first' : ''}`}>
-                <div
-                  className={`relative rounded-lg p-3 transition-all duration-200 hover:shadow-md ${
-                    message.sender === 'user'
-                      ? 'bg-primary text-primary-foreground ml-auto'
-                      : 'bg-muted'
-                  }`}
-                >
+              <div
+                className={`relative max-w-[85%] md:max-w-[70%] rounded-lg px-4 py-2 group ${
+                  message.sender === 'user'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted'
+                }`}
+              >
+                <div className="flex flex-col gap-2">
                   {message.attachment && (
-                    <div className="mb-2 p-2 rounded bg-black/10 text-xs">
-                      📎 {message.attachment.name}
+                    <div className="flex items-center gap-2 p-2 rounded border bg-background/50">
+                      <Paperclip className="w-4 h-4" />
+                      <span className="text-sm truncate">{message.attachment.name}</span>
+                      <Badge variant="outline" className="text-xs">
+                        {message.attachment.type.split('/')[0]}
+                      </Badge>
                     </div>
                   )}
                   
-                  <MessageFormatter content={message.content} />
+                  <div className="text-sm">
+                    <MessageFormatter content={message.content} />
+                  </div>
                   
-                  {message.status === 'error' && (
-                    <div className="mt-2 text-xs text-red-400">
-                      Failed to send
-                    </div>
-                  )}
-                  
-                  <div className="flex items-center justify-between mt-2 text-xs opacity-60">
-                    <span>{message.timestamp.toLocaleTimeString()}</span>
-                    {message.status === 'sending' && (
-                      <Loader2 className="w-3 h-3 animate-spin" />
+                  <div className="flex items-center justify-between text-xs opacity-70">
+                    <span>{message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    {message.status && (
+                      <Badge variant="outline" className="text-xs">
+                        {message.status}
+                      </Badge>
                     )}
                   </div>
+                </div>
 
-                  {/* Message Actions */}
-                  <div className="absolute -top-2 right-0 hidden group-hover:flex gap-1">
+                {/* Message Actions */}
+                <div className="absolute -top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-background border rounded-md shadow-md flex">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleCopyMessage(message.content)}
+                    className="h-6 w-6 p-0"
+                  >
+                    <Copy className="w-3 h-3" />
+                  </Button>
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleReply(message)}
+                    className="h-6 w-6 p-0"
+                  >
+                    <Reply className="w-3 h-3" />
+                  </Button>
+                  
+                  {message.sender === 'ayn' && (
                     <Button
-                      size="sm"
                       variant="ghost"
-                      className="h-6 w-6 p-0 bg-background shadow-sm"
-                      onClick={() => handleCopyMessage(message.content)}
-                    >
-                      <Copy className="w-3 h-3" />
-                    </Button>
-                    <Button
                       size="sm"
-                      variant="ghost"
-                      className="h-6 w-6 p-0 bg-background shadow-sm"
-                      onClick={() => handleReply(message)}
+                      onClick={() => handleSaveToFavorites(message)}
+                      className={`h-6 w-6 p-0 ${favoriteMessages.has(message.id) ? 'text-red-500' : ''}`}
                     >
-                      <Reply className="w-3 h-3" />
+                      <Heart className={`w-3 h-3 ${favoriteMessages.has(message.id) ? 'fill-current' : ''}`} />
                     </Button>
-                  </div>
+                  )}
                 </div>
               </div>
-
+              
               {message.sender === 'user' && (
                 <Avatar className="w-8 h-8 shrink-0">
-                  <AvatarFallback className="bg-muted text-muted-foreground text-xs">
-                    {user.email?.charAt(0).toUpperCase()}
+                  <AvatarFallback>
+                    {user.email?.charAt(0).toUpperCase() || 'U'}
                   </AvatarFallback>
                 </Avatar>
               )}
@@ -370,14 +445,12 @@ export const ChatInterface = ({
           ))}
           
           {isTyping && (
-            <div className="flex gap-3">
+            <div className="flex justify-start gap-2">
               <Avatar className="w-8 h-8 shrink-0">
-                <AvatarImage src="/placeholder.svg" />
-                <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-xs">
-                  AYN
-                </AvatarFallback>
+                <AvatarImage src="/favicon-brain.png" alt="AYN" />
+                <AvatarFallback>AI</AvatarFallback>
               </Avatar>
-              <div className="bg-muted rounded-lg p-3 max-w-[80%]">
+              <div className="bg-muted rounded-lg px-4 py-2 max-w-[70%]">
                 <TypingIndicator />
               </div>
             </div>
@@ -387,49 +460,66 @@ export const ChatInterface = ({
         </div>
       </ScrollArea>
 
-      {/* Reply Indicator */}
+      {/* Reply Context */}
       {replyingTo && (
-        <div className="p-2 bg-muted/50 border-t flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Reply className="w-4 h-4" />
-            <span className="text-sm">Replying to: {replyingTo.content.substring(0, 50)}...</span>
+        <div className="mx-4 mb-2 p-2 bg-muted rounded-md text-sm border-l-4 border-primary flex items-center justify-between">
+          <div>
+            <span className="text-muted-foreground">Replying to:</span>
+            <p className="line-clamp-1">{replyingTo.content}</p>
           </div>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setReplyingTo(null)}
+            className="h-6 w-6 p-0"
           >
-            Cancel
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </Button>
         </div>
       )}
 
       {/* File Preview */}
       {selectedFile && (
-        <div className="p-2 bg-muted/50 border-t flex items-center justify-between">
+        <div className="mx-4 mb-2 p-2 bg-muted rounded-md text-sm flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Paperclip className="w-4 h-4" />
-            <span className="text-sm">{selectedFile.name}</span>
-            <Badge variant="outline">{(selectedFile.size / 1024).toFixed(1)} KB</Badge>
+            <span>{selectedFile.name}</span>
+            <Badge variant="outline" className="text-xs">
+              {(selectedFile.size / 1024 / 1024).toFixed(1)}MB
+            </Badge>
           </div>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setSelectedFile(null)}
+            className="h-6 w-6 p-0"
           >
-            Remove
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </Button>
         </div>
       )}
 
       {/* Input Area */}
-      <div className="p-4 border-t bg-background">
-        <div className="flex gap-2 max-w-4xl mx-auto">
+      <div className="border-t p-4">
+        <div className="flex gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            onChange={handleFileChange}
+            className="hidden"
+            accept=".pdf,.doc,.docx,.txt,.json,image/*"
+          />
+          
           <Button
             variant="outline"
-            size="icon"
+            size="sm"
             onClick={handleFileSelect}
-            disabled={isUploading}
+            disabled={!hasAccess || !hasAcceptedTerms || isUploading}
+            className="shrink-0"
           >
             {isUploading ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -437,29 +527,25 @@ export const ChatInterface = ({
               <Paperclip className="w-4 h-4" />
             )}
           </Button>
-
+          
           <div className="flex-1 relative">
             <Textarea
               ref={inputRef}
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
-              placeholder={`Ask ${selectedMode} anything...`}
-              className="min-h-[40px] max-h-32 pr-12 resize-none"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage();
-                }
-              }}
-              disabled={isTyping || isUploading}
+              onKeyDown={handleKeyPress}
+              placeholder={hasAccess ? "Type your message..." : "Access required to send messages"}
+              disabled={!hasAccess || !hasAcceptedTerms || isTyping}
+              className="min-h-[44px] max-h-32 resize-none pr-12"
             />
+            
             <Button
-              size="sm"
-              className="absolute right-2 top-2"
               onClick={() => handleSendMessage()}
-              disabled={(!inputMessage.trim() && !selectedFile) || isTyping || isUploading}
+              disabled={(!inputMessage.trim() && !selectedFile) || !hasAccess || !hasAcceptedTerms || isTyping}
+              size="sm"
+              className="absolute right-2 top-2 h-8 w-8 p-0"
             >
-              {isTyping || isUploading ? (
+              {isTyping ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <Send className="w-4 h-4" />
@@ -468,14 +554,6 @@ export const ChatInterface = ({
           </div>
         </div>
       </div>
-
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={handleFileChange}
-        className="hidden"
-        accept=".txt,.pdf,.doc,.docx,.jpg,.jpeg,.png,.gif"
-      />
     </div>
   );
 };

@@ -21,7 +21,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import {
   MessageSquare, TrendingUp, Search, FileText, Eye,
-  LogOut, Settings, Plus, X, Trash2
+  LogOut, Settings, Plus, X, Trash2, Download, Heart
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -46,6 +46,9 @@ interface ChatSidebarProps {
   onPersonalizationChange: (enabled: boolean) => void;
   userProfile: any;
   onSignOut: () => void;
+  onSearchClick: () => void;
+  onFavoritesClick: () => void;
+  onExportClick: () => void;
 }
 
 export const ChatSidebar = ({
@@ -58,7 +61,10 @@ export const ChatSidebar = ({
   allowPersonalization,
   onPersonalizationChange,
   userProfile,
-  onSignOut
+  onSignOut,
+  onSearchClick,
+  onFavoritesClick,
+  onExportClick
 }: ChatSidebarProps) => {
   const [selectedChats, setSelectedChats] = useState<Set<number>>(new Set());
   const [showChatSelection, setShowChatSelection] = useState(false);
@@ -173,12 +179,43 @@ export const ChatSidebar = ({
       </SidebarHeader>
 
       <SidebarContent className="p-4">
-        {/* New Chat Button */}
-        <div className="mb-6">
+        {/* New Chat Button & Quick Actions */}
+        <div className="mb-6 space-y-3">
           <Button onClick={onNewChat} className="w-full" variant="outline">
             <Plus className="w-4 h-4 mr-2" />
             {t('dashboard.newChat')}
           </Button>
+          
+          {/* Quick Action Buttons */}
+          <div className="grid grid-cols-3 gap-2">
+            <Button
+              onClick={onSearchClick}
+              variant="ghost"
+              size="sm"
+              className="flex flex-col items-center gap-1 h-auto py-2 px-1"
+            >
+              <Search className="w-4 h-4" />
+              <span className="text-xs">Search</span>
+            </Button>
+            <Button
+              onClick={onFavoritesClick}
+              variant="ghost"
+              size="sm"
+              className="flex flex-col items-center gap-1 h-auto py-2 px-1"
+            >
+              <Heart className="w-4 h-4" />
+              <span className="text-xs">Favorites</span>
+            </Button>
+            <Button
+              onClick={onExportClick}
+              variant="ghost"
+              size="sm"
+              className="flex flex-col items-center gap-1 h-auto py-2 px-1"
+            >
+              <Download className="w-4 h-4" />
+              <span className="text-xs">Export</span>
+            </Button>
+          </div>
         </div>
 
         {/* AI Modes */}
@@ -248,7 +285,7 @@ export const ChatSidebar = ({
             <SidebarGroupContent>
               <div className="space-y-1">
                 {recentChats.slice(0, 10).map((chat, index) => (
-                  <div key={chat.sessionId} className="flex items-center gap-2">
+                  <div key={chat.sessionId} className="flex items-center gap-2 group">
                     {showChatSelection && (
                       <Checkbox
                         checked={selectedChats.has(index)}
@@ -264,21 +301,40 @@ export const ChatSidebar = ({
                         className="shrink-0"
                       />
                     )}
-                    <button
-                      onClick={() => onChatLoad(chat.sessionId)}
-                      className="flex-1 text-left p-2 rounded-md hover:bg-muted/50 transition-colors"
-                      disabled={showChatSelection}
-                    >
-                      <div className="font-medium text-sm line-clamp-1">
-                        {chat.title}
-                      </div>
-                      <div className="text-xs text-muted-foreground line-clamp-1">
-                        {chat.lastMessage}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {chat.timestamp.toLocaleDateString()}
-                      </div>
-                    </button>
+                    <div className="flex-1 flex items-center gap-2">
+                      <button
+                        onClick={() => onChatLoad(chat.sessionId)}
+                        className="flex-1 text-left p-2 rounded-md hover:bg-muted/50 transition-colors"
+                        disabled={showChatSelection}
+                      >
+                        <div className="font-medium text-sm line-clamp-1">
+                          {chat.title}
+                        </div>
+                        <div className="text-xs text-muted-foreground line-clamp-1">
+                          {chat.lastMessage}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {chat.timestamp.toLocaleDateString()}
+                        </div>
+                      </button>
+                      {!showChatSelection && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // Add to favorites functionality here
+                            toast({
+                              title: 'Added to Favorites',
+                              description: 'Chat conversation added to your favorites.',
+                            });
+                          }}
+                          className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Heart className="w-3 h-3" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

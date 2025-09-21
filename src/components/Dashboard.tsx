@@ -995,7 +995,7 @@ export default function Dashboard({ user }: DashboardProps) {
   return (
     <div className="flex h-screen w-full bg-background">
         {/* Sidebar */}
-        <Sidebar collapsible="offcanvas" className="w-64">
+        <Sidebar collapsible="offcanvas" className="w-64 lg:w-80">
           <SidebarHeader className="p-4">
             {/* User Profile */}
             <div className="flex items-center gap-3">
@@ -1658,8 +1658,7 @@ export default function Dashboard({ user }: DashboardProps) {
         
         {/* Chat Actions Dialogs */}
         <ChatActions
-          messages={messages}
-          currentSessionId={currentSessionId}
+          user={user}
           showExportDialog={showExportDialog}
           showSearchDialog={showSearchDialog}
           showFavoritesDialog={showFavoritesDialog}
@@ -1667,6 +1666,10 @@ export default function Dashboard({ user }: DashboardProps) {
           onSearchClose={() => setShowSearchDialog(false)}
           onFavoritesClose={() => setShowFavoritesDialog(false)}
           onMessageSelect={handleMessageSelect}
+          onSessionLoad={(sessionId: string) => {
+            setCurrentSessionId(sessionId);
+            loadCurrentChatHistory();
+          }}
         />
       </div>
   );
