@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider } from "@/contexts/LanguageContext";
-import { SolanaWalletProvider } from '@/contexts/SolanaWalletContext';
+import { SolanaWalletProvider } from "@/contexts/SolanaWalletContext";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
