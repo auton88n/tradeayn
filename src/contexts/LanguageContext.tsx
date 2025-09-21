@@ -26,6 +26,18 @@ const translations = {
     'hero.description': 'Get strategic business insights, market research, sales optimization, and trend analysis - all from one intelligent AI consultant.',
     'hero.cta': 'Start Consulting with AYN',
     
+    // Header
+    'header.aynBusinessConsole': 'AYN Business Console',
+    'header.chat': 'Chat',
+    'header.admin': 'Admin',
+    
+    // Modes
+    'modes.general': 'General',
+    'modes.nenMode': 'Nen Mode ⚡',
+    'modes.researchPro': 'Research Pro',
+    'modes.pdfAnalyst': 'PDF Analyst',
+    'modes.visionLab': 'Vision Lab',
+    
     // Auth Modal
     'auth.welcomeToAyn': 'Welcome to AYN',
     'auth.signIn': 'Sign In',
@@ -76,6 +88,20 @@ const translations = {
     'common.language': 'Language',
     'common.cancel': 'Cancel',
     'common.delete': 'Delete',
+    'common.active': 'Active',
+    'common.inactive': 'Inactive',
+    'common.newChat': 'New Chat',
+    'common.quickStart': 'Quick Start',
+    'common.recentChats': 'Recent Chats',
+    'common.user': 'User',
+    'common.thinking': 'Thinking',
+    'common.select': 'Select',
+    'common.all': 'All',
+    'common.none': 'None',
+    'common.deleteChats': 'Delete Chats',
+    'common.deleteChat': 'Delete Chat',
+    'common.noConversations': 'No conversations yet',
+    'common.personalization': 'Personalization',
     
     // Errors
     'error.systemError': 'System Error',
@@ -83,6 +109,8 @@ const translations = {
     
     // Dashboard
     'dashboard.loading': 'Loading AYN...',
+    'dashboard.welcomeBack': 'Welcome back',
+    'dashboard.getStarted': 'Get started with AYN',
     
     // Admin Panel
     'admin.title': 'Admin Control Center',
