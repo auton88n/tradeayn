@@ -174,7 +174,7 @@ serve(async (req) => {
       });
     }
     // Parse request body
-    let requestData: WebhookRequest = {};
+    let requestData: any = {};
     
     try {
       const body = await req.json();
@@ -185,7 +185,10 @@ serve(async (req) => {
         contactPerson: body?.contactPerson || '',
         detectedLanguage: body?.detectedLanguage || 'en',
         concise: body?.concise ?? true,
-        mode: body?.mode || 'General'
+        mode: body?.mode || 'General',
+        conversationHistory: body?.conversationHistory || [],
+        userContext: body?.userContext || null,
+        sessionId: body?.sessionId || ''
       };
     } catch (e) {
       console.warn(`[${requestId}] Request body was not valid JSON, using defaults`);
@@ -198,7 +201,9 @@ serve(async (req) => {
       allowPersonalization: requestData.allowPersonalization,
       detectedLanguage: requestData.detectedLanguage,
       concise: requestData.concise,
-      mode: requestData.mode
+      mode: requestData.mode,
+      conversationHistoryLength: requestData.conversationHistory?.length || 0,
+      hasUserContext: !!requestData.userContext
     });
 
     // 4. Get webhook URL from environment variables
@@ -217,7 +222,7 @@ serve(async (req) => {
 
     console.log(`[${requestId}] Using webhook URL for mode '${requestData.mode}': ${upstreamUrl.slice(0, 50)}...`);
 
-    // Call upstream webhook with clean payload
+    // Call upstream webhook with enhanced context payload
     const upstream = await fetch(upstreamUrl, {
       method: 'POST',
       headers: {
@@ -226,7 +231,13 @@ serve(async (req) => {
       body: JSON.stringify({
         user_id: requestData.userId,
         message: requestData.message,
-        mode: requestData.mode
+        mode: requestData.mode,
+        conversation_history: requestData.conversationHistory,
+        user_context: requestData.userContext,
+        session_id: requestData.sessionId,
+        allow_personalization: requestData.allowPersonalization,
+        detected_language: requestData.detectedLanguage,
+        concise: requestData.concise
       }),
     });
 

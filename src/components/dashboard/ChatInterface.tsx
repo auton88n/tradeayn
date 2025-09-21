@@ -270,14 +270,31 @@ export const ChatInterface = ({
         return;
       }
 
-      // Enhanced payload with user context
+      // Get user profile for context
+      const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('company_name, business_type, business_context, contact_person')
+        .eq('user_id', user.id)
+        .single();
+
+      // Enhanced payload with user context and conversation history
       const payload = { 
         message: content,
         userId: user.id,
         userEmail: user.email,
         mode: selectedMode,
         sessionId: currentSessionId,
-        conversationHistory: messages.slice(-5),
+        conversationHistory: messages.slice(-5).map(msg => ({
+          content: msg.content,
+          sender: msg.sender,
+          timestamp: msg.timestamp.toISOString()
+        })),
+        userContext: userProfile ? {
+          companyName: userProfile.company_name,
+          businessType: userProfile.business_type,
+          businessContext: userProfile.business_context,
+          contactPerson: userProfile.contact_person
+        } : null,
         timestamp: new Date().toISOString()
       };
 
