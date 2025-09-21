@@ -89,6 +89,10 @@ const translations = {
     
     // Placeholders
     'placeholders.General': '["Ask about your business strategy...", "How can I help optimize your operations?", "What business challenge are you facing?"]',
+    'placeholders.Nen Mode ⚡': '["Ask about your business strategy...", "How can I help optimize your operations?", "What business challenge are you facing?"]',
+    'placeholders.Research Pro': '["Research market trends for me...", "Analyze competitor strategies...", "Find industry insights about..."]',
+    'placeholders.PDF Analyst': '["Analyze this document for key insights...", "Summarize the main points of this PDF...", "Extract data from this report..."]',
+    'placeholders.Vision Lab': '["Analyze this image for business insights...", "What do you see in this visual?", "Extract text from this image..."]',
   },
   ar: {
     // Basic Arabic translations
