@@ -234,7 +234,7 @@ export default function ChatContainer({ user, isAdmin, activeTab, onTabChange }:
 
   return (
     <div className="flex min-h-screen w-full">
-      <Sidebar className="w-80">{memoizedSidebar}</Sidebar>
+      {memoizedSidebar}
       <SidebarInset className="flex-1">
         {maintenanceConfig.enableMaintenance && (
           <MaintenanceBanner 
