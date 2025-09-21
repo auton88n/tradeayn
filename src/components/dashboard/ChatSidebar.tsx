@@ -321,13 +321,40 @@ export const ChatSidebar = ({
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={(e) => {
+                          onClick={async (e) => {
                             e.stopPropagation();
-                            // Add to favorites functionality here
-                            toast({
-                              title: 'Added to Favorites',
-                              description: 'Chat conversation added to your favorites.',
-                            });
+                            try {
+                              const { error } = await supabase
+                                .from('saved_insights')
+                                .insert({
+                                  user_id: user.id,
+                                  insight_text: `Chat: ${chat.title}\n\nLast message: ${chat.lastMessage}`,
+                                  category: 'chat_session',
+                                  tags: ['chat', 'conversation', chat.sessionId]
+                                });
+
+                              if (error) {
+                                console.error('Error saving to favorites:', error);
+                                toast({
+                                  title: "Error",
+                                  description: "Failed to save chat to favorites",
+                                  variant: "destructive",
+                                });
+                                return;
+                              }
+
+                              toast({
+                                title: "Added to favorites",
+                                description: `"${chat.title}" saved to your favorites`,
+                              });
+                            } catch (error) {
+                              console.error('Error saving to favorites:', error);
+                              toast({
+                                title: "Error",
+                                description: "Failed to save chat to favorites",
+                                variant: "destructive",
+                              });
+                            }
                           }}
                           className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                         >
