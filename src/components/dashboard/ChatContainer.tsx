@@ -233,39 +233,37 @@ export default function ChatContainer({ user, isAdmin, activeTab, onTabChange }:
   ), [user, selectedMode, recentChats, allowPersonalization, userProfile]);
 
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full">
-        <Sidebar className="w-80">{memoizedSidebar}</Sidebar>
-        <SidebarInset className="flex-1">
-          {maintenanceConfig.enableMaintenance && (
-            <MaintenanceBanner 
-              isEnabled={maintenanceConfig.enableMaintenance}
-              message={maintenanceConfig.maintenanceMessage} 
-            />
-          )}
-          
-          <header className="flex h-16 shrink-0 items-center justify-between border-b px-4">
-            <SidebarTrigger className="-ml-1" />
-            <div className="flex items-center gap-2">
-              <LanguageSwitcher />
-              <ThemeToggle />
-            </div>
-          </header>
+    <div className="flex min-h-screen w-full">
+      <Sidebar className="w-80">{memoizedSidebar}</Sidebar>
+      <SidebarInset className="flex-1">
+        {maintenanceConfig.enableMaintenance && (
+          <MaintenanceBanner 
+            isEnabled={maintenanceConfig.enableMaintenance}
+            message={maintenanceConfig.maintenanceMessage} 
+          />
+        )}
+        
+        <header className="flex h-16 shrink-0 items-center justify-between border-b px-4">
+          <SidebarTrigger className="-ml-1" />
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher />
+            <ThemeToggle />
+          </div>
+        </header>
 
-          <main className="flex-1 overflow-hidden">
-            <ChatInterface
-              user={user}
-              messages={messages}
-              onMessagesChange={setMessages}
-              selectedMode={selectedMode}
-              modeWebhooks={modeWebhooks}
-              currentSessionId={currentSessionId}
-              hasAccess={true}
-              hasAcceptedTerms={true}
-            />
-          </main>
-        </SidebarInset>
-      </div>
-    </SidebarProvider>
+        <main className="flex-1 overflow-hidden">
+          <ChatInterface
+            user={user}
+            messages={messages}
+            onMessagesChange={setMessages}
+            selectedMode={selectedMode}
+            modeWebhooks={modeWebhooks}
+            currentSessionId={currentSessionId}
+            hasAccess={true}
+            hasAcceptedTerms={true}
+          />
+        </main>
+      </SidebarInset>
+    </div>
   );
 }

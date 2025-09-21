@@ -2,6 +2,7 @@ import React, { Suspense } from 'react';
 import { User } from '@supabase/supabase-js';
 import { ErrorBoundary } from '../ErrorBoundary';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SidebarProvider } from '@/components/ui/sidebar';
 
 // Lazy load components for better performance
 const ChatContainer = React.lazy(() => import('./ChatContainer'));
@@ -66,8 +67,8 @@ export default function DashboardLayout({
     );
   }
 
-  // Show terms modal or user interface if not accepted
-  if (!hasAcceptedTerms) {
+  // Show terms modal or access status if needed
+  if (!hasAcceptedTerms || !hasAccess) {
     return (
       <ErrorBoundary>
         <Suspense fallback={<LoadingSkeleton />}>
@@ -83,22 +84,24 @@ export default function DashboardLayout({
 
   // Main dashboard content
   return (
-    <ErrorBoundary>
-      <Suspense fallback={<LoadingSkeleton />}>
-        {activeTab === 'admin' && isAdmin ? (
-          <AdminContainer 
-            user={user}
-            onTabChange={onTabChange}
-          />
-        ) : (
-          <ChatContainer 
-            user={user}
-            isAdmin={isAdmin}
-            activeTab={activeTab}
-            onTabChange={onTabChange}
-          />
-        )}
-      </Suspense>
-    </ErrorBoundary>
+    <SidebarProvider>
+      <ErrorBoundary>
+        <Suspense fallback={<LoadingSkeleton />}>
+          {activeTab === 'admin' && isAdmin ? (
+            <AdminContainer 
+              user={user}
+              onTabChange={onTabChange}
+            />
+          ) : (
+            <ChatContainer 
+              user={user}
+              isAdmin={isAdmin}
+              activeTab={activeTab}
+              onTabChange={onTabChange}
+            />
+          )}
+        </Suspense>
+      </ErrorBoundary>
+    </SidebarProvider>
   );
 }
