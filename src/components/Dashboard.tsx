@@ -258,13 +258,14 @@ export default function Dashboard({ user }: DashboardProps) {
     return () => clearInterval(interval);
   }, [showPlaceholder, inputMessage, placeholderTexts.length]);
 
-  const loadCurrentChatHistory = async () => {
+  const loadCurrentChatHistory = async (sessionId?: string) => {
+    const targetSessionId = sessionId || currentSessionId;
     try {
       const { data, error } = await supabase
         .from('messages')
         .select('id, content, created_at, sender, attachment_url, attachment_name, attachment_type')
         .eq('user_id', user.id)
-        .eq('session_id', currentSessionId)
+        .eq('session_id', targetSessionId)
         .order('created_at', { ascending: true });
 
       if (error) {
@@ -287,6 +288,8 @@ export default function Dashboard({ user }: DashboardProps) {
         }));
         
         setMessages(chatMessages);
+      } else {
+        setMessages([]);
       }
     } catch (error) {
       console.error('Error loading current chat history:', error);
@@ -1668,7 +1671,11 @@ export default function Dashboard({ user }: DashboardProps) {
           onMessageSelect={handleMessageSelect}
           onSessionLoad={(sessionId: string) => {
             setCurrentSessionId(sessionId);
-            loadCurrentChatHistory();
+            loadCurrentChatHistory(sessionId);
+            toast({
+              title: 'Session loaded',
+              description: 'Switched to selected conversation.',
+            });
           }}
         />
       </div>

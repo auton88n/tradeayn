@@ -172,6 +172,7 @@ export const ChatInterface = ({
       if (maliciousCheck.isMalicious) {
         await reportThreatEvent({
           type: 'malicious_input',
+          severity: 'high',
           details: { 
             content: content.substring(0, 100),
             threats: maliciousCheck.threats,
