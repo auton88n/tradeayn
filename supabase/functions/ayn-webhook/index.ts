@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Webhook URL mapping for different modes
+// Webhook URL mapping for different modes - Updated to match UI mode names
 const WEBHOOK_URLS = {
   'General': Deno.env.get('WEBHOOK_URL_GENERAL') || '',
   'Nen Mode ⚡': Deno.env.get('WEBHOOK_URL_NEN_MODE') || '',
