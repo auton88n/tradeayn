@@ -59,60 +59,6 @@ export type Database = {
         }
         Relationships: []
       }
-      admin_emails: {
-        Row: {
-          content: string
-          created_at: string
-          created_by: string | null
-          email_type: string
-          error_message: string | null
-          html_content: string | null
-          id: string
-          metadata: Json | null
-          received_at: string | null
-          recipient_email: string
-          sender_email: string
-          sent_at: string | null
-          status: string
-          subject: string
-          updated_at: string
-        }
-        Insert: {
-          content: string
-          created_at?: string
-          created_by?: string | null
-          email_type?: string
-          error_message?: string | null
-          html_content?: string | null
-          id?: string
-          metadata?: Json | null
-          received_at?: string | null
-          recipient_email: string
-          sender_email: string
-          sent_at?: string | null
-          status?: string
-          subject: string
-          updated_at?: string
-        }
-        Update: {
-          content?: string
-          created_at?: string
-          created_by?: string | null
-          email_type?: string
-          error_message?: string | null
-          html_content?: string | null
-          id?: string
-          metadata?: Json | null
-          received_at?: string | null
-          recipient_email?: string
-          sender_email?: string
-          sent_at?: string | null
-          status?: string
-          subject?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       ai_mode_configs: {
         Row: {
           created_at: string
@@ -182,39 +128,6 @@ export type Database = {
         }
         Relationships: []
       }
-      auth_email_templates: {
-        Row: {
-          created_at: string
-          html_content: string
-          id: string
-          is_active: boolean
-          subject: string
-          template_type: string
-          text_content: string | null
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          html_content: string
-          id?: string
-          is_active?: boolean
-          subject: string
-          template_type: string
-          text_content?: string | null
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          html_content?: string
-          id?: string
-          is_active?: boolean
-          subject?: string
-          template_type?: string
-          text_content?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
       device_fingerprints: {
         Row: {
           created_at: string
@@ -254,54 +167,6 @@ export type Database = {
           login_count?: number | null
           updated_at?: string
           user_id?: string
-        }
-        Relationships: []
-      }
-      email_templates: {
-        Row: {
-          content: string
-          created_at: string
-          created_by: string | null
-          html_content: string | null
-          id: string
-          is_active: boolean
-          name: string
-          subject: string
-          tags: Json | null
-          template_type: string
-          updated_at: string
-          usage_count: number | null
-          variables: Json | null
-        }
-        Insert: {
-          content: string
-          created_at?: string
-          created_by?: string | null
-          html_content?: string | null
-          id?: string
-          is_active?: boolean
-          name: string
-          subject: string
-          tags?: Json | null
-          template_type?: string
-          updated_at?: string
-          usage_count?: number | null
-          variables?: Json | null
-        }
-        Update: {
-          content?: string
-          created_at?: string
-          created_by?: string | null
-          html_content?: string | null
-          id?: string
-          is_active?: boolean
-          name?: string
-          subject?: string
-          tags?: Json | null
-          template_type?: string
-          updated_at?: string
-          usage_count?: number | null
-          variables?: Json | null
         }
         Relationships: []
       }
@@ -797,75 +662,6 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
-        }
-        Relationships: []
-      }
-      webhook_rate_limits: {
-        Row: {
-          created_at: string | null
-          endpoint: string
-          id: string
-          request_count: number | null
-          updated_at: string | null
-          user_id: string
-          window_start: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          endpoint: string
-          id?: string
-          request_count?: number | null
-          updated_at?: string | null
-          user_id: string
-          window_start?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          endpoint?: string
-          id?: string
-          request_count?: number | null
-          updated_at?: string | null
-          user_id?: string
-          window_start?: string | null
-        }
-        Relationships: []
-      }
-      webhook_security_logs: {
-        Row: {
-          action: string
-          created_at: string | null
-          details: Json | null
-          endpoint: string
-          id: string
-          ip_address: unknown | null
-          request_headers: Json | null
-          severity: string | null
-          user_agent: string | null
-          user_id: string | null
-        }
-        Insert: {
-          action: string
-          created_at?: string | null
-          details?: Json | null
-          endpoint: string
-          id?: string
-          ip_address?: unknown | null
-          request_headers?: Json | null
-          severity?: string | null
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          action?: string
-          created_at?: string | null
-          details?: Json | null
-          endpoint?: string
-          id?: string
-          ip_address?: unknown | null
-          request_headers?: Json | null
-          severity?: string | null
-          user_agent?: string | null
-          user_id?: string | null
         }
         Relationships: []
       }
