@@ -842,6 +842,10 @@ export type Database = {
             }
         Returns: undefined
       }
+      log_sensitive_data_audit: {
+        Args: { _details?: Json; _operation: string; _table_name: string }
+        Returns: undefined
+      }
       log_webhook_security_event: {
         Args: {
           p_action: string
