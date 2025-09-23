@@ -128,6 +128,18 @@ const getModes = (t: (key: string) => string) => [
     color: 'text-orange-500',
     webhookUrl: '' // Will be set by user
   },
+  { 
+    name: 'Crypto', 
+    translatedName: t('modes.crypto') || 'Crypto',
+    description: 'Cryptocurrency analysis and blockchain insights',
+    icon: ({ ...props }) => (
+      <svg {...props} viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.568 8.16c-.169 1.858-.896 2.587-2.777 3.186l.566 2.268-1.382.345-.551-2.207c-.363.091-.735.176-1.104.259l.554 2.218-1.382.345-.566-2.267c-.298.069-.591.135-.873.202v.004l-1.906.476-.367-1.472s1.018-.233 1.005-.248c.556-.139.657-.508.639-.8l-.639-2.561c.038-.009.088-.023.142-.044-.045.011-.092.022-.141.033l-.906-3.626c-.069-.171-.244-.428-.637-.33.014-.02-1.008.252-1.008.252L6.87 5.69l2.021-.504c.376-.094.746-.192 1.110-.288l-.564-2.26 1.382-.345.554 2.218c.375-.085.738-.167 1.094-.246l-.551-2.202 1.382-.345.564 2.259c2.334-.441 4.088-.263 4.826 1.846.595 1.698-.03 2.677-1.257 3.314.894.207 1.567.795 1.748 2.013zm-3.133-4.525c-.423-1.695-3.265-1.537-4.186-1.284l.747 2.991c.922-.23 3.86-.687 3.439-1.707zm.423 4.548c-.471-1.892-3.396-1.726-4.434-1.429l.83 3.329c1.038-.259 4.058-.742 3.604-1.9z"/>
+      </svg>
+    ),
+    color: 'text-yellow-500',
+    webhookUrl: 'https://n8n.srv846714.hstgr.cloud/webhook/5a05ee2a-4be3-4952-ae3f-c23dd8dc8fe5'
+  },
 ];
 
 
@@ -163,7 +175,8 @@ export default function Dashboard({ user }: DashboardProps) {
     'Nen Mode ⚡': '',
     'Research Pro': '',
     'PDF Analyst': '',
-    'Vision Lab': ''
+    'Vision Lab': '',
+    'Crypto': 'https://n8n.srv846714.hstgr.cloud/webhook/5a05ee2a-4be3-4952-ae3f-c23dd8dc8fe5'
   });
 
   // Maintenance mode state
@@ -902,6 +915,45 @@ export default function Dashboard({ user }: DashboardProps) {
     });
   };
 
+  const handleFavoriteChat = async (chat: ChatHistory, index: number) => {
+    try {
+      const { data, error } = await supabase
+        .from('favorite_chats')
+        .insert({
+          user_id: user.id,
+          session_id: chat.sessionId,
+          chat_title: chat.title,
+          chat_data: JSON.parse(JSON.stringify({
+            messages: chat.messages,
+            lastMessage: chat.lastMessage,
+            timestamp: chat.timestamp.toISOString()
+          }))
+        });
+
+      if (error) {
+        console.error('Error favoriting chat:', error);
+        toast({
+          title: "Error",
+          description: "Failed to favorite chat.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      toast({
+        title: "Chat Favorited",
+        description: `"${chat.title}" has been added to your favorites.`,
+      });
+    } catch (error) {
+      console.error('Error favoriting chat:', error);
+      toast({
+        title: "Error", 
+        description: "Failed to favorite chat.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
   };
@@ -996,9 +1048,9 @@ export default function Dashboard({ user }: DashboardProps) {
   };
 
   return (
-    <div className="flex h-screen w-full bg-background overflow-hidden">
+    <div className="flex h-screen w-full bg-background overflow-hidden sidebar-edge-to-edge">
         {/* Sidebar */}
-        <Sidebar collapsible="offcanvas" className="w-56 lg:w-64">
+        <Sidebar collapsible="offcanvas" className="w-56 lg:w-64 border-r-0">
           <SidebarHeader className="p-4">
             {/* User Profile */}
             <div className="flex items-center gap-3">
@@ -1237,6 +1289,20 @@ export default function Dashboard({ user }: DashboardProps) {
                               <span className="text-xs text-muted-foreground truncate group-data-[collapsible=icon]:hidden leading-relaxed">{chat.lastMessage}</span>
                             </div>
                           </SidebarMenuButton>
+                          {!showChatSelection && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleFavoriteChat(chat, index);
+                              }}
+                              className="flex-shrink-0 w-8 h-8 p-0 hover:bg-red-50 hover:text-red-600 transition-colors"
+                              title="Add to favorites"
+                            >
+                              <Heart className="w-4 h-4" />
+                            </Button>
+                          )}
                         </div>
                       </SidebarMenuItem>
                     ))
@@ -1257,7 +1323,7 @@ export default function Dashboard({ user }: DashboardProps) {
         </Sidebar>
 
         {/* Main Chat Area */}
-        <SidebarInset>
+        <SidebarInset className="border-l-0">
           {/* Header */}
           <header className="h-14 sm:h-16 bg-card border-b border-border flex items-center justify-between px-3 sm:px-4 lg:px-6 flex-shrink-0">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">

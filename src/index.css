@@ -493,12 +493,19 @@
     text-align: right;
   }
 
-  [dir="rtl"] .whitespace-pre-wrap {
-    white-space: pre-wrap;
-    word-break: break-word;
-    direction: rtl;
-    text-align: right;
-  }
+/* Remove sidebar border and gaps */
+.sidebar-edge-to-edge [data-sidebar] {
+  border-right: none !important;
+}
+
+.sidebar-edge-to-edge [data-sidebar-inset] {
+  border-left: none !important;
+  margin-left: 0 !important;
+}
+
+.sidebar-edge-to-edge .sidebar-container {
+  gap: 0 !important;
+}
 
   [dir="rtl"] .ml-2 {
     margin-left: 0;

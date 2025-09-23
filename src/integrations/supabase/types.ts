@@ -218,6 +218,36 @@ export type Database = {
         }
         Relationships: []
       }
+      favorite_chats: {
+        Row: {
+          chat_data: Json
+          chat_title: string
+          created_at: string
+          id: string
+          session_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          chat_data?: Json
+          chat_title: string
+          created_at?: string
+          id?: string
+          session_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          chat_data?: Json
+          chat_title?: string
+          created_at?: string
+          id?: string
+          session_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ip_blocks: {
         Row: {
           block_reason: string
