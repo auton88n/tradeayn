@@ -828,6 +828,20 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_user_profile_secure: {
+        Args: { _user_id: string }
+        Returns: {
+          business_context: string
+          business_type: string
+          company_name: string
+          contact_person: string
+          created_at: string
+          id: string
+          phone: string
+          updated_at: string
+          user_id: string
+        }[]
+      }
       has_active_access: {
         Args: { _user_id: string }
         Returns: boolean
@@ -853,6 +867,15 @@ export type Database = {
       }
       log_chat_security_event: {
         Args: { _action: string; _details?: Json; _session_id?: string }
+        Returns: undefined
+      }
+      log_profiles_sensitive_access: {
+        Args: {
+          _accessed_fields?: string[]
+          _additional_context?: Json
+          _operation: string
+          _user_id: string
+        }
         Returns: undefined
       }
       log_security_event: {
