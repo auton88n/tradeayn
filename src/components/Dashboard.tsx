@@ -1320,7 +1320,7 @@ export default function Dashboard({ user }: DashboardProps) {
         </Sidebar>
 
         {/* Main Chat Area */}
-        <SidebarInset className="border-l-0">
+        <SidebarInset className="border-l-0 -ml-px">
           {/* Header */}
           <header className="h-14 sm:h-16 bg-card border-b border-border flex items-center justify-between px-3 sm:px-4 lg:px-6 flex-shrink-0">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
