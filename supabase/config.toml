@@ -1,5 +1,8 @@
 project_id = "dfkoxuokfkttjhfjcecx"
 
+[functions.admin-auth]
+verify_jwt = false
+
 [functions.ayn-webhook]
 verify_jwt = true
 

@@ -4,6 +4,8 @@ interface AdminSession {
   isAuthenticated: boolean;
   authenticatedAt: number | null;
   sessionTimeout: number; // 30 minutes in milliseconds
+  sessionToken?: string;
+  expiresAt?: number;
 }
 
 const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
@@ -15,11 +17,24 @@ export function useAdminSession() {
     if (stored) {
       const parsed = JSON.parse(stored);
       const now = Date.now();
+      
+      // Check server expiration first if available
+      if (parsed.expiresAt && now >= parsed.expiresAt) {
+        return {
+          isAuthenticated: false,
+          authenticatedAt: null,
+          sessionTimeout: SESSION_TIMEOUT
+        };
+      }
+      
+      // Fallback to local timeout check
       if (parsed.authenticatedAt && (now - parsed.authenticatedAt < SESSION_TIMEOUT)) {
         return {
           isAuthenticated: true,
           authenticatedAt: parsed.authenticatedAt,
-          sessionTimeout: SESSION_TIMEOUT
+          sessionTimeout: SESSION_TIMEOUT,
+          sessionToken: parsed.sessionToken,
+          expiresAt: parsed.expiresAt
         };
       }
     }
@@ -30,12 +45,14 @@ export function useAdminSession() {
     };
   });
 
-  const authenticate = () => {
+  const authenticate = (sessionToken?: string, expiresAt?: number) => {
     const now = Date.now();
     const newSession = {
       isAuthenticated: true,
       authenticatedAt: now,
-      sessionTimeout: SESSION_TIMEOUT
+      sessionTimeout: SESSION_TIMEOUT,
+      sessionToken,
+      expiresAt
     };
     setSession(newSession);
     localStorage.setItem(SESSION_KEY, JSON.stringify(newSession));
@@ -45,7 +62,9 @@ export function useAdminSession() {
     const newSession = {
       isAuthenticated: false,
       authenticatedAt: null,
-      sessionTimeout: SESSION_TIMEOUT
+      sessionTimeout: SESSION_TIMEOUT,
+      sessionToken: undefined,
+      expiresAt: undefined
     };
     setSession(newSession);
     localStorage.removeItem(SESSION_KEY);
@@ -54,6 +73,14 @@ export function useAdminSession() {
   const checkSession = () => {
     if (session.isAuthenticated && session.authenticatedAt) {
       const now = Date.now();
+      
+      // Check server-provided expiration if available
+      if (session.expiresAt && now >= session.expiresAt) {
+        logout();
+        return false;
+      }
+      
+      // Fallback to local timeout check
       if (now - session.authenticatedAt >= SESSION_TIMEOUT) {
         logout();
         return false;

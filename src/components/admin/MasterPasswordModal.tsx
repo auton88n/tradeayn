@@ -49,12 +49,24 @@ export function MasterPasswordModal({
     setError('');
 
     try {
-      // In a real implementation, you would validate against the environment variable
-      // For now, we'll use a simple check - in production this should be done server-side
-      const isValid = password === 'admin123'; // This should be replaced with proper validation
+      // Use secure server-side authentication
+      const { supabase } = await import('@/integrations/supabase/client');
       
-      if (isValid) {
-        authenticate();
+      const { data, error } = await supabase.functions.invoke('admin-auth', {
+        body: {
+          password: password.trim(),
+          actionType
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.success) {
+        // Store secure session token
+        authenticate(data.sessionToken, data.expiresAt);
+        
         toast({
           title: "Authentication successful",
           description: "You are now authenticated for admin actions.",
@@ -63,9 +75,10 @@ export function MasterPasswordModal({
         onClose();
         setPassword('');
       } else {
-        setError('Invalid password');
+        setError(data?.message || 'Invalid password');
       }
     } catch (error) {
+      console.error('Authentication error:', error);
       setError('Authentication failed. Please try again.');
     } finally {
       setIsLoading(false);
