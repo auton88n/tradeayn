@@ -56,7 +56,7 @@ const translations = {
     'modes.nenMode': 'Nen Mode',
     'modes.researchPro': 'Research Pro',
     'modes.pdfAnalyst': 'PDF Analyst',
-    'modes.visionLab': 'Vision Lab',
+    'modes.crypto': 'Crypto',
     
     // Header elements
     'header.aynBusinessConsole': 'AYN Business Console',
@@ -442,6 +442,7 @@ const translations = {
     'modes.nenMode': 'وضع نين',
     'modes.researchPro': 'بحث متقدم',
     'modes.pdfAnalyst': 'محلل المستندات',
+    'modes.crypto': 'العملات المشفرة',
     'modes.visionLab': 'مختبر الرؤية',
     
     // Header elements in Arabic
