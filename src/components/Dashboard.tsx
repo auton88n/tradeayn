@@ -201,6 +201,9 @@ export default function Dashboard({ user }: DashboardProps) {
   const [showSearchDialog, setShowSearchDialog] = useState(false);
   const [showFavoritesDialog, setShowFavoritesDialog] = useState(false);
   
+  // Favorite chats state
+  const [favoritedChats, setFavoritedChats] = useState<Set<string>>(new Set());
+  
   const { toast } = useToast();
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -312,6 +315,7 @@ export default function Dashboard({ user }: DashboardProps) {
     checkMaintenanceStatus();
     loadRecentChats();
     loadUserProfile();
+    loadFavoritedChats();
     
     const termsKey = `ayn_terms_accepted_${user.id}`;
     const accepted = localStorage.getItem(termsKey) === 'true';
@@ -405,6 +409,25 @@ export default function Dashboard({ user }: DashboardProps) {
       setUserProfile(data);
     } catch (error) {
       console.error('Profile loading error:', error);
+    }
+  };
+
+  const loadFavoritedChats = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('favorite_chats')
+        .select('session_id')
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error loading favorited chats:', error);
+        return;
+      }
+
+      const favoritedSessionIds = new Set(data?.map(item => item.session_id) || []);
+      setFavoritedChats(favoritedSessionIds);
+    } catch (error) {
+      console.error('Error loading favorited chats:', error);
     }
   };
 
@@ -913,39 +936,80 @@ export default function Dashboard({ user }: DashboardProps) {
   };
 
   const handleFavoriteChat = async (chat: ChatHistory, index: number) => {
+    const isCurrentlyFavorited = favoritedChats.has(chat.sessionId);
+    
     try {
-      const { data, error } = await supabase
-        .from('favorite_chats')
-        .insert({
-          user_id: user.id,
-          session_id: chat.sessionId,
-          chat_title: chat.title,
-          chat_data: JSON.parse(JSON.stringify({
-            messages: chat.messages,
-            lastMessage: chat.lastMessage,
-            timestamp: chat.timestamp.toISOString()
-          }))
+      if (isCurrentlyFavorited) {
+        // Unfavorite the chat
+        const { error } = await supabase
+          .from('favorite_chats')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('session_id', chat.sessionId);
+
+        if (error) {
+          console.error('Error unfavoriting chat:', error);
+          toast({
+            title: "Error",
+            description: "Failed to remove chat from favorites.",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        // Update local state
+        setFavoritedChats(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(chat.sessionId);
+          return newSet;
         });
 
-      if (error) {
-        console.error('Error favoriting chat:', error);
         toast({
-          title: "Error",
-          description: "Failed to favorite chat.",
-          variant: "destructive"
+          title: "Chat Unfavorited",
+          description: `"${chat.title}" has been removed from your favorites.`,
         });
-        return;
-      }
+      } else {
+        // Favorite the chat
+        const { error } = await supabase
+          .from('favorite_chats')
+          .insert({
+            user_id: user.id,
+            session_id: chat.sessionId,
+            chat_title: chat.title,
+            chat_data: JSON.parse(JSON.stringify({
+              messages: chat.messages,
+              lastMessage: chat.lastMessage,
+              timestamp: chat.timestamp.toISOString()
+            }))
+          });
 
-      toast({
-        title: "Chat Favorited",
-        description: `"${chat.title}" has been added to your favorites.`,
-      });
+        if (error) {
+          console.error('Error favoriting chat:', error);
+          toast({
+            title: "Error",
+            description: "Failed to favorite chat.",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        // Update local state
+        setFavoritedChats(prev => {
+          const newSet = new Set(prev);
+          newSet.add(chat.sessionId);
+          return newSet;
+        });
+
+        toast({
+          title: "Chat Favorited",
+          description: `"${chat.title}" has been added to your favorites.`,
+        });
+      }
     } catch (error) {
-      console.error('Error favoriting chat:', error);
+      console.error('Error toggling favorite chat:', error);
       toast({
         title: "Error", 
-        description: "Failed to favorite chat.",
+        description: "Failed to update chat favorites.",
         variant: "destructive"
       });
     }
@@ -1294,10 +1358,14 @@ export default function Dashboard({ user }: DashboardProps) {
                                 e.stopPropagation();
                                 handleFavoriteChat(chat, index);
                               }}
-                              className="flex-shrink-0 w-8 h-8 p-0 hover:bg-red-50 hover:text-red-600 transition-colors"
-                              title="Add to favorites"
+                              className={`flex-shrink-0 w-8 h-8 p-0 transition-colors ${
+                                favoritedChats.has(chat.sessionId) 
+                                  ? 'hover:bg-red-50 text-red-600 hover:text-red-700' 
+                                  : 'hover:bg-red-50 hover:text-red-600'
+                              }`}
+                              title={favoritedChats.has(chat.sessionId) ? "Remove from favorites" : "Add to favorites"}
                             >
-                              <Heart className="w-4 h-4" />
+                              <Heart className={`w-4 h-4 ${favoritedChats.has(chat.sessionId) ? 'fill-current' : ''}`} />
                             </Button>
                           )}
                         </div>
