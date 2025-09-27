@@ -38,6 +38,8 @@ interface ChatHistory {
 
 interface ChatSidebarProps {
   user: User;
+  selectedMode: string;
+  onModeChange: (mode: string) => void;
   recentChats: ChatHistory[];
   onChatLoad: (sessionId: string) => void;
   onNewChat: () => void;
@@ -52,6 +54,8 @@ interface ChatSidebarProps {
 
 export const ChatSidebar = ({
   user,
+  selectedMode,
+  onModeChange,
   recentChats,
   onChatLoad,
   onNewChat,
@@ -69,6 +73,59 @@ export const ChatSidebar = ({
   const { toast } = useToast();
   const { t, language } = useLanguage();
 
+  // Mode definitions with icons
+  const modes = useMemo(() => [
+    {
+      name: 'General',
+      translatedName: t('modes.general'),
+      description: 'General AI assistant for all your needs',
+      icon: MessageSquare,
+      color: 'text-slate-500',
+    },
+    {
+      name: 'Nen Mode ⚡',
+      translatedName: t('modes.nenMode') + ' ⚡',
+      description: 'Ultra-fast AI responses for quick insights',
+      icon: TrendingUp,
+      color: 'text-blue-500',
+    },
+    {
+      name: 'Research Pro',
+      translatedName: t('modes.researchPro'),
+      description: 'Deep research and comprehensive analysis',
+      icon: Search,
+      color: 'text-green-500',
+    },
+    {
+      name: 'PDF Analyst',
+      translatedName: t('modes.pdfAnalyst'),
+      description: 'Specialized document analysis and insights',
+      icon: FileText,
+      color: 'text-purple-500',
+    },
+    {
+      name: 'Vision Lab',
+      translatedName: t('modes.visionLab'),
+      description: 'Advanced image and visual content analysis',
+      icon: Eye,
+      color: 'text-orange-500',
+    },
+    {
+      name: 'Crypto',
+      translatedName: t('modes.crypto'),
+      description: 'Cryptocurrency analysis and blockchain insights',
+      icon: Coins,
+      color: 'text-yellow-500',
+    },
+  ], [t]);
+
+  const handleModeClick = (modeName: string) => {
+    onModeChange(modeName);
+    toast({
+      title: `${modeName} Selected`,
+      description: `Now using ${modeName} for AI responses`,
+    });
+  };
 
   const handleDeleteSelectedChats = async () => {
     if (selectedChats.size === 0) return;
@@ -116,13 +173,15 @@ export const ChatSidebar = ({
       <Sidebar>
       <SidebarHeader className="border-b p-4">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
-            <Eye className="w-4 h-4 text-white" />
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
+            <span className="text-primary-foreground font-bold text-sm">AYN</span>
           </div>
           <div>
-            <h2 className="font-semibold text-sm">VisionLab</h2>
-            <p className="text-xs text-muted-foreground">
+            <h2 className="font-semibold text-sm">
               {userProfile?.contact_person || user.email?.split('@')[0]}
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              {userProfile?.company_name || 'User'}
             </p>
           </div>
         </div>
@@ -193,6 +252,40 @@ export const ChatSidebar = ({
           </TooltipProvider>
         </div>
 
+        {/* AI Modes */}
+        <SidebarGroup>
+          <SidebarGroupLabel>{t('dashboard.aiModes')}</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {modes.map((mode) => {
+                const Icon = mode.icon;
+                const isSelected = selectedMode === mode.name;
+                
+                return (
+                  <SidebarMenuItem key={mode.name}>
+                    <SidebarMenuButton
+                      onClick={() => handleModeClick(mode.name)}
+                      className={`w-full ${isSelected ? 'bg-primary text-primary-foreground' : ''}`}
+                    >
+                      <Icon className={`w-4 h-4 mr-3 ${isSelected ? '' : mode.color}`} />
+                      <div className="flex-1 text-left">
+                        <div className="font-medium text-sm">{mode.translatedName}</div>
+                        <div className="text-xs text-muted-foreground line-clamp-1">
+                          {mode.description}
+                        </div>
+                      </div>
+                      {isSelected && (
+                        <Badge variant="secondary" className="ml-2">
+                          Active
+                        </Badge>
+                      )}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
 
         {/* Recent Chats */}
         {recentChats.length > 0 && (
