@@ -87,68 +87,17 @@ interface ChatHistory {
   sessionId: string;
 }
 
-// Mode definitions with translated names
-const getModes = (t: (key: string) => string) => [
-  { 
-    name: 'General', 
-    translatedName: t('modes.general'),
-    description: 'General AI assistant for all your needs',
-    icon: MessageSquare,
-    color: 'text-slate-500',
-    webhookUrl: '' // Will be set by user
-  },
-  { 
-    name: 'Nen Mode ⚡', 
-    translatedName: t('modes.nenMode') + ' ⚡',
-    description: 'Ultra-fast AI responses for quick insights',
-    icon: TrendingUp,
-    color: 'text-blue-500',
-    webhookUrl: '' // Will be set by user
-  },
-  { 
-    name: 'Research Pro', 
-    translatedName: t('modes.researchPro'),
-    description: 'Deep research and comprehensive analysis',
-    icon: Search,
-    color: 'text-green-500',
-    webhookUrl: '' // Will be set by user
-  },
-  { 
-    name: 'PDF Analyst', 
-    translatedName: t('modes.pdfAnalyst'),
-    description: 'Specialized document analysis and insights',
-    icon: FileText,
-    color: 'text-purple-500',
-    webhookUrl: '' // Will be set by user
-  },
-  { 
-    name: 'Vision Lab', 
-    translatedName: t('modes.visionLab'),
-    description: 'Advanced image and visual content analysis',
-    icon: Eye,
-    color: 'text-orange-500',
-    webhookUrl: '' // Will be set by user
-  },
-  { 
-    name: 'Crypto', 
-    translatedName: t('modes.crypto'),
-    description: 'Cryptocurrency analysis and blockchain insights',
-    icon: Coins,
-    color: 'text-yellow-500',
-    webhookUrl: 'https://n8n.srv846714.hstgr.cloud/webhook/5a05ee2a-4be3-4952-ae3f-c23dd8dc8fe5'
-  },
-];
-
-
-// Helper function to get send button class based on mode
-const getSendButtonClass = (mode: string) => {
-  const modeName = mode.toLowerCase();
-  if (modeName.includes('nen')) return 'mode-blue';
-  if (modeName.includes('research')) return 'mode-green';
-  if (modeName.includes('pdf')) return 'mode-purple';
-  if (modeName.includes('vision')) return 'mode-orange';
-  return 'mode-default';
+// VisionLab - focused on image and visual content analysis
+const VISION_LAB_MODE = {
+  name: 'VisionLab',
+  description: 'Advanced image and visual content analysis',
+  icon: Eye,
+  color: 'text-orange-500',
+  webhookUrl: '' // Will be set by user
 };
+
+// Helper function to get send button class for VisionLab
+const getSendButtonClass = () => 'mode-orange';
 
 export default function Dashboard({ user }: DashboardProps) {
   // State management
@@ -166,15 +115,8 @@ export default function Dashboard({ user }: DashboardProps) {
   const [currentSessionId, setCurrentSessionId] = useState<string>(() => crypto.randomUUID());
   const { t, language, direction, setLanguage } = useLanguage();
   
-  // State for AI modes and webhooks
-  const [selectedMode, setSelectedMode] = useState<string>('Nen Mode ⚡');
-  const [modeWebhooks, setModeWebhooks] = useState<Record<string, string>>({
-    'Nen Mode ⚡': '',
-    'Research Pro': '',
-    'PDF Analyst': '',
-    'Vision Lab': '',
-    'Crypto': 'https://n8n.srv846714.hstgr.cloud/webhook/5a05ee2a-4be3-4952-ae3f-c23dd8dc8fe5'
-  });
+  // VisionLab webhook configuration
+  const [visionLabWebhook, setVisionLabWebhook] = useState<string>('');
 
   // Maintenance mode state
   const [maintenanceConfig, setMaintenanceConfig] = useState({
@@ -210,38 +152,17 @@ export default function Dashboard({ user }: DashboardProps) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // Get modes with translations
-  const modes = getModes(t);
-  
-  // Get mode-specific placeholder texts
-  const getPlaceholderTexts = () => {
-    try {
-      const placeholders = t(`placeholders.${selectedMode}`);
-      if (Array.isArray(placeholders)) {
-        return placeholders;
-      }
-      // Fallback to parsed array if it's stored as a string
-      if (typeof placeholders === 'string') {
-        return JSON.parse(placeholders);
-      }
-    } catch (error) {
-      console.error('Error getting placeholders:', error);
-    }
-    
-    // Fallback to legacy placeholders
-    return [
-      t('dashboard.placeholders.askAyn'),
-      t('dashboard.placeholders.increaseRevenue'),
-      t('dashboard.placeholders.marketTrends'),
-      t('dashboard.placeholders.competitionStrategy'),
-      t('dashboard.placeholders.optimizeSales'),
-      t('dashboard.placeholders.growthOpportunities'),
-      t('dashboard.placeholders.pricingStrategy'),
-      t('dashboard.placeholders.targetMarket')
-    ];
-  };
-  
-  const placeholderTexts = getPlaceholderTexts();
+  // VisionLab placeholder texts
+  const placeholderTexts = [
+    'Analyze this image for me...',
+    'What do you see in this picture?',
+    'Describe the visual elements...',
+    'Extract text from this image...',
+    'Identify objects in this photo...',
+    'Compare these visual elements...',
+    'What patterns do you notice?',
+    'Analyze the composition and colors...'
+  ];
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -513,14 +434,6 @@ export default function Dashboard({ user }: DashboardProps) {
     });
   };
 
-  const handleModeClick = (modeName: string) => {
-    setSelectedMode(modeName);
-    // Optional: Show a toast or indication that the mode was selected
-    toast({
-      title: `${modeName} Selected`,
-      description: `Now using ${modeName} for AI responses`,
-    });
-  };
   
   // Handle message selection from search dialog
   const handleMessageSelect = (message: Message) => {
@@ -662,7 +575,7 @@ export default function Dashboard({ user }: DashboardProps) {
         message: content,
         userId: user.id,
         userEmail: user.email,
-        mode: selectedMode,
+        mode: 'VisionLab',
         sessionId: currentSessionId,
         conversationHistory: messages.slice(-5), // Last 5 messages for context
         userProfile: {
@@ -706,7 +619,7 @@ export default function Dashboard({ user }: DashboardProps) {
         session_id: currentSessionId,
         content: content,
         sender: 'user',
-        mode_used: selectedMode,
+        mode_used: 'VisionLab',
         attachment_url: attachment?.url,
         attachment_name: attachment?.name,
         attachment_type: attachment?.type
@@ -718,7 +631,7 @@ export default function Dashboard({ user }: DashboardProps) {
         session_id: currentSessionId,
         content: response,
         sender: 'ayn',
-        mode_used: selectedMode
+        mode_used: 'VisionLab'
       });
 
       // Refresh recent chats
@@ -1113,11 +1026,22 @@ export default function Dashboard({ user }: DashboardProps) {
         {/* Sidebar */}
         <Sidebar collapsible="offcanvas" className="border-r-0">
           <SidebarHeader className="p-4">
+            {/* VisionLab Header */}
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
+                <Eye className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <h2 className="font-semibold text-sm">VisionLab</h2>
+                <p className="text-xs text-muted-foreground">Image Analysis Platform</p>
+              </div>
+            </div>
+            
             {/* User Profile */}
             <div className="flex items-center gap-3">
-              <Avatar className="h-8 w-8 ring-2 ring-primary/20">
+              <Avatar className="h-8 w-8 ring-2 ring-orange-500/20">
                 <AvatarImage src="" />
-                <AvatarFallback className="bg-gradient-primary text-white font-semibold text-sm">
+                <AvatarFallback className="bg-gradient-to-br from-orange-500 to-orange-600 text-white font-semibold text-sm">
                   {user?.user_metadata?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
                 </AvatarFallback>
               </Avatar>
@@ -1202,29 +1126,6 @@ export default function Dashboard({ user }: DashboardProps) {
               </SidebarGroupContent>
             </SidebarGroup>
 
-            {/* Quick Start */}
-            <SidebarGroup dir={language === 'ar' ? 'rtl' : 'ltr'}>
-              <div className={`w-full flex px-4 py-2 ${language === 'ar' ? 'justify-end' : 'justify-start'}`} style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}>
-                <SidebarGroupLabel className={language === 'ar' ? 'text-right ml-auto' : 'text-left'}>{t('common.quickStart')}</SidebarGroupLabel>
-              </div>
-              <SidebarGroupContent className={language === 'ar' ? 'text-right' : ''}>
-                <SidebarMenu>
-                   {modes.map((mode) => (
-                    <SidebarMenuItem key={mode.name}>
-                       <SidebarMenuButton
-                         onClick={() => handleModeClick(mode.name)}
-                         disabled={!hasAccess || !hasAcceptedTerms}
-                         tooltip={mode.description}
-                         className={`${selectedMode === mode.name ? 'bg-sidebar-accent text-sidebar-accent-foreground' : ''}`}
-                       >
-                         <mode.icon className={`w-4 h-4 flex-shrink-0 ${mode.color} mr-2`} />
-                         <span className={`group-data-[collapsible=icon]:hidden ${language === 'ar' ? 'text-right' : ''}`}>{mode.translatedName}</span>
-                       </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
 
             {/* Recent Chats */}
             <SidebarGroup>
@@ -1396,10 +1297,10 @@ export default function Dashboard({ user }: DashboardProps) {
               <SidebarTrigger />
               
               <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-                <Brain className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
-                <h1 className="font-bold text-sm sm:text-lg truncate">{t('header.aynBusinessConsole')}</h1>
-                <Badge variant="secondary" className="text-xs hidden sm:inline-flex">
-                  {modes.find(mode => mode.name === selectedMode)?.translatedName || selectedMode}
+                <Eye className="w-5 h-5 sm:w-6 sm:h-6 text-orange-500 flex-shrink-0" />
+                <h1 className="font-bold text-sm sm:text-lg truncate">VisionLab</h1>
+                <Badge variant="secondary" className="text-xs hidden sm:inline-flex bg-orange-100 text-orange-700">
+                  Image Analysis
                 </Badge>
               </div>
             </div>
@@ -1651,8 +1552,8 @@ export default function Dashboard({ user }: DashboardProps) {
 
                 <div className={`input-container ${isDragOver ? 'drag-over' : ''}`}>
                   {/* Attachment Button with File Types Dropdown */}
-                  {(selectedMode.toLowerCase().includes('pdf') || selectedMode.toLowerCase().includes('vision') || selectedMode.toLowerCase().includes('general')) ? (
-                    <div className="relative">
+                  {/* VisionLab supports file attachments for image analysis */}
+                  <div className="relative">
                       <button 
                         className="attachment-button group"
                         onClick={handleAttachmentClick}
@@ -1698,8 +1599,7 @@ export default function Dashboard({ user }: DashboardProps) {
                           </div>
                         </div>
                       )}
-                    </div>
-                  ) : null}
+                     </div>
                   
                   {/* Hidden File Input */}
                   <input
@@ -1773,7 +1673,7 @@ export default function Dashboard({ user }: DashboardProps) {
                   
                   {/* Send Button */}
                   <button
-                    className={`send-button ${getSendButtonClass(selectedMode)}`}
+                    className={`send-button ${getSendButtonClass()}`}
                     onClick={() => handleSendMessage()}
                     disabled={(!inputMessage.trim() && !selectedFile) || !hasAccess || !hasAcceptedTerms || isTyping || isUploading}
                   >
