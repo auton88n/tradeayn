@@ -804,6 +804,17 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      create_system_alert: {
+        Args: {
+          p_alert_type: string
+          p_content: string
+          p_metadata?: Json
+          p_recipient_email: string
+          p_subject: string
+          p_user_id?: string
+        }
+        Returns: string
+      }
       delete_user_chat_sessions: {
         Args: { _session_ids: string[]; _user_id: string }
         Returns: boolean
