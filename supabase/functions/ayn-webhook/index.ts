@@ -13,6 +13,7 @@ const WEBHOOK_URLS = {
   'Research Pro': Deno.env.get('WEBHOOK_URL_RESEARCH_PRO') || '',
   'PDF Analyst': Deno.env.get('WEBHOOK_URL_PDF_ANALYST') || '',
   'Vision Lab': Deno.env.get('WEBHOOK_URL_VISION_LAB') || '',
+  'Crypto': Deno.env.get('WEBHOOK_URL_CRYPTO') || '',
 };
 
 // Validate webhook URL
