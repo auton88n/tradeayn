@@ -831,6 +831,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      cleanup_security_data: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       cleanup_security_tables: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -894,6 +898,10 @@ export type Database = {
           security_note: string
           version: string
         }[]
+      }
+      get_security_headers: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
       get_usage_stats: {
         Args: { _user_id?: string }
@@ -1024,6 +1032,10 @@ export type Database = {
       }
       validate_session_ownership: {
         Args: { _session_id: string; _user_id: string }
+        Returns: boolean
+      }
+      validate_session_security: {
+        Args: Record<PropertyKey, never>
         Returns: boolean
       }
     }
