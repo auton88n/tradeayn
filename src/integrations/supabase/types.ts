@@ -793,7 +793,15 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      security_extension_audit: {
+        Row: {
+          extension_name: unknown | null
+          schema_name: unknown | null
+          security_note: string | null
+          version: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       authenticate_or_create_solana_user: {
@@ -857,6 +865,15 @@ export type Database = {
           _window_minutes?: number
         }
         Returns: boolean
+      }
+      get_extension_security_status: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          extension_name: string
+          recommendation: string
+          schema_name: string
+          security_risk: string
+        }[]
       }
       get_profile_phone_secure: {
         Args: { _user_id: string }
