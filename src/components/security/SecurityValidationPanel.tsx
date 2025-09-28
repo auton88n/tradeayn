@@ -6,7 +6,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { 
   Shield, CheckCircle, AlertTriangle, XCircle, 
-  Database, Lock, Eye, Activity, RefreshCw 
+  Database, Lock, Eye, Activity, RefreshCw, Settings
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,9 +16,13 @@ interface SecurityStatus {
   validated_by: string;
   extensions_in_public: number;
   rls_enabled_tables: number;
-  phone_encryption_enabled: boolean;
+  expected_rls_tables: number;
+  active_threats_24h: number;
+  blocked_ips: number;
   security_functions_available: boolean;
   threat_detection_active: boolean;
+  audit_logging_enabled: boolean;
+  rate_limiting_enabled: boolean;
   status: 'SECURE' | 'MOSTLY_SECURE' | 'NEEDS_ATTENTION';
 }
 
@@ -92,11 +96,11 @@ export const SecurityValidationPanel: React.FC = () => {
     const maxScore = 6;
     
     if (securityStatus.extensions_in_public === 0) score += 1;
-    if (securityStatus.rls_enabled_tables >= 4) score += 1;
-    if (securityStatus.phone_encryption_enabled) score += 1;
+    if (securityStatus.rls_enabled_tables >= securityStatus.expected_rls_tables) score += 1;
     if (securityStatus.security_functions_available) score += 1;
     if (securityStatus.threat_detection_active) score += 1;
-    if (securityStatus.status === 'SECURE') score += 1;
+    if (securityStatus.audit_logging_enabled) score += 1;
+    if (securityStatus.rate_limiting_enabled) score += 1;
     
     return Math.round((score / maxScore) * 100);
   };
@@ -181,8 +185,8 @@ export const SecurityValidationPanel: React.FC = () => {
                   
                   <div className="flex items-center justify-between">
                     <span className="text-sm">RLS Enabled Tables</span>
-                    <Badge variant={securityStatus.rls_enabled_tables >= 4 ? 'secondary' : 'destructive'}>
-                      {securityStatus.rls_enabled_tables}/4+
+                    <Badge variant={securityStatus.rls_enabled_tables >= securityStatus.expected_rls_tables ? 'secondary' : 'destructive'}>
+                      {securityStatus.rls_enabled_tables}/{securityStatus.expected_rls_tables}
                     </Badge>
                   </div>
                 </div>
@@ -191,21 +195,28 @@ export const SecurityValidationPanel: React.FC = () => {
               <div className="space-y-3">
                 <h4 className="font-medium flex items-center gap-2">
                   <Lock className="w-4 h-4" />
-                  Data Protection
+                  Security Functions
                 </h4>
                 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm">Phone Encryption</span>
-                    <Badge variant={securityStatus.phone_encryption_enabled ? 'secondary' : 'destructive'}>
-                      {securityStatus.phone_encryption_enabled ? 'Enabled' : 'Disabled'}
+                    <span className="text-sm">Security Functions</span>
+                    <Badge variant={securityStatus.security_functions_available ? 'secondary' : 'destructive'}>
+                      {securityStatus.security_functions_available ? 'Available' : 'Missing'}
                     </Badge>
                   </div>
                   
                   <div className="flex items-center justify-between">
-                    <span className="text-sm">Security Functions</span>
-                    <Badge variant={securityStatus.security_functions_available ? 'secondary' : 'destructive'}>
-                      {securityStatus.security_functions_available ? 'Available' : 'Missing'}
+                    <span className="text-sm">Audit Logging</span>
+                    <Badge variant={securityStatus.audit_logging_enabled ? 'secondary' : 'destructive'}>
+                      {securityStatus.audit_logging_enabled ? 'Enabled' : 'Disabled'}
+                    </Badge>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Rate Limiting</span>
+                    <Badge variant={securityStatus.rate_limiting_enabled ? 'secondary' : 'destructive'}>
+                      {securityStatus.rate_limiting_enabled ? 'Enabled' : 'Disabled'}
                     </Badge>
                   </div>
                 </div>
@@ -242,11 +253,20 @@ export const SecurityValidationPanel: React.FC = () => {
                 {securityStatus.extensions_in_public > 0 && (
                   <p>• Consider moving extensions from public schema to extensions schema</p>
                 )}
-                {securityStatus.rls_enabled_tables < 4 && (
+                {securityStatus.rls_enabled_tables < securityStatus.expected_rls_tables && (
                   <p>• Enable Row Level Security on all sensitive tables</p>
                 )}
-                {!securityStatus.phone_encryption_enabled && (
-                  <p>• Enable phone number encryption for customer data protection</p>
+                {!securityStatus.security_functions_available && (
+                  <p>• Deploy required security functions to database</p>
+                )}
+                {!securityStatus.audit_logging_enabled && (
+                  <p>• Enable comprehensive audit logging system</p>
+                )}
+                {!securityStatus.rate_limiting_enabled && (
+                  <p>• Implement rate limiting for API protection</p>
+                )}
+                {securityStatus.active_threats_24h > 0 && (
+                  <p>• Review and address {securityStatus.active_threats_24h} active threat(s)</p>
                 )}
                 {securityStatus.status === 'SECURE' && (
                   <p className="text-green-600">• All security measures are properly configured ✓</p>
