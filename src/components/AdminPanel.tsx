@@ -5,11 +5,13 @@ import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { 
-  Crown, RefreshCw, Activity, BarChart3, Settings, Users
+  Crown, RefreshCw, Activity, BarChart3, Settings, Users, Shield
 } from 'lucide-react';
 import { AdminDashboard } from './admin/AdminDashboard';
 import { UserManagement } from './admin/UserManagement';
 import { SystemSettings } from './admin/SystemSettings';
+import { ThreatMonitoringDashboard } from '@/components/security/ThreatMonitoringDashboard';
+import { SecurityValidationPanel } from '@/components/security/SecurityValidationPanel';
 import { MasterPasswordModal } from './admin/MasterPasswordModal';
 import { ErrorBoundary } from './ErrorBoundary';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -318,7 +320,7 @@ export const AdminPanel = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview" className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
             <BarChart3 className="w-4 h-4" />
             {t('admin.dashboard')}
@@ -330,6 +332,14 @@ export const AdminPanel = () => {
           <TabsTrigger value="settings" className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
             <Settings className="w-4 h-4" />
             {t('admin.settings')}
+          </TabsTrigger>
+          <TabsTrigger value="security" className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+            <Shield className="w-4 h-4" />
+            Security
+          </TabsTrigger>
+          <TabsTrigger value="validation" className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+            <Activity className="w-4 h-4" />
+            Validation
           </TabsTrigger>
         </TabsList>
 
@@ -359,6 +369,18 @@ export const AdminPanel = () => {
               onRefresh={fetchData}
               requireAuthentication={requireAuthentication}
             />
+          </ErrorBoundary>
+        </TabsContent>
+
+        <TabsContent value="security">
+          <ErrorBoundary>
+            <ThreatMonitoringDashboard />
+          </ErrorBoundary>
+        </TabsContent>
+
+        <TabsContent value="validation">
+          <ErrorBoundary>
+            <SecurityValidationPanel />
           </ErrorBoundary>
         </TabsContent>
       </Tabs>
