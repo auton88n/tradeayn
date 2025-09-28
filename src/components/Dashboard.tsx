@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { log } from '@/lib/secureLogger';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -225,7 +226,9 @@ export default function Dashboard({ user }: DashboardProps) {
         return JSON.parse(placeholders);
       }
     } catch (error) {
-      console.error('Error getting placeholders:', error);
+      log.error('Error getting placeholders', { 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
     }
     
     // Fallback to legacy placeholders

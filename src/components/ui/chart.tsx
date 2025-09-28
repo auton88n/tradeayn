@@ -74,28 +74,52 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
     return null
   }
 
-  return (
-    <style
-      dangerouslySetInnerHTML={{
-        __html: Object.entries(THEMES)
-          .map(
-            ([theme, prefix]) => `
-${prefix} [data-chart=${id}] {
-${colorConfig
-  .map(([key, itemConfig]) => {
-    const color =
-      itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ||
-      itemConfig.color
-    return color ? `  --color-${key}: ${color};` : null
-  })
-  .join("\n")}
-}
-`
-          )
-          .join("\n"),
-      }}
-    />
-  )
+  // Generate CSS rules safely without dangerouslySetInnerHTML
+  const cssRules = Object.entries(THEMES)
+    .map(([theme, prefix]) => {
+      const colorStyles = colorConfig
+        .map(([key, itemConfig]) => {
+          const color =
+            itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ||
+            itemConfig.color
+          
+          // Sanitize color values to prevent injection
+          if (!color || typeof color !== 'string') return null
+          const sanitizedColor = color.replace(/[<>'"]/g, '')
+          
+          return sanitizedColor ? `--color-${key.replace(/[^a-zA-Z0-9-_]/g, '')}: ${sanitizedColor};` : null
+        })
+        .filter(Boolean)
+        .join(' ')
+
+      return { prefix, selector: `[data-chart="${id.replace(/[^a-zA-Z0-9-_]/g, '')}"]`, styles: colorStyles }
+    })
+    .filter(rule => rule.styles)
+
+  // Create style element with secure CSS injection
+  React.useEffect(() => {
+    const styleId = `chart-style-${id}`
+    let styleElement = document.getElementById(styleId) as HTMLStyleElement
+    
+    if (!styleElement) {
+      styleElement = document.createElement('style')
+      styleElement.id = styleId
+      document.head.appendChild(styleElement)
+    }
+
+    const css = cssRules
+      .map(({ prefix, selector, styles }) => `${prefix} ${selector} { ${styles} }`)
+      .join('\n')
+    
+    styleElement.textContent = css
+
+    return () => {
+      const el = document.getElementById(styleId)
+      if (el) el.remove()
+    }
+  }, [id, cssRules])
+
+  return null
 }
 
 const ChartTooltip = RechartsPrimitive.Tooltip

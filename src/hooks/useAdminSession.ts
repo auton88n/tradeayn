@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useSecureSession } from './useSecureSession';
+import { log } from '@/lib/secureLogger';
 
 interface AdminSession {
   isAuthenticated: boolean;
@@ -12,105 +14,59 @@ const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 const SESSION_KEY = 'admin_session';
 
 export function useAdminSession() {
-  const [session, setSession] = useState<AdminSession>(() => {
-    const stored = localStorage.getItem(SESSION_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      const now = Date.now();
-      
-      // Check server expiration first if available
-      if (parsed.expiresAt && now >= parsed.expiresAt) {
-        return {
-          isAuthenticated: false,
-          authenticatedAt: null,
-          sessionTimeout: SESSION_TIMEOUT
-        };
-      }
-      
-      // Fallback to local timeout check
-      if (parsed.authenticatedAt && (now - parsed.authenticatedAt < SESSION_TIMEOUT)) {
-        return {
-          isAuthenticated: true,
-          authenticatedAt: parsed.authenticatedAt,
-          sessionTimeout: SESSION_TIMEOUT,
-          sessionToken: parsed.sessionToken,
-          expiresAt: parsed.expiresAt
-        };
-      }
-    }
-    return {
-      isAuthenticated: false,
-      authenticatedAt: null,
-      sessionTimeout: SESSION_TIMEOUT
-    };
+  // Use secure session management with enhanced security
+  const secureSession = useSecureSession({
+    timeout: SESSION_TIMEOUT,
+    enableRotation: true,
+    storageKey: 'admin_secure_session'
   });
 
+  const [adminData, setAdminData] = useState<{
+    sessionToken?: string;
+    expiresAt?: number;
+  }>({});
+
+  // Legacy compatibility layer
+  const session: AdminSession = {
+    isAuthenticated: secureSession.isAuthenticated,
+    authenticatedAt: secureSession.isAuthenticated ? Date.now() : null,
+    sessionTimeout: SESSION_TIMEOUT,
+    sessionToken: adminData.sessionToken,
+    expiresAt: adminData.expiresAt
+  };
+
   const authenticate = (sessionToken?: string, expiresAt?: number) => {
-    const now = Date.now();
-    const newSession = {
-      isAuthenticated: true,
-      authenticatedAt: now,
-      sessionTimeout: SESSION_TIMEOUT,
-      sessionToken,
-      expiresAt
-    };
-    setSession(newSession);
-    localStorage.setItem(SESSION_KEY, JSON.stringify(newSession));
+    // Use secure session authentication
+    secureSession.authenticate({ sessionToken, expiresAt, userRole: 'admin' });
+    
+    // Store admin-specific data securely (no sensitive tokens in localStorage)
+    setAdminData({ sessionToken, expiresAt });
+    
+    log.security('admin_authenticated', { 
+      hasToken: !!sessionToken, 
+      expiresAt 
+    }, 'medium');
   };
 
   const logout = () => {
-    const newSession = {
-      isAuthenticated: false,
-      authenticatedAt: null,
-      sessionTimeout: SESSION_TIMEOUT,
-      sessionToken: undefined,
-      expiresAt: undefined
-    };
-    setSession(newSession);
-    localStorage.removeItem(SESSION_KEY);
+    // Use secure logout
+    secureSession.logout();
+    
+    // Clear admin-specific data
+    setAdminData({});
+    
+    log.security('admin_logged_out', {}, 'low');
   };
 
   const checkSession = () => {
-    if (session.isAuthenticated && session.authenticatedAt) {
-      const now = Date.now();
-      
-      // Check server-provided expiration if available
-      if (session.expiresAt && now >= session.expiresAt) {
-        logout();
-        return false;
-      }
-      
-      // Fallback to local timeout check
-      if (now - session.authenticatedAt >= SESSION_TIMEOUT) {
-        logout();
-        return false;
-      }
-      return true;
-    }
-    return false;
+    return secureSession.checkSession();
   };
 
   const getRemainingTime = () => {
-    if (session.isAuthenticated && session.authenticatedAt) {
-      const elapsed = Date.now() - session.authenticatedAt;
-      const remaining = SESSION_TIMEOUT - elapsed;
-      return Math.max(0, remaining);
-    }
-    return 0;
+    return secureSession.getRemainingTime();
   };
 
-  // Auto logout on timeout
-  useEffect(() => {
-    if (session.isAuthenticated) {
-      const interval = setInterval(() => {
-        if (!checkSession()) {
-          clearInterval(interval);
-        }
-      }, 60000); // Check every minute
-
-      return () => clearInterval(interval);
-    }
-  }, [session.isAuthenticated]);
+  // Session management is handled by useSecureSession
 
   return {
     isAuthenticated: session.isAuthenticated,
