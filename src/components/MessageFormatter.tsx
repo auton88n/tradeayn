@@ -355,8 +355,8 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
           </span>
         );
       } else if (match[9]) {
-        // Header (##text##)
-        parts.push(<strong key={`h-${baseKey}-${match.index}`} className="text-lg font-bold text-primary block my-2">{match[9]}</strong>);
+        // Header (##text##) - render as actual h2 element
+        parts.push(<h2 key={`h-${baseKey}-${match.index}`} className="text-lg font-bold text-primary block my-2 border-b border-border pb-1">{match[9]}</h2>);
       }
       
       lastIndex = match.index + match[0].length;

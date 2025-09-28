@@ -254,6 +254,14 @@ export default function Dashboard({ user }: DashboardProps) {
     scrollToBottom();
   }, [messages]);
 
+  // Reset textarea height when input is cleared
+  useEffect(() => {
+    if (inputMessage === '' && inputRef.current) {
+      inputRef.current.style.height = '44px';
+      inputRef.current.style.overflowY = 'hidden';
+    }
+  }, [inputMessage]);
+
   // Manage animated placeholder rotation
   useEffect(() => {
     if (!inputMessage.trim()) {
@@ -657,6 +665,13 @@ export default function Dashboard({ user }: DashboardProps) {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+    
+    // Immediately reset textarea height
+    if (inputRef.current) {
+      inputRef.current.style.height = '44px';
+      inputRef.current.style.overflowY = 'hidden';
+    }
+    
     setIsTyping(true);
 
     try {
@@ -680,58 +695,80 @@ export default function Dashboard({ user }: DashboardProps) {
         timestamp: new Date().toISOString()
       };
 
-      // Call AYN webhook through edge function
-      const { data: webhookResponse, error: webhookError } = await supabase.functions.invoke('ayn-webhook', {
-        body: payload
-      });
-      
-      setIsTyping(false);
+      // Create timeout controller for AYN response
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+      }, 30000); // 30 second timeout
 
-      if (webhookError) {
-        throw new Error(webhookError.message || 'Webhook call failed');
+      try {
+        // Call AYN webhook through edge function with timeout
+        const { data: webhookResponse, error: webhookError } = await supabase.functions.invoke('ayn-webhook', {
+          body: payload,
+          headers: {
+            'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+          },
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (webhookError) {
+          throw new Error(webhookError.message || 'Webhook call failed');
+        }
+        
+        setIsTyping(false);
+
+        const response = webhookResponse?.response || 'I received your message and I\'m processing it. Please try again if you don\'t see a proper response.';
+
+        const aynMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: response,
+          sender: 'ayn',
+          timestamp: new Date(),
+          isTyping: true,
+        };
+
+        setMessages(prev => [...prev, aynMessage]);
+
+        // Save user message to database
+        await supabase.from('messages').insert({
+          user_id: user.id,
+          session_id: currentSessionId,
+          content: content,
+          sender: 'user',
+          mode_used: selectedMode,
+          attachment_url: attachment?.url,
+          attachment_name: attachment?.name,
+          attachment_type: attachment?.type
+        });
+
+        // Save AI response to database
+        await supabase.from('messages').insert({
+          user_id: user.id,
+          session_id: currentSessionId,
+          content: response,
+          sender: 'ayn',
+          mode_used: selectedMode
+        });
+
+        // Refresh recent chats
+        loadRecentChats();
+        
+      } catch (abortError) {
+        clearTimeout(timeoutId);
+        if (controller.signal.aborted) {
+          throw new Error('AYN response timed out. Please try again.');
+        }
+        throw abortError;
       }
-
-      const response = webhookResponse?.response || 'I received your message and I\'m processing it. Please try again if you don\'t see a proper response.';
-
-      const aynMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: response,
-        sender: 'ayn',
-        timestamp: new Date(),
-        isTyping: true,
-      };
-
-      setMessages(prev => [...prev, aynMessage]);
-
-      // Save user message to database
-      await supabase.from('messages').insert({
-        user_id: user.id,
-        session_id: currentSessionId,
-        content: content,
-        sender: 'user',
-        mode_used: selectedMode,
-        attachment_url: attachment?.url,
-        attachment_name: attachment?.name,
-        attachment_type: attachment?.type
-      });
-
-      // Save AI response to database
-      await supabase.from('messages').insert({
-        user_id: user.id,
-        session_id: currentSessionId,
-        content: response,
-        sender: 'ayn',
-        mode_used: selectedMode
-      });
-
-      // Refresh recent chats
-      loadRecentChats();
 
     } catch (error) {
       setIsTyping(false);
+      const errorMsg = error instanceof Error ? error.message : "I'm sorry, I'm having trouble connecting right now. Please try again in a moment.";
+      
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: "I'm sorry, I'm having trouble connecting right now. Please try again in a moment.",
+        content: errorMsg,
         sender: 'ayn',
         timestamp: new Date(),
       };
@@ -740,7 +777,7 @@ export default function Dashboard({ user }: DashboardProps) {
       
       toast({
         title: "Connection Error",
-        description: "Unable to reach AYN. Please try again.",
+        description: errorMsg.includes('timed out') ? 'AYN response timed out. Please try again.' : "Unable to reach AYN. Please try again.",
         variant: "destructive"
       });
     }
@@ -1508,7 +1545,7 @@ export default function Dashboard({ user }: DashboardProps) {
                               <TypewriterText
                                 text={message.content}
                                 speed={2}
-                                className={`inline-block transition-all duration-300 hover:tracking-wide text-foreground hover:text-primary hover:drop-shadow-sm group-hover:scale-[1.02] transform-gpu`}
+                                className={`inline-block transition-all duration-300 text-foreground group-hover:scale-[1.02] transform-gpu`}
                                 onComplete={() => {
                                   setMessages(prev => 
                                     prev.map(msg => 
@@ -1524,8 +1561,8 @@ export default function Dashboard({ user }: DashboardProps) {
                                 content={message.content}
                                 className={`transition-all duration-300 ${
                                   message.sender === 'user' 
-                                    ? 'text-primary-foreground hover:text-white' 
-                                    : 'text-foreground hover:text-primary'
+                                    ? 'text-primary-foreground' 
+                                    : 'text-foreground'
                                 } group-hover:scale-[1.02] transform-gpu`}
                               />
                             )}

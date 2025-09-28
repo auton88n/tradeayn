@@ -326,7 +326,7 @@
   /* Mobile-Style Floating Input Bar */
   .input-area {
     position: fixed;
-    z-index: 9; /* Keep under sidebar (z-10) so it never covers it */
+    z-index: 5; /* Lower z-index so it stays below messages and other content */
     transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     padding: 0 12px;
   }
