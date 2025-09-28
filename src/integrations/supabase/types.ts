@@ -128,39 +128,6 @@ export type Database = {
         }
         Relationships: []
       }
-      api_rate_limits: {
-        Row: {
-          blocked_until: string | null
-          created_at: string
-          endpoint: string
-          id: string
-          identifier: string
-          request_count: number
-          updated_at: string
-          window_start: string
-        }
-        Insert: {
-          blocked_until?: string | null
-          created_at?: string
-          endpoint: string
-          id?: string
-          identifier: string
-          request_count?: number
-          updated_at?: string
-          window_start?: string
-        }
-        Update: {
-          blocked_until?: string | null
-          created_at?: string
-          endpoint?: string
-          id?: string
-          identifier?: string
-          request_count?: number
-          updated_at?: string
-          window_start?: string
-        }
-        Relationships: []
-      }
       device_fingerprints: {
         Row: {
           created_at: string

@@ -94,17 +94,7 @@ export const ThreatMonitoringDashboard = () => {
 
       if (alertsError) throw alertsError;
 
-      // Load security dashboard data (optional, may not exist yet)
-      try {
-        const { data: dashboardQuery } = await supabase
-          .from('api_rate_limits')
-          .select('count(*)')
-          .limit(1);
-        
-        console.log('Enhanced security monitoring active');
-      } catch (dashboardError) {
-        console.warn('Enhanced security features not fully initialized');
-      }
+      // Security monitoring is active with core features
 
       setThreats((threatsData || []).map(t => ({
         ...t,
