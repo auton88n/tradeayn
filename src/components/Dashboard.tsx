@@ -257,7 +257,7 @@ export default function Dashboard({ user }: DashboardProps) {
   // Reset textarea height when input is cleared
   useEffect(() => {
     if (inputMessage === '' && inputRef.current) {
-      inputRef.current.style.height = '44px';
+      inputRef.current.style.height = '40px';
       inputRef.current.style.overflowY = 'hidden';
     }
   }, [inputMessage]);
@@ -661,14 +661,10 @@ export default function Dashboard({ user }: DashboardProps) {
 
     setMessages(prev => [...prev, userMessage]);
     setInputMessage('');
-    setSelectedFile(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
     
-    // Immediately reset textarea height
+    // Immediately reset textarea height with smooth transition
     if (inputRef.current) {
-      inputRef.current.style.height = '44px';
+      inputRef.current.style.height = '40px';
       inputRef.current.style.overflowY = 'hidden';
     }
     
@@ -757,7 +753,14 @@ export default function Dashboard({ user }: DashboardProps) {
       } catch (abortError) {
         clearTimeout(timeoutId);
         if (controller.signal.aborted) {
-          throw new Error('AYN response timed out. Please try again.');
+          console.log('Request timed out after 30 seconds');
+          setIsTyping(false);
+          toast({
+            title: "Response Timeout", 
+            description: "AYN took too long to respond. Please try again.",
+            variant: "destructive"
+          });
+          return;
         }
         throw abortError;
       }
@@ -1623,7 +1626,7 @@ export default function Dashboard({ user }: DashboardProps) {
               {/* Mobile-Style Floating Input Bar */}
               <div 
                 dir="ltr"
-                className={`input-area ${messages.length > 1 ? 'bottom-position' : 'center-position'}`}
+                className={`input-area ${messages.length > 0 ? 'bottom-position' : 'center-position'}`}
                 onDragEnter={handleDragEnter}
                 onDragLeave={handleDragLeave}
                 onDragOver={handleDragOver}
