@@ -431,11 +431,12 @@ export const ChatInterface = ({
               )}
               
               <div
-                className={`relative max-w-[85%] md:max-w-[70%] rounded-lg px-4 py-2 group transition-colors duration-200 ${
+                className={`relative max-w-[85%] md:max-w-[70%] rounded-lg px-4 py-2 group transition-colors duration-200 overflow-hidden ${
                   message.sender === 'user'
                     ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                     : 'bg-muted text-foreground hover:bg-muted/80'
                 }`}
+                style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}
               >
                 <div className="flex flex-col gap-2">
                   {message.attachment && (
@@ -448,7 +449,7 @@ export const ChatInterface = ({
                     </div>
                   )}
                   
-                  <div className="text-sm">
+                  <div className="text-sm break-words whitespace-pre-wrap">
                     <MessageFormatter content={message.content} />
                   </div>
                   
@@ -463,7 +464,7 @@ export const ChatInterface = ({
                 </div>
 
                 {/* Message Actions */}
-                <div className="absolute -top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-background border rounded-md shadow-md flex">
+                <div className="absolute -top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-background/95 backdrop-blur-sm border rounded-md shadow-md flex z-10">
                   <Button
                     variant="ghost"
                     size="sm"

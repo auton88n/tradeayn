@@ -303,7 +303,7 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
         return (
           <code 
             key={index} 
-            className="bg-muted text-current px-1.5 py-0.5 rounded text-sm font-mono border"
+            className="bg-muted/80 text-foreground px-1.5 py-0.5 rounded text-sm font-mono border border-border"
           >
             {part.content}
           </code>
@@ -316,8 +316,8 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
   };
 
   const formatBoldItalic = (text: string, baseKey: number) => {
-    // Handle **bold**, *italic*, __underline__, ~~strikethrough~~, and other formatting
-    const formatRegex = /(\*\*\*([^*]+)\*\*\*|\*\*([^*]+)\*\*|\*([^*]+)\*|__([^_]+)__|~~([^~]+)~~|==([^=]+)==|\|\|([^|]+)\|\|)/g;
+    // Handle **bold**, *italic*, __underline__, ~~strikethrough~~, ##header##, and other formatting
+    const formatRegex = /(\*\*\*([^*]+)\*\*\*|\*\*([^*]+)\*\*|\*([^*]+)\*|__([^_]+)__|~~([^~]+)~~|==([^=]+)==|\|\|([^|]+)\|\||##([^#]+)##)/g;
     const parts = [];
     let lastIndex = 0;
     let match;
@@ -354,6 +354,9 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
             {match[8]}
           </span>
         );
+      } else if (match[9]) {
+        // Header (##text##)
+        parts.push(<strong key={`h-${baseKey}-${match.index}`} className="text-lg font-bold text-primary block my-2">{match[9]}</strong>);
       }
       
       lastIndex = match.index + match[0].length;
