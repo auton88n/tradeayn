@@ -8,8 +8,26 @@ interface MessageFormatterProps {
 }
 
 export function MessageFormatter({ content, className }: MessageFormatterProps) {
-  // Sanitize content to prevent XSS attacks
-  const sanitizedContent = isValidUserInput(content) ? content : sanitizeUserInput(content);
+  // Clean system tags first
+  const cleanSystemTags = (text: string): string => {
+    // Remove <lov-actions> blocks entirely (including content)
+    text = text.replace(/<lov-actions>[\s\S]*?<\/lov-actions>/gi, '');
+    
+    // Extract content from <lov-plan> tags but remove the tags themselves
+    text = text.replace(/<lov-plan>([\s\S]*?)<\/lov-plan>/gi, '$1');
+    
+    // Remove other system tags and their content (lov-message-prompt, lov-link, etc.)
+    text = text.replace(/<lov-(?!plan)[\w-]*>[\s\S]*?<\/lov-[\w-]*>/gi, '');
+    
+    // Remove standalone system tags (self-closing or single tags)
+    text = text.replace(/<lov-[\w-]*[^>]*\/?>/gi, '');
+    
+    return text.trim();
+  };
+
+  // Clean system tags and sanitize content to prevent XSS attacks
+  const cleanedContent = cleanSystemTags(content);
+  const sanitizedContent = isValidUserInput(cleanedContent) ? cleanedContent : sanitizeUserInput(cleanedContent);
   
   const formatMessage = (text: string) => {
     // Split by code blocks first
