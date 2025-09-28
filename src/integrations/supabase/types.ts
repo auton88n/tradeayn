@@ -403,8 +403,6 @@ export type Database = {
           contact_person: string | null
           created_at: string
           id: string
-          phone: string | null
-          phone_encrypted: string | null
           updated_at: string
           user_id: string
         }
@@ -415,8 +413,6 @@ export type Database = {
           contact_person?: string | null
           created_at?: string
           id?: string
-          phone?: string | null
-          phone_encrypted?: string | null
           updated_at?: string
           user_id: string
         }
@@ -427,8 +423,6 @@ export type Database = {
           contact_person?: string | null
           created_at?: string
           id?: string
-          phone?: string | null
-          phone_encrypted?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -843,10 +837,6 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
-      decrypt_phone_number: {
-        Args: { _encrypted_phone: string }
-        Returns: string
-      }
       delete_user_chat_sessions: {
         Args: { _session_ids: string[]; _user_id: string }
         Returns: boolean
@@ -859,10 +849,6 @@ export type Database = {
           _threat_type: string
         }
         Returns: boolean
-      }
-      encrypt_phone_number: {
-        Args: { _phone_number: string }
-        Returns: string
       }
       enhanced_rate_limit_check: {
         Args: {
@@ -881,14 +867,6 @@ export type Database = {
           schema_name: string
           security_risk: string
         }[]
-      }
-      get_phone_number_secure: {
-        Args: { _user_id: string }
-        Returns: string
-      }
-      get_profile_phone_secure: {
-        Args: { _user_id: string }
-        Returns: string
       }
       get_security_extension_audit: {
         Args: Record<PropertyKey, never>
@@ -1021,10 +999,6 @@ export type Database = {
           _trigger_reason: string
         }
         Returns: string
-      }
-      update_phone_number_secure: {
-        Args: { _new_phone: string; _user_id: string }
-        Returns: boolean
       }
       validate_input_sanitization: {
         Args: { input_text: string }

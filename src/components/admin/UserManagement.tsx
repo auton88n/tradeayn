@@ -16,15 +16,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { EditLimitModal } from './EditLimitModal';
 
-interface Profile {
-  id: string;
-  user_id: string;
-  company_name: string | null;
-  contact_person: string | null;
-  phone: string | null;
-  created_at: string;
-}
-
 interface AccessGrantWithProfile {
   id: string;
   user_id: string;
@@ -36,7 +27,13 @@ interface AccessGrantWithProfile {
   monthly_limit: number | null;
   current_month_usage: number;
   user_email?: string;
-  profiles: Profile | null;
+  profiles: {
+    id: string;
+    user_id: string;
+    company_name: string | null;
+    contact_person: string | null;
+    created_at: string;
+  } | null;
 }
 
 interface UserManagementProps {
@@ -379,7 +376,7 @@ export const UserManagement = ({ allUsers, onRefresh, requireAuthentication }: U
                             </span>
                             <span className={`flex items-center gap-1 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
                               <Phone className="w-3 h-3" />
-                              {user.profiles?.contact_person || t('admin.noContact')}
+                              {user.profiles?.company_name || t('admin.noCompany')}
                             </span>
                           </div>
                           <div className="space-y-2">

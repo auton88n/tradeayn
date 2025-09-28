@@ -22,7 +22,6 @@ interface Profile {
   user_id: string;
   company_name: string | null;
   contact_person: string | null;
-  phone: string | null;
   created_at: string;
 }
 
@@ -107,7 +106,6 @@ export const AdminPanel = () => {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      console.log('AdminPanel: Starting data fetch...');
       
       // Fetch access grants and profiles with optimized queries
       const [accessResult, profilesResult, usageResult, todayUsageResult] = await Promise.all([
@@ -119,7 +117,7 @@ export const AdminPanel = () => {
         
         supabase
           .from('profiles')
-          .select('id, user_id, company_name, contact_person, phone, created_at')
+          .select('id, user_id, company_name, contact_person, created_at')
           .limit(1000), // Add limit for better performance
         
         supabase.rpc('get_usage_stats'),
