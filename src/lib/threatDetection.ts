@@ -13,10 +13,22 @@ export interface ThreatEvent {
 }
 
 /**
- * Report a security threat event
+ * Report a security threat event with enhanced rate limiting
  */
 export async function reportThreatEvent(event: ThreatEvent): Promise<boolean> {
   try {
+    // Check rate limiting before reporting
+    const { data: rateLimitOk } = await supabase.rpc('enhanced_rate_limit_check', {
+      _action_type: 'threat_reporting',
+      _max_attempts: 10,
+      _window_minutes: 5
+    });
+
+    if (!rateLimitOk) {
+      console.warn('Threat reporting rate limited');
+      return false;
+    }
+
     const clientIp = await getClientIP();
     
     // Call edge function for threat processing
@@ -146,16 +158,23 @@ export class ThreatMonitor {
 }
 
 /**
- * Validate input for malicious content
+ * Enhanced input validation with comprehensive security checks
  */
 export function detectMaliciousInput(input: string): { isMalicious: boolean; threats: string[] } {
   const threats: string[] = [];
   
-  // SQL Injection patterns
+  // Length validation
+  if (input.length > 10000) {
+    threats.push('Input exceeds maximum length');
+  }
+  
+  // SQL Injection patterns (enhanced)
   const sqlPatterns = [
-    /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION)\b)/gi,
-    /'(\s)*(OR|AND)\s*'?\d/gi,
-    /;\s*(SELECT|INSERT|UPDATE|DELETE)/gi
+    /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION|TRUNCATE|REPLACE)\b)/gi,
+    /'(\s)*(OR|AND)\s*('?\d|'?\w)/gi,
+    /;\s*(SELECT|INSERT|UPDATE|DELETE|DROP)/gi,
+    /(UNION\s+SELECT|ORDER\s+BY|GROUP\s+BY)/gi,
+    /(\|\||&&|\bAND\b|\bOR\b)\s*['"]?(\d+|true|false)['"]?\s*=\s*['"]?(\d+|true|false)/gi
   ];
   
   sqlPatterns.forEach(pattern => {
@@ -164,13 +183,18 @@ export function detectMaliciousInput(input: string): { isMalicious: boolean; thr
     }
   });
   
-  // XSS patterns
+  // XSS patterns (enhanced)
   const xssPatterns = [
     /<script[^>]*>.*?<\/script>/gi,
-    /javascript:/gi,
-    /on\w+\s*=/gi,
+    /javascript:\s*[^;]*/gi,
+    /on\w+\s*=\s*["'][^"']*["']/gi,
     /<iframe[^>]*>/gi,
-    /eval\s*\(/gi
+    /eval\s*\([^)]*\)/gi,
+    /<object[^>]*>/gi,
+    /<embed[^>]*>/gi,
+    /expression\s*\([^)]*\)/gi,
+    /vbscript:/gi,
+    /data:\s*text\/html/gi
   ];
   
   xssPatterns.forEach(pattern => {
@@ -179,16 +203,47 @@ export function detectMaliciousInput(input: string): { isMalicious: boolean; thr
     }
   });
   
-  // Command injection
+  // Command injection (enhanced)
   const commandPatterns = [
-    /;\s*(rm|del|format|shutdown)/gi,
-    /\|\s*(nc|netcat|wget|curl)/gi,
-    /`[^`]*`/g
+    /;\s*(rm|del|format|shutdown|reboot|halt)/gi,
+    /\|\s*(nc|netcat|wget|curl|cat|ls|ps|kill)/gi,
+    /`[^`]*`/g,
+    /\$\([^)]*\)/g,
+    /\$\{[^}]*\}/g,
+    /(&&|\|\|)\s*(rm|del|cat|ls)/gi
   ];
   
   commandPatterns.forEach(pattern => {
     if (pattern.test(input)) {
       threats.push('Command injection attempt');
+    }
+  });
+  
+  // Path traversal
+  const pathTraversalPatterns = [
+    /\.\.[\/\\]/g,
+    /[\/\\]\.\.[\/\\]/g,
+    /%2e%2e[\/\\]/gi,
+    /\.\.%2f/gi
+  ];
+  
+  pathTraversalPatterns.forEach(pattern => {
+    if (pattern.test(input)) {
+      threats.push('Path traversal attempt');
+    }
+  });
+  
+  // LDAP injection
+  const ldapPatterns = [
+    /\(\s*\|\s*\(/g,
+    /\(\s*&\s*\(/g,
+    /\)\(\|\(/g,
+    /\)\(&\(/g
+  ];
+  
+  ldapPatterns.forEach(pattern => {
+    if (pattern.test(input)) {
+      threats.push('LDAP injection attempt');
     }
   });
   

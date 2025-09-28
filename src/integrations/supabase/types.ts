@@ -128,6 +128,39 @@ export type Database = {
         }
         Relationships: []
       }
+      api_rate_limits: {
+        Row: {
+          blocked_until: string | null
+          created_at: string
+          endpoint: string
+          id: string
+          identifier: string
+          request_count: number
+          updated_at: string
+          window_start: string
+        }
+        Insert: {
+          blocked_until?: string | null
+          created_at?: string
+          endpoint: string
+          id?: string
+          identifier: string
+          request_count?: number
+          updated_at?: string
+          window_start?: string
+        }
+        Update: {
+          blocked_until?: string | null
+          created_at?: string
+          endpoint?: string
+          id?: string
+          identifier?: string
+          request_count?: number
+          updated_at?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       device_fingerprints: {
         Row: {
           created_at: string
@@ -816,6 +849,19 @@ export type Database = {
         }
         Returns: boolean
       }
+      enhanced_rate_limit_check: {
+        Args: {
+          _action_type: string
+          _max_attempts?: number
+          _user_identifier?: string
+          _window_minutes?: number
+        }
+        Returns: boolean
+      }
+      get_profile_phone_secure: {
+        Args: { _user_id: string }
+        Returns: string
+      }
       get_usage_stats: {
         Args: { _user_id?: string }
         Returns: {
@@ -864,6 +910,15 @@ export type Database = {
       is_ip_blocked: {
         Args: { _ip_address: unknown }
         Returns: boolean
+      }
+      log_admin_action: {
+        Args: {
+          _action: string
+          _details?: Json
+          _target_id?: string
+          _target_table?: string
+        }
+        Returns: undefined
       }
       log_chat_security_event: {
         Args: { _action: string; _details?: Json; _session_id?: string }

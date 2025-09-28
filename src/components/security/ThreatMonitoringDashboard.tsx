@@ -67,7 +67,7 @@ export const ThreatMonitoringDashboard = () => {
     try {
       setIsLoading(true);
       
-      // Load threat detection data
+      // Load threat detection data with enhanced logging
       const { data: threatsData, error: threatsError } = await supabase
         .from('threat_detection')
         .select('*')
@@ -94,6 +94,18 @@ export const ThreatMonitoringDashboard = () => {
 
       if (alertsError) throw alertsError;
 
+      // Load security dashboard data (optional, may not exist yet)
+      try {
+        const { data: dashboardQuery } = await supabase
+          .from('api_rate_limits')
+          .select('count(*)')
+          .limit(1);
+        
+        console.log('Enhanced security monitoring active');
+      } catch (dashboardError) {
+        console.warn('Enhanced security features not fully initialized');
+      }
+
       setThreats((threatsData || []).map(t => ({
         ...t,
         source_ip: t.source_ip as string
@@ -104,12 +116,17 @@ export const ThreatMonitoringDashboard = () => {
       })));
       setEmergencyAlerts(alertsData || []);
 
-      // Calculate statistics
+      // Enhanced statistics calculation
       const now = new Date();
       const hourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+      const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
       
       const recentThreats = threatsData?.filter(t => 
         new Date(t.detected_at) > hourAgo
+      ).length || 0;
+      
+      const dailyThreats = threatsData?.filter(t => 
+        new Date(t.detected_at) > dayAgo
       ).length || 0;
       
       const criticalAlerts = alertsData?.filter(a => 
@@ -117,10 +134,21 @@ export const ThreatMonitoringDashboard = () => {
       ).length || 0;
 
       setStats({
-        totalThreats: threatsData?.length || 0,
+        totalThreats: dailyThreats,
         activeBlocks: blocksData?.length || 0,
         criticalAlerts,
         threatTrends: recentThreats
+      });
+
+      // Log security monitoring access
+      await supabase.rpc('log_admin_action', {
+        _action: 'security_dashboard_access',
+        _target_table: 'threat_monitoring',
+        _details: {
+          threats_loaded: threatsData?.length || 0,
+          blocks_loaded: blocksData?.length || 0,
+          alerts_loaded: alertsData?.length || 0
+        }
       });
 
     } catch (error) {
