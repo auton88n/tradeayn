@@ -53,7 +53,8 @@ export const ChatInterface = ({
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
+  const [uploadState, setUploadState] = useState<'idle' | 'reading' | 'uploading' | 'processing'>('idle');
+  const [uploadProgress, setUploadProgress] = useState<{ phase: string; fileSize?: string }>({ phase: '' });
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const [favoriteMessages, setFavoriteMessages] = useState<Set<string>>(new Set());
   
@@ -66,6 +67,13 @@ export const ChatInterface = ({
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Reset textarea height when message is cleared
+  useEffect(() => {
+    if (inputMessage === '' && inputRef.current) {
+      inputRef.current.style.height = '44px';
+    }
+  }, [inputMessage]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -136,10 +144,15 @@ export const ChatInterface = ({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      const sizeInMB = (file.size / 1024 / 1024).toFixed(1);
       setSelectedFile(file);
+      setUploadProgress({ 
+        phase: 'ready', 
+        fileSize: `${sizeInMB}MB` 
+      });
       toast({
         title: "File Selected",
-        description: `${file.name} is ready to send.`,
+        description: `${file.name} (${sizeInMB}MB) is ready to send.`,
       });
     }
   };
@@ -192,8 +205,14 @@ export const ChatInterface = ({
     // Upload file if selected
     let attachment = null;
     if (selectedFile) {
-      setIsUploading(true);
       try {
+        // Phase 1: Reading file
+        setUploadState('reading');
+        setUploadProgress({ 
+          phase: `Reading ${selectedFile.name}...`, 
+          fileSize: uploadProgress.fileSize 
+        });
+
         const base64 = await new Promise<string>((resolve) => {
           const reader = new FileReader();
           reader.onload = () => {
@@ -201,6 +220,13 @@ export const ChatInterface = ({
             resolve(result.split(',')[1]);
           };
           reader.readAsDataURL(selectedFile);
+        });
+
+        // Phase 2: Uploading
+        setUploadState('uploading');
+        setUploadProgress({ 
+          phase: `Uploading ${selectedFile.name}...`, 
+          fileSize: uploadProgress.fileSize 
         });
 
         const { data, error } = await supabase.functions.invoke('file-upload', {
@@ -214,11 +240,24 @@ export const ChatInterface = ({
 
         if (error) throw error;
 
+        // Phase 3: Processing
+        setUploadState('processing');
+        setUploadProgress({ 
+          phase: 'Processing file...', 
+          fileSize: uploadProgress.fileSize 
+        });
+
+        // Small delay to show processing state
+        await new Promise(resolve => setTimeout(resolve, 500));
+
         attachment = {
           url: data.fileUrl,
           name: data.fileName,
           type: data.fileType
         };
+
+        setUploadState('idle');
+        setUploadProgress({ phase: '' });
       } catch (error) {
         console.error('File upload error:', error);
         toast({
@@ -226,10 +265,9 @@ export const ChatInterface = ({
           description: "Failed to upload file. Please try again.",
           variant: "destructive"
         });
-        setIsUploading(false);
+        setUploadState('idle');
+        setUploadProgress({ phase: '' });
         return;
-      } finally {
-        setIsUploading(false);
       }
     }
 
@@ -247,6 +285,7 @@ export const ChatInterface = ({
     setInputMessage('');
     setSelectedFile(null);
     setReplyingTo(null);
+    setUploadProgress({ phase: '' });
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -505,19 +544,49 @@ export const ChatInterface = ({
             <Paperclip className="w-4 h-4" />
             <span>{selectedFile.name}</span>
             <Badge variant="outline" className="text-xs">
-              {(selectedFile.size / 1024 / 1024).toFixed(1)}MB
+              {uploadProgress.fileSize}
             </Badge>
           </div>
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setSelectedFile(null)}
+            onClick={() => {
+              setSelectedFile(null);
+              setUploadProgress({ phase: '' });
+              setUploadState('idle');
+            }}
             className="h-6 w-6 p-0"
+            disabled={uploadState !== 'idle'}
           >
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </Button>
+        </div>
+      )}
+
+      {/* Upload Progress */}
+      {uploadState !== 'idle' && uploadProgress.phase && (
+        <div className="mx-4 mb-2 p-2 bg-primary/10 border border-primary/20 rounded-md text-sm">
+          <div className="flex items-center gap-2">
+            <Loader2 className="w-4 h-4 animate-spin text-primary" />
+            <span className="text-primary font-medium">{uploadProgress.phase}</span>
+            {uploadProgress.fileSize && (
+              <Badge variant="outline" className="text-xs">
+                {uploadProgress.fileSize}
+              </Badge>
+            )}
+          </div>
+          <div className="mt-1 h-1 bg-primary/20 rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-primary transition-all duration-500 rounded-full"
+              style={{
+                width: uploadState === 'reading' ? '33%' : 
+                       uploadState === 'uploading' ? '66%' : 
+                       uploadState === 'processing' ? '100%' : '0%'
+              }}
+            />
+          </div>
         </div>
       )}
 
@@ -536,10 +605,10 @@ export const ChatInterface = ({
             variant="outline"
             size="sm"
             onClick={handleFileSelect}
-            disabled={!hasAccess || !hasAcceptedTerms || isUploading}
+            disabled={!hasAccess || !hasAcceptedTerms || uploadState !== 'idle'}
             className="shrink-0"
           >
-            {isUploading ? (
+            {uploadState !== 'idle' ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <Paperclip className="w-4 h-4" />
@@ -559,11 +628,11 @@ export const ChatInterface = ({
             
             <Button
               onClick={() => handleSendMessage()}
-              disabled={(!inputMessage.trim() && !selectedFile) || !hasAccess || !hasAcceptedTerms || isTyping}
+              disabled={(!inputMessage.trim() && !selectedFile) || !hasAccess || !hasAcceptedTerms || isTyping || uploadState !== 'idle'}
               size="sm"
               className="absolute right-2 top-2 h-8 w-8 p-0"
             >
-              {isTyping ? (
+              {isTyping || uploadState !== 'idle' ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <Send className="w-4 h-4" />
