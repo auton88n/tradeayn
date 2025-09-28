@@ -346,7 +346,7 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
         parts.push(<del key={`s-${baseKey}-${match.index}`} className="line-through opacity-75">{match[6]}</del>);
       } else if (match[7]) {
         // Highlight (==text==)
-        parts.push(<mark key={`h-${baseKey}-${match.index}`} className="bg-yellow-200 dark:bg-yellow-800 px-1 rounded">{match[7]}</mark>);
+        parts.push(<mark key={`h-${baseKey}-${match.index}`} className="bg-primary/20 text-primary px-1 rounded">{match[7]}</mark>);
       } else if (match[8]) {
         // Spoiler (||text||)
         parts.push(

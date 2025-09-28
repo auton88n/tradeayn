@@ -283,6 +283,10 @@ export const ChatInterface = ({
     const updatedMessages = [...messages, userMessage];
     onMessagesChange(updatedMessages);
     setInputMessage('');
+    // Immediately reset textarea height to prevent resize bug
+    if (inputRef.current) {
+      inputRef.current.style.height = '44px';
+    }
     setSelectedFile(null);
     setReplyingTo(null);
     setUploadProgress({ phase: '' });
@@ -427,10 +431,10 @@ export const ChatInterface = ({
               )}
               
               <div
-                className={`relative max-w-[85%] md:max-w-[70%] rounded-lg px-4 py-2 group ${
+                className={`relative max-w-[85%] md:max-w-[70%] rounded-lg px-4 py-2 group transition-colors duration-200 ${
                   message.sender === 'user'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted'
+                    ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                    : 'bg-muted text-foreground hover:bg-muted/80'
                 }`}
               >
                 <div className="flex flex-col gap-2">
