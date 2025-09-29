@@ -34,6 +34,9 @@ export const EnhancedAuthModal = ({ open, onOpenChange }: EnhancedAuthModalProps
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [authMethod, setAuthMethod] = useState<'email' | 'solana'>('email');
   const [solanaWallet, setSolanaWallet] = useState<any>(null);
+  const [isVerifyingToken, setIsVerifyingToken] = useState(false);
+  const [tokenVerified, setTokenVerified] = useState(false);
+  const [tokenBalance, setTokenBalance] = useState<number | null>(null);
   
   const { toast } = useToast();
   const { t } = useLanguage();
@@ -290,6 +293,57 @@ export const EnhancedAuthModal = ({ open, onOpenChange }: EnhancedAuthModalProps
       const publicKey = response.publicKey.toString();
       setSolanaWallet(response);
       
+      // HOO Token Verification
+      setIsVerifyingToken(true);
+      toast({
+        title: 'Verifying HOO Token Holdings...',
+        description: 'Checking your wallet balance...',
+      });
+
+      try {
+        const { data: verificationData, error: verifyError } = await supabase.functions.invoke(
+          'verify-solana-token',
+          {
+            body: { walletAddress: publicKey }
+          }
+        );
+
+        if (verifyError) {
+          console.error('Token verification error:', verifyError);
+          throw new Error(verifyError.message || 'Failed to verify token holdings');
+        }
+
+        setTokenBalance(verificationData.balance);
+
+        if (!verificationData.verified) {
+          setIsVerifyingToken(false);
+          setIsLoading(false);
+          toast({
+            title: 'Insufficient HOO Tokens',
+            description: `You need 10,000,000 HOO tokens. Your balance: ${verificationData.balance.toLocaleString()} HOO`,
+            variant: 'destructive'
+          });
+          return;
+        }
+
+        setTokenVerified(true);
+        toast({
+          title: 'Token Verification Successful! ✅',
+          description: `Verified ${verificationData.balance.toLocaleString()} HOO tokens`,
+        });
+      } catch (tokenError: any) {
+        setIsVerifyingToken(false);
+        setIsLoading(false);
+        toast({
+          title: 'Verification Failed',
+          description: tokenError.message || 'Unable to verify token holdings. Please try again.',
+          variant: 'destructive'
+        });
+        return;
+      } finally {
+        setIsVerifyingToken(false);
+      }
+      
       // Check if wallet is already linked to an account
       const { data: existingWallet } = await supabase
         .from('wallet_addresses')
@@ -298,8 +352,6 @@ export const EnhancedAuthModal = ({ open, onOpenChange }: EnhancedAuthModalProps
         .single();
 
       if (existingWallet) {
-        // Wallet already linked, need to sign in the user
-        // For now, show success and let auth state handle the redirect
         toast({
           title: 'Wallet Connected',
           description: 'Successfully connected your Solana wallet!',
@@ -320,7 +372,8 @@ export const EnhancedAuthModal = ({ open, onOpenChange }: EnhancedAuthModalProps
             full_name: `Solana User ${publicKey.slice(0, 8)}`,
             company_name: 'Solana Wallet User',
             wallet_address: publicKey,
-            auth_method: 'solana'
+            auth_method: 'solana',
+            hoo_token_balance: verificationData.balance
           }
         }
       });
@@ -330,7 +383,6 @@ export const EnhancedAuthModal = ({ open, onOpenChange }: EnhancedAuthModalProps
       }
 
       if (authData.user) {
-        // Link wallet to the new user account
         const { error: walletError } = await supabase
           .from('wallet_addresses')
           .insert({
@@ -350,7 +402,6 @@ export const EnhancedAuthModal = ({ open, onOpenChange }: EnhancedAuthModalProps
           description: 'Successfully created account and signed in with Solana wallet!',
         });
         
-        // Reset form and close modal
         resetForm();
         onOpenChange(false);
       }
@@ -487,15 +538,54 @@ export const EnhancedAuthModal = ({ open, onOpenChange }: EnhancedAuthModalProps
 
         {authMethod === 'solana' ? (
           <div className="space-y-4">
-            <div className="text-center py-8">
+            <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 mb-4">
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-2xl">🎫</span>
+                <div>
+                  <div className="font-semibold">Requires 10,000,000 HOO tokens</div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Your wallet will be verified before access is granted
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="text-center py-6">
               <Wallet className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground mb-4">
                 Connect your Solana wallet for secure, decentralized authentication
               </p>
-              <Button onClick={handleSolanaAuth} disabled={isLoading} className="w-full">
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Connect Solana Wallet
+              
+              <Button 
+                onClick={handleSolanaAuth} 
+                disabled={isLoading || isVerifyingToken} 
+                className="w-full"
+              >
+                {(isLoading || isVerifyingToken) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isVerifyingToken ? 'Verifying HOO Token Holdings...' : 'Connect Solana Wallet'}
               </Button>
+
+              {tokenVerified && (
+                <div className="mt-4 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+                  <div className="flex items-center justify-center gap-2 text-green-600">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span className="text-sm font-medium">
+                      Token verification passed: {tokenBalance?.toLocaleString()} HOO
+                    </span>
+                  </div>
+                </div>
+              )}
+              
+              {tokenBalance !== null && !tokenVerified && (
+                <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                  <div className="flex items-center justify-center gap-2 text-red-600">
+                    <AlertTriangle className="w-4 h-4" />
+                    <span className="text-sm font-medium">
+                      Insufficient tokens: {tokenBalance.toLocaleString()} / 10,000,000 HOO
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         ) : (
