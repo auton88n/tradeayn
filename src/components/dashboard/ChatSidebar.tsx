@@ -318,8 +318,7 @@ export const ChatSidebar = ({
               </div>
             </SidebarGroupLabel>
             <SidebarGroupContent>
-              <ScrollArea className="h-[400px]">
-                <div className="space-y-1 pr-4">
+              <div className="space-y-1 pr-4">
                   {recentChats.slice(0, 10).map((chat, index) => (
                   <div key={chat.sessionId} className="flex items-center gap-2 group">
                     {showChatSelection && (
@@ -407,8 +406,7 @@ export const ChatSidebar = ({
                     </div>
                   </div>
                   ))}
-                </div>
-              </ScrollArea>
+              </div>
             </SidebarGroupContent>
           </SidebarGroup>
         )}
