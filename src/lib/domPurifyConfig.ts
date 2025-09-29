@@ -1,7 +1,7 @@
-import DOMPurify from 'dompurify';
+import createDOMPurify from 'dompurify';
 
 // Create a single DOMPurify instance configured once
-const purify = DOMPurify(window);
+const purify = createDOMPurify(window);
 
 // Configure DOMPurify once with safe settings
 purify.setConfig({
