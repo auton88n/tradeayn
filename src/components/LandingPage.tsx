@@ -118,7 +118,7 @@ const LandingPage = () => {
                   onClick={() => setShowAuthModal(true)}
                   variant="white"
                   size="xl"
-                  className="group"
+                  className="group bg-black text-white dark:bg-white dark:text-black hover:bg-black/90 dark:hover:bg-white/90"
                 >
                   {t('hero.cta')}
                   <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
