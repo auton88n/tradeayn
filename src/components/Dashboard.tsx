@@ -63,6 +63,7 @@ import { MessageFormatter } from './MessageFormatter';
 import { ChatActions } from './dashboard/ChatActions';
 import { MessageItem } from './dashboard/MessageItem';
 import { MessageList } from './dashboard/MessageList';
+import { ChatInput } from './dashboard/ChatInput';
 import { useChatState } from '@/hooks/useChatState';
 
 interface Message {
@@ -1532,211 +1533,44 @@ export default function Dashboard({ user }: DashboardProps) {
                 }}
               />
 
-              {/* Mobile-Style Floating Input Bar */}
-              <div 
-                dir="ltr"
-                className={`input-area ${chatState.messages.length > 0 ? 'bottom-position' : 'center-position'}`}
+              <ChatInput
+                value={chatState.inputMessage}
+                onChange={chatState.setInputMessage}
+                onSend={handleSendMessage}
+                onKeyPress={handleKeyPress}
+                disabled={!hasAccess || !hasAcceptedTerms}
+                isUploading={chatState.isUploading}
+                selectedFile={chatState.selectedFile}
+                onFileSelect={handleFileSelect}
+                onFileRemove={removeSelectedFile}
+                selectedMode={chatState.selectedMode}
+                isDragOver={chatState.isDragOver}
                 onDragEnter={handleDragEnter}
                 onDragLeave={handleDragLeave}
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
-              >
-                {/* Reply indicator */}
-                {chatState.replyingTo && (
-                  <div className="mb-2 p-2 bg-muted rounded-lg flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Reply className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">
-                        Replying to: "{chatState.replyingTo.content.substring(0, 50)}{chatState.replyingTo.content.length > 50 ? '...' : ''}"
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => {
-                        chatState.setReplyingTo(null);
-                        chatState.setInputMessage('');
-                      }}
-                      className="p-1 rounded-md hover:bg-background text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
-                {/* Drag Overlay */}
-                {chatState.isDragOver && (
-                  <div className="fixed inset-0 z-[60] bg-background/20 backdrop-blur-sm flex items-center justify-center">
-                    <div className="bg-background border-2 border-dashed border-primary rounded-2xl p-8 text-center max-w-sm mx-4">
-                      <Paperclip className="w-12 h-12 mx-auto mb-4 text-primary" />
-                      <p className="text-lg font-medium text-primary mb-2">Drop your file here</p>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Images, PDFs, Word docs, text, or JSON files (max 10MB)
-                      </p>
-                      <div className="text-xs text-muted-foreground space-y-1">
-                        <div>• Images: JPG, PNG, GIF, WebP</div>
-                        <div>• Documents: PDF, DOC, DOCX</div>
-                        <div>• Text: TXT files</div>
-                        <div>• Data: JSON files</div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
-                {/* Selected File Preview */}
-                {chatState.selectedFile && (
-                  <div className="mb-2 p-3 bg-muted rounded-xl border flex items-center gap-3">
-                    <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                      <Paperclip className="w-4 h-4 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{chatState.selectedFile.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {(chatState.selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                      </p>
-                    </div>
-                    <button
-                      onClick={removeSelectedFile}
-                      className="w-6 h-6 rounded-full bg-destructive/10 text-destructive hover:bg-destructive/20 flex items-center justify-center transition-colors"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                )}
-
-                <div className={`input-container ${chatState.isDragOver ? 'drag-over' : ''}`}>
-                  {/* Attachment Button with File Types Dropdown */}
-                  {(chatState.selectedMode.toLowerCase().includes('pdf') || chatState.selectedMode.toLowerCase().includes('vision') || chatState.selectedMode.toLowerCase().includes('general')) ? (
-                    <div className="relative">
-                      <button 
-                        className="attachment-button group"
-                        onClick={handleAttachmentClick}
-                        onMouseEnter={() => chatState.setShowFileTypes(true)}
-                        onMouseLeave={() => chatState.setShowFileTypes(false)}
-                        disabled={!hasAccess || !hasAcceptedTerms || chatState.isUploading}
-                        title="Attach file"
-                      >
-                        <Paperclip className="w-4 h-4" />
-                      </button>
-                      
-                      {/* File Types Dropdown */}
-                      {chatState.showFileTypes && !chatState.isDragOver && (
-                        <div className="absolute bottom-full left-0 mb-2 bg-background border border-border rounded-lg shadow-lg p-3 min-w-[220px] z-50">
-                          <div className="text-xs font-semibold text-foreground mb-2">📎 Accepted file types:</div>
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2 text-xs">
-                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                              <span className="text-muted-foreground">Images:</span>
-                              <span className="text-foreground font-medium">JPG, PNG, GIF, WebP</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-xs">
-                              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                              <span className="text-muted-foreground">Documents:</span>
-                              <span className="text-foreground font-medium">PDF, DOC, DOCX</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-xs">
-                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                              <span className="text-muted-foreground">Text:</span>
-                              <span className="text-foreground font-medium">TXT files</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-xs">
-                              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                              <span className="text-muted-foreground">Data:</span>
-                              <span className="text-foreground font-medium">JSON files</span>
-                            </div>
-                          </div>
-                          <div className="mt-3 pt-2 border-t border-border">
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                              <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                              <span>Maximum file size: <strong>10MB</strong></span>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ) : null}
-                  
-                  {/* Hidden File Input */}
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp,.txt,.json"
-                    onChange={handleFileSelect}
-                    className="hidden"
-                  />
-                  
-                  {/* Input Field */}
-                  <div className="flex-1 relative">
-                    <Textarea
-                      ref={inputRef}
-                      unstyled={true}
-                      className="message-input resize-none min-h-[40px] max-h-[200px] overflow-hidden"
-                      value={chatState.inputMessage}
-                      onChange={(e) => {
-                        chatState.setInputMessage(e.target.value);
-                        // Auto-resize textarea
-                        const textarea = e.target as HTMLTextAreaElement;
-                        textarea.style.height = 'auto';
-                        const newHeight = Math.min(textarea.scrollHeight, 200);
-                        textarea.style.height = newHeight + 'px';
-                        
-                        // Show scrollbar only when content exceeds max height
-                        if (textarea.scrollHeight > 200) {
-                          textarea.style.overflowY = 'auto';
-                        } else {
-                          textarea.style.overflowY = 'hidden';
-                        }
-                      }}
-                      onKeyPress={handleKeyPress}
-                      onFocus={() => chatState.setIsInputFocused(true)}
-                      onBlur={() => chatState.setIsInputFocused(false)}
-                      placeholder=""
-                      disabled={!hasAccess || !hasAcceptedTerms || chatState.isUploading}
-                      rows={1}
-                    />
-                    
-                    {/* Typewriter Animation Placeholder */}
-                    {chatState.showPlaceholder && !chatState.inputMessage.trim() && !chatState.isInputFocused && (
-                      <div className={`absolute ${direction === 'rtl' ? 'right-[var(--input-left-offset)]' : 'left-[var(--input-left-offset)]'} top-[var(--input-vertical-offset)] pointer-events-none z-10 ${direction === 'rtl' ? 'text-right' : 'text-left'} transition-all duration-300 ease-in-out`}>
-                        <TypewriterText
-                          key={`${chatState.placeholderIndex}-${language}-${direction}`}
-                          text={placeholderTexts[chatState.placeholderIndex]}
-                          speed={50}
-                          className="typewriter-text text-muted-foreground"
-                          showCursor={true}
-                        />
-                      </div>
-                    )}
-                    
-                    {/* File Selected Indicator */}
-                    {chatState.selectedFile && (
-                      <div className="absolute -top-12 left-0 bg-primary text-primary-foreground px-3 py-1 rounded-lg text-sm flex items-center gap-2">
-                        <Paperclip className="w-3 h-3" />
-                        <span>{chatState.selectedFile.name}</span>
-                        <button 
-                          onClick={() => {
-                            chatState.setSelectedFile(null);
-                            if (fileInputRef.current) fileInputRef.current.value = '';
-                          }}
-                          className="text-primary-foreground hover:text-primary-foreground/80"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Send Button */}
-                  <button
-                    className={`send-button ${getSendButtonClass(chatState.selectedMode)}`}
-                    onClick={() => handleSendMessage()}
-                    disabled={(!chatState.inputMessage.trim() && !chatState.selectedFile) || !hasAccess || !hasAcceptedTerms || chatState.isTyping || chatState.isUploading}
-                  >
-                    {chatState.isUploading ? (
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <Send className="w-4 h-4" style={{ transform: 'scaleX(1)' }} />
-                    )}
-                  </button>
-                </div>
-              </div>
+                replyingTo={chatState.replyingTo}
+                onClearReply={() => {
+                  chatState.setReplyingTo(null);
+                  chatState.setInputMessage('');
+                }}
+                placeholderTexts={placeholderTexts}
+                placeholderIndex={chatState.placeholderIndex}
+                showPlaceholder={chatState.showPlaceholder}
+                isInputFocused={chatState.isInputFocused}
+                onFocus={() => chatState.setIsInputFocused(true)}
+                onBlur={() => chatState.setIsInputFocused(false)}
+                fileInputRef={fileInputRef}
+                inputRef={inputRef}
+                language={language}
+                direction={direction}
+                messagesLength={chatState.messages.length}
+                isTyping={chatState.isTyping}
+                showFileTypes={chatState.showFileTypes}
+                onShowFileTypes={chatState.setShowFileTypes}
+                onAttachmentClick={() => fileInputRef.current?.click()}
+                getSendButtonClass={(mode) => `send-button-${mode.toLowerCase().replace(/\s+/g, '-')}`}
+              />
             </>
           )}
           </div>
