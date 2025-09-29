@@ -95,6 +95,7 @@ export type Database = {
           id: string
           metadata: Json | null
           recipient_email: string
+          recipient_email_encrypted: string | null
           sent_at: string | null
           status: string | null
           subject: string
@@ -108,6 +109,7 @@ export type Database = {
           id?: string
           metadata?: Json | null
           recipient_email: string
+          recipient_email_encrypted?: string | null
           sent_at?: string | null
           status?: string | null
           subject: string
@@ -121,6 +123,7 @@ export type Database = {
           id?: string
           metadata?: Json | null
           recipient_email?: string
+          recipient_email_encrypted?: string | null
           sent_at?: string | null
           status?: string | null
           subject?: string
@@ -815,6 +818,10 @@ export type Database = {
         }
         Returns: string
       }
+      decrypt_email: {
+        Args: { encrypted_email: string; encryption_key: string }
+        Returns: string
+      }
       delete_user_chat_sessions: {
         Args: { _session_ids: string[]; _user_id: string }
         Returns: boolean
@@ -828,6 +835,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      encrypt_email: {
+        Args: { email: string; encryption_key: string }
+        Returns: string
+      }
       enhanced_rate_limit_check: {
         Args: {
           _action_type: string
@@ -836,6 +847,22 @@ export type Database = {
           _window_minutes?: number
         }
         Returns: boolean
+      }
+      get_alert_history_with_emails: {
+        Args: { p_alert_id?: string; p_encryption_key?: string }
+        Returns: {
+          alert_type: string
+          content: string
+          created_at: string
+          error_message: string
+          id: string
+          metadata: Json
+          recipient_email_decrypted: string
+          sent_at: string
+          status: string
+          subject: string
+          user_id: string
+        }[]
       }
       get_extension_security_status: {
         Args: Record<PropertyKey, never>
