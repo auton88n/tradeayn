@@ -446,7 +446,7 @@ export const EnhancedAuthModal = ({ open, onOpenChange }: EnhancedAuthModalProps
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="glass sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-center gradient-text-hero text-2xl">
+          <DialogTitle className="text-center text-white text-2xl">
             {t('auth.welcomeToAyn')}
           </DialogTitle>
           <div className="flex items-center justify-center gap-2">
