@@ -62,6 +62,7 @@ import { LanguageSwitcher } from './LanguageSwitcher';
 import { MessageFormatter } from './MessageFormatter';
 import { ChatActions } from './dashboard/ChatActions';
 import { MessageItem } from './dashboard/MessageItem';
+import { MessageList } from './dashboard/MessageList';
 import { useChatState } from '@/hooks/useChatState';
 
 interface Message {
@@ -1513,42 +1514,23 @@ export default function Dashboard({ user }: DashboardProps) {
           {(activeTab === 'chat' || !isAdmin) && (
             <>
               {/* Messages Area */}
-              <ScrollArea className="flex-1 px-3 sm:px-4 lg:px-6 pb-20 sm:pb-24">
-                <div className="max-w-4xl mx-auto py-4 sm:py-6 space-y-3 sm:space-y-4">
-                  {chatState.messages.map((message) => (
-                    <MessageItem
-                      key={message.id}
-                      message={message}
-                      user={user}
-                      onCopy={handleCopyMessage}
-                      onReply={handleReplyToMessage}
-                      onTypingComplete={(messageId) => {
-                        chatState.setMessages(prev =>
-                          prev.map(msg =>
-                            msg.id === messageId
-                              ? { ...msg, isTyping: false }
-                              : msg
-                          )
-                        );
-                      }}
-                    />
-                  ))}
-
-                {/* Typing Indicator */}
-                {chatState.isTyping && (
-                    <div className="flex gap-2 sm:gap-3 justify-start">
-                      <Avatar className="w-7 h-7 sm:w-8 sm:h-8 flex-shrink-0">
-                        <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                          <Brain className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                        </AvatarFallback>
-                      </Avatar>
-                      <TypingIndicator />
-                    </div>
-                  )}
-                  
-                  <div ref={messagesEndRef} />
-                </div>
-              </ScrollArea>
+              <MessageList
+                messages={chatState.messages}
+                isTyping={chatState.isTyping}
+                user={user}
+                onCopy={handleCopyMessage}
+                onReply={handleReplyToMessage}
+                messagesEndRef={messagesEndRef}
+                onTypingComplete={(messageId) => {
+                  chatState.setMessages(prev =>
+                    prev.map(msg =>
+                      msg.id === messageId
+                        ? { ...msg, isTyping: false }
+                        : msg
+                    )
+                  );
+                }}
+              />
 
               {/* Mobile-Style Floating Input Bar */}
               <div 
