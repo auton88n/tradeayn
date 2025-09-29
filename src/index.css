@@ -195,6 +195,11 @@
     -webkit-text-fill-color: hsl(var(--primary-foreground));
   }
   
+  .dark .gradient-text-hero {
+    color: hsl(var(--primary-foreground));
+    background: none;
+    -webkit-text-fill-color: hsl(var(--primary-foreground));
+  }
   
   /* Neon glow effects */
   .neon-purple {
