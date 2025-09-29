@@ -1528,7 +1528,7 @@ export default function Dashboard({ user }: DashboardProps) {
                   {messages.map((message) => (
                      <div
                        key={message.id}
-                       className={`flex gap-2 sm:gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'} group relative`}
+                       className={`flex gap-2 sm:gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'} group relative transition-all duration-200 hover:scale-[1.01]`}
                      >
                       {message.sender === 'ayn' && (
                         <Avatar className="w-7 h-7 sm:w-8 sm:h-8 flex-shrink-0">
@@ -1538,12 +1538,17 @@ export default function Dashboard({ user }: DashboardProps) {
                          </Avatar>
                        )}
                        
-                        <div className={`message-bubble rounded-xl sm:rounded-2xl px-3 py-2 sm:px-4 sm:py-3 ${
+                        <div className={`message-bubble rounded-lg sm:rounded-xl px-3 py-2 sm:px-4 sm:py-3 ${
                           message.sender === 'user' 
-                            ? 'user-message bg-primary text-primary-foreground' 
+                            ? 'user-message bg-muted/50 border border-border text-foreground' 
                             : 'ai-message bg-muted text-foreground'
                         }`}>
-                          <div className="text-sm leading-relaxed whitespace-pre-wrap break-words group cursor-default select-text">
+                          {message.sender === 'user' && (
+                            <div className="text-xs font-medium text-muted-foreground mb-1">
+                              You
+                            </div>
+                          )}
+                          <div className="text-sm sm:text-base leading-relaxed whitespace-pre-wrap break-words group cursor-default select-text">
                             {message.sender === 'ayn' && message.isTyping ? (
                               <TypewriterText
                                 text={message.content}
@@ -1562,11 +1567,7 @@ export default function Dashboard({ user }: DashboardProps) {
                             ) : (
                               <MessageFormatter
                                 content={message.content}
-                                className={`transition-all duration-300 ${
-                                  message.sender === 'user' 
-                                    ? 'text-primary-foreground' 
-                                    : 'text-foreground'
-                                } group-hover:scale-[1.02] transform-gpu`}
+                                className="transition-all duration-300 text-foreground group-hover:scale-[1.02] transform-gpu"
                               />
                             )}
                           </div>
