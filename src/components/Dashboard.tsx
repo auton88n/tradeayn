@@ -64,6 +64,7 @@ import { ChatActions } from './dashboard/ChatActions';
 import { MessageItem } from './dashboard/MessageItem';
 import { MessageList } from './dashboard/MessageList';
 import { ChatInput } from './dashboard/ChatInput';
+import { ModeSelector } from './dashboard/ModeSelector';
 import { useChatState } from '@/hooks/useChatState';
 
 interface Message {
@@ -1238,28 +1239,14 @@ export default function Dashboard({ user }: DashboardProps) {
             </SidebarGroup>
 
             {/* Quick Start */}
-            <SidebarGroup dir={language === 'ar' ? 'rtl' : 'ltr'}>
-              <div className={`w-full flex px-4 py-2 ${language === 'ar' ? 'justify-end' : 'justify-start'}`} style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}>
-                <SidebarGroupLabel className={language === 'ar' ? 'text-right ml-auto' : 'text-left'}>{t('common.quickStart')}</SidebarGroupLabel>
-              </div>
-              <SidebarGroupContent className={language === 'ar' ? 'text-right' : ''}>
-                <SidebarMenu>
-                   {modes.map((mode) => (
-                    <SidebarMenuItem key={mode.name}>
-                       <SidebarMenuButton
-                         onClick={() => handleModeClick(mode.name)}
-                         disabled={!hasAccess || !hasAcceptedTerms}
-                            tooltip={mode.description}
-                            className={`${chatState.selectedMode === mode.name ? 'bg-sidebar-accent text-sidebar-accent-foreground' : ''}`}
-                       >
-                         <mode.icon className={`w-4 h-4 flex-shrink-0 ${mode.color} mr-2`} />
-                         <span className={`group-data-[collapsible=icon]:hidden ${language === 'ar' ? 'text-right' : ''}`}>{mode.translatedName}</span>
-                       </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
+            <ModeSelector
+              modes={modes}
+              selectedMode={chatState.selectedMode}
+              onModeChange={handleModeClick}
+              disabled={!hasAccess || !hasAcceptedTerms}
+              language={language}
+              t={t}
+            />
 
             {/* Recent Chats */}
             <SidebarGroup>
