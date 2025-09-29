@@ -1528,7 +1528,7 @@ export default function Dashboard({ user }: DashboardProps) {
                   {messages.map((message) => (
                      <div
                        key={message.id}
-                       className={`flex gap-2 sm:gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'} group relative transition-all duration-200 hover:scale-[1.01]`}
+                       className={`flex gap-2 sm:gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'} group relative`}
                      >
                       {message.sender === 'ayn' && (
                         <Avatar className="w-7 h-7 sm:w-8 sm:h-8 flex-shrink-0">
@@ -1553,7 +1553,7 @@ export default function Dashboard({ user }: DashboardProps) {
                               <TypewriterText
                                 text={message.content}
                                 speed={2}
-                                className={`inline-block transition-all duration-300 text-foreground group-hover:scale-[1.02] transform-gpu`}
+                                className="inline-block text-foreground"
                                 onComplete={() => {
                                   setMessages(prev => 
                                     prev.map(msg => 
@@ -1567,7 +1567,7 @@ export default function Dashboard({ user }: DashboardProps) {
                             ) : (
                               <MessageFormatter
                                 content={message.content}
-                                className="transition-all duration-300 text-foreground group-hover:scale-[1.02] transform-gpu"
+                                className="text-foreground"
                               />
                             )}
                           </div>
@@ -1580,7 +1580,7 @@ export default function Dashboard({ user }: DashboardProps) {
                         </div>
 
                         {/* Action buttons */}
-                        <div className="flex items-start gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                        <div className="flex items-start gap-1 opacity-70 group-hover:opacity-100 transition-opacity duration-200">
                           <button
                             onClick={() => handleCopyMessage(message.content)}
                             className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
