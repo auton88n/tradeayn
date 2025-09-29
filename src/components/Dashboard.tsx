@@ -153,7 +153,7 @@ const getSendButtonClass = (mode: string) => {
 };
 
 export default function Dashboard({ user }: DashboardProps) {
-  // Chat state management (centralized)
+  // Chat state management (centralized via custom hook)
   const chatState = useChatState();
   
   // Other state management
