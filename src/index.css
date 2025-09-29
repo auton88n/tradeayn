@@ -97,8 +97,13 @@
     --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-border: 0 0% 14.9%;
     --sidebar-ring: 0 0% 83.1%;
-    
+
+    /* Dark mode glass variables for readability */
+    --glass-bg: hsl(var(--background) / 0.7);
+    --glass-border: hsl(var(--foreground) / 0.12);
+    --glass-shadow: 0 8px 32px hsla(0, 0%, 0%, 0.4);
   }
+
 }
 
   * {
