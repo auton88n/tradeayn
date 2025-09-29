@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { detectMaliciousInput, reportThreatEvent } from '@/lib/threatDetection';
 import { useToast } from '@/hooks/use-toast';
+import { sanitizeWithDOMPurify } from '@/lib/domPurifyConfig';
 
 interface SecureInputOptions {
   maxLength?: number;
@@ -89,14 +90,9 @@ export function useSecureInput(options: SecureInputOptions = {}) {
     // Normalize whitespace
     sanitized = sanitized.replace(/\s+/g, ' ');
     
-    // If HTML is not allowed, escape HTML entities
+    // Apply DOMPurify sanitization
     if (!allowHtml) {
-      sanitized = sanitized
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#x27;');
+      sanitized = sanitizeWithDOMPurify(sanitized);
     }
     
     return sanitized;

@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { sanitizeUserInput, isValidUserInput } from '@/lib/security';
+import { sanitizeMessageContent } from '@/lib/domPurifyConfig';
 
 interface MessageFormatterProps {
   content: string;
@@ -27,7 +27,7 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
 
   // Clean system tags and sanitize content to prevent XSS attacks
   const cleanedContent = cleanSystemTags(content);
-  const sanitizedContent = isValidUserInput(cleanedContent) ? cleanedContent : sanitizeUserInput(cleanedContent);
+  const sanitizedContent = sanitizeMessageContent(cleanedContent);
   
   const formatMessage = (text: string) => {
     // Split by code blocks first
