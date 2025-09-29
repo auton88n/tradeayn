@@ -535,7 +535,7 @@ export const EnhancedAuthModal = ({ open, onOpenChange }: EnhancedAuthModalProps
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-foreground hover:text-primary transition-colors"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -552,7 +552,7 @@ export const EnhancedAuthModal = ({ open, onOpenChange }: EnhancedAuthModalProps
                   <Button
                     type="button"
                     variant="link"
-                    className="p-0 h-auto text-sm text-muted-foreground hover:text-primary"
+                    className="p-0 h-auto text-sm text-primary hover:text-primary/80"
                     onClick={handleForgotPassword}
                     disabled={isLoading}
                   >
@@ -653,7 +653,7 @@ export const EnhancedAuthModal = ({ open, onOpenChange }: EnhancedAuthModalProps
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-foreground hover:text-primary transition-colors"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
