@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { log } from '@/lib/secureLogger';
@@ -44,7 +44,7 @@ import {
 } from 'lucide-react';
 import { ThemeToggle } from './theme-toggle';
 import { TermsModal } from './TermsModal';
-import { AdminPanel } from './AdminPanel';
+const AdminPanel = lazy(() => import('./AdminPanel').then(module => ({ default: module.AdminPanel })));
 
 
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -1484,7 +1484,18 @@ export default function Dashboard({ user }: DashboardProps) {
           {/* Admin Panel */}
           {isAdmin && activeTab === 'admin' && (
             <div className="flex-1 overflow-y-auto p-6">
-              <AdminPanel />
+              <Suspense 
+                fallback={
+                  <div className="flex items-center justify-center h-screen">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                      <p className="text-foreground text-sm">Loading admin panel...</p>
+                    </div>
+                  </div>
+                }
+              >
+                <AdminPanel />
+              </Suspense>
             </div>
           )}
 
