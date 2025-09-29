@@ -89,7 +89,6 @@ export const MessageList = ({
         components={{ Footer }}
         followOutput="smooth"
         alignToBottom
-        overscan={200}
         increaseViewportBy={{ top: 200, bottom: 200 }}
         className="py-4 sm:py-6"
       />
