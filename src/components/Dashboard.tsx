@@ -61,6 +61,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { MessageFormatter } from './MessageFormatter';
 import { ChatActions } from './dashboard/ChatActions';
+import { useChatState } from '@/hooks/useChatState';
 
 interface Message {
   id: string;
@@ -152,10 +153,10 @@ const getSendButtonClass = (mode: string) => {
 };
 
 export default function Dashboard({ user }: DashboardProps) {
-  // State management
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [inputMessage, setInputMessage] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
+  // Chat state management (centralized)
+  const chatState = useChatState();
+  
+  // Other state management
   const [hasAccess, setHasAccess] = useState(false);
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -164,11 +165,9 @@ export default function Dashboard({ user }: DashboardProps) {
   const [selectedChats, setSelectedChats] = useState<Set<number>>(new Set());
   const [showChatSelection, setShowChatSelection] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
-  const [currentSessionId, setCurrentSessionId] = useState<string>(() => crypto.randomUUID());
   const { t, language, direction, setLanguage } = useLanguage();
   
   // State for AI modes and webhooks
-  const [selectedMode, setSelectedMode] = useState<string>('Nen Mode ⚡');
   const [modeWebhooks, setModeWebhooks] = useState<Record<string, string>>({
     'Nen Mode ⚡': '',
     'Research Pro': '',
@@ -185,17 +184,7 @@ export default function Dashboard({ user }: DashboardProps) {
     maintenanceEndTime: ''
   });
   
-  const [isInputFocused, setIsInputFocused] = useState(false);
-  
-  // File attachment state
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [isDragOver, setIsDragOver] = useState(false);
-  const [showFileTypes, setShowFileTypes] = useState(false);
   const [allowPersonalization, setAllowPersonalization] = useState(false);
-  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
-  const [placeholderIndex, setPlaceholderIndex] = useState(0);
-  const [showPlaceholder, setShowPlaceholder] = useState(true);
   
   // Dialog states
   const [showExportDialog, setShowExportDialog] = useState(false);
@@ -217,7 +206,7 @@ export default function Dashboard({ user }: DashboardProps) {
   // Get mode-specific placeholder texts
   const getPlaceholderTexts = () => {
     try {
-      const placeholders = t(`placeholders.${selectedMode}`);
+      const placeholders = t(`placeholders.${chatState.selectedMode}`);
       if (Array.isArray(placeholders)) {
         return placeholders;
       }
@@ -252,38 +241,38 @@ export default function Dashboard({ user }: DashboardProps) {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [chatState.messages]);
 
   // Reset textarea height when input is cleared
   useEffect(() => {
-    if (inputMessage === '' && inputRef.current) {
+    if (chatState.inputMessage === '' && inputRef.current) {
       inputRef.current.style.height = '40px';
       inputRef.current.style.overflowY = 'hidden';
     }
-  }, [inputMessage]);
+  }, [chatState.inputMessage]);
 
   // Manage animated placeholder rotation
   useEffect(() => {
-    if (!inputMessage.trim()) {
-      setShowPlaceholder(true);
+    if (!chatState.inputMessage.trim()) {
+      chatState.setShowPlaceholder(true);
     } else {
-      setShowPlaceholder(false);
+      chatState.setShowPlaceholder(false);
     }
-  }, [inputMessage]);
+  }, [chatState.inputMessage]);
 
   // Rotate placeholder texts every few seconds
   useEffect(() => {
-    if (!showPlaceholder || inputMessage.trim()) return;
+    if (!chatState.showPlaceholder || chatState.inputMessage.trim()) return;
     
     const interval = setInterval(() => {
-      setPlaceholderIndex(prev => (prev + 1) % placeholderTexts.length);
+      chatState.setPlaceholderIndex(prev => (prev + 1) % placeholderTexts.length);
     }, 4000);
 
     return () => clearInterval(interval);
-  }, [showPlaceholder, inputMessage, placeholderTexts.length]);
+  }, [chatState.showPlaceholder, chatState.inputMessage, placeholderTexts.length]);
 
   const loadCurrentChatHistory = async (sessionId?: string) => {
-    const targetSessionId = sessionId || currentSessionId;
+    const targetSessionId = sessionId || chatState.currentSessionId;
     try {
       const { data, error } = await supabase
         .from('messages')
@@ -311,9 +300,9 @@ export default function Dashboard({ user }: DashboardProps) {
           } : undefined
         }));
         
-        setMessages(chatMessages);
+        chatState.setMessages(chatMessages);
       } else {
-        setMessages([]);
+        chatState.setMessages([]);
       }
     } catch (error) {
       console.error('Error loading current chat history:', error);
@@ -525,7 +514,7 @@ export default function Dashboard({ user }: DashboardProps) {
   };
 
   const handleModeClick = (modeName: string) => {
-    setSelectedMode(modeName);
+    chatState.setSelectedMode(modeName);
     // Optional: Show a toast or indication that the mode was selected
     toast({
       title: `${modeName} Selected`,
@@ -596,8 +585,8 @@ export default function Dashboard({ user }: DashboardProps) {
       return arabicPattern.test(text) ? 'ar' : 'en';
     };
 
-    const content = messageContent || inputMessage.trim();
-    if (!content && !selectedFile) return;
+    const content = messageContent || chatState.inputMessage.trim();
+    if (!content && !chatState.selectedFile) return;
 
     // Detect the language of user input
     const detectedLanguage = detectLanguage(content);
@@ -609,8 +598,8 @@ export default function Dashboard({ user }: DashboardProps) {
 
     // Upload file if selected
     let attachment = null;
-    if (selectedFile) {
-      attachment = await uploadFile(selectedFile);
+    if (chatState.selectedFile) {
+      attachment = await uploadFile(chatState.selectedFile);
       if (!attachment) return; // Upload failed
     }
 
@@ -659,8 +648,8 @@ export default function Dashboard({ user }: DashboardProps) {
       attachment
     };
 
-    setMessages(prev => [...prev, userMessage]);
-    setInputMessage('');
+    chatState.setMessages(prev => [...prev, userMessage]);
+    chatState.setInputMessage('');
     
     // Immediately reset textarea height with smooth transition
     if (inputRef.current) {
@@ -668,7 +657,7 @@ export default function Dashboard({ user }: DashboardProps) {
       inputRef.current.style.overflowY = 'hidden';
     }
     
-    setIsTyping(true);
+    chatState.setIsTyping(true);
 
     try {
       // Enhanced payload with user context for n8n
@@ -676,9 +665,9 @@ export default function Dashboard({ user }: DashboardProps) {
         message: content,
         userId: user.id,
         userEmail: user.email,
-        mode: selectedMode,
-        sessionId: currentSessionId,
-        conversationHistory: messages.slice(-5), // Last 5 messages for context
+        mode: chatState.selectedMode,
+        sessionId: chatState.currentSessionId,
+        conversationHistory: chatState.messages.slice(-5), // Last 5 messages for context
         userProfile: {
           companyName: userProfile?.company_name || '',
           contactPerson: userProfile?.contact_person || '',
@@ -712,7 +701,7 @@ export default function Dashboard({ user }: DashboardProps) {
           throw new Error(webhookError.message || 'Webhook call failed');
         }
         
-        setIsTyping(false);
+        chatState.setIsTyping(false);
 
         const response = webhookResponse?.response || 'I received your message and I\'m processing it. Please try again if you don\'t see a proper response.';
 
@@ -724,15 +713,15 @@ export default function Dashboard({ user }: DashboardProps) {
           isTyping: true,
         };
 
-        setMessages(prev => [...prev, aynMessage]);
+        chatState.setMessages(prev => [...prev, aynMessage]);
 
         // Save user message to database
         await supabase.from('messages').insert({
           user_id: user.id,
-          session_id: currentSessionId,
+          session_id: chatState.currentSessionId,
           content: content,
           sender: 'user',
-          mode_used: selectedMode,
+          mode_used: chatState.selectedMode,
           attachment_url: attachment?.url,
           attachment_name: attachment?.name,
           attachment_type: attachment?.type
@@ -741,10 +730,10 @@ export default function Dashboard({ user }: DashboardProps) {
         // Save AI response to database
         await supabase.from('messages').insert({
           user_id: user.id,
-          session_id: currentSessionId,
+          session_id: chatState.currentSessionId,
           content: response,
           sender: 'ayn',
-          mode_used: selectedMode
+          mode_used: chatState.selectedMode
         });
 
         // Refresh recent chats
@@ -754,7 +743,7 @@ export default function Dashboard({ user }: DashboardProps) {
         clearTimeout(timeoutId);
         if (controller.signal.aborted) {
           console.log('Request timed out after 30 seconds');
-          setIsTyping(false);
+          chatState.setIsTyping(false);
           toast({
             title: "Response Timeout", 
             description: "AYN took too long to respond. Please try again.",
@@ -766,7 +755,7 @@ export default function Dashboard({ user }: DashboardProps) {
       }
 
     } catch (error) {
-      setIsTyping(false);
+      chatState.setIsTyping(false);
       const errorMsg = error instanceof Error ? error.message : "I'm sorry, I'm having trouble connecting right now. Please try again in a moment.";
       
       const errorMessage: Message = {
@@ -776,7 +765,7 @@ export default function Dashboard({ user }: DashboardProps) {
         timestamp: new Date(),
       };
 
-      setMessages(prev => [...prev, errorMessage]);
+      chatState.setMessages(prev => [...prev, errorMessage]);
       
       toast({
         title: "Connection Error",
@@ -815,7 +804,7 @@ export default function Dashboard({ user }: DashboardProps) {
       return false;
     }
 
-    setSelectedFile(file);
+    chatState.setSelectedFile(file);
     toast({
       title: "File Selected",
       description: `${file.name} is ready to send.`,
@@ -834,7 +823,7 @@ export default function Dashboard({ user }: DashboardProps) {
   const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsDragOver(true);
+    chatState.setIsDragOver(true);
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
@@ -843,7 +832,7 @@ export default function Dashboard({ user }: DashboardProps) {
     
     // Only set dragOver to false if we're leaving the drop zone entirely
     if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-      setIsDragOver(false);
+      chatState.setIsDragOver(false);
     }
   };
 
@@ -871,14 +860,14 @@ export default function Dashboard({ user }: DashboardProps) {
 
   // Reply to message
   const handleReplyToMessage = (message: Message) => {
-    setReplyingTo(message);
-    setInputMessage(`@${message.sender}: "${message.content.substring(0, 50)}${message.content.length > 50 ? '...' : ''}"\n\n`);
+    chatState.setReplyingTo(message);
+    chatState.setInputMessage(`@${message.sender}: "${message.content.substring(0, 50)}${message.content.length > 50 ? '...' : ''}"\n\n`);
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsDragOver(false);
+    chatState.setIsDragOver(false);
 
     if (!hasAccess || !hasAcceptedTerms) {
       toast({
@@ -907,7 +896,7 @@ export default function Dashboard({ user }: DashboardProps) {
 
   const uploadFile = async (file: File): Promise<{ url: string; name: string; type: string } | null> => {
     try {
-      setIsUploading(true);
+      chatState.setIsUploading(true);
       
       // Convert file to base64
       const base64 = await new Promise<string>((resolve) => {
@@ -947,12 +936,12 @@ export default function Dashboard({ user }: DashboardProps) {
       });
       return null;
     } finally {
-      setIsUploading(false);
+      chatState.setIsUploading(false);
     }
   };
 
   const removeSelectedFile = () => {
-    setSelectedFile(null);
+    chatState.setSelectedFile(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -970,8 +959,8 @@ export default function Dashboard({ user }: DashboardProps) {
   };
 
   const handleLoadChat = (chatHistory: ChatHistory) => {
-    setCurrentSessionId(chatHistory.sessionId);
-    setMessages(chatHistory.messages);
+    chatState.setCurrentSessionId(chatHistory.sessionId);
+    chatState.setMessages(chatHistory.messages);
     toast({
       title: "Chat Loaded",
       description: `Loaded conversation: ${chatHistory.title}`,
@@ -1064,8 +1053,8 @@ export default function Dashboard({ user }: DashboardProps) {
 
   const handleNewChat = () => {
     const newSessionId = crypto.randomUUID();
-    setCurrentSessionId(newSessionId);
-    setMessages([]);
+    chatState.setCurrentSessionId(newSessionId);
+    chatState.setMessages([]);
     // Force reload of recent chats to update the sidebar
     loadRecentChats();
     toast({
@@ -1185,8 +1174,8 @@ export default function Dashboard({ user }: DashboardProps) {
               </div>
               <div className={`flex-1 min-w-0 group-data-[collapsible=icon]:hidden ${language === 'ar' ? 'text-right' : ''}`}>
                 <p className="font-medium text-xs text-foreground">AYN AI</p>
-                <p className={`text-xs ${isTyping ? 'text-muted-foreground' : (hasAccess ? 'text-green-500 font-medium' : 'text-muted-foreground')}`}>
-                  {isTyping ? t('common.thinking') : (hasAccess ? t('common.active') : t('common.inactive'))}
+                <p className={`text-xs ${chatState.isTyping ? 'text-muted-foreground' : (hasAccess ? 'text-green-500 font-medium' : 'text-muted-foreground')}`}>
+                  {chatState.isTyping ? t('common.thinking') : (hasAccess ? t('common.active') : t('common.inactive'))}
                 </p>
               </div>
             </div>
@@ -1257,8 +1246,8 @@ export default function Dashboard({ user }: DashboardProps) {
                        <SidebarMenuButton
                          onClick={() => handleModeClick(mode.name)}
                          disabled={!hasAccess || !hasAcceptedTerms}
-                         tooltip={mode.description}
-                         className={`${selectedMode === mode.name ? 'bg-sidebar-accent text-sidebar-accent-foreground' : ''}`}
+                            tooltip={mode.description}
+                            className={`${chatState.selectedMode === mode.name ? 'bg-sidebar-accent text-sidebar-accent-foreground' : ''}`}
                        >
                          <mode.icon className={`w-4 h-4 flex-shrink-0 ${mode.color} mr-2`} />
                          <span className={`group-data-[collapsible=icon]:hidden ${language === 'ar' ? 'text-right' : ''}`}>{mode.translatedName}</span>
@@ -1442,7 +1431,7 @@ export default function Dashboard({ user }: DashboardProps) {
                 <Brain className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
                 <h1 className="font-bold text-sm sm:text-lg truncate">{t('header.aynBusinessConsole')}</h1>
                 <Badge variant="secondary" className="text-xs hidden sm:inline-flex">
-                  {modes.find(mode => mode.name === selectedMode)?.translatedName || selectedMode}
+                  {modes.find(mode => mode.name === chatState.selectedMode)?.translatedName || chatState.selectedMode}
                 </Badge>
               </div>
             </div>
@@ -1525,7 +1514,7 @@ export default function Dashboard({ user }: DashboardProps) {
               {/* Messages Area */}
               <ScrollArea className="flex-1 px-3 sm:px-4 lg:px-6 pb-20 sm:pb-24">
                 <div className="max-w-4xl mx-auto py-4 sm:py-6 space-y-3 sm:space-y-4">
-                  {messages.map((message) => (
+                  {chatState.messages.map((message) => (
                      <div
                        key={message.id}
                        className={`flex gap-2 sm:gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'} group relative`}
@@ -1555,7 +1544,7 @@ export default function Dashboard({ user }: DashboardProps) {
                                 speed={2}
                                 className="inline-block text-foreground"
                                 onComplete={() => {
-                                  setMessages(prev => 
+                                  chatState.setMessages(prev => 
                                     prev.map(msg => 
                                       msg.id === message.id 
                                         ? { ...msg, isTyping: false }
@@ -1608,8 +1597,8 @@ export default function Dashboard({ user }: DashboardProps) {
                     </div>
                   ))}
 
-                  {/* Typing Indicator */}
-                  {isTyping && (
+                {/* Typing Indicator */}
+                {chatState.isTyping && (
                     <div className="flex gap-2 sm:gap-3 justify-start">
                       <Avatar className="w-7 h-7 sm:w-8 sm:h-8 flex-shrink-0">
                         <AvatarFallback className="bg-primary text-primary-foreground text-xs">
@@ -1627,25 +1616,25 @@ export default function Dashboard({ user }: DashboardProps) {
               {/* Mobile-Style Floating Input Bar */}
               <div 
                 dir="ltr"
-                className={`input-area ${messages.length > 0 ? 'bottom-position' : 'center-position'}`}
+                className={`input-area ${chatState.messages.length > 0 ? 'bottom-position' : 'center-position'}`}
                 onDragEnter={handleDragEnter}
                 onDragLeave={handleDragLeave}
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
               >
                 {/* Reply indicator */}
-                {replyingTo && (
+                {chatState.replyingTo && (
                   <div className="mb-2 p-2 bg-muted rounded-lg flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Reply className="w-4 h-4 text-muted-foreground" />
                       <span className="text-sm text-muted-foreground">
-                        Replying to: "{replyingTo.content.substring(0, 50)}{replyingTo.content.length > 50 ? '...' : ''}"
+                        Replying to: "{chatState.replyingTo.content.substring(0, 50)}{chatState.replyingTo.content.length > 50 ? '...' : ''}"
                       </span>
                     </div>
                     <button
                       onClick={() => {
-                        setReplyingTo(null);
-                        setInputMessage('');
+                        chatState.setReplyingTo(null);
+                        chatState.setInputMessage('');
                       }}
                       className="p-1 rounded-md hover:bg-background text-muted-foreground hover:text-foreground transition-colors"
                     >
@@ -1654,7 +1643,7 @@ export default function Dashboard({ user }: DashboardProps) {
                   </div>
                 )}
                 {/* Drag Overlay */}
-                {isDragOver && (
+                {chatState.isDragOver && (
                   <div className="fixed inset-0 z-[60] bg-background/20 backdrop-blur-sm flex items-center justify-center">
                     <div className="bg-background border-2 border-dashed border-primary rounded-2xl p-8 text-center max-w-sm mx-4">
                       <Paperclip className="w-12 h-12 mx-auto mb-4 text-primary" />
@@ -1673,15 +1662,15 @@ export default function Dashboard({ user }: DashboardProps) {
                 )}
                 
                 {/* Selected File Preview */}
-                {selectedFile && (
+                {chatState.selectedFile && (
                   <div className="mb-2 p-3 bg-muted rounded-xl border flex items-center gap-3">
                     <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
                       <Paperclip className="w-4 h-4 text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{selectedFile.name}</p>
+                      <p className="text-sm font-medium truncate">{chatState.selectedFile.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                        {(chatState.selectedFile.size / 1024 / 1024).toFixed(2)} MB
                       </p>
                     </div>
                     <button
@@ -1693,23 +1682,23 @@ export default function Dashboard({ user }: DashboardProps) {
                   </div>
                 )}
 
-                <div className={`input-container ${isDragOver ? 'drag-over' : ''}`}>
+                <div className={`input-container ${chatState.isDragOver ? 'drag-over' : ''}`}>
                   {/* Attachment Button with File Types Dropdown */}
-                  {(selectedMode.toLowerCase().includes('pdf') || selectedMode.toLowerCase().includes('vision') || selectedMode.toLowerCase().includes('general')) ? (
+                  {(chatState.selectedMode.toLowerCase().includes('pdf') || chatState.selectedMode.toLowerCase().includes('vision') || chatState.selectedMode.toLowerCase().includes('general')) ? (
                     <div className="relative">
                       <button 
                         className="attachment-button group"
                         onClick={handleAttachmentClick}
-                        onMouseEnter={() => setShowFileTypes(true)}
-                        onMouseLeave={() => setShowFileTypes(false)}
-                        disabled={!hasAccess || !hasAcceptedTerms || isUploading}
+                        onMouseEnter={() => chatState.setShowFileTypes(true)}
+                        onMouseLeave={() => chatState.setShowFileTypes(false)}
+                        disabled={!hasAccess || !hasAcceptedTerms || chatState.isUploading}
                         title="Attach file"
                       >
                         <Paperclip className="w-4 h-4" />
                       </button>
                       
                       {/* File Types Dropdown */}
-                      {showFileTypes && !isDragOver && (
+                      {chatState.showFileTypes && !chatState.isDragOver && (
                         <div className="absolute bottom-full left-0 mb-2 bg-background border border-border rounded-lg shadow-lg p-3 min-w-[220px] z-50">
                           <div className="text-xs font-semibold text-foreground mb-2">📎 Accepted file types:</div>
                           <div className="space-y-2">
@@ -1760,9 +1749,9 @@ export default function Dashboard({ user }: DashboardProps) {
                       ref={inputRef}
                       unstyled={true}
                       className="message-input resize-none min-h-[40px] max-h-[200px] overflow-hidden"
-                      value={inputMessage}
+                      value={chatState.inputMessage}
                       onChange={(e) => {
-                        setInputMessage(e.target.value);
+                        chatState.setInputMessage(e.target.value);
                         // Auto-resize textarea
                         const textarea = e.target as HTMLTextAreaElement;
                         textarea.style.height = 'auto';
@@ -1777,19 +1766,19 @@ export default function Dashboard({ user }: DashboardProps) {
                         }
                       }}
                       onKeyPress={handleKeyPress}
-                      onFocus={() => setIsInputFocused(true)}
-                      onBlur={() => setIsInputFocused(false)}
+                      onFocus={() => chatState.setIsInputFocused(true)}
+                      onBlur={() => chatState.setIsInputFocused(false)}
                       placeholder=""
-                      disabled={!hasAccess || !hasAcceptedTerms || isUploading}
+                      disabled={!hasAccess || !hasAcceptedTerms || chatState.isUploading}
                       rows={1}
                     />
                     
                     {/* Typewriter Animation Placeholder */}
-                    {showPlaceholder && !inputMessage.trim() && !isInputFocused && (
+                    {chatState.showPlaceholder && !chatState.inputMessage.trim() && !chatState.isInputFocused && (
                       <div className={`absolute ${direction === 'rtl' ? 'right-[var(--input-left-offset)]' : 'left-[var(--input-left-offset)]'} top-[var(--input-vertical-offset)] pointer-events-none z-10 ${direction === 'rtl' ? 'text-right' : 'text-left'} transition-all duration-300 ease-in-out`}>
                         <TypewriterText
-                          key={`${placeholderIndex}-${language}-${direction}`}
-                          text={placeholderTexts[placeholderIndex]}
+                          key={`${chatState.placeholderIndex}-${language}-${direction}`}
+                          text={placeholderTexts[chatState.placeholderIndex]}
                           speed={50}
                           className="typewriter-text text-muted-foreground"
                           showCursor={true}
@@ -1798,13 +1787,13 @@ export default function Dashboard({ user }: DashboardProps) {
                     )}
                     
                     {/* File Selected Indicator */}
-                    {selectedFile && (
+                    {chatState.selectedFile && (
                       <div className="absolute -top-12 left-0 bg-primary text-primary-foreground px-3 py-1 rounded-lg text-sm flex items-center gap-2">
                         <Paperclip className="w-3 h-3" />
-                        <span>{selectedFile.name}</span>
+                        <span>{chatState.selectedFile.name}</span>
                         <button 
                           onClick={() => {
-                            setSelectedFile(null);
+                            chatState.setSelectedFile(null);
                             if (fileInputRef.current) fileInputRef.current.value = '';
                           }}
                           className="text-primary-foreground hover:text-primary-foreground/80"
@@ -1817,11 +1806,11 @@ export default function Dashboard({ user }: DashboardProps) {
                   
                   {/* Send Button */}
                   <button
-                    className={`send-button ${getSendButtonClass(selectedMode)}`}
+                    className={`send-button ${getSendButtonClass(chatState.selectedMode)}`}
                     onClick={() => handleSendMessage()}
-                    disabled={(!inputMessage.trim() && !selectedFile) || !hasAccess || !hasAcceptedTerms || isTyping || isUploading}
+                    disabled={(!chatState.inputMessage.trim() && !chatState.selectedFile) || !hasAccess || !hasAcceptedTerms || chatState.isTyping || chatState.isUploading}
                   >
-                    {isUploading ? (
+                    {chatState.isUploading ? (
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     ) : (
                       <Send className="w-4 h-4" style={{ transform: 'scaleX(1)' }} />
@@ -1845,7 +1834,7 @@ export default function Dashboard({ user }: DashboardProps) {
           onFavoritesClose={() => setShowFavoritesDialog(false)}
           onMessageSelect={handleMessageSelect}
           onSessionLoad={(sessionId: string) => {
-            setCurrentSessionId(sessionId);
+            chatState.setCurrentSessionId(sessionId);
             loadCurrentChatHistory(sessionId);
             toast({
               title: 'Session loaded',
