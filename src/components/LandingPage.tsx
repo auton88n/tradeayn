@@ -85,6 +85,7 @@ const LandingPage = () => {
               <Button 
                 onClick={() => setShowAuthModal(true)}
                 variant="white"
+                className="bg-black text-white dark:bg-white dark:text-black hover:bg-black/90 dark:hover:bg-white/90"
               >
                 {t('nav.getStarted')}
               </Button>
