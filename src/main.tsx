@@ -1,3 +1,4 @@
+// Force rebuild to clear Vite cache after dependency changes
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'

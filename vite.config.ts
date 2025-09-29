@@ -9,6 +9,10 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react-virtuoso'],
+    force: true
+  },
   plugins: [
     react(),
     mode === 'development' &&
