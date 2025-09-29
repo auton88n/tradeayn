@@ -4,18 +4,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { log } from '@/lib/secureLogger';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+
+
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -29,25 +28,16 @@ import {
 } from '@/components/ui/sidebar';
 import { MaintenanceBanner } from '@/components/MaintenanceBanner';
 import { 
-  Send, 
-  Paperclip, 
   TrendingUp, 
-  Target, 
   Search, 
-  Rocket,
   Brain,
   LogOut,
-  Settings,
   FileText,
   Eye,
   Coins,
-  Menu,
-  X,
   Shield,
   Plus,
   User as UserIcon,
-  Copy,
-  Reply,
   MessageSquare,
   Download,
   Heart
@@ -55,11 +45,11 @@ import {
 import { ThemeToggle } from './theme-toggle';
 import { TermsModal } from './TermsModal';
 import { AdminPanel } from './AdminPanel';
-import { TypewriterText } from './TypewriterText';
-import { TypingIndicator } from './TypingIndicator';
+
+
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
-import { MessageFormatter } from './MessageFormatter';
+
 import { ChatActions } from './dashboard/ChatActions';
 import { MessageItem } from './dashboard/MessageItem';
 import { MessageList } from './dashboard/MessageList';
