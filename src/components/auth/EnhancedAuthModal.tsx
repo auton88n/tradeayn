@@ -300,8 +300,9 @@ export const EnhancedAuthModal = ({ open, onOpenChange }: EnhancedAuthModalProps
         description: 'Checking your wallet balance...',
       });
 
+      let verificationData: any = null;
       try {
-        const { data: verificationData, error: verifyError } = await supabase.functions.invoke(
+        const { data, error: verifyError } = await supabase.functions.invoke(
           'verify-solana-token',
           {
             body: { walletAddress: publicKey }
@@ -313,6 +314,7 @@ export const EnhancedAuthModal = ({ open, onOpenChange }: EnhancedAuthModalProps
           throw new Error(verifyError.message || 'Failed to verify token holdings');
         }
 
+        verificationData = data;
         setTokenBalance(verificationData.balance);
 
         if (!verificationData.verified) {

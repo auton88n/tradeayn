@@ -1,5 +1,5 @@
 // Virtual scrolling with react-virtuoso for performance optimization
-import { useRef, useEffect } from 'react';
+import { useRef, useCallback } from 'react';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Brain } from 'lucide-react';
@@ -42,19 +42,8 @@ export const MessageList = ({
 }: MessageListProps) => {
   const virtuosoRef = useRef<VirtuosoHandle>(null);
 
-  // Auto-scroll to bottom when new messages arrive
-  useEffect(() => {
-    if (virtuosoRef.current && messages.length > 0) {
-      virtuosoRef.current.scrollToIndex({
-        index: messages.length - 1,
-        behavior: 'smooth',
-        align: 'end'
-      });
-    }
-  }, [messages.length]);
-
   // Item renderer with typing indicator support
-  const itemContent = (index: number) => {
+  const itemContent = useCallback((index: number) => {
     const message = messages[index];
     return (
       <div className="px-3 sm:px-4 lg:px-6">
@@ -69,7 +58,7 @@ export const MessageList = ({
         </div>
       </div>
     );
-  };
+  }, [messages, user, onCopy, onReply, onTypingComplete]);
 
   // Footer renderer for typing indicator
   const Footer = () => {
@@ -100,6 +89,8 @@ export const MessageList = ({
         components={{ Footer }}
         followOutput="smooth"
         alignToBottom
+        overscan={200}
+        increaseViewportBy={{ top: 200, bottom: 200 }}
         className="py-4 sm:py-6"
       />
       <div ref={messagesEndRef} className="absolute bottom-0" />

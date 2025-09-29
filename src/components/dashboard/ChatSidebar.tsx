@@ -12,6 +12,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -317,8 +318,9 @@ export const ChatSidebar = ({
               </div>
             </SidebarGroupLabel>
             <SidebarGroupContent>
-              <div className="space-y-1">
-                {recentChats.slice(0, 10).map((chat, index) => (
+              <ScrollArea className="h-[400px]">
+                <div className="space-y-1 pr-4">
+                  {recentChats.slice(0, 10).map((chat, index) => (
                   <div key={chat.sessionId} className="flex items-center gap-2 group">
                     {showChatSelection && (
                       <Checkbox
@@ -404,8 +406,9 @@ export const ChatSidebar = ({
                       )}
                     </div>
                   </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              </ScrollArea>
             </SidebarGroupContent>
           </SidebarGroup>
         )}

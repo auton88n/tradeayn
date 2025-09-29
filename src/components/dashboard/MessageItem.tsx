@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Brain, Copy, Reply, Paperclip } from 'lucide-react';
 import { TypewriterText } from '@/components/TypewriterText';
@@ -26,7 +27,7 @@ interface MessageItemProps {
   onTypingComplete?: (messageId: string) => void;
 }
 
-export const MessageItem = ({ message, user, onCopy, onReply, onTypingComplete }: MessageItemProps) => {
+export const MessageItem = memo(({ message, user, onCopy, onReply, onTypingComplete }: MessageItemProps) => {
   return (
     <div
       className={`flex gap-2 sm:gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'} group relative`}
@@ -104,4 +105,4 @@ export const MessageItem = ({ message, user, onCopy, onReply, onTypingComplete }
       )}
     </div>
   );
-};
+});
