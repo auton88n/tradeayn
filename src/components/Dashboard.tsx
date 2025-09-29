@@ -1160,7 +1160,7 @@ export default function Dashboard({ user }: DashboardProps) {
             <div className="flex items-center gap-3">
               <Avatar className="h-8 w-8 ring-2 ring-primary/20">
                 <AvatarImage src="" />
-                <AvatarFallback className="bg-gradient-primary text-white font-semibold text-sm">
+                <AvatarFallback className="bg-primary text-primary-foreground font-semibold text-sm">
                   {user?.user_metadata?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
                 </AvatarFallback>
               </Avatar>
@@ -1654,7 +1654,7 @@ export default function Dashboard({ user }: DashboardProps) {
                 )}
                 {/* Drag Overlay */}
                 {isDragOver && (
-                  <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-sm flex items-center justify-center">
+                  <div className="fixed inset-0 z-[60] bg-background/20 backdrop-blur-sm flex items-center justify-center">
                     <div className="bg-background border-2 border-dashed border-primary rounded-2xl p-8 text-center max-w-sm mx-4">
                       <Paperclip className="w-12 h-12 mx-auto mb-4 text-primary" />
                       <p className="text-lg font-medium text-primary mb-2">Drop your file here</p>

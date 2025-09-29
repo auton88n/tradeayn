@@ -165,13 +165,13 @@
   }
 
   .dark .glass-hover:hover {
-    background: rgba(255, 255, 255, 0.9);
-    color: black;
+    background: hsla(var(--background) / 0.95);
+    color: hsl(var(--foreground));
   }
 
   .dark .glass-hover:hover h3,
   .dark .glass-hover:hover p {
-    color: black;
+    color: hsl(var(--foreground));
   }
 
   /* Gradient text styles */
@@ -183,9 +183,9 @@
   }
 
   .dark .gradient-text {
-    color: white;
+    color: hsl(var(--primary-foreground));
     background: none;
-    -webkit-text-fill-color: white;
+    -webkit-text-fill-color: hsl(var(--primary-foreground));
   }
   
   
@@ -216,25 +216,25 @@
   /* Brain containers with theme-specific design */
   .brain-container,
   .brain-container-lg {
-    background: black;
+    background: hsl(var(--primary));
     border: 2px solid hsl(var(--primary) / 0.2);
   }
   
   .dark .brain-container,
   .dark .brain-container-lg {
-    background: white;
+    background: hsl(var(--primary));
     border: 2px solid hsl(var(--primary) / 0.2);
   }
 
   /* Brain icons with theme-specific colors */
   .brain-container svg,
   .brain-container-lg svg {
-    color: white !important;
+    color: hsl(var(--primary-foreground)) !important;
   }
   
   .dark .brain-container svg,
   .dark .brain-container-lg svg {
-    color: black !important;
+    color: hsl(var(--primary-foreground)) !important;
   }
   
   /* Gradient text */
@@ -379,56 +379,7 @@
     .input-area.bottom-position {
       bottom: 16px;
     }
-  }
 
-
-
-  /* Center position for initial state */
-  .input-area.center-position {
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: calc(100% - 24px);
-    max-width: 600px;
-  }
-
-  /* Bottom position after first message */
-  .input-area.bottom-position {
-    bottom: 12px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: calc(100% - 24px);
-    max-width: 600px;
-  }
-
-  /* Mobile specific adjustments */
-  @media (max-width: 640px) {
-    .input-area {
-      padding: 0 8px;
-    }
-    
-    .input-area.center-position,
-    .input-area.bottom-position {
-      width: calc(100% - 16px);
-      max-width: none;
-    }
-    
-    .input-area.bottom-position {
-      bottom: 8px;
-    }
-  }
-
-  /* Tablet adjustments */
-  @media (min-width: 641px) and (max-width: 1023px) {
-    .input-area.center-position,
-    .input-area.bottom-position {
-      width: calc(100% - 32px);
-      max-width: 500px;
-    }
-    
-    .input-area.bottom-position {
-      bottom: 16px;
-    }
     
     /* Tablet: sidebar expanded positioning */
     [data-state="expanded"] ~ main .input-area {
@@ -552,22 +503,22 @@
 
   /* Remove old RTL input container rules - now handled above */
 
-  /* Auth input text - force black color in both light and dark modes */
+  /* Auth input text - use semantic tokens */
   .auth-input-text {
-    color: black !important;
+    color: hsl(var(--foreground)) !important;
   }
   
   .dark .auth-input-text {
-    color: black !important;
+    color: hsl(var(--foreground)) !important;
   }
 
-  /* Auth label text - force black color in both light and dark modes */
+  /* Auth label text - use semantic tokens */
   .auth-label {
-    color: black !important;
+    color: hsl(var(--foreground)) !important;
   }
   
   .dark .auth-label {
-    color: black !important;
+    color: hsl(var(--foreground)) !important;
   }
 
   /* RTL Margin and Padding Adjustments */

@@ -19,8 +19,8 @@ const NotFound = () => {
   return (
     <div className="min-h-screen flex items-center justify-center p-6">
       <Card className="glass text-center p-12 max-w-lg">
-        <div className="w-24 h-24 rounded-full bg-gradient-primary mx-auto mb-6 flex items-center justify-center animate-pulse-glow">
-          <Brain className="w-12 h-12 text-white" />
+        <div className="w-24 h-24 rounded-full bg-primary mx-auto mb-6 flex items-center justify-center animate-pulse-glow">
+          <Brain className="w-12 h-12 text-primary-foreground" />
         </div>
         
         <h1 className="text-6xl font-bold mb-4 gradient-text-hero">404</h1>
@@ -41,7 +41,7 @@ const NotFound = () => {
           
           <Button 
             onClick={() => window.location.href = "/"}
-            className="bg-gradient-primary hover:scale-105 transition-all neon-purple"
+            className="bg-primary text-primary-foreground hover:scale-105 transition-all neon-purple"
           >
             <Home className="w-4 h-4 mr-2" />
             {t('notFound.returnHome')}

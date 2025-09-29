@@ -64,7 +64,7 @@ const LandingPage = () => {
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg brain-container flex items-center justify-center">
-                  <Brain className="w-5 h-5 text-white" />
+                  <Brain className="w-5 h-5 text-primary-foreground" />
                 </div>
                 <span className="text-2xl font-bold">AYN</span>
               </div>
@@ -136,7 +136,7 @@ const LandingPage = () => {
               <Card className="bg-card border border-border max-w-md mx-auto p-6">
                 <div className="flex items-center gap-4 mb-4">
                   <div className="w-12 h-12 rounded-full brain-container-lg flex items-center justify-center">
-                    <Brain className="w-6 h-6 text-white" />
+                    <Brain className="w-6 h-6 text-primary-foreground" />
                   </div>
                   <div>
                     <h3 className="font-semibold">AYN AI Consultant</h3>
@@ -168,7 +168,7 @@ const LandingPage = () => {
             {features.map((feature, index) => (
               <Card key={index} className="bg-card border border-border glass-hover p-6 text-center group">
                 <div className="w-16 h-16 rounded-full brain-container-lg mx-auto mb-4 flex items-center justify-center group-hover:scale-105 transition-transform">
-                  <feature.icon className="w-8 h-8 text-black" />
+                  <feature.icon className="w-8 h-8 text-primary-foreground" />
                 </div>
                 <h3 className="text-xl font-semibold mb-3">{feature.title}</h3>
                 <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
@@ -215,7 +215,7 @@ const LandingPage = () => {
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center gap-3 mb-4 md:mb-0">
               <div className="w-8 h-8 rounded-lg brain-container flex items-center justify-center">
-                <Brain className="w-5 h-5 text-white" />
+                <Brain className="w-5 h-5 text-primary-foreground" />
               </div>
               <span className="text-2xl font-bold">AYN</span>
             </div>

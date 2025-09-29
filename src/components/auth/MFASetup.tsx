@@ -163,7 +163,7 @@ export function MFASetup({ isOpen, onClose, onComplete, userEmail }: MFASetupPro
               <img 
                 src={mfaData.qrCode} 
                 alt="MFA QR Code" 
-                className="mx-auto border rounded-lg p-4 bg-white"
+                className="mx-auto border rounded-lg p-4 bg-card"
                 width="200"
                 height="200"
               />
