@@ -1,3 +1,4 @@
+// Virtual scrolling with react-virtuoso for performance optimization
 import { useRef, useEffect } from 'react';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
