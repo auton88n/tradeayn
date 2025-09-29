@@ -166,6 +166,7 @@ export function MFASetup({ isOpen, onClose, onComplete, userEmail }: MFASetupPro
                 className="mx-auto border rounded-lg p-4 bg-card"
                 width="200"
                 height="200"
+                loading="lazy"
               />
             </CardContent>
           </Card>
