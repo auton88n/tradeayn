@@ -14,6 +14,7 @@ import {
 import { useLanguage } from '@/contexts/LanguageContext';
 import { generateDeviceFingerprint, collectDeviceInfo, validateDeviceInfo } from '@/lib/deviceFingerprint';
 import { reportThreatEvent, checkIPBlocked } from '@/lib/threatDetection';
+import { Mail } from 'lucide-react';
 
 interface EnhancedAuthModalProps {
   open: boolean;
@@ -37,6 +38,9 @@ export const EnhancedAuthModal = ({ open, onOpenChange }: EnhancedAuthModalProps
   const [isVerifyingToken, setIsVerifyingToken] = useState(false);
   const [tokenVerified, setTokenVerified] = useState(false);
   const [tokenBalance, setTokenBalance] = useState<number | null>(null);
+  const [showUsernamePrompt, setShowUsernamePrompt] = useState(false);
+  const [displayName, setDisplayName] = useState('');
+  const [pendingWalletAddress, setPendingWalletAddress] = useState('');
   
   const { toast } = useToast();
   const { t } = useLanguage();
@@ -362,18 +366,48 @@ export const EnhancedAuthModal = ({ open, onOpenChange }: EnhancedAuthModalProps
           title: 'Wallet Already Connected',
           description: 'This wallet is already linked to an account. Signing you in...',
         });
+        setIsLoading(false);
         onOpenChange(false);
         return;
       }
 
+      // New wallet - show username prompt
+      setPendingWalletAddress(publicKey);
+      setShowUsernamePrompt(true);
+      setIsLoading(false);
+      
+    } catch (error: any) {
+      console.error('Solana auth error:', error);
+      toast({
+        title: 'Wallet Connection Failed',
+        description: error.message || 'Failed to connect Solana wallet. Please try again.',
+        variant: 'destructive'
+      });
+      setIsLoading(false);
+    }
+  };
+
+  const handleUsernameSubmit = async () => {
+    if (!displayName.trim() || !pendingWalletAddress) {
+      toast({
+        title: 'Display Name Required',
+        description: 'Please enter a display name to continue.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      
       // Create new user account with Solana wallet
-      const tempEmail = `${publicKey.slice(0, 12)}-${Date.now()}@solana.wallet`;
-      const tempPassword = publicKey + Date.now() + Math.random().toString(36); 
+      const tempEmail = `${pendingWalletAddress.slice(0, 12)}-${Date.now()}@solana.wallet`;
+      const tempPassword = pendingWalletAddress + Date.now() + Math.random().toString(36); 
       
       console.log('Creating new user with Solana wallet:', {
         email: tempEmail,
-        walletAddress: publicKey,
-        tokenBalance: verificationData.balance
+        walletAddress: pendingWalletAddress,
+        displayName: displayName
       });
 
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
@@ -381,21 +415,17 @@ export const EnhancedAuthModal = ({ open, onOpenChange }: EnhancedAuthModalProps
         password: tempPassword,
         options: {
           data: {
-            full_name: `Solana User ${publicKey.slice(0, 8)}`,
+            full_name: displayName,
             company_name: 'Solana Wallet User',
-            wallet_address: publicKey,
+            wallet_address: pendingWalletAddress,
             auth_method: 'solana',
-            hoo_token_balance: verificationData.balance
+            hoo_token_balance: tokenBalance
           }
         }
       });
 
       if (signUpError) {
-        console.error('Signup error details:', {
-          message: signUpError.message,
-          status: signUpError.status,
-          details: signUpError
-        });
+        console.error('Signup error:', signUpError);
         throw new Error(`Account creation failed: ${signUpError.message}`);
       }
 
@@ -410,53 +440,35 @@ export const EnhancedAuthModal = ({ open, onOpenChange }: EnhancedAuthModalProps
         .from('wallet_addresses')
         .insert({
           user_id: authData.user.id,
-          wallet_address: publicKey,
+          wallet_address: pendingWalletAddress,
           wallet_type: 'solana',
           verified: true,
           is_primary: true
         });
 
       if (walletError) {
-        console.error('Wallet linking error:', {
-          message: walletError.message,
-          code: walletError.code,
-          details: walletError.details,
-          hint: walletError.hint
-        });
-        // Don't throw here - user is created, just wallet link failed
+        console.error('Wallet linking error:', walletError);
         toast({
-          title: 'Account Created',
-          description: 'Account created but wallet linking failed. Please contact support.',
+          title: 'Warning',
+          description: 'Account created but wallet linking needs admin review.',
           variant: 'destructive'
         });
-        return;
       }
 
-      console.log('Wallet linked successfully');
-
       toast({
-        title: 'Wallet Connected & Account Created',
-        description: 'Successfully created account and signed in with Solana wallet!',
+        title: 'Account Created! 🎉',
+        description: 'Your account is pending admin approval. You will be notified once approved.',
       });
       
-      resetForm();
+      setShowUsernamePrompt(false);
       onOpenChange(false);
+      resetForm();
       
     } catch (error: any) {
-      console.error('Solana auth error:', {
-        message: error.message,
-        error: error,
-        stack: error.stack
-      });
-      
-      // Show specific error message
-      const errorMessage = error.message?.includes('Account creation failed') 
-        ? error.message 
-        : error.message || 'Failed to connect Solana wallet. Please try again.';
-      
+      console.error('Error creating account:', error);
       toast({
-        title: 'Wallet Connection Failed',
-        description: errorMessage,
+        title: 'Account Creation Failed',
+        description: error.message || 'Failed to create account. Please try again.',
         variant: 'destructive'
       });
     } finally {
@@ -503,317 +515,323 @@ export const EnhancedAuthModal = ({ open, onOpenChange }: EnhancedAuthModalProps
     setFullName('');
     setCompanyName('');
     setPhone('');
+    setIsLoading(false);
     setFailedAttempts(0);
+    setSolanaWallet(null);
+    setIsVerifyingToken(false);
+    setTokenVerified(false);
+    setTokenBalance(null);
+    setShowUsernamePrompt(false);
+    setDisplayName('');
+    setPendingWalletAddress('');
   };
 
   const getSecurityStatus = () => {
-    if (ipBlocked) return { color: 'red', text: 'Blocked' };
-    if (!deviceTrusted) return { color: 'yellow', text: 'New Device' };
-    return { color: 'green', text: 'Trusted' };
+    if (ipBlocked) {
+      return { icon: AlertTriangle, text: 'Blocked', variant: 'destructive' as const };
+    }
+    if (!deviceTrusted) {
+      return { icon: Shield, text: 'New Device', variant: 'secondary' as const };
+    }
+    return { icon: CheckCircle2, text: 'Trusted', variant: 'default' as const };
   };
 
   const securityStatus = getSecurityStatus();
+  const SecurityIcon = securityStatus.icon;
 
-  if (ipBlocked) {
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="glass sm:max-w-md">
+  return (
+    <>
+      {/* Username Prompt Dialog */}
+      <Dialog open={showUsernamePrompt} onOpenChange={setShowUsernamePrompt}>
+        <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
-            <DialogTitle className="text-center text-red-600 text-2xl flex items-center justify-center gap-2">
-              <Shield className="w-6 h-6" />
-              Access Blocked
-            </DialogTitle>
+            <DialogTitle>Choose Your Display Name</DialogTitle>
           </DialogHeader>
-          <div className="text-center space-y-4 p-4">
-            <AlertTriangle className="w-16 h-16 text-red-500 mx-auto" />
-            <p className="text-muted-foreground">
-              Your IP address has been temporarily blocked due to suspicious activity.
-              Please contact support if you believe this is an error.
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-muted-foreground">
+              Please choose a display name for your account. This will be visible to administrators during the approval process.
             </p>
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Close
+            <div className="space-y-2">
+              <Label htmlFor="displayName">Display Name</Label>
+              <Input
+                id="displayName"
+                type="text"
+                placeholder="Enter your display name"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                disabled={isLoading}
+                maxLength={50}
+              />
+            </div>
+            <Button 
+              onClick={handleUsernameSubmit}
+              disabled={isLoading || !displayName.trim()}
+              className="w-full"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating Account...
+                </>
+              ) : (
+                'Create Account'
+              )}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
-    );
-  }
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="glass sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="text-center text-black dark:text-white text-2xl">
-            {t('auth.welcomeToAyn')}
-          </DialogTitle>
-          <div className="flex items-center justify-center gap-2">
-            <Badge variant="outline" className={`text-${securityStatus.color}-600`}>
-              <Shield className="w-3 h-3 mr-1" />
-              {securityStatus.text}
-            </Badge>
-            {deviceFingerprint && (
-              <Badge variant="outline">
-                <CheckCircle2 className="w-3 h-3 mr-1" />
-                Verified Device
-              </Badge>
-            )}
-          </div>
-        </DialogHeader>
-
-        {/* Auth Method Selection */}
-        <div className="flex gap-2 mb-4">
-          <Button 
-            variant={authMethod === 'email' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setAuthMethod('email')}
-            className="flex-1"
-          >
-            <User className="w-4 h-4 mr-2" />
-            Email
-          </Button>
-          <Button 
-            variant={authMethod === 'solana' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setAuthMethod('solana')}
-            className="flex-1"
-          >
-            <Wallet className="w-4 h-4 mr-2" />
-            Solana Wallet
-          </Button>
-        </div>
-
-        {authMethod === 'solana' ? (
-          <div className="space-y-4">
-            <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 mb-4">
-              <div className="flex items-center gap-2 text-sm">
-                <span className="text-2xl">🎫</span>
-                <div>
-                  <div className="font-semibold">Requires 10,000,000 HOO tokens</div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    Your wallet will be verified before access is granted
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="text-center py-6">
-              <Wallet className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground mb-4">
-                Connect your Solana wallet for secure, decentralized authentication
+      {/* Main Auth Dialog */}
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+          {ipBlocked ? (
+            <div className="space-y-4 text-center py-8">
+              <AlertTriangle className="w-16 h-16 text-destructive mx-auto" />
+              <h2 className="text-2xl font-bold">Access Blocked</h2>
+              <p className="text-muted-foreground">
+                Your IP address has been temporarily blocked due to suspicious activity.
+                Please contact support if you believe this is an error.
               </p>
-              
-              <Button 
-                onClick={handleSolanaAuth} 
-                disabled={isLoading || isVerifyingToken} 
-                className="w-full"
-              >
-                {(isLoading || isVerifyingToken) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isVerifyingToken ? 'Verifying HOO Token Holdings...' : 'Connect Solana Wallet'}
-              </Button>
-
-              {tokenVerified && (
-                <div className="mt-4 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
-                  <div className="flex items-center justify-center gap-2 text-green-600">
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span className="text-sm font-medium">
-                      Token verification passed: {tokenBalance?.toLocaleString()} HOO
-                    </span>
-                  </div>
-                </div>
-              )}
-              
-              {tokenBalance !== null && !tokenVerified && (
-                <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-                  <div className="flex items-center justify-center gap-2 text-red-600">
-                    <AlertTriangle className="w-4 h-4" />
-                    <span className="text-sm font-medium">
-                      Insufficient tokens: {tokenBalance.toLocaleString()} / 10,000,000 HOO
-                    </span>
-                  </div>
-                </div>
-              )}
             </div>
-          </div>
-        ) : (
-          <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 glass">
-              <TabsTrigger value="signin">{t('auth.signIn')}</TabsTrigger>
-              <TabsTrigger value="signup">{t('auth.requestAccess')}</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="signin" className="space-y-4 mt-6">
-              <form onSubmit={handleSignIn} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signin-email" className="auth-label">{t('auth.email')}</Label>
-                  <Input
-                    id="signin-email"
-                    type="email"
-                    placeholder={t('auth.enterEmail')}
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    disabled={isLoading}
-                    className="glass auth-input-text"
-                  />
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-2xl">{t('auth.welcome')}</DialogTitle>
+                <div className="flex items-center gap-2 mt-2">
+                  <Badge variant={securityStatus.variant} className="flex items-center gap-1">
+                    <SecurityIcon className="w-3 h-3" />
+                    {securityStatus.text}
+                  </Badge>
                 </div>
+              </DialogHeader>
 
-                <div className="space-y-2">
-                  <Label htmlFor="signin-password" className="auth-label">{t('auth.password')}</Label>
-                  <div className="relative">
-                    <Input
-                      id="signin-password"
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder={t('auth.enterPassword')}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      disabled={isLoading}
-                      className="glass auth-input-text pr-10"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-foreground hover:text-primary transition-colors"
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
+              <Tabs value={authMethod} onValueChange={(v) => setAuthMethod(v as 'email' | 'solana')} className="mt-4">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="email" className="flex items-center gap-2">
+                    <Mail className="w-4 h-4" />
+                    Email
+                  </TabsTrigger>
+                  <TabsTrigger value="solana" className="flex items-center gap-2">
+                    <Wallet className="w-4 h-4" />
+                    Solana Wallet
+                  </TabsTrigger>
+                </TabsList>
 
-                {failedAttempts > 0 && (
-                  <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
-                    Failed attempts: {failedAttempts}/5
-                  </div>
-                )}
-
-                <div className="flex justify-end">
-                  <Button
-                    type="button"
-                    variant="link"
-                    className="p-0 h-auto text-sm text-primary hover:text-primary/80"
-                    onClick={handleForgotPassword}
-                    disabled={isLoading}
-                  >
-                    Forgot password?
-                  </Button>
-                </div>
-
-                <Button
-                  type="submit"
-                  variant="hero"
-                  className="w-full"
-                  disabled={isLoading}
-                >
-                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {t('auth.signIn')}
-                </Button>
-              </form>
-            </TabsContent>
-
-            <TabsContent value="signup" className="space-y-4 mt-6">
-              <div className="text-center text-sm text-muted-foreground mb-4">
-                {t('auth.requestAccessDesc')}
-              </div>
-              
-              <form onSubmit={handleSignUp} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-name" className="auth-label">{t('auth.fullName')} *</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signup-name"
-                        type="text"
-                        placeholder="John Doe"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        disabled={isLoading}
-                        className="glass pl-10 auth-input-text"
-                      />
+                <TabsContent value="solana" className="space-y-4">
+                  <div className="space-y-4 py-4">
+                    <div className="text-center space-y-2">
+                      <Wallet className="w-12 h-12 mx-auto text-primary" />
+                      <h3 className="font-semibold">Connect with Solana</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Connect your Phantom wallet to access AYN. Requires 10,000,000 HOO tokens.
+                      </p>
                     </div>
-                  </div>
+                    
+                    {tokenVerified && (
+                      <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="w-5 h-5 text-green-600" />
+                          <div>
+                            <p className="font-medium text-green-900 dark:text-green-100">Token Verification Complete</p>
+                            <p className="text-sm text-green-700 dark:text-green-300">
+                              {tokenBalance?.toLocaleString()} HOO tokens verified
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-company" className="auth-label">{t('auth.company')} *</Label>
-                    <div className="relative">
-                      <Building className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signup-company"
-                        type="text"
-                        placeholder="Company Name"
-                        value={companyName}
-                        onChange={(e) => setCompanyName(e.target.value)}
-                        disabled={isLoading}
-                        className="glass pl-10 auth-input-text"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email" className="auth-label">{t('auth.businessEmail')} *</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    placeholder="john@company.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    disabled={isLoading}
-                    className="glass auth-input-text"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="signup-phone" className="auth-label">{t('auth.phoneNumber')}</Label>
-                  <Input
-                    id="signup-phone"
-                    type="tel"
-                    placeholder="+1 (555) 123-4567"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    disabled={isLoading}
-                    className="glass auth-input-text"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password" className="auth-label">{t('auth.password')} *</Label>
-                  <div className="relative">
-                    <Input
-                      id="signup-password"
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder={t('auth.createPassword')}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      disabled={isLoading}
-                      className="glass auth-input-text pr-10"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-foreground hover:text-primary transition-colors"
+                    <Button
+                      onClick={handleSolanaAuth}
+                      disabled={isLoading || isVerifyingToken}
+                      className="w-full"
+                      size="lg"
                     >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
+                      {isLoading || isVerifyingToken ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          {isVerifyingToken ? 'Verifying Tokens...' : 'Connecting...'}
+                        </>
+                      ) : (
+                        <>
+                          <Wallet className="mr-2 h-4 w-4" />
+                          Connect Phantom Wallet
+                        </>
+                      )}
+                    </Button>
                   </div>
-                </div>
+                </TabsContent>
 
-                <Button
-                  type="submit"
-                  variant="hero"
-                  className="w-full"
-                  disabled={isLoading}
-                >
-                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {t('auth.requestAccess')}
-                </Button>
+                <TabsContent value="email">
+                  <Tabs defaultValue="signin" className="space-y-4">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="signin">{t('auth.signIn')}</TabsTrigger>
+                      <TabsTrigger value="signup">{t('auth.signUp')}</TabsTrigger>
+                    </TabsList>
 
-                <div className="text-xs text-muted-foreground text-center">
-                  {t('auth.accessReviewDesc')}
-                </div>
-              </form>
-            </TabsContent>
-          </Tabs>
-        )}
-      </DialogContent>
-    </Dialog>
+                    <TabsContent value="signin">
+                      <form onSubmit={handleSignIn} className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="email">{t('auth.email')}</Label>
+                          <Input
+                            id="email"
+                            type="email"
+                            placeholder="your@email.com"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            disabled={isLoading}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="password">{t('auth.password')}</Label>
+                          <div className="relative">
+                            <Input
+                              id="password"
+                              type={showPassword ? 'text' : 'password'}
+                              value={password}
+                              onChange={(e) => setPassword(e.target.value)}
+                              disabled={isLoading}
+                              required
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                              onClick={() => setShowPassword(!showPassword)}
+                            >
+                              {showPassword ? (
+                                <EyeOff className="h-4 w-4" />
+                              ) : (
+                                <Eye className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                        <Button type="submit" className="w-full" disabled={isLoading}>
+                          {isLoading ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              {t('auth.signingIn')}
+                            </>
+                          ) : (
+                            t('auth.signIn')
+                          )}
+                        </Button>
+                        <Button 
+                          type="button"
+                          variant="link" 
+                          className="w-full text-sm" 
+                          onClick={handleForgotPassword}
+                          disabled={isLoading}
+                        >
+                          {t('auth.forgotPassword')}
+                        </Button>
+                      </form>
+                    </TabsContent>
+
+                    <TabsContent value="signup">
+                      <form onSubmit={handleSignUp} className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="signup-fullname">
+                            <User className="w-4 h-4 inline mr-1" />
+                            {t('auth.fullName')}
+                          </Label>
+                          <Input
+                            id="signup-fullname"
+                            type="text"
+                            placeholder={t('auth.fullNamePlaceholder')}
+                            value={fullName}
+                            onChange={(e) => setFullName(e.target.value)}
+                            disabled={isLoading}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="signup-company">
+                            <Building className="w-4 h-4 inline mr-1" />
+                            {t('auth.companyName')}
+                          </Label>
+                          <Input
+                            id="signup-company"
+                            type="text"
+                            placeholder={t('auth.companyNamePlaceholder')}
+                            value={companyName}
+                            onChange={(e) => setCompanyName(e.target.value)}
+                            disabled={isLoading}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="signup-phone">{t('auth.phone')} ({t('auth.optional')})</Label>
+                          <Input
+                            id="signup-phone"
+                            type="tel"
+                            placeholder={t('auth.phonePlaceholder')}
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            disabled={isLoading}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="signup-email">{t('auth.email')}</Label>
+                          <Input
+                            id="signup-email"
+                            type="email"
+                            placeholder="your@email.com"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            disabled={isLoading}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="signup-password">{t('auth.password')}</Label>
+                          <div className="relative">
+                            <Input
+                              id="signup-password"
+                              type={showPassword ? 'text' : 'password'}
+                              value={password}
+                              onChange={(e) => setPassword(e.target.value)}
+                              disabled={isLoading}
+                              required
+                              minLength={6}
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                              onClick={() => setShowPassword(!showPassword)}
+                            >
+                              {showPassword ? (
+                                <EyeOff className="h-4 w-4" />
+                              ) : (
+                                <Eye className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                        <Button type="submit" className="w-full" disabled={isLoading}>
+                          {isLoading ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              {t('auth.creatingAccount')}
+                            </>
+                          ) : (
+                            t('auth.createAccount')
+                          )}
+                        </Button>
+                      </form>
+                    </TabsContent>
+                  </Tabs>
+                </TabsContent>
+              </Tabs>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };

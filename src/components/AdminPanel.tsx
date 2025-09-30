@@ -36,6 +36,9 @@ interface AccessGrantWithProfile {
   monthly_limit: number | null;
   current_month_usage: number;
   user_email?: string;
+  requires_approval: boolean;
+  auth_method: string;
+  wallet_address: string | null;
   profiles: Profile | null;
 }
 

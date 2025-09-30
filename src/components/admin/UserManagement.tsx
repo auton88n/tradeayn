@@ -9,7 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { 
   Users, CheckCircle, XCircle, Clock, Building, Mail, Phone, Shield, Eye, Edit,
-  Search, Filter, Download, UserPlus, UserMinus, MoreVertical, Settings
+  Search, Filter, Download, UserPlus, UserMinus, MoreVertical, Settings, Wallet
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -27,6 +27,9 @@ interface AccessGrantWithProfile {
   monthly_limit: number | null;
   current_month_usage: number;
   user_email?: string;
+  requires_approval: boolean;
+  auth_method: string;
+  wallet_address: string | null;
   profiles: {
     id: string;
     user_id: string;
@@ -93,7 +96,8 @@ export const UserManagement = ({ allUsers, onRefresh, requireAuthentication }: U
       const matchesSearch = !searchTerm || 
         user.profiles?.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.profiles?.contact_person?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.user_email?.toLowerCase().includes(searchTerm.toLowerCase());
+        user.user_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.wallet_address?.toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesStatus = statusFilter === 'all' || 
         (statusFilter === 'active' && user.is_active) ||
@@ -237,12 +241,15 @@ export const UserManagement = ({ allUsers, onRefresh, requireAuthentication }: U
 
   const exportUserData = () => {
     const csvContent = [
-      ['Email', 'Company', 'Contact Person', 'Status', 'Monthly Limit', 'Current Usage', 'Usage %', 'Created Date'].join(','),
+      ['Email', 'Auth Method', 'Wallet Address', 'Company', 'Contact Person', 'Status', 'Requires Approval', 'Monthly Limit', 'Current Usage', 'Usage %', 'Created Date'].join(','),
       ...filteredUsers.map(user => [
         user.user_email || 'N/A',
+        user.auth_method || 'email',
+        user.wallet_address || 'N/A',
         user.profiles?.company_name || 'N/A',
         user.profiles?.contact_person || 'N/A',
         user.is_active ? 'Active' : 'Inactive',
+        user.requires_approval ? 'Yes' : 'No',
         user.monthly_limit || 'Unlimited',
         user.current_month_usage || 0,
         user.monthly_limit && user.current_month_usage !== null 
@@ -363,21 +370,39 @@ export const UserManagement = ({ allUsers, onRefresh, requireAuthentication }: U
                         
                         <div className={`space-y-1 ${language === 'ar' ? 'text-right' : ''}`}>
                           <div className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-                            <h3 className="font-semibold">{user.profiles?.company_name || t('admin.unknownCompany')}</h3>
+                            <h3 className="font-semibold">
+                              {user.profiles?.contact_person || user.profiles?.company_name || t('admin.unknownCompany')}
+                            </h3>
+                            <Badge variant={user.auth_method === 'solana' ? 'default' : 'secondary'} className="text-xs">
+                              {user.auth_method === 'solana' ? 'Solana' : 'Email'}
+                            </Badge>
                             <Badge variant={statusInfo.variant} className={`flex items-center gap-1 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
                               <StatusIcon className="w-3 h-3" />
                               {statusInfo.label}
                             </Badge>
+                            {user.requires_approval && (
+                              <Badge variant="outline" className="text-xs">
+                                Awaiting Approval
+                              </Badge>
+                            )}
                           </div>
-                          <div className={`flex items-center gap-4 text-sm text-muted-foreground ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+                          <div className={`flex flex-col gap-1 text-sm text-muted-foreground ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
                             <span className={`flex items-center gap-1 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
                               <Mail className="w-3 h-3" />
                               {user.user_email || t('admin.noEmail')}
                             </span>
-                            <span className={`flex items-center gap-1 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-                              <Phone className="w-3 h-3" />
-                              {user.profiles?.company_name || t('admin.noCompany')}
-                            </span>
+                            {user.wallet_address && (
+                              <span className={`flex items-center gap-1 font-mono text-xs ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+                                <Wallet className="w-3 h-3" />
+                                {user.wallet_address.slice(0, 8)}...{user.wallet_address.slice(-6)}
+                              </span>
+                            )}
+                            {user.profiles?.company_name && (
+                              <span className={`flex items-center gap-1 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+                                <Building className="w-3 h-3" />
+                                {user.profiles.company_name}
+                              </span>
+                            )}
                           </div>
                           <div className="space-y-2">
                             <div className={`flex items-center gap-4 text-xs text-muted-foreground ${language === 'ar' ? 'flex-row-reverse' : ''}`}>

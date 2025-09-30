@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       access_grants: {
         Row: {
+          auth_method: string | null
           created_at: string
           current_month_usage: number | null
           expires_at: string | null
@@ -25,11 +26,14 @@ export type Database = {
           is_active: boolean
           monthly_limit: number | null
           notes: string | null
+          requires_approval: boolean | null
           updated_at: string
           usage_reset_date: string | null
           user_id: string
+          wallet_address: string | null
         }
         Insert: {
+          auth_method?: string | null
           created_at?: string
           current_month_usage?: number | null
           expires_at?: string | null
@@ -39,11 +43,14 @@ export type Database = {
           is_active?: boolean
           monthly_limit?: number | null
           notes?: string | null
+          requires_approval?: boolean | null
           updated_at?: string
           usage_reset_date?: string | null
           user_id: string
+          wallet_address?: string | null
         }
         Update: {
+          auth_method?: string | null
           created_at?: string
           current_month_usage?: number | null
           expires_at?: string | null
@@ -53,9 +60,11 @@ export type Database = {
           is_active?: boolean
           monthly_limit?: number | null
           notes?: string | null
+          requires_approval?: boolean | null
           updated_at?: string
           usage_reset_date?: string | null
           user_id?: string
+          wallet_address?: string | null
         }
         Relationships: []
       }
