@@ -128,6 +128,19 @@ export const ChatSidebar = ({
     });
   };
 
+  // Format relative timestamp
+  const formatRelativeTime = (date: Date): string => {
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    if (diffInSeconds < 172800) return 'Yesterday';
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
   const handleDeleteSelectedChats = async () => {
     if (selectedChats.size === 0) return;
 
@@ -318,7 +331,7 @@ export const ChatSidebar = ({
               </div>
             </SidebarGroupLabel>
             <SidebarGroupContent>
-              <div className="space-y-1 pr-4">
+              <div className="space-y-0.5 pr-4">
                   {recentChats.slice(0, 10).map((chat, index) => (
                   <div key={chat.sessionId} className="flex items-center gap-2 group">
                     {showChatSelection && (
@@ -336,20 +349,19 @@ export const ChatSidebar = ({
                         className="shrink-0"
                       />
                     )}
-                    <div className="flex-1 flex items-center gap-2">
+                    <div className="flex-1 flex items-center gap-2 min-w-0">
                       <button
                         onClick={() => onChatLoad(chat.sessionId)}
-                        className="flex-1 text-left p-2 rounded-md hover:bg-muted/50 transition-colors"
+                        className="flex-1 text-left px-2 py-2.5 rounded-md hover:bg-muted/50 transition-colors min-w-0"
                         disabled={showChatSelection}
                       >
-                        <div className="font-medium text-sm line-clamp-1">
-                          {chat.title}
-                        </div>
-                        <div className="text-xs text-muted-foreground line-clamp-1">
-                          {chat.lastMessage}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {chat.timestamp.toLocaleDateString()}
+                        <div className="flex items-baseline justify-between gap-2 mb-0.5">
+                          <div className="font-semibold text-sm line-clamp-1 flex-1 min-w-0">
+                            {chat.title}
+                          </div>
+                          <span className="text-xs text-muted-foreground shrink-0">
+                            {formatRelativeTime(chat.timestamp)}
+                          </span>
                         </div>
                       </button>
                       {!showChatSelection && (
@@ -393,13 +405,13 @@ export const ChatSidebar = ({
                                   });
                                 }
                               }}
-                              className="h-8 w-8 p-0 hover:bg-muted transition-colors"
+                              className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 hover:bg-muted transition-all shrink-0"
                             >
-                              <Heart className="w-3 h-3" />
+                              <Heart className="w-3.5 h-3.5" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p>Save this entire chat session</p>
+                            <p>Save this chat</p>
                           </TooltipContent>
                         </Tooltip>
                       )}
