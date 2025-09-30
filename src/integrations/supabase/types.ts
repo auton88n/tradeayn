@@ -94,7 +94,6 @@ export type Database = {
           error_message: string | null
           id: string
           metadata: Json | null
-          recipient_email: string
           recipient_email_encrypted: string | null
           sent_at: string | null
           status: string | null
@@ -108,7 +107,6 @@ export type Database = {
           error_message?: string | null
           id?: string
           metadata?: Json | null
-          recipient_email: string
           recipient_email_encrypted?: string | null
           sent_at?: string | null
           status?: string | null
@@ -122,7 +120,6 @@ export type Database = {
           error_message?: string | null
           id?: string
           metadata?: Json | null
-          recipient_email?: string
           recipient_email_encrypted?: string | null
           sent_at?: string | null
           status?: string | null
