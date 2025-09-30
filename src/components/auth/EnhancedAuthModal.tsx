@@ -347,25 +347,35 @@ export const EnhancedAuthModal = ({ open, onOpenChange }: EnhancedAuthModalProps
       }
       
       // Check if wallet is already linked to an account
-      const { data: existingWallet } = await supabase
+      const { data: existingWallet, error: walletCheckError } = await supabase
         .from('wallet_addresses')
         .select('user_id')
         .eq('wallet_address', publicKey)
-        .single();
+        .maybeSingle();
+
+      if (walletCheckError) {
+        console.error('Error checking existing wallet:', walletCheckError);
+      }
 
       if (existingWallet) {
         toast({
-          title: 'Wallet Connected',
-          description: 'Successfully connected your Solana wallet!',
+          title: 'Wallet Already Connected',
+          description: 'This wallet is already linked to an account. Signing you in...',
         });
         onOpenChange(false);
         return;
       }
 
       // Create new user account with Solana wallet
-      const tempEmail = `${publicKey.slice(0, 12)}@solana.wallet`;
-      const tempPassword = publicKey + Date.now(); 
+      const tempEmail = `${publicKey.slice(0, 12)}-${Date.now()}@solana.wallet`;
+      const tempPassword = publicKey + Date.now() + Math.random().toString(36); 
       
+      console.log('Creating new user with Solana wallet:', {
+        email: tempEmail,
+        walletAddress: publicKey,
+        tokenBalance: verificationData.balance
+      });
+
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email: tempEmail,
         password: tempPassword,
@@ -381,38 +391,72 @@ export const EnhancedAuthModal = ({ open, onOpenChange }: EnhancedAuthModalProps
       });
 
       if (signUpError) {
-        throw signUpError;
-      }
-
-      if (authData.user) {
-        const { error: walletError } = await supabase
-          .from('wallet_addresses')
-          .insert({
-            user_id: authData.user.id,
-            wallet_address: publicKey,
-            wallet_type: 'solana',
-            verified: true,
-            is_primary: true
-          });
-
-        if (walletError) {
-          console.error('Error linking wallet:', walletError);
-        }
-
-        toast({
-          title: 'Wallet Connected & Account Created',
-          description: 'Successfully created account and signed in with Solana wallet!',
+        console.error('Signup error details:', {
+          message: signUpError.message,
+          status: signUpError.status,
+          details: signUpError
         });
-        
-        resetForm();
-        onOpenChange(false);
+        throw new Error(`Account creation failed: ${signUpError.message}`);
       }
+
+      if (!authData.user) {
+        throw new Error('User account was not created properly');
+      }
+
+      console.log('User created successfully:', authData.user.id);
+
+      // Link wallet to user account
+      const { error: walletError } = await supabase
+        .from('wallet_addresses')
+        .insert({
+          user_id: authData.user.id,
+          wallet_address: publicKey,
+          wallet_type: 'solana',
+          verified: true,
+          is_primary: true
+        });
+
+      if (walletError) {
+        console.error('Wallet linking error:', {
+          message: walletError.message,
+          code: walletError.code,
+          details: walletError.details,
+          hint: walletError.hint
+        });
+        // Don't throw here - user is created, just wallet link failed
+        toast({
+          title: 'Account Created',
+          description: 'Account created but wallet linking failed. Please contact support.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      console.log('Wallet linked successfully');
+
+      toast({
+        title: 'Wallet Connected & Account Created',
+        description: 'Successfully created account and signed in with Solana wallet!',
+      });
+      
+      resetForm();
+      onOpenChange(false);
       
     } catch (error: any) {
-      console.error('Solana auth error:', error);
+      console.error('Solana auth error:', {
+        message: error.message,
+        error: error,
+        stack: error.stack
+      });
+      
+      // Show specific error message
+      const errorMessage = error.message?.includes('Account creation failed') 
+        ? error.message 
+        : error.message || 'Failed to connect Solana wallet. Please try again.';
+      
       toast({
         title: 'Wallet Connection Failed',
-        description: error.message || 'Failed to connect to Solana wallet.',
+        description: errorMessage,
         variant: 'destructive'
       });
     } finally {
