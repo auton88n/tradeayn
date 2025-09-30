@@ -108,12 +108,17 @@
 
   * {
     @apply border-border;
+    transition: background-color 0.3s ease-in-out, 
+                border-color 0.3s ease-in-out, 
+                color 0.3s ease-in-out,
+                box-shadow 0.3s ease-in-out;
   }
   
   body {
     @apply bg-background text-foreground font-sans;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     min-height: 100vh;
+    transition: background 0.3s ease-in-out;
   }
 
   html.dark body {
