@@ -400,9 +400,13 @@ export const EnhancedAuthModal = ({ open, onOpenChange }: EnhancedAuthModalProps
     try {
       setIsLoading(true);
       
-      // Create new user account with Solana wallet
-      const tempEmail = `${pendingWalletAddress.slice(0, 12)}-${Date.now()}@solana.wallet`;
-      const tempPassword = pendingWalletAddress + Date.now() + Math.random().toString(36); 
+      // Add random delay to avoid rate limits (500-2000ms)
+      const delay = Math.floor(Math.random() * 1500) + 500;
+      await new Promise(resolve => setTimeout(resolve, delay));
+      
+      // Create deterministic email based on wallet address (prevents duplicates)
+      const tempEmail = `solana-${pendingWalletAddress.slice(0, 8)}@ayn.wallet`;
+      const tempPassword = pendingWalletAddress + Date.now() + Math.random().toString(36);
       
       console.log('Creating new user with Solana wallet:', {
         email: tempEmail,
