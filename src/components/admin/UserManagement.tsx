@@ -9,7 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { 
   Users, CheckCircle, XCircle, Clock, Building, Mail, Phone, Shield, Eye, Edit,
-  Search, Filter, Download, UserPlus, UserMinus, MoreVertical, Settings, Wallet
+  Search, Filter, Download, UserPlus, UserMinus, MoreVertical, Settings
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -96,8 +96,7 @@ export const UserManagement = ({ allUsers, onRefresh, requireAuthentication }: U
       const matchesSearch = !searchTerm || 
         user.profiles?.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.profiles?.contact_person?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.user_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.wallet_address?.toLowerCase().includes(searchTerm.toLowerCase());
+        user.user_email?.toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesStatus = statusFilter === 'all' || 
         (statusFilter === 'active' && user.is_active) ||
@@ -241,11 +240,9 @@ export const UserManagement = ({ allUsers, onRefresh, requireAuthentication }: U
 
   const exportUserData = () => {
     const csvContent = [
-      ['Email', 'Auth Method', 'Wallet Address', 'Company', 'Contact Person', 'Status', 'Requires Approval', 'Monthly Limit', 'Current Usage', 'Usage %', 'Created Date'].join(','),
+      ['Email', 'Company', 'Contact Person', 'Status', 'Requires Approval', 'Monthly Limit', 'Current Usage', 'Usage %', 'Created Date'].join(','),
       ...filteredUsers.map(user => [
         user.user_email || 'N/A',
-        user.auth_method || 'email',
-        user.wallet_address || 'N/A',
         user.profiles?.company_name || 'N/A',
         user.profiles?.contact_person || 'N/A',
         user.is_active ? 'Active' : 'Inactive',
@@ -373,9 +370,6 @@ export const UserManagement = ({ allUsers, onRefresh, requireAuthentication }: U
                             <h3 className="font-semibold">
                               {user.profiles?.contact_person || user.profiles?.company_name || t('admin.unknownCompany')}
                             </h3>
-                            <Badge variant={user.auth_method === 'solana' ? 'default' : 'secondary'} className="text-xs">
-                              {user.auth_method === 'solana' ? 'Solana' : 'Email'}
-                            </Badge>
                             <Badge variant={statusInfo.variant} className={`flex items-center gap-1 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
                               <StatusIcon className="w-3 h-3" />
                               {statusInfo.label}
@@ -391,12 +385,6 @@ export const UserManagement = ({ allUsers, onRefresh, requireAuthentication }: U
                               <Mail className="w-3 h-3" />
                               {user.user_email || t('admin.noEmail')}
                             </span>
-                            {user.wallet_address && (
-                              <span className={`flex items-center gap-1 font-mono text-xs ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-                                <Wallet className="w-3 h-3" />
-                                {user.wallet_address.slice(0, 8)}...{user.wallet_address.slice(-6)}
-                              </span>
-                            )}
                             {user.profiles?.company_name && (
                               <span className={`flex items-center gap-1 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
                                 <Building className="w-3 h-3" />
