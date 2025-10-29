@@ -29,7 +29,6 @@ interface AccessGrantWithProfile {
   user_email?: string;
   requires_approval: boolean;
   auth_method: string;
-  wallet_address: string | null;
   profiles: {
     id: string;
     user_id: string;

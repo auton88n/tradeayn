@@ -467,7 +467,7 @@ export type Database = {
           created_at: string | null
           details: Json | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           severity: string | null
           user_agent: string | null
           user_id: string | null
@@ -477,7 +477,7 @@ export type Database = {
           created_at?: string | null
           details?: Json | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           severity?: string | null
           user_agent?: string | null
           user_id?: string | null
@@ -487,7 +487,7 @@ export type Database = {
           created_at?: string | null
           details?: Json | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           severity?: string | null
           user_agent?: string | null
           user_id?: string | null
@@ -500,7 +500,7 @@ export type Database = {
           created_at: string
           details: Json | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           severity: string | null
           user_agent: string | null
           user_id: string | null
@@ -510,7 +510,7 @@ export type Database = {
           created_at?: string
           details?: Json | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           severity?: string | null
           user_agent?: string | null
           user_id?: string | null
@@ -520,7 +520,7 @@ export type Database = {
           created_at?: string
           details?: Json | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           severity?: string | null
           user_agent?: string | null
           user_id?: string | null
@@ -773,10 +773,7 @@ export type Database = {
         Args: { _user_metadata?: Json; _wallet_address: string }
         Returns: string
       }
-      check_emergency_shutdown: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      check_emergency_shutdown: { Args: never; Returns: boolean }
       check_rate_limit: {
         Args: {
           _action_type: string
@@ -785,34 +782,16 @@ export type Database = {
         }
         Returns: boolean
       }
-      check_usage_limit: {
-        Args: { _user_id: string }
-        Returns: boolean
-      }
+      check_usage_limit: { Args: { _user_id: string }; Returns: boolean }
       check_webhook_rate_limit: {
         Args: { p_endpoint: string; p_user_id: string }
         Returns: boolean
       }
-      cleanup_old_security_logs: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_old_system_reports: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_security_data: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_security_tables: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_webhook_logs: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      cleanup_old_security_logs: { Args: never; Returns: undefined }
+      cleanup_old_system_reports: { Args: never; Returns: undefined }
+      cleanup_security_data: { Args: never; Returns: undefined }
+      cleanup_security_tables: { Args: never; Returns: undefined }
+      cleanup_webhook_logs: { Args: never; Returns: undefined }
       create_system_alert: {
         Args: {
           p_alert_type: string
@@ -871,7 +850,7 @@ export type Database = {
         }[]
       }
       get_extension_security_status: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           extension_name: string
           recommendation: string
@@ -880,7 +859,7 @@ export type Database = {
         }[]
       }
       get_security_extension_audit: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           extension_name: string
           schema_name: string
@@ -888,10 +867,7 @@ export type Database = {
           version: string
         }[]
       }
-      get_security_headers: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
+      get_security_headers: { Args: never; Returns: Json }
       get_usage_stats: {
         Args: { _user_id?: string }
         Returns: {
@@ -918,10 +894,7 @@ export type Database = {
           user_id: string
         }[]
       }
-      has_active_access: {
-        Args: { _user_id: string }
-        Returns: boolean
-      }
+      has_active_access: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -937,10 +910,7 @@ export type Database = {
         Args: { _action_type?: string; _count?: number; _user_id: string }
         Returns: boolean
       }
-      is_ip_blocked: {
-        Args: { _ip_address: unknown }
-        Returns: boolean
-      }
+      is_ip_blocked: { Args: { _ip_address: unknown }; Returns: boolean }
       log_admin_action: {
         Args: {
           _action: string
@@ -963,23 +933,26 @@ export type Database = {
         }
         Returns: undefined
       }
-      log_security_event: {
-        Args:
-          | {
+      log_security_event:
+        | {
+            Args: {
+              _action: string
+              _details?: Json
+              _severity?: string
+              _user_agent?: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
               _action: string
               _details?: Json
               _ip_address?: unknown
               _severity?: string
               _user_agent?: string
             }
-          | {
-              _action: string
-              _details?: Json
-              _severity?: string
-              _user_agent?: string
-            }
-        Returns: undefined
-      }
+            Returns: undefined
+          }
       log_sensitive_data_audit: {
         Args: { _details?: Json; _operation: string; _table_name: string }
         Returns: undefined
@@ -1019,14 +992,8 @@ export type Database = {
         Args: { _session_id: string; _user_id: string }
         Returns: boolean
       }
-      validate_session_security: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      validate_system_security: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
+      validate_session_security: { Args: never; Returns: boolean }
+      validate_system_security: { Args: never; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "user"
