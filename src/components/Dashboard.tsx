@@ -40,7 +40,8 @@ import {
   User as UserIcon,
   MessageSquare,
   Download,
-  Heart
+  Heart,
+  Layers
 } from 'lucide-react';
 import { ThemeToggle } from './theme-toggle';
 import { TermsModal } from './TermsModal';
@@ -132,6 +133,14 @@ const getModes = (t: (key: string) => string) => [
     icon: Coins,
     color: 'text-yellow-500',
     webhookUrl: 'https://n8n.srv846714.hstgr.cloud/webhook/5a05ee2a-4be3-4952-ae3f-c23dd8dc8fe5'
+  },
+  { 
+    name: 'Civil Engineering', 
+    translatedName: t('modes.civilEngineering'),
+    description: 'Infrastructure and civil engineering analysis',
+    icon: Layers,
+    color: 'text-orange-500',
+    webhookUrl: ''
   },
 ];
 

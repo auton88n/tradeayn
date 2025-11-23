@@ -57,6 +57,8 @@ const translations = {
     'modes.researchPro': 'Research Pro',
     'modes.pdfAnalyst': 'PDF Analyst',
     'modes.crypto': 'Crypto',
+    'modes.visionLab': 'Vision Lab',
+    'modes.civilEngineering': 'Civil Engineering',
     
     // Header elements
     'header.aynBusinessConsole': 'AYN Business Console',
@@ -80,6 +82,7 @@ const translations = {
     'placeholders.Research Pro': '["What market trends should I research?", "Find the latest industry data...", "Which competitor should I analyze?"]',
     'placeholders.PDF Analyst': '["Upload your business document...", "Let me review your files...", "Upload PDF for analysis..."]',
     'placeholders.Vision Lab': '["Upload image for analysis...", "Analyze charts and visuals...", "Share visual content..."]',
+    'placeholders.Civil Engineering': '["Upload survey data or describe your infrastructure project...", "Analyze structural requirements...", "Review engineering specifications..."]',
     
     // Legacy placeholders (keeping for backward compatibility)
     'dashboard.placeholders.askAyn': 'Ask AYN anything about your business...',
@@ -456,6 +459,7 @@ const translations = {
     'modes.pdfAnalyst': 'محلل المستندات',
     'modes.crypto': 'العملات المشفرة',
     'modes.visionLab': 'مختبر الرؤية',
+    'modes.civilEngineering': 'الهندسة المدنية',
     
     // Header elements in Arabic
     'header.aynBusinessConsole': 'منصة عين للأعمال',
@@ -479,6 +483,7 @@ const translations = {
     'placeholders.Research Pro': '["ما اتجاهات السوق التي يجب بحثها؟", "ابحث عن أحدث بيانات الصناعة", "أي منافس يجب تحليله؟"]',
     'placeholders.PDF Analyst': '["ارفع مستند عملك", "دعني أراجع ملفاتك", "ارفع PDF للتحليل"]',
     'placeholders.Vision Lab': '["ارفع صورة للتحليل", "حلل المخططات والصور", "شارك المحتوى المرئي"]',
+    'placeholders.Civil Engineering': '["ارفع بيانات المساحة أو اشرح مشروع البنية التحتية", "حلل المتطلبات الهيكلية", "راجع المواصفات الهندسية"]',
     
     // Legacy placeholders (keeping for backward compatibility)
     'dashboard.placeholders.askAyn': 'اسأل AYN أي شيء عن أعمالك',
