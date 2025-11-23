@@ -14,6 +14,7 @@ const WEBHOOK_URLS = {
   'PDF Analyst': Deno.env.get('WEBHOOK_URL_PDF_ANALYST') || '',
   'Vision Lab': Deno.env.get('WEBHOOK_URL_VISION_LAB') || '',
   'Crypto': Deno.env.get('WEBHOOK_URL_CRYPTO') || '',
+  'Civil Engineering': Deno.env.get('WEBHOOK_URL_CIVIL_ENGINEERING') || '',
 };
 
 // Validate webhook URL

@@ -22,7 +22,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import {
   MessageSquare, TrendingUp, Search, FileText, Eye, Coins,
-  LogOut, Settings, Plus, X, Trash2, Download, Heart
+  LogOut, Settings, Plus, X, Trash2, Download, Heart, Layers
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
@@ -117,6 +117,13 @@ export const ChatSidebar = ({
       description: 'Cryptocurrency analysis and blockchain insights',
       icon: Coins,
       color: 'text-yellow-500',
+    },
+    {
+      name: 'Civil Engineering',
+      translatedName: t('modes.civilEngineering'),
+      description: 'Infrastructure and civil engineering analysis',
+      icon: Layers,
+      color: 'text-orange-500',
     },
   ], [t]);
 
