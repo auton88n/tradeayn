@@ -140,7 +140,7 @@ const getModes = (t: (key: string) => string) => [
     description: 'Infrastructure and civil engineering analysis',
     icon: Layers,
     color: 'text-orange-500',
-    webhookUrl: ''
+    webhookUrl: 'https://n8n.srv846714.hstgr.cloud/webhook/d62028bd-83a0-4c33-8111-81b1ec7a909e'
   },
 ];
 
