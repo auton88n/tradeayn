@@ -32,6 +32,12 @@ interface WebhookRequest {
   message?: string;
   userId?: string;
   mode?: string;
+  fileData?: {
+    url: string;
+    filename: string;
+    content?: string;
+    type: string;
+  } | null;
 }
 
 interface WebhookResponse {
@@ -190,7 +196,8 @@ serve(async (req) => {
         mode: body?.mode || 'General',
         conversationHistory: body?.conversationHistory || [],
         userContext: body?.userContext || null,
-        sessionId: body?.sessionId || ''
+        sessionId: body?.sessionId || '',
+        fileData: body?.fileData || null
       };
     } catch (e) {
       console.warn(`[${requestId}] Request body was not valid JSON, using defaults`);
@@ -239,7 +246,9 @@ serve(async (req) => {
         session_id: requestData.sessionId,
         allow_personalization: requestData.allowPersonalization,
         detected_language: requestData.detectedLanguage,
-        concise: requestData.concise
+        concise: requestData.concise,
+        has_attachment: !!requestData.fileData,
+        file_data: requestData.fileData
       }),
     });
 

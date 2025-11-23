@@ -338,7 +338,13 @@ export const ChatInterface = ({
           businessContext: userProfile.business_context,
           contactPerson: userProfile.contact_person
         } : null,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        fileData: attachment ? {
+          url: attachment.url,
+          filename: attachment.name,
+          content: null,
+          type: attachment.type
+        } : null
       };
 
       // Call AYN webhook through edge function
