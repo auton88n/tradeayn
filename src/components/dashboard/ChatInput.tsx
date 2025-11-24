@@ -114,24 +114,7 @@ export const ChatInput = ({
         </div>
       )}
       
-      {/* Drag Overlay */}
-      {isDragOver && (
-        <div className="fixed inset-0 z-[60] bg-background/20 backdrop-blur-sm flex items-center justify-center">
-          <div className="bg-background border-2 border-dashed border-primary rounded-2xl p-8 text-center max-w-sm mx-4">
-            <Paperclip className="w-12 h-12 mx-auto mb-4 text-primary" />
-            <p className="text-lg font-medium text-primary mb-2">Drop your file here</p>
-            <p className="text-sm text-muted-foreground mb-4">
-              Images, PDFs, Word docs, text, or JSON files (max 10MB)
-            </p>
-            <div className="text-xs text-muted-foreground space-y-1">
-              <div>• Images: JPG, PNG, GIF, WebP</div>
-              <div>• Documents: PDF, DOC, DOCX</div>
-              <div>• Text: TXT files</div>
-              <div>• Data: JSON files</div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Note: Full-screen drag overlay now handled by MessageList component */}
       
       {/* Selected File Preview */}
       {selectedFile && (
@@ -155,24 +138,38 @@ export const ChatInput = ({
       )}
 
       <div className={`input-container ${isDragOver ? 'drag-over' : ''}`}>
-        {/* Attachment Button with File Types Dropdown */}
+        {/* Enhanced Attachment Button with Drag & Drop Hints */}
         {(selectedMode.toLowerCase().includes('pdf') || selectedMode.toLowerCase().includes('vision') || selectedMode.toLowerCase().includes('general')) ? (
           <div className="relative">
             <button 
-              className="attachment-button group"
+              className={`attachment-button group relative ${messagesLength === 0 && !disabled ? 'animate-pulse' : ''}`}
               onClick={onAttachmentClick}
               onMouseEnter={() => onShowFileTypes(true)}
               onMouseLeave={() => onShowFileTypes(false)}
               disabled={disabled || isUploading}
-              title="Attach file"
+              title="Attach file or drag & drop anywhere"
             >
               <Paperclip className="w-4 h-4" />
+              
+              {/* Visual Hint Badge for Empty Chat */}
+              {messagesLength === 0 && !disabled && (
+                <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
+                </span>
+              )}
             </button>
             
-            {/* File Types Dropdown */}
+            {/* Enhanced File Types Tooltip with Drag Hint */}
             {showFileTypes && !isDragOver && (
-              <div className="absolute bottom-full left-0 mb-2 bg-background border border-border rounded-lg shadow-lg p-3 min-w-[220px] z-50">
-                <div className="text-xs font-semibold text-foreground mb-2">📎 Accepted file types:</div>
+              <div className="absolute bottom-full left-0 mb-2 bg-popover border border-border rounded-lg shadow-xl p-4 min-w-[260px] z-50 animate-fade-in">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-7 h-7 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Paperclip className="w-4 h-4 text-primary" />
+                  </div>
+                  <div className="text-sm font-semibold text-foreground">Click or drag & drop</div>
+                </div>
+                
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-xs">
                     <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
@@ -195,10 +192,17 @@ export const ChatInput = ({
                     <span className="text-foreground font-medium">JSON files</span>
                   </div>
                 </div>
-                <div className="mt-3 pt-2 border-t border-border">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                
+                <div className="mt-3 pt-3 border-t border-border space-y-2">
+                  <div className="flex items-center justify-center gap-2 text-xs font-medium text-primary bg-primary/5 rounded-md py-2 px-3">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    Drag files anywhere in chat
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground justify-center">
                     <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                    <span>Maximum file size: <strong>10MB</strong></span>
+                    <span>Max size: <strong>10MB</strong></span>
                   </div>
                 </div>
               </div>
