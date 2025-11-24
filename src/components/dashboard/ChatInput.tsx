@@ -139,7 +139,7 @@ export const ChatInput = ({
 
       <div className={`input-container ${isDragOver ? 'drag-over' : ''}`}>
         {/* Enhanced Attachment Button with Drag & Drop Hints */}
-        {(selectedMode.toLowerCase().includes('pdf') || selectedMode.toLowerCase().includes('vision') || selectedMode.toLowerCase().includes('general')) ? (
+        {(selectedMode.toLowerCase().includes('pdf') || selectedMode.toLowerCase().includes('vision') || selectedMode.toLowerCase().includes('general') || selectedMode.toLowerCase().includes('civil engineering')) ? (
           <div className="relative">
             <button 
               className={`attachment-button group relative ${messagesLength === 0 && !disabled ? 'animate-pulse' : ''}`}
