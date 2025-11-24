@@ -1,3 +1,4 @@
+import React from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Send, Paperclip, X, Reply, FileText, Image } from 'lucide-react';
 import { TypewriterText } from '@/components/TypewriterText';
@@ -91,6 +92,26 @@ export const ChatInput = ({
   onAttachmentClick,
   getSendButtonClass
 }: ChatInputProps) => {
+  // Create preview URL for images
+  const [imagePreview, setImagePreview] = React.useState<string | null>(null);
+  
+  React.useEffect(() => {
+    if (selectedFile && selectedFile.type.startsWith('image/')) {
+      const url = URL.createObjectURL(selectedFile);
+      setImagePreview(url);
+      
+      // Cleanup: revoke object URL when file changes or component unmounts
+      return () => {
+        URL.revokeObjectURL(url);
+        setImagePreview(null);
+      };
+    } else {
+      setImagePreview(null);
+    }
+  }, [selectedFile]);
+  
+  const isImageFile = selectedFile?.type.startsWith('image/');
+  
   return <div dir="ltr" className={`input-area ${messagesLength > 0 ? 'bottom-position' : 'center-position'}`} onDragEnter={onDragEnter} onDragLeave={onDragLeave} onDragOver={onDragOver} onDrop={onDrop}>
       {/* Reply indicator */}
       {replyingTo && <div className="mb-2 p-2 bg-muted rounded-lg flex items-center justify-between">
@@ -169,9 +190,16 @@ export const ChatInput = ({
           {/* Inline File Chip */}
           {selectedFile && (
             <div className="file-chip-inline">
-              <div className="file-icon">
-                {getFileIcon(selectedFile)}
-              </div>
+              {/* Image Thumbnail or File Icon */}
+              {isImageFile && imagePreview ? (
+                <div className="file-thumbnail">
+                  <img src={imagePreview} alt={selectedFile.name} className="file-thumbnail-image" />
+                </div>
+              ) : (
+                <div className="file-icon">
+                  {getFileIcon(selectedFile)}
+                </div>
+              )}
               <div className="file-info">
                 <span className="file-name">{selectedFile.name}</span>
                 <span className="file-size">
