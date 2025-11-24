@@ -218,7 +218,7 @@ export const ChatInput = ({
           {/* Inline File Chip */}
           {selectedFile && (
             <div 
-              className="file-chip-inline group animate-in slide-in-from-bottom-2 duration-300"
+              className="file-chip-inline group"
               onClick={handleFileChipClick}
               role="button"
               tabIndex={0}
