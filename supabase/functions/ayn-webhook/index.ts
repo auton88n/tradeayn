@@ -215,6 +215,15 @@ serve(async (req) => {
       hasUserContext: !!requestData.userContext
     });
 
+    // DIAGNOSTIC: Track file data received from frontend
+    console.log(`[${requestId}] File attachment data received:`, {
+      hasFileData: !!requestData.fileData,
+      filename: requestData.fileData?.filename || 'none',
+      fileType: requestData.fileData?.type || 'none',
+      hasUrl: !!requestData.fileData?.url,
+      hasContent: !!requestData.fileData?.content
+    });
+
     // 4. Get webhook URL from environment variables
     const upstreamUrl = WEBHOOK_URLS[requestData.mode as keyof typeof WEBHOOK_URLS];
     if (!upstreamUrl || !isValidUrl(upstreamUrl)) {
@@ -231,25 +240,36 @@ serve(async (req) => {
 
     console.log(`[${requestId}] Using webhook URL for mode '${requestData.mode}': ${upstreamUrl.slice(0, 50)}...`);
 
+    // DIAGNOSTIC: Track payload being sent to n8n
+    const upstreamPayload = {
+      user_id: requestData.userId,
+      message: requestData.message,
+      mode: requestData.mode,
+      conversation_history: requestData.conversationHistory,
+      user_context: requestData.userContext,
+      session_id: requestData.sessionId,
+      allow_personalization: requestData.allowPersonalization,
+      detected_language: requestData.detectedLanguage,
+      concise: requestData.concise,
+      has_attachment: !!requestData.fileData,
+      file_data: requestData.fileData
+    };
+
+    console.log(`[${requestId}] Payload being sent to n8n:`, {
+      has_attachment: upstreamPayload.has_attachment,
+      file_data_present: !!upstreamPayload.file_data,
+      filename: upstreamPayload.file_data?.filename || 'none',
+      fileType: upstreamPayload.file_data?.type || 'none',
+      mode: upstreamPayload.mode
+    });
+
     // Call upstream webhook with enhanced context payload
     const upstream = await fetch(upstreamUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        user_id: requestData.userId,
-        message: requestData.message,
-        mode: requestData.mode,
-        conversation_history: requestData.conversationHistory,
-        user_context: requestData.userContext,
-        session_id: requestData.sessionId,
-        allow_personalization: requestData.allowPersonalization,
-        detected_language: requestData.detectedLanguage,
-        concise: requestData.concise,
-        has_attachment: !!requestData.fileData,
-        file_data: requestData.fileData
-      }),
+      body: JSON.stringify(upstreamPayload),
     });
 
     const contentType = upstream.headers.get('content-type') || '';
