@@ -186,6 +186,11 @@ serve(async (req) => {
     
     try {
       const body = await req.json();
+      
+      // 🔍 EDGE FUNCTION DEBUG - Log raw request
+      console.log(`[${requestId}] RAW REQUEST BODY:`, JSON.stringify(body, null, 2));
+      console.log(`[${requestId}] body.fileData specifically:`, body.fileData);
+      
       requestData = {
         message: body?.message || '',
         userId: user.id, // Use authenticated user ID

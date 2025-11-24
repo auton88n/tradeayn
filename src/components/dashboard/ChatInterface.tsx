@@ -347,6 +347,11 @@ export const ChatInterface = ({
         } : null
       };
 
+      // 🔍 FRONTEND DEBUG - Log attachment and payload
+      console.log('🔍 FRONTEND DEBUG - Attachment value:', attachment);
+      console.log('🔍 FRONTEND DEBUG - Payload fileData:', payload.fileData);
+      console.log('🔍 FRONTEND DEBUG - Full payload:', JSON.stringify(payload, null, 2));
+
       // Call AYN webhook through edge function
       const { data: webhookResponse, error: webhookError } = await supabase.functions.invoke('ayn-webhook', {
         body: payload
