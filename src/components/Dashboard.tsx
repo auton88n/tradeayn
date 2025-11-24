@@ -1511,7 +1511,7 @@ export default function Dashboard({ user }: DashboardProps) {
           {/* Chat Interface */}
           {(activeTab === 'chat' || !isAdmin) && (
             <>
-              {/* Messages Area */}
+              {/* Messages Area with Full Drag Zone */}
               <MessageList
                 messages={chatState.messages}
                 isTyping={chatState.isTyping}
@@ -1528,6 +1528,11 @@ export default function Dashboard({ user }: DashboardProps) {
                     )
                   );
                 }}
+                isDragOver={chatState.isDragOver}
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
               />
 
               <ChatInput

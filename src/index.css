@@ -335,6 +335,50 @@
     51%, 100% { opacity: 0; }
   }
 
+  /* Drag & Drop Animations */
+  @keyframes drag-overlay-enter {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes drag-border-pulse {
+    0%, 100% {
+      border-color: hsl(var(--primary));
+      box-shadow: 0 0 0 0 hsla(var(--primary) / 0.4);
+    }
+    50% {
+      border-color: hsl(var(--primary) / 0.6);
+      box-shadow: 0 0 0 8px hsla(var(--primary) / 0);
+    }
+  }
+
+  @keyframes drag-icon-bounce {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  .drag-overlay-enter {
+    animation: drag-overlay-enter 0.2s ease-out;
+  }
+
+  .drag-border-pulse {
+    animation: drag-border-pulse 2s ease-in-out infinite;
+  }
+
+  .drag-icon-bounce {
+    animation: drag-icon-bounce 1s ease-in-out infinite;
+  }
+
   /* Mobile-Style Floating Input Bar */
   .input-area {
     position: fixed;
