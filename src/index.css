@@ -953,6 +953,185 @@
     }
   }
 
+  /* ============================================= */
+  /* Claude-Style File Upload Interface */
+  /* ============================================= */
+
+  /* Plus Button - Separate from Input */
+  .plus-button {
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border: 1px solid hsl(var(--border));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: hsl(var(--muted-foreground));
+    flex-shrink: 0;
+  }
+
+  .plus-button:hover:not(:disabled) {
+    background: hsl(var(--muted) / 0.5);
+    border-color: hsl(var(--primary));
+    color: hsl(var(--foreground));
+  }
+
+  .plus-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* File Preview Card - Above Input (Claude Style) */
+  .file-preview-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: hsl(var(--muted) / 0.3);
+    border: 1px solid hsl(var(--border));
+    border-radius: 12px;
+    margin-bottom: 8px;
+    animation: slideInFromTop 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  .file-preview-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+  }
+
+  .file-preview-content:hover {
+    opacity: 0.8;
+  }
+
+  .file-preview-thumbnail {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    object-fit: cover;
+    background: hsl(var(--background));
+  }
+
+  .file-preview-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: hsl(var(--primary) / 0.1);
+    border-radius: 8px;
+  }
+
+  .file-preview-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .file-preview-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .file-preview-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: hsl(var(--foreground));
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .file-preview-size {
+    font-size: 12px;
+    color: hsl(var(--muted-foreground));
+  }
+
+  .file-preview-remove {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: hsl(var(--destructive) / 0.1);
+    color: hsl(var(--destructive));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    border: none;
+  }
+
+  .file-preview-remove:hover {
+    background: hsl(var(--destructive) / 0.2);
+    transform: scale(1.1);
+  }
+
+  @keyframes slideInFromTop {
+    from {
+      opacity: 0;
+      transform: translateY(-12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Input Bar Container - Plus Button + Input */
+  .input-bar-container {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    width: 100%;
+  }
+
+  /* Mobile responsive adjustments for Claude-style interface */
+  @media (max-width: 640px) {
+    .file-preview-card {
+      padding: 10px 12px;
+      gap: 10px;
+    }
+
+    .file-preview-thumbnail,
+    .file-preview-icon {
+      width: 40px;
+      height: 40px;
+    }
+
+    .file-preview-icon svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .file-preview-name {
+      font-size: 13px;
+    }
+
+    .file-preview-size {
+      font-size: 11px;
+    }
+
+    .plus-button {
+      width: 32px;
+      height: 32px;
+    }
+
+    .plus-button svg {
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  /* ============================================= */
+
   .message-input {
     flex: 1;
     background: transparent;
