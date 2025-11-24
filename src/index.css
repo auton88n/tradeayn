@@ -815,6 +815,19 @@
     border-radius: 8px;
     max-width: fit-content;
     animation: slideInFile 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .file-chip-inline:hover {
+    background: hsl(var(--muted) / 0.7);
+    border-color: hsl(var(--primary) / 0.5);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px hsl(var(--foreground) / 0.1);
+  }
+
+  .file-chip-inline:active {
+    transform: translateY(0);
   }
 
   @keyframes slideInFile {
@@ -851,12 +864,37 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
   }
 
   .file-chip-inline .file-thumbnail-image {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    transition: transform 0.2s ease;
+  }
+
+  .file-chip-inline:hover .file-thumbnail-image {
+    transform: scale(1.1);
+  }
+
+  /* Hover overlay for image thumbnails */
+  .file-thumbnail-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: hsl(var(--primary) / 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  .file-chip-inline:hover .file-thumbnail-overlay {
+    opacity: 1;
   }
 
   /* File information */

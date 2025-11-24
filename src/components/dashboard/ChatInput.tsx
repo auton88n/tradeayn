@@ -1,7 +1,8 @@
 import React from 'react';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Paperclip, X, Reply, FileText, Image } from 'lucide-react';
+import { Send, Paperclip, X, Reply, FileText, Image, Eye } from 'lucide-react';
 import { TypewriterText } from '@/components/TypewriterText';
+import { FilePreviewModal } from './FilePreviewModal';
 interface Message {
   id: string;
   content: string;
@@ -94,6 +95,7 @@ export const ChatInput = ({
 }: ChatInputProps) => {
   // Create preview URL for images
   const [imagePreview, setImagePreview] = React.useState<string | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = React.useState(false);
   
   React.useEffect(() => {
     if (selectedFile && selectedFile.type.startsWith('image/')) {
@@ -111,6 +113,12 @@ export const ChatInput = ({
   }, [selectedFile]);
   
   const isImageFile = selectedFile?.type.startsWith('image/');
+  
+  const handleFileChipClick = () => {
+    if (selectedFile) {
+      setIsPreviewOpen(true);
+    }
+  };
   
   return <div dir="ltr" className={`input-area ${messagesLength > 0 ? 'bottom-position' : 'center-position'}`} onDragEnter={onDragEnter} onDragLeave={onDragLeave} onDragOver={onDragOver} onDrop={onDrop}>
       {/* Reply indicator */}
@@ -189,17 +197,33 @@ export const ChatInput = ({
         <div className="input-wrapper">
           {/* Inline File Chip */}
           {selectedFile && (
-            <div className="file-chip-inline">
+            <div 
+              className="file-chip-inline group"
+              onClick={handleFileChipClick}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  handleFileChipClick();
+                }
+              }}
+            >
               {/* Image Thumbnail or File Icon */}
-              {isImageFile && imagePreview ? (
-                <div className="file-thumbnail">
-                  <img src={imagePreview} alt={selectedFile.name} className="file-thumbnail-image" />
-                </div>
-              ) : (
-                <div className="file-icon">
-                  {getFileIcon(selectedFile)}
-                </div>
-              )}
+              <div className="relative">
+                {isImageFile && imagePreview ? (
+                  <div className="file-thumbnail">
+                    <img src={imagePreview} alt={selectedFile.name} className="file-thumbnail-image" />
+                    {/* Hover overlay with eye icon */}
+                    <div className="file-thumbnail-overlay">
+                      <Eye className="w-4 h-4 text-white" />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="file-icon">
+                    {getFileIcon(selectedFile)}
+                  </div>
+                )}
+              </div>
               <div className="file-info">
                 <span className="file-name">{selectedFile.name}</span>
                 <span className="file-size">
@@ -207,7 +231,10 @@ export const ChatInput = ({
                 </span>
               </div>
               <button 
-                onClick={onFileRemove}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onFileRemove();
+                }}
                 className="remove-button"
                 title={language === 'ar' ? 'إزالة الملف' : 'Remove file'}
               >
@@ -215,6 +242,14 @@ export const ChatInput = ({
               </button>
             </div>
           )}
+          
+          {/* File Preview Modal */}
+          <FilePreviewModal
+            open={isPreviewOpen}
+            onOpenChange={setIsPreviewOpen}
+            file={selectedFile}
+            previewUrl={imagePreview}
+          />
           
           {/* Text Input Area */}
           <Textarea ref={inputRef} unstyled={true} className="message-input resize-none min-h-[40px] max-h-[200px] overflow-hidden" value={value} onChange={e => {
