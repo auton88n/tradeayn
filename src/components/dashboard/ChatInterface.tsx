@@ -352,10 +352,60 @@ export const ChatInterface = ({
       console.log('🔍 FRONTEND DEBUG - Payload fileData:', payload.fileData);
       console.log('🔍 FRONTEND DEBUG - Full payload:', JSON.stringify(payload, null, 2));
 
-      // Call AYN webhook through edge function
-      const { data: webhookResponse, error: webhookError } = await supabase.functions.invoke('ayn-webhook', {
-        body: payload
+      // STEP 1: Ensure we have a fresh JWT token before calling the edge function
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) {
+        throw new Error('Session expired. Please log in again.');
+      }
+
+      // If token is close to expiry, refresh it
+      const tokenExpiresAt = session.expires_at || 0;
+      const now = Math.floor(Date.now() / 1000);
+      const timeUntilExpiry = tokenExpiresAt - now;
+
+      if (timeUntilExpiry < 300) { // Less than 5 minutes
+        console.log('🔄 Refreshing session token...');
+        const { data: { session: newSession }, error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError || !newSession) {
+          throw new Error('Failed to refresh session. Please log in again.');
+        }
+        console.log('✅ Session token refreshed successfully');
+      }
+
+      // STEP 2: Add detailed request logging
+      console.log('🚀 Calling ayn-webhook with:', {
+        hasFileData: !!payload.fileData,
+        fileDataDetails: payload.fileData ? {
+          url: payload.fileData.url,
+          filename: payload.fileData.filename,
+          type: payload.fileData.type
+        } : null,
+        messageLength: payload.message?.length,
+        mode: payload.mode,
+        timestamp: new Date().toISOString()
       });
+
+      // STEP 3: Call AYN webhook with timeout wrapper
+      const invokeWithTimeout = async (timeout = 55000) => {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
+        
+        try {
+          const result = await supabase.functions.invoke('ayn-webhook', {
+            body: payload
+          });
+          clearTimeout(timeoutId);
+          return result;
+        } catch (error: any) {
+          clearTimeout(timeoutId);
+          if (error.name === 'AbortError') {
+            throw new Error('Request timed out after 55 seconds');
+          }
+          throw error;
+        }
+      };
+
+      const { data: webhookResponse, error: webhookError } = await invokeWithTimeout();
       
       setIsTyping(false);
 
@@ -397,21 +447,44 @@ export const ChatInterface = ({
         }
       ]);
 
-    } catch (error) {
+    } catch (error: any) {
       setIsTyping(false);
-      console.error('Send message error:', error);
-      const errorMessage: Message = {
+      console.error('❌ Send message error:', error);
+      
+      // STEP 4: Enhanced error handling with specific error detection
+      const errorMessage = error?.message || '';
+      const isAuthError = errorMessage.includes('JWT') || 
+                         errorMessage.includes('session') || 
+                         errorMessage.includes('auth') ||
+                         errorMessage.includes('unauthorized');
+      const isTimeout = errorMessage.includes('timed out');
+      
+      let userMessage = "I'm sorry, I'm having trouble connecting right now. Please try again in a moment.";
+      let toastTitle = "Connection Error";
+      let toastDescription = "Unable to reach AYN. Please try again.";
+      
+      if (isAuthError) {
+        userMessage = "Your session has expired. Please refresh the page and log in again.";
+        toastTitle = "Session Expired";
+        toastDescription = "Please refresh the page and log in again.";
+      } else if (isTimeout) {
+        userMessage = "The request took too long to process. Please try again with a smaller file or simpler message.";
+        toastTitle = "Request Timeout";
+        toastDescription = "The operation timed out. Please try again.";
+      }
+      
+      const errorMsg: Message = {
         id: (Date.now() + 1).toString(),
-        content: "I'm sorry, I'm having trouble connecting right now. Please try again in a moment.",
+        content: userMessage,
         sender: 'ayn',
         timestamp: new Date(),
       };
 
-      onMessagesChange([...updatedMessages, errorMessage]);
+      onMessagesChange([...updatedMessages, errorMsg]);
       
       toast({
-        title: "Connection Error",
-        description: "Unable to reach AYN. Please try again.",
+        title: toastTitle,
+        description: toastDescription,
         variant: "destructive"
       });
     }
