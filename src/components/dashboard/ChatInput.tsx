@@ -196,8 +196,6 @@ export const ChatInput = ({
               <TypewriterText key={`${selectedMode}-${placeholderIndex}-${language}-${direction}`} text={placeholderTexts[placeholderIndex]} speed={50} className="typewriter-text text-muted-foreground" showCursor={true} />
             </div>}
           
-          {/* File Selected Indicator */}
-          {selectedFile}
         </div>
         
         {/* Send Button */}
