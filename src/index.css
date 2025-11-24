@@ -685,6 +685,16 @@
     left: auto;
   }
 
+  /* RTL Input wrapper */
+  [dir="rtl"] .input-wrapper {
+    direction: ltr !important;
+  }
+
+  /* RTL File chip */
+  [dir="rtl"] .file-chip-inline {
+    direction: ltr !important;
+  }
+
 /* Message input specific styling */
 .message-input {
   background: hsla(var(--background) / 0.9);
@@ -754,7 +764,7 @@
       0 1px 3px hsla(var(--foreground), 0.1);
     border: 1px solid hsl(var(--border));
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 8px;
     transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
     position: relative;
@@ -783,6 +793,107 @@
       0 3px 8px hsla(var(--primary), 0.1),
       0 0 0 2px hsla(var(--primary), 0.2);
     transform: translateY(-1px);
+  }
+
+  /* Input wrapper to contain both file chip and textarea */
+  .input-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    position: relative;
+  }
+
+  /* Inline file chip styling - Claude-inspired */
+  .file-chip-inline {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: hsl(var(--muted) / 0.5);
+    border: 1px solid hsl(var(--border));
+    border-radius: 8px;
+    max-width: fit-content;
+    animation: slideInFile 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  @keyframes slideInFile {
+    from {
+      opacity: 0;
+      transform: translateY(-8px) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  /* File icon container */
+  .file-chip-inline .file-icon {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: hsl(var(--primary) / 0.1);
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+
+  /* File information */
+  .file-chip-inline .file-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .file-chip-inline .file-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: hsl(var(--foreground));
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+  }
+
+  .file-chip-inline .file-size {
+    font-size: 10px;
+    color: hsl(var(--muted-foreground));
+  }
+
+  /* Compact remove button */
+  .file-chip-inline .remove-button {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: hsl(var(--destructive) / 0.1);
+    color: hsl(var(--destructive));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+  }
+
+  .file-chip-inline .remove-button:hover {
+    background: hsl(var(--destructive) / 0.2);
+    transform: scale(1.1);
+  }
+
+  /* Adjust textarea when file is present */
+  .input-wrapper .message-input {
+    margin-top: 0;
+  }
+
+  /* Mobile adjustments */
+  @media (max-width: 640px) {
+    .file-chip-inline .file-name {
+      max-width: 150px;
+    }
   }
 
   .message-input {

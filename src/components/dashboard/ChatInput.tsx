@@ -1,5 +1,5 @@
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Paperclip, X, Reply } from 'lucide-react';
+import { Send, Paperclip, X, Reply, FileText, Image } from 'lucide-react';
 import { TypewriterText } from '@/components/TypewriterText';
 interface Message {
   id: string;
@@ -14,6 +14,13 @@ interface Message {
     type: string;
   };
 }
+const getFileIcon = (file: File) => {
+  if (file.type.includes('pdf')) return <FileText className="w-3 h-3 text-primary" />;
+  if (file.type.includes('image')) return <Image className="w-3 h-3 text-primary" />;
+  if (file.type.includes('word') || file.name.endsWith('.doc') || file.name.endsWith('.docx')) return <FileText className="w-3 h-3 text-primary" />;
+  return <Paperclip className="w-3 h-3 text-primary" />;
+};
+
 interface ChatInputProps {
   value: string;
   onChange: (value: string) => void;
@@ -99,22 +106,6 @@ export const ChatInput = ({
         </div>}
       
       {/* Note: Full-screen drag overlay now handled by MessageList component */}
-      
-      {/* Selected File Preview */}
-      {selectedFile && <div className="mb-2 p-3 bg-muted rounded-xl border flex items-center gap-3">
-          <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-            <Paperclip className="w-4 h-4 text-primary" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{selectedFile.name}</p>
-            <p className="text-xs text-muted-foreground">
-              {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-            </p>
-          </div>
-          <button onClick={onFileRemove} className="w-6 h-6 rounded-full bg-destructive/10 text-destructive hover:bg-destructive/20 flex items-center justify-center transition-colors">
-            <X className="w-3 h-3" />
-          </button>
-        </div>}
 
       <div className={`input-container ${isDragOver ? 'drag-over' : ''}`}>
         {/* Enhanced Attachment Button with Drag & Drop Hints */}
@@ -173,29 +164,51 @@ export const ChatInput = ({
         {/* Hidden File Input */}
         <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp,.txt,.json" onChange={onFileSelect} className="hidden" />
         
-        {/* Input Field */}
-        <div className="flex-1 relative">
+        {/* Input Wrapper containing both file chip and textarea */}
+        <div className="input-wrapper">
+          {/* Inline File Chip */}
+          {selectedFile && (
+            <div className="file-chip-inline">
+              <div className="file-icon">
+                {getFileIcon(selectedFile)}
+              </div>
+              <div className="file-info">
+                <span className="file-name">{selectedFile.name}</span>
+                <span className="file-size">
+                  {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                </span>
+              </div>
+              <button 
+                onClick={onFileRemove}
+                className="remove-button"
+                title={language === 'ar' ? 'إزالة الملف' : 'Remove file'}
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          )}
+          
+          {/* Text Input Area */}
           <Textarea ref={inputRef} unstyled={true} className="message-input resize-none min-h-[40px] max-h-[200px] overflow-hidden" value={value} onChange={e => {
-          onChange(e.target.value);
-          // Auto-resize textarea
-          const textarea = e.target as HTMLTextAreaElement;
-          textarea.style.height = 'auto';
-          const newHeight = Math.min(textarea.scrollHeight, 200);
-          textarea.style.height = newHeight + 'px';
+            onChange(e.target.value);
+            // Auto-resize textarea
+            const textarea = e.target as HTMLTextAreaElement;
+            textarea.style.height = 'auto';
+            const newHeight = Math.min(textarea.scrollHeight, 200);
+            textarea.style.height = newHeight + 'px';
 
-          // Show scrollbar only when content exceeds max height
-          if (textarea.scrollHeight > 200) {
-            textarea.style.overflowY = 'auto';
-          } else {
-            textarea.style.overflowY = 'hidden';
-          }
-        }} onKeyPress={onKeyPress} onFocus={onFocus} onBlur={onBlur} placeholder="" disabled={disabled || isUploading} rows={1} />
+            // Show scrollbar only when content exceeds max height
+            if (textarea.scrollHeight > 200) {
+              textarea.style.overflowY = 'auto';
+            } else {
+              textarea.style.overflowY = 'hidden';
+            }
+          }} onKeyPress={onKeyPress} onFocus={onFocus} onBlur={onBlur} placeholder="" disabled={disabled || isUploading} rows={1} />
           
           {/* Typewriter Animation Placeholder */}
-          {showPlaceholder && !value.trim() && !isInputFocused && <div className={`absolute ${direction === 'rtl' ? 'right-[var(--input-left-offset)]' : 'left-[var(--input-left-offset)]'} top-[var(--input-vertical-offset)] pointer-events-none z-10 ${direction === 'rtl' ? 'text-right' : 'text-left'} transition-all duration-300 ease-in-out`}>
+          {showPlaceholder && !value.trim() && !isInputFocused && !selectedFile && <div className={`absolute ${direction === 'rtl' ? 'right-[var(--input-left-offset)]' : 'left-[var(--input-left-offset)]'} top-[var(--input-vertical-offset)] pointer-events-none z-10 ${direction === 'rtl' ? 'text-right' : 'text-left'} transition-all duration-300 ease-in-out`}>
               <TypewriterText key={`${selectedMode}-${placeholderIndex}-${language}-${direction}`} text={placeholderTexts[placeholderIndex]} speed={50} className="typewriter-text text-muted-foreground" showCursor={true} />
             </div>}
-          
         </div>
         
         {/* Send Button */}
