@@ -348,7 +348,12 @@ export const ChatInterface = ({
       };
 
       // 🔍 FRONTEND DEBUG - Log attachment and payload
-      console.log('🔍 FRONTEND DEBUG - Attachment value:', attachment);
+      console.log('🔍 FRONTEND DEBUG - Attachment value:', attachment ? {
+        name: attachment.name,
+        type: attachment.type,
+        size: attachment.size,
+        url: attachment.url
+      } : null);
       console.log('🔍 FRONTEND DEBUG - Payload fileData:', payload.fileData);
       console.log('🔍 FRONTEND DEBUG - Full payload:', JSON.stringify(payload, null, 2));
 
