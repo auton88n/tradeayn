@@ -142,7 +142,7 @@ export const ChatInput = ({
         {(selectedMode.toLowerCase().includes('pdf') || selectedMode.toLowerCase().includes('vision') || selectedMode.toLowerCase().includes('general') || selectedMode.toLowerCase().includes('civil engineering')) ? (
           <div className="relative">
             <button 
-              className={`attachment-button group relative ${messagesLength === 0 && !disabled ? 'animate-pulse' : ''}`}
+              className="attachment-button group relative"
               onClick={onAttachmentClick}
               onMouseEnter={() => onShowFileTypes(true)}
               onMouseLeave={() => onShowFileTypes(false)}
@@ -150,14 +150,6 @@ export const ChatInput = ({
               title="Attach file or drag & drop anywhere"
             >
               <Paperclip className="w-4 h-4" />
-              
-              {/* Visual Hint Badge for Empty Chat */}
-              {messagesLength === 0 && !disabled && (
-                <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
-                </span>
-              )}
             </button>
             
             {/* Enhanced File Types Tooltip with Drag Hint */}
