@@ -82,7 +82,7 @@ const translations = {
     'placeholders.Research Pro': '["What market trends should I research?", "Find the latest industry data...", "Which competitor should I analyze?"]',
     'placeholders.PDF Analyst': '["Upload your business document...", "Let me review your files...", "Upload PDF for analysis..."]',
     'placeholders.Vision Lab': '["Upload image for analysis...", "Analyze charts and visuals...", "Share visual content..."]',
-    'placeholders.Civil Engineering': '["Upload survey data or describe your infrastructure project...", "Analyze structural requirements...", "Review engineering specifications..."]',
+    'placeholders.Civil Engineering': '["Upload survey data...", "Analyze structural requirements...", "Review engineering specifications..."]',
     
     // Legacy placeholders (keeping for backward compatibility)
     'dashboard.placeholders.askAyn': 'Ask AYN anything about your business...',
