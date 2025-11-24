@@ -14,6 +14,8 @@ import { MessageFormatter } from '@/components/MessageFormatter';
 import { TypingIndicator } from '@/components/TypingIndicator';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { globalThreatMonitor, detectMaliciousInput, reportThreatEvent } from '@/lib/threatDetection';
+import { useFileUploadRetry } from '@/hooks/useFileUploadRetry';
+import { FilePreviewDialog } from './FilePreviewDialog';
 
 interface Message {
   id: string;
@@ -57,9 +59,13 @@ export const ChatInterface = ({
   const [uploadProgress, setUploadProgress] = useState<{ phase: string; fileSize?: string }>({ phase: '' });
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const [favoriteMessages, setFavoriteMessages] = useState<Set<string>>(new Set());
+  const [previewFile, setPreviewFile] = useState<{ url: string; name: string; type: string } | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const [pendingMessage, setPendingMessage] = useState<string>('');
   
   const { toast } = useToast();
   const { t } = useLanguage();
+  const { uploadWithRetry, retryAttempt } = useFileUploadRetry();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -157,119 +163,30 @@ export const ChatInterface = ({
     }
   };
 
-  const handleSendMessage = async (messageContent?: string) => {
-    if (!hasAcceptedTerms) {
-      toast({
-        title: t('auth.termsRequired'),
-        description: t('auth.termsRequiredDesc'),
-        variant: "destructive"
-      });
-      return;
-    }
+  const handlePreviewConfirm = () => {
+    setShowPreview(false);
+    // Continue with sending the message
+    continueSendingMessage();
+  };
 
-    if (!hasAccess) {
-      toast({
-        title: t('auth.accessRequired'),
-        description: t('auth.accessRequiredDesc'),
-        variant: "destructive"
-      });
-      return;
-    }
+  const handlePreviewCancel = () => {
+    setShowPreview(false);
+    setPreviewFile(null);
+    setPendingMessage('');
+    setSelectedFile(null);
+    toast({
+      title: "Upload Cancelled",
+      description: "File upload was cancelled.",
+    });
+  };
 
-    const content = messageContent || inputMessage.trim();
-    if (!content && !selectedFile) return;
+  const continueSendingMessage = async () => {
+    const content = pendingMessage;
+    const attachment = previewFile;
 
-    // Security: Check for malicious input
-    if (content) {
-      const maliciousCheck = detectMaliciousInput(content);
-      if (maliciousCheck.isMalicious) {
-        await reportThreatEvent({
-          type: 'malicious_input',
-          severity: 'high',
-          details: { 
-            content: content.substring(0, 100),
-            threats: maliciousCheck.threats,
-            sessionId: currentSessionId
-          }
-        });
-
-        toast({
-          title: "Security Alert",
-          description: "Your message contains potentially harmful content and cannot be sent.",
-          variant: "destructive"
-        });
-        return;
-      }
-    }
-
-    // Upload file if selected
-    let attachment = null;
-    if (selectedFile) {
-      try {
-        // Phase 1: Reading file
-        setUploadState('reading');
-        setUploadProgress({ 
-          phase: `Reading ${selectedFile.name}...`, 
-          fileSize: uploadProgress.fileSize 
-        });
-
-        const base64 = await new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onload = () => {
-            const result = reader.result as string;
-            resolve(result.split(',')[1]);
-          };
-          reader.readAsDataURL(selectedFile);
-        });
-
-        // Phase 2: Uploading
-        setUploadState('uploading');
-        setUploadProgress({ 
-          phase: `Uploading ${selectedFile.name}...`, 
-          fileSize: uploadProgress.fileSize 
-        });
-
-        const { data, error } = await supabase.functions.invoke('file-upload', {
-          body: {
-            file: base64,
-            fileName: selectedFile.name,
-            fileType: selectedFile.type,
-            userId: user.id
-          }
-        });
-
-        if (error) throw error;
-
-        // Phase 3: Processing
-        setUploadState('processing');
-        setUploadProgress({ 
-          phase: 'Processing file...', 
-          fileSize: uploadProgress.fileSize 
-        });
-
-        // Small delay to show processing state
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        attachment = {
-          url: data.fileUrl,
-          name: data.fileName,
-          type: data.fileType
-        };
-
-        setUploadState('idle');
-        setUploadProgress({ phase: '' });
-      } catch (error) {
-        console.error('File upload error:', error);
-        toast({
-          title: "Upload Failed",
-          description: "Failed to upload file. Please try again.",
-          variant: "destructive"
-        });
-        setUploadState('idle');
-        setUploadProgress({ phase: '' });
-        return;
-      }
-    }
+    // Reset preview state
+    setPreviewFile(null);
+    setPendingMessage('');
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -347,17 +264,14 @@ export const ChatInterface = ({
         } : null
       };
 
-      // 🔍 FRONTEND DEBUG - Log attachment and payload
       console.log('🔍 FRONTEND DEBUG - Attachment value:', attachment ? {
         name: attachment.name,
         type: attachment.type,
-        size: attachment.size,
         url: attachment.url
       } : null);
       console.log('🔍 FRONTEND DEBUG - Payload fileData:', payload.fileData);
-      console.log('🔍 FRONTEND DEBUG - Full payload:', JSON.stringify(payload, null, 2));
 
-      // STEP 1: Ensure we have a fresh JWT token before calling the edge function
+      // Ensure we have a fresh JWT token
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       if (sessionError || !session) {
         throw new Error('Session expired. Please log in again.');
@@ -368,7 +282,7 @@ export const ChatInterface = ({
       const now = Math.floor(Date.now() / 1000);
       const timeUntilExpiry = tokenExpiresAt - now;
 
-      if (timeUntilExpiry < 300) { // Less than 5 minutes
+      if (timeUntilExpiry < 300) {
         console.log('🔄 Refreshing session token...');
         const { data: { session: newSession }, error: refreshError } = await supabase.auth.refreshSession();
         if (refreshError || !newSession) {
@@ -377,121 +291,192 @@ export const ChatInterface = ({
         console.log('✅ Session token refreshed successfully');
       }
 
-      // STEP 2: Add detailed request logging
-      console.log('🚀 Calling ayn-webhook with:', {
-        hasFileData: !!payload.fileData,
-        fileDataDetails: payload.fileData ? {
-          url: payload.fileData.url,
-          filename: payload.fileData.filename,
-          type: payload.fileData.type
-        } : null,
-        messageLength: payload.message?.length,
-        mode: payload.mode,
-        timestamp: new Date().toISOString()
+      console.log('🚀 Calling ayn-webhook');
+
+      // Call AYN webhook
+      const { data, error } = await supabase.functions.invoke('ayn-webhook', {
+        body: payload
       });
 
-      // STEP 3: Call AYN webhook with timeout wrapper
-      const invokeWithTimeout = async (timeout = 55000) => {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), timeout);
-        
-        try {
-          const result = await supabase.functions.invoke('ayn-webhook', {
-            body: payload
-          });
-          clearTimeout(timeoutId);
-          return result;
-        } catch (error: any) {
-          clearTimeout(timeoutId);
-          if (error.name === 'AbortError') {
-            throw new Error('Request timed out after 55 seconds');
-          }
-          throw error;
-        }
-      };
+      if (error) throw error;
 
-      const { data: webhookResponse, error: webhookError } = await invokeWithTimeout();
-      
-      setIsTyping(false);
-
-      if (webhookError) {
-        throw new Error(webhookError.message || 'Webhook call failed');
-      }
-
-      const response = webhookResponse?.response || 'I received your message and I\'m processing it. Please try again if you don\'t see a proper response.';
-
+      // Add AYN's response
       const aynMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: response,
+        content: data.response || 'No response received',
         sender: 'ayn',
         timestamp: new Date(),
-        isTyping: true,
+        status: 'sent'
       };
 
-      const finalMessages = [...updatedMessages, aynMessage];
-      onMessagesChange(finalMessages);
+      onMessagesChange([...updatedMessages, aynMessage]);
 
       // Save messages to database
-      await supabase.from('messages').insert([
-        {
+      await Promise.all([
+        supabase.from('messages').insert({
           user_id: user.id,
-          session_id: currentSessionId,
-          content: content,
+          content: userMessage.content,
           sender: 'user',
+          session_id: currentSessionId,
           mode_used: selectedMode,
           attachment_url: attachment?.url,
           attachment_name: attachment?.name,
           attachment_type: attachment?.type
-        },
-        {
+        }),
+        supabase.from('messages').insert({
           user_id: user.id,
-          session_id: currentSessionId,
-          content: response,
+          content: aynMessage.content,
           sender: 'ayn',
+          session_id: currentSessionId,
           mode_used: selectedMode
-        }
+        })
       ]);
 
     } catch (error: any) {
-      setIsTyping(false);
-      console.error('❌ Send message error:', error);
-      
-      // STEP 4: Enhanced error handling with specific error detection
-      const errorMessage = error?.message || '';
-      const isAuthError = errorMessage.includes('JWT') || 
-                         errorMessage.includes('session') || 
-                         errorMessage.includes('auth') ||
-                         errorMessage.includes('unauthorized');
-      const isTimeout = errorMessage.includes('timed out');
-      
-      let userMessage = "I'm sorry, I'm having trouble connecting right now. Please try again in a moment.";
-      let toastTitle = "Connection Error";
-      let toastDescription = "Unable to reach AYN. Please try again.";
-      
-      if (isAuthError) {
-        userMessage = "Your session has expired. Please refresh the page and log in again.";
-        toastTitle = "Session Expired";
-        toastDescription = "Please refresh the page and log in again.";
-      } else if (isTimeout) {
-        userMessage = "The request took too long to process. Please try again with a smaller file or simpler message.";
-        toastTitle = "Request Timeout";
-        toastDescription = "The operation timed out. Please try again.";
-      }
-      
-      const errorMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        content: userMessage,
-        sender: 'ayn',
-        timestamp: new Date(),
-      };
-
-      onMessagesChange([...updatedMessages, errorMsg]);
-      
+      console.error('Error calling AYN webhook:', error);
       toast({
-        title: toastTitle,
-        description: toastDescription,
+        title: "Error",
+        description: error.message || "Failed to send message",
         variant: "destructive"
       });
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
+  const handleSendMessage = async (messageContent?: string) => {
+    if (!hasAcceptedTerms) {
+      toast({
+        title: t('auth.termsRequired'),
+        description: t('auth.termsRequiredDesc'),
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!hasAccess) {
+      toast({
+        title: t('auth.accessRequired'),
+        description: t('auth.accessRequiredDesc'),
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const content = messageContent || inputMessage.trim();
+    if (!content && !selectedFile) return;
+
+    // Security: Check for malicious input
+    if (content) {
+      const maliciousCheck = detectMaliciousInput(content);
+      if (maliciousCheck.isMalicious) {
+        await reportThreatEvent({
+          type: 'malicious_input',
+          severity: 'high',
+          details: { 
+            content: content.substring(0, 100),
+            threats: maliciousCheck.threats,
+            sessionId: currentSessionId
+          }
+        });
+
+        toast({
+          title: "Security Alert",
+          description: "Your message contains potentially harmful content and cannot be sent.",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
+    // Upload file if selected
+    let attachment = null;
+    if (selectedFile) {
+      try {
+        // Phase 1: Reading file
+        setUploadState('reading');
+        setUploadProgress({ 
+          phase: `Reading ${selectedFile.name}...`, 
+          fileSize: uploadProgress.fileSize 
+        });
+
+        const base64 = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const result = reader.result as string;
+            resolve(result.split(',')[1]);
+          };
+          reader.readAsDataURL(selectedFile);
+        });
+
+        // Phase 2: Uploading
+        setUploadState('uploading');
+        setUploadProgress({ 
+          phase: `Uploading ${selectedFile.name}...`, 
+          fileSize: uploadProgress.fileSize 
+        });
+
+        const data = await uploadWithRetry({
+          file: base64,
+          fileName: selectedFile.name,
+          fileType: selectedFile.type,
+          userId: user.id
+        }, {
+          maxRetries: 3,
+          baseDelay: 1000,
+          maxDelay: 10000
+        });
+
+        if (retryAttempt > 0) {
+          toast({
+            title: "Upload Successful",
+            description: `File uploaded after ${retryAttempt + 1} attempt(s)`,
+          });
+        }
+
+        // Phase 3: Processing
+        setUploadState('processing');
+        setUploadProgress({ 
+          phase: 'Processing file...', 
+          fileSize: uploadProgress.fileSize 
+        });
+
+        // Small delay to show processing state
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        attachment = {
+          url: data.fileUrl,
+          name: data.fileName,
+          type: data.fileType
+        };
+
+        setUploadState('idle');
+        setUploadProgress({ phase: '' });
+
+        // Show preview dialog before sending
+        setPreviewFile(attachment);
+        setPendingMessage(content);
+        setShowPreview(true);
+        return; // Stop here, wait for user confirmation
+      } catch (error) {
+        console.error('File upload error:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        toast({
+          title: "Upload Failed",
+          description: retryAttempt > 0 
+            ? `Failed after ${retryAttempt + 1} attempts: ${errorMessage}`
+            : `Failed to upload file: ${errorMessage}`,
+          variant: "destructive"
+        });
+        setUploadState('idle');
+        setUploadProgress({ phase: '' });
+        return;
+      }
+    } else {
+      // No file to upload, send message directly via preview
+      setPendingMessage(content);
+      setPreviewFile(null);
+      setShowPreview(true);
     }
   };
 
@@ -735,6 +720,14 @@ export const ChatInterface = ({
           </div>
         </div>
       </div>
+
+      <FilePreviewDialog
+        open={showPreview}
+        onOpenChange={setShowPreview}
+        file={previewFile}
+        onConfirm={handlePreviewConfirm}
+        onCancel={handlePreviewCancel}
+      />
     </div>
   );
 };
