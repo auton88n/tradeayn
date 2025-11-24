@@ -198,6 +198,23 @@ export const ChatInput = ({
         
         {/* Input Wrapper containing both file chip and textarea */}
         <div className="input-wrapper">
+          {/* Text Input Area */}
+          <Textarea ref={inputRef} unstyled={true} className="message-input resize-none min-h-[40px] max-h-[200px] overflow-hidden" value={value} onChange={e => {
+            onChange(e.target.value);
+            // Auto-resize textarea
+            const textarea = e.target as HTMLTextAreaElement;
+            textarea.style.height = 'auto';
+            const newHeight = Math.min(textarea.scrollHeight, 200);
+            textarea.style.height = newHeight + 'px';
+
+            // Show scrollbar only when content exceeds max height
+            if (textarea.scrollHeight > 200) {
+              textarea.style.overflowY = 'auto';
+            } else {
+              textarea.style.overflowY = 'hidden';
+            }
+          }} onKeyPress={onKeyPress} onFocus={onFocus} onBlur={onBlur} placeholder="" disabled={disabled || isUploading} rows={1} />
+          
           {/* Inline File Chip */}
           {selectedFile && (
             <div 
@@ -253,23 +270,6 @@ export const ChatInput = ({
             file={selectedFile}
             previewUrl={filePreviewUrl}
           />
-          
-          {/* Text Input Area */}
-          <Textarea ref={inputRef} unstyled={true} className="message-input resize-none min-h-[40px] max-h-[200px] overflow-hidden" value={value} onChange={e => {
-            onChange(e.target.value);
-            // Auto-resize textarea
-            const textarea = e.target as HTMLTextAreaElement;
-            textarea.style.height = 'auto';
-            const newHeight = Math.min(textarea.scrollHeight, 200);
-            textarea.style.height = newHeight + 'px';
-
-            // Show scrollbar only when content exceeds max height
-            if (textarea.scrollHeight > 200) {
-              textarea.style.overflowY = 'auto';
-            } else {
-              textarea.style.overflowY = 'hidden';
-            }
-          }} onKeyPress={onKeyPress} onFocus={onFocus} onBlur={onBlur} placeholder="" disabled={disabled || isUploading} rows={1} />
           
           {/* Typewriter Animation Placeholder */}
           {showPlaceholder && !value.trim() && !isInputFocused && !selectedFile && <div className={`absolute ${direction === 'rtl' ? 'right-[var(--input-left-offset)]' : 'left-[var(--input-left-offset)]'} top-[var(--input-vertical-offset)] pointer-events-none z-10 ${direction === 'rtl' ? 'text-right' : 'text-left'} transition-all duration-300 ease-in-out`}>
