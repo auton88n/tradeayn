@@ -26,14 +26,19 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
   const isPDF = file.type.includes('pdf');
 
   const handleDownload = () => {
-    if (!previewUrl) return;
+    if (!previewUrl || !file) return;
     
     const link = document.createElement('a');
     link.href = previewUrl;
     link.download = file.name;
+    link.style.display = 'none';
     document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
+    
+    // Delay removal to ensure download starts
+    setTimeout(() => {
+      document.body.removeChild(link);
+    }, 100);
   };
 
   return (
