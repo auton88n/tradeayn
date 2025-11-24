@@ -17,6 +17,20 @@ import { globalThreatMonitor, detectMaliciousInput, reportThreatEvent } from '@/
 import { useFileUploadRetry } from '@/hooks/useFileUploadRetry';
 import { FilePreviewDialog } from './FilePreviewDialog';
 
+// Timeout wrapper for webhook calls
+const invokeWithTimeout = async (
+  functionName: string, 
+  payload: any, 
+  timeoutMs: number = 55000
+): Promise<{ data: any; error: any }> => {
+  return Promise.race([
+    supabase.functions.invoke(functionName, { body: payload }),
+    new Promise<{ data: any; error: any }>((_, reject) =>
+      setTimeout(() => reject(new Error('TIMEOUT')), timeoutMs)
+    )
+  ]);
+};
+
 interface Message {
   id: string;
   content: string;
@@ -264,41 +278,78 @@ export const ChatInterface = ({
         } : null
       };
 
-      console.log('🔍 FRONTEND DEBUG - Attachment value:', attachment ? {
-        name: attachment.name,
-        type: attachment.type,
-        url: attachment.url
-      } : null);
-      console.log('🔍 FRONTEND DEBUG - Payload fileData:', payload.fileData);
+      console.log('📦 Webhook payload constructed:', {
+        messageLength: payload.message?.length,
+        mode: payload.mode,
+        sessionId: payload.sessionId,
+        hasUserContext: !!payload.userContext,
+        conversationHistoryLength: payload.conversationHistory?.length,
+        fileData: payload.fileData ? {
+          filename: payload.fileData.filename,
+          type: payload.fileData.type,
+          hasUrl: !!payload.fileData.url,
+          urlLength: payload.fileData.url?.length
+        } : null
+      });
 
       // Ensure we have a fresh JWT token
+      console.log('🔐 Checking session status...');
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
       if (sessionError || !session) {
-        throw new Error('Session expired. Please log in again.');
+        console.error('❌ Session error:', sessionError);
+        throw new Error('SESSION_EXPIRED');
       }
 
-      // If token is close to expiry, refresh it
+      // Calculate time until token expiry
       const tokenExpiresAt = session.expires_at || 0;
       const now = Math.floor(Date.now() / 1000);
       const timeUntilExpiry = tokenExpiresAt - now;
 
+      console.log(`⏰ Token expires in ${timeUntilExpiry} seconds`);
+
+      // Refresh if less than 5 minutes remaining
       if (timeUntilExpiry < 300) {
-        console.log('🔄 Refreshing session token...');
+        console.log('🔄 Token expiring soon, refreshing...');
+        const startTime = Date.now();
+        
         const { data: { session: newSession }, error: refreshError } = await supabase.auth.refreshSession();
+        
         if (refreshError || !newSession) {
-          throw new Error('Failed to refresh session. Please log in again.');
+          console.error('❌ Session refresh failed:', refreshError);
+          throw new Error('SESSION_REFRESH_FAILED');
         }
-        console.log('✅ Session token refreshed successfully');
+        
+        const refreshDuration = Date.now() - startTime;
+        console.log(`✅ Session refreshed in ${refreshDuration}ms`);
+      } else {
+        console.log('✅ Token is valid');
       }
 
-      console.log('🚀 Calling ayn-webhook');
-
-      // Call AYN webhook
-      const { data, error } = await supabase.functions.invoke('ayn-webhook', {
-        body: payload
+      console.log('🚀 Calling ayn-webhook with payload:', {
+        mode: selectedMode,
+        hasFile: !!payload.fileData,
+        fileName: payload.fileData?.filename,
+        messageLength: payload.message?.length
       });
 
-      if (error) throw error;
+      const startTime = Date.now();
+
+      // Call webhook with timeout protection
+      const { data, error } = await invokeWithTimeout('ayn-webhook', payload, 55000);
+
+      const callDuration = Date.now() - startTime;
+      console.log(`⏱️ Webhook call completed in ${callDuration}ms`);
+
+      if (error) {
+        console.error('❌ Webhook error:', error);
+        throw error;
+      }
+
+      console.log('✅ Webhook response received:', {
+        hasResponse: !!data?.response,
+        responseLength: data?.response?.length
+      });
 
       // Add AYN's response
       const aynMessage: Message = {
@@ -333,12 +384,41 @@ export const ChatInterface = ({
       ]);
 
     } catch (error: any) {
-      console.error('Error calling AYN webhook:', error);
+      console.error('❌ Error in continueSendingMessage:', error);
+      
+      let errorTitle = "Error";
+      let errorDescription = "Failed to send message";
+      
+      // Categorize errors
+      if (error.message === 'SESSION_EXPIRED' || error.message === 'SESSION_REFRESH_FAILED') {
+        errorTitle = "Session Expired";
+        errorDescription = "Your session has expired. Please refresh the page and log in again.";
+        console.error('🔐 Session error - user needs to re-authenticate');
+      } else if (error.message === 'TIMEOUT') {
+        errorTitle = "Request Timeout";
+        errorDescription = "The request took too long to complete. Please try again with a smaller file or check your connection.";
+        console.error('⏱️ Timeout error - webhook took longer than 55 seconds');
+      } else if (error.message?.includes('fetch') || error.message?.includes('network')) {
+        errorTitle = "Connection Error";
+        errorDescription = "Unable to reach AYN. Please check your internet connection and try again.";
+        console.error('🌐 Network error - connection issue');
+      } else {
+        errorTitle = "Processing Error";
+        errorDescription = error.message || "An unexpected error occurred. Please try again.";
+        console.error('❓ Unknown error:', error);
+      }
+      
       toast({
-        title: "Error",
-        description: error.message || "Failed to send message",
+        title: errorTitle,
+        description: errorDescription,
         variant: "destructive"
       });
+      
+      // Update the user message to show error status
+      const updatedMessagesWithError = updatedMessages.map(msg => 
+        msg.id === userMessage.id ? { ...msg, status: 'error' as const } : msg
+      );
+      onMessagesChange(updatedMessagesWithError);
     } finally {
       setIsTyping(false);
     }
@@ -392,7 +472,15 @@ export const ChatInterface = ({
     // Upload file if selected
     let attachment = null;
     if (selectedFile) {
+      let fileUploadStartTime = Date.now();
       try {
+        console.log('📁 Starting file upload process:', {
+          fileName: selectedFile.name,
+          fileSize: `${(selectedFile.size / 1024 / 1024).toFixed(2)}MB`,
+          fileType: selectedFile.type
+        });
+        fileUploadStartTime = Date.now();
+
         // Phase 1: Reading file
         setUploadState('reading');
         setUploadProgress({ 
@@ -427,6 +515,12 @@ export const ChatInterface = ({
           maxDelay: 10000
         });
 
+        const uploadDuration = Date.now() - fileUploadStartTime;
+        console.log(`✅ File uploaded in ${uploadDuration}ms:`, {
+          url: data.fileUrl,
+          retries: retryAttempt
+        });
+
         if (retryAttempt > 0) {
           toast({
             title: "Upload Successful",
@@ -459,7 +553,9 @@ export const ChatInterface = ({
         setShowPreview(true);
         return; // Stop here, wait for user confirmation
       } catch (error) {
-        console.error('File upload error:', error);
+        const uploadDuration = Date.now() - fileUploadStartTime;
+        console.error(`❌ File upload failed after ${uploadDuration}ms:`, error);
+        
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         toast({
           title: "Upload Failed",
