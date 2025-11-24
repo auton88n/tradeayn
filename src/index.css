@@ -840,6 +840,25 @@
     flex-shrink: 0;
   }
 
+  /* File thumbnail for images */
+  .file-chip-inline .file-thumbnail {
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: hsl(var(--muted));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .file-chip-inline .file-thumbnail-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
   /* File information */
   .file-chip-inline .file-info {
     display: flex;
