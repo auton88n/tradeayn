@@ -8,6 +8,9 @@ interface MessageFormatterProps {
 }
 
 export function MessageFormatter({ content, className }: MessageFormatterProps) {
+  // Ensure content is a string - handle edge cases
+  const safeContent = typeof content === 'string' ? content : String(content || '');
+  
   // Clean system tags first
   const cleanSystemTags = (text: string): string => {
     // Remove <lov-actions> blocks entirely (including content)
@@ -26,7 +29,7 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
   };
 
   // Clean system tags and sanitize content to prevent XSS attacks
-  const cleanedContent = cleanSystemTags(content);
+  const cleanedContent = cleanSystemTags(safeContent);
   const sanitizedContent = sanitizeMessageContent(cleanedContent);
   
   const formatMessage = (text: string) => {
