@@ -31,6 +31,45 @@ const invokeWithTimeout = async (
   ]);
 };
 
+// Ensure JWT token is fresh before Supabase function calls
+const ensureFreshToken = async (): Promise<boolean> => {
+  console.log('🔐 Checking session status...');
+  
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+  if (sessionError || !session) {
+    console.error('❌ Session error:', sessionError);
+    return false;
+  }
+
+  // Calculate time until token expiry
+  const tokenExpiresAt = session.expires_at || 0;
+  const now = Math.floor(Date.now() / 1000);
+  const timeUntilExpiry = tokenExpiresAt - now;
+
+  console.log(`⏰ Token expires in ${timeUntilExpiry} seconds (${Math.round(timeUntilExpiry / 60)} minutes)`);
+
+  // Refresh if less than 5 minutes remaining
+  if (timeUntilExpiry < 300) {
+    console.log('🔄 Token expiring soon, refreshing...');
+    const startTime = Date.now();
+    
+    const { data: { session: newSession }, error: refreshError } = await supabase.auth.refreshSession();
+    
+    if (refreshError || !newSession) {
+      console.error('❌ Session refresh failed:', refreshError);
+      return false;
+    }
+    
+    const refreshDuration = Date.now() - startTime;
+    console.log(`✅ Session refreshed in ${refreshDuration}ms, new expiry in ${newSession.expires_at ? (newSession.expires_at - now) : 'unknown'} seconds`);
+  } else {
+    console.log('✅ Token is valid, no refresh needed');
+  }
+
+  return true;
+};
+
 interface Message {
   id: string;
   content: string;
@@ -292,38 +331,11 @@ export const ChatInterface = ({
         } : null
       });
 
-      // Ensure we have a fresh JWT token
-      console.log('🔐 Checking session status...');
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-      if (sessionError || !session) {
-        console.error('❌ Session error:', sessionError);
+      // ✅ CRITICAL: Final JWT check before webhook call
+      console.log('🔐 Pre-webhook: Ensuring fresh JWT token...');
+      const tokenValid = await ensureFreshToken();
+      if (!tokenValid) {
         throw new Error('SESSION_EXPIRED');
-      }
-
-      // Calculate time until token expiry
-      const tokenExpiresAt = session.expires_at || 0;
-      const now = Math.floor(Date.now() / 1000);
-      const timeUntilExpiry = tokenExpiresAt - now;
-
-      console.log(`⏰ Token expires in ${timeUntilExpiry} seconds`);
-
-      // Refresh if less than 5 minutes remaining
-      if (timeUntilExpiry < 300) {
-        console.log('🔄 Token expiring soon, refreshing...');
-        const startTime = Date.now();
-        
-        const { data: { session: newSession }, error: refreshError } = await supabase.auth.refreshSession();
-        
-        if (refreshError || !newSession) {
-          console.error('❌ Session refresh failed:', refreshError);
-          throw new Error('SESSION_REFRESH_FAILED');
-        }
-        
-        const refreshDuration = Date.now() - startTime;
-        console.log(`✅ Session refreshed in ${refreshDuration}ms`);
-      } else {
-        console.log('✅ Token is valid');
       }
 
       console.log('🚀 Calling ayn-webhook with payload:', {
@@ -346,15 +358,65 @@ export const ChatInterface = ({
         throw error;
       }
 
-      console.log('✅ Webhook response received:', {
+      // Log raw response structure for debugging
+      console.log('📨 Raw webhook response structure:', {
+        hasData: !!data,
+        dataType: typeof data,
         hasResponse: !!data?.response,
-        responseLength: data?.response?.length
+        responseType: typeof data?.response,
+        dataKeys: data ? Object.keys(data) : [],
+        responseKeys: data?.response && typeof data.response === 'object' ? Object.keys(data.response) : []
+      });
+
+      // Extract text from response (handle various n8n formats)
+      let responseText = '';
+      try {
+        if (typeof data.response === 'string') {
+          responseText = data.response;
+        } else if (data?.response?.output) {
+          responseText = typeof data.response.output === 'string' 
+            ? data.response.output 
+            : JSON.stringify(data.response.output);
+        } else if (data?.response?.text) {
+          responseText = data.response.text;
+        } else if (data?.response?.message) {
+          responseText = data.response.message;
+        } else if (data?.output) {
+          responseText = typeof data.output === 'string' ? data.output : JSON.stringify(data.output);
+        } else if (data?.text) {
+          responseText = data.text;
+        } else if (data?.message) {
+          responseText = data.message;
+        } else if (data?.response && typeof data.response === 'object') {
+          // Safe stringify with circular reference handling
+          responseText = JSON.stringify(data.response, (key, value) => {
+            if (typeof value === 'function') return '[Function]';
+            if (typeof value === 'undefined') return undefined;
+            return value;
+          }, 2);
+        } else if (data) {
+          responseText = JSON.stringify(data, (key, value) => {
+            if (typeof value === 'function') return '[Function]';
+            if (typeof value === 'undefined') return undefined;
+            return value;
+          }, 2);
+        } else {
+          responseText = 'Received response but could not extract text content';
+        }
+      } catch (stringifyError) {
+        console.error('⚠️ Error extracting response text:', stringifyError);
+        responseText = 'Received response but encountered formatting error.';
+      }
+
+      console.log('✅ Extracted response text:', {
+        length: responseText.length,
+        preview: responseText.substring(0, 100) + (responseText.length > 100 ? '...' : '')
       });
 
       // Add AYN's response
       const aynMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: data.response || 'No response received',
+        content: responseText || 'No response received',
         sender: 'ayn',
         timestamp: new Date(),
         status: 'sent'
@@ -479,6 +541,20 @@ export const ChatInterface = ({
           fileSize: `${(selectedFile.size / 1024 / 1024).toFixed(2)}MB`,
           fileType: selectedFile.type
         });
+
+        // ✅ CRITICAL: Refresh JWT token BEFORE file upload
+        console.log('🔐 Pre-upload: Ensuring fresh JWT token...');
+        const tokenValid = await ensureFreshToken();
+        if (!tokenValid) {
+          toast({
+            title: "Session Expired",
+            description: "Your session has expired. Please refresh the page and log in again.",
+            variant: "destructive"
+          });
+          return;
+        }
+        console.log('✅ Pre-upload: Token is fresh, proceeding with upload...');
+
         fileUploadStartTime = Date.now();
 
         // Phase 1: Reading file
