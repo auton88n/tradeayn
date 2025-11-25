@@ -234,6 +234,17 @@ export const ChatInterface = ({
   };
 
   const continueSendingMessage = async () => {
+    // Debug logging for attachment state
+    console.log('📎 continueSendingMessage called:', {
+      hasPendingMessage: !!pendingMessage,
+      hasPreviewFile: !!previewFile,
+      previewFileDetails: previewFile ? {
+        name: previewFile.name,
+        type: previewFile.type,
+        hasUrl: !!previewFile.url
+      } : null
+    });
+
     const content = pendingMessage;
     const attachment = previewFile;
 
@@ -300,7 +311,13 @@ export const ChatInterface = ({
         conversationHistory: messages.slice(-5).map(msg => ({
           content: msg.content,
           sender: msg.sender,
-          timestamp: msg.timestamp.toISOString()
+          timestamp: msg.timestamp.toISOString(),
+          has_attachment: !!msg.attachment,
+          attachment: msg.attachment ? {
+            url: msg.attachment.url,
+            filename: msg.attachment.name,
+            type: msg.attachment.type
+          } : null
         })),
         userContext: userProfile ? {
           companyName: userProfile.company_name,
@@ -309,6 +326,7 @@ export const ChatInterface = ({
           contactPerson: userProfile.contact_person
         } : null,
         timestamp: new Date().toISOString(),
+        has_attachment: !!attachment,
         fileData: attachment ? {
           url: attachment.url,
           filename: attachment.name,
@@ -323,6 +341,7 @@ export const ChatInterface = ({
         sessionId: payload.sessionId,
         hasUserContext: !!payload.userContext,
         conversationHistoryLength: payload.conversationHistory?.length,
+        has_attachment: payload.has_attachment,
         fileData: payload.fileData ? {
           filename: payload.fileData.filename,
           type: payload.fileData.type,
