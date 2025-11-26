@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Brain, TrendingUp, Target, BarChart3, Zap, Users, Shield, ArrowRight } from 'lucide-react';
+import { Brain, TrendingUp, Target, BarChart3, Zap, Users, ArrowRight, Sparkles, Palette, Cog, FileSpreadsheet, MessageSquare, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { AuthModal } from './auth/AuthModal';
@@ -34,26 +34,6 @@ const LandingPage = () => {
     }
   ];
 
-  const testimonials = [
-    {
-      name: "Sarah Chen",
-      role: "CEO, TechStart",
-      quote: t('testimonials.sarah.quote'),
-      avatar: "👩‍💼"
-    },
-    {
-      name: "Marcus Rodriguez", 
-      role: "Founder, GrowthCo",
-      quote: t('testimonials.marcus.quote'),
-      avatar: "👨‍💼"
-    },
-    {
-      name: "Emma Thompson",
-      role: "CMO, InnovateX",
-      quote: t('testimonials.emma.quote'),
-      avatar: "👩‍🚀"
-    }
-  ];
 
   return (
     <div className="min-h-screen">
@@ -74,8 +54,8 @@ const LandingPage = () => {
               <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">
                 {t('nav.features')}
               </a>
-              <a href="#testimonials" className="text-muted-foreground hover:text-foreground transition-colors">
-                {t('nav.testimonials')}
+              <a href="#services" className="text-muted-foreground hover:text-foreground transition-colors">
+                Services
               </a>
             </nav>
             
@@ -178,33 +158,198 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Testimonials Section */}
-      <section id="testimonials" className="py-20 bg-gradient-to-b from-transparent to-muted/20">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4 gradient-text">
-              {t('testimonials.title')}
+      {/* Services Section */}
+      <section id="services" className="py-24 px-4 bg-gradient-to-b from-background via-muted/20 to-background">
+        <div className="container mx-auto max-w-7xl">
+          {/* Section Header */}
+          <div className="text-center mb-16 space-y-4">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+              <Sparkles className="w-4 h-4" />
+              What We Do Best
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+              Transform Your Business with AI
             </h2>
-            <p className="text-xl text-muted-foreground">
-              {t('testimonials.subtitle')}
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              We don't just build tools—we create intelligent systems that grow with your business
             </p>
           </div>
-          
-          <div className="grid md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <Card key={index} className="bg-card border border-border p-6">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="text-3xl">{testimonial.avatar}</div>
-                  <div>
-                    <h4 className="font-semibold">{testimonial.name}</h4>
-                    <p className="text-sm text-muted-foreground">{testimonial.role}</p>
-                  </div>
+
+          {/* Services Grid */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            
+            {/* Service 1: Influencer Portfolios */}
+            <div className="group relative p-8 rounded-2xl bg-card border border-border hover:border-primary/50 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-1">
+              {/* Glow effect */}
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-purple-500/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+              
+              <div className="relative z-10">
+                {/* Icon */}
+                <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <Palette className="w-7 h-7 text-primary" />
                 </div>
-                <p className="text-muted-foreground italic leading-relaxed">
-                  "{testimonial.quote}"
+                
+                {/* Content */}
+                <h3 className="text-2xl font-bold mb-3">Influencer Portfolio Sites</h3>
+                <p className="text-muted-foreground mb-6 leading-relaxed">
+                  Stand out from the crowd. We craft stunning, personal portfolio websites that showcase your brand and convert followers into clients—complete with AI-powered contact forms that actually understand your audience.
                 </p>
-              </Card>
-            ))}
+                
+                {/* Features */}
+                <ul className="space-y-2 mb-6 text-sm">
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">✓</span>
+                    <span>Custom design that matches your aesthetic</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">✓</span>
+                    <span>AI chatbot trained on your content</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">✓</span>
+                    <span>Automatic social media integration</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">✓</span>
+                    <span>Powered by AYN AI branding</span>
+                  </li>
+                </ul>
+                
+                {/* Example */}
+                <a 
+                  href="https://ghazi.today" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
+                >
+                  See it in action: ghazi.today →
+                </a>
+              </div>
+            </div>
+
+            {/* Service 2: Custom AI Agents */}
+            <div className="group relative p-8 rounded-2xl bg-card border border-border hover:border-blue-500/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-1">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-cyan-500/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+              
+              <div className="relative z-10">
+                <div className="w-14 h-14 rounded-xl bg-blue-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <MessageSquare className="w-7 h-7 text-blue-500" />
+                </div>
+                
+                <h3 className="text-2xl font-bold mb-3">Custom AI Agents</h3>
+                <p className="text-muted-foreground mb-6 leading-relaxed">
+                  Your business is unique. Your AI should be too. We build intelligent agents tailored to your workflows—handling customer support, lead qualification, appointment booking, and more while you focus on what matters.
+                </p>
+                
+                <ul className="space-y-2 mb-6 text-sm">
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-500 mt-0.5">✓</span>
+                    <span>Trained on your company's knowledge base</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-500 mt-0.5">✓</span>
+                    <span>Integrates with your existing tools</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-500 mt-0.5">✓</span>
+                    <span>Handles customer inquiries 24/7</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-500 mt-0.5">✓</span>
+                    <span>Learns and improves over time</span>
+                  </li>
+                </ul>
+                
+                <p className="text-sm font-medium text-blue-500">
+                  From lead generation to customer service—fully automated
+                </p>
+              </div>
+            </div>
+
+            {/* Service 3: Business Automation */}
+            <div className="group relative p-8 rounded-2xl bg-card border border-border hover:border-green-500/50 transition-all duration-300 hover:shadow-2xl hover:shadow-green-500/10 hover:-translate-y-1">
+              <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-emerald-500/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+              
+              <div className="relative z-10">
+                <div className="w-14 h-14 rounded-xl bg-green-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <Cog className="w-7 h-7 text-green-500" />
+                </div>
+                
+                <h3 className="text-2xl font-bold mb-3">Process Automation</h3>
+                <p className="text-muted-foreground mb-6 leading-relaxed">
+                  Stop wasting time on repetitive tasks. We analyze your operations, identify bottlenecks, and deploy smart automation that saves hours every day—no coding required from your team.
+                </p>
+                
+                <ul className="space-y-2 mb-6 text-sm">
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-500 mt-0.5">✓</span>
+                    <span>Automated email responses and follow-ups</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-500 mt-0.5">✓</span>
+                    <span>Smart data entry and document processing</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-500 mt-0.5">✓</span>
+                    <span>Calendar management and scheduling</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-500 mt-0.5">✓</span>
+                    <span>Report generation on autopilot</span>
+                  </li>
+                </ul>
+                
+                <p className="text-sm font-medium text-green-500">
+                  Your team focuses on growth, not grunt work
+                </p>
+              </div>
+            </div>
+
+            {/* Service 4: AYN Eng (Teaser) */}
+            <div className="group relative p-8 rounded-2xl bg-gradient-to-br from-orange-500/10 to-red-500/10 border-2 border-orange-500/30 hover:border-orange-500/50 transition-all duration-300 hover:shadow-2xl hover:shadow-orange-500/20 hover:-translate-y-1 md:col-span-2 lg:col-span-3">
+              <div className="relative z-10 text-center max-w-4xl mx-auto">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/20 text-orange-600 dark:text-orange-400 text-sm font-bold mb-4">
+                  <FileSpreadsheet className="w-4 h-4" />
+                  COMING SOON
+                </div>
+                
+                <h3 className="text-3xl font-bold mb-4">AYN Eng: Civil Engineering AI</h3>
+                <p className="text-lg text-muted-foreground mb-6 leading-relaxed max-w-2xl mx-auto">
+                  Revolutionary AI for civil engineers. Upload survey data, get instant cut/fill analysis, AutoCAD-ready DXF files, and engineering reports that follow Saudi and GCC standards—all in seconds, not hours.
+                </p>
+                
+                <div className="flex flex-wrap justify-center gap-3 text-sm">
+                  <span className="px-4 py-2 rounded-full bg-background/50 border border-orange-500/30">
+                    Slope Analysis
+                  </span>
+                  <span className="px-4 py-2 rounded-full bg-background/50 border border-orange-500/30">
+                    Volume Calculations
+                  </span>
+                  <span className="px-4 py-2 rounded-full bg-background/50 border border-orange-500/30">
+                    DXF Export
+                  </span>
+                  <span className="px-4 py-2 rounded-full bg-background/50 border border-orange-500/30">
+                    GCC Compliance
+                  </span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          {/* CTA */}
+          <div className="text-center mt-16">
+            <p className="text-lg text-muted-foreground mb-6">
+              Ready to automate your business and scale faster?
+            </p>
+            <Button 
+              size="lg" 
+              className="text-lg px-8 py-6 rounded-full shadow-xl hover:shadow-2xl transition-all hover:scale-105"
+              onClick={() => setShowAuthModal(true)}
+            >
+              <Building2 className="w-5 h-5 mr-2" />
+              Let's Build Something Amazing
+            </Button>
           </div>
         </div>
       </section>
