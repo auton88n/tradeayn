@@ -1,7 +1,7 @@
 import React from 'react';
 import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
-import type { Message, FileAttachment, AIMode } from '@/types/dashboard.types';
+import type { Message, FileAttachment, AIMode, AIModeConfig } from '@/types/dashboard.types';
 
 interface ChatAreaProps {
   // Message display
@@ -31,6 +31,10 @@ interface ChatAreaProps {
   
   // Sidebar state
   sidebarOpen?: boolean;
+  
+  // Mode management
+  modes: AIModeConfig[];
+  onModeChange: (mode: AIMode) => void;
 }
 
 export const ChatArea = ({
@@ -53,7 +57,9 @@ export const ChatArea = ({
   onDragOver,
   onDrop,
   fileInputRef,
-  sidebarOpen = true
+  sidebarOpen = true,
+  modes,
+  onModeChange
 }: ChatAreaProps) => {
   return (
     <div className="flex flex-col h-full">
@@ -84,6 +90,8 @@ export const ChatArea = ({
         fileInputRef={fileInputRef}
         hasMessages={messages.length > 0}
         sidebarOpen={sidebarOpen}
+        modes={modes}
+        onModeChange={onModeChange}
       />
     </div>
   );

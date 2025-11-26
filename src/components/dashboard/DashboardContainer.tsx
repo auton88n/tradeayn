@@ -327,6 +327,8 @@ const DashboardContent = ({
           onDrop={fileUpload.handleDrop}
           fileInputRef={fileUpload.fileInputRef}
           sidebarOpen={open}
+          modes={modes}
+          onModeChange={setSelectedMode}
         />
       </main>
     </div>

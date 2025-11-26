@@ -237,6 +237,8 @@ export interface ChatInputProps {
   fileInputRef: React.RefObject<HTMLInputElement>;
   hasMessages: boolean;
   sidebarOpen?: boolean;
+  modes: AIModeConfig[];
+  onModeChange: (mode: AIMode) => void;
 }
 
 export interface SidebarProps {
