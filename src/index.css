@@ -306,6 +306,19 @@
     50% { background-position: 100% 50%; }
   }
 
+  @keyframes float {
+    0%, 100% { 
+      transform: translateY(0) translateX(0); 
+      opacity: 0; 
+    }
+    10% { opacity: 0.6; }
+    90% { opacity: 0.6; }
+    100% { 
+      transform: translateY(-100vh) translateX(50px); 
+      opacity: 0; 
+    }
+  }
+
   .animate-gradient-x {
     background-size: 200% 200%;
     animation: gradient-x 3s ease infinite;
