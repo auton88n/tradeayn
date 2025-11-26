@@ -21,7 +21,6 @@ interface Profile {
   user_id: string;
   company_name: string | null;
   contact_person: string | null;
-  phone: string | null;
   created_at: string;
 }
 
