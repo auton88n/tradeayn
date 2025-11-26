@@ -137,8 +137,8 @@ export const Sidebar = ({
         {/* User Profile with Logout */}
         <Popover>
           <PopoverTrigger asChild>
-            <button className="flex items-center gap-3 px-4 pb-4 w-full hover:bg-muted/50 transition-colors cursor-pointer rounded-lg">
-              <Avatar className="w-10 h-10">
+            <button className="flex items-center gap-3 px-4 pb-4 w-full hover:bg-muted/50 transition-all duration-300 hover:scale-[1.02] cursor-pointer rounded-lg">
+              <Avatar className="w-10 h-10 transition-transform duration-300 hover:scale-110">
                 <AvatarFallback>
                   {userName?.charAt(0) || userEmail?.charAt(0) || 'U'}
                 </AvatarFallback>
@@ -153,11 +153,16 @@ export const Sidebar = ({
               </div>
             </button>
           </PopoverTrigger>
-          <PopoverContent className="w-48 p-2" align="end" side="top">
+          <PopoverContent 
+            className="w-48 p-2 animate-in slide-in-from-left-2 fade-in-0 duration-300 z-50 bg-background border shadow-xl" 
+            align="end" 
+            side="right"
+            sideOffset={8}
+          >
             <Button 
               onClick={onLogout} 
               variant="ghost" 
-              className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
+              className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10 transition-all duration-200 hover:scale-105"
             >
               <LogOut className="w-4 h-4 mr-2" />
               {t('common.signOut')}
