@@ -2,6 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { MessageBubble } from './MessageBubble';
 import { TypingIndicator } from '@/components/TypingIndicator';
+import { Brain } from 'lucide-react';
 import type { MessageListProps } from '@/types/dashboard.types';
 
 export const MessageList = ({
@@ -68,8 +69,8 @@ export const MessageList = ({
         {/* Typing Indicator */}
         {isTyping && (
           <div className="flex gap-3 mb-4">
-            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-medium flex-shrink-0">
-              AYN
+            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground flex-shrink-0">
+              <Brain className="w-4 h-4" />
             </div>
             <TypingIndicator />
           </div>
