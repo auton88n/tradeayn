@@ -28,6 +28,9 @@ interface ChatAreaProps {
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent) => void;
   fileInputRef: React.RefObject<HTMLInputElement>;
+  
+  // Sidebar state
+  sidebarOpen?: boolean;
 }
 
 export const ChatArea = ({
@@ -49,7 +52,8 @@ export const ChatArea = ({
   onDragLeave,
   onDragOver,
   onDrop,
-  fileInputRef
+  fileInputRef,
+  sidebarOpen = true
 }: ChatAreaProps) => {
   return (
     <div className="flex flex-col h-full">
@@ -79,6 +83,7 @@ export const ChatArea = ({
         onDrop={onDrop}
         fileInputRef={fileInputRef}
         hasMessages={messages.length > 0}
+        sidebarOpen={sidebarOpen}
       />
     </div>
   );

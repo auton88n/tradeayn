@@ -379,14 +379,20 @@
     }
   }
 
-  /* Desktop: Offset for sidebar (240px width, so offset by 120px = half) */
+  /* Desktop: Dynamic positioning based on sidebar state */
   @media (min-width: 768px) {
-    .input-area.center-position {
+    /* Sidebar OPEN - offset by half sidebar width */
+    .input-area.sidebar-open.center-position,
+    .input-area.sidebar-open.bottom-position {
       left: calc(50% + 120px);
+      transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     
-    .input-area.bottom-position {
-      left: calc(50% + 120px);
+    /* Sidebar CLOSED - center on full viewport */
+    .input-area.sidebar-closed.center-position,
+    .input-area.sidebar-closed.bottom-position {
+      left: 50%;
+      transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
   }
 

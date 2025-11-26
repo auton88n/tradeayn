@@ -3,9 +3,11 @@ import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { SidebarProvider, Sidebar as ShadcnSidebar, SidebarTrigger } from '@/components/ui/sidebar';
+import { SidebarProvider, Sidebar as ShadcnSidebar, SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { Sidebar as DashboardSidebar } from './Sidebar';
 import { ChatArea } from './ChatArea';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import type { AIMode, FileAttachment, AIModeConfig } from '@/types/dashboard.types';
 
 // Import custom hooks
@@ -15,7 +17,7 @@ import { useFileUpload } from '@/hooks/useFileUpload';
 import { useMessages } from '@/hooks/useMessages';
 
 // Import icons for modes
-import { MessageSquare, TrendingUp, Search, FileText, Eye, Hammer } from 'lucide-react';
+import { MessageSquare, TrendingUp, Search, FileText, Eye, Hammer, Menu, X } from 'lucide-react';
 
 interface DashboardContainerProps {
   user: User;
@@ -209,74 +211,128 @@ export const DashboardContainer = ({ user }: DashboardContainerProps) => {
 
   return (
     <SidebarProvider>
-      <div className="flex h-screen w-full">
-        <ShadcnSidebar>
-          <DashboardSidebar
-            userName={user.user_metadata?.name}
-            userEmail={user.email}
-            userAvatar={user.user_metadata?.name?.charAt(0)}
-            isTyping={messagesHook.isTyping}
-            hasAccess={auth.hasAccess}
-            selectedMode={selectedMode}
-            modes={modes}
-            recentChats={chatSession.recentChats}
-            showChatSelection={chatSession.showChatSelection}
-            selectedChats={chatSession.selectedChats}
-            onModeSelect={setSelectedMode}
-            onNewChat={handleNewChat}
-            onLoadChat={handleLoadChat}
-            onToggleChatSelection={(index) => {
-              const newSelected = new Set(chatSession.selectedChats);
-              if (newSelected.has(index)) {
-                newSelected.delete(index);
-              } else {
-                newSelected.add(index);
-              }
-              chatSession.setSelectedChats(newSelected);
-            }}
-            onSelectAllChats={() => {
-              if (chatSession.selectedChats.size === chatSession.recentChats.length) {
-                chatSession.setSelectedChats(new Set());
-              } else {
-                chatSession.setSelectedChats(new Set(chatSession.recentChats.map((_, i) => i)));
-              }
-            }}
-            onDeleteSelected={chatSession.deleteSelectedChats}
-            onShowChatSelection={chatSession.setShowChatSelection}
-            onLogout={handleLogout}
-          />
-        </ShadcnSidebar>
-
-        <main className="flex-1 overflow-hidden flex flex-col">
-          {/* Mobile header with sidebar trigger */}
-          <header className="md:hidden flex items-center p-3 border-b bg-background">
-            <SidebarTrigger />
-            <span className="ml-3 font-semibold text-foreground">AYN AI</span>
-          </header>
-
-          <ChatArea
-            messages={messagesHook.messages}
-            isTyping={messagesHook.isTyping}
-            userName={user.user_metadata?.name}
-            userAvatar={user.user_metadata?.name?.charAt(0)}
-            onCopyMessage={handleCopyMessage}
-            onReplyToMessage={handleReplyToMessage}
-            onSendMessage={handleSendMessage}
-            isDisabled={!auth.hasAccess || !auth.hasAcceptedTerms}
-            selectedMode={selectedMode}
-            selectedFile={fileUpload.selectedFile}
-            isUploading={fileUpload.isUploading}
-            isDragOver={fileUpload.isDragOver}
-            onFileSelect={fileUpload.handleFileSelect}
-            onRemoveFile={fileUpload.removeFile}
-            onDragEnter={fileUpload.handleDragEnter}
-            onDragLeave={fileUpload.handleDragLeave}
-            onDragOver={fileUpload.handleDragOver}
-            onDrop={fileUpload.handleDrop}
-            fileInputRef={fileUpload.fileInputRef}
-          />
-        </main>
-      </div>
+      <DashboardContent
+        user={user}
+        auth={auth}
+        chatSession={chatSession}
+        fileUpload={fileUpload}
+        messagesHook={messagesHook}
+        selectedMode={selectedMode}
+        modes={modes}
+        setSelectedMode={setSelectedMode}
+        handleNewChat={handleNewChat}
+        handleLoadChat={handleLoadChat}
+        handleCopyMessage={handleCopyMessage}
+        handleReplyToMessage={handleReplyToMessage}
+        handleSendMessage={handleSendMessage}
+        handleLogout={handleLogout}
+      />
     </SidebarProvider>
+  );
+};
+
+// Separate component that can use useSidebar hook
+const DashboardContent = ({
+  user,
+  auth,
+  chatSession,
+  fileUpload,
+  messagesHook,
+  selectedMode,
+  modes,
+  setSelectedMode,
+  handleNewChat,
+  handleLoadChat,
+  handleCopyMessage,
+  handleReplyToMessage,
+  handleSendMessage,
+  handleLogout
+}: any) => {
+  const { open, toggleSidebar } = useSidebar();
+
+  return (
+    <div className="flex h-screen w-full">
+      <ShadcnSidebar>
+        <DashboardSidebar
+          userName={user.user_metadata?.name}
+          userEmail={user.email}
+          userAvatar={user.user_metadata?.name?.charAt(0)}
+          isTyping={messagesHook.isTyping}
+          hasAccess={auth.hasAccess}
+          selectedMode={selectedMode}
+          modes={modes}
+          recentChats={chatSession.recentChats}
+          showChatSelection={chatSession.showChatSelection}
+          selectedChats={chatSession.selectedChats}
+          onModeSelect={setSelectedMode}
+          onNewChat={handleNewChat}
+          onLoadChat={handleLoadChat}
+          onToggleChatSelection={(index) => {
+            const newSelected = new Set(chatSession.selectedChats);
+            if (newSelected.has(index)) {
+              newSelected.delete(index);
+            } else {
+              newSelected.add(index);
+            }
+            chatSession.setSelectedChats(newSelected);
+          }}
+          onSelectAllChats={() => {
+            if (chatSession.selectedChats.size === chatSession.recentChats.length) {
+              chatSession.setSelectedChats(new Set());
+            } else {
+              chatSession.setSelectedChats(new Set(chatSession.recentChats.map((_, i) => i)));
+            }
+          }}
+          onDeleteSelected={chatSession.deleteSelectedChats}
+          onShowChatSelection={chatSession.setShowChatSelection}
+          onLogout={handleLogout}
+        />
+      </ShadcnSidebar>
+
+      {/* Floating Hamburger Toggle Button (Desktop Only) */}
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={toggleSidebar}
+        className={cn(
+          "fixed top-4 z-50 hidden md:flex transition-all duration-300",
+          "bg-background/80 backdrop-blur-sm border shadow-lg hover:shadow-xl",
+          open ? "left-[260px]" : "left-4"
+        )}
+      >
+        {open ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+      </Button>
+
+      <main className="flex-1 overflow-hidden flex flex-col">
+        {/* Mobile header with sidebar trigger */}
+        <header className="md:hidden flex items-center p-3 border-b bg-background">
+          <SidebarTrigger />
+          <span className="ml-3 font-semibold text-foreground">AYN AI</span>
+        </header>
+
+        <ChatArea
+          messages={messagesHook.messages}
+          isTyping={messagesHook.isTyping}
+          userName={user.user_metadata?.name}
+          userAvatar={user.user_metadata?.name?.charAt(0)}
+          onCopyMessage={handleCopyMessage}
+          onReplyToMessage={handleReplyToMessage}
+          onSendMessage={handleSendMessage}
+          isDisabled={!auth.hasAccess || !auth.hasAcceptedTerms}
+          selectedMode={selectedMode}
+          selectedFile={fileUpload.selectedFile}
+          isUploading={fileUpload.isUploading}
+          isDragOver={fileUpload.isDragOver}
+          onFileSelect={fileUpload.handleFileSelect}
+          onRemoveFile={fileUpload.removeFile}
+          onDragEnter={fileUpload.handleDragEnter}
+          onDragLeave={fileUpload.handleDragLeave}
+          onDragOver={fileUpload.handleDragOver}
+          onDrop={fileUpload.handleDrop}
+          fileInputRef={fileUpload.fileInputRef}
+          sidebarOpen={open}
+        />
+      </main>
+    </div>
   );
 };

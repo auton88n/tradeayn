@@ -236,6 +236,7 @@ export interface ChatInputProps {
   onDrop: (e: React.DragEvent) => void;
   fileInputRef: React.RefObject<HTMLInputElement>;
   hasMessages: boolean;
+  sidebarOpen?: boolean;
 }
 
 export interface SidebarProps {
