@@ -57,6 +57,7 @@ const translations = {
     'modes.researchPro': 'Research Pro',
     'modes.pdfAnalyst': 'PDF Analyst',
     'modes.visionLab': 'Vision Lab',
+    'modes.civilEngineering': 'Civil Engineering',
     
     // Header elements
     'header.aynBusinessConsole': 'AYN Business Console',
@@ -128,7 +129,6 @@ const translations = {
     'common.deleteChats': 'Delete Chats',
     'common.deleteSelected': 'Delete Selected',
     'common.noRecentChats': 'No recent chats',
-    'common.poweredBy': 'Powered by Lovable',
     
     // Admin Panel
     'admin.title': 'Admin Control Center',
@@ -446,6 +446,7 @@ const translations = {
     'modes.researchPro': 'بحث متقدم',
     'modes.pdfAnalyst': 'محلل المستندات',
     'modes.visionLab': 'مختبر الرؤية',
+    'modes.civilEngineering': 'الهندسة المدنية',
     
     // Header elements in Arabic
     'header.aynBusinessConsole': 'منصة عين للأعمال',
@@ -517,7 +518,6 @@ const translations = {
     'common.deleteChats': 'حذف محادثات',
     'common.deleteSelected': 'حذف المحدد',
     'common.noRecentChats': 'لا توجد محادثات حديثة',
-    'common.poweredBy': 'مدعوم من Lovable',
     
     // Admin Panel
     'admin.title': 'مركز التحكم الإداري',

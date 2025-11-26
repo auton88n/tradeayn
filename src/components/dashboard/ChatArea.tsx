@@ -1,7 +1,7 @@
 import React from 'react';
 import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
-import type { Message, FileAttachment, AIMode } from '@/types/dashboard.types';
+import type { Message, FileAttachment, AIMode, AIModeConfig } from '@/types/dashboard.types';
 
 interface ChatAreaProps {
   // Message display
@@ -13,7 +13,7 @@ interface ChatAreaProps {
   onReplyToMessage: (message: Message) => void;
   
   // Message sending
-  onSendMessage: (content: string, attachment?: FileAttachment | null) => Promise<void>;
+  onSendMessage: (content: string, fileToUpload?: File | null) => Promise<void>;
   isDisabled: boolean;
   selectedMode: AIMode;
   
@@ -28,6 +28,13 @@ interface ChatAreaProps {
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent) => void;
   fileInputRef: React.RefObject<HTMLInputElement>;
+  
+  // Sidebar state
+  sidebarOpen?: boolean;
+  
+  // Mode management
+  modes: AIModeConfig[];
+  onModeChange: (mode: AIMode) => void;
 }
 
 export const ChatArea = ({
@@ -49,7 +56,10 @@ export const ChatArea = ({
   onDragLeave,
   onDragOver,
   onDrop,
-  fileInputRef
+  fileInputRef,
+  sidebarOpen = true,
+  modes,
+  onModeChange
 }: ChatAreaProps) => {
   return (
     <div className="flex flex-col h-full">
@@ -78,6 +88,10 @@ export const ChatArea = ({
         onDragOver={onDragOver}
         onDrop={onDrop}
         fileInputRef={fileInputRef}
+        hasMessages={messages.length > 0}
+        sidebarOpen={sidebarOpen}
+        modes={modes}
+        onModeChange={onModeChange}
       />
     </div>
   );

@@ -53,21 +53,42 @@
     --glass-border: hsla(0, 0%, 85%, 0.9);
     --glass-shadow: 0 8px 32px hsla(0, 0%, 0%, 0.06);
     
-    /* Professional Shadows */
-    --neon-purple: 0 0 20px hsla(0, 0%, 80%, 0.3);
-    --neon-blue: 0 0 20px hsla(0, 0%, 70%, 0.3);
-    --neon-teal: 0 0 20px hsla(0, 0%, 60%, 0.3);
-    
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 0 0% 9%;
-    --sidebar-primary: 0 0% 15%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 0 0% 96%;
-    --sidebar-accent-foreground: 0 0% 9%;
-    --sidebar-border: 0 0% 90%;
-    --sidebar-ring: 0 0% 50%;
-    --sidebar-width: 240px;
-  }
+  /* Professional Shadows */
+  --neon-purple: 0 0 20px hsla(0, 0%, 80%, 0.3);
+  --neon-blue: 0 0 20px hsla(0, 0%, 70%, 0.3);
+  --neon-teal: 0 0 20px hsla(0, 0%, 60%, 0.3);
+  
+  --sidebar-background: 0 0% 98%;
+  --sidebar-foreground: 0 0% 9%;
+  --sidebar-primary: 0 0% 15%;
+  --sidebar-primary-foreground: 0 0% 98%;
+  --sidebar-accent: 0 0% 96%;
+  --sidebar-accent-foreground: 0 0% 9%;
+  --sidebar-border: 0 0% 90%;
+  --sidebar-ring: 0 0% 50%;
+  --sidebar-width: 240px;
+}
+
+/* Mode selector button */
+.mode-selector-button {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.mode-selector-button:hover {
+  background: hsl(var(--muted) / 0.8) !important;
+  border-color: hsl(var(--primary) / 0.3) !important;
+}
+
+/* Plus button enhancement */
+.attachment-button:hover:not(:disabled) {
+  background: hsl(var(--primary) / 0.1) !important;
+  transform: scale(1.05);
+}
 
   .dark {
     --background: 0 0% 3.9%;
@@ -379,99 +400,24 @@
     }
   }
 
-
-  /* Mobile-Style Floating Input Bar */
-  .input-area {
-    position: fixed;
-    z-index: 9; /* Keep under sidebar (z-10) so it never covers it */
-    transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    padding: 0 12px;
-  }
-
-  /* Center position for initial state */
-  .input-area.center-position {
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: calc(100% - 24px);
-    max-width: 600px;
-  }
-
-  /* Bottom position after first message */
-  .input-area.bottom-position {
-    bottom: 12px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: calc(100% - 24px);
-    max-width: 600px;
-  }
-
-  /* Mobile specific adjustments */
-  @media (max-width: 640px) {
-    .input-area {
-      padding: 0 8px;
+  /* Desktop: Dynamic positioning based on sidebar state */
+  @media (min-width: 768px) {
+    /* Sidebar OPEN - offset by half sidebar width */
+    .input-area.sidebar-open.center-position,
+    .input-area.sidebar-open.bottom-position {
+      left: calc(50% + 120px);
+      transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     
-    .input-area.center-position,
-    .input-area.bottom-position {
-      width: calc(100% - 16px);
-      max-width: none;
-    }
-    
-    .input-area.bottom-position {
-      bottom: 8px;
+    /* Sidebar CLOSED - center on full viewport */
+    .input-area.sidebar-closed.center-position,
+    .input-area.sidebar-closed.bottom-position {
+      left: 50%;
+      transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
   }
 
-  /* Tablet adjustments */
-  @media (min-width: 641px) and (max-width: 1023px) {
-    .input-area.center-position,
-    .input-area.bottom-position {
-      width: calc(100% - 32px);
-      max-width: 500px;
-    }
-    
-    .input-area.bottom-position {
-      bottom: 16px;
-    }
-    
-    /* Tablet: sidebar expanded positioning */
-    [data-state="expanded"] ~ main .input-area {
-      left: calc(240px + (100vw - 240px) / 2) !important;
-      transform: translateX(-50%) !important;
-      transition: left 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
-    }
-    
-    [data-state="expanded"] ~ main .input-area.center-position {
-      left: calc(240px + (100vw - 240px) / 2) !important;
-      top: 50% !important;
-      transform: translate(-50%, -50%) !important;
-      transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
-    }
-    
-    [data-state="expanded"] ~ main .input-area.bottom-position {
-      left: calc(240px + (100vw - 240px) / 2) !important;
-      bottom: 16px !important;
-      transform: translateX(-50%) !important;
-      transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
-    }
-    
-    /* RTL versions for tablet */
-    [dir="rtl"] [data-state="expanded"] ~ main .input-area,
-    [dir="rtl"] [data-state="expanded"] ~ main .input-area.center-position,
-    [dir="rtl"] [data-state="expanded"] ~ main .input-area.bottom-position {
-      left: calc(240px + (100vw - 240px) / 2) !important;
-      right: auto !important;
-    }
-    
-    [dir="rtl"] [data-state="expanded"] ~ main .input-area.center-position {
-      transform: translate(-50%, -50%) !important;
-    }
-    
-    [dir="rtl"] [data-state="expanded"] ~ main .input-area.bottom-position {
-      transform: translateX(-50%) !important;
-    }
-  }
+
 
   /* RTL Support */
   [dir="rtl"] {
