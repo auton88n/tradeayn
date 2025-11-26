@@ -289,19 +289,17 @@ const DashboardContent = ({
         />
       </ShadcnSidebar>
 
-      {/* Floating Hamburger Toggle Button (Desktop Only) */}
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={toggleSidebar}
-        className={cn(
-          "fixed top-4 z-50 hidden md:flex transition-all duration-300",
-          "bg-background/80 backdrop-blur-sm border shadow-lg hover:shadow-xl",
-          open ? "left-[260px]" : "left-4"
-        )}
-      >
-        {open ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-      </Button>
+      {/* Floating Menu Button - only show when sidebar is closed */}
+      {!open && (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleSidebar}
+          className="fixed top-4 left-4 z-50 hidden md:flex bg-background/80 backdrop-blur-sm border shadow-lg hover:shadow-xl transition-all duration-300"
+        >
+          <Menu className="w-5 h-5" />
+        </Button>
+      )}
 
       <main className="flex-1 overflow-hidden flex flex-col">
         {/* Mobile header with sidebar trigger */}
