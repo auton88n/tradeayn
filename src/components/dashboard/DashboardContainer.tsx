@@ -252,9 +252,9 @@ const DashboardContent = ({
     <div className="flex h-screen w-full">
       <ShadcnSidebar>
         <DashboardSidebar
-          userName={user.user_metadata?.name}
-          userEmail={user.email}
-          userAvatar={user.user_metadata?.name?.charAt(0)}
+          userName={auth.userProfile?.contact_person || user.user_metadata?.name || user.email?.split('@')[0]}
+          userEmail={auth.userProfile?.company_name || 'No company'}
+          userAvatar={(auth.userProfile?.contact_person || user.user_metadata?.name || user.email)?.charAt(0)}
           isTyping={messagesHook.isTyping}
           hasAccess={auth.hasAccess}
           selectedMode={selectedMode}
