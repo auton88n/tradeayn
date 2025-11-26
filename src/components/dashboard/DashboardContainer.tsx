@@ -254,7 +254,7 @@ const DashboardContent = ({
         <DashboardSidebar
           userName={auth.userProfile?.contact_person || user.user_metadata?.name || user.email?.split('@')[0]}
           userEmail={auth.userProfile?.company_name || 'No company'}
-          userAvatar={(auth.userProfile?.contact_person || user.user_metadata?.name || user.email)?.charAt(0)}
+          userAvatar={auth.userProfile?.avatar_url}
           isTyping={messagesHook.isTyping}
           hasAccess={auth.hasAccess}
           selectedMode={selectedMode}
@@ -284,6 +284,7 @@ const DashboardContent = ({
           onDeleteSelected={chatSession.deleteSelectedChats}
           onShowChatSelection={chatSession.setShowChatSelection}
           onLogout={handleLogout}
+          onAvatarUpdated={auth.loadUserProfile}
         />
       </ShadcnSidebar>
 

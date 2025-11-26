@@ -29,6 +29,7 @@ export interface UserProfile {
   company_name?: string;
   business_type?: string;
   business_context?: string;
+  avatar_url?: string;
 }
 
 export interface UserAccess {
@@ -260,4 +261,5 @@ export interface SidebarProps {
   onDeleteSelected: () => Promise<void>;
   onShowChatSelection: (show: boolean) => void;
   onLogout: () => Promise<void>;
+  onAvatarUpdated?: () => void;
 }

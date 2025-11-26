@@ -67,11 +67,11 @@ export const useAuth = (user: User): UseAuthReturn => {
   // Load user profile
   const loadUserProfile = useCallback(async () => {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('user_id, contact_person, company_name, business_type, business_context')
-        .eq('user_id', user.id)
-        .maybeSingle();
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('user_id, contact_person, company_name, business_type, business_context, avatar_url')
+      .eq('user_id', user.id)
+      .maybeSingle();
 
       if (error) {
         console.error('Error loading profile:', error);

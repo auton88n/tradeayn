@@ -130,6 +130,13 @@ const translations = {
     'common.deleteSelected': 'Delete Selected',
     'common.noRecentChats': 'No recent chats',
     
+    // Profile
+    'profile.changePhoto': 'Change Photo',
+    'profile.uploadPhoto': 'Upload Photo',
+    'profile.removePhoto': 'Remove Photo',
+    'profile.photoUpdated': 'Profile photo updated!',
+    'profile.confirmUpload': 'Confirm Upload',
+    
     // Admin Panel
     'admin.title': 'Admin Control Center',
     'admin.subtitle': 'System administration and monitoring',
@@ -518,6 +525,13 @@ const translations = {
     'common.deleteChats': 'حذف محادثات',
     'common.deleteSelected': 'حذف المحدد',
     'common.noRecentChats': 'لا توجد محادثات حديثة',
+    
+    // Profile
+    'profile.changePhoto': 'تغيير الصورة',
+    'profile.uploadPhoto': 'رفع صورة',
+    'profile.removePhoto': 'إزالة الصورة',
+    'profile.photoUpdated': 'تم تحديث صورة الملف الشخصي!',
+    'profile.confirmUpload': 'تأكيد الرفع',
     
     // Admin Panel
     'admin.title': 'مركز التحكم الإداري',
