@@ -5,23 +5,20 @@ import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { 
-  Crown, RefreshCw, Activity, BarChart3, Settings, Users, Shield
+  Crown, RefreshCw, Activity, BarChart3, Settings, Users
 } from 'lucide-react';
 import { AdminDashboard } from './admin/AdminDashboard';
 import { UserManagement } from './admin/UserManagement';
 import { SystemSettings } from './admin/SystemSettings';
-import { ThreatMonitoringDashboard } from '@/components/security/ThreatMonitoringDashboard';
-import { SecurityValidationPanel } from '@/components/security/SecurityValidationPanel';
-import { MasterPasswordModal } from './admin/MasterPasswordModal';
 import { ErrorBoundary } from './ErrorBoundary';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useAdminSession } from '@/hooks/useAdminSession';
 
 interface Profile {
   id: string;
   user_id: string;
   company_name: string | null;
   contact_person: string | null;
+  phone: string | null;
   created_at: string;
 }
 
@@ -36,8 +33,6 @@ interface AccessGrantWithProfile {
   monthly_limit: number | null;
   current_month_usage: number;
   user_email?: string;
-  requires_approval: boolean;
-  auth_method: string;
   profiles: Profile | null;
 }
 
@@ -98,16 +93,14 @@ export const AdminPanel = () => {
   // UI State
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
   
   const { toast } = useToast();
-  const { isAuthenticated, checkSession } = useAdminSession();
 
   // Optimized data fetching with better error handling and memoization
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
+      console.log('AdminPanel: Starting data fetch...');
       
       // Fetch access grants and profiles with optimized queries
       const [accessResult, profilesResult, usageResult, todayUsageResult] = await Promise.all([
@@ -119,7 +112,7 @@ export const AdminPanel = () => {
         
         supabase
           .from('profiles')
-          .select('id, user_id, company_name, contact_person, created_at')
+          .select('id, user_id, company_name, contact_person, phone, created_at')
           .limit(1000), // Add limit for better performance
         
         supabase.rpc('get_usage_stats'),
@@ -240,53 +233,33 @@ export const AdminPanel = () => {
     }
   };
 
-  const requireAuthentication = (action: () => void) => {
-    if (isAuthenticated && checkSession()) {
-      action();
-    } else {
-      setPendingAction(() => action);
-      setShowPasswordModal(true);
-    }
-  };
-
-  const handleAuthenticated = () => {
-    if (pendingAction) {
-      pendingAction();
-      setPendingAction(null);
-    }
-  };
-
   // Configuration management
   const updateSystemConfig = async (newConfig: Partial<SystemConfig>) => {
-    const action = async () => {
-      try {
-        const updatedConfig = { ...systemConfig, ...newConfig };
-        setSystemConfig(updatedConfig);
-        
-        // Save maintenance config to localStorage for dashboard access
-        const maintenanceConfig = {
-          enableMaintenance: updatedConfig.enableMaintenance,
-          maintenanceMessage: updatedConfig.maintenanceMessage,
-          maintenanceStartTime: updatedConfig.maintenanceStartTime,
-          maintenanceEndTime: updatedConfig.maintenanceEndTime
-        };
-        localStorage.setItem('ayn_maintenance_config', JSON.stringify(maintenanceConfig));
-        
-        toast({
-          title: "Configuration Updated",
-          description: "System configuration has been updated successfully."
-        });
-      } catch (error) {
-        console.error('Error updating config:', error);
-        toast({
-          title: "Error",
-          description: "Failed to update configuration.",
-          variant: "destructive"
-        });
-      }
-    };
-
-    requireAuthentication(action);
+    try {
+      const updatedConfig = { ...systemConfig, ...newConfig };
+      setSystemConfig(updatedConfig);
+      
+      // Save maintenance config to localStorage for dashboard access
+      const maintenanceConfig = {
+        enableMaintenance: updatedConfig.enableMaintenance,
+        maintenanceMessage: updatedConfig.maintenanceMessage,
+        maintenanceStartTime: updatedConfig.maintenanceStartTime,
+        maintenanceEndTime: updatedConfig.maintenanceEndTime
+      };
+      localStorage.setItem('ayn_maintenance_config', JSON.stringify(maintenanceConfig));
+      
+      toast({
+        title: "Configuration Updated",
+        description: "System configuration has been updated successfully."
+      });
+    } catch (error) {
+      console.error('Error updating config:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update configuration.",
+        variant: "destructive"
+      });
+    }
   };
 
   if (isLoading) {
@@ -320,7 +293,7 @@ export const AdminPanel = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="overview" className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
             <BarChart3 className="w-4 h-4" />
             {t('admin.dashboard')}
@@ -333,14 +306,6 @@ export const AdminPanel = () => {
             <Settings className="w-4 h-4" />
             {t('admin.settings')}
           </TabsTrigger>
-          <TabsTrigger value="security" className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-            <Shield className="w-4 h-4" />
-            Security
-          </TabsTrigger>
-          <TabsTrigger value="validation" className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-            <Activity className="w-4 h-4" />
-            Validation
-          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
@@ -351,14 +316,9 @@ export const AdminPanel = () => {
 
         <TabsContent value="users">
           <ErrorBoundary>
-            <UserManagement 
-              allUsers={allUsers} 
-              onRefresh={fetchData}
-              requireAuthentication={requireAuthentication}
-            />
+            <UserManagement allUsers={allUsers} onRefresh={fetchData} />
           </ErrorBoundary>
         </TabsContent>
-
 
         <TabsContent value="settings">
           <ErrorBoundary>
@@ -366,35 +326,10 @@ export const AdminPanel = () => {
               systemConfig={systemConfig}
               onUpdateConfig={updateSystemConfig}
               onPerformMaintenance={performSystemMaintenance}
-              onRefresh={fetchData}
-              requireAuthentication={requireAuthentication}
             />
           </ErrorBoundary>
         </TabsContent>
-
-        <TabsContent value="security">
-          <ErrorBoundary>
-            <ThreatMonitoringDashboard />
-          </ErrorBoundary>
-        </TabsContent>
-
-        <TabsContent value="validation">
-          <ErrorBoundary>
-            <SecurityValidationPanel />
-          </ErrorBoundary>
-        </TabsContent>
       </Tabs>
-
-      <MasterPasswordModal
-        isOpen={showPasswordModal}
-        onClose={() => {
-          setShowPasswordModal(false);
-          setPendingAction(null);
-        }}
-        onAuthenticated={handleAuthenticated}
-        title="Admin Authentication Required"
-        description="Please enter your master password to perform this administrative action."
-      />
     </div>
   );
 };

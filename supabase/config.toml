@@ -1,13 +1,1 @@
 project_id = "dfkoxuokfkttjhfjcecx"
-
-[functions.admin-auth]
-verify_jwt = false
-
-[functions.ayn-webhook]
-verify_jwt = true
-
-[functions.file-upload]
-verify_jwt = true
-
-[functions.threat-detector]
-verify_jwt = true

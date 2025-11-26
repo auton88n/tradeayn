@@ -1,20 +1,20 @@
-import { useState, useEffect, useRef, lazy, Suspense } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { log } from '@/lib/secureLogger';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-
-
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -28,35 +28,34 @@ import {
 } from '@/components/ui/sidebar';
 import { MaintenanceBanner } from '@/components/MaintenanceBanner';
 import { 
+  Send, 
+  Paperclip, 
   TrendingUp, 
+  Target, 
   Search, 
+  Rocket,
   Brain,
   LogOut,
+  Settings,
   FileText,
   Eye,
-  Coins,
+  Menu,
+  X,
   Shield,
   Plus,
   User as UserIcon,
-  MessageSquare,
-  Download,
-  Heart,
-  Layers
+  Copy,
+  Reply,
+  MessageSquare
 } from 'lucide-react';
 import { ThemeToggle } from './theme-toggle';
 import { TermsModal } from './TermsModal';
-const AdminPanel = lazy(() => import('./AdminPanel').then(module => ({ default: module.AdminPanel })));
-
-
+import { AdminPanel } from './AdminPanel';
+import { TypewriterText } from './TypewriterText';
+import { TypingIndicator } from './TypingIndicator';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
-
-import { ChatActions } from './dashboard/ChatActions';
-import { MessageItem } from './dashboard/MessageItem';
-import { MessageList } from './dashboard/MessageList';
-import { ChatInput } from './dashboard/ChatInput';
-import { ModeSelector } from './dashboard/ModeSelector';
-import { useChatState } from '@/hooks/useChatState';
+import { MessageFormatter } from './MessageFormatter';
 
 interface Message {
   id: string;
@@ -126,22 +125,6 @@ const getModes = (t: (key: string) => string) => [
     color: 'text-orange-500',
     webhookUrl: '' // Will be set by user
   },
-  { 
-    name: 'Crypto', 
-    translatedName: t('modes.crypto'),
-    description: 'Cryptocurrency analysis and blockchain insights',
-    icon: Coins,
-    color: 'text-yellow-500',
-    webhookUrl: 'https://n8n.srv846714.hstgr.cloud/webhook/5a05ee2a-4be3-4952-ae3f-c23dd8dc8fe5'
-  },
-  { 
-    name: 'Civil Engineering', 
-    translatedName: t('modes.civilEngineering'),
-    description: 'Infrastructure and civil engineering analysis',
-    icon: Layers,
-    color: 'text-orange-500',
-    webhookUrl: 'https://n8n.srv846714.hstgr.cloud/webhook/d62028bd-83a0-4c33-8111-81b1ec7a909e'
-  },
 ];
 
 
@@ -156,10 +139,10 @@ const getSendButtonClass = (mode: string) => {
 };
 
 export default function Dashboard({ user }: DashboardProps) {
-  // Chat state management (centralized via custom hook)
-  const chatState = useChatState();
-  
-  // Other state management
+  // State management
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputMessage, setInputMessage] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
   const [hasAccess, setHasAccess] = useState(false);
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -168,15 +151,16 @@ export default function Dashboard({ user }: DashboardProps) {
   const [selectedChats, setSelectedChats] = useState<Set<number>>(new Set());
   const [showChatSelection, setShowChatSelection] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [currentSessionId, setCurrentSessionId] = useState<string>(() => crypto.randomUUID());
   const { t, language, direction, setLanguage } = useLanguage();
   
   // State for AI modes and webhooks
+  const [selectedMode, setSelectedMode] = useState<string>('Nen Mode ⚡');
   const [modeWebhooks, setModeWebhooks] = useState<Record<string, string>>({
     'Nen Mode ⚡': '',
     'Research Pro': '',
     'PDF Analyst': '',
-    'Vision Lab': '',
-    'Crypto': 'https://n8n.srv846714.hstgr.cloud/webhook/5a05ee2a-4be3-4952-ae3f-c23dd8dc8fe5'
+    'Vision Lab': ''
   });
 
   // Maintenance mode state
@@ -187,15 +171,17 @@ export default function Dashboard({ user }: DashboardProps) {
     maintenanceEndTime: ''
   });
   
+  const [isInputFocused, setIsInputFocused] = useState(false);
+  
+  // File attachment state
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [showFileTypes, setShowFileTypes] = useState(false);
   const [allowPersonalization, setAllowPersonalization] = useState(false);
-  
-  // Dialog states
-  const [showExportDialog, setShowExportDialog] = useState(false);
-  const [showSearchDialog, setShowSearchDialog] = useState(false);
-  const [showFavoritesDialog, setShowFavoritesDialog] = useState(false);
-  
-  // Favorite chats state
-  const [favoritedChats, setFavoritedChats] = useState<Set<string>>(new Set());
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const [showPlaceholder, setShowPlaceholder] = useState(true);
   
   const { toast } = useToast();
   
@@ -209,7 +195,7 @@ export default function Dashboard({ user }: DashboardProps) {
   // Get mode-specific placeholder texts
   const getPlaceholderTexts = () => {
     try {
-      const placeholders = t(`placeholders.${chatState.selectedMode}`);
+      const placeholders = t(`placeholders.${selectedMode}`);
       if (Array.isArray(placeholders)) {
         return placeholders;
       }
@@ -218,9 +204,7 @@ export default function Dashboard({ user }: DashboardProps) {
         return JSON.parse(placeholders);
       }
     } catch (error) {
-      log.error('Error getting placeholders', { 
-        error: error instanceof Error ? error.message : 'Unknown error' 
-      });
+      console.error('Error getting placeholders:', error);
     }
     
     // Fallback to legacy placeholders
@@ -244,44 +228,35 @@ export default function Dashboard({ user }: DashboardProps) {
 
   useEffect(() => {
     scrollToBottom();
-  }, [chatState.messages]);
-
-  // Reset textarea height when input is cleared
-  useEffect(() => {
-    if (chatState.inputMessage === '' && inputRef.current) {
-      inputRef.current.style.height = '40px';
-      inputRef.current.style.overflowY = 'hidden';
-    }
-  }, [chatState.inputMessage]);
+  }, [messages]);
 
   // Manage animated placeholder rotation
   useEffect(() => {
-    if (!chatState.inputMessage.trim()) {
-      chatState.setShowPlaceholder(true);
+    if (!inputMessage.trim()) {
+      setShowPlaceholder(true);
     } else {
-      chatState.setShowPlaceholder(false);
+      setShowPlaceholder(false);
     }
-  }, [chatState.inputMessage]);
+  }, [inputMessage]);
 
   // Rotate placeholder texts every few seconds
   useEffect(() => {
-    if (!chatState.showPlaceholder || chatState.inputMessage.trim()) return;
+    if (!showPlaceholder || inputMessage.trim()) return;
     
     const interval = setInterval(() => {
-      chatState.setPlaceholderIndex(prev => (prev + 1) % placeholderTexts.length);
+      setPlaceholderIndex(prev => (prev + 1) % placeholderTexts.length);
     }, 4000);
 
     return () => clearInterval(interval);
-  }, [chatState.showPlaceholder, chatState.inputMessage, placeholderTexts.length]);
+  }, [showPlaceholder, inputMessage, placeholderTexts.length]);
 
-  const loadCurrentChatHistory = async (sessionId?: string) => {
-    const targetSessionId = sessionId || chatState.currentSessionId;
+  const loadCurrentChatHistory = async () => {
     try {
       const { data, error } = await supabase
         .from('messages')
         .select('id, content, created_at, sender, attachment_url, attachment_name, attachment_type')
         .eq('user_id', user.id)
-        .eq('session_id', targetSessionId)
+        .eq('session_id', currentSessionId)
         .order('created_at', { ascending: true });
 
       if (error) {
@@ -303,9 +278,7 @@ export default function Dashboard({ user }: DashboardProps) {
           } : undefined
         }));
         
-        chatState.setMessages(chatMessages);
-      } else {
-        chatState.setMessages([]);
+        setMessages(chatMessages);
       }
     } catch (error) {
       console.error('Error loading current chat history:', error);
@@ -318,7 +291,6 @@ export default function Dashboard({ user }: DashboardProps) {
     checkMaintenanceStatus();
     loadRecentChats();
     loadUserProfile();
-    loadFavoritedChats();
     
     const termsKey = `ayn_terms_accepted_${user.id}`;
     const accepted = localStorage.getItem(termsKey) === 'true';
@@ -415,25 +387,6 @@ export default function Dashboard({ user }: DashboardProps) {
     }
   };
 
-  const loadFavoritedChats = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('favorite_chats')
-        .select('session_id')
-        .eq('user_id', user.id);
-
-      if (error) {
-        console.error('Error loading favorited chats:', error);
-        return;
-      }
-
-      const favoritedSessionIds = new Set(data?.map(item => item.session_id) || []);
-      setFavoritedChats(favoritedSessionIds);
-    } catch (error) {
-      console.error('Error loading favorited chats:', error);
-    }
-  };
-
   const loadRecentChats = async () => {
     try {
       const { data, error } = await supabase
@@ -517,50 +470,12 @@ export default function Dashboard({ user }: DashboardProps) {
   };
 
   const handleModeClick = (modeName: string) => {
-    chatState.setSelectedMode(modeName);
+    setSelectedMode(modeName);
     // Optional: Show a toast or indication that the mode was selected
     toast({
       title: `${modeName} Selected`,
       description: `Now using ${modeName} for AI responses`,
     });
-  };
-  
-  // Handle message selection from search dialog
-  const handleMessageSelect = (message: Message) => {
-    // Scroll to the message or highlight it
-    // For now, just show a toast with the message
-    toast({
-      title: 'Message found',
-      description: message.content.substring(0, 100) + (message.content.length > 100 ? '...' : ''),
-    });
-  };
-  
-  // Handle saving message to favorites
-  const handleSaveToFavorites = async (message: Message) => {
-    try {
-      const { error } = await supabase
-        .from('saved_insights')
-        .insert({
-          user_id: user.id,
-          category: 'Chat Message',
-          insight_text: message.content,
-          tags: ['chat', 'favorite']
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: 'Message saved',
-        description: 'Message added to your favorites.',
-      });
-    } catch (error) {
-      console.error('Error saving to favorites:', error);
-      toast({
-        title: 'Error saving message',
-        description: 'Failed to save message to favorites.',
-        variant: 'destructive'
-      });
-    }
   };
 
   const handleSendMessage = async (messageContent?: string) => {
@@ -588,8 +503,8 @@ export default function Dashboard({ user }: DashboardProps) {
       return arabicPattern.test(text) ? 'ar' : 'en';
     };
 
-    const content = messageContent || chatState.inputMessage.trim();
-    if (!content && !chatState.selectedFile) return;
+    const content = messageContent || inputMessage.trim();
+    if (!content && !selectedFile) return;
 
     // Detect the language of user input
     const detectedLanguage = detectLanguage(content);
@@ -601,8 +516,8 @@ export default function Dashboard({ user }: DashboardProps) {
 
     // Upload file if selected
     let attachment = null;
-    if (chatState.selectedFile) {
-      attachment = await uploadFile(chatState.selectedFile);
+    if (selectedFile) {
+      attachment = await uploadFile(selectedFile);
       if (!attachment) return; // Upload failed
     }
 
@@ -651,16 +566,13 @@ export default function Dashboard({ user }: DashboardProps) {
       attachment
     };
 
-    chatState.setMessages(prev => [...prev, userMessage]);
-    chatState.setInputMessage('');
-    
-    // Immediately reset textarea height with smooth transition
-    if (inputRef.current) {
-      inputRef.current.style.height = '40px';
-      inputRef.current.style.overflowY = 'hidden';
+    setMessages(prev => [...prev, userMessage]);
+    setInputMessage('');
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
-    
-    chatState.setIsTyping(true);
+    setIsTyping(true);
 
     try {
       // Enhanced payload with user context for n8n
@@ -668,9 +580,9 @@ export default function Dashboard({ user }: DashboardProps) {
         message: content,
         userId: user.id,
         userEmail: user.email,
-        mode: chatState.selectedMode,
-        sessionId: chatState.currentSessionId,
-        conversationHistory: chatState.messages.slice(-5), // Last 5 messages for context
+        mode: selectedMode,
+        sessionId: currentSessionId,
+        conversationHistory: messages.slice(-5), // Last 5 messages for context
         userProfile: {
           companyName: userProfile?.company_name || '',
           contactPerson: userProfile?.contact_person || '',
@@ -683,96 +595,67 @@ export default function Dashboard({ user }: DashboardProps) {
         timestamp: new Date().toISOString()
       };
 
-      // Create timeout controller for AYN response
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => {
-        controller.abort();
-      }, 30000); // 30 second timeout
+      // Call AYN webhook through edge function
+      const { data: webhookResponse, error: webhookError } = await supabase.functions.invoke('ayn-webhook', {
+        body: payload
+      });
+      
+      setIsTyping(false);
 
-      try {
-        // Call AYN webhook through edge function with timeout
-        const { data: webhookResponse, error: webhookError } = await supabase.functions.invoke('ayn-webhook', {
-          body: payload,
-          headers: {
-            'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-          },
-        });
-        
-        clearTimeout(timeoutId);
-        
-        if (webhookError) {
-          throw new Error(webhookError.message || 'Webhook call failed');
-        }
-        
-        chatState.setIsTyping(false);
-
-        const response = webhookResponse?.response || 'I received your message and I\'m processing it. Please try again if you don\'t see a proper response.';
-
-        const aynMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          content: response,
-          sender: 'ayn',
-          timestamp: new Date(),
-          isTyping: true,
-        };
-
-        chatState.setMessages(prev => [...prev, aynMessage]);
-
-        // Save user message to database
-        await supabase.from('messages').insert({
-          user_id: user.id,
-          session_id: chatState.currentSessionId,
-          content: content,
-          sender: 'user',
-          mode_used: chatState.selectedMode,
-          attachment_url: attachment?.url,
-          attachment_name: attachment?.name,
-          attachment_type: attachment?.type
-        });
-
-        // Save AI response to database
-        await supabase.from('messages').insert({
-          user_id: user.id,
-          session_id: chatState.currentSessionId,
-          content: response,
-          sender: 'ayn',
-          mode_used: chatState.selectedMode
-        });
-
-        // Refresh recent chats
-        loadRecentChats();
-        
-      } catch (abortError) {
-        clearTimeout(timeoutId);
-        if (controller.signal.aborted) {
-          console.log('Request timed out after 30 seconds');
-          chatState.setIsTyping(false);
-          toast({
-            title: "Response Timeout", 
-            description: "AYN took too long to respond. Please try again.",
-            variant: "destructive"
-          });
-          return;
-        }
-        throw abortError;
+      if (webhookError) {
+        throw new Error(webhookError.message || 'Webhook call failed');
       }
 
+      const response = webhookResponse?.response || 'I received your message and I\'m processing it. Please try again if you don\'t see a proper response.';
+
+      const aynMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: response,
+        sender: 'ayn',
+        timestamp: new Date(),
+        isTyping: true,
+      };
+
+      setMessages(prev => [...prev, aynMessage]);
+
+      // Save user message to database
+      await supabase.from('messages').insert({
+        user_id: user.id,
+        session_id: currentSessionId,
+        content: content,
+        sender: 'user',
+        mode_used: selectedMode,
+        attachment_url: attachment?.url,
+        attachment_name: attachment?.name,
+        attachment_type: attachment?.type
+      });
+
+      // Save AI response to database
+      await supabase.from('messages').insert({
+        user_id: user.id,
+        session_id: currentSessionId,
+        content: response,
+        sender: 'ayn',
+        mode_used: selectedMode
+      });
+
+      // Refresh recent chats
+      loadRecentChats();
+
     } catch (error) {
-      chatState.setIsTyping(false);
-      const errorMsg = error instanceof Error ? error.message : "I'm sorry, I'm having trouble connecting right now. Please try again in a moment.";
-      
+      setIsTyping(false);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: errorMsg,
+        content: "I'm sorry, I'm having trouble connecting right now. Please try again in a moment.",
         sender: 'ayn',
         timestamp: new Date(),
       };
 
-      chatState.setMessages(prev => [...prev, errorMessage]);
+      setMessages(prev => [...prev, errorMessage]);
       
       toast({
         title: "Connection Error",
-        description: errorMsg.includes('timed out') ? 'AYN response timed out. Please try again.' : "Unable to reach AYN. Please try again.",
+        description: "Unable to reach AYN. Please try again.",
         variant: "destructive"
       });
     }
@@ -807,7 +690,7 @@ export default function Dashboard({ user }: DashboardProps) {
       return false;
     }
 
-    chatState.setSelectedFile(file);
+    setSelectedFile(file);
     toast({
       title: "File Selected",
       description: `${file.name} is ready to send.`,
@@ -826,7 +709,7 @@ export default function Dashboard({ user }: DashboardProps) {
   const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    chatState.setIsDragOver(true);
+    setIsDragOver(true);
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
@@ -835,7 +718,7 @@ export default function Dashboard({ user }: DashboardProps) {
     
     // Only set dragOver to false if we're leaving the drop zone entirely
     if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-      chatState.setIsDragOver(false);
+      setIsDragOver(false);
     }
   };
 
@@ -863,14 +746,14 @@ export default function Dashboard({ user }: DashboardProps) {
 
   // Reply to message
   const handleReplyToMessage = (message: Message) => {
-    chatState.setReplyingTo(message);
-    chatState.setInputMessage(`@${message.sender}: "${message.content.substring(0, 50)}${message.content.length > 50 ? '...' : ''}"\n\n`);
+    setReplyingTo(message);
+    setInputMessage(`@${message.sender}: "${message.content.substring(0, 50)}${message.content.length > 50 ? '...' : ''}"\n\n`);
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    chatState.setIsDragOver(false);
+    setIsDragOver(false);
 
     if (!hasAccess || !hasAcceptedTerms) {
       toast({
@@ -899,7 +782,7 @@ export default function Dashboard({ user }: DashboardProps) {
 
   const uploadFile = async (file: File): Promise<{ url: string; name: string; type: string } | null> => {
     try {
-      chatState.setIsUploading(true);
+      setIsUploading(true);
       
       // Convert file to base64
       const base64 = await new Promise<string>((resolve) => {
@@ -939,12 +822,12 @@ export default function Dashboard({ user }: DashboardProps) {
       });
       return null;
     } finally {
-      chatState.setIsUploading(false);
+      setIsUploading(false);
     }
   };
 
   const removeSelectedFile = () => {
-    chatState.setSelectedFile(null);
+    setSelectedFile(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -962,92 +845,12 @@ export default function Dashboard({ user }: DashboardProps) {
   };
 
   const handleLoadChat = (chatHistory: ChatHistory) => {
-    chatState.setCurrentSessionId(chatHistory.sessionId);
-    chatState.setMessages(chatHistory.messages);
+    setCurrentSessionId(chatHistory.sessionId);
+    setMessages(chatHistory.messages);
     toast({
       title: "Chat Loaded",
       description: `Loaded conversation: ${chatHistory.title}`,
     });
-  };
-
-  const handleFavoriteChat = async (chat: ChatHistory, index: number) => {
-    const isCurrentlyFavorited = favoritedChats.has(chat.sessionId);
-    
-    try {
-      if (isCurrentlyFavorited) {
-        // Unfavorite the chat
-        const { error } = await supabase
-          .from('favorite_chats')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('session_id', chat.sessionId);
-
-        if (error) {
-          console.error('Error unfavoriting chat:', error);
-          toast({
-            title: "Error",
-            description: "Failed to remove chat from favorites.",
-            variant: "destructive"
-          });
-          return;
-        }
-
-        // Update local state
-        setFavoritedChats(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(chat.sessionId);
-          return newSet;
-        });
-
-        toast({
-          title: "Chat Unfavorited",
-          description: `"${chat.title}" has been removed from your favorites.`,
-        });
-      } else {
-        // Favorite the chat
-        const { error } = await supabase
-          .from('favorite_chats')
-          .insert({
-            user_id: user.id,
-            session_id: chat.sessionId,
-            chat_title: chat.title,
-            chat_data: JSON.parse(JSON.stringify({
-              messages: chat.messages,
-              lastMessage: chat.lastMessage,
-              timestamp: chat.timestamp.toISOString()
-            }))
-          });
-
-        if (error) {
-          console.error('Error favoriting chat:', error);
-          toast({
-            title: "Error",
-            description: "Failed to favorite chat.",
-            variant: "destructive"
-          });
-          return;
-        }
-
-        // Update local state
-        setFavoritedChats(prev => {
-          const newSet = new Set(prev);
-          newSet.add(chat.sessionId);
-          return newSet;
-        });
-
-        toast({
-          title: "Chat Favorited",
-          description: `"${chat.title}" has been added to your favorites.`,
-        });
-      }
-    } catch (error) {
-      console.error('Error toggling favorite chat:', error);
-      toast({
-        title: "Error", 
-        description: "Failed to update chat favorites.",
-        variant: "destructive"
-      });
-    }
   };
 
   const handleLogout = async () => {
@@ -1056,8 +859,8 @@ export default function Dashboard({ user }: DashboardProps) {
 
   const handleNewChat = () => {
     const newSessionId = crypto.randomUUID();
-    chatState.setCurrentSessionId(newSessionId);
-    chatState.setMessages([]);
+    setCurrentSessionId(newSessionId);
+    setMessages([]);
     // Force reload of recent chats to update the sidebar
     loadRecentChats();
     toast({
@@ -1144,15 +947,15 @@ export default function Dashboard({ user }: DashboardProps) {
   };
 
   return (
-    <div className="flex h-screen w-full bg-background overflow-hidden sidebar-edge-to-edge [--sidebar-width:14rem] lg:[--sidebar-width:16rem]">
+    <div className="flex h-screen w-full bg-background">
         {/* Sidebar */}
-        <Sidebar collapsible="offcanvas" className="border-r-0">
+        <Sidebar collapsible="offcanvas" className="w-64">
           <SidebarHeader className="p-4">
             {/* User Profile */}
             <div className="flex items-center gap-3">
               <Avatar className="h-8 w-8 ring-2 ring-primary/20">
                 <AvatarImage src="" />
-                <AvatarFallback className="bg-primary text-primary-foreground font-semibold text-sm">
+                <AvatarFallback className="bg-gradient-primary text-white font-semibold text-sm">
                   {user?.user_metadata?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
                 </AvatarFallback>
               </Avatar>
@@ -1177,8 +980,8 @@ export default function Dashboard({ user }: DashboardProps) {
               </div>
               <div className={`flex-1 min-w-0 group-data-[collapsible=icon]:hidden ${language === 'ar' ? 'text-right' : ''}`}>
                 <p className="font-medium text-xs text-foreground">AYN AI</p>
-                <p className={`text-xs ${chatState.isTyping ? 'text-muted-foreground' : (hasAccess ? 'text-green-500 font-medium' : 'text-muted-foreground')}`}>
-                  {chatState.isTyping ? t('common.thinking') : (hasAccess ? t('common.active') : t('common.inactive'))}
+                <p className={`text-xs ${isTyping ? 'text-muted-foreground' : (hasAccess ? 'text-green-500 font-medium' : 'text-muted-foreground')}`}>
+                  {isTyping ? t('common.thinking') : (hasAccess ? t('common.active') : t('common.inactive'))}
                 </p>
               </div>
             </div>
@@ -1202,50 +1005,29 @@ export default function Dashboard({ user }: DashboardProps) {
               </SidebarGroupContent>
             </SidebarGroup>
 
-            {/* Quick Actions */}
-            <SidebarGroup>
-              <SidebarGroupContent>
-                <div className="flex gap-2 px-2">
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    onClick={() => setShowSearchDialog(true)}
-                    className="flex-1 h-8"
-                    title="Search messages"
-                  >
-                    <Search className="w-4 h-4" />
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    onClick={() => setShowFavoritesDialog(true)}
-                    className="flex-1 h-8"
-                    title="Favorite messages"
-                  >
-                    <Heart className="w-4 h-4" />
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    onClick={() => setShowExportDialog(true)}
-                    className="flex-1 h-8"
-                    title="Export chat"
-                  >
-                    <Download className="w-4 h-4" />
-                  </Button>
-                </div>
+            {/* Quick Start */}
+            <SidebarGroup dir={language === 'ar' ? 'rtl' : 'ltr'}>
+              <div className={`w-full flex px-4 py-2 ${language === 'ar' ? 'justify-end' : 'justify-start'}`} style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}>
+                <SidebarGroupLabel className={language === 'ar' ? 'text-right ml-auto' : 'text-left'}>{t('common.quickStart')}</SidebarGroupLabel>
+              </div>
+              <SidebarGroupContent className={language === 'ar' ? 'text-right' : ''}>
+                <SidebarMenu>
+                   {modes.map((mode) => (
+                    <SidebarMenuItem key={mode.name}>
+                       <SidebarMenuButton
+                         onClick={() => handleModeClick(mode.name)}
+                         disabled={!hasAccess || !hasAcceptedTerms}
+                         tooltip={mode.description}
+                         className={`${selectedMode === mode.name ? 'bg-sidebar-accent text-sidebar-accent-foreground' : ''}`}
+                       >
+                         <mode.icon className={`w-4 h-4 flex-shrink-0 ${mode.color} mr-2`} />
+                         <span className={`group-data-[collapsible=icon]:hidden ${language === 'ar' ? 'text-right' : ''}`}>{mode.translatedName}</span>
+                       </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
-
-            {/* Quick Start */}
-            <ModeSelector
-              modes={modes}
-              selectedMode={chatState.selectedMode}
-              onModeChange={handleModeClick}
-              disabled={!hasAccess || !hasAcceptedTerms}
-              language={language}
-              t={t}
-            />
 
             {/* Recent Chats */}
             <SidebarGroup>
@@ -1371,24 +1153,6 @@ export default function Dashboard({ user }: DashboardProps) {
                               <span className="text-xs text-muted-foreground truncate group-data-[collapsible=icon]:hidden leading-relaxed">{chat.lastMessage}</span>
                             </div>
                           </SidebarMenuButton>
-                          {!showChatSelection && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleFavoriteChat(chat, index);
-                              }}
-                              className={`flex-shrink-0 w-8 h-8 p-0 transition-colors ${
-                                favoritedChats.has(chat.sessionId) 
-                                  ? 'hover:bg-red-50 text-red-600 hover:text-red-700' 
-                                  : 'hover:bg-red-50 hover:text-red-600'
-                              }`}
-                              title={favoritedChats.has(chat.sessionId) ? "Remove from favorites" : "Add to favorites"}
-                            >
-                              <Heart className={`w-4 h-4 ${favoritedChats.has(chat.sessionId) ? 'fill-current' : ''}`} />
-                            </Button>
-                          )}
                         </div>
                       </SidebarMenuItem>
                     ))
@@ -1409,7 +1173,7 @@ export default function Dashboard({ user }: DashboardProps) {
         </Sidebar>
 
         {/* Main Chat Area */}
-        <SidebarInset className="border-l-0 -ml-px">
+        <SidebarInset>
           {/* Header */}
           <header className="h-14 sm:h-16 bg-card border-b border-border flex items-center justify-between px-3 sm:px-4 lg:px-6 flex-shrink-0">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
@@ -1420,7 +1184,7 @@ export default function Dashboard({ user }: DashboardProps) {
                 <Brain className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
                 <h1 className="font-bold text-sm sm:text-lg truncate">{t('header.aynBusinessConsole')}</h1>
                 <Badge variant="secondary" className="text-xs hidden sm:inline-flex">
-                  {modes.find(mode => mode.name === chatState.selectedMode)?.translatedName || chatState.selectedMode}
+                  {modes.find(mode => mode.name === selectedMode)?.translatedName || selectedMode}
                 </Badge>
               </div>
             </div>
@@ -1493,110 +1257,323 @@ export default function Dashboard({ user }: DashboardProps) {
           {/* Admin Panel */}
           {isAdmin && activeTab === 'admin' && (
             <div className="flex-1 overflow-y-auto p-6">
-              <Suspense 
-                fallback={
-                  <div className="flex items-center justify-center h-screen">
-                    <div className="text-center">
-                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                      <p className="text-foreground text-sm">Loading admin panel...</p>
-                    </div>
-                  </div>
-                }
-              >
-                <AdminPanel />
-              </Suspense>
+              <AdminPanel />
             </div>
           )}
 
           {/* Chat Interface */}
           {(activeTab === 'chat' || !isAdmin) && (
             <>
-              {/* Messages Area with Full Drag Zone */}
-              <MessageList
-                messages={chatState.messages}
-                isTyping={chatState.isTyping}
-                user={user}
-                onCopy={handleCopyMessage}
-                onReply={handleReplyToMessage}
-                messagesEndRef={messagesEndRef}
-                onTypingComplete={(messageId) => {
-                  chatState.setMessages(prev =>
-                    prev.map(msg =>
-                      msg.id === messageId
-                        ? { ...msg, isTyping: false }
-                        : msg
-                    )
-                  );
-                }}
-                isDragOver={chatState.isDragOver}
-                onDragEnter={handleDragEnter}
-                onDragLeave={handleDragLeave}
-                onDragOver={handleDragOver}
-                onDrop={handleDrop}
-              />
+              {/* Messages Area */}
+              <ScrollArea className="flex-1 px-3 sm:px-4 lg:px-6 pb-20 sm:pb-24">
+                <div className="max-w-4xl mx-auto py-4 sm:py-6 space-y-3 sm:space-y-4">
+                  {messages.map((message) => (
+                     <div
+                       key={message.id}
+                       className={`flex gap-2 sm:gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'} group relative`}
+                     >
+                      {message.sender === 'ayn' && (
+                        <Avatar className="w-7 h-7 sm:w-8 sm:h-8 flex-shrink-0">
+                          <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                            <Brain className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          </AvatarFallback>
+                         </Avatar>
+                       )}
+                       
+                        <div className={`message-bubble rounded-xl sm:rounded-2xl px-3 py-2 sm:px-4 sm:py-3 ${
+                          message.sender === 'user' 
+                            ? 'user-message bg-primary text-primary-foreground' 
+                            : 'ai-message bg-muted text-foreground'
+                        }`}>
+                          <div className="text-sm leading-relaxed whitespace-pre-wrap break-words group cursor-default select-text">
+                            {message.sender === 'ayn' && message.isTyping ? (
+                              <TypewriterText
+                                text={message.content}
+                                speed={2}
+                                className={`inline-block transition-all duration-300 hover:tracking-wide text-foreground hover:text-primary hover:drop-shadow-sm group-hover:scale-[1.02] transform-gpu`}
+                                onComplete={() => {
+                                  setMessages(prev => 
+                                    prev.map(msg => 
+                                      msg.id === message.id 
+                                        ? { ...msg, isTyping: false }
+                                        : msg
+                                    )
+                                  );
+                                }}
+                              />
+                            ) : (
+                              <MessageFormatter
+                                content={message.content}
+                                className={`transition-all duration-300 ${
+                                  message.sender === 'user' 
+                                    ? 'text-primary-foreground hover:text-white' 
+                                    : 'text-foreground hover:text-primary'
+                                } group-hover:scale-[1.02] transform-gpu`}
+                              />
+                            )}
+                          </div>
+                         {message.attachment && (
+                           <div className="mt-2 p-2 bg-muted/50 rounded-lg flex items-center gap-2">
+                             <Paperclip className="w-3 h-3" />
+                             <span className="text-xs">{message.attachment.name}</span>
+                           </div>
+                         )}
+                        </div>
 
-              <ChatInput
-                value={chatState.inputMessage}
-                onChange={chatState.setInputMessage}
-                onSend={handleSendMessage}
-                onKeyPress={handleKeyPress}
-                disabled={!hasAccess || !hasAcceptedTerms}
-                isUploading={chatState.isUploading}
-                selectedFile={chatState.selectedFile}
-                onFileSelect={handleFileSelect}
-                onFileRemove={removeSelectedFile}
-                selectedMode={chatState.selectedMode}
-                isDragOver={chatState.isDragOver}
+                        {/* Action buttons */}
+                        <div className="flex items-start gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                          <button
+                            onClick={() => handleCopyMessage(message.content)}
+                            className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                            title="Copy message"
+                          >
+                            <Copy className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleReplyToMessage(message)}
+                            className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                            title="Reply to message"
+                          >
+                            <Reply className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                        
+                        {message.sender === 'user' && (
+                         <Avatar className="w-7 h-7 sm:w-8 sm:h-8 flex-shrink-0">
+                           <AvatarImage src="" />
+                           <AvatarFallback className="text-xs">
+                             {user?.user_metadata?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                           </AvatarFallback>
+                         </Avatar>
+                       )}
+                    </div>
+                  ))}
+
+                  {/* Typing Indicator */}
+                  {isTyping && (
+                    <div className="flex gap-2 sm:gap-3 justify-start">
+                      <Avatar className="w-7 h-7 sm:w-8 sm:h-8 flex-shrink-0">
+                        <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                          <Brain className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <TypingIndicator />
+                    </div>
+                  )}
+                  
+                  <div ref={messagesEndRef} />
+                </div>
+              </ScrollArea>
+
+              {/* Mobile-Style Floating Input Bar */}
+              <div 
+                dir="ltr"
+                className={`input-area ${messages.length > 1 ? 'bottom-position' : 'center-position'}`}
                 onDragEnter={handleDragEnter}
                 onDragLeave={handleDragLeave}
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
-                replyingTo={chatState.replyingTo}
-                onClearReply={() => {
-                  chatState.setReplyingTo(null);
-                  chatState.setInputMessage('');
-                }}
-                placeholderTexts={placeholderTexts}
-                placeholderIndex={chatState.placeholderIndex}
-                showPlaceholder={chatState.showPlaceholder}
-                isInputFocused={chatState.isInputFocused}
-                onFocus={() => chatState.setIsInputFocused(true)}
-                onBlur={() => chatState.setIsInputFocused(false)}
-                fileInputRef={fileInputRef}
-                inputRef={inputRef}
-                language={language}
-                direction={direction}
-                messagesLength={chatState.messages.length}
-                isTyping={chatState.isTyping}
-                showFileTypes={chatState.showFileTypes}
-                onShowFileTypes={chatState.setShowFileTypes}
-                onAttachmentClick={() => fileInputRef.current?.click()}
-                getSendButtonClass={(mode) => `send-button-${mode.toLowerCase().replace(/\s+/g, '-')}`}
-              />
+              >
+                {/* Reply indicator */}
+                {replyingTo && (
+                  <div className="mb-2 p-2 bg-muted rounded-lg flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Reply className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">
+                        Replying to: "{replyingTo.content.substring(0, 50)}{replyingTo.content.length > 50 ? '...' : ''}"
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setReplyingTo(null);
+                        setInputMessage('');
+                      }}
+                      className="p-1 rounded-md hover:bg-background text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+                {/* Drag Overlay */}
+                {isDragOver && (
+                  <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-sm flex items-center justify-center">
+                    <div className="bg-background border-2 border-dashed border-primary rounded-2xl p-8 text-center max-w-sm mx-4">
+                      <Paperclip className="w-12 h-12 mx-auto mb-4 text-primary" />
+                      <p className="text-lg font-medium text-primary mb-2">Drop your file here</p>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Images, PDFs, Word docs, text, or JSON files (max 10MB)
+                      </p>
+                      <div className="text-xs text-muted-foreground space-y-1">
+                        <div>• Images: JPG, PNG, GIF, WebP</div>
+                        <div>• Documents: PDF, DOC, DOCX</div>
+                        <div>• Text: TXT files</div>
+                        <div>• Data: JSON files</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Selected File Preview */}
+                {selectedFile && (
+                  <div className="mb-2 p-3 bg-muted rounded-xl border flex items-center gap-3">
+                    <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                      <Paperclip className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{selectedFile.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    </div>
+                    <button
+                      onClick={removeSelectedFile}
+                      className="w-6 h-6 rounded-full bg-destructive/10 text-destructive hover:bg-destructive/20 flex items-center justify-center transition-colors"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                )}
+
+                <div className={`input-container ${isDragOver ? 'drag-over' : ''}`}>
+                  {/* Attachment Button with File Types Dropdown */}
+                  {(selectedMode.toLowerCase().includes('pdf') || selectedMode.toLowerCase().includes('vision')) ? (
+                    <div className="relative">
+                      <button 
+                        className="attachment-button group"
+                        onClick={handleAttachmentClick}
+                        onMouseEnter={() => setShowFileTypes(true)}
+                        onMouseLeave={() => setShowFileTypes(false)}
+                        disabled={!hasAccess || !hasAcceptedTerms || isUploading}
+                        title="Attach file"
+                      >
+                        <Paperclip className="w-4 h-4" />
+                      </button>
+                      
+                      {/* File Types Dropdown */}
+                      {showFileTypes && !isDragOver && (
+                        <div className="absolute bottom-full left-0 mb-2 bg-background border border-border rounded-lg shadow-lg p-3 min-w-[220px] z-50">
+                          <div className="text-xs font-semibold text-foreground mb-2">📎 Accepted file types:</div>
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 text-xs">
+                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                              <span className="text-muted-foreground">Images:</span>
+                              <span className="text-foreground font-medium">JPG, PNG, GIF, WebP</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-xs">
+                              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                              <span className="text-muted-foreground">Documents:</span>
+                              <span className="text-foreground font-medium">PDF, DOC, DOCX</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-xs">
+                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                              <span className="text-muted-foreground">Text:</span>
+                              <span className="text-foreground font-medium">TXT files</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-xs">
+                              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                              <span className="text-muted-foreground">Data:</span>
+                              <span className="text-foreground font-medium">JSON files</span>
+                            </div>
+                          </div>
+                          <div className="mt-3 pt-2 border-t border-border">
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                              <span>Maximum file size: <strong>10MB</strong></span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : null}
+                  
+                  {/* Hidden File Input */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp,.txt,.json"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                  
+                  {/* Input Field */}
+                  <div className="flex-1 relative">
+                    <Textarea
+                      ref={inputRef}
+                      unstyled={true}
+                      className="message-input resize-none min-h-[40px] max-h-[200px] overflow-hidden"
+                      value={inputMessage}
+                      onChange={(e) => {
+                        setInputMessage(e.target.value);
+                        // Auto-resize textarea
+                        const textarea = e.target as HTMLTextAreaElement;
+                        textarea.style.height = 'auto';
+                        const newHeight = Math.min(textarea.scrollHeight, 200);
+                        textarea.style.height = newHeight + 'px';
+                        
+                        // Show scrollbar only when content exceeds max height
+                        if (textarea.scrollHeight > 200) {
+                          textarea.style.overflowY = 'auto';
+                        } else {
+                          textarea.style.overflowY = 'hidden';
+                        }
+                      }}
+                      onKeyPress={handleKeyPress}
+                      onFocus={() => setIsInputFocused(true)}
+                      onBlur={() => setIsInputFocused(false)}
+                      placeholder=""
+                      disabled={!hasAccess || !hasAcceptedTerms || isUploading}
+                      rows={1}
+                    />
+                    
+                    {/* Typewriter Animation Placeholder */}
+                    {showPlaceholder && !inputMessage.trim() && !isInputFocused && (
+                      <div className={`absolute ${direction === 'rtl' ? 'right-[var(--input-left-offset)]' : 'left-[var(--input-left-offset)]'} top-[var(--input-vertical-offset)] pointer-events-none z-10 ${direction === 'rtl' ? 'text-right' : 'text-left'} transition-all duration-300 ease-in-out`}>
+                        <TypewriterText
+                          key={`${placeholderIndex}-${language}-${direction}`}
+                          text={placeholderTexts[placeholderIndex]}
+                          speed={50}
+                          className="typewriter-text text-muted-foreground"
+                          showCursor={true}
+                        />
+                      </div>
+                    )}
+                    
+                    {/* File Selected Indicator */}
+                    {selectedFile && (
+                      <div className="absolute -top-12 left-0 bg-primary text-primary-foreground px-3 py-1 rounded-lg text-sm flex items-center gap-2">
+                        <Paperclip className="w-3 h-3" />
+                        <span>{selectedFile.name}</span>
+                        <button 
+                          onClick={() => {
+                            setSelectedFile(null);
+                            if (fileInputRef.current) fileInputRef.current.value = '';
+                          }}
+                          className="text-primary-foreground hover:text-primary-foreground/80"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Send Button */}
+                  <button
+                    className={`send-button ${getSendButtonClass(selectedMode)}`}
+                    onClick={() => handleSendMessage()}
+                    disabled={(!inputMessage.trim() && !selectedFile) || !hasAccess || !hasAcceptedTerms || isTyping || isUploading}
+                  >
+                    {isUploading ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4" style={{ transform: 'scaleX(1)' }} />
+                    )}
+                  </button>
+                </div>
+              </div>
             </>
           )}
           </div>
         </SidebarInset>
-        
-        {/* Chat Actions Dialogs */}
-        <ChatActions
-          user={user}
-          showExportDialog={showExportDialog}
-          showSearchDialog={showSearchDialog}
-          showFavoritesDialog={showFavoritesDialog}
-          onExportClose={() => setShowExportDialog(false)}
-          onSearchClose={() => setShowSearchDialog(false)}
-          onFavoritesClose={() => setShowFavoritesDialog(false)}
-          onMessageSelect={handleMessageSelect}
-          onSessionLoad={(sessionId: string) => {
-            chatState.setCurrentSessionId(sessionId);
-            loadCurrentChatHistory(sessionId);
-            toast({
-              title: 'Session loaded',
-              description: 'Switched to selected conversation.',
-            });
-          }}
-        />
       </div>
   );
 }

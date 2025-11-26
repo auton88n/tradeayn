@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { sanitizeMessageContent } from '@/lib/domPurifyConfig';
+import { sanitizeUserInput, isValidUserInput } from '@/lib/security';
 
 interface MessageFormatterProps {
   content: string;
@@ -8,29 +8,8 @@ interface MessageFormatterProps {
 }
 
 export function MessageFormatter({ content, className }: MessageFormatterProps) {
-  // Ensure content is a string - handle edge cases
-  const safeContent = typeof content === 'string' ? content : String(content || '');
-  
-  // Clean system tags first
-  const cleanSystemTags = (text: string): string => {
-    // Remove <lov-actions> blocks entirely (including content)
-    text = text.replace(/<lov-actions>[\s\S]*?<\/lov-actions>/gi, '');
-    
-    // Extract content from <lov-plan> tags but remove the tags themselves
-    text = text.replace(/<lov-plan>([\s\S]*?)<\/lov-plan>/gi, '$1');
-    
-    // Remove other system tags and their content (lov-message-prompt, lov-link, etc.)
-    text = text.replace(/<lov-(?!plan)[\w-]*>[\s\S]*?<\/lov-[\w-]*>/gi, '');
-    
-    // Remove standalone system tags (self-closing or single tags)
-    text = text.replace(/<lov-[\w-]*[^>]*\/?>/gi, '');
-    
-    return text.trim();
-  };
-
-  // Clean system tags and sanitize content to prevent XSS attacks
-  const cleanedContent = cleanSystemTags(safeContent);
-  const sanitizedContent = sanitizeMessageContent(cleanedContent);
+  // Sanitize content to prevent XSS attacks
+  const sanitizedContent = isValidUserInput(content) ? content : sanitizeUserInput(content);
   
   const formatMessage = (text: string) => {
     // Split by code blocks first
@@ -306,7 +285,7 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
         return (
           <code 
             key={index} 
-            className="bg-muted/80 text-foreground px-1.5 py-0.5 rounded text-sm font-mono border border-border"
+            className="bg-muted text-current px-1.5 py-0.5 rounded text-sm font-mono border"
           >
             {part.content}
           </code>
@@ -319,8 +298,8 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
   };
 
   const formatBoldItalic = (text: string, baseKey: number) => {
-    // Handle **bold**, *italic*, __underline__, ~~strikethrough~~, ##header##, and other formatting
-    const formatRegex = /(\*\*\*([^*]+)\*\*\*|\*\*([^*]+)\*\*|\*([^*]+)\*|__([^_]+)__|~~([^~]+)~~|==([^=]+)==|\|\|([^|]+)\|\||##([^#]+)##)/g;
+    // Handle **bold**, *italic*, __underline__, ~~strikethrough~~, and other formatting
+    const formatRegex = /(\*\*\*([^*]+)\*\*\*|\*\*([^*]+)\*\*|\*([^*]+)\*|__([^_]+)__|~~([^~]+)~~|==([^=]+)==|\|\|([^|]+)\|\|)/g;
     const parts = [];
     let lastIndex = 0;
     let match;
@@ -349,7 +328,7 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
         parts.push(<del key={`s-${baseKey}-${match.index}`} className="line-through opacity-75">{match[6]}</del>);
       } else if (match[7]) {
         // Highlight (==text==)
-        parts.push(<mark key={`h-${baseKey}-${match.index}`} className="bg-primary/20 text-primary px-1 rounded">{match[7]}</mark>);
+        parts.push(<mark key={`h-${baseKey}-${match.index}`} className="bg-yellow-200 dark:bg-yellow-800 px-1 rounded">{match[7]}</mark>);
       } else if (match[8]) {
         // Spoiler (||text||)
         parts.push(
@@ -357,9 +336,6 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
             {match[8]}
           </span>
         );
-      } else if (match[9]) {
-        // Header (##text##) - render as actual h2 element
-        parts.push(<h2 key={`h-${baseKey}-${match.index}`} className="text-lg font-bold text-primary block my-2 border-b border-border pb-1">{match[9]}</h2>);
       }
       
       lastIndex = match.index + match[0].length;

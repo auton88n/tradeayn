@@ -16,6 +16,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { EditLimitModal } from './EditLimitModal';
 
+interface Profile {
+  id: string;
+  user_id: string;
+  company_name: string | null;
+  contact_person: string | null;
+  phone: string | null;
+  created_at: string;
+}
+
 interface AccessGrantWithProfile {
   id: string;
   user_id: string;
@@ -27,24 +36,15 @@ interface AccessGrantWithProfile {
   monthly_limit: number | null;
   current_month_usage: number;
   user_email?: string;
-  requires_approval: boolean;
-  auth_method: string;
-  profiles: {
-    id: string;
-    user_id: string;
-    company_name: string | null;
-    contact_person: string | null;
-    created_at: string;
-  } | null;
+  profiles: Profile | null;
 }
 
 interface UserManagementProps {
   allUsers: AccessGrantWithProfile[];
   onRefresh: () => void;
-  requireAuthentication?: (action: () => void) => void;
 }
 
-export const UserManagement = ({ allUsers, onRefresh, requireAuthentication }: UserManagementProps) => {
+export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
@@ -107,108 +107,84 @@ export const UserManagement = ({ allUsers, onRefresh, requireAuthentication }: U
   }, [allUsers, searchTerm, statusFilter]);
 
   const handleRevokeAccess = async (userId: string) => {
-    const action = async () => {
-      try {
-        const { error } = await supabase
-          .from('access_grants')
-          .update({
-            is_active: false,
-            notes: 'Access revoked by administrator'
-          })
-          .eq('user_id', userId);
+    try {
+      const { error } = await supabase
+        .from('access_grants')
+        .update({
+          is_active: false,
+          notes: 'Access revoked by administrator'
+        })
+        .eq('user_id', userId);
 
-        if (error) throw error;
+      if (error) throw error;
 
-        toast({
-          title: t('admin.accessRevoked'),
-          description: t('admin.accessRevokedDesc')
-        });
-        
-        onRefresh();
-      } catch (error) {
-        console.error('Error revoking access:', error);
-        toast({
-          title: "Error",
-          description: "Failed to revoke user access.",
-          variant: "destructive"
-        });
-      }
-    };
-
-    if (requireAuthentication) {
-      requireAuthentication(action);
-    } else {
-      await action();
+      toast({
+        title: t('admin.accessRevoked'),
+        description: t('admin.accessRevokedDesc')
+      });
+      
+      onRefresh();
+    } catch (error) {
+      console.error('Error revoking access:', error);
+      toast({
+        title: "Error",
+        description: "Failed to revoke user access.",
+        variant: "destructive"
+      });
     }
   };
 
   const handleGrantAccess = async (userId: string) => {
-    const action = async () => {
-      try {
-        const { error } = await supabase
-          .from('access_grants')
-          .update({
-            is_active: true,
-            granted_at: new Date().toISOString(),
-            notes: 'Access granted by administrator'
-          })
-          .eq('user_id', userId);
+    try {
+      const { error } = await supabase
+        .from('access_grants')
+        .update({
+          is_active: true,
+          granted_at: new Date().toISOString(),
+          notes: 'Access granted by administrator'
+        })
+        .eq('user_id', userId);
 
-        if (error) throw error;
+      if (error) throw error;
 
-        toast({
-          title: t('admin.accessRestored'),
-          description: t('admin.accessRestoredDesc')
-        });
-        
-        onRefresh();
-      } catch (error) {
-        console.error('Error granting access:', error);
-        toast({
-          title: "Error",
-          description: "Failed to grant user access.",
-          variant: "destructive"
-        });
-      }
-    };
-
-    if (requireAuthentication) {
-      requireAuthentication(action);
-    } else {
-      action();
+      toast({
+        title: t('admin.accessRestored'),
+        description: t('admin.accessRestoredDesc')
+      });
+      
+      onRefresh();
+    } catch (error) {
+      console.error('Error granting access:', error);
+      toast({
+        title: "Error",
+        description: "Failed to grant user access.",
+        variant: "destructive"
+      });
     }
   };
 
   const handleUpdateUserLimits = async (userIds: string[], newLimit: number | null) => {
-    const action = async () => {
-      try {
-        const { error } = await supabase
-          .from('access_grants')
-          .update({ monthly_limit: newLimit })
-          .in('user_id', userIds);
+    try {
+      const { error } = await supabase
+        .from('access_grants')
+        .update({ monthly_limit: newLimit })
+        .in('user_id', userIds);
 
-        if (error) throw error;
+      if (error) throw error;
 
-        toast({
-          title: t('admin.limitsUpdated'),
-          description: `${t('admin.limitsUpdatedDesc')} (${userIds.length} ${t('admin.users')})`
-        });
-        
-        onRefresh();
-      } catch (error) {
-        console.error('Error updating limits:', error);
-        toast({
-          title: "Error",
-          description: "Failed to update user limits.",
-          variant: "destructive"
-        });
-      }
-    };
-
-    if (requireAuthentication) {
-      requireAuthentication(action);
-    } else {
-      action();
+      toast({
+        title: t('admin.limitsUpdated'),
+        description: `${t('admin.limitsUpdatedDesc')} (${userIds.length} ${t('admin.users')})`
+      });
+      
+      onRefresh();
+    } catch (error) {
+      console.error('Error updating limits:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update user limits.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -239,13 +215,12 @@ export const UserManagement = ({ allUsers, onRefresh, requireAuthentication }: U
 
   const exportUserData = () => {
     const csvContent = [
-      ['Email', 'Company', 'Contact Person', 'Status', 'Requires Approval', 'Monthly Limit', 'Current Usage', 'Usage %', 'Created Date'].join(','),
+      ['Email', 'Company', 'Contact Person', 'Status', 'Monthly Limit', 'Current Usage', 'Usage %', 'Created Date'].join(','),
       ...filteredUsers.map(user => [
         user.user_email || 'N/A',
         user.profiles?.company_name || 'N/A',
         user.profiles?.contact_person || 'N/A',
         user.is_active ? 'Active' : 'Inactive',
-        user.requires_approval ? 'Yes' : 'No',
         user.monthly_limit || 'Unlimited',
         user.current_month_usage || 0,
         user.monthly_limit && user.current_month_usage !== null 
@@ -366,30 +341,21 @@ export const UserManagement = ({ allUsers, onRefresh, requireAuthentication }: U
                         
                         <div className={`space-y-1 ${language === 'ar' ? 'text-right' : ''}`}>
                           <div className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-                            <h3 className="font-semibold">
-                              {user.profiles?.contact_person || user.profiles?.company_name || t('admin.unknownCompany')}
-                            </h3>
+                            <h3 className="font-semibold">{user.profiles?.company_name || t('admin.unknownCompany')}</h3>
                             <Badge variant={statusInfo.variant} className={`flex items-center gap-1 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
                               <StatusIcon className="w-3 h-3" />
                               {statusInfo.label}
                             </Badge>
-                            {user.requires_approval && (
-                              <Badge variant="outline" className="text-xs">
-                                Awaiting Approval
-                              </Badge>
-                            )}
                           </div>
-                          <div className={`flex flex-col gap-1 text-sm text-muted-foreground ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+                          <div className={`flex items-center gap-4 text-sm text-muted-foreground ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
                             <span className={`flex items-center gap-1 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
                               <Mail className="w-3 h-3" />
                               {user.user_email || t('admin.noEmail')}
                             </span>
-                            {user.profiles?.company_name && (
-                              <span className={`flex items-center gap-1 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-                                <Building className="w-3 h-3" />
-                                {user.profiles.company_name}
-                              </span>
-                            )}
+                            <span className={`flex items-center gap-1 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+                              <Phone className="w-3 h-3" />
+                              {user.profiles?.contact_person || t('admin.noContact')}
+                            </span>
                           </div>
                           <div className="space-y-2">
                             <div className={`flex items-center gap-4 text-xs text-muted-foreground ${language === 'ar' ? 'flex-row-reverse' : ''}`}>

@@ -56,9 +56,7 @@ const translations = {
     'modes.nenMode': 'Nen Mode',
     'modes.researchPro': 'Research Pro',
     'modes.pdfAnalyst': 'PDF Analyst',
-    'modes.crypto': 'Crypto',
     'modes.visionLab': 'Vision Lab',
-    'modes.civilEngineering': 'Civil Engineering',
     
     // Header elements
     'header.aynBusinessConsole': 'AYN Business Console',
@@ -82,7 +80,6 @@ const translations = {
     'placeholders.Research Pro': '["What market trends should I research?", "Find the latest industry data...", "Which competitor should I analyze?"]',
     'placeholders.PDF Analyst': '["Upload your business document...", "Let me review your files...", "Upload PDF for analysis..."]',
     'placeholders.Vision Lab': '["Upload image for analysis...", "Analyze charts and visuals...", "Share visual content..."]',
-    'placeholders.Civil Engineering': '["Upload survey data...", "Analyze structural requirements...", "Review engineering specifications..."]',
     
     // Legacy placeholders (keeping for backward compatibility)
     'dashboard.placeholders.askAyn': 'Ask AYN anything about your business...',
@@ -339,23 +336,12 @@ const translations = {
     
     // Auth Modal
     'auth.welcomeToAyn': 'Welcome to AYN',
-    'auth.welcome': 'Welcome to AYN',
     'auth.signIn': 'Sign In',
-    'auth.signUp': 'Sign Up',
-    'auth.signingIn': 'Signing In...',
-    'auth.forgotPassword': 'Forgot Password?',
     'auth.requestAccess': 'Request Access',
     'auth.email': 'Email',
     'auth.password': 'Password',
     'auth.enterEmail': 'Enter your email',
     'auth.enterPassword': 'Enter your password',
-    'auth.fullNamePlaceholder': 'Enter your full name',
-    'auth.companyNamePlaceholder': 'Enter your company name',
-    'auth.phone': 'Phone',
-    'auth.optional': 'Optional',
-    'auth.phonePlaceholder': 'Enter your phone number',
-    'auth.creatingAccount': 'Creating Account...',
-    'auth.createAccount': 'Create Account',
     'auth.missingInfo': 'Missing Information',
     'auth.missingInfoDesc': 'Please fill in all required fields.',
     'auth.verifyEmail': 'Verify your email',
@@ -367,7 +353,6 @@ const translations = {
     'auth.welcomeBackDesc': 'You have been successfully logged in.',
     'auth.requestAccessDesc': 'Request access to AYN AI Business Consulting Platform',
     'auth.fullName': 'Full Name',
-    'auth.companyName': 'Company Name',
     'auth.company': 'Company',
     'auth.businessEmail': 'Business Email',
     'auth.phoneNumber': 'Phone Number',
@@ -457,9 +442,7 @@ const translations = {
     'modes.nenMode': 'وضع نين',
     'modes.researchPro': 'بحث متقدم',
     'modes.pdfAnalyst': 'محلل المستندات',
-    'modes.crypto': 'العملات المشفرة',
     'modes.visionLab': 'مختبر الرؤية',
-    'modes.civilEngineering': 'الهندسة المدنية',
     
     // Header elements in Arabic
     'header.aynBusinessConsole': 'منصة عين للأعمال',
@@ -483,7 +466,6 @@ const translations = {
     'placeholders.Research Pro': '["ما اتجاهات السوق التي يجب بحثها؟", "ابحث عن أحدث بيانات الصناعة", "أي منافس يجب تحليله؟"]',
     'placeholders.PDF Analyst': '["ارفع مستند عملك", "دعني أراجع ملفاتك", "ارفع PDF للتحليل"]',
     'placeholders.Vision Lab': '["ارفع صورة للتحليل", "حلل المخططات والصور", "شارك المحتوى المرئي"]',
-    'placeholders.Civil Engineering': '["ارفع بيانات المساحة أو اشرح مشروع البنية التحتية", "حلل المتطلبات الهيكلية", "راجع المواصفات الهندسية"]',
     
     // Legacy placeholders (keeping for backward compatibility)
     'dashboard.placeholders.askAyn': 'اسأل AYN أي شيء عن أعمالك',
@@ -686,7 +668,18 @@ const translations = {
     'admin.twoDaysAgo': 'منذ يومين',
     'admin.autoUpdatesEnabled': 'التحديثات التلقائية مفعلة',
     
-    // Removed unused email campaign translations
+    // Email Campaigns
+    'admin.emailCampaigns': 'حملات البريد الإلكتروني',
+    'admin.emailCampaignsDesc': 'إنشاء وإدارة حملات البريد الإلكتروني المجمعة',
+    'admin.recipientGroups': 'مجموعات المستلمين',
+    'admin.newCampaign': 'حملة جديدة',
+    'admin.totalCampaigns': 'إجمالي الحملات',
+    'admin.activeCampaigns': 'الحملات النشطة',
+    'admin.totalRecipients': 'إجمالي المستلمين',
+    'admin.emailsSent': 'الإيميلات المرسلة',
+    'admin.manageCampaigns': 'إدارة حملات التسويق والتواصل عبر البريد الإلكتروني',
+    'admin.loadingCampaigns': 'جاري تحميل حملات البريد الإلكتروني...',
+    'admin.recipients': 'المستلمون',
     'admin.sent': 'مرسل',
     'admin.createEmailCampaign': 'إنشاء حملة بريد إلكتروني',
     'admin.setupNewCampaign': 'إعداد حملة بريد إلكتروني جديدة للمستخدمين',
@@ -775,23 +768,12 @@ const translations = {
     
     // Auth Modal
     'auth.welcomeToAyn': 'مرحباً بك في AYN',
-    'auth.welcome': 'مرحباً بك في AYN',
     'auth.signIn': 'تسجيل الدخول',
-    'auth.signUp': 'إنشاء حساب',
-    'auth.signingIn': 'جاري تسجيل الدخول...',
-    'auth.forgotPassword': 'نسيت كلمة المرور؟',
     'auth.requestAccess': 'طلب الوصول',
     'auth.email': 'البريد الإلكتروني',
     'auth.password': 'كلمة المرور',
     'auth.enterEmail': 'أدخل بريدك الإلكتروني',
     'auth.enterPassword': 'أدخل كلمة المرور',
-    'auth.fullNamePlaceholder': 'أدخل اسمك الكامل',
-    'auth.companyNamePlaceholder': 'أدخل اسم شركتك',
-    'auth.phone': 'الهاتف',
-    'auth.optional': 'اختياري',
-    'auth.phonePlaceholder': 'أدخل رقم هاتفك',
-    'auth.creatingAccount': 'جاري إنشاء الحساب...',
-    'auth.createAccount': 'إنشاء حساب',
     'auth.missingInfo': 'معلومات مفقودة',
     'auth.missingInfoDesc': 'يرجى ملء جميع الحقول المطلوبة.',
     'auth.verifyEmail': 'تحقق من بريدك الإلكتروني',
@@ -803,7 +785,6 @@ const translations = {
     'auth.welcomeBackDesc': 'تم تسجيل دخولك بنجاح.',
     'auth.requestAccessDesc': 'طلب الوصول إلى منصة الاستشارات التجارية AYN AI',
     'auth.fullName': 'الاسم الكامل',
-    'auth.companyName': 'اسم الشركة',
     'auth.company': 'الشركة',
     'auth.businessEmail': 'البريد الإلكتروني للعمل',
     'auth.phoneNumber': 'رقم الهاتف',

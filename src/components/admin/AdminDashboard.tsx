@@ -29,6 +29,7 @@ interface AccessGrantWithProfile {
   profiles: {
     company_name: string | null;
     contact_person: string | null;
+    phone: string | null;
   } | null;
 }
 
