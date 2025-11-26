@@ -129,19 +129,6 @@ const translations = {
     'common.deleteChats': 'Delete Chats',
     'common.deleteSelected': 'Delete Selected',
     'common.noRecentChats': 'No recent chats',
-
-    // Welcome Screen
-    'welcome.title': 'Welcome to AYN AI',
-    'welcome.subtitle': 'Your intelligent business consulting assistant',
-    'welcome.features.fast': 'Ultra-fast responses',
-    'welcome.features.research': 'Deep research',
-    'welcome.features.documents': 'Document analysis',
-    'welcome.features.vision': 'Vision analysis',
-    'welcome.tryAsking': 'Try asking:',
-    'welcome.prompts.market': 'Analyze my market position',
-    'welcome.prompts.growth': 'Create a growth strategy',
-    'welcome.prompts.sales': 'Optimize my sales funnel',
-    'welcome.prompts.launch': 'Plan my product launch',
     
     // Admin Panel
     'admin.title': 'Admin Control Center',
@@ -531,19 +518,6 @@ const translations = {
     'common.deleteChats': 'حذف محادثات',
     'common.deleteSelected': 'حذف المحدد',
     'common.noRecentChats': 'لا توجد محادثات حديثة',
-
-    // Welcome Screen
-    'welcome.title': 'مرحباً بك في AYN AI',
-    'welcome.subtitle': 'مستشارك الذكي في الأعمال',
-    'welcome.features.fast': 'ردود فائقة السرعة',
-    'welcome.features.research': 'بحث معمّق',
-    'welcome.features.documents': 'تحليل المستندات',
-    'welcome.features.vision': 'تحليل الصور',
-    'welcome.tryAsking': 'جرّب أن تسأل:',
-    'welcome.prompts.market': 'حلل موقعي في السوق',
-    'welcome.prompts.growth': 'أنشئ استراتيجية نمو',
-    'welcome.prompts.sales': 'حسّن قمع المبيعات',
-    'welcome.prompts.launch': 'خطط لإطلاق منتجي',
     
     // Admin Panel
     'admin.title': 'مركز التحكم الإداري',

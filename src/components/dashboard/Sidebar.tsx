@@ -3,7 +3,6 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { cn } from '@/lib/utils';
 import { 
   SidebarContent,
   SidebarFooter,
@@ -90,7 +89,7 @@ export const Sidebar = ({
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* AI Modes with hover animations */}
+        {/* AI Modes */}
         <SidebarGroup>
           <SidebarGroupLabel>{t('common.quickStart')}</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -101,12 +100,7 @@ export const Sidebar = ({
                     onClick={() => onModeSelect(mode.name)}
                     disabled={!hasAccess}
                     tooltip={mode.description}
-                    className={cn(
-                      'transition-all duration-200',
-                      selectedMode === mode.name 
-                        ? 'bg-sidebar-accent text-sidebar-accent-foreground shadow-md' 
-                        : 'hover:scale-[1.02] hover:bg-sidebar-accent/50'
-                    )}
+                    className={selectedMode === mode.name ? 'bg-sidebar-accent text-sidebar-accent-foreground' : ''}
                   >
                     <mode.icon className="w-4 h-4" />
                     <span>{mode.translatedName}</span>
@@ -217,7 +211,7 @@ export const Sidebar = ({
                         )}
                         <SidebarMenuButton
                           onClick={() => !showChatSelection && onLoadChat(chat)}
-                          className="flex-1 transition-all duration-200 hover:bg-sidebar-accent/50"
+                          className="flex-1"
                         >
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium truncate">{chat.title}</p>
