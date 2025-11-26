@@ -75,8 +75,8 @@ export const MessageList = ({
           </div>
         )}
 
-        {/* Scroll Anchor */}
-        <div ref={messagesEndRef} />
+        {/* Scroll Anchor with padding */}
+        <div className="pb-24" ref={messagesEndRef} />
       </div>
     </ScrollArea>
   );

@@ -65,7 +65,7 @@ const getModes = (t: (key: string) => string): AIModeConfig[] => [
   },
   { 
     name: 'Civil Engineering', 
-    translatedName: 'Civil Engineering',
+    translatedName: t('modes.civilEngineering'),
     description: 'Civil engineering analysis and calculations',
     icon: Hammer,
     color: 'text-teal-500',
@@ -116,10 +116,10 @@ export const DashboardContainer = ({ user }: DashboardContainerProps) => {
     return arabicPattern.test(text) ? 'ar' : 'en';
   }, []);
 
-  // Handle send message with attachment (already uploaded)
+  // Handle send message with file upload
   const handleSendMessage = useCallback(async (
     content: string,
-    attachment?: FileAttachment | null
+    fileToUpload?: File | null
   ) => {
     if (!auth.hasAccess || !auth.hasAcceptedTerms) {
       toast({
@@ -138,7 +138,19 @@ export const DashboardContainer = ({ user }: DashboardContainerProps) => {
       }
     }
 
-    // Send message with attachment (file already uploaded by ChatInput)
+    // Upload file if present
+    let attachment: FileAttachment | null = null;
+    if (fileToUpload) {
+      attachment = await fileUpload.uploadFile(fileToUpload);
+      if (!attachment) {
+        // Upload failed, error already shown by uploadFile
+        return;
+      }
+      // Clear the file after successful upload
+      fileUpload.removeFile();
+    }
+
+    // Send message with attachment
     await messagesHook.sendMessage(content, attachment);
     
     // Refresh chat history
@@ -151,6 +163,7 @@ export const DashboardContainer = ({ user }: DashboardContainerProps) => {
     setLanguage,
     messagesHook,
     chatSession,
+    fileUpload,
     toast,
     t
   ]);
