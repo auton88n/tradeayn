@@ -14,6 +14,15 @@ interface WebhookRequest {
   detectedLanguage?: 'ar' | 'en';
   concise?: boolean;
   mode?: string;
+  has_attachment?: boolean;
+  file_data?: {
+    url: string;
+    name: string;
+    type: string;
+    size?: number;
+  } | null;
+  sessionId?: string;
+  conversationHistory?: any[];
 }
 
 interface WebhookResponse {
@@ -157,7 +166,11 @@ serve(async (req) => {
         contactPerson: body?.contactPerson || '',
         detectedLanguage: body?.detectedLanguage || 'en',
         concise: body?.concise ?? true,
-        mode: body?.mode || 'General'
+        mode: body?.mode || 'General',
+        has_attachment: body?.has_attachment || false,
+        file_data: body?.file_data || null,
+        sessionId: body?.sessionId || '',
+        conversationHistory: body?.conversationHistory || []
       };
     } catch (e) {
       console.warn(`[${requestId}] Request body was not valid JSON, using defaults`);
@@ -169,7 +182,9 @@ serve(async (req) => {
       allowPersonalization: requestData.allowPersonalization,
       detectedLanguage: requestData.detectedLanguage,
       concise: requestData.concise,
-      mode: requestData.mode
+      mode: requestData.mode,
+      has_attachment: requestData.has_attachment,
+      file_data: requestData.file_data ? { name: requestData.file_data.name, type: requestData.file_data.type } : null
     });
 
     // Get webhook URL for the selected mode
@@ -226,7 +241,11 @@ serve(async (req) => {
         concise: requestData.concise,
         mode: requestData.mode,
         timestamp: new Date().toISOString(),
-        requestId
+        requestId,
+        has_attachment: requestData.has_attachment,
+        file_data: requestData.file_data,
+        sessionId: requestData.sessionId,
+        conversationHistory: requestData.conversationHistory
       }),
     });
 
