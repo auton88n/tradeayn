@@ -379,6 +379,17 @@
     }
   }
 
+  /* Desktop: Offset for sidebar (240px width, so offset by 120px = half) */
+  @media (min-width: 768px) {
+    .input-area.center-position {
+      left: calc(50% + 120px);
+    }
+    
+    .input-area.bottom-position {
+      left: calc(50% + 120px);
+    }
+  }
+
 
 
   /* RTL Support */

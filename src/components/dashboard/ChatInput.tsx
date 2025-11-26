@@ -127,11 +127,8 @@ export const ChatInput = ({
     }
   };
 
-  // Check if current mode supports file attachments
-  const supportsFileAttachment = 
-    selectedMode.toLowerCase().includes('pdf') || 
-    selectedMode.toLowerCase().includes('vision') ||
-    selectedMode.toLowerCase().includes('civil');
+  // Enable file attachments for all modes
+  const supportsFileAttachment = true;
 
   return (
     <div 
