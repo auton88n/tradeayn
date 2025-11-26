@@ -185,6 +185,8 @@ export interface UseChatSessionReturn {
   startNewChat: () => void;
   loadChat: (chatHistory: ChatHistory) => Message[];
   deleteSelectedChats: () => Promise<void>;
+  toggleChatSelection: (index: number) => void;
+  selectAllChats: () => void;
 }
 
 export interface UseAuthReturn {
