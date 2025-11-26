@@ -311,56 +311,6 @@
     animation: gradient-x 3s ease infinite;
   }
 
-  /* Premium floating particles animation */
-  @keyframes float {
-    0%, 100% { 
-      transform: translateY(0) translateX(0); 
-      opacity: 0; 
-    }
-    10% { opacity: 0.6; }
-    90% { opacity: 0.6; }
-    100% { 
-      transform: translateY(-100px) translateX(50px); 
-      opacity: 0; 
-    }
-  }
-
-  /* Flowing gradient border animation */
-  @keyframes gradient-flow {
-    0%, 100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-  }
-
-  /* Slow bounce for badges */
-  @keyframes bounce-slow {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
-  }
-
-  /* Slow spin for sparkles */
-  @keyframes spin-slow {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-
-  /* Animation classes */
-  .animate-float {
-    animation: float 15s ease-in-out infinite;
-  }
-
-  .animate-gradient-flow {
-    background-size: 200% auto;
-    animation: gradient-flow 3s ease infinite;
-  }
-
-  .animate-bounce-slow {
-    animation: bounce-slow 2s ease-in-out infinite;
-  }
-
-  .animate-spin-slow {
-    animation: spin-slow 3s linear infinite;
-  }
-
   /* Grid pattern background */
   .bg-grid-pattern {
     background-image: 
@@ -373,9 +323,6 @@
   .delay-300 { animation-delay: 300ms; }
   .delay-500 { animation-delay: 500ms; }
   .delay-700 { animation-delay: 700ms; }
-  .animation-delay-500 { animation-delay: 500ms; }
-  .animation-delay-700 { animation-delay: 700ms; }
-  .animation-delay-1000 { animation-delay: 1000ms; }
   
   /* Smooth scrolling */
   html {
