@@ -219,6 +219,7 @@ export interface MessageListProps {
   userAvatar?: string;
   onCopy: (content: string) => void;
   onReply: (message: Message) => void;
+  onQuickPrompt?: (prompt: string) => void;
 }
 
 export interface ChatInputProps {

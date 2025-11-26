@@ -36,10 +36,10 @@ export const MessageBubble = memo(({
       {/* Message Content */}
       <div
         className={cn(
-          "message-bubble rounded-2xl px-4 py-3 shadow-sm relative group",
+          "message-bubble rounded-2xl px-4 py-3 relative group transition-all duration-300",
           isUser
-            ? "user-message bg-primary text-primary-foreground"
-            : "ai-message bg-muted text-foreground"
+            ? "user-message bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30"
+            : "ai-message bg-muted text-foreground shadow-md hover:shadow-lg"
         )}
       >
         {/* Message Text */}
