@@ -40,17 +40,6 @@ export const Sidebar = ({
   } = useSidebar();
   return <>
       <SidebarHeader>
-        {/* Actions at the top */}
-        <div className="flex items-center justify-between p-4 border-b">
-          <div className="flex items-center gap-2">
-            <LanguageSwitcher />
-            <ThemeToggle />
-          </div>
-          <Button onClick={onLogout} variant="ghost" size="sm" title={t('common.signOut')}>
-            <LogOut className="w-4 h-4" />
-          </Button>
-        </div>
-
         {/* AYN Status with Close Button */}
         <div className="flex items-center justify-between p-4 border-b">
           <div className="flex items-center gap-3">
@@ -62,6 +51,17 @@ export const Sidebar = ({
           {/* Close button inside sidebar - desktop only */}
           <Button variant="ghost" size="icon" onClick={toggleSidebar} className="hidden md:flex hover:bg-muted h-8 w-8">
             <X className="w-4 h-4" />
+          </Button>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center justify-between p-4 border-b">
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher />
+            <ThemeToggle />
+          </div>
+          <Button onClick={onLogout} variant="ghost" size="sm" title={t('common.signOut')}>
+            <LogOut className="w-4 h-4" />
           </Button>
         </div>
       </SidebarHeader>
