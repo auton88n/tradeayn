@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Brain, TrendingUp, Target, BarChart3, Zap, Users, ArrowRight, Sparkles, Palette, Cog, FileSpreadsheet, MessageSquare, Building2, Mail, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -13,6 +13,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { TypewriterText } from '@/components/TypewriterText';
 
 const contactSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters').max(100),
@@ -25,8 +26,51 @@ type ContactFormValues = z.infer<typeof contactSchema>;
 const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { t } = useLanguage();
+  const [demoInput, setDemoInput] = useState('');
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const [showPlaceholder, setShowPlaceholder] = useState(true);
+  const { t, language } = useLanguage();
   const { toast } = useToast();
+
+  // Demo placeholder suggestions
+  const placeholders = language === 'ar' ? [
+    'كيف يمكنني زيادة إيراداتي؟',
+    'حلل اتجاهات السوق في مجالي',
+    'اقترح استراتيجية تسويق',
+    'كيف أحسن قمع المبيعات؟'
+  ] : [
+    'How can I increase my revenue?',
+    'Analyze market trends in my industry',
+    'Suggest a marketing strategy',
+    'How do I optimize my sales funnel?'
+  ];
+
+  // Rotate placeholders
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPlaceholderIndex((prev) => (prev + 1) % placeholders.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [placeholders.length]);
+
+  // Update placeholder visibility
+  useEffect(() => {
+    setShowPlaceholder(!demoInput.trim());
+  }, [demoInput]);
+
+  // Handle demo send - trigger auth modal
+  const handleDemoSend = () => {
+    if (!demoInput.trim()) return;
+    setShowAuthModal(true);
+  };
+
+  // Handle key press
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleDemoSend();
+    }
+  };
 
   const form = useForm<ContactFormValues>({
     resolver: zodResolver(contactSchema),
@@ -125,60 +169,186 @@ const LandingPage = () => {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="relative py-20 overflow-hidden">
-        {/* Soft Radial Gradient Background */}
-        
-        <div className="absolute inset-0 bg-gradient-radial from-primary/8 via-background to-accent/5" />
-        
-        <div className="container mx-auto px-6 relative z-10">
-          <div className="text-center max-w-4xl mx-auto">
-            <div className="animate-fade-in-up">
-              <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
-                {t('hero.title')}
-                <span className="text-foreground block mt-2">
-                  {t('hero.titleHighlight')}
-                </span>
-              </h1>
+      {/* Hero Section - Interactive Demo */}
+      <section id="home" className="relative min-h-screen overflow-hidden">
+        {/* Animated background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-purple-500/5 to-pink-500/5" />
+        <div className="absolute inset-0">
+          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_20%_30%,rgba(168,85,247,0.15),transparent_50%)]" />
+          <div className="absolute bottom-0 right-0 w-full h-full bg-[radial-gradient(circle_at_80%_70%,rgba(59,130,246,0.15),transparent_50%)]" />
+        </div>
+
+        {/* Floating particles */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {[...Array(30)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-1 h-1 bg-primary/30 rounded-full animate-float"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 5}s`,
+                animationDuration: `${10 + Math.random() * 20}s`
+              }}
+            />
+          ))}
+        </div>
+
+        <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-20">
+          {/* Logo and Badge */}
+          <div className="text-center mb-12 space-y-4 animate-in fade-in slide-in-from-top duration-700">
+            {/* Brain Logo with Glow */}
+            <div className="relative inline-block mb-6">
+              <div className="absolute inset-0 bg-primary/30 blur-3xl rounded-full" />
+              <div className="relative w-24 h-24 mx-auto rounded-3xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shadow-2xl">
+                <Brain className="w-14 h-14 text-white" />
+              </div>
+            </div>
+
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-primary/10 border border-primary/30 text-primary font-bold animate-pulse backdrop-blur-sm">
+              <Sparkles className="w-5 h-5" />
+              <span>{language === 'ar' ? 'جرّب AYN مجاناً الآن' : 'Try AYN Free Now'}</span>
+            </div>
+
+            {/* Heading */}
+            <h1 className="text-5xl md:text-7xl font-black leading-tight">
+              <span className="block bg-gradient-to-r from-foreground via-primary to-purple-600 bg-clip-text text-transparent">
+                {language === 'ar' ? 'مستشارك الذكي' : 'Your AI Business'}
+              </span>
+              <span className="block text-foreground/80 mt-2">
+                {language === 'ar' ? 'في الأعمال' : 'Consultant'}
+              </span>
+            </h1>
+
+            <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto">
+              {language === 'ar'
+                ? 'اسأل أي سؤال عن عملك واحصل على إجابات فورية مدعومة بالذكاء الاصطناعي'
+                : 'Ask any question about your business and get instant AI-powered answers'}
+            </p>
+          </div>
+
+          {/* Interactive Demo Input - Center Stage */}
+          <div className="w-full max-w-4xl mb-12 animate-in fade-in slide-in-from-bottom duration-700 delay-200">
+            <div className="relative group">
+              {/* Glow effect */}
+              <div className="absolute -inset-1 bg-gradient-to-r from-primary via-purple-600 to-pink-600 rounded-3xl blur-2xl opacity-30 group-hover:opacity-50 transition-opacity" />
               
-              <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-                {t('hero.description')}
-              </p>
-              
-              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                <Button 
-                  onClick={() => setShowAuthModal(true)}
-                  variant="white"
-                  size="xl"
-                  className="group"
-                >
-                  {t('hero.cta')}
-                  <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </Button>
-                
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Users className="w-4 h-4" />
-                  <span>{t('hero.joinBusiness')}</span>
+              {/* Input container */}
+              <div className="relative bg-background/95 backdrop-blur-xl rounded-3xl shadow-2xl border-2 border-primary/20 p-3 group-hover:border-primary/40 transition-all">
+                <div className="flex items-center gap-3">
+                  {/* Mode indicator */}
+                  <div className="flex-shrink-0 px-4 py-2 rounded-2xl bg-primary/10 text-primary text-sm font-semibold">
+                    {language === 'ar' ? 'نمط عام' : 'General Mode'}
+                  </div>
+
+                  {/* Input area */}
+                  <div className="relative flex-1">
+                    <Textarea
+                      value={demoInput}
+                      onChange={(e) => setDemoInput(e.target.value)}
+                      onKeyDown={handleKeyPress}
+                      placeholder=""
+                      rows={1}
+                      className="w-full resize-none border-0 bg-transparent text-lg focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[56px] max-h-[200px]"
+                    />
+                    
+                    {/* Typewriter placeholder */}
+                    {showPlaceholder && !demoInput.trim() && (
+                      <div className="absolute top-4 left-4 pointer-events-none">
+                        <TypewriterText
+                          key={`${placeholderIndex}-${language}`}
+                          text={placeholders[placeholderIndex]}
+                          speed={50}
+                          className="text-muted-foreground text-lg"
+                          showCursor={true}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Send button */}
+                  <Button
+                    onClick={handleDemoSend}
+                    disabled={!demoInput.trim()}
+                    size="lg"
+                    className="flex-shrink-0 h-14 w-14 rounded-2xl bg-gradient-to-r from-primary to-purple-600 hover:scale-110 transition-all shadow-lg disabled:opacity-50 disabled:hover:scale-100"
+                  >
+                    <Send className="w-6 h-6" />
+                  </Button>
                 </div>
               </div>
             </div>
-            
-            {/* Floating AYN Agent Preview */}
-            <div className="mt-16 animate-float">
-              <Card className="bg-card border border-border max-w-md mx-auto p-6">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 rounded-full brain-container-lg flex items-center justify-center">
-                    <Brain className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">AYN AI Consultant</h3>
-                    <p className="text-sm text-muted-foreground">{t('hero.readyToAnalyze')}</p>
-                  </div>
-                </div>
-                <p className="text-sm text-muted-foreground italic">
-                  "{t('hero.aiConsultantQuote')}"
-                </p>
-              </Card>
+
+            {/* Helper text */}
+            <p className="text-center text-sm text-muted-foreground mt-4">
+              {language === 'ar'
+                ? '✨ جرّب الآن مجاناً - لا حاجة لبطاقة ائتمان'
+                : '✨ Try now for free - no credit card needed'}
+            </p>
+          </div>
+
+          {/* Quick Action Buttons */}
+          <div className="flex flex-wrap justify-center gap-4 mb-16 animate-in fade-in slide-in-from-bottom duration-700 delay-400">
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => setDemoInput(language === 'ar' ? 'كيف أزيد مبيعاتي؟' : 'How do I increase sales?')}
+              className="rounded-full text-base"
+            >
+              💡 {language === 'ar' ? 'كيف أزيد مبيعاتي؟' : 'How do I increase sales?'}
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => setDemoInput(language === 'ar' ? 'حلل منافسيني' : 'Analyze my competitors')}
+              className="rounded-full text-base"
+            >
+              🎯 {language === 'ar' ? 'حلل منافسيني' : 'Analyze my competitors'}
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => setDemoInput(language === 'ar' ? 'اقترح استراتيجية تسويق' : 'Suggest marketing strategy')}
+              className="rounded-full text-base"
+            >
+              📊 {language === 'ar' ? 'استراتيجية تسويق' : 'Marketing strategy'}
+            </Button>
+          </div>
+
+          {/* Scroll Indicator */}
+          <div className="text-center animate-in fade-in slide-in-from-bottom duration-700 delay-600">
+            <p className="text-muted-foreground mb-4">
+              {language === 'ar' ? 'أو استكشف خدماتنا' : 'Or explore our services'}
+            </p>
+            <Button
+              variant="ghost"
+              onClick={() => document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' })}
+              className="text-lg group"
+            >
+              <span>{language === 'ar' ? 'عرض جميع الخدمات' : 'View All Services'}</span>
+              <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Service Icons - Floating Preview */}
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-6 px-8 py-4 rounded-full bg-background/80 backdrop-blur-xl border border-border shadow-2xl animate-in fade-in slide-in-from-bottom duration-700 delay-800">
+          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            {language === 'ar' ? 'خدماتنا:' : 'Our Services:'}
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center transition-transform hover:scale-110" title={language === 'ar' ? 'مواقع المؤثرين' : 'Influencer Portfolios'}>
+              <Palette className="w-5 h-5 text-purple-500" />
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center transition-transform hover:scale-110" title={language === 'ar' ? 'روبوتات ذكية' : 'Custom AI Agents'}>
+              <MessageSquare className="w-5 h-5 text-blue-500" />
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center transition-transform hover:scale-110" title={language === 'ar' ? 'أتمتة العمليات' : 'Process Automation'}>
+              <Cog className="w-5 h-5 text-green-500" />
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center transition-transform hover:scale-110" title={language === 'ar' ? 'AYN Eng هندسة مدنية' : 'AYN Eng Civil Engineering'}>
+              <FileSpreadsheet className="w-5 h-5 text-orange-500" />
             </div>
           </div>
         </div>
@@ -611,6 +781,11 @@ const LandingPage = () => {
       <AuthModal 
         open={showAuthModal} 
         onOpenChange={setShowAuthModal}
+        message={demoInput.trim() ? (language === 'ar' 
+          ? '✨ سجّل الدخول لتستمر في المحادثة مع AYN'
+          : '✨ Sign in to continue your conversation with AYN'
+        ) : undefined}
+        prefilledMessage={demoInput.trim() || undefined}
       />
     </div>
   );
