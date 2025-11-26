@@ -8,6 +8,9 @@ import { LanguageSwitcher } from './LanguageSwitcher';
 import { ThemeToggle } from './theme-toggle';
 import { TypewriterText } from '@/components/TypewriterText';
 import { Link } from 'react-router-dom';
+import { Particles } from './Particles';
+import { CounterAnimation } from './CounterAnimation';
+import { PageTransition } from './PageTransition';
 
 const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -49,9 +52,12 @@ const LandingPage = () => {
   };
 
   return (
-    <div className="min-h-screen">
-      {/* Navigation Header - Transparent */}
-      <header className="fixed top-0 left-0 right-0 z-50">
+    <PageTransition>
+      <div className="min-h-screen">
+        <Particles />
+        
+        {/* Navigation Header - Transparent */}
+        <header className="fixed top-0 left-0 right-0 z-50">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -188,13 +194,17 @@ const LandingPage = () => {
           {/* Stats Bar */}
           <div className="grid grid-cols-3 gap-12 text-center">
             <div>
-              <div className="text-4xl font-bold text-white mb-2">10,000+</div>
+              <div className="text-4xl font-bold text-white mb-2">
+                <CounterAnimation from={0} to={10000} suffix="+" />
+              </div>
               <div className="text-white/60">
                 {language === 'ar' ? 'شركة تستخدم AYN' : 'Businesses Using AYN'}
               </div>
             </div>
             <div>
-              <div className="text-4xl font-bold text-white mb-2">98%</div>
+              <div className="text-4xl font-bold text-white mb-2">
+                <CounterAnimation from={0} to={98} suffix="%" />
+              </div>
               <div className="text-white/60">
                 {language === 'ar' ? 'نسبة الرضا' : 'Satisfaction Rate'}
               </div>
@@ -219,6 +229,7 @@ const LandingPage = () => {
         }
       />
     </div>
+    </PageTransition>
   );
 };
 

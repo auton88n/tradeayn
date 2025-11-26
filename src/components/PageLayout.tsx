@@ -6,6 +6,9 @@ import { ThemeToggle } from './theme-toggle';
 import { useState } from 'react';
 import { AuthModal } from './auth/AuthModal';
 import { Link } from 'react-router-dom';
+import { MobileNav } from './MobileNav';
+import { FloatingCTA } from './FloatingCTA';
+import { PageTransition } from './PageTransition';
 
 interface PageLayoutProps {
   children: React.ReactNode;
@@ -16,11 +19,14 @@ const PageLayout = ({ children }: PageLayoutProps) => {
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   return (
-    <div className="min-h-screen">
-      {/* Navigation Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-black/80 border-b border-white/10">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
+    <PageTransition>
+      <div className="min-h-screen">
+        <MobileNav />
+        
+        {/* Navigation Header */}
+        <header className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-black/80 border-b border-white/10">
+          <div className="container mx-auto px-6 py-4">
+            <div className="flex items-center justify-between">
             <Link to="/" className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center">
                 <Brain className="w-5 h-5 text-black" />
@@ -84,11 +90,14 @@ const PageLayout = ({ children }: PageLayoutProps) => {
         </div>
       </footer>
 
-      <AuthModal 
-        open={showAuthModal} 
-        onOpenChange={setShowAuthModal}
-      />
-    </div>
+        <FloatingCTA onGetStarted={() => setShowAuthModal(true)} />
+
+        <AuthModal 
+          open={showAuthModal} 
+          onOpenChange={setShowAuthModal}
+        />
+      </div>
+    </PageTransition>
   );
 };
 
