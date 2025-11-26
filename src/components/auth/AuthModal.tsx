@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,11 +12,9 @@ import { useLanguage } from '@/contexts/LanguageContext';
 interface AuthModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  message?: string;
-  prefilledMessage?: string;
 }
 
-export const AuthModal = ({ open, onOpenChange, message, prefilledMessage }: AuthModalProps) => {
+export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,13 +23,6 @@ export const AuthModal = ({ open, onOpenChange, message, prefilledMessage }: Aut
   const [phone, setPhone] = useState('');
   const { toast } = useToast();
   const { t } = useLanguage();
-
-  // Store prefilled message in session storage
-  useEffect(() => {
-    if (prefilledMessage) {
-      sessionStorage.setItem('ayn_prefilled_message', prefilledMessage);
-    }
-  }, [prefilledMessage]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,12 +151,6 @@ export const AuthModal = ({ open, onOpenChange, message, prefilledMessage }: Aut
             {t('auth.welcomeToAyn')}
           </DialogTitle>
         </DialogHeader>
-
-        {message && (
-          <div className="text-center mb-4 p-4 rounded-lg bg-primary/10 border border-primary/20 animate-in fade-in">
-            <p className="text-base font-medium">{message}</p>
-          </div>
-        )}
 
         <Tabs defaultValue="signin" className="w-full">
           <TabsList className="grid w-full grid-cols-2 glass">

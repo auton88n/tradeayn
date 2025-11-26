@@ -14,8 +14,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { Plus, LogOut, Trash2, X } from 'lucide-react';
-import { useSidebar } from '@/components/ui/sidebar';
+import { Plus, LogOut, Trash2 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -42,37 +41,25 @@ export const Sidebar = ({
   onLogout
 }: SidebarProps) => {
   const { t, language, direction } = useLanguage();
-  const { toggleSidebar } = useSidebar();
 
   return (
     <>
       <SidebarHeader>
-        {/* User Profile with Close Button */}
-        <div className="flex items-center justify-between p-4">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <Avatar className="w-10 h-10">
-              <AvatarFallback>
-                {userName?.charAt(0) || userEmail?.charAt(0) || 'U'}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">
-                {userName || t('common.user')}
-              </p>
-              <p className="text-xs text-muted-foreground truncate">
-                {userEmail}
-              </p>
-            </div>
+        {/* User Profile */}
+        <div className="flex items-center gap-3 p-4">
+          <Avatar className="w-10 h-10">
+            <AvatarFallback>
+              {userName?.charAt(0) || userEmail?.charAt(0) || 'U'}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate">
+              {userName || t('common.user')}
+            </p>
+            <p className="text-xs text-muted-foreground truncate">
+              {userEmail}
+            </p>
           </div>
-          {/* Close button inside sidebar - desktop only */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleSidebar}
-            className="hidden md:flex ml-2 hover:bg-muted h-8 w-8"
-          >
-            <X className="w-4 h-4" />
-          </Button>
         </div>
 
         {/* AYN Status */}
@@ -273,6 +260,8 @@ export const Sidebar = ({
         </div>
         <div className="px-4 pb-4 text-xs text-center text-muted-foreground">
           © 2024 AYN AI
+          <br />
+          {t('common.poweredBy')}
         </div>
       </SidebarFooter>
     </>

@@ -1,235 +1,238 @@
-import { useState, useEffect } from 'react';
-import { Brain, Send } from 'lucide-react';
+import { useState } from 'react';
+import { Brain, TrendingUp, Target, BarChart3, Zap, Users, Shield, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
+import { Card } from '@/components/ui/card';
 import { AuthModal } from './auth/AuthModal';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ThemeToggle } from './theme-toggle';
-import { TypewriterText } from '@/components/TypewriterText';
-import { Link } from 'react-router-dom';
-import { Particles } from './Particles';
-import { CounterAnimation } from './CounterAnimation';
-import { PageTransition } from './PageTransition';
 
 const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [demoInput, setDemoInput] = useState('');
-  const [placeholderIndex, setPlaceholderIndex] = useState(0);
-  const [showPlaceholder, setShowPlaceholder] = useState(true);
-  const { language } = useLanguage();
+  const { t } = useLanguage();
 
-  // Demo placeholder suggestions
-  const placeholders = language === 'ar' 
-    ? ['زيادة الإيرادات؟', 'تحليل المنافسين', 'استراتيجية تسويق', 'تحسين المبيعات؟']
-    : ['Increase revenue?', 'Analyze competitors', 'Marketing strategy', 'Boost sales?'];
-
-  // Rotate placeholders
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setPlaceholderIndex((prev) => (prev + 1) % placeholders.length);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [placeholders.length]);
-
-  // Update placeholder visibility
-  useEffect(() => {
-    setShowPlaceholder(!demoInput.trim());
-  }, [demoInput]);
-
-  // Handle demo send - trigger auth modal
-  const handleDemoSend = () => {
-    if (!demoInput.trim()) return;
-    setShowAuthModal(true);
-  };
-
-  // Handle key press
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleDemoSend();
+  const features = [
+    {
+      icon: BarChart3,
+      title: t('features.marketResearch.title'),
+      description: t('features.marketResearch.description')
+    },
+    {
+      icon: Target,
+      title: t('features.salesOptimization.title'), 
+      description: t('features.salesOptimization.description')
+    },
+    {
+      icon: TrendingUp,
+      title: t('features.trendAnalysis.title'),
+      description: t('features.trendAnalysis.description')
+    },
+    {
+      icon: Zap,
+      title: t('features.strategicPlanning.title'),
+      description: t('features.strategicPlanning.description')
     }
-  };
+  ];
+
+  const testimonials = [
+    {
+      name: "Sarah Chen",
+      role: "CEO, TechStart",
+      quote: t('testimonials.sarah.quote'),
+      avatar: "👩‍💼"
+    },
+    {
+      name: "Marcus Rodriguez", 
+      role: "Founder, GrowthCo",
+      quote: t('testimonials.marcus.quote'),
+      avatar: "👨‍💼"
+    },
+    {
+      name: "Emma Thompson",
+      role: "CMO, InnovateX",
+      quote: t('testimonials.emma.quote'),
+      avatar: "👩‍🚀"
+    }
+  ];
 
   return (
-    <PageTransition>
-      <div className="min-h-screen">
-        <Particles />
-        
-        {/* Navigation Header - Transparent */}
-        <header className="fixed top-0 left-0 right-0 z-50">
+    <div className="min-h-screen">
+      {/* Navigation Header */}
+      <header className="bg-card border-b border-border sticky top-0 z-50">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center">
-                <Brain className="w-5 h-5 text-black" />
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg brain-container flex items-center justify-center">
+                  <Brain className="w-5 h-5 text-white" />
+                </div>
+                <span className="text-2xl font-bold">AYN</span>
               </div>
-              <span className="text-2xl font-bold text-white tracking-tight">AYN</span>
             </div>
             
             <nav className="hidden md:flex items-center gap-8">
-              <Link to="/features" className="text-white/60 hover:text-white transition-colors">
-                {language === 'ar' ? 'المميزات' : 'Features'}
-              </Link>
-              <Link to="/services" className="text-white/60 hover:text-white transition-colors">
-                {language === 'ar' ? 'الخدمات' : 'Services'}
-              </Link>
-              <Link to="/contact" className="text-white/60 hover:text-white transition-colors">
-                {language === 'ar' ? 'اتصل بنا' : 'Contact'}
-              </Link>
+              <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">
+                {t('nav.features')}
+              </a>
+              <a href="#testimonials" className="text-muted-foreground hover:text-foreground transition-colors">
+                {t('nav.testimonials')}
+              </a>
             </nav>
             
             <div className="flex items-center gap-3">
               <LanguageSwitcher />
               <ThemeToggle />
               <Button 
-                onClick={() => setShowAuthModal(true)} 
-                className="backdrop-blur-xl bg-white/10 text-white border border-white/20 hover:bg-white/20"
+                onClick={() => setShowAuthModal(true)}
+                variant="white"
               >
-                {language === 'ar' ? 'ابدأ الآن' : 'Get Started'}
+                {t('nav.getStarted')}
               </Button>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Hero Section - Interactive Demo - Black Background */}
-      <section id="home" className="relative min-h-screen bg-black text-white pt-20 overflow-hidden">
-        {/* Subtle blur orbs */}
-        <div className="absolute top-20 left-10 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl" />
-
-        <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-20">
-          {/* Heading */}
-          <h1 className="text-5xl md:text-7xl font-black leading-tight text-center mb-6 tracking-tight">
-            <span className="block bg-gradient-to-b from-white to-white/40 bg-clip-text text-transparent">
-              {language === 'ar' ? 'مستشارك الذكي' : 'Your AI Business'}
-            </span>
-            <span className="block text-white/80 mt-2">
-              {language === 'ar' ? 'في الأعمال' : 'Consultant'}
-            </span>
-          </h1>
-
-          <p className="text-xl md:text-2xl text-white/60 max-w-3xl mx-auto text-center mb-12">
-            {language === 'ar' 
-              ? 'اسأل أي سؤال عن عملك واحصل على إجابات فورية مدعومة بالذكاء الاصطناعي'
-              : 'Ask any question about your business and get instant AI-powered answers'
-            }
-          </p>
-
-          {/* Interactive Demo Input */}
-          <div className="w-full max-w-4xl mb-8">
-            <div className="relative group">
-              <div className="relative bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 p-3 hover:border-white/20 transition-all">
-                <div className="flex items-center gap-3">
-                  <div className="flex-shrink-0 px-4 py-2 rounded-2xl bg-white/10 text-white text-sm font-semibold">
-                    {language === 'ar' ? 'عام' : 'General'}
-                  </div>
-
-                  <div className="relative flex-1">
-                    <Textarea
-                      value={demoInput}
-                      onChange={(e) => setDemoInput(e.target.value)}
-                      onKeyDown={handleKeyPress}
-                      placeholder=""
-                      rows={1}
-                      className="w-full resize-none border-0 bg-transparent text-lg focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[56px] max-h-[200px] text-white"
-                      unstyled
-                    />
-                    
-                    {showPlaceholder && !demoInput.trim() && (
-                      <div className="absolute top-4 left-4 pointer-events-none">
-                        <TypewriterText
-                          key={`${placeholderIndex}-${language}`}
-                          text={placeholders[placeholderIndex]}
-                          speed={50}
-                          className="text-white/40 text-lg"
-                          showCursor={true}
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  <Button
-                    onClick={handleDemoSend}
-                    disabled={!demoInput.trim()}
-                    size="lg"
-                    className="flex-shrink-0 h-14 w-14 rounded-2xl bg-white text-black hover:bg-white/90 disabled:opacity-50"
-                  >
-                    <Send className="w-6 h-6" />
-                  </Button>
+      {/* Hero Section */}
+      <section className="relative py-20 overflow-hidden">
+        {/* Soft Radial Gradient Background */}
+        
+        <div className="absolute inset-0 bg-gradient-radial from-primary/8 via-background to-accent/5" />
+        
+        <div className="container mx-auto px-6 relative z-10">
+          <div className="text-center max-w-4xl mx-auto">
+            <div className="animate-fade-in-up">
+              <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+                {t('hero.title')}
+                <span className="text-foreground block mt-2">
+                  {t('hero.titleHighlight')}
+                </span>
+              </h1>
+              
+              <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto">
+                {t('hero.description')}
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <Button 
+                  onClick={() => setShowAuthModal(true)}
+                  variant="white"
+                  size="xl"
+                  className="group"
+                >
+                  {t('hero.cta')}
+                  <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </Button>
+                
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Users className="w-4 h-4" />
+                  <span>{t('hero.joinBusiness')}</span>
                 </div>
               </div>
             </div>
-          </div>
-
-          {/* Quick Action Buttons */}
-          <div className="flex flex-wrap justify-center gap-4 mb-16">
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={() => setDemoInput(language === 'ar' ? 'زيادة المبيعات' : 'Increase sales')}
-              className="rounded-full bg-white/5 border-white/20 text-white hover:bg-white/10"
-            >
-              💡 {language === 'ar' ? 'زيادة المبيعات' : 'Increase sales'}
-            </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={() => setDemoInput(language === 'ar' ? 'تحليل المنافسين' : 'Analyze competitors')}
-              className="rounded-full bg-white/5 border-white/20 text-white hover:bg-white/10"
-            >
-              🎯 {language === 'ar' ? 'تحليل المنافسين' : 'Analyze competitors'}
-            </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={() => setDemoInput(language === 'ar' ? 'استراتيجية تسويق' : 'Marketing strategy')}
-              className="rounded-full bg-white/5 border-white/20 text-white hover:bg-white/10"
-            >
-              📊 {language === 'ar' ? 'استراتيجية تسويق' : 'Marketing strategy'}
-            </Button>
-          </div>
-
-          {/* Stats Bar */}
-          <div className="grid grid-cols-3 gap-12 text-center">
-            <div>
-              <div className="text-4xl font-bold text-white mb-2">
-                <CounterAnimation from={0} to={10000} suffix="+" />
-              </div>
-              <div className="text-white/60">
-                {language === 'ar' ? 'شركة تستخدم AYN' : 'Businesses Using AYN'}
-              </div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold text-white mb-2">
-                <CounterAnimation from={0} to={98} suffix="%" />
-              </div>
-              <div className="text-white/60">
-                {language === 'ar' ? 'نسبة الرضا' : 'Satisfaction Rate'}
-              </div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold text-white mb-2">24/7</div>
-              <div className="text-white/60">
-                {language === 'ar' ? 'دعم متاح' : 'Support Available'}
-              </div>
+            
+            {/* Floating AYN Agent Preview */}
+            <div className="mt-16 animate-float">
+              <Card className="bg-card border border-border max-w-md mx-auto p-6">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-12 h-12 rounded-full brain-container-lg flex items-center justify-center">
+                    <Brain className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">AYN AI Consultant</h3>
+                    <p className="text-sm text-muted-foreground">{t('hero.readyToAnalyze')}</p>
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground italic">
+                  "{t('hero.aiConsultantQuote')}"
+                </p>
+              </Card>
             </div>
           </div>
         </div>
       </section>
 
+      {/* Features Section */}
+      <section id="features" className="py-20">
+        <div className="container mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold mb-4 gradient-text">
+              {t('features.title')}
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              {t('features.subtitle')}
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {features.map((feature, index) => (
+              <Card key={index} className="bg-card border border-border glass-hover p-6 text-center group">
+                <div className="w-16 h-16 rounded-full brain-container-lg mx-auto mb-4 flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <feature.icon className="w-8 h-8 text-black" />
+                </div>
+                <h3 className="text-xl font-semibold mb-3">{feature.title}</h3>
+                <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section id="testimonials" className="py-20 bg-gradient-to-b from-transparent to-muted/20">
+        <div className="container mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold mb-4 gradient-text">
+              {t('testimonials.title')}
+            </h2>
+            <p className="text-xl text-muted-foreground">
+              {t('testimonials.subtitle')}
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-8">
+            {testimonials.map((testimonial, index) => (
+              <Card key={index} className="bg-card border border-border p-6">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="text-3xl">{testimonial.avatar}</div>
+                  <div>
+                    <h4 className="font-semibold">{testimonial.name}</h4>
+                    <p className="text-sm text-muted-foreground">{testimonial.role}</p>
+                  </div>
+                </div>
+                <p className="text-muted-foreground italic leading-relaxed">
+                  "{testimonial.quote}"
+                </p>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-card border-t border-border py-12">
+        <div className="container mx-auto px-6">
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <div className="flex items-center gap-3 mb-4 md:mb-0">
+              <div className="w-8 h-8 rounded-lg brain-container flex items-center justify-center">
+                <Brain className="w-5 h-5 text-white" />
+              </div>
+              <span className="text-2xl font-bold">AYN</span>
+            </div>
+            
+            <p className="text-muted-foreground text-center md:text-right">
+              {t('footer.copyright')}
+            </p>
+          </div>
+        </div>
+      </footer>
+
+      {/* Auth Modal */}
       <AuthModal 
         open={showAuthModal} 
         onOpenChange={setShowAuthModal}
-        prefilledMessage={demoInput}
-        message={language === 'ar' 
-          ? 'سجّل الدخول لمتابعة محادثتك مع AYN'
-          : 'Sign in to continue your conversation with AYN'
-        }
       />
     </div>
-    </PageTransition>
   );
 };
 

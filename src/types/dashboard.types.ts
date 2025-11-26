@@ -222,7 +222,7 @@ export interface MessageListProps {
 }
 
 export interface ChatInputProps {
-  onSend: (content: string, fileToUpload?: File | null) => Promise<void>;
+  onSend: (content: string, attachment?: FileAttachment | null) => Promise<void>;
   isDisabled: boolean;
   selectedMode: AIMode;
   selectedFile: File | null;
@@ -235,10 +235,6 @@ export interface ChatInputProps {
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent) => void;
   fileInputRef: React.RefObject<HTMLInputElement>;
-  hasMessages: boolean;
-  sidebarOpen?: boolean;
-  modes: AIModeConfig[];
-  onModeChange: (mode: AIMode) => void;
 }
 
 export interface SidebarProps {
