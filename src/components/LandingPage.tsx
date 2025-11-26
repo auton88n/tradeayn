@@ -18,7 +18,7 @@ const LandingPage = () => {
   } = useLanguage();
 
   // Demo placeholder suggestions
-  const placeholders = language === 'ar' ? ['كيف يمكنني زيادة إيراداتي؟', 'حلل اتجاهات السوق في مجالي', 'اقترح استراتيجية تسويق', 'كيف أحسن قمع المبيعات؟'] : ['How can I increase my revenue?', 'Analyze market trends in my industry', 'Suggest a marketing strategy', 'How do I optimize my sales funnel?'];
+  const placeholders = language === 'ar' ? ['كيف أزيد إيراداتي؟', 'حلل منافسيني', 'اقترح استراتيجية', 'كيف أحسن المبيعات؟'] : ['How to increase revenue?', 'Analyze my competitors', 'Suggest a strategy', 'How to boost sales?'];
 
   // Rotate placeholders
   useEffect(() => {
