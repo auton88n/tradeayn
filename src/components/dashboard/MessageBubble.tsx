@@ -1,7 +1,7 @@
 import React, { memo } from 'react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Copy, Reply } from 'lucide-react';
+import { Copy, Reply, Brain } from 'lucide-react';
 import { MessageFormatter } from '@/components/MessageFormatter';
 import { TypewriterText } from '@/components/TypewriterText';
 import { cn } from '@/lib/utils';
@@ -28,7 +28,7 @@ export const MessageBubble = memo(({
       {isAyn && (
         <Avatar className="w-8 h-8 flex-shrink-0">
           <AvatarFallback className="bg-primary text-primary-foreground">
-            AYN
+            <Brain className="w-4 h-4" />
           </AvatarFallback>
         </Avatar>
       )}
@@ -95,7 +95,7 @@ export const MessageBubble = memo(({
       {/* User Avatar - Right Side */}
       {isUser && (
         <Avatar className="w-8 h-8 flex-shrink-0">
-          <AvatarFallback className="bg-muted text-foreground">
+          <AvatarFallback className="bg-background border border-border text-foreground">
             {userName?.charAt(0) || userAvatar?.charAt(0) || 'U'}
           </AvatarFallback>
         </Avatar>
