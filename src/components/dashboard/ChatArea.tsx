@@ -13,7 +13,7 @@ interface ChatAreaProps {
   onReplyToMessage: (message: Message) => void;
   
   // Message sending
-  onSendMessage: (content: string, attachment?: FileAttachment | null) => Promise<void>;
+  onSendMessage: (content: string, fileToUpload?: File | null) => Promise<void>;
   isDisabled: boolean;
   selectedMode: AIMode;
   
@@ -78,6 +78,7 @@ export const ChatArea = ({
         onDragOver={onDragOver}
         onDrop={onDrop}
         fileInputRef={fileInputRef}
+        hasMessages={messages.length > 0}
       />
     </div>
   );

@@ -31,7 +31,8 @@ export const ChatInput = ({
   onDragLeave,
   onDragOver,
   onDrop,
-  fileInputRef
+  fileInputRef,
+  hasMessages
 }: ChatInputProps) => {
   const [inputMessage, setInputMessage] = useState('');
   const [isInputFocused, setIsInputFocused] = useState(false);
@@ -92,8 +93,8 @@ export const ChatInput = ({
       textareaRef.current.style.height = 'auto';
     }
 
-    // Parent component handles file upload and passes FileAttachment to sendMessage
-    await onSend(content, null);
+    // Pass the selected file to parent for upload
+    await onSend(content, selectedFile ? selectedFile : null);
   };
 
   // Handle key press
@@ -135,7 +136,8 @@ export const ChatInput = ({
   return (
     <div 
       className={cn(
-        "input-area relative",
+        "input-area",
+        hasMessages ? "bottom-position" : "center-position",
         isDragOver && "drag-over"
       )}
       onDragEnter={onDragEnter}

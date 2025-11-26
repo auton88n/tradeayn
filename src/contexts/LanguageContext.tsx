@@ -57,6 +57,7 @@ const translations = {
     'modes.researchPro': 'Research Pro',
     'modes.pdfAnalyst': 'PDF Analyst',
     'modes.visionLab': 'Vision Lab',
+    'modes.civilEngineering': 'Civil Engineering',
     
     // Header elements
     'header.aynBusinessConsole': 'AYN Business Console',
@@ -445,6 +446,7 @@ const translations = {
     'modes.researchPro': 'بحث متقدم',
     'modes.pdfAnalyst': 'محلل المستندات',
     'modes.visionLab': 'مختبر الرؤية',
+    'modes.civilEngineering': 'الهندسة المدنية',
     
     // Header elements in Arabic
     'header.aynBusinessConsole': 'منصة عين للأعمال',
