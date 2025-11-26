@@ -115,6 +115,7 @@ export const ChatInterface = ({
   const [previewFile, setPreviewFile] = useState<{ url: string; name: string; type: string } | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [pendingMessage, setPendingMessage] = useState<string>('');
+  const [shouldSendDirectly, setShouldSendDirectly] = useState(false);
   
   const { toast } = useToast();
   const { t } = useLanguage();
@@ -133,6 +134,15 @@ export const ChatInterface = ({
       inputRef.current.style.height = '44px';
     }
   }, [inputMessage]);
+
+  // Handle direct sending after state update for text-only messages
+  useEffect(() => {
+    if (shouldSendDirectly && pendingMessage) {
+      console.log('🚀 Triggering direct send for text-only message');
+      setShouldSendDirectly(false);
+      continueSendingMessage();
+    }
+  }, [shouldSendDirectly, pendingMessage]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -217,6 +227,7 @@ export const ChatInterface = ({
   };
 
   const handlePreviewConfirm = () => {
+    console.log('📎 File-with-preview flow - user confirmed attachment in preview dialog');
     setShowPreview(false);
     // Continue with sending the message
     continueSendingMessage();
@@ -664,10 +675,18 @@ export const ChatInterface = ({
         return;
       }
     } else {
-      // No file to upload, send message directly via preview
+      // No file to upload - skip preview dialog and send directly
+      console.log('📝 Text-only message flow - bypassing preview dialog');
       setPendingMessage(content);
       setPreviewFile(null);
-      setShowPreview(true);
+      setShowPreview(false);
+      
+      // Clear input immediately
+      setInputMessage('');
+      setReplyingTo(null);
+      
+      // Trigger direct send via useEffect
+      setShouldSendDirectly(true);
     }
   };
 
