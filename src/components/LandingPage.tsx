@@ -162,13 +162,13 @@ const LandingPage = () => {
 
           {/* Quick Action Buttons */}
           <div className="flex flex-wrap justify-center gap-4 mb-16">
-            <Button variant="outline" size="lg" onClick={() => setDemoInput(language === 'ar' ? 'كيف أزيد مبيعاتي؟' : 'How do I increase sales?')} className="rounded-full bg-white/5 border-white/20 text-white hover:bg-white/10">
-              💡 {language === 'ar' ? 'كيف أزيد مبيعاتي؟' : 'How do I increase sales?'}
+            <Button variant="outline" size="lg" onClick={() => setDemoInput(language === 'ar' ? 'زيادة المبيعات' : 'Increase sales')} className="rounded-full bg-white/5 border-white/20 text-white hover:bg-white/10">
+              💡 {language === 'ar' ? 'زيادة المبيعات' : 'Increase sales'}
             </Button>
-            <Button variant="outline" size="lg" onClick={() => setDemoInput(language === 'ar' ? 'حلل منافسيني' : 'Analyze my competitors')} className="rounded-full bg-white/5 border-white/20 text-white hover:bg-white/10">
-              🎯 {language === 'ar' ? 'حلل منافسيني' : 'Analyze my competitors'}
+            <Button variant="outline" size="lg" onClick={() => setDemoInput(language === 'ar' ? 'تحليل المنافسين' : 'Analyze competitors')} className="rounded-full bg-white/5 border-white/20 text-white hover:bg-white/10">
+              🎯 {language === 'ar' ? 'تحليل المنافسين' : 'Analyze competitors'}
             </Button>
-            <Button variant="outline" size="lg" onClick={() => setDemoInput(language === 'ar' ? 'اقترح استراتيجية تسويق' : 'Suggest marketing strategy')} className="rounded-full bg-white/5 border-white/20 text-white hover:bg-white/10">
+            <Button variant="outline" size="lg" onClick={() => setDemoInput(language === 'ar' ? 'استراتيجية تسويق' : 'Marketing strategy')} className="rounded-full bg-white/5 border-white/20 text-white hover:bg-white/10">
               📊 {language === 'ar' ? 'استراتيجية تسويق' : 'Marketing strategy'}
             </Button>
           </div>
