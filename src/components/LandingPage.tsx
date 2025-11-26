@@ -168,14 +168,6 @@ const LandingPage = () => {
 
       {/* Hero Section - Interactive Demo - Black Background */}
       <section id="home" className="relative min-h-screen bg-black text-white pt-20 overflow-hidden">
-        {/* Grid background pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0" style={{
-            backgroundImage: 'linear-gradient(white 1px, transparent 1px), linear-gradient(90deg, white 1px, transparent 1px)',
-            backgroundSize: '50px 50px'
-          }} />
-        </div>
-
         {/* Subtle blur orbs */}
         <div className="absolute top-20 left-10 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl" />
         <div className="absolute bottom-20 right-10 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl" />
