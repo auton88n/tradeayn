@@ -1,15 +1,16 @@
-import React from 'react';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import React, { useState } from 'react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-import { Plus, LogOut, Trash2 } from 'lucide-react';
+import { Plus, LogOut, Trash2, Camera } from 'lucide-react';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { ProfileAvatarUpload } from './ProfileAvatarUpload';
 import type { SidebarProps } from '@/types/dashboard.types';
 export const Sidebar = ({
   userName,
@@ -29,7 +30,8 @@ export const Sidebar = ({
   onSelectAllChats,
   onDeleteSelected,
   onShowChatSelection,
-  onLogout
+  onLogout,
+  onAvatarUpdated
 }: SidebarProps) => {
   const {
     t,
@@ -39,6 +41,7 @@ export const Sidebar = ({
   const {
     toggleSidebar
   } = useSidebar();
+  const [showAvatarUpload, setShowAvatarUpload] = useState(false);
   return <>
       <SidebarHeader>
         {/* AYN Status */}
@@ -139,6 +142,7 @@ export const Sidebar = ({
           <PopoverTrigger asChild>
             <button className="flex items-center gap-3 px-4 pb-4 w-full hover:bg-muted/50 transition-all duration-300 hover:scale-[1.02] cursor-pointer rounded-lg">
               <Avatar className="w-10 h-10 transition-transform duration-300 hover:scale-110">
+                <AvatarImage src={userAvatar} alt={userName || 'User'} />
                 <AvatarFallback>
                   {userName?.charAt(0) || userEmail?.charAt(0) || 'U'}
                 </AvatarFallback>
@@ -160,6 +164,14 @@ export const Sidebar = ({
             sideOffset={8}
           >
             <Button 
+              onClick={() => setShowAvatarUpload(true)}
+              variant="ghost" 
+              className="w-full justify-start hover:bg-accent transition-all duration-200 hover:scale-105 mb-1"
+            >
+              <Camera className="w-4 h-4 mr-2" />
+              {t('profile.changePhoto')}
+            </Button>
+            <Button 
               onClick={onLogout} 
               variant="ghost" 
               className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10 transition-all duration-200 hover:scale-105"
@@ -169,6 +181,18 @@ export const Sidebar = ({
             </Button>
           </PopoverContent>
         </Popover>
+
+        {/* Avatar Upload Dialog */}
+        <ProfileAvatarUpload
+          currentAvatarUrl={userAvatar}
+          userName={userName}
+          onAvatarUpdated={() => {
+            setShowAvatarUpload(false);
+            onAvatarUpdated?.();
+          }}
+          open={showAvatarUpload}
+          onOpenChange={setShowAvatarUpload}
+        />
 
         {/* Copyright */}
         
