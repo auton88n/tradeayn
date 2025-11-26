@@ -192,7 +192,7 @@ export const ChatInput = ({
             placeholder=""
             disabled={isDisabled || isUploading}
             rows={1}
-            className="message-input resize-none min-h-[44px] max-h-[200px]"
+            className="message-input resize-none min-h-[44px] max-h-[200px] focus-visible:ring-0 focus-visible:ring-offset-0"
           />
 
           {/* Typewriter Placeholder */}
