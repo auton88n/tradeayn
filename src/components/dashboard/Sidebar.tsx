@@ -3,8 +3,9 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-import { Plus, LogOut, Trash2, X } from 'lucide-react';
+import { Plus, LogOut, Trash2 } from 'lucide-react';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
@@ -40,29 +41,18 @@ export const Sidebar = ({
   } = useSidebar();
   return <>
       <SidebarHeader>
-        {/* AYN Status with Close Button */}
-        <div className="flex items-center justify-between p-4 border-b">
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-medium">AYN AI</span>
-            <Badge variant={hasAccess ? "default" : "secondary"} className="text-xs">
-              {isTyping ? t('common.thinking') : hasAccess ? t('common.active') : t('common.inactive')}
-            </Badge>
-          </div>
-          {/* Close button inside sidebar - desktop only */}
-          <Button variant="ghost" size="icon" onClick={toggleSidebar} className="hidden md:flex hover:bg-muted h-8 w-8">
-            <X className="w-4 h-4" />
-          </Button>
+        {/* AYN Status */}
+        <div className="flex items-center gap-3 p-4 border-b">
+          <span className="text-sm font-medium">AYN AI</span>
+          <Badge variant={hasAccess ? "default" : "secondary"} className="text-xs">
+            {isTyping ? t('common.thinking') : hasAccess ? t('common.active') : t('common.inactive')}
+          </Badge>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-between p-4 border-b">
-          <div className="flex items-center gap-2">
-            <LanguageSwitcher />
-            <ThemeToggle />
-          </div>
-          <Button onClick={onLogout} variant="ghost" size="sm" title={t('common.signOut')}>
-            <LogOut className="w-4 h-4" />
-          </Button>
+        <div className="flex items-center gap-2 p-4 border-b">
+          <LanguageSwitcher />
+          <ThemeToggle />
         </div>
       </SidebarHeader>
 
@@ -144,22 +134,36 @@ export const Sidebar = ({
       </SidebarContent>
 
       <SidebarFooter>
-        {/* User Profile */}
-        <div className="flex items-center gap-3 px-4 pb-4">
-          <Avatar className="w-10 h-10">
-            <AvatarFallback>
-              {userName?.charAt(0) || userEmail?.charAt(0) || 'U'}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">
-              {userName || t('common.user')}
-            </p>
-            <p className="text-xs text-muted-foreground truncate">
-              {userEmail}
-            </p>
-          </div>
-        </div>
+        {/* User Profile with Logout */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="flex items-center gap-3 px-4 pb-4 w-full hover:bg-muted/50 transition-colors cursor-pointer rounded-lg">
+              <Avatar className="w-10 h-10">
+                <AvatarFallback>
+                  {userName?.charAt(0) || userEmail?.charAt(0) || 'U'}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0 text-left">
+                <p className="text-sm font-medium truncate">
+                  {userName || t('common.user')}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {userEmail}
+                </p>
+              </div>
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-48 p-2" align="end" side="top">
+            <Button 
+              onClick={onLogout} 
+              variant="ghost" 
+              className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              {t('common.signOut')}
+            </Button>
+          </PopoverContent>
+        </Popover>
 
         {/* Copyright */}
         
