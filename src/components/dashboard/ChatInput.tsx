@@ -1,7 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Paperclip, X } from 'lucide-react';
+import { Send, Paperclip, X, Plus, ChevronDown } from 'lucide-react';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { TypewriterText } from '@/components/TypewriterText';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
@@ -33,7 +39,9 @@ export const ChatInput = ({
   onDrop,
   fileInputRef,
   hasMessages,
-  sidebarOpen = true
+  sidebarOpen = true,
+  modes,
+  onModeChange
 }: ChatInputProps) => {
   const [inputMessage, setInputMessage] = useState('');
   const [isInputFocused, setIsInputFocused] = useState(false);
@@ -157,19 +165,53 @@ export const ChatInput = ({
 
       {/* Input Container */}
       <div className="input-container relative">
-        {/* Attachment Button */}
-        {supportsFileAttachment && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isDisabled || isUploading}
-            className="attachment-button flex-shrink-0"
-            title="Attach file"
-          >
-            <Paperclip className="w-4 h-4" />
-          </Button>
-        )}
+        {/* Mode Selector and Attachment Buttons */}
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {/* Mode Selector Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="mode-selector-button h-9 px-3 rounded-full hover:bg-muted/80 transition-all border border-border/50"
+              >
+                <span className="text-xs font-medium truncate max-w-[120px]">
+                  {modes.find(m => m.name === selectedMode)?.translatedName || 'Mode'}
+                </span>
+                <ChevronDown className="w-3 h-3 ml-1 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56 z-50 bg-popover">
+              {modes.map((mode) => (
+                <DropdownMenuItem
+                  key={mode.name}
+                  onClick={() => onModeChange(mode.name)}
+                  className="cursor-pointer"
+                >
+                  <mode.icon className="w-4 h-4 mr-2" />
+                  <span>{mode.translatedName}</span>
+                  {selectedMode === mode.name && (
+                    <span className="ml-auto text-primary">✓</span>
+                  )}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Plus Button for File Attachment */}
+          {supportsFileAttachment && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isDisabled || isUploading}
+              className="attachment-button h-9 w-9 rounded-full hover:bg-muted/80 transition-all"
+              title="Attach file"
+            >
+              <Plus className="w-5 h-5" />
+            </Button>
+          )}
+        </div>
 
         {/* Hidden File Input */}
         <input
