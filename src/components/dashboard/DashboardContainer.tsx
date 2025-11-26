@@ -116,7 +116,7 @@ export const DashboardContainer = ({ user }: DashboardContainerProps) => {
     return arabicPattern.test(text) ? 'ar' : 'en';
   }, []);
 
-  // Handle send message with file upload
+  // Handle send message with file upload and quick prompts
   const handleSendMessage = useCallback(async (
     content: string,
     fileToUpload?: File | null
@@ -167,6 +167,13 @@ export const DashboardContainer = ({ user }: DashboardContainerProps) => {
     toast,
     t
   ]);
+
+  // Handle quick prompt selection
+  const handleQuickPrompt = useCallback((prompt: string) => {
+    // The prompt will be auto-filled in the input
+    // This is handled by ChatInput component via state
+    handleSendMessage(prompt);
+  }, [handleSendMessage]);
 
   // Handle copy message
   const handleCopyMessage = useCallback(async (content: string) => {
@@ -261,6 +268,7 @@ export const DashboardContainer = ({ user }: DashboardContainerProps) => {
             userAvatar={user.user_metadata?.name?.charAt(0)}
             onCopyMessage={handleCopyMessage}
             onReplyToMessage={handleReplyToMessage}
+            onQuickPrompt={handleQuickPrompt}
             onSendMessage={handleSendMessage}
             isDisabled={!auth.hasAccess || !auth.hasAcceptedTerms}
             selectedMode={selectedMode}

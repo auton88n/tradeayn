@@ -11,6 +11,7 @@ interface ChatAreaProps {
   userAvatar?: string;
   onCopyMessage: (content: string) => void;
   onReplyToMessage: (message: Message) => void;
+  onQuickPrompt?: (prompt: string) => void;
   
   // Message sending
   onSendMessage: (content: string, fileToUpload?: File | null) => Promise<void>;
@@ -37,6 +38,7 @@ export const ChatArea = ({
   userAvatar,
   onCopyMessage,
   onReplyToMessage,
+  onQuickPrompt,
   onSendMessage,
   isDisabled,
   selectedMode,
@@ -61,6 +63,7 @@ export const ChatArea = ({
         userAvatar={userAvatar}
         onCopy={onCopyMessage}
         onReply={onReplyToMessage}
+        onQuickPrompt={onQuickPrompt}
       />
 
       {/* Input Area */}
