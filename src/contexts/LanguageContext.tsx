@@ -126,6 +126,9 @@ const translations = {
     'common.delete': 'Delete',
     'common.deleteChat': 'Delete Chat',
     'common.deleteChats': 'Delete Chats',
+    'common.deleteSelected': 'Delete Selected',
+    'common.noRecentChats': 'No recent chats',
+    'common.poweredBy': 'Powered by Lovable',
     
     // Admin Panel
     'admin.title': 'Admin Control Center',
@@ -512,6 +515,9 @@ const translations = {
     'common.delete': 'حذف',
     'common.deleteChat': 'حذف محادثة',
     'common.deleteChats': 'حذف محادثات',
+    'common.deleteSelected': 'حذف المحدد',
+    'common.noRecentChats': 'لا توجد محادثات حديثة',
+    'common.poweredBy': 'مدعوم من Lovable',
     
     // Admin Panel
     'admin.title': 'مركز التحكم الإداري',
