@@ -47,42 +47,23 @@ export const Sidebar = ({
   return (
     <>
       <SidebarHeader>
-        {/* User Profile with Close Button */}
-        <div className="flex items-center justify-between p-4">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <Avatar className="w-10 h-10">
-              <AvatarFallback>
-                {userName?.charAt(0) || userEmail?.charAt(0) || 'U'}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">
-                {userName || t('common.user')}
-              </p>
-              <p className="text-xs text-muted-foreground truncate">
-                {userEmail}
-              </p>
-            </div>
+        {/* AYN Status with Close Button */}
+        <div className="flex items-center justify-between p-4 border-b">
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium">AYN AI</span>
+            <Badge variant={hasAccess ? "default" : "secondary"} className="text-xs">
+              {isTyping ? t('common.thinking') : (hasAccess ? t('common.active') : t('common.inactive'))}
+            </Badge>
           </div>
           {/* Close button inside sidebar - desktop only */}
           <Button
             variant="ghost"
             size="icon"
             onClick={toggleSidebar}
-            className="hidden md:flex ml-2 hover:bg-muted h-8 w-8"
+            className="hidden md:flex hover:bg-muted h-8 w-8"
           >
             <X className="w-4 h-4" />
           </Button>
-        </div>
-
-        {/* AYN Status */}
-        <div className="px-4 pb-4 border-b">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">AYN AI</span>
-            <Badge variant={hasAccess ? "default" : "secondary"} className="text-xs">
-              {isTyping ? t('common.thinking') : (hasAccess ? t('common.active') : t('common.inactive'))}
-            </Badge>
-          </div>
         </div>
       </SidebarHeader>
 
@@ -235,7 +216,25 @@ export const Sidebar = ({
       </SidebarContent>
 
       <SidebarFooter>
-        <div className="flex items-center justify-between p-4 border-t">
+        {/* User Profile */}
+        <div className="flex items-center gap-3 p-4 border-t">
+          <Avatar className="w-10 h-10">
+            <AvatarFallback>
+              {userName?.charAt(0) || userEmail?.charAt(0) || 'U'}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate">
+              {userName || t('common.user')}
+            </p>
+            <p className="text-xs text-muted-foreground truncate">
+              {userEmail}
+            </p>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center justify-between px-4 pb-4">
           <div className="flex items-center gap-2">
             <LanguageSwitcher />
             <ThemeToggle />
@@ -249,6 +248,8 @@ export const Sidebar = ({
             <LogOut className="w-4 h-4" />
           </Button>
         </div>
+
+        {/* Copyright */}
         <div className="px-4 pb-4 text-xs text-center text-muted-foreground">
           © 2024 AYN AI
         </div>
