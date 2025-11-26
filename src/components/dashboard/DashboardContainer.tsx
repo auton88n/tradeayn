@@ -210,24 +210,22 @@ export const DashboardContainer = ({ user }: DashboardContainerProps) => {
   }, []);
 
   return (
-    <SidebarProvider>
-      <DashboardContent
-        user={user}
-        auth={auth}
-        chatSession={chatSession}
-        fileUpload={fileUpload}
-        messagesHook={messagesHook}
-        selectedMode={selectedMode}
-        modes={modes}
-        setSelectedMode={setSelectedMode}
-        handleNewChat={handleNewChat}
-        handleLoadChat={handleLoadChat}
-        handleCopyMessage={handleCopyMessage}
-        handleReplyToMessage={handleReplyToMessage}
-        handleSendMessage={handleSendMessage}
-        handleLogout={handleLogout}
-      />
-    </SidebarProvider>
+    <DashboardContent
+      user={user}
+      auth={auth}
+      chatSession={chatSession}
+      fileUpload={fileUpload}
+      messagesHook={messagesHook}
+      selectedMode={selectedMode}
+      modes={modes}
+      setSelectedMode={setSelectedMode}
+      handleNewChat={handleNewChat}
+      handleLoadChat={handleLoadChat}
+      handleCopyMessage={handleCopyMessage}
+      handleReplyToMessage={handleReplyToMessage}
+      handleSendMessage={handleSendMessage}
+      handleLogout={handleLogout}
+    />
   );
 };
 
