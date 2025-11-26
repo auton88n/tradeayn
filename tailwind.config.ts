@@ -132,6 +132,10 @@ export default {
 					'0%, 100%': { transform: 'translateY(0px)' },
 					'50%': { transform: 'translateY(-10px)' }
 				},
+				'bounce-slow': {
+					'0%, 100%': { transform: 'translateY(0)' },
+					'50%': { transform: 'translateY(-20px)' }
+				},
 				'typewriter': {
 					'0%': { width: '0ch' },
 					'100%': { width: '100%' }
@@ -152,6 +156,7 @@ export default {
 				'fade-in-up': 'fade-in-up 0.6s ease-out',
 				'pulse-glow': 'pulse-glow 2s ease-in-out infinite',
 				'float': 'float 3s ease-in-out infinite',
+				'bounce-slow': 'bounce-slow 3s ease-in-out infinite',
 				'typewriter': 'typewriter 3s steps(30, end) infinite',
 				'blink': 'blink 1s step-end infinite',
 				'placeholder-pulse': 'placeholder-pulse 2s ease-in-out infinite'
