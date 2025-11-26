@@ -158,201 +158,236 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Services Section */}
-      <section id="services" className="py-24 px-4 bg-gradient-to-b from-background via-muted/20 to-background">
-        <div className="container mx-auto max-w-7xl">
-          {/* Section Header */}
-          <div className="text-center mb-16 space-y-4">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
-              <Sparkles className="w-4 h-4" />
-              What We Do Best
+        {/* Services Section - Premium Redesign */}
+        <section id="services" className="py-24 px-4 relative overflow-hidden">
+          {/* Animated Background */}
+          <div className="absolute inset-0 bg-gradient-to-b from-background via-primary/5 to-background" />
+          <div className="absolute inset-0 bg-grid-pattern" />
+          
+          <div className="container mx-auto max-w-7xl relative z-10">
+            {/* Section Header */}
+            <div className="text-center mb-20 space-y-4">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4 animate-pulse">
+                <Sparkles className="w-4 h-4" />
+                What We Do Best
+              </div>
+              <h2 className="text-5xl md:text-6xl font-bold mb-6">
+                <span className="bg-gradient-to-r from-foreground via-primary to-foreground bg-clip-text text-transparent">
+                  Transform Your Business
+                </span>
+                <br />
+                <span className="text-foreground/80">with AI Solutions</span>
+              </h2>
+              <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+                We don't just build tools—we create intelligent systems that grow with your business
+              </p>
             </div>
-            <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-              Transform Your Business with AI
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              We don't just build tools—we create intelligent systems that grow with your business
-            </p>
-          </div>
 
-          {/* Services Grid */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            
-            {/* Service 1: Influencer Portfolios */}
-            <div className="group relative p-8 rounded-2xl bg-card border border-border hover:border-primary/50 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-1">
-              {/* Glow effect */}
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-purple-500/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+            {/* Services Grid */}
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
               
-              <div className="relative z-10">
-                {/* Icon */}
-                <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                  <Palette className="w-7 h-7 text-primary" />
+              {/* Service 1: Influencer Portfolios - Dark themed with gradient */}
+              <div className="group relative overflow-hidden rounded-3xl transition-all duration-500 hover:scale-105 hover:-translate-y-2">
+                {/* Dark gradient background */}
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-purple-900 to-black" />
+                
+                {/* Animated particles background */}
+                <div className="absolute inset-0 opacity-30">
+                  <div className="absolute top-10 left-10 w-32 h-32 bg-purple-400 rounded-full blur-3xl animate-pulse" />
+                  <div className="absolute bottom-10 right-10 w-40 h-40 bg-pink-400 rounded-full blur-3xl animate-pulse delay-700" />
                 </div>
                 
                 {/* Content */}
-                <h3 className="text-2xl font-bold mb-3">Influencer Portfolio Sites</h3>
-                <p className="text-muted-foreground mb-6 leading-relaxed">
-                  Stand out from the crowd. We craft stunning, personal portfolio websites that showcase your brand and convert followers into clients—complete with AI-powered contact forms that actually understand your audience.
-                </p>
-                
-                {/* Features */}
-                <ul className="space-y-2 mb-6 text-sm">
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary mt-0.5">✓</span>
-                    <span>Custom design that matches your aesthetic</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary mt-0.5">✓</span>
-                    <span>AI chatbot trained on your content</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary mt-0.5">✓</span>
-                    <span>Automatic social media integration</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary mt-0.5">✓</span>
-                    <span>Powered by AYN AI branding</span>
-                  </li>
-                </ul>
-                
-                {/* Example */}
-                <a 
-                  href="https://ghazi.today" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
-                >
-                  See it in action: ghazi.today →
-                </a>
-              </div>
-            </div>
-
-            {/* Service 2: Custom AI Agents */}
-            <div className="group relative p-8 rounded-2xl bg-card border border-border hover:border-blue-500/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-1">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-cyan-500/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
-              
-              <div className="relative z-10">
-                <div className="w-14 h-14 rounded-xl bg-blue-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                  <MessageSquare className="w-7 h-7 text-blue-500" />
+                <div className="relative z-10 p-8 text-white">
+                  {/* Icon with glow */}
+                  <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-sm flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-lg shadow-purple-500/50">
+                    <Palette className="w-8 h-8 text-white" />
+                  </div>
+                  
+                  <h3 className="text-3xl font-bold mb-4">Influencer Portfolio Sites</h3>
+                  <p className="text-white/80 mb-6 leading-relaxed">
+                    Stand out from the crowd. We craft stunning, personal portfolio websites that showcase your brand and convert followers into clients—complete with AI-powered contact forms.
+                  </p>
+                  
+                  {/* Features */}
+                  <ul className="space-y-3 mb-6 text-sm">
+                    <li className="flex items-start gap-2">
+                      <span className="text-purple-300 mt-0.5">✓</span>
+                      <span>Custom design that matches your aesthetic</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-purple-300 mt-0.5">✓</span>
+                      <span>AI chatbot trained on your content</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-purple-300 mt-0.5">✓</span>
+                      <span>Automatic social media integration</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-purple-300 mt-0.5">✓</span>
+                      <span>Powered by AYN AI branding</span>
+                    </li>
+                  </ul>
+                  
+                  {/* CTA */}
+                  <a 
+                    href="https://ghazi.today" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white text-purple-900 font-semibold hover:bg-purple-100 transition-all shadow-lg hover:shadow-xl"
+                  >
+                    See Live Example
+                    <ArrowRight className="w-4 h-4" />
+                  </a>
                 </div>
-                
-                <h3 className="text-2xl font-bold mb-3">Custom AI Agents</h3>
-                <p className="text-muted-foreground mb-6 leading-relaxed">
-                  Your business is unique. Your AI should be too. We build intelligent agents tailored to your workflows—handling customer support, lead qualification, appointment booking, and more while you focus on what matters.
-                </p>
-                
-                <ul className="space-y-2 mb-6 text-sm">
-                  <li className="flex items-start gap-2">
-                    <span className="text-blue-500 mt-0.5">✓</span>
-                    <span>Trained on your company's knowledge base</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-blue-500 mt-0.5">✓</span>
-                    <span>Integrates with your existing tools</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-blue-500 mt-0.5">✓</span>
-                    <span>Handles customer inquiries 24/7</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-blue-500 mt-0.5">✓</span>
-                    <span>Learns and improves over time</span>
-                  </li>
-                </ul>
-                
-                <p className="text-sm font-medium text-blue-500">
-                  From lead generation to customer service—fully automated
-                </p>
               </div>
-            </div>
 
-            {/* Service 3: Business Automation */}
-            <div className="group relative p-8 rounded-2xl bg-card border border-border hover:border-green-500/50 transition-all duration-300 hover:shadow-2xl hover:shadow-green-500/10 hover:-translate-y-1">
-              <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-emerald-500/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
-              
-              <div className="relative z-10">
-                <div className="w-14 h-14 rounded-xl bg-green-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                  <Cog className="w-7 h-7 text-green-500" />
+              {/* Service 2: Custom AI Agents - Blue gradient */}
+              <div className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950 dark:to-cyan-950 border-2 border-blue-200 dark:border-blue-800 transition-all duration-500 hover:scale-105 hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-500/20">
+                {/* Animated gradient orb */}
+                <div className="absolute -top-20 -right-20 w-60 h-60 bg-blue-400 rounded-full blur-3xl opacity-20 animate-pulse" />
+                
+                <div className="relative z-10 p-8">
+                  {/* Icon */}
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-lg">
+                    <MessageSquare className="w-8 h-8 text-white" />
+                  </div>
+                  
+                  <h3 className="text-3xl font-bold mb-4 text-foreground">Custom AI Agents</h3>
+                  <p className="text-muted-foreground mb-6 leading-relaxed">
+                    Your business is unique. Your AI should be too. We build intelligent agents tailored to your workflows—handling customer support, lead qualification, and more.
+                  </p>
+                  
+                  <ul className="space-y-3 mb-6 text-sm">
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-500 mt-0.5">✓</span>
+                      <span>Trained on your company's knowledge base</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-500 mt-0.5">✓</span>
+                      <span>Integrates with your existing tools</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-500 mt-0.5">✓</span>
+                      <span>Handles customer inquiries 24/7</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-500 mt-0.5">✓</span>
+                      <span>Learns and improves over time</span>
+                    </li>
+                  </ul>
+                  
+                  <div className="px-4 py-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                    <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+                      From lead generation to customer service—fully automated
+                    </p>
+                  </div>
                 </div>
-                
-                <h3 className="text-2xl font-bold mb-3">Process Automation</h3>
-                <p className="text-muted-foreground mb-6 leading-relaxed">
-                  Stop wasting time on repetitive tasks. We analyze your operations, identify bottlenecks, and deploy smart automation that saves hours every day—no coding required from your team.
-                </p>
-                
-                <ul className="space-y-2 mb-6 text-sm">
-                  <li className="flex items-start gap-2">
-                    <span className="text-green-500 mt-0.5">✓</span>
-                    <span>Automated email responses and follow-ups</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-green-500 mt-0.5">✓</span>
-                    <span>Smart data entry and document processing</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-green-500 mt-0.5">✓</span>
-                    <span>Calendar management and scheduling</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-green-500 mt-0.5">✓</span>
-                    <span>Report generation on autopilot</span>
-                  </li>
-                </ul>
-                
-                <p className="text-sm font-medium text-green-500">
-                  Your team focuses on growth, not grunt work
-                </p>
               </div>
-            </div>
 
-            {/* Service 4: AYN Eng (Teaser) */}
-            <div className="group relative p-8 rounded-2xl bg-gradient-to-br from-orange-500/10 to-red-500/10 border-2 border-orange-500/30 hover:border-orange-500/50 transition-all duration-300 hover:shadow-2xl hover:shadow-orange-500/20 hover:-translate-y-1 md:col-span-2 lg:col-span-3">
-              <div className="relative z-10 text-center max-w-4xl mx-auto">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/20 text-orange-600 dark:text-orange-400 text-sm font-bold mb-4">
-                  <FileSpreadsheet className="w-4 h-4" />
-                  COMING SOON
-                </div>
+              {/* Service 3: Process Automation - Green gradient */}
+              <div className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950 border-2 border-green-200 dark:border-green-800 transition-all duration-500 hover:scale-105 hover:-translate-y-2 hover:shadow-2xl hover:shadow-green-500/20">
+                {/* Animated gradient orb */}
+                <div className="absolute -bottom-20 -left-20 w-60 h-60 bg-green-400 rounded-full blur-3xl opacity-20 animate-pulse delay-300" />
                 
-                <h3 className="text-3xl font-bold mb-4">AYN Eng: Civil Engineering AI</h3>
-                <p className="text-lg text-muted-foreground mb-6 leading-relaxed max-w-2xl mx-auto">
-                  Revolutionary AI for civil engineers. Upload survey data, get instant cut/fill analysis, AutoCAD-ready DXF files, and engineering reports that follow Saudi and GCC standards—all in seconds, not hours.
-                </p>
-                
-                <div className="flex flex-wrap justify-center gap-3 text-sm">
-                  <span className="px-4 py-2 rounded-full bg-background/50 border border-orange-500/30">
-                    Slope Analysis
-                  </span>
-                  <span className="px-4 py-2 rounded-full bg-background/50 border border-orange-500/30">
-                    Volume Calculations
-                  </span>
-                  <span className="px-4 py-2 rounded-full bg-background/50 border border-orange-500/30">
-                    DXF Export
-                  </span>
-                  <span className="px-4 py-2 rounded-full bg-background/50 border border-orange-500/30">
-                    GCC Compliance
-                  </span>
+                <div className="relative z-10 p-8">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-180 transition-all duration-500 shadow-lg">
+                    <Cog className="w-8 h-8 text-white" />
+                  </div>
+                  
+                  <h3 className="text-3xl font-bold mb-4 text-foreground">Process Automation</h3>
+                  <p className="text-muted-foreground mb-6 leading-relaxed">
+                    Stop wasting time on repetitive tasks. We analyze your operations, identify bottlenecks, and deploy smart automation that saves hours every day.
+                  </p>
+                  
+                  <ul className="space-y-3 mb-6 text-sm">
+                    <li className="flex items-start gap-2">
+                      <span className="text-green-500 mt-0.5">✓</span>
+                      <span>Automated email responses and follow-ups</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-green-500 mt-0.5">✓</span>
+                      <span>Smart data entry and document processing</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-green-500 mt-0.5">✓</span>
+                      <span>Calendar management and scheduling</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-green-500 mt-0.5">✓</span>
+                      <span>Report generation on autopilot</span>
+                    </li>
+                  </ul>
+                  
+                  <div className="px-4 py-3 rounded-xl bg-green-500/10 border border-green-500/20">
+                    <p className="text-sm font-semibold text-green-600 dark:text-green-400">
+                      Your team focuses on growth, not grunt work
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
 
+            {/* AYN Eng - Full Width Premium Card */}
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 p-1 animate-gradient-x">
+              {/* Inner card */}
+              <div className="relative overflow-hidden rounded-[22px] bg-gradient-to-br from-orange-50 to-pink-50 dark:from-orange-950/90 dark:to-pink-950/90 backdrop-blur-xl">
+                {/* Animated background */}
+                <div className="absolute inset-0 opacity-30">
+                  <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-orange-400 rounded-full blur-3xl animate-pulse" />
+                  <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-400 rounded-full blur-3xl animate-pulse delay-500" />
+                </div>
+                
+                <div className="relative z-10 p-12 text-center">
+                  {/* Badge */}
+                  <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-orange-500 to-pink-500 text-white text-sm font-bold mb-6 shadow-lg animate-bounce">
+                    <FileSpreadsheet className="w-5 h-5" />
+                    COMING SOON - Revolutionary Tech
+                  </div>
+                  
+                  <h3 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-orange-600 to-pink-600 dark:from-orange-400 dark:to-pink-400 bg-clip-text text-transparent">
+                    AYN Eng: Civil Engineering AI
+                  </h3>
+                  <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-4xl mx-auto leading-relaxed">
+                    Revolutionary AI for civil engineers. Upload survey data, get instant cut/fill analysis, AutoCAD-ready DXF files, and engineering reports that follow Saudi and GCC standards—all in seconds, not hours.
+                  </p>
+                  
+                  {/* Feature pills */}
+                  <div className="flex flex-wrap justify-center gap-4">
+                    <div className="px-6 py-3 rounded-full bg-white/80 dark:bg-black/40 backdrop-blur-sm border-2 border-orange-500/30 font-semibold text-foreground shadow-lg">
+                      📐 Slope Analysis
+                    </div>
+                    <div className="px-6 py-3 rounded-full bg-white/80 dark:bg-black/40 backdrop-blur-sm border-2 border-orange-500/30 font-semibold text-foreground shadow-lg">
+                      📊 Volume Calculations
+                    </div>
+                    <div className="px-6 py-3 rounded-full bg-white/80 dark:bg-black/40 backdrop-blur-sm border-2 border-orange-500/30 font-semibold text-foreground shadow-lg">
+                      📁 DXF Export
+                    </div>
+                    <div className="px-6 py-3 rounded-full bg-white/80 dark:bg-black/40 backdrop-blur-sm border-2 border-orange-500/30 font-semibold text-foreground shadow-lg">
+                      ✅ GCC Compliance
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* CTA */}
+            <div className="text-center mt-16">
+              <p className="text-2xl font-medium text-muted-foreground mb-8">
+                Ready to automate your business and scale faster?
+              </p>
+              <Button 
+                size="lg" 
+                className="text-lg px-10 py-7 rounded-full shadow-2xl hover:shadow-3xl transition-all hover:scale-110 bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90"
+                onClick={() => setShowAuthModal(true)}
+              >
+                <Building2 className="w-6 h-6 mr-3" />
+                Let's Build Something Amazing
+                <ArrowRight className="w-5 h-5 ml-3" />
+              </Button>
+            </div>
           </div>
-
-          {/* CTA */}
-          <div className="text-center mt-16">
-            <p className="text-lg text-muted-foreground mb-6">
-              Ready to automate your business and scale faster?
-            </p>
-            <Button 
-              size="lg" 
-              className="text-lg px-8 py-6 rounded-full shadow-xl hover:shadow-2xl transition-all hover:scale-105"
-              onClick={() => setShowAuthModal(true)}
-            >
-              <Building2 className="w-5 h-5 mr-2" />
-              Let's Build Something Amazing
-            </Button>
-          </div>
-        </div>
-      </section>
+        </section>
 
       {/* Footer */}
       <footer className="bg-card border-t border-border py-12">
