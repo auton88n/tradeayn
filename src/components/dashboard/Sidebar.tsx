@@ -102,28 +102,6 @@ export const Sidebar = ({
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* AI Modes */}
-        <SidebarGroup>
-          <SidebarGroupLabel>{t('common.quickStart')}</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {modes.map((mode) => (
-                <SidebarMenuItem key={mode.name}>
-                  <SidebarMenuButton
-                    onClick={() => onModeSelect(mode.name)}
-                    disabled={!hasAccess}
-                    tooltip={mode.description}
-                    className={selectedMode === mode.name ? 'bg-sidebar-accent text-sidebar-accent-foreground' : ''}
-                  >
-                    <mode.icon className="w-4 h-4" />
-                    <span>{mode.translatedName}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
         {/* Recent Chats */}
         <SidebarGroup>
           <div className={`flex items-center justify-between px-2 ${direction === 'rtl' ? 'flex-row-reverse' : ''}`}>
