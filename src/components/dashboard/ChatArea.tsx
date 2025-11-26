@@ -52,7 +52,7 @@ export const ChatArea = ({
   fileInputRef
 }: ChatAreaProps) => {
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full relative">
       {/* Messages Area */}
       <MessageList
         messages={messages}
