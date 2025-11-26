@@ -157,7 +157,7 @@ const LandingPage = () => {
               <ThemeToggle />
               <Button 
                 onClick={() => setShowAuthModal(true)}
-                className="bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 hover:from-cyan-600 hover:via-blue-600 hover:to-purple-700 text-white border border-white/20 shadow-lg shadow-cyan-500/25"
+                className="backdrop-blur-xl bg-white/10 text-white border border-white/20 hover:bg-white/20"
               >
                 {language === 'ar' ? 'ابدأ الآن' : 'Get Started'}
               </Button>
