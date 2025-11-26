@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Shield } from 'lucide-react';
+import { SidebarProvider } from '@/components/ui/sidebar';
 
 interface DashboardProps {
   user: User;
@@ -63,9 +64,13 @@ export default function Dashboard({ user }: DashboardProps) {
 
       {/* Main Content - conditionally render based on active view */}
       {activeView === 'admin' && auth.isAdmin ? (
-        <AdminPanel />
+        <div className="min-h-screen p-6 pt-16 bg-background">
+          <AdminPanel />
+        </div>
       ) : (
-        <DashboardContainer user={user} />
+        <SidebarProvider>
+          <DashboardContainer user={user} />
+        </SidebarProvider>
       )}
     </div>
   );
