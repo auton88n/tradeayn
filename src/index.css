@@ -842,6 +842,11 @@
     box-shadow: 0 0 15px hsl(25 95% 53% / 0.3);
   }
   
+  .send-button.mode-teal {
+    background: hsl(173 58% 39%); /* teal-500 equivalent */
+    box-shadow: 0 0 15px hsl(173 58% 39% / 0.3);
+  }
+  
   .send-button.mode-default {
     background: hsl(var(--primary));
   }
@@ -868,6 +873,11 @@
   .send-button.mode-orange:hover:not(:disabled) {
     background: hsl(25 95% 48%);
     box-shadow: 0 0 20px hsl(25 95% 53% / 0.4);
+  }
+  
+  .send-button.mode-teal:hover:not(:disabled) {
+    background: hsl(173 58% 34%);
+    box-shadow: 0 0 20px hsl(173 58% 39% / 0.4);
   }
   
   .send-button.mode-default:hover:not(:disabled) {
