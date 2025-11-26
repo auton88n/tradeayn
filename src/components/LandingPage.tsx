@@ -18,7 +18,7 @@ const LandingPage = () => {
   } = useLanguage();
 
   // Demo placeholder suggestions
-  const placeholders = language === 'ar' ? ['كيف أزيد إيراداتي؟', 'حلل منافسيني', 'اقترح استراتيجية', 'كيف أحسن المبيعات؟'] : ['How to increase revenue?', 'Analyze my competitors', 'Suggest a strategy', 'How to boost sales?'];
+  const placeholders = language === 'ar' ? ['زيادة الإيرادات؟', 'تحليل المنافسين', 'استراتيجية تسويق', 'تحسين المبيعات؟'] : ['Increase revenue?', 'Analyze competitors', 'Marketing strategy', 'Boost sales?'];
 
   // Rotate placeholders
   useEffect(() => {
@@ -141,7 +141,7 @@ const LandingPage = () => {
               <div className="relative bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 p-3 hover:border-white/20 transition-all">
                 <div className="flex items-center gap-3">
                   <div className="flex-shrink-0 px-4 py-2 rounded-2xl bg-white/10 text-white text-sm font-semibold">
-                    {language === 'ar' ? 'نمط عام' : 'General Mode'}
+                    {language === 'ar' ? 'عام' : 'General'}
                   </div>
 
                   <div className="relative flex-1">
