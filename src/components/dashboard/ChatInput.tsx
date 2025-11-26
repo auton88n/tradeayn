@@ -32,7 +32,8 @@ export const ChatInput = ({
   onDragOver,
   onDrop,
   fileInputRef,
-  hasMessages
+  hasMessages,
+  sidebarOpen = true
 }: ChatInputProps) => {
   const [inputMessage, setInputMessage] = useState('');
   const [isInputFocused, setIsInputFocused] = useState(false);
@@ -135,6 +136,7 @@ export const ChatInput = ({
       className={cn(
         "input-area",
         hasMessages ? "bottom-position" : "center-position",
+        sidebarOpen ? "sidebar-open" : "sidebar-closed",
         isDragOver && "drag-over"
       )}
       onDragEnter={onDragEnter}
