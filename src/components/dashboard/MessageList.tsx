@@ -25,10 +25,10 @@ export const MessageList = ({
 
   return (
     <ScrollArea className="flex-1 px-4 py-6">
-      <div className="max-w-4xl mx-auto space-y-4 relative min-h-full">
+      <div className="max-w-4xl mx-auto space-y-4">
         {/* Empty State - positioned to work with centered input */}
         {messages.length === 0 && !isTyping && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none pb-32">
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
             <div className="mb-6">
               <svg
                 className="w-16 h-16 text-primary"
