@@ -216,8 +216,24 @@ export const Sidebar = ({
       </SidebarContent>
 
       <SidebarFooter>
+        {/* Actions */}
+        <div className="flex items-center justify-between p-4 border-t">
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher />
+            <ThemeToggle />
+          </div>
+          <Button
+            onClick={onLogout}
+            variant="ghost"
+            size="sm"
+            title={t('common.signOut')}
+          >
+            <LogOut className="w-4 h-4" />
+          </Button>
+        </div>
+
         {/* User Profile */}
-        <div className="flex items-center gap-3 p-4 border-t">
+        <div className="flex items-center gap-3 px-4 pb-4">
           <Avatar className="w-10 h-10">
             <AvatarFallback>
               {userName?.charAt(0) || userEmail?.charAt(0) || 'U'}
@@ -231,22 +247,6 @@ export const Sidebar = ({
               {userEmail}
             </p>
           </div>
-        </div>
-
-        {/* Actions */}
-        <div className="flex items-center justify-between px-4 pb-4">
-          <div className="flex items-center gap-2">
-            <LanguageSwitcher />
-            <ThemeToggle />
-          </div>
-          <Button
-            onClick={onLogout}
-            variant="ghost"
-            size="sm"
-            title={t('common.signOut')}
-          >
-            <LogOut className="w-4 h-4" />
-          </Button>
         </div>
 
         {/* Copyright */}
