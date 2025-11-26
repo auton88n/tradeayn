@@ -260,8 +260,6 @@ export const Sidebar = ({
         </div>
         <div className="px-4 pb-4 text-xs text-center text-muted-foreground">
           © 2024 AYN AI
-          <br />
-          {t('common.poweredBy')}
         </div>
       </SidebarFooter>
     </>
