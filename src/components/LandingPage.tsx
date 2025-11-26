@@ -130,7 +130,7 @@ const LandingPage = () => {
   return (
     <div className="min-h-screen">
       {/* Navigation Header - Fixed Black */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-[#0a0a1a]/90 backdrop-blur-xl border-b border-white/5">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-xl border-b border-white/10">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -166,17 +166,11 @@ const LandingPage = () => {
         </div>
       </header>
 
-      {/* Hero Section - Interactive Demo - Futuristic Gradient Background */}
-      <section id="home" className="relative min-h-screen text-white pt-20 overflow-hidden bg-gradient-to-b from-[#0a0a1a] via-[#0f0f23] to-[#1a1030]">
-        {/* Top subtle blue glow */}
-        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[120px]" />
-        
-        {/* Main pink/magenta glow at bottom */}
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-gradient-to-t from-pink-500/30 via-purple-500/20 to-transparent blur-[80px]" />
-        
-        {/* Side purple accents */}
-        <div className="absolute bottom-20 right-20 w-[400px] h-[400px] bg-purple-600/20 rounded-full blur-[100px]" />
-        <div className="absolute bottom-40 left-10 w-[300px] h-[300px] bg-pink-600/15 rounded-full blur-[80px]" />
+      {/* Hero Section - Interactive Demo - Black Background */}
+      <section id="home" className="relative min-h-screen bg-black text-white pt-20 overflow-hidden">
+        {/* Subtle blur orbs */}
+        <div className="absolute top-20 left-10 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl" />
 
         <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-20">
           {/* Badge */}
