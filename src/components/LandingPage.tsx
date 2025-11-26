@@ -1,15 +1,64 @@
 import { useState } from 'react';
-import { Brain, TrendingUp, Target, BarChart3, Zap, Users, ArrowRight, Sparkles, Palette, Cog, FileSpreadsheet, MessageSquare, Building2 } from 'lucide-react';
+import { Brain, TrendingUp, Target, BarChart3, Zap, Users, ArrowRight, Sparkles, Palette, Cog, FileSpreadsheet, MessageSquare, Building2, Mail, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { AuthModal } from './auth/AuthModal';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ThemeToggle } from './theme-toggle';
+import { useToast } from '@/hooks/use-toast';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+
+const contactSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters').max(100),
+  email: z.string().email('Invalid email address').max(255),
+  message: z.string().min(10, 'Message must be at least 10 characters').max(1000),
+});
+
+type ContactFormValues = z.infer<typeof contactSchema>;
 
 const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { t } = useLanguage();
+  const { toast } = useToast();
+
+  const form = useForm<ContactFormValues>({
+    resolver: zodResolver(contactSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      message: '',
+    },
+  });
+
+  const onSubmitContact = async (data: ContactFormValues) => {
+    setIsSubmitting(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      toast({
+        title: "Message sent successfully!",
+        description: "We'll get back to you within 24 hours.",
+      });
+      
+      form.reset();
+    } catch (error) {
+      toast({
+        title: "Failed to send message",
+        description: "Please try again or contact us directly.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const features = [
     {
@@ -56,6 +105,9 @@ const LandingPage = () => {
               </a>
               <a href="#services" className="text-muted-foreground hover:text-foreground transition-colors">
                 Services
+              </a>
+              <a href="#contact" className="text-muted-foreground hover:text-foreground transition-colors">
+                Contact
               </a>
             </nav>
             
@@ -385,6 +437,154 @@ const LandingPage = () => {
                 Let's Build Something Amazing
                 <ArrowRight className="w-5 h-5 ml-3" />
               </Button>
+            </div>
+          </div>
+        </section>
+
+        {/* Contact Section */}
+        <section id="contact" className="py-24 px-4 relative overflow-hidden">
+          {/* Animated Background */}
+          <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-background to-primary/5" />
+          <div className="absolute inset-0 bg-grid-pattern opacity-50" />
+          
+          <div className="container mx-auto max-w-4xl relative z-10">
+            {/* Section Header */}
+            <div className="text-center mb-16 space-y-4">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4 animate-pulse">
+                <Mail className="w-4 h-4" />
+                Get In Touch
+              </div>
+              <h2 className="text-5xl md:text-6xl font-bold mb-6">
+                <span className="bg-gradient-to-r from-foreground via-primary to-foreground bg-clip-text text-transparent">
+                  Let's Talk
+                </span>
+              </h2>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                Ready to transform your business with AI? Drop us a message and we'll get back to you within 24 hours.
+              </p>
+            </div>
+
+            {/* Contact Form Card */}
+            <div className="relative group">
+              {/* Animated gradient border */}
+              <div className="absolute -inset-1 bg-gradient-to-r from-primary via-purple-500 to-primary rounded-3xl blur-lg opacity-30 group-hover:opacity-50 transition duration-1000 animate-gradient-x" />
+              
+              {/* Form Container */}
+              <div className="relative bg-card/80 backdrop-blur-xl border border-border rounded-3xl p-8 md:p-12 shadow-2xl">
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmitContact)} className="space-y-8">
+                    
+                    {/* Name Field */}
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem className="relative group/field">
+                          <FormLabel className="text-base font-semibold text-foreground/80 mb-2 block">
+                            Full Name
+                          </FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Input 
+                                {...field}
+                                placeholder="John Doe"
+                                className="h-14 text-base bg-background/50 border-2 border-border focus:border-primary transition-all duration-300 rounded-xl px-4 group-focus-within/field:shadow-lg group-focus-within/field:shadow-primary/20"
+                                disabled={isSubmitting}
+                              />
+                            </div>
+                          </FormControl>
+                          <FormMessage className="text-sm mt-2" />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Email Field */}
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem className="relative group/field">
+                          <FormLabel className="text-base font-semibold text-foreground/80 mb-2 block">
+                            Email Address
+                          </FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Input 
+                                {...field}
+                                type="email"
+                                placeholder="john@example.com"
+                                className="h-14 text-base bg-background/50 border-2 border-border focus:border-primary transition-all duration-300 rounded-xl px-4 group-focus-within/field:shadow-lg group-focus-within/field:shadow-primary/20"
+                                disabled={isSubmitting}
+                              />
+                            </div>
+                          </FormControl>
+                          <FormMessage className="text-sm mt-2" />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Message Field */}
+                    <FormField
+                      control={form.control}
+                      name="message"
+                      render={({ field }) => (
+                        <FormItem className="relative group/field">
+                          <FormLabel className="text-base font-semibold text-foreground/80 mb-2 block">
+                            Your Message
+                          </FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Textarea 
+                                {...field}
+                                placeholder="Tell us about your project or ask us anything..."
+                                className="min-h-[160px] text-base bg-background/50 border-2 border-border focus:border-primary transition-all duration-300 rounded-xl px-4 py-4 resize-none group-focus-within/field:shadow-lg group-focus-within/field:shadow-primary/20"
+                                disabled={isSubmitting}
+                              />
+                            </div>
+                          </FormControl>
+                          <FormMessage className="text-sm mt-2" />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Submit Button */}
+                    <div className="flex justify-center pt-4">
+                      <Button
+                        type="submit"
+                        size="lg"
+                        disabled={isSubmitting}
+                        className="text-lg px-12 py-7 rounded-full shadow-2xl hover:shadow-3xl transition-all hover:scale-110 bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-3" />
+                            Sending...
+                          </>
+                        ) : (
+                          <>
+                            <Send className="w-5 h-5 mr-3" />
+                            Send Message
+                            <ArrowRight className="w-5 h-5 ml-3" />
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </div>
+            </div>
+
+            {/* Contact Info */}
+            <div className="mt-12 text-center">
+              <p className="text-muted-foreground mb-2">
+                Or reach us directly at
+              </p>
+              <a 
+                href="mailto:contact@ayn.ai" 
+                className="text-lg font-semibold text-primary hover:underline"
+              >
+                contact@ayn.ai
+              </a>
             </div>
           </div>
         </section>
