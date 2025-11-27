@@ -7,7 +7,7 @@ export const MobileMockup = () => {
         <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-blue-500/20 rounded-[3.5rem] blur-3xl" />
         
         {/* Phone container */}
-        <div className="relative w-[340px] h-[700px] bg-gradient-to-br from-slate-800 via-slate-900 to-black rounded-[3.5rem] p-[3px] shadow-2xl">
+        <div className="relative w-[300px] h-[620px] bg-gradient-to-br from-slate-800 via-slate-900 to-black rounded-[3.5rem] p-[3px] shadow-2xl">
           {/* Inner frame */}
           <div className="w-full h-full bg-black rounded-[3.3rem] p-[12px]">
             {/* Screen */}
