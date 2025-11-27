@@ -200,31 +200,25 @@ export const Sidebar = ({
                           {showChatSelection && <Checkbox checked={selectedChats.has(originalIndex)} onCheckedChange={() => onToggleChatSelection(originalIndex)} className="mr-2" />}
                             <SidebarMenuButton 
                               onClick={() => !showChatSelection && onLoadChat(chat)} 
-                              className="flex-1 h-auto py-3 px-3 hover:bg-muted/50 rounded-lg group overflow-visible"
+                              className="flex-1 h-auto py-3 px-2 hover:bg-muted/50 rounded-lg group !overflow-visible"
                             >
-                            <div className="flex-1 min-w-0 space-y-1">
-                              {/* Title row with icon, star, and timestamp */}
-                              <div className="flex items-center justify-between gap-2">
-                                <div className="flex items-center gap-2 min-w-0 max-w-[60%]">
-                                  <MessageSquare className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                                  <p className="text-sm font-medium truncate">{chat.title}</p>
-                                </div>
-                                <div className="flex items-center gap-1 flex-shrink-0 ml-auto">
-                                  <button
-                                    onClick={(e) => togglePin(chat.sessionId, e)}
-                                    className={`${isPinned ? '' : 'opacity-0 group-hover:opacity-100'} transition-opacity p-1 hover:bg-accent rounded`}
-                                  >
-                                    <Star 
-                                      className={`w-3.5 h-3.5 ${isPinned ? 'fill-yellow-500 text-yellow-500' : 'text-muted-foreground'}`}
-                                    />
-                                  </button>
-                                  <span className="text-xs text-muted-foreground whitespace-nowrap">
-                                    {formatCompactTime(new Date(chat.timestamp))}
-                                  </span>
-                                </div>
+                            <div className="w-full space-y-1">
+                              {/* Title row - single flex with proper spacing */}
+                              <div className="flex items-center gap-1.5 w-full">
+                                <MessageSquare className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                                <span className="text-sm font-medium truncate flex-1 min-w-0">{chat.title}</span>
+                                <button
+                                  onClick={(e) => togglePin(chat.sessionId, e)}
+                                  className={`${isPinned ? '' : 'opacity-0 group-hover:opacity-100'} transition-opacity p-0.5 hover:bg-accent rounded flex-shrink-0`}
+                                >
+                                  <Star className={`w-3 h-3 ${isPinned ? 'fill-yellow-500 text-yellow-500' : 'text-muted-foreground'}`} />
+                                </button>
+                                <span className="text-xs text-muted-foreground flex-shrink-0">
+                                  {formatCompactTime(new Date(chat.timestamp))}
+                                </span>
                               </div>
                               {/* Preview text */}
-                              <p className="text-xs text-muted-foreground truncate pl-6">{chat.lastMessage}</p>
+                              <p className="text-xs text-muted-foreground truncate pl-5">{chat.lastMessage}</p>
                             </div>
                           </SidebarMenuButton>
                         </div>
