@@ -170,7 +170,7 @@ export const Sidebar = ({
             </button>
           </PopoverTrigger>
           <PopoverContent 
-            className="w-48 p-2 animate-in slide-in-from-left-2 fade-in-0 duration-300 z-50 bg-background border shadow-xl" 
+            className="w-48 p-1 animate-in slide-in-from-left-2 fade-in-0 duration-300 z-50 bg-background border shadow-xl" 
             align="end" 
             side="right"
             sideOffset={8}
@@ -178,7 +178,7 @@ export const Sidebar = ({
             <Button 
               onClick={() => setShowAvatarUpload(true)}
               variant="ghost" 
-              className="w-full justify-start hover:bg-accent transition-all duration-200 hover:scale-105 mb-1"
+              className="w-full justify-start h-9 px-2 rounded-sm hover:bg-accent focus-visible:ring-0 focus-visible:ring-offset-0"
             >
               <Camera className="w-4 h-4 mr-2" />
               {t('profile.changePhoto')}
@@ -186,7 +186,7 @@ export const Sidebar = ({
             <Button 
               onClick={() => navigate('/settings')}
               variant="ghost" 
-              className="w-full justify-start hover:bg-accent transition-all duration-200 hover:scale-105 mb-1"
+              className="w-full justify-start h-9 px-2 rounded-sm hover:bg-accent focus-visible:ring-0 focus-visible:ring-offset-0"
             >
               <Settings className="w-4 h-4 mr-2" />
               {t('settings.title')}
@@ -194,7 +194,7 @@ export const Sidebar = ({
             <Button 
               onClick={onLogout} 
               variant="ghost" 
-              className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10 transition-all duration-200 hover:scale-105"
+              className="w-full justify-start h-9 px-2 rounded-sm text-destructive hover:text-destructive hover:bg-destructive/10 focus-visible:ring-0 focus-visible:ring-offset-0"
             >
               <LogOut className="w-4 h-4 mr-2" />
               {t('common.signOut')}
