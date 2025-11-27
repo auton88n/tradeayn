@@ -49,19 +49,6 @@ export default function Dashboard({ user }: DashboardProps) {
         onAccept={auth.acceptTerms}
       />
 
-      {/* Admin Toggle Button (only for admins) */}
-      {auth.isAdmin && (
-        <Button
-          variant="outline"
-          size="sm"
-          className="fixed top-4 right-4 z-50"
-          onClick={() => setActiveView(activeView === 'chat' ? 'admin' : 'chat')}
-        >
-          <Shield className="w-4 h-4 mr-2" />
-          {activeView === 'chat' ? 'Admin Panel' : 'Back to Chat'}
-        </Button>
-      )}
-
       {/* Main Content - conditionally render based on active view */}
       {activeView === 'admin' && auth.isAdmin ? (
         <div className="min-h-screen p-6 pt-16 bg-background">
