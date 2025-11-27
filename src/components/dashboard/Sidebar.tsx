@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-import { Plus, LogOut, Trash2, Camera, Settings } from 'lucide-react';
+import { Plus, LogOut, Trash2, Camera, Settings, X } from 'lucide-react';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
@@ -46,18 +46,28 @@ export const Sidebar = ({
   const [showAvatarUpload, setShowAvatarUpload] = useState(false);
   return <>
       <SidebarHeader>
-        {/* AYN Status */}
-        <div className="flex items-center gap-3 p-4 border-b">
-          <span className="text-sm font-medium">AYN AI</span>
-          <Badge variant={hasAccess ? "default" : "secondary"} className="text-xs">
-            {isTyping ? t('common.thinking') : hasAccess ? t('common.active') : t('common.inactive')}
-          </Badge>
-        </div>
+        <div className="flex items-center justify-between p-4 border-b gap-3">
+          {/* Left: AYN Status */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">AYN AI</span>
+            <Badge variant={hasAccess ? "default" : "secondary"} className="text-xs">
+              {isTyping ? t('common.thinking') : hasAccess ? t('common.active') : t('common.inactive')}
+            </Badge>
+          </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-2 p-4 border-b">
-          <LanguageSwitcher />
-          <ThemeToggle />
+          {/* Right: Actions */}
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher />
+            <ThemeToggle />
+            <Button 
+              onClick={toggleSidebar} 
+              variant="ghost" 
+              size="sm" 
+              className="h-8 w-8 p-0"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </SidebarHeader>
 
