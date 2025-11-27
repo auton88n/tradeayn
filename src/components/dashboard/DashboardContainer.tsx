@@ -21,6 +21,8 @@ import { MessageSquare, TrendingUp, Search, FileText, Eye, Hammer, Menu, X } fro
 
 interface DashboardContainerProps {
   user: User;
+  isAdmin?: boolean;
+  onAdminPanelClick?: () => void;
 }
 
 // Get modes with translations
@@ -75,7 +77,7 @@ const getModes = (t: (key: string) => string): AIModeConfig[] => [
   },
 ];
 
-export const DashboardContainer = ({ user }: DashboardContainerProps) => {
+export const DashboardContainer = ({ user, isAdmin, onAdminPanelClick }: DashboardContainerProps) => {
   const { toast } = useToast();
   const { t, language, setLanguage } = useLanguage();
   
@@ -225,6 +227,8 @@ export const DashboardContainer = ({ user }: DashboardContainerProps) => {
       handleReplyToMessage={handleReplyToMessage}
       handleSendMessage={handleSendMessage}
       handleLogout={handleLogout}
+      isAdmin={isAdmin}
+      onAdminPanelClick={onAdminPanelClick}
     />
   );
 };
@@ -244,7 +248,9 @@ const DashboardContent = ({
   handleCopyMessage,
   handleReplyToMessage,
   handleSendMessage,
-  handleLogout
+  handleLogout,
+  isAdmin,
+  onAdminPanelClick
 }: any) => {
   const { open, toggleSidebar } = useSidebar();
 
@@ -285,6 +291,8 @@ const DashboardContent = ({
           onShowChatSelection={chatSession.setShowChatSelection}
           onLogout={handleLogout}
           onAvatarUpdated={auth.loadUserProfile}
+          isAdmin={isAdmin}
+          onAdminPanelClick={onAdminPanelClick}
         />
       </ShadcnSidebar>
 

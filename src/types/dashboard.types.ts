@@ -262,4 +262,6 @@ export interface SidebarProps {
   onShowChatSelection: (show: boolean) => void;
   onLogout: () => Promise<void>;
   onAvatarUpdated?: () => void;
+  isAdmin?: boolean;
+  onAdminPanelClick?: () => void;
 }

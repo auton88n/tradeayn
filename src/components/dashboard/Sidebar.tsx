@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-import { Plus, LogOut, Trash2, Camera, Settings, X, MessageSquare, Search, Star } from 'lucide-react';
+import { Plus, LogOut, Trash2, Camera, Settings, X, MessageSquare, Search, Star, Shield } from 'lucide-react';
 import { format } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -35,7 +35,9 @@ export const Sidebar = ({
   onDeleteSelected,
   onShowChatSelection,
   onLogout,
-  onAvatarUpdated
+  onAvatarUpdated,
+  isAdmin,
+  onAdminPanelClick
 }: SidebarProps) => {
   const { t, language, direction } = useLanguage();
   const { toggleSidebar } = useSidebar();
@@ -286,6 +288,16 @@ export const Sidebar = ({
               <Settings className="w-4 h-4 mr-2" />
               {t('settings.title')}
             </Button>
+            {isAdmin && (
+              <Button 
+                onClick={onAdminPanelClick}
+                variant="ghost" 
+                className="w-full justify-start h-9 px-2 rounded-sm hover:bg-accent focus-visible:ring-0 focus-visible:ring-offset-0"
+              >
+                <Shield className="w-4 h-4 mr-2" />
+                {language === 'ar' ? 'لوحة الإدارة' : 'Admin Panel'}
+              </Button>
+            )}
             <Button 
               onClick={onLogout} 
               variant="ghost" 
