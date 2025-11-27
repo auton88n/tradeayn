@@ -196,10 +196,10 @@ export const Sidebar = ({
                       <SidebarMenuItem key={chat.sessionId}>
                         <div className="flex items-center gap-2 w-full border-b last:border-b-0">
                           {showChatSelection && <Checkbox checked={selectedChats.has(originalIndex)} onCheckedChange={() => onToggleChatSelection(originalIndex)} className="mr-2" />}
-                          <SidebarMenuButton 
-                            onClick={() => !showChatSelection && onLoadChat(chat)} 
-                            className="flex-1 h-auto py-3 px-3 hover:bg-muted/50 rounded-lg group"
-                          >
+                            <SidebarMenuButton 
+                              onClick={() => !showChatSelection && onLoadChat(chat)} 
+                              className="flex-1 h-auto py-3 px-3 hover:bg-muted/50 rounded-lg group overflow-visible"
+                            >
                             <div className="flex-1 min-w-0 space-y-1">
                               {/* Title row with icon, star, and timestamp */}
                               <div className="flex items-center justify-between gap-2">
