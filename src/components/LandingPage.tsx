@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Brain, TrendingUp, Target, BarChart3, Zap, Users, ArrowRight, Sparkles, Palette, Cog, FileSpreadsheet, MessageSquare, Building2 } from 'lucide-react';
+import { Brain, TrendingUp, Target, BarChart3, Zap, Users, ArrowRight, Sparkles, Palette, Cog, FileSpreadsheet, MessageSquare, Building2, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { AuthModal } from './auth/AuthModal';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ThemeToggle } from './theme-toggle';
+import { MobileMockup } from '@/components/MobileMockup';
 
 const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -175,57 +176,72 @@ const LandingPage = () => {
             </p>
           </div>
 
-          {/* Services Grid */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            
-            {/* Service 1: Influencer Portfolios */}
-            <div className="group relative p-8 rounded-2xl bg-card border border-border hover:border-primary/50 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-1">
-              {/* Glow effect */}
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-purple-500/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+          {/* Service 1: Influencer Portfolios - WITH MOCKUP */}
+          <div className="grid lg:grid-cols-2 gap-12 items-center mb-24">
+            {/* Left: Mobile Mockup */}
+            <div className="order-2 lg:order-1">
+              <MobileMockup />
+            </div>
+
+            {/* Right: Service Info */}
+            <div className="order-1 lg:order-2 space-y-6">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 font-bold backdrop-blur-sm">
+                <Palette className="w-5 h-5" />
+                Featured Service
+              </div>
               
-              <div className="relative z-10">
-                {/* Icon */}
-                <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                  <Palette className="w-7 h-7 text-primary" />
-                </div>
-                
-                {/* Content */}
-                <h3 className="text-2xl font-bold mb-3">Influencer Portfolio Sites</h3>
-                <p className="text-muted-foreground mb-6 leading-relaxed">
-                  Stand out from the crowd. We craft stunning, personal portfolio websites that showcase your brand and convert followers into clients—complete with AI-powered contact forms that actually understand your audience.
-                </p>
-                
-                {/* Features */}
-                <ul className="space-y-2 mb-6 text-sm">
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary mt-0.5">✓</span>
-                    <span>Custom design that matches your aesthetic</span>
+              <h2 className="text-4xl md:text-5xl font-black">
+                Professional Influencer Portfolios
+              </h2>
+              
+              <p className="text-xl text-muted-foreground leading-relaxed">
+                We design stunning portfolio websites that showcase your brand professionally with an AI chatbot trained on your content
+              </p>
+
+              <ul className="space-y-4">
+                {[
+                  'Custom design matching your brand',
+                  'AI chatbot trained on your content',
+                  'Automatic social media integration',
+                  'Smart contact forms',
+                  'Mobile & SEO optimized'
+                ].map((feature, i) => (
+                  <li key={i} className="flex items-start gap-3">
+                    <div className="w-6 h-6 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-purple-600 dark:text-purple-400 text-sm">✓</span>
+                    </div>
+                    <span className="text-lg">{feature}</span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary mt-0.5">✓</span>
-                    <span>AI chatbot trained on your content</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary mt-0.5">✓</span>
-                    <span>Automatic social media integration</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary mt-0.5">✓</span>
-                    <span>Powered by AYN AI branding</span>
-                  </li>
-                </ul>
-                
-                {/* Example */}
-                <a 
-                  href="https://ghazi.today" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
+                ))}
+              </ul>
+
+              <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                <Button 
+                  onClick={() => setShowAuthModal(true)}
+                  size="lg"
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-xl px-8 shadow-lg"
                 >
-                  See it in action: ghazi.today →
-                </a>
+                  Start Your Project
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
+                
+                <Button 
+                  variant="outline"
+                  size="lg"
+                  asChild
+                  className="rounded-xl px-8"
+                >
+                  <a href="https://ghazi.today" target="_blank" rel="noopener noreferrer">
+                    View Live Example
+                    <ExternalLink className="w-4 h-4 ml-2" />
+                  </a>
+                </Button>
               </div>
             </div>
+          </div>
+
+          {/* Services Grid - Remaining Services */}
+          <div className="grid md:grid-cols-2 gap-8">
 
             {/* Service 2: Custom AI Agents */}
             <div className="group relative p-8 rounded-2xl bg-card border border-border hover:border-blue-500/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-1">
