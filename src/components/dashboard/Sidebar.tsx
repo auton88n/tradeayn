@@ -218,7 +218,9 @@ export const Sidebar = ({
                                 </span>
                               </div>
                               {/* Preview text */}
-                              <p className="text-xs text-muted-foreground truncate pl-5">{chat.lastMessage}</p>
+                              <p className="text-xs text-muted-foreground truncate pl-5">
+                                {chat.lastMessage.length > 40 ? `${chat.lastMessage.substring(0, 40)}...` : chat.lastMessage}
+                              </p>
                             </div>
                           </SidebarMenuButton>
                         </div>
