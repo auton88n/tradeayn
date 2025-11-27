@@ -170,9 +170,9 @@ export const Sidebar = ({
             </button>
           </PopoverTrigger>
           <PopoverContent 
-            className="w-48 p-1 animate-in slide-in-from-left-2 fade-in-0 duration-300 z-50 bg-background border shadow-xl" 
-            align="end" 
-            side="right"
+            className="w-48 p-1 animate-in slide-in-from-bottom-2 fade-in-0 duration-300 z-50 bg-background border shadow-xl" 
+            align="start" 
+            side="top"
             sideOffset={8}
           >
             <Button 
