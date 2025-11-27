@@ -203,14 +203,14 @@ export const Sidebar = ({
                             <div className="flex-1 min-w-0 space-y-1">
                               {/* Title row with icon, star, and timestamp */}
                               <div className="flex items-center justify-between gap-2">
-                                <div className="flex items-center gap-2 min-w-0 flex-1">
+                                <div className="flex items-center gap-2 min-w-0 max-w-[60%]">
                                   <MessageSquare className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                                   <p className="text-sm font-medium truncate">{chat.title}</p>
                                 </div>
-                                <div className="flex items-center gap-1 flex-shrink-0">
+                                <div className="flex items-center gap-1 flex-shrink-0 ml-auto">
                                   <button
                                     onClick={(e) => togglePin(chat.sessionId, e)}
-                                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-accent rounded"
+                                    className={`${isPinned ? '' : 'opacity-0 group-hover:opacity-100'} transition-opacity p-1 hover:bg-accent rounded`}
                                   >
                                     <Star 
                                       className={`w-3.5 h-3.5 ${isPinned ? 'fill-yellow-500 text-yellow-500' : 'text-muted-foreground'}`}
