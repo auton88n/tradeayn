@@ -704,6 +704,54 @@ export type Database = {
         }
         Relationships: []
       }
+      user_settings: {
+        Row: {
+          allow_personalization: boolean | null
+          created_at: string | null
+          desktop_notifications: boolean | null
+          email_marketing: boolean | null
+          email_system_alerts: boolean | null
+          email_usage_warnings: boolean | null
+          email_weekly_summary: boolean | null
+          id: string
+          in_app_sounds: boolean | null
+          share_anonymous_data: boolean | null
+          store_chat_history: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          allow_personalization?: boolean | null
+          created_at?: string | null
+          desktop_notifications?: boolean | null
+          email_marketing?: boolean | null
+          email_system_alerts?: boolean | null
+          email_usage_warnings?: boolean | null
+          email_weekly_summary?: boolean | null
+          id?: string
+          in_app_sounds?: boolean | null
+          share_anonymous_data?: boolean | null
+          store_chat_history?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          allow_personalization?: boolean | null
+          created_at?: string | null
+          desktop_notifications?: boolean | null
+          email_marketing?: boolean | null
+          email_system_alerts?: boolean | null
+          email_usage_warnings?: boolean | null
+          email_weekly_summary?: boolean | null
+          id?: string
+          in_app_sounds?: boolean | null
+          share_anonymous_data?: boolean | null
+          store_chat_history?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       wallet_addresses: {
         Row: {
           created_at: string

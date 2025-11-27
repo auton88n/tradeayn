@@ -5,12 +5,13 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-import { Plus, LogOut, Trash2, Camera } from 'lucide-react';
+import { Plus, LogOut, Trash2, Camera, Settings } from 'lucide-react';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { ProfileAvatarUpload } from './ProfileAvatarUpload';
+import { useNavigate } from 'react-router-dom';
 import type { SidebarProps } from '@/types/dashboard.types';
 export const Sidebar = ({
   userName,
@@ -41,6 +42,7 @@ export const Sidebar = ({
   const {
     toggleSidebar
   } = useSidebar();
+  const navigate = useNavigate();
   const [showAvatarUpload, setShowAvatarUpload] = useState(false);
   return <>
       <SidebarHeader>
@@ -170,6 +172,14 @@ export const Sidebar = ({
             >
               <Camera className="w-4 h-4 mr-2" />
               {t('profile.changePhoto')}
+            </Button>
+            <Button 
+              onClick={() => navigate('/settings')}
+              variant="ghost" 
+              className="w-full justify-start hover:bg-accent transition-all duration-200 hover:scale-105 mb-1"
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              {t('settings.title')}
             </Button>
             <Button 
               onClick={onLogout} 
