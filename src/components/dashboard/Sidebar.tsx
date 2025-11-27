@@ -44,8 +44,6 @@ export const Sidebar = ({
   const navigate = useNavigate();
   const [showAvatarUpload, setShowAvatarUpload] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [editingChatId, setEditingChatId] = useState<string | null>(null);
-  const [editingTitle, setEditingTitle] = useState('');
   const [pinnedChats, setPinnedChats] = useState<Set<string>>(() => {
     const stored = localStorage.getItem('pinnedChats');
     return stored ? new Set(JSON.parse(stored)) : new Set();
@@ -65,27 +63,6 @@ export const Sidebar = ({
     return format(date, 'MMM d');
   };
 
-  const startEditing = (sessionId: string, currentTitle: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setEditingChatId(sessionId);
-    setEditingTitle(currentTitle);
-  };
-
-  const saveTitle = (sessionId: string) => {
-    if (editingTitle.trim()) {
-      const customTitles = JSON.parse(localStorage.getItem('chatTitles') || '{}');
-      customTitles[sessionId] = editingTitle.trim();
-      localStorage.setItem('chatTitles', JSON.stringify(customTitles));
-    }
-    setEditingChatId(null);
-    setEditingTitle('');
-  };
-
-  const cancelEditing = () => {
-    setEditingChatId(null);
-    setEditingTitle('');
-  };
-
   const togglePin = (sessionId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setPinnedChats(prev => {
@@ -101,16 +78,12 @@ export const Sidebar = ({
   };
 
   const filteredAndSortedChats = React.useMemo(() => {
-    const customTitles = JSON.parse(localStorage.getItem('chatTitles') || '{}');
-    let filtered = recentChats.map(chat => ({
-      ...chat,
-      title: customTitles[chat.sessionId] || chat.title
-    }));
+    let filtered = recentChats;
     
     // Filter by search query
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(chat => 
+      filtered = recentChats.filter(chat => 
         chat.title.toLowerCase().includes(query) ||
         chat.lastMessage.toLowerCase().includes(query)
       );
@@ -233,27 +206,7 @@ export const Sidebar = ({
                               {/* Title row - single flex with proper spacing */}
                               <div className="flex items-center gap-1.5 w-full">
                                 <MessageSquare className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                                {editingChatId === chat.sessionId ? (
-                                  <Input
-                                    value={editingTitle}
-                                    onChange={(e) => setEditingTitle(e.target.value)}
-                                    onBlur={() => saveTitle(chat.sessionId)}
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter') saveTitle(chat.sessionId);
-                                      if (e.key === 'Escape') cancelEditing();
-                                    }}
-                                    className="h-6 text-sm flex-1 min-w-0"
-                                    autoFocus
-                                    onClick={(e) => e.stopPropagation()}
-                                  />
-                                ) : (
-                                  <span 
-                                    onClick={(e) => startEditing(chat.sessionId, chat.title, e)}
-                                    className="text-sm font-medium truncate flex-1 min-w-0 cursor-pointer hover:text-primary"
-                                  >
-                                    {chat.title}
-                                  </span>
-                                )}
+                                <span className="text-sm font-medium truncate flex-1 min-w-0">{chat.title}</span>
                                 <button
                                   onClick={(e) => togglePin(chat.sessionId, e)}
                                   className={`${isPinned ? '' : 'opacity-0 group-hover:opacity-100'} transition-opacity p-0.5 hover:bg-accent rounded flex-shrink-0`}
