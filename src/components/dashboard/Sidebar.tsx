@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-import { Plus, LogOut, Trash2, Camera, Settings, X } from 'lucide-react';
+import { Plus, LogOut, Trash2, Camera, Settings, X, MessageSquare } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
@@ -124,12 +125,25 @@ export const Sidebar = ({
                   {t('common.noRecentChats')}
                 </div> : <>
                   {recentChats.map((chat, index) => <SidebarMenuItem key={chat.sessionId}>
-                      <div className="flex items-center gap-2 w-full">
+                      <div className="flex items-center gap-2 w-full border-b last:border-b-0">
                         {showChatSelection && <Checkbox checked={selectedChats.has(index)} onCheckedChange={() => onToggleChatSelection(index)} className="mr-2" />}
-                        <SidebarMenuButton onClick={() => !showChatSelection && onLoadChat(chat)} className="flex-1">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">{chat.title}</p>
-                            <p className="text-xs text-muted-foreground truncate">{chat.lastMessage}</p>
+                        <SidebarMenuButton 
+                          onClick={() => !showChatSelection && onLoadChat(chat)} 
+                          className="flex-1 h-auto py-3 px-3 hover:bg-muted/50 rounded-lg"
+                        >
+                          <div className="flex-1 min-w-0 space-y-1">
+                            {/* Title row with icon and timestamp */}
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 min-w-0 flex-1">
+                                <MessageSquare className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                                <p className="text-sm font-medium truncate">{chat.title}</p>
+                              </div>
+                              <span className="text-xs text-muted-foreground flex-shrink-0">
+                                {formatDistanceToNow(new Date(chat.timestamp), { addSuffix: true })}
+                              </span>
+                            </div>
+                            {/* Preview text */}
+                            <p className="text-xs text-muted-foreground truncate pl-6">{chat.lastMessage}</p>
                           </div>
                         </SidebarMenuButton>
                       </div>
