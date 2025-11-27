@@ -6,7 +6,7 @@ import { AuthModal } from './auth/AuthModal';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ThemeToggle } from './theme-toggle';
-import { DesktopMockup } from '@/components/services/DesktopMockup';
+import { MobileMockup } from '@/components/MobileMockup';
 
 const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -178,9 +178,9 @@ const LandingPage = () => {
 
           {/* Service 1: Influencer Portfolios - WITH MOCKUP */}
           <div className="grid lg:grid-cols-2 gap-12 items-center mb-24">
-            {/* Left: Desktop Mockup */}
+            {/* Left: Mobile Mockup */}
             <div className="order-2 lg:order-1">
-              <DesktopMockup />
+              <MobileMockup />
             </div>
 
             {/* Right: Service Info */}
