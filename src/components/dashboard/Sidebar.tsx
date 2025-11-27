@@ -6,7 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { Plus, LogOut, Trash2, Camera, Settings, X, MessageSquare, Search, Star } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { format } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -46,6 +46,20 @@ export const Sidebar = ({
     const stored = localStorage.getItem('pinnedChats');
     return stored ? new Set(JSON.parse(stored)) : new Set();
   });
+
+  const formatCompactTime = (date: Date): string => {
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+    
+    if (diffMins < 1) return language === 'ar' ? 'الآن' : 'Now';
+    if (diffMins < 60) return `${diffMins}${language === 'ar' ? 'د' : 'm'}`;
+    if (diffHours < 24) return `${diffHours}${language === 'ar' ? 'س' : 'h'}`;
+    if (diffDays === 1) return language === 'ar' ? 'أمس' : 'Yesterday';
+    return format(date, 'MMM d');
+  };
 
   const togglePin = (sessionId: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -202,8 +216,8 @@ export const Sidebar = ({
                                       className={`w-3.5 h-3.5 ${isPinned ? 'fill-yellow-500 text-yellow-500' : 'text-muted-foreground'}`}
                                     />
                                   </button>
-                                  <span className="text-xs text-muted-foreground">
-                                    {formatDistanceToNow(new Date(chat.timestamp), { addSuffix: true })}
+                                  <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                    {formatCompactTime(new Date(chat.timestamp))}
                                   </span>
                                 </div>
                               </div>
