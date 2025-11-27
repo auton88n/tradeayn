@@ -5,8 +5,10 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-import { Plus, LogOut, Trash2, Camera, Settings, X, MessageSquare } from 'lucide-react';
+import { Plus, LogOut, Trash2, Camera, Settings, X, MessageSquare, Search, Star } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
@@ -35,16 +37,51 @@ export const Sidebar = ({
   onLogout,
   onAvatarUpdated
 }: SidebarProps) => {
-  const {
-    t,
-    language,
-    direction
-  } = useLanguage();
-  const {
-    toggleSidebar
-  } = useSidebar();
+  const { t, language, direction } = useLanguage();
+  const { toggleSidebar } = useSidebar();
   const navigate = useNavigate();
   const [showAvatarUpload, setShowAvatarUpload] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [pinnedChats, setPinnedChats] = useState<Set<string>>(() => {
+    const stored = localStorage.getItem('pinnedChats');
+    return stored ? new Set(JSON.parse(stored)) : new Set();
+  });
+
+  const togglePin = (sessionId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setPinnedChats(prev => {
+      const newPinned = new Set(prev);
+      if (newPinned.has(sessionId)) {
+        newPinned.delete(sessionId);
+      } else {
+        newPinned.add(sessionId);
+      }
+      localStorage.setItem('pinnedChats', JSON.stringify([...newPinned]));
+      return newPinned;
+    });
+  };
+
+  const filteredAndSortedChats = React.useMemo(() => {
+    let filtered = recentChats;
+    
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = recentChats.filter(chat => 
+        chat.title.toLowerCase().includes(query) ||
+        chat.lastMessage.toLowerCase().includes(query)
+      );
+    }
+    
+    // Sort: pinned first, then by timestamp
+    return [...filtered].sort((a, b) => {
+      const aPinned = pinnedChats.has(a.sessionId);
+      const bPinned = pinnedChats.has(b.sessionId);
+      if (aPinned && !bPinned) return -1;
+      if (!aPinned && bPinned) return 1;
+      return b.timestamp.getTime() - a.timestamp.getTime();
+    });
+  }, [recentChats, searchQuery, pinnedChats]);
   return <>
       <SidebarHeader>
         <div className="flex items-center justify-between p-4 border-b gap-3">
@@ -72,9 +109,9 @@ export const Sidebar = ({
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
-        {/* New Chat Button */}
-        <SidebarGroup>
+      <SidebarContent className="flex flex-col overflow-hidden">
+        {/* Fixed: New Chat Button */}
+        <SidebarGroup className="flex-shrink-0">
           <SidebarGroupContent>
             <Button onClick={onNewChat} className="w-full" variant="outline" disabled={!hasAccess}>
               <Plus className="w-4 h-4 mr-2" />
@@ -83,8 +120,21 @@ export const Sidebar = ({
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Recent Chats */}
-        <SidebarGroup>
+        {/* Fixed: Search Input */}
+        <div className="px-2 pb-2 flex-shrink-0">
+          <div className="relative">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={language === 'ar' ? 'البحث في المحادثات...' : 'Search chats...'}
+              className="pl-8"
+            />
+          </div>
+        </div>
+
+        {/* Fixed: Recent Chats Label and Actions */}
+        <div className="flex-shrink-0">
           <div className={`flex items-center justify-between px-2 ${direction === 'rtl' ? 'flex-row-reverse' : ''}`}>
             {direction === 'rtl' ? <>
                 <div className="flex gap-1">
@@ -94,9 +144,7 @@ export const Sidebar = ({
                       <Button onClick={onSelectAllChats} variant="ghost" size="sm" className="h-6 px-2 text-xs">
                         {selectedChats.size === recentChats.length ? t('common.none') : t('common.all')}
                       </Button>
-                      <Button onClick={() => {
-                  onShowChatSelection(false);
-                }} variant="ghost" size="sm" className="h-6 px-2 text-xs">
+                      <Button onClick={() => onShowChatSelection(false)} variant="ghost" size="sm" className="h-6 px-2 text-xs">
                         {t('common.cancel')}
                       </Button>
                     </>}
@@ -118,36 +166,55 @@ export const Sidebar = ({
                   </div>}
               </>}
           </div>
+        </div>
 
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {recentChats.length === 0 ? <div className="px-4 py-8 text-center text-sm text-muted-foreground">
-                  {t('common.noRecentChats')}
+        {/* Scrollable: Chat List Only */}
+        <div className="flex-1 overflow-hidden">
+          <ScrollArea className="h-full">
+            <SidebarMenu className="px-2">
+              {filteredAndSortedChats.length === 0 ? <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+                  {searchQuery ? (language === 'ar' ? 'لم يتم العثور على محادثات' : 'No chats found') : t('common.noRecentChats')}
                 </div> : <>
-                  {recentChats.map((chat, index) => <SidebarMenuItem key={chat.sessionId}>
-                      <div className="flex items-center gap-2 w-full border-b last:border-b-0">
-                        {showChatSelection && <Checkbox checked={selectedChats.has(index)} onCheckedChange={() => onToggleChatSelection(index)} className="mr-2" />}
-                        <SidebarMenuButton 
-                          onClick={() => !showChatSelection && onLoadChat(chat)} 
-                          className="flex-1 h-auto py-3 px-3 hover:bg-muted/50 rounded-lg"
-                        >
-                          <div className="flex-1 min-w-0 space-y-1">
-                            {/* Title row with icon and timestamp */}
-                            <div className="flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-2 min-w-0 flex-1">
-                                <MessageSquare className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                                <p className="text-sm font-medium truncate">{chat.title}</p>
+                  {filteredAndSortedChats.map((chat) => {
+                    const isPinned = pinnedChats.has(chat.sessionId);
+                    const originalIndex = recentChats.findIndex(c => c.sessionId === chat.sessionId);
+                    return (
+                      <SidebarMenuItem key={chat.sessionId}>
+                        <div className="flex items-center gap-2 w-full border-b last:border-b-0">
+                          {showChatSelection && <Checkbox checked={selectedChats.has(originalIndex)} onCheckedChange={() => onToggleChatSelection(originalIndex)} className="mr-2" />}
+                          <SidebarMenuButton 
+                            onClick={() => !showChatSelection && onLoadChat(chat)} 
+                            className="flex-1 h-auto py-3 px-3 hover:bg-muted/50 rounded-lg group"
+                          >
+                            <div className="flex-1 min-w-0 space-y-1">
+                              {/* Title row with icon, star, and timestamp */}
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2 min-w-0 flex-1">
+                                  <MessageSquare className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                                  <p className="text-sm font-medium truncate">{chat.title}</p>
+                                </div>
+                                <div className="flex items-center gap-1 flex-shrink-0">
+                                  <button
+                                    onClick={(e) => togglePin(chat.sessionId, e)}
+                                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-accent rounded"
+                                  >
+                                    <Star 
+                                      className={`w-3.5 h-3.5 ${isPinned ? 'fill-yellow-500 text-yellow-500' : 'text-muted-foreground'}`}
+                                    />
+                                  </button>
+                                  <span className="text-xs text-muted-foreground">
+                                    {formatDistanceToNow(new Date(chat.timestamp), { addSuffix: true })}
+                                  </span>
+                                </div>
                               </div>
-                              <span className="text-xs text-muted-foreground flex-shrink-0">
-                                {formatDistanceToNow(new Date(chat.timestamp), { addSuffix: true })}
-                              </span>
+                              {/* Preview text */}
+                              <p className="text-xs text-muted-foreground truncate pl-6">{chat.lastMessage}</p>
                             </div>
-                            {/* Preview text */}
-                            <p className="text-xs text-muted-foreground truncate pl-6">{chat.lastMessage}</p>
-                          </div>
-                        </SidebarMenuButton>
-                      </div>
-                    </SidebarMenuItem>)}
+                          </SidebarMenuButton>
+                        </div>
+                      </SidebarMenuItem>
+                    );
+                  })}
                   
                   {/* Delete Selected Button */}
                   {showChatSelection && selectedChats.size > 0 && <div className="px-2 pt-2">
@@ -158,8 +225,8 @@ export const Sidebar = ({
                     </div>}
                 </>}
             </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+          </ScrollArea>
+        </div>
       </SidebarContent>
 
       <SidebarFooter>
