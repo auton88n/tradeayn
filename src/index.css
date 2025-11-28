@@ -4,60 +4,61 @@
 
 /* AYN AI Business Consulting Platform Design System */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter&display=swap");
 
 @layer base {
   :root {
     /* Professional White Background Theme */
     --background: 0 0% 100%;
     --foreground: 0 0% 9%;
-    
+
     --card: 0 0% 98%;
     --card-foreground: 0 0% 9%;
-    
+
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 9%;
-    
+
     /* Professional Black & White Theme */
     --primary: 0 0% 9%;  /* Near Black */
     --primary-foreground: 0 0% 98%;
-    
+
     --secondary: 0 0% 20%;  /* Dark Gray */
     --secondary-foreground: 0 0% 98%;
-    
+
     --accent: 0 0% 15%;  /* Charcoal */
     --accent-foreground: 0 0% 98%;
-    
+
     --warning: 0 0% 25%;  /* Medium Gray */
     --warning-foreground: 0 0% 98%;
-    
+
     --muted: 0 0% 96%;
     --muted-foreground: 0 0% 45%;
-    
-    --destructive: 0 84.2% 60.2%;
+
+    --destructive: 0 0% 9.0196%;
     --destructive-foreground: 0 0% 98%;
-    
+
     --border: 0 0% 90%;
     --input: 0 0% 96%;
     --ring: 0 0% 50%;
 
     --radius: 0.75rem;
-    
+
     /* Professional Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(0 0% 9%), hsl(0 0% 15%));
     --gradient-secondary: linear-gradient(135deg, hsl(0 0% 15%), hsl(0 0% 20%));
     --gradient-accent: linear-gradient(135deg, hsl(0 0% 20%), hsl(0 0% 25%));
     --gradient-hero: linear-gradient(135deg, hsl(0 0% 9%) 0%, hsl(0 0% 15%) 50%, hsl(0 0% 20%) 100%);
-    
+
     /* Professional White Background Glassmorphism - Fixed */
     --glass-bg: hsla(0, 0%, 97%, 0.98);
     --glass-border: hsla(0, 0%, 85%, 0.9);
     --glass-shadow: 0 8px 32px hsla(0, 0%, 0%, 0.06);
-    
+
   /* Professional Shadows */
   --neon-purple: 0 0 20px hsla(0, 0%, 80%, 0.3);
   --neon-blue: 0 0 20px hsla(0, 0%, 70%, 0.3);
   --neon-teal: 0 0 20px hsla(0, 0%, 60%, 0.3);
-  
+
   --sidebar-background: 0 0% 98%;
   --sidebar-foreground: 0 0% 9%;
   --sidebar-primary: 0 0% 15%;
@@ -118,14 +119,14 @@
     --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-border: 0 0% 14.9%;
     --sidebar-ring: 0 0% 83.1%;
-    
+
   }
 }
 
   * {
     @apply border-border;
   }
-  
+
   body {
     @apply bg-background text-foreground font-sans;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -139,7 +140,7 @@
   html:not(.dark) body {
     background: radial-gradient(ellipse at top, hsl(0 0% 100%) 0%, hsl(0 0% 98%) 100%);
   }
-  
+
   /* Message bubble styling */
   .message-bubble {
     word-wrap: break-word;
@@ -160,12 +161,12 @@
     .user-message {
       max-width: 65%;
     }
-    
+
     .ai-message {
       max-width: 80%;
     }
   }
-  
+
   /* Glass morphism effects */
   .glass {
     background: var(--glass-bg);
@@ -174,11 +175,11 @@
     -webkit-backdrop-filter: blur(20px);
     box-shadow: var(--glass-shadow);
   }
-  
+
   .glass-hover {
     transition: all 0.3s ease;
   }
-  
+
   .glass-hover:hover {
     background: hsla(0, 0%, 95%, 1);
     border-color: hsla(0, 0%, 80%, 1);
@@ -208,17 +209,16 @@
     background: none;
     -webkit-text-fill-color: white;
   }
-  
-  
+
   /* Neon glow effects */
   .neon-purple {
     box-shadow: var(--neon-purple);
   }
-  
+
   .neon-blue {
     box-shadow: var(--neon-blue);
   }
-  
+
   /* Solid background for brain containers */
   .brain-container {
     background: hsl(var(--primary));
@@ -231,7 +231,7 @@
     border: 2px solid hsl(var(--primary));
     box-shadow: 0 8px 24px hsla(var(--primary), 0.15);
   }
-  
+
   /* Brain containers - white background in both light and dark modes */
   .brain-container,
   /* Brain containers with theme-specific design */
@@ -240,7 +240,7 @@
     background: black;
     border: 2px solid hsl(var(--primary) / 0.2);
   }
-  
+
   .dark .brain-container,
   .dark .brain-container-lg {
     background: white;
@@ -252,12 +252,12 @@
   .brain-container-lg svg {
     color: white !important;
   }
-  
+
   .dark .brain-container svg,
   .dark .brain-container-lg svg {
     color: black !important;
   }
-  
+
   /* Gradient text */
   .gradient-text {
     background: var(--gradient-primary);
@@ -265,14 +265,14 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-  
+
   .gradient-text-hero {
     background: var(--gradient-hero);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-  
+
   /* Professional animated gradient backgrounds */
   .animated-gradient {
     background: linear-gradient(
@@ -285,26 +285,25 @@
     background-size: 400% 400%;
     animation: gradient-shift 15s ease infinite;
   }
-  
-  
+
   @keyframes gradient-shift {
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
   }
-  
+
   @keyframes float-horizontal {
     0% { transform: translateX(-100px); opacity: 0; }
     10% { opacity: 1; }
     90% { opacity: 1; }
     100% { transform: translateX(calc(100vw + 100px)); opacity: 0; }
   }
-  
+
   /* Smooth scrolling */
   html {
     scroll-behavior: smooth;
   }
-  
+
   /* Custom scrollbar */
   ::-webkit-scrollbar {
     width: 8px;
@@ -339,12 +338,12 @@
     line-height: 1.4; /* match textarea */
     caret-color: transparent; /* Hide browser cursor */
   }
-  
+
   /* Hide browser cursor in input when placeholder is showing */
   .message-input:not(:focus) {
     caret-color: transparent;
   }
-  
+
   .message-input:focus {
     caret-color: hsl(var(--foreground));
   }
@@ -385,13 +384,13 @@
     .input-area {
       padding: 0 8px;
     }
-    
+
     .input-area.center-position,
     .input-area.bottom-position {
       width: calc(100% - 16px);
       max-width: none;
     }
-    
+
     .input-area.bottom-position {
       bottom: 8px;
     }
@@ -404,7 +403,7 @@
       width: calc(100% - 32px);
       max-width: 500px;
     }
-    
+
     .input-area.bottom-position {
       bottom: 16px;
     }
@@ -418,7 +417,7 @@
       left: calc(50% + 120px);
       transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    
+
     /* Sidebar CLOSED - center on full viewport */
     .input-area.sidebar-closed.center-position,
     .input-area.sidebar-closed.bottom-position {
@@ -426,8 +425,6 @@
       transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
   }
-
-
 
   /* RTL Support */
   [dir="rtl"] {
@@ -486,18 +483,17 @@
     margin-left: 0;
   }
 
-
   /* Force chat input to behave like LTR for consistency */
   [dir="rtl"] .message-input {
     direction: ltr !important;
     text-align: left !important;
   }
-  
+
   [dir="rtl"] .message-input::placeholder {
     direction: ltr !important;
     text-align: left !important;
   }
-  
+
   /* Force input container to use LTR layout for consistency */
   [dir="rtl"] .input-container {
     direction: ltr !important;
@@ -510,7 +506,7 @@
   .auth-input-text {
     color: black !important;
   }
-  
+
   .dark .auth-input-text {
     color: black !important;
   }
@@ -519,7 +515,7 @@
   .auth-label {
     color: black !important;
   }
-  
+
   .dark .auth-label {
     color: black !important;
   }
@@ -598,7 +594,6 @@
 
   /* Remove old RTL input field rules - now handled in unified section above */
 
-
   /* RTL Send Button - keep inside on the left via flex order */
   [dir="rtl"] .send-button {
     position: static;
@@ -638,13 +633,13 @@
       right: 0;
       left: auto;
     }
-    
+
     [dir="rtl"] .send-button {
       position: static;
       margin-left: 6px;
       margin-right: 0;
     }
-    
+
     [dir="rtl"] .attachment-button {
       position: static;
       margin-right: 6px;
@@ -660,7 +655,7 @@
       transform: translateX(-50%) !important;
       transition: left 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
     }
-    
+
     /* Center position specific */  
     [data-state="expanded"] ~ main .input-area.center-position {
       left: calc(240px + (100vw - 240px) / 2) !important;
@@ -668,7 +663,7 @@
       transform: translate(-50%, -50%) !important;
       transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
     }
-    
+
     /* Bottom position specific */
     [data-state="expanded"] ~ main .input-area.bottom-position {
       left: calc(240px + (100vw - 240px) / 2) !important;
@@ -676,7 +671,7 @@
       transform: translateX(-50%) !important;
       transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
     }
-    
+
     /* RTL versions - same positioning since sidebar stays on left */
     [dir="rtl"] [data-state="expanded"] ~ main .input-area,
     [dir="rtl"] [data-state="expanded"] ~ main .input-area.center-position,
@@ -684,16 +679,15 @@
       left: calc(240px + (100vw - 240px) / 2) !important;
       right: auto !important;
     }
-    
+
     [dir="rtl"] [data-state="expanded"] ~ main .input-area.center-position {
       transform: translate(-50%, -50%) !important;
     }
-    
+
     [dir="rtl"] [data-state="expanded"] ~ main .input-area.bottom-position {
       transform: translateX(-50%) !important;
     }
   }
-
 
   .input-container {
     --input-left-offset: 4px; /* align placeholder with textarea text start */
@@ -711,7 +705,6 @@
     transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
     position: relative;
   }
-
 
   .input-container.drag-over {
     border-color: hsl(var(--primary));
@@ -776,33 +769,33 @@
     color: hsl(var(--primary-foreground));
     font-size: 14px;
   }
-  
+
   /* Mode-specific send button variants */
   .send-button.mode-blue {
     background: hsl(217 91% 60%); /* blue-500 equivalent */
     box-shadow: 0 0 15px hsl(217 91% 60% / 0.3);
   }
-  
+
   .send-button.mode-green {
     background: hsl(142 71% 45%); /* green-500 equivalent */
     box-shadow: 0 0 15px hsl(142 71% 45% / 0.3);
   }
-  
+
   .send-button.mode-purple {
     background: hsl(262 83% 58%); /* purple-500 equivalent */
     box-shadow: 0 0 15px hsl(262 83% 58% / 0.3);
   }
-  
+
   .send-button.mode-orange {
     background: hsl(25 95% 53%); /* orange-500 equivalent */
     box-shadow: 0 0 15px hsl(25 95% 53% / 0.3);
   }
-  
+
   .send-button.mode-teal {
     background: hsl(173 58% 39%); /* teal-500 equivalent */
     box-shadow: 0 0 15px hsl(173 58% 39% / 0.3);
   }
-  
+
   .send-button.mode-default {
     background: hsl(var(--primary));
   }
@@ -810,32 +803,32 @@
   .send-button:hover:not(:disabled) {
     transform: scale(1.05);
   }
-  
+
   .send-button.mode-blue:hover:not(:disabled) {
     background: hsl(217 91% 55%);
     box-shadow: 0 0 20px hsl(217 91% 60% / 0.4);
   }
-  
+
   .send-button.mode-green:hover:not(:disabled) {
     background: hsl(142 71% 40%);
     box-shadow: 0 0 20px hsl(142 71% 45% / 0.4);
   }
-  
+
   .send-button.mode-purple:hover:not(:disabled) {
     background: hsl(262 83% 53%);
     box-shadow: 0 0 20px hsl(262 83% 58% / 0.4);
   }
-  
+
   .send-button.mode-orange:hover:not(:disabled) {
     background: hsl(25 95% 48%);
     box-shadow: 0 0 20px hsl(25 95% 53% / 0.4);
   }
-  
+
   .send-button.mode-teal:hover:not(:disabled) {
     background: hsl(173 58% 34%);
     box-shadow: 0 0 20px hsl(173 58% 39% / 0.4);
   }
-  
+
   .send-button.mode-default:hover:not(:disabled) {
     background: hsl(var(--primary) / 0.9);
   }
@@ -877,32 +870,31 @@
     cursor: not-allowed;
   }
 
-
   /* Responsive Adjustments */
   @media (max-width: 640px) {
     .input-area.bottom-position {
       bottom: 8px;
     }
-    
+
     .input-container {
       --input-left-offset: 4px; /* mobile: align placeholder with textarea text start */
       --input-vertical-offset: 8px; /* keep in sync on mobile */
       padding: 6px 10px;
       border-radius: 18px;
     }
-    
+
     .send-button {
       width: 32px;
       height: 32px;
       min-width: 32px;
     }
-    
+
     .attachment-button {
       width: 28px;
       height: 28px;
       min-width: 28px;
     }
-    
+
     .chat-input {
       font-size: 14px;
       padding: 6px 0;
@@ -913,13 +905,13 @@
     .input-area.bottom-position {
       bottom: 12px;
     }
-    
+
     .send-button {
       width: 36px;
       height: 36px;
       min-width: 36px;
     }
-    
+
     .attachment-button {
       width: 32px;
       height: 32px;
