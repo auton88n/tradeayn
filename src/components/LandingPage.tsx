@@ -6,12 +6,10 @@ import { AuthModal } from './auth/AuthModal';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ThemeToggle } from './theme-toggle';
-import { MobileMockup } from '@/components/MobileMockup';
-import { MobileMockupPhotographer } from '@/components/MobileMockupPhotographer';
 
 const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   const features = [
     {
@@ -177,89 +175,174 @@ const LandingPage = () => {
             </p>
           </div>
 
-          {/* Service 1: Influencer Portfolios - WITH DUAL MOCKUPS */}
-          <div className="space-y-12 mb-24">
-            {/* Service Info - Centered */}
-            <div className="text-center space-y-6 max-w-3xl mx-auto">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 font-bold backdrop-blur-sm">
-                <Palette className="w-5 h-5" />
-                Featured Service
-              </div>
-              
-              <h2 className="text-4xl md:text-5xl font-black">
-                Professional Portfolio Websites
-              </h2>
-              
-              <p className="text-xl text-muted-foreground leading-relaxed">
-                We design stunning portfolio websites that showcase your brand professionally with an AI chatbot trained on your content
-              </p>
+          {/* Service 1: Influencer Portfolios - REAL WEBSITE SHOWCASE */}
+          <div className="lg:col-span-3 relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-1 mb-24">
+            {/* Gradient border effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 opacity-50 blur-xl" />
+            
+            <div className="relative bg-gradient-to-br from-slate-900 via-purple-900/50 to-slate-900 rounded-3xl p-12 backdrop-blur-xl">
+              {/* Header Section */}
+              <div className="text-center mb-12 space-y-6">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/20 border border-purple-500/30 backdrop-blur-sm">
+                  <Palette className="w-5 h-5 text-purple-400" />
+                  <span className="text-sm font-bold text-purple-300">
+                    {language === 'ar' ? 'خدمة مميزة' : 'Featured Service'}
+                  </span>
+                </div>
 
-              <ul className="grid md:grid-cols-2 gap-4 text-left max-w-2xl mx-auto">
-                {[
-                  'Custom design matching your brand',
-                  'AI chatbot trained on your content',
-                  'Automatic social media integration',
-                  'Smart contact forms',
-                  'Mobile & SEO optimized',
-                  'Lightning-fast performance'
-                ].map((feature, i) => (
-                  <li key={i} className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-purple-600 dark:text-purple-400 text-sm">✓</span>
+                <h3 className="text-5xl md:text-6xl font-black text-white">
+                  {language === 'ar' ? 'مواقع المؤثرين الاحترافية' : 'Professional Influencer Portfolios'}
+                </h3>
+                
+                <p className="text-xl text-slate-300 max-w-3xl mx-auto leading-relaxed">
+                  {language === 'ar'
+                    ? 'نصمم مواقع portfolio فريدة تعرض محتواك وإنجازاتك بشكل احترافي. مع تكامل AI ذكي وتحليلات متقدمة'
+                    : 'We design unique portfolio sites that showcase your content and achievements professionally. With smart AI integration and advanced analytics'}
+                </p>
+
+                {/* Feature Pills */}
+                <div className="flex flex-wrap justify-center gap-3 pt-4">
+                  {[
+                    { icon: '✨', text: language === 'ar' ? 'تصميم مخصص' : 'Custom Design' },
+                    { icon: '🤖', text: language === 'ar' ? 'AI Chatbot' : 'AI Chatbot' },
+                    { icon: '📊', text: language === 'ar' ? 'تحليلات متقدمة' : 'Analytics' },
+                    { icon: '📱', text: language === 'ar' ? 'متجاوب 100%' : 'Fully Responsive' },
+                    { icon: '⚡', text: language === 'ar' ? 'سرعة فائقة' : 'Lightning Fast' }
+                  ].map((feature, i) => (
+                    <div 
+                      key={i}
+                      className="px-4 py-2 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 text-white font-medium hover:bg-white/10 hover:scale-105 transition-all"
+                    >
+                      <span className="mr-2">{feature.icon}</span>
+                      {feature.text}
                     </div>
-                    <span className="text-base">{feature}</span>
-                  </li>
-                ))}
-              </ul>
+                  ))}
+                </div>
+              </div>
 
-              <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+              {/* REAL Website Preview - Using iframe */}
+              <div className="relative mb-12 group">
+                {/* Browser Chrome */}
+                <div className="relative bg-slate-800 rounded-t-xl p-3 shadow-2xl">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="flex gap-2">
+                      <div className="w-3 h-3 rounded-full bg-red-500" />
+                      <div className="w-3 h-3 rounded-full bg-yellow-500" />
+                      <div className="w-3 h-3 rounded-full bg-green-500" />
+                    </div>
+                    <div className="flex-1 ml-4 h-8 bg-slate-700 rounded-lg flex items-center px-4 gap-2">
+                      <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                      <span className="text-sm text-slate-300 font-medium">ghazi.today</span>
+                    </div>
+                  </div>
+
+                  {/* Live Website iframe */}
+                  <div className="relative w-full bg-white rounded-lg overflow-hidden shadow-2xl" style={{ height: '600px' }}>
+                    <iframe
+                      src="https://ghazi.today"
+                      className="w-full h-full border-0"
+                      title="Ghazi.Today Portfolio"
+                      loading="lazy"
+                    />
+                    
+                    {/* Overlay on hover with "View Live" */}
+                    <a
+                      href="https://ghazi.today"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="absolute inset-0 bg-purple-900/90 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300"
+                    >
+                      <div className="text-center space-y-4">
+                        <div className="text-6xl">🚀</div>
+                        <div className="text-3xl font-black text-white">
+                          {language === 'ar' ? 'شاهد الموقع الحي' : 'View Live Website'}
+                        </div>
+                        <div className="px-6 py-3 bg-white text-purple-900 rounded-xl font-bold inline-flex items-center gap-2 shadow-xl">
+                          {language === 'ar' ? 'افتح ghazi.today' : 'Open ghazi.today'}
+                          <ArrowRight className="w-5 h-5" />
+                        </div>
+                      </div>
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              {/* Key Features Grid */}
+              <div className="grid md:grid-cols-3 gap-6 mb-12">
+                {[
+                  {
+                    icon: '🎨',
+                    title: language === 'ar' ? 'تصميم فريد' : 'Unique Design',
+                    desc: language === 'ar' ? 'تصميم يعكس شخصيتك وعلامتك' : 'Design that reflects your personality'
+                  },
+                  {
+                    icon: '🤖',
+                    title: language === 'ar' ? 'AI مدرّب' : 'Trained AI',
+                    desc: language === 'ar' ? 'روبوت محادثة يفهم محتواك' : 'Chatbot that understands your content'
+                  },
+                  {
+                    icon: '📊',
+                    title: language === 'ar' ? 'تحليلات' : 'Analytics',
+                    desc: language === 'ar' ? 'تتبع الزوار والتفاعل' : 'Track visitors and engagement'
+                  }
+                ].map((item, i) => (
+                  <div 
+                    key={i}
+                    className="p-6 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-purple-500/50 transition-all group"
+                  >
+                    <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">
+                      {item.icon}
+                    </div>
+                    <h4 className="text-xl font-bold text-white mb-2">{item.title}</h4>
+                    <p className="text-slate-400">{item.desc}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* CTA Buttons */}
+              <div className="flex flex-col sm:flex-row justify-center gap-4">
                 <Button 
                   onClick={() => setShowAuthModal(true)}
                   size="lg"
-                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-xl px-8 shadow-lg"
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold px-12 py-7 rounded-xl shadow-2xl text-lg hover:scale-105 transition-all"
                 >
-                  Start Your Project
-                  <ArrowRight className="w-5 h-5 ml-2" />
+                  <Sparkles className="w-5 h-5 mr-2" />
+                  {language === 'ar' ? 'ابدأ مشروعك' : 'Start Your Project'}
                 </Button>
-                
                 <Button 
                   variant="outline"
                   size="lg"
                   asChild
-                  className="rounded-xl px-8"
+                  className="border-2 border-purple-500/50 text-white hover:bg-purple-500/20 px-12 py-7 rounded-xl text-lg font-bold backdrop-blur-sm"
                 >
                   <a href="https://ghazi.today" target="_blank" rel="noopener noreferrer">
-                    View Live Example
-                    <ExternalLink className="w-4 h-4 ml-2" />
+                    {language === 'ar' ? 'شاهد المثال الحي' : 'View Live Example'}
+                    <ArrowRight className="w-5 h-5 ml-2" />
                   </a>
                 </Button>
               </div>
-            </div>
 
-            {/* Mockups Side by Side */}
-            <div className="grid lg:grid-cols-2 gap-12 xl:gap-16 max-w-7xl mx-auto">
-              {/* Influencer Mockup */}
-              <div className="space-y-4">
-                <div className="text-center">
-                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#B76E79]/10 border border-[#B76E79]/20 mb-2">
-                    <Users className="w-4 h-4 text-[#B76E79]" />
-                    <span className="text-sm font-bold text-[#B76E79]">Influencer Portfolio</span>
+              {/* Social Proof */}
+              <div className="mt-12 text-center">
+                <div className="inline-flex items-center gap-6 px-6 py-4 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10">
+                  <div className="flex -space-x-3">
+                    {[1,2,3,4].map(i => (
+                      <div key={i} className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 border-2 border-slate-900 flex items-center justify-center text-white font-bold">
+                        {i}
+                      </div>
+                    ))}
                   </div>
-                  <p className="text-sm text-muted-foreground">Perfect for content creators & influencers</p>
-                </div>
-                <MobileMockup />
-              </div>
-
-              {/* Photographer Mockup */}
-              <div className="space-y-4">
-                <div className="text-center">
-                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-500/10 border border-cyan-500/20 mb-2">
-                    <Target className="w-4 h-4 text-cyan-500" />
-                    <span className="text-sm font-bold text-cyan-500">Professional Portfolio</span>
+                  <div className="text-left">
+                    <div className="text-white font-bold">
+                      {language === 'ar' ? '50+ مؤثر راضٍ' : '50+ Happy Influencers'}
+                    </div>
+                    <div className="text-sm text-slate-400">
+                      {language === 'ar' ? 'انضم إليهم اليوم' : 'Join them today'}
+                    </div>
                   </div>
-                  <p className="text-sm text-muted-foreground">Ideal for photographers & creatives</p>
                 </div>
-                <MobileMockupPhotographer />
               </div>
             </div>
           </div>
