@@ -3,6 +3,8 @@ import { Mail, Instagram, Music2, Edit3 } from 'lucide-react';
 
 export const MobileMockup = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [touchStart, setTouchStart] = useState(0);
+  const [touchEnd, setTouchEnd] = useState(0);
   const totalSlides = 4;
 
   useEffect(() => {
@@ -14,6 +16,34 @@ export const MobileMockup = () => {
 
   const navigateToSlide = (index: number) => {
     setCurrentSlide(index);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.targetTouches[0].clientY);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientY);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const minSwipeDistance = 50;
+
+    if (Math.abs(distance) > minSwipeDistance) {
+      if (distance > 0) {
+        // Swiped up - go to next slide
+        setCurrentSlide((prev) => (prev + 1) % totalSlides);
+      } else {
+        // Swiped down - go to previous slide
+        setCurrentSlide((prev) => (prev - 1 + totalSlides) % totalSlides);
+      }
+    }
+
+    setTouchStart(0);
+    setTouchEnd(0);
   };
 
   return (
@@ -43,7 +73,12 @@ export const MobileMockup = () => {
               </div>
 
               {/* Content - Sliding Screens */}
-              <div className="w-full h-full overflow-hidden pt-10 bg-black relative">
+              <div 
+                className="w-full h-full overflow-hidden pt-10 bg-black relative"
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+              >
                 {/* Slide Container */}
                 <div className="absolute inset-0 transition-transform duration-500 ease-in-out" style={{ transform: `translateY(-${currentSlide * 100}%)` }}>
                   <div className="flex flex-col h-full">
