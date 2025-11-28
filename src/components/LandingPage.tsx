@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Brain, TrendingUp, Target, BarChart3, Zap, Users, ArrowRight, Sparkles, Palette, Cog, FileSpreadsheet, MessageSquare, Building2, ExternalLink } from 'lucide-react';
+import { Brain, TrendingUp, Target, BarChart3, Zap, Users, ArrowRight, Sparkles, Palette, Cog, FileSpreadsheet, MessageSquare, Building2, ExternalLink, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { AuthModal } from './auth/AuthModal';
@@ -234,22 +234,22 @@ const LandingPage = () => {
                       <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                       </svg>
-                      <span className="text-sm text-slate-300 font-medium">ghazi.today</span>
+                      <span className="text-sm text-slate-300 font-medium">sarah.aynn.io</span>
                     </div>
                   </div>
 
                   {/* Live Website iframe */}
                   <div className="relative w-full bg-white rounded-lg overflow-hidden shadow-2xl" style={{ height: '600px' }}>
                     <iframe
-                      src="https://ghazi.today"
+                      src="https://sarah.aynn.io"
                       className="w-full h-full border-0"
-                      title="Ghazi.Today Portfolio"
+                      title="Sarah.Aynn.io Portfolio"
                       loading="lazy"
                     />
                     
                     {/* Overlay on hover with "View Live" */}
                     <a
-                      href="https://ghazi.today"
+                      href="https://sarah.aynn.io"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="absolute inset-0 bg-purple-900/90 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300"
@@ -257,10 +257,11 @@ const LandingPage = () => {
                       <div className="text-center space-y-4">
                         <div className="text-6xl">🚀</div>
                         <div className="text-3xl font-black text-white">
-                          {language === 'ar' ? 'شاهد الموقع الحي' : 'View Live Website'}
+                          View Live Website
                         </div>
                         <div className="px-6 py-3 bg-white text-purple-900 rounded-xl font-bold inline-flex items-center gap-2 shadow-xl">
-                          {language === 'ar' ? 'افتح ghazi.today' : 'Open ghazi.today'}
+                          <MessageCircle className="w-5 h-5" />
+                          sarah.aynn.io
                           <ArrowRight className="w-5 h-5" />
                         </div>
                       </div>
@@ -311,17 +312,17 @@ const LandingPage = () => {
                   <Sparkles className="w-5 h-5 mr-2" />
                   {language === 'ar' ? 'ابدأ مشروعك' : 'Start Your Project'}
                 </Button>
-                <Button 
-                  variant="outline"
-                  size="lg"
-                  asChild
-                  className="border-2 border-purple-500/50 text-white hover:bg-purple-500/20 px-12 py-7 rounded-xl text-lg font-bold backdrop-blur-sm"
-                >
-                  <a href="https://ghazi.today" target="_blank" rel="noopener noreferrer">
-                    {language === 'ar' ? 'شاهد المثال الحي' : 'View Live Example'}
-                    <ArrowRight className="w-5 h-5 ml-2" />
-                  </a>
-                </Button>
+              <Button 
+                variant="outline"
+                size="lg"
+                asChild
+                className="border-2 border-purple-500/50 text-white hover:bg-purple-500/20 px-12 py-7 rounded-xl text-lg font-bold backdrop-blur-sm"
+              >
+                <a href="https://sarah.aynn.io" target="_blank" rel="noopener noreferrer">
+                  {language === 'ar' ? 'شاهد المثال الحي' : 'View Live Example'}
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </a>
+              </Button>
               </div>
 
               {/* Social Proof */}
