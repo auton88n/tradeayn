@@ -45,8 +45,8 @@ export const MobileMockup = () => {
               {/* Content - Sliding Screens */}
               <div className="w-full h-full overflow-hidden pt-10 bg-black relative">
                 {/* Slide Container */}
-                <div className="absolute inset-0 transition-transform duration-500 ease-in-out" style={{ transform: `translateX(-${currentSlide * 100}%)` }}>
-                  <div className="flex h-full">
+                <div className="absolute inset-0 transition-transform duration-500 ease-in-out" style={{ transform: `translateY(-${currentSlide * 100}%)` }}>
+                  <div className="flex flex-col h-full">
                     {/* Slide 1: Hero */}
                     <div className="w-full h-full flex-shrink-0">
                       <div className="relative h-[45%] bg-gradient-to-b from-zinc-900 to-black">
