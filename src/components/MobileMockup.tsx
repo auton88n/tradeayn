@@ -75,26 +75,38 @@ export const MobileMockup = () => {
   return (
     <div className="relative w-full flex justify-center">
       {/* Phone Frame */}
-      <div className="relative">
-        {/* Rose-Gold Glow effect */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#B76E79]/30 to-[#D4A5A5]/20 rounded-[3.5rem] blur-3xl animate-pulse" />
+      <div className="relative group">
+        {/* Enhanced Multi-layer Glow Effect */}
+        <div className="absolute -inset-8 bg-gradient-to-br from-[#B76E79]/40 via-[#D4A5A5]/30 to-transparent rounded-[4rem] blur-[80px] opacity-60 group-hover:opacity-80 transition-opacity duration-700" />
+        <div className="absolute -inset-4 bg-gradient-to-t from-[#D4A5A5]/30 to-transparent rounded-[4rem] blur-[60px] animate-pulse" />
         
-        {/* Phone container */}
-        <div className="relative w-[300px] h-[620px] bg-gradient-to-br from-slate-800 via-slate-900 to-black rounded-[3.5rem] p-[3px] shadow-2xl">
+        {/* Phone container with enhanced metallic frame */}
+        <div className="relative w-[300px] h-[620px] bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950 rounded-[3.5rem] p-[3px] shadow-[0_20px_80px_-20px_rgba(183,110,121,0.6)] ring-1 ring-white/10">
           {/* Inner frame */}
-          <div className="w-full h-full bg-black rounded-[3.3rem] p-[12px]">
-            {/* Screen */}
-            <div className="w-full h-full bg-white rounded-[3rem] overflow-hidden relative">
-              {/* Notch */}
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-36 h-6 bg-black rounded-b-3xl z-50 flex items-center justify-center">
-                <div className="w-14 h-1 bg-slate-800 rounded-full" />
+          <div className="w-full h-full bg-gradient-to-br from-black via-slate-950 to-black rounded-[3.3rem] p-[12px] shadow-inner">
+            {/* Screen with subtle gradient background */}
+            <div className="w-full h-full bg-white rounded-[3rem] overflow-hidden relative shadow-2xl">
+              {/* Enhanced Notch */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-36 h-7 bg-black rounded-b-[1.75rem] z-50 flex items-center justify-center shadow-lg">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-slate-900" />
+                  <div className="w-14 h-1.5 bg-slate-800 rounded-full" />
+                </div>
               </div>
               
-              {/* Status Bar */}
-              <div className="absolute top-0 left-0 right-0 h-10 bg-gradient-to-b from-black/10 to-transparent z-40 flex items-center justify-between px-6 pt-1">
-                <span className="text-xs font-semibold text-gray-900">9:41</span>
-                <div className="flex items-center gap-1">
-                  <div className="w-3 h-2 bg-gray-900 rounded-sm" />
+              {/* Enhanced Status Bar */}
+              <div className="absolute top-0 left-0 right-0 h-11 bg-gradient-to-b from-black/20 via-black/10 to-transparent z-40 flex items-center justify-between px-6 pt-2">
+                <span className="text-xs font-bold text-white drop-shadow-md">9:41</span>
+                <div className="flex items-center gap-1.5">
+                  <div className="flex gap-0.5">
+                    <div className="w-0.5 h-2.5 bg-white/90 rounded-full" />
+                    <div className="w-0.5 h-3 bg-white/90 rounded-full" />
+                    <div className="w-0.5 h-3.5 bg-white/90 rounded-full" />
+                    <div className="w-0.5 h-4 bg-white/90 rounded-full" />
+                  </div>
+                  <div className="w-5 h-2.5 bg-white/90 rounded-sm relative">
+                    <div className="absolute right-[-2px] top-1/2 -translate-y-1/2 w-0.5 h-1.5 bg-white/90 rounded-r-sm" />
+                  </div>
                 </div>
               </div>
 
@@ -114,22 +126,30 @@ export const MobileMockup = () => {
                   }}
                 >
                   <div className="flex flex-col h-full">
-                    {/* Slide 1: Hero */}
+                    {/* Slide 1: Hero - Enhanced */}
                     <div className="w-full h-full flex-shrink-0">
-                      <div className="relative h-[45%] bg-gradient-to-b from-zinc-900 to-black">
+                      <div className="relative h-[45%] bg-gradient-to-b from-zinc-900 via-black to-black overflow-hidden">
+                        {/* Ambient glow background */}
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-radial from-[#B76E79]/30 via-[#D4A5A5]/10 to-transparent blur-3xl" />
+                        
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="w-40 h-40 rounded-full bg-gradient-to-br from-[#B76E79] to-[#D4A5A5] border-2 border-[#D4A5A5] animate-pulse shadow-[0_0_40px_rgba(183,110,121,0.4)]" />
+                          <div className="relative">
+                            {/* Outer glow ring */}
+                            <div className="absolute inset-0 w-40 h-40 rounded-full bg-gradient-to-br from-[#B76E79]/40 to-[#D4A5A5]/40 blur-xl animate-pulse" />
+                            {/* Main avatar */}
+                            <div className="relative w-40 h-40 rounded-full bg-gradient-to-br from-[#B76E79] via-[#C48A94] to-[#D4A5A5] border-[3px] border-[#D4A5A5]/50 shadow-[0_0_60px_rgba(183,110,121,0.6)] animate-fade-in" />
+                          </div>
                         </div>
                       </div>
 
                       <div className="relative px-6 pt-8 pb-6 bg-black text-center space-y-5">
-                        <div className="space-y-1 animate-fade-up">
-                          <h1 className="text-2xl font-serif italic text-[#d4a5a5]">SARAH</h1>
-                          <h2 className="text-4xl font-serif font-bold text-white tracking-wide">JOHNSON</h2>
-                          <p className="text-xs text-[#d4a5a5] font-light tracking-widest">Fashion & Lifestyle Influencer</p>
+                        <div className="space-y-2 animate-fade-up">
+                          <h1 className="text-2xl font-serif italic text-[#d4a5a5] tracking-wide drop-shadow-lg">SARAH</h1>
+                          <h2 className="text-5xl font-serif font-bold text-white tracking-wide drop-shadow-2xl">JOHNSON</h2>
+                          <p className="text-xs text-[#d4a5a5] font-light tracking-[0.25em] uppercase">Fashion & Lifestyle Influencer</p>
                         </div>
 
-                        <p className="text-[10px] text-zinc-500 leading-relaxed max-w-[240px] mx-auto animate-fade-in animation-delay-200">
+                        <p className="text-[11px] text-zinc-400 leading-relaxed max-w-[240px] mx-auto animate-fade-in animation-delay-200">
                           Creating content that inspires. Sharing my journey in fashion, beauty, and lifestyle.
                         </p>
 
@@ -141,86 +161,97 @@ export const MobileMockup = () => {
                           ].map((stat, i) => (
                             <div 
                               key={i}
-                              className="flex-1 bg-white/5 backdrop-blur-md rounded-lg p-3 border border-white/10 hover:border-[#B76E79]/30 transition-colors animate-slide-in-right"
+                              className="flex-1 bg-gradient-to-b from-white/10 to-white/5 backdrop-blur-xl rounded-xl p-3 border border-white/20 hover:border-[#B76E79]/50 transition-all duration-300 hover:scale-105 hover:shadow-[0_0_20px_rgba(183,110,121,0.3)] animate-scale-in"
                               style={{ animationDelay: `${300 + i * 100}ms` }}
                             >
-                              <div className="text-lg font-bold text-white">{stat.value}</div>
-                              <div className="text-[9px] text-zinc-500">{stat.label}</div>
+                              <div className="text-xl font-bold text-white drop-shadow-lg">{stat.value}</div>
+                              <div className="text-[9px] text-zinc-400 font-medium mt-0.5">{stat.label}</div>
                             </div>
                           ))}
                         </div>
 
-                        <button className="w-full max-w-[200px] mx-auto px-5 py-2.5 bg-white text-black rounded-full text-xs font-semibold shadow-lg flex items-center justify-center gap-2 hover:scale-105 transition-transform animate-fade-in animation-delay-600">
-                          <Mail className="w-3.5 h-3.5" />
+                        <button className="group w-full max-w-[200px] mx-auto px-6 py-3 bg-gradient-to-r from-white to-zinc-100 text-black rounded-full text-xs font-bold shadow-[0_8px_30px_rgba(255,255,255,0.2)] flex items-center justify-center gap-2 hover:scale-110 hover:shadow-[0_12px_40px_rgba(255,255,255,0.3)] transition-all duration-300 animate-fade-in animation-delay-600">
+                          <Mail className="w-4 h-4 group-hover:rotate-12 transition-transform" />
                           Work With Me
                         </button>
 
                         <div className="flex justify-center gap-4 pt-2 animate-fade-in animation-delay-700">
                           {[Instagram, Music2, Edit3].map((Icon, i) => (
-                            <div key={i} className="w-8 h-8 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center hover:border-[#B76E79]/50 transition-colors">
-                              <Icon className="w-4 h-4 text-white" />
+                            <div 
+                              key={i} 
+                              className="w-9 h-9 rounded-full bg-gradient-to-br from-zinc-900 to-black border border-zinc-700 flex items-center justify-center hover:border-[#B76E79] hover:shadow-[0_0_15px_rgba(183,110,121,0.4)] transition-all duration-300 hover:scale-110 cursor-pointer"
+                              style={{ animationDelay: `${800 + i * 100}ms` }}
+                            >
+                              <Icon className="w-4 h-4 text-zinc-400 hover:text-white transition-colors" />
                             </div>
                           ))}
                         </div>
                       </div>
                     </div>
 
-                    {/* Slide 2: Stats */}
-                    <div className="w-full h-full flex-shrink-0 bg-black">
+                    {/* Slide 2: Stats - Enhanced */}
+                    <div className="w-full h-full flex-shrink-0 bg-gradient-to-b from-black via-zinc-950 to-black">
                       <div className="h-full flex flex-col justify-center px-6 space-y-6">
-                        <div className="text-center space-y-2 animate-fade-up">
-                          <h2 className="text-3xl font-serif font-bold text-white">Platform Stats</h2>
-                          <p className="text-xs text-[#d4a5a5]">Updated Daily</p>
+                        <div className="text-center space-y-3 animate-fade-up">
+                          <h2 className="text-4xl font-serif font-bold text-white tracking-tight drop-shadow-2xl">Platform Stats</h2>
+                          <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#B76E79]/20 border border-[#B76E79]/30 rounded-full">
+                            <div className="w-1.5 h-1.5 rounded-full bg-[#d4a5a5] animate-pulse" />
+                            <p className="text-[10px] text-[#d4a5a5] font-medium tracking-wide">Live Updates</p>
+                          </div>
                         </div>
 
-                        <div className="space-y-4">
-                          <div className="bg-gradient-to-r from-[#B76E79]/20 to-transparent backdrop-blur-md border border-white/10 rounded-xl p-5 animate-slide-in-right animation-delay-200">
-                            <div className="flex items-center justify-between mb-3">
+                        <div className="space-y-3">
+                          <div className="group bg-gradient-to-br from-[#B76E79]/25 via-[#B76E79]/15 to-transparent backdrop-blur-xl border border-white/20 rounded-2xl p-5 hover:border-[#B76E79]/50 transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_30px_rgba(183,110,121,0.3)] animate-slide-in-right animation-delay-200">
+                            <div className="flex items-center justify-between mb-4">
                               <div className="flex items-center gap-3">
-                                <Instagram className="w-6 h-6 text-[#d4a5a5]" />
-                                <span className="text-sm font-semibold text-white">Instagram</span>
+                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#B76E79] to-[#D4A5A5] flex items-center justify-center shadow-lg">
+                                  <Instagram className="w-5 h-5 text-white" />
+                                </div>
+                                <span className="text-base font-bold text-white">Instagram</span>
                               </div>
-                              <span className="text-xl font-bold text-white">2.1M</span>
+                              <span className="text-2xl font-bold text-white drop-shadow-lg">2.1M</span>
                             </div>
-                            <div className="space-y-1">
-                              <div className="flex justify-between text-[10px]">
-                                <span className="text-zinc-500">Engagement</span>
-                                <span className="text-[#d4a5a5] font-semibold">9.2%</span>
+                            <div className="space-y-2">
+                              <div className="flex justify-between text-[11px]">
+                                <span className="text-zinc-400 font-medium">Engagement Rate</span>
+                                <span className="text-[#d4a5a5] font-bold">9.2%</span>
                               </div>
-                              <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                                <div className="h-full w-[92%] bg-gradient-to-r from-[#B76E79] to-[#D4A5A5] rounded-full" />
+                              <div className="w-full h-2 bg-zinc-900/50 rounded-full overflow-hidden backdrop-blur-sm">
+                                <div className="h-full w-[92%] bg-gradient-to-r from-[#B76E79] via-[#C48A94] to-[#D4A5A5] rounded-full shadow-[0_0_10px_rgba(183,110,121,0.5)] animate-slide-in-right animation-delay-400" />
                               </div>
                             </div>
                           </div>
 
-                          <div className="bg-gradient-to-r from-[#B76E79]/20 to-transparent backdrop-blur-md border border-white/10 rounded-xl p-5 animate-slide-in-right animation-delay-400">
-                            <div className="flex items-center justify-between mb-3">
+                          <div className="group bg-gradient-to-br from-[#B76E79]/25 via-[#B76E79]/15 to-transparent backdrop-blur-xl border border-white/20 rounded-2xl p-5 hover:border-[#B76E79]/50 transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_30px_rgba(183,110,121,0.3)] animate-slide-in-right animation-delay-400">
+                            <div className="flex items-center justify-between mb-4">
                               <div className="flex items-center gap-3">
-                                <Music2 className="w-6 h-6 text-[#d4a5a5]" />
-                                <span className="text-sm font-semibold text-white">TikTok</span>
+                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#B76E79] to-[#D4A5A5] flex items-center justify-center shadow-lg">
+                                  <Music2 className="w-5 h-5 text-white" />
+                                </div>
+                                <span className="text-base font-bold text-white">TikTok</span>
                               </div>
-                              <span className="text-xl font-bold text-white">1.1M</span>
+                              <span className="text-2xl font-bold text-white drop-shadow-lg">1.1M</span>
                             </div>
-                            <div className="space-y-1">
-                              <div className="flex justify-between text-[10px]">
-                                <span className="text-zinc-500">Avg Views</span>
-                                <span className="text-[#d4a5a5] font-semibold">450K</span>
+                            <div className="space-y-2">
+                              <div className="flex justify-between text-[11px]">
+                                <span className="text-zinc-400 font-medium">Avg. Views</span>
+                                <span className="text-[#d4a5a5] font-bold">450K</span>
                               </div>
-                              <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                                <div className="h-full w-[75%] bg-gradient-to-r from-[#B76E79] to-[#D4A5A5] rounded-full" />
+                              <div className="w-full h-2 bg-zinc-900/50 rounded-full overflow-hidden backdrop-blur-sm">
+                                <div className="h-full w-[75%] bg-gradient-to-r from-[#B76E79] via-[#C48A94] to-[#D4A5A5] rounded-full shadow-[0_0_10px_rgba(183,110,121,0.5)] animate-slide-in-right animation-delay-600" />
                               </div>
                             </div>
                           </div>
 
-                          <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-4 animate-fade-in animation-delay-600">
-                            <div className="grid grid-cols-2 gap-3 text-center">
-                              <div>
-                                <div className="text-lg font-bold text-white">72%</div>
-                                <div className="text-[9px] text-zinc-500">Female</div>
+                          <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/20 rounded-2xl p-5 hover:border-white/30 transition-all duration-300 animate-fade-in animation-delay-600">
+                            <div className="grid grid-cols-2 gap-4 text-center">
+                              <div className="space-y-1">
+                                <div className="text-2xl font-bold text-white drop-shadow-lg">72%</div>
+                                <div className="text-[10px] text-zinc-400 font-medium uppercase tracking-wider">Female</div>
                               </div>
-                              <div>
-                                <div className="text-lg font-bold text-white">18-34</div>
-                                <div className="text-[9px] text-zinc-500">Age Range</div>
+                              <div className="space-y-1">
+                                <div className="text-2xl font-bold text-white drop-shadow-lg">18-34</div>
+                                <div className="text-[10px] text-zinc-400 font-medium uppercase tracking-wider">Age Range</div>
                               </div>
                             </div>
                           </div>
@@ -228,40 +259,49 @@ export const MobileMockup = () => {
                       </div>
                     </div>
 
-                    {/* Slide 3: Brands */}
-                    <div className="w-full h-full flex-shrink-0 bg-black">
-                      <div className="h-full flex flex-col justify-center px-6 space-y-6">
-                        <div className="text-center space-y-2 animate-fade-up">
-                          <h2 className="text-3xl font-serif font-bold text-white">Brand Partners</h2>
-                          <p className="text-xs text-[#d4a5a5]">50+ Collaborations</p>
+                    {/* Slide 3: Brands - Enhanced */}
+                    <div className="w-full h-full flex-shrink-0 bg-gradient-to-b from-black via-zinc-950 to-black">
+                      <div className="h-full flex flex-col justify-center px-6 space-y-7">
+                        <div className="text-center space-y-3 animate-fade-up">
+                          <h2 className="text-4xl font-serif font-bold text-white tracking-tight drop-shadow-2xl">Brand Partners</h2>
+                          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-gradient-to-r from-[#B76E79]/20 to-[#D4A5A5]/20 border border-[#B76E79]/30 rounded-full">
+                            <p className="text-[11px] text-[#d4a5a5] font-bold tracking-wide">50+ Premium Collaborations</p>
+                          </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-3">
                           {['Dior', 'Chanel', 'Gucci', 'Prada', 'Versace', 'Fendi'].map((brand, i) => (
                             <div 
                               key={brand}
-                              className="bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-6 flex items-center justify-center hover:border-[#B76E79]/50 transition-colors animate-scale-in"
+                              className="group relative bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/20 rounded-2xl p-6 flex items-center justify-center hover:border-[#B76E79]/60 hover:shadow-[0_0_25px_rgba(183,110,121,0.3)] transition-all duration-300 hover:scale-105 cursor-pointer animate-scale-in overflow-hidden"
                               style={{ animationDelay: `${i * 100}ms` }}
                             >
-                              <span className="text-sm font-serif font-bold text-white tracking-wider">{brand}</span>
+                              {/* Shine effect on hover */}
+                              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 group-hover:animate-slide-in-right" />
+                              <span className="relative text-base font-serif font-bold text-white tracking-[0.15em] drop-shadow-lg">{brand}</span>
                             </div>
                           ))}
                         </div>
 
-                        <div className="text-center bg-gradient-to-r from-[#B76E79]/20 to-[#D4A5A5]/20 backdrop-blur-md border border-[#B76E79]/30 rounded-xl p-4 animate-fade-in animation-delay-600">
-                          <p className="text-[10px] text-zinc-400">
-                            Trusted by luxury brands worldwide for authentic fashion storytelling
+                        <div className="relative text-center bg-gradient-to-br from-[#B76E79]/25 via-[#B76E79]/15 to-[#D4A5A5]/20 backdrop-blur-xl border border-[#B76E79]/40 rounded-2xl p-5 animate-fade-in animation-delay-600 overflow-hidden">
+                          {/* Subtle animated background */}
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#B76E79]/10 to-transparent animate-pulse" />
+                          <p className="relative text-[11px] text-zinc-300 leading-relaxed font-medium">
+                            Trusted by luxury brands worldwide for authentic fashion storytelling and premium content creation
                           </p>
                         </div>
                       </div>
                     </div>
 
-                    {/* Slide 4: Contact */}
-                    <div className="w-full h-full flex-shrink-0 bg-black">
+                    {/* Slide 4: Contact - Enhanced */}
+                    <div className="w-full h-full flex-shrink-0 bg-gradient-to-b from-black via-zinc-950 to-black">
                       <div className="h-full flex flex-col justify-center px-6 space-y-6">
-                        <div className="text-center space-y-2 animate-fade-up">
-                          <h2 className="text-3xl font-serif font-bold text-white">Let's Collaborate</h2>
-                          <p className="text-xs text-[#d4a5a5]">Response within 24h</p>
+                        <div className="text-center space-y-3 animate-fade-up">
+                          <h2 className="text-4xl font-serif font-bold text-white tracking-tight drop-shadow-2xl">Let's Collaborate</h2>
+                          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 rounded-full">
+                            <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+                            <p className="text-[11px] text-green-300 font-bold tracking-wide">Available Now</p>
+                          </div>
                         </div>
 
                         <div className="space-y-3">
@@ -269,31 +309,41 @@ export const MobileMockup = () => {
                             <input 
                               type="text" 
                               placeholder="Brand Name"
-                              className="w-full bg-white/5 backdrop-blur-md border border-white/10 rounded-lg px-4 py-3 text-xs text-white placeholder:text-zinc-600 focus:border-[#B76E79]/50 outline-none transition-colors"
+                              className="w-full bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/20 rounded-xl px-4 py-3.5 text-xs text-white placeholder:text-zinc-500 focus:border-[#B76E79]/60 focus:shadow-[0_0_20px_rgba(183,110,121,0.2)] outline-none transition-all duration-300"
                             />
                           </div>
                           <div className="animate-fade-in animation-delay-300">
                             <input 
                               type="email" 
                               placeholder="Email Address"
-                              className="w-full bg-white/5 backdrop-blur-md border border-white/10 rounded-lg px-4 py-3 text-xs text-white placeholder:text-zinc-600 focus:border-[#B76E79]/50 outline-none transition-colors"
+                              className="w-full bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/20 rounded-xl px-4 py-3.5 text-xs text-white placeholder:text-zinc-500 focus:border-[#B76E79]/60 focus:shadow-[0_0_20px_rgba(183,110,121,0.2)] outline-none transition-all duration-300"
                             />
                           </div>
                           <div className="animate-fade-in animation-delay-400">
                             <textarea 
-                              placeholder="Campaign Details"
+                              placeholder="Campaign Details & Budget"
                               rows={4}
-                              className="w-full bg-white/5 backdrop-blur-md border border-white/10 rounded-lg px-4 py-3 text-xs text-white placeholder:text-zinc-600 focus:border-[#B76E79]/50 outline-none transition-colors resize-none"
+                              className="w-full bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/20 rounded-xl px-4 py-3.5 text-xs text-white placeholder:text-zinc-500 focus:border-[#B76E79]/60 focus:shadow-[0_0_20px_rgba(183,110,121,0.2)] outline-none transition-all duration-300 resize-none"
                             />
                           </div>
-                          <button className="w-full py-3 bg-gradient-to-r from-[#B76E79] to-[#D4A5A5] text-white rounded-lg text-xs font-semibold hover:scale-105 transition-transform shadow-lg shadow-[#B76E79]/30 animate-fade-in animation-delay-600">
-                            Send Inquiry
+                          <button className="group w-full py-4 bg-gradient-to-r from-[#B76E79] via-[#C48A94] to-[#D4A5A5] text-white rounded-xl text-sm font-bold hover:scale-105 hover:shadow-[0_8px_30px_rgba(183,110,121,0.5)] transition-all duration-300 shadow-[0_4px_20px_rgba(183,110,121,0.4)] animate-fade-in animation-delay-600 relative overflow-hidden">
+                            <span className="relative z-10 flex items-center justify-center gap-2">
+                              <Mail className="w-4 h-4 group-hover:rotate-12 transition-transform" />
+                              Send Inquiry
+                            </span>
+                            {/* Shine effect */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 group-hover:animate-slide-in-right" />
                           </button>
                         </div>
 
-                        <div className="flex justify-center gap-6 pt-2 animate-fade-in animation-delay-700">
+                        <div className="flex justify-center gap-6 pt-3 animate-fade-in animation-delay-700">
                           {[Instagram, Music2, Mail].map((Icon, i) => (
-                            <Icon key={i} className="w-5 h-5 text-[#d4a5a5] hover:text-white transition-colors cursor-pointer" />
+                            <div 
+                              key={i}
+                              className="w-11 h-11 rounded-full bg-gradient-to-br from-white/10 to-white/5 border border-white/20 flex items-center justify-center hover:border-[#B76E79] hover:shadow-[0_0_20px_rgba(183,110,121,0.4)] transition-all duration-300 hover:scale-110 cursor-pointer"
+                            >
+                              <Icon className="w-5 h-5 text-[#d4a5a5] hover:text-white transition-colors" />
+                            </div>
                           ))}
                         </div>
                       </div>
@@ -301,20 +351,41 @@ export const MobileMockup = () => {
                   </div>
                 </div>
 
-                {/* Navigation Dots */}
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-50">
+                {/* Enhanced Navigation Dots with Progress */}
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-50">
                   {[...Array(totalSlides)].map((_, i) => (
                     <button
                       key={i}
                       onClick={() => navigateToSlide(i)}
-                      className={`rounded-full transition-all duration-300 cursor-pointer hover:scale-125 ${
-                        i === currentSlide 
-                          ? 'w-2 h-2 bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]' 
-                          : 'w-1.5 h-1.5 bg-zinc-700 hover:bg-zinc-500'
-                      }`}
+                      className="group relative flex items-center justify-center"
                       aria-label={`Go to slide ${i + 1}`}
-                    />
+                    >
+                      {/* Outer glow ring for active */}
+                      {i === currentSlide && (
+                        <div className="absolute inset-0 w-3 h-3 rounded-full bg-[#B76E79]/40 blur-sm animate-pulse" />
+                      )}
+                      
+                      {/* Main dot */}
+                      <div className={`relative rounded-full transition-all duration-300 cursor-pointer ${
+                        i === currentSlide 
+                          ? 'w-2.5 h-2.5 bg-gradient-to-br from-[#B76E79] to-[#D4A5A5] shadow-[0_0_12px_rgba(183,110,121,0.8)] scale-100' 
+                          : 'w-2 h-2 bg-zinc-700 hover:bg-zinc-500 hover:scale-125 group-hover:shadow-[0_0_8px_rgba(255,255,255,0.3)]'
+                      }`} />
+                      
+                      {/* Slide number tooltip on hover */}
+                      <div className="absolute right-full mr-3 px-2 py-1 bg-black/80 backdrop-blur-sm rounded text-[9px] text-white font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none">
+                        Slide {i + 1}
+                      </div>
+                    </button>
                   ))}
+                </div>
+                
+                {/* Swipe Hint Indicator (shows on first load) */}
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 text-white/40 animate-bounce pointer-events-none">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                  </svg>
+                  <span className="text-[8px] font-medium">Swipe</span>
                 </div>
               </div>
             </div>
