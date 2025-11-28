@@ -3,8 +3,10 @@ import { Mail, Instagram, Music2, Edit3 } from 'lucide-react';
 
 export const MobileMockup = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [touchStart, setTouchStart] = useState(0);
-  const [touchEnd, setTouchEnd] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [touchStartY, setTouchStartY] = useState(0);
+  const [touchStartTime, setTouchStartTime] = useState(0);
   const totalSlides = 4;
 
   useEffect(() => {
@@ -19,31 +21,55 @@ export const MobileMockup = () => {
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchStart(e.targetTouches[0].clientY);
+    setTouchStartY(e.targetTouches[0].clientY);
+    setTouchStartTime(Date.now());
+    setIsDragging(true);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientY);
+    if (!isDragging) return;
+    
+    const currentY = e.targetTouches[0].clientY;
+    let offset = currentY - touchStartY;
+    
+    // Add boundary resistance at edges
+    if (currentSlide === 0 && offset > 0) {
+      offset = offset * 0.3; // Rubber band effect when at first slide
+    } else if (currentSlide === totalSlides - 1 && offset < 0) {
+      offset = offset * 0.3; // Rubber band effect when at last slide
+    }
+    
+    setDragOffset(offset);
   };
 
   const handleTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
+    if (!isDragging) return;
     
-    const distance = touchStart - touchEnd;
-    const minSwipeDistance = 50;
-
-    if (Math.abs(distance) > minSwipeDistance) {
-      if (distance > 0) {
+    const touchEndTime = Date.now();
+    const timeDiff = touchEndTime - touchStartTime;
+    const velocity = Math.abs(dragOffset) / timeDiff; // pixels per millisecond
+    
+    const containerHeight = 600; // Approximate height
+    const dragPercentage = Math.abs(dragOffset) / containerHeight;
+    
+    // Fast swipe (velocity > 0.5 px/ms) or drag > 20% triggers navigation
+    const shouldNavigate = velocity > 0.5 || dragPercentage > 0.2;
+    
+    if (shouldNavigate && Math.abs(dragOffset) > 20) {
+      if (dragOffset < 0 && currentSlide < totalSlides - 1) {
         // Swiped up - go to next slide
-        setCurrentSlide((prev) => (prev + 1) % totalSlides);
-      } else {
+        setCurrentSlide(prev => prev + 1);
+      } else if (dragOffset > 0 && currentSlide > 0) {
         // Swiped down - go to previous slide
-        setCurrentSlide((prev) => (prev - 1 + totalSlides) % totalSlides);
+        setCurrentSlide(prev => prev - 1);
       }
     }
-
-    setTouchStart(0);
-    setTouchEnd(0);
+    
+    // Reset drag state
+    setIsDragging(false);
+    setDragOffset(0);
+    setTouchStartY(0);
+    setTouchStartTime(0);
   };
 
   return (
@@ -80,7 +106,13 @@ export const MobileMockup = () => {
                 onTouchEnd={handleTouchEnd}
               >
                 {/* Slide Container */}
-                <div className="absolute inset-0 transition-transform duration-500 ease-in-out" style={{ transform: `translateY(-${currentSlide * 100}%)` }}>
+                <div 
+                  className="absolute inset-0 ease-out" 
+                  style={{ 
+                    transform: `translateY(calc(-${currentSlide * 100}% + ${dragOffset}px))`,
+                    transition: isDragging ? 'none' : 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+                  }}
+                >
                   <div className="flex flex-col h-full">
                     {/* Slide 1: Hero */}
                     <div className="w-full h-full flex-shrink-0">
