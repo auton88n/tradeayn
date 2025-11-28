@@ -7,6 +7,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ThemeToggle } from './theme-toggle';
 import { MobileMockup } from '@/components/MobileMockup';
+import { MobileMockupPhotographer } from '@/components/MobileMockupPhotographer';
 
 const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -176,46 +177,42 @@ const LandingPage = () => {
             </p>
           </div>
 
-          {/* Service 1: Influencer Portfolios - WITH MOCKUP */}
-          <div className="grid lg:grid-cols-2 gap-12 items-center mb-24">
-            {/* Left: Mobile Mockup */}
-            <div className="order-2 lg:order-1">
-              <MobileMockup />
-            </div>
-
-            {/* Right: Service Info */}
-            <div className="order-1 lg:order-2 space-y-6">
+          {/* Service 1: Influencer Portfolios - WITH DUAL MOCKUPS */}
+          <div className="space-y-12 mb-24">
+            {/* Service Info - Centered */}
+            <div className="text-center space-y-6 max-w-3xl mx-auto">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 font-bold backdrop-blur-sm">
                 <Palette className="w-5 h-5" />
                 Featured Service
               </div>
               
               <h2 className="text-4xl md:text-5xl font-black">
-                Professional Influencer Portfolios
+                Professional Portfolio Websites
               </h2>
               
               <p className="text-xl text-muted-foreground leading-relaxed">
                 We design stunning portfolio websites that showcase your brand professionally with an AI chatbot trained on your content
               </p>
 
-              <ul className="space-y-4">
+              <ul className="grid md:grid-cols-2 gap-4 text-left max-w-2xl mx-auto">
                 {[
                   'Custom design matching your brand',
                   'AI chatbot trained on your content',
                   'Automatic social media integration',
                   'Smart contact forms',
-                  'Mobile & SEO optimized'
+                  'Mobile & SEO optimized',
+                  'Lightning-fast performance'
                 ].map((feature, i) => (
                   <li key={i} className="flex items-start gap-3">
                     <div className="w-6 h-6 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
                       <span className="text-purple-600 dark:text-purple-400 text-sm">✓</span>
                     </div>
-                    <span className="text-lg">{feature}</span>
+                    <span className="text-base">{feature}</span>
                   </li>
                 ))}
               </ul>
 
-              <div className="flex flex-col sm:flex-row gap-4 pt-4">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
                 <Button 
                   onClick={() => setShowAuthModal(true)}
                   size="lg"
@@ -236,6 +233,33 @@ const LandingPage = () => {
                     <ExternalLink className="w-4 h-4 ml-2" />
                   </a>
                 </Button>
+              </div>
+            </div>
+
+            {/* Mockups Side by Side */}
+            <div className="grid lg:grid-cols-2 gap-12 xl:gap-16 max-w-7xl mx-auto">
+              {/* Influencer Mockup */}
+              <div className="space-y-4">
+                <div className="text-center">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#B76E79]/10 border border-[#B76E79]/20 mb-2">
+                    <Users className="w-4 h-4 text-[#B76E79]" />
+                    <span className="text-sm font-bold text-[#B76E79]">Influencer Portfolio</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Perfect for content creators & influencers</p>
+                </div>
+                <MobileMockup />
+              </div>
+
+              {/* Photographer Mockup */}
+              <div className="space-y-4">
+                <div className="text-center">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-500/10 border border-cyan-500/20 mb-2">
+                    <Target className="w-4 h-4 text-cyan-500" />
+                    <span className="text-sm font-bold text-cyan-500">Professional Portfolio</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Ideal for photographers & creatives</p>
+                </div>
+                <MobileMockupPhotographer />
               </div>
             </div>
           </div>
