@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Brain, TrendingUp, Target, BarChart3, Zap, Users, ArrowRight, Sparkles, Palette, Cog, FileSpreadsheet, MessageSquare, Building2, ExternalLink } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Brain, TrendingUp, Target, BarChart3, Zap, Users, ArrowRight, Sparkles, Palette, Cog, FileSpreadsheet, MessageSquare, Building2, ExternalLink, Mail, Bot, Database, Calendar, FileText, BarChart, Clock, TrendingDown, CheckCircle2, Box, Upload, Download, Loader2, Wrench } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { AuthModal } from './auth/AuthModal';
@@ -20,6 +20,15 @@ const LandingPage = () => {
   ]);
   const [isTyping] = useState(true);
   const [demoInput, setDemoInput] = useState('');
+  const [activeNode, setActiveNode] = useState(0);
+
+  // Auto-cycle through workflow nodes for Process Automation demo
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveNode((prev) => (prev + 1) % 5);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
 
   const features = [
     {
@@ -572,78 +581,362 @@ const LandingPage = () => {
             </div>
           </div>
 
-          {/* Services Grid - Remaining Services */}
-          <div className="grid md:grid-cols-2 gap-8">
-
-            {/* Service 3: Business Automation */}
-            <div className="group relative p-8 rounded-2xl bg-card border border-border hover:border-green-500/50 transition-all duration-300 hover:shadow-2xl hover:shadow-green-500/10 hover:-translate-y-1">
-              <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-emerald-500/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+          {/* Service 3: Process Automation - Full Width Showcase */}
+          <div className="w-full max-w-7xl mx-auto mb-24">
+            <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-slate-900 via-green-900 to-slate-900 border border-green-500/20 p-8 md:p-12">
+              {/* Glow effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 via-emerald-500/5 to-green-500/5" />
               
+              {/* Content */}
               <div className="relative z-10">
-                <div className="w-14 h-14 rounded-xl bg-green-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                  <Cog className="w-7 h-7 text-green-500" />
+                {/* Badge */}
+                <div className="inline-flex items-center gap-2 bg-green-500/10 border border-green-500/20 rounded-full px-4 py-2 mb-6">
+                  <Cog className="w-4 h-4 text-green-400" />
+                  <span className="text-sm font-semibold text-green-400">
+                    {language === 'ar' ? 'الخدمة المميزة' : 'Featured Service'}
+                  </span>
                 </div>
+
+                {/* Heading */}
+                <h3 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
+                  {language === 'ar' ? 'أتمتة العمليات التي تعمل' : 'Process Automation That Works'}
+                </h3>
                 
-                <h3 className="text-2xl font-bold mb-3">Process Automation</h3>
-                <p className="text-muted-foreground mb-6 leading-relaxed">
-                  Stop wasting time on repetitive tasks. We analyze your operations, identify bottlenecks, and deploy smart automation that saves hours every day—no coding required from your team.
+                <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-3xl">
+                  {language === 'ar'
+                    ? 'توقف عن إضاعة الوقت على المهام المتكررة. أتمتة سير العمل لديك بالذكاء الاصطناعي ووفر 20+ ساعة أسبوعياً.'
+                    : 'Stop wasting time on repetitive tasks. Automate your workflows with AI and save 20+ hours per week.'}
                 </p>
-                
-                <ul className="space-y-2 mb-6 text-sm">
-                  <li className="flex items-start gap-2">
-                    <span className="text-green-500 mt-0.5">✓</span>
-                    <span>Automated email responses and follow-ups</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-green-500 mt-0.5">✓</span>
-                    <span>Smart data entry and document processing</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-green-500 mt-0.5">✓</span>
-                    <span>Calendar management and scheduling</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-green-500 mt-0.5">✓</span>
-                    <span>Report generation on autopilot</span>
-                  </li>
-                </ul>
-                
-                <p className="text-sm font-medium text-green-500">
-                  Your team focuses on growth, not grunt work
-                </p>
+
+                {/* Feature Pills */}
+                <div className="flex flex-wrap gap-3 mb-12">
+                  {[
+                    language === 'ar' ? 'الرد التلقائي على البريد' : 'Email Auto-Response',
+                    language === 'ar' ? 'معالجة البيانات' : 'Data Processing',
+                    language === 'ar' ? 'مزامنة التقويم' : 'Calendar Sync',
+                    language === 'ar' ? 'توليد التقارير' : 'Report Generation',
+                    language === 'ar' ? 'بدون كود مطلوب' : 'No-Code Required',
+                  ].map((pill, idx) => (
+                    <div
+                      key={idx}
+                      className="px-4 py-2 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-sm font-medium hover:bg-green-500/20 transition-colors duration-300"
+                    >
+                      {pill}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Animated Workflow Diagram */}
+                <div className="bg-background/50 backdrop-blur-xl rounded-2xl border border-green-500/20 p-8 mb-8">
+                  <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-8">
+                    {/* Row 1: Email -> AI Process -> CRM */}
+                    <div className="flex items-center gap-4">
+                      <div className={`relative w-20 h-20 rounded-xl bg-gradient-to-br ${activeNode === 0 ? 'from-green-500 to-emerald-500 shadow-lg shadow-green-500/50' : 'from-green-500/20 to-emerald-500/20'} flex items-center justify-center transition-all duration-500`}>
+                        <Mail className="w-8 h-8 text-white" />
+                        {activeNode === 0 && (
+                          <div className="absolute inset-0 rounded-xl bg-green-500/30 animate-ping" />
+                        )}
+                      </div>
+                      
+                      <div className="relative">
+                        <ArrowRight className={`w-6 h-6 ${activeNode === 0 || activeNode === 1 ? 'text-green-400' : 'text-muted-foreground'} transition-colors duration-500`} />
+                        {activeNode === 0 && (
+                          <div className="absolute inset-0 flex items-center">
+                            <div className="w-2 h-2 rounded-full bg-green-400 animate-ping" />
+                          </div>
+                        )}
+                      </div>
+
+                      <div className={`relative w-20 h-20 rounded-xl bg-gradient-to-br ${activeNode === 1 ? 'from-green-500 to-emerald-500 shadow-lg shadow-green-500/50' : 'from-green-500/20 to-emerald-500/20'} flex items-center justify-center transition-all duration-500`}>
+                        <Bot className="w-8 h-8 text-white" />
+                        {activeNode === 1 && (
+                          <div className="absolute inset-0 rounded-xl bg-green-500/30 animate-ping" />
+                        )}
+                      </div>
+
+                      <div className="relative">
+                        <ArrowRight className={`w-6 h-6 ${activeNode === 1 || activeNode === 2 ? 'text-green-400' : 'text-muted-foreground'} transition-colors duration-500`} />
+                      </div>
+
+                      <div className={`relative w-20 h-20 rounded-xl bg-gradient-to-br ${activeNode === 2 ? 'from-green-500 to-emerald-500 shadow-lg shadow-green-500/50' : 'from-green-500/20 to-emerald-500/20'} flex items-center justify-center transition-all duration-500`}>
+                        <Database className="w-8 h-8 text-white" />
+                        {activeNode === 2 && (
+                          <div className="absolute inset-0 rounded-xl bg-green-500/30 animate-ping" />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Row 2: Secondary outputs */}
+                  <div className="flex items-center justify-center gap-8 mt-8">
+                    <div className={`relative w-16 h-16 rounded-lg bg-gradient-to-br ${activeNode === 3 ? 'from-green-500 to-emerald-500 shadow-lg shadow-green-500/50' : 'from-green-500/20 to-emerald-500/20'} flex items-center justify-center transition-all duration-500`}>
+                      <Calendar className="w-6 h-6 text-white" />
+                    </div>
+                    <div className={`relative w-16 h-16 rounded-lg bg-gradient-to-br ${activeNode === 4 ? 'from-green-500 to-emerald-500 shadow-lg shadow-green-500/50' : 'from-green-500/20 to-emerald-500/20'} flex items-center justify-center transition-all duration-500`}>
+                      <FileText className="w-6 h-6 text-white" />
+                    </div>
+                    <div className={`relative w-16 h-16 rounded-lg bg-gradient-to-br ${activeNode === 0 ? 'from-green-500 to-emerald-500 shadow-lg shadow-green-500/50' : 'from-green-500/20 to-emerald-500/20'} flex items-center justify-center transition-all duration-500`}>
+                      <BarChart className="w-6 h-6 text-white" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Stats Bar */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                  {[
+                    { label: language === 'ar' ? 'وفر 20+ ساعة أسبوعياً' : 'Save 20+ hours/week', icon: Clock },
+                    { label: language === 'ar' ? 'تخفيض 50٪ من التكاليف' : '50% cost reduction', icon: TrendingDown },
+                    { label: language === 'ar' ? 'صفر أخطاء' : 'Zero errors', icon: CheckCircle2 },
+                  ].map((stat, idx) => (
+                    <div key={idx} className="flex items-center gap-3 bg-green-500/5 border border-green-500/20 rounded-xl px-4 py-3">
+                      <stat.icon className="w-5 h-5 text-green-400" />
+                      <span className="text-sm font-semibold text-foreground">{stat.label}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Feature Grid */}
+                <div className="grid md:grid-cols-3 gap-6 mb-8">
+                  {[
+                    {
+                      icon: Mail,
+                      title: language === 'ar' ? 'البريد الإلكتروني' : 'Email',
+                      desc: language === 'ar' ? 'رد تلقائي ذكي' : 'Auto-respond intelligently',
+                    },
+                    {
+                      icon: Database,
+                      title: language === 'ar' ? 'معالجة البيانات' : 'Data Processing',
+                      desc: language === 'ar' ? 'أتمتة إدخال البيانات' : 'Automate data entry',
+                    },
+                    {
+                      icon: Calendar,
+                      title: language === 'ar' ? 'إدارة التقويم' : 'Calendar Management',
+                      desc: language === 'ar' ? 'مزامنة الجداول تلقائياً' : 'Sync schedules automatically',
+                    },
+                  ].map((feature, idx) => (
+                    <div key={idx} className="bg-background/50 backdrop-blur-sm border border-green-500/20 rounded-xl p-6 hover:bg-green-500/5 transition-colors duration-300">
+                      <feature.icon className="w-8 h-8 text-green-400 mb-3" />
+                      <h4 className="text-lg font-semibold mb-2">{feature.title}</h4>
+                      <p className="text-sm text-muted-foreground">{feature.desc}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* CTA Buttons */}
+                <div className="flex flex-wrap gap-4 justify-center mb-6">
+                  <Button
+                    size="lg"
+                    className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg hover:shadow-green-500/50 transition-all duration-300"
+                    onClick={() => setShowAuthModal(true)}
+                  >
+                    {language === 'ar' ? 'أتمتة عملك' : 'Automate Your Business'}
+                    <ArrowRight className="ml-2 w-5 h-5" />
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="border-green-500/30 hover:bg-green-500/10"
+                    onClick={() => setShowAuthModal(true)}
+                  >
+                    {language === 'ar' ? 'شاهد سير العمل' : 'See Workflows'}
+                  </Button>
+                </div>
+
+                {/* Social Proof */}
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground">
+                    <span className="text-green-400 font-semibold">200+</span>{' '}
+                    {language === 'ar' ? 'عملية مؤتمتة' : 'Processes Automated'}
+                  </p>
+                </div>
               </div>
             </div>
+          </div>
 
-            {/* Service 4: AYN Eng (Teaser) */}
-            <div className="group relative p-8 rounded-2xl bg-gradient-to-br from-orange-500/10 to-red-500/10 border-2 border-orange-500/30 hover:border-orange-500/50 transition-all duration-300 hover:shadow-2xl hover:shadow-orange-500/20 hover:-translate-y-1 md:col-span-2 lg:col-span-3">
-              <div className="relative z-10 text-center max-w-4xl mx-auto">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/20 text-orange-600 dark:text-orange-400 text-sm font-bold mb-4">
-                  <FileSpreadsheet className="w-4 h-4" />
-                  COMING SOON
+          {/* Service 4: AYN Eng - Full Width Showcase */}
+          <div className="w-full max-w-7xl mx-auto mb-24">
+            <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-slate-900 via-orange-900 to-slate-900 border border-orange-500/20 p-8 md:p-12">
+              {/* Glow effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 via-red-500/5 to-orange-500/5" />
+              
+              {/* Content */}
+              <div className="relative z-10">
+                {/* Badge */}
+                <div className="inline-flex items-center gap-2 bg-orange-500/10 border border-orange-500/20 rounded-full px-4 py-2 mb-6">
+                  <Wrench className="w-4 h-4 text-orange-400" />
+                  <span className="text-sm font-semibold text-orange-400">
+                    {language === 'ar' ? 'قريباً' : 'COMING SOON'}
+                  </span>
                 </div>
+
+                {/* Heading */}
+                <h3 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent">
+                  {language === 'ar' ? 'AYN Eng: ذكاء الهندسة المدنية' : 'AYN Eng: Civil Engineering AI'}
+                </h3>
                 
-                <h3 className="text-3xl font-bold mb-4">AYN Eng: Civil Engineering AI</h3>
-                <p className="text-lg text-muted-foreground mb-6 leading-relaxed max-w-2xl mx-auto">
-                  Revolutionary AI for civil engineers. Upload survey data, get instant cut/fill analysis, AutoCAD-ready DXF files, and engineering reports that follow Saudi and GCC standards—all in seconds, not hours.
+                <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-3xl">
+                  {language === 'ar'
+                    ? 'ذكاء اصطناعي ثوري لمهندسي البناء. أتمتة القطع والردم، تصدير DXF، وحسابات الحجم التي تتبع معايير GCC.'
+                    : 'Revolutionary AI for civil engineers. Automate cut/fill analysis, DXF export, and volume calculations that follow GCC standards.'}
                 </p>
-                
-                <div className="flex flex-wrap justify-center gap-3 text-sm">
-                  <span className="px-4 py-2 rounded-full bg-background/50 border border-orange-500/30">
-                    Slope Analysis
-                  </span>
-                  <span className="px-4 py-2 rounded-full bg-background/50 border border-orange-500/30">
-                    Volume Calculations
-                  </span>
-                  <span className="px-4 py-2 rounded-full bg-background/50 border border-orange-500/30">
-                    DXF Export
-                  </span>
-                  <span className="px-4 py-2 rounded-full bg-background/50 border border-orange-500/30">
-                    GCC Compliance
-                  </span>
+
+                {/* Feature Pills */}
+                <div className="flex flex-wrap gap-3 mb-12">
+                  {[
+                    language === 'ar' ? 'تحليل القطع والردم' : 'Cut/Fill Analysis',
+                    language === 'ar' ? 'تصدير DXF' : 'DXF Export',
+                    language === 'ar' ? 'حسابات الحجم' : 'Volume Calculations',
+                    language === 'ar' ? 'معايير GCC' : 'GCC Standards',
+                    language === 'ar' ? 'جاهز لـ AutoCAD' : 'AutoCAD Ready',
+                  ].map((pill, idx) => (
+                    <div
+                      key={idx}
+                      className="px-4 py-2 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 text-sm font-medium hover:bg-orange-500/20 transition-colors duration-300"
+                    >
+                      {pill}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Engineering Dashboard Preview */}
+                <div className="bg-background/50 backdrop-blur-xl rounded-2xl border border-orange-500/20 p-8 mb-8">
+                  <div className="grid md:grid-cols-2 gap-8">
+                    {/* Left: Terrain Analysis */}
+                    <div>
+                      <h4 className="text-lg font-semibold mb-4 text-orange-400">
+                        {language === 'ar' ? 'تحليل التضاريس' : 'TERRAIN ANALYSIS'}
+                      </h4>
+                      <div className="bg-slate-950/50 rounded-lg p-6 border border-orange-500/20 h-48 flex items-end justify-center overflow-hidden relative">
+                        {/* Animated terrain visualization */}
+                        <div className="absolute bottom-0 left-0 right-0 flex items-end justify-center gap-1">
+                          {[...Array(20)].map((_, i) => (
+                            <div
+                              key={i}
+                              className="w-4 bg-gradient-to-t from-orange-500 to-red-500 transition-all duration-1000"
+                              style={{
+                                height: `${Math.sin(i * 0.5) * 30 + 50}px`,
+                                animation: 'float 3s ease-in-out infinite',
+                                animationDelay: `${i * 0.1}s`,
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right: Calculation Results */}
+                    <div>
+                      <h4 className="text-lg font-semibold mb-4 text-orange-400">
+                        {language === 'ar' ? 'نتائج الحسابات' : 'CALCULATION RESULTS'}
+                      </h4>
+                      <div className="space-y-4">
+                        <div className="bg-slate-950/50 rounded-lg p-4 border border-orange-500/20">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-sm text-muted-foreground">
+                              {language === 'ar' ? 'حجم القطع' : 'Cut Volume'}
+                            </span>
+                            <span className="text-xl font-bold text-orange-400">2,450 m³</span>
+                          </div>
+                        </div>
+                        <div className="bg-slate-950/50 rounded-lg p-4 border border-orange-500/20">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-sm text-muted-foreground">
+                              {language === 'ar' ? 'حجم الردم' : 'Fill Volume'}
+                            </span>
+                            <span className="text-xl font-bold text-red-400">1,890 m³</span>
+                          </div>
+                        </div>
+                        <div className="bg-slate-950/50 rounded-lg p-4 border border-orange-500/20">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-sm text-muted-foreground">
+                              {language === 'ar' ? 'الصافي' : 'Net'}
+                            </span>
+                            <span className="text-xl font-bold text-green-400">+560 m³ (cut)</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <CheckCircle2 className="w-4 h-4 text-green-400" />
+                          <span className="text-muted-foreground">
+                            {language === 'ar' ? 'متوافق مع معايير GCC' : 'GCC Compliant'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Processing Pipeline */}
+                  <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+                    <div className="flex items-center gap-3 bg-orange-500/5 border border-orange-500/20 rounded-xl px-4 py-3">
+                      <Upload className="w-5 h-5 text-orange-400" />
+                      <span className="text-sm font-medium">
+                        {language === 'ar' ? 'رفع Survey.csv' : 'Upload Survey.csv'}
+                      </span>
+                    </div>
+                    <ArrowRight className="w-5 h-5 text-orange-400" />
+                    <div className="flex items-center gap-3 bg-orange-500/5 border border-orange-500/20 rounded-xl px-4 py-3">
+                      <Loader2 className="w-5 h-5 text-orange-400 animate-spin" />
+                      <span className="text-sm font-medium">
+                        {language === 'ar' ? 'جاري المعالجة...' : 'Processing...'}
+                      </span>
+                    </div>
+                    <ArrowRight className="w-5 h-5 text-orange-400" />
+                    <div className="flex items-center gap-3 bg-orange-500/5 border border-orange-500/20 rounded-xl px-4 py-3">
+                      <Download className="w-5 h-5 text-orange-400" />
+                      <span className="text-sm font-medium">
+                        {language === 'ar' ? 'تحميل DXF' : 'Download DXF'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Feature Grid */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+                  {[
+                    {
+                      icon: TrendingDown,
+                      title: language === 'ar' ? 'تحليل المنحدرات' : 'Slope Analysis',
+                    },
+                    {
+                      icon: Box,
+                      title: language === 'ar' ? 'حساب الحجم' : 'Volume Calc',
+                    },
+                    {
+                      icon: FileText,
+                      title: language === 'ar' ? 'تصدير DXF' : 'DXF Export',
+                    },
+                    {
+                      icon: CheckCircle2,
+                      title: language === 'ar' ? 'متوافق مع GCC' : 'GCC Compliant',
+                    },
+                  ].map((feature, idx) => (
+                    <div key={idx} className="bg-background/50 backdrop-blur-sm border border-orange-500/20 rounded-xl p-6 hover:bg-orange-500/5 transition-colors duration-300 text-center">
+                      <feature.icon className="w-8 h-8 text-orange-400 mb-3 mx-auto" />
+                      <h4 className="text-sm font-semibold">{feature.title}</h4>
+                    </div>
+                  ))}
+                </div>
+
+                {/* CTA Button */}
+                <div className="flex justify-center mb-6">
+                  <Button
+                    size="lg"
+                    className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-lg hover:shadow-orange-500/50 transition-all duration-300"
+                    onClick={() => setShowAuthModal(true)}
+                  >
+                    {language === 'ar' ? 'انضم إلى قائمة الانتظار' : 'Join Waitlist'}
+                    <ArrowRight className="ml-2 w-5 h-5" />
+                  </Button>
+                </div>
+
+                {/* Waitlist Counter */}
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground">
+                    <span className="text-orange-400 font-semibold">500+</span>{' '}
+                    {language === 'ar' ? 'مهندس في قائمة الانتظار' : 'Engineers on Waitlist'}
+                  </p>
                 </div>
               </div>
             </div>
-
           </div>
 
           {/* CTA */}
