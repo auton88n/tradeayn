@@ -11,6 +11,16 @@ const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const { t, language } = useLanguage();
 
+  // Demo chat state for Custom AI Agents showcase
+  const [demoMessages] = useState([
+    { sender: 'bot', text: language === 'ar' ? 'مرحباً بك في TechCorp! كيف يمكنني مساعدتك اليوم؟' : 'Welcome to TechCorp! How can I help you today?', time: '9:41' },
+    { sender: 'user', text: language === 'ar' ? 'أريد تتبع طلبي رقم #12345' : 'I need help tracking my order #12345', time: '9:42' },
+    { sender: 'bot', text: language === 'ar' ? 'وجدت طلبك! تم شحنه أمس عبر FedEx وسيصل غداً بحلول الساعة 5 مساءً. هل تريد رابط التتبع؟' : 'I found your order! It was shipped yesterday via FedEx and will arrive tomorrow by 5pm. Would you like the tracking link?', time: '9:42', hasButton: true },
+    { sender: 'user', text: language === 'ar' ? 'هل يمكنني تغيير عنوان التسليم؟' : 'Can I change the delivery address?', time: '9:43' },
+  ]);
+  const [isTyping] = useState(true);
+  const [demoInput, setDemoInput] = useState('');
+
   const features = [
     {
       icon: BarChart3,
@@ -347,47 +357,223 @@ const LandingPage = () => {
             </div>
           </div>
 
-          {/* Services Grid - Remaining Services */}
-          <div className="grid md:grid-cols-2 gap-8">
-
-            {/* Service 2: Custom AI Agents */}
-            <div className="group relative p-8 rounded-2xl bg-card border border-border hover:border-blue-500/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-1">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-cyan-500/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
-              
-              <div className="relative z-10">
-                <div className="w-14 h-14 rounded-xl bg-blue-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                  <MessageSquare className="w-7 h-7 text-blue-500" />
+          {/* Service 2: Custom AI Agents - INTERACTIVE DEMO SHOWCASE */}
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-1 mb-24">
+            {/* Gradient border effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-500 opacity-50 blur-xl" />
+            
+            <div className="relative bg-gradient-to-br from-slate-900 via-blue-900/50 to-slate-900 rounded-3xl p-12 backdrop-blur-xl">
+              {/* Header Section */}
+              <div className="text-center mb-12 space-y-6">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/20 border border-blue-500/30 backdrop-blur-sm">
+                  <MessageSquare className="w-5 h-5 text-blue-400" />
+                  <span className="text-sm font-bold text-blue-300">
+                    {language === 'ar' ? 'تجربة تفاعلية' : 'Interactive Demo'}
+                  </span>
                 </div>
+
+                <h3 className="text-5xl md:text-6xl font-black text-white">
+                  {language === 'ar' ? 'وكلاء AI مخصصون لأعمالك' : 'Custom AI Agents For Your Business'}
+                </h3>
                 
-                <h3 className="text-2xl font-bold mb-3">Custom AI Agents</h3>
-                <p className="text-muted-foreground mb-6 leading-relaxed">
-                  Your business is unique. Your AI should be too. We build intelligent agents tailored to your workflows—handling customer support, lead qualification, appointment booking, and more while you focus on what matters.
+                <p className="text-xl text-slate-300 max-w-3xl mx-auto leading-relaxed">
+                  {language === 'ar'
+                    ? 'أتمتة خدمة العملاء، المبيعات، والدعم مع وكلاء AI مدربين على بياناتك. متاح 24/7 بلغات متعددة'
+                    : 'Automate customer service, sales, and support with AI agents trained on your data. Available 24/7 in multiple languages'}
                 </p>
-                
-                <ul className="space-y-2 mb-6 text-sm">
-                  <li className="flex items-start gap-2">
-                    <span className="text-blue-500 mt-0.5">✓</span>
-                    <span>Trained on your company's knowledge base</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-blue-500 mt-0.5">✓</span>
-                    <span>Integrates with your existing tools</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-blue-500 mt-0.5">✓</span>
-                    <span>Handles customer inquiries 24/7</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-blue-500 mt-0.5">✓</span>
-                    <span>Learns and improves over time</span>
-                  </li>
-                </ul>
-                
-                <p className="text-sm font-medium text-blue-500">
-                  From lead generation to customer service—fully automated
-                </p>
+
+                {/* Feature Pills */}
+                <div className="flex flex-wrap justify-center gap-3 pt-4">
+                  {[
+                    { icon: '🕒', text: language === 'ar' ? 'دعم 24/7' : '24/7 Support' },
+                    { icon: '🌍', text: language === 'ar' ? 'متعدد اللغات' : 'Multi-Language' },
+                    { icon: '🧠', text: language === 'ar' ? 'مدرّب على بياناتك' : 'Trained on Your Data' },
+                    { icon: '🔗', text: language === 'ar' ? 'تكامل CRM' : 'CRM Integration' },
+                    { icon: '📈', text: language === 'ar' ? 'يتعلم باستمرار' : 'Learns Over Time' }
+                  ].map((feature, i) => (
+                    <div 
+                      key={i}
+                      className="px-4 py-2 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 text-white font-medium hover:bg-white/10 hover:scale-105 transition-all"
+                    >
+                      <span className="mr-2">{feature.icon}</span>
+                      {feature.text}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* INTERACTIVE CHAT DEMO */}
+              <div className="relative mb-12">
+                {/* Chat Container */}
+                <div className="relative bg-slate-800/50 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 p-6 max-w-3xl mx-auto">
+                  {/* Chat Header */}
+                  <div className="flex items-center gap-3 pb-4 mb-6 border-b border-white/10">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center">
+                      <MessageSquare className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <div className="text-white font-bold">TechCorp Support AI</div>
+                      <div className="flex items-center gap-2 text-xs text-green-400">
+                        <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                        {language === 'ar' ? 'متصل' : 'Online'}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Chat Messages */}
+                  <div className="space-y-4 mb-6 max-h-96 overflow-y-auto">
+                    {demoMessages.map((msg, i) => (
+                      <div key={i} className={`flex gap-3 ${msg.sender === 'user' ? 'flex-row-reverse' : ''}`}>
+                        {msg.sender === 'bot' && (
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center flex-shrink-0">
+                            <MessageSquare className="w-4 h-4 text-white" />
+                          </div>
+                        )}
+                        {msg.sender === 'user' && (
+                          <div className="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center flex-shrink-0 text-white font-bold text-sm">
+                            U
+                          </div>
+                        )}
+                        <div className={`flex-1 ${msg.sender === 'user' ? 'text-right' : ''}`}>
+                          <div className={`inline-block max-w-[80%] p-4 rounded-2xl ${
+                            msg.sender === 'user' 
+                              ? 'bg-blue-600 text-white' 
+                              : 'bg-white/10 text-white backdrop-blur-sm'
+                          }`}>
+                            <p className="text-sm leading-relaxed">{msg.text}</p>
+                            {msg.hasButton && (
+                              <button className="mt-3 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-xs font-medium transition-colors">
+                                {language === 'ar' ? '📦 رابط التتبع' : '📦 View Tracking'}
+                              </button>
+                            )}
+                          </div>
+                          <div className={`text-xs text-slate-400 mt-1 ${msg.sender === 'user' ? 'text-right' : ''}`}>
+                            {msg.time}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Typing Indicator */}
+                    {isTyping && (
+                      <div className="flex gap-3">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center flex-shrink-0">
+                          <MessageSquare className="w-4 h-4 text-white" />
+                        </div>
+                        <div className="inline-block p-4 rounded-2xl bg-white/10 backdrop-blur-sm">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-white/60 rounded-full animate-pulse" />
+                            <div className="w-2 h-2 bg-white/60 rounded-full animate-pulse [animation-delay:0.2s]" />
+                            <div className="w-2 h-2 bg-white/60 rounded-full animate-pulse [animation-delay:0.4s]" />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Chat Input */}
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={demoInput}
+                      onChange={(e) => setDemoInput(e.target.value)}
+                      placeholder={language === 'ar' ? 'جرّب كتابة سؤال...' : 'Try asking something...'}
+                      className="w-full px-4 py-3 pr-12 bg-slate-700/50 border border-white/10 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:border-blue-500/50 transition-colors"
+                      onClick={() => setShowAuthModal(true)}
+                    />
+                    <button
+                      onClick={() => setShowAuthModal(true)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center hover:scale-110 transition-transform"
+                    >
+                      <ArrowRight className="w-4 h-4 text-white" />
+                    </button>
+                  </div>
+
+                  {/* Try It Notice */}
+                  <p className="text-center text-xs text-slate-400 mt-3">
+                    {language === 'ar' ? '💡 سجّل دخول لتجربة الوكيل بالكامل' : '💡 Sign in to try the full agent experience'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Key Features Grid */}
+              <div className="grid md:grid-cols-3 gap-6 mb-12">
+                {[
+                  {
+                    icon: '🎯',
+                    title: language === 'ar' ? 'توليد العملاء' : 'Lead Generation',
+                    desc: language === 'ar' ? 'اجذب واحتفظ بالعملاء تلقائياً' : 'Qualify and capture leads automatically'
+                  },
+                  {
+                    icon: '💬',
+                    title: language === 'ar' ? 'دعم العملاء' : 'Customer Support',
+                    desc: language === 'ar' ? 'أجب على الأسئلة 24/7' : 'Answer FAQs 24/7 instantly'
+                  },
+                  {
+                    icon: '📅',
+                    title: language === 'ar' ? 'الحجوزات' : 'Booking & Scheduling',
+                    desc: language === 'ar' ? 'جدولة الاجتماعات تلقائياً' : 'Schedule meetings automatically'
+                  }
+                ].map((item, i) => (
+                  <div 
+                    key={i}
+                    className="p-6 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-blue-500/50 transition-all group"
+                  >
+                    <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">
+                      {item.icon}
+                    </div>
+                    <h4 className="text-xl font-bold text-white mb-2">{item.title}</h4>
+                    <p className="text-slate-400">{item.desc}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* CTA Buttons */}
+              <div className="flex flex-col sm:flex-row justify-center gap-4">
+                <Button 
+                  onClick={() => setShowAuthModal(true)}
+                  size="lg"
+                  className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold px-12 py-7 rounded-xl shadow-2xl text-lg hover:scale-105 transition-all"
+                >
+                  <MessageSquare className="w-5 h-5 mr-2" />
+                  {language === 'ar' ? 'احصل على وكيلك AI' : 'Get Your AI Agent'}
+                </Button>
+                <Button 
+                  onClick={() => setShowAuthModal(true)}
+                  variant="outline"
+                  size="lg"
+                  className="border-2 border-blue-500/50 text-white hover:bg-blue-500/20 px-12 py-7 rounded-xl text-lg font-bold backdrop-blur-sm"
+                >
+                  {language === 'ar' ? 'جرّب التجربة' : 'See Full Demo'}
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
+              </div>
+
+              {/* Social Proof */}
+              <div className="mt-12 text-center">
+                <div className="inline-flex items-center gap-6 px-6 py-4 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10">
+                  <div className="flex -space-x-3">
+                    {[1,2,3,4,5].map(i => (
+                      <div key={i} className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-cyan-500 border-2 border-slate-900 flex items-center justify-center text-white font-bold text-sm">
+                        {i}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="text-left">
+                    <div className="text-white font-bold">
+                      {language === 'ar' ? '100+ شركة أتمتت أعمالها' : '100+ Businesses Automated'}
+                    </div>
+                    <div className="text-sm text-slate-400">
+                      {language === 'ar' ? 'وفّر الوقت والتكاليف اليوم' : 'Save time and costs today'}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
+          </div>
+
+          {/* Services Grid - Remaining Services */}
+          <div className="grid md:grid-cols-2 gap-8">
 
             {/* Service 3: Business Automation */}
             <div className="group relative p-8 rounded-2xl bg-card border border-border hover:border-green-500/50 transition-all duration-300 hover:shadow-2xl hover:shadow-green-500/10 hover:-translate-y-1">
