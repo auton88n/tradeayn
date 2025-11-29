@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Brain, TrendingUp, Target, BarChart3, Zap, Users, ArrowRight, Sparkles, Palette, Cog, FileSpreadsheet, MessageSquare, Building2, ExternalLink, Mail, Bot, Database, Calendar, FileText, BarChart, Clock, TrendingDown, CheckCircle2, Box, Upload, Download, Loader2, Wrench } from 'lucide-react';
+import { Brain, TrendingUp, Target, BarChart3, Zap, Users, ArrowRight, Sparkles, Palette, Cog, FileSpreadsheet, MessageSquare, Building2, ExternalLink, Mail, Bot, Database, Calendar, FileText, BarChart, Clock, TrendingDown, CheckCircle2, Box, Upload, Download, Loader2, Wrench, Home, ShoppingCart, Truck, DollarSign, Phone, Briefcase, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { AuthModal } from './auth/AuthModal';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ThemeToggle } from './theme-toggle';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -21,14 +24,163 @@ const LandingPage = () => {
   const [isTyping] = useState(true);
   const [demoInput, setDemoInput] = useState('');
   const [activeNode, setActiveNode] = useState(0);
+  const [showCaseStudyModal, setShowCaseStudyModal] = useState(false);
+  const [selectedIndustry, setSelectedIndustry] = useState('ecommerce');
+  const [hoveredNode, setHoveredNode] = useState<string | null>(null);
 
   // Auto-cycle through workflow nodes for Process Automation demo
   useEffect(() => {
     const interval = setInterval(() => {
-      setActiveNode((prev) => (prev + 1) % 5);
+      setActiveNode((prev) => (prev + 1) % 6);
     }, 2000);
     return () => clearInterval(interval);
   }, []);
+
+  // Workflow node tooltips data
+  const workflowNodes = [
+    {
+      id: 'email',
+      icon: Mail,
+      label: { en: 'Email', ar: 'البريد' },
+      tooltip: {
+        en: { title: 'Incoming Emails', desc: 'AI reads and categorizes customer emails automatically' },
+        ar: { title: 'البريد الوارد', desc: 'يقرأ AI ويصنف رسائل العملاء تلقائياً' }
+      }
+    },
+    {
+      id: 'ai',
+      icon: Bot,
+      label: { en: 'AI Process', ar: 'معالجة AI' },
+      tooltip: {
+        en: { title: 'AI Processing', desc: 'Natural language understanding extracts intent, sentiment, and key data' },
+        ar: { title: 'معالجة AI', desc: 'فهم اللغة الطبيعية يستخرج النية والمشاعر والبيانات' }
+      }
+    },
+    {
+      id: 'crm',
+      icon: Database,
+      label: { en: 'CRM Update', ar: 'تحديث CRM' },
+      tooltip: {
+        en: { title: 'CRM Update', desc: 'Automatically creates tickets, updates contacts, and logs interactions' },
+        ar: { title: 'تحديث CRM', desc: 'إنشاء التذاكر وتحديث جهات الاتصال تلقائياً' }
+      }
+    },
+    {
+      id: 'calendar',
+      icon: Calendar,
+      label: { en: 'Calendar', ar: 'التقويم' },
+      tooltip: {
+        en: { title: 'Calendar Sync', desc: 'Schedules meetings and sends reminders automatically' },
+        ar: { title: 'مزامنة التقويم', desc: 'جدولة الاجتماعات وإرسال التذكيرات تلقائياً' }
+      }
+    },
+    {
+      id: 'document',
+      icon: FileText,
+      label: { en: 'Document', ar: 'المستند' },
+      tooltip: {
+        en: { title: 'Document Generation', desc: 'Creates reports, invoices, and contracts automatically' },
+        ar: { title: 'إنشاء المستندات', desc: 'إنشاء التقارير والفواتير والعقود تلقائياً' }
+      }
+    },
+    {
+      id: 'report',
+      icon: BarChart,
+      label: { en: 'Report', ar: 'التقرير' },
+      tooltip: {
+        en: { title: 'Analytics Report', desc: 'Generates insights and performance dashboards' },
+        ar: { title: 'تقارير التحليلات', desc: 'توليد الرؤى ولوحات الأداء' }
+      }
+    }
+  ];
+
+  // Case studies data
+  const caseStudies = {
+    ecommerce: {
+      icon: ShoppingCart,
+      title: { en: 'E-Commerce Automation', ar: 'أتمتة التجارة الإلكترونية' },
+      problem: { en: 'Spending 4 hours/day on order confirmations and inventory updates', ar: 'قضاء 4 ساعات/يوم في تأكيدات الطلبات وتحديثات المخزون' },
+      workflow: [
+        { icon: Mail, label: { en: 'New Order', ar: 'طلب جديد' } },
+        { icon: Bot, label: { en: 'AI Validation', ar: 'التحقق بالذكاء الاصطناعي' } },
+        { icon: Box, label: { en: 'Inventory Check', ar: 'فحص المخزون' } },
+        { icon: Phone, label: { en: 'Customer SMS', ar: 'رسالة نصية للعميل' } },
+        { icon: FileText, label: { en: 'Invoice', ar: 'فاتورة' } },
+        { icon: Truck, label: { en: 'Shipping Label', ar: 'ملصق الشحن' } }
+      ],
+      results: {
+        en: ['95% reduction in manual processing', '30 min → 2 min order handling', 'Zero data entry errors'],
+        ar: ['تخفيض 95٪ في المعالجة اليدوية', '30 دقيقة ← 2 دقيقة معالجة الطلب', 'صفر أخطاء إدخال البيانات']
+      },
+      testimonial: {
+        en: { text: 'Saved us 20 hours per week', author: 'Ahmed, Store Owner' },
+        ar: { text: 'وفر علينا 20 ساعة أسبوعياً', author: 'أحمد، صاحب متجر' }
+      }
+    },
+    realestate: {
+      icon: Home,
+      title: { en: 'Real Estate Automation', ar: 'أتمتة العقارات' },
+      problem: { en: 'Manual lead qualification taking 2 hours daily', ar: 'تأهيل العملاء المحتملين يدويًا يستغرق ساعتين يوميًا' },
+      workflow: [
+        { icon: Mail, label: { en: 'Lead Inquiry', ar: 'استفسار عميل' } },
+        { icon: Bot, label: { en: 'AI Qualification', ar: 'تأهيل AI' } },
+        { icon: Database, label: { en: 'Property Match', ar: 'مطابقة عقار' } },
+        { icon: Phone, label: { en: 'Auto Response', ar: 'رد تلقائي' } },
+        { icon: Calendar, label: { en: 'Schedule Tour', ar: 'جدولة جولة' } },
+        { icon: FileText, label: { en: 'Contract Prep', ar: 'تحضير عقد' } }
+      ],
+      results: {
+        en: ['80% faster lead response', '3x more qualified leads', '60% time savings on admin'],
+        ar: ['80٪ أسرع في الرد على العملاء', '3 أضعاف العملاء المؤهلين', '60٪ توفير في الوقت الإداري']
+      },
+      testimonial: {
+        en: { text: 'Closed 40% more deals this quarter', author: 'Sara, Real Estate Agent' },
+        ar: { text: 'أغلقت 40٪ صفقات أكثر هذا الربع', author: 'سارة، وكيلة عقارات' }
+      }
+    },
+    finance: {
+      icon: DollarSign,
+      title: { en: 'Finance Automation', ar: 'أتمتة المالية' },
+      problem: { en: 'Invoice processing taking 3 days per month', ar: 'معالجة الفواتير تستغرق 3 أيام شهرياً' },
+      workflow: [
+        { icon: Mail, label: { en: 'Invoice Received', ar: 'استلام فاتورة' } },
+        { icon: Bot, label: { en: 'Data Extract', ar: 'استخراج بيانات' } },
+        { icon: Database, label: { en: 'Categorize', ar: 'تصنيف' } },
+        { icon: CheckCircle2, label: { en: 'Auto Approve', ar: 'موافقة تلقائية' } },
+        { icon: DollarSign, label: { en: 'Payment', ar: 'دفع' } },
+        { icon: BarChart, label: { en: 'Report', ar: 'تقرير' } }
+      ],
+      results: {
+        en: ['90% faster invoice processing', '100% accuracy in data entry', '$5K saved monthly on admin'],
+        ar: ['90٪ أسرع في معالجة الفواتير', '100٪ دقة في إدخال البيانات', '5000$ توفير شهري في الإدارة']
+      },
+      testimonial: {
+        en: { text: 'Cut our month-end close from 5 days to 1 day', author: 'Khaled, CFO' },
+        ar: { text: 'قللنا إغلاق نهاية الشهر من 5 أيام إلى يوم واحد', author: 'خالد، مدير مالي' }
+      }
+    },
+    marketing: {
+      icon: TrendingUp,
+      title: { en: 'Marketing Automation', ar: 'أتمتة التسويق' },
+      problem: { en: 'Manual campaign management consuming 15 hours weekly', ar: 'إدارة الحملات يدوياً تستهلك 15 ساعة أسبوعياً' },
+      workflow: [
+        { icon: Mail, label: { en: 'Lead Capture', ar: 'التقاط عميل' } },
+        { icon: Bot, label: { en: 'Segment', ar: 'تقسيم' } },
+        { icon: Mail, label: { en: 'Nurture Email', ar: 'بريد رعاية' } },
+        { icon: Phone, label: { en: 'SMS Follow-up', ar: 'متابعة نصية' } },
+        { icon: Calendar, label: { en: 'Schedule Post', ar: 'جدولة منشور' } },
+        { icon: BarChart, label: { en: 'Analytics', ar: 'تحليلات' } }
+      ],
+      results: {
+        en: ['4x increase in lead engagement', '50% higher conversion rate', '15 hours saved weekly'],
+        ar: ['4 أضعاف زيادة في تفاعل العملاء', '50٪ زيادة في معدل التحويل', '15 ساعة توفير أسبوعياً']
+      },
+      testimonial: {
+        en: { text: 'Our campaigns run themselves now', author: 'Layla, Marketing Director' },
+        ar: { text: 'حملاتنا تعمل بنفسها الآن', author: 'ليلى، مديرة تسويق' }
+      }
+    }
+  };
 
   const features = [
     {
@@ -626,60 +778,96 @@ const LandingPage = () => {
                   ))}
                 </div>
 
-                {/* Animated Workflow Diagram */}
-                <div className="bg-background/50 backdrop-blur-xl rounded-2xl border border-green-500/20 p-8 mb-8">
-                  <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-8">
-                    {/* Row 1: Email -> AI Process -> CRM */}
-                    <div className="flex items-center gap-4">
-                      <div className={`relative w-20 h-20 rounded-xl bg-gradient-to-br ${activeNode === 0 ? 'from-green-500 to-emerald-500 shadow-lg shadow-green-500/50' : 'from-green-500/20 to-emerald-500/20'} flex items-center justify-center transition-all duration-500`}>
-                        <Mail className="w-8 h-8 text-white" />
-                        {activeNode === 0 && (
-                          <div className="absolute inset-0 rounded-xl bg-green-500/30 animate-ping" />
-                        )}
-                      </div>
-                      
-                      <div className="relative">
-                        <ArrowRight className={`w-6 h-6 ${activeNode === 0 || activeNode === 1 ? 'text-green-400' : 'text-muted-foreground'} transition-colors duration-500`} />
-                        {activeNode === 0 && (
-                          <div className="absolute inset-0 flex items-center">
-                            <div className="w-2 h-2 rounded-full bg-green-400 animate-ping" />
+                {/* Animated Workflow Diagram with Tooltips */}
+                <TooltipProvider delayDuration={100}>
+                  <div className="bg-background/50 backdrop-blur-xl rounded-2xl border border-green-500/20 p-8 mb-8">
+                    <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-8">
+                      {/* Row 1: Email -> AI Process -> CRM */}
+                      <div className="flex items-center gap-4">
+                        {workflowNodes.slice(0, 3).map((node, idx) => (
+                          <div key={node.id} className="flex items-center gap-4">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div 
+                                  className={`relative w-20 h-20 rounded-xl bg-gradient-to-br ${
+                                    activeNode === idx 
+                                      ? 'from-green-500 to-emerald-500 shadow-lg shadow-green-500/50 scale-110' 
+                                      : 'from-green-500/20 to-emerald-500/20 hover:scale-105'
+                                  } flex items-center justify-center transition-all duration-500 cursor-pointer group`}
+                                  onMouseEnter={() => setHoveredNode(node.id)}
+                                  onMouseLeave={() => setHoveredNode(null)}
+                                >
+                                  <node.icon className="w-8 h-8 text-white" />
+                                  {activeNode === idx && (
+                                    <div className="absolute inset-0 rounded-xl bg-green-500/30 animate-ping" />
+                                  )}
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent 
+                                side="bottom" 
+                                className="max-w-xs bg-gradient-to-br from-slate-900 to-emerald-900/50 border-emerald-500/30 backdrop-blur-xl"
+                              >
+                                <div className="flex items-start gap-3">
+                                  <node.icon className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                                  <div>
+                                    <p className="font-semibold text-white mb-1">
+                                      {language === 'ar' ? node.tooltip.ar.title : node.tooltip.en.title}
+                                    </p>
+                                    <p className="text-sm text-gray-300">
+                                      {language === 'ar' ? node.tooltip.ar.desc : node.tooltip.en.desc}
+                                    </p>
+                                  </div>
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                            {idx < 2 && (
+                              <div className="relative">
+                                <ArrowRight className={`w-6 h-6 ${activeNode === idx || activeNode === idx + 1 ? 'text-green-400' : 'text-muted-foreground'} transition-colors duration-500`} />
+                              </div>
+                            )}
                           </div>
-                        )}
+                        ))}
                       </div>
+                    </div>
 
-                      <div className={`relative w-20 h-20 rounded-xl bg-gradient-to-br ${activeNode === 1 ? 'from-green-500 to-emerald-500 shadow-lg shadow-green-500/50' : 'from-green-500/20 to-emerald-500/20'} flex items-center justify-center transition-all duration-500`}>
-                        <Bot className="w-8 h-8 text-white" />
-                        {activeNode === 1 && (
-                          <div className="absolute inset-0 rounded-xl bg-green-500/30 animate-ping" />
-                        )}
-                      </div>
-
-                      <div className="relative">
-                        <ArrowRight className={`w-6 h-6 ${activeNode === 1 || activeNode === 2 ? 'text-green-400' : 'text-muted-foreground'} transition-colors duration-500`} />
-                      </div>
-
-                      <div className={`relative w-20 h-20 rounded-xl bg-gradient-to-br ${activeNode === 2 ? 'from-green-500 to-emerald-500 shadow-lg shadow-green-500/50' : 'from-green-500/20 to-emerald-500/20'} flex items-center justify-center transition-all duration-500`}>
-                        <Database className="w-8 h-8 text-white" />
-                        {activeNode === 2 && (
-                          <div className="absolute inset-0 rounded-xl bg-green-500/30 animate-ping" />
-                        )}
-                      </div>
+                    {/* Row 2: Secondary outputs */}
+                    <div className="flex items-center justify-center gap-8 mt-8">
+                      {workflowNodes.slice(3, 6).map((node, idx) => (
+                        <Tooltip key={node.id}>
+                          <TooltipTrigger asChild>
+                            <div 
+                              className={`relative w-16 h-16 rounded-lg bg-gradient-to-br ${
+                                activeNode === idx + 3 
+                                  ? 'from-green-500 to-emerald-500 shadow-lg shadow-green-500/50 scale-110' 
+                                  : 'from-green-500/20 to-emerald-500/20 hover:scale-105'
+                              } flex items-center justify-center transition-all duration-500 cursor-pointer group`}
+                              onMouseEnter={() => setHoveredNode(node.id)}
+                              onMouseLeave={() => setHoveredNode(null)}
+                            >
+                              <node.icon className="w-6 h-6 text-white" />
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent 
+                            side="top" 
+                            className="max-w-xs bg-gradient-to-br from-slate-900 to-green-900/50 border-green-500/30 backdrop-blur-xl"
+                          >
+                            <div className="flex items-start gap-3">
+                              <node.icon className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                              <div>
+                                <p className="font-semibold text-white mb-1">
+                                  {language === 'ar' ? node.tooltip.ar.title : node.tooltip.en.title}
+                                </p>
+                                <p className="text-sm text-gray-300">
+                                  {language === 'ar' ? node.tooltip.ar.desc : node.tooltip.en.desc}
+                                </p>
+                              </div>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      ))}
                     </div>
                   </div>
-
-                  {/* Row 2: Secondary outputs */}
-                  <div className="flex items-center justify-center gap-8 mt-8">
-                    <div className={`relative w-16 h-16 rounded-lg bg-gradient-to-br ${activeNode === 3 ? 'from-green-500 to-emerald-500 shadow-lg shadow-green-500/50' : 'from-green-500/20 to-emerald-500/20'} flex items-center justify-center transition-all duration-500`}>
-                      <Calendar className="w-6 h-6 text-white" />
-                    </div>
-                    <div className={`relative w-16 h-16 rounded-lg bg-gradient-to-br ${activeNode === 4 ? 'from-green-500 to-emerald-500 shadow-lg shadow-green-500/50' : 'from-green-500/20 to-emerald-500/20'} flex items-center justify-center transition-all duration-500`}>
-                      <FileText className="w-6 h-6 text-white" />
-                    </div>
-                    <div className={`relative w-16 h-16 rounded-lg bg-gradient-to-br ${activeNode === 0 ? 'from-green-500 to-emerald-500 shadow-lg shadow-green-500/50' : 'from-green-500/20 to-emerald-500/20'} flex items-center justify-center transition-all duration-500`}>
-                      <BarChart className="w-6 h-6 text-white" />
-                    </div>
-                  </div>
-                </div>
+                </TooltipProvider>
 
                 {/* Stats Bar */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
@@ -736,7 +924,7 @@ const LandingPage = () => {
                     size="lg"
                     variant="outline"
                     className="border-green-500/30 hover:bg-green-500/10"
-                    onClick={() => setShowAuthModal(true)}
+                    onClick={() => setShowCaseStudyModal(true)}
                   >
                     {language === 'ar' ? 'شاهد سير العمل' : 'See Workflows'}
                   </Button>
@@ -979,6 +1167,136 @@ const LandingPage = () => {
         open={showAuthModal} 
         onOpenChange={setShowAuthModal}
       />
+
+      {/* Case Studies Modal */}
+      <Dialog open={showCaseStudyModal} onOpenChange={setShowCaseStudyModal}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border-emerald-500/20">
+          <DialogHeader>
+            <DialogTitle className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-green-500 bg-clip-text text-transparent flex items-center gap-3">
+              <Briefcase className="w-8 h-8 text-emerald-400" />
+              {language === 'ar' ? 'دراسات حالة الأتمتة' : 'Automation Case Studies'}
+            </DialogTitle>
+            <DialogDescription className="text-gray-400">
+              {language === 'ar' ? 'أمثلة حقيقية من عملائنا' : 'Real examples from our clients'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <Tabs value={selectedIndustry} onValueChange={setSelectedIndustry} className="w-full">
+            <TabsList className="grid w-full grid-cols-4 bg-slate-900/50">
+              <TabsTrigger value="ecommerce" className="data-[state=active]:bg-emerald-600">
+                <ShoppingCart className="w-4 h-4 mr-2" />
+                {language === 'ar' ? 'تجارة' : 'E-Commerce'}
+              </TabsTrigger>
+              <TabsTrigger value="realestate" className="data-[state=active]:bg-emerald-600">
+                <Home className="w-4 h-4 mr-2" />
+                {language === 'ar' ? 'عقارات' : 'Real Estate'}
+              </TabsTrigger>
+              <TabsTrigger value="finance" className="data-[state=active]:bg-emerald-600">
+                <DollarSign className="w-4 h-4 mr-2" />
+                {language === 'ar' ? 'مالية' : 'Finance'}
+              </TabsTrigger>
+              <TabsTrigger value="marketing" className="data-[state=active]:bg-emerald-600">
+                <TrendingUp className="w-4 h-4 mr-2" />
+                {language === 'ar' ? 'تسويق' : 'Marketing'}
+              </TabsTrigger>
+            </TabsList>
+
+            {Object.entries(caseStudies).map(([key, study]) => (
+              <TabsContent key={key} value={key} className="mt-6">
+                <div className="space-y-6">
+                  {/* Header */}
+                  <div className="flex items-start gap-4">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center flex-shrink-0">
+                      <study.icon className="w-8 h-8 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-2xl font-bold text-white mb-2">
+                        {language === 'ar' ? study.title.ar : study.title.en}
+                      </h3>
+                      <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
+                        <p className="text-sm font-medium text-red-400 mb-1">
+                          {language === 'ar' ? '❌ المشكلة:' : '❌ Problem:'}
+                        </p>
+                        <p className="text-gray-300">
+                          {language === 'ar' ? study.problem.ar : study.problem.en}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Workflow Visualization */}
+                  <div className="bg-gradient-to-br from-slate-900/50 to-emerald-900/20 backdrop-blur-xl rounded-2xl p-6 border border-emerald-500/20">
+                    <h4 className="text-lg font-semibold text-emerald-400 mb-4 flex items-center gap-2">
+                      <Cog className="w-5 h-5" />
+                      {language === 'ar' ? 'الحل - سير العمل:' : 'Solution Workflow:'}
+                    </h4>
+                    <div className="grid grid-cols-6 gap-4">
+                      {study.workflow.map((step, index) => (
+                        <div key={index} className="flex flex-col items-center gap-2">
+                          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
+                            <step.icon className="w-6 h-6 text-white" />
+                          </div>
+                          <span className="text-xs text-center text-gray-300">
+                            {language === 'ar' ? step.label.ar : step.label.en}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Results */}
+                  <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
+                    <h4 className="text-lg font-semibold text-green-400 mb-3 flex items-center gap-2">
+                      <CheckCircle2 className="w-5 h-5" />
+                      {language === 'ar' ? '✅ النتائج:' : '✅ Results:'}
+                    </h4>
+                    <ul className="space-y-2">
+                      {(language === 'ar' ? study.results.ar : study.results.en).map((result, index) => (
+                        <li key={index} className="flex items-start gap-2 text-gray-300">
+                          <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                          <span>{result}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Testimonial */}
+                  <div className="bg-gradient-to-r from-emerald-500/10 to-green-500/10 border border-emerald-500/30 rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center flex-shrink-0">
+                        <Users className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-white italic mb-2">
+                          "{language === 'ar' ? study.testimonial.ar.text : study.testimonial.en.text}"
+                        </p>
+                        <p className="text-sm text-gray-400">
+                          — {language === 'ar' ? study.testimonial.ar.author : study.testimonial.en.author}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* CTA */}
+                  <div className="text-center pt-4">
+                    <Button 
+                      size="lg"
+                      onClick={() => {
+                        setShowCaseStudyModal(false);
+                        setShowAuthModal(true);
+                      }}
+                      className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white px-8 shadow-lg hover:shadow-emerald-500/30 transition-all"
+                    >
+                      {language === 'ar' ? 'احصل على أتمتة مماثلة' : 'Get Similar Automation'}
+                      <ArrowRight className="ml-2 w-5 h-5" />
+                    </Button>
+                  </div>
+                </div>
+              </TabsContent>
+            ))}
+          </Tabs>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
