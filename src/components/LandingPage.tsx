@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const LandingPage = () => {
+  const [scrollY, setScrollY] = useState(0);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const { t, language } = useLanguage();
 
@@ -34,6 +35,16 @@ const LandingPage = () => {
       setActiveNode((prev) => (prev + 1) % 6);
     }, 2000);
     return () => clearInterval(interval);
+  }, []);
+
+  // Scroll handler for sticky nav glassmorphism
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+    
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   // Workflow node tooltips data
@@ -233,7 +244,16 @@ const LandingPage = () => {
       {/* All content with higher z-index */}
       <div className="relative z-10">
         {/* Navigation Header */}
-      <header className="bg-card border-b border-border sticky top-0 z-50">
+      <header 
+        className="sticky top-0 z-50 transition-all duration-300"
+        style={{
+          backgroundColor: `hsl(var(--card) / ${0.3 + (Math.min(scrollY / 100, 1) * 0.5)})`,
+          backdropFilter: `blur(${8 + (Math.min(scrollY / 100, 1) * 12)}px)`,
+          WebkitBackdropFilter: `blur(${8 + (Math.min(scrollY / 100, 1) * 12)}px)`,
+          borderBottom: `1px solid hsl(var(--border) / ${Math.min(scrollY / 100, 1) * 0.2})`,
+          boxShadow: scrollY > 10 ? '0 4px 30px rgba(0, 0, 0, 0.1)' : 'none',
+        }}
+      >
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
