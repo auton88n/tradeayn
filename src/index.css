@@ -805,8 +805,8 @@
     width: 40px;
     height: 40px;
     background: hsl(var(--primary));
-    border: none;
-    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -814,6 +814,9 @@
     transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     color: hsl(var(--primary-foreground));
     font-size: 14px;
+    box-shadow: 
+      inset 0 1px 0 rgba(255, 255, 255, 0.15),
+      0 2px 8px rgba(0, 0, 0, 0.15);
   }
 
   .send-button-square:hover:not(:disabled) {
@@ -834,32 +837,47 @@
   /* Mode-specific send button variants */
   .send-button.mode-blue,
   .send-button-square.mode-blue {
-    background: hsl(217 91% 60%); /* blue-500 equivalent */
-    box-shadow: 0 0 15px hsl(217 91% 60% / 0.3);
+    background: linear-gradient(180deg, hsl(217 91% 65%) 0%, hsl(217 91% 55%) 100%);
+    box-shadow: 
+      inset 0 1px 0 rgba(255, 255, 255, 0.2),
+      0 0 15px hsl(217 91% 60% / 0.4),
+      0 4px 12px hsl(217 91% 50% / 0.3);
   }
 
   .send-button.mode-green,
   .send-button-square.mode-green {
-    background: hsl(142 71% 45%); /* green-500 equivalent */
-    box-shadow: 0 0 15px hsl(142 71% 45% / 0.3);
+    background: linear-gradient(180deg, hsl(142 71% 50%) 0%, hsl(142 71% 40%) 100%);
+    box-shadow: 
+      inset 0 1px 0 rgba(255, 255, 255, 0.2),
+      0 0 15px hsl(142 71% 45% / 0.4),
+      0 4px 12px hsl(142 71% 40% / 0.3);
   }
 
   .send-button.mode-purple,
   .send-button-square.mode-purple {
-    background: hsl(262 83% 58%); /* purple-500 equivalent */
-    box-shadow: 0 0 15px hsl(262 83% 58% / 0.3);
+    background: linear-gradient(180deg, hsl(262 83% 63%) 0%, hsl(262 83% 53%) 100%);
+    box-shadow: 
+      inset 0 1px 0 rgba(255, 255, 255, 0.2),
+      0 0 15px hsl(262 83% 58% / 0.4),
+      0 4px 12px hsl(262 83% 53% / 0.3);
   }
 
   .send-button.mode-orange,
   .send-button-square.mode-orange {
-    background: hsl(25 95% 53%); /* orange-500 equivalent */
-    box-shadow: 0 0 15px hsl(25 95% 53% / 0.3);
+    background: linear-gradient(180deg, hsl(25 95% 58%) 0%, hsl(25 95% 48%) 100%);
+    box-shadow: 
+      inset 0 1px 0 rgba(255, 255, 255, 0.2),
+      0 0 15px hsl(25 95% 53% / 0.4),
+      0 4px 12px hsl(25 95% 48% / 0.3);
   }
 
   .send-button.mode-teal,
   .send-button-square.mode-teal {
-    background: hsl(173 58% 39%); /* teal-500 equivalent */
-    box-shadow: 0 0 15px hsl(173 58% 39% / 0.3);
+    background: linear-gradient(180deg, hsl(173 58% 44%) 0%, hsl(173 58% 34%) 100%);
+    box-shadow: 
+      inset 0 1px 0 rgba(255, 255, 255, 0.2),
+      0 0 15px hsl(173 58% 39% / 0.4),
+      0 4px 12px hsl(173 58% 34% / 0.3);
   }
 
   .send-button.mode-default,
@@ -873,36 +891,51 @@
 
   .send-button.mode-blue:hover:not(:disabled),
   .send-button-square.mode-blue:hover:not(:disabled) {
-    background: hsl(217 91% 55%);
-    box-shadow: 0 0 20px hsl(217 91% 60% / 0.4);
+    background: linear-gradient(180deg, hsl(217 91% 70%) 0%, hsl(217 91% 58%) 100%);
+    box-shadow: 
+      inset 0 1px 0 rgba(255, 255, 255, 0.25),
+      0 0 25px hsl(217 91% 60% / 0.5),
+      0 6px 16px hsl(217 91% 50% / 0.4);
     transform: scale(1.08);
   }
 
   .send-button.mode-green:hover:not(:disabled),
   .send-button-square.mode-green:hover:not(:disabled) {
-    background: hsl(142 71% 40%);
-    box-shadow: 0 0 20px hsl(142 71% 45% / 0.4);
+    background: linear-gradient(180deg, hsl(142 71% 55%) 0%, hsl(142 71% 43%) 100%);
+    box-shadow: 
+      inset 0 1px 0 rgba(255, 255, 255, 0.25),
+      0 0 25px hsl(142 71% 45% / 0.5),
+      0 6px 16px hsl(142 71% 40% / 0.4);
     transform: scale(1.08);
   }
 
   .send-button.mode-purple:hover:not(:disabled),
   .send-button-square.mode-purple:hover:not(:disabled) {
-    background: hsl(262 83% 53%);
-    box-shadow: 0 0 20px hsl(262 83% 58% / 0.4);
+    background: linear-gradient(180deg, hsl(262 83% 68%) 0%, hsl(262 83% 56%) 100%);
+    box-shadow: 
+      inset 0 1px 0 rgba(255, 255, 255, 0.25),
+      0 0 25px hsl(262 83% 58% / 0.5),
+      0 6px 16px hsl(262 83% 53% / 0.4);
     transform: scale(1.08);
   }
 
   .send-button.mode-orange:hover:not(:disabled),
   .send-button-square.mode-orange:hover:not(:disabled) {
-    background: hsl(25 95% 48%);
-    box-shadow: 0 0 20px hsl(25 95% 53% / 0.4);
+    background: linear-gradient(180deg, hsl(25 95% 63%) 0%, hsl(25 95% 51%) 100%);
+    box-shadow: 
+      inset 0 1px 0 rgba(255, 255, 255, 0.25),
+      0 0 25px hsl(25 95% 53% / 0.5),
+      0 6px 16px hsl(25 95% 48% / 0.4);
     transform: scale(1.08);
   }
 
   .send-button.mode-teal:hover:not(:disabled),
   .send-button-square.mode-teal:hover:not(:disabled) {
-    background: hsl(173 58% 34%);
-    box-shadow: 0 0 20px hsl(173 58% 39% / 0.4);
+    background: linear-gradient(180deg, hsl(173 58% 49%) 0%, hsl(173 58% 37%) 100%);
+    box-shadow: 
+      inset 0 1px 0 rgba(255, 255, 255, 0.25),
+      0 0 25px hsl(173 58% 39% / 0.5),
+      0 6px 16px hsl(173 58% 34% / 0.4);
     transform: scale(1.08);
   }
 
