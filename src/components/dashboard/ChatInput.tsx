@@ -195,7 +195,11 @@ export const ChatInput = ({
               </DropdownMenuTrigger>
               <DropdownMenuContent 
                 align="end" 
-                className="w-56 z-50 bg-background/80 backdrop-blur-xl border-border/50 shadow-2xl"
+                className="w-56 z-50 bg-background/80 backdrop-blur-xl border-border/50 shadow-2xl
+                  data-[state=open]:animate-in data-[state=closed]:animate-out 
+                  data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0
+                  data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95
+                  data-[side=bottom]:slide-in-from-top-2 data-[side=top]:slide-in-from-bottom-2"
               >
                 {modes.map(mode => <DropdownMenuItem 
                   key={mode.name} 
