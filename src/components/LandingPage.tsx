@@ -11,7 +11,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const LandingPage = () => {
-  const [scrollY, setScrollY] = useState(0);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const { t, language } = useLanguage();
 
@@ -35,16 +34,6 @@ const LandingPage = () => {
       setActiveNode((prev) => (prev + 1) % 6);
     }, 2000);
     return () => clearInterval(interval);
-  }, []);
-
-  // Scroll handler for sticky nav glassmorphism
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrollY(window.scrollY);
-    };
-    
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   // Workflow node tooltips data
@@ -218,42 +207,9 @@ const LandingPage = () => {
 
 
   return (
-    <div className="min-h-screen relative">
-      {/* Static White Glossy Blur Background Layer */}
-      <div className="fixed inset-0 pointer-events-none z-0">
-        {/* Main white glossy overlay */}
-        <div className="absolute inset-0 bg-white/5 backdrop-blur-3xl" />
-        
-        {/* Subtle gradient for depth */}
-        <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-white/5 to-white/10" />
-        
-        {/* Top gradient glow */}
-        <div className="absolute top-0 left-0 right-0 h-1/3 bg-gradient-to-b from-white/15 to-transparent blur-3xl" />
-        
-        {/* Bottom gradient glow */}
-        <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-white/15 to-transparent blur-3xl" />
-        
-        {/* Side glows for depth */}
-        <div className="absolute top-0 bottom-0 left-0 w-1/4 bg-gradient-to-r from-white/12 to-transparent blur-2xl" />
-        <div className="absolute top-0 bottom-0 right-0 w-1/4 bg-gradient-to-l from-white/12 to-transparent blur-2xl" />
-        
-        {/* Center subtle highlight */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1/2 h-1/2 bg-white/8 rounded-full blur-[100px]" />
-      </div>
-
-      {/* All content with higher z-index */}
-      <div className="relative z-10">
-        {/* Navigation Header */}
-      <header 
-        className="sticky top-0 z-50 transition-all duration-300"
-        style={{
-          backgroundColor: `hsl(var(--card) / ${0.3 + (Math.min(scrollY / 100, 1) * 0.5)})`,
-          backdropFilter: `blur(${8 + (Math.min(scrollY / 100, 1) * 12)}px)`,
-          WebkitBackdropFilter: `blur(${8 + (Math.min(scrollY / 100, 1) * 12)}px)`,
-          borderBottom: `1px solid hsl(var(--border) / ${Math.min(scrollY / 100, 1) * 0.2})`,
-          boxShadow: scrollY > 10 ? '0 4px 30px rgba(0, 0, 0, 0.1)' : 'none',
-        }}
-      >
+    <div className="min-h-screen">
+      {/* Navigation Header */}
+      <header className="bg-card border-b border-border sticky top-0 z-50">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -1341,7 +1297,6 @@ const LandingPage = () => {
           </Tabs>
         </DialogContent>
       </Dialog>
-      </div>
     </div>
   );
 };
