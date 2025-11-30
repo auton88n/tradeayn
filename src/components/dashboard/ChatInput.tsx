@@ -193,8 +193,15 @@ export const ChatInput = ({
                   <ChevronDown className="w-3 h-3 ml-1 opacity-50" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 z-50 bg-popover">
-                {modes.map(mode => <DropdownMenuItem key={mode.name} onClick={() => onModeChange(mode.name)} className="cursor-pointer">
+              <DropdownMenuContent 
+                align="end" 
+                className="w-56 z-50 bg-background/80 backdrop-blur-xl border-border/50 shadow-2xl"
+              >
+                {modes.map(mode => <DropdownMenuItem 
+                  key={mode.name} 
+                  onClick={() => onModeChange(mode.name)} 
+                  className="cursor-pointer hover:bg-accent/50 transition-colors"
+                >
                     <mode.icon className="w-4 h-4 mr-2" />
                     <span>{mode.translatedName}</span>
                     {selectedMode === mode.name && <span className="ml-auto text-primary">✓</span>}
