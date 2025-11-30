@@ -250,6 +250,43 @@ const LandingPage = () => {
         
         <div className="absolute inset-0 bg-gradient-radial from-primary/8 via-background to-accent/5" />
         
+        {/* Glassmorphism Geometric Shapes */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {/* Large glass circle - top right */}
+          <div className="absolute -top-20 -right-20 w-96 h-96 rounded-full bg-gradient-to-br from-purple-500/10 via-blue-500/10 to-transparent backdrop-blur-3xl border border-white/20 animate-float-slow" />
+          
+          {/* Hexagon - left side */}
+          <div 
+            className="absolute top-1/3 -left-10 w-48 h-48 bg-gradient-to-tr from-cyan-500/10 to-transparent backdrop-blur-xl border border-white/15 rotate-12 animate-spin-slow"
+            style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }}
+          />
+          
+          {/* Small glossy circles */}
+          <div className="absolute top-20 left-1/4 w-24 h-24 rounded-full bg-gradient-to-br from-white/30 to-white/5 shadow-lg animate-pulse-slow" />
+          <div className="absolute top-40 right-1/3 w-20 h-20 rounded-full bg-gradient-to-br from-blue-500/15 to-white/5 shadow-md animate-pulse-slow" style={{ animationDelay: '1s' }} />
+          <div className="absolute bottom-1/3 left-1/3 w-16 h-16 rounded-full bg-gradient-to-br from-purple-500/15 to-white/5 shadow-md animate-pulse-slow" style={{ animationDelay: '2s' }} />
+          
+          {/* Diamond shape - right center */}
+          <div className="absolute bottom-1/4 right-1/4 w-32 h-32 bg-gradient-to-r from-pink-500/10 to-purple-500/10 backdrop-blur-lg border border-white/20 rotate-45 animate-float" />
+          
+          {/* Dot grid */}
+          <div className="absolute top-1/2 right-10 grid grid-cols-3 gap-3">
+            {[...Array(9)].map((_, i) => (
+              <div 
+                key={i} 
+                className="w-2 h-2 rounded-full bg-primary/20 animate-pulse" 
+                style={{ animationDelay: `${i * 0.2}s` }} 
+              />
+            ))}
+          </div>
+          
+          {/* Bottom glass rectangle */}
+          <div className="absolute -bottom-10 left-1/4 w-80 h-40 rounded-3xl bg-gradient-to-tr from-pink-500/8 via-white/10 to-transparent backdrop-blur-2xl border border-white/15 -rotate-6 animate-float-slow" style={{ animationDelay: '0.5s' }} />
+          
+          {/* Small accent shapes */}
+          <div className="absolute top-2/3 right-1/3 w-12 h-12 rounded-lg bg-gradient-to-br from-cyan-500/10 to-transparent backdrop-blur-lg border border-white/15 rotate-12 animate-float" style={{ animationDelay: '1.5s' }} />
+        </div>
+        
         <div className="container mx-auto px-6 relative z-10">
           <div className="text-center max-w-4xl mx-auto">
             <div className="animate-fade-in-up">
