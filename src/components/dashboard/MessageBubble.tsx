@@ -20,9 +20,10 @@ export const MessageBubble = memo(({
   return (
     <div
       className={cn(
-        "flex gap-3 mb-4 animate-in fade-in slide-in-from-bottom-2 duration-300",
+        "flex gap-3 mb-4 animate-in fade-in-0 slide-in-from-bottom-2 duration-500",
         isUser ? "justify-end" : "justify-start"
       )}
+      style={{ animationTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)' }}
     >
       {/* AYN Avatar - Left Side */}
       {isAyn && (
@@ -36,7 +37,7 @@ export const MessageBubble = memo(({
       {/* Message Content */}
       <div
         className={cn(
-          "message-bubble rounded-2xl px-4 py-3 shadow-sm relative group",
+          "message-bubble rounded-2xl px-4 py-3 shadow-sm relative group transition-all duration-300 hover:shadow-md",
           isUser
             ? "user-message bg-primary text-primary-foreground"
             : "ai-message bg-muted text-foreground"
@@ -68,7 +69,7 @@ export const MessageBubble = memo(({
 
         {/* Action Buttons - Show on Hover */}
         <div className={cn(
-          "absolute -top-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity",
+          "absolute -top-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all duration-300",
           isUser ? "left-2" : "right-2"
         )}>
           <Button

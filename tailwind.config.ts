@@ -192,6 +192,43 @@ export default {
     				'50%': {
     					opacity: '0.4'
     				}
+    			},
+    			'scale-fade-in': {
+    				'0%': { opacity: '0', transform: 'scale(0.95)' },
+    				'100%': { opacity: '1', transform: 'scale(1)' }
+    			},
+    			'scale-fade-out': {
+    				'0%': { opacity: '1', transform: 'scale(1)' },
+    				'100%': { opacity: '0', transform: 'scale(0.95)' }
+    			},
+    			'slide-up-fade': {
+    				'0%': { opacity: '0', transform: 'translateY(8px)' },
+    				'100%': { opacity: '1', transform: 'translateY(0)' }
+    			},
+    			'slide-down-fade': {
+    				'0%': { opacity: '0', transform: 'translateY(-8px)' },
+    				'100%': { opacity: '1', transform: 'translateY(0)' }
+    			},
+    			'list-item-enter': {
+    				'0%': { opacity: '0', transform: 'translateX(-10px)' },
+    				'100%': { opacity: '1', transform: 'translateX(0)' }
+    			},
+    			'button-press': {
+    				'0%': { transform: 'scale(1)' },
+    				'50%': { transform: 'scale(0.97)' },
+    				'100%': { transform: 'scale(1)' }
+    			},
+    			'soft-pulse': {
+    				'0%, 100%': { opacity: '1' },
+    				'50%': { opacity: '0.8' }
+    			},
+    			'bounce-dot': {
+    				'0%, 100%': { transform: 'translateY(0)' },
+    				'50%': { transform: 'translateY(-4px)' }
+    			},
+    			shimmer: {
+    				'0%': { backgroundPosition: '-200% 0' },
+    				'100%': { backgroundPosition: '200% 0' }
     			}
     		},
     		animation: {
@@ -203,7 +240,16 @@ export default {
     			float: 'float 3s ease-in-out infinite',
     			typewriter: 'typewriter 3s steps(30, end) infinite',
     			blink: 'blink 1s step-end infinite',
-    			'placeholder-pulse': 'placeholder-pulse 2s ease-in-out infinite'
+    			'placeholder-pulse': 'placeholder-pulse 2s ease-in-out infinite',
+    			'scale-fade-in': 'scale-fade-in 0.2s cubic-bezier(0.32, 0.72, 0, 1)',
+    			'scale-fade-out': 'scale-fade-out 0.15s ease-out',
+    			'slide-up-fade': 'slide-up-fade 0.3s cubic-bezier(0.32, 0.72, 0, 1)',
+    			'slide-down-fade': 'slide-down-fade 0.3s cubic-bezier(0.32, 0.72, 0, 1)',
+    			'list-item-enter': 'list-item-enter 0.3s ease-out',
+    			'button-press': 'button-press 0.15s ease-out',
+    			'soft-pulse': 'soft-pulse 2s ease-in-out infinite',
+    			'bounce-dot': 'bounce-dot 1.4s ease-in-out infinite',
+    			shimmer: 'shimmer 2s linear infinite'
     		}
     	}
     },
