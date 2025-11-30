@@ -204,7 +204,7 @@ export const ChatInput = ({
 
             {/* Send Button */}
             <button className={cn("send-button-square", getSendButtonClass(selectedMode))} onClick={handleSend} disabled={!inputMessage.trim() && !selectedFile || isDisabled || isUploading} title="Send message">
-              <ArrowUp className="w-4 h-4" />
+              <ArrowUp className="w-[18px] h-[18px]" strokeWidth={2.5} />
             </button>
           </div>
         </div>
