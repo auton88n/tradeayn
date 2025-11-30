@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Paperclip, X, Plus, ChevronDown } from 'lucide-react';
+import { ArrowUp, Paperclip, X, Plus, ChevronDown, SlidersHorizontal, Clock } from 'lucide-react';
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -163,56 +163,8 @@ export const ChatInput = ({
         </div>
       )}
 
-      {/* Input Container */}
+      {/* Input Container - Two Row Layout */}
       <div className="input-container relative">
-        {/* Mode Selector and Attachment Buttons */}
-        <div className="flex items-center gap-1 flex-shrink-0">
-          {/* Mode Selector Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="mode-selector-button h-9 px-3 rounded-full hover:bg-muted/80 transition-all border border-border/50"
-              >
-                <span className="text-xs font-medium truncate max-w-[120px]">
-                  {modes.find(m => m.name === selectedMode)?.translatedName || 'Mode'}
-                </span>
-                <ChevronDown className="w-3 h-3 ml-1 opacity-50" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56 z-50 bg-popover">
-              {modes.map((mode) => (
-                <DropdownMenuItem
-                  key={mode.name}
-                  onClick={() => onModeChange(mode.name)}
-                  className="cursor-pointer"
-                >
-                  <mode.icon className="w-4 h-4 mr-2" />
-                  <span>{mode.translatedName}</span>
-                  {selectedMode === mode.name && (
-                    <span className="ml-auto text-primary">✓</span>
-                  )}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {/* Plus Button for File Attachment */}
-          {supportsFileAttachment && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isDisabled || isUploading}
-              className="attachment-button h-9 w-9 rounded-full hover:bg-muted/80 transition-all"
-              title="Attach file"
-            >
-              <Plus className="w-5 h-5" />
-            </Button>
-          )}
-        </div>
-
         {/* Hidden File Input */}
         <input
           ref={fileInputRef}
@@ -222,8 +174,8 @@ export const ChatInput = ({
           accept="image/*,.pdf,.doc,.docx,.txt,.json"
         />
 
-        {/* Textarea with Placeholder */}
-        <div className="relative flex-1">
+        {/* Row 1: Full-width Textarea */}
+        <div className="w-full relative">
           <Textarea
             ref={textareaRef}
             value={inputMessage}
@@ -234,14 +186,15 @@ export const ChatInput = ({
             placeholder=""
             disabled={isDisabled || isUploading}
             rows={1}
-            className="message-input resize-none min-h-[44px] max-h-[200px] focus-visible:ring-0 focus-visible:ring-offset-0"
+            unstyled={true}
+            className="w-full resize-none min-h-[44px] max-h-[200px] text-base bg-transparent border-0 outline-none focus:ring-0 px-1 py-2"
           />
 
           {/* Typewriter Placeholder */}
           {showPlaceholder && !inputMessage.trim() && !isInputFocused && (
             <div 
               className={cn(
-                "absolute top-[10px] pointer-events-none z-10 transition-all duration-300",
+                "absolute top-[8px] pointer-events-none z-10 transition-all duration-300",
                 direction === 'rtl' ? 'right-[4px]' : 'left-[4px]'
               )}
             >
@@ -275,15 +228,87 @@ export const ChatInput = ({
           )}
         </div>
 
-        {/* Send Button */}
-        <button
-          className={cn("send-button", getSendButtonClass(selectedMode))}
-          onClick={handleSend}
-          disabled={(!inputMessage.trim() && !selectedFile) || isDisabled || isUploading}
-          title="Send message"
-        >
-          <Send className="w-4 h-4" />
-        </button>
+        {/* Row 2: Toolbar */}
+        <div className="flex items-center justify-between w-full pt-2">
+          {/* Left: Action Buttons */}
+          <div className="flex items-center gap-1">
+            {/* Plus Button for File Attachment */}
+            {supportsFileAttachment && (
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isDisabled || isUploading}
+                className="toolbar-button"
+                title="Attach file"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            )}
+
+            {/* Settings Button (future functionality) */}
+            <button
+              onClick={() => {/* Future: Open AI settings */}}
+              disabled={isDisabled}
+              className="toolbar-button"
+              title="AI Settings"
+            >
+              <SlidersHorizontal className="w-4 h-4" />
+            </button>
+
+            {/* History Button (future functionality) */}
+            <button
+              onClick={() => {/* Future: Open chat history */}}
+              disabled={isDisabled}
+              className="toolbar-button"
+              title="Chat History"
+            >
+              <Clock className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Right: Mode Selector + Send Button */}
+          <div className="flex items-center gap-2">
+            {/* Mode Selector Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="mode-selector-button h-8 px-3 rounded-lg hover:bg-muted/80 transition-all"
+                >
+                  <span className="text-sm font-medium truncate max-w-[120px]">
+                    {modes.find(m => m.name === selectedMode)?.translatedName || 'Mode'}
+                  </span>
+                  <ChevronDown className="w-3 h-3 ml-1 opacity-50" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 z-50 bg-popover">
+                {modes.map((mode) => (
+                  <DropdownMenuItem
+                    key={mode.name}
+                    onClick={() => onModeChange(mode.name)}
+                    className="cursor-pointer"
+                  >
+                    <mode.icon className="w-4 h-4 mr-2" />
+                    <span>{mode.translatedName}</span>
+                    {selectedMode === mode.name && (
+                      <span className="ml-auto text-primary">✓</span>
+                    )}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Send Button */}
+            <button
+              className={cn("send-button-square", getSendButtonClass(selectedMode))}
+              onClick={handleSend}
+              disabled={(!inputMessage.trim() && !selectedFile) || isDisabled || isUploading}
+              title="Send message"
+            >
+              <ArrowUp className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

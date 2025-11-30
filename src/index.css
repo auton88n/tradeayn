@@ -694,16 +694,42 @@
     --input-vertical-offset: 10px; /* match .message-input padding-top exactly */
     background: hsl(var(--background));
     border-radius: 25px;
-    padding: 6px 12px;
+    padding: 12px 16px;
     box-shadow: 
       0 4px 20px hsla(var(--foreground), 0.1),
       0 1px 3px hsla(var(--foreground), 0.1);
     border: 1px solid hsl(var(--border));
     display: flex;
-    align-items: center;
-    gap: 8px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
     transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
     position: relative;
+  }
+
+  /* Toolbar button styles */
+  .toolbar-button {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    border: 1px solid hsl(var(--border));
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: hsl(var(--muted-foreground));
+  }
+
+  .toolbar-button:hover:not(:disabled) {
+    background: hsl(var(--muted));
+    color: hsl(var(--foreground));
+  }
+
+  .toolbar-button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
   }
 
   .input-container.drag-over {
@@ -770,33 +796,70 @@
     font-size: 14px;
   }
 
+  /* Square send button for new layout */
+  .send-button-square {
+    width: 40px;
+    height: 40px;
+    background: hsl(var(--primary));
+    border: none;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: hsl(var(--primary-foreground));
+    font-size: 14px;
+  }
+
+  .send-button-square:hover:not(:disabled) {
+    transform: scale(1.05);
+  }
+
+  .send-button-square:active:not(:disabled) {
+    transform: scale(0.95);
+  }
+
+  .send-button-square:disabled {
+    background: hsl(var(--muted));
+    color: hsl(var(--muted-foreground));
+    cursor: not-allowed;
+    transform: none;
+  }
+
   /* Mode-specific send button variants */
-  .send-button.mode-blue {
+  .send-button.mode-blue,
+  .send-button-square.mode-blue {
     background: hsl(217 91% 60%); /* blue-500 equivalent */
     box-shadow: 0 0 15px hsl(217 91% 60% / 0.3);
   }
 
-  .send-button.mode-green {
+  .send-button.mode-green,
+  .send-button-square.mode-green {
     background: hsl(142 71% 45%); /* green-500 equivalent */
     box-shadow: 0 0 15px hsl(142 71% 45% / 0.3);
   }
 
-  .send-button.mode-purple {
+  .send-button.mode-purple,
+  .send-button-square.mode-purple {
     background: hsl(262 83% 58%); /* purple-500 equivalent */
     box-shadow: 0 0 15px hsl(262 83% 58% / 0.3);
   }
 
-  .send-button.mode-orange {
+  .send-button.mode-orange,
+  .send-button-square.mode-orange {
     background: hsl(25 95% 53%); /* orange-500 equivalent */
     box-shadow: 0 0 15px hsl(25 95% 53% / 0.3);
   }
 
-  .send-button.mode-teal {
+  .send-button.mode-teal,
+  .send-button-square.mode-teal {
     background: hsl(173 58% 39%); /* teal-500 equivalent */
     box-shadow: 0 0 15px hsl(173 58% 39% / 0.3);
   }
 
-  .send-button.mode-default {
+  .send-button.mode-default,
+  .send-button-square.mode-default {
     background: hsl(var(--primary));
   }
 
@@ -804,32 +867,38 @@
     transform: scale(1.05);
   }
 
-  .send-button.mode-blue:hover:not(:disabled) {
+  .send-button.mode-blue:hover:not(:disabled),
+  .send-button-square.mode-blue:hover:not(:disabled) {
     background: hsl(217 91% 55%);
     box-shadow: 0 0 20px hsl(217 91% 60% / 0.4);
   }
 
-  .send-button.mode-green:hover:not(:disabled) {
+  .send-button.mode-green:hover:not(:disabled),
+  .send-button-square.mode-green:hover:not(:disabled) {
     background: hsl(142 71% 40%);
     box-shadow: 0 0 20px hsl(142 71% 45% / 0.4);
   }
 
-  .send-button.mode-purple:hover:not(:disabled) {
+  .send-button.mode-purple:hover:not(:disabled),
+  .send-button-square.mode-purple:hover:not(:disabled) {
     background: hsl(262 83% 53%);
     box-shadow: 0 0 20px hsl(262 83% 58% / 0.4);
   }
 
-  .send-button.mode-orange:hover:not(:disabled) {
+  .send-button.mode-orange:hover:not(:disabled),
+  .send-button-square.mode-orange:hover:not(:disabled) {
     background: hsl(25 95% 48%);
     box-shadow: 0 0 20px hsl(25 95% 53% / 0.4);
   }
 
-  .send-button.mode-teal:hover:not(:disabled) {
+  .send-button.mode-teal:hover:not(:disabled),
+  .send-button-square.mode-teal:hover:not(:disabled) {
     background: hsl(173 58% 34%);
     box-shadow: 0 0 20px hsl(173 58% 39% / 0.4);
   }
 
-  .send-button.mode-default:hover:not(:disabled) {
+  .send-button.mode-default:hover:not(:disabled),
+  .send-button-square.mode-default:hover:not(:disabled) {
     background: hsl(var(--primary) / 0.9);
   }
 
