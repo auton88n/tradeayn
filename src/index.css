@@ -176,23 +176,6 @@
     box-shadow: var(--glass-shadow);
   }
 
-  /* Enhanced Glassmorphism */
-  .glass-panel {
-    backdrop-filter: blur(20px);
-    background: hsl(var(--background) / 0.7);
-    border: 1px solid hsl(var(--border) / 0.3);
-    box-shadow: 0 8px 32px hsl(var(--foreground) / 0.05);
-  }
-
-  .glass-shine {
-    background: linear-gradient(
-      135deg,
-      hsl(var(--background) / 0.4) 0%,
-      hsl(var(--background) / 0.1) 50%,
-      transparent 100%
-    );
-  }
-
   .glass-hover {
     transition: all 0.3s ease;
   }

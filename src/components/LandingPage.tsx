@@ -207,35 +207,9 @@ const LandingPage = () => {
 
 
   return (
-    <div className="min-h-screen relative bg-gradient-to-b from-background to-secondary/20">
-      {/* Glossy Background Layers */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        {/* Top-left glass orb */}
-        <div className="absolute -top-40 -left-40 w-96 h-96 bg-gradient-to-br from-muted/50 to-background/30 rounded-full blur-3xl" />
-        {/* Top-right shine */}
-        <div className="absolute top-0 right-0 w-1/2 h-64 bg-gradient-to-b from-background/50 to-transparent" />
-        {/* Center glow */}
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-gradient-radial from-muted/80 to-transparent rounded-full blur-2xl" />
-        {/* Bottom glass panel */}
-        <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-muted/50 to-transparent" />
-        
-        {/* Floating Glass Particles */}
-        {[...Array(5)].map((_, i) => (
-          <div 
-            key={i}
-            className="absolute w-24 h-24 rounded-full bg-background/20 backdrop-blur-sm border border-border/30 animate-pulse"
-            style={{ 
-              left: `${15 + i * 20}%`, 
-              top: `${10 + (i % 3) * 25}%`,
-              animationDelay: `${i * 0.5}s`,
-              animationDuration: '4s'
-            }}
-          />
-        ))}
-      </div>
-      
+    <div className="min-h-screen">
       {/* Navigation Header */}
-      <header className="backdrop-blur-xl bg-background/80 border-b border-border/50 sticky top-0 z-50 shadow-sm relative">
+      <header className="bg-card border-b border-border sticky top-0 z-50">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -275,8 +249,6 @@ const LandingPage = () => {
         {/* Soft Radial Gradient Background */}
         
         <div className="absolute inset-0 bg-gradient-radial from-primary/8 via-background to-accent/5" />
-        {/* Glossy Shine Effect */}
-        <div className="absolute top-0 left-1/4 w-1/2 h-32 bg-gradient-to-b from-background/60 to-transparent blur-sm transform -skew-x-12 pointer-events-none" />
         
         <div className="container mx-auto px-6 relative z-10">
           <div className="text-center max-w-4xl mx-auto">
