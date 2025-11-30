@@ -689,9 +689,45 @@
     }
   }
 
-  /* Monochrome input container - no longer needed, styles in component */
   .input-container {
-    /* Removed - using inline Tailwind classes */
+    --input-left-offset: 4px; /* align placeholder with textarea text start */
+    --input-vertical-offset: 10px; /* match .message-input padding-top exactly */
+    background: hsl(var(--background));
+    border-radius: 25px;
+    padding: 6px 12px;
+    box-shadow: 
+      0 4px 20px hsla(var(--foreground), 0.1),
+      0 1px 3px hsla(var(--foreground), 0.1);
+    border: 1px solid hsl(var(--border));
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    position: relative;
+  }
+
+  .input-container.drag-over {
+    border-color: hsl(var(--primary));
+    box-shadow: 
+      0 8px 30px hsla(var(--primary), 0.15),
+      0 3px 8px hsla(var(--primary), 0.1),
+      0 0 0 2px hsla(var(--primary), 0.2);
+    transform: translateY(-2px);
+  }
+
+  .input-container:hover {
+    box-shadow: 
+      0 6px 25px hsla(var(--foreground), 0.12),
+      0 2px 6px hsla(var(--foreground), 0.1);
+    transform: translateY(-1px);
+  }
+
+  .input-container:focus-within {
+    box-shadow: 
+      0 8px 30px hsla(var(--primary), 0.15),
+      0 3px 8px hsla(var(--primary), 0.1),
+      0 0 0 2px hsla(var(--primary), 0.2);
+    transform: translateY(-1px);
   }
 
   .message-input {
@@ -719,9 +755,93 @@
     cursor: not-allowed;
   }
 
-  /* Monochrome send button - no longer needed, styles in component */
   .send-button {
-    /* Removed - using inline Tailwind classes */
+    width: 36px;
+    height: 36px;
+    background: hsl(var(--primary));
+    border: none;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: hsl(var(--primary-foreground));
+    font-size: 14px;
+  }
+
+  /* Mode-specific send button variants */
+  .send-button.mode-blue {
+    background: hsl(217 91% 60%); /* blue-500 equivalent */
+    box-shadow: 0 0 15px hsl(217 91% 60% / 0.3);
+  }
+
+  .send-button.mode-green {
+    background: hsl(142 71% 45%); /* green-500 equivalent */
+    box-shadow: 0 0 15px hsl(142 71% 45% / 0.3);
+  }
+
+  .send-button.mode-purple {
+    background: hsl(262 83% 58%); /* purple-500 equivalent */
+    box-shadow: 0 0 15px hsl(262 83% 58% / 0.3);
+  }
+
+  .send-button.mode-orange {
+    background: hsl(25 95% 53%); /* orange-500 equivalent */
+    box-shadow: 0 0 15px hsl(25 95% 53% / 0.3);
+  }
+
+  .send-button.mode-teal {
+    background: hsl(173 58% 39%); /* teal-500 equivalent */
+    box-shadow: 0 0 15px hsl(173 58% 39% / 0.3);
+  }
+
+  .send-button.mode-default {
+    background: hsl(var(--primary));
+  }
+
+  .send-button:hover:not(:disabled) {
+    transform: scale(1.05);
+  }
+
+  .send-button.mode-blue:hover:not(:disabled) {
+    background: hsl(217 91% 55%);
+    box-shadow: 0 0 20px hsl(217 91% 60% / 0.4);
+  }
+
+  .send-button.mode-green:hover:not(:disabled) {
+    background: hsl(142 71% 40%);
+    box-shadow: 0 0 20px hsl(142 71% 45% / 0.4);
+  }
+
+  .send-button.mode-purple:hover:not(:disabled) {
+    background: hsl(262 83% 53%);
+    box-shadow: 0 0 20px hsl(262 83% 58% / 0.4);
+  }
+
+  .send-button.mode-orange:hover:not(:disabled) {
+    background: hsl(25 95% 48%);
+    box-shadow: 0 0 20px hsl(25 95% 53% / 0.4);
+  }
+
+  .send-button.mode-teal:hover:not(:disabled) {
+    background: hsl(173 58% 34%);
+    box-shadow: 0 0 20px hsl(173 58% 39% / 0.4);
+  }
+
+  .send-button.mode-default:hover:not(:disabled) {
+    background: hsl(var(--primary) / 0.9);
+  }
+
+  .send-button:active:not(:disabled) {
+    transform: scale(0.95);
+  }
+
+  .send-button:disabled {
+    background: hsl(var(--muted));
+    color: hsl(var(--muted-foreground));
+    cursor: not-allowed;
+    transform: none;
   }
 
   .attachment-button {
@@ -757,7 +877,16 @@
     }
 
     .input-container {
-      /* Removed - using inline Tailwind classes */
+      --input-left-offset: 4px; /* mobile: align placeholder with textarea text start */
+      --input-vertical-offset: 8px; /* keep in sync on mobile */
+      padding: 6px 10px;
+      border-radius: 18px;
+    }
+
+    .send-button {
+      width: 32px;
+      height: 32px;
+      min-width: 32px;
     }
 
     .attachment-button {
@@ -775,6 +904,12 @@
   @media (min-width: 641px) and (max-width: 1023px) {
     .input-area.bottom-position {
       bottom: 12px;
+    }
+
+    .send-button {
+      width: 36px;
+      height: 36px;
+      min-width: 36px;
     }
 
     .attachment-button {
