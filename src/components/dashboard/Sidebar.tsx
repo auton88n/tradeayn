@@ -191,11 +191,18 @@ export const Sidebar = ({
               {filteredAndSortedChats.length === 0 ? <div className="px-4 py-8 text-center text-sm text-muted-foreground">
                   {searchQuery ? (language === 'ar' ? 'لم يتم العثور على محادثات' : 'No chats found') : t('common.noRecentChats')}
                 </div> : <>
-                  {filteredAndSortedChats.map((chat) => {
+                  {filteredAndSortedChats.map((chat, index) => {
                     const isPinned = pinnedChats.has(chat.sessionId);
                     const originalIndex = recentChats.findIndex(c => c.sessionId === chat.sessionId);
                     return (
-                      <SidebarMenuItem key={chat.sessionId}>
+                      <SidebarMenuItem 
+                        key={chat.sessionId}
+                        className="animate-in fade-in-0 slide-in-from-left-1 duration-300"
+                        style={{ 
+                          animationDelay: `${index * 30}ms`,
+                          animationFillMode: 'backwards'
+                        }}
+                      >
                         <div className="flex items-center gap-2 w-full border-b last:border-b-0">
                           {showChatSelection && <Checkbox checked={selectedChats.has(originalIndex)} onCheckedChange={() => onToggleChatSelection(originalIndex)} className="mr-2" />}
                             <SidebarMenuButton 
@@ -245,8 +252,8 @@ export const Sidebar = ({
         {/* User Profile with Logout */}
         <Popover>
           <PopoverTrigger asChild>
-            <button className="flex items-center gap-3 px-4 pb-4 w-full hover:bg-muted/50 transition-all duration-300 hover:scale-[1.02] cursor-pointer rounded-lg">
-              <Avatar className="w-10 h-10 transition-transform duration-300 hover:scale-110">
+            <button className="flex items-center gap-3 px-4 pb-4 w-full hover:bg-muted/50 transition-all duration-300 hover:scale-[1.01] cursor-pointer rounded-lg">
+              <Avatar className="w-10 h-10 transition-all duration-300 hover:scale-110 hover:shadow-md">
                 <AvatarImage src={userAvatar} alt={userName || 'User'} />
                 <AvatarFallback>
                   {userName?.charAt(0) || userEmail?.charAt(0) || 'U'}

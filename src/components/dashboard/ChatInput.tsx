@@ -214,7 +214,15 @@ export const ChatInput = ({
             </DropdownMenu>
 
             {/* Send Button */}
-            <button className={cn("send-button-square", getSendButtonClass(selectedMode))} onClick={handleSend} disabled={!inputMessage.trim() && !selectedFile || isDisabled || isUploading} title="Send message">
+            <button 
+              className={cn(
+                "send-button-square transition-all duration-200 active:scale-95 hover:scale-105", 
+                getSendButtonClass(selectedMode)
+              )} 
+              onClick={handleSend} 
+              disabled={!inputMessage.trim() && !selectedFile || isDisabled || isUploading} 
+              title="Send message"
+            >
               <ArrowUp className="w-[22px] h-[22px]" strokeWidth={2.5} />
             </button>
           </div>
