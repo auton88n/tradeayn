@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -36,6 +35,10 @@ interface AccessGrantWithProfile {
   profiles: Profile | null;
 }
 
+interface AdminPanelProps {
+  onBackToChat?: () => void;
+}
+
 interface UsageStats {
   user_id: string;
   user_email: string;
@@ -69,9 +72,8 @@ interface SystemConfig {
   notificationEmail: string;
 }
 
-export const AdminPanel = () => {
+export const AdminPanel = ({ onBackToChat }: AdminPanelProps) => {
   const { t, language } = useLanguage();
-  const navigate = useNavigate();
   // Core State
   const [allUsers, setAllUsers] = useState<AccessGrantWithProfile[]>([]);
   const [usageStats, setUsageStats] = useState<UsageStats[]>([]);
@@ -286,7 +288,11 @@ export const AdminPanel = () => {
           <p className="text-muted-foreground">{t('admin.subtitle')}</p>
         </div>
         <div className={`flex items-center gap-3 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-          <Button onClick={() => navigate('/')} variant="outline" size="sm">
+          <Button 
+            onClick={() => onBackToChat?.()} 
+            variant="outline" 
+            size="sm"
+          >
             <MessageSquare className={`w-4 h-4 ${language === 'ar' ? 'ml-2' : 'mr-2'}`} />
             {language === 'ar' ? 'العودة للدردشة' : 'Back to Chat'}
           </Button>
