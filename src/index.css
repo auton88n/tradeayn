@@ -77,12 +77,13 @@
   gap: 0.25rem;
   font-size: 0.75rem;
   font-weight: 500;
-  transition: all 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .mode-selector-button:hover {
   background: hsl(var(--muted) / 0.8) !important;
   border-color: hsl(var(--primary) / 0.3) !important;
+  transform: scale(1.02);
 }
 
 /* Plus button enhancement */
@@ -718,13 +719,16 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     color: hsl(var(--muted-foreground));
+    transform: translateY(0);
   }
 
   .toolbar-button:hover:not(:disabled) {
     background: hsl(var(--muted));
     color: hsl(var(--foreground));
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px hsla(var(--foreground) / 0.1);
   }
 
   .toolbar-button:disabled {
@@ -807,13 +811,13 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     color: hsl(var(--primary-foreground));
     font-size: 14px;
   }
 
   .send-button-square:hover:not(:disabled) {
-    transform: scale(1.05);
+    transform: scale(1.08);
   }
 
   .send-button-square:active:not(:disabled) {
@@ -871,35 +875,41 @@
   .send-button-square.mode-blue:hover:not(:disabled) {
     background: hsl(217 91% 55%);
     box-shadow: 0 0 20px hsl(217 91% 60% / 0.4);
+    transform: scale(1.08);
   }
 
   .send-button.mode-green:hover:not(:disabled),
   .send-button-square.mode-green:hover:not(:disabled) {
     background: hsl(142 71% 40%);
     box-shadow: 0 0 20px hsl(142 71% 45% / 0.4);
+    transform: scale(1.08);
   }
 
   .send-button.mode-purple:hover:not(:disabled),
   .send-button-square.mode-purple:hover:not(:disabled) {
     background: hsl(262 83% 53%);
     box-shadow: 0 0 20px hsl(262 83% 58% / 0.4);
+    transform: scale(1.08);
   }
 
   .send-button.mode-orange:hover:not(:disabled),
   .send-button-square.mode-orange:hover:not(:disabled) {
     background: hsl(25 95% 48%);
     box-shadow: 0 0 20px hsl(25 95% 53% / 0.4);
+    transform: scale(1.08);
   }
 
   .send-button.mode-teal:hover:not(:disabled),
   .send-button-square.mode-teal:hover:not(:disabled) {
     background: hsl(173 58% 34%);
     box-shadow: 0 0 20px hsl(173 58% 39% / 0.4);
+    transform: scale(1.08);
   }
 
   .send-button.mode-default:hover:not(:disabled),
   .send-button-square.mode-default:hover:not(:disabled) {
     background: hsl(var(--primary) / 0.9);
+    transform: scale(1.08);
   }
 
   .send-button:active:not(:disabled) {
