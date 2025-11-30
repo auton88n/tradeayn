@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { 
-  Crown, RefreshCw, Activity, BarChart3, Settings, Users, MessageSquare
+  Crown, RefreshCw, Activity, BarChart3, Settings, Users
 } from 'lucide-react';
 import { AdminDashboard } from './admin/AdminDashboard';
 import { UserManagement } from './admin/UserManagement';
@@ -33,10 +33,6 @@ interface AccessGrantWithProfile {
   current_month_usage: number;
   user_email?: string;
   profiles: Profile | null;
-}
-
-interface AdminPanelProps {
-  onBackToChat?: () => void;
 }
 
 interface UsageStats {
@@ -72,7 +68,7 @@ interface SystemConfig {
   notificationEmail: string;
 }
 
-export const AdminPanel = ({ onBackToChat }: AdminPanelProps) => {
+export const AdminPanel = () => {
   const { t, language } = useLanguage();
   // Core State
   const [allUsers, setAllUsers] = useState<AccessGrantWithProfile[]>([]);
@@ -288,14 +284,6 @@ export const AdminPanel = ({ onBackToChat }: AdminPanelProps) => {
           <p className="text-muted-foreground">{t('admin.subtitle')}</p>
         </div>
         <div className={`flex items-center gap-3 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-          <Button 
-            onClick={() => onBackToChat?.()} 
-            variant="outline" 
-            size="sm"
-          >
-            <MessageSquare className={`w-4 h-4 ${language === 'ar' ? 'ml-2' : 'mr-2'}`} />
-            {language === 'ar' ? 'العودة للدردشة' : 'Back to Chat'}
-          </Button>
           <Button onClick={fetchData} variant="outline" size="sm" disabled={isLoading}>
             <RefreshCw className={`w-4 h-4 ${language === 'ar' ? 'ml-2' : 'mr-2'} ${isLoading ? 'animate-spin' : ''}`} />
             {t('admin.refresh')}

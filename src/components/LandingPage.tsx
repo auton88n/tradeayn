@@ -208,32 +208,8 @@ const LandingPage = () => {
 
   return (
     <div className="min-h-screen">
-      {/* Static White Glossy Blur Background Layer */}
-      <div className="fixed inset-0 pointer-events-none z-0">
-        {/* Main white glossy overlay */}
-        <div className="absolute inset-0 bg-white/5 backdrop-blur-3xl" />
-        
-        {/* Subtle gradient for depth */}
-        <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-white/5 to-white/10" />
-        
-        {/* Top gradient glow */}
-        <div className="absolute top-0 left-0 right-0 h-1/3 bg-gradient-to-b from-white/15 to-transparent blur-3xl" />
-        
-        {/* Bottom gradient glow */}
-        <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-white/15 to-transparent blur-3xl" />
-        
-        {/* Side glows for depth */}
-        <div className="absolute top-0 bottom-0 left-0 w-1/4 bg-gradient-to-r from-white/12 to-transparent blur-2xl" />
-        <div className="absolute top-0 bottom-0 right-0 w-1/4 bg-gradient-to-l from-white/12 to-transparent blur-2xl" />
-        
-        {/* Center subtle highlight */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1/2 h-1/2 bg-white/8 rounded-full blur-[100px]" />
-      </div>
-
-      {/* Content with higher z-index */}
-      <div className="relative z-10">
-        {/* Navigation Header */}
-        <header className="bg-card border-b border-border sticky top-0 z-50">
+      {/* Navigation Header */}
+      <header className="bg-card border-b border-border sticky top-0 z-50">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -273,43 +249,6 @@ const LandingPage = () => {
         {/* Soft Radial Gradient Background */}
         
         <div className="absolute inset-0 bg-gradient-radial from-primary/8 via-background to-accent/5" />
-        
-        {/* Glassmorphism Geometric Shapes */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {/* Large glass circle - top right */}
-          <div className="absolute -top-20 -right-20 w-96 h-96 rounded-full bg-gradient-to-br from-purple-500/10 via-blue-500/10 to-transparent backdrop-blur-3xl border border-white/20 animate-float-slow" />
-          
-          {/* Hexagon - left side */}
-          <div 
-            className="absolute top-1/3 -left-10 w-48 h-48 bg-gradient-to-tr from-cyan-500/10 to-transparent backdrop-blur-xl border border-white/15 rotate-12 animate-spin-slow"
-            style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }}
-          />
-          
-          {/* Small glossy circles */}
-          <div className="absolute top-20 left-1/4 w-24 h-24 rounded-full bg-gradient-to-br from-white/30 to-white/5 shadow-lg animate-pulse-slow" />
-          <div className="absolute top-40 right-1/3 w-20 h-20 rounded-full bg-gradient-to-br from-blue-500/15 to-white/5 shadow-md animate-pulse-slow" style={{ animationDelay: '1s' }} />
-          <div className="absolute bottom-1/3 left-1/3 w-16 h-16 rounded-full bg-gradient-to-br from-purple-500/15 to-white/5 shadow-md animate-pulse-slow" style={{ animationDelay: '2s' }} />
-          
-          {/* Diamond shape - right center */}
-          <div className="absolute bottom-1/4 right-1/4 w-32 h-32 bg-gradient-to-r from-pink-500/10 to-purple-500/10 backdrop-blur-lg border border-white/20 rotate-45 animate-float" />
-          
-          {/* Dot grid */}
-          <div className="absolute top-1/2 right-10 grid grid-cols-3 gap-3">
-            {[...Array(9)].map((_, i) => (
-              <div 
-                key={i} 
-                className="w-2 h-2 rounded-full bg-primary/20 animate-pulse" 
-                style={{ animationDelay: `${i * 0.2}s` }} 
-              />
-            ))}
-          </div>
-          
-          {/* Bottom glass rectangle */}
-          <div className="absolute -bottom-10 left-1/4 w-80 h-40 rounded-3xl bg-gradient-to-tr from-pink-500/8 via-white/10 to-transparent backdrop-blur-2xl border border-white/15 -rotate-6 animate-float-slow" style={{ animationDelay: '0.5s' }} />
-          
-          {/* Small accent shapes */}
-          <div className="absolute top-2/3 right-1/3 w-12 h-12 rounded-lg bg-gradient-to-br from-cyan-500/10 to-transparent backdrop-blur-lg border border-white/15 rotate-12 animate-float" style={{ animationDelay: '1.5s' }} />
-        </div>
         
         <div className="container mx-auto px-6 relative z-10">
           <div className="text-center max-w-4xl mx-auto">
@@ -1358,7 +1297,6 @@ const LandingPage = () => {
           </Tabs>
         </DialogContent>
       </Dialog>
-      </div> {/* Close content wrapper */}
     </div>
   );
 };

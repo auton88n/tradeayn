@@ -52,7 +52,7 @@ export default function Dashboard({ user }: DashboardProps) {
       {/* Main Content - conditionally render based on active view */}
       {activeView === 'admin' && auth.isAdmin ? (
         <div className="min-h-screen p-6 pt-16 bg-background">
-          <AdminPanel onBackToChat={() => setActiveView('chat')} />
+          <AdminPanel />
         </div>
       ) : (
         <SidebarProvider>
