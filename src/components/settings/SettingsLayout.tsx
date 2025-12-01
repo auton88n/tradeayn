@@ -20,12 +20,12 @@ export const SettingsLayout = ({ children }: SettingsLayoutProps) => {
   return (
     <div className="min-h-screen bg-background p-6 pt-8">
       <div className="max-w-5xl mx-auto">
-        <div className="mb-8 flex items-center gap-4">
+        <div className="mb-8">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => navigate('/')}
-            className="gap-2"
+            className="gap-2 mb-4"
           >
             <ArrowLeft className="h-4 w-4" />
             {t('common.back')}
