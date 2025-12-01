@@ -18,7 +18,7 @@ export const SettingsLayout = ({ children }: SettingsLayoutProps) => {
   const { t, language } = useLanguage();
 
   return (
-    <div className="min-h-screen bg-background p-6 pt-20">
+    <div className="min-h-screen bg-background p-6 pt-8">
       <div className="max-w-5xl mx-auto">
         <div className="mb-8 flex items-center gap-4">
           <Button
