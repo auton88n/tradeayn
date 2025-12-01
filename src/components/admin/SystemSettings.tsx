@@ -1,13 +1,15 @@
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { 
-  Settings, Shield, AlertTriangle
+  Settings, Shield, AlertTriangle, Loader2
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SystemConfig {
   defaultMonthlyLimit: number;
@@ -37,6 +39,16 @@ export const SystemSettings = ({
 }: SystemSettingsProps) => {
   const { toast } = useToast();
   const { t, language } = useLanguage();
+  const [saving, setSaving] = useState(false);
+
+  const handleConfigUpdate = async (updates: Partial<SystemConfig>) => {
+    setSaving(true);
+    try {
+      await onUpdateConfig(updates);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="space-y-6" dir={language === 'ar' ? 'rtl' : 'ltr'}>
@@ -60,9 +72,10 @@ export const SystemSettings = ({
               <div className={`flex items-center space-x-2 ${language === 'ar' ? 'flex-row-reverse space-x-reverse' : ''}`}>
                 <Switch 
                   checked={systemConfig.enableMaintenance}
-                  onCheckedChange={(checked) => onUpdateConfig({ enableMaintenance: checked })}
+                  onCheckedChange={(checked) => handleConfigUpdate({ enableMaintenance: checked })}
                   size="sm"
                   rtl={language === 'ar'}
+                  disabled={saving}
                 />
                 <span className="text-sm text-muted-foreground">
                   {t('admin.showMaintenance')}

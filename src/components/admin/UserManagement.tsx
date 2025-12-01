@@ -9,7 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { 
   Users, CheckCircle, XCircle, Clock, Building, Mail, Phone, Shield, Eye, Edit,
-  Search, Filter, Download, UserPlus, UserMinus, MoreVertical, Settings
+  Search, Filter, Download, UserPlus, UserMinus, MoreVertical, Settings, Loader2
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -50,6 +50,8 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<AccessGrantWithProfile | null>(null);
   const [bulkEditModalOpen, setBulkEditModalOpen] = useState(false);
+  const [bulkAction, setBulkAction] = useState('');
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
   const { toast } = useToast();
   const { t, language } = useLanguage();
 
@@ -243,6 +245,76 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
     });
   };
 
+  const handleBulkAction = async () => {
+    if (selectedUsers.length === 0 || !bulkAction) return;
+    
+    setBulkActionLoading(true);
+    try {
+      switch (bulkAction) {
+        case 'activate':
+          const { error: activateError } = await supabase
+            .from('access_grants')
+            .update({ 
+              is_active: true,
+              granted_at: new Date().toISOString()
+            })
+            .in('user_id', selectedUsers);
+          if (activateError) throw activateError;
+          break;
+          
+        case 'deactivate':
+          const { error: deactivateError } = await supabase
+            .from('access_grants')
+            .update({ is_active: false })
+            .in('user_id', selectedUsers);
+          if (deactivateError) throw deactivateError;
+          break;
+          
+        case 'reset_usage':
+          const { error: resetError } = await supabase
+            .from('access_grants')
+            .update({ current_month_usage: 0 })
+            .in('user_id', selectedUsers);
+          if (resetError) throw resetError;
+          break;
+          
+        case 'delete':
+          // Confirm deletion
+          if (!confirm(`Are you sure you want to delete ${selectedUsers.length} user(s)? This action cannot be undone.`)) {
+            setBulkActionLoading(false);
+            return;
+          }
+          
+          // Delete user data
+          await supabase.from('messages').delete().in('user_id', selectedUsers);
+          await supabase.from('user_settings').delete().in('user_id', selectedUsers);
+          await supabase.from('device_fingerprints').delete().in('user_id', selectedUsers);
+          await supabase.from('access_grants').delete().in('user_id', selectedUsers);
+          await supabase.from('profiles').delete().in('user_id', selectedUsers);
+          break;
+      }
+      
+      toast({
+        title: 'Success',
+        description: `Bulk action "${bulkAction}" completed for ${selectedUsers.length} users`
+      });
+      
+      setSelectedUsers([]);
+      setBulkAction('');
+      onRefresh();
+      
+    } catch (error) {
+      console.error('Bulk action error:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to complete bulk action',
+        variant: 'destructive'
+      });
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       {/* Header and Controls */}
@@ -253,10 +325,37 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
         </div>
         <div className={`flex items-center gap-3 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
           {selectedUsers.length > 0 && (
-            <Button onClick={handleBulkEditLimits} variant="outline" size="sm">
-              <Settings className={`w-4 h-4 ${language === 'ar' ? 'ml-2' : 'mr-2'}`} />
-              {t('admin.bulkEditLimits')} ({selectedUsers.length})
-            </Button>
+            <>
+              <Select value={bulkAction} onValueChange={setBulkAction}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder={t('admin.bulkActions')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="activate">{t('admin.activateSelected')}</SelectItem>
+                  <SelectItem value="deactivate">{t('admin.deactivateSelected')}</SelectItem>
+                  <SelectItem value="reset_usage">{t('admin.resetUsageSelected')}</SelectItem>
+                  <SelectItem value="delete">{t('admin.deleteSelected')}</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button 
+                onClick={handleBulkAction} 
+                disabled={!bulkAction || bulkActionLoading}
+                size="sm"
+              >
+                {bulkActionLoading ? (
+                  <>
+                    <Loader2 className={`w-4 w-4 animate-spin ${language === 'ar' ? 'ml-2' : 'mr-2'}`} />
+                    Processing...
+                  </>
+                ) : (
+                  'Apply'
+                )}
+              </Button>
+              <Button onClick={handleBulkEditLimits} variant="outline" size="sm">
+                <Settings className={`w-4 h-4 ${language === 'ar' ? 'ml-2' : 'mr-2'}`} />
+                {t('admin.bulkEditLimits')} ({selectedUsers.length})
+              </Button>
+            </>
           )}
           <Button onClick={exportUserData} variant="outline" size="sm">
             <Download className={`w-4 h-4 ${language === 'ar' ? 'ml-2' : 'mr-2'}`} />

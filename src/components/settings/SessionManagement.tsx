@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,12 +15,50 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useUserSettings } from '@/hooks/useUserSettings';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Monitor, Smartphone, Tablet, LogOut, Key } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 export const SessionManagement = () => {
   const { t } = useLanguage();
+  const { toast } = useToast();
   const { sessions, loading, revokeSession, signOutAllDevices } = useUserSettings();
+  const [changingPassword, setChangingPassword] = useState(false);
+
+  const handlePasswordChange = async () => {
+    try {
+      setChangingPassword(true);
+      
+      // Get current user email
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) {
+        throw new Error('No email found');
+      }
+      
+      // Send password reset email
+      const { error } = await supabase.auth.resetPasswordForEmail(
+        user.email,
+        { redirectTo: `${window.location.origin}/reset-password` }
+      );
+      
+      if (error) throw error;
+      
+      toast({
+        title: t('common.success'),
+        description: t('settings.passwordResetEmailSent'),
+      });
+    } catch (error) {
+      console.error('Error sending password reset:', error);
+      toast({
+        title: t('common.error'),
+        description: 'Failed to send password reset email',
+        variant: 'destructive',
+      });
+    } finally {
+      setChangingPassword(false);
+    }
+  };
 
   const getDeviceIcon = (deviceInfo: any) => {
     const type = deviceInfo?.type?.toLowerCase() || '';
@@ -125,9 +164,23 @@ export const SessionManagement = () => {
                 {t('settings.changePasswordDesc')}
               </p>
             </div>
-            <Button variant="outline" className="gap-2">
-              <Key className="h-4 w-4" />
-              {t('settings.changePassword')}
+            <Button 
+              variant="outline" 
+              className="gap-2"
+              onClick={handlePasswordChange}
+              disabled={changingPassword}
+            >
+              {changingPassword ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {t('common.sending')}
+                </>
+              ) : (
+                <>
+                  <Key className="h-4 w-4" />
+                  {t('settings.changePassword')}
+                </>
+              )}
             </Button>
           </div>
         </div>

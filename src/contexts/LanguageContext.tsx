@@ -140,6 +140,7 @@ const translations = {
     'common.error': 'Error',
     'common.saving': 'Saving...',
     'common.saveChanges': 'Save Changes',
+    'common.sending': 'Sending...',
     
     // Profile
     'profile.changePhoto': 'Change Photo',
@@ -223,6 +224,7 @@ const translations = {
     'settings.security': 'Security',
     'settings.changePassword': 'Change Password',
     'settings.changePasswordDesc': 'Update your account password',
+    'settings.passwordResetEmailSent': 'Password reset email sent! Check your inbox.',
     'settings.searchSettings': 'Search settings...',
     'settings.unsavedChanges': 'Unsaved changes',
     'settings.unsavedChangesTitle': 'Unsaved Changes',
@@ -313,6 +315,14 @@ const translations = {
     'admin.accessRestored': 'Access Restored',
     'admin.accessRestoredDesc': 'User access has been restored successfully',
     'admin.userDetails': 'User Details',
+    'admin.bulkActions': 'Bulk Actions',
+    'admin.activateSelected': 'Activate Selected',
+    'admin.deactivateSelected': 'Deactivate Selected',
+    'admin.resetUsageSelected': 'Reset Usage',
+    'admin.deleteSelected': 'Delete Selected',
+    'admin.configSaved': 'Configuration saved to database',
+    'admin.securityAccessControl': 'Security & Access Control',
+    'admin.securityAccessControlDesc': 'Advanced security settings and policies',
     
     // System Settings
     'admin.systemConfiguration': 'System Configuration',
@@ -349,8 +359,6 @@ const translations = {
     'admin.rateLimitPerMinuteDesc': 'Maximum requests per minute per user',
     'admin.maxConcurrentSessions': 'Max Concurrent Sessions',
     'admin.maxConcurrentSessionsDesc': 'Maximum simultaneous sessions per user',
-    'admin.securityAccessControl': 'Security & Access Control',
-    'admin.securityAccessControlDesc': 'Advanced security settings and policies',
     'admin.createDatabaseBackup': 'Create Database Backup',
     'admin.clearSystemCache': 'Clear System Cache',
     'admin.systemMaintenance': 'System Maintenance',
@@ -630,6 +638,7 @@ const translations = {
     'common.error': 'خطأ',
     'common.saving': 'جاري الحفظ...',
     'common.saveChanges': 'حفظ التغييرات',
+    'common.sending': 'جاري الإرسال...',
     
     // Profile
     'profile.changePhoto': 'تغيير الصورة',
@@ -713,6 +722,7 @@ const translations = {
     'settings.security': 'الأمان',
     'settings.changePassword': 'تغيير كلمة المرور',
     'settings.changePasswordDesc': 'تحديث كلمة مرور حسابك',
+    'settings.passwordResetEmailSent': 'تم إرسال بريد إعادة تعيين كلمة المرور! تحقق من بريدك الوارد.',
     'settings.searchSettings': 'بحث في الإعدادات...',
     'settings.unsavedChanges': 'تغييرات غير محفوظة',
     'settings.unsavedChangesTitle': 'تغييرات غير محفوظة',
@@ -803,6 +813,14 @@ const translations = {
     'admin.accessRestored': 'تم استعادة الوصول',
     'admin.accessRestoredDesc': 'تم استعادة وصول المستخدم بنجاح',
     'admin.userDetails': 'تفاصيل المستخدم',
+    'admin.bulkActions': 'إجراءات جماعية',
+    'admin.activateSelected': 'تفعيل المحدد',
+    'admin.deactivateSelected': 'إلغاء تفعيل المحدد',
+    'admin.resetUsageSelected': 'إعادة تعيين الاستخدام',
+    'admin.deleteSelected': 'حذف المحدد',
+    'admin.configSaved': 'تم حفظ التكوين في قاعدة البيانات',
+    'admin.securityAccessControl': 'الأمان والتحكم في الوصول',
+    'admin.securityAccessControlDesc': 'إعدادات الأمان المتقدمة والسياسات',
     
     // System Settings
     'admin.systemConfiguration': 'تكوين النظام',
@@ -839,8 +857,6 @@ const translations = {
     'admin.rateLimitPerMinuteDesc': 'الحد الأقصى للطلبات في الدقيقة لكل مستخدم',
     'admin.maxConcurrentSessions': 'الحد الأقصى للجلسات المتزامنة',
     'admin.maxConcurrentSessionsDesc': 'الحد الأقصى للجلسات المتزامنة لكل مستخدم',
-    'admin.securityAccessControl': 'الأمان والتحكم في الوصول',
-    'admin.securityAccessControlDesc': 'إعدادات الأمان المتقدمة والسياسات',
     'admin.createDatabaseBackup': 'إنشاء نسخة احتياطية لقاعدة البيانات',
     'admin.clearSystemCache': 'مسح ذاكرة التخزين المؤقت للنظام',
     'admin.systemMaintenance': 'صيانة النظام',
