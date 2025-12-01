@@ -1,8 +1,13 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, User, Bell, Shield, Monitor } from 'lucide-react';
+import { ArrowLeft, User, Bell, Shield, Monitor, Search, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { SettingsProvider, useSettingsContext } from '@/contexts/SettingsContext';
+import { useUnsavedChangesWarning } from '@/hooks/useUnsavedChangesWarning';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { useState } from 'react';
 
 interface SettingsLayoutProps {
   children: {
@@ -13,52 +18,142 @@ interface SettingsLayoutProps {
   };
 }
 
-export const SettingsLayout = ({ children }: SettingsLayoutProps) => {
+const SettingsLayoutContent = ({ children }: SettingsLayoutProps) => {
   const navigate = useNavigate();
   const { t, language } = useLanguage();
+  const { searchTerm, setSearchTerm, hasUnsavedChanges, setHasUnsavedChanges } = useSettingsContext();
+  const [showWarning, setShowWarning] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
+
+  const blocker = useUnsavedChangesWarning(hasUnsavedChanges, () => {
+    setShowWarning(true);
+  });
+
+  const handleBack = () => {
+    if (hasUnsavedChanges) {
+      setPendingNavigation('/');
+      setShowWarning(true);
+    } else {
+      navigate('/');
+    }
+  };
+
+  const confirmNavigation = () => {
+    setHasUnsavedChanges(false);
+    setShowWarning(false);
+    
+    if (blocker.state === 'blocked') {
+      blocker.proceed();
+    } else if (pendingNavigation) {
+      navigate(pendingNavigation);
+      setPendingNavigation(null);
+    }
+  };
+
+  const cancelNavigation = () => {
+    setShowWarning(false);
+    setPendingNavigation(null);
+    
+    if (blocker.state === 'blocked') {
+      blocker.reset();
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-background p-6 pt-8">
-      <div className="max-w-5xl mx-auto">
-        <div className="mb-8">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate('/')}
-            className="gap-2 mb-4"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            {t('common.back')}
-          </Button>
-          <h1 className="text-3xl font-bold">{t('settings.title')}</h1>
+    <>
+      <div className="min-h-screen bg-background p-6 pt-8">
+        <div className="max-w-5xl mx-auto">
+          <div className="mb-8">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleBack}
+              className="gap-2 mb-4"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              {t('common.back')}
+            </Button>
+            <div className="flex items-center justify-between gap-4 mb-6">
+              <h1 className="text-3xl font-bold">{t('settings.title')}</h1>
+              {hasUnsavedChanges && (
+                <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-sm">
+                  <AlertTriangle className="h-4 w-4" />
+                  <span>{t('settings.unsavedChanges')}</span>
+                </div>
+              )}
+            </div>
+            
+            {/* Search Bar */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder={t('settings.searchSettings')}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 bg-card/50 backdrop-blur-xl border-border/50"
+              />
+            </div>
+          </div>
+
+          <Tabs defaultValue="account" className="w-full" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+            <TabsList className="w-full grid grid-cols-4 mb-8 bg-muted">
+              <TabsTrigger value="account" className="gap-2">
+                <User className="h-4 w-4" />
+                <span className="hidden sm:inline">{t('settings.account')}</span>
+              </TabsTrigger>
+              <TabsTrigger value="notifications" className="gap-2">
+                <Bell className="h-4 w-4" />
+                <span className="hidden sm:inline">{t('settings.notifications')}</span>
+              </TabsTrigger>
+              <TabsTrigger value="privacy" className="gap-2">
+                <Shield className="h-4 w-4" />
+                <span className="hidden sm:inline">{t('settings.privacy')}</span>
+              </TabsTrigger>
+              <TabsTrigger value="sessions" className="gap-2">
+                <Monitor className="h-4 w-4" />
+                <span className="hidden sm:inline">{t('settings.sessions')}</span>
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="account">{children.account}</TabsContent>
+            <TabsContent value="notifications">{children.notifications}</TabsContent>
+            <TabsContent value="privacy">{children.privacy}</TabsContent>
+            <TabsContent value="sessions">{children.sessions}</TabsContent>
+          </Tabs>
         </div>
-
-        <Tabs defaultValue="account" className="w-full" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-          <TabsList className="w-full grid grid-cols-4 mb-8 bg-muted">
-            <TabsTrigger value="account" className="gap-2">
-              <User className="h-4 w-4" />
-              <span className="hidden sm:inline">{t('settings.account')}</span>
-            </TabsTrigger>
-            <TabsTrigger value="notifications" className="gap-2">
-              <Bell className="h-4 w-4" />
-              <span className="hidden sm:inline">{t('settings.notifications')}</span>
-            </TabsTrigger>
-            <TabsTrigger value="privacy" className="gap-2">
-              <Shield className="h-4 w-4" />
-              <span className="hidden sm:inline">{t('settings.privacy')}</span>
-            </TabsTrigger>
-            <TabsTrigger value="sessions" className="gap-2">
-              <Monitor className="h-4 w-4" />
-              <span className="hidden sm:inline">{t('settings.sessions')}</span>
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="account">{children.account}</TabsContent>
-          <TabsContent value="notifications">{children.notifications}</TabsContent>
-          <TabsContent value="privacy">{children.privacy}</TabsContent>
-          <TabsContent value="sessions">{children.sessions}</TabsContent>
-        </Tabs>
       </div>
-    </div>
+
+      {/* Unsaved Changes Warning Dialog */}
+      <AlertDialog open={showWarning} onOpenChange={setShowWarning}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-600" />
+              {t('settings.unsavedChangesTitle')}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('settings.unsavedChangesDesc')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={cancelNavigation}>
+              {t('settings.stayOnPage')}
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={confirmNavigation} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {t('settings.leaveWithoutSaving')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+};
+
+export const SettingsLayout = ({ children }: SettingsLayoutProps) => {
+  return (
+    <SettingsProvider>
+      <SettingsLayoutContent>{children}</SettingsLayoutContent>
+    </SettingsProvider>
   );
 };

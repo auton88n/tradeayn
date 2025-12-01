@@ -136,6 +136,10 @@ const translations = {
     'common.deleteSelected': 'Delete Selected',
     'common.noRecentChats': 'No recent chats',
     'common.back': 'Back',
+    'common.success': 'Success',
+    'common.error': 'Error',
+    'common.saving': 'Saving...',
+    'common.saveChanges': 'Save Changes',
     
     // Profile
     'profile.changePhoto': 'Change Photo',
@@ -219,6 +223,13 @@ const translations = {
     'settings.security': 'Security',
     'settings.changePassword': 'Change Password',
     'settings.changePasswordDesc': 'Update your account password',
+    'settings.searchSettings': 'Search settings...',
+    'settings.unsavedChanges': 'Unsaved changes',
+    'settings.unsavedChangesTitle': 'Unsaved Changes',
+    'settings.unsavedChangesDesc': 'You have unsaved changes. Are you sure you want to leave this page? Your changes will be lost.',
+    'settings.stayOnPage': 'Stay on Page',
+    'settings.leaveWithoutSaving': 'Leave Without Saving',
+    'settings.noResultsFound': 'No settings found matching your search',
     
     // Admin Panel
     'admin.title': 'Admin Control Center',
@@ -615,6 +626,10 @@ const translations = {
     'common.deleteSelected': 'حذف المحدد',
     'common.noRecentChats': 'لا توجد محادثات حديثة',
     'common.back': 'رجوع',
+    'common.success': 'نجاح',
+    'common.error': 'خطأ',
+    'common.saving': 'جاري الحفظ...',
+    'common.saveChanges': 'حفظ التغييرات',
     
     // Profile
     'profile.changePhoto': 'تغيير الصورة',
@@ -698,6 +713,13 @@ const translations = {
     'settings.security': 'الأمان',
     'settings.changePassword': 'تغيير كلمة المرور',
     'settings.changePasswordDesc': 'تحديث كلمة مرور حسابك',
+    'settings.searchSettings': 'بحث في الإعدادات...',
+    'settings.unsavedChanges': 'تغييرات غير محفوظة',
+    'settings.unsavedChangesTitle': 'تغييرات غير محفوظة',
+    'settings.unsavedChangesDesc': 'لديك تغييرات غير محفوظة. هل أنت متأكد من أنك تريد مغادرة هذه الصفحة؟ ستفقد التغييرات.',
+    'settings.stayOnPage': 'البقاء في الصفحة',
+    'settings.leaveWithoutSaving': 'المغادرة دون حفظ',
+    'settings.noResultsFound': 'لم يتم العثور على إعدادات مطابقة لبحثك',
     
     // Admin Panel
     'admin.title': 'مركز التحكم الإداري',
