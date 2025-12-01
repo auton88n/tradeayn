@@ -198,9 +198,139 @@ export const AdminPanel = () => {
     }
   }, [toast]);
 
+  // Configuration management with database persistence
+  const loadSystemConfig = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('system_config')
+        .select('key, value')
+        .in('key', ['maintenance_mode', 'default_settings', 'security_settings']);
+      
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        const configData = data.reduce((acc, item) => ({...acc, [item.key]: item.value}), {} as Record<string, any>);
+        
+        // Update system config from database
+        if (configData.maintenance_mode) {
+          setSystemConfig(prev => ({
+            ...prev,
+            enableMaintenance: configData.maintenance_mode.enabled || false,
+            maintenanceMessage: configData.maintenance_mode.message || prev.maintenanceMessage,
+            maintenanceStartTime: configData.maintenance_mode.startTime || prev.maintenanceStartTime,
+            maintenanceEndTime: configData.maintenance_mode.endTime || prev.maintenanceEndTime
+          }));
+        }
+        
+        if (configData.default_settings) {
+          setSystemConfig(prev => ({
+            ...prev,
+            defaultMonthlyLimit: configData.default_settings.defaultMonthlyLimit || prev.defaultMonthlyLimit,
+            autoApproveRequests: configData.default_settings.autoApprove || prev.autoApproveRequests,
+            notificationEmail: configData.default_settings.notificationEmail || prev.notificationEmail,
+            sessionTimeout: configData.default_settings.sessionTimeout || prev.sessionTimeout
+          }));
+        }
+        
+        if (configData.security_settings) {
+          setSystemConfig(prev => ({
+            ...prev,
+            requireAdminApproval: configData.security_settings.requireAdminApproval ?? prev.requireAdminApproval,
+            enableAuditLogging: configData.security_settings.enableAuditLogging ?? prev.enableAuditLogging,
+            rateLimitPerMinute: configData.security_settings.rateLimitPerMinute || prev.rateLimitPerMinute,
+            maxConcurrentSessions: configData.security_settings.maxConcurrentSessions || prev.maxConcurrentSessions
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('Error loading system config:', error);
+    }
+  }, []);
+
+  const updateSystemConfig = async (newConfig: Partial<SystemConfig>) => {
+    try {
+      const updatedConfig = { ...systemConfig, ...newConfig };
+      setSystemConfig(updatedConfig);
+      
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // Save to database based on which fields changed
+      if ('enableMaintenance' in newConfig || 'maintenanceMessage' in newConfig || 
+          'maintenanceStartTime' in newConfig || 'maintenanceEndTime' in newConfig) {
+        await supabase
+          .from('system_config')
+          .upsert({
+            key: 'maintenance_mode',
+            value: {
+              enabled: updatedConfig.enableMaintenance,
+              message: updatedConfig.maintenanceMessage,
+              startTime: updatedConfig.maintenanceStartTime,
+              endTime: updatedConfig.maintenanceEndTime
+            },
+            updated_by: user?.id
+          }, { onConflict: 'key' });
+      }
+      
+      if ('defaultMonthlyLimit' in newConfig || 'autoApproveRequests' in newConfig ||
+          'notificationEmail' in newConfig || 'sessionTimeout' in newConfig) {
+        await supabase
+          .from('system_config')
+          .upsert({
+            key: 'default_settings',
+            value: {
+              defaultMonthlyLimit: updatedConfig.defaultMonthlyLimit,
+              autoApprove: updatedConfig.autoApproveRequests,
+              notificationEmail: updatedConfig.notificationEmail,
+              sessionTimeout: updatedConfig.sessionTimeout
+            },
+            updated_by: user?.id
+          }, { onConflict: 'key' });
+      }
+      
+      if ('requireAdminApproval' in newConfig || 'enableAuditLogging' in newConfig ||
+          'rateLimitPerMinute' in newConfig || 'maxConcurrentSessions' in newConfig) {
+        await supabase
+          .from('system_config')
+          .upsert({
+            key: 'security_settings',
+            value: {
+              requireAdminApproval: updatedConfig.requireAdminApproval,
+              enableAuditLogging: updatedConfig.enableAuditLogging,
+              rateLimitPerMinute: updatedConfig.rateLimitPerMinute,
+              maxConcurrentSessions: updatedConfig.maxConcurrentSessions
+            },
+            updated_by: user?.id
+          }, { onConflict: 'key' });
+      }
+      
+      // Also save maintenance config to localStorage for dashboard access
+      const maintenanceConfig = {
+        enableMaintenance: updatedConfig.enableMaintenance,
+        maintenanceMessage: updatedConfig.maintenanceMessage,
+        maintenanceStartTime: updatedConfig.maintenanceStartTime,
+        maintenanceEndTime: updatedConfig.maintenanceEndTime
+      };
+      localStorage.setItem('ayn_maintenance_config', JSON.stringify(maintenanceConfig));
+      
+      toast({
+        title: "Configuration Updated",
+        description: t('admin.configSaved')
+      });
+    } catch (error) {
+      console.error('Error updating config:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update configuration.",
+        variant: "destructive"
+      });
+    }
+  };
+
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+    loadSystemConfig();
+  }, [fetchData, loadSystemConfig]);
 
   // System maintenance functions
   const performSystemMaintenance = async (action: string) => {
@@ -227,35 +357,6 @@ export const AdminPanel = () => {
       toast({
         title: "Error",
         description: "Maintenance task failed.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  // Configuration management
-  const updateSystemConfig = async (newConfig: Partial<SystemConfig>) => {
-    try {
-      const updatedConfig = { ...systemConfig, ...newConfig };
-      setSystemConfig(updatedConfig);
-      
-      // Save maintenance config to localStorage for dashboard access
-      const maintenanceConfig = {
-        enableMaintenance: updatedConfig.enableMaintenance,
-        maintenanceMessage: updatedConfig.maintenanceMessage,
-        maintenanceStartTime: updatedConfig.maintenanceStartTime,
-        maintenanceEndTime: updatedConfig.maintenanceEndTime
-      };
-      localStorage.setItem('ayn_maintenance_config', JSON.stringify(maintenanceConfig));
-      
-      toast({
-        title: "Configuration Updated",
-        description: "System configuration has been updated successfully."
-      });
-    } catch (error) {
-      console.error('Error updating config:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update configuration.",
         variant: "destructive"
       });
     }

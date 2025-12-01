@@ -373,6 +373,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_status: string | null
           avatar_url: string | null
           business_context: string | null
           business_type: string | null
@@ -380,10 +381,13 @@ export type Database = {
           contact_person: string | null
           created_at: string
           id: string
+          last_login: string | null
+          total_sessions: number | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          account_status?: string | null
           avatar_url?: string | null
           business_context?: string | null
           business_type?: string | null
@@ -391,10 +395,13 @@ export type Database = {
           contact_person?: string | null
           created_at?: string
           id?: string
+          last_login?: string | null
+          total_sessions?: number | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          account_status?: string | null
           avatar_url?: string | null
           business_context?: string | null
           business_type?: string | null
@@ -402,6 +409,8 @@ export type Database = {
           contact_person?: string | null
           created_at?: string
           id?: string
+          last_login?: string | null
+          total_sessions?: number | null
           updated_at?: string
           user_id?: string
         }
@@ -527,6 +536,33 @@ export type Database = {
           severity?: string | null
           user_agent?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      system_config: {
+        Row: {
+          created_at: string | null
+          id: string
+          key: string
+          updated_at: string | null
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          key: string
+          updated_at?: string | null
+          updated_by?: string | null
+          value: Json
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          key?: string
+          updated_at?: string | null
+          updated_by?: string | null
+          value?: Json
         }
         Relationships: []
       }

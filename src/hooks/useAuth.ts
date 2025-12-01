@@ -3,6 +3,7 @@ import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { trackDeviceLogin } from '@/hooks/useDeviceTracking';
 import type { UserProfile, UseAuthReturn } from '@/types/dashboard.types';
 
 export const useAuth = (user: User): UseAuthReturn => {
@@ -105,12 +106,15 @@ export const useAuth = (user: User): UseAuthReturn => {
     setHasAcceptedTerms(accepted);
   }, [user.id]);
 
-  // Load all auth data on mount
+  // Load all auth data on mount and track device login
   useEffect(() => {
     checkAccess();
     checkAdminRole();
     loadUserProfile();
-  }, [checkAccess, checkAdminRole, loadUserProfile]);
+    
+    // Track device login
+    trackDeviceLogin(user.id);
+  }, [checkAccess, checkAdminRole, loadUserProfile, user.id]);
 
   return {
     hasAccess,
