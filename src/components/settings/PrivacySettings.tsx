@@ -2,105 +2,104 @@ import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useUserSettings } from '@/hooks/useUserSettings';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, Download, Trash2, AlertTriangle } from 'lucide-react';
-
 export const PrivacySettings = () => {
-  const { t } = useLanguage();
-  const { toast } = useToast();
+  const {
+    t
+  } = useLanguage();
+  const {
+    toast
+  } = useToast();
   const navigate = useNavigate();
-  const { settings, loading, updating, updateSettings } = useUserSettings();
-
+  const {
+    settings,
+    loading,
+    updating,
+    updateSettings
+  } = useUserSettings();
   const handleExportData = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       if (!user) return;
-
-      const { data: messages } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('user_id', user.id);
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-
+      const {
+        data: messages
+      } = await supabase.from('messages').select('*').eq('user_id', user.id);
+      const {
+        data: profile
+      } = await supabase.from('profiles').select('*').eq('user_id', user.id).single();
       const exportData = {
-        user: { email: user.email },
+        user: {
+          email: user.email
+        },
         profile,
         messages,
         settings,
-        exported_at: new Date().toISOString(),
+        exported_at: new Date().toISOString()
       };
-
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+        type: 'application/json'
+      });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = `ayn-data-export-${Date.now()}.json`;
       a.click();
       URL.revokeObjectURL(url);
-
       toast({
         title: t('common.success'),
-        description: t('settings.dataExported'),
+        description: t('settings.dataExported')
       });
     } catch (error) {
       console.error('Error exporting data:', error);
       toast({
         title: t('common.error'),
         description: 'Failed to export data',
-        variant: 'destructive',
+        variant: 'destructive'
       });
     }
   };
-
   const handleDeleteChatHistory = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       if (!user) return;
-
-      const { error } = await supabase
-        .from('messages')
-        .delete()
-        .eq('user_id', user.id);
-
+      const {
+        error
+      } = await supabase.from('messages').delete().eq('user_id', user.id);
       if (error) throw error;
-
       toast({
         title: t('common.success'),
-        description: t('settings.chatHistoryDeleted'),
+        description: t('settings.chatHistoryDeleted')
       });
     } catch (error) {
       console.error('Error deleting chat history:', error);
       toast({
         title: t('common.error'),
         description: 'Failed to delete chat history',
-        variant: 'destructive',
+        variant: 'destructive'
       });
     }
   };
-
   const handleDeleteAccount = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       if (!user) return;
 
       // Delete user data
@@ -110,49 +109,30 @@ export const PrivacySettings = () => {
 
       // Sign out
       await supabase.auth.signOut();
-      
       navigate('/');
-      
       toast({
         title: t('common.success'),
-        description: t('settings.accountDeleted'),
+        description: t('settings.accountDeleted')
       });
     } catch (error) {
       console.error('Error deleting account:', error);
       toast({
         title: t('common.error'),
         description: 'Failed to delete account',
-        variant: 'destructive',
+        variant: 'destructive'
       });
     }
   };
-
   if (loading || !settings) {
-    return (
-      <div className="flex items-center justify-center p-8">
+    return <div className="flex items-center justify-center p-8">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       <Card className="p-6 bg-card/50 backdrop-blur-xl border-border/50">
         <h2 className="text-xl font-semibold mb-6">{t('settings.dataPersonalization')}</h2>
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>{t('settings.allowPersonalization')}</Label>
-              <p className="text-sm text-muted-foreground">
-                {t('settings.allowPersonalizationDesc')}
-              </p>
-            </div>
-            <Switch
-              checked={settings.allow_personalization}
-              onCheckedChange={(checked) => updateSettings({ allow_personalization: checked })}
-              disabled={updating}
-            />
-          </div>
+          
 
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
@@ -161,11 +141,9 @@ export const PrivacySettings = () => {
                 {t('settings.storeChatHistoryDesc')}
               </p>
             </div>
-            <Switch
-              checked={settings.store_chat_history}
-              onCheckedChange={(checked) => updateSettings({ store_chat_history: checked })}
-              disabled={updating}
-            />
+            <Switch checked={settings.store_chat_history} onCheckedChange={checked => updateSettings({
+            store_chat_history: checked
+          })} disabled={updating} />
           </div>
 
           <div className="flex items-center justify-between">
@@ -175,11 +153,9 @@ export const PrivacySettings = () => {
                 {t('settings.shareAnonymousDataDesc')}
               </p>
             </div>
-            <Switch
-              checked={settings.share_anonymous_data}
-              onCheckedChange={(checked) => updateSettings({ share_anonymous_data: checked })}
-              disabled={updating}
-            />
+            <Switch checked={settings.share_anonymous_data} onCheckedChange={checked => updateSettings({
+            share_anonymous_data: checked
+          })} disabled={updating} />
           </div>
         </div>
       </Card>
@@ -263,6 +239,5 @@ export const PrivacySettings = () => {
           </div>
         </div>
       </Card>
-    </div>
-  );
+    </div>;
 };
