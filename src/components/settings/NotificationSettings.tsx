@@ -4,21 +4,22 @@ import { Switch } from '@/components/ui/switch';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useUserSettings } from '@/hooks/useUserSettings';
 import { Loader2 } from 'lucide-react';
-
 export const NotificationSettings = () => {
-  const { t } = useLanguage();
-  const { settings, loading, updating, updateSettings } = useUserSettings();
-
+  const {
+    t
+  } = useLanguage();
+  const {
+    settings,
+    loading,
+    updating,
+    updateSettings
+  } = useUserSettings();
   if (loading || !settings) {
-    return (
-      <div className="flex items-center justify-center p-8">
+    return <div className="flex items-center justify-center p-8">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       <Card className="p-6 bg-card/50 backdrop-blur-xl border-border/50">
         <h2 className="text-xl font-semibold mb-6">{t('settings.emailNotifications')}</h2>
         <div className="space-y-4">
@@ -29,11 +30,9 @@ export const NotificationSettings = () => {
                 {t('settings.systemAlertsDesc')}
               </p>
             </div>
-            <Switch
-              checked={settings.email_system_alerts}
-              onCheckedChange={(checked) => updateSettings({ email_system_alerts: checked })}
-              disabled={updating}
-            />
+            <Switch checked={settings.email_system_alerts} onCheckedChange={checked => updateSettings({
+            email_system_alerts: checked
+          })} disabled={updating} />
           </div>
 
           <div className="flex items-center justify-between">
@@ -43,11 +42,9 @@ export const NotificationSettings = () => {
                 {t('settings.usageWarningsDesc')}
               </p>
             </div>
-            <Switch
-              checked={settings.email_usage_warnings}
-              onCheckedChange={(checked) => updateSettings({ email_usage_warnings: checked })}
-              disabled={updating}
-            />
+            <Switch checked={settings.email_usage_warnings} onCheckedChange={checked => updateSettings({
+            email_usage_warnings: checked
+          })} disabled={updating} />
           </div>
 
           <div className="flex items-center justify-between">
@@ -57,26 +54,12 @@ export const NotificationSettings = () => {
                 {t('settings.marketingDesc')}
               </p>
             </div>
-            <Switch
-              checked={settings.email_marketing}
-              onCheckedChange={(checked) => updateSettings({ email_marketing: checked })}
-              disabled={updating}
-            />
+            <Switch checked={settings.email_marketing} onCheckedChange={checked => updateSettings({
+            email_marketing: checked
+          })} disabled={updating} />
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>{t('settings.weeklySummary')}</Label>
-              <p className="text-sm text-muted-foreground">
-                {t('settings.weeklySummaryDesc')}
-              </p>
-            </div>
-            <Switch
-              checked={settings.email_weekly_summary}
-              onCheckedChange={(checked) => updateSettings({ email_weekly_summary: checked })}
-              disabled={updating}
-            />
-          </div>
+          
         </div>
       </Card>
 
@@ -90,11 +73,9 @@ export const NotificationSettings = () => {
                 {t('settings.soundsDesc')}
               </p>
             </div>
-            <Switch
-              checked={settings.in_app_sounds}
-              onCheckedChange={(checked) => updateSettings({ in_app_sounds: checked })}
-              disabled={updating}
-            />
+            <Switch checked={settings.in_app_sounds} onCheckedChange={checked => updateSettings({
+            in_app_sounds: checked
+          })} disabled={updating} />
           </div>
 
           <div className="flex items-center justify-between">
@@ -104,14 +85,11 @@ export const NotificationSettings = () => {
                 {t('settings.desktopNotificationsDesc')}
               </p>
             </div>
-            <Switch
-              checked={settings.desktop_notifications}
-              onCheckedChange={(checked) => updateSettings({ desktop_notifications: checked })}
-              disabled={updating}
-            />
+            <Switch checked={settings.desktop_notifications} onCheckedChange={checked => updateSettings({
+            desktop_notifications: checked
+          })} disabled={updating} />
           </div>
         </div>
       </Card>
-    </div>
-  );
+    </div>;
 };
