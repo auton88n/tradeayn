@@ -278,7 +278,7 @@ export const Sidebar = ({
             <Button 
               onClick={() => setShowAvatarUpload(true)}
               variant="ghost" 
-              className="w-full justify-start h-9 px-2 rounded-sm hover:bg-accent focus-visible:ring-0 focus-visible:ring-offset-0"
+              className="w-full justify-start h-9 px-2 rounded-sm hover:bg-muted focus-visible:ring-0 focus-visible:ring-offset-0"
             >
               <Camera className="w-4 h-4 mr-2" />
               {t('profile.changePhoto')}
@@ -286,7 +286,7 @@ export const Sidebar = ({
             <Button 
               onClick={() => navigate('/settings')}
               variant="ghost" 
-              className="w-full justify-start h-9 px-2 rounded-sm hover:bg-accent focus-visible:ring-0 focus-visible:ring-offset-0"
+              className="w-full justify-start h-9 px-2 rounded-sm hover:bg-muted focus-visible:ring-0 focus-visible:ring-offset-0"
             >
               <Settings className="w-4 h-4 mr-2" />
               {t('settings.title')}
@@ -295,7 +295,7 @@ export const Sidebar = ({
               <Button 
                 onClick={onAdminPanelClick}
                 variant="ghost" 
-                className="w-full justify-start h-9 px-2 rounded-sm hover:bg-accent focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="w-full justify-start h-9 px-2 rounded-sm hover:bg-muted focus-visible:ring-0 focus-visible:ring-offset-0"
               >
                 <Shield className="w-4 h-4 mr-2" />
                 {language === 'ar' ? 'لوحة الإدارة' : 'Admin Panel'}
