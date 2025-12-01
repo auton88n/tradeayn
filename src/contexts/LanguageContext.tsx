@@ -66,6 +66,12 @@ const translations = {
     
     // Dashboard
     'dashboard.loading': 'Loading AYN...',
+    'dashboard.chatLoaded': 'Chat Loaded',
+    'dashboard.loadedConversation': 'Loaded conversation',
+    'dashboard.newChatDesc': 'You can now start a fresh conversation with AYN.',
+    'dashboard.chatsDeleted': 'Chats Deleted',
+    'dashboard.successfullyDeleted': 'Successfully deleted',
+    'dashboard.conversations': 'conversation(s)',
     'dashboard.templates.marketAnalysis': 'Market Analysis',
     'dashboard.templates.marketAnalysisPrompt': 'Analyze the current market trends and opportunities in my industry',
     'dashboard.templates.salesFunnel': 'Sales Funnel Audit',
@@ -538,6 +544,12 @@ const translations = {
     
     // Dashboard
     'dashboard.loading': 'جاري تحميل AYN...',
+    'dashboard.chatLoaded': 'تم تحميل المحادثة',
+    'dashboard.loadedConversation': 'تم تحميل المحادثة',
+    'dashboard.newChatDesc': 'يمكنك الآن بدء محادثة جديدة مع AYN.',
+    'dashboard.chatsDeleted': 'تم حذف المحادثات',
+    'dashboard.successfullyDeleted': 'تم الحذف بنجاح',
+    'dashboard.conversations': 'محادثة (محادثات)',
     'dashboard.templates.marketAnalysis': 'تحليل السوق',
     'dashboard.templates.marketAnalysisPrompt': 'حلل الاتجاهات الحالية للسوق والفرص في صناعتي',
     'dashboard.templates.salesFunnel': 'مراجعة قمع المبيعات',
