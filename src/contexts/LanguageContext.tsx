@@ -135,6 +135,7 @@ const translations = {
     'common.deleteChats': 'Delete Chats',
     'common.deleteSelected': 'Delete Selected',
     'common.noRecentChats': 'No recent chats',
+    'common.back': 'Back',
     
     // Profile
     'profile.changePhoto': 'Change Photo',
@@ -613,6 +614,7 @@ const translations = {
     'common.deleteChats': 'حذف محادثات',
     'common.deleteSelected': 'حذف المحدد',
     'common.noRecentChats': 'لا توجد محادثات حديثة',
+    'common.back': 'رجوع',
     
     // Profile
     'profile.changePhoto': 'تغيير الصورة',
