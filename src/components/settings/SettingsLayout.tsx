@@ -23,29 +23,29 @@ const SettingsLayoutContent = ({ children }: SettingsLayoutProps) => {
   const { t, language } = useLanguage();
   const { searchTerm, setSearchTerm, hasUnsavedChanges, setHasUnsavedChanges } = useSettingsContext();
   const [showWarning, setShowWarning] = useState(false);
-  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
+  const [pendingNavigation, setPendingNavigation] = useState<(() => void) | null>(null);
 
-  const blocker = useUnsavedChangesWarning(hasUnsavedChanges, () => {
-    setShowWarning(true);
-  });
+  useUnsavedChangesWarning(hasUnsavedChanges);
 
-  const handleBack = () => {
+  const handleNavigation = (navigationFn: () => void) => {
     if (hasUnsavedChanges) {
-      setPendingNavigation('/');
+      setPendingNavigation(() => navigationFn);
       setShowWarning(true);
     } else {
-      navigate('/');
+      navigationFn();
     }
+  };
+
+  const handleBack = () => {
+    handleNavigation(() => navigate('/'));
   };
 
   const confirmNavigation = () => {
     setHasUnsavedChanges(false);
     setShowWarning(false);
     
-    if (blocker.state === 'blocked') {
-      blocker.proceed();
-    } else if (pendingNavigation) {
-      navigate(pendingNavigation);
+    if (pendingNavigation) {
+      pendingNavigation();
       setPendingNavigation(null);
     }
   };
@@ -53,10 +53,6 @@ const SettingsLayoutContent = ({ children }: SettingsLayoutProps) => {
   const cancelNavigation = () => {
     setShowWarning(false);
     setPendingNavigation(null);
-    
-    if (blocker.state === 'blocked') {
-      blocker.reset();
-    }
   };
 
   return (
