@@ -3,9 +3,11 @@ import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
+import { useRipple } from "@/components/ui/ripple"
+import { hapticFeedback } from "@/lib/haptics"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 active:scale-[0.98] hover:shadow-sm",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 active:scale-[0.98] hover:shadow-sm relative overflow-hidden",
   {
     variants: {
       variant: {
@@ -47,14 +49,43 @@ export interface ButtonProps
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, onClick, onMouseDown, onTouchStart, ...props }, ref) => {
     const Comp = asChild ? Slot : "button"
+    const { createRipple, RippleContainer } = useRipple()
+
+    const handleInteraction = (event: React.MouseEvent<HTMLButtonElement> | React.TouchEvent<HTMLButtonElement>) => {
+      // Trigger haptic feedback
+      hapticFeedback('light')
+      
+      // Create ripple effect
+      createRipple(event)
+      
+      // Call original handlers if they exist
+      if ('touches' in event && onTouchStart) {
+        onTouchStart(event as React.TouchEvent<HTMLButtonElement>)
+      } else if (!('touches' in event) && onMouseDown) {
+        onMouseDown(event as React.MouseEvent<HTMLButtonElement>)
+      }
+    }
+
+    const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+      if (onClick) {
+        onClick(event)
+      }
+    }
+
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
+        onClick={handleClick}
+        onMouseDown={handleInteraction}
+        onTouchStart={handleInteraction}
         {...props}
-      />
+      >
+        {props.children}
+        <RippleContainer />
+      </Comp>
     )
   }
 )

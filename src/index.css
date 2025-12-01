@@ -415,6 +415,28 @@ button, a, input, textarea, select {
     51%, 100% { opacity: 0; }
   }
 
+  /* Ripple effect animation */
+  @keyframes ripple {
+    0% {
+      transform: translate(-50%, -50%) scale(0);
+      opacity: 0.5;
+    }
+    100% {
+      transform: translate(-50%, -50%) scale(4);
+      opacity: 0;
+    }
+  }
+
+  .ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.3;
+    animation: ripple 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+    will-change: transform, opacity;
+  }
+
   /* Mobile-Style Floating Input Bar */
   .input-area {
     position: fixed;
