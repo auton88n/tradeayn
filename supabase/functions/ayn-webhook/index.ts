@@ -176,6 +176,33 @@ serve(async (req) => {
       console.warn(`[${requestId}] Request body was not valid JSON, using defaults`);
     }
 
+    // Validate required fields
+    if (!requestData.message || typeof requestData.message !== 'string') {
+      console.error(`[${requestId}] Invalid message field`);
+      throw new Error('Message is required and must be a string');
+    }
+
+    const sanitizedMessage = requestData.message.trim();
+    if (sanitizedMessage.length === 0) {
+      console.error(`[${requestId}] Empty message`);
+      throw new Error('Message cannot be empty');
+    }
+
+    if (sanitizedMessage.length > 10000) {
+      console.error(`[${requestId}] Message too long: ${sanitizedMessage.length}`);
+      throw new Error('Message is too long (max 10000 characters)');
+    }
+
+    if (!requestData.userId) {
+      console.error(`[${requestId}] Missing user ID`);
+      throw new Error('User ID is required');
+    }
+
+    console.log(`[${requestId}] Edge function started`);
+    console.log(`[${requestId}] User ID:`, requestData.userId);
+    console.log(`[${requestId}] Message length:`, requestData.message?.length || 0);
+    console.log(`[${requestId}] Mode:`, requestData.mode);
+    console.log(`[${requestId}] Has attachments:`, requestData.has_attachment);
     console.log(`[${requestId}] Request data:`, {
       message: requestData.message?.slice(0, 100) + (requestData.message?.length > 100 ? '...' : ''),
       userId: requestData.userId,
@@ -225,11 +252,19 @@ serve(async (req) => {
     ? `You may address the user as ${requestData.contactPerson}. ${languageInstruction} ${conciseInstruction} Scope all context strictly to conversationKey (${conversationKey}).`
     : `Do not use or infer personal names. Ignore any prior memory of names. ${languageInstruction} ${conciseInstruction} Treat each request as stateless and scope strictly to conversationKey (${conversationKey}).`;
 
-  // Call upstream webhook
-  const upstream = await fetch(upstreamUrl, {
+  // Call upstream webhook with authentication and error handling
+  let upstream;
+  let contentType = '';
+  let rawText = '';
+  
+  try {
+    console.log(`[${requestId}] Calling n8n webhook:`, upstreamUrl);
+    
+    upstream = await fetch(upstreamUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'X-Webhook-Secret': Deno.env.get('N8N_WEBHOOK_SECRET') || '',
       },
       body: JSON.stringify({
         message: requestData.message,
@@ -249,8 +284,16 @@ serve(async (req) => {
       }),
     });
 
-    const contentType = upstream.headers.get('content-type') || '';
-    const rawText = await upstream.text();
+    console.log(`[${requestId}] N8N response status:`, upstream.status);
+
+    if (!upstream.ok) {
+      const errorText = await upstream.text();
+      console.error(`[${requestId}] N8N webhook error:`, errorText);
+      throw new Error(`N8N webhook failed: ${upstream.status} - ${errorText}`);
+    }
+
+    contentType = upstream.headers.get('content-type') || '';
+    rawText = await upstream.text();
 
     console.log(`[${requestId}] Upstream response:`, {
       status: upstream.status,
@@ -258,6 +301,20 @@ serve(async (req) => {
       bodyLength: rawText.length,
       bodyPreview: rawText.slice(0, 200) + (rawText.length > 200 ? '...' : '')
     });
+  } catch (upstreamError) {
+    console.error(`[${requestId}] Error calling n8n:`, upstreamError);
+    
+    const errorResponse: WebhookResponse = {
+      response: "I'm having trouble connecting to my AI brain right now. Please try again in a moment.",
+      status: 'error',
+      error: upstreamError instanceof Error ? upstreamError.message : String(upstreamError)
+    };
+
+    return new Response(JSON.stringify(errorResponse), {
+      status: 200, // Return 200 so frontend doesn't show error modal
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
 
     // Process the response
     const processedText = textProcessor.processResponse(rawText, contentType);
