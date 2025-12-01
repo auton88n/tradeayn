@@ -229,6 +229,26 @@ export default {
     			shimmer: {
     				'0%': { backgroundPosition: '-200% 0' },
     				'100%': { backgroundPosition: '200% 0' }
+    			},
+    			'scroll-fade-up': {
+    				'0%': { opacity: '0', transform: 'translateY(40px)' },
+    				'100%': { opacity: '1', transform: 'translateY(0)' }
+    			},
+    			'scroll-fade-left': {
+    				'0%': { opacity: '0', transform: 'translateX(-40px)' },
+    				'100%': { opacity: '1', transform: 'translateX(0)' }
+    			},
+    			'scroll-fade-right': {
+    				'0%': { opacity: '0', transform: 'translateX(40px)' },
+    				'100%': { opacity: '1', transform: 'translateX(0)' }
+    			},
+    			'scroll-scale-in': {
+    				'0%': { opacity: '0', transform: 'scale(0.9)' },
+    				'100%': { opacity: '1', transform: 'scale(1)' }
+    			},
+    			'scroll-rotate-in': {
+    				'0%': { opacity: '0', transform: 'rotate(-5deg) scale(0.95)' },
+    				'100%': { opacity: '1', transform: 'rotate(0) scale(1)' }
     			}
     		},
     		animation: {
@@ -249,7 +269,12 @@ export default {
     			'button-press': 'button-press 0.15s ease-out',
     			'soft-pulse': 'soft-pulse 2s ease-in-out infinite',
     			'bounce-dot': 'bounce-dot 1.4s ease-in-out infinite',
-    			shimmer: 'shimmer 2s linear infinite'
+    			shimmer: 'shimmer 2s linear infinite',
+    			'scroll-fade-up': 'scroll-fade-up 0.8s cubic-bezier(0.32, 0.72, 0, 1)',
+    			'scroll-fade-left': 'scroll-fade-left 0.8s cubic-bezier(0.32, 0.72, 0, 1)',
+    			'scroll-fade-right': 'scroll-fade-right 0.8s cubic-bezier(0.32, 0.72, 0, 1)',
+    			'scroll-scale-in': 'scroll-scale-in 0.8s cubic-bezier(0.32, 0.72, 0, 1)',
+    			'scroll-rotate-in': 'scroll-rotate-in 0.8s cubic-bezier(0.32, 0.72, 0, 1)'
     		}
     	}
     },
