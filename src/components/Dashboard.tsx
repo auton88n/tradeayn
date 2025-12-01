@@ -31,7 +31,7 @@ export default function Dashboard({ user }: DashboardProps) {
         const { data, error } = await supabase
           .from('system_config')
           .select('value')
-          .eq('key', 'maintenance_config')
+          .eq('key', 'maintenance_mode')
           .maybeSingle();
 
         if (error) {
@@ -42,10 +42,10 @@ export default function Dashboard({ user }: DashboardProps) {
         if (data?.value && typeof data.value === 'object' && !Array.isArray(data.value)) {
           const config = data.value as Record<string, any>;
           setMaintenanceConfig({
-            enableMaintenance: config.enableMaintenance || false,
-            maintenanceMessage: config.maintenanceMessage || 'System is currently under maintenance.',
-            maintenanceStartTime: config.maintenanceStartTime || '',
-            maintenanceEndTime: config.maintenanceEndTime || '',
+            enableMaintenance: config.enabled || false,
+            maintenanceMessage: config.message || 'System is currently under maintenance.',
+            maintenanceStartTime: config.startTime || '',
+            maintenanceEndTime: config.endTime || '',
           });
         }
       } catch (error) {
@@ -64,7 +64,7 @@ export default function Dashboard({ user }: DashboardProps) {
           event: '*',
           schema: 'public',
           table: 'system_config',
-          filter: 'key=eq.maintenance_config'
+          filter: 'key=eq.maintenance_mode'
         },
         (payload) => {
           if (payload.new && typeof payload.new === 'object' && 'value' in payload.new) {
@@ -72,10 +72,10 @@ export default function Dashboard({ user }: DashboardProps) {
             if (value && typeof value === 'object' && !Array.isArray(value)) {
               const config = value as Record<string, any>;
               setMaintenanceConfig({
-                enableMaintenance: config.enableMaintenance || false,
-                maintenanceMessage: config.maintenanceMessage || 'System is currently under maintenance.',
-                maintenanceStartTime: config.maintenanceStartTime || '',
-                maintenanceEndTime: config.maintenanceEndTime || '',
+                enableMaintenance: config.enabled || false,
+                maintenanceMessage: config.message || 'System is currently under maintenance.',
+                maintenanceStartTime: config.startTime || '',
+                maintenanceEndTime: config.endTime || '',
               });
             }
           }
