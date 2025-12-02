@@ -171,45 +171,22 @@ const LandingPage = () => {
             {/* Chat Input Container */}
             <div className="relative bg-card/50 backdrop-blur-xl border-2 border-border rounded-2xl p-6 shadow-2xl opacity-0 animate-[fade-in_0.8s_ease-out_0.4s_forwards] hover-glow">
               <div className="relative">
-                <Textarea
-                  value={demoMessage}
-                  onChange={(e) => setDemoMessage(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      setShowAuthModal(true);
-                    }
-                  }}
-                  placeholder=""
-                  rows={3}
-                  className="w-full resize-none bg-transparent border-0 outline-none focus:ring-0 text-base min-h-[80px] focus-visible:ring-0"
-                />
+                <Textarea value={demoMessage} onChange={e => setDemoMessage(e.target.value)} onKeyPress={e => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  setShowAuthModal(true);
+                }
+              }} placeholder="" rows={3} className="w-full resize-none bg-transparent border-0 outline-none focus:ring-0 text-base min-h-[80px] focus-visible:ring-0" />
                 
                 {/* Typewriter Placeholder */}
-                {!demoMessage && (
-                  <div className={cn(
-                    "absolute top-2 pointer-events-none",
-                    language === 'ar' ? 'right-3' : 'left-3'
-                  )}>
-                    <TypewriterText
-                      key={`demo-${language}`}
-                      text={language === 'ar' ? 'كيف يمكنني زيادة إيراداتي؟' : 'How can I increase my revenue?'}
-                      speed={50}
-                      className="text-muted-foreground"
-                      showCursor={true}
-                    />
-                  </div>
-                )}
+                {!demoMessage && <div className={cn("absolute top-2 pointer-events-none", language === 'ar' ? 'right-3' : 'left-3')}>
+                    <TypewriterText key={`demo-${language}`} text={language === 'ar' ? 'كيف يمكنني زيادة إيراداتي؟' : 'How can I increase my revenue?'} speed={50} className="text-muted-foreground" showCursor={true} />
+                  </div>}
               </div>
               
               {/* Send Button Row */}
               <div className="flex items-center justify-end mt-4 pt-4 border-t border-border/50">
-                <Button
-                  onClick={() => setShowAuthModal(true)}
-                  disabled={!demoMessage.trim()}
-                  size="lg"
-                  className="h-12 px-8 rounded-full transition-all hover:scale-105 active:scale-95"
-                >
+                <Button onClick={() => setShowAuthModal(true)} disabled={!demoMessage.trim()} size="lg" className="h-12 px-8 rounded-full transition-all hover:scale-105 active:scale-95">
                   {language === 'ar' ? 'إرسال' : 'Send'}
                   <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
@@ -221,9 +198,7 @@ const LandingPage = () => {
         {/* Single elegant CTA below the input */}
         <ScrollReveal delay={0.8}>
           <div className="text-center mt-8">
-            <p className="text-sm text-muted-foreground">
-              {language === 'ar' ? 'ابدأ التحدث مع AYN مجاناً' : 'Start chatting with AYN for free'}
-            </p>
+            
           </div>
         </ScrollReveal>
 
