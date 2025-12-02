@@ -131,7 +131,7 @@ export const AdminPanel = () => {
       }, {} as Record<string, Profile>);
 
       // Create a map of user_id to email from usage stats
-      const emailsMap = (usageResult.data || []).reduce((acc: Record<string, string>, stat: any) => {
+      const emailsMap = (usageResult.data || []).reduce((acc: Record<string, string>, stat: UsageStats) => {
         if (stat.user_id && stat.user_email) {
           acc[stat.user_id] = stat.user_email;
         }
@@ -156,7 +156,7 @@ export const AdminPanel = () => {
       const activeUsers = enrichedAccessData.filter(u => u.is_active).length;
       const pendingRequests = enrichedAccessData.filter(u => !u.is_active && !u.granted_at).length;
       const todayMessages = todayUsageResult.data?.reduce((sum, log) => sum + (log.usage_count || 0), 0) || 0;
-      const totalMessages = usageResult.data?.reduce((sum: number, stat: any) => sum + (stat.current_usage || 0), 0) || 0;
+      const totalMessages = usageResult.data?.reduce((sum: number, stat: UsageStats) => sum + (stat.current_usage || 0), 0) || 0;
       
       // Set system metrics with calculated values
       setSystemMetrics({
@@ -189,36 +189,57 @@ export const AdminPanel = () => {
       if (error) throw error;
       
       if (data && data.length > 0) {
-        const configData = data.reduce((acc, item) => ({...acc, [item.key]: item.value}), {} as Record<string, any>);
+        interface ConfigValue {
+          enabled?: boolean;
+          message?: string;
+          startTime?: string;
+          endTime?: string;
+          defaultMonthlyLimit?: number;
+          autoApprove?: boolean;
+          notificationEmail?: string;
+          sessionTimeout?: number;
+          requireAdminApproval?: boolean;
+          enableAuditLogging?: boolean;
+          rateLimitPerMinute?: number;
+          maxConcurrentSessions?: number;
+        }
+        
+        // Find and process each config type
+        const maintenanceModeData = data.find(item => item.key === 'maintenance_mode');
+        const defaultSettingsData = data.find(item => item.key === 'default_settings');
+        const securitySettingsData = data.find(item => item.key === 'security_settings');
         
         // Update system config from database
-        if (configData.maintenance_mode) {
+        if (maintenanceModeData?.value && typeof maintenanceModeData.value === 'object') {
+          const maintenanceMode = maintenanceModeData.value as ConfigValue;
           setSystemConfig(prev => ({
             ...prev,
-            enableMaintenance: configData.maintenance_mode.enabled || false,
-            maintenanceMessage: configData.maintenance_mode.message || prev.maintenanceMessage,
-            maintenanceStartTime: configData.maintenance_mode.startTime || prev.maintenanceStartTime,
-            maintenanceEndTime: configData.maintenance_mode.endTime || prev.maintenanceEndTime
+            enableMaintenance: maintenanceMode.enabled || false,
+            maintenanceMessage: maintenanceMode.message || prev.maintenanceMessage,
+            maintenanceStartTime: maintenanceMode.startTime || prev.maintenanceStartTime,
+            maintenanceEndTime: maintenanceMode.endTime || prev.maintenanceEndTime
           }));
         }
         
-        if (configData.default_settings) {
+        if (defaultSettingsData?.value && typeof defaultSettingsData.value === 'object') {
+          const defaultSettings = defaultSettingsData.value as ConfigValue;
           setSystemConfig(prev => ({
             ...prev,
-            defaultMonthlyLimit: configData.default_settings.defaultMonthlyLimit || prev.defaultMonthlyLimit,
-            autoApproveRequests: configData.default_settings.autoApprove || prev.autoApproveRequests,
-            notificationEmail: configData.default_settings.notificationEmail || prev.notificationEmail,
-            sessionTimeout: configData.default_settings.sessionTimeout || prev.sessionTimeout
+            defaultMonthlyLimit: defaultSettings.defaultMonthlyLimit || prev.defaultMonthlyLimit,
+            autoApproveRequests: defaultSettings.autoApprove || prev.autoApproveRequests,
+            notificationEmail: defaultSettings.notificationEmail || prev.notificationEmail,
+            sessionTimeout: defaultSettings.sessionTimeout || prev.sessionTimeout
           }));
         }
         
-        if (configData.security_settings) {
+        if (securitySettingsData?.value && typeof securitySettingsData.value === 'object') {
+          const securitySettings = securitySettingsData.value as ConfigValue;
           setSystemConfig(prev => ({
             ...prev,
-            requireAdminApproval: configData.security_settings.requireAdminApproval ?? prev.requireAdminApproval,
-            enableAuditLogging: configData.security_settings.enableAuditLogging ?? prev.enableAuditLogging,
-            rateLimitPerMinute: configData.security_settings.rateLimitPerMinute || prev.rateLimitPerMinute,
-            maxConcurrentSessions: configData.security_settings.maxConcurrentSessions || prev.maxConcurrentSessions
+            requireAdminApproval: securitySettings.requireAdminApproval ?? prev.requireAdminApproval,
+            enableAuditLogging: securitySettings.enableAuditLogging ?? prev.enableAuditLogging,
+            rateLimitPerMinute: securitySettings.rateLimitPerMinute || prev.rateLimitPerMinute,
+            maxConcurrentSessions: securitySettings.maxConcurrentSessions || prev.maxConcurrentSessions
           }));
         }
       }

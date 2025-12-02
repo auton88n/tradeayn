@@ -55,11 +55,11 @@ const ResetPassword = () => {
         navigate('/');
       }, 2000);
       
-    } catch (error: any) {
-      console.error('Error resetting password:', error);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to reset password';
       toast({
         title: 'Error',
-        description: error.message || 'Failed to reset password',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {

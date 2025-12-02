@@ -33,7 +33,14 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
       }
 
       // Group messages by session_id
-      const sessionGroups: { [key: string]: any[] } = {};
+      interface ProcessedMessage {
+        id: string;
+        content: string;
+        sender: 'user' | 'ayn';
+        timestamp: Date;
+      }
+      
+      const sessionGroups: { [key: string]: ProcessedMessage[] } = {};
 
       data.forEach(message => {
         const sessionId = message.session_id;

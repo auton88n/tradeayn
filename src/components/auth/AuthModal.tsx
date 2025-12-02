@@ -44,7 +44,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
 
       if (error) {
         // Special handling: email not confirmed
-        const code = (error as any).code as string | undefined;
+        const code = (error as { code?: string }).code;
         if (code === 'email_not_confirmed' || /email not confirmed/i.test(error.message)) {
           try {
             await supabase.auth.resend({

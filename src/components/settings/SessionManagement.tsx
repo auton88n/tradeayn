@@ -60,15 +60,15 @@ export const SessionManagement = () => {
     }
   };
 
-  const getDeviceIcon = (deviceInfo: any) => {
-    const type = deviceInfo?.type?.toLowerCase() || '';
+  const getDeviceIcon = (deviceInfo: Record<string, unknown> | null) => {
+    const type = String(deviceInfo?.type || '').toLowerCase();
     if (type.includes('mobile') || type.includes('phone')) return <Smartphone className="h-5 w-5" />;
     if (type.includes('tablet')) return <Tablet className="h-5 w-5" />;
     return <Monitor className="h-5 w-5" />;
   };
 
-  const getDeviceName = (deviceInfo: any) => {
-    return deviceInfo?.browser || deviceInfo?.os || t('settings.unknownDevice');
+  const getDeviceName = (deviceInfo: Record<string, unknown> | null) => {
+    return String(deviceInfo?.browser || deviceInfo?.os || t('settings.unknownDevice'));
   };
 
   if (loading) {

@@ -8,7 +8,7 @@ import { Sidebar as DashboardSidebar } from './Sidebar';
 import { ChatArea } from './ChatArea';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import type { AIMode, FileAttachment, AIModeConfig } from '@/types/dashboard.types';
+import type { AIMode, FileAttachment, AIModeConfig, ChatHistory } from '@/types/dashboard.types';
 
 // Import custom hooks
 import { useAuth } from '@/hooks/useAuth';
@@ -190,12 +190,12 @@ export const DashboardContainer = ({ user, isAdmin, onAdminPanelClick }: Dashboa
   }, [toast]);
 
   // Handle reply to message
-  const handleReplyToMessage = useCallback((message: any) => {
+  const handleReplyToMessage = useCallback((message: { content: string }) => {
     handleCopyMessage(message.content);
   }, [handleCopyMessage]);
 
   // Handle load chat
-  const handleLoadChat = useCallback((chat: any) => {
+  const handleLoadChat = useCallback((chat: ChatHistory) => {
     const loadedMessages = chatSession.loadChat(chat);
     messagesHook.setMessages(loadedMessages);
   }, [chatSession, messagesHook]);
@@ -251,7 +251,24 @@ const DashboardContent = ({
   handleLogout,
   isAdmin,
   onAdminPanelClick
-}: any) => {
+}: {
+  user: User;
+  auth: ReturnType<typeof useAuth>;
+  chatSession: ReturnType<typeof useChatSession>;
+  fileUpload: ReturnType<typeof useFileUpload>;
+  messagesHook: ReturnType<typeof useMessages>;
+  selectedMode: AIMode;
+  modes: AIModeConfig[];
+  setSelectedMode: (mode: AIMode) => void;
+  handleNewChat: () => void;
+  handleLoadChat: (chat: ChatHistory) => void;
+  handleCopyMessage: (content: string) => Promise<void>;
+  handleReplyToMessage: (message: { content: string }) => void;
+  handleSendMessage: (content: string, fileToUpload?: File | null) => Promise<void>;
+  handleLogout: () => Promise<void>;
+  isAdmin?: boolean;
+  onAdminPanelClick?: () => void;
+}) => {
   const { open, toggleSidebar } = useSidebar();
 
   return (
@@ -284,7 +301,7 @@ const DashboardContent = ({
             if (chatSession.selectedChats.size === chatSession.recentChats.length) {
               chatSession.setSelectedChats(new Set());
             } else {
-              chatSession.setSelectedChats(new Set(chatSession.recentChats.map((_: unknown, i: number) => i)));
+              chatSession.setSelectedChats(new Set(chatSession.recentChats.map((_chat: unknown, i: number) => i)));
             }
           }}
           onDeleteSelected={chatSession.deleteSelectedChats}

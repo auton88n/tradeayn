@@ -20,7 +20,7 @@ export interface UserSettings {
 export interface DeviceSession {
   id: string;
   fingerprint_hash: string;
-  device_info: any;
+  device_info: Record<string, unknown> | null;
   first_seen: string;
   last_seen: string;
   login_count: number;
@@ -120,7 +120,7 @@ export const useUserSettings = () => {
       const normalizedSessions: DeviceSession[] = (data || []).map(session => ({
         id: session.id,
         fingerprint_hash: session.fingerprint_hash,
-        device_info: session.device_info,
+        device_info: session.device_info as Record<string, unknown> | null,
         first_seen: session.first_seen,
         last_seen: session.last_seen,
         login_count: session.login_count ?? 0,
