@@ -137,6 +137,48 @@ export type Database = {
         }
         Relationships: []
       }
+      api_rate_limits: {
+        Row: {
+          blocked_until: string | null
+          created_at: string | null
+          endpoint: string
+          id: string
+          last_violation: string | null
+          max_requests: number | null
+          request_count: number | null
+          updated_at: string | null
+          user_id: string
+          violation_count: number | null
+          window_start: string | null
+        }
+        Insert: {
+          blocked_until?: string | null
+          created_at?: string | null
+          endpoint: string
+          id?: string
+          last_violation?: string | null
+          max_requests?: number | null
+          request_count?: number | null
+          updated_at?: string | null
+          user_id: string
+          violation_count?: number | null
+          window_start?: string | null
+        }
+        Update: {
+          blocked_until?: string | null
+          created_at?: string | null
+          endpoint?: string
+          id?: string
+          last_violation?: string | null
+          max_requests?: number | null
+          request_count?: number | null
+          updated_at?: string | null
+          user_id?: string
+          violation_count?: number | null
+          window_start?: string | null
+        }
+        Relationships: []
+      }
       device_fingerprints: {
         Row: {
           created_at: string
@@ -856,9 +898,27 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_unblock_user: {
+        Args: { p_endpoint?: string; p_user_id: string }
+        Returns: undefined
+      }
       authenticate_or_create_solana_user: {
         Args: { _user_metadata?: Json; _wallet_address: string }
         Returns: string
+      }
+      check_api_rate_limit: {
+        Args: {
+          p_endpoint: string
+          p_max_requests?: number
+          p_user_id: string
+          p_window_minutes?: number
+        }
+        Returns: {
+          allowed: boolean
+          remaining_requests: number
+          reset_at: string
+          retry_after_seconds: number
+        }[]
       }
       check_emergency_shutdown: { Args: never; Returns: boolean }
       check_rate_limit: {
@@ -943,6 +1003,19 @@ export type Database = {
           recommendation: string
           schema_name: string
           security_risk: string
+        }[]
+      }
+      get_rate_limit_stats: {
+        Args: never
+        Returns: {
+          blocked_until: string
+          endpoint: string
+          is_blocked: boolean
+          last_activity: string
+          max_requests: number
+          request_count: number
+          user_id: string
+          violation_count: number
         }[]
       }
       get_security_extension_audit: {

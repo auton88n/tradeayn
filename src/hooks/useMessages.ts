@@ -147,6 +147,25 @@ export const useMessages = (
 
       setIsTyping(false);
 
+      // Handle 429 Rate Limit Response
+      if (webhookError && webhookError.message?.includes('429')) {
+        const errorMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: "You've reached the rate limit for messages. Please wait a moment before sending more messages.",
+          sender: 'ayn',
+          timestamp: new Date(),
+          status: 'error'
+        };
+        setMessages(prev => [...prev, errorMessage]);
+        
+        toast({
+          title: "Rate Limit Reached",
+          description: "You're sending messages too quickly. Please wait before trying again.",
+          variant: "destructive"
+        });
+        return;
+      }
+
       if (webhookError) {
         throw new Error(webhookError.message || 'Webhook call failed');
       }

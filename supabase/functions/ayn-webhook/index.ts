@@ -198,6 +198,45 @@ serve(async (req) => {
       throw new Error('User ID is required');
     }
 
+    // SERVER-SIDE RATE LIMIT CHECK (100 requests per hour)
+    const { data: rateLimitResult, error: rateLimitError } = await supabase
+      .rpc('check_api_rate_limit', {
+        p_user_id: requestData.userId,
+        p_endpoint: 'ayn-webhook',
+        p_max_requests: 100,
+        p_window_minutes: 60
+      });
+
+    if (rateLimitError) {
+      console.error(`[${requestId}] Rate limit check error:`, rateLimitError);
+    }
+
+    if (rateLimitResult && rateLimitResult.length > 0 && !rateLimitResult[0].allowed) {
+      const result = rateLimitResult[0];
+      console.warn(`[${requestId}] Rate limit exceeded for user:`, requestData.userId);
+      
+      return new Response(
+        JSON.stringify({ 
+          error: 'Rate limit exceeded. Please try again later.',
+          response: 'You have exceeded the maximum number of requests. Please wait before sending more messages.',
+          status: 'error',
+          retryAfter: result.retry_after_seconds || 3600,
+          resetAt: result.reset_at
+        }),
+        { 
+          status: 429,
+          headers: { 
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+            'Retry-After': String(result.retry_after_seconds || 3600),
+            'X-RateLimit-Limit': '100',
+            'X-RateLimit-Remaining': String(result.remaining_requests || 0),
+            'X-RateLimit-Reset': result.reset_at || ''
+          }
+        }
+      );
+    }
+
     console.log(`[${requestId}] Edge function started`);
     console.log(`[${requestId}] User ID:`, requestData.userId);
     console.log(`[${requestId}] Message length:`, requestData.message?.length || 0);

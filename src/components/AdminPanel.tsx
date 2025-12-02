@@ -10,6 +10,7 @@ import {
 import { AdminDashboard } from './admin/AdminDashboard';
 import { UserManagement } from './admin/UserManagement';
 import { SystemSettings } from './admin/SystemSettings';
+import { RateLimitMonitoring } from './admin/RateLimitMonitoring';
 import { ErrorBoundary } from './ErrorBoundary';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -392,7 +393,7 @@ export const AdminPanel = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview" className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
             <BarChart3 className="w-4 h-4" />
             {t('admin.dashboard')}
@@ -400,6 +401,10 @@ export const AdminPanel = () => {
           <TabsTrigger value="users" className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
             <Users className="w-4 h-4" />
             {t('admin.users')}
+          </TabsTrigger>
+          <TabsTrigger value="rate-limits" className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+            <Activity className="w-4 h-4" />
+            Rate Limits
           </TabsTrigger>
           <TabsTrigger value="settings" className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
             <Settings className="w-4 h-4" />
@@ -416,6 +421,12 @@ export const AdminPanel = () => {
         <TabsContent value="users">
           <ErrorBoundary>
             <UserManagement allUsers={allUsers} onRefresh={fetchData} />
+          </ErrorBoundary>
+        </TabsContent>
+
+        <TabsContent value="rate-limits">
+          <ErrorBoundary>
+            <RateLimitMonitoring />
           </ErrorBoundary>
         </TabsContent>
 
