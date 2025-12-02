@@ -289,18 +289,24 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
           />
         </div>
 
-        {/* Cards - positioned absolutely, reveal on individual hover */}
+        {/* Cards - emanate from eye center */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           {/* Top-left card */}
           <motion.div
+            initial={{ x: 0, y: 0, scale: 0.3, opacity: 0 }}
             animate={{ 
+              x: visibleCardIndex === 0 ? -180 : 0,
+              y: visibleCardIndex === 0 ? -120 : 0,
               opacity: visibleCardIndex === 0 ? 1 : 0,
-              scale: visibleCardIndex === 0 ? 1 : 0.9,
-              y: visibleCardIndex === 0 ? -5 : 0,
-              filter: visibleCardIndex === 0 ? 'blur(0px)' : 'blur(6px)'
+              scale: visibleCardIndex === 0 ? 1 : 0.3,
+              filter: visibleCardIndex === 0 ? 'blur(0px)' : 'blur(4px)'
             }}
-            transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-            className="absolute left-[18%] md:left-[22%] lg:left-[26%] top-[15%] w-[150px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20"
+            transition={{ 
+              duration: 0.5, 
+              ease: [0.34, 1.56, 0.64, 1],
+              opacity: { duration: 0.3 }
+            }}
+            className="absolute w-[150px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20"
           >
             <div className="flex items-start gap-2">
               <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
@@ -310,14 +316,20 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
 
           {/* Middle-left card */}
           <motion.div
+            initial={{ x: 0, y: 0, scale: 0.3, opacity: 0 }}
             animate={{ 
+              x: visibleCardIndex === 1 ? -220 : 0,
+              y: visibleCardIndex === 1 ? 0 : 0,
               opacity: visibleCardIndex === 1 ? 1 : 0,
-              scale: visibleCardIndex === 1 ? 1 : 0.9,
-              y: visibleCardIndex === 1 ? -5 : 0,
-              filter: visibleCardIndex === 1 ? 'blur(0px)' : 'blur(6px)'
+              scale: visibleCardIndex === 1 ? 1 : 0.3,
+              filter: visibleCardIndex === 1 ? 'blur(0px)' : 'blur(4px)'
             }}
-            transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-            className="absolute left-[15%] md:left-[18%] lg:left-[22%] top-1/2 -translate-y-1/2 w-[160px] md:w-[200px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-4 z-20"
+            transition={{ 
+              duration: 0.5, 
+              ease: [0.34, 1.56, 0.64, 1],
+              opacity: { duration: 0.3 }
+            }}
+            className="absolute w-[160px] md:w-[200px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-4 z-20"
           >
             <div className="flex items-start gap-2">
               <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
@@ -327,14 +339,20 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
 
           {/* Bottom-left card */}
           <motion.div
+            initial={{ x: 0, y: 0, scale: 0.3, opacity: 0 }}
             animate={{ 
+              x: visibleCardIndex === 2 ? -180 : 0,
+              y: visibleCardIndex === 2 ? 120 : 0,
               opacity: visibleCardIndex === 2 ? 1 : 0,
-              scale: visibleCardIndex === 2 ? 1 : 0.9,
-              y: visibleCardIndex === 2 ? -5 : 0,
-              filter: visibleCardIndex === 2 ? 'blur(0px)' : 'blur(6px)'
+              scale: visibleCardIndex === 2 ? 1 : 0.3,
+              filter: visibleCardIndex === 2 ? 'blur(0px)' : 'blur(4px)'
             }}
-            transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-            className="absolute left-[18%] md:left-[22%] lg:left-[26%] bottom-[15%] w-[150px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20"
+            transition={{ 
+              duration: 0.5, 
+              ease: [0.34, 1.56, 0.64, 1],
+              opacity: { duration: 0.3 }
+            }}
+            className="absolute w-[150px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20"
           >
             <div className="flex items-start gap-2">
               <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
@@ -344,14 +362,20 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
 
           {/* Top-right card */}
           <motion.div
+            initial={{ x: 0, y: 0, scale: 0.3, opacity: 0 }}
             animate={{ 
+              x: visibleCardIndex === 3 ? 180 : 0,
+              y: visibleCardIndex === 3 ? -120 : 0,
               opacity: visibleCardIndex === 3 ? 1 : 0,
-              scale: visibleCardIndex === 3 ? 1 : 0.9,
-              y: visibleCardIndex === 3 ? -5 : 0,
-              filter: visibleCardIndex === 3 ? 'blur(0px)' : 'blur(6px)'
+              scale: visibleCardIndex === 3 ? 1 : 0.3,
+              filter: visibleCardIndex === 3 ? 'blur(0px)' : 'blur(4px)'
             }}
-            transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-            className="absolute right-[18%] md:right-[22%] lg:right-[26%] top-[15%] w-[150px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20"
+            transition={{ 
+              duration: 0.5, 
+              ease: [0.34, 1.56, 0.64, 1],
+              opacity: { duration: 0.3 }
+            }}
+            className="absolute w-[150px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20"
           >
             <div className="flex items-start gap-2">
               <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
@@ -361,14 +385,20 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
 
           {/* Middle-right card */}
           <motion.div
+            initial={{ x: 0, y: 0, scale: 0.3, opacity: 0 }}
             animate={{ 
+              x: visibleCardIndex === 4 ? 220 : 0,
+              y: visibleCardIndex === 4 ? 0 : 0,
               opacity: visibleCardIndex === 4 ? 1 : 0,
-              scale: visibleCardIndex === 4 ? 1 : 0.9,
-              y: visibleCardIndex === 4 ? -5 : 0,
-              filter: visibleCardIndex === 4 ? 'blur(0px)' : 'blur(6px)'
+              scale: visibleCardIndex === 4 ? 1 : 0.3,
+              filter: visibleCardIndex === 4 ? 'blur(0px)' : 'blur(4px)'
             }}
-            transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-            className="absolute right-[15%] md:right-[18%] lg:right-[22%] top-1/2 -translate-y-1/2 w-[160px] md:w-[200px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-4 z-20"
+            transition={{ 
+              duration: 0.5, 
+              ease: [0.34, 1.56, 0.64, 1],
+              opacity: { duration: 0.3 }
+            }}
+            className="absolute w-[160px] md:w-[200px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-4 z-20"
           >
             <div className="flex items-start gap-2">
               <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
@@ -378,14 +408,20 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
 
           {/* Bottom-right card */}
           <motion.div
+            initial={{ x: 0, y: 0, scale: 0.3, opacity: 0 }}
             animate={{ 
+              x: visibleCardIndex === 5 ? 180 : 0,
+              y: visibleCardIndex === 5 ? 120 : 0,
               opacity: visibleCardIndex === 5 ? 1 : 0,
-              scale: visibleCardIndex === 5 ? 1 : 0.9,
-              y: visibleCardIndex === 5 ? -5 : 0,
-              filter: visibleCardIndex === 5 ? 'blur(0px)' : 'blur(6px)'
+              scale: visibleCardIndex === 5 ? 1 : 0.3,
+              filter: visibleCardIndex === 5 ? 'blur(0px)' : 'blur(4px)'
             }}
-            transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-            className="absolute right-[18%] md:right-[22%] lg:right-[26%] bottom-[15%] w-[150px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20"
+            transition={{ 
+              duration: 0.5, 
+              ease: [0.34, 1.56, 0.64, 1],
+              opacity: { duration: 0.3 }
+            }}
+            className="absolute w-[150px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20"
           >
             <div className="flex items-start gap-2">
               <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
