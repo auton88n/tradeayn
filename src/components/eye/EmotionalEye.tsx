@@ -10,7 +10,7 @@ interface EmotionalEyeProps {
 }
 
 export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
-  const { isAbsorbing, isBlinking, triggerBlink } = useAYNEmotion();
+  const { emotion, emotionConfig, isAbsorbing, isBlinking, triggerBlink } = useAYNEmotion();
   const [isHovered, setIsHovered] = useState(false);
 
   // Mouse tracking - same as Hero.tsx
@@ -65,17 +65,43 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
     lg: 'w-[160px] h-[160px] md:w-[220px] md:h-[220px] lg:w-[260px] lg:h-[260px]',
   };
 
+  // Calculate iris radius based on state and emotion
+  const baseRadius = isAbsorbing ? 22 : isBlinking ? 30 : isHovered ? 32 : 28;
+  const irisRadius = baseRadius * emotionConfig.irisScale;
+
   return (
     <div className={cn("relative flex items-center justify-center", className)}>
-      {/* Absorption glow - simplified without blur */}
+      {/* Emotion-colored outer glow */}
+      <motion.div 
+        className="absolute rounded-full pointer-events-none z-0"
+        style={{
+          width: '120%',
+          height: '120%',
+          background: `radial-gradient(circle, ${emotionConfig.glowColor}20 0%, transparent 70%)`,
+        }}
+        animate={{ 
+          scale: [1, 1.05, 1],
+          opacity: [0.5, 0.8, 0.5],
+        }}
+        transition={{ 
+          duration: emotionConfig.breathingSpeed, 
+          repeat: Infinity, 
+          ease: "easeInOut" 
+        }}
+      />
+
+      {/* Absorption glow */}
       <AnimatePresence>
         {isAbsorbing && (
           <motion.div 
             initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1.1, opacity: 0.4 }}
-            exit={{ scale: 1.3, opacity: 0 }}
-            transition={{ duration: 0.25, ease: "easeOut" }}
-            className="absolute w-[140px] h-[140px] md:w-[180px] md:h-[180px] lg:w-[220px] lg:h-[220px] rounded-full bg-foreground/8 pointer-events-none z-10" 
+            animate={{ scale: 1.2, opacity: 0.6 }}
+            exit={{ scale: 1.4, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="absolute w-[140px] h-[140px] md:w-[180px] md:h-[180px] lg:w-[220px] lg:h-[220px] rounded-full pointer-events-none z-10" 
+            style={{
+              background: `radial-gradient(circle, ${emotionConfig.color}40 0%, transparent 70%)`,
+            }}
           />
         )}
       </AnimatePresence>
@@ -90,15 +116,34 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
         onMouseEnter={() => setIsHovered(true)} 
         onMouseLeave={() => setIsHovered(false)}
       >
-        {/* Outer casing - same as Hero.tsx */}
+        {/* Outer casing with emotion glow */}
         <motion.div 
           className={cn(
-            "relative rounded-full bg-background flex items-center justify-center shadow-xl group-hover:shadow-2xl group-hover:scale-[1.03] overflow-hidden transition-shadow duration-300",
+            "relative rounded-full bg-background flex items-center justify-center overflow-hidden transition-all duration-500",
             sizeClasses[size]
           )}
+          style={{
+            boxShadow: `0 0 40px ${emotionConfig.color}30, 0 0 80px ${emotionConfig.color}15, 0 10px 30px rgba(0,0,0,0.2)`,
+          }}
           animate={{ scale: [1, 1.01, 1] }}
           transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
         >
+          {/* Emotion-colored ring */}
+          <motion.div 
+            className={cn(
+              "absolute inset-0 rounded-full ring-2 transition-all duration-500",
+              emotionConfig.ringClass
+            )}
+            animate={{
+              opacity: [0.5, 1, 0.5],
+            }}
+            transition={{
+              duration: emotionConfig.breathingSpeed,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          />
+
           {/* soft inner ring */}
           <div className="absolute inset-4 rounded-full bg-background/80 shadow-inner" />
 
@@ -119,28 +164,33 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
               transformOrigin: 'center center'
             }}
           >
-            {/* iris subtle gradient */}
+            {/* iris subtle gradient with emotion color */}
             <defs>
               <radialGradient id="emotional-g1" cx="50%" cy="40%">
-                <stop offset="0%" stopColor="hsl(var(--foreground))" stopOpacity="0.12" />
-                <stop offset="45%" stopColor="hsl(var(--foreground))" stopOpacity="0.06" />
+                <stop offset="0%" stopColor={emotionConfig.color} stopOpacity="0.15" />
+                <stop offset="45%" stopColor={emotionConfig.color} stopOpacity="0.08" />
                 <stop offset="100%" stopColor="hsl(var(--foreground))" stopOpacity="0.9" />
               </radialGradient>
               <radialGradient id="emotional-g2" cx="40%" cy="30%">
                 <stop offset="0%" stopColor="hsl(var(--background))" stopOpacity="0.9" />
                 <stop offset="80%" stopColor="hsl(var(--foreground))" stopOpacity="0.95" />
               </radialGradient>
+              <radialGradient id="iris-gradient" cx="50%" cy="50%">
+                <stop offset="0%" stopColor={emotionConfig.color} stopOpacity="0.3" />
+                <stop offset="60%" stopColor="black" stopOpacity="1" />
+                <stop offset="100%" stopColor="black" stopOpacity="1" />
+              </radialGradient>
             </defs>
 
             {/* sclera subtle */}
             <circle cx="50" cy="50" r="48" fill="url(#emotional-g2)" opacity="0.06" />
 
-            {/* iris / pupil - black circle that dilates on blink, contracts on absorption */}
+            {/* iris / pupil - with emotion color tinting */}
             <circle 
               cx="50" 
               cy="50" 
-              r={isAbsorbing ? 22 : isBlinking ? 30 : isHovered ? 32 : 28} 
-              fill="black" 
+              r={irisRadius}
+              fill="url(#iris-gradient)"
               style={{
                 transition: isAbsorbing 
                   ? "r 0.15s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
@@ -149,13 +199,24 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
                     : "r 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)"
               }} 
             />
+
+            {/* Inner emotion glow ring */}
+            <circle 
+              cx="50" 
+              cy="50" 
+              r={irisRadius + 2}
+              fill="none"
+              stroke={emotionConfig.color}
+              strokeWidth="1"
+              opacity="0.4"
+            />
               
             {/* Brain logo centered inside the black pupil */}
             <foreignObject 
-              x={isAbsorbing ? 36 : isBlinking ? 32 : isHovered ? 30 : 32} 
-              y={isAbsorbing ? 36 : isBlinking ? 32 : isHovered ? 30 : 32} 
-              width={isAbsorbing ? 28 : isBlinking ? 36 : isHovered ? 40 : 36} 
-              height={isAbsorbing ? 28 : isBlinking ? 36 : isHovered ? 40 : 36} 
+              x={50 - irisRadius * 0.6} 
+              y={50 - irisRadius * 0.6} 
+              width={irisRadius * 1.2} 
+              height={irisRadius * 1.2} 
               style={{
                 transition: isAbsorbing 
                   ? "all 0.15s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
