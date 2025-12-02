@@ -1,8 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { motion, useMotionValue, useSpring } from 'framer-motion';
+import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 
 interface HeroProps {
   onGetStarted: () => void;
@@ -23,6 +23,7 @@ const CARDS_AR = [
 export const Hero = ({ onGetStarted }: HeroProps) => {
   const { language } = useLanguage();
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const [isHovered, setIsHovered] = useState(false);
 
   // track pointer relative to container center for subtle eye follow with spring physics
   const mouseX = useMotionValue(0);
@@ -39,6 +40,20 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
     damping: 20, 
     mass: 0.5 
   });
+
+  // Parallax transforms for floating particles (different speeds for depth)
+  const parallax1X = useTransform(mouseX, (v) => v * 0.02);
+  const parallax1Y = useTransform(mouseY, (v) => v * 0.02);
+  const parallax2X = useTransform(mouseX, (v) => v * 0.035);
+  const parallax2Y = useTransform(mouseY, (v) => v * 0.035);
+  const parallax3X = useTransform(mouseX, (v) => v * 0.015);
+  const parallax3Y = useTransform(mouseY, (v) => v * 0.015);
+  const parallax4X = useTransform(mouseX, (v) => v * 0.028);
+  const parallax4Y = useTransform(mouseY, (v) => v * 0.028);
+  const parallax5X = useTransform(mouseX, (v) => v * 0.022);
+  const parallax5Y = useTransform(mouseY, (v) => v * 0.022);
+  const parallax6X = useTransform(mouseX, (v) => v * 0.032);
+  const parallax6Y = useTransform(mouseY, (v) => v * 0.032);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -109,7 +124,7 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
           {/* Particle 1 */}
           <motion.div
             className="absolute w-2 h-2 rounded-full bg-foreground/10 blur-[1px]"
-            style={{ top: '20%', left: '30%' }}
+            style={{ top: '20%', left: '30%', x: parallax1X, y: parallax1Y }}
             animate={{
               y: [0, -30, 0],
               x: [0, 20, 0],
@@ -124,7 +139,7 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
           {/* Particle 2 */}
           <motion.div
             className="absolute w-3 h-3 rounded-full bg-foreground/8 blur-[2px]"
-            style={{ top: '15%', right: '25%' }}
+            style={{ top: '15%', right: '25%', x: parallax2X, y: parallax2Y }}
             animate={{
               y: [0, 40, 0],
               x: [0, -25, 0],
@@ -140,7 +155,7 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
           {/* Particle 3 */}
           <motion.div
             className="absolute w-1.5 h-1.5 rounded-full bg-foreground/12 blur-[1px]"
-            style={{ bottom: '25%', left: '20%' }}
+            style={{ bottom: '25%', left: '20%', x: parallax3X, y: parallax3Y }}
             animate={{
               y: [0, -20, 0],
               x: [0, 15, 0],
@@ -156,7 +171,7 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
           {/* Particle 4 */}
           <motion.div
             className="absolute w-2.5 h-2.5 rounded-full bg-foreground/10 blur-[2px]"
-            style={{ bottom: '30%', right: '22%' }}
+            style={{ bottom: '30%', right: '22%', x: parallax4X, y: parallax4Y }}
             animate={{
               y: [0, 35, 0],
               x: [0, -18, 0],
@@ -172,7 +187,7 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
           {/* Particle 5 */}
           <motion.div
             className="absolute w-1 h-1 rounded-full bg-foreground/15 blur-[1px]"
-            style={{ top: '40%', left: '15%' }}
+            style={{ top: '40%', left: '15%', x: parallax5X, y: parallax5Y }}
             animate={{
               y: [0, -25, 0],
               x: [0, 12, 0],
@@ -188,7 +203,7 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
           {/* Particle 6 */}
           <motion.div
             className="absolute w-2 h-2 rounded-full bg-foreground/8 blur-[2px]"
-            style={{ top: '45%', right: '18%' }}
+            style={{ top: '45%', right: '18%', x: parallax6X, y: parallax6Y }}
             animate={{
               y: [0, 28, 0],
               x: [0, -22, 0],
@@ -249,6 +264,8 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
           initial={{ scale: 0.92, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
         >
           {/* Outer casing with breathing pulse and hover glow */}
           <motion.div 
@@ -301,13 +318,15 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
               {/* sclera subtle */}
               <circle cx="50" cy="50" r="48" fill="url(#g2)" opacity="0.06" />
 
-              {/* iris / pupil */}
+              {/* iris / pupil - dilates on hover */}
               <circle
                 cx="50"
                 cy="50"
-                r="28"
+                r={isHovered ? "32" : "28"}
                 fill="url(#g1)"
-                style={{ transition: "transform 0.12s ease-out" }}
+                style={{ 
+                  transition: "r 0.3s cubic-bezier(0.32, 0.72, 0, 1), transform 0.12s ease-out" 
+                }}
               />
               {/* highlight */}
               <circle cx="64" cy="40" r="6" fill="hsl(var(--background))" opacity="0.95" />
