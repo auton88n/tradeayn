@@ -632,6 +632,20 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
                 }}
               />
               
+              {/* Brightness flash overlay on absorption */}
+              <circle
+                cx="50"
+                cy="50"
+                r={absorptionPulse ? "22" : isHovered ? "32" : "28"}
+                fill="white"
+                opacity={absorptionPulse ? "0.4" : "0"}
+                style={{ 
+                  transition: absorptionPulse 
+                    ? "opacity 0.1s ease-out, r 0.15s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
+                    : "opacity 0.25s ease-in, r 0.3s cubic-bezier(0.32, 0.72, 0, 1)" 
+                }}
+              />
+              
               {/* Brain logo centered inside the black pupil - smaller */}
               <foreignObject 
                 x={absorptionPulse ? "36" : isHovered ? "30" : "32"} 
