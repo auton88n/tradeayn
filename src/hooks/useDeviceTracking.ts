@@ -60,7 +60,7 @@ export const trackDeviceLogin = async (userId: string) => {
         .from('device_fingerprints')
         .update({
           last_seen: new Date().toISOString(),
-          login_count: existing.login_count + 1,
+          login_count: (existing.login_count ?? 0) + 1,
           device_info: deviceInfo
         })
         .eq('id', existing.id);

@@ -24,8 +24,8 @@ interface AccessGrantWithProfile {
   notes: string | null;
   created_at: string;
   monthly_limit: number | null;
-  current_month_usage: number;
-  user_email?: string;
+  current_month_usage: number | null;
+  user_email?: string | null;
   profiles: {
     company_name: string | null;
     contact_person: string | null;

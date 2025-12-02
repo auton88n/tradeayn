@@ -56,12 +56,40 @@ export const useUserSettings = () => {
             .single();
 
           if (insertError) throw insertError;
-          setSettings(newSettings);
+          // Normalize newly created settings
+          const normalizedNewSettings: UserSettings = {
+            id: newSettings.id,
+            user_id: newSettings.user_id,
+            email_system_alerts: newSettings.email_system_alerts ?? true,
+            email_usage_warnings: newSettings.email_usage_warnings ?? true,
+            email_marketing: newSettings.email_marketing ?? false,
+            email_weekly_summary: newSettings.email_weekly_summary ?? false,
+            in_app_sounds: newSettings.in_app_sounds ?? true,
+            desktop_notifications: newSettings.desktop_notifications ?? false,
+            allow_personalization: newSettings.allow_personalization ?? false,
+            store_chat_history: newSettings.store_chat_history ?? true,
+            share_anonymous_data: newSettings.share_anonymous_data ?? false,
+          };
+          setSettings(normalizedNewSettings);
         } else {
           throw error;
         }
       } else {
-        setSettings(data);
+        // Normalize settings data with defaults for boolean fields
+        const normalizedSettings: UserSettings = {
+          id: data.id,
+          user_id: data.user_id,
+          email_system_alerts: data.email_system_alerts ?? true,
+          email_usage_warnings: data.email_usage_warnings ?? true,
+          email_marketing: data.email_marketing ?? false,
+          email_weekly_summary: data.email_weekly_summary ?? false,
+          in_app_sounds: data.in_app_sounds ?? true,
+          desktop_notifications: data.desktop_notifications ?? false,
+          allow_personalization: data.allow_personalization ?? false,
+          store_chat_history: data.store_chat_history ?? true,
+          share_anonymous_data: data.share_anonymous_data ?? false,
+        };
+        setSettings(normalizedSettings);
       }
     } catch (error) {
       console.error('Error fetching settings:', error);
@@ -87,7 +115,18 @@ export const useUserSettings = () => {
         .order('last_seen', { ascending: false });
 
       if (error) throw error;
-      setSessions(data || []);
+      
+      // Normalize session data with defaults for nullable fields
+      const normalizedSessions: DeviceSession[] = (data || []).map(session => ({
+        id: session.id,
+        fingerprint_hash: session.fingerprint_hash,
+        device_info: session.device_info,
+        first_seen: session.first_seen,
+        last_seen: session.last_seen,
+        login_count: session.login_count ?? 0,
+        is_trusted: session.is_trusted ?? false,
+      }));
+      setSessions(normalizedSessions);
     } catch (error) {
       console.error('Error fetching sessions:', error);
     }

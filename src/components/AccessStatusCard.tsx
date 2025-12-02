@@ -15,7 +15,7 @@ interface AccessGrant {
   expires_at: string | null;
   notes: string | null;
   monthly_limit: number | null;
-  current_month_usage: number;
+  current_month_usage: number | null;
   usage_reset_date: string | null;
 }
 

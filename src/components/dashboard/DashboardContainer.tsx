@@ -284,7 +284,7 @@ const DashboardContent = ({
             if (chatSession.selectedChats.size === chatSession.recentChats.length) {
               chatSession.setSelectedChats(new Set());
             } else {
-              chatSession.setSelectedChats(new Set(chatSession.recentChats.map((_, i) => i)));
+              chatSession.setSelectedChats(new Set(chatSession.recentChats.map((_: unknown, i: number) => i)));
             }
           }}
           onDeleteSelected={chatSession.deleteSelectedChats}
