@@ -11,11 +11,15 @@ import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
-
 const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const { t, language } = useLanguage();
-  const { toast } = useToast();
+  const {
+    t,
+    language
+  } = useLanguage();
+  const {
+    toast
+  } = useToast();
 
   // Contact form state
   const [contactForm, setContactForm] = useState({
@@ -29,18 +33,21 @@ const LandingPage = () => {
 
   // Contact form validation schema
   const contactSchema = z.object({
-    name: z.string()
-      .trim()
-      .min(1, { message: language === 'ar' ? 'الاسم مطلوب' : 'Name is required' })
-      .max(100, { message: language === 'ar' ? 'الاسم يجب أن يكون أقل من 100 حرف' : 'Name must be less than 100 characters' }),
-    email: z.string()
-      .trim()
-      .email({ message: language === 'ar' ? 'البريد الإلكتروني غير صالح' : 'Invalid email address' })
-      .max(255, { message: language === 'ar' ? 'البريد الإلكتروني يجب أن يكون أقل من 255 حرف' : 'Email must be less than 255 characters' }),
-    message: z.string()
-      .trim()
-      .min(1, { message: language === 'ar' ? 'الرسالة مطلوبة' : 'Message is required' })
-      .max(1000, { message: language === 'ar' ? 'الرسالة يجب أن تكون أقل من 1000 حرف' : 'Message must be less than 1000 characters' })
+    name: z.string().trim().min(1, {
+      message: language === 'ar' ? 'الاسم مطلوب' : 'Name is required'
+    }).max(100, {
+      message: language === 'ar' ? 'الاسم يجب أن يكون أقل من 100 حرف' : 'Name must be less than 100 characters'
+    }),
+    email: z.string().trim().email({
+      message: language === 'ar' ? 'البريد الإلكتروني غير صالح' : 'Invalid email address'
+    }).max(255, {
+      message: language === 'ar' ? 'البريد الإلكتروني يجب أن يكون أقل من 255 حرف' : 'Email must be less than 255 characters'
+    }),
+    message: z.string().trim().min(1, {
+      message: language === 'ar' ? 'الرسالة مطلوبة' : 'Message is required'
+    }).max(1000, {
+      message: language === 'ar' ? 'الرسالة يجب أن تكون أقل من 1000 حرف' : 'Message must be less than 1000 characters'
+    })
   });
 
   // Handle contact form submission
@@ -54,7 +61,7 @@ const LandingPage = () => {
     } catch (error) {
       if (error instanceof z.ZodError) {
         const errors: Record<string, string> = {};
-        error.errors.forEach((err) => {
+        error.errors.forEach(err => {
           if (err.path[0]) {
             errors[err.path[0].toString()] = err.message;
           }
@@ -63,19 +70,20 @@ const LandingPage = () => {
         return;
       }
     }
-
     setIsSubmitting(true);
 
     // Simulate form submission (replace with actual API call)
     try {
       await new Promise(resolve => setTimeout(resolve, 1500));
-      
       setIsSubmitted(true);
-      setContactForm({ name: '', email: '', message: '' });
-      
+      setContactForm({
+        name: '',
+        email: '',
+        message: ''
+      });
       toast({
         title: language === 'ar' ? 'تم الإرسال بنجاح' : 'Message Sent',
-        description: language === 'ar' ? 'سنتواصل معك قريباً' : "We'll get back to you soon",
+        description: language === 'ar' ? 'سنتواصل معك قريباً' : "We'll get back to you soon"
       });
 
       // Reset submitted state after 3 seconds
@@ -84,7 +92,7 @@ const LandingPage = () => {
       toast({
         title: language === 'ar' ? 'خطأ' : 'Error',
         description: language === 'ar' ? 'حدث خطأ. يرجى المحاولة مرة أخرى' : 'Something went wrong. Please try again',
-        variant: 'destructive',
+        variant: 'destructive'
       });
     } finally {
       setIsSubmitting(false);
@@ -92,64 +100,39 @@ const LandingPage = () => {
   };
 
   // ScrollReveal component for smooth scroll animations
-  const ScrollReveal = ({ children, direction = 'up', delay = 0 }: {
+  const ScrollReveal = ({
+    children,
+    direction = 'up',
+    delay = 0
+  }: {
     children: React.ReactNode;
     direction?: 'up' | 'left' | 'right' | 'scale';
     delay?: number;
   }) => {
     const [ref, isVisible] = useScrollAnimation();
-    return (
-      <div 
-        ref={ref as React.RefObject<HTMLDivElement>}
-        className={cn(
-          'scroll-animate',
-          direction === 'left' && 'scroll-animate-left',
-          direction === 'right' && 'scroll-animate-right',
-          direction === 'scale' && 'scroll-animate-scale',
-          isVisible && 'visible'
-        )}
-        style={{ transitionDelay: `${delay}s` }}
-      >
+    return <div ref={ref as React.RefObject<HTMLDivElement>} className={cn('scroll-animate', direction === 'left' && 'scroll-animate-left', direction === 'right' && 'scroll-animate-right', direction === 'scale' && 'scroll-animate-scale', isVisible && 'visible')} style={{
+      transitionDelay: `${delay}s`
+    }}>
         {children}
-      </div>
-    );
+      </div>;
   };
-
-  const services = [
-    {
-      number: '01',
-      title: language === 'ar' ? 'مواقع المؤثرين المميزة' : 'Premium Influencer Sites',
-      description: language === 'ar' 
-        ? 'مواقع ويب فاخرة مصممة خصيصاً لبناء علامتك التجارية الشخصية وجذب فرص التعاون.'
-        : 'Luxury websites custom-built to showcase your personal brand and attract collaboration opportunities.',
-      features: language === 'ar' 
-        ? ['تصميم فاخر حسب الطلب', 'محفظة أعمال تفاعلية', 'محسّن لتحويل العملاء']
-        : ['Custom luxury design', 'Interactive portfolio', 'Conversion optimized']
-    },
-    {
-      number: '02',
-      title: language === 'ar' ? 'وكلاء الذكاء الاصطناعي المخصصون' : 'Custom AI Agents',
-      description: language === 'ar'
-        ? 'مساعدون أذكياء يعملون 24/7 مدربون على بيانات عملك لأتمتة دعم العملاء والعمليات.'
-        : '24/7 intelligent assistants trained on your business data to automate customer support and operations.',
-      features: language === 'ar'
-        ? ['فهم اللغة الطبيعية', 'تكامل مع الأنظمة الموجودة', 'تعلّم مستمر']
-        : ['Natural language understanding', 'Integrates with existing systems', 'Continuous learning']
-    },
-    {
-      number: '03',
-      title: language === 'ar' ? 'أتمتة العمليات' : 'Process Automation',
-      description: language === 'ar'
-        ? 'توفير 15+ ساعة أسبوعياً من خلال أتمتة المهام المتكررة والربط بين أنظمتك التجارية.'
-        : 'Save 15+ hours per week by automating repetitive tasks and connecting your business systems.',
-      features: language === 'ar'
-        ? ['سير عمل مخصص', 'لا حاجة لكتابة الكود', 'توفير فوري للوقت']
-        : ['Custom workflows', 'No-code setup', 'Instant time savings']
-    }
-  ];
-
-  return (
-    <div className="min-h-screen bg-background">
+  const services = [{
+    number: '01',
+    title: language === 'ar' ? 'مواقع المؤثرين المميزة' : 'Premium Influencer Sites',
+    description: language === 'ar' ? 'مواقع ويب فاخرة مصممة خصيصاً لبناء علامتك التجارية الشخصية وجذب فرص التعاون.' : 'Luxury websites custom-built to showcase your personal brand and attract collaboration opportunities.',
+    features: language === 'ar' ? ['تصميم فاخر حسب الطلب', 'محفظة أعمال تفاعلية', 'محسّن لتحويل العملاء'] : ['Custom luxury design', 'Interactive portfolio', 'Conversion optimized']
+  }, {
+    number: '02',
+    title: language === 'ar' ? 'وكلاء الذكاء الاصطناعي المخصصون' : 'Custom AI Agents',
+    description: language === 'ar' ? 'مساعدون أذكياء يعملون 24/7 مدربون على بيانات عملك لأتمتة دعم العملاء والعمليات.' : '24/7 intelligent assistants trained on your business data to automate customer support and operations.',
+    features: language === 'ar' ? ['فهم اللغة الطبيعية', 'تكامل مع الأنظمة الموجودة', 'تعلّم مستمر'] : ['Natural language understanding', 'Integrates with existing systems', 'Continuous learning']
+  }, {
+    number: '03',
+    title: language === 'ar' ? 'أتمتة العمليات' : 'Process Automation',
+    description: language === 'ar' ? 'توفير 15+ ساعة أسبوعياً من خلال أتمتة المهام المتكررة والربط بين أنظمتك التجارية.' : 'Save 15+ hours per week by automating repetitive tasks and connecting your business systems.',
+    features: language === 'ar' ? ['سير عمل مخصص', 'لا حاجة لكتابة الكود', 'توفير فوري للوقت'] : ['Custom workflows', 'No-code setup', 'Instant time savings']
+  }];
+  return <div className="min-h-screen bg-background">
       {/* Minimal Floating Navigation */}
       <nav className="fixed top-6 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
         <div className="flex items-center gap-8 px-6 py-3 bg-card/80 dark:bg-card/80 backdrop-blur-xl border border-border rounded-full shadow-2xl">
@@ -163,11 +146,7 @@ const LandingPage = () => {
           <div className="flex items-center gap-3">
             <LanguageSwitcher />
             <ThemeToggle />
-            <Button 
-              onClick={() => setShowAuthModal(true)}
-              size="sm"
-              className="rounded-full"
-            >
+            <Button onClick={() => setShowAuthModal(true)} size="sm" className="rounded-full">
               {t('nav.getStarted')}
             </Button>
           </div>
@@ -195,32 +174,17 @@ const LandingPage = () => {
         </ScrollReveal>
         
         {/* Minimal subtitle */}
-        <ScrollReveal delay={1}>
-          <p className="text-xl md:text-2xl text-muted-foreground max-w-xl text-center mb-12 leading-relaxed">
-            {language === 'ar' 
-              ? 'استشارات الذكاء الاصطناعي التي تحوّل طريقة عملك'
-              : 'AI consulting that transforms how you work'}
-          </p>
-        </ScrollReveal>
+        
         
         {/* Single elegant CTA */}
         <ScrollReveal delay={1.2}>
-          <Button 
-            onClick={() => setShowAuthModal(true)}
-            size="lg"
-            className="h-14 px-10 text-lg rounded-full group hover-lift"
-          >
-            {language === 'ar' ? 'ابدأ مجاناً' : 'Start Free'}
-            <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-          </Button>
+          
         </ScrollReveal>
 
         {/* Floating brain icon */}
         <ScrollReveal delay={1.5}>
           <div className="absolute bottom-32 animate-float">
-            <div className="w-16 h-16 rounded-full bg-foreground/5 border border-border flex items-center justify-center">
-              <Brain className="w-8 h-8 text-foreground/60" />
-            </div>
+            
           </div>
         </ScrollReveal>
       </section>
@@ -242,18 +206,11 @@ const LandingPage = () => {
 
           {/* Service cards - Floating, borderless */}
           <div className="space-y-32">
-            {services.map((service, index) => (
-              <ScrollReveal key={index} delay={index * 0.2}>
+            {services.map((service, index) => <ScrollReveal key={index} delay={index * 0.2}>
                 <div className="group">
-                  <div className={cn(
-                    "grid md:grid-cols-2 gap-12 items-center",
-                    index % 2 === 1 && "md:grid-flow-dense"
-                  )}>
+                  <div className={cn("grid md:grid-cols-2 gap-12 items-center", index % 2 === 1 && "md:grid-flow-dense")}>
                     {/* Text content */}
-                    <div className={cn(
-                      "space-y-6",
-                      index % 2 === 1 && "md:col-start-2"
-                    )}>
+                    <div className={cn("space-y-6", index % 2 === 1 && "md:col-start-2")}>
                       <span className="text-sm font-mono text-muted-foreground">{service.number}</span>
                       <h3 className="text-4xl md:text-5xl font-bold leading-tight">{service.title}</h3>
                       <p className="text-lg text-muted-foreground leading-relaxed">
@@ -262,20 +219,14 @@ const LandingPage = () => {
                       
                       {/* Features list */}
                       <ul className="space-y-3 pt-4">
-                        {service.features.map((feature, i) => (
-                          <li key={i} className="flex items-center gap-3">
+                        {service.features.map((feature, i) => <li key={i} className="flex items-center gap-3">
                             <CheckCircle className="w-5 h-5 text-foreground flex-shrink-0" />
                             <span className="text-foreground/80">{feature}</span>
-                          </li>
-                        ))}
+                          </li>)}
                       </ul>
 
                       <div className="pt-6">
-                        <Button 
-                          onClick={() => setShowAuthModal(true)}
-                          variant="outline"
-                          className="group/btn"
-                        >
+                        <Button onClick={() => setShowAuthModal(true)} variant="outline" className="group/btn">
                           {language === 'ar' ? 'اعرف المزيد' : 'Learn More'}
                           <ArrowRight className="ml-2 w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
                         </Button>
@@ -283,18 +234,14 @@ const LandingPage = () => {
                     </div>
 
                     {/* Visual placeholder */}
-                    <div className={cn(
-                      "aspect-square rounded-3xl bg-muted/50 border border-border hover-glow transition-all duration-500",
-                      index % 2 === 1 && "md:col-start-1 md:row-start-1"
-                    )}>
+                    <div className={cn("aspect-square rounded-3xl bg-muted/50 border border-border hover-glow transition-all duration-500", index % 2 === 1 && "md:col-start-1 md:row-start-1")}>
                       <div className="w-full h-full flex items-center justify-center">
                         <Brain className="w-16 h-16 text-muted-foreground/30" />
                       </div>
                     </div>
                   </div>
                 </div>
-              </ScrollReveal>
-            ))}
+              </ScrollReveal>)}
           </div>
         </div>
       </section>
@@ -311,17 +258,15 @@ const LandingPage = () => {
                 {language === 'ar' ? 'لنبدأ المحادثة' : "Let's Start a Conversation"}
               </h2>
               <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-                {language === 'ar' 
-                  ? 'أخبرنا عن مشروعك وسنساعدك في تحويل رؤيتك إلى واقع'
-                  : "Tell us about your project and we'll help transform your vision into reality"}
+                {language === 'ar' ? 'أخبرنا عن مشروعك وسنساعدك في تحويل رؤيتك إلى واقع' : "Tell us about your project and we'll help transform your vision into reality"}
               </p>
             </div>
           </ScrollReveal>
 
           <ScrollReveal delay={0.2}>
-            {isSubmitted ? (
-              // Success state
-              <div className="text-center py-20 animate-scale-fade-in">
+            {isSubmitted ?
+          // Success state
+          <div className="text-center py-20 animate-scale-fade-in">
                 <div className="w-16 h-16 rounded-full bg-foreground mx-auto mb-6 flex items-center justify-center">
                   <CheckCircle className="w-8 h-8 text-background" />
                 </div>
@@ -329,119 +274,58 @@ const LandingPage = () => {
                   {language === 'ar' ? 'شكراً لتواصلك!' : 'Thank You!'}
                 </h3>
                 <p className="text-muted-foreground">
-                  {language === 'ar' 
-                    ? 'سنتواصل معك خلال 24 ساعة'
-                    : "We'll be in touch within 24 hours"}
+                  {language === 'ar' ? 'سنتواصل معك خلال 24 ساعة' : "We'll be in touch within 24 hours"}
                 </p>
-              </div>
-            ) : (
-              // Contact form
-              <form onSubmit={handleContactSubmit} className="space-y-6">
+              </div> :
+          // Contact form
+          <form onSubmit={handleContactSubmit} className="space-y-6">
                 {/* Name input */}
                 <div className="space-y-2 group">
-                  <label 
-                    htmlFor="name" 
-                    className="text-sm font-mono uppercase tracking-wider text-muted-foreground"
-                  >
+                  <label htmlFor="name" className="text-sm font-mono uppercase tracking-wider text-muted-foreground">
                     {language === 'ar' ? 'الاسم' : 'Name'}
                   </label>
-                  <Input
-                    id="name"
-                    type="text"
-                    value={contactForm.name}
-                    onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })}
-                    placeholder={language === 'ar' ? 'اسمك الكامل' : 'Your full name'}
-                    className={cn(
-                      "h-14 bg-transparent border-2 border-border rounded-none text-base transition-all duration-300",
-                      "focus:border-foreground focus:ring-0",
-                      "group-hover:border-muted-foreground",
-                      contactErrors.name && "border-destructive"
-                    )}
-                    disabled={isSubmitting}
-                  />
-                  {contactErrors.name && (
-                    <p className="text-sm text-destructive animate-slide-down-fade">{contactErrors.name}</p>
-                  )}
+                  <Input id="name" type="text" value={contactForm.name} onChange={e => setContactForm({
+                ...contactForm,
+                name: e.target.value
+              })} placeholder={language === 'ar' ? 'اسمك الكامل' : 'Your full name'} className={cn("h-14 bg-transparent border-2 border-border rounded-none text-base transition-all duration-300", "focus:border-foreground focus:ring-0", "group-hover:border-muted-foreground", contactErrors.name && "border-destructive")} disabled={isSubmitting} />
+                  {contactErrors.name && <p className="text-sm text-destructive animate-slide-down-fade">{contactErrors.name}</p>}
                 </div>
 
                 {/* Email input */}
                 <div className="space-y-2 group">
-                  <label 
-                    htmlFor="email" 
-                    className="text-sm font-mono uppercase tracking-wider text-muted-foreground"
-                  >
+                  <label htmlFor="email" className="text-sm font-mono uppercase tracking-wider text-muted-foreground">
                     {language === 'ar' ? 'البريد الإلكتروني' : 'Email'}
                   </label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={contactForm.email}
-                    onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
-                    placeholder={language === 'ar' ? 'بريدك الإلكتروني' : 'your@email.com'}
-                    className={cn(
-                      "h-14 bg-transparent border-2 border-border rounded-none text-base transition-all duration-300",
-                      "focus:border-foreground focus:ring-0",
-                      "group-hover:border-muted-foreground",
-                      contactErrors.email && "border-destructive"
-                    )}
-                    disabled={isSubmitting}
-                  />
-                  {contactErrors.email && (
-                    <p className="text-sm text-destructive animate-slide-down-fade">{contactErrors.email}</p>
-                  )}
+                  <Input id="email" type="email" value={contactForm.email} onChange={e => setContactForm({
+                ...contactForm,
+                email: e.target.value
+              })} placeholder={language === 'ar' ? 'بريدك الإلكتروني' : 'your@email.com'} className={cn("h-14 bg-transparent border-2 border-border rounded-none text-base transition-all duration-300", "focus:border-foreground focus:ring-0", "group-hover:border-muted-foreground", contactErrors.email && "border-destructive")} disabled={isSubmitting} />
+                  {contactErrors.email && <p className="text-sm text-destructive animate-slide-down-fade">{contactErrors.email}</p>}
                 </div>
 
                 {/* Message textarea */}
                 <div className="space-y-2 group">
-                  <label 
-                    htmlFor="message" 
-                    className="text-sm font-mono uppercase tracking-wider text-muted-foreground"
-                  >
+                  <label htmlFor="message" className="text-sm font-mono uppercase tracking-wider text-muted-foreground">
                     {language === 'ar' ? 'الرسالة' : 'Message'}
                   </label>
-                  <Textarea
-                    id="message"
-                    value={contactForm.message}
-                    onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
-                    placeholder={language === 'ar' ? 'أخبرنا عن مشروعك...' : 'Tell us about your project...'}
-                    rows={6}
-                    className={cn(
-                      "bg-transparent border-2 border-border rounded-none text-base transition-all duration-300 resize-none",
-                      "focus:border-foreground focus:ring-0",
-                      "group-hover:border-muted-foreground",
-                      contactErrors.message && "border-destructive"
-                    )}
-                    disabled={isSubmitting}
-                  />
-                  {contactErrors.message && (
-                    <p className="text-sm text-destructive animate-slide-down-fade">{contactErrors.message}</p>
-                  )}
+                  <Textarea id="message" value={contactForm.message} onChange={e => setContactForm({
+                ...contactForm,
+                message: e.target.value
+              })} placeholder={language === 'ar' ? 'أخبرنا عن مشروعك...' : 'Tell us about your project...'} rows={6} className={cn("bg-transparent border-2 border-border rounded-none text-base transition-all duration-300 resize-none", "focus:border-foreground focus:ring-0", "group-hover:border-muted-foreground", contactErrors.message && "border-destructive")} disabled={isSubmitting} />
+                  {contactErrors.message && <p className="text-sm text-destructive animate-slide-down-fade">{contactErrors.message}</p>}
                 </div>
 
                 {/* Submit button */}
-                <Button
-                  type="submit"
-                  size="lg"
-                  disabled={isSubmitting}
-                  className={cn(
-                    "w-full h-14 rounded-none font-mono uppercase tracking-wider transition-all duration-300",
-                    "hover:shadow-2xl"
-                  )}
-                >
-                  {isSubmitting ? (
-                    <>
+                <Button type="submit" size="lg" disabled={isSubmitting} className={cn("w-full h-14 rounded-none font-mono uppercase tracking-wider transition-all duration-300", "hover:shadow-2xl")}>
+                  {isSubmitting ? <>
                       <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                       {language === 'ar' ? 'جاري الإرسال...' : 'Sending...'}
-                    </>
-                  ) : (
-                    <>
+                    </> : <>
                       {language === 'ar' ? 'إرسال الرسالة' : 'Send Message'}
                       <Send className="ml-2 h-5 w-5" />
-                    </>
-                  )}
+                    </>}
                 </Button>
-              </form>
-            )}
+              </form>}
           </ScrollReveal>
         </div>
       </section>
@@ -481,12 +365,7 @@ const LandingPage = () => {
       </footer>
 
       {/* Auth Modal */}
-      <AuthModal 
-        open={showAuthModal} 
-        onOpenChange={setShowAuthModal}
-      />
-    </div>
-  );
+      <AuthModal open={showAuthModal} onOpenChange={setShowAuthModal} />
+    </div>;
 };
-
 export default LandingPage;
