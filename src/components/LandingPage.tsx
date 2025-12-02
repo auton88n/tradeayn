@@ -302,25 +302,14 @@ const LandingPage = () => {
       </section>
 
       {/* Minimal Footer */}
-      <footer className="py-12 border-t border-border">
+      <footer className="py-6 border-t border-border">
         <div className="container max-w-6xl mx-auto px-6">
-          <div className="flex flex-col md:flex-row justify-between items-start gap-12 mb-16">
-            {/* Logo & tagline */}
-            <div>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-8 h-8 rounded-lg bg-foreground flex items-center justify-center">
-                  <Brain className="w-5 h-5 text-background" />
-                </div>
-                <span className="text-2xl font-bold">AYN</span>
-              </div>
-              
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-foreground flex items-center justify-center">
+              <Brain className="w-5 h-5 text-background" />
             </div>
-            
-            {/* Minimal links */}
-            
+            <span className="text-2xl font-bold">AYN</span>
           </div>
-          
-          
         </div>
       </footer>
 
