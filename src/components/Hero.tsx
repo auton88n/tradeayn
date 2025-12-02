@@ -245,8 +245,14 @@ export const Hero = ({
       duration: 0.8,
       ease: [0.32, 0.72, 0, 1]
     }} className="w-full max-w-4xl text-center mb-8 md:mb-12">
-        
-        
+        <h1 className="font-serif text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight text-foreground mb-4 md:mb-6">
+          {language === 'ar' ? 'تعرّف على AYN' : 'Meet AYN'}
+        </h1>
+        <p className="text-lg md:text-xl lg:text-2xl text-muted-foreground font-light max-w-2xl mx-auto">
+          {language === 'ar' 
+            ? 'الذكاء الاصطناعي الذي يرى، يستمع، ويفهم عالمك.' 
+            : 'The AI that sees, listens, and understands your world.'}
+        </p>
       </motion.div>
 
       {/* Central area with eye and cards */}
