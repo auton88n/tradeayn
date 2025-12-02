@@ -474,7 +474,7 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
                 style={{ transition: "all 0.3s cubic-bezier(0.32, 0.72, 0, 1)" }}
               >
                 <Brain 
-                  className="w-full h-full text-background/90"
+                  className="w-full h-full text-white/90"
                 />
               </foreignObject>
             </svg>
