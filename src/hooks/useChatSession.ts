@@ -37,6 +37,9 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
 
       data.forEach(message => {
         const sessionId = message.session_id;
+        // Skip messages without a session_id
+        if (!sessionId) return;
+        
         if (!sessionGroups[sessionId]) {
           sessionGroups[sessionId] = [];
         }

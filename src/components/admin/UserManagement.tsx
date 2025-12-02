@@ -33,8 +33,8 @@ interface AccessGrantWithProfile {
   notes: string | null;
   created_at: string;
   monthly_limit: number | null;
-  current_month_usage: number;
-  user_email?: string;
+  current_month_usage: number | null;
+  user_email?: string | null;
   profiles: Profile | null;
 }
 
@@ -462,7 +462,7 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
                                 {user.monthly_limit ? ` / ${user.monthly_limit}` : ` / ${t('admin.unlimited')}`}
                                 {user.monthly_limit && (
                                   <Badge variant="outline" className="text-xs">
-                                    {Math.round(getUsagePercentage(user.current_month_usage, user.monthly_limit))}%
+                                    {Math.round(getUsagePercentage(user.current_month_usage ?? 0, user.monthly_limit))}%
                                   </Badge>
                                 )}
                               </span>
@@ -472,7 +472,7 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
                             </div>
                             {user.monthly_limit && (
                               <Progress 
-                                value={getUsagePercentage(user.current_month_usage, user.monthly_limit)} 
+                                value={getUsagePercentage(user.current_month_usage ?? 0, user.monthly_limit)} 
                                 className="h-1.5"
                               />
                             )}
@@ -552,9 +552,9 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
           onConfirm={confirmUpdateLimit}
           users={[{
             user_id: editingUser.user_id,
-            user_email: editingUser.user_email,
+            user_email: editingUser.user_email || undefined,
             company_name: editingUser.profiles?.company_name || undefined,
-            current_month_usage: editingUser.current_month_usage,
+            current_month_usage: editingUser.current_month_usage ?? 0,
             monthly_limit: editingUser.monthly_limit
           }]}
         />
@@ -568,9 +568,9 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
           const user = allUsers.find(u => u.user_id === userId);
           return {
             user_id: userId,
-            user_email: user?.user_email,
+            user_email: user?.user_email || undefined,
             company_name: user?.profiles?.company_name || undefined,
-            current_month_usage: user?.current_month_usage || 0,
+            current_month_usage: user?.current_month_usage ?? 0,
             monthly_limit: user?.monthly_limit || null
           };
         })}
