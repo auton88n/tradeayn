@@ -188,7 +188,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
 
               <Button
                 type="submit"
-                variant="hero"
+                variant="default"
                 className="w-full"
                 disabled={isLoading}
               >
@@ -279,7 +279,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
 
               <Button
                 type="submit"
-                variant="hero"
+                variant="default"
                 className="w-full"
                 disabled={isLoading}
               >

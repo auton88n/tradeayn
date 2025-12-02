@@ -21,20 +21,15 @@ export default {
     		fontFamily: {
     			sans: [
     				'Inter',
-    				'ui-sans-serif',
+    				'-apple-system',
+    				'BlinkMacSystemFont',
+    				'Segoe UI',
     				'system-ui',
-    				'sans-serif',
-    				'Apple Color Emoji',
-    				'Segoe UI Emoji',
-    				'Segoe UI Symbol',
-    				'Noto Color Emoji'
+    				'sans-serif'
     			],
     			serif: [
-    				'ui-serif',
+    				'DM Serif Display',
     				'Georgia',
-    				'Cambria',
-    				'Times New Roman',
-    				'Times',
     				'serif'
     			],
     			mono: [
