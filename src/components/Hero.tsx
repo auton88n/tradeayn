@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowUp } from 'lucide-react';
+import { ArrowUp, Plus, ChevronDown } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { TypewriterText } from '@/components/TypewriterText';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -418,16 +418,42 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
             )}
           </div>
 
-          {/* Send Button */}
-          <div className="flex justify-end mt-2">
-            <button
-              className="w-9 h-9 rounded-xl bg-gradient-to-br from-foreground to-foreground/90 text-background flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-              onClick={handleSend}
-              disabled={!inputMessage.trim()}
-              title="Send message"
-            >
-              <ArrowUp className="w-5 h-5" strokeWidth={2.5} />
-            </button>
+          {/* Toolbar Row */}
+          <div className="flex items-center justify-between w-full pt-2">
+            {/* Left: Plus Button */}
+            <div className="flex items-center gap-1">
+              <button
+                onClick={onGetStarted}
+                className="w-10 h-10 rounded-xl border border-border/50 flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-all duration-200"
+                title={language === 'ar' ? 'إرفاق ملف' : 'Attach file'}
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Right: Mode Selector + Send Button */}
+            <div className="flex items-center gap-2">
+              {/* Static Mode Selector (triggers auth on click) */}
+              <button
+                onClick={onGetStarted}
+                className="h-8 px-3 rounded-lg border border-border/50 flex items-center gap-1 hover:bg-muted/80 transition-all"
+              >
+                <span className="text-sm font-medium">
+                  {language === 'ar' ? 'عام' : 'General'}
+                </span>
+                <ChevronDown className="w-3 h-3 opacity-50" />
+              </button>
+
+              {/* Send Button */}
+              <button
+                className="w-9 h-9 rounded-xl bg-gradient-to-br from-foreground to-foreground/90 text-background flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                onClick={handleSend}
+                disabled={!inputMessage.trim()}
+                title={language === 'ar' ? 'إرسال' : 'Send message'}
+              >
+                <ArrowUp className="w-5 h-5" strokeWidth={2.5} />
+              </button>
+            </div>
           </div>
         </div>
       </motion.div>
