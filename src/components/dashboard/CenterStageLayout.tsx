@@ -195,63 +195,65 @@ export const CenterStageLayout = ({
   return (
     <div
       ref={containerRef}
-      className="relative flex-1 flex flex-col items-center justify-center overflow-hidden"
+      className="relative flex-1 flex flex-col items-center overflow-hidden"
     >
       {/* Background gradient */}
       <div className="absolute inset-0 bg-gradient-to-b from-background via-background to-muted/10 pointer-events-none" />
 
-      {/* Central Eye Stage */}
-      <div ref={eyeRef} className="relative z-10">
-        <EmotionalEye size="lg" />
+      {/* Central Eye Stage - centered in available space above input */}
+      <div className="flex-1 flex items-center justify-center pb-32">
+        <div ref={eyeRef} className="relative">
+          <EmotionalEye size="lg" />
 
-        {/* Response bubbles emanating from eye */}
-        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-8 flex flex-col items-center gap-4 w-[400px] max-w-[90vw]">
-          <AnimatePresence mode="popLayout">
-            {responseBubbles.filter(b => b.isVisible).map((bubble) => (
-              <AYNSpeechBubble
-                key={bubble.id}
-                id={bubble.id}
-                content={bubble.content}
-                type={bubble.type}
-                isVisible={bubble.isVisible}
-                onDismiss={() => dismissBubble(bubble.id)}
-              />
-            ))}
+          {/* Response bubbles emanating from eye */}
+          <div className="absolute top-full left-1/2 -translate-x-1/2 mt-8 flex flex-col items-center gap-4 w-[400px] max-w-[90vw]">
+            <AnimatePresence mode="popLayout">
+              {responseBubbles.filter(b => b.isVisible).map((bubble) => (
+                <AYNSpeechBubble
+                  key={bubble.id}
+                  id={bubble.id}
+                  content={bubble.content}
+                  type={bubble.type}
+                  isVisible={bubble.isVisible}
+                  onDismiss={() => dismissBubble(bubble.id)}
+                />
+              ))}
+            </AnimatePresence>
+          </div>
+
+          {/* Thinking indicator when typing */}
+          <AnimatePresence>
+            {isTyping && (
+              <motion.div
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0, opacity: 0 }}
+                className="absolute -bottom-16 left-1/2 -translate-x-1/2"
+              >
+                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-ayn-thinking/20 backdrop-blur-sm border border-ayn-thinking/30">
+                  <div className="flex gap-1">
+                    <motion.div
+                      className="w-2 h-2 rounded-full bg-ayn-thinking"
+                      animate={{ scale: [1, 1.3, 1] }}
+                      transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
+                    />
+                    <motion.div
+                      className="w-2 h-2 rounded-full bg-ayn-thinking"
+                      animate={{ scale: [1, 1.3, 1] }}
+                      transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
+                    />
+                    <motion.div
+                      className="w-2 h-2 rounded-full bg-ayn-thinking"
+                      animate={{ scale: [1, 1.3, 1] }}
+                      transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
+                    />
+                  </div>
+                  <span className="text-sm text-ayn-thinking">Thinking...</span>
+                </div>
+              </motion.div>
+            )}
           </AnimatePresence>
         </div>
-
-        {/* Thinking indicator when typing */}
-        <AnimatePresence>
-          {isTyping && (
-            <motion.div
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0, opacity: 0 }}
-              className="absolute -bottom-16 left-1/2 -translate-x-1/2"
-            >
-              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-ayn-thinking/20 backdrop-blur-sm border border-ayn-thinking/30">
-                <div className="flex gap-1">
-                  <motion.div
-                    className="w-2 h-2 rounded-full bg-ayn-thinking"
-                    animate={{ scale: [1, 1.3, 1] }}
-                    transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
-                  />
-                  <motion.div
-                    className="w-2 h-2 rounded-full bg-ayn-thinking"
-                    animate={{ scale: [1, 1.3, 1] }}
-                    transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
-                  />
-                  <motion.div
-                    className="w-2 h-2 rounded-full bg-ayn-thinking"
-                    animate={{ scale: [1, 1.3, 1] }}
-                    transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
-                  />
-                </div>
-                <span className="text-sm text-ayn-thinking">Thinking...</span>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
 
       {/* Flying user message bubble */}
@@ -265,8 +267,8 @@ export const CenterStageLayout = ({
         />
       )}
 
-      {/* Input area at bottom */}
-      <div ref={inputRef} className="absolute bottom-0 left-0 right-0 z-20">
+      {/* Input area fixed at bottom */}
+      <div ref={inputRef} className="absolute bottom-0 left-0 right-0 z-20 p-4 pb-6">
         <ChatInput
           onSend={handleSendWithAnimation}
           isDisabled={isDisabled}
