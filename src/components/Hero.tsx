@@ -247,79 +247,47 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
         <div className="absolute w-[280px] h-[280px] md:w-[420px] md:h-[420px] lg:w-[520px] lg:h-[520px] xl:w-[640px] xl:h-[640px] rounded-full -z-10 pointer-events-none
                         bg-gradient-to-b from-transparent via-muted/30 to-transparent" />
 
-        {/* Floating particles around eye - hidden on mobile for performance */}
+        {/* Floating particles around eye - synced to 6s (2x master rhythm) - hidden on mobile */}
         <div className="absolute inset-0 pointer-events-none overflow-visible hidden md:block">
-          {/* Particle 1 */}
+          {/* Particle 1 - top left */}
           <motion.div
             className="absolute w-2 h-2 rounded-full bg-foreground/10 blur-[1px]"
             style={{ top: '20%', left: '30%', x: parallax1X, y: parallax1Y }}
             animate={{
-              y: [0, -30, 0],
-              x: [0, 20, 0],
+              y: [0, -25, 0],
+              x: [0, 15, 0],
               opacity: [0.3, 0.6, 0.3],
             }}
             transition={{
-              duration: 8,
+              duration: 6,
               repeat: Infinity,
               ease: "easeInOut",
             }}
           />
-          {/* Particle 2 */}
+          {/* Particle 2 - top right */}
           <motion.div
             className="absolute w-3 h-3 rounded-full bg-foreground/8 blur-[2px]"
             style={{ top: '15%', right: '25%', x: parallax2X, y: parallax2Y }}
             animate={{
-              y: [0, 40, 0],
-              x: [0, -25, 0],
+              y: [0, 30, 0],
+              x: [0, -20, 0],
               opacity: [0.2, 0.5, 0.2],
             }}
             transition={{
-              duration: 10,
+              duration: 6,
               repeat: Infinity,
               ease: "easeInOut",
-              delay: 1,
+              delay: 1.5,
             }}
           />
-          {/* Particle 3 */}
+          {/* Particle 3 - bottom left */}
           <motion.div
             className="absolute w-1.5 h-1.5 rounded-full bg-foreground/12 blur-[1px]"
             style={{ bottom: '25%', left: '20%', x: parallax3X, y: parallax3Y }}
             animate={{
-              y: [0, -20, 0],
-              x: [0, 15, 0],
-              opacity: [0.4, 0.7, 0.4],
-            }}
-            transition={{
-              duration: 7,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: 2,
-            }}
-          />
-          {/* Particle 4 */}
-          <motion.div
-            className="absolute w-2.5 h-2.5 rounded-full bg-foreground/10 blur-[2px]"
-            style={{ bottom: '30%', right: '22%', x: parallax4X, y: parallax4Y }}
-            animate={{
-              y: [0, 35, 0],
-              x: [0, -18, 0],
-              opacity: [0.3, 0.6, 0.3],
-            }}
-            transition={{
-              duration: 9,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: 0.5,
-            }}
-          />
-          {/* Particle 5 */}
-          <motion.div
-            className="absolute w-1 h-1 rounded-full bg-foreground/15 blur-[1px]"
-            style={{ top: '40%', left: '15%', x: parallax5X, y: parallax5Y }}
-            animate={{
-              y: [0, -25, 0],
+              y: [0, -18, 0],
               x: [0, 12, 0],
-              opacity: [0.5, 0.8, 0.5],
+              opacity: [0.4, 0.7, 0.4],
             }}
             transition={{
               duration: 6,
@@ -328,20 +296,52 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
               delay: 3,
             }}
           />
-          {/* Particle 6 */}
+          {/* Particle 4 - bottom right */}
+          <motion.div
+            className="absolute w-2.5 h-2.5 rounded-full bg-foreground/10 blur-[2px]"
+            style={{ bottom: '30%', right: '22%', x: parallax4X, y: parallax4Y }}
+            animate={{
+              y: [0, 28, 0],
+              x: [0, -15, 0],
+              opacity: [0.3, 0.6, 0.3],
+            }}
+            transition={{
+              duration: 6,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 4.5,
+            }}
+          />
+          {/* Particle 5 - mid left */}
+          <motion.div
+            className="absolute w-1 h-1 rounded-full bg-foreground/15 blur-[1px]"
+            style={{ top: '40%', left: '15%', x: parallax5X, y: parallax5Y }}
+            animate={{
+              y: [0, -20, 0],
+              x: [0, 10, 0],
+              opacity: [0.5, 0.8, 0.5],
+            }}
+            transition={{
+              duration: 6,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 0.75,
+            }}
+          />
+          {/* Particle 6 - mid right */}
           <motion.div
             className="absolute w-2 h-2 rounded-full bg-foreground/8 blur-[2px]"
             style={{ top: '45%', right: '18%', x: parallax6X, y: parallax6Y }}
             animate={{
-              y: [0, 28, 0],
-              x: [0, -22, 0],
+              y: [0, 22, 0],
+              x: [0, -18, 0],
               opacity: [0.2, 0.5, 0.2],
             }}
             transition={{
-              duration: 11,
+              duration: 6,
               repeat: Infinity,
               ease: "easeInOut",
-              delay: 1.5,
+              delay: 2.25,
             }}
           />
         </div>
