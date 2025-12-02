@@ -44,6 +44,7 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
   const [isBlinking, setIsBlinking] = useState(false);
   const [animationPhase, setAnimationPhase] = useState<'idle' | 'blinking' | 'emitting' | 'absorbing'>('idle');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const previousCardRef = useRef<number | null>(null);
   
   // Responsive card positions
   const getCardPositions = () => {
@@ -153,7 +154,13 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
       setTimeout(() => {
         setIsBlinking(false);
         setAnimationPhase('emitting');
-        const randomIndex = Math.floor(Math.random() * 6);
+        // Get a random card that's different from the previous one
+        let availableIndices = [0, 1, 2, 3, 4, 5];
+        if (previousCardRef.current !== null) {
+          availableIndices = availableIndices.filter(i => i !== previousCardRef.current);
+        }
+        const randomIndex = availableIndices[Math.floor(Math.random() * availableIndices.length)];
+        previousCardRef.current = randomIndex;
         setVisibleCardIndex(randomIndex);
       }, 150);
       
