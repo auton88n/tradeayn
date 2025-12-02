@@ -8,11 +8,15 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Languages } from 'lucide-react';
 
-export const LanguageSwitcher = () => {
+interface LanguageSwitcherProps {
+  onOpenChange?: (open: boolean) => void;
+}
+
+export const LanguageSwitcher = ({ onOpenChange }: LanguageSwitcherProps) => {
   const { language, setLanguage, t } = useLanguage();
 
   return (
-    <DropdownMenu>
+    <DropdownMenu onOpenChange={onOpenChange}>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
           <Languages className="h-4 w-4" />

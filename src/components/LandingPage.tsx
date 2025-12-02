@@ -20,6 +20,7 @@ const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [demoMessage, setDemoMessage] = useState('');
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const collapseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const {
@@ -39,9 +40,21 @@ const LandingPage = () => {
     setIsMenuExpanded(true);
   };
   const handleMouseLeave = () => {
+    // Don't collapse if a dropdown is open
+    if (isDropdownOpen) return;
+    
     collapseTimeoutRef.current = setTimeout(() => {
       setIsMenuExpanded(false);
-    }, 150);
+    }, 300);
+  };
+
+  // Handle dropdown open state to prevent menu collapse
+  const handleDropdownOpenChange = (open: boolean) => {
+    setIsDropdownOpen(open);
+    if (open && collapseTimeoutRef.current) {
+      clearTimeout(collapseTimeoutRef.current);
+      collapseTimeoutRef.current = null;
+    }
   };
 
   // Smooth scroll to section
@@ -255,7 +268,7 @@ const LandingPage = () => {
             }} transition={{
               delay: 0.15
             }}>
-                  <LanguageSwitcher />
+                  <LanguageSwitcher onOpenChange={handleDropdownOpenChange} />
                 </motion.div>
                 <motion.div initial={{
               x: -20,
@@ -328,7 +341,7 @@ const LandingPage = () => {
                 
                 <div className="flex items-center justify-between py-2">
                   <span className="text-sm text-muted-foreground">{language === 'ar' ? 'اللغة' : 'Language'}</span>
-                  <LanguageSwitcher />
+                  <LanguageSwitcher onOpenChange={handleDropdownOpenChange} />
                 </div>
                 <div className="flex items-center justify-between py-2">
                   <span className="text-sm text-muted-foreground">{language === 'ar' ? 'المظهر' : 'Theme'}</span>
