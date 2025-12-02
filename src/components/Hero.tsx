@@ -558,16 +558,13 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
           className="relative z-10 flex items-center justify-center group cursor-pointer"
           initial={{ scale: 0.92, opacity: 0 }}
           animate={{ 
-            scale: absorptionPulse ? 1.08 : 1, 
+            scale: 1, 
             opacity: 1,
             filter: isAreaHovered 
               ? 'drop-shadow(0 0 40px rgba(59, 130, 246, 0.3))' 
               : 'drop-shadow(0 0 20px rgba(59, 130, 246, 0.15))'
           }}
-          transition={{ 
-            duration: absorptionPulse ? 0.15 : 0.8, 
-            ease: absorptionPulse ? [0.34, 1.56, 0.64, 1] : "easeOut" 
-          }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
         >
