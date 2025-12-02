@@ -245,14 +245,14 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
         {/* Eye - centered with spring physics */}
         <motion.div
           style={{ x: eyeX, y: eyeY }}
-          className="relative z-10 flex items-center justify-center"
+          className="relative z-10 flex items-center justify-center group cursor-pointer"
           initial={{ scale: 0.92, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
         >
-          {/* Outer casing with breathing pulse */}
+          {/* Outer casing with breathing pulse and hover glow */}
           <motion.div 
-            className="relative w-[160px] h-[160px] md:w-[220px] md:h-[220px] lg:w-[260px] lg:h-[260px] rounded-full bg-background shadow-[0_20px_60px_rgba(0,0,0,0.08)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.4)] flex items-center justify-center"
+            className="relative w-[160px] h-[160px] md:w-[220px] md:h-[220px] lg:w-[260px] lg:h-[260px] rounded-full bg-background flex items-center justify-center transition-all duration-500 shadow-[0_20px_60px_rgba(0,0,0,0.08)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.4)] group-hover:shadow-[0_30px_80px_rgba(0,0,0,0.15),0_0_60px_rgba(0,0,0,0.08)] dark:group-hover:shadow-[0_30px_80px_rgba(0,0,0,0.6),0_0_60px_rgba(255,255,255,0.15)]"
             animate={{
               scale: [1, 1.02, 1],
               opacity: [0.95, 1, 0.95],
