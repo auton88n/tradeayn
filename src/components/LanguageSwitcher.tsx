@@ -1,5 +1,6 @@
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
+import { Languages } from 'lucide-react';
 
 interface LanguageSwitcherProps {
   onOpenChange?: (open: boolean) => void;
@@ -19,7 +20,7 @@ export const LanguageSwitcher = ({ onOpenChange }: LanguageSwitcherProps) => {
       className="h-8 w-8 p-0"
       onClick={toggleLanguage}
     >
-      <span className="text-base">{language === 'en' ? '🇺🇸' : '🇸🇦'}</span>
+      <Languages className="h-4 w-4" />
       <span className="sr-only">
         {language === 'en' ? 'Switch to Arabic' : 'Switch to English'}
       </span>
