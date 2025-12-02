@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Brain, ArrowRight, CheckCircle, Send, Loader2, Sparkles, Globe, Shield, Menu } from 'lucide-react';
+import { Brain, ArrowRight, CheckCircle, Send, Loader2, Sparkles, Globe, Shield, Menu, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -198,22 +198,22 @@ const LandingPage = () => {
     features: language === 'ar' ? ['سير عمل مخصص', 'لا حاجة لكتابة الكود', 'توفير فوري للوقت'] : ['Custom workflows', 'No-code setup', 'Instant time savings']
   }];
   return <div className="min-h-screen bg-background">
-      {/* Expandable Logo Navigation */}
+      {/* Vertical Dropdown Navigation */}
       <nav className="fixed top-4 md:top-6 left-4 md:left-6 z-50 animate-fade-in">
-        <motion.div ref={menuRef} layout onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} className="flex items-center bg-card/80 dark:bg-card/80 backdrop-blur-xl border border-border rounded-full shadow-2xl overflow-hidden cursor-pointer" transition={{
-        type: "spring",
-        stiffness: 400,
-        damping: 30
-      }}>
-          {/* Logo - Always visible */}
-          <motion.div layout className={cn("flex items-center gap-2 md:gap-3 py-2.5 md:py-3", isMenuExpanded ? "px-4" : "px-3")}>
-            <motion.div layout className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-foreground flex items-center justify-center">
+        <div className="relative">
+          {/* Logo Pill - Always visible, acts as trigger */}
+          <motion.div
+            ref={menuRef}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+            className="flex items-center gap-2 px-3 py-2.5 bg-card/80 backdrop-blur-xl border border-border rounded-full shadow-2xl cursor-pointer"
+          >
+            <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-foreground flex items-center justify-center">
               <Brain className="w-4 h-4 md:w-5 md:h-5 text-background" />
-            </motion.div>
+            </div>
             <AnimatePresence mode="popLayout">
               {isMenuExpanded && (
-                <motion.span 
-                  layout
+                <motion.span
                   initial={{ width: 0, opacity: 0 }}
                   animate={{ width: 'auto', opacity: 1 }}
                   exit={{ width: 0, opacity: 0 }}
@@ -224,101 +224,95 @@ const LandingPage = () => {
                 </motion.span>
               )}
             </AnimatePresence>
+            <motion.div
+              animate={{ rotate: isMenuExpanded ? 180 : 0 }}
+              transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            >
+              <ChevronDown className="w-4 h-4 text-muted-foreground" />
+            </motion.div>
           </motion.div>
-          
-          {/* Expandable Menu Items */}
-          <AnimatePresence mode="popLayout">
-            {isMenuExpanded && <motion.div initial={{
-            width: 0,
-            opacity: 0
-          }} animate={{
-            width: 'auto',
-            opacity: 1
-          }} exit={{
-            width: 0,
-            opacity: 0
-          }} transition={{
-            type: "spring",
-            stiffness: 400,
-            damping: 30
-          }} className="flex items-center gap-2 md:gap-3 overflow-hidden">
-                {/* About Link */}
-                <motion.button
-                  onClick={() => scrollToSection('about')}
-                  initial={{ x: -20, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  exit={{ x: -20, opacity: 0 }}
-                  transition={{ delay: 0.05 }}
-                  className="text-sm font-medium hover:text-foreground/80 transition-colors px-2"
-                >
-                  {language === 'ar' ? 'عن AYN' : 'About'}
-                </motion.button>
-                
-                {/* Services Link */}
-                <motion.button
-                  onClick={() => scrollToSection('services')}
-                  initial={{ x: -20, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  exit={{ x: -20, opacity: 0 }}
-                  transition={{ delay: 0.1 }}
-                  className="text-sm font-medium hover:text-foreground/80 transition-colors px-2"
-                >
-                  {language === 'ar' ? 'خدماتنا' : 'Services'}
-                </motion.button>
-                
+
+          {/* Dropdown Panel */}
+          <AnimatePresence>
+            {isMenuExpanded && (
+              <motion.div
+                initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                className="absolute top-full left-0 mt-2 min-w-[200px] bg-card/95 backdrop-blur-xl border border-border rounded-2xl shadow-2xl overflow-hidden"
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+              >
+                {/* Navigation Links */}
+                <div className="p-2">
+                  <motion.button
+                    initial={{ x: -20, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.05 }}
+                    onClick={() => scrollToSection('about')}
+                    className="w-full text-left px-4 py-2.5 rounded-xl hover:bg-muted transition-colors text-sm font-medium"
+                  >
+                    {language === 'ar' ? 'عن AYN' : 'About'}
+                  </motion.button>
+                  <motion.button
+                    initial={{ x: -20, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.1 }}
+                    onClick={() => scrollToSection('services')}
+                    className="w-full text-left px-4 py-2.5 rounded-xl hover:bg-muted transition-colors text-sm font-medium"
+                  >
+                    {language === 'ar' ? 'خدماتنا' : 'Services'}
+                  </motion.button>
+                  <motion.button
+                    initial={{ x: -20, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.15 }}
+                    onClick={() => scrollToSection('contact')}
+                    className="w-full text-left px-4 py-2.5 rounded-xl hover:bg-muted transition-colors text-sm font-medium"
+                  >
+                    {language === 'ar' ? 'تواصل معنا' : 'Contact'}
+                  </motion.button>
+                </div>
+
                 {/* Separator */}
-                <div className="w-px h-5 bg-border mx-1" />
-                
-                <motion.div initial={{
-              x: -20,
-              opacity: 0
-            }} animate={{
-              x: 0,
-              opacity: 1
-            }} exit={{
-              x: -20,
-              opacity: 0
-            }} transition={{
-              delay: 0.15
-            }}>
+                <div className="h-px bg-border mx-2" />
+
+                {/* Settings Row */}
+                <motion.div
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                  className="p-2 flex items-center justify-between px-4"
+                >
                   <LanguageSwitcher onOpenChange={handleDropdownOpenChange} />
-                </motion.div>
-                <motion.div initial={{
-              x: -20,
-              opacity: 0
-            }} animate={{
-              x: 0,
-              opacity: 1
-            }} exit={{
-              x: -20,
-              opacity: 0
-            }} transition={{
-              delay: 0.2
-            }}>
                   <ThemeToggle />
                 </motion.div>
-                <motion.div initial={{
-              x: -20,
-              opacity: 0
-            }} animate={{
-              x: 0,
-              opacity: 1
-            }} exit={{
-              x: -20,
-              opacity: 0
-            }} transition={{
-              delay: 0.25
-            }} className="pr-3 md:pr-4">
-                  <Button onClick={() => {
-                setIsMenuExpanded(false);
-                setShowAuthModal(true);
-              }} size="sm" className="rounded-full">
+
+                {/* Separator */}
+                <div className="h-px bg-border mx-2" />
+
+                {/* CTA Button */}
+                <motion.div
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 0.25 }}
+                  className="p-3"
+                >
+                  <Button
+                    onClick={() => {
+                      setIsMenuExpanded(false);
+                      setShowAuthModal(true);
+                    }}
+                    className="w-full rounded-xl"
+                  >
                     {t('nav.getStarted')}
                   </Button>
                 </motion.div>
-              </motion.div>}
+              </motion.div>
+            )}
           </AnimatePresence>
-        </motion.div>
+        </div>
       </nav>
 
       {/* Mobile Sheet Navigation (fallback for small screens) */}
