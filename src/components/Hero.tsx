@@ -627,8 +627,8 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
                 fill="black"
                 style={{ 
                   transition: absorptionPulse 
-                    ? "r 0.15s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
-                    : "r 0.3s cubic-bezier(0.32, 0.72, 0, 1)" 
+                    ? "r 0.12s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
+                    : "r 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)" 
                 }}
               />
               
@@ -640,8 +640,8 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
                 height={absorptionPulse ? "28" : isHovered ? "40" : "36"}
                 style={{ 
                   transition: absorptionPulse 
-                    ? "all 0.15s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
-                    : "all 0.3s cubic-bezier(0.32, 0.72, 0, 1)" 
+                    ? "all 0.12s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
+                    : "all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)" 
                 }}
               >
                 <Brain 
