@@ -93,6 +93,105 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
         <div className="absolute w-[420px] h-[420px] md:w-[520px] md:h-[520px] lg:w-[640px] lg:h-[640px] rounded-full -z-10 pointer-events-none
                         bg-gradient-to-b from-transparent via-muted/30 to-transparent" />
 
+        {/* Floating particles around eye */}
+        <div className="absolute inset-0 pointer-events-none overflow-visible">
+          {/* Particle 1 */}
+          <motion.div
+            className="absolute w-2 h-2 rounded-full bg-foreground/10 blur-[1px]"
+            style={{ top: '20%', left: '30%' }}
+            animate={{
+              y: [0, -30, 0],
+              x: [0, 20, 0],
+              opacity: [0.3, 0.6, 0.3],
+            }}
+            transition={{
+              duration: 8,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          />
+          {/* Particle 2 */}
+          <motion.div
+            className="absolute w-3 h-3 rounded-full bg-foreground/8 blur-[2px]"
+            style={{ top: '15%', right: '25%' }}
+            animate={{
+              y: [0, 40, 0],
+              x: [0, -25, 0],
+              opacity: [0.2, 0.5, 0.2],
+            }}
+            transition={{
+              duration: 10,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 1,
+            }}
+          />
+          {/* Particle 3 */}
+          <motion.div
+            className="absolute w-1.5 h-1.5 rounded-full bg-foreground/12 blur-[1px]"
+            style={{ bottom: '25%', left: '20%' }}
+            animate={{
+              y: [0, -20, 0],
+              x: [0, 15, 0],
+              opacity: [0.4, 0.7, 0.4],
+            }}
+            transition={{
+              duration: 7,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 2,
+            }}
+          />
+          {/* Particle 4 */}
+          <motion.div
+            className="absolute w-2.5 h-2.5 rounded-full bg-foreground/10 blur-[2px]"
+            style={{ bottom: '30%', right: '22%' }}
+            animate={{
+              y: [0, 35, 0],
+              x: [0, -18, 0],
+              opacity: [0.3, 0.6, 0.3],
+            }}
+            transition={{
+              duration: 9,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 0.5,
+            }}
+          />
+          {/* Particle 5 */}
+          <motion.div
+            className="absolute w-1 h-1 rounded-full bg-foreground/15 blur-[1px]"
+            style={{ top: '40%', left: '15%' }}
+            animate={{
+              y: [0, -25, 0],
+              x: [0, 12, 0],
+              opacity: [0.5, 0.8, 0.5],
+            }}
+            transition={{
+              duration: 6,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 3,
+            }}
+          />
+          {/* Particle 6 */}
+          <motion.div
+            className="absolute w-2 h-2 rounded-full bg-foreground/8 blur-[2px]"
+            style={{ top: '45%', right: '18%' }}
+            animate={{
+              y: [0, 28, 0],
+              x: [0, -22, 0],
+              opacity: [0.2, 0.5, 0.2],
+            }}
+            transition={{
+              duration: 11,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 1.5,
+            }}
+          />
+        </div>
+
         {/* Cards row - positioned absolutely to avoid cutoffs */}
         <div className="absolute inset-0 flex items-center justify-center">
           {/* Left card */}
