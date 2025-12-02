@@ -464,8 +464,13 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
                   transition: "r 0.3s cubic-bezier(0.32, 0.72, 0, 1), transform 0.12s ease-out" 
                 }}
               />
-              {/* highlight */}
-              <circle cx="64" cy="40" r="6" fill="hsl(var(--background))" opacity="0.95" />
+              {/* highlight - Brain logo instead of white circle */}
+              <foreignObject x="56" y="32" width="16" height="16">
+                <Brain 
+                  className="w-4 h-4 text-background" 
+                  style={{ opacity: 0.9 }}
+                />
+              </foreignObject>
             </svg>
           </motion.div>
         </motion.div>
