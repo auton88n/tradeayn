@@ -24,6 +24,7 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
   const { language } = useLanguage();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isHovered, setIsHovered] = useState(false);
+  const [activeCard, setActiveCard] = useState<'left' | 'top' | 'right' | null>(null);
 
   // track pointer relative to container center for subtle eye follow with spring physics
   const mouseX = useMotionValue(0);
@@ -65,12 +66,38 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
       const cx = rect.left + rect.width / 2;
       const cy = rect.top + rect.height / 2;
       // Scale down the movement for subtle effect
-      mouseX.set((e.clientX - cx) * 0.12);
-      mouseY.set((e.clientY - cy) * 0.12);
+      const rawX = (e.clientX - cx) * 0.12;
+      const rawY = (e.clientY - cy) * 0.12;
+      mouseX.set(rawX);
+      mouseY.set(rawY);
+
+      // Determine which card the eye is looking at based on direction
+      // Use unscaled values for better threshold detection
+      const unscaledX = e.clientX - cx;
+      const unscaledY = e.clientY - cy;
+      
+      if (Math.abs(unscaledX) > Math.abs(unscaledY)) {
+        // Horizontal direction dominates
+        if (unscaledX < -100) {
+          setActiveCard('left');
+        } else if (unscaledX > 100) {
+          setActiveCard('right');
+        } else {
+          setActiveCard(null);
+        }
+      } else {
+        // Vertical direction dominates
+        if (unscaledY < -100) {
+          setActiveCard('top');
+        } else {
+          setActiveCard(null);
+        }
+      }
     }
     function onLeave() {
       mouseX.set(0);
       mouseY.set(0);
+      setActiveCard(null);
     }
 
     window.addEventListener("mousemove", onMove);
@@ -223,9 +250,17 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
           {/* Left card */}
           <motion.div
             initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
+            animate={{ 
+              opacity: 1, 
+              y: 0,
+              scale: activeCard === 'left' ? 1.08 : 1,
+            }}
             transition={{ delay: 0.25, duration: 0.7 }}
-            className="absolute left-6 md:left-16 lg:left-24 top-1/2 -translate-y-1/2 w-[170px] md:w-[220px] rounded-2xl backdrop-blur-xl bg-background/55 border border-border/30 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-4 z-20 transition-all duration-300 hover:scale-105 hover:backdrop-blur-2xl hover:bg-background/65 hover:shadow-[0_15px_40px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_15px_40px_rgba(0,0,0,0.4)] cursor-pointer"
+            className={`absolute left-6 md:left-16 lg:left-24 top-1/2 -translate-y-1/2 w-[170px] md:w-[220px] rounded-2xl backdrop-blur-xl bg-background/55 border p-4 z-20 transition-all duration-300 hover:scale-105 hover:backdrop-blur-2xl hover:bg-background/65 cursor-pointer ${
+              activeCard === 'left' 
+                ? 'border-foreground/40 shadow-[0_0_30px_rgba(0,0,0,0.2),0_15px_40px_rgba(0,0,0,0.15)] dark:shadow-[0_0_40px_rgba(255,255,255,0.25),0_15px_40px_rgba(0,0,0,0.4)]' 
+                : 'border-border/30 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] hover:shadow-[0_15px_40px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_15px_40px_rgba(0,0,0,0.4)]'
+            }`}
           >
             <div className="text-sm md:text-base font-medium text-foreground">
               {CARDS[0]}
@@ -235,9 +270,17 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
           {/* Top card */}
           <motion.div
             initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
+            animate={{ 
+              opacity: 1, 
+              y: 0,
+              scale: activeCard === 'top' ? 1.08 : 1,
+            }}
             transition={{ delay: 0.35, duration: 0.7 }}
-            className="absolute -top-12 md:-top-16 lg:-top-20 left-1/2 -translate-x-1/2 w-[150px] md:w-[200px] rounded-2xl backdrop-blur-xl bg-background/55 border border-border/30 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20 transition-all duration-300 hover:scale-105 hover:backdrop-blur-2xl hover:bg-background/65 hover:shadow-[0_15px_40px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_15px_40px_rgba(0,0,0,0.4)] cursor-pointer"
+            className={`absolute -top-12 md:-top-16 lg:-top-20 left-1/2 -translate-x-1/2 w-[150px] md:w-[200px] rounded-2xl backdrop-blur-xl bg-background/55 border p-3 z-20 transition-all duration-300 hover:scale-105 hover:backdrop-blur-2xl hover:bg-background/65 cursor-pointer ${
+              activeCard === 'top' 
+                ? 'border-foreground/40 shadow-[0_0_30px_rgba(0,0,0,0.2),0_15px_40px_rgba(0,0,0,0.15)] dark:shadow-[0_0_40px_rgba(255,255,255,0.25),0_15px_40px_rgba(0,0,0,0.4)]' 
+                : 'border-border/30 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] hover:shadow-[0_15px_40px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_15px_40px_rgba(0,0,0,0.4)]'
+            }`}
           >
             <div className="text-sm md:text-base font-medium text-foreground">
               {CARDS[1]}
@@ -247,9 +290,17 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
           {/* Right card */}
           <motion.div
             initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
+            animate={{ 
+              opacity: 1, 
+              y: 0,
+              scale: activeCard === 'right' ? 1.08 : 1,
+            }}
             transition={{ delay: 0.45, duration: 0.7 }}
-            className="absolute right-6 md:right-16 lg:right-24 top-1/2 -translate-y-1/2 w-[170px] md:w-[220px] rounded-2xl backdrop-blur-xl bg-background/55 border border-border/30 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-4 z-20 transition-all duration-300 hover:scale-105 hover:backdrop-blur-2xl hover:bg-background/65 hover:shadow-[0_15px_40px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_15px_40px_rgba(0,0,0,0.4)] cursor-pointer"
+            className={`absolute right-6 md:right-16 lg:right-24 top-1/2 -translate-y-1/2 w-[170px] md:w-[220px] rounded-2xl backdrop-blur-xl bg-background/55 border p-4 z-20 transition-all duration-300 hover:scale-105 hover:backdrop-blur-2xl hover:bg-background/65 cursor-pointer ${
+              activeCard === 'right' 
+                ? 'border-foreground/40 shadow-[0_0_30px_rgba(0,0,0,0.2),0_15px_40px_rgba(0,0,0,0.15)] dark:shadow-[0_0_40px_rgba(255,255,255,0.25),0_15px_40px_rgba(0,0,0,0.4)]' 
+                : 'border-border/30 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] hover:shadow-[0_15px_40px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_15px_40px_rgba(0,0,0,0.4)]'
+            }`}
           >
             <div className="text-sm md:text-base font-medium text-foreground">
               {CARDS[2]}
