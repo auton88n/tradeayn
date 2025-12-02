@@ -1,8 +1,11 @@
-import { useState, useEffect } from 'react';
-import LandingPage from '@/components/LandingPage';
-import Dashboard from '@/components/Dashboard';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
+import { DashboardLoader, PageLoader } from '@/components/ui/page-loader';
+
+// Lazy load heavy components for better initial load time
+const LandingPage = lazy(() => import('@/components/LandingPage'));
+const Dashboard = lazy(() => import('@/components/Dashboard'));
 
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -46,9 +49,13 @@ const Index = () => {
   }
 
   return user ? (
-    <Dashboard user={user} />
+    <Suspense fallback={<DashboardLoader />}>
+      <Dashboard user={user} />
+    </Suspense>
   ) : (
-    <LandingPage />
+    <Suspense fallback={<PageLoader />}>
+      <LandingPage />
+    </Suspense>
   );
 };
 

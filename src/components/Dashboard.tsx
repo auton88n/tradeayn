@@ -2,13 +2,16 @@ import { User } from '@supabase/supabase-js';
 import { DashboardContainer } from './dashboard/DashboardContainer';
 import { TermsModal } from './TermsModal';
 import { MaintenanceBanner } from './MaintenanceBanner';
-import { AdminPanel } from './AdminPanel';
+import { SessionTimeoutModal } from './SessionTimeoutModal';
 import { useAuth } from '@/hooks/useAuth';
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Shield } from 'lucide-react';
+import { useSessionTimeout } from '@/hooks/useSessionTimeout';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { supabase } from '@/integrations/supabase/client';
+import { AdminLoader } from '@/components/ui/page-loader';
+
+// Lazy load AdminPanel (only needed for admins)
+const AdminPanel = lazy(() => import('./AdminPanel').then(module => ({ default: module.AdminPanel })));
 
 interface DashboardProps {
   user: User;
@@ -22,6 +25,12 @@ export default function Dashboard({ user }: DashboardProps) {
     maintenanceMessage: 'System is currently under maintenance.',
     maintenanceStartTime: '',
     maintenanceEndTime: '',
+  });
+
+  // Session timeout with 30-minute inactivity auto-logout
+  const sessionTimeout = useSessionTimeout({
+    timeoutMinutes: 30,
+    warningMinutes: 1,
   });
 
   // Load maintenance config from database
@@ -106,10 +115,20 @@ export default function Dashboard({ user }: DashboardProps) {
         onAccept={auth.acceptTerms}
       />
 
+      {/* Session Timeout Warning Modal */}
+      <SessionTimeoutModal
+        open={sessionTimeout.showWarning}
+        remainingSeconds={sessionTimeout.remainingSeconds}
+        onStayLoggedIn={sessionTimeout.handleStayLoggedIn}
+        onLogoutNow={sessionTimeout.handleLogoutNow}
+      />
+
       {/* Main Content - conditionally render based on active view */}
       {activeView === 'admin' && auth.isAdmin ? (
         <div className="min-h-screen p-6 pt-16 bg-background">
-          <AdminPanel />
+          <Suspense fallback={<AdminLoader />}>
+            <AdminPanel />
+          </Suspense>
         </div>
       ) : (
         <SidebarProvider>
