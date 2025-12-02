@@ -12,6 +12,8 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { TypewriterText } from './TypewriterText';
 import { ConversationExamples } from './ConversationExamples';
+import { AIEye } from './AIEye';
+import { OrbitingCards } from './OrbitingCards';
 import { z } from 'zod';
 const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -156,62 +158,58 @@ const LandingPage = () => {
         </div>
       </nav>
 
-      {/* Hero Section - Editorial Masterpiece */}
+      {/* Hero Section - Premium AI Eye Experience */}
       <section className="min-h-screen flex flex-col justify-center items-center px-6 relative overflow-hidden">
+        {/* Radial gradient background */}
+        <div className="absolute inset-0 bg-gradient-radial from-muted/20 via-background to-background" />
+        
+        {/* Subtle animated orbs */}
+        <div className="absolute top-20 left-20 w-96 h-96 rounded-full bg-foreground/5 blur-[100px] animate-soft-pulse" />
+        <div className="absolute bottom-20 right-20 w-80 h-80 rounded-full bg-foreground/5 blur-[120px] animate-soft-pulse" style={{ animationDelay: '1s' }} />
+        
         {/* Subtle noise texture */}
         <div className="absolute inset-0 bg-noise opacity-[0.02] pointer-events-none" />
         
-        {/* Animated Conversation Examples */}
-        <ConversationExamples />
-        
-        {/* Interactive Chat Input */}
-        <ScrollReveal>
-          <div className="w-full max-w-3xl mx-auto">
-            {/* Optional tagline above input */}
-            <p className="text-center text-lg text-muted-foreground mb-8 opacity-0 animate-[fade-in_0.8s_ease-out_0.2s_forwards]">
-              {language === 'ar' ? 'اسأل AYN أي شيء' : 'Ask AYN anything'}
-            </p>
-            
-            {/* Chat Input Container */}
-            <div className="relative bg-card/50 backdrop-blur-xl border-2 border-border rounded-2xl p-6 shadow-2xl opacity-0 animate-[fade-in_0.8s_ease-out_0.4s_forwards] hover-glow">
-              <div className="relative">
-                <Textarea value={demoMessage} onChange={e => setDemoMessage(e.target.value)} onKeyPress={e => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  setShowAuthModal(true);
+        <div className="relative z-10 flex flex-col items-center gap-16 py-20">
+          {/* Headline */}
+          <ScrollReveal>
+            <div className="text-center space-y-6">
+              <h1 className="text-6xl md:text-7xl lg:text-8xl font-serif font-bold tracking-tight">
+                {language === 'ar' ? (
+                  <>تعرّف على <span className="gradient-text">AYN</span></>
+                ) : (
+                  <>Meet <span className="gradient-text">AYN</span></>
+                )}
+              </h1>
+              <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+                {language === 'ar' 
+                  ? 'الذكاء الاصطناعي الذي يرى، يسمع، ويفهم عالمك'
+                  : 'The AI that sees, listens, and understands your world.'
                 }
-              }} placeholder="" rows={3} className="w-full resize-none bg-transparent border-0 outline-none focus:ring-0 text-base min-h-[80px] focus-visible:ring-0" />
-                
-                {/* Typewriter Placeholder */}
-                {!demoMessage && <div className={cn("absolute top-2 pointer-events-none", language === 'ar' ? 'right-3' : 'left-3')}>
-                    <TypewriterText key={`demo-${language}`} text={language === 'ar' ? 'كيف يمكنني زيادة إيراداتي؟' : 'How can I increase my revenue?'} speed={50} className="text-muted-foreground" showCursor={true} />
-                  </div>}
-              </div>
-              
-              {/* Send Button Row */}
-              <div className="flex items-center justify-end mt-4 pt-4 border-t border-border/50">
-                <Button onClick={() => setShowAuthModal(true)} disabled={!demoMessage.trim()} size="lg" className="h-12 px-8 rounded-full transition-all hover:scale-105 active:scale-95">
-                  {language === 'ar' ? 'إرسال' : 'Send'}
-                  <ArrowRight className="ml-2 w-5 h-5" />
-                </Button>
-              </div>
+              </p>
             </div>
-          </div>
-        </ScrollReveal>
-        
-        {/* Single elegant CTA below the input */}
-        <ScrollReveal delay={0.8}>
-          <div className="text-center mt-8">
-            
-          </div>
-        </ScrollReveal>
-
-        {/* Floating brain icon */}
-        <ScrollReveal delay={1.2}>
-          <div className="absolute bottom-32 animate-float opacity-0 animate-[fade-in_0.8s_ease-out_1.2s_forwards]">
-            <Brain className="w-16 h-16 text-muted-foreground/20" />
-          </div>
-        </ScrollReveal>
+          </ScrollReveal>
+          
+          {/* AI Eye + Orbiting Cards */}
+          <ScrollReveal delay={0.3}>
+            <div className="relative w-full max-w-4xl h-[600px] md:h-[700px] flex items-center justify-center">
+              <OrbitingCards />
+              <AIEye />
+            </div>
+          </ScrollReveal>
+          
+          {/* CTA Button */}
+          <ScrollReveal delay={0.6}>
+            <Button 
+              onClick={() => setShowAuthModal(true)}
+              size="lg" 
+              className="h-14 px-10 text-lg rounded-full shadow-2xl transition-all hover:scale-105 active:scale-95"
+            >
+              {language === 'ar' ? 'جرّب AYN الآن' : 'Experience AYN'}
+              <ArrowRight className={language === 'ar' ? 'mr-3 w-5 h-5' : 'ml-3 w-5 h-5'} />
+            </Button>
+          </ScrollReveal>
+        </div>
       </section>
 
       {/* Services Section - Magazine Editorial Layout */}
