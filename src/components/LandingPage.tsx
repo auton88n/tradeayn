@@ -161,21 +161,18 @@ const LandingPage = () => {
       <Hero onGetStarted={() => setShowAuthModal(true)} onDemoMessage={msg => setDemoMessage(msg)} />
 
       {/* About AYN - Value Proposition Section */}
-      <section className="py-20 bg-gradient-to-b from-muted/30 to-background">
-        <div className="max-w-6xl mx-auto px-6 text-center">
+      <section className="py-32 px-6">
+        <div className="container mx-auto max-w-6xl text-center">
           <ScrollReveal>
-            <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full mb-6">
-              <Sparkles className="w-4 h-4 text-primary" />
-              <span className="text-sm text-primary">
-                {language === 'ar' ? 'عن AYN' : 'About AYN'}
-              </span>
-            </div>
+            <span className="text-sm font-mono text-muted-foreground tracking-wider uppercase mb-4 block">
+              {language === 'ar' ? 'عن AYN' : 'About AYN'}
+            </span>
 
-            <h2 className="text-4xl md:text-5xl font-serif font-bold mb-6">
+            <h2 className="text-5xl md:text-6xl font-serif font-bold mb-6">
               {language === 'ar' ? 'ذكاء اصطناعي يفهمك حقاً' : 'AI That Actually Understands You'}
             </h2>
 
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-12">
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-16">
               {language === 'ar' 
                 ? 'مصمم للشرق الأوسط، يجمع AYN بين أحدث تقنيات الذكاء الاصطناعي وفهم عميق لاحتياجات الأعمال الإقليمية. نتحدث لغتك - حرفياً ومجازياً.'
                 : 'Built for the Middle East, AYN combines cutting-edge AI with deep understanding of regional business needs. We speak your language—literally and figuratively.'}
@@ -183,14 +180,16 @@ const LandingPage = () => {
           </ScrollReveal>
 
           {/* 3 Value Props */}
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-12">
             <ScrollReveal delay={0.1}>
-              <div className="p-6 bg-card/50 rounded-2xl border border-border hover:shadow-lg transition-all duration-300">
-                <Brain className="w-12 h-12 mx-auto mb-4 text-foreground" />
-                <h3 className="text-lg font-semibold mb-2">
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 rounded-2xl bg-muted/50 mx-auto flex items-center justify-center">
+                  <Brain className="w-8 h-8 text-foreground" />
+                </div>
+                <h3 className="text-xl font-bold">
                   {language === 'ar' ? 'ذكاء سياقي' : 'Contextual Intelligence'}
                 </h3>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground leading-relaxed">
                   {language === 'ar' 
                     ? 'يفهم صناعتك ونموذج عملك وتحدياتك المحددة'
                     : 'Understands your industry, business model, and specific challenges'}
@@ -199,12 +198,14 @@ const LandingPage = () => {
             </ScrollReveal>
 
             <ScrollReveal delay={0.2}>
-              <div className="p-6 bg-card/50 rounded-2xl border border-border hover:shadow-lg transition-all duration-300">
-                <Globe className="w-12 h-12 mx-auto mb-4 text-foreground" />
-                <h3 className="text-lg font-semibold mb-2">
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 rounded-2xl bg-muted/50 mx-auto flex items-center justify-center">
+                  <Globe className="w-8 h-8 text-foreground" />
+                </div>
+                <h3 className="text-xl font-bold">
                   {language === 'ar' ? 'ثنائي اللغة بالتصميم' : 'Bilingual by Design'}
                 </h3>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground leading-relaxed">
                   {language === 'ar' 
                     ? 'انتقل بسلاسة بين العربية والإنجليزية مع فهم أصيل'
                     : 'Seamlessly switch between Arabic and English with native understanding'}
@@ -213,12 +214,14 @@ const LandingPage = () => {
             </ScrollReveal>
 
             <ScrollReveal delay={0.3}>
-              <div className="p-6 bg-card/50 rounded-2xl border border-border hover:shadow-lg transition-all duration-300">
-                <Shield className="w-12 h-12 mx-auto mb-4 text-foreground" />
-                <h3 className="text-lg font-semibold mb-2">
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 rounded-2xl bg-muted/50 mx-auto flex items-center justify-center">
+                  <Shield className="w-8 h-8 text-foreground" />
+                </div>
+                <h3 className="text-xl font-bold">
                   {language === 'ar' ? 'أمان المؤسسات' : 'Enterprise Security'}
                 </h3>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground leading-relaxed">
                   {language === 'ar' 
                     ? 'تشفير بمستوى البنوك مع خصوصية كاملة للبيانات والامتثال'
                     : 'Bank-level encryption with complete data privacy and compliance'}
