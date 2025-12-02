@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { motion, useMotionValue, useTransform } from 'framer-motion';
+import { motion, useMotionValue, useSpring } from 'framer-motion';
 
 interface HeroProps {
   onGetStarted: () => void;
@@ -24,11 +24,21 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
   const { language } = useLanguage();
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  // track pointer relative to container center for subtle eye follow
+  // track pointer relative to container center for subtle eye follow with spring physics
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
-  const eyeX = useTransform(mouseX, (v) => v * 0.12); // subtle follow
-  const eyeY = useTransform(mouseY, (v) => v * 0.12);
+  
+  // Spring physics for smooth, natural eye movement
+  const eyeX = useSpring(mouseX, { 
+    stiffness: 150, 
+    damping: 20, 
+    mass: 0.5 
+  });
+  const eyeY = useSpring(mouseY, { 
+    stiffness: 150, 
+    damping: 20, 
+    mass: 0.5 
+  });
 
   useEffect(() => {
     const el = containerRef.current;
@@ -39,8 +49,9 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
       const rect = el.getBoundingClientRect();
       const cx = rect.left + rect.width / 2;
       const cy = rect.top + rect.height / 2;
-      mouseX.set(e.clientX - cx);
-      mouseY.set(e.clientY - cy);
+      // Scale down the movement for subtle effect
+      mouseX.set((e.clientX - cx) * 0.12);
+      mouseY.set((e.clientY - cy) * 0.12);
     }
     function onLeave() {
       mouseX.set(0);
@@ -231,7 +242,7 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
           </motion.div>
         </div>
 
-        {/* Eye - centered */}
+        {/* Eye - centered with spring physics */}
         <motion.div
           style={{ x: eyeX, y: eyeY }}
           className="relative z-10 flex items-center justify-center"
@@ -239,8 +250,19 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
         >
-          {/* Outer casing */}
-          <div className="relative w-[160px] h-[160px] md:w-[220px] md:h-[220px] lg:w-[260px] lg:h-[260px] rounded-full bg-background shadow-[0_20px_60px_rgba(0,0,0,0.08)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.4)] flex items-center justify-center">
+          {/* Outer casing with breathing pulse */}
+          <motion.div 
+            className="relative w-[160px] h-[160px] md:w-[220px] md:h-[220px] lg:w-[260px] lg:h-[260px] rounded-full bg-background shadow-[0_20px_60px_rgba(0,0,0,0.08)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.4)] flex items-center justify-center"
+            animate={{
+              scale: [1, 1.02, 1],
+              opacity: [0.95, 1, 0.95],
+            }}
+            transition={{
+              duration: 4,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          >
             {/* soft inner ring */}
             <div className="absolute inset-4 rounded-full bg-background/80 shadow-inner"></div>
 
@@ -281,7 +303,7 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
               {/* highlight */}
               <circle cx="64" cy="40" r="6" fill="hsl(var(--background))" opacity="0.95" />
             </svg>
-          </div>
+          </motion.div>
         </motion.div>
       </div>
 
