@@ -142,7 +142,7 @@ export const TermsModal = ({ open, onAccept }: TermsModalProps) => {
             onClick={handleAccept}
             disabled={!hasRead || !acceptTerms}
             className="w-full"
-            variant="hero"
+            variant="default"
           >
             {t('terms.acceptContinue')}
           </Button>
