@@ -72,7 +72,7 @@ export interface AIModeConfig {
   name: AIMode;
   translatedName: string;
   description: string;
-  icon: React.ComponentType<any>;
+  icon: React.ComponentType<{ className?: string }>;
   color: string;
   webhookUrl: string;
 }

@@ -49,7 +49,13 @@ export default function Dashboard({ user }: DashboardProps) {
         }
 
         if (data?.value && typeof data.value === 'object' && !Array.isArray(data.value)) {
-          const config = data.value as Record<string, any>;
+          interface MaintenanceConfig {
+            enabled?: boolean;
+            message?: string;
+            startTime?: string;
+            endTime?: string;
+          }
+          const config = data.value as MaintenanceConfig;
           setMaintenanceConfig({
             enableMaintenance: config.enabled || false,
             maintenanceMessage: config.message || 'System is currently under maintenance.',
@@ -79,7 +85,13 @@ export default function Dashboard({ user }: DashboardProps) {
           if (payload.new && typeof payload.new === 'object' && 'value' in payload.new) {
             const value = payload.new.value;
             if (value && typeof value === 'object' && !Array.isArray(value)) {
-              const config = value as Record<string, any>;
+              interface MaintenanceConfig {
+                enabled?: boolean;
+                message?: string;
+                startTime?: string;
+                endTime?: string;
+              }
+              const config = value as MaintenanceConfig;
               setMaintenanceConfig({
                 enableMaintenance: config.enabled || false,
                 maintenanceMessage: config.message || 'System is currently under maintenance.',

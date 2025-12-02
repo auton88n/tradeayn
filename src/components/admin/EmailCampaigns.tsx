@@ -38,7 +38,7 @@ interface RecipientGroup {
   name: string;
   description: string;
   recipient_count: number;
-  criteria: any;
+  criteria: Record<string, unknown>;
 }
 
 export const EmailCampaigns = () => {
