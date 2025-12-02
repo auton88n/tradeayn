@@ -27,6 +27,7 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
   const { language } = useLanguage();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isHovered, setIsHovered] = useState(false);
+  const [isAreaHovered, setIsAreaHovered] = useState(false);
   const [inputMessage, setInputMessage] = useState('');
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [isFocused, setIsFocused] = useState(false);
@@ -161,7 +162,11 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
       </motion.div>
 
       {/* Central area with eye and cards */}
-      <div className="relative w-full max-w-5xl mt-8 flex items-center justify-center">
+      <div 
+        className="relative w-full max-w-5xl mt-8 flex items-center justify-center"
+        onMouseEnter={() => setIsAreaHovered(true)}
+        onMouseLeave={() => setIsAreaHovered(false)}
+      >
         {/* ring / subtle light behind the eye */}
         <div className="absolute w-[420px] h-[420px] md:w-[520px] md:h-[520px] lg:w-[640px] lg:h-[640px] rounded-full -z-10 pointer-events-none
                         bg-gradient-to-b from-transparent via-muted/30 to-transparent" />
@@ -269,10 +274,16 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
         <div className="absolute inset-0 flex items-center justify-center">
           {/* Left card */}
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.25, duration: 0.7 }}
-            className="absolute left-6 md:left-16 lg:left-24 top-1/2 -translate-y-1/2 w-[170px] md:w-[220px] rounded-2xl backdrop-blur-xl bg-background/55 border border-border/30 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-4 z-20 transition-all duration-300 hover:scale-105 hover:backdrop-blur-2xl hover:bg-background/65 hover:shadow-[0_15px_40px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_15px_40px_rgba(0,0,0,0.4)] cursor-pointer"
+            initial={{ opacity: 0, scale: 0.92, y: 20, filter: 'blur(4px)' }}
+            animate={{ 
+              opacity: isAreaHovered ? 1 : 0,
+              scale: isAreaHovered ? 1 : 0.92,
+              y: isAreaHovered ? 0 : 20,
+              filter: isAreaHovered ? 'blur(0px)' : 'blur(4px)'
+            }}
+            transition={{ duration: 0.5, delay: 0.1, ease: [0.32, 0.72, 0, 1] }}
+            whileHover={{ scale: 1.05, y: -5 }}
+            className="absolute left-6 md:left-16 lg:left-24 top-1/2 -translate-y-1/2 w-[170px] md:w-[220px] rounded-2xl backdrop-blur-xl bg-background/55 border border-border/30 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-4 z-20 pointer-events-auto cursor-pointer"
           >
             <div className="text-sm md:text-base font-medium text-foreground">
               {CARDS[0]}
@@ -281,10 +292,16 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
 
           {/* Top card */}
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35, duration: 0.7 }}
-            className="absolute -top-12 md:-top-16 lg:-top-20 left-1/2 -translate-x-1/2 w-[150px] md:w-[200px] rounded-2xl backdrop-blur-xl bg-background/55 border border-border/30 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20 transition-all duration-300 hover:scale-105 hover:backdrop-blur-2xl hover:bg-background/65 hover:shadow-[0_15px_40px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_15px_40px_rgba(0,0,0,0.4)] cursor-pointer"
+            initial={{ opacity: 0, scale: 0.92, y: 20, filter: 'blur(4px)' }}
+            animate={{ 
+              opacity: isAreaHovered ? 1 : 0,
+              scale: isAreaHovered ? 1 : 0.92,
+              y: isAreaHovered ? 0 : 20,
+              filter: isAreaHovered ? 'blur(0px)' : 'blur(4px)'
+            }}
+            transition={{ duration: 0.5, delay: 0.15, ease: [0.32, 0.72, 0, 1] }}
+            whileHover={{ scale: 1.05, y: -5 }}
+            className="absolute -top-12 md:-top-16 lg:-top-20 left-1/2 -translate-x-1/2 w-[150px] md:w-[200px] rounded-2xl backdrop-blur-xl bg-background/55 border border-border/30 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20 pointer-events-auto cursor-pointer"
           >
             <div className="text-sm md:text-base font-medium text-foreground">
               {CARDS[1]}
@@ -293,10 +310,16 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
 
           {/* Right card */}
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.45, duration: 0.7 }}
-            className="absolute right-6 md:right-16 lg:right-24 top-1/2 -translate-y-1/2 w-[170px] md:w-[220px] rounded-2xl backdrop-blur-xl bg-background/55 border border-border/30 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-4 z-20 transition-all duration-300 hover:scale-105 hover:backdrop-blur-2xl hover:bg-background/65 hover:shadow-[0_15px_40px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_15px_40px_rgba(0,0,0,0.4)] cursor-pointer"
+            initial={{ opacity: 0, scale: 0.92, y: 20, filter: 'blur(4px)' }}
+            animate={{ 
+              opacity: isAreaHovered ? 1 : 0,
+              scale: isAreaHovered ? 1 : 0.92,
+              y: isAreaHovered ? 0 : 20,
+              filter: isAreaHovered ? 'blur(0px)' : 'blur(4px)'
+            }}
+            transition={{ duration: 0.5, delay: 0.2, ease: [0.32, 0.72, 0, 1] }}
+            whileHover={{ scale: 1.05, y: -5 }}
+            className="absolute right-6 md:right-16 lg:right-24 top-1/2 -translate-y-1/2 w-[170px] md:w-[220px] rounded-2xl backdrop-blur-xl bg-background/55 border border-border/30 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-4 z-20 pointer-events-auto cursor-pointer"
           >
             <div className="text-sm md:text-base font-medium text-foreground">
               {CARDS[2]}
@@ -309,7 +332,13 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
           style={{ x: eyeX, y: eyeY }}
           className="relative z-10 flex items-center justify-center group cursor-pointer"
           initial={{ scale: 0.92, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
+          animate={{ 
+            scale: 1, 
+            opacity: 1,
+            filter: isAreaHovered 
+              ? 'drop-shadow(0 0 40px rgba(59, 130, 246, 0.3))' 
+              : 'drop-shadow(0 0 20px rgba(59, 130, 246, 0.15))'
+          }}
           transition={{ duration: 0.8, ease: "easeOut" }}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
