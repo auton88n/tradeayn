@@ -158,10 +158,7 @@ const LandingPage = () => {
       </nav>
 
       {/* Hero Section - Premium AI Eye Experience */}
-      <Hero 
-        onGetStarted={() => setShowAuthModal(true)} 
-        onDemoMessage={(msg) => setDemoMessage(msg)}
-      />
+      <Hero onGetStarted={() => setShowAuthModal(true)} onDemoMessage={msg => setDemoMessage(msg)} />
 
       {/* Services Section - Magazine Editorial Layout */}
       <section id="services" className="py-32 px-6">
@@ -316,25 +313,14 @@ const LandingPage = () => {
                 </div>
                 <span className="text-2xl font-bold">AYN</span>
               </div>
-              <p className="text-muted-foreground">
-                {language === 'ar' ? 'الذكاء يلتقي الأعمال' : 'Intelligence meets business'}
-              </p>
+              
             </div>
             
             {/* Minimal links */}
-            <nav className="flex gap-8 text-sm">
-              <a href="#services" className="text-muted-foreground hover:text-foreground transition-colors">
-                {language === 'ar' ? 'الخدمات' : 'Services'}
-              </a>
-              <a href="#contact" className="text-muted-foreground hover:text-foreground transition-colors">
-                {language === 'ar' ? 'تواصل' : 'Contact'}
-              </a>
-            </nav>
+            
           </div>
           
-          <div className="pt-8 border-t border-border text-sm text-muted-foreground">
-            © 2024 AYN. {language === 'ar' ? 'جميع الحقوق محفوظة' : 'All rights reserved'}
-          </div>
+          
         </div>
       </footer>
 
