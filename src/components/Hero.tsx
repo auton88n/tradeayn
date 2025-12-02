@@ -6,32 +6,19 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
-
 interface HeroProps {
   onGetStarted: () => void;
   onDemoMessage?: (message: string) => void;
 }
-
-const CARDS_EN = [
-  "Always watching over you.",
-  "I understand context.",
-  "Ready when you are.",
-  "Let me handle that.",
-  "Optimizing your workflow.",
-  "Done. What's next?",
-];
-
-const CARDS_AR = [
-  "دائماً أراقب من أجلك.",
-  "أفهم السياق.",
-  "جاهز عندما تريد.",
-  "دعني أتولى ذلك.",
-  "أحسّن سير عملك.",
-  "انتهيت. ما التالي؟",
-];
-
-export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
-  const { language } = useLanguage();
+const CARDS_EN = ["Always watching over you.", "I understand context.", "Ready when you are.", "Let me handle that.", "Optimizing your workflow.", "Done. What's next?"];
+const CARDS_AR = ["دائماً أراقب من أجلك.", "أفهم السياق.", "جاهز عندما تريد.", "دعني أتولى ذلك.", "أحسّن سير عملك.", "انتهيت. ما التالي؟"];
+export const Hero = ({
+  onGetStarted,
+  onDemoMessage
+}: HeroProps) => {
+  const {
+    language
+  } = useLanguage();
   const isMobile = useIsMobile();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isHovered, setIsHovered] = useState(false);
@@ -45,26 +32,62 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
   const [animationPhase, setAnimationPhase] = useState<'idle' | 'blinking' | 'emitting' | 'absorbing'>('idle');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const previousCardRef = useRef<number | null>(null);
-  
+
   // Responsive card positions
   const getCardPositions = () => {
     if (isMobile) {
       return {
-        topLeft: { x: -100, y: -70 },
-        middleLeft: { x: -120, y: 0 },
-        bottomLeft: { x: -100, y: 70 },
-        topRight: { x: 100, y: -70 },
-        middleRight: { x: 120, y: 0 },
-        bottomRight: { x: 100, y: 70 },
+        topLeft: {
+          x: -100,
+          y: -70
+        },
+        middleLeft: {
+          x: -120,
+          y: 0
+        },
+        bottomLeft: {
+          x: -100,
+          y: 70
+        },
+        topRight: {
+          x: 100,
+          y: -70
+        },
+        middleRight: {
+          x: 120,
+          y: 0
+        },
+        bottomRight: {
+          x: 100,
+          y: 70
+        }
       };
     }
     return {
-      topLeft: { x: -180, y: -120 },
-      middleLeft: { x: -220, y: 0 },
-      bottomLeft: { x: -180, y: 120 },
-      topRight: { x: 180, y: -120 },
-      middleRight: { x: 220, y: 0 },
-      bottomRight: { x: 180, y: 120 },
+      topLeft: {
+        x: -180,
+        y: -120
+      },
+      middleLeft: {
+        x: -220,
+        y: 0
+      },
+      bottomLeft: {
+        x: -180,
+        y: 120
+      },
+      topRight: {
+        x: 180,
+        y: -120
+      },
+      middleRight: {
+        x: 220,
+        y: 0
+      },
+      bottomRight: {
+        x: 180,
+        y: 120
+      }
     };
   };
   const cardPositions = getCardPositions();
@@ -72,37 +95,35 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
   // track pointer relative to container center for subtle eye follow with spring physics
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
-  
+
   // Spring physics for smooth, natural eye movement
-  const eyeX = useSpring(mouseX, { 
-    stiffness: 150, 
-    damping: 20, 
-    mass: 0.5 
+  const eyeX = useSpring(mouseX, {
+    stiffness: 150,
+    damping: 20,
+    mass: 0.5
   });
-  const eyeY = useSpring(mouseY, { 
-    stiffness: 150, 
-    damping: 20, 
-    mass: 0.5 
+  const eyeY = useSpring(mouseY, {
+    stiffness: 150,
+    damping: 20,
+    mass: 0.5
   });
 
   // Parallax transforms for floating particles (different speeds for depth)
-  const parallax1X = useTransform(mouseX, (v) => v * 0.02);
-  const parallax1Y = useTransform(mouseY, (v) => v * 0.02);
-  const parallax2X = useTransform(mouseX, (v) => v * 0.035);
-  const parallax2Y = useTransform(mouseY, (v) => v * 0.035);
-  const parallax3X = useTransform(mouseX, (v) => v * 0.015);
-  const parallax3Y = useTransform(mouseY, (v) => v * 0.015);
-  const parallax4X = useTransform(mouseX, (v) => v * 0.028);
-  const parallax4Y = useTransform(mouseY, (v) => v * 0.028);
-  const parallax5X = useTransform(mouseX, (v) => v * 0.022);
-  const parallax5Y = useTransform(mouseY, (v) => v * 0.022);
-  const parallax6X = useTransform(mouseX, (v) => v * 0.032);
-  const parallax6Y = useTransform(mouseY, (v) => v * 0.032);
-
+  const parallax1X = useTransform(mouseX, v => v * 0.02);
+  const parallax1Y = useTransform(mouseY, v => v * 0.02);
+  const parallax2X = useTransform(mouseX, v => v * 0.035);
+  const parallax2Y = useTransform(mouseY, v => v * 0.035);
+  const parallax3X = useTransform(mouseX, v => v * 0.015);
+  const parallax3Y = useTransform(mouseY, v => v * 0.015);
+  const parallax4X = useTransform(mouseX, v => v * 0.028);
+  const parallax4Y = useTransform(mouseY, v => v * 0.028);
+  const parallax5X = useTransform(mouseX, v => v * 0.022);
+  const parallax5Y = useTransform(mouseY, v => v * 0.022);
+  const parallax6X = useTransform(mouseX, v => v * 0.032);
+  const parallax6Y = useTransform(mouseY, v => v * 0.032);
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-
     function onMove(e: MouseEvent) {
       if (!el) return;
       const rect = el.getBoundingClientRect();
@@ -116,7 +137,6 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
       mouseX.set(0);
       mouseY.set(0);
     }
-
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseleave", onLeave);
     return () => {
@@ -126,15 +146,13 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
   }, [mouseX, mouseY]);
 
   // Placeholder texts for demo input
-  const placeholderTexts = language === 'ar' 
-    ? ['كيف يمكنني زيادة إيراداتي؟', 'اقترح استراتيجية تسويقية', 'حلل اتجاهات السوق في مجالي']
-    : ['How can I increase my revenue?', 'Suggest a marketing strategy', 'Analyze market trends in my industry'];
+  const placeholderTexts = language === 'ar' ? ['كيف يمكنني زيادة إيراداتي؟', 'اقترح استراتيجية تسويقية', 'حلل اتجاهات السوق في مجالي'] : ['How can I increase my revenue?', 'Suggest a marketing strategy', 'Analyze market trends in my industry'];
 
   // Rotate placeholder texts
   useEffect(() => {
     if (inputMessage.length > 0 || isFocused) return;
     const interval = setInterval(() => {
-      setPlaceholderIndex((prev) => (prev + 1) % placeholderTexts.length);
+      setPlaceholderIndex(prev => (prev + 1) % placeholderTexts.length);
     }, 3500);
     return () => clearInterval(interval);
   }, [inputMessage, isFocused, placeholderTexts.length]);
@@ -149,7 +167,7 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
       // Phase 1: Blink (0ms) - eye prepares to speak
       setAnimationPhase('blinking');
       setIsBlinking(true);
-      
+
       // Phase 2: Emit card (150ms after blink completes)
       setTimeout(() => {
         setIsBlinking(false);
@@ -163,14 +181,14 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
         previousCardRef.current = randomIndex;
         setVisibleCardIndex(randomIndex);
       }, 150);
-      
+
       // Phase 3: Start absorption (2400ms - card returns)
       setTimeout(() => {
         setAnimationPhase('absorbing');
         setAbsorptionPulse(true);
         setVisibleCardIndex(null);
       }, 2400);
-      
+
       // Phase 4: Reset absorption pulse (2700ms)
       setTimeout(() => {
         setAbsorptionPulse(false);
@@ -180,7 +198,7 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
 
     // Initial run
     runAnimationCycle();
-    
+
     // Repeat every 3 seconds
     const interval = setInterval(runAnimationCycle, 3000);
     return () => clearInterval(interval);
@@ -211,45 +229,28 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
     const newHeight = Math.min(textarea.scrollHeight, 120);
     textarea.style.height = newHeight + 'px';
   };
-
   const CARDS = language === 'ar' ? CARDS_AR : CARDS_EN;
-
-  return (
-    <section
-      ref={containerRef}
-      className="relative min-h-screen flex flex-col items-center justify-center py-16 md:py-24 px-4 md:px-12 lg:px-24 overflow-hidden"
-      aria-label="Hero"
-    >
+  return <section ref={containerRef} className="relative min-h-screen flex flex-col items-center justify-center py-16 md:py-24 px-4 md:px-12 lg:px-24 overflow-hidden" aria-label="Hero">
       {/* Subtle vignette / soft gradient background */}
       <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-background via-background to-muted/10" />
 
       {/* Headline */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: [0.32, 0.72, 0, 1] }}
-        className="w-full max-w-4xl text-center mb-8 md:mb-12"
-      >
-        <h1 className="text-4xl md:text-6xl lg:text-7xl xl:text-8xl leading-[0.9] font-display tracking-tight text-foreground drop-shadow-[0_20px_40px_rgba(0,0,0,0.06)]">
-          {language === 'ar' ? (
-            <>تعرّف على <span className="text-neutral-500 dark:text-neutral-400">AYN</span></>
-          ) : (
-            <>Meet <span className="text-neutral-500 dark:text-neutral-400">AYN</span></>
-          )}
-        </h1>
-        <p className="mt-4 md:mt-6 text-base md:text-lg lg:text-2xl text-neutral-600 dark:text-neutral-300 max-w-2xl mx-auto font-light px-4">
-          {language === 'ar'
-            ? 'الذكاء الاصطناعي الذي يرى، يسمع، ويفهم عالمك'
-            : 'The AI that sees, listens, and understands your world.'}
-        </p>
+      <motion.div initial={{
+      opacity: 0,
+      y: 20
+    }} animate={{
+      opacity: 1,
+      y: 0
+    }} transition={{
+      duration: 0.8,
+      ease: [0.32, 0.72, 0, 1]
+    }} className="w-full max-w-4xl text-center mb-8 md:mb-12">
+        
+        
       </motion.div>
 
       {/* Central area with eye and cards */}
-      <div 
-        className="relative w-full max-w-5xl mt-4 md:mt-8 flex items-center justify-center"
-        onMouseEnter={() => setIsAreaHovered(true)}
-        onMouseLeave={() => setIsAreaHovered(false)}
-      >
+      <div className="relative w-full max-w-5xl mt-4 md:mt-8 flex items-center justify-center" onMouseEnter={() => setIsAreaHovered(true)} onMouseLeave={() => setIsAreaHovered(false)}>
         {/* ring / subtle light behind the eye */}
         <div className="absolute w-[280px] h-[280px] md:w-[420px] md:h-[420px] lg:w-[520px] lg:h-[520px] xl:w-[640px] xl:h-[640px] rounded-full -z-10 pointer-events-none
                         bg-gradient-to-b from-transparent via-muted/30 to-transparent" />
@@ -257,425 +258,410 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
         {/* Floating particles around eye - organic multi-point paths - hidden on mobile */}
         <div className="absolute inset-0 pointer-events-none overflow-visible hidden md:block">
           {/* Particle 1 - top left - 8s duration */}
-          <motion.div
-            className="absolute w-2 h-2 rounded-full bg-foreground/10 blur-[2px]"
-            style={{ top: '20%', left: '30%', x: parallax1X, y: parallax1Y }}
-            animate={{
-              y: [0, -8, -20, -25, -18, -10, 0],
-              x: [0, 5, 12, 15, 10, 4, 0],
-              scale: [1, 1.05, 1.1, 1.05, 0.98, 1.02, 1],
-              opacity: [0.3, 0.4, 0.55, 0.6, 0.5, 0.35, 0.3],
-            }}
-            transition={{
-              duration: 8,
-              repeat: Infinity,
-              ease: [0.45, 0.05, 0.55, 0.95],
-            }}
-          />
+          <motion.div className="absolute w-2 h-2 rounded-full bg-foreground/10 blur-[2px]" style={{
+          top: '20%',
+          left: '30%',
+          x: parallax1X,
+          y: parallax1Y
+        }} animate={{
+          y: [0, -8, -20, -25, -18, -10, 0],
+          x: [0, 5, 12, 15, 10, 4, 0],
+          scale: [1, 1.05, 1.1, 1.05, 0.98, 1.02, 1],
+          opacity: [0.3, 0.4, 0.55, 0.6, 0.5, 0.35, 0.3]
+        }} transition={{
+          duration: 8,
+          repeat: Infinity,
+          ease: [0.45, 0.05, 0.55, 0.95]
+        }} />
           {/* Particle 2 - top right - 9s duration */}
-          <motion.div
-            className="absolute w-3 h-3 rounded-full bg-foreground/8 blur-[3px]"
-            style={{ top: '15%', right: '25%', x: parallax2X, y: parallax2Y }}
-            animate={{
-              y: [0, 10, 22, 30, 24, 12, 0],
-              x: [0, -6, -14, -20, -15, -8, 0],
-              scale: [1, 0.98, 1.08, 1.12, 1.05, 1.02, 1],
-              opacity: [0.2, 0.3, 0.42, 0.5, 0.4, 0.28, 0.2],
-              rotate: [0, 2, 5, 3, -1, 1, 0],
-            }}
-            transition={{
-              duration: 9,
-              repeat: Infinity,
-              ease: [0.45, 0.05, 0.55, 0.95],
-              delay: 0.5,
-            }}
-          />
+          <motion.div className="absolute w-3 h-3 rounded-full bg-foreground/8 blur-[3px]" style={{
+          top: '15%',
+          right: '25%',
+          x: parallax2X,
+          y: parallax2Y
+        }} animate={{
+          y: [0, 10, 22, 30, 24, 12, 0],
+          x: [0, -6, -14, -20, -15, -8, 0],
+          scale: [1, 0.98, 1.08, 1.12, 1.05, 1.02, 1],
+          opacity: [0.2, 0.3, 0.42, 0.5, 0.4, 0.28, 0.2],
+          rotate: [0, 2, 5, 3, -1, 1, 0]
+        }} transition={{
+          duration: 9,
+          repeat: Infinity,
+          ease: [0.45, 0.05, 0.55, 0.95],
+          delay: 0.5
+        }} />
           {/* Particle 3 - bottom left - 7s duration */}
-          <motion.div
-            className="absolute w-1.5 h-1.5 rounded-full bg-foreground/12 blur-[2px]"
-            style={{ bottom: '25%', left: '20%', x: parallax3X, y: parallax3Y }}
-            animate={{
-              y: [0, -5, -12, -18, -14, -6, 0],
-              x: [0, 4, 9, 12, 8, 3, 0],
-              scale: [1, 1.08, 1.15, 1.1, 1.02, 0.98, 1],
-              opacity: [0.4, 0.5, 0.62, 0.7, 0.58, 0.45, 0.4],
-            }}
-            transition={{
-              duration: 7,
-              repeat: Infinity,
-              ease: [0.45, 0.05, 0.55, 0.95],
-              delay: 1.2,
-            }}
-          />
+          <motion.div className="absolute w-1.5 h-1.5 rounded-full bg-foreground/12 blur-[2px]" style={{
+          bottom: '25%',
+          left: '20%',
+          x: parallax3X,
+          y: parallax3Y
+        }} animate={{
+          y: [0, -5, -12, -18, -14, -6, 0],
+          x: [0, 4, 9, 12, 8, 3, 0],
+          scale: [1, 1.08, 1.15, 1.1, 1.02, 0.98, 1],
+          opacity: [0.4, 0.5, 0.62, 0.7, 0.58, 0.45, 0.4]
+        }} transition={{
+          duration: 7,
+          repeat: Infinity,
+          ease: [0.45, 0.05, 0.55, 0.95],
+          delay: 1.2
+        }} />
           {/* Particle 4 - bottom right - 11s duration */}
-          <motion.div
-            className="absolute w-2.5 h-2.5 rounded-full bg-foreground/10 blur-[3px]"
-            style={{ bottom: '30%', right: '22%', x: parallax4X, y: parallax4Y }}
-            animate={{
-              y: [0, 8, 18, 28, 22, 12, 0],
-              x: [0, -4, -10, -15, -12, -6, 0],
-              scale: [1, 1.02, 1.06, 1.1, 1.04, 0.98, 1],
-              opacity: [0.3, 0.38, 0.5, 0.6, 0.48, 0.35, 0.3],
-              rotate: [0, -2, -4, -2, 1, 0, 0],
-            }}
-            transition={{
-              duration: 11,
-              repeat: Infinity,
-              ease: [0.45, 0.05, 0.55, 0.95],
-              delay: 2,
-            }}
-          />
+          <motion.div className="absolute w-2.5 h-2.5 rounded-full bg-foreground/10 blur-[3px]" style={{
+          bottom: '30%',
+          right: '22%',
+          x: parallax4X,
+          y: parallax4Y
+        }} animate={{
+          y: [0, 8, 18, 28, 22, 12, 0],
+          x: [0, -4, -10, -15, -12, -6, 0],
+          scale: [1, 1.02, 1.06, 1.1, 1.04, 0.98, 1],
+          opacity: [0.3, 0.38, 0.5, 0.6, 0.48, 0.35, 0.3],
+          rotate: [0, -2, -4, -2, 1, 0, 0]
+        }} transition={{
+          duration: 11,
+          repeat: Infinity,
+          ease: [0.45, 0.05, 0.55, 0.95],
+          delay: 2
+        }} />
           {/* Particle 5 - mid left - 8.5s duration */}
-          <motion.div
-            className="absolute w-1 h-1 rounded-full bg-foreground/15 blur-[2px]"
-            style={{ top: '40%', left: '15%', x: parallax5X, y: parallax5Y }}
-            animate={{
-              y: [0, -6, -14, -20, -15, -8, 0],
-              x: [0, 3, 7, 10, 7, 3, 0],
-              scale: [1, 1.1, 1.18, 1.12, 1.05, 1.02, 1],
-              opacity: [0.5, 0.6, 0.72, 0.8, 0.68, 0.55, 0.5],
-            }}
-            transition={{
-              duration: 8.5,
-              repeat: Infinity,
-              ease: [0.45, 0.05, 0.55, 0.95],
-              delay: 0.8,
-            }}
-          />
+          <motion.div className="absolute w-1 h-1 rounded-full bg-foreground/15 blur-[2px]" style={{
+          top: '40%',
+          left: '15%',
+          x: parallax5X,
+          y: parallax5Y
+        }} animate={{
+          y: [0, -6, -14, -20, -15, -8, 0],
+          x: [0, 3, 7, 10, 7, 3, 0],
+          scale: [1, 1.1, 1.18, 1.12, 1.05, 1.02, 1],
+          opacity: [0.5, 0.6, 0.72, 0.8, 0.68, 0.55, 0.5]
+        }} transition={{
+          duration: 8.5,
+          repeat: Infinity,
+          ease: [0.45, 0.05, 0.55, 0.95],
+          delay: 0.8
+        }} />
           {/* Particle 6 - mid right - 9.5s duration */}
-          <motion.div
-            className="absolute w-2 h-2 rounded-full bg-foreground/8 blur-[3px]"
-            style={{ top: '45%', right: '18%', x: parallax6X, y: parallax6Y }}
-            animate={{
-              y: [0, 6, 14, 22, 17, 9, 0],
-              x: [0, -5, -12, -18, -13, -6, 0],
-              scale: [1, 0.97, 1.05, 1.1, 1.03, 0.99, 1],
-              opacity: [0.2, 0.3, 0.42, 0.5, 0.38, 0.26, 0.2],
-              rotate: [0, 3, 5, 2, -1, 1, 0],
-            }}
-            transition={{
-              duration: 9.5,
-              repeat: Infinity,
-              ease: [0.45, 0.05, 0.55, 0.95],
-              delay: 1.5,
-            }}
-          />
+          <motion.div className="absolute w-2 h-2 rounded-full bg-foreground/8 blur-[3px]" style={{
+          top: '45%',
+          right: '18%',
+          x: parallax6X,
+          y: parallax6Y
+        }} animate={{
+          y: [0, 6, 14, 22, 17, 9, 0],
+          x: [0, -5, -12, -18, -13, -6, 0],
+          scale: [1, 0.97, 1.05, 1.1, 1.03, 0.99, 1],
+          opacity: [0.2, 0.3, 0.42, 0.5, 0.38, 0.26, 0.2],
+          rotate: [0, 3, 5, 2, -1, 1, 0]
+        }} transition={{
+          duration: 9.5,
+          repeat: Infinity,
+          ease: [0.45, 0.05, 0.55, 0.95],
+          delay: 1.5
+        }} />
         </div>
 
         {/* Cards - emanate from eye center with enhanced exit animations */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           {/* Top-left card */}
           <AnimatePresence mode="popLayout">
-            {visibleCardIndex === 0 && (
-              <motion.div
-                key="card-0"
-                initial={{ x: 0, y: 0, scale: 0.1, opacity: 0, rotate: -10, filter: 'blur(8px)' }}
-                animate={{ 
-                  x: cardPositions.topLeft.x,
-                  y: cardPositions.topLeft.y,
-                  opacity: 1,
-                  scale: 1,
-                  rotate: 0,
-                  filter: 'blur(0px)'
-                }}
-                exit={{ 
-                  x: 0,
-                  y: 0,
-                  scale: 0.05,
-                  opacity: 0,
-                  rotate: 15,
-                  filter: 'blur(12px)'
-                }}
-                transition={{ 
-                  duration: 0.5, 
-                  ease: [0.34, 1.56, 0.64, 1],
-                }}
-                className="absolute w-[120px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-2 md:p-3 z-20"
-              >
+            {visibleCardIndex === 0 && <motion.div key="card-0" initial={{
+            x: 0,
+            y: 0,
+            scale: 0.1,
+            opacity: 0,
+            rotate: -10,
+            filter: 'blur(8px)'
+          }} animate={{
+            x: cardPositions.topLeft.x,
+            y: cardPositions.topLeft.y,
+            opacity: 1,
+            scale: 1,
+            rotate: 0,
+            filter: 'blur(0px)'
+          }} exit={{
+            x: 0,
+            y: 0,
+            scale: 0.05,
+            opacity: 0,
+            rotate: 15,
+            filter: 'blur(12px)'
+          }} transition={{
+            duration: 0.5,
+            ease: [0.34, 1.56, 0.64, 1]
+          }} className="absolute w-[120px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-2 md:p-3 z-20">
                 <div className="flex items-start gap-1.5 md:gap-2">
                   <Brain className="w-3 h-3 md:w-4 md:h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
                   <span className="text-xs md:text-sm font-medium text-foreground">{CARDS[0]}</span>
                 </div>
-              </motion.div>
-            )}
+              </motion.div>}
           </AnimatePresence>
 
           {/* Middle-left card */}
           <AnimatePresence mode="popLayout">
-            {visibleCardIndex === 1 && (
-              <motion.div
-                key="card-1"
-                initial={{ x: 0, y: 0, scale: 0.1, opacity: 0, rotate: 8, filter: 'blur(8px)' }}
-                animate={{ 
-                  x: cardPositions.middleLeft.x,
-                  y: cardPositions.middleLeft.y,
-                  opacity: 1,
-                  scale: 1,
-                  rotate: 0,
-                  filter: 'blur(0px)'
-                }}
-                exit={{ 
-                  x: 0,
-                  y: 0,
-                  scale: 0.05,
-                  opacity: 0,
-                  rotate: -12,
-                  filter: 'blur(12px)'
-                }}
-                transition={{ 
-                  duration: 0.5, 
-                  ease: [0.34, 1.56, 0.64, 1],
-                }}
-                className="absolute w-[130px] md:w-[200px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-2 md:p-4 z-20"
-              >
+            {visibleCardIndex === 1 && <motion.div key="card-1" initial={{
+            x: 0,
+            y: 0,
+            scale: 0.1,
+            opacity: 0,
+            rotate: 8,
+            filter: 'blur(8px)'
+          }} animate={{
+            x: cardPositions.middleLeft.x,
+            y: cardPositions.middleLeft.y,
+            opacity: 1,
+            scale: 1,
+            rotate: 0,
+            filter: 'blur(0px)'
+          }} exit={{
+            x: 0,
+            y: 0,
+            scale: 0.05,
+            opacity: 0,
+            rotate: -12,
+            filter: 'blur(12px)'
+          }} transition={{
+            duration: 0.5,
+            ease: [0.34, 1.56, 0.64, 1]
+          }} className="absolute w-[130px] md:w-[200px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-2 md:p-4 z-20">
                 <div className="flex items-start gap-1.5 md:gap-2">
                   <Brain className="w-3 h-3 md:w-4 md:h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
                   <span className="text-xs md:text-sm font-medium text-foreground">{CARDS[1]}</span>
                 </div>
-              </motion.div>
-            )}
+              </motion.div>}
           </AnimatePresence>
 
           {/* Bottom-left card */}
           <AnimatePresence mode="popLayout">
-            {visibleCardIndex === 2 && (
-              <motion.div
-                key="card-2"
-                initial={{ x: 0, y: 0, scale: 0.1, opacity: 0, rotate: -12, filter: 'blur(8px)' }}
-                animate={{ 
-                  x: cardPositions.bottomLeft.x,
-                  y: cardPositions.bottomLeft.y,
-                  opacity: 1,
-                  scale: 1,
-                  rotate: 0,
-                  filter: 'blur(0px)'
-                }}
-                exit={{ 
-                  x: 0,
-                  y: 0,
-                  scale: 0.05,
-                  opacity: 0,
-                  rotate: 10,
-                  filter: 'blur(12px)'
-                }}
-                transition={{ 
-                  duration: 0.5, 
-                  ease: [0.34, 1.56, 0.64, 1],
-                }}
-                className="absolute w-[120px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-2 md:p-3 z-20"
-              >
+            {visibleCardIndex === 2 && <motion.div key="card-2" initial={{
+            x: 0,
+            y: 0,
+            scale: 0.1,
+            opacity: 0,
+            rotate: -12,
+            filter: 'blur(8px)'
+          }} animate={{
+            x: cardPositions.bottomLeft.x,
+            y: cardPositions.bottomLeft.y,
+            opacity: 1,
+            scale: 1,
+            rotate: 0,
+            filter: 'blur(0px)'
+          }} exit={{
+            x: 0,
+            y: 0,
+            scale: 0.05,
+            opacity: 0,
+            rotate: 10,
+            filter: 'blur(12px)'
+          }} transition={{
+            duration: 0.5,
+            ease: [0.34, 1.56, 0.64, 1]
+          }} className="absolute w-[120px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-2 md:p-3 z-20">
                 <div className="flex items-start gap-1.5 md:gap-2">
                   <Brain className="w-3 h-3 md:w-4 md:h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
                   <span className="text-xs md:text-sm font-medium text-foreground">{CARDS[2]}</span>
                 </div>
-              </motion.div>
-            )}
+              </motion.div>}
           </AnimatePresence>
 
           {/* Top-right card */}
           <AnimatePresence mode="popLayout">
-            {visibleCardIndex === 3 && (
-              <motion.div
-                key="card-3"
-                initial={{ x: 0, y: 0, scale: 0.1, opacity: 0, rotate: 10, filter: 'blur(8px)' }}
-                animate={{ 
-                  x: cardPositions.topRight.x,
-                  y: cardPositions.topRight.y,
-                  opacity: 1,
-                  scale: 1,
-                  rotate: 0,
-                  filter: 'blur(0px)'
-                }}
-                exit={{ 
-                  x: 0,
-                  y: 0,
-                  scale: 0.05,
-                  opacity: 0,
-                  rotate: -15,
-                  filter: 'blur(12px)'
-                }}
-                transition={{ 
-                  duration: 0.5, 
-                  ease: [0.34, 1.56, 0.64, 1],
-                }}
-                className="absolute w-[120px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-2 md:p-3 z-20"
-              >
+            {visibleCardIndex === 3 && <motion.div key="card-3" initial={{
+            x: 0,
+            y: 0,
+            scale: 0.1,
+            opacity: 0,
+            rotate: 10,
+            filter: 'blur(8px)'
+          }} animate={{
+            x: cardPositions.topRight.x,
+            y: cardPositions.topRight.y,
+            opacity: 1,
+            scale: 1,
+            rotate: 0,
+            filter: 'blur(0px)'
+          }} exit={{
+            x: 0,
+            y: 0,
+            scale: 0.05,
+            opacity: 0,
+            rotate: -15,
+            filter: 'blur(12px)'
+          }} transition={{
+            duration: 0.5,
+            ease: [0.34, 1.56, 0.64, 1]
+          }} className="absolute w-[120px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-2 md:p-3 z-20">
                 <div className="flex items-start gap-1.5 md:gap-2">
                   <Brain className="w-3 h-3 md:w-4 md:h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
                   <span className="text-xs md:text-sm font-medium text-foreground">{CARDS[3]}</span>
                 </div>
-              </motion.div>
-            )}
+              </motion.div>}
           </AnimatePresence>
 
           {/* Middle-right card */}
           <AnimatePresence mode="popLayout">
-            {visibleCardIndex === 4 && (
-              <motion.div
-                key="card-4"
-                initial={{ x: 0, y: 0, scale: 0.1, opacity: 0, rotate: -8, filter: 'blur(8px)' }}
-                animate={{ 
-                  x: cardPositions.middleRight.x,
-                  y: cardPositions.middleRight.y,
-                  opacity: 1,
-                  scale: 1,
-                  rotate: 0,
-                  filter: 'blur(0px)'
-                }}
-                exit={{ 
-                  x: 0,
-                  y: 0,
-                  scale: 0.05,
-                  opacity: 0,
-                  rotate: 12,
-                  filter: 'blur(12px)'
-                }}
-                transition={{ 
-                  duration: 0.5, 
-                  ease: [0.34, 1.56, 0.64, 1],
-                }}
-                className="absolute w-[130px] md:w-[200px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-2 md:p-4 z-20"
-              >
+            {visibleCardIndex === 4 && <motion.div key="card-4" initial={{
+            x: 0,
+            y: 0,
+            scale: 0.1,
+            opacity: 0,
+            rotate: -8,
+            filter: 'blur(8px)'
+          }} animate={{
+            x: cardPositions.middleRight.x,
+            y: cardPositions.middleRight.y,
+            opacity: 1,
+            scale: 1,
+            rotate: 0,
+            filter: 'blur(0px)'
+          }} exit={{
+            x: 0,
+            y: 0,
+            scale: 0.05,
+            opacity: 0,
+            rotate: 12,
+            filter: 'blur(12px)'
+          }} transition={{
+            duration: 0.5,
+            ease: [0.34, 1.56, 0.64, 1]
+          }} className="absolute w-[130px] md:w-[200px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-2 md:p-4 z-20">
                 <div className="flex items-start gap-1.5 md:gap-2">
                   <Brain className="w-3 h-3 md:w-4 md:h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
                   <span className="text-xs md:text-sm font-medium text-foreground">{CARDS[4]}</span>
                 </div>
-              </motion.div>
-            )}
+              </motion.div>}
           </AnimatePresence>
 
           {/* Bottom-right card */}
           <AnimatePresence mode="popLayout">
-            {visibleCardIndex === 5 && (
-              <motion.div
-                key="card-5"
-                initial={{ x: 0, y: 0, scale: 0.1, opacity: 0, rotate: 12, filter: 'blur(8px)' }}
-                animate={{ 
-                  x: cardPositions.bottomRight.x,
-                  y: cardPositions.bottomRight.y,
-                  opacity: 1,
-                  scale: 1,
-                  rotate: 0,
-                  filter: 'blur(0px)'
-                }}
-                exit={{ 
-                  x: 0,
-                  y: 0,
-                  scale: 0.05,
-                  opacity: 0,
-                  rotate: -10,
-                  filter: 'blur(12px)'
-                }}
-                transition={{ 
-                  duration: 0.5, 
-                  ease: [0.34, 1.56, 0.64, 1],
-                }}
-                className="absolute w-[120px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-2 md:p-3 z-20"
-              >
+            {visibleCardIndex === 5 && <motion.div key="card-5" initial={{
+            x: 0,
+            y: 0,
+            scale: 0.1,
+            opacity: 0,
+            rotate: 12,
+            filter: 'blur(8px)'
+          }} animate={{
+            x: cardPositions.bottomRight.x,
+            y: cardPositions.bottomRight.y,
+            opacity: 1,
+            scale: 1,
+            rotate: 0,
+            filter: 'blur(0px)'
+          }} exit={{
+            x: 0,
+            y: 0,
+            scale: 0.05,
+            opacity: 0,
+            rotate: -10,
+            filter: 'blur(12px)'
+          }} transition={{
+            duration: 0.5,
+            ease: [0.34, 1.56, 0.64, 1]
+          }} className="absolute w-[120px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-2 md:p-3 z-20">
                 <div className="flex items-start gap-1.5 md:gap-2">
                   <Brain className="w-3 h-3 md:w-4 md:h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
                   <span className="text-xs md:text-sm font-medium text-foreground">{CARDS[5]}</span>
                 </div>
-              </motion.div>
-            )}
+              </motion.div>}
           </AnimatePresence>
         </div>
 
         {/* Absorption glow on eye when card returns */}
         <AnimatePresence>
-          {absorptionPulse && (
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1.2, opacity: 0.6 }}
-              exit={{ scale: 1.5, opacity: 0 }}
-              transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
-              className="absolute w-[140px] h-[140px] md:w-[180px] md:h-[180px] lg:w-[220px] lg:h-[220px] rounded-full bg-foreground/5 blur-xl pointer-events-none z-10"
-            />
-          )}
+          {absorptionPulse && <motion.div initial={{
+          scale: 0.8,
+          opacity: 0
+        }} animate={{
+          scale: 1.2,
+          opacity: 0.6
+        }} exit={{
+          scale: 1.5,
+          opacity: 0
+        }} transition={{
+          duration: 0.3,
+          ease: [0.32, 0.72, 0, 1]
+        }} className="absolute w-[140px] h-[140px] md:w-[180px] md:h-[180px] lg:w-[220px] lg:h-[220px] rounded-full bg-foreground/5 blur-xl pointer-events-none z-10" />}
         </AnimatePresence>
 
         {/* Pulse rings - emanate when card appears */}
         <AnimatePresence mode="wait">
-          <motion.div
-            key={visibleCardIndex}
-            className="absolute inset-0 flex items-center justify-center pointer-events-none z-5"
-          >
+          <motion.div key={visibleCardIndex} className="absolute inset-0 flex items-center justify-center pointer-events-none z-5">
             {/* Outer ring */}
-            <motion.div
-              initial={{ scale: 0.5, opacity: 0.5 }}
-              animate={{ scale: 2.5, opacity: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.8, ease: [0.32, 0.72, 0, 1] }}
-              className="absolute w-[160px] h-[160px] md:w-[220px] md:h-[220px] lg:w-[260px] lg:h-[260px] rounded-full border border-foreground/10"
-            />
+            <motion.div initial={{
+            scale: 0.5,
+            opacity: 0.5
+          }} animate={{
+            scale: 2.5,
+            opacity: 0
+          }} exit={{
+            opacity: 0
+          }} transition={{
+            duration: 0.8,
+            ease: [0.32, 0.72, 0, 1]
+          }} className="absolute w-[160px] h-[160px] md:w-[220px] md:h-[220px] lg:w-[260px] lg:h-[260px] rounded-full border border-foreground/10" />
             {/* Inner ring - delayed */}
-            <motion.div
-              initial={{ scale: 0.5, opacity: 0.4 }}
-              animate={{ scale: 2, opacity: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1], delay: 0.1 }}
-              className="absolute w-[160px] h-[160px] md:w-[220px] md:h-[220px] lg:w-[260px] lg:h-[260px] rounded-full border border-foreground/8"
-            />
+            <motion.div initial={{
+            scale: 0.5,
+            opacity: 0.4
+          }} animate={{
+            scale: 2,
+            opacity: 0
+          }} exit={{
+            opacity: 0
+          }} transition={{
+            duration: 0.7,
+            ease: [0.32, 0.72, 0, 1],
+            delay: 0.1
+          }} className="absolute w-[160px] h-[160px] md:w-[220px] md:h-[220px] lg:w-[260px] lg:h-[260px] rounded-full border border-foreground/8" />
           </motion.div>
         </AnimatePresence>
 
         {/* Eye - centered with spring physics */}
-        <motion.div
-          style={{ x: eyeX, y: eyeY }}
-          className="relative z-10 flex items-center justify-center group cursor-pointer"
-          initial={{ scale: 0.92, opacity: 0 }}
-          animate={{ 
-            scale: 1, 
-            opacity: 1,
-            filter: isAreaHovered 
-              ? 'drop-shadow(0 0 40px rgba(59, 130, 246, 0.3))' 
-              : 'drop-shadow(0 0 20px rgba(59, 130, 246, 0.15))'
-          }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
-        >
+        <motion.div style={{
+        x: eyeX,
+        y: eyeY
+      }} className="relative z-10 flex items-center justify-center group cursor-pointer" initial={{
+        scale: 0.92,
+        opacity: 0
+      }} animate={{
+        scale: 1,
+        opacity: 1,
+        filter: isAreaHovered ? 'drop-shadow(0 0 40px rgba(59, 130, 246, 0.3))' : 'drop-shadow(0 0 20px rgba(59, 130, 246, 0.15))'
+      }} transition={{
+        duration: 0.8,
+        ease: "easeOut"
+      }} onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
           {/* Outer casing with breathing pulse and hover glow - synced to 3s cycle */}
-          <motion.div 
-            className="relative w-[160px] h-[160px] md:w-[220px] md:h-[220px] lg:w-[260px] lg:h-[260px] rounded-full bg-background flex items-center justify-center transition-all duration-500 shadow-[0_20px_60px_rgba(0,0,0,0.08)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.4)] group-hover:shadow-[0_30px_80px_rgba(0,0,0,0.15),0_0_60px_rgba(0,0,0,0.08)] dark:group-hover:shadow-[0_30px_80px_rgba(0,0,0,0.6),0_0_60px_rgba(255,255,255,0.15)] group-hover:scale-105 overflow-hidden"
-            animate={{
-              scale: [1, 1.015, 1],
-              opacity: [0.97, 1, 0.97],
-            }}
-            transition={{
-              duration: 3,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          >
+          <motion.div className="relative w-[160px] h-[160px] md:w-[220px] md:h-[220px] lg:w-[260px] lg:h-[260px] rounded-full bg-background flex items-center justify-center transition-all duration-500 shadow-[0_20px_60px_rgba(0,0,0,0.08)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.4)] group-hover:shadow-[0_30px_80px_rgba(0,0,0,0.15),0_0_60px_rgba(0,0,0,0.08)] dark:group-hover:shadow-[0_30px_80px_rgba(0,0,0,0.6),0_0_60px_rgba(255,255,255,0.15)] group-hover:scale-105 overflow-hidden" animate={{
+          scale: [1, 1.015, 1],
+          opacity: [0.97, 1, 0.97]
+        }} transition={{
+          duration: 3,
+          repeat: Infinity,
+          ease: "easeInOut"
+        }}>
             {/* Shine sweep effect - synced to 6s (2x cycle) */}
-            <div 
-              className="absolute inset-0 w-full h-full pointer-events-none"
-              style={{
-                background: 'linear-gradient(135deg, transparent 30%, rgba(255, 255, 255, 0.6) 50%, transparent 70%)',
-                animation: 'eye-shine 6s ease-in-out infinite',
-              }}
-            />
+            <div className="absolute inset-0 w-full h-full pointer-events-none" style={{
+            background: 'linear-gradient(135deg, transparent 30%, rgba(255, 255, 255, 0.6) 50%, transparent 70%)',
+            animation: 'eye-shine 6s ease-in-out infinite'
+          }} />
             {/* soft inner ring */}
             <div className="absolute inset-4 rounded-full bg-background/80 shadow-inner"></div>
 
             {/* actual eye (pupil + iris) - state-controlled blink */}
-            <motion.svg
-              viewBox="0 0 100 100"
-              className="w-[70%] h-[70%] relative"
-              xmlns="http://www.w3.org/2000/svg"
-              animate={{
-                scaleY: isBlinking ? 0.05 : 1,
-                opacity: isBlinking ? 0.7 : 1,
-              }}
-              transition={{
-                duration: isBlinking ? 0.08 : 0.12,
-                ease: isBlinking ? [0.55, 0.055, 0.675, 0.19] : [0.34, 1.56, 0.64, 1],
-              }}
-              style={{
-                transformOrigin: 'center center'
-              }}
-            >
+            <motion.svg viewBox="0 0 100 100" className="w-[70%] h-[70%] relative" xmlns="http://www.w3.org/2000/svg" animate={{
+            scaleY: isBlinking ? 0.05 : 1,
+            opacity: isBlinking ? 0.7 : 1
+          }} transition={{
+            duration: isBlinking ? 0.08 : 0.12,
+            ease: isBlinking ? [0.55, 0.055, 0.675, 0.19] : [0.34, 1.56, 0.64, 1]
+          }} style={{
+            transformOrigin: 'center center'
+          }}>
               {/* iris subtle gradient */}
               <defs>
                 <radialGradient id="g1" cx="50%" cy="40%">
@@ -693,37 +679,15 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
               <circle cx="50" cy="50" r="48" fill="url(#g2)" opacity="0.06" />
 
               {/* iris / pupil - black circle that dilates on blink (anticipation), contracts on absorption */}
-              <circle
-                cx="50"
-                cy="50"
-                r={absorptionPulse ? "22" : isBlinking ? "30" : isHovered ? "32" : "28"}
-                fill="black"
-                style={{ 
-                  transition: absorptionPulse 
-                    ? "r 0.15s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
-                    : isBlinking
-                    ? "r 0.08s cubic-bezier(0.55, 0.055, 0.675, 0.19)"
-                    : "r 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)" 
-                }}
-              />
+              <circle cx="50" cy="50" r={absorptionPulse ? "22" : isBlinking ? "30" : isHovered ? "32" : "28"} fill="black" style={{
+              transition: absorptionPulse ? "r 0.15s cubic-bezier(0.55, 0.055, 0.675, 0.19)" : isBlinking ? "r 0.08s cubic-bezier(0.55, 0.055, 0.675, 0.19)" : "r 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)"
+            }} />
               
               {/* Brain logo centered inside the black pupil - smaller */}
-              <foreignObject 
-                x={absorptionPulse ? "36" : isBlinking ? "32" : isHovered ? "30" : "32"} 
-                y={absorptionPulse ? "36" : isBlinking ? "32" : isHovered ? "30" : "32"} 
-                width={absorptionPulse ? "28" : isBlinking ? "36" : isHovered ? "40" : "36"} 
-                height={absorptionPulse ? "28" : isBlinking ? "36" : isHovered ? "40" : "36"}
-                style={{ 
-                  transition: absorptionPulse 
-                    ? "all 0.15s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
-                    : isBlinking
-                    ? "all 0.08s cubic-bezier(0.55, 0.055, 0.675, 0.19)"
-                    : "all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)" 
-                }}
-              >
-                <Brain 
-                  className="w-full h-full text-white/90"
-                />
+              <foreignObject x={absorptionPulse ? "36" : isBlinking ? "32" : isHovered ? "30" : "32"} y={absorptionPulse ? "36" : isBlinking ? "32" : isHovered ? "30" : "32"} width={absorptionPulse ? "28" : isBlinking ? "36" : isHovered ? "40" : "36"} height={absorptionPulse ? "28" : isBlinking ? "36" : isHovered ? "40" : "36"} style={{
+              transition: absorptionPulse ? "all 0.15s cubic-bezier(0.55, 0.055, 0.675, 0.19)" : isBlinking ? "all 0.08s cubic-bezier(0.55, 0.055, 0.675, 0.19)" : "all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)"
+            }}>
+                <Brain className="w-full h-full text-white/90" />
               </foreignObject>
             </motion.svg>
           </motion.div>
@@ -731,54 +695,33 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
       </div>
 
       {/* Demo Chat Input */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 0.6, ease: [0.32, 0.72, 0, 1] }}
-        className="mt-16 w-full max-w-2xl"
-      >
+      <motion.div initial={{
+      opacity: 0,
+      y: 20
+    }} animate={{
+      opacity: 1,
+      y: 0
+    }} transition={{
+      duration: 0.8,
+      delay: 0.6,
+      ease: [0.32, 0.72, 0, 1]
+    }} className="mt-16 w-full max-w-2xl">
         <div className="relative bg-background/80 dark:bg-background/80 backdrop-blur-xl border border-border/50 rounded-3xl shadow-2xl p-3">
           {/* Textarea */}
           <div className="w-full relative">
-            <Textarea
-              ref={textareaRef}
-              value={inputMessage}
-              onChange={handleTextareaChange}
-              onKeyPress={handleKeyPress}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
-              placeholder=""
-              rows={1}
-              unstyled={true}
-              className="w-full resize-none min-h-[44px] max-h-[120px] text-base bg-transparent px-2 py-2"
-            />
+            <Textarea ref={textareaRef} value={inputMessage} onChange={handleTextareaChange} onKeyPress={handleKeyPress} onFocus={() => setIsFocused(true)} onBlur={() => setIsFocused(false)} placeholder="" rows={1} unstyled={true} className="w-full resize-none min-h-[44px] max-h-[120px] text-base bg-transparent px-2 py-2" />
 
             {/* Typewriter Placeholder */}
-            {inputMessage.length === 0 && !isFocused && (
-              <div className={cn(
-                "absolute top-[10px] pointer-events-none z-10",
-                language === 'ar' ? 'right-[8px]' : 'left-[8px]'
-              )}>
-                <TypewriterText
-                  key={`${placeholderIndex}-${language}`}
-                  text={placeholderTexts[placeholderIndex]}
-                  speed={50}
-                  className="text-muted-foreground"
-                  showCursor={true}
-                />
-              </div>
-            )}
+            {inputMessage.length === 0 && !isFocused && <div className={cn("absolute top-[10px] pointer-events-none z-10", language === 'ar' ? 'right-[8px]' : 'left-[8px]')}>
+                <TypewriterText key={`${placeholderIndex}-${language}`} text={placeholderTexts[placeholderIndex]} speed={50} className="text-muted-foreground" showCursor={true} />
+              </div>}
           </div>
 
           {/* Toolbar Row */}
           <div className="flex items-center justify-between w-full pt-2">
             {/* Left: Plus Button */}
             <div className="flex items-center gap-1">
-              <button
-                onClick={onGetStarted}
-                className="w-10 h-10 rounded-xl border border-border/50 flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-all duration-200"
-                title={language === 'ar' ? 'إرفاق ملف' : 'Attach file'}
-              >
+              <button onClick={onGetStarted} className="w-10 h-10 rounded-xl border border-border/50 flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-all duration-200" title={language === 'ar' ? 'إرفاق ملف' : 'Attach file'}>
                 <Plus className="w-4 h-4" />
               </button>
             </div>
@@ -786,10 +729,7 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
             {/* Right: Mode Selector + Send Button */}
             <div className="flex items-center gap-2">
               {/* Static Mode Selector (triggers auth on click) */}
-              <button
-                onClick={onGetStarted}
-                className="h-8 px-3 rounded-lg border border-border/50 flex items-center gap-1 hover:bg-muted/80 transition-all"
-              >
+              <button onClick={onGetStarted} className="h-8 px-3 rounded-lg border border-border/50 flex items-center gap-1 hover:bg-muted/80 transition-all">
                 <span className="text-sm font-medium">
                   {language === 'ar' ? 'عام' : 'General'}
                 </span>
@@ -797,18 +737,12 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
               </button>
 
               {/* Send Button */}
-              <button
-                className="w-9 h-9 rounded-xl bg-gradient-to-br from-foreground to-foreground/90 text-background flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                onClick={handleSend}
-                disabled={!inputMessage.trim()}
-                title={language === 'ar' ? 'إرسال' : 'Send message'}
-              >
+              <button className="w-9 h-9 rounded-xl bg-gradient-to-br from-foreground to-foreground/90 text-background flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100" onClick={handleSend} disabled={!inputMessage.trim()} title={language === 'ar' ? 'إرسال' : 'Send message'}>
                 <ArrowUp className="w-5 h-5" strokeWidth={2.5} />
               </button>
             </div>
           </div>
         </div>
       </motion.div>
-    </section>
-  );
+    </section>;
 };
