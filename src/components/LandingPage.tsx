@@ -38,7 +38,6 @@ const LandingPage = () => {
     }
     setIsMenuExpanded(true);
   };
-
   const handleMouseLeave = () => {
     collapseTimeoutRef.current = setTimeout(() => {
       setIsMenuExpanded(false);
@@ -176,26 +175,17 @@ const LandingPage = () => {
     description: language === 'ar' ? 'توفير 15+ ساعة أسبوعياً من خلال أتمتة المهام المتكررة والربط بين أنظمتك التجارية.' : 'Save 15+ hours per week by automating repetitive tasks and connecting your business systems.',
     features: language === 'ar' ? ['سير عمل مخصص', 'لا حاجة لكتابة الكود', 'توفير فوري للوقت'] : ['Custom workflows', 'No-code setup', 'Instant time savings']
   }];
-return <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       {/* Expandable Logo Navigation */}
       <nav className="fixed top-4 md:top-6 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
-        <motion.div 
-          ref={menuRef}
-          layout
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
-          className="flex items-center bg-card/80 dark:bg-card/80 backdrop-blur-xl border border-border rounded-full shadow-2xl overflow-hidden cursor-pointer"
-          transition={{ type: "spring", stiffness: 400, damping: 30 }}
-        >
+        <motion.div ref={menuRef} layout onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} className="flex items-center bg-card/80 dark:bg-card/80 backdrop-blur-xl border border-border rounded-full shadow-2xl overflow-hidden cursor-pointer" transition={{
+        type: "spring",
+        stiffness: 400,
+        damping: 30
+      }}>
           {/* Logo - Always visible */}
-          <motion.div
-            layout
-            className="flex items-center gap-2 md:gap-3 px-4 py-2.5 md:py-3"
-          >
-            <motion.div 
-              layout
-              className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-foreground flex items-center justify-center"
-            >
+          <motion.div layout className="flex items-center gap-2 md:gap-3 px-4 py-2.5 md:py-3">
+            <motion.div layout className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-foreground flex items-center justify-center">
               <Brain className="w-4 h-4 md:w-5 md:h-5 text-background" />
             </motion.div>
             <motion.span layout className="text-lg md:text-xl font-bold tracking-tight">AYN</motion.span>
@@ -203,50 +193,68 @@ return <div className="min-h-screen bg-background">
           
           {/* Expandable Menu Items */}
           <AnimatePresence mode="popLayout">
-            {isMenuExpanded && (
-              <motion.div
-                initial={{ width: 0, opacity: 0 }}
-                animate={{ width: 'auto', opacity: 1 }}
-                exit={{ width: 0, opacity: 0 }}
-                transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                className="flex items-center gap-2 md:gap-3 overflow-hidden"
-              >
-                <motion.div
-                  initial={{ x: -20, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  exit={{ x: -20, opacity: 0 }}
-                  transition={{ delay: 0.05 }}
-                >
+            {isMenuExpanded && <motion.div initial={{
+            width: 0,
+            opacity: 0
+          }} animate={{
+            width: 'auto',
+            opacity: 1
+          }} exit={{
+            width: 0,
+            opacity: 0
+          }} transition={{
+            type: "spring",
+            stiffness: 400,
+            damping: 30
+          }} className="flex items-center gap-2 md:gap-3 overflow-hidden">
+                <motion.div initial={{
+              x: -20,
+              opacity: 0
+            }} animate={{
+              x: 0,
+              opacity: 1
+            }} exit={{
+              x: -20,
+              opacity: 0
+            }} transition={{
+              delay: 0.05
+            }}>
                   <LanguageSwitcher />
                 </motion.div>
-                <motion.div
-                  initial={{ x: -20, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  exit={{ x: -20, opacity: 0 }}
-                  transition={{ delay: 0.1 }}
-                >
+                <motion.div initial={{
+              x: -20,
+              opacity: 0
+            }} animate={{
+              x: 0,
+              opacity: 1
+            }} exit={{
+              x: -20,
+              opacity: 0
+            }} transition={{
+              delay: 0.1
+            }}>
                   <ThemeToggle />
                 </motion.div>
-                <motion.div
-                  initial={{ x: -20, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  exit={{ x: -20, opacity: 0 }}
-                  transition={{ delay: 0.15 }}
-                  className="pr-3 md:pr-4"
-                >
-                  <Button 
-                    onClick={() => {
-                      setIsMenuExpanded(false);
-                      setShowAuthModal(true);
-                    }} 
-                    size="sm" 
-                    className="rounded-full"
-                  >
+                <motion.div initial={{
+              x: -20,
+              opacity: 0
+            }} animate={{
+              x: 0,
+              opacity: 1
+            }} exit={{
+              x: -20,
+              opacity: 0
+            }} transition={{
+              delay: 0.15
+            }} className="pr-3 md:pr-4">
+                  <Button onClick={() => {
+                setIsMenuExpanded(false);
+                setShowAuthModal(true);
+              }} size="sm" className="rounded-full">
                     {t('nav.getStarted')}
                   </Button>
                 </motion.div>
-              </motion.div>
-            )}
+              </motion.div>}
           </AnimatePresence>
         </motion.div>
       </nav>
@@ -255,9 +263,7 @@ return <div className="min-h-screen bg-background">
       <div className="fixed top-4 right-4 z-50 md:hidden">
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-10 w-10 p-0 bg-card/80 backdrop-blur-xl border border-border rounded-full shadow-lg">
-              <Menu className="h-5 w-5" />
-            </Button>
+            
           </SheetTrigger>
           <SheetContent side="right" className="w-[280px] sm:w-[320px]">
             <div className="flex flex-col gap-6 pt-8">
@@ -303,9 +309,7 @@ return <div className="min-h-screen bg-background">
             </h2>
 
             <p className="text-base md:text-xl text-muted-foreground max-w-3xl mx-auto mb-10 md:mb-16">
-              {language === 'ar' 
-                ? 'مصمم للشرق الأوسط، يجمع AYN بين أحدث تقنيات الذكاء الاصطناعي وفهم عميق لاحتياجات الأعمال الإقليمية. نتحدث لغتك - حرفياً ومجازياً.'
-                : 'Built for the Middle East, AYN combines cutting-edge AI with deep understanding of regional business needs. We speak your language—literally and figuratively.'}
+              {language === 'ar' ? 'مصمم للشرق الأوسط، يجمع AYN بين أحدث تقنيات الذكاء الاصطناعي وفهم عميق لاحتياجات الأعمال الإقليمية. نتحدث لغتك - حرفياً ومجازياً.' : 'Built for the Middle East, AYN combines cutting-edge AI with deep understanding of regional business needs. We speak your language—literally and figuratively.'}
             </p>
           </ScrollReveal>
 
@@ -320,9 +324,7 @@ return <div className="min-h-screen bg-background">
                   {language === 'ar' ? 'ذكاء سياقي' : 'Contextual Intelligence'}
                 </h3>
                 <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-                  {language === 'ar' 
-                    ? 'يفهم صناعتك ونموذج عملك وتحدياتك المحددة'
-                    : 'Understands your industry, business model, and specific challenges'}
+                  {language === 'ar' ? 'يفهم صناعتك ونموذج عملك وتحدياتك المحددة' : 'Understands your industry, business model, and specific challenges'}
                 </p>
               </div>
             </ScrollReveal>
@@ -336,9 +338,7 @@ return <div className="min-h-screen bg-background">
                   {language === 'ar' ? 'ثنائي اللغة بالتصميم' : 'Bilingual by Design'}
                 </h3>
                 <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-                  {language === 'ar' 
-                    ? 'انتقل بسلاسة بين العربية والإنجليزية مع فهم أصيل'
-                    : 'Seamlessly switch between Arabic and English with native understanding'}
+                  {language === 'ar' ? 'انتقل بسلاسة بين العربية والإنجليزية مع فهم أصيل' : 'Seamlessly switch between Arabic and English with native understanding'}
                 </p>
               </div>
             </ScrollReveal>
@@ -352,9 +352,7 @@ return <div className="min-h-screen bg-background">
                   {language === 'ar' ? 'أمان المؤسسات' : 'Enterprise Security'}
                 </h3>
                 <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-                  {language === 'ar' 
-                    ? 'تشفير بمستوى البنوك مع خصوصية كاملة للبيانات والامتثال'
-                    : 'Bank-level encryption with complete data privacy and compliance'}
+                  {language === 'ar' ? 'تشفير بمستوى البنوك مع خصوصية كاملة للبيانات والامتثال' : 'Bank-level encryption with complete data privacy and compliance'}
                 </p>
               </div>
             </ScrollReveal>
