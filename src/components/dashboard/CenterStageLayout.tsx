@@ -267,8 +267,8 @@ export const CenterStageLayout = ({
         />
       )}
 
-      {/* Input area fixed at bottom */}
-      <div ref={inputRef} className="absolute bottom-0 left-0 right-0 z-20 p-4 pb-6">
+      {/* Input area - ChatInput handles its own fixed positioning */}
+      <div ref={inputRef}>
         <ChatInput
           onSend={handleSendWithAnimation}
           isDisabled={isDisabled}
