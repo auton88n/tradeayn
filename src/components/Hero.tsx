@@ -459,18 +459,18 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
                 cx="50"
                 cy="50"
                 r={isHovered ? "32" : "28"}
-                fill="url(#g1)"
+                fill="black"
                 style={{ 
                   transition: "r 0.3s cubic-bezier(0.32, 0.72, 0, 1)" 
                 }}
               />
               
-              {/* Brain logo centered inside the black pupil */}
+              {/* Brain logo centered inside the black pupil - smaller */}
               <foreignObject 
-                x={isHovered ? "18" : "22"} 
-                y={isHovered ? "18" : "22"} 
-                width={isHovered ? "64" : "56"} 
-                height={isHovered ? "64" : "56"}
+                x={isHovered ? "30" : "32"} 
+                y={isHovered ? "30" : "32"} 
+                width={isHovered ? "40" : "36"} 
+                height={isHovered ? "40" : "36"}
                 style={{ transition: "all 0.3s cubic-bezier(0.32, 0.72, 0, 1)" }}
               >
                 <Brain 
