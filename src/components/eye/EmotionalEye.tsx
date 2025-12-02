@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react';
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { useEffect, useState } from 'react';
+import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from 'framer-motion';
+import { Brain } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
 
@@ -9,27 +10,23 @@ interface EmotionalEyeProps {
 }
 
 export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
-  const { emotionConfig, isAbsorbing, isBlinking } = useAYNEmotion();
-  const containerRef = useRef<HTMLDivElement>(null);
+  const { isAbsorbing, isBlinking } = useAYNEmotion();
+  const [isHovered, setIsHovered] = useState(false);
 
-  // Mouse tracking
+  // Mouse tracking - same as Hero.tsx
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
 
-  const springConfig = { damping: 30, stiffness: 200 };
-  const eyeX = useSpring(mouseX, springConfig);
-  const eyeY = useSpring(mouseY, springConfig);
-
-  // Limit eye movement range
-  const clampedX = useTransform(eyeX, (v) => Math.max(-12, Math.min(12, v)));
-  const clampedY = useTransform(eyeY, (v) => Math.max(-12, Math.min(12, v)));
+  const springConfig = { damping: 50, stiffness: 300 };
+  const eyeX = useSpring(useTransform(mouseX, (v) => v * 0.015), springConfig);
+  const eyeY = useSpring(useTransform(mouseY, (v) => v * 0.015), springConfig);
 
   useEffect(() => {
     function onMove(e: MouseEvent) {
       const cx = window.innerWidth / 2;
       const cy = window.innerHeight / 2;
-      mouseX.set((e.clientX - cx) * 0.03);
-      mouseY.set((e.clientY - cy) * 0.03);
+      mouseX.set(e.clientX - cx);
+      mouseY.set(e.clientY - cy);
     }
 
     function onLeave() {
@@ -46,76 +43,114 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
   }, [mouseX, mouseY]);
 
   const sizeClasses = {
-    sm: 'w-24 h-24',
-    md: 'w-32 h-32 md:w-40 md:h-40',
-    lg: 'w-40 h-40 md:w-48 md:h-48 lg:w-64 lg:h-64',
-  };
-
-  const irisSizes = {
-    sm: 'w-10 h-10',
-    md: 'w-12 h-12 md:w-16 md:h-16',
-    lg: 'w-16 h-16 md:w-20 md:h-20',
+    sm: 'w-[100px] h-[100px] md:w-[120px] md:h-[120px]',
+    md: 'w-[140px] h-[140px] md:w-[180px] md:h-[180px]',
+    lg: 'w-[160px] h-[160px] md:w-[220px] md:h-[220px] lg:w-[260px] lg:h-[260px]',
   };
 
   return (
-    <div ref={containerRef} className={cn("relative", className)}>
-      {/* Single soft glow halo - same as landing page but with emotion color */}
-      <motion.div 
-        className="absolute -inset-8 rounded-full blur-3xl"
-        animate={{
-          scale: isAbsorbing ? 1.2 : 1,
-          opacity: isAbsorbing ? 0.5 : 0.3,
-        }}
-        transition={{ duration: 0.3 }}
-        style={{
-          background: `radial-gradient(circle, ${emotionConfig.color}30 0%, transparent 70%)`,
-        }}
-      />
-
-      {/* Main eye - perfect circle with clean Apple-style design */}
-      <motion.div 
-        className={cn(
-          "relative rounded-full",
-          "bg-gradient-to-b from-white to-neutral-100",
-          "dark:from-neutral-900 dark:to-neutral-950",
-          "eye-shadow",
-          sizeClasses[size]
-        )}
-        animate={{
-          scaleY: isBlinking ? 0.1 : 1,
-          scale: isAbsorbing ? 1.05 : 1,
-        }}
-        transition={{ 
-          scaleY: { duration: 0.15 },
-          scale: { duration: 0.3 }
-        }}
-      >
-        {/* Inner shadow ring for depth */}
-        <div className="absolute inset-2 rounded-full shadow-[inset_0_4px_16px_rgba(0,0,0,0.1)] dark:shadow-[inset_0_4px_16px_rgba(0,0,0,0.3)]" />
-
-        {/* Iris container - cursor tracking */}
-        <motion.div
-          style={{ x: clampedX, y: clampedY }}
-          className="absolute inset-0 flex items-center justify-center"
-        >
-          {/* Iris - with subtle emotion color tint */}
+    <div className={cn("relative flex items-center justify-center", className)}>
+      {/* Absorption glow - simplified without blur */}
+      <AnimatePresence>
+        {isAbsorbing && (
           <motion.div 
-            className={cn(
-              "rounded-full shadow-lg",
-              irisSizes[size]
-            )}
-            style={{
-              background: `linear-gradient(to bottom right, ${emotionConfig.color}, hsl(var(--foreground)))`,
-            }}
-            animate={{
-              scale: emotionConfig.irisScale,
-            }}
-            transition={{ duration: 0.3 }}
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1.1, opacity: 0.4 }}
+            exit={{ scale: 1.3, opacity: 0 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="absolute w-[140px] h-[140px] md:w-[180px] md:h-[180px] lg:w-[220px] lg:h-[220px] rounded-full bg-foreground/8 pointer-events-none z-10" 
           />
-        </motion.div>
+        )}
+      </AnimatePresence>
 
-        {/* Single highlight reflection - top left */}
-        <div className="absolute top-6 left-8 md:top-8 md:left-10 lg:top-10 lg:left-12 w-3 h-3 md:w-4 md:h-4 rounded-full bg-white/60 dark:bg-white/40" />
+      {/* Eye - centered with spring physics */}
+      <motion.div 
+        style={{ x: eyeX, y: eyeY }}
+        className="relative z-10 flex items-center justify-center group cursor-pointer will-change-transform" 
+        initial={{ scale: 0.92, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        onMouseEnter={() => setIsHovered(true)} 
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        {/* Outer casing - same as Hero.tsx */}
+        <motion.div 
+          className={cn(
+            "relative rounded-full bg-background flex items-center justify-center shadow-xl group-hover:shadow-2xl group-hover:scale-[1.03] overflow-hidden transition-shadow duration-300",
+            sizeClasses[size]
+          )}
+          animate={{ scale: [1, 1.01, 1] }}
+          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+        >
+          {/* soft inner ring */}
+          <div className="absolute inset-4 rounded-full bg-background/80 shadow-inner" />
+
+          {/* actual eye (pupil + iris) - state-controlled blink */}
+          <motion.svg 
+            viewBox="0 0 100 100" 
+            className="w-[70%] h-[70%] relative" 
+            xmlns="http://www.w3.org/2000/svg" 
+            animate={{
+              scaleY: isBlinking ? 0.05 : 1,
+              opacity: isBlinking ? 0.7 : 1
+            }} 
+            transition={{
+              duration: isBlinking ? 0.08 : 0.12,
+              ease: isBlinking ? [0.55, 0.055, 0.675, 0.19] : [0.34, 1.56, 0.64, 1]
+            }} 
+            style={{
+              transformOrigin: 'center center'
+            }}
+          >
+            {/* iris subtle gradient */}
+            <defs>
+              <radialGradient id="emotional-g1" cx="50%" cy="40%">
+                <stop offset="0%" stopColor="hsl(var(--foreground))" stopOpacity="0.12" />
+                <stop offset="45%" stopColor="hsl(var(--foreground))" stopOpacity="0.06" />
+                <stop offset="100%" stopColor="hsl(var(--foreground))" stopOpacity="0.9" />
+              </radialGradient>
+              <radialGradient id="emotional-g2" cx="40%" cy="30%">
+                <stop offset="0%" stopColor="hsl(var(--background))" stopOpacity="0.9" />
+                <stop offset="80%" stopColor="hsl(var(--foreground))" stopOpacity="0.95" />
+              </radialGradient>
+            </defs>
+
+            {/* sclera subtle */}
+            <circle cx="50" cy="50" r="48" fill="url(#emotional-g2)" opacity="0.06" />
+
+            {/* iris / pupil - black circle that dilates on blink, contracts on absorption */}
+            <circle 
+              cx="50" 
+              cy="50" 
+              r={isAbsorbing ? 22 : isBlinking ? 30 : isHovered ? 32 : 28} 
+              fill="black" 
+              style={{
+                transition: isAbsorbing 
+                  ? "r 0.15s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
+                  : isBlinking 
+                    ? "r 0.08s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
+                    : "r 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)"
+              }} 
+            />
+              
+            {/* Brain logo centered inside the black pupil */}
+            <foreignObject 
+              x={isAbsorbing ? 36 : isBlinking ? 32 : isHovered ? 30 : 32} 
+              y={isAbsorbing ? 36 : isBlinking ? 32 : isHovered ? 30 : 32} 
+              width={isAbsorbing ? 28 : isBlinking ? 36 : isHovered ? 40 : 36} 
+              height={isAbsorbing ? 28 : isBlinking ? 36 : isHovered ? 40 : 36} 
+              style={{
+                transition: isAbsorbing 
+                  ? "all 0.15s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
+                  : isBlinking 
+                    ? "all 0.08s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
+                    : "all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)"
+              }}
+            >
+              <Brain className="w-full h-full text-white/90" />
+            </foreignObject>
+          </motion.svg>
+        </motion.div>
       </motion.div>
     </div>
   );
