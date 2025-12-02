@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Brain, ArrowRight, CheckCircle, Send, Loader2, Sparkles, Globe, Shield, Menu, X } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Brain, ArrowRight, CheckCircle, Send, Loader2, Sparkles, Globe, Shield, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -15,9 +15,12 @@ import { ConversationExamples } from './ConversationExamples';
 import { Hero } from './Hero';
 import { z } from 'zod';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { motion, AnimatePresence } from 'framer-motion';
 const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [demoMessage, setDemoMessage] = useState('');
+  const [isMenuExpanded, setIsMenuExpanded] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   const {
     t,
     language
@@ -25,6 +28,31 @@ const LandingPage = () => {
   const {
     toast
   } = useToast();
+
+  // Click outside to close menu
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setIsMenuExpanded(false);
+      }
+    };
+    
+    if (isMenuExpanded) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isMenuExpanded]);
+
+  // Auto-collapse on scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 100 && isMenuExpanded) {
+        setIsMenuExpanded(false);
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isMenuExpanded]);
 
   // Contact form state
   const [contactForm, setContactForm] = useState({
@@ -137,60 +165,117 @@ const LandingPage = () => {
     description: language === 'ar' ? 'توفير 15+ ساعة أسبوعياً من خلال أتمتة المهام المتكررة والربط بين أنظمتك التجارية.' : 'Save 15+ hours per week by automating repetitive tasks and connecting your business systems.',
     features: language === 'ar' ? ['سير عمل مخصص', 'لا حاجة لكتابة الكود', 'توفير فوري للوقت'] : ['Custom workflows', 'No-code setup', 'Instant time savings']
   }];
-  return <div className="min-h-screen bg-background">
-      {/* Minimal Floating Navigation - Desktop */}
-      <nav className="fixed top-4 md:top-6 left-1/2 -translate-x-1/2 z-50 animate-fade-in w-[calc(100%-2rem)] md:w-auto max-w-md md:max-w-none">
-        <div className="flex items-center justify-between md:gap-8 px-4 md:px-6 py-2.5 md:py-3 bg-card/80 dark:bg-card/80 backdrop-blur-xl border border-border rounded-full shadow-2xl">
-          <div className="flex items-center gap-2 md:gap-3">
-            <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-foreground flex items-center justify-center">
+return <div className="min-h-screen bg-background">
+      {/* Expandable Logo Navigation */}
+      <nav className="fixed top-4 md:top-6 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
+        <motion.div 
+          ref={menuRef}
+          layout
+          className="flex items-center bg-card/80 dark:bg-card/80 backdrop-blur-xl border border-border rounded-full shadow-2xl overflow-hidden"
+          transition={{ type: "spring", stiffness: 400, damping: 30 }}
+        >
+          {/* Clickable Logo - Always visible */}
+          <motion.button
+            layout
+            onClick={() => setIsMenuExpanded(!isMenuExpanded)}
+            className="flex items-center gap-2 md:gap-3 px-4 py-2.5 md:py-3 hover:bg-muted/50 transition-colors cursor-pointer"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <motion.div 
+              layout
+              className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-foreground flex items-center justify-center"
+            >
               <Brain className="w-4 h-4 md:w-5 md:h-5 text-background" />
-            </div>
-            <span className="text-lg md:text-xl font-bold tracking-tight">AYN</span>
-          </div>
+            </motion.div>
+            <motion.span layout className="text-lg md:text-xl font-bold tracking-tight">AYN</motion.span>
+          </motion.button>
           
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-3">
-            <LanguageSwitcher />
-            <ThemeToggle />
-            <Button onClick={() => setShowAuthModal(true)} size="sm" className="rounded-full">
-              {t('nav.getStarted')}
-            </Button>
-          </div>
-
-          {/* Mobile Navigation */}
-          <div className="flex md:hidden items-center gap-2">
-            <ThemeToggle />
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-[280px] sm:w-[320px]">
-                <div className="flex flex-col gap-6 pt-8">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-foreground flex items-center justify-center">
-                      <Brain className="w-6 h-6 text-background" />
-                    </div>
-                    <span className="text-2xl font-bold">AYN</span>
-                  </div>
-                  
-                  <div className="flex flex-col gap-4">
-                    <div className="flex items-center justify-between py-2">
-                      <span className="text-sm text-muted-foreground">{language === 'ar' ? 'اللغة' : 'Language'}</span>
-                      <LanguageSwitcher />
-                    </div>
-                    
-                    <Button onClick={() => setShowAuthModal(true)} className="w-full rounded-xl">
-                      {t('nav.getStarted')}
-                    </Button>
-                  </div>
-                </div>
-              </SheetContent>
-            </Sheet>
-          </div>
-        </div>
+          {/* Expandable Menu Items */}
+          <AnimatePresence mode="popLayout">
+            {isMenuExpanded && (
+              <motion.div
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: 'auto', opacity: 1 }}
+                exit={{ width: 0, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                className="flex items-center gap-2 md:gap-3 overflow-hidden"
+              >
+                <motion.div
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: -20, opacity: 0 }}
+                  transition={{ delay: 0.05 }}
+                >
+                  <LanguageSwitcher />
+                </motion.div>
+                <motion.div
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: -20, opacity: 0 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  <ThemeToggle />
+                </motion.div>
+                <motion.div
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: -20, opacity: 0 }}
+                  transition={{ delay: 0.15 }}
+                  className="pr-3 md:pr-4"
+                >
+                  <Button 
+                    onClick={() => {
+                      setIsMenuExpanded(false);
+                      setShowAuthModal(true);
+                    }} 
+                    size="sm" 
+                    className="rounded-full"
+                  >
+                    {t('nav.getStarted')}
+                  </Button>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
       </nav>
+
+      {/* Mobile Sheet Navigation (fallback for small screens) */}
+      <div className="fixed top-4 right-4 z-50 md:hidden">
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-10 w-10 p-0 bg-card/80 backdrop-blur-xl border border-border rounded-full shadow-lg">
+              <Menu className="h-5 w-5" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="right" className="w-[280px] sm:w-[320px]">
+            <div className="flex flex-col gap-6 pt-8">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-foreground flex items-center justify-center">
+                  <Brain className="w-6 h-6 text-background" />
+                </div>
+                <span className="text-2xl font-bold">AYN</span>
+              </div>
+              
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center justify-between py-2">
+                  <span className="text-sm text-muted-foreground">{language === 'ar' ? 'اللغة' : 'Language'}</span>
+                  <LanguageSwitcher />
+                </div>
+                <div className="flex items-center justify-between py-2">
+                  <span className="text-sm text-muted-foreground">{language === 'ar' ? 'المظهر' : 'Theme'}</span>
+                  <ThemeToggle />
+                </div>
+                
+                <Button onClick={() => setShowAuthModal(true)} className="w-full rounded-xl">
+                  {t('nav.getStarted')}
+                </Button>
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
+      </div>
 
       {/* Hero Section - Premium AI Eye Experience */}
       <Hero onGetStarted={() => setShowAuthModal(true)} onDemoMessage={msg => setDemoMessage(msg)} />
