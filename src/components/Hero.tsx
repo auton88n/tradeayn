@@ -41,6 +41,8 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
   const [isFocused, setIsFocused] = useState(false);
   const [visibleCardIndex, setVisibleCardIndex] = useState<number | null>(null);
   const [absorptionPulse, setAbsorptionPulse] = useState(false);
+  const [isBlinking, setIsBlinking] = useState(false);
+  const [animationPhase, setAnimationPhase] = useState<'idle' | 'blinking' | 'emitting' | 'absorbing'>('idle');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
   // Responsive card positions
@@ -136,20 +138,44 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
     return () => clearInterval(interval);
   }, [inputMessage, isFocused, placeholderTexts.length]);
 
-  // Random card cycling animation with absorption effect
+  // Unified animation cycle - 3 second rhythm
+  // 0.0s: Eye blinks (preparing to speak)
+  // 0.15s: Card bursts out (eye speaks)
+  // 2.4s: Card returns + absorption pulse
+  // 3.0s: Cycle repeats
   useEffect(() => {
-    const showRandomCard = () => {
-      // Trigger absorption pulse when card exits
-      if (visibleCardIndex !== null) {
+    const runAnimationCycle = () => {
+      // Phase 1: Blink (0ms) - eye prepares to speak
+      setAnimationPhase('blinking');
+      setIsBlinking(true);
+      
+      // Phase 2: Emit card (150ms after blink completes)
+      setTimeout(() => {
+        setIsBlinking(false);
+        setAnimationPhase('emitting');
+        const randomIndex = Math.floor(Math.random() * 6);
+        setVisibleCardIndex(randomIndex);
+      }, 150);
+      
+      // Phase 3: Start absorption (2400ms - card returns)
+      setTimeout(() => {
+        setAnimationPhase('absorbing');
         setAbsorptionPulse(true);
-        setTimeout(() => setAbsorptionPulse(false), 400);
-      }
-      const randomIndex = Math.floor(Math.random() * 6);
-      setVisibleCardIndex(randomIndex);
+        setVisibleCardIndex(null);
+      }, 2400);
+      
+      // Phase 4: Reset absorption pulse (2700ms)
+      setTimeout(() => {
+        setAbsorptionPulse(false);
+        setAnimationPhase('idle');
+      }, 2700);
     };
+
+    // Initial run
+    runAnimationCycle();
     
-    showRandomCard();
-    const interval = setInterval(showRandomCard, 2500);
+    // Repeat every 3 seconds
+    const interval = setInterval(runAnimationCycle, 3000);
     return () => clearInterval(interval);
   }, []);
 
@@ -593,38 +619,44 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
         >
-          {/* Outer casing with breathing pulse and hover glow */}
+          {/* Outer casing with breathing pulse and hover glow - synced to 3s cycle */}
           <motion.div 
             className="relative w-[160px] h-[160px] md:w-[220px] md:h-[220px] lg:w-[260px] lg:h-[260px] rounded-full bg-background flex items-center justify-center transition-all duration-500 shadow-[0_20px_60px_rgba(0,0,0,0.08)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.4)] group-hover:shadow-[0_30px_80px_rgba(0,0,0,0.15),0_0_60px_rgba(0,0,0,0.08)] dark:group-hover:shadow-[0_30px_80px_rgba(0,0,0,0.6),0_0_60px_rgba(255,255,255,0.15)] group-hover:scale-105 overflow-hidden"
             animate={{
-              scale: [1, 1.02, 1],
-              opacity: [0.95, 1, 0.95],
+              scale: [1, 1.015, 1],
+              opacity: [0.97, 1, 0.97],
             }}
             transition={{
-              duration: 4,
+              duration: 3,
               repeat: Infinity,
               ease: "easeInOut",
             }}
           >
-            {/* Shine sweep effect */}
+            {/* Shine sweep effect - synced to 6s (2x cycle) */}
             <div 
               className="absolute inset-0 w-full h-full pointer-events-none"
               style={{
                 background: 'linear-gradient(135deg, transparent 30%, rgba(255, 255, 255, 0.6) 50%, transparent 70%)',
                 animation: 'eye-shine 6s ease-in-out infinite',
-                animationDelay: '2s',
               }}
             />
             {/* soft inner ring */}
             <div className="absolute inset-4 rounded-full bg-background/80 shadow-inner"></div>
 
-            {/* actual eye (pupil + iris) */}
-            <svg
+            {/* actual eye (pupil + iris) - state-controlled blink */}
+            <motion.svg
               viewBox="0 0 100 100"
               className="w-[70%] h-[70%] relative"
               xmlns="http://www.w3.org/2000/svg"
+              animate={{
+                scaleY: isBlinking ? 0.05 : 1,
+                opacity: isBlinking ? 0.7 : 1,
+              }}
+              transition={{
+                duration: isBlinking ? 0.08 : 0.12,
+                ease: isBlinking ? [0.55, 0.055, 0.675, 0.19] : [0.34, 1.56, 0.64, 1],
+              }}
               style={{
-                animation: 'eye-blink 4s ease-in-out infinite',
                 transformOrigin: 'center center'
               }}
             >
@@ -644,36 +676,40 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
               {/* sclera subtle */}
               <circle cx="50" cy="50" r="48" fill="url(#g2)" opacity="0.06" />
 
-              {/* iris / pupil - black circle that dilates on hover and contracts on absorption */}
+              {/* iris / pupil - black circle that dilates on blink (anticipation), contracts on absorption */}
               <circle
                 cx="50"
                 cy="50"
-                r={absorptionPulse ? "22" : isHovered ? "32" : "28"}
+                r={absorptionPulse ? "22" : isBlinking ? "30" : isHovered ? "32" : "28"}
                 fill="black"
                 style={{ 
                   transition: absorptionPulse 
-                    ? "r 0.12s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
-                    : "r 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)" 
+                    ? "r 0.15s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
+                    : isBlinking
+                    ? "r 0.08s cubic-bezier(0.55, 0.055, 0.675, 0.19)"
+                    : "r 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)" 
                 }}
               />
               
               {/* Brain logo centered inside the black pupil - smaller */}
               <foreignObject 
-                x={absorptionPulse ? "36" : isHovered ? "30" : "32"} 
-                y={absorptionPulse ? "36" : isHovered ? "30" : "32"} 
-                width={absorptionPulse ? "28" : isHovered ? "40" : "36"} 
-                height={absorptionPulse ? "28" : isHovered ? "40" : "36"}
+                x={absorptionPulse ? "36" : isBlinking ? "32" : isHovered ? "30" : "32"} 
+                y={absorptionPulse ? "36" : isBlinking ? "32" : isHovered ? "30" : "32"} 
+                width={absorptionPulse ? "28" : isBlinking ? "36" : isHovered ? "40" : "36"} 
+                height={absorptionPulse ? "28" : isBlinking ? "36" : isHovered ? "40" : "36"}
                 style={{ 
                   transition: absorptionPulse 
-                    ? "all 0.12s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
-                    : "all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)" 
+                    ? "all 0.15s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
+                    : isBlinking
+                    ? "all 0.08s cubic-bezier(0.55, 0.055, 0.675, 0.19)"
+                    : "all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)" 
                 }}
               >
                 <Brain 
                   className="w-full h-full text-white/90"
                 />
               </foreignObject>
-            </svg>
+            </motion.svg>
           </motion.div>
         </motion.div>
       </div>
