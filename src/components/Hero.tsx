@@ -252,7 +252,7 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
         >
           {/* Outer casing with breathing pulse and hover glow */}
           <motion.div 
-            className="relative w-[160px] h-[160px] md:w-[220px] md:h-[220px] lg:w-[260px] lg:h-[260px] rounded-full bg-background flex items-center justify-center transition-all duration-500 shadow-[0_20px_60px_rgba(0,0,0,0.08)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.4)] group-hover:shadow-[0_30px_80px_rgba(0,0,0,0.15),0_0_60px_rgba(0,0,0,0.08)] dark:group-hover:shadow-[0_30px_80px_rgba(0,0,0,0.6),0_0_60px_rgba(255,255,255,0.15)]"
+            className="relative w-[160px] h-[160px] md:w-[220px] md:h-[220px] lg:w-[260px] lg:h-[260px] rounded-full bg-background flex items-center justify-center transition-all duration-500 shadow-[0_20px_60px_rgba(0,0,0,0.08)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.4)] group-hover:shadow-[0_30px_80px_rgba(0,0,0,0.15),0_0_60px_rgba(0,0,0,0.08)] dark:group-hover:shadow-[0_30px_80px_rgba(0,0,0,0.6),0_0_60px_rgba(255,255,255,0.15)] group-hover:scale-105 overflow-hidden"
             animate={{
               scale: [1, 1.02, 1],
               opacity: [0.95, 1, 0.95],
@@ -263,6 +263,15 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
               ease: "easeInOut",
             }}
           >
+            {/* Shine sweep effect */}
+            <div 
+              className="absolute inset-0 w-full h-full pointer-events-none"
+              style={{
+                background: 'linear-gradient(135deg, transparent 30%, rgba(255, 255, 255, 0.6) 50%, transparent 70%)',
+                animation: 'eye-shine 6s ease-in-out infinite',
+                animationDelay: '2s',
+              }}
+            />
             {/* soft inner ring */}
             <div className="absolute inset-4 rounded-full bg-background/80 shadow-inner"></div>
 
