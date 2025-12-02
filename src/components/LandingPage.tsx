@@ -199,18 +199,31 @@ const LandingPage = () => {
   }];
   return <div className="min-h-screen bg-background">
       {/* Expandable Logo Navigation */}
-      <nav className="fixed top-4 md:top-6 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
+      <nav className="fixed top-4 md:top-6 left-4 md:left-6 z-50 animate-fade-in">
         <motion.div ref={menuRef} layout onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} className="flex items-center bg-card/80 dark:bg-card/80 backdrop-blur-xl border border-border rounded-full shadow-2xl overflow-hidden cursor-pointer" transition={{
         type: "spring",
         stiffness: 400,
         damping: 30
       }}>
           {/* Logo - Always visible */}
-          <motion.div layout className="flex items-center gap-2 md:gap-3 px-4 py-2.5 md:py-3">
+          <motion.div layout className={cn("flex items-center gap-2 md:gap-3 py-2.5 md:py-3", isMenuExpanded ? "px-4" : "px-3")}>
             <motion.div layout className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-foreground flex items-center justify-center">
               <Brain className="w-4 h-4 md:w-5 md:h-5 text-background" />
             </motion.div>
-            <motion.span layout className="text-lg md:text-xl font-bold tracking-tight">AYN</motion.span>
+            <AnimatePresence mode="popLayout">
+              {isMenuExpanded && (
+                <motion.span 
+                  layout
+                  initial={{ width: 0, opacity: 0 }}
+                  animate={{ width: 'auto', opacity: 1 }}
+                  exit={{ width: 0, opacity: 0 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                  className="text-lg md:text-xl font-bold tracking-tight overflow-hidden whitespace-nowrap"
+                >
+                  AYN
+                </motion.span>
+              )}
+            </AnimatePresence>
           </motion.div>
           
           {/* Expandable Menu Items */}
