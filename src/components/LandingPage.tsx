@@ -44,6 +44,15 @@ const LandingPage = () => {
     }, 150);
   };
 
+  // Smooth scroll to section
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+      setIsMenuExpanded(false);
+    }
+  };
+
   // Auto-collapse on scroll
   useEffect(() => {
     const handleScroll = () => {
@@ -207,6 +216,33 @@ const LandingPage = () => {
             stiffness: 400,
             damping: 30
           }} className="flex items-center gap-2 md:gap-3 overflow-hidden">
+                {/* About Link */}
+                <motion.button
+                  onClick={() => scrollToSection('about')}
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: -20, opacity: 0 }}
+                  transition={{ delay: 0.05 }}
+                  className="text-sm font-medium hover:text-foreground/80 transition-colors px-2"
+                >
+                  {language === 'ar' ? 'عن AYN' : 'About'}
+                </motion.button>
+                
+                {/* Services Link */}
+                <motion.button
+                  onClick={() => scrollToSection('services')}
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: -20, opacity: 0 }}
+                  transition={{ delay: 0.1 }}
+                  className="text-sm font-medium hover:text-foreground/80 transition-colors px-2"
+                >
+                  {language === 'ar' ? 'خدماتنا' : 'Services'}
+                </motion.button>
+                
+                {/* Separator */}
+                <div className="w-px h-5 bg-border mx-1" />
+                
                 <motion.div initial={{
               x: -20,
               opacity: 0
@@ -217,7 +253,7 @@ const LandingPage = () => {
               x: -20,
               opacity: 0
             }} transition={{
-              delay: 0.05
+              delay: 0.15
             }}>
                   <LanguageSwitcher />
                 </motion.div>
@@ -231,7 +267,7 @@ const LandingPage = () => {
               x: -20,
               opacity: 0
             }} transition={{
-              delay: 0.1
+              delay: 0.2
             }}>
                   <ThemeToggle />
                 </motion.div>
@@ -245,7 +281,7 @@ const LandingPage = () => {
               x: -20,
               opacity: 0
             }} transition={{
-              delay: 0.15
+              delay: 0.25
             }} className="pr-3 md:pr-4">
                   <Button onClick={() => {
                 setIsMenuExpanded(false);
@@ -275,6 +311,21 @@ const LandingPage = () => {
               </div>
               
               <div className="flex flex-col gap-4">
+                <button
+                  onClick={() => scrollToSection('about')}
+                  className="text-left py-2 text-sm font-medium hover:text-foreground/80 transition-colors"
+                >
+                  {language === 'ar' ? 'عن AYN' : 'About'}
+                </button>
+                <button
+                  onClick={() => scrollToSection('services')}
+                  className="text-left py-2 text-sm font-medium hover:text-foreground/80 transition-colors"
+                >
+                  {language === 'ar' ? 'خدماتنا' : 'Services'}
+                </button>
+                
+                <div className="h-px bg-border my-2" />
+                
                 <div className="flex items-center justify-between py-2">
                   <span className="text-sm text-muted-foreground">{language === 'ar' ? 'اللغة' : 'Language'}</span>
                   <LanguageSwitcher />
@@ -297,7 +348,7 @@ const LandingPage = () => {
       <Hero onGetStarted={() => setShowAuthModal(true)} onDemoMessage={msg => setDemoMessage(msg)} />
 
       {/* About AYN - Value Proposition Section */}
-      <section className="py-16 md:py-32 px-4 md:px-6">
+      <section id="about" className="py-16 md:py-32 px-4 md:px-6">
         <div className="container mx-auto max-w-6xl text-center">
           <ScrollReveal>
             <span className="text-sm font-mono text-muted-foreground tracking-wider uppercase mb-4 block">
