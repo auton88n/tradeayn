@@ -33,10 +33,7 @@ export const useMessages = (
         .eq('session_id', sessionId)
         .order('created_at', { ascending: true });
 
-      if (error) {
-        console.error('Error loading messages:', error);
-        return;
-      }
+      if (error) return;
 
       if (data && data.length > 0) {
         const chatMessages: Message[] = data.map(msg => ({
@@ -55,7 +52,7 @@ export const useMessages = (
         setMessages(chatMessages);
       }
     } catch (error) {
-      console.error('Error loading messages:', error);
+      // Silent fail - messages will be empty
     }
   }, [userId, sessionId]);
 
@@ -73,7 +70,6 @@ export const useMessages = (
       });
 
       if (usageError) {
-        console.error('Usage check error:', usageError);
         toast({
           title: "Usage Error",
           description: "Unable to verify usage limits. Please try again.",
@@ -91,7 +87,6 @@ export const useMessages = (
         return;
       }
     } catch (error) {
-      console.error('Usage tracking error:', error);
       toast({
         title: "System Error",
         description: "Unable to process your request. Please try again.",
@@ -145,16 +140,6 @@ export const useMessages = (
         file_data: attachment || null
       };
 
-      console.log('📦 Sending payload to n8n:', {
-        mode: selectedMode,
-        has_attachment: payload.has_attachment,
-        file_data: payload.file_data ? {
-          name: payload.file_data.name,
-          type: payload.file_data.type,
-          hasUrl: !!payload.file_data.url
-        } : null
-      });
-
       // Call webhook via edge function
       const { data: webhookResponse, error: webhookError } = await supabase.functions.invoke('ayn-webhook', {
         body: payload
@@ -172,12 +157,6 @@ export const useMessages = (
         : webhookResponse?.response?.output || 
           webhookResponse?.output ||
           'I received your message and I\'m processing it. Please try again if you don\'t see a proper response.';
-
-      console.log('✅ Received response from n8n:', {
-        responseType: typeof response,
-        responseLength: response.length,
-        hasAttachment: !!attachment
-      });
 
       // Create AI response message
       const aynMessage: Message = {
@@ -213,7 +192,6 @@ export const useMessages = (
 
     } catch (error) {
       setIsTyping(false);
-      console.error('Send message error:', error);
 
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),

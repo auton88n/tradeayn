@@ -44,8 +44,6 @@ export const trackDeviceLogin = async (userId: string) => {
     const fingerprintHash = generateFingerprint();
     const deviceInfo = getDeviceInfo();
     
-    console.log('Tracking device login:', { userId, fingerprintHash });
-    
     // Check if device exists
     const { data: existing } = await supabase
       .from('device_fingerprints')
@@ -64,8 +62,6 @@ export const trackDeviceLogin = async (userId: string) => {
           device_info: deviceInfo
         })
         .eq('id', existing.id);
-      
-      console.log('Updated existing device');
     } else {
       // Insert new device
       await supabase
@@ -76,8 +72,6 @@ export const trackDeviceLogin = async (userId: string) => {
           device_info: deviceInfo,
           is_trusted: false
         });
-      
-      console.log('Created new device fingerprint');
     }
     
     // Get current profile data
@@ -95,8 +89,6 @@ export const trackDeviceLogin = async (userId: string) => {
         total_sessions: (profile?.total_sessions || 0) + 1
       })
       .eq('user_id', userId);
-    
-    console.log('Updated profile login tracking');
     
   } catch (error) {
     console.error('Error tracking device login:', error);

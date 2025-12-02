@@ -57,16 +57,9 @@ export const useFileUpload = (userId: string): UseFileUploadReturn => {
         useWebWorker: true
       };
       const compressedFile = await imageCompression(file, options);
-      
-      console.log('Image compressed:', {
-        original: `${(file.size / 1024 / 1024).toFixed(2)}MB`,
-        compressed: `${(compressedFile.size / 1024 / 1024).toFixed(2)}MB`,
-        reduction: `${(((file.size - compressedFile.size) / file.size) * 100).toFixed(0)}%`
-      });
 
       return compressedFile;
     } catch (error) {
-      console.error('Image compression error:', error);
       return file; // Return original if compression fails
     }
   }, []);
@@ -83,7 +76,6 @@ export const useFileUpload = (userId: string): UseFileUploadReturn => {
         const fiveMinutesFromNow = Math.floor(Date.now() / 1000) + 300;
         
         if (expiresAt && expiresAt < fiveMinutesFromNow) {
-          console.log('Refreshing session before file upload...');
           await supabase.auth.refreshSession();
         }
       }
@@ -120,7 +112,6 @@ export const useFileUpload = (userId: string): UseFileUploadReturn => {
         size: processedFile.size
       };
     } catch (error) {
-      console.error('File upload error:', error);
       toast({
         title: "Upload Failed",
         description: "Failed to upload file. Please try again.",
