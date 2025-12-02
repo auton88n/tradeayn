@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowUp, Plus, ChevronDown } from 'lucide-react';
+import { ArrowUp, Plus, ChevronDown, Brain } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { TypewriterText } from '@/components/TypewriterText';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -12,15 +12,21 @@ interface HeroProps {
 }
 
 const CARDS_EN = [
-  "Always aware.",
-  "Understands context.",
-  "Ready to assist.",
+  "Always watching over you.",
+  "I understand context.",
+  "Ready when you are.",
+  "Let me handle that.",
+  "Optimizing your workflow.",
+  "Done. What's next?",
 ];
 
 const CARDS_AR = [
-  "دائماً يقظ.",
-  "يفهم السياق.",
-  "جاهز للمساعدة.",
+  "دائماً أراقب من أجلك.",
+  "أفهم السياق.",
+  "جاهز عندما تريد.",
+  "دعني أتولى ذلك.",
+  "أحسّن سير عملك.",
+  "انتهيت. ما التالي؟",
 ];
 
 export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
@@ -270,59 +276,113 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
           />
         </div>
 
-        {/* Cards row - positioned absolutely to avoid cutoffs */}
-        <div className="absolute inset-0 flex items-center justify-center">
+        {/* Cards - positioned absolutely, reveal on individual hover */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           {/* Left card */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.92, y: 20, filter: 'blur(4px)' }}
-            animate={{ 
-              opacity: isAreaHovered ? 1 : 0,
-              scale: isAreaHovered ? 1 : 0.92,
-              y: isAreaHovered ? 0 : 20,
-              filter: isAreaHovered ? 'blur(0px)' : 'blur(4px)'
+            initial={{ opacity: 0, scale: 0.9, filter: 'blur(6px)' }}
+            whileHover={{ 
+              opacity: 1,
+              scale: 1,
+              y: -5,
+              filter: 'blur(0px)'
             }}
-            transition={{ duration: 0.5, delay: 0.1, ease: [0.32, 0.72, 0, 1] }}
-            whileHover={{ scale: 1.05, y: -5 }}
-            className="absolute left-6 md:left-16 lg:left-24 top-1/2 -translate-y-1/2 w-[170px] md:w-[220px] rounded-2xl backdrop-blur-xl bg-background/55 border border-border/30 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-4 z-20 pointer-events-auto cursor-pointer"
+            transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
+            className="absolute left-4 md:left-12 lg:left-20 top-1/2 -translate-y-1/2 w-[160px] md:w-[200px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-4 z-20 pointer-events-auto cursor-pointer"
           >
-            <div className="text-sm md:text-base font-medium text-foreground">
-              {CARDS[0]}
+            <div className="flex items-start gap-2">
+              <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
+              <span className="text-sm font-medium text-foreground">{CARDS[0]}</span>
+            </div>
+          </motion.div>
+
+          {/* Top-left card */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, filter: 'blur(6px)' }}
+            whileHover={{ 
+              opacity: 1,
+              scale: 1,
+              y: -5,
+              filter: 'blur(0px)'
+            }}
+            transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
+            className="absolute left-16 md:left-28 lg:left-36 top-8 md:top-4 w-[150px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20 pointer-events-auto cursor-pointer"
+          >
+            <div className="flex items-start gap-2">
+              <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
+              <span className="text-sm font-medium text-foreground">{CARDS[1]}</span>
             </div>
           </motion.div>
 
           {/* Top card */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.92, y: 20, filter: 'blur(4px)' }}
-            animate={{ 
-              opacity: isAreaHovered ? 1 : 0,
-              scale: isAreaHovered ? 1 : 0.92,
-              y: isAreaHovered ? 0 : 20,
-              filter: isAreaHovered ? 'blur(0px)' : 'blur(4px)'
+            initial={{ opacity: 0, scale: 0.9, filter: 'blur(6px)' }}
+            whileHover={{ 
+              opacity: 1,
+              scale: 1,
+              y: -5,
+              filter: 'blur(0px)'
             }}
-            transition={{ duration: 0.5, delay: 0.15, ease: [0.32, 0.72, 0, 1] }}
-            whileHover={{ scale: 1.05, y: -5 }}
-            className="absolute -top-12 md:-top-16 lg:-top-20 left-1/2 -translate-x-1/2 w-[150px] md:w-[200px] rounded-2xl backdrop-blur-xl bg-background/55 border border-border/30 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20 pointer-events-auto cursor-pointer"
+            transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
+            className="absolute left-1/2 -translate-x-1/2 -top-16 md:-top-20 w-[140px] md:w-[180px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20 pointer-events-auto cursor-pointer"
           >
-            <div className="text-sm md:text-base font-medium text-foreground">
-              {CARDS[1]}
+            <div className="flex items-start gap-2">
+              <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
+              <span className="text-sm font-medium text-foreground">{CARDS[2]}</span>
+            </div>
+          </motion.div>
+
+          {/* Top-right card */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, filter: 'blur(6px)' }}
+            whileHover={{ 
+              opacity: 1,
+              scale: 1,
+              y: -5,
+              filter: 'blur(0px)'
+            }}
+            transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
+            className="absolute right-16 md:right-28 lg:right-36 top-8 md:top-4 w-[150px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20 pointer-events-auto cursor-pointer"
+          >
+            <div className="flex items-start gap-2">
+              <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
+              <span className="text-sm font-medium text-foreground">{CARDS[3]}</span>
             </div>
           </motion.div>
 
           {/* Right card */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.92, y: 20, filter: 'blur(4px)' }}
-            animate={{ 
-              opacity: isAreaHovered ? 1 : 0,
-              scale: isAreaHovered ? 1 : 0.92,
-              y: isAreaHovered ? 0 : 20,
-              filter: isAreaHovered ? 'blur(0px)' : 'blur(4px)'
+            initial={{ opacity: 0, scale: 0.9, filter: 'blur(6px)' }}
+            whileHover={{ 
+              opacity: 1,
+              scale: 1,
+              y: -5,
+              filter: 'blur(0px)'
             }}
-            transition={{ duration: 0.5, delay: 0.2, ease: [0.32, 0.72, 0, 1] }}
-            whileHover={{ scale: 1.05, y: -5 }}
-            className="absolute right-6 md:right-16 lg:right-24 top-1/2 -translate-y-1/2 w-[170px] md:w-[220px] rounded-2xl backdrop-blur-xl bg-background/55 border border-border/30 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-4 z-20 pointer-events-auto cursor-pointer"
+            transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
+            className="absolute right-4 md:right-12 lg:right-20 top-1/2 -translate-y-1/2 w-[160px] md:w-[200px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-4 z-20 pointer-events-auto cursor-pointer"
           >
-            <div className="text-sm md:text-base font-medium text-foreground">
-              {CARDS[2]}
+            <div className="flex items-start gap-2">
+              <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
+              <span className="text-sm font-medium text-foreground">{CARDS[4]}</span>
+            </div>
+          </motion.div>
+
+          {/* Bottom card */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, filter: 'blur(6px)' }}
+            whileHover={{ 
+              opacity: 1,
+              scale: 1,
+              y: -5,
+              filter: 'blur(0px)'
+            }}
+            transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
+            className="absolute left-1/2 -translate-x-1/2 bottom-4 md:bottom-0 w-[150px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20 pointer-events-auto cursor-pointer"
+          >
+            <div className="flex items-start gap-2">
+              <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
+              <span className="text-sm font-medium text-foreground">{CARDS[5]}</span>
             </div>
           </motion.div>
         </div>
