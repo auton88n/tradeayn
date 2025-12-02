@@ -148,13 +148,17 @@ export const CenterStageLayout = ({
     if (lastMessage.sender === 'ayn' && lastMessage.id !== lastProcessedMessageId) {
       setLastProcessedMessageId(lastMessage.id);
       
-      // Analyze emotion from response
-      const emotion = analyzeResponseEmotion(lastMessage.content);
-      setEmotion(emotion);
-      setIsResponding(false);
+      // Blink before responding (like landing page)
+      triggerBlink();
+      
+      // After blink, analyze emotion and emit bubbles
+      setTimeout(() => {
+        const emotion = analyzeResponseEmotion(lastMessage.content);
+        setEmotion(emotion);
+        setIsResponding(false);
 
-      // Emit response bubble
-      const bubbleType = getBubbleType(lastMessage.content);
+        // Emit response bubble
+        const bubbleType = getBubbleType(lastMessage.content);
       
       // Split long responses into multiple bubbles
       const maxLength = 200;
@@ -185,11 +189,12 @@ export const CenterStageLayout = ({
             emitResponseBubble(currentBubble.trim(), bubbleType);
           }, bubbleIndex * 600);
         }
-      } else {
-        emitResponseBubble(response, bubbleType);
-      }
+        } else {
+          emitResponseBubble(response, bubbleType);
+        }
+      }, 150); // Delay for blink animation
     }
-  }, [messages, lastProcessedMessageId, setEmotion, setIsResponding, emitResponseBubble]);
+  }, [messages, lastProcessedMessageId, setEmotion, setIsResponding, emitResponseBubble, triggerBlink]);
 
   // Update emotion when typing
   useEffect(() => {
@@ -213,7 +218,12 @@ export const CenterStageLayout = ({
           ref={eyeRef} 
           className="relative"
           animate={{ x: eyeShiftX }}
-          transition={{ type: 'spring', stiffness: 200, damping: 25 }}
+          transition={{ 
+            type: 'spring', 
+            stiffness: 150, 
+            damping: 20, 
+            mass: 0.8 
+          }}
         >
           <EmotionalEye size="lg" />
 
