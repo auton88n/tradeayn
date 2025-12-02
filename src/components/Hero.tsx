@@ -5,6 +5,7 @@ import { TypewriterText } from '@/components/TypewriterText';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface HeroProps {
   onGetStarted: () => void;
@@ -31,6 +32,7 @@ const CARDS_AR = [
 
 export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
   const { language } = useLanguage();
+  const isMobile = useIsMobile();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isHovered, setIsHovered] = useState(false);
   const [isAreaHovered, setIsAreaHovered] = useState(false);
@@ -40,6 +42,29 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
   const [visibleCardIndex, setVisibleCardIndex] = useState<number | null>(null);
   const [absorptionPulse, setAbsorptionPulse] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  
+  // Responsive card positions
+  const getCardPositions = () => {
+    if (isMobile) {
+      return {
+        topLeft: { x: -100, y: -70 },
+        middleLeft: { x: -120, y: 0 },
+        bottomLeft: { x: -100, y: 70 },
+        topRight: { x: 100, y: -70 },
+        middleRight: { x: 120, y: 0 },
+        bottomRight: { x: 100, y: 70 },
+      };
+    }
+    return {
+      topLeft: { x: -180, y: -120 },
+      middleLeft: { x: -220, y: 0 },
+      bottomLeft: { x: -180, y: 120 },
+      topRight: { x: 180, y: -120 },
+      middleRight: { x: 220, y: 0 },
+      bottomRight: { x: 180, y: 120 },
+    };
+  };
+  const cardPositions = getCardPositions();
 
   // track pointer relative to container center for subtle eye follow with spring physics
   const mouseX = useMotionValue(0);
@@ -159,7 +184,7 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
   return (
     <section
       ref={containerRef}
-      className="relative min-h-screen flex flex-col items-center justify-center py-24 px-6 md:px-12 lg:px-24 overflow-hidden"
+      className="relative min-h-screen flex flex-col items-center justify-center py-16 md:py-24 px-4 md:px-12 lg:px-24 overflow-hidden"
       aria-label="Hero"
     >
       {/* Subtle vignette / soft gradient background */}
@@ -170,16 +195,16 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: [0.32, 0.72, 0, 1] }}
-        className="w-full max-w-4xl text-center mb-12"
+        className="w-full max-w-4xl text-center mb-8 md:mb-12"
       >
-        <h1 className="text-6xl md:text-7xl lg:text-8xl leading-[0.9] font-display tracking-tight text-foreground drop-shadow-[0_20px_40px_rgba(0,0,0,0.06)]">
+        <h1 className="text-4xl md:text-6xl lg:text-7xl xl:text-8xl leading-[0.9] font-display tracking-tight text-foreground drop-shadow-[0_20px_40px_rgba(0,0,0,0.06)]">
           {language === 'ar' ? (
             <>تعرّف على <span className="text-neutral-500 dark:text-neutral-400">AYN</span></>
           ) : (
             <>Meet <span className="text-neutral-500 dark:text-neutral-400">AYN</span></>
           )}
         </h1>
-        <p className="mt-6 text-lg md:text-2xl text-neutral-600 dark:text-neutral-300 max-w-2xl mx-auto font-light">
+        <p className="mt-4 md:mt-6 text-base md:text-lg lg:text-2xl text-neutral-600 dark:text-neutral-300 max-w-2xl mx-auto font-light px-4">
           {language === 'ar'
             ? 'الذكاء الاصطناعي الذي يرى، يسمع، ويفهم عالمك'
             : 'The AI that sees, listens, and understands your world.'}
@@ -188,16 +213,16 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
 
       {/* Central area with eye and cards */}
       <div 
-        className="relative w-full max-w-5xl mt-8 flex items-center justify-center"
+        className="relative w-full max-w-5xl mt-4 md:mt-8 flex items-center justify-center"
         onMouseEnter={() => setIsAreaHovered(true)}
         onMouseLeave={() => setIsAreaHovered(false)}
       >
         {/* ring / subtle light behind the eye */}
-        <div className="absolute w-[420px] h-[420px] md:w-[520px] md:h-[520px] lg:w-[640px] lg:h-[640px] rounded-full -z-10 pointer-events-none
+        <div className="absolute w-[280px] h-[280px] md:w-[420px] md:h-[420px] lg:w-[520px] lg:h-[520px] xl:w-[640px] xl:h-[640px] rounded-full -z-10 pointer-events-none
                         bg-gradient-to-b from-transparent via-muted/30 to-transparent" />
 
-        {/* Floating particles around eye */}
-        <div className="absolute inset-0 pointer-events-none overflow-visible">
+        {/* Floating particles around eye - hidden on mobile for performance */}
+        <div className="absolute inset-0 pointer-events-none overflow-visible hidden md:block">
           {/* Particle 1 */}
           <motion.div
             className="absolute w-2 h-2 rounded-full bg-foreground/10 blur-[1px]"
@@ -304,8 +329,8 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
                 key="card-0"
                 initial={{ x: 0, y: 0, scale: 0.1, opacity: 0, rotate: -10, filter: 'blur(8px)' }}
                 animate={{ 
-                  x: -180,
-                  y: -120,
+                  x: cardPositions.topLeft.x,
+                  y: cardPositions.topLeft.y,
                   opacity: 1,
                   scale: 1,
                   rotate: 0,
@@ -323,11 +348,11 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
                   duration: 0.5, 
                   ease: [0.34, 1.56, 0.64, 1],
                 }}
-                className="absolute w-[150px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20"
+                className="absolute w-[120px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-2 md:p-3 z-20"
               >
-                <div className="flex items-start gap-2">
-                  <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
-                  <span className="text-sm font-medium text-foreground">{CARDS[0]}</span>
+                <div className="flex items-start gap-1.5 md:gap-2">
+                  <Brain className="w-3 h-3 md:w-4 md:h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
+                  <span className="text-xs md:text-sm font-medium text-foreground">{CARDS[0]}</span>
                 </div>
               </motion.div>
             )}
@@ -340,8 +365,8 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
                 key="card-1"
                 initial={{ x: 0, y: 0, scale: 0.1, opacity: 0, rotate: 8, filter: 'blur(8px)' }}
                 animate={{ 
-                  x: -220,
-                  y: 0,
+                  x: cardPositions.middleLeft.x,
+                  y: cardPositions.middleLeft.y,
                   opacity: 1,
                   scale: 1,
                   rotate: 0,
@@ -359,11 +384,11 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
                   duration: 0.5, 
                   ease: [0.34, 1.56, 0.64, 1],
                 }}
-                className="absolute w-[160px] md:w-[200px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-4 z-20"
+                className="absolute w-[130px] md:w-[200px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-2 md:p-4 z-20"
               >
-                <div className="flex items-start gap-2">
-                  <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
-                  <span className="text-sm font-medium text-foreground">{CARDS[1]}</span>
+                <div className="flex items-start gap-1.5 md:gap-2">
+                  <Brain className="w-3 h-3 md:w-4 md:h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
+                  <span className="text-xs md:text-sm font-medium text-foreground">{CARDS[1]}</span>
                 </div>
               </motion.div>
             )}
@@ -376,8 +401,8 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
                 key="card-2"
                 initial={{ x: 0, y: 0, scale: 0.1, opacity: 0, rotate: -12, filter: 'blur(8px)' }}
                 animate={{ 
-                  x: -180,
-                  y: 120,
+                  x: cardPositions.bottomLeft.x,
+                  y: cardPositions.bottomLeft.y,
                   opacity: 1,
                   scale: 1,
                   rotate: 0,
@@ -395,11 +420,11 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
                   duration: 0.5, 
                   ease: [0.34, 1.56, 0.64, 1],
                 }}
-                className="absolute w-[150px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20"
+                className="absolute w-[120px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-2 md:p-3 z-20"
               >
-                <div className="flex items-start gap-2">
-                  <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
-                  <span className="text-sm font-medium text-foreground">{CARDS[2]}</span>
+                <div className="flex items-start gap-1.5 md:gap-2">
+                  <Brain className="w-3 h-3 md:w-4 md:h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
+                  <span className="text-xs md:text-sm font-medium text-foreground">{CARDS[2]}</span>
                 </div>
               </motion.div>
             )}
@@ -412,8 +437,8 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
                 key="card-3"
                 initial={{ x: 0, y: 0, scale: 0.1, opacity: 0, rotate: 10, filter: 'blur(8px)' }}
                 animate={{ 
-                  x: 180,
-                  y: -120,
+                  x: cardPositions.topRight.x,
+                  y: cardPositions.topRight.y,
                   opacity: 1,
                   scale: 1,
                   rotate: 0,
@@ -431,11 +456,11 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
                   duration: 0.5, 
                   ease: [0.34, 1.56, 0.64, 1],
                 }}
-                className="absolute w-[150px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20"
+                className="absolute w-[120px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-2 md:p-3 z-20"
               >
-                <div className="flex items-start gap-2">
-                  <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
-                  <span className="text-sm font-medium text-foreground">{CARDS[3]}</span>
+                <div className="flex items-start gap-1.5 md:gap-2">
+                  <Brain className="w-3 h-3 md:w-4 md:h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
+                  <span className="text-xs md:text-sm font-medium text-foreground">{CARDS[3]}</span>
                 </div>
               </motion.div>
             )}
@@ -448,8 +473,8 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
                 key="card-4"
                 initial={{ x: 0, y: 0, scale: 0.1, opacity: 0, rotate: -8, filter: 'blur(8px)' }}
                 animate={{ 
-                  x: 220,
-                  y: 0,
+                  x: cardPositions.middleRight.x,
+                  y: cardPositions.middleRight.y,
                   opacity: 1,
                   scale: 1,
                   rotate: 0,
@@ -467,11 +492,11 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
                   duration: 0.5, 
                   ease: [0.34, 1.56, 0.64, 1],
                 }}
-                className="absolute w-[160px] md:w-[200px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-4 z-20"
+                className="absolute w-[130px] md:w-[200px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-2 md:p-4 z-20"
               >
-                <div className="flex items-start gap-2">
-                  <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
-                  <span className="text-sm font-medium text-foreground">{CARDS[4]}</span>
+                <div className="flex items-start gap-1.5 md:gap-2">
+                  <Brain className="w-3 h-3 md:w-4 md:h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
+                  <span className="text-xs md:text-sm font-medium text-foreground">{CARDS[4]}</span>
                 </div>
               </motion.div>
             )}
@@ -484,8 +509,8 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
                 key="card-5"
                 initial={{ x: 0, y: 0, scale: 0.1, opacity: 0, rotate: 12, filter: 'blur(8px)' }}
                 animate={{ 
-                  x: 180,
-                  y: 120,
+                  x: cardPositions.bottomRight.x,
+                  y: cardPositions.bottomRight.y,
                   opacity: 1,
                   scale: 1,
                   rotate: 0,
@@ -503,11 +528,11 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
                   duration: 0.5, 
                   ease: [0.34, 1.56, 0.64, 1],
                 }}
-                className="absolute w-[150px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20"
+                className="absolute w-[120px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-2 md:p-3 z-20"
               >
-                <div className="flex items-start gap-2">
-                  <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
-                  <span className="text-sm font-medium text-foreground">{CARDS[5]}</span>
+                <div className="flex items-start gap-1.5 md:gap-2">
+                  <Brain className="w-3 h-3 md:w-4 md:h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
+                  <span className="text-xs md:text-sm font-medium text-foreground">{CARDS[5]}</span>
                 </div>
               </motion.div>
             )}

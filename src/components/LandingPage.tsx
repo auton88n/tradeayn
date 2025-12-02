@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Brain, ArrowRight, CheckCircle, Send, Loader2, Sparkles, Globe, Shield } from 'lucide-react';
+import { Brain, ArrowRight, CheckCircle, Send, Loader2, Sparkles, Globe, Shield, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -14,6 +14,7 @@ import { TypewriterText } from './TypewriterText';
 import { ConversationExamples } from './ConversationExamples';
 import { Hero } from './Hero';
 import { z } from 'zod';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [demoMessage, setDemoMessage] = useState('');
@@ -137,22 +138,56 @@ const LandingPage = () => {
     features: language === 'ar' ? ['سير عمل مخصص', 'لا حاجة لكتابة الكود', 'توفير فوري للوقت'] : ['Custom workflows', 'No-code setup', 'Instant time savings']
   }];
   return <div className="min-h-screen bg-background">
-      {/* Minimal Floating Navigation */}
-      <nav className="fixed top-6 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
-        <div className="flex items-center gap-8 px-6 py-3 bg-card/80 dark:bg-card/80 backdrop-blur-xl border border-border rounded-full shadow-2xl">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-foreground flex items-center justify-center">
-              <Brain className="w-5 h-5 text-background" />
+      {/* Minimal Floating Navigation - Desktop */}
+      <nav className="fixed top-4 md:top-6 left-1/2 -translate-x-1/2 z-50 animate-fade-in w-[calc(100%-2rem)] md:w-auto max-w-md md:max-w-none">
+        <div className="flex items-center justify-between md:gap-8 px-4 md:px-6 py-2.5 md:py-3 bg-card/80 dark:bg-card/80 backdrop-blur-xl border border-border rounded-full shadow-2xl">
+          <div className="flex items-center gap-2 md:gap-3">
+            <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-foreground flex items-center justify-center">
+              <Brain className="w-4 h-4 md:w-5 md:h-5 text-background" />
             </div>
-            <span className="text-xl font-bold tracking-tight">AYN</span>
+            <span className="text-lg md:text-xl font-bold tracking-tight">AYN</span>
           </div>
           
-          <div className="flex items-center gap-3">
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center gap-3">
             <LanguageSwitcher />
             <ThemeToggle />
             <Button onClick={() => setShowAuthModal(true)} size="sm" className="rounded-full">
               {t('nav.getStarted')}
             </Button>
+          </div>
+
+          {/* Mobile Navigation */}
+          <div className="flex md:hidden items-center gap-2">
+            <ThemeToggle />
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[280px] sm:w-[320px]">
+                <div className="flex flex-col gap-6 pt-8">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-foreground flex items-center justify-center">
+                      <Brain className="w-6 h-6 text-background" />
+                    </div>
+                    <span className="text-2xl font-bold">AYN</span>
+                  </div>
+                  
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-center justify-between py-2">
+                      <span className="text-sm text-muted-foreground">{language === 'ar' ? 'اللغة' : 'Language'}</span>
+                      <LanguageSwitcher />
+                    </div>
+                    
+                    <Button onClick={() => setShowAuthModal(true)} className="w-full rounded-xl">
+                      {t('nav.getStarted')}
+                    </Button>
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </nav>
@@ -161,18 +196,18 @@ const LandingPage = () => {
       <Hero onGetStarted={() => setShowAuthModal(true)} onDemoMessage={msg => setDemoMessage(msg)} />
 
       {/* About AYN - Value Proposition Section */}
-      <section className="py-32 px-6">
+      <section className="py-16 md:py-32 px-4 md:px-6">
         <div className="container mx-auto max-w-6xl text-center">
           <ScrollReveal>
             <span className="text-sm font-mono text-muted-foreground tracking-wider uppercase mb-4 block">
               {language === 'ar' ? 'عن AYN' : 'About AYN'}
             </span>
 
-            <h2 className="text-5xl md:text-6xl font-serif font-bold mb-6">
+            <h2 className="text-3xl md:text-5xl lg:text-6xl font-serif font-bold mb-4 md:mb-6">
               {language === 'ar' ? 'ذكاء اصطناعي يفهمك حقاً' : 'AI That Actually Understands You'}
             </h2>
 
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-16">
+            <p className="text-base md:text-xl text-muted-foreground max-w-3xl mx-auto mb-10 md:mb-16">
               {language === 'ar' 
                 ? 'مصمم للشرق الأوسط، يجمع AYN بين أحدث تقنيات الذكاء الاصطناعي وفهم عميق لاحتياجات الأعمال الإقليمية. نتحدث لغتك - حرفياً ومجازياً.'
                 : 'Built for the Middle East, AYN combines cutting-edge AI with deep understanding of regional business needs. We speak your language—literally and figuratively.'}
@@ -180,16 +215,16 @@ const LandingPage = () => {
           </ScrollReveal>
 
           {/* 3 Value Props */}
-          <div className="grid md:grid-cols-3 gap-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
             <ScrollReveal delay={0.1}>
-              <div className="text-center space-y-4">
-                <div className="w-16 h-16 rounded-2xl bg-muted/50 mx-auto flex items-center justify-center">
-                  <Brain className="w-8 h-8 text-foreground" />
+              <div className="text-center space-y-3 md:space-y-4">
+                <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-muted/50 mx-auto flex items-center justify-center">
+                  <Brain className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
                 </div>
-                <h3 className="text-xl font-bold">
+                <h3 className="text-lg md:text-xl font-bold">
                   {language === 'ar' ? 'ذكاء سياقي' : 'Contextual Intelligence'}
                 </h3>
-                <p className="text-muted-foreground leading-relaxed">
+                <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
                   {language === 'ar' 
                     ? 'يفهم صناعتك ونموذج عملك وتحدياتك المحددة'
                     : 'Understands your industry, business model, and specific challenges'}
@@ -198,14 +233,14 @@ const LandingPage = () => {
             </ScrollReveal>
 
             <ScrollReveal delay={0.2}>
-              <div className="text-center space-y-4">
-                <div className="w-16 h-16 rounded-2xl bg-muted/50 mx-auto flex items-center justify-center">
-                  <Globe className="w-8 h-8 text-foreground" />
+              <div className="text-center space-y-3 md:space-y-4">
+                <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-muted/50 mx-auto flex items-center justify-center">
+                  <Globe className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
                 </div>
-                <h3 className="text-xl font-bold">
+                <h3 className="text-lg md:text-xl font-bold">
                   {language === 'ar' ? 'ثنائي اللغة بالتصميم' : 'Bilingual by Design'}
                 </h3>
-                <p className="text-muted-foreground leading-relaxed">
+                <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
                   {language === 'ar' 
                     ? 'انتقل بسلاسة بين العربية والإنجليزية مع فهم أصيل'
                     : 'Seamlessly switch between Arabic and English with native understanding'}
@@ -214,14 +249,14 @@ const LandingPage = () => {
             </ScrollReveal>
 
             <ScrollReveal delay={0.3}>
-              <div className="text-center space-y-4">
-                <div className="w-16 h-16 rounded-2xl bg-muted/50 mx-auto flex items-center justify-center">
-                  <Shield className="w-8 h-8 text-foreground" />
+              <div className="text-center space-y-3 md:space-y-4">
+                <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-muted/50 mx-auto flex items-center justify-center">
+                  <Shield className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
                 </div>
-                <h3 className="text-xl font-bold">
+                <h3 className="text-lg md:text-xl font-bold">
                   {language === 'ar' ? 'أمان المؤسسات' : 'Enterprise Security'}
                 </h3>
-                <p className="text-muted-foreground leading-relaxed">
+                <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
                   {language === 'ar' 
                     ? 'تشفير بمستوى البنوك مع خصوصية كاملة للبيانات والامتثال'
                     : 'Bank-level encryption with complete data privacy and compliance'}
@@ -233,42 +268,42 @@ const LandingPage = () => {
       </section>
 
       {/* Services Section - Magazine Editorial Layout */}
-      <section id="services" className="py-32 px-6">
+      <section id="services" className="py-16 md:py-32 px-4 md:px-6">
         <div className="container mx-auto max-w-6xl">
           {/* Section header */}
           <ScrollReveal>
-            <div className="text-center mb-24">
+            <div className="text-center mb-12 md:mb-24">
               <span className="text-sm font-mono text-muted-foreground tracking-wider uppercase mb-4 block">
                 {language === 'ar' ? 'ما نفعله بشكل أفضل' : 'What We Do Best'}
               </span>
-              <h2 className="text-5xl md:text-6xl font-serif font-bold mb-6">
+              <h2 className="text-3xl md:text-5xl lg:text-6xl font-serif font-bold mb-4 md:mb-6">
                 {language === 'ar' ? 'خدماتنا' : 'Our Services'}
               </h2>
             </div>
           </ScrollReveal>
 
           {/* Service cards - Floating, borderless */}
-          <div className="space-y-32">
+          <div className="space-y-16 md:space-y-32">
             {services.map((service, index) => <ScrollReveal key={index} delay={index * 0.2}>
                 <div className="group">
-                  <div className={cn("grid md:grid-cols-2 gap-12 items-center", index % 2 === 1 && "md:grid-flow-dense")}>
+                  <div className={cn("grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 items-center", index % 2 === 1 && "md:grid-flow-dense")}>
                     {/* Text content */}
-                    <div className={cn("space-y-6", index % 2 === 1 && "md:col-start-2")}>
+                    <div className={cn("space-y-4 md:space-y-6", index % 2 === 1 && "md:col-start-2")}>
                       <span className="text-sm font-mono text-muted-foreground">{service.number}</span>
-                      <h3 className="text-4xl md:text-5xl font-bold leading-tight">{service.title}</h3>
-                      <p className="text-lg text-muted-foreground leading-relaxed">
+                      <h3 className="text-2xl md:text-4xl lg:text-5xl font-bold leading-tight">{service.title}</h3>
+                      <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
                         {service.description}
                       </p>
                       
                       {/* Features list */}
-                      <ul className="space-y-3 pt-4">
-                        {service.features.map((feature, i) => <li key={i} className="flex items-center gap-3">
-                            <CheckCircle className="w-5 h-5 text-foreground flex-shrink-0" />
-                            <span className="text-foreground/80">{feature}</span>
+                      <ul className="space-y-2 md:space-y-3 pt-2 md:pt-4">
+                        {service.features.map((feature, i) => <li key={i} className="flex items-center gap-2 md:gap-3">
+                            <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-foreground flex-shrink-0" />
+                            <span className="text-sm md:text-base text-foreground/80">{feature}</span>
                           </li>)}
                       </ul>
 
-                      <div className="pt-6">
+                      <div className="pt-4 md:pt-6">
                         <Button onClick={() => setShowAuthModal(true)} variant="outline" className="group/btn">
                           {language === 'ar' ? 'اعرف المزيد' : 'Learn More'}
                           <ArrowRight className="ml-2 w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
@@ -277,9 +312,9 @@ const LandingPage = () => {
                     </div>
 
                     {/* Visual placeholder */}
-                    <div className={cn("aspect-square rounded-3xl bg-muted/50 border border-border hover-glow transition-all duration-500", index % 2 === 1 && "md:col-start-1 md:row-start-1")}>
+                    <div className={cn("aspect-square rounded-2xl md:rounded-3xl bg-muted/50 border border-border hover-glow transition-all duration-500", index % 2 === 1 && "md:col-start-1 md:row-start-1")}>
                       <div className="w-full h-full flex items-center justify-center">
-                        <Brain className="w-16 h-16 text-muted-foreground/30" />
+                        <Brain className="w-12 h-12 md:w-16 md:h-16 text-muted-foreground/30" />
                       </div>
                     </div>
                   </div>
@@ -290,17 +325,17 @@ const LandingPage = () => {
       </section>
 
       {/* Premium Contact Section */}
-      <section id="contact" className="py-32 px-6">
+      <section id="contact" className="py-16 md:py-32 px-4 md:px-6">
         <div className="container mx-auto max-w-3xl">
           <ScrollReveal>
-            <div className="text-center mb-16">
+            <div className="text-center mb-10 md:mb-16">
               <span className="text-sm font-mono text-muted-foreground tracking-wider uppercase mb-4 block">
                 {language === 'ar' ? 'تواصل معنا' : 'Get In Touch'}
               </span>
-              <h2 className="text-5xl md:text-6xl font-serif font-bold mb-6">
+              <h2 className="text-3xl md:text-5xl lg:text-6xl font-serif font-bold mb-4 md:mb-6">
                 {language === 'ar' ? 'لنبدأ المحادثة' : "Let's Start a Conversation"}
               </h2>
-              <p className="text-lg text-muted-foreground max-w-xl mx-auto">
+              <p className="text-base md:text-lg text-muted-foreground max-w-xl mx-auto">
                 {language === 'ar' ? 'أخبرنا عن مشروعك وسنساعدك في تحويل رؤيتك إلى واقع' : "Tell us about your project and we'll help transform your vision into reality"}
               </p>
             </div>

@@ -170,7 +170,7 @@ export const ChatInput = ({
           {/* Left: Action Buttons */}
           <div className="flex items-center gap-1">
             {/* Plus Button for File Attachment */}
-            {supportsFileAttachment && <button onClick={() => fileInputRef.current?.click()} disabled={isDisabled || isUploading} className="toolbar-button" title="Attach file">
+            {supportsFileAttachment && <button onClick={() => fileInputRef.current?.click()} disabled={isDisabled || isUploading} className="toolbar-button w-8 h-8 md:w-9 md:h-9" title="Attach file">
                 <Plus className="w-4 h-4" />
               </button>}
 
@@ -186,8 +186,8 @@ export const ChatInput = ({
             {/* Mode Selector Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="mode-selector-button h-8 px-3 rounded-lg hover:bg-muted/80 transition-all">
-                  <span className="text-sm font-medium truncate max-w-[120px]">
+                <Button variant="ghost" size="sm" className="mode-selector-button h-7 md:h-8 px-2 md:px-3 rounded-lg hover:bg-muted/80 transition-all">
+                  <span className="text-xs md:text-sm font-medium truncate max-w-[80px] md:max-w-[120px]">
                     {modes.find(m => m.name === selectedMode)?.translatedName || 'Mode'}
                   </span>
                   <ChevronDown className="w-3 h-3 ml-1 opacity-50" />
@@ -216,14 +216,14 @@ export const ChatInput = ({
             {/* Send Button */}
             <button 
               className={cn(
-                "send-button-square transition-all duration-200 active:scale-95 hover:scale-105", 
+                "send-button-square w-8 h-8 md:w-9 md:h-9 transition-all duration-200 active:scale-95 hover:scale-105", 
                 getSendButtonClass(selectedMode)
               )} 
               onClick={handleSend} 
               disabled={!inputMessage.trim() && !selectedFile || isDisabled || isUploading} 
               title="Send message"
             >
-              <ArrowUp className="w-[22px] h-[22px]" strokeWidth={2.5} />
+              <ArrowUp className="w-5 h-5 md:w-[22px] md:h-[22px]" strokeWidth={2.5} />
             </button>
           </div>
         </div>

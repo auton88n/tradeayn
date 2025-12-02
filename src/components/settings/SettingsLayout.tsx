@@ -57,20 +57,20 @@ const SettingsLayoutContent = ({ children }: SettingsLayoutProps) => {
 
   return (
     <>
-      <div className="min-h-screen bg-background p-6 pt-8">
+      <div className="min-h-screen bg-background p-4 md:p-6 pt-6 md:pt-8">
         <div className="max-w-5xl mx-auto">
-          <div className="mb-8">
+          <div className="mb-6 md:mb-8">
             <Button
               variant="ghost"
               size="sm"
               onClick={handleBack}
-              className="gap-2 mb-4"
+              className="gap-2 mb-3 md:mb-4"
             >
               <ArrowLeft className="h-4 w-4" />
               {t('common.back')}
             </Button>
-            <div className="flex items-center justify-between gap-4 mb-6">
-              <h1 className="text-3xl font-bold">{t('settings.title')}</h1>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 md:gap-4 mb-4 md:mb-6">
+              <h1 className="text-2xl md:text-3xl font-bold">{t('settings.title')}</h1>
               {hasUnsavedChanges && (
                 <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-sm">
                   <AlertTriangle className="h-4 w-4" />
