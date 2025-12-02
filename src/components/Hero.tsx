@@ -398,7 +398,8 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
               onKeyPress={handleKeyPress}
               placeholder=""
               rows={1}
-              className="w-full resize-none min-h-[44px] max-h-[120px] text-base bg-transparent border-0 outline-none focus:ring-0 px-2 py-2"
+              unstyled={true}
+              className="w-full resize-none min-h-[44px] max-h-[120px] text-base bg-transparent px-2 py-2"
             />
 
             {/* Typewriter Placeholder */}
