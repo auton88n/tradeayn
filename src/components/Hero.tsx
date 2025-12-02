@@ -225,7 +225,7 @@ export const Hero = ({
     textarea.style.height = newHeight + 'px';
   };
   const CARDS = language === 'ar' ? CARDS_AR : CARDS_EN;
-  return <section ref={containerRef} className="relative min-h-screen flex flex-col items-center justify-center py-16 md:py-24 px-4 md:px-12 lg:px-24 overflow-hidden contain-layout" aria-label="Hero">
+  return <section ref={containerRef} className="relative min-h-screen flex flex-col items-center justify-center py-16 md:py-24 px-4 md:px-12 lg:px-24 overflow-hidden" aria-label="Hero">
       {/* Subtle vignette / soft gradient background */}
       <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-background via-background to-muted/10" />
 
@@ -262,7 +262,7 @@ export const Hero = ({
                         bg-gradient-to-b from-transparent via-muted/30 to-transparent" />
 
         {/* Floating particles - reduced to 3 for performance */}
-        <div className="absolute inset-0 pointer-events-none overflow-visible hidden md:block will-change-transform contain-paint">
+        <div className="absolute inset-0 pointer-events-none overflow-visible hidden md:block will-change-transform">
           {/* Particle 1 */}
           <motion.div 
             className="absolute w-2 h-2 rounded-full bg-foreground/15" 
@@ -287,7 +287,7 @@ export const Hero = ({
         </div>
 
         {/* Cards - optimized animations without blur filters */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none will-change-transform contain-paint">
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none will-change-transform">
           {/* Top-left card */}
           <AnimatePresence mode="popLayout">
             {visibleCardIndex === 0 && (
