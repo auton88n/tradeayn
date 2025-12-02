@@ -288,7 +288,7 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
               filter: 'blur(0px)'
             }}
             transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-            className="absolute left-4 md:left-12 lg:left-20 top-1/2 -translate-y-1/2 w-[160px] md:w-[200px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-4 z-20 pointer-events-auto cursor-pointer"
+            className="absolute left-12 md:left-24 lg:left-32 top-1/2 -translate-y-1/2 w-[160px] md:w-[200px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-4 z-20 pointer-events-auto cursor-pointer"
           >
             <div className="flex items-start gap-2">
               <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
@@ -306,7 +306,7 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
               filter: 'blur(0px)'
             }}
             transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-            className="absolute left-16 md:left-28 lg:left-36 top-8 md:top-4 w-[150px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20 pointer-events-auto cursor-pointer"
+            className="absolute left-24 md:left-40 lg:left-48 top-4 md:top-0 w-[150px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20 pointer-events-auto cursor-pointer"
           >
             <div className="flex items-start gap-2">
               <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
@@ -324,7 +324,7 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
               filter: 'blur(0px)'
             }}
             transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-            className="absolute left-1/2 -translate-x-1/2 -top-6 md:-top-8 w-[140px] md:w-[180px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20 pointer-events-auto cursor-pointer"
+            className="absolute left-1/2 -translate-x-1/2 top-2 md:top-0 w-[140px] md:w-[180px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20 pointer-events-auto cursor-pointer"
           >
             <div className="flex items-start gap-2">
               <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
@@ -342,7 +342,7 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
               filter: 'blur(0px)'
             }}
             transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-            className="absolute right-16 md:right-28 lg:right-36 top-8 md:top-4 w-[150px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20 pointer-events-auto cursor-pointer"
+            className="absolute right-24 md:right-40 lg:right-48 top-4 md:top-0 w-[150px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20 pointer-events-auto cursor-pointer"
           >
             <div className="flex items-start gap-2">
               <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
@@ -360,7 +360,7 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
               filter: 'blur(0px)'
             }}
             transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-            className="absolute right-4 md:right-12 lg:right-20 top-1/2 -translate-y-1/2 w-[160px] md:w-[200px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-4 z-20 pointer-events-auto cursor-pointer"
+            className="absolute right-12 md:right-24 lg:right-32 top-1/2 -translate-y-1/2 w-[160px] md:w-[200px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-4 z-20 pointer-events-auto cursor-pointer"
           >
             <div className="flex items-start gap-2">
               <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
@@ -378,7 +378,7 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
               filter: 'blur(0px)'
             }}
             transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-            className="absolute left-1/2 -translate-x-1/2 bottom-4 md:bottom-0 w-[150px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20 pointer-events-auto cursor-pointer"
+            className="absolute left-1/2 -translate-x-1/2 bottom-8 md:bottom-4 w-[150px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20 pointer-events-auto cursor-pointer"
           >
             <div className="flex items-start gap-2">
               <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
