@@ -205,8 +205,8 @@ export const CenterStageLayout = ({
         <div ref={eyeRef} className="relative">
           <EmotionalEye size="lg" />
 
-          {/* Response bubbles emanating from eye */}
-          <div className="absolute top-full left-1/2 -translate-x-1/2 mt-8 flex flex-col items-center gap-4 w-[400px] max-w-[90vw]">
+          {/* Response bubbles emanating from eye - positioned to the right */}
+          <div className="absolute top-1/2 left-full -translate-y-1/2 ml-6 flex flex-col items-start gap-3 w-[320px]">
             <AnimatePresence mode="popLayout">
               {responseBubbles.filter(b => b.isVisible).map((bubble) => (
                 <AYNSpeechBubble

@@ -76,9 +76,9 @@ export const useBubbleAnimation = (): UseBubbleAnimationReturn => {
   const emitResponseBubble = useCallback((content: string, type: BubbleType) => {
     const id = `response-${Date.now()}-${bubbleIdRef.current++}`;
     
-    // Calculate position based on existing bubbles
+    // Calculate position based on existing bubbles - stack vertically from eye level
     const existingCount = responseBubbles.filter((b) => b.isVisible).length;
-    const yOffset = 80 + existingCount * 70;
+    const yOffset = existingCount * 50;
     
     const newBubble: ResponseBubble = {
       id,

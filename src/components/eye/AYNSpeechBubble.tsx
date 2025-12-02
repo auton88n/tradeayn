@@ -56,30 +56,24 @@ export const AYNSpeechBubble = ({
         <motion.div
           key={id}
           className={cn(
-            "absolute z-40 max-w-[320px] px-4 py-3 rounded-2xl",
+            "relative z-40 max-w-[320px] px-4 py-3 rounded-2xl",
             "backdrop-blur-md border shadow-lg",
             config.bgClass
           )}
-          style={{
-            left: '50%',
-            top: '50%',
-          }}
           initial={{
-            x: '-50%',
-            y: '-50%',
-            scale: 0,
+            x: -20,
+            scale: 0.8,
             opacity: 0,
           }}
           animate={{
-            x: `calc(-50% + ${position.x}px)`,
-            y: `calc(-50% + ${position.y}px)`,
+            x: 0,
             scale: 1,
             opacity: 1,
           }}
           exit={{
+            x: -20,
             scale: 0.8,
             opacity: 0,
-            y: `calc(-50% + ${position.y + 20}px)`,
           }}
           transition={{
             type: 'spring',
