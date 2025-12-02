@@ -57,6 +57,39 @@ Deno.serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
+    // SERVER-SIDE RATE LIMIT CHECK (50 uploads per hour)
+    const { data: rateLimitResult, error: rateLimitError } = await supabaseClient
+      .rpc('check_api_rate_limit', {
+        p_user_id: user.id,
+        p_endpoint: 'file-upload',
+        p_max_requests: 50,
+        p_window_minutes: 60
+      });
+
+    if (rateLimitError) {
+      console.error('Rate limit check error:', rateLimitError);
+    }
+
+    if (rateLimitResult && rateLimitResult.length > 0 && !rateLimitResult[0].allowed) {
+      const result = rateLimitResult[0];
+      console.warn('Rate limit exceeded for file upload, user:', user.id);
+      
+      return new Response(
+        JSON.stringify({ 
+          error: 'Upload rate limit exceeded. Please try again later.',
+          retryAfter: result.retry_after_seconds || 3600
+        }),
+        { 
+          status: 429,
+          headers: { 
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+            'Retry-After': String(result.retry_after_seconds || 3600)
+          }
+        }
+      );
+    }
+
     const { file, fileName, fileType, userId }: FileUploadRequest = await req.json();
     
     // Verify user can only upload their own files
