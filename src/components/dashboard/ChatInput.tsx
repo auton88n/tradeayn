@@ -128,7 +128,7 @@ export const ChatInput = ({
 
   // Enable file attachments for all modes
   const supportsFileAttachment = true;
-  return <div className={cn("input-area", hasMessages ? "bottom-position" : "center-position", sidebarOpen ? "sidebar-open" : "sidebar-closed", isDragOver && "drag-over")} onDragEnter={onDragEnter} onDragLeave={onDragLeave} onDragOver={onDragOver} onDrop={onDrop}>
+  return <div className={cn("input-area bottom-position", sidebarOpen ? "sidebar-open" : "sidebar-closed", isDragOver && "drag-over")} onDragEnter={onDragEnter} onDragLeave={onDragLeave} onDragOver={onDragOver} onDrop={onDrop}>
       {/* Drag Overlay */}
       {isDragOver && <div className="absolute inset-0 bg-primary/10 backdrop-blur-sm rounded-3xl border-2 border-primary border-dashed flex flex-col items-center justify-center z-50 pointer-events-none">
           <Paperclip className="w-12 h-12 text-primary mb-2" />
