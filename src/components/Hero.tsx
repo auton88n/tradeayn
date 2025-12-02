@@ -619,24 +619,30 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
               {/* sclera subtle */}
               <circle cx="50" cy="50" r="48" fill="url(#g2)" opacity="0.06" />
 
-              {/* iris / pupil - black circle that dilates on hover */}
+              {/* iris / pupil - black circle that dilates on hover and contracts on absorption */}
               <circle
                 cx="50"
                 cy="50"
-                r={isHovered ? "32" : "28"}
+                r={absorptionPulse ? "22" : isHovered ? "32" : "28"}
                 fill="black"
                 style={{ 
-                  transition: "r 0.3s cubic-bezier(0.32, 0.72, 0, 1)" 
+                  transition: absorptionPulse 
+                    ? "r 0.15s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
+                    : "r 0.3s cubic-bezier(0.32, 0.72, 0, 1)" 
                 }}
               />
               
               {/* Brain logo centered inside the black pupil - smaller */}
               <foreignObject 
-                x={isHovered ? "30" : "32"} 
-                y={isHovered ? "30" : "32"} 
-                width={isHovered ? "40" : "36"} 
-                height={isHovered ? "40" : "36"}
-                style={{ transition: "all 0.3s cubic-bezier(0.32, 0.72, 0, 1)" }}
+                x={absorptionPulse ? "36" : isHovered ? "30" : "32"} 
+                y={absorptionPulse ? "36" : isHovered ? "30" : "32"} 
+                width={absorptionPulse ? "28" : isHovered ? "40" : "36"} 
+                height={absorptionPulse ? "28" : isHovered ? "40" : "36"}
+                style={{ 
+                  transition: absorptionPulse 
+                    ? "all 0.15s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
+                    : "all 0.3s cubic-bezier(0.32, 0.72, 0, 1)" 
+                }}
               >
                 <Brain 
                   className="w-full h-full text-white/90"
