@@ -64,19 +64,6 @@ button, a, input, textarea, select {
     --gradient-secondary: linear-gradient(135deg, hsl(0 0% 15%), hsl(0 0% 20%));
     --gradient-accent: linear-gradient(135deg, hsl(0 0% 20%), hsl(0 0% 25%));
     --gradient-hero: linear-gradient(135deg, hsl(0 0% 9%) 0%, hsl(0 0% 15%) 50%, hsl(0 0% 20%) 100%);
-    
-    /* Superhuman-inspired Premium Gradient */
-    --hero-gradient: linear-gradient(180deg, 
-      hsl(250, 40%, 92%) 0%,
-      hsl(260, 45%, 88%) 30%,
-      hsl(270, 40%, 85%) 60%,
-      hsl(290, 35%, 82%) 100%);
-    
-    --hero-gradient-dark: linear-gradient(180deg,
-      hsl(250, 30%, 15%) 0%,
-      hsl(260, 35%, 12%) 30%,
-      hsl(270, 30%, 10%) 60%,
-      hsl(290, 25%, 8%) 100%);
 
     /* Professional White Background Glassmorphism - Fixed */
     --glass-bg: hsla(0, 0%, 97%, 0.98);
@@ -168,11 +155,7 @@ button, a, input, textarea, select {
   }
 
   html:not(.dark) body {
-    background: var(--hero-gradient);
-  }
-  
-  html.dark body {
-    background: var(--hero-gradient-dark);
+    background: radial-gradient(ellipse at top, hsl(0 0% 100%) 0%, hsl(0 0% 98%) 100%);
   }
 
   /* Message bubble styling */
