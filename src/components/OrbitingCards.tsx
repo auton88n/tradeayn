@@ -1,139 +1,71 @@
-import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { MessageSquare } from 'lucide-react';
 
-interface Conversation {
-  id: string;
-  userMessage: string;
-  aynResponse: string;
+interface Phrase {
+  en: string;
+  ar: string;
 }
 
 export const OrbitingCards = () => {
   const { language } = useLanguage();
-  const [isPaused, setIsPaused] = useState(false);
-  
-  const conversations: Conversation[] = language === 'ar' ? [
-    {
-      id: '1',
-      userMessage: 'كيف أزيد إيراداتي؟',
-      aynResponse: 'دعني أحلل بيانات مبيعاتك...'
-    },
-    {
-      id: '2',
-      userMessage: 'اكتب بريد تسويقي',
-      aynResponse: 'إليك حملة مخصصة...'
-    },
-    {
-      id: '3',
-      userMessage: 'أتمتة الفواتير',
-      aynResponse: 'تم الربط بأنظمتك...'
-    },
-    {
-      id: '4',
-      userMessage: 'حلل هذا العقد',
-      aynResponse: 'وجدت 3 بنود رئيسية...'
-    },
-  ] : [
-    {
-      id: '1',
-      userMessage: 'How can I grow revenue?',
-      aynResponse: 'Let me analyze your sales data...'
-    },
-    {
-      id: '2',
-      userMessage: 'Draft a marketing email',
-      aynResponse: "Here's a personalized campaign..."
-    },
-    {
-      id: '3',
-      userMessage: 'Automate my invoicing',
-      aynResponse: "I've connected to your systems..."
-    },
-    {
-      id: '4',
-      userMessage: 'Analyze this contract',
-      aynResponse: 'I found 3 key clauses...'
-    },
+
+  const phrases: Phrase[] = [
+    { en: 'Let me take care of that.', ar: '\u062f\u0639\u0646\u064a \u0623\u062a\u0648\u0644\u0649 \u0630\u0644\u0643.' },
+    { en: 'Working on it…', ar: '\u062c\u0627\u0631\u0650 \u0627\u0644\u0639\u0645\u0644...' },
+    { en: 'Done. What\'s next?', ar: '\u062a\u0645. \u0645\u0627\u0630\u0627 \u0628\u0639\u062f\u061f' },
+    { en: 'Optimizing your workflow.', ar: '\u0623\u062d\u0633\u0651\u0646 \u0633\u064a\u0631 \u0639\u0645\u0644\u0643.' },
+    { en: 'I\'ve got you covered.', ar: '\u0623\u0646\u0627 \u0641\u064a \u062e\u062f\u0645\u062a\u0643.' },
+    { en: 'Consider it done.', ar: '\u0627\u0639\u062a\u0628\u0631\u0647 \u0645\u0646\u062c\u0632\u0627\u064b.' },
   ];
-  
-  const radius = 280; // Distance from center
-  const cardCount = conversations.length;
-  
+
+  // Orbit settings
+  const radius = 180; // Distance from center
+  const cardCount = 6;
+  const rotationDuration = 40; // Smooth, slow rotation
+
   return (
     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-      {conversations.map((conv, index) => {
+      {phrases.slice(0, cardCount).map((phrase, index) => {
         const angle = (index / cardCount) * 360;
-        
+
         return (
           <motion.div
-            key={conv.id}
-            className="absolute pointer-events-auto cursor-pointer"
+            key={index}
+            className="absolute"
             style={{
               left: '50%',
               top: '50%',
             }}
             animate={{
-              rotate: isPaused ? angle : [angle, angle + 360],
+              rotate: [angle, angle + 360],
             }}
             transition={{
-              duration: 30,
+              duration: rotationDuration,
               repeat: Infinity,
-              ease: "linear",
+              ease: 'linear',
             }}
-            onMouseEnter={() => setIsPaused(true)}
-            onMouseLeave={() => setIsPaused(false)}
           >
+            {/* Position card at orbit radius */}
             <motion.div
               style={{
                 x: Math.cos((angle * Math.PI) / 180) * radius,
                 y: Math.sin((angle * Math.PI) / 180) * radius,
               }}
               animate={{
-                rotate: isPaused ? -angle : [0, -360],
+                rotate: [-angle, -angle - 360],
               }}
               transition={{
-                duration: 30,
+                duration: rotationDuration,
                 repeat: Infinity,
-                ease: "linear",
-              }}
-              whileHover={{
-                scale: 1.1,
-                zIndex: 10,
+                ease: 'linear',
               }}
             >
-              <motion.div
-                className="orbit-card rounded-2xl p-4 w-48 shadow-xl hover:shadow-2xl transition-shadow"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{
-                  delay: index * 0.2,
-                  duration: 0.5,
-                  ease: [0.32, 0.72, 0, 1]
-                }}
-              >
-                <div className="space-y-2">
-                  {/* User message */}
-                  <div className="flex items-start gap-2">
-                    <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs font-medium text-muted-foreground">U</span>
-                    </div>
-                    <p className="text-xs text-foreground/80 leading-relaxed flex-1">
-                      {conv.userMessage}
-                    </p>
-                  </div>
-                  
-                  {/* AYN response */}
-                  <div className="flex items-start gap-2">
-                    <div className="w-6 h-6 rounded-full bg-foreground flex items-center justify-center flex-shrink-0">
-                      <MessageSquare className="w-3 h-3 text-background" />
-                    </div>
-                    <p className="text-xs text-foreground/60 leading-relaxed flex-1">
-                      {conv.aynResponse}
-                    </p>
-                  </div>
-                </div>
-              </motion.div>
+              {/* Card with premium glassmorphism */}
+              <div className="orbit-card pointer-events-auto px-5 py-3 max-w-[200px]">
+                <p className="text-sm text-foreground/80 text-center leading-relaxed">
+                  {language === 'ar' ? phrase.ar : phrase.en}
+                </p>
+              </div>
             </motion.div>
           </motion.div>
         );
