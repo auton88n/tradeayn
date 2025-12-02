@@ -302,7 +302,7 @@ const LandingPage = () => {
       </section>
 
       {/* Minimal Footer */}
-      <footer className="py-24 border-t border-border">
+      <footer className="py-12 border-t border-border">
         <div className="container max-w-6xl mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-start gap-12 mb-16">
             {/* Logo & tagline */}
