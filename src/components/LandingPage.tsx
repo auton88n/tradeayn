@@ -10,9 +10,11 @@ import { ThemeToggle } from './theme-toggle';
 import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { TypewriterText } from './TypewriterText';
 import { z } from 'zod';
 const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [demoMessage, setDemoMessage] = useState('');
   const {
     t,
     language
@@ -158,33 +160,77 @@ const LandingPage = () => {
         {/* Subtle noise texture */}
         <div className="absolute inset-0 bg-noise opacity-[0.02] pointer-events-none" />
         
-        {/* Main headline with staggered animation */}
+        {/* Interactive Chat Input */}
         <ScrollReveal>
-          <h1 className="text-display text-[clamp(3rem,12vw,8rem)] font-serif font-bold text-center leading-[0.9] mb-12">
-            <span className="block opacity-0 animate-[fade-in_0.8s_ease-out_0.2s_forwards]">
-              {language === 'ar' ? 'الذكاء' : 'Intelligence'}
-            </span>
-            <span className="block opacity-0 animate-[fade-in_0.8s_ease-out_0.5s_forwards]">
-              {language === 'ar' ? 'يلتقي' : 'Meets'}
-            </span>
-            <span className="block opacity-0 animate-[fade-in_0.8s_ease-out_0.8s_forwards]">
-              {language === 'ar' ? 'الأعمال' : 'Business'}
-            </span>
-          </h1>
+          <div className="w-full max-w-3xl mx-auto">
+            {/* Optional tagline above input */}
+            <p className="text-center text-lg text-muted-foreground mb-8 opacity-0 animate-[fade-in_0.8s_ease-out_0.2s_forwards]">
+              {language === 'ar' ? 'اسأل AYN أي شيء' : 'Ask AYN anything'}
+            </p>
+            
+            {/* Chat Input Container */}
+            <div className="relative bg-card/50 backdrop-blur-xl border-2 border-border rounded-2xl p-6 shadow-2xl opacity-0 animate-[fade-in_0.8s_ease-out_0.4s_forwards] hover-glow">
+              <div className="relative">
+                <Textarea
+                  value={demoMessage}
+                  onChange={(e) => setDemoMessage(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      setShowAuthModal(true);
+                    }
+                  }}
+                  placeholder=""
+                  rows={3}
+                  className="w-full resize-none bg-transparent border-0 outline-none focus:ring-0 text-base min-h-[80px] focus-visible:ring-0"
+                />
+                
+                {/* Typewriter Placeholder */}
+                {!demoMessage && (
+                  <div className={cn(
+                    "absolute top-2 pointer-events-none",
+                    language === 'ar' ? 'right-3' : 'left-3'
+                  )}>
+                    <TypewriterText
+                      key={`demo-${language}`}
+                      text={language === 'ar' ? 'كيف يمكنني زيادة إيراداتي؟' : 'How can I increase my revenue?'}
+                      speed={50}
+                      className="text-muted-foreground"
+                      showCursor={true}
+                    />
+                  </div>
+                )}
+              </div>
+              
+              {/* Send Button Row */}
+              <div className="flex items-center justify-end mt-4 pt-4 border-t border-border/50">
+                <Button
+                  onClick={() => setShowAuthModal(true)}
+                  disabled={!demoMessage.trim()}
+                  size="lg"
+                  className="h-12 px-8 rounded-full transition-all hover:scale-105 active:scale-95"
+                >
+                  {language === 'ar' ? 'إرسال' : 'Send'}
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </Button>
+              </div>
+            </div>
+          </div>
         </ScrollReveal>
         
-        {/* Minimal subtitle */}
-        
-        
-        {/* Single elegant CTA */}
-        <ScrollReveal delay={1.2}>
-          
+        {/* Single elegant CTA below the input */}
+        <ScrollReveal delay={0.8}>
+          <div className="text-center mt-8">
+            <p className="text-sm text-muted-foreground">
+              {language === 'ar' ? 'ابدأ التحدث مع AYN مجاناً' : 'Start chatting with AYN for free'}
+            </p>
+          </div>
         </ScrollReveal>
 
         {/* Floating brain icon */}
-        <ScrollReveal delay={1.5}>
-          <div className="absolute bottom-32 animate-float">
-            
+        <ScrollReveal delay={1.2}>
+          <div className="absolute bottom-32 animate-float opacity-0 animate-[fade-in_0.8s_ease-out_1.2s_forwards]">
+            <Brain className="w-16 h-16 text-muted-foreground/20" />
           </div>
         </ScrollReveal>
       </section>
