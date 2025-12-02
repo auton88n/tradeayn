@@ -150,6 +150,10 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
               viewBox="0 0 100 100"
               className="w-[70%] h-[70%] relative"
               xmlns="http://www.w3.org/2000/svg"
+              style={{
+                animation: 'eye-blink 4s ease-in-out infinite',
+                transformOrigin: 'center center'
+              }}
             >
               {/* iris subtle gradient */}
               <defs>
