@@ -1,4 +1,5 @@
-import { useRef, useCallback, useEffect, useState } from 'react';
+import { useRef, useCallback, useEffect, useState, useMemo } from 'react';
+import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EmotionalEye } from '@/components/eye/EmotionalEye';
 import { UserMessageBubble } from '@/components/eye/UserMessageBubble';
@@ -65,6 +66,12 @@ export const CenterStageLayout = ({
   } = useBubbleAnimation();
 
   const [lastProcessedMessageId, setLastProcessedMessageId] = useState<string | null>(null);
+
+  // Calculate if eye should shift left based on visible bubbles
+  const visibleBubbles = responseBubbles.filter(b => b.isVisible);
+  const hasLongBubbles = visibleBubbles.some(b => b.content.length > 100);
+  const shouldShiftLeft = visibleBubbles.length > 0;
+  const eyeShiftX = shouldShiftLeft ? (hasLongBubbles ? -120 : -80) : 0;
 
   // Get eye position for bubble animations
   const getEyePosition = useCallback(() => {
@@ -202,13 +209,21 @@ export const CenterStageLayout = ({
 
       {/* Central Eye Stage - centered in available space above input */}
       <div className="flex-1 flex items-center justify-center pb-32">
-        <div ref={eyeRef} className="relative">
+        <motion.div 
+          ref={eyeRef} 
+          className="relative"
+          animate={{ x: eyeShiftX }}
+          transition={{ type: 'spring', stiffness: 200, damping: 25 }}
+        >
           <EmotionalEye size="lg" />
 
           {/* Response bubbles emanating from eye - positioned to the right */}
-          <div className="absolute top-1/2 left-full -translate-y-1/2 ml-6 flex flex-col items-start gap-3 w-[320px]">
+          <div className={cn(
+            "absolute top-1/2 left-full -translate-y-1/2 ml-6 flex flex-col items-start gap-3",
+            shouldShiftLeft && hasLongBubbles ? "w-[400px]" : "w-[320px]"
+          )}>
             <AnimatePresence mode="popLayout">
-              {responseBubbles.filter(b => b.isVisible).map((bubble) => (
+              {visibleBubbles.map((bubble) => (
                 <AYNSpeechBubble
                   key={bubble.id}
                   id={bubble.id}
@@ -253,7 +268,7 @@ export const CenterStageLayout = ({
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
+        </motion.div>
       </div>
 
       {/* Flying user message bubble */}
