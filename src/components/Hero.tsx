@@ -3,7 +3,7 @@ import { ArrowUp, Plus, ChevronDown, Brain } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { TypewriterText } from '@/components/TypewriterText';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 interface HeroProps {
@@ -429,6 +429,22 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
             </div>
           </motion.div>
         </div>
+
+        {/* Pulse ring - emanates when card appears */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={visibleCardIndex}
+            className="absolute inset-0 flex items-center justify-center pointer-events-none z-5"
+          >
+            <motion.div
+              initial={{ scale: 0.5, opacity: 0.6 }}
+              animate={{ scale: 2.5, opacity: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.8, ease: [0.32, 0.72, 0, 1] }}
+              className="w-[160px] h-[160px] md:w-[220px] md:h-[220px] lg:w-[260px] lg:h-[260px] rounded-full border border-foreground/10"
+            />
+          </motion.div>
+        </AnimatePresence>
 
         {/* Eye - centered with spring physics */}
         <motion.div
