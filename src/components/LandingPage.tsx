@@ -304,7 +304,7 @@ const LandingPage = () => {
       {/* Minimal Footer */}
       <footer className="py-6 border-t border-border">
         <div className="container max-w-6xl mx-auto px-6">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-foreground flex items-center justify-center">
               <Brain className="w-5 h-5 text-background" />
             </div>
