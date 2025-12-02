@@ -614,6 +614,12 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
                   <stop offset="0%" stopColor="hsl(var(--background))" stopOpacity="0.9" />
                   <stop offset="80%" stopColor="hsl(var(--foreground))" stopOpacity="0.95" />
                 </radialGradient>
+                {/* Radial flash gradient for absorption effect */}
+                <radialGradient id="flashGradient" cx="50%" cy="50%">
+                  <stop offset="0%" stopColor="white" stopOpacity="0.9" />
+                  <stop offset="40%" stopColor="white" stopOpacity="0.5" />
+                  <stop offset="100%" stopColor="white" stopOpacity="0" />
+                </radialGradient>
               </defs>
 
               {/* sclera subtle */}
@@ -632,17 +638,17 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
                 }}
               />
               
-              {/* Brightness flash overlay on absorption */}
+              {/* Brightness flash overlay on absorption - radial glow from center */}
               <circle
                 cx="50"
                 cy="50"
-                r={absorptionPulse ? "22" : isHovered ? "32" : "28"}
-                fill="white"
-                opacity={absorptionPulse ? "0.4" : "0"}
+                r={absorptionPulse ? "26" : isHovered ? "36" : "32"}
+                fill="url(#flashGradient)"
+                opacity={absorptionPulse ? "0.7" : "0"}
                 style={{ 
                   transition: absorptionPulse 
-                    ? "opacity 0.1s ease-out, r 0.15s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
-                    : "opacity 0.25s ease-in, r 0.3s cubic-bezier(0.32, 0.72, 0, 1)" 
+                    ? "opacity 0.08s ease-out, r 0.15s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
+                    : "opacity 0.3s ease-in, r 0.3s cubic-bezier(0.32, 0.72, 0, 1)" 
                 }}
               />
               
