@@ -430,18 +430,27 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
           </motion.div>
         </div>
 
-        {/* Pulse ring - emanates when card appears */}
+        {/* Pulse rings - emanate when card appears */}
         <AnimatePresence mode="wait">
           <motion.div
             key={visibleCardIndex}
             className="absolute inset-0 flex items-center justify-center pointer-events-none z-5"
           >
+            {/* Outer ring */}
             <motion.div
-              initial={{ scale: 0.5, opacity: 0.6 }}
+              initial={{ scale: 0.5, opacity: 0.5 }}
               animate={{ scale: 2.5, opacity: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.8, ease: [0.32, 0.72, 0, 1] }}
-              className="w-[160px] h-[160px] md:w-[220px] md:h-[220px] lg:w-[260px] lg:h-[260px] rounded-full border border-foreground/10"
+              className="absolute w-[160px] h-[160px] md:w-[220px] md:h-[220px] lg:w-[260px] lg:h-[260px] rounded-full border border-foreground/10"
+            />
+            {/* Inner ring - delayed */}
+            <motion.div
+              initial={{ scale: 0.5, opacity: 0.4 }}
+              animate={{ scale: 2, opacity: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1], delay: 0.1 }}
+              className="absolute w-[160px] h-[160px] md:w-[220px] md:h-[220px] lg:w-[260px] lg:h-[260px] rounded-full border border-foreground/8"
             />
           </motion.div>
         </AnimatePresence>
