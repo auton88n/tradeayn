@@ -99,8 +99,6 @@ export const AdminPanel = () => {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      console.log('AdminPanel: Starting data fetch...');
-      
       // Fetch access grants and profiles with optimized queries
       const [accessResult, profilesResult, usageResult, todayUsageResult] = await Promise.all([
         supabase
@@ -123,20 +121,8 @@ export const AdminPanel = () => {
           .limit(500) // Add limit for better performance
       ]);
 
-      console.log('AdminPanel: Data fetched:', {
-        accessGrants: accessResult.data?.length || 0,
-        profiles: profilesResult.data?.length || 0,
-        usageStats: usageResult.data?.length || 0
-      });
-
-      if (accessResult.error) {
-        console.error('Access grants error:', accessResult.error);
-        throw accessResult.error;
-      }
-      if (profilesResult.error) {
-        console.error('Profiles error:', profilesResult.error);
-        throw profilesResult.error;
-      }
+      if (accessResult.error) throw accessResult.error;
+      if (profilesResult.error) throw profilesResult.error;
       
       // Create a map of user_id to profile for efficient lookup
       const profilesMap = (profilesResult.data || []).reduce((acc, profile) => {
@@ -152,8 +138,6 @@ export const AdminPanel = () => {
         return acc;
       }, {} as Record<string, string>);
 
-      console.log('AdminPanel: Email mapping created:', Object.keys(emailsMap).length, 'emails');
-
       // Enrich access data with profile information and email
       const enrichedAccessData = (accessResult.data || []).map(grant => ({
         ...grant,
@@ -161,13 +145,10 @@ export const AdminPanel = () => {
         user_email: emailsMap[grant.user_id] || null
       }));
       
-      console.log('AdminPanel: Enriched data created:', enrichedAccessData.length, 'users with emails');
       setAllUsers(enrichedAccessData);
 
       if (!usageResult.error && usageResult.data) {
         setUsageStats(usageResult.data);
-      } else if (usageResult.error) {
-        console.error('Usage stats error:', usageResult.error);
       }
 
       // Calculate system metrics efficiently with error handling
@@ -187,7 +168,6 @@ export const AdminPanel = () => {
       });
 
     } catch (error) {
-      console.error('Error fetching admin data:', error);
       toast({
         title: "Error",
         description: "Unable to fetch admin data. Please try again.",
@@ -243,7 +223,7 @@ export const AdminPanel = () => {
         }
       }
     } catch (error) {
-      console.error('Error loading system config:', error);
+      // Silent fail - config loading is not critical
     }
   }, []);
 
@@ -318,7 +298,6 @@ export const AdminPanel = () => {
         description: t('admin.configSaved')
       });
     } catch (error) {
-      console.error('Error updating config:', error);
       toast({
         title: "Error",
         description: "Failed to update configuration.",
@@ -353,7 +332,6 @@ export const AdminPanel = () => {
           break;
       }
     } catch (error) {
-      console.error('Error performing maintenance:', error);
       toast({
         title: "Error",
         description: "Maintenance task failed.",
