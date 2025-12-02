@@ -29,6 +29,7 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const [inputMessage, setInputMessage] = useState('');
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const [isFocused, setIsFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // track pointer relative to container center for subtle eye follow with spring physics
@@ -94,12 +95,12 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
 
   // Rotate placeholder texts
   useEffect(() => {
-    if (inputMessage.length > 0) return;
+    if (inputMessage.length > 0 || isFocused) return;
     const interval = setInterval(() => {
       setPlaceholderIndex((prev) => (prev + 1) % placeholderTexts.length);
     }, 3500);
     return () => clearInterval(interval);
-  }, [inputMessage, placeholderTexts.length]);
+  }, [inputMessage, isFocused, placeholderTexts.length]);
 
   // Handle send
   const handleSend = () => {
@@ -396,6 +397,8 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
               value={inputMessage}
               onChange={handleTextareaChange}
               onKeyPress={handleKeyPress}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
               placeholder=""
               rows={1}
               unstyled={true}
@@ -403,7 +406,7 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
             />
 
             {/* Typewriter Placeholder */}
-            {inputMessage.length === 0 && (
+            {inputMessage.length === 0 && !isFocused && (
               <div className={cn(
                 "absolute top-[10px] pointer-events-none z-10",
                 language === 'ar' ? 'right-[8px]' : 'left-[8px]'
