@@ -300,7 +300,7 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
               filter: visibleCardIndex === 0 ? 'blur(0px)' : 'blur(6px)'
             }}
             transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-            className="absolute left-[28%] md:left-[32%] lg:left-[35%] top-[15%] w-[150px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20"
+            className="absolute left-[18%] md:left-[22%] lg:left-[26%] top-[15%] w-[150px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20"
           >
             <div className="flex items-start gap-2">
               <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
@@ -317,7 +317,7 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
               filter: visibleCardIndex === 1 ? 'blur(0px)' : 'blur(6px)'
             }}
             transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-            className="absolute left-[25%] md:left-[28%] lg:left-[32%] top-1/2 -translate-y-1/2 w-[160px] md:w-[200px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-4 z-20"
+            className="absolute left-[15%] md:left-[18%] lg:left-[22%] top-1/2 -translate-y-1/2 w-[160px] md:w-[200px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-4 z-20"
           >
             <div className="flex items-start gap-2">
               <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
@@ -334,7 +334,7 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
               filter: visibleCardIndex === 2 ? 'blur(0px)' : 'blur(6px)'
             }}
             transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-            className="absolute left-[28%] md:left-[32%] lg:left-[35%] bottom-[15%] w-[150px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20"
+            className="absolute left-[18%] md:left-[22%] lg:left-[26%] bottom-[15%] w-[150px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20"
           >
             <div className="flex items-start gap-2">
               <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
@@ -351,7 +351,7 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
               filter: visibleCardIndex === 3 ? 'blur(0px)' : 'blur(6px)'
             }}
             transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-            className="absolute right-[28%] md:right-[32%] lg:right-[35%] top-[15%] w-[150px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20"
+            className="absolute right-[18%] md:right-[22%] lg:right-[26%] top-[15%] w-[150px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20"
           >
             <div className="flex items-start gap-2">
               <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
@@ -368,7 +368,7 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
               filter: visibleCardIndex === 4 ? 'blur(0px)' : 'blur(6px)'
             }}
             transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-            className="absolute right-[25%] md:right-[28%] lg:right-[32%] top-1/2 -translate-y-1/2 w-[160px] md:w-[200px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-4 z-20"
+            className="absolute right-[15%] md:right-[18%] lg:right-[22%] top-1/2 -translate-y-1/2 w-[160px] md:w-[200px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-4 z-20"
           >
             <div className="flex items-start gap-2">
               <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
@@ -385,7 +385,7 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
               filter: visibleCardIndex === 5 ? 'blur(0px)' : 'blur(6px)'
             }}
             transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-            className="absolute right-[28%] md:right-[32%] lg:right-[35%] bottom-[15%] w-[150px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20"
+            className="absolute right-[18%] md:right-[22%] lg:right-[26%] bottom-[15%] w-[150px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20"
           >
             <div className="flex items-start gap-2">
               <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
