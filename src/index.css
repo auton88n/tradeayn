@@ -437,6 +437,134 @@ button, a, input, textarea, select {
     will-change: transform, opacity;
   }
 
+  /* ====== Superhuman Hero Styles ====== */
+  
+  /* Soft blur orbs for premium background effect */
+  .hero-blur-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(100px);
+    opacity: 0.15;
+    pointer-events: none;
+    animation: hero-drift 20s linear infinite;
+  }
+
+  .hero-blur-orb-purple {
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(168, 85, 247, 0.4) 0%, rgba(168, 85, 247, 0) 70%);
+    top: 10%;
+    left: 5%;
+    animation-delay: 0s;
+  }
+
+  .hero-blur-orb-blue {
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.35) 0%, rgba(59, 130, 246, 0) 70%);
+    top: 40%;
+    right: 10%;
+    animation-delay: 7s;
+  }
+
+  .hero-blur-orb-pink {
+    width: 550px;
+    height: 550px;
+    background: radial-gradient(circle, rgba(236, 72, 153, 0.3) 0%, rgba(236, 72, 153, 0) 70%);
+    bottom: 15%;
+    left: 20%;
+    animation-delay: 14s;
+  }
+
+  @keyframes hero-drift {
+    0%, 100% { transform: translate(0, 0); }
+    25% { transform: translate(50px, 30px); }
+    50% { transform: translate(20px, -40px); }
+    75% { transform: translate(-30px, 20px); }
+  }
+
+  /* Glassmorphism cards for floating UI elements */
+  .glass-card-hero {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08),
+                0 2px 8px rgba(0, 0, 0, 0.04);
+    transition: all 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .dark .glass-card-hero {
+    background: rgba(20, 20, 20, 0.85);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  }
+
+  .glass-card-hero:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.12);
+  }
+
+  /* Floating card animations with different timing */
+  .hero-float-card {
+    will-change: transform;
+  }
+
+  @keyframes hero-float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+  }
+
+  .animate-hero-float-1 {
+    animation: hero-float 6s ease-in-out infinite;
+  }
+
+  .animate-hero-float-2 {
+    animation: hero-float 5s ease-in-out infinite;
+    animation-delay: 0.5s;
+  }
+
+  .animate-hero-float-3 {
+    animation: hero-float 7s ease-in-out infinite;
+    animation-delay: 1s;
+  }
+
+  .animate-hero-float-4 {
+    animation: hero-float 5.5s ease-in-out infinite;
+    animation-delay: 1.5s;
+  }
+
+  /* Eye pulse glow effect */
+  .hero-eye-pulse {
+    animation: eye-pulse 4s ease-in-out infinite;
+  }
+
+  @keyframes eye-pulse {
+    0%, 100% { 
+      filter: drop-shadow(0 10px 40px rgba(168, 85, 247, 0.15));
+    }
+    50% { 
+      filter: drop-shadow(0 15px 50px rgba(168, 85, 247, 0.25));
+    }
+  }
+
+  /* Mobile responsiveness for hero cards */
+  @media (max-width: 768px) {
+    .hero-blur-orb {
+      filter: blur(80px);
+      opacity: 0.1;
+    }
+    
+    .hero-blur-orb-purple,
+    .hero-blur-orb-blue,
+    .hero-blur-orb-pink {
+      width: 300px;
+      height: 300px;
+    }
+  }
+
+  /* ====== End Superhuman Hero Styles ====== */
+
   /* Mobile-Style Floating Input Bar */
   .input-area {
     position: fixed;
