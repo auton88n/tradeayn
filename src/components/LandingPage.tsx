@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Brain, TrendingUp, Target, BarChart3, Zap, Users, ArrowRight, Sparkles, Palette, Cog, FileSpreadsheet, MessageSquare, Building2, ExternalLink, Mail, Bot, Database, Calendar, FileText, BarChart, Clock, TrendingDown, CheckCircle2, Box, Upload, Download, Loader2, Wrench, Home, ShoppingCart, Truck, DollarSign, Phone, Briefcase, CheckCircle, LineChart, Mic, Globe2 } from 'lucide-react';
-import heroEye from '@/assets/hero-eye.jpg';
+import { Brain, TrendingUp, Target, BarChart3, Zap, Users, ArrowRight, Sparkles, Palette, Cog, FileSpreadsheet, MessageSquare, Building2, ExternalLink, Mail, Bot, Database, Calendar, FileText, BarChart, Clock, TrendingDown, CheckCircle2, Box, Upload, Download, Loader2, Wrench, Home, ShoppingCart, Truck, DollarSign, Phone, Briefcase, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { AuthModal } from './auth/AuthModal';
@@ -271,149 +270,60 @@ const LandingPage = () => {
         </div>
       </header>
 
-      {/* Hero Section - Superhuman Style */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-white dark:bg-background">
-        {/* Soft Blur Orbs */}
-        <div className="hero-blur-orb hero-blur-orb-purple" />
-        <div className="hero-blur-orb hero-blur-orb-blue" />
-        <div className="hero-blur-orb hero-blur-orb-pink" />
+      {/* Hero Section */}
+      <section className="relative py-20 overflow-hidden">
+        {/* Soft Radial Gradient Background */}
         
-        <div className="container mx-auto px-6 relative z-10 py-20">
-          <div className="max-w-7xl mx-auto">
-            {/* Main Headline */}
-            <div className="text-center mb-12 animate-fade-in-up">
-              <h1 className="text-6xl md:text-8xl font-black mb-6 leading-[1.1] text-foreground">
-                {language === 'ar' ? 'قوى خارقة لقرارات' : 'Superpowers for Your'}
-                <br />
-                <span className="gradient-text">
-                  {language === 'ar' ? 'عملك' : 'Business Decisions'}
+        <div className="absolute inset-0 bg-gradient-radial from-primary/8 via-background to-accent/5" />
+        
+        <div className="container mx-auto px-6 relative z-10">
+          <div className="text-center max-w-4xl mx-auto">
+            <div className="animate-fade-in-up">
+              <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+                {t('hero.title')}
+                <span className="text-foreground block mt-2">
+                  {t('hero.titleHighlight')}
                 </span>
               </h1>
               
-              <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto mb-8">
-                {language === 'ar' 
-                  ? 'استشارات الذكاء الاصطناعي التي تعمل في كل محادثة وتبويب'
-                  : 'AI consulting that works in every conversation and tab'
-                }
+              <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto">
+                {t('hero.description')}
               </p>
               
-              <Button 
-                onClick={() => setShowAuthModal(true)}
-                variant="default"
-                size="xl"
-                className="bg-foreground text-background hover:bg-foreground/90 rounded-full px-8 group"
-              >
-                {t('hero.cta')}
-                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <Button 
+                  onClick={() => setShowAuthModal(true)}
+                  variant="white"
+                  size="xl"
+                  className="group"
+                >
+                  {t('hero.cta')}
+                  <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </Button>
+                
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Users className="w-4 h-4" />
+                  <span>{t('hero.joinBusiness')}</span>
+                </div>
+              </div>
             </div>
             
-            {/* Central Eye with Floating Cards */}
-            <div className="relative flex items-center justify-center min-h-[600px]">
-              {/* Central Eye Image */}
-              <div className="relative z-10 hero-eye-pulse">
-                <div className="w-[500px] h-[300px] md:w-[600px] md:h-[360px] rounded-3xl overflow-hidden shadow-2xl">
-                  <img 
-                    src={heroEye} 
-                    alt="AI Vision" 
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              </div>
-              
-              {/* Floating Card 1 - Chat Preview (Left) */}
-              <div className="absolute left-0 md:left-8 top-1/4 hero-float-card animate-hero-float-1 hidden md:block">
-                <div className="glass-card-hero p-5 rounded-2xl max-w-xs">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center">
-                      <Brain className="w-4 h-4 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-sm text-foreground">AYN AI</h3>
-                    </div>
+            {/* Floating AYN Agent Preview */}
+            <div className="mt-16 animate-float">
+              <Card className="bg-card border border-border max-w-md mx-auto p-6">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-12 h-12 rounded-full brain-container-lg flex items-center justify-center">
+                    <Brain className="w-6 h-6 text-white" />
                   </div>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {language === 'ar' 
-                      ? 'وجدت 3 فرص في السوق السعودي لعملك...'
-                      : '"I found 3 opportunities in the Saudi market for your business..."'
-                    }
-                  </p>
-                  <button className="mt-3 text-xs font-medium text-primary hover:text-primary/80 transition-colors">
-                    {language === 'ar' ? 'تحليل المزيد ←' : 'Analyze More →'}
-                  </button>
-                </div>
-              </div>
-              
-              {/* Floating Card 2 - Quick Actions (Right) */}
-              <div className="absolute right-0 md:right-8 top-1/4 hero-float-card animate-hero-float-2 hidden md:block">
-                <div className="glass-card-hero p-5 rounded-2xl max-w-xs">
-                  <h3 className="font-semibold text-sm text-foreground mb-3 flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-primary" />
-                    {language === 'ar' ? 'إجراءات سريعة' : 'Quick Actions'}
-                  </h3>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                      {language === 'ar' ? 'تحليل السوق' : 'Market Analysis'}
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                      {language === 'ar' ? 'استراتيجية المبيعات' : 'Sales Strategy'}
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                      {language === 'ar' ? 'التخطيط المالي' : 'Financial Planning'}
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                      {language === 'ar' ? 'أتمتة العمليات' : 'Process Automation'}
-                    </div>
+                  <div>
+                    <h3 className="font-semibold">AYN AI Consultant</h3>
+                    <p className="text-sm text-muted-foreground">{t('hero.readyToAnalyze')}</p>
                   </div>
                 </div>
-              </div>
-              
-              {/* Floating Card 3 - Stats (Bottom Left) */}
-              <div className="absolute left-0 md:left-16 bottom-0 md:bottom-16 hero-float-card animate-hero-float-3 hidden lg:block">
-                <div className="glass-card-hero p-4 rounded-2xl">
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2">
-                      <TrendingUp className="w-4 h-4 text-green-500" />
-                      <span className="text-foreground font-semibold">
-                        {language === 'ar' ? '٪40 قرارات أسرع' : '40% faster decisions'}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <LineChart className="w-4 h-4 text-blue-500" />
-                      <span className="text-foreground font-semibold">
-                        {language === 'ar' ? '3× نمو الإيرادات' : '3x revenue growth'}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-purple-500" />
-                      <span className="text-foreground font-semibold">
-                        {language === 'ar' ? '20 ساعة موفرة/أسبوع' : '20hrs saved/week'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Floating Card 4 - Language (Bottom Right) */}
-              <div className="absolute right-0 md:right-16 bottom-0 md:bottom-16 hero-float-card animate-hero-float-4 hidden lg:block">
-                <div className="glass-card-hero p-4 rounded-2xl">
-                  <div className="flex items-center gap-3">
-                    <Globe2 className="w-5 h-5 text-primary" />
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">
-                        {language === 'ar' ? 'يتحدث بطلاقة' : 'Fluent in'}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {language === 'ar' ? 'العربية والإنجليزية' : 'Arabic & English'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                <p className="text-sm text-muted-foreground italic">
+                  "{t('hero.aiConsultantQuote')}"
+                </p>
+              </Card>
             </div>
           </div>
         </div>
