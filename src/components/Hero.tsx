@@ -254,101 +254,110 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
         <div className="absolute w-[280px] h-[280px] md:w-[420px] md:h-[420px] lg:w-[520px] lg:h-[520px] xl:w-[640px] xl:h-[640px] rounded-full -z-10 pointer-events-none
                         bg-gradient-to-b from-transparent via-muted/30 to-transparent" />
 
-        {/* Floating particles around eye - synced to 6s (2x master rhythm) - hidden on mobile */}
+        {/* Floating particles around eye - organic multi-point paths - hidden on mobile */}
         <div className="absolute inset-0 pointer-events-none overflow-visible hidden md:block">
-          {/* Particle 1 - top left */}
+          {/* Particle 1 - top left - 8s duration */}
           <motion.div
-            className="absolute w-2 h-2 rounded-full bg-foreground/10 blur-[1px]"
+            className="absolute w-2 h-2 rounded-full bg-foreground/10 blur-[2px]"
             style={{ top: '20%', left: '30%', x: parallax1X, y: parallax1Y }}
             animate={{
-              y: [0, -25, 0],
-              x: [0, 15, 0],
-              opacity: [0.3, 0.6, 0.3],
+              y: [0, -8, -20, -25, -18, -10, 0],
+              x: [0, 5, 12, 15, 10, 4, 0],
+              scale: [1, 1.05, 1.1, 1.05, 0.98, 1.02, 1],
+              opacity: [0.3, 0.4, 0.55, 0.6, 0.5, 0.35, 0.3],
             }}
             transition={{
-              duration: 6,
+              duration: 8,
               repeat: Infinity,
-              ease: "easeInOut",
+              ease: [0.45, 0.05, 0.55, 0.95],
             }}
           />
-          {/* Particle 2 - top right */}
+          {/* Particle 2 - top right - 9s duration */}
           <motion.div
-            className="absolute w-3 h-3 rounded-full bg-foreground/8 blur-[2px]"
+            className="absolute w-3 h-3 rounded-full bg-foreground/8 blur-[3px]"
             style={{ top: '15%', right: '25%', x: parallax2X, y: parallax2Y }}
             animate={{
-              y: [0, 30, 0],
-              x: [0, -20, 0],
-              opacity: [0.2, 0.5, 0.2],
+              y: [0, 10, 22, 30, 24, 12, 0],
+              x: [0, -6, -14, -20, -15, -8, 0],
+              scale: [1, 0.98, 1.08, 1.12, 1.05, 1.02, 1],
+              opacity: [0.2, 0.3, 0.42, 0.5, 0.4, 0.28, 0.2],
+              rotate: [0, 2, 5, 3, -1, 1, 0],
             }}
             transition={{
-              duration: 6,
+              duration: 9,
               repeat: Infinity,
-              ease: "easeInOut",
-              delay: 1.5,
+              ease: [0.45, 0.05, 0.55, 0.95],
+              delay: 0.5,
             }}
           />
-          {/* Particle 3 - bottom left */}
+          {/* Particle 3 - bottom left - 7s duration */}
           <motion.div
-            className="absolute w-1.5 h-1.5 rounded-full bg-foreground/12 blur-[1px]"
+            className="absolute w-1.5 h-1.5 rounded-full bg-foreground/12 blur-[2px]"
             style={{ bottom: '25%', left: '20%', x: parallax3X, y: parallax3Y }}
             animate={{
-              y: [0, -18, 0],
-              x: [0, 12, 0],
-              opacity: [0.4, 0.7, 0.4],
+              y: [0, -5, -12, -18, -14, -6, 0],
+              x: [0, 4, 9, 12, 8, 3, 0],
+              scale: [1, 1.08, 1.15, 1.1, 1.02, 0.98, 1],
+              opacity: [0.4, 0.5, 0.62, 0.7, 0.58, 0.45, 0.4],
             }}
             transition={{
-              duration: 6,
+              duration: 7,
               repeat: Infinity,
-              ease: "easeInOut",
-              delay: 3,
+              ease: [0.45, 0.05, 0.55, 0.95],
+              delay: 1.2,
             }}
           />
-          {/* Particle 4 - bottom right */}
+          {/* Particle 4 - bottom right - 11s duration */}
           <motion.div
-            className="absolute w-2.5 h-2.5 rounded-full bg-foreground/10 blur-[2px]"
+            className="absolute w-2.5 h-2.5 rounded-full bg-foreground/10 blur-[3px]"
             style={{ bottom: '30%', right: '22%', x: parallax4X, y: parallax4Y }}
             animate={{
-              y: [0, 28, 0],
-              x: [0, -15, 0],
-              opacity: [0.3, 0.6, 0.3],
+              y: [0, 8, 18, 28, 22, 12, 0],
+              x: [0, -4, -10, -15, -12, -6, 0],
+              scale: [1, 1.02, 1.06, 1.1, 1.04, 0.98, 1],
+              opacity: [0.3, 0.38, 0.5, 0.6, 0.48, 0.35, 0.3],
+              rotate: [0, -2, -4, -2, 1, 0, 0],
             }}
             transition={{
-              duration: 6,
+              duration: 11,
               repeat: Infinity,
-              ease: "easeInOut",
-              delay: 4.5,
+              ease: [0.45, 0.05, 0.55, 0.95],
+              delay: 2,
             }}
           />
-          {/* Particle 5 - mid left */}
+          {/* Particle 5 - mid left - 8.5s duration */}
           <motion.div
-            className="absolute w-1 h-1 rounded-full bg-foreground/15 blur-[1px]"
+            className="absolute w-1 h-1 rounded-full bg-foreground/15 blur-[2px]"
             style={{ top: '40%', left: '15%', x: parallax5X, y: parallax5Y }}
             animate={{
-              y: [0, -20, 0],
-              x: [0, 10, 0],
-              opacity: [0.5, 0.8, 0.5],
+              y: [0, -6, -14, -20, -15, -8, 0],
+              x: [0, 3, 7, 10, 7, 3, 0],
+              scale: [1, 1.1, 1.18, 1.12, 1.05, 1.02, 1],
+              opacity: [0.5, 0.6, 0.72, 0.8, 0.68, 0.55, 0.5],
             }}
             transition={{
-              duration: 6,
+              duration: 8.5,
               repeat: Infinity,
-              ease: "easeInOut",
-              delay: 0.75,
+              ease: [0.45, 0.05, 0.55, 0.95],
+              delay: 0.8,
             }}
           />
-          {/* Particle 6 - mid right */}
+          {/* Particle 6 - mid right - 9.5s duration */}
           <motion.div
-            className="absolute w-2 h-2 rounded-full bg-foreground/8 blur-[2px]"
+            className="absolute w-2 h-2 rounded-full bg-foreground/8 blur-[3px]"
             style={{ top: '45%', right: '18%', x: parallax6X, y: parallax6Y }}
             animate={{
-              y: [0, 22, 0],
-              x: [0, -18, 0],
-              opacity: [0.2, 0.5, 0.2],
+              y: [0, 6, 14, 22, 17, 9, 0],
+              x: [0, -5, -12, -18, -13, -6, 0],
+              scale: [1, 0.97, 1.05, 1.1, 1.03, 0.99, 1],
+              opacity: [0.2, 0.3, 0.42, 0.5, 0.38, 0.26, 0.2],
+              rotate: [0, 3, 5, 2, -1, 1, 0],
             }}
             transition={{
-              duration: 6,
+              duration: 9.5,
               repeat: Infinity,
-              ease: "easeInOut",
-              delay: 2.25,
+              ease: [0.45, 0.05, 0.55, 0.95],
+              delay: 1.5,
             }}
           />
         </div>
