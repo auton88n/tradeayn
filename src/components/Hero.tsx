@@ -454,7 +454,18 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
               {/* sclera subtle */}
               <circle cx="50" cy="50" r="48" fill="url(#g2)" opacity="0.06" />
 
-              {/* pupil - Brain logo that dilates on hover */}
+              {/* iris / pupil - black circle that dilates on hover */}
+              <circle
+                cx="50"
+                cy="50"
+                r={isHovered ? "32" : "28"}
+                fill="url(#g1)"
+                style={{ 
+                  transition: "r 0.3s cubic-bezier(0.32, 0.72, 0, 1)" 
+                }}
+              />
+              
+              {/* Brain logo centered inside the black pupil */}
               <foreignObject 
                 x={isHovered ? "18" : "22"} 
                 y={isHovered ? "18" : "22"} 
@@ -463,7 +474,7 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
                 style={{ transition: "all 0.3s cubic-bezier(0.32, 0.72, 0, 1)" }}
               >
                 <Brain 
-                  className="w-full h-full text-foreground/90"
+                  className="w-full h-full text-background/90"
                 />
               </foreignObject>
             </svg>
