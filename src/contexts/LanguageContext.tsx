@@ -232,6 +232,13 @@ const translations = {
     'settings.stayOnPage': 'Stay on Page',
     'settings.leaveWithoutSaving': 'Leave Without Saving',
     'settings.noResultsFound': 'No settings found matching your search',
+
+    // Session Timeout
+    'timeout.title': 'Session Expiring Soon',
+    'timeout.description': 'Your session will expire due to inactivity. Click "Stay Logged In" to continue your session.',
+    'timeout.secondsRemaining': 'seconds remaining',
+    'timeout.stayLoggedIn': 'Stay Logged In',
+    'timeout.logoutNow': 'Log Out Now',
     
     // Admin Panel
     'admin.title': 'Admin Control Center',
@@ -730,6 +737,13 @@ const translations = {
     'settings.stayOnPage': 'البقاء في الصفحة',
     'settings.leaveWithoutSaving': 'المغادرة دون حفظ',
     'settings.noResultsFound': 'لم يتم العثور على إعدادات مطابقة لبحثك',
+    
+    // Session Timeout
+    'timeout.title': 'انتهاء الجلسة قريباً',
+    'timeout.description': 'ستنتهي جلستك بسبب عدم النشاط. انقر على "البقاء متصلاً" لمتابعة جلستك.',
+    'timeout.secondsRemaining': 'ثانية متبقية',
+    'timeout.stayLoggedIn': 'البقاء متصلاً',
+    'timeout.logoutNow': 'تسجيل الخروج الآن',
     
     // Admin Panel
     'admin.title': 'مركز التحكم الإداري',
