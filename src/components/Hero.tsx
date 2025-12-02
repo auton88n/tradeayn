@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { ArrowRight } from 'lucide-react';
+import { ArrowUp } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { TypewriterText } from '@/components/TypewriterText';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 interface HeroProps {
   onGetStarted: () => void;
+  onDemoMessage?: (message: string) => void;
 }
 
 const CARDS_EN = [
@@ -20,10 +23,13 @@ const CARDS_AR = [
   "جاهز للمساعدة.",
 ];
 
-export const Hero = ({ onGetStarted }: HeroProps) => {
+export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
   const { language } = useLanguage();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isHovered, setIsHovered] = useState(false);
+  const [inputMessage, setInputMessage] = useState('');
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // track pointer relative to container center for subtle eye follow with spring physics
   const mouseX = useMotionValue(0);
@@ -80,6 +86,46 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
       window.removeEventListener("mouseleave", onLeave);
     };
   }, [mouseX, mouseY]);
+
+  // Placeholder texts for demo input
+  const placeholderTexts = language === 'ar' 
+    ? ['كيف يمكنني زيادة إيراداتي؟', 'اقترح استراتيجية تسويقية', 'حلل اتجاهات السوق في مجالي']
+    : ['How can I increase my revenue?', 'Suggest a marketing strategy', 'Analyze market trends in my industry'];
+
+  // Rotate placeholder texts
+  useEffect(() => {
+    if (inputMessage.trim()) return;
+    const interval = setInterval(() => {
+      setPlaceholderIndex((prev) => (prev + 1) % placeholderTexts.length);
+    }, 3500);
+    return () => clearInterval(interval);
+  }, [inputMessage, placeholderTexts.length]);
+
+  // Handle send
+  const handleSend = () => {
+    if (!inputMessage.trim()) return;
+    // Store message for after authentication
+    sessionStorage.setItem('demoMessage', inputMessage);
+    if (onDemoMessage) onDemoMessage(inputMessage);
+    onGetStarted();
+  };
+
+  // Handle key press
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  // Handle textarea change
+  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInputMessage(e.target.value);
+    const textarea = e.target;
+    textarea.style.height = 'auto';
+    const newHeight = Math.min(textarea.scrollHeight, 120);
+    textarea.style.height = newHeight + 'px';
+  };
 
   const CARDS = language === 'ar' ? CARDS_AR : CARDS_EN;
 
@@ -335,21 +381,55 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
         </motion.div>
       </div>
 
-      {/* CTA Button */}
+      {/* Demo Chat Input */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 0.6, ease: [0.32, 0.72, 0, 1] }}
-        className="mt-16"
+        className="mt-16 w-full max-w-2xl"
       >
-        <Button
-          onClick={onGetStarted}
-          size="lg"
-          className="h-14 px-10 text-lg rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95"
-        >
-          {language === 'ar' ? 'جرّب AYN الآن' : 'Experience AYN'}
-          <ArrowRight className={language === 'ar' ? 'mr-3 w-5 h-5' : 'ml-3 w-5 h-5'} />
-        </Button>
+        <div className="relative bg-background/80 dark:bg-background/80 backdrop-blur-xl border border-border/50 rounded-3xl shadow-2xl p-3">
+          {/* Textarea */}
+          <div className="w-full relative">
+            <Textarea
+              ref={textareaRef}
+              value={inputMessage}
+              onChange={handleTextareaChange}
+              onKeyPress={handleKeyPress}
+              placeholder=""
+              rows={1}
+              className="w-full resize-none min-h-[44px] max-h-[120px] text-base bg-transparent border-0 outline-none focus:ring-0 px-2 py-2"
+            />
+
+            {/* Typewriter Placeholder */}
+            {!inputMessage.trim() && (
+              <div className={cn(
+                "absolute top-[10px] pointer-events-none z-10",
+                language === 'ar' ? 'right-[8px]' : 'left-[8px]'
+              )}>
+                <TypewriterText
+                  key={`${placeholderIndex}-${language}`}
+                  text={placeholderTexts[placeholderIndex]}
+                  speed={50}
+                  className="text-muted-foreground"
+                  showCursor={true}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Send Button */}
+          <div className="flex justify-end mt-2">
+            <button
+              className="w-9 h-9 rounded-xl bg-gradient-to-br from-foreground to-foreground/90 text-background flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              onClick={handleSend}
+              disabled={!inputMessage.trim()}
+              title="Send message"
+            >
+              <ArrowUp className="w-5 h-5" strokeWidth={2.5} />
+            </button>
+          </div>
+        </div>
       </motion.div>
     </section>
   );

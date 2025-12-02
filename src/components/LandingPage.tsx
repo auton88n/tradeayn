@@ -158,7 +158,10 @@ const LandingPage = () => {
       </nav>
 
       {/* Hero Section - Premium AI Eye Experience */}
-      <Hero onGetStarted={() => setShowAuthModal(true)} />
+      <Hero 
+        onGetStarted={() => setShowAuthModal(true)} 
+        onDemoMessage={(msg) => setDemoMessage(msg)}
+      />
 
       {/* Services Section - Magazine Editorial Layout */}
       <section id="services" className="py-32 px-6">
