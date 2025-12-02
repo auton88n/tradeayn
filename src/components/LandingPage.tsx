@@ -21,6 +21,7 @@ const LandingPage = () => {
   const [demoMessage, setDemoMessage] = useState('');
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const collapseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const {
     t,
     language
@@ -29,19 +30,20 @@ const LandingPage = () => {
     toast
   } = useToast();
 
-  // Click outside to close menu
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setIsMenuExpanded(false);
-      }
-    };
-    
-    if (isMenuExpanded) {
-      document.addEventListener('mousedown', handleClickOutside);
+  // Hover handlers with collapse delay
+  const handleMouseEnter = () => {
+    if (collapseTimeoutRef.current) {
+      clearTimeout(collapseTimeoutRef.current);
+      collapseTimeoutRef.current = null;
     }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isMenuExpanded]);
+    setIsMenuExpanded(true);
+  };
+
+  const handleMouseLeave = () => {
+    collapseTimeoutRef.current = setTimeout(() => {
+      setIsMenuExpanded(false);
+    }, 150);
+  };
 
   // Auto-collapse on scroll
   useEffect(() => {
@@ -53,6 +55,15 @@ const LandingPage = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, [isMenuExpanded]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (collapseTimeoutRef.current) {
+        clearTimeout(collapseTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Contact form state
   const [contactForm, setContactForm] = useState({
@@ -171,16 +182,15 @@ return <div className="min-h-screen bg-background">
         <motion.div 
           ref={menuRef}
           layout
-          className="flex items-center bg-card/80 dark:bg-card/80 backdrop-blur-xl border border-border rounded-full shadow-2xl overflow-hidden"
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+          className="flex items-center bg-card/80 dark:bg-card/80 backdrop-blur-xl border border-border rounded-full shadow-2xl overflow-hidden cursor-pointer"
           transition={{ type: "spring", stiffness: 400, damping: 30 }}
         >
-          {/* Clickable Logo - Always visible */}
-          <motion.button
+          {/* Logo - Always visible */}
+          <motion.div
             layout
-            onClick={() => setIsMenuExpanded(!isMenuExpanded)}
-            className="flex items-center gap-2 md:gap-3 px-4 py-2.5 md:py-3 hover:bg-muted/50 transition-colors cursor-pointer"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            className="flex items-center gap-2 md:gap-3 px-4 py-2.5 md:py-3"
           >
             <motion.div 
               layout
@@ -189,7 +199,7 @@ return <div className="min-h-screen bg-background">
               <Brain className="w-4 h-4 md:w-5 md:h-5 text-background" />
             </motion.div>
             <motion.span layout className="text-lg md:text-xl font-bold tracking-tight">AYN</motion.span>
-          </motion.button>
+          </motion.div>
           
           {/* Expandable Menu Items */}
           <AnimatePresence mode="popLayout">
