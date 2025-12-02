@@ -5,7 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { SidebarProvider, Sidebar as ShadcnSidebar, SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { Sidebar as DashboardSidebar } from './Sidebar';
-import { ChatArea } from './ChatArea';
+import { CenterStageLayout } from './CenterStageLayout';
 import { TranscriptSidebar } from '@/components/transcript/TranscriptSidebar';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -356,14 +356,10 @@ const DashboardContent = ({
           <span className="ml-3 font-semibold text-foreground">AYN AI</span>
         </header>
 
-        <ChatArea
+        <CenterStageLayout
           messages={messagesHook.messages}
-          isTyping={messagesHook.isTyping}
-          userName={user.user_metadata?.name}
-          userAvatar={user.user_metadata?.name?.charAt(0)}
-          onCopyMessage={handleCopyMessage}
-          onReplyToMessage={handleReplyToMessage}
           onSendMessage={handleSendMessage}
+          isTyping={messagesHook.isTyping}
           isDisabled={!auth.hasAccess || !auth.hasAcceptedTerms}
           selectedMode={selectedMode}
           selectedFile={fileUpload.selectedFile}

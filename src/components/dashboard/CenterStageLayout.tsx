@@ -1,28 +1,58 @@
-import { useRef, useCallback, useState } from 'react';
+import { useRef, useCallback, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EmotionalEye } from '@/components/eye/EmotionalEye';
 import { UserMessageBubble } from '@/components/eye/UserMessageBubble';
 import { AYNSpeechBubble } from '@/components/eye/AYNSpeechBubble';
+import { ChatInput } from './ChatInput';
 import { useBubbleAnimation } from '@/hooks/useBubbleAnimation';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
 import { analyzeResponseEmotion, getBubbleType } from '@/utils/emotionMapping';
-import type { Message } from '@/types/dashboard.types';
+import type { Message, AIMode, AIModeConfig } from '@/types/dashboard.types';
 
 interface CenterStageLayoutProps {
-  onSendMessage: (content: string) => Promise<void>;
+  messages: Message[];
+  onSendMessage: (content: string, file?: File | null) => Promise<void>;
   isTyping: boolean;
-  latestResponse?: string;
-  children?: React.ReactNode;
+  isDisabled: boolean;
+  selectedMode: AIMode;
+  selectedFile: File | null;
+  isUploading: boolean;
+  isDragOver: boolean;
+  onFileSelect: (file: File | null) => void;
+  onRemoveFile: () => void;
+  onDragEnter: (e: React.DragEvent) => void;
+  onDragLeave: (e: React.DragEvent) => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDrop: (e: React.DragEvent) => void;
+  fileInputRef: React.RefObject<HTMLInputElement>;
+  sidebarOpen: boolean;
+  modes: AIModeConfig[];
+  onModeChange: (mode: AIMode) => void;
 }
 
 export const CenterStageLayout = ({
+  messages,
   onSendMessage,
   isTyping,
-  latestResponse,
-  children,
+  isDisabled,
+  selectedMode,
+  selectedFile,
+  isUploading,
+  isDragOver,
+  onFileSelect,
+  onRemoveFile,
+  onDragEnter,
+  onDragLeave,
+  onDragOver,
+  onDrop,
+  fileInputRef,
+  sidebarOpen,
+  modes,
+  onModeChange,
 }: CenterStageLayoutProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const eyeRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLDivElement>(null);
   const { setEmotion, triggerAbsorption, triggerBlink, setIsResponding } = useAYNEmotion();
   const {
     flyingBubble,
@@ -31,9 +61,10 @@ export const CenterStageLayout = ({
     completeAbsorption,
     emitResponseBubble,
     clearResponseBubbles,
+    dismissBubble,
   } = useBubbleAnimation();
 
-  const [pendingMessage, setPendingMessage] = useState<string | null>(null);
+  const [lastProcessedMessageId, setLastProcessedMessageId] = useState<string | null>(null);
 
   // Get eye position for bubble animations
   const getEyePosition = useCallback(() => {
@@ -47,20 +78,32 @@ export const CenterStageLayout = ({
     };
   }, []);
 
+  // Get input position for bubble start
+  const getInputPosition = useCallback(() => {
+    if (!inputRef.current) {
+      return { x: window.innerWidth / 2, y: window.innerHeight - 100 };
+    }
+    const inputRect = inputRef.current.getBoundingClientRect();
+    return {
+      x: inputRect.left + inputRect.width / 2,
+      y: inputRect.top,
+    };
+  }, []);
+
   // Handle sending message with bubble animation
   const handleSendWithAnimation = useCallback(
-    async (content: string, inputPosition: { x: number; y: number }) => {
+    async (content: string, file?: File | null) => {
+      if (!content.trim() && !file) return;
+
       // Clear previous response bubbles
       clearResponseBubbles();
-      
+
       // Start flying animation
+      const inputPos = getInputPosition();
       const eyePos = getEyePosition();
-      startMessageAnimation(content, inputPosition, eyePos);
+      startMessageAnimation(content, inputPos, eyePos);
 
-      // Store pending message
-      setPendingMessage(content);
-
-      // After flight completes, trigger eye absorption and change emotion to thinking
+      // After flight completes, trigger eye absorption and send message
       setTimeout(() => {
         triggerBlink();
         setTimeout(() => {
@@ -68,16 +111,15 @@ export const CenterStageLayout = ({
           setEmotion('thinking');
           setIsResponding(true);
           completeAbsorption();
-          
+
           // Actually send the message
-          if (pendingMessage || content) {
-            onSendMessage(content);
-          }
+          onSendMessage(content, file);
         }, 150);
       }, 800);
     },
     [
       clearResponseBubbles,
+      getInputPosition,
       getEyePosition,
       startMessageAnimation,
       triggerBlink,
@@ -86,35 +128,46 @@ export const CenterStageLayout = ({
       setIsResponding,
       completeAbsorption,
       onSendMessage,
-      pendingMessage,
     ]
   );
 
-  // Process response and emit speech bubbles
-  const processResponse = useCallback(
-    (response: string) => {
+  // Process AYN responses and emit speech bubbles
+  useEffect(() => {
+    if (messages.length === 0) return;
+
+    const lastMessage = messages[messages.length - 1];
+    
+    // Only process new AYN messages
+    if (lastMessage.sender === 'ayn' && lastMessage.id !== lastProcessedMessageId) {
+      setLastProcessedMessageId(lastMessage.id);
+      
       // Analyze emotion from response
-      const emotion = analyzeResponseEmotion(response);
+      const emotion = analyzeResponseEmotion(lastMessage.content);
       setEmotion(emotion);
       setIsResponding(false);
 
       // Emit response bubble
-      const bubbleType = getBubbleType(response);
+      const bubbleType = getBubbleType(lastMessage.content);
       
       // Split long responses into multiple bubbles
-      const maxLength = 150;
+      const maxLength = 200;
+      const response = lastMessage.content;
+      
       if (response.length > maxLength) {
         const sentences = response.match(/[^.!?]+[.!?]+/g) || [response];
         let currentBubble = '';
+        let bubbleIndex = 0;
         
-        sentences.forEach((sentence, i) => {
+        sentences.forEach((sentence) => {
           if ((currentBubble + sentence).length <= maxLength) {
             currentBubble += sentence;
           } else {
             if (currentBubble) {
+              const bubbleContent = currentBubble.trim();
               setTimeout(() => {
-                emitResponseBubble(currentBubble.trim(), bubbleType);
-              }, i * 400);
+                emitResponseBubble(bubbleContent, bubbleType);
+              }, bubbleIndex * 600);
+              bubbleIndex++;
             }
             currentBubble = sentence;
           }
@@ -123,17 +176,21 @@ export const CenterStageLayout = ({
         if (currentBubble) {
           setTimeout(() => {
             emitResponseBubble(currentBubble.trim(), bubbleType);
-          }, sentences.length * 400);
+          }, bubbleIndex * 600);
         }
       } else {
         emitResponseBubble(response, bubbleType);
       }
-    },
-    [setEmotion, setIsResponding, emitResponseBubble]
-  );
+    }
+  }, [messages, lastProcessedMessageId, setEmotion, setIsResponding, emitResponseBubble]);
 
-  // Effect to process new responses
-  // This would be called when latestResponse changes
+  // Update emotion when typing
+  useEffect(() => {
+    if (isTyping) {
+      setEmotion('thinking');
+      setIsResponding(true);
+    }
+  }, [isTyping, setEmotion, setIsResponding]);
 
   return (
     <div
@@ -144,20 +201,24 @@ export const CenterStageLayout = ({
       <div className="absolute inset-0 bg-gradient-to-b from-background via-background to-muted/10 pointer-events-none" />
 
       {/* Central Eye Stage */}
-      <div ref={eyeRef} className="relative">
+      <div ref={eyeRef} className="relative z-10">
         <EmotionalEye size="lg" />
 
         {/* Response bubbles emanating from eye */}
-        {responseBubbles.map((bubble) => (
-          <AYNSpeechBubble
-            key={bubble.id}
-            id={bubble.id}
-            content={bubble.content}
-            type={bubble.type}
-            isVisible={bubble.isVisible}
-            position={bubble.position}
-          />
-        ))}
+        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-8 flex flex-col items-center gap-4 w-[400px] max-w-[90vw]">
+          <AnimatePresence mode="popLayout">
+            {responseBubbles.filter(b => b.isVisible).map((bubble) => (
+              <AYNSpeechBubble
+                key={bubble.id}
+                id={bubble.id}
+                content={bubble.content}
+                type={bubble.type}
+                isVisible={bubble.isVisible}
+                onDismiss={() => dismissBubble(bubble.id)}
+              />
+            ))}
+          </AnimatePresence>
+        </div>
 
         {/* Thinking indicator when typing */}
         <AnimatePresence>
@@ -166,27 +227,27 @@ export const CenterStageLayout = ({
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0, opacity: 0 }}
-              className="absolute -bottom-20 left-1/2 -translate-x-1/2"
+              className="absolute -bottom-16 left-1/2 -translate-x-1/2"
             >
-              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/20 backdrop-blur-sm border border-blue-400/30">
+              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-ayn-thinking/20 backdrop-blur-sm border border-ayn-thinking/30">
                 <div className="flex gap-1">
                   <motion.div
-                    className="w-2 h-2 rounded-full bg-blue-400"
+                    className="w-2 h-2 rounded-full bg-ayn-thinking"
                     animate={{ scale: [1, 1.3, 1] }}
                     transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
                   />
                   <motion.div
-                    className="w-2 h-2 rounded-full bg-blue-400"
+                    className="w-2 h-2 rounded-full bg-ayn-thinking"
                     animate={{ scale: [1, 1.3, 1] }}
                     transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
                   />
                   <motion.div
-                    className="w-2 h-2 rounded-full bg-blue-400"
+                    className="w-2 h-2 rounded-full bg-ayn-thinking"
                     animate={{ scale: [1, 1.3, 1] }}
                     transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
                   />
                 </div>
-                <span className="text-sm text-blue-400">Thinking...</span>
+                <span className="text-sm text-ayn-thinking">Thinking...</span>
               </div>
             </motion.div>
           )}
@@ -204,22 +265,28 @@ export const CenterStageLayout = ({
         />
       )}
 
-      {/* Input area passed as children */}
-      {children}
+      {/* Input area at bottom */}
+      <div ref={inputRef} className="absolute bottom-0 left-0 right-0 z-20">
+        <ChatInput
+          onSend={handleSendWithAnimation}
+          isDisabled={isDisabled}
+          selectedMode={selectedMode}
+          selectedFile={selectedFile}
+          isUploading={isUploading}
+          isDragOver={isDragOver}
+          onFileSelect={onFileSelect}
+          onRemoveFile={onRemoveFile}
+          onDragEnter={onDragEnter}
+          onDragLeave={onDragLeave}
+          onDragOver={onDragOver}
+          onDrop={onDrop}
+          fileInputRef={fileInputRef}
+          hasMessages={messages.length > 0}
+          sidebarOpen={sidebarOpen}
+          modes={modes}
+          onModeChange={onModeChange}
+        />
+      </div>
     </div>
   );
-};
-
-// Export the send handler for use in parent components
-export const useCenterStageSend = () => {
-  const containerRef = useRef<{
-    handleSend: (content: string, position: { x: number; y: number }) => void;
-  } | null>(null);
-
-  return {
-    containerRef,
-    triggerSend: (content: string, position: { x: number; y: number }) => {
-      containerRef.current?.handleSend(content, position);
-    },
-  };
 };
