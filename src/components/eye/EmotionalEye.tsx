@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from 'framer-motion';
 import { Brain } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -10,7 +10,7 @@ interface EmotionalEyeProps {
 }
 
 export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
-  const { isAbsorbing, isBlinking } = useAYNEmotion();
+  const { isAbsorbing, isBlinking, triggerBlink } = useAYNEmotion();
   const [isHovered, setIsHovered] = useState(false);
 
   // Mouse tracking - same as Hero.tsx
@@ -41,6 +41,23 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
       window.removeEventListener('mouseleave', onLeave);
     };
   }, [mouseX, mouseY]);
+
+  // Automatic blinking cycle (like Hero.tsx - 3 second rhythm)
+  useEffect(() => {
+    const runBlinkCycle = () => {
+      // Only blink if not already absorbing
+      if (!isAbsorbing) {
+        triggerBlink();
+      }
+    };
+
+    // Blink every 3-4 seconds randomly for natural feel
+    const interval = setInterval(() => {
+      runBlinkCycle();
+    }, 3000 + Math.random() * 1000);
+
+    return () => clearInterval(interval);
+  }, [isAbsorbing, triggerBlink]);
 
   const sizeClasses = {
     sm: 'w-[100px] h-[100px] md:w-[120px] md:h-[120px]',
