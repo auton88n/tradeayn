@@ -77,6 +77,14 @@ button, a, input, textarea, select {
     --eye-glow-light: 0 0 60px hsl(0 0% 0% / 0.15), 0 0 120px hsl(0 0% 0% / 0.08), inset 0 0 30px hsl(0 0% 100% / 0.1);
     --eye-glow-dark: 0 0 60px hsl(0 0% 100% / 0.2), 0 0 120px hsl(0 0% 100% / 0.1), inset 0 0 30px hsl(0 0% 100% / 0.05);
 
+    /* AYN Emotion Colors */
+    --emotion-calm: 0 0% 50%;
+    --emotion-happy: 142 71% 45%;
+    --emotion-excited: 25 95% 53%;
+    --emotion-thinking: 217 91% 60%;
+    --emotion-frustrated: 0 72% 51%;
+    --emotion-curious: 270 76% 60%;
+
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 0 0% 8%;
     --sidebar-primary: 0 0% 8%;

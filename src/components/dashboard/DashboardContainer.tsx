@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -6,6 +6,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { SidebarProvider, Sidebar as ShadcnSidebar, SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { Sidebar as DashboardSidebar } from './Sidebar';
 import { ChatArea } from './ChatArea';
+import { TranscriptSidebar } from '@/components/transcript/TranscriptSidebar';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { AIMode, FileAttachment, AIModeConfig, ChatHistory } from '@/types/dashboard.types';
@@ -15,6 +16,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useChatSession } from '@/hooks/useChatSession';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { useMessages } from '@/hooks/useMessages';
+import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
+import { analyzeResponseEmotion } from '@/utils/emotionMapping';
 
 // Import icons for modes
 import { MessageSquare, TrendingUp, Search, FileText, Eye, Hammer, Menu, X } from 'lucide-react';
@@ -270,6 +273,27 @@ const DashboardContent = ({
   onAdminPanelClick?: () => void;
 }) => {
   const { open, toggleSidebar } = useSidebar();
+  const [transcriptOpen, setTranscriptOpen] = useState(false);
+  const { setEmotion, setIsResponding } = useAYNEmotion();
+
+  // Update emotion when AYN responds
+  useEffect(() => {
+    if (!messagesHook.isTyping && messagesHook.messages.length > 0) {
+      const lastMessage = messagesHook.messages[messagesHook.messages.length - 1];
+      if (lastMessage.sender === 'ayn') {
+        const emotion = analyzeResponseEmotion(lastMessage.content);
+        setEmotion(emotion);
+        setIsResponding(false);
+      }
+    } else if (messagesHook.isTyping) {
+      setEmotion('thinking');
+      setIsResponding(true);
+    }
+  }, [messagesHook.isTyping, messagesHook.messages, setEmotion, setIsResponding]);
+
+  const handleClearTranscript = useCallback(() => {
+    handleNewChat();
+  }, [handleNewChat]);
 
   return (
     <div className="flex h-screen w-full">
@@ -357,6 +381,15 @@ const DashboardContent = ({
           onModeChange={setSelectedMode}
         />
       </main>
+
+      {/* Right Sidebar - Transcript */}
+      <TranscriptSidebar
+        messages={messagesHook.messages}
+        isOpen={transcriptOpen}
+        onToggle={() => setTranscriptOpen(!transcriptOpen)}
+        onClear={handleClearTranscript}
+        currentMode={selectedMode}
+      />
     </div>
   );
 };
