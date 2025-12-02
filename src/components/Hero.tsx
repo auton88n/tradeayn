@@ -11,7 +11,7 @@ interface HeroProps {
   onDemoMessage?: (message: string) => void;
 }
 const CARDS_EN = ["Always watching over you.", "I understand context.", "Ready when you are.", "Let me handle that.", "Optimizing your workflow.", "Done. What's next?"];
-const CARDS_AR = ["دائماً أراقب من أجلك.", "أفهم السياق.", "جاهز عندما تريد.", "دعني أتولى ذلك.", "أحسّن سير عملك.", "انتهيت. ما التالي؟"];
+const CARDS_AR = ["معك في كل خطوة.", "أفهم ما تحتاجه.", "جاهز لخدمتك.", "اترك الأمر لي.", "أُنجز المهام بذكاء.", "تمّ. ماذا بعد؟"];
 export const Hero = ({
   onGetStarted,
   onDemoMessage
@@ -146,7 +146,7 @@ export const Hero = ({
   }, [mouseX, mouseY]);
 
   // Placeholder texts for demo input
-  const placeholderTexts = language === 'ar' ? ['كيف يمكنني زيادة إيراداتي؟', 'اقترح استراتيجية تسويقية', 'حلل اتجاهات السوق في مجالي'] : ['How can I increase my revenue?', 'Suggest a marketing strategy', 'Analyze market trends in my industry'];
+  const placeholderTexts = language === 'ar' ? ['كيف أضاعف أرباحي؟', 'أعطني خطة تسويق فعّالة', 'ما الفرص الجديدة في سوقي؟'] : ['How can I increase my revenue?', 'Suggest a marketing strategy', 'Analyze market trends in my industry'];
 
   // Rotate placeholder texts
   useEffect(() => {

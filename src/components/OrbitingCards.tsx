@@ -10,12 +10,12 @@ export const OrbitingCards = () => {
   const { language } = useLanguage();
 
   const phrases: Phrase[] = [
-    { en: 'Let me take care of that.', ar: '\u062f\u0639\u0646\u064a \u0623\u062a\u0648\u0644\u0649 \u0630\u0644\u0643.' },
-    { en: 'Working on it…', ar: '\u062c\u0627\u0631\u0650 \u0627\u0644\u0639\u0645\u0644...' },
-    { en: 'Done. What\'s next?', ar: '\u062a\u0645. \u0645\u0627\u0630\u0627 \u0628\u0639\u062f\u061f' },
-    { en: 'Optimizing your workflow.', ar: '\u0623\u062d\u0633\u0651\u0646 \u0633\u064a\u0631 \u0639\u0645\u0644\u0643.' },
-    { en: 'I\'ve got you covered.', ar: '\u0623\u0646\u0627 \u0641\u064a \u062e\u062f\u0645\u062a\u0643.' },
-    { en: 'Consider it done.', ar: '\u0627\u0639\u062a\u0628\u0631\u0647 \u0645\u0646\u062c\u0632\u0627\u064b.' },
+    { en: 'Let me take care of that.', ar: 'اترك الأمر لي.' },
+    { en: 'Working on it…', ar: 'جارٍ العمل...' },
+    { en: 'Done. What\'s next?', ar: 'تمّ. ماذا بعد؟' },
+    { en: 'Optimizing your workflow.', ar: 'أُحسّن سير عملك.' },
+    { en: 'I\'ve got you covered.', ar: 'معك في كل خطوة.' },
+    { en: 'Consider it done.', ar: 'اعتبرها منجزة.' },
   ];
 
   // Orbit settings
