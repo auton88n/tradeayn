@@ -9,6 +9,20 @@
   .shadow-inner { 
     box-shadow: inset 0 12px 30px rgba(0, 0, 0, 0.06); 
   }
+  
+  /* CSS Containment utilities for performance */
+  .contain-layout {
+    contain: layout;
+  }
+  .contain-paint {
+    contain: paint;
+  }
+  .contain-strict {
+    contain: strict;
+  }
+  .contain-content {
+    contain: content;
+  }
 }
 
 /* Theme transitions - scoped for performance */

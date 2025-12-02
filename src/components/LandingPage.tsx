@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, lazy, Suspense } from 'react';
 import { Brain, ArrowRight, CheckCircle, Send, Loader2, Sparkles, Globe, Shield, Menu, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,10 +12,20 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { TypewriterText } from './TypewriterText';
 import { ConversationExamples } from './ConversationExamples';
-import { Hero } from './Hero';
 import { z } from 'zod';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { motion, AnimatePresence } from 'framer-motion';
+
+// Lazy load heavy Hero component
+const Hero = lazy(() => import('./Hero').then(m => ({ default: m.Hero })));
+
+// Simple loader for Hero
+const HeroLoader = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <div className="w-12 h-12 rounded-full border-2 border-foreground/20 border-t-foreground animate-spin" />
+  </div>
+);
+
 const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [demoMessage, setDemoMessage] = useState('');
@@ -365,7 +375,9 @@ const LandingPage = () => {
       </div>
 
       {/* Hero Section - Premium AI Eye Experience */}
-      <Hero onGetStarted={() => setShowAuthModal(true)} onDemoMessage={msg => setDemoMessage(msg)} />
+      <Suspense fallback={<HeroLoader />}>
+        <Hero onGetStarted={() => setShowAuthModal(true)} onDemoMessage={msg => setDemoMessage(msg)} />
+      </Suspense>
 
       {/* About AYN - Value Proposition Section */}
       <section id="about" className="py-16 md:py-32 px-4 md:px-6">
