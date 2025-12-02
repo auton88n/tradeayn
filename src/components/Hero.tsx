@@ -3,82 +3,8 @@ import { ArrowUp, Plus, ChevronDown, Brain } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { TypewriterText } from '@/components/TypewriterText';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { motion, useMotionValue, useSpring, useTransform, MotionValue } from 'framer-motion';
+import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { cn } from '@/lib/utils';
-
-// Magnetic Card Component
-const MagneticCard = ({ 
-  children, 
-  className 
-}: { 
-  children: React.ReactNode; 
-  className: string;
-}) => {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const [isNearby, setIsNearby] = useState(false);
-  
-  const magneticX = useMotionValue(0);
-  const magneticY = useMotionValue(0);
-  
-  const springX = useSpring(magneticX, { stiffness: 150, damping: 15, mass: 0.1 });
-  const springY = useSpring(magneticY, { stiffness: 150, damping: 15, mass: 0.1 });
-
-  useEffect(() => {
-    const card = cardRef.current;
-    if (!card) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const rect = card.getBoundingClientRect();
-      const cardCenterX = rect.left + rect.width / 2;
-      const cardCenterY = rect.top + rect.height / 2;
-      
-      const distanceX = e.clientX - cardCenterX;
-      const distanceY = e.clientY - cardCenterY;
-      const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
-      
-      // Magnetic effect activates within 150px radius
-      const magneticRadius = 150;
-      
-      if (distance < magneticRadius) {
-        setIsNearby(true);
-        // Pull strength based on distance (closer = stronger pull)
-        const strength = (magneticRadius - distance) / magneticRadius;
-        const maxPull = 20; // Maximum 20px movement
-        
-        magneticX.set((distanceX / distance) * strength * maxPull);
-        magneticY.set((distanceY / distance) * strength * maxPull);
-      } else {
-        setIsNearby(false);
-        magneticX.set(0);
-        magneticY.set(0);
-      }
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-    };
-  }, [magneticX, magneticY]);
-
-  return (
-    <motion.div
-      ref={cardRef}
-      style={{ x: springX, y: springY }}
-      initial={{ opacity: 0, scale: 0.9, filter: 'blur(6px)' }}
-      whileHover={{ 
-        opacity: 1,
-        scale: 1.05,
-        y: -5,
-        filter: 'blur(0px)'
-      }}
-      transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-      className={className}
-    >
-      {children}
-    </motion.div>
-  );
-};
 
 interface HeroProps {
   onGetStarted: () => void;
@@ -350,55 +276,115 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
           />
         </div>
 
-        {/* Cards - positioned absolutely, reveal on individual hover with magnetic effect */}
+        {/* Cards - positioned absolutely, reveal on individual hover */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           {/* Left card */}
-          <MagneticCard className="absolute left-4 md:left-12 lg:left-20 top-1/2 -translate-y-1/2 w-[160px] md:w-[200px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-4 z-20 pointer-events-auto cursor-pointer">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, filter: 'blur(6px)' }}
+            whileHover={{ 
+              opacity: 1,
+              scale: 1,
+              y: -5,
+              filter: 'blur(0px)'
+            }}
+            transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
+            className="absolute left-4 md:left-12 lg:left-20 top-1/2 -translate-y-1/2 w-[160px] md:w-[200px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-4 z-20 pointer-events-auto cursor-pointer"
+          >
             <div className="flex items-start gap-2">
               <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
               <span className="text-sm font-medium text-foreground">{CARDS[0]}</span>
             </div>
-          </MagneticCard>
+          </motion.div>
 
           {/* Top-left card */}
-          <MagneticCard className="absolute left-16 md:left-28 lg:left-36 top-8 md:top-4 w-[150px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20 pointer-events-auto cursor-pointer">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, filter: 'blur(6px)' }}
+            whileHover={{ 
+              opacity: 1,
+              scale: 1,
+              y: -5,
+              filter: 'blur(0px)'
+            }}
+            transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
+            className="absolute left-16 md:left-28 lg:left-36 top-8 md:top-4 w-[150px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20 pointer-events-auto cursor-pointer"
+          >
             <div className="flex items-start gap-2">
               <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
               <span className="text-sm font-medium text-foreground">{CARDS[1]}</span>
             </div>
-          </MagneticCard>
+          </motion.div>
 
           {/* Top card */}
-          <MagneticCard className="absolute left-1/2 -translate-x-1/2 -top-16 md:-top-20 w-[140px] md:w-[180px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20 pointer-events-auto cursor-pointer">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, filter: 'blur(6px)' }}
+            whileHover={{ 
+              opacity: 1,
+              scale: 1,
+              y: -5,
+              filter: 'blur(0px)'
+            }}
+            transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
+            className="absolute left-1/2 -translate-x-1/2 -top-16 md:-top-20 w-[140px] md:w-[180px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20 pointer-events-auto cursor-pointer"
+          >
             <div className="flex items-start gap-2">
               <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
               <span className="text-sm font-medium text-foreground">{CARDS[2]}</span>
             </div>
-          </MagneticCard>
+          </motion.div>
 
           {/* Top-right card */}
-          <MagneticCard className="absolute right-16 md:right-28 lg:right-36 top-8 md:top-4 w-[150px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20 pointer-events-auto cursor-pointer">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, filter: 'blur(6px)' }}
+            whileHover={{ 
+              opacity: 1,
+              scale: 1,
+              y: -5,
+              filter: 'blur(0px)'
+            }}
+            transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
+            className="absolute right-16 md:right-28 lg:right-36 top-8 md:top-4 w-[150px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20 pointer-events-auto cursor-pointer"
+          >
             <div className="flex items-start gap-2">
               <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
               <span className="text-sm font-medium text-foreground">{CARDS[3]}</span>
             </div>
-          </MagneticCard>
+          </motion.div>
 
           {/* Right card */}
-          <MagneticCard className="absolute right-4 md:right-12 lg:right-20 top-1/2 -translate-y-1/2 w-[160px] md:w-[200px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-4 z-20 pointer-events-auto cursor-pointer">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, filter: 'blur(6px)' }}
+            whileHover={{ 
+              opacity: 1,
+              scale: 1,
+              y: -5,
+              filter: 'blur(0px)'
+            }}
+            transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
+            className="absolute right-4 md:right-12 lg:right-20 top-1/2 -translate-y-1/2 w-[160px] md:w-[200px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-4 z-20 pointer-events-auto cursor-pointer"
+          >
             <div className="flex items-start gap-2">
               <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
               <span className="text-sm font-medium text-foreground">{CARDS[4]}</span>
             </div>
-          </MagneticCard>
+          </motion.div>
 
           {/* Bottom card */}
-          <MagneticCard className="absolute left-1/2 -translate-x-1/2 bottom-4 md:bottom-0 w-[150px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20 pointer-events-auto cursor-pointer">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, filter: 'blur(6px)' }}
+            whileHover={{ 
+              opacity: 1,
+              scale: 1,
+              y: -5,
+              filter: 'blur(0px)'
+            }}
+            transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
+            className="absolute left-1/2 -translate-x-1/2 bottom-4 md:bottom-0 w-[150px] md:w-[190px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20 pointer-events-auto cursor-pointer"
+          >
             <div className="flex items-start gap-2">
               <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
               <span className="text-sm font-medium text-foreground">{CARDS[5]}</span>
             </div>
-          </MagneticCard>
+          </motion.div>
         </div>
 
         {/* Eye - centered with spring physics */}
