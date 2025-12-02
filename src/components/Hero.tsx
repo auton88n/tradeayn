@@ -324,7 +324,7 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
               filter: 'blur(0px)'
             }}
             transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-            className="absolute left-1/2 -translate-x-1/2 -top-16 md:-top-20 w-[140px] md:w-[180px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20 pointer-events-auto cursor-pointer"
+            className="absolute left-1/2 -translate-x-1/2 -top-6 md:-top-8 w-[140px] md:w-[180px] rounded-2xl backdrop-blur-xl bg-background/60 border border-border/20 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] p-3 z-20 pointer-events-auto cursor-pointer"
           >
             <div className="flex items-start gap-2">
               <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
