@@ -11,6 +11,7 @@ import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { TypewriterText } from './TypewriterText';
+import { ConversationExamples } from './ConversationExamples';
 import { z } from 'zod';
 const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -159,6 +160,9 @@ const LandingPage = () => {
       <section className="min-h-screen flex flex-col justify-center items-center px-6 relative overflow-hidden">
         {/* Subtle noise texture */}
         <div className="absolute inset-0 bg-noise opacity-[0.02] pointer-events-none" />
+        
+        {/* Animated Conversation Examples */}
+        <ConversationExamples />
         
         {/* Interactive Chat Input */}
         <ScrollReveal>
