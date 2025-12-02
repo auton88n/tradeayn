@@ -453,6 +453,24 @@ button, a, input, textarea, select {
     }
   }
 
+  /* Eye shine sweep effect */
+  @keyframes eye-shine {
+    0%, 100% {
+      transform: translateX(-150%) translateY(-150%) rotate(45deg);
+      opacity: 0;
+    }
+    40% {
+      opacity: 0.4;
+    }
+    60% {
+      opacity: 0.4;
+    }
+    100% {
+      transform: translateX(150%) translateY(150%) rotate(45deg);
+      opacity: 0;
+    }
+  }
+
   /* Ripple effect animation */
   @keyframes ripple {
     0% {
