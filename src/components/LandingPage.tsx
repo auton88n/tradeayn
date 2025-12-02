@@ -1,16 +1,95 @@
 import { useState } from 'react';
-import { Brain, ArrowRight, CheckCircle } from 'lucide-react';
+import { Brain, ArrowRight, CheckCircle, Send, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { AuthModal } from './auth/AuthModal';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ThemeToggle } from './theme-toggle';
 import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
+import { z } from 'zod';
 
 const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const { t, language } = useLanguage();
+  const { toast } = useToast();
+
+  // Contact form state
+  const [contactForm, setContactForm] = useState({
+    name: '',
+    email: '',
+    message: ''
+  });
+  const [contactErrors, setContactErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
+  // Contact form validation schema
+  const contactSchema = z.object({
+    name: z.string()
+      .trim()
+      .min(1, { message: language === 'ar' ? 'الاسم مطلوب' : 'Name is required' })
+      .max(100, { message: language === 'ar' ? 'الاسم يجب أن يكون أقل من 100 حرف' : 'Name must be less than 100 characters' }),
+    email: z.string()
+      .trim()
+      .email({ message: language === 'ar' ? 'البريد الإلكتروني غير صالح' : 'Invalid email address' })
+      .max(255, { message: language === 'ar' ? 'البريد الإلكتروني يجب أن يكون أقل من 255 حرف' : 'Email must be less than 255 characters' }),
+    message: z.string()
+      .trim()
+      .min(1, { message: language === 'ar' ? 'الرسالة مطلوبة' : 'Message is required' })
+      .max(1000, { message: language === 'ar' ? 'الرسالة يجب أن تكون أقل من 1000 حرف' : 'Message must be less than 1000 characters' })
+  });
+
+  // Handle contact form submission
+  const handleContactSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setContactErrors({});
+
+    // Validate form
+    try {
+      contactSchema.parse(contactForm);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const errors: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          if (err.path[0]) {
+            errors[err.path[0].toString()] = err.message;
+          }
+        });
+        setContactErrors(errors);
+        return;
+      }
+    }
+
+    setIsSubmitting(true);
+
+    // Simulate form submission (replace with actual API call)
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      setIsSubmitted(true);
+      setContactForm({ name: '', email: '', message: '' });
+      
+      toast({
+        title: language === 'ar' ? 'تم الإرسال بنجاح' : 'Message Sent',
+        description: language === 'ar' ? 'سنتواصل معك قريباً' : "We'll get back to you soon",
+      });
+
+      // Reset submitted state after 3 seconds
+      setTimeout(() => setIsSubmitted(false), 3000);
+    } catch (error) {
+      toast({
+        title: language === 'ar' ? 'خطأ' : 'Error',
+        description: language === 'ar' ? 'حدث خطأ. يرجى المحاولة مرة أخرى' : 'Something went wrong. Please try again',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   // ScrollReveal component for smooth scroll animations
   const ScrollReveal = ({ children, direction = 'up', delay = 0 }: {
@@ -220,6 +299,153 @@ const LandingPage = () => {
         </div>
       </section>
 
+      {/* Premium Contact Section */}
+      <section id="contact" className="py-32 px-6">
+        <div className="container mx-auto max-w-3xl">
+          <ScrollReveal>
+            <div className="text-center mb-16">
+              <span className="text-sm font-mono text-muted-foreground tracking-wider uppercase mb-4 block">
+                {language === 'ar' ? 'تواصل معنا' : 'Get In Touch'}
+              </span>
+              <h2 className="text-5xl md:text-6xl font-serif font-bold mb-6">
+                {language === 'ar' ? 'لنبدأ المحادثة' : "Let's Start a Conversation"}
+              </h2>
+              <p className="text-lg text-muted-foreground max-w-xl mx-auto">
+                {language === 'ar' 
+                  ? 'أخبرنا عن مشروعك وسنساعدك في تحويل رؤيتك إلى واقع'
+                  : "Tell us about your project and we'll help transform your vision into reality"}
+              </p>
+            </div>
+          </ScrollReveal>
+
+          <ScrollReveal delay={0.2}>
+            {isSubmitted ? (
+              // Success state
+              <div className="text-center py-20 animate-scale-fade-in">
+                <div className="w-16 h-16 rounded-full bg-foreground mx-auto mb-6 flex items-center justify-center">
+                  <CheckCircle className="w-8 h-8 text-background" />
+                </div>
+                <h3 className="text-2xl font-bold mb-3">
+                  {language === 'ar' ? 'شكراً لتواصلك!' : 'Thank You!'}
+                </h3>
+                <p className="text-muted-foreground">
+                  {language === 'ar' 
+                    ? 'سنتواصل معك خلال 24 ساعة'
+                    : "We'll be in touch within 24 hours"}
+                </p>
+              </div>
+            ) : (
+              // Contact form
+              <form onSubmit={handleContactSubmit} className="space-y-6">
+                {/* Name input */}
+                <div className="space-y-2 group">
+                  <label 
+                    htmlFor="name" 
+                    className="text-sm font-mono uppercase tracking-wider text-muted-foreground"
+                  >
+                    {language === 'ar' ? 'الاسم' : 'Name'}
+                  </label>
+                  <Input
+                    id="name"
+                    type="text"
+                    value={contactForm.name}
+                    onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })}
+                    placeholder={language === 'ar' ? 'اسمك الكامل' : 'Your full name'}
+                    className={cn(
+                      "h-14 bg-transparent border-2 border-border rounded-none text-base transition-all duration-300",
+                      "focus:border-foreground focus:ring-0",
+                      "group-hover:border-muted-foreground",
+                      contactErrors.name && "border-destructive"
+                    )}
+                    disabled={isSubmitting}
+                  />
+                  {contactErrors.name && (
+                    <p className="text-sm text-destructive animate-slide-down-fade">{contactErrors.name}</p>
+                  )}
+                </div>
+
+                {/* Email input */}
+                <div className="space-y-2 group">
+                  <label 
+                    htmlFor="email" 
+                    className="text-sm font-mono uppercase tracking-wider text-muted-foreground"
+                  >
+                    {language === 'ar' ? 'البريد الإلكتروني' : 'Email'}
+                  </label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={contactForm.email}
+                    onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
+                    placeholder={language === 'ar' ? 'بريدك الإلكتروني' : 'your@email.com'}
+                    className={cn(
+                      "h-14 bg-transparent border-2 border-border rounded-none text-base transition-all duration-300",
+                      "focus:border-foreground focus:ring-0",
+                      "group-hover:border-muted-foreground",
+                      contactErrors.email && "border-destructive"
+                    )}
+                    disabled={isSubmitting}
+                  />
+                  {contactErrors.email && (
+                    <p className="text-sm text-destructive animate-slide-down-fade">{contactErrors.email}</p>
+                  )}
+                </div>
+
+                {/* Message textarea */}
+                <div className="space-y-2 group">
+                  <label 
+                    htmlFor="message" 
+                    className="text-sm font-mono uppercase tracking-wider text-muted-foreground"
+                  >
+                    {language === 'ar' ? 'الرسالة' : 'Message'}
+                  </label>
+                  <Textarea
+                    id="message"
+                    value={contactForm.message}
+                    onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
+                    placeholder={language === 'ar' ? 'أخبرنا عن مشروعك...' : 'Tell us about your project...'}
+                    rows={6}
+                    className={cn(
+                      "bg-transparent border-2 border-border rounded-none text-base transition-all duration-300 resize-none",
+                      "focus:border-foreground focus:ring-0",
+                      "group-hover:border-muted-foreground",
+                      contactErrors.message && "border-destructive"
+                    )}
+                    disabled={isSubmitting}
+                  />
+                  {contactErrors.message && (
+                    <p className="text-sm text-destructive animate-slide-down-fade">{contactErrors.message}</p>
+                  )}
+                </div>
+
+                {/* Submit button */}
+                <Button
+                  type="submit"
+                  size="lg"
+                  disabled={isSubmitting}
+                  className={cn(
+                    "w-full h-14 rounded-none font-mono uppercase tracking-wider transition-all duration-300",
+                    "hover:shadow-2xl"
+                  )}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      {language === 'ar' ? 'جاري الإرسال...' : 'Sending...'}
+                    </>
+                  ) : (
+                    <>
+                      {language === 'ar' ? 'إرسال الرسالة' : 'Send Message'}
+                      <Send className="ml-2 h-5 w-5" />
+                    </>
+                  )}
+                </Button>
+              </form>
+            )}
+          </ScrollReveal>
+        </div>
+      </section>
+
       {/* Minimal Footer */}
       <footer className="py-24 border-t border-border">
         <div className="container max-w-6xl mx-auto px-6">
@@ -242,7 +468,7 @@ const LandingPage = () => {
               <a href="#services" className="text-muted-foreground hover:text-foreground transition-colors">
                 {language === 'ar' ? 'الخدمات' : 'Services'}
               </a>
-              <a href="#" onClick={() => setShowAuthModal(true)} className="text-muted-foreground hover:text-foreground transition-colors">
+              <a href="#contact" className="text-muted-foreground hover:text-foreground transition-colors">
                 {language === 'ar' ? 'تواصل' : 'Contact'}
               </a>
             </nav>
