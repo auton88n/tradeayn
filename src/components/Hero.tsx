@@ -94,7 +94,7 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
 
   // Rotate placeholder texts
   useEffect(() => {
-    if (inputMessage.trim()) return;
+    if (inputMessage.length > 0) return;
     const interval = setInterval(() => {
       setPlaceholderIndex((prev) => (prev + 1) % placeholderTexts.length);
     }, 3500);
@@ -403,7 +403,7 @@ export const Hero = ({ onGetStarted, onDemoMessage }: HeroProps) => {
             />
 
             {/* Typewriter Placeholder */}
-            {!inputMessage.trim() && (
+            {inputMessage.length === 0 && (
               <div className={cn(
                 "absolute top-[10px] pointer-events-none z-10",
                 language === 'ar' ? 'right-[8px]' : 'left-[8px]'
