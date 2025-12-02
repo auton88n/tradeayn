@@ -642,22 +642,26 @@ button, a, input, textarea, select {
 
   /* Remove old RTL input container rules - now handled above */
 
-  /* Auth input text - force black color in both light and dark modes */
+  /* Auth input text - proper contrast for light and dark modes */
   .auth-input-text {
     color: black !important;
   }
 
   .dark .auth-input-text {
-    color: black !important;
+    color: white !important;
   }
 
-  /* Auth label text - force black color in both light and dark modes */
+  .dark .auth-input-text::placeholder {
+    color: rgba(255, 255, 255, 0.5) !important;
+  }
+
+  /* Auth label text - proper contrast for light and dark modes */
   .auth-label {
     color: black !important;
   }
 
   .dark .auth-label {
-    color: black !important;
+    color: white !important;
   }
 
   /* RTL Margin and Padding Adjustments */
