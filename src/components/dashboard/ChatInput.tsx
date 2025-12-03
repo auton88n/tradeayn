@@ -321,8 +321,6 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
             <ArrowUp className="w-5 h-5 md:w-[22px] md:h-[22px]" strokeWidth={2.5} />
           </button>
         </div>
-          </button>
-        </div>
       </div>
     </div>;
 });
