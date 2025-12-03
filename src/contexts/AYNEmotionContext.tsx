@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, ReactNode, useRef } from 'react';
 
 export type AYNEmotion = 'calm' | 'happy' | 'excited' | 'thinking' | 'frustrated' | 'curious';
 
@@ -19,7 +19,7 @@ export const EMOTION_CONFIGS: Record<AYNEmotion, EmotionConfig> = {
     ringClass: 'ring-foreground/20',
     glowClass: 'shadow-[0_0_30px_hsl(0,0%,50%,0.2)]',
     irisScale: 1,
-    breathingSpeed: 3,
+    breathingSpeed: 4,
     particleType: 'none',
   },
   happy: {
@@ -28,7 +28,7 @@ export const EMOTION_CONFIGS: Record<AYNEmotion, EmotionConfig> = {
     ringClass: 'ring-green-400/50',
     glowClass: 'shadow-[0_0_40px_hsl(142,71%,45%,0.4)]',
     irisScale: 1.05,
-    breathingSpeed: 2.5,
+    breathingSpeed: 3,
     particleType: 'sparkle',
   },
   excited: {
@@ -46,7 +46,7 @@ export const EMOTION_CONFIGS: Record<AYNEmotion, EmotionConfig> = {
     ringClass: 'ring-blue-400/50',
     glowClass: 'shadow-[0_0_45px_hsl(217,91%,60%,0.45)]',
     irisScale: 0.85,
-    breathingSpeed: 4,
+    breathingSpeed: 2.5,
     particleType: 'orbit',
   },
   frustrated: {
@@ -79,6 +79,14 @@ interface AYNEmotionContextType {
   triggerBlink: () => void;
   isResponding: boolean;
   setIsResponding: (responding: boolean) => void;
+  // New smart life states
+  isUserTyping: boolean;
+  setIsUserTyping: (typing: boolean) => void;
+  isAttentive: boolean;
+  setIsAttentive: (attentive: boolean) => void;
+  triggerAttentionBlink: () => void;
+  lastActivityTime: number;
+  updateActivity: () => void;
 }
 
 const AYNEmotionContext = createContext<AYNEmotionContextType | undefined>(undefined);
@@ -88,6 +96,10 @@ export const AYNEmotionProvider = ({ children }: { children: ReactNode }) => {
   const [isAbsorbing, setIsAbsorbing] = useState(false);
   const [isBlinking, setIsBlinking] = useState(false);
   const [isResponding, setIsResponding] = useState(false);
+  const [isUserTyping, setIsUserTyping] = useState(false);
+  const [isAttentive, setIsAttentive] = useState(false);
+  const [lastActivityTime, setLastActivityTime] = useState(Date.now());
+  const blinkTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const setEmotion = useCallback((newEmotion: AYNEmotion) => {
     setEmotionState(newEmotion);
@@ -101,6 +113,29 @@ export const AYNEmotionProvider = ({ children }: { children: ReactNode }) => {
   const triggerBlink = useCallback(() => {
     setIsBlinking(true);
     setTimeout(() => setIsBlinking(false), 150);
+  }, []);
+
+  // Double-blink for attention (when user starts typing)
+  const triggerAttentionBlink = useCallback(() => {
+    // Clear any existing blink timeout
+    if (blinkTimeoutRef.current) {
+      clearTimeout(blinkTimeoutRef.current);
+    }
+    
+    // First blink
+    setIsBlinking(true);
+    setTimeout(() => {
+      setIsBlinking(false);
+      // Second blink after short pause
+      blinkTimeoutRef.current = setTimeout(() => {
+        setIsBlinking(true);
+        setTimeout(() => setIsBlinking(false), 100);
+      }, 150);
+    }, 100);
+  }, []);
+
+  const updateActivity = useCallback(() => {
+    setLastActivityTime(Date.now());
   }, []);
 
   const emotionConfig = EMOTION_CONFIGS[emotion];
@@ -117,6 +152,13 @@ export const AYNEmotionProvider = ({ children }: { children: ReactNode }) => {
         triggerBlink,
         isResponding,
         setIsResponding,
+        isUserTyping,
+        setIsUserTyping,
+        isAttentive,
+        setIsAttentive,
+        triggerAttentionBlink,
+        lastActivityTime,
+        updateActivity,
       }}
     >
       {children}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { Brain } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -10,10 +10,22 @@ interface EmotionalEyeProps {
 }
 
 export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
-  const { emotionConfig, isAbsorbing, isBlinking, triggerBlink, isResponding } = useAYNEmotion();
+  const { 
+    emotionConfig, 
+    isAbsorbing, 
+    isBlinking, 
+    triggerBlink, 
+    isResponding,
+    isUserTyping,
+    isAttentive,
+    lastActivityTime
+  } = useAYNEmotion();
   const [isHovered, setIsHovered] = useState(false);
+  const lastBlinkRef = useRef(Date.now());
+  const idleBlinkIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const checkInTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Mouse tracking
+  // Mouse tracking for gaze
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
 
@@ -21,6 +33,17 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
   const eyeX = useSpring(useTransform(mouseX, (v) => v * 0.015), springConfig);
   const eyeY = useSpring(useTransform(mouseY, (v) => v * 0.015), springConfig);
 
+  // Micro-movement for idle "look around"
+  const microX = useMotionValue(0);
+  const microY = useMotionValue(0);
+  const smoothMicroX = useSpring(microX, { damping: 30, stiffness: 100 });
+  const smoothMicroY = useSpring(microY, { damping: 30, stiffness: 100 });
+
+  // Combined eye movement
+  const combinedX = useTransform([eyeX, smoothMicroX], ([eye, micro]) => (eye as number) + (micro as number));
+  const combinedY = useTransform([eyeY, smoothMicroY], ([eye, micro]) => (eye as number) + (micro as number));
+
+  // Mouse tracking effect
   useEffect(() => {
     function onMove(e: MouseEvent) {
       const cx = window.innerWidth / 2;
@@ -42,18 +65,89 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
     };
   }, [mouseX, mouseY]);
 
-  // Blink only when AYN is responding
-  useEffect(() => {
-    if (!isResponding) return;
-    
-    const interval = setInterval(() => {
-      if (!isAbsorbing) {
-        triggerBlink();
-      }
-    }, 800 + Math.random() * 400); // Faster blinks while responding (0.8-1.2s)
+  // Smart blinking system - get random blink interval based on state
+  const getBlinkInterval = useCallback(() => {
+    if (isUserTyping) return null; // Don't blink while user is typing (attentive listening)
+    if (isResponding) return 800 + Math.random() * 400; // Faster blinks while responding (0.8-1.2s)
+    return 3000 + Math.random() * 2000; // Natural idle blinks (3-5s)
+  }, [isUserTyping, isResponding]);
 
-    return () => clearInterval(interval);
-  }, [isAbsorbing, triggerBlink, isResponding]);
+  // Idle blinking effect
+  useEffect(() => {
+    // Clear existing interval
+    if (idleBlinkIntervalRef.current) {
+      clearInterval(idleBlinkIntervalRef.current);
+      idleBlinkIntervalRef.current = null;
+    }
+
+    const scheduleNextBlink = () => {
+      const interval = getBlinkInterval();
+      if (interval === null) return; // Don't blink if null (user typing)
+
+      idleBlinkIntervalRef.current = setTimeout(() => {
+        if (!isAbsorbing && !isAttentive) {
+          const now = Date.now();
+          // Prevent too rapid blinking
+          if (now - lastBlinkRef.current > 500) {
+            triggerBlink();
+            lastBlinkRef.current = now;
+          }
+        }
+        scheduleNextBlink(); // Schedule next blink
+      }, interval);
+    };
+
+    scheduleNextBlink();
+
+    return () => {
+      if (idleBlinkIntervalRef.current) {
+        clearTimeout(idleBlinkIntervalRef.current);
+      }
+    };
+  }, [isAbsorbing, isAttentive, getBlinkInterval, triggerBlink]);
+
+  // "Check-in" blink after long user inactivity (10+ seconds)
+  useEffect(() => {
+    if (checkInTimeoutRef.current) {
+      clearTimeout(checkInTimeoutRef.current);
+    }
+
+    checkInTimeoutRef.current = setTimeout(() => {
+      if (!isUserTyping && !isResponding && !isAbsorbing) {
+        // Gentle double-blink "are you still there?"
+        triggerBlink();
+        setTimeout(() => {
+          triggerBlink();
+        }, 300);
+      }
+    }, 10000);
+
+    return () => {
+      if (checkInTimeoutRef.current) {
+        clearTimeout(checkInTimeoutRef.current);
+      }
+    };
+  }, [lastActivityTime, isUserTyping, isResponding, isAbsorbing, triggerBlink]);
+
+  // Micro-movements when idle (subtle "look around")
+  useEffect(() => {
+    if (isUserTyping || isResponding || isAbsorbing) {
+      // Reset to center when not idle
+      microX.set(0);
+      microY.set(0);
+      return;
+    }
+
+    const microMovementInterval = setInterval(() => {
+      // Subtle random movement within small range
+      const newX = (Math.random() - 0.5) * 4;
+      const newY = (Math.random() - 0.5) * 3;
+      microX.set(newX);
+      microY.set(newY);
+    }, 5000 + Math.random() * 3000); // Every 5-8 seconds
+
+    return () => clearInterval(microMovementInterval);
+  }, [isUserTyping, isResponding, isAbsorbing, microX, microY]);
 
   const sizeClasses = {
     sm: 'w-[100px] h-[100px] md:w-[120px] md:h-[120px]',
@@ -61,14 +155,27 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
     lg: 'w-[160px] h-[160px] md:w-[220px] md:h-[220px] lg:w-[260px] lg:h-[260px]',
   };
 
-  // Calculate iris radius based on state - contract on absorb, expand on respond
-  const irisRadius = isAbsorbing ? 18 : isResponding ? 34 : isBlinking ? 30 : isHovered ? 32 : 28;
+  // Calculate iris radius based on state - dilates for attention, contracts when thinking
+  const getIrisRadius = () => {
+    if (isAbsorbing) return 16; // Contract during absorption
+    if (isAttentive) return 34; // Dilate when user starts typing (attention/interest)
+    if (isUserTyping) return 32; // Slightly dilated while listening
+    if (isResponding) return 30; // Normal while responding
+    if (isBlinking) return 28;
+    if (isHovered) return 30;
+    return 28; // Default calm state
+  };
+
+  const irisRadius = getIrisRadius();
+
+  // Breathing animation speed based on emotion
+  const breathingDuration = emotionConfig.breathingSpeed;
 
   return (
     <div className={cn("relative flex items-center justify-center", className)}>
       {/* Eye - centered with spring physics */}
       <motion.div 
-        style={{ x: eyeX, y: eyeY }}
+        style={{ x: combinedX, y: combinedY }}
         className="relative z-10 flex items-center justify-center group cursor-pointer will-change-transform" 
         initial={{ scale: 0.92, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -76,7 +183,7 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
         onMouseEnter={() => setIsHovered(true)} 
         onMouseLeave={() => setIsHovered(false)}
       >
-        {/* Outer casing - emotion color on border ONLY */}
+        {/* Outer casing with breathing animation */}
         <motion.div 
           className={cn(
             "relative rounded-full bg-background flex items-center justify-center overflow-hidden transition-all duration-500",
@@ -85,8 +192,15 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
           style={{
             boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
           }}
-          animate={{ scale: [1, 1.01, 1] }}
-          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+          animate={{ 
+            scale: [1, 1.015, 1],
+            opacity: [1, 0.98, 1]
+          }}
+          transition={{ 
+            duration: breathingDuration, 
+            repeat: Infinity, 
+            ease: "easeInOut" 
+          }}
         >
           {/* soft inner ring */}
           <div className="absolute inset-4 rounded-full bg-background/80 shadow-inner" />
@@ -119,7 +233,6 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
             {/* sclera subtle */}
             <circle cx="50" cy="50" r="48" fill="url(#emotional-sclera)" opacity="0.06" />
 
-
             {/* iris / pupil - PURE BLACK */}
             <circle 
               cx="50" 
@@ -129,9 +242,11 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
               style={{
                 transition: isAbsorbing 
                   ? "r 0.15s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
-                  : isBlinking 
-                    ? "r 0.08s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
-                    : "r 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)"
+                  : isAttentive
+                    ? "r 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)"
+                    : isBlinking 
+                      ? "r 0.08s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
+                      : "r 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)"
               }} 
             />
               
@@ -144,9 +259,11 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
               style={{
                 transition: isAbsorbing 
                   ? "all 0.15s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
-                  : isBlinking 
-                    ? "all 0.08s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
-                    : "all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)"
+                  : isAttentive
+                    ? "all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)"
+                    : isBlinking 
+                      ? "all 0.08s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
+                      : "all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)"
               }}
             >
               <Brain className="w-full h-full" style={{ color: emotionConfig.color, transition: 'color 0.5s ease' }} />
