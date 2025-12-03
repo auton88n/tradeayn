@@ -359,10 +359,13 @@ const DashboardContent = ({
         </Button>
       )}
 
-      <main className={cn(
-        "flex-1 overflow-hidden flex flex-col transition-[margin] duration-300",
-        transcriptOpen && "md:mr-80"
-      )}>
+      <main 
+        dir="ltr"
+        className={cn(
+          "flex-1 overflow-hidden flex flex-col transition-[margin] duration-300",
+          transcriptOpen && "md:mr-80"
+        )}
+      >
         {/* Mobile header with sidebar trigger */}
         <header className="md:hidden flex items-center p-3 border-b bg-background">
           <SidebarTrigger />

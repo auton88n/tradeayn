@@ -730,31 +730,7 @@ button, a, input, textarea, select {
     text-align: left;
   }
 
-  /* RTL Flex Justify Content */
-  [dir="rtl"] .justify-start {
-    justify-content: flex-end;
-  }
-
-  [dir="rtl"] .justify-end {
-    justify-content: flex-start;
-  }
-
-  /* Remove old RTL input field rules - now handled in unified section above */
-
-  /* RTL Send Button - keep inside on the left via flex order */
-  [dir="rtl"] .send-button {
-    position: static;
-    margin-left: 8px;
-    margin-right: 0;
-  }
-
-  /* RTL Attachment Button - keep inside on the right via flex order */
-  [dir="rtl"] .attachment-button {
-    position: static;
-    margin-right: 8px;
-    margin-left: 0;
-    transform: none;
-  }
+  /* RTL Flex Justify - removed aggressive rules that broke layout */
 
   /* RTL File Types Dropdown Positioning */
   [dir="rtl"] .attachment-button + div .absolute {
@@ -781,17 +757,6 @@ button, a, input, textarea, select {
       left: auto;
     }
 
-    [dir="rtl"] .send-button {
-      position: static;
-      margin-left: 6px;
-      margin-right: 0;
-    }
-
-    [dir="rtl"] .attachment-button {
-      position: static;
-      margin-right: 6px;
-      margin-left: 0;
-    }
   }
 
   /* SIDEBAR EXPANDED - INPUT AREA POSITIONING FIX */
