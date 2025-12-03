@@ -18,17 +18,25 @@ export const UserMessageBubble = ({
 }: UserMessageBubbleProps) => {
   if (status === 'done') return null;
 
+  // Calculate center offset for the bubble (so it lands centered on eye)
+  const bubbleWidth = 140;
+  const bubbleHeight = 44;
+
   return (
     <motion.div
       className={cn(
-        "fixed left-0 top-0 z-50 max-w-[300px] px-4 py-3 rounded-2xl",
+        "fixed z-50 max-w-[300px] px-4 py-3 rounded-2xl",
         "bg-primary text-primary-foreground",
         "shadow-lg border border-primary/20",
         "pointer-events-none"
       )}
+      style={{
+        left: 0,
+        top: 0,
+      }}
       initial={{
-        x: startPosition.x,
-        y: startPosition.y,
+        x: startPosition.x - bubbleWidth / 2,
+        y: startPosition.y - bubbleHeight / 2,
         scale: 1,
         opacity: 1,
         rotate: 0,
@@ -37,32 +45,32 @@ export const UserMessageBubble = ({
       animate={
         status === 'flying'
           ? {
-              x: endPosition.x,
-              y: endPosition.y,
-              scale: 0.5,
+              x: endPosition.x - bubbleWidth / 2,
+              y: endPosition.y - bubbleHeight / 2,
+              scale: 0.35,
               opacity: 1,
-              rotate: -5,
+              rotate: -8,
               filter: 'blur(0px)',
             }
           : {
-              x: endPosition.x,
-              y: endPosition.y,
+              x: endPosition.x - bubbleWidth / 2,
+              y: endPosition.y - bubbleHeight / 2,
               scale: 0,
               opacity: 0,
               rotate: 0,
-              filter: 'blur(4px)',
+              filter: 'blur(6px)',
             }
       }
       transition={
         status === 'flying'
           ? {
               type: 'spring',
-              stiffness: 200,
-              damping: 22,
-              mass: 0.6,
+              stiffness: 160,
+              damping: 18,
+              mass: 0.5,
             }
           : {
-              duration: 0.35,
+              duration: 0.25,
               ease: [0.32, 0, 0.67, 0],
             }
       }

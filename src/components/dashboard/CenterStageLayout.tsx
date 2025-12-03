@@ -3,8 +3,8 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EmotionalEye } from '@/components/eye/EmotionalEye';
 import { UserMessageBubble } from '@/components/eye/UserMessageBubble';
-import { AYNSpeechBubble } from '@/components/eye/AYNSpeechBubble';
-import { SuggestionBubble } from '@/components/eye/SuggestionBubble';
+import { SuggestionsCard } from '@/components/eye/SuggestionsCard';
+import { ResponseCard } from '@/components/eye/ResponseCard';
 import { FlyingSuggestionBubble } from '@/components/eye/FlyingSuggestionBubble';
 import { ParticleBurst } from '@/components/eye/ParticleBurst';
 import { ChatInput } from './ChatInput';
@@ -83,10 +83,8 @@ export const CenterStageLayout = ({
     completeSuggestionAbsorption,
     emitResponseBubble,
     clearResponseBubbles,
-    dismissBubble,
     emitSuggestions,
     clearSuggestions,
-    dismissSuggestion,
   } = useBubbleAnimation();
 
   const [lastProcessedMessageId, setLastProcessedMessageId] = useState<string | null>(null);
@@ -117,25 +115,17 @@ export const CenterStageLayout = ({
     }
   }, []);
 
-  // Calculate eye position based on visible bubbles
-  const visibleBubbles = responseBubbles.filter(b => b.isVisible);
-  const visibleSuggestions = suggestionBubbles.filter(s => s.isVisible);
-  const hasManyBubbles = visibleBubbles.length > 2;
-  const hasLongBubbles = visibleBubbles.some(b => b.content.length > 150);
+  // Calculate eye position based on visible cards
+  const hasVisibleResponses = responseBubbles.some(b => b.isVisible);
+  const hasVisibleSuggestions = suggestionBubbles.some(s => s.isVisible);
   
-  // Enhanced eye movement - shifts based on bubble count and suggestions
-  const shouldShiftLeft = visibleBubbles.length > 0;
-  const shouldShiftRight = visibleSuggestions.length > 0 && visibleBubbles.length === 0;
-  
+  // Eye shifts left when responses are visible, right when only suggestions
   let eyeShiftX = 0;
-  if (shouldShiftLeft) {
-    eyeShiftX = hasManyBubbles ? -150 : hasLongBubbles ? -120 : -80;
-  } else if (shouldShiftRight) {
+  if (hasVisibleResponses) {
+    eyeShiftX = -100;
+  } else if (hasVisibleSuggestions) {
     eyeShiftX = 60;
   }
-  
-  // Vertical shift when many bubbles stack
-  const eyeShiftY = hasManyBubbles ? -20 : 0;
 
   // Get eye position for bubble animations
   const getEyePosition = useCallback(() => {
@@ -219,15 +209,12 @@ export const CenterStageLayout = ({
     // Track the user's message for suggestion context
     setLastUserMessage(content);
     
-    // Clear other suggestions but keep clicked one visible during flight
+    // Clear suggestions
     clearSuggestions();
     
-    // Get eye position and start flying animation
+    // Get eye position (exact center) and start flying animation
     const eyePos = getEyePosition();
-    startSuggestionFlight(content, emoji, clickPosition, {
-      x: eyePos.x - 60,
-      y: eyePos.y - 20,
-    });
+    startSuggestionFlight(content, emoji, clickPosition, eyePos);
 
     // After flight completes, trigger absorption and send
     setTimeout(() => {
@@ -362,7 +349,7 @@ export const CenterStageLayout = ({
         <motion.div 
           ref={eyeRef} 
           className="relative"
-          animate={{ x: eyeShiftX, y: eyeShiftY }}
+          animate={{ x: eyeShiftX }}
           transition={{ 
             type: 'spring', 
             stiffness: 150, 
@@ -372,40 +359,17 @@ export const CenterStageLayout = ({
         >
           <EmotionalEye size="lg" />
 
-          {/* Suggestion bubbles on the LEFT side of eye */}
-          <div className="absolute top-1/2 right-full -translate-y-1/2 mr-6 flex flex-col items-end gap-2 w-[200px]">
-            <AnimatePresence mode="popLayout">
-              {visibleSuggestions.map((suggestion, index) => (
-                <SuggestionBubble
-                  key={suggestion.id}
-                  id={suggestion.id}
-                  content={suggestion.content}
-                  emoji={suggestion.emoji}
-                  isVisible={suggestion.isVisible}
-                  onClick={handleSuggestionClick}
-                  index={index}
-                />
-              ))}
-            </AnimatePresence>
+          {/* Unified Suggestions Card on the LEFT side of eye */}
+          <div className="absolute top-1/2 right-full -translate-y-1/2 mr-8">
+            <SuggestionsCard
+              suggestions={suggestionBubbles}
+              onSuggestionClick={handleSuggestionClick}
+            />
           </div>
 
-          {/* Response bubbles emanating from eye - positioned to the right */}
-          <div className={cn(
-            "absolute top-1/2 left-full -translate-y-1/2 ml-6 flex flex-col items-start gap-3",
-            hasManyBubbles ? "w-[450px]" : hasLongBubbles ? "w-[400px]" : "w-[350px]"
-          )}>
-            <AnimatePresence mode="popLayout">
-              {visibleBubbles.map((bubble) => (
-                <AYNSpeechBubble
-                  key={bubble.id}
-                  id={bubble.id}
-                  content={bubble.content}
-                  type={bubble.type}
-                  isVisible={bubble.isVisible}
-                  onDismiss={() => dismissBubble(bubble.id)}
-                />
-              ))}
-            </AnimatePresence>
+          {/* Unified Response Card on the RIGHT side of eye */}
+          <div className="absolute top-1/2 left-full -translate-y-1/2 ml-8">
+            <ResponseCard responses={responseBubbles} />
           </div>
 
           {/* Thinking indicator when typing */}
