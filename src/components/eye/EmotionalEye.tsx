@@ -241,33 +241,33 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
             ease: "easeInOut" 
           }}
         >
-          {/* Layer 1: Soft outer glow/halo */}
+          {/* Layer 1: Soft outer glow/halo - expanded */}
           <div 
             className="absolute inset-0 rounded-full"
             style={{
-              background: 'radial-gradient(circle, hsla(0, 0%, 100%, 0.95) 0%, hsla(0, 0%, 96%, 0.7) 40%, hsla(0, 0%, 92%, 0.4) 60%, transparent 75%)',
-              boxShadow: 'inset 0 0 30px hsla(0, 0%, 0%, 0.03)',
+              background: 'radial-gradient(circle, hsla(0, 0%, 100%, 0.98) 0%, hsla(0, 0%, 98%, 0.85) 35%, hsla(0, 0%, 96%, 0.5) 55%, transparent 80%)',
+              boxShadow: '0 8px 40px hsla(0, 0%, 0%, 0.06)',
             }}
           />
 
-          {/* Layer 2: Light gray outer ring */}
+          {/* Layer 2: Light gray outer ring - softer */}
           <div 
-            className="absolute inset-[12%] rounded-full"
+            className="absolute inset-[15%] rounded-full"
             style={{
-              backgroundColor: 'hsl(0, 0%, 94%)',
-              boxShadow: 'inset 0 3px 12px hsla(0, 0%, 0%, 0.06), inset 0 -2px 8px hsla(0, 0%, 100%, 0.6)',
+              backgroundColor: 'hsl(0, 0%, 96%)',
+              boxShadow: 'inset 0 2px 8px hsla(0, 0%, 0%, 0.04)',
             }}
           />
 
-          {/* Layer 3: Emotional Ring - Medium gray with dynamic glow */}
+          {/* Layer 3: Emotional Ring - lighter gray, no border */}
           <motion.div 
-            className="absolute inset-[24%] rounded-full"
+            className="absolute inset-[30%] rounded-full"
             animate={{ 
               scale: isPulsing 
-                ? [1, 1.08, 1] 
+                ? [1, 1.06, 1] 
                 : isResponding || isAbsorbing 
-                  ? [1, 1.04, 1] 
-                  : [1, 1.015, 1],
+                  ? [1, 1.03, 1] 
+                  : [1, 1.01, 1],
               rotate: emotion === 'thinking' ? [0, 360] : 0,
             }}
             transition={{ 
@@ -284,22 +284,19 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
             }}
             style={{
               backgroundColor: emotion === 'calm' 
-                ? 'hsl(0, 0%, 75%)'
+                ? 'hsl(0, 0%, 88%)'
                 : emotionConfig.glowColor,
               boxShadow: isResponding || isUserTyping || isAttentive
-                ? `inset 0 3px 10px hsla(0, 0%, 0%, 0.15), 0 0 30px ${emotionConfig.glowColor}50`
-                : 'inset 0 3px 10px hsla(0, 0%, 0%, 0.12), inset 0 -2px 6px hsla(0, 0%, 100%, 0.3)',
-              border: emotion === 'calm' 
-                ? '2px solid hsl(0, 0%, 65%)'
-                : `2px solid ${emotionConfig.glowColor}`,
-              transition: 'background-color 1.2s ease, box-shadow 0.8s ease, border-color 1.2s ease',
+                ? `inset 0 2px 6px hsla(0, 0%, 0%, 0.08), 0 0 25px ${emotionConfig.glowColor}40`
+                : 'inset 0 2px 6px hsla(0, 0%, 0%, 0.06)',
+              transition: 'background-color 1.2s ease, box-shadow 0.8s ease',
             }}
           />
 
-          {/* Layer 4: Black pupil with brain - state-controlled blink */}
+          {/* Layer 4: Black pupil with brain - smaller */}
           <motion.svg 
             viewBox="0 0 100 100" 
-            className="w-[52%] h-[52%] relative z-10"
+            className="w-[40%] h-[40%] relative z-10"
             xmlns="http://www.w3.org/2000/svg" 
             animate={{
               scaleY: isBlinking ? 0.05 : 1,
