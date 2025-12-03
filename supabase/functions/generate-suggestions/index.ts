@@ -1,3 +1,4 @@
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -13,9 +14,9 @@ serve(async (req) => {
   try {
     const { lastUserMessage, lastAynResponse, mode } = await req.json();
     
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    const openAIApiKey = Deno.env.get("OPENAI_API_KEY");
+    if (!openAIApiKey) {
+      throw new Error("OPENAI_API_KEY is not configured");
     }
 
     const systemPrompt = `You are a helpful assistant that generates contextual follow-up suggestions for a conversation with an AI assistant named AYN.
@@ -38,14 +39,14 @@ AYN responded: "${lastAynResponse?.substring(0, 500) || 'No response yet'}"
 
 Generate 3 contextual follow-up suggestions based on this conversation.`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${openAIApiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash-lite",
+        model: "gpt-4o-mini",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
@@ -65,17 +66,8 @@ Generate 3 contextual follow-up suggestions based on this conversation.`;
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ 
-            error: "Payment required",
-            suggestions: getDefaultSuggestions() 
-          }),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
       
-      console.error("AI gateway error:", response.status);
+      console.error("OpenAI API error:", response.status);
       return new Response(
         JSON.stringify({ suggestions: getDefaultSuggestions() }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
