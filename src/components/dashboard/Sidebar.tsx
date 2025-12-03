@@ -295,7 +295,7 @@ export const Sidebar = ({
                                 <div className="w-6 h-6 rounded-lg bg-black dark:bg-white group-hover:bg-background flex items-center justify-center flex-shrink-0 transition-colors">
                                   <MessageSquare className="w-3 h-3 text-white dark:text-black group-hover:text-foreground" />
                                 </div>
-                                <span className="text-sm font-medium truncate flex-1 min-w-0 text-foreground group-hover:text-background transition-colors">
+                                <span className="text-sm font-medium truncate flex-1 min-w-0 text-black dark:text-white group-hover:text-background transition-colors">
                                   {chat.title}
                                 </span>
                                 <button
@@ -313,12 +313,12 @@ export const Sidebar = ({
                                     isPinned ? "fill-amber-400 text-amber-400" : "text-muted-foreground group-hover:text-background"
                                   )} />
                                 </button>
-                                <span className="text-[10px] text-muted-foreground group-hover:text-background/70 flex-shrink-0 transition-colors">
+                                <span className="text-[10px] text-gray-500 dark:text-gray-400 group-hover:text-background/70 flex-shrink-0 transition-colors">
                                   {formatCompactTime(new Date(chat.timestamp))}
                                 </span>
                               </div>
                               {/* Preview text - using CSS truncate */}
-                              <p className="text-xs text-muted-foreground group-hover:text-background/70 truncate pl-8 transition-colors">
+                              <p className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-background/70 truncate pl-8 transition-colors">
                                 {chat.lastMessage}
                               </p>
                             </div>
