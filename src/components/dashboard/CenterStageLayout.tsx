@@ -7,7 +7,6 @@ import { SuggestionsCard } from '@/components/eye/SuggestionsCard';
 import { ResponseCard } from '@/components/eye/ResponseCard';
 import { FlyingSuggestionBubble } from '@/components/eye/FlyingSuggestionBubble';
 import { ParticleBurst } from '@/components/eye/ParticleBurst';
-import { TrailEffect } from '@/components/eye/TrailEffect';
 import { ChatInput } from './ChatInput';
 import { useBubbleAnimation } from '@/hooks/useBubbleAnimation';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
@@ -92,11 +91,6 @@ export const CenterStageLayout = ({
   const [showParticleBurst, setShowParticleBurst] = useState(false);
   const [burstPosition, setBurstPosition] = useState({ x: 0, y: 0 });
   const [lastUserMessage, setLastUserMessage] = useState<string>('');
-  const [trailEffect, setTrailEffect] = useState<{
-    isActive: boolean;
-    start: { x: number; y: number };
-    end: { x: number; y: number };
-  }>({ isActive: false, start: { x: 0, y: 0 }, end: { x: 0, y: 0 } });
 
   // Fetch dynamic suggestions based on conversation context
   const fetchDynamicSuggestions = useCallback(async (userMessage: string, aynResponse: string, mode: AIMode) => {
@@ -220,18 +214,6 @@ export const CenterStageLayout = ({
     
     // Get eye position (exact center) and start flying animation
     const eyePos = getEyePosition();
-    
-    // Trigger trail effect
-    setTrailEffect({
-      isActive: true,
-      start: clickPosition,
-      end: eyePos,
-    });
-    
-    // Clear trail after animation
-    setTimeout(() => {
-      setTrailEffect(prev => ({ ...prev, isActive: false }));
-    }, 500);
     
     startSuggestionFlight(content, emoji, clickPosition, eyePos);
 
@@ -446,15 +428,6 @@ export const CenterStageLayout = ({
           onComplete={completeSuggestionAbsorption}
         />
       )}
-
-      {/* Trail effect connecting suggestion to eye */}
-      <TrailEffect
-        startPosition={trailEffect.start}
-        endPosition={trailEffect.end}
-        isActive={trailEffect.isActive}
-        color="rgba(99, 102, 241, 0.6)"
-        particleCount={8}
-      />
 
       {/* Particle burst on absorption */}
       <ParticleBurst
