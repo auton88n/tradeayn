@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Brain, User, Copy, Check } from 'lucide-react';
+import { Brain, User, Copy, Check, Reply } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import type { AYNEmotion } from '@/contexts/AYNEmotionContext';
@@ -11,6 +11,7 @@ interface TranscriptMessageProps {
   timestamp: Date;
   emotion?: AYNEmotion;
   mode?: string;
+  onReply?: (quotedContent: string) => void;
 }
 
 const emotionEmojis: Record<AYNEmotion, string> = {
@@ -28,6 +29,7 @@ export const TranscriptMessage = ({
   timestamp,
   emotion = 'calm',
   mode,
+  onReply,
 }: TranscriptMessageProps) => {
   const isUser = sender === 'user';
   const [copied, setCopied] = useState(false);
@@ -36,6 +38,15 @@ export const TranscriptMessage = ({
     await navigator.clipboard.writeText(content);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleReply = () => {
+    if (onReply) {
+      // Create quoted reply with truncated preview
+      const preview = content.length > 50 ? content.slice(0, 50) + '...' : content;
+      const quotedReply = `> ${preview}\n\n`;
+      onReply(quotedReply);
+    }
   };
 
   return (
@@ -69,25 +80,38 @@ export const TranscriptMessage = ({
         )}
       </div>
 
-      {/* Message bubble with copy button */}
+      {/* Message bubble with action buttons */}
       <div className="relative inline-block max-w-[90%]">
-        {/* Copy button - appears on hover */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleCopy}
-          className={cn(
-            "absolute -top-2 h-6 w-6 p-0 bg-background border shadow-sm hover:bg-muted opacity-0 group-hover:opacity-100 transition-all duration-200 z-10",
-            isUser ? "left-0" : "right-0"
+        {/* Action buttons - appear on hover */}
+        <div className={cn(
+          "absolute -top-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 z-10",
+          isUser ? "left-0" : "right-0"
+        )}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleCopy}
+            className="h-6 w-6 p-0 bg-background border shadow-sm hover:bg-muted"
+            title="Copy message"
+          >
+            {copied ? (
+              <Check className="w-3 h-3 text-green-500" />
+            ) : (
+              <Copy className="w-3 h-3" />
+            )}
+          </Button>
+          {onReply && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleReply}
+              className="h-6 w-6 p-0 bg-background border shadow-sm hover:bg-muted"
+              title="Reply to message"
+            >
+              <Reply className="w-3 h-3" />
+            </Button>
           )}
-          title="Copy message"
-        >
-          {copied ? (
-            <Check className="w-3 h-3 text-green-500" />
-          ) : (
-            <Copy className="w-3 h-3" />
-          )}
-        </Button>
+        </div>
 
         <div
           className={cn(

@@ -37,7 +37,9 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
   hasMessages,
   sidebarOpen = true,
   modes,
-  onModeChange
+  onModeChange,
+  prefillValue,
+  onPrefillConsumed
 }, ref) => {
   const [inputMessage, setInputMessage] = useState('');
   const [isInputFocused, setIsInputFocused] = useState(false);
@@ -52,7 +54,24 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
     direction
   } = useLanguage();
   
-  const { 
+  // Handle prefill value changes
+  useEffect(() => {
+    if (prefillValue) {
+      setInputMessage(prefillValue);
+      setShowPlaceholder(false);
+      setHasStartedTyping(true);
+      onPrefillConsumed?.();
+      // Focus the textarea
+      setTimeout(() => {
+        textareaRef.current?.focus();
+        // Move cursor to end
+        const len = prefillValue.length;
+        textareaRef.current?.setSelectionRange(len, len);
+      }, 100);
+    }
+  }, [prefillValue, onPrefillConsumed]);
+  
+  const {
     setIsUserTyping, 
     setIsAttentive, 
     triggerAttentionBlink,

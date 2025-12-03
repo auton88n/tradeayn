@@ -310,7 +310,14 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
                       : "all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)"
               }}
             >
-              <Brain className="w-full h-full" style={{ color: emotionConfig.color, transition: 'color 0.5s ease' }} />
+              <Brain 
+                className="w-full h-full" 
+                style={{ 
+                  color: emotionConfig.color, 
+                  transition: 'color 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                  filter: `drop-shadow(0 0 8px ${emotionConfig.color}40)`
+                }} 
+              />
             </foreignObject>
           </motion.svg>
         </motion.div>

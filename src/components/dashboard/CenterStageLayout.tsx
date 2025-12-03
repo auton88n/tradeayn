@@ -30,6 +30,8 @@ interface CenterStageLayoutProps {
   sidebarOpen: boolean;
   modes: AIModeConfig[];
   onModeChange: (mode: AIMode) => void;
+  prefillValue?: string;
+  onPrefillConsumed?: () => void;
 }
 
 export const CenterStageLayout = ({
@@ -51,6 +53,8 @@ export const CenterStageLayout = ({
   sidebarOpen,
   modes,
   onModeChange,
+  prefillValue,
+  onPrefillConsumed,
 }: CenterStageLayoutProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const eyeRef = useRef<HTMLDivElement>(null);
@@ -332,6 +336,8 @@ export const CenterStageLayout = ({
         sidebarOpen={sidebarOpen}
         modes={modes}
         onModeChange={onModeChange}
+        prefillValue={prefillValue}
+        onPrefillConsumed={onPrefillConsumed}
       />
     </div>
   );
