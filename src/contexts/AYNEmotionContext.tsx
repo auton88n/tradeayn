@@ -100,6 +100,9 @@ interface AYNEmotionContextType {
   isSurprised: boolean;
   triggerSurprise: () => void;
   detectExcitement: (text: string) => boolean;
+  // Pulse effect for new messages
+  isPulsing: boolean;
+  triggerPulse: () => void;
 }
 
 const AYNEmotionContext = createContext<AYNEmotionContextType | undefined>(undefined);
@@ -113,8 +116,10 @@ export const AYNEmotionProvider = ({ children }: { children: ReactNode }) => {
   const [isAttentive, setIsAttentive] = useState(false);
   const [lastActivityTime, setLastActivityTime] = useState(Date.now());
   const [isSurprised, setIsSurprised] = useState(false);
+  const [isPulsing, setIsPulsing] = useState(false);
   const blinkTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const surpriseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pulseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const setEmotion = useCallback((newEmotion: AYNEmotion) => {
     setEmotionState(newEmotion);
@@ -176,6 +181,17 @@ export const AYNEmotionProvider = ({ children }: { children: ReactNode }) => {
     return hasExcitingKeyword;
   }, [triggerSurprise]);
 
+  // Trigger pulse effect for new message receive
+  const triggerPulse = useCallback(() => {
+    if (pulseTimeoutRef.current) {
+      clearTimeout(pulseTimeoutRef.current);
+    }
+    setIsPulsing(true);
+    pulseTimeoutRef.current = setTimeout(() => {
+      setIsPulsing(false);
+    }, 400);
+  }, []);
+
   const emotionConfig = EMOTION_CONFIGS[emotion];
 
   return (
@@ -200,6 +216,8 @@ export const AYNEmotionProvider = ({ children }: { children: ReactNode }) => {
         isSurprised,
         triggerSurprise,
         detectExcitement,
+        isPulsing,
+        triggerPulse,
       }}
     >
       {children}
