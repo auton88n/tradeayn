@@ -65,14 +65,91 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
     });
   };
 
+  const formatTable = (tableLines: string[], startKey: number) => {
+    if (tableLines.length < 2) return null;
+    
+    // Parse header row
+    const headerCells = tableLines[0]
+      .split('|')
+      .map(cell => cell.trim())
+      .filter(cell => cell.length > 0);
+    
+    // Skip separator row (index 1) and parse data rows
+    const dataRows = tableLines.slice(2).map(line => 
+      line.split('|').map(cell => cell.trim()).filter(cell => cell.length > 0)
+    );
+    
+    return (
+      <div key={`table-${startKey}`} className="overflow-x-auto my-4 first:mt-0 last:mb-0">
+        <table className="min-w-full border-collapse border border-border rounded-lg overflow-hidden">
+          <thead className="bg-muted/50">
+            <tr>
+              {headerCells.map((header, idx) => (
+                <th 
+                  key={`th-${idx}`} 
+                  className="px-4 py-2.5 text-left font-semibold border-b border-border text-sm"
+                >
+                  {formatInlineText(header)}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {dataRows.map((row, rowIdx) => (
+              <tr 
+                key={`tr-${rowIdx}`} 
+                className="hover:bg-muted/30 transition-colors"
+              >
+                {row.map((cell, cellIdx) => (
+                  <td 
+                    key={`td-${rowIdx}-${cellIdx}`} 
+                    className="px-4 py-2 border-b border-border/50 text-sm"
+                  >
+                    {formatInlineText(cell)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
   const formatTextContent = (text: string) => {
     const lines = text.split('\n');
-    const elements = [];
-    let currentList = null;
-    let currentListType = null;
+    const elements: React.ReactNode[] = [];
+    let currentList: React.ReactElement | null = null;
+    let currentListType: string | null = null;
+    let i = 0;
 
-    for (let i = 0; i < lines.length; i++) {
+    while (i < lines.length) {
       const line = lines[i].trim();
+      
+      // Check for table start (line contains | and next line is separator)
+      if (line.includes('|') && i + 1 < lines.length && lines[i + 1].match(/^\|?[\s-:|]+\|?$/)) {
+        if (currentList) {
+          elements.push(currentList);
+          currentList = null;
+          currentListType = null;
+        }
+        
+        // Collect all table lines
+        const tableLines: string[] = [line];
+        let j = i + 1;
+        while (j < lines.length && (lines[j].includes('|') || lines[j].match(/^\|?[\s-:|]+\|?$/))) {
+          tableLines.push(lines[j]);
+          j++;
+        }
+        
+        const table = formatTable(tableLines, i);
+        if (table) {
+          elements.push(table);
+        }
+        
+        i = j;
+        continue;
+      }
       
       if (!line) {
         // Empty line - close current list and add spacing
@@ -82,6 +159,7 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
           currentListType = null;
         }
         elements.push(<div key={`space-${i}`} className="h-3" />);
+        i++;
         continue;
       }
 
@@ -232,6 +310,8 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
           </p>
         );
       }
+      
+      i++;
     }
 
     // Don't forget to add the last list if it exists
