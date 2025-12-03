@@ -259,9 +259,30 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
         </div>
 
         {/* Row 2: Toolbar */}
-        <div className="input-toolbar-row" dir="ltr">
+        <div 
+          className="input-toolbar-row" 
+          dir="ltr"
+          style={{ 
+            display: 'flex', 
+            flexDirection: 'row', 
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            width: '100%',
+            paddingTop: '0.5rem',
+            direction: 'ltr'
+          }}
+        >
           {/* Left: Action Buttons */}
-          <div className="input-toolbar-left">
+          <div 
+            className="input-toolbar-left"
+            style={{ 
+              display: 'flex', 
+              flexDirection: 'row', 
+              alignItems: 'center',
+              gap: '0.25rem',
+              direction: 'ltr'
+            }}
+          >
             {/* Plus Button for File Attachment */}
             {supportsFileAttachment && <button onClick={() => fileInputRef.current?.click()} disabled={isDisabled || isUploading} className="toolbar-button w-8 h-8 md:w-9 md:h-9" title="Attach file">
                 <Plus className="w-4 h-4" />
@@ -275,7 +296,16 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
           </div>
 
           {/* Right: Mode Selector + Send Button */}
-          <div className="input-toolbar-right">
+          <div 
+            className="input-toolbar-right"
+            style={{ 
+              display: 'flex', 
+              flexDirection: 'row', 
+              alignItems: 'center',
+              gap: '0.5rem',
+              direction: 'ltr'
+            }}
+          >
             {/* Mode Selector Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
