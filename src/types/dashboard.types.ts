@@ -240,6 +240,8 @@ export interface ChatInputProps {
   sidebarOpen?: boolean;
   modes: AIModeConfig[];
   onModeChange: (mode: AIMode) => void;
+  prefillValue?: string;
+  onPrefillConsumed?: () => void;
 }
 
 export interface SidebarProps {

@@ -274,7 +274,17 @@ const DashboardContent = ({
 }) => {
   const { open, toggleSidebar } = useSidebar();
   const [transcriptOpen, setTranscriptOpen] = useState(false);
+  const [replyPrefill, setReplyPrefill] = useState<string>('');
   const { setEmotion, setIsResponding } = useAYNEmotion();
+
+  // Handle reply from transcript
+  const handleReply = useCallback((quotedContent: string) => {
+    setReplyPrefill(quotedContent);
+  }, []);
+
+  const handlePrefillConsumed = useCallback(() => {
+    setReplyPrefill('');
+  }, []);
 
   // Update emotion when AYN responds
   useEffect(() => {
@@ -375,6 +385,8 @@ const DashboardContent = ({
           sidebarOpen={open}
           modes={modes}
           onModeChange={setSelectedMode}
+          prefillValue={replyPrefill}
+          onPrefillConsumed={handlePrefillConsumed}
         />
       </main>
 
@@ -385,6 +397,7 @@ const DashboardContent = ({
         onToggle={() => setTranscriptOpen(!transcriptOpen)}
         onClear={handleClearTranscript}
         currentMode={selectedMode}
+        onReply={handleReply}
       />
     </div>
   );

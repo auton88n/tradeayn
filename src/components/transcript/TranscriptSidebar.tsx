@@ -17,6 +17,7 @@ interface TranscriptSidebarProps {
   onToggle: () => void;
   onClear?: () => void;
   currentMode?: string;
+  onReply?: (quotedContent: string) => void;
 }
 
 export const TranscriptSidebar = ({
@@ -25,6 +26,7 @@ export const TranscriptSidebar = ({
   onToggle,
   onClear,
   currentMode,
+  onReply,
 }: TranscriptSidebarProps) => {
   const { toast } = useToast();
   const { language } = useLanguage();
@@ -229,6 +231,7 @@ export const TranscriptSidebar = ({
                         timestamp={msg.timestamp}
                         emotion={(msg as Message & { emotion?: AYNEmotion }).emotion}
                         mode={msg.sender === 'ayn' ? currentMode : undefined}
+                        onReply={onReply}
                       />
                     </motion.div>
                   ))
