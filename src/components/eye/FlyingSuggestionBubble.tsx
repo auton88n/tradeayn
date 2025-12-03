@@ -20,19 +20,27 @@ export const FlyingSuggestionBubble = ({
 }: FlyingSuggestionBubbleProps) => {
   if (status === 'done') return null;
 
+  // Calculate center offset for the bubble
+  const bubbleWidth = 180;
+  const bubbleHeight = 50;
+
   return (
     <motion.div
       className={cn(
-        "fixed left-0 top-0 z-50 px-4 py-3 rounded-2xl",
+        "fixed z-50 px-4 py-3 rounded-2xl",
         "bg-white/95 dark:bg-gray-900/90",
         "backdrop-blur-xl",
         "border border-gray-200/60 dark:border-gray-700/40",
-        "shadow-[0_4px_20px_rgba(0,0,0,0.08)]",
+        "shadow-[0_8px_24px_rgba(0,0,0,0.1)]",
         "pointer-events-none"
       )}
+      style={{
+        left: 0,
+        top: 0,
+      }}
       initial={{
-        x: startPosition.x,
-        y: startPosition.y,
+        x: startPosition.x - bubbleWidth / 2,
+        y: startPosition.y - bubbleHeight / 2,
         scale: 1,
         opacity: 1,
         rotate: 0,
@@ -41,32 +49,32 @@ export const FlyingSuggestionBubble = ({
       animate={
         status === 'flying'
           ? {
-              x: endPosition.x,
-              y: endPosition.y,
-              scale: 0.4,
+              x: endPosition.x - bubbleWidth / 2,
+              y: endPosition.y - bubbleHeight / 2,
+              scale: 0.3,
               opacity: 1,
-              rotate: 8,
+              rotate: 10,
               filter: 'blur(0px)',
             }
           : {
-              x: endPosition.x,
-              y: endPosition.y,
+              x: endPosition.x - bubbleWidth / 2,
+              y: endPosition.y - bubbleHeight / 2,
               scale: 0,
               opacity: 0,
               rotate: 0,
-              filter: 'blur(6px)',
+              filter: 'blur(8px)',
             }
       }
       transition={
         status === 'flying'
           ? {
               type: 'spring',
-              stiffness: 180,
-              damping: 20,
-              mass: 0.8,
+              stiffness: 150,
+              damping: 16,
+              mass: 0.5,
             }
           : {
-              duration: 0.3,
+              duration: 0.2,
               ease: [0.32, 0, 0.67, 0],
             }
       }
