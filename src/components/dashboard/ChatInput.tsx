@@ -1,10 +1,11 @@
-import React, { useState, useRef, useEffect, forwardRef } from 'react';
+import React, { useState, useRef, useEffect, forwardRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowUp, Paperclip, X, Plus, ChevronDown, SlidersHorizontal, Clock } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { TypewriterText } from '@/components/TypewriterText';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
 import { cn } from '@/lib/utils';
 import type { ChatInputProps } from '@/types/dashboard.types';
 
@@ -42,12 +43,21 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [showPlaceholder, setShowPlaceholder] = useState(true);
+  const [hasStartedTyping, setHasStartedTyping] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const {
     t,
     language,
     direction
   } = useLanguage();
+  
+  const { 
+    setIsUserTyping, 
+    setIsAttentive, 
+    triggerAttentionBlink,
+    updateActivity 
+  } = useAYNEmotion();
 
   // Get mode-specific placeholder texts
   const getPlaceholderTexts = () => {
@@ -87,6 +97,14 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
     if (!inputMessage.trim() && !selectedFile || isDisabled || isUploading) return;
     const content = inputMessage.trim();
     setInputMessage('');
+    
+    // Clear typing state
+    setIsUserTyping(false);
+    setIsAttentive(false);
+    setHasStartedTyping(false);
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
 
     // Reset textarea height
     if (textareaRef.current) {
@@ -105,9 +123,37 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
     }
   };
 
-  // Handle textarea change with auto-resize
+  // Handle textarea change with auto-resize and typing detection
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInputMessage(e.target.value);
+    const newValue = e.target.value;
+    setInputMessage(newValue);
+    updateActivity();
+
+    // Detect first keystroke - trigger attention blink
+    if (newValue.length > 0 && !hasStartedTyping) {
+      setHasStartedTyping(true);
+      setIsAttentive(true);
+      triggerAttentionBlink();
+      
+      // Reset attentive state after a moment
+      setTimeout(() => setIsAttentive(false), 500);
+    }
+
+    // Set user typing state
+    if (newValue.trim().length > 0) {
+      setIsUserTyping(true);
+      
+      // Clear typing state after user stops typing for 2 seconds
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      typingTimeoutRef.current = setTimeout(() => {
+        setIsUserTyping(false);
+      }, 2000);
+    } else {
+      setIsUserTyping(false);
+      setHasStartedTyping(false);
+    }
 
     // Auto-resize
     const textarea = e.target;
@@ -118,6 +164,15 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
     // Show scrollbar only when content exceeds max height
     textarea.style.overflowY = textarea.scrollHeight > 200 ? 'auto' : 'hidden';
   };
+  
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Handle file input change
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
