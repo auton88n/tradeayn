@@ -353,28 +353,26 @@ export const Sidebar = ({
         <Popover>
           <PopoverTrigger asChild>
             <button className={cn(
-              "flex items-center gap-3 p-4 w-full",
-              "cursor-pointer rounded-xl m-2 mb-3",
-              "bg-muted/50 hover:bg-muted",
-              "border border-border/50 hover:border-border",
-              "transition-all duration-200 ease-out",
-              "hover:shadow-md active:scale-[0.98]"
+              "flex items-center gap-2.5 px-3 py-2.5 w-full",
+              "cursor-pointer rounded-lg mx-2 mb-2",
+              "hover:bg-muted/60",
+              "transition-colors duration-150",
+              "active:scale-[0.99]"
             )}>
-              <div className="relative">
-                <Avatar className="w-10 h-10 ring-2 ring-border">
+              <div className="relative flex-shrink-0">
+                <Avatar className="w-8 h-8">
                   <AvatarImage src={userAvatar} alt={userName || 'User'} />
-                  <AvatarFallback className="bg-foreground/10 text-foreground font-medium">
+                  <AvatarFallback className="bg-muted text-foreground/70 text-xs font-medium">
                     {userName?.charAt(0) || userEmail?.charAt(0) || 'U'}
                   </AvatarFallback>
                 </Avatar>
-                {/* Online indicator */}
-                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-500 border-2 border-background" />
+                <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-500 border-[1.5px] border-background" />
               </div>
               <div className="flex-1 min-w-0 text-left">
-                <p className="text-sm font-medium truncate text-black dark:text-white">
+                <p className="text-[13px] font-medium truncate text-foreground">
                   {userName || t('common.user')}
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                <p className="text-[11px] text-muted-foreground truncate">
                   {userEmail}
                 </p>
               </div>
