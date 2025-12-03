@@ -265,8 +265,8 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
             <button 
               onClick={() => fileInputRef.current?.click()} 
               disabled={isDisabled || isUploading} 
-              className="toolbar-button w-8 h-8 md:w-9 md:h-9 absolute left-0 top-2" 
-              style={{ left: '0', position: 'absolute' }}
+              className="toolbar-button w-8 h-8 md:w-9 md:h-9"
+              style={{ position: 'absolute', left: 0, top: '8px' }}
               title="Attach file"
             >
               <Plus className="w-4 h-4" />
@@ -274,7 +274,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
           )}
 
           {/* Mode Selector - ABSOLUTE CENTER-RIGHT */}
-          <div className="absolute top-2" style={{ right: '52px', position: 'absolute' }}>
+          <div style={{ position: 'absolute', right: '52px', top: '8px' }}>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="mode-selector-button h-7 md:h-8 px-2 md:px-3 rounded-lg hover:bg-muted/80 transition-all">
@@ -312,10 +312,10 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
           {/* Send Button - ABSOLUTE RIGHT */}
           <button 
             className={cn(
-              "send-button-square w-8 h-8 md:w-9 md:h-9 transition-all duration-200 active:scale-95 hover:scale-105 absolute top-2", 
+              "send-button-square w-8 h-8 md:w-9 md:h-9 transition-all duration-200 active:scale-95 hover:scale-105", 
               getSendButtonClass(selectedMode)
             )}
-            style={{ right: '0', position: 'absolute' }}
+            style={{ position: 'absolute', right: 0, top: '8px' }}
             onClick={handleSend} 
             disabled={!inputMessage.trim() && !selectedFile || isDisabled || isUploading} 
             title="Send message"
