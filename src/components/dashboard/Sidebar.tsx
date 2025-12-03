@@ -353,11 +353,13 @@ export const Sidebar = ({
         <Popover>
           <PopoverTrigger asChild>
             <button className={cn(
-              "flex items-center gap-2.5 px-3 py-2.5 w-full",
-              "cursor-pointer rounded-lg mx-2 mb-2",
+              "flex items-center gap-2.5 px-3 py-2.5",
+              "w-[calc(100%-1rem)] mx-2 mb-2",
+              "cursor-pointer rounded-lg",
               "hover:bg-muted/60",
               "transition-colors duration-150",
-              "active:scale-[0.99]"
+              "active:scale-[0.99]",
+              "focus:outline-none focus-visible:ring-0"
             )}>
               <div className="relative flex-shrink-0">
                 <Avatar className="w-8 h-8">
@@ -376,7 +378,7 @@ export const Sidebar = ({
                   {userEmail}
                 </p>
               </div>
-              <ChevronDown className="w-4 h-4 text-muted-foreground/60 flex-shrink-0" />
+              <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/50 flex-shrink-0 pointer-events-none" />
             </button>
           </PopoverTrigger>
           <PopoverContent 
