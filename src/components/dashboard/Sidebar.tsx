@@ -187,11 +187,12 @@ export const Sidebar = ({
               placeholder={language === 'ar' ? 'البحث في المحادثات...' : 'Search chats...'}
               className={cn(
                 "pl-9 h-9 text-sm rounded-xl",
-                "bg-transparent border border-border",
+                "bg-transparent",
+                "!border !border-border/60",
                 "placeholder:text-foreground/40",
-                "focus:bg-background focus:border-foreground/50",
-                "focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0",
-                "focus:outline-none focus-visible:outline-none",
+                "focus:bg-background focus:!border-foreground/40",
+                "!ring-0 !outline-none",
+                "focus:!ring-0 focus-visible:!ring-0 focus-visible:!ring-offset-0",
                 "transition-all duration-300"
               )}
             />
