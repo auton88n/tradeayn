@@ -56,8 +56,9 @@ export const AYNSpeechBubble = ({
         <motion.div
           key={id}
           className={cn(
-            "relative z-40 max-w-[320px] px-4 py-3 rounded-2xl",
+            "relative z-40 max-w-[450px] px-4 py-3 rounded-2xl",
             "backdrop-blur-md border shadow-lg",
+            "max-h-[200px] overflow-y-auto scrollbar-thin scrollbar-thumb-border/50",
             config.bgClass
           )}
           initial={{
