@@ -1,5 +1,4 @@
 import { useState, useCallback, useRef } from 'react';
-import type { AYNEmotion } from '@/contexts/AYNEmotionContext';
 import type { BubbleType } from '@/utils/emotionMapping';
 
 export interface FlyingBubble {
@@ -18,9 +17,17 @@ export interface ResponseBubble {
   position: { x: number; y: number };
 }
 
+export interface SuggestionBubble {
+  id: string;
+  content: string;
+  emoji: string;
+  isVisible: boolean;
+}
+
 interface UseBubbleAnimationReturn {
   flyingBubble: FlyingBubble | null;
   responseBubbles: ResponseBubble[];
+  suggestionBubbles: SuggestionBubble[];
   startMessageAnimation: (
     content: string,
     inputPosition: { x: number; y: number },
@@ -30,11 +37,18 @@ interface UseBubbleAnimationReturn {
   emitResponseBubble: (content: string, type: BubbleType) => void;
   clearResponseBubbles: () => void;
   dismissBubble: (id: string) => void;
+  emitSuggestion: (content: string, emoji?: string) => void;
+  emitSuggestions: (suggestions: Array<{ content: string; emoji?: string }>) => void;
+  clearSuggestions: () => void;
+  dismissSuggestion: (id: string) => void;
 }
+
+const MAX_VISIBLE_BUBBLES = 4;
 
 export const useBubbleAnimation = (): UseBubbleAnimationReturn => {
   const [flyingBubble, setFlyingBubble] = useState<FlyingBubble | null>(null);
   const [responseBubbles, setResponseBubbles] = useState<ResponseBubble[]>([]);
+  const [suggestionBubbles, setSuggestionBubbles] = useState<SuggestionBubble[]>([]);
   const bubbleIdRef = useRef(0);
 
   const startMessageAnimation = useCallback(
@@ -84,11 +98,21 @@ export const useBubbleAnimation = (): UseBubbleAnimationReturn => {
       position: { x: 0, y: 0 },
     };
 
-    // Clear previous bubbles when new message arrives, then add new one
-    setResponseBubbles((prev) => [
-      ...prev.map((b) => ({ ...b, isVisible: false })),
-      newBubble,
-    ]);
+    // Keep previous bubbles visible, only hide oldest when exceeding max
+    setResponseBubbles((prev) => {
+      const visibleBubbles = prev.filter(b => b.isVisible);
+      
+      if (visibleBubbles.length >= MAX_VISIBLE_BUBBLES) {
+        // Hide the oldest bubble
+        const oldestId = visibleBubbles[0].id;
+        return [
+          ...prev.map(b => b.id === oldestId ? { ...b, isVisible: false } : b),
+          newBubble
+        ];
+      }
+      
+      return [...prev, newBubble];
+    });
 
     // Auto-dismiss after 5 minutes
     setTimeout(() => {
@@ -110,13 +134,51 @@ export const useBubbleAnimation = (): UseBubbleAnimationReturn => {
     );
   }, []);
 
+  // Suggestion bubble functions
+  const emitSuggestion = useCallback((content: string, emoji: string = '💡') => {
+    const id = `suggestion-${Date.now()}-${bubbleIdRef.current++}`;
+    
+    setSuggestionBubbles((prev) => [
+      ...prev,
+      { id, content, emoji, isVisible: true }
+    ]);
+  }, []);
+
+  const emitSuggestions = useCallback((suggestions: Array<{ content: string; emoji?: string }>) => {
+    const newSuggestions = suggestions.map((s, index) => ({
+      id: `suggestion-${Date.now()}-${bubbleIdRef.current++}-${index}`,
+      content: s.content,
+      emoji: s.emoji || '💡',
+      isVisible: true,
+    }));
+    
+    setSuggestionBubbles(newSuggestions);
+  }, []);
+
+  const clearSuggestions = useCallback(() => {
+    setSuggestionBubbles((prev) =>
+      prev.map((s) => ({ ...s, isVisible: false }))
+    );
+  }, []);
+
+  const dismissSuggestion = useCallback((id: string) => {
+    setSuggestionBubbles((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, isVisible: false } : s))
+    );
+  }, []);
+
   return {
     flyingBubble,
     responseBubbles,
+    suggestionBubbles,
     startMessageAnimation,
     completeAbsorption,
     emitResponseBubble,
     clearResponseBubbles,
     dismissBubble,
+    emitSuggestion,
+    emitSuggestions,
+    clearSuggestions,
+    dismissSuggestion,
   };
 };

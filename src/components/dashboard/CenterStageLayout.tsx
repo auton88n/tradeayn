@@ -1,15 +1,23 @@
-import { useRef, useCallback, useEffect, useState, useMemo } from 'react';
+import { useRef, useCallback, useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EmotionalEye } from '@/components/eye/EmotionalEye';
 import { UserMessageBubble } from '@/components/eye/UserMessageBubble';
 import { AYNSpeechBubble } from '@/components/eye/AYNSpeechBubble';
+import { SuggestionBubble } from '@/components/eye/SuggestionBubble';
 import { ParticleBurst } from '@/components/eye/ParticleBurst';
 import { ChatInput } from './ChatInput';
 import { useBubbleAnimation } from '@/hooks/useBubbleAnimation';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
 import { analyzeResponseEmotion, getBubbleType } from '@/utils/emotionMapping';
 import type { Message, AIMode, AIModeConfig } from '@/types/dashboard.types';
+
+// Default suggestions that AYN can offer
+const DEFAULT_SUGGESTIONS = [
+  { content: 'Tell me more', emoji: '💬' },
+  { content: 'Explain simpler', emoji: '🔍' },
+  { content: 'Give examples', emoji: '📝' },
+];
 
 interface CenterStageLayoutProps {
   messages: Message[];
@@ -65,22 +73,40 @@ export const CenterStageLayout = ({
   const {
     flyingBubble,
     responseBubbles,
+    suggestionBubbles,
     startMessageAnimation,
     completeAbsorption,
     emitResponseBubble,
     clearResponseBubbles,
     dismissBubble,
+    emitSuggestions,
+    clearSuggestions,
+    dismissSuggestion,
   } = useBubbleAnimation();
 
   const [lastProcessedMessageId, setLastProcessedMessageId] = useState<string | null>(null);
   const [showParticleBurst, setShowParticleBurst] = useState(false);
   const [burstPosition, setBurstPosition] = useState({ x: 0, y: 0 });
 
-  // Calculate if eye should shift left based on visible bubbles
+  // Calculate eye position based on visible bubbles
   const visibleBubbles = responseBubbles.filter(b => b.isVisible);
-  const hasLongBubbles = visibleBubbles.some(b => b.content.length > 100);
+  const visibleSuggestions = suggestionBubbles.filter(s => s.isVisible);
+  const hasManyBubbles = visibleBubbles.length > 2;
+  const hasLongBubbles = visibleBubbles.some(b => b.content.length > 150);
+  
+  // Enhanced eye movement - shifts based on bubble count and suggestions
   const shouldShiftLeft = visibleBubbles.length > 0;
-  const eyeShiftX = shouldShiftLeft ? (hasLongBubbles ? -120 : -80) : 0;
+  const shouldShiftRight = visibleSuggestions.length > 0 && visibleBubbles.length === 0;
+  
+  let eyeShiftX = 0;
+  if (shouldShiftLeft) {
+    eyeShiftX = hasManyBubbles ? -150 : hasLongBubbles ? -120 : -80;
+  } else if (shouldShiftRight) {
+    eyeShiftX = 60;
+  }
+  
+  // Vertical shift when many bubbles stack
+  const eyeShiftY = hasManyBubbles ? -20 : 0;
 
   // Get eye position for bubble animations
   const getEyePosition = useCallback(() => {
@@ -111,8 +137,9 @@ export const CenterStageLayout = ({
     async (content: string, file?: File | null) => {
       if (!content.trim() && !file) return;
 
-      // Clear previous response bubbles
+      // Clear previous response bubbles and suggestions
       clearResponseBubbles();
+      clearSuggestions();
 
       // Start flying animation
       const inputPos = getInputPosition();
@@ -142,6 +169,7 @@ export const CenterStageLayout = ({
     },
     [
       clearResponseBubbles,
+      clearSuggestions,
       getInputPosition,
       getEyePosition,
       startMessageAnimation,
@@ -154,7 +182,46 @@ export const CenterStageLayout = ({
     ]
   );
 
-  // Process AYN responses and emit speech bubbles
+  // Handle suggestion click - animate and send
+  const handleSuggestionClick = useCallback((content: string) => {
+    // Hide the clicked suggestion
+    clearSuggestions();
+    
+    // Animate as if user sent it
+    const inputPos = getInputPosition();
+    const eyePos = getEyePosition();
+    startMessageAnimation(content, { x: eyePos.x - 200, y: eyePos.y }, eyePos);
+
+    setTimeout(() => {
+      triggerBlink();
+      setTimeout(() => {
+        triggerAbsorption();
+        setEmotion('thinking');
+        setIsResponding(true);
+        
+        const eyePos = getEyePosition();
+        setBurstPosition(eyePos);
+        setShowParticleBurst(true);
+        setTimeout(() => setShowParticleBurst(false), 500);
+        
+        completeAbsorption();
+        onSendMessage(content, null);
+      }, 150);
+    }, 600);
+  }, [
+    clearSuggestions,
+    getInputPosition,
+    getEyePosition,
+    startMessageAnimation,
+    triggerBlink,
+    triggerAbsorption,
+    setEmotion,
+    setIsResponding,
+    completeAbsorption,
+    onSendMessage,
+  ]);
+
+  // Process AYN responses and emit speech bubbles + suggestions
   useEffect(() => {
     if (messages.length === 0) return;
 
@@ -179,41 +246,50 @@ export const CenterStageLayout = ({
         // Emit response bubble
         const bubbleType = getBubbleType(lastMessage.content);
       
-      // Split long responses into multiple bubbles
-      const maxLength = 200;
-      const response = lastMessage.content;
+        // Split long responses into multiple bubbles with larger max length
+        const maxLength = 300;
+        const response = lastMessage.content;
+        let totalBubbles = 0;
       
-      if (response.length > maxLength) {
-        const sentences = response.match(/[^.!?]+[.!?]+/g) || [response];
-        let currentBubble = '';
-        let bubbleIndex = 0;
+        if (response.length > maxLength) {
+          const sentences = response.match(/[^.!?]+[.!?]+/g) || [response];
+          let currentBubble = '';
+          let bubbleIndex = 0;
         
-        sentences.forEach((sentence) => {
-          if ((currentBubble + sentence).length <= maxLength) {
-            currentBubble += sentence;
-          } else {
-            if (currentBubble) {
-              const bubbleContent = currentBubble.trim();
-              setTimeout(() => {
-                emitResponseBubble(bubbleContent, bubbleType);
-              }, bubbleIndex * 600);
-              bubbleIndex++;
+          sentences.forEach((sentence) => {
+            if ((currentBubble + sentence).length <= maxLength) {
+              currentBubble += sentence;
+            } else {
+              if (currentBubble) {
+                const bubbleContent = currentBubble.trim();
+                setTimeout(() => {
+                  emitResponseBubble(bubbleContent, bubbleType);
+                }, bubbleIndex * 600);
+                bubbleIndex++;
+              }
+              currentBubble = sentence;
             }
-            currentBubble = sentence;
-          }
-        });
+          });
         
-        if (currentBubble) {
-          setTimeout(() => {
-            emitResponseBubble(currentBubble.trim(), bubbleType);
-          }, bubbleIndex * 600);
-        }
+          if (currentBubble) {
+            setTimeout(() => {
+              emitResponseBubble(currentBubble.trim(), bubbleType);
+            }, bubbleIndex * 600);
+            bubbleIndex++;
+          }
+          totalBubbles = bubbleIndex;
         } else {
           emitResponseBubble(response, bubbleType);
+          totalBubbles = 1;
         }
+        
+        // Show suggestions after response bubbles finish appearing
+        setTimeout(() => {
+          emitSuggestions(DEFAULT_SUGGESTIONS);
+        }, totalBubbles * 600 + 800);
       }, 150); // Delay for blink animation
     }
-  }, [messages, lastProcessedMessageId, setEmotion, setIsResponding, emitResponseBubble, triggerBlink]);
+  }, [messages, lastProcessedMessageId, setEmotion, setIsResponding, emitResponseBubble, emitSuggestions, triggerBlink, detectExcitement]);
 
   // Update emotion when typing - only set thinking if not recently set from a response
   useEffect(() => {
@@ -238,7 +314,7 @@ export const CenterStageLayout = ({
         <motion.div 
           ref={eyeRef} 
           className="relative"
-          animate={{ x: eyeShiftX }}
+          animate={{ x: eyeShiftX, y: eyeShiftY }}
           transition={{ 
             type: 'spring', 
             stiffness: 150, 
@@ -248,10 +324,27 @@ export const CenterStageLayout = ({
         >
           <EmotionalEye size="lg" />
 
+          {/* Suggestion bubbles on the LEFT side of eye */}
+          <div className="absolute top-1/2 right-full -translate-y-1/2 mr-6 flex flex-col items-end gap-2 w-[200px]">
+            <AnimatePresence mode="popLayout">
+              {visibleSuggestions.map((suggestion, index) => (
+                <SuggestionBubble
+                  key={suggestion.id}
+                  id={suggestion.id}
+                  content={suggestion.content}
+                  emoji={suggestion.emoji}
+                  isVisible={suggestion.isVisible}
+                  onClick={handleSuggestionClick}
+                  index={index}
+                />
+              ))}
+            </AnimatePresence>
+          </div>
+
           {/* Response bubbles emanating from eye - positioned to the right */}
           <div className={cn(
             "absolute top-1/2 left-full -translate-y-1/2 ml-6 flex flex-col items-start gap-3",
-            shouldShiftLeft && hasLongBubbles ? "w-[400px]" : "w-[320px]"
+            hasManyBubbles ? "w-[450px]" : hasLongBubbles ? "w-[400px]" : "w-[350px]"
           )}>
             <AnimatePresence mode="popLayout">
               {visibleBubbles.map((bubble) => (
