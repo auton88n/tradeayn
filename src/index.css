@@ -615,14 +615,7 @@ button, a, input, textarea, select {
     margin-left: 0.5rem;
   }
 
-  /* RTL Layout - Flex Direction Reversals */
-  [dir="rtl"] .flex {
-    flex-direction: row-reverse;
-  }
-
-  [dir="rtl"] .flex-col {
-    flex-direction: column;
-  }
+  /* RTL Layout - Flex handled per-component, not globally */
 
   /* RTL Sidebar Positioning */
   [dir="rtl"] .sidebar {
@@ -652,15 +645,7 @@ button, a, input, textarea, select {
     flex-direction: row !important;
   }
 
-  /* Prevent flex reversal inside input container - override global RTL rule */
-  [dir="rtl"] .input-container .flex,
-  [dir="rtl"] .input-container [class*="flex"] {
-    flex-direction: row !important;
-  }
-
-  [dir="rtl"] .input-container .flex.flex-col {
-    flex-direction: column !important;
-  }
+  /* Input container flex rules now in dedicated section at end of file */
 
   /* Remove old RTL input container rules - now handled above */
 
