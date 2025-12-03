@@ -282,8 +282,8 @@ export const Sidebar = ({
                             tooltip={undefined}
                             title=""
                             className={cn(
-                              "flex-1 h-auto py-3 px-3 rounded-xl group",
-                              "hover:bg-foreground hover:text-background active:scale-[0.98]",
+                              "flex-1 h-auto py-3 px-3 rounded-xl",
+                              "active:scale-[0.98]",
                               "transition-all duration-200",
                               isPinned && "bg-foreground/5 border border-border"
                             )}
@@ -292,8 +292,8 @@ export const Sidebar = ({
                             <div className="w-full space-y-1.5">
                               {/* Title row */}
                               <div className="flex items-center gap-2 w-full">
-                                <div className="w-6 h-6 rounded-lg bg-black dark:bg-white group-hover:bg-background flex items-center justify-center flex-shrink-0 transition-colors">
-                                  <MessageSquare className="w-3 h-3 text-white dark:text-black group-hover:text-foreground" />
+                                <div className="w-6 h-6 rounded-lg bg-black dark:bg-white flex items-center justify-center flex-shrink-0">
+                                  <MessageSquare className="w-3 h-3 text-white dark:text-black" />
                                 </div>
                                 <span className="text-sm font-medium truncate flex-1 min-w-0 text-black dark:text-white">
                                   {chat.title}
@@ -301,24 +301,21 @@ export const Sidebar = ({
                                 <button
                                   onClick={(e) => togglePin(chat.sessionId, e)}
                                   className={cn(
-                                    "p-1 rounded-md transition-all duration-200 flex-shrink-0",
-                                    isPinned 
-                                      ? "opacity-100" 
-                                      : "opacity-0 group-hover:opacity-100",
-                                    "hover:bg-background/20"
+                                    "p-1 rounded-md flex-shrink-0",
+                                    isPinned ? "opacity-100" : "opacity-50"
                                   )}
                                 >
                                   <Star className={cn(
                                     "w-3 h-3",
-                                    isPinned ? "fill-amber-400 text-amber-400" : "text-muted-foreground group-hover:text-background"
+                                    isPinned ? "fill-amber-400 text-amber-400" : "text-gray-400"
                                   )} />
                                 </button>
-                                <span className="text-[10px] text-gray-500 dark:text-gray-400 group-hover:text-background/70 flex-shrink-0 transition-colors">
+                                <span className="text-[10px] text-gray-500 dark:text-gray-400 flex-shrink-0">
                                   {formatCompactTime(new Date(chat.timestamp))}
                                 </span>
                               </div>
                               {/* Preview text - using CSS truncate */}
-                              <p className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-background/70 truncate pl-8 transition-colors">
+                              <p className="text-xs text-gray-500 dark:text-gray-400 truncate pl-8">
                                 {chat.lastMessage}
                               </p>
                             </div>
