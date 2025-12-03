@@ -215,7 +215,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
         </div>}
 
       {/* Input Container - Two Row Layout */}
-      <div className="input-container relative" dir="ltr">
+      <div className="input-container relative">
         {/* Hidden File Input */}
         <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileInputChange} accept="image/*,.pdf,.doc,.docx,.txt,.json" />
 
@@ -259,34 +259,9 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
         </div>
 
         {/* Row 2: Toolbar */}
-        <div 
-          className="input-toolbar-row" 
-          dir="ltr"
-          style={{ 
-            display: 'flex', 
-            flexDirection: 'row', 
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            width: 'calc(100% + 1.5rem)',
-            marginLeft: '-0.75rem',
-            marginRight: '-0.75rem',
-            paddingTop: '0.5rem',
-            direction: 'ltr'
-          }}
-        >
+        <div className="flex items-center justify-between w-full pt-2">
           {/* Left: Action Buttons */}
-          <div 
-            className="input-toolbar-left"
-            style={{ 
-              display: 'flex', 
-              flexDirection: 'row', 
-              alignItems: 'center',
-              gap: '0.25rem',
-              direction: 'ltr',
-              marginLeft: 0,
-              paddingLeft: 0
-            }}
-          >
+          <div className="flex items-center gap-1">
             {/* Plus Button for File Attachment */}
             {supportsFileAttachment && <button onClick={() => fileInputRef.current?.click()} disabled={isDisabled || isUploading} className="toolbar-button w-8 h-8 md:w-9 md:h-9" title="Attach file">
                 <Plus className="w-4 h-4" />
@@ -300,16 +275,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
           </div>
 
           {/* Right: Mode Selector + Send Button */}
-          <div 
-            className="input-toolbar-right"
-            style={{ 
-              display: 'flex', 
-              flexDirection: 'row', 
-              alignItems: 'center',
-              gap: '0.5rem',
-              direction: 'ltr'
-            }}
-          >
+          <div className="flex items-center gap-2">
             {/* Mode Selector Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -328,7 +294,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
                   data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95
                   data-[side=bottom]:slide-in-from-top-2 data-[side=top]:slide-in-from-bottom-2"
               >
-                <div dir="ltr">
+                <div>
                   {modes.map(mode => <DropdownMenuItem 
                     key={mode.name} 
                     onClick={() => onModeChange(mode.name)} 
