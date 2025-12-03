@@ -267,7 +267,9 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
             flexDirection: 'row', 
             justifyContent: 'space-between',
             alignItems: 'center',
-            width: '100%',
+            width: 'calc(100% + 1.5rem)',
+            marginLeft: '-0.75rem',
+            marginRight: '-0.75rem',
             paddingTop: '0.5rem',
             direction: 'ltr'
           }}
