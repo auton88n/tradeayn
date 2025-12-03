@@ -241,6 +241,7 @@ const translations = {
     'timeout.logoutNow': 'Log Out Now',
     
     // Admin Panel
+    'admin.panel': 'Admin Panel',
     'admin.title': 'Admin Control Center',
     'admin.subtitle': 'System administration and monitoring',
     'admin.realTime': 'Real-time',
@@ -746,6 +747,7 @@ const translations = {
     'timeout.logoutNow': 'تسجيل الخروج الآن',
     
     // Admin Panel
+    'admin.panel': 'لوحة الإدارة',
     'admin.title': 'مركز التحكم الإداري',
     'admin.subtitle': 'إدارة ومراقبة النظام',
     'admin.realTime': 'الوقت الحقيقي',
