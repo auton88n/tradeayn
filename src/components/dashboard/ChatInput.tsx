@@ -242,7 +242,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
         </div>
 
         {/* Row 2: Toolbar */}
-        <div className="flex items-center justify-between w-full pt-2">
+        <div className="flex items-center justify-between w-full pt-2" dir="ltr">
           {/* Left: Action Buttons */}
           <div className="flex items-center gap-1">
             {/* Plus Button for File Attachment */}
