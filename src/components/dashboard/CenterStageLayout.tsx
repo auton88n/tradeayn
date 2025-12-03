@@ -69,6 +69,7 @@ export const CenterStageLayout = ({
   onPrefillConsumed,
 }: CenterStageLayoutProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const eyeStageRef = useRef<HTMLDivElement>(null); // Stable ref for eye center calculation
   const eyeRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLDivElement>(null);
   const { setEmotion, triggerAbsorption, triggerBlink, setIsResponding, detectExcitement } = useAYNEmotion();
@@ -127,15 +128,17 @@ export const CenterStageLayout = ({
     eyeShiftX = 60;
   }
 
-  // Get eye position for bubble animations
+  // Get eye position for bubble animations - uses stable container ref
+  // to calculate where the eye WILL be (center) rather than current animated position
   const getEyePosition = useCallback(() => {
-    if (!eyeRef.current || !containerRef.current) {
+    if (!eyeStageRef.current) {
       return { x: window.innerWidth / 2, y: window.innerHeight / 3 };
     }
-    const eyeRect = eyeRef.current.getBoundingClientRect();
+    const stageRect = eyeStageRef.current.getBoundingClientRect();
+    // Return the center of the stage container (where eye settles when eyeShiftX=0)
     return {
-      x: eyeRect.left + eyeRect.width / 2,
-      y: eyeRect.top + eyeRect.height / 2,
+      x: stageRect.left + stageRect.width / 2,
+      y: stageRect.top + stageRect.height / 2,
     };
   }, []);
 
@@ -346,7 +349,7 @@ export const CenterStageLayout = ({
       <div className="absolute inset-0 bg-gradient-to-b from-background via-background to-muted/10 pointer-events-none" />
 
       {/* Central Eye Stage - centered in available space above input */}
-      <div className="flex-1 flex items-center justify-center pb-32">
+      <div ref={eyeStageRef} className="flex-1 flex items-center justify-center pb-32">
         <motion.div 
           ref={eyeRef} 
           className="relative"
