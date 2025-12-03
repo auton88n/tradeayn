@@ -5,6 +5,7 @@ import { EmotionalEye } from '@/components/eye/EmotionalEye';
 import { UserMessageBubble } from '@/components/eye/UserMessageBubble';
 import { AYNSpeechBubble } from '@/components/eye/AYNSpeechBubble';
 import { SuggestionBubble } from '@/components/eye/SuggestionBubble';
+import { FlyingSuggestionBubble } from '@/components/eye/FlyingSuggestionBubble';
 import { ParticleBurst } from '@/components/eye/ParticleBurst';
 import { ChatInput } from './ChatInput';
 import { useBubbleAnimation } from '@/hooks/useBubbleAnimation';
@@ -73,10 +74,13 @@ export const CenterStageLayout = ({
   const { setEmotion, triggerAbsorption, triggerBlink, setIsResponding, detectExcitement } = useAYNEmotion();
   const {
     flyingBubble,
+    flyingSuggestion,
     responseBubbles,
     suggestionBubbles,
     startMessageAnimation,
     completeAbsorption,
+    startSuggestionFlight,
+    completeSuggestionAbsorption,
     emitResponseBubble,
     clearResponseBubbles,
     dismissBubble,
@@ -210,16 +214,22 @@ export const CenterStageLayout = ({
     ]
   );
 
-  // Handle suggestion click - animate and send
-  const handleSuggestionClick = useCallback((content: string) => {
-    // Hide the clicked suggestion
+  // Handle suggestion click - animate flying to eye and send
+  const handleSuggestionClick = useCallback((content: string, emoji: string, clickPosition: { x: number; y: number }) => {
+    // Track the user's message for suggestion context
+    setLastUserMessage(content);
+    
+    // Clear other suggestions but keep clicked one visible during flight
     clearSuggestions();
     
-    // Animate as if user sent it
-    const inputPos = getInputPosition();
+    // Get eye position and start flying animation
     const eyePos = getEyePosition();
-    startMessageAnimation(content, { x: eyePos.x - 200, y: eyePos.y }, eyePos);
+    startSuggestionFlight(content, emoji, clickPosition, {
+      x: eyePos.x - 60,
+      y: eyePos.y - 20,
+    });
 
+    // After flight completes, trigger absorption and send
     setTimeout(() => {
       triggerBlink();
       setTimeout(() => {
@@ -227,25 +237,29 @@ export const CenterStageLayout = ({
         setEmotion('thinking');
         setIsResponding(true);
         
-        const eyePos = getEyePosition();
         setBurstPosition(eyePos);
         setShowParticleBurst(true);
         setTimeout(() => setShowParticleBurst(false), 500);
         
-        completeAbsorption();
+        completeSuggestionAbsorption();
+        
+        // Clear previous response bubbles
+        clearResponseBubbles();
+        
+        // Send the message
         onSendMessage(content, null);
       }, 150);
-    }, 600);
+    }, 550);
   }, [
     clearSuggestions,
-    getInputPosition,
+    clearResponseBubbles,
     getEyePosition,
-    startMessageAnimation,
+    startSuggestionFlight,
+    completeSuggestionAbsorption,
     triggerBlink,
     triggerAbsorption,
     setEmotion,
     setIsResponding,
-    completeAbsorption,
     onSendMessage,
   ]);
 
@@ -437,6 +451,18 @@ export const CenterStageLayout = ({
           startPosition={flyingBubble.startPosition}
           endPosition={flyingBubble.endPosition}
           onComplete={completeAbsorption}
+        />
+      )}
+
+      {/* Flying suggestion bubble */}
+      {flyingSuggestion && (
+        <FlyingSuggestionBubble
+          content={flyingSuggestion.content}
+          emoji={flyingSuggestion.emoji}
+          status={flyingSuggestion.status}
+          startPosition={flyingSuggestion.startPosition}
+          endPosition={flyingSuggestion.endPosition}
+          onComplete={completeSuggestionAbsorption}
         />
       )}
 
