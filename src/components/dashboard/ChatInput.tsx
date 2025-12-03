@@ -258,15 +258,14 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
             </div>}
         </div>
 
-        {/* Row 2: Toolbar - ABSOLUTE POSITIONING TO LOCK BUTTON POSITIONS */}
+ {/* Row 2: Toolbar - ABSOLUTE POSITIONING TO LOCK BUTTON POSITIONS */}
         <div className="relative w-full pt-2 mt-auto" style={{ height: '44px', direction: 'ltr' }}>
           {/* Plus Button - ABSOLUTE LEFT */}
           {supportsFileAttachment && (
             <button 
               onClick={() => fileInputRef.current?.click()} 
               disabled={isDisabled || isUploading} 
-              className="toolbar-button w-8 h-8 md:w-9 md:h-9"
-              style={{ position: 'absolute', left: 0, top: '8px' }}
+              className="toolbar-button w-8 h-8 md:w-9 md:h-9 absolute top-2 left-0" 
               title="Attach file"
             >
               <Plus className="w-4 h-4" />
@@ -274,7 +273,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
           )}
 
           {/* Mode Selector - ABSOLUTE CENTER-RIGHT */}
-          <div style={{ position: 'absolute', right: '52px', top: '8px' }}>
+          <div className="absolute top-2" style={{ right: '52px' }}>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="mode-selector-button h-7 md:h-8 px-2 md:px-3 rounded-lg hover:bg-muted/80 transition-all">
@@ -312,15 +311,16 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
           {/* Send Button - ABSOLUTE RIGHT */}
           <button 
             className={cn(
-              "send-button-square w-8 h-8 md:w-9 md:h-9 transition-all duration-200 active:scale-95 hover:scale-105", 
+              "send-button-square w-8 h-8 md:w-9 md:h-9 transition-all duration-200 active:scale-95 hover:scale-105 absolute top-2 right-0", 
               getSendButtonClass(selectedMode)
             )}
-            style={{ position: 'absolute', right: 0, top: '8px' }}
             onClick={handleSend} 
             disabled={!inputMessage.trim() && !selectedFile || isDisabled || isUploading} 
             title="Send message"
           >
             <ArrowUp className="w-5 h-5 md:w-[22px] md:h-[22px]" strokeWidth={2.5} />
+          </button>
+        </div>
           </button>
         </div>
       </div>
