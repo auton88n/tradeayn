@@ -200,8 +200,8 @@ export const TranscriptSidebar = ({
                         transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
                         className="absolute inset-0 w-20 h-20 rounded-full bg-foreground/10 blur-xl"
                       />
-                      <div className="relative w-20 h-20 rounded-2xl bg-foreground/5 border border-border flex items-center justify-center">
-                        <Brain className="w-8 h-8 text-foreground/30" />
+                      <div className="relative w-20 h-20 rounded-2xl bg-black dark:bg-white border border-border flex items-center justify-center">
+                        <Brain className="w-8 h-8 text-white dark:text-black" />
                       </div>
                     </div>
                     <p className="text-sm font-medium text-foreground mb-1">
