@@ -290,10 +290,10 @@ export const Sidebar = ({
                             <div className="w-full space-y-1.5">
                               {/* Title row */}
                               <div className="flex items-center gap-2 w-full">
-                                <div className="w-6 h-6 rounded-lg bg-black dark:bg-white group-hover:bg-white dark:group-hover:bg-black flex items-center justify-center flex-shrink-0 transition-colors">
-                                  <MessageSquare className="w-3 h-3 text-white dark:text-black group-hover:text-black dark:group-hover:text-white" />
+                                <div className="w-6 h-6 rounded-lg bg-black dark:bg-white group-hover:bg-background flex items-center justify-center flex-shrink-0 transition-colors">
+                                  <MessageSquare className="w-3 h-3 text-white dark:text-black group-hover:text-foreground" />
                                 </div>
-                                <span className="text-sm font-medium truncate flex-1 min-w-0 text-foreground group-hover:text-white dark:group-hover:text-black transition-colors">
+                                <span className="text-sm font-medium truncate flex-1 min-w-0 text-foreground group-hover:text-background transition-colors">
                                   {chat.title}
                                 </span>
                                 <button
@@ -303,20 +303,20 @@ export const Sidebar = ({
                                     isPinned 
                                       ? "opacity-100" 
                                       : "opacity-0 group-hover:opacity-100",
-                                    "hover:bg-white/20 dark:hover:bg-black/20"
+                                    "hover:bg-background/20"
                                   )}
                                 >
                                   <Star className={cn(
                                     "w-3 h-3",
-                                    isPinned ? "fill-amber-400 text-amber-400" : "text-muted-foreground group-hover:text-white dark:group-hover:text-black"
+                                    isPinned ? "fill-amber-400 text-amber-400" : "text-muted-foreground group-hover:text-background"
                                   )} />
                                 </button>
-                                <span className="text-[10px] text-muted-foreground group-hover:text-white/70 dark:group-hover:text-black/70 flex-shrink-0 transition-colors">
+                                <span className="text-[10px] text-muted-foreground group-hover:text-background/70 flex-shrink-0 transition-colors">
                                   {formatCompactTime(new Date(chat.timestamp))}
                                 </span>
                               </div>
                               {/* Preview text - using CSS truncate */}
-                              <p className="text-xs text-muted-foreground group-hover:text-white/70 dark:group-hover:text-black/70 truncate pl-8 transition-colors">
+                              <p className="text-xs text-muted-foreground group-hover:text-background/70 truncate pl-8 transition-colors">
                                 {chat.lastMessage}
                               </p>
                             </div>
