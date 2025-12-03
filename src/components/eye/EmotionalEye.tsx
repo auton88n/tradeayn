@@ -61,8 +61,8 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
     lg: 'w-[160px] h-[160px] md:w-[220px] md:h-[220px] lg:w-[260px] lg:h-[260px]',
   };
 
-  // Calculate iris radius based on state
-  const irisRadius = isAbsorbing ? 22 : isBlinking ? 30 : isHovered ? 32 : 28;
+  // Calculate iris radius based on state - contract on absorb, expand on respond
+  const irisRadius = isAbsorbing ? 18 : isResponding ? 34 : isBlinking ? 30 : isHovered ? 32 : 28;
 
   return (
     <div className={cn("relative flex items-center justify-center", className)}>
