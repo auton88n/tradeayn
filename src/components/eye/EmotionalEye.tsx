@@ -11,7 +11,8 @@ interface EmotionalEyeProps {
 
 export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
   const { 
-    emotionConfig, 
+    emotionConfig,
+    emotion,
     isAbsorbing, 
     isBlinking, 
     triggerBlink, 
@@ -129,7 +130,35 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
     };
   }, [lastActivityTime, isUserTyping, isResponding, isAbsorbing, triggerBlink]);
 
-  // Micro-movements when idle (subtle "look around")
+  // Get emotion-based micro-expression parameters
+  const getEmotionMicroParams = useCallback(() => {
+    switch (emotion) {
+      case 'curious':
+        return { range: 6, interval: 3000, tilt: 3 }; // More movement, slight tilt
+      case 'excited':
+        return { range: 8, interval: 1500, tilt: 0 }; // Quick, energetic movements
+      case 'happy':
+        return { range: 5, interval: 4000, tilt: 1 }; // Gentle, pleasant movements
+      case 'thinking':
+        return { range: 3, interval: 6000, tilt: -2 }; // Slow, focused, slight opposite tilt
+      case 'frustrated':
+        return { range: 2, interval: 8000, tilt: 0 }; // Minimal movement
+      default:
+        return { range: 4, interval: 5000, tilt: 0 }; // Calm default
+    }
+  }, [emotion]);
+
+  // Head tilt based on emotion
+  const tiltRotation = useMotionValue(0);
+  const smoothTilt = useSpring(tiltRotation, { damping: 40, stiffness: 80 });
+
+  // Update tilt when emotion changes
+  useEffect(() => {
+    const { tilt } = getEmotionMicroParams();
+    tiltRotation.set(tilt);
+  }, [emotion, getEmotionMicroParams, tiltRotation]);
+
+  // Micro-movements when idle (subtle "look around") - emotion-aware
   useEffect(() => {
     if (isUserTyping || isResponding || isAbsorbing) {
       // Reset to center when not idle
@@ -138,16 +167,18 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
       return;
     }
 
+    const { range, interval } = getEmotionMicroParams();
+    
     const microMovementInterval = setInterval(() => {
-      // Subtle random movement within small range
-      const newX = (Math.random() - 0.5) * 4;
-      const newY = (Math.random() - 0.5) * 3;
+      // Emotion-based movement range
+      const newX = (Math.random() - 0.5) * range;
+      const newY = (Math.random() - 0.5) * (range * 0.75);
       microX.set(newX);
       microY.set(newY);
-    }, 5000 + Math.random() * 3000); // Every 5-8 seconds
+    }, interval + Math.random() * (interval * 0.4));
 
     return () => clearInterval(microMovementInterval);
-  }, [isUserTyping, isResponding, isAbsorbing, microX, microY]);
+  }, [isUserTyping, isResponding, isAbsorbing, microX, microY, getEmotionMicroParams]);
 
   const sizeClasses = {
     sm: 'w-[100px] h-[100px] md:w-[120px] md:h-[120px]',
@@ -173,10 +204,10 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
 
   return (
     <div className={cn("relative flex items-center justify-center", className)}>
-      {/* Eye - centered with spring physics */}
+      {/* Eye - centered with spring physics and emotion tilt */}
       <motion.div 
-        style={{ x: combinedX, y: combinedY }}
-        className="relative z-10 flex items-center justify-center group cursor-pointer will-change-transform" 
+        style={{ x: combinedX, y: combinedY, rotate: smoothTilt }}
+        className="relative z-10 flex items-center justify-center group cursor-pointer will-change-transform"
         initial={{ scale: 0.92, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
