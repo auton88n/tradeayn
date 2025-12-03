@@ -1,5 +1,5 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
+import { motion, useMotionValue, useSpring, useTransform, animate } from 'framer-motion';
 import { Brain } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
@@ -11,6 +11,7 @@ interface EmotionalEyeProps {
 
 export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
   const { 
+    emotion,
     emotionConfig, 
     isAbsorbing, 
     isBlinking, 
@@ -24,6 +25,10 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
   const lastBlinkRef = useRef(Date.now());
   const idleBlinkIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const checkInTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Eyelid animation (0 = open, 1 = closed)
+  const eyelidProgress = useMotionValue(0);
+  const smoothEyelid = useSpring(eyelidProgress, { damping: 40, stiffness: 400 });
 
   // Mouse tracking for gaze
   const mouseX = useMotionValue(0);
@@ -39,9 +44,17 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
   const smoothMicroX = useSpring(microX, { damping: 30, stiffness: 100 });
   const smoothMicroY = useSpring(microY, { damping: 30, stiffness: 100 });
 
+  // Emotion-based head tilt (rotation)
+  const headTilt = useMotionValue(0);
+  const smoothTilt = useSpring(headTilt, { damping: 25, stiffness: 150 });
+
   // Combined eye movement
   const combinedX = useTransform([eyeX, smoothMicroX], ([eye, micro]) => (eye as number) + (micro as number));
   const combinedY = useTransform([eyeY, smoothMicroY], ([eye, micro]) => (eye as number) + (micro as number));
+
+  // Eyelid clip path based on blink progress
+  const eyelidClipTop = useTransform(smoothEyelid, [0, 1], [0, 50]);
+  const eyelidClipBottom = useTransform(smoothEyelid, [0, 1], [100, 50]);
 
   // Mouse tracking effect
   useEffect(() => {
@@ -65,16 +78,79 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
     };
   }, [mouseX, mouseY]);
 
+  // Animate eyelid when blinking
+  useEffect(() => {
+    if (isBlinking) {
+      // Close eyelid
+      animate(eyelidProgress, 1, { duration: 0.08, ease: [0.55, 0.055, 0.675, 0.19] });
+    } else {
+      // Open eyelid
+      animate(eyelidProgress, 0, { duration: 0.12, ease: [0.34, 1.56, 0.64, 1] });
+    }
+  }, [isBlinking, eyelidProgress]);
+
+  // Emotion-based micro-expressions
+  useEffect(() => {
+    let tiltInterval: NodeJS.Timeout | null = null;
+    
+    switch (emotion) {
+      case 'curious':
+        // Curious = slight head tilt that shifts occasionally
+        headTilt.set(5);
+        tiltInterval = setInterval(() => {
+          const newTilt = (Math.random() - 0.5) * 12; // -6 to +6 degrees
+          headTilt.set(newTilt);
+        }, 3000);
+        break;
+      case 'excited':
+        // Excited = quick, energetic micro-movements
+        headTilt.set(0);
+        const excitedMoveInterval = setInterval(() => {
+          microX.set((Math.random() - 0.5) * 8);
+          microY.set((Math.random() - 0.5) * 6);
+        }, 800 + Math.random() * 400); // Faster movements
+        tiltInterval = excitedMoveInterval;
+        break;
+      case 'thinking':
+        // Thinking = look up and to the side
+        headTilt.set(-3);
+        microX.set(3);
+        microY.set(-2);
+        break;
+      case 'happy':
+        // Happy = slight upward tilt (like a smile)
+        headTilt.set(-2);
+        break;
+      case 'frustrated':
+        // Frustrated = slight downward, narrow focus
+        headTilt.set(2);
+        microX.set(0);
+        microY.set(1);
+        break;
+      default:
+        // Calm = neutral
+        headTilt.set(0);
+    }
+
+    return () => {
+      if (tiltInterval) clearInterval(tiltInterval);
+    };
+  }, [emotion, headTilt, microX, microY]);
+
   // Smart blinking system - get random blink interval based on state
   const getBlinkInterval = useCallback(() => {
     if (isUserTyping) return null; // Don't blink while user is typing (attentive listening)
-    if (isResponding) return 800 + Math.random() * 400; // Faster blinks while responding (0.8-1.2s)
+    if (isResponding) {
+      // Emotion affects blink speed while responding
+      if (emotion === 'excited') return 500 + Math.random() * 300; // Very fast
+      if (emotion === 'thinking') return 2000 + Math.random() * 1000; // Slower, contemplative
+      return 800 + Math.random() * 400; // Normal responding
+    }
     return 3000 + Math.random() * 2000; // Natural idle blinks (3-5s)
-  }, [isUserTyping, isResponding]);
+  }, [isUserTyping, isResponding, emotion]);
 
   // Idle blinking effect
   useEffect(() => {
-    // Clear existing interval
     if (idleBlinkIntervalRef.current) {
       clearInterval(idleBlinkIntervalRef.current);
       idleBlinkIntervalRef.current = null;
@@ -82,18 +158,17 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
 
     const scheduleNextBlink = () => {
       const interval = getBlinkInterval();
-      if (interval === null) return; // Don't blink if null (user typing)
+      if (interval === null) return;
 
       idleBlinkIntervalRef.current = setTimeout(() => {
         if (!isAbsorbing && !isAttentive) {
           const now = Date.now();
-          // Prevent too rapid blinking
           if (now - lastBlinkRef.current > 500) {
             triggerBlink();
             lastBlinkRef.current = now;
           }
         }
-        scheduleNextBlink(); // Schedule next blink
+        scheduleNextBlink();
       }, interval);
     };
 
@@ -114,7 +189,6 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
 
     checkInTimeoutRef.current = setTimeout(() => {
       if (!isUserTyping && !isResponding && !isAbsorbing) {
-        // Gentle double-blink "are you still there?"
         triggerBlink();
         setTimeout(() => {
           triggerBlink();
@@ -131,23 +205,23 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
 
   // Micro-movements when idle (subtle "look around")
   useEffect(() => {
-    if (isUserTyping || isResponding || isAbsorbing) {
-      // Reset to center when not idle
-      microX.set(0);
-      microY.set(0);
+    if (isUserTyping || isResponding || isAbsorbing || emotion === 'excited') {
+      if (emotion !== 'excited') {
+        microX.set(0);
+        microY.set(0);
+      }
       return;
     }
 
     const microMovementInterval = setInterval(() => {
-      // Subtle random movement within small range
       const newX = (Math.random() - 0.5) * 4;
       const newY = (Math.random() - 0.5) * 3;
       microX.set(newX);
       microY.set(newY);
-    }, 5000 + Math.random() * 3000); // Every 5-8 seconds
+    }, 5000 + Math.random() * 3000);
 
     return () => clearInterval(microMovementInterval);
-  }, [isUserTyping, isResponding, isAbsorbing, microX, microY]);
+  }, [isUserTyping, isResponding, isAbsorbing, emotion, microX, microY]);
 
   const sizeClasses = {
     sm: 'w-[100px] h-[100px] md:w-[120px] md:h-[120px]',
@@ -155,27 +229,33 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
     lg: 'w-[160px] h-[160px] md:w-[220px] md:h-[220px] lg:w-[260px] lg:h-[260px]',
   };
 
-  // Calculate iris radius based on state - dilates for attention, contracts when thinking
+  // Calculate iris radius based on state
   const getIrisRadius = () => {
-    if (isAbsorbing) return 16; // Contract during absorption
-    if (isAttentive) return 34; // Dilate when user starts typing (attention/interest)
-    if (isUserTyping) return 32; // Slightly dilated while listening
-    if (isResponding) return 30; // Normal while responding
-    if (isBlinking) return 28;
+    if (isAbsorbing) return 16;
+    if (isAttentive) return 34;
+    if (isUserTyping) return 32;
+    if (emotion === 'curious') return 33; // Wider pupils when curious
+    if (emotion === 'excited') return 32;
+    if (isResponding) return 30;
     if (isHovered) return 30;
-    return 28; // Default calm state
+    return 28;
   };
 
   const irisRadius = getIrisRadius();
-
-  // Breathing animation speed based on emotion
   const breathingDuration = emotionConfig.breathingSpeed;
+
+  // Breathing scale based on emotion
+  const breathingScale = useMemo(() => {
+    if (emotion === 'excited') return [1, 1.025, 1];
+    if (emotion === 'calm') return [1, 1.01, 1];
+    return [1, 1.015, 1];
+  }, [emotion]);
 
   return (
     <div className={cn("relative flex items-center justify-center", className)}>
-      {/* Eye - centered with spring physics */}
+      {/* Eye container with head tilt */}
       <motion.div 
-        style={{ x: combinedX, y: combinedY }}
+        style={{ x: combinedX, y: combinedY, rotate: smoothTilt }}
         className="relative z-10 flex items-center justify-center group cursor-pointer will-change-transform" 
         initial={{ scale: 0.92, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -193,7 +273,7 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
             boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
           }}
           animate={{ 
-            scale: [1, 1.015, 1],
+            scale: breathingScale,
             opacity: [1, 0.98, 1]
           }}
           transition={{ 
@@ -205,22 +285,45 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
           {/* soft inner ring */}
           <div className="absolute inset-4 rounded-full bg-background/80 shadow-inner" />
 
-          {/* actual eye (pupil + iris) - state-controlled blink */}
-          <motion.svg 
-            viewBox="0 0 100 100" 
-            className="w-[70%] h-[70%] relative" 
-            xmlns="http://www.w3.org/2000/svg" 
-            animate={{
-              scaleY: isBlinking ? 0.05 : 1,
-              opacity: isBlinking ? 0.7 : 1
-            }} 
-            transition={{
-              duration: isBlinking ? 0.08 : 0.12,
-              ease: isBlinking ? [0.55, 0.055, 0.675, 0.19] : [0.34, 1.56, 0.64, 1]
-            }} 
+          {/* Eyelid overlay - top */}
+          <motion.div 
+            className="absolute inset-0 bg-background z-20 origin-top"
             style={{
-              transformOrigin: 'center center'
+              clipPath: useTransform(eyelidClipTop, (v) => `inset(0% 0% ${100 - v}% 0%)`),
             }}
+          />
+          
+          {/* Eyelid overlay - bottom */}
+          <motion.div 
+            className="absolute inset-0 bg-background z-20 origin-bottom"
+            style={{
+              clipPath: useTransform(eyelidClipBottom, (v) => `inset(${v}% 0% 0% 0%)`),
+            }}
+          />
+
+          {/* Eyelid edge shadows for depth */}
+          <motion.div 
+            className="absolute inset-x-0 h-8 bg-gradient-to-b from-foreground/10 to-transparent z-21 pointer-events-none"
+            style={{
+              top: 0,
+              opacity: smoothEyelid,
+              transform: useTransform(eyelidClipTop, (v) => `translateY(${v - 50}%)`),
+            }}
+          />
+          <motion.div 
+            className="absolute inset-x-0 h-8 bg-gradient-to-t from-foreground/10 to-transparent z-21 pointer-events-none"
+            style={{
+              bottom: 0,
+              opacity: smoothEyelid,
+              transform: useTransform(eyelidClipBottom, (v) => `translateY(${50 - v}%)`),
+            }}
+          />
+
+          {/* actual eye (pupil + iris) */}
+          <svg 
+            viewBox="0 0 100 100" 
+            className="w-[70%] h-[70%] relative z-10" 
+            xmlns="http://www.w3.org/2000/svg"
           >
             {/* sclera subtle gradient */}
             <defs>
@@ -244,9 +347,7 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
                   ? "r 0.15s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
                   : isAttentive
                     ? "r 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)"
-                    : isBlinking 
-                      ? "r 0.08s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
-                      : "r 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)"
+                    : "r 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)"
               }} 
             />
               
@@ -261,14 +362,12 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
                   ? "all 0.15s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
                   : isAttentive
                     ? "all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)"
-                    : isBlinking 
-                      ? "all 0.08s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
-                      : "all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)"
+                    : "all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)"
               }}
             >
               <Brain className="w-full h-full" style={{ color: emotionConfig.color, transition: 'color 0.5s ease' }} />
             </foreignObject>
-          </motion.svg>
+          </svg>
         </motion.div>
       </motion.div>
     </div>
