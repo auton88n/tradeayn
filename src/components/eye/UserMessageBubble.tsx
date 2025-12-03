@@ -21,7 +21,7 @@ export const UserMessageBubble = ({
   return (
     <motion.div
       className={cn(
-        "fixed z-50 max-w-[300px] px-4 py-3 rounded-2xl",
+        "fixed left-0 top-0 z-50 max-w-[300px] px-4 py-3 rounded-2xl",
         "bg-primary text-primary-foreground",
         "shadow-lg border border-primary/20",
         "pointer-events-none"
