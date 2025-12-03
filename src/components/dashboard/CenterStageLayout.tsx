@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { EmotionalEye } from '@/components/eye/EmotionalEye';
 import { UserMessageBubble } from '@/components/eye/UserMessageBubble';
 import { AYNSpeechBubble } from '@/components/eye/AYNSpeechBubble';
+import { ParticleBurst } from '@/components/eye/ParticleBurst';
 import { ChatInput } from './ChatInput';
 import { useBubbleAnimation } from '@/hooks/useBubbleAnimation';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
@@ -66,6 +67,8 @@ export const CenterStageLayout = ({
   } = useBubbleAnimation();
 
   const [lastProcessedMessageId, setLastProcessedMessageId] = useState<string | null>(null);
+  const [showParticleBurst, setShowParticleBurst] = useState(false);
+  const [burstPosition, setBurstPosition] = useState({ x: 0, y: 0 });
 
   // Calculate if eye should shift left based on visible bubbles
   const visibleBubbles = responseBubbles.filter(b => b.isVisible);
@@ -117,12 +120,19 @@ export const CenterStageLayout = ({
           triggerAbsorption();
           setEmotion('thinking');
           setIsResponding(true);
+          
+          // Trigger particle burst at eye position
+          const eyePos = getEyePosition();
+          setBurstPosition(eyePos);
+          setShowParticleBurst(true);
+          setTimeout(() => setShowParticleBurst(false), 500);
+          
           completeAbsorption();
 
           // Actually send the message
           onSendMessage(content, file);
         }, 150);
-      }, 800);
+      }, 500);
     },
     [
       clearResponseBubbles,
@@ -291,6 +301,13 @@ export const CenterStageLayout = ({
           onComplete={completeAbsorption}
         />
       )}
+
+      {/* Particle burst on absorption */}
+      <ParticleBurst
+        isActive={showParticleBurst}
+        position={burstPosition}
+        particleCount={16}
+      />
 
       {/* Input area - ChatInput handles its own fixed positioning */}
       <ChatInput
