@@ -280,6 +280,7 @@ export const Sidebar = ({
                           <SidebarMenuButton 
                             onClick={() => !showChatSelection && onLoadChat(chat)} 
                             tooltip={undefined}
+                            title=""
                             className={cn(
                               "flex-1 h-auto py-3 px-3 rounded-xl group",
                               "hover:bg-foreground hover:text-background active:scale-[0.98]",
