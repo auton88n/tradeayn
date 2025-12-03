@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
+import { useRef, useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { MessageFormatter } from '@/components/MessageFormatter';
 
@@ -13,21 +14,61 @@ interface ResponseCardProps {
 }
 
 export const ResponseCard = ({ responses }: ResponseCardProps) => {
-  const visibleResponses = responses.filter(r => r.isVisible);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [isScrollable, setIsScrollable] = useState(false);
+  const [isAtBottom, setIsAtBottom] = useState(true);
 
-  if (visibleResponses.length === 0) return null;
+  const visibleResponses = responses.filter(r => r.isVisible);
 
   // Combine all responses into single content
   const combinedContent = visibleResponses
     .map(r => r.content.replace(/^[!?\s]+/, '').trim())
     .join('\n\n');
 
+  // Check if content is scrollable and track scroll position
+  useEffect(() => {
+    const el = contentRef.current;
+    if (!el) return;
+
+    const checkScrollState = () => {
+      const scrollable = el.scrollHeight > el.clientHeight;
+      setIsScrollable(scrollable);
+      
+      const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 10;
+      setIsAtBottom(atBottom);
+    };
+
+    checkScrollState();
+    el.addEventListener('scroll', checkScrollState);
+    
+    // Re-check when content changes
+    const resizeObserver = new ResizeObserver(checkScrollState);
+    resizeObserver.observe(el);
+
+    return () => {
+      el.removeEventListener('scroll', checkScrollState);
+      resizeObserver.disconnect();
+    };
+  }, [combinedContent]);
+
+  // Auto-scroll to bottom when new content arrives
+  useEffect(() => {
+    const el = contentRef.current;
+    if (el && isAtBottom) {
+      el.scrollTop = el.scrollHeight;
+    }
+  }, [combinedContent, isAtBottom]);
+
+  if (visibleResponses.length === 0) return null;
+
   return (
     <AnimatePresence>
       <motion.div
         className={cn(
           "relative",
-          "w-auto min-w-[320px] max-w-[520px]",
+          // Responsive width
+          "w-auto min-w-[280px] max-w-[calc(100vw-2rem)] sm:max-w-[520px]",
+          // Premium glass card
           "bg-white/95 dark:bg-gray-900/90",
           "backdrop-blur-md",
           "shadow-sm",
@@ -56,20 +97,33 @@ export const ResponseCard = ({ responses }: ResponseCardProps) => {
         }}
       >
         {/* Content area with proper scrolling */}
-        <div className={cn(
-          "max-h-[60vh] overflow-y-auto overflow-x-auto",
-          "[&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:h-2",
-          "[&::-webkit-scrollbar-track]:bg-gray-100/50 dark:[&::-webkit-scrollbar-track]:bg-gray-800/50",
-          "[&::-webkit-scrollbar-track]:rounded-full",
-          "[&::-webkit-scrollbar-thumb]:bg-gray-300 dark:[&::-webkit-scrollbar-thumb]:bg-gray-600",
-          "[&::-webkit-scrollbar-thumb]:rounded-full",
-          "[&::-webkit-scrollbar-thumb]:hover:bg-gray-400 dark:[&::-webkit-scrollbar-thumb]:hover:bg-gray-500"
-        )}>
+        <div 
+          ref={contentRef}
+          className={cn(
+            "max-h-[400px] overflow-y-auto overflow-x-auto",
+            // Premium scrollbar styling
+            "[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar]:h-1.5",
+            "[&::-webkit-scrollbar-track]:bg-transparent",
+            "[&::-webkit-scrollbar-thumb]:bg-gray-300/60 dark:[&::-webkit-scrollbar-thumb]:bg-gray-600/60",
+            "[&::-webkit-scrollbar-thumb]:rounded-full",
+            "[&::-webkit-scrollbar-thumb]:hover:bg-gray-400 dark:[&::-webkit-scrollbar-thumb]:hover:bg-gray-500",
+            // iOS touch scrolling
+            "[-webkit-overflow-scrolling:touch]"
+          )}
+        >
           <MessageFormatter 
             content={combinedContent} 
             className="text-sm text-gray-700 dark:text-gray-200 leading-relaxed" 
           />
         </div>
+
+        {/* Fade gradient indicator when scrollable and not at bottom */}
+        {isScrollable && !isAtBottom && (
+          <div 
+            className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-white dark:from-gray-900 to-transparent pointer-events-none rounded-b-xl"
+            aria-hidden="true"
+          />
+        )}
       </motion.div>
     </AnimatePresence>
   );
