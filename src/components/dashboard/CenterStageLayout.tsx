@@ -213,13 +213,14 @@ export const CenterStageLayout = ({
     }
   }, [messages, lastProcessedMessageId, setEmotion, setIsResponding, emitResponseBubble, triggerBlink]);
 
-  // Update emotion when typing
+  // Update emotion when typing - only set thinking if not recently set from a response
   useEffect(() => {
     if (isTyping) {
-      setEmotion('thinking');
       setIsResponding(true);
+      // Don't override the emotion - let it persist from the last response
+      // The emotion will naturally change when the next response comes in
     }
-  }, [isTyping, setEmotion, setIsResponding]);
+  }, [isTyping, setIsResponding]);
 
   return (
     <div
