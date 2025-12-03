@@ -117,17 +117,6 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
             {/* sclera subtle */}
             <circle cx="50" cy="50" r="48" fill="url(#emotional-sclera)" opacity="0.06" />
 
-            {/* Subtle emotion ring right next to the black iris */}
-            <circle 
-              cx="50" 
-              cy="50" 
-              r={irisRadius + 3}
-              fill="none"
-              stroke={emotionConfig.color}
-              strokeWidth="2"
-              opacity={0.6}
-              style={{ transition: 'stroke 0.5s ease, r 0.4s ease' }}
-            />
 
             {/* iris / pupil - PURE BLACK */}
             <circle 
