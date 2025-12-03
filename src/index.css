@@ -1220,3 +1220,48 @@ button, a, input, textarea, select {
       min-width: 32px;
     }
   }
+
+/* ============================================
+   INPUT TOOLBAR - FORCE LTR LAYOUT ALWAYS
+   Bypasses global RTL rules completely
+   ============================================ */
+
+.input-toolbar-row {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  padding-top: 0.5rem !important;
+}
+
+.input-toolbar-left {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 0.25rem !important;
+}
+
+.input-toolbar-right {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+}
+
+/* Prevent ANY RTL reversal on input toolbar */
+[dir="rtl"] .input-toolbar-row,
+[dir="rtl"] .input-toolbar-left,
+[dir="rtl"] .input-toolbar-right {
+  flex-direction: row !important;
+  direction: ltr !important;
+}
+
+/* Force button order */
+.input-toolbar-left {
+  order: 1;
+}
+
+.input-toolbar-right {
+  order: 2;
+}
