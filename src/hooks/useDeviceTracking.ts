@@ -136,12 +136,18 @@ export const trackDeviceLogin = async (userId: string) => {
         });
     }
     
-    // Update last_login in profiles (use upsert-like update)
+    // Update last_login in profiles
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('total_sessions')
+      .eq('user_id', userId)
+      .maybeSingle();
+    
     await supabase
       .from('profiles')
       .update({
         last_login: now,
-        total_sessions: supabase.rpc ? undefined : 1 // Will be handled by trigger if available
+        total_sessions: (profile?.total_sessions ?? 0) + 1
       })
       .eq('user_id', userId);
     
