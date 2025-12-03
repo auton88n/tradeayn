@@ -57,8 +57,11 @@ export const ResponseCard = ({ responses }: ResponseCardProps) => {
       >
         {/* Content area */}
         <div className={cn(
-          "max-h-[300px] overflow-y-auto",
-          "scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-700"
+          "max-h-[50vh] overflow-y-auto",
+          "[&::-webkit-scrollbar]:w-1.5",
+          "[&::-webkit-scrollbar-track]:bg-transparent",
+          "[&::-webkit-scrollbar-thumb]:bg-gray-300 dark:[&::-webkit-scrollbar-thumb]:bg-gray-600",
+          "[&::-webkit-scrollbar-thumb]:rounded-full"
         )}>
           <MessageFormatter 
             content={combinedContent} 

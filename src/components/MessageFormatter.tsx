@@ -116,15 +116,27 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
     );
   };
 
-  // Preprocess to convert inline numbered lists to proper newlines
+  // Preprocess to convert inline numbered/bullet lists to proper newlines
   const preprocessContent = (text: string): string => {
-    // Detect inline numbered lists like "1. item 2. item 3. item"
-    // Only convert if we find multiple consecutive numbered items
-    if (text.match(/\d+\.\s[^0-9]+\d+\.\s/)) {
-      // Insert newline before each numbered item (except the first if at start)
-      return text.replace(/(\s)(\d+)\.\s/g, '\n$2. ').trim();
+    let processed = text;
+    
+    // 1. Convert inline numbered lists like "1. item 2. item 3. item"
+    if (processed.match(/\d+\.\s[^0-9]+\d+\.\s/)) {
+      processed = processed.replace(/(\s)(\d+)\.\s/g, '\n$2. ').trim();
     }
-    return text;
+    
+    // 2. Convert inline bullet lists like "text: - **Item** - **Item**"
+    // Match " - " followed by bold text or capital letter (bullet pattern)
+    if (processed.match(/[^-\n]\s+-\s+(\*\*|[A-Z])/)) {
+      processed = processed.replace(/(\S)\s+-\s+(\*\*|[A-Z])/g, '$1\n- $2');
+    }
+    
+    // 3. Convert inline bullets with em-dash "text – item – item"
+    if (processed.match(/[^\n]\s+[–—]\s+\*\*/)) {
+      processed = processed.replace(/(\S)\s+[–—]\s+(\*\*)/g, '$1\n• $2');
+    }
+    
+    return processed;
   };
 
   const formatTextContent = (text: string) => {
