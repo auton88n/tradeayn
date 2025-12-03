@@ -132,7 +132,7 @@ export const CenterStageLayout = ({
           // Actually send the message
           onSendMessage(content, file);
         }, 150);
-      }, 500);
+      }, 600);
     },
     [
       clearResponseBubbles,

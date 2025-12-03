@@ -32,15 +32,17 @@ export const UserMessageBubble = ({
         scale: 1,
         opacity: 1,
         rotate: 0,
+        filter: 'blur(0px)',
       }}
       animate={
         status === 'flying'
           ? {
               x: endPosition.x,
               y: endPosition.y,
-              scale: 0.85,
+              scale: 0.5,
               opacity: 1,
-              rotate: -3,
+              rotate: -5,
+              filter: 'blur(0px)',
             }
           : {
               x: endPosition.x,
@@ -48,19 +50,20 @@ export const UserMessageBubble = ({
               scale: 0,
               opacity: 0,
               rotate: 0,
+              filter: 'blur(4px)',
             }
       }
       transition={
         status === 'flying'
           ? {
               type: 'spring',
-              stiffness: 300,
-              damping: 25,
-              mass: 0.8,
+              stiffness: 200,
+              damping: 22,
+              mass: 0.6,
             }
           : {
-              duration: 0.15,
-              ease: 'easeIn',
+              duration: 0.35,
+              ease: [0.32, 0, 0.67, 0],
             }
       }
       onAnimationComplete={() => {
