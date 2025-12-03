@@ -277,15 +277,17 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
                   data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95
                   data-[side=bottom]:slide-in-from-top-2 data-[side=top]:slide-in-from-bottom-2"
               >
-                {modes.map(mode => <DropdownMenuItem 
-                  key={mode.name} 
-                  onClick={() => onModeChange(mode.name)} 
-                  className="cursor-pointer hover:bg-accent/50 transition-colors"
-                >
-                    <mode.icon className="w-4 h-4 mr-2" />
-                    <span>{mode.translatedName}</span>
-                    {selectedMode === mode.name && <span className="ml-auto text-primary">✓</span>}
-                  </DropdownMenuItem>)}
+                <div dir="ltr">
+                  {modes.map(mode => <DropdownMenuItem 
+                    key={mode.name} 
+                    onClick={() => onModeChange(mode.name)} 
+                    className="cursor-pointer hover:bg-accent/50 transition-colors"
+                  >
+                      <mode.icon className="w-4 h-4 mr-2" />
+                      <span>{mode.translatedName}</span>
+                      {selectedMode === mode.name && <span className="ml-auto text-primary">✓</span>}
+                    </DropdownMenuItem>)}
+                </div>
               </DropdownMenuContent>
             </DropdownMenu>
 
