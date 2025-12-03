@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Search, Copy, Trash2, ChevronRight, ChevronLeft, MessageSquare } from 'lucide-react';
+import { X, Search, Copy, Trash2, ChevronRight, ChevronLeft, MessageSquare, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -29,6 +29,7 @@ export const TranscriptSidebar = ({
   const { toast } = useToast();
   const { language } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const isArabic = language === 'ar';
 
@@ -66,31 +67,43 @@ export const TranscriptSidebar = ({
 
   return (
     <>
-      {/* Toggle button when closed */}
+      {/* Toggle button when closed - Premium pill design */}
       <AnimatePresence>
         {!isOpen && (
           <motion.button
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
+            initial={{ opacity: 0, x: 20, scale: 0.9 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 20, scale: 0.9 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
             onClick={onToggle}
             className={cn(
               "fixed top-1/2 -translate-y-1/2 z-40",
-              "w-8 h-20 rounded-l-lg",
-              "bg-background/80 backdrop-blur-sm border border-r-0 border-border",
+              "w-10 h-24 rounded-l-2xl",
+              "bg-background/60 backdrop-blur-2xl",
+              "border border-border/50",
               "flex items-center justify-center",
-              "hover:bg-muted transition-colors",
-              "shadow-lg",
-              isArabic ? "left-0 rounded-l-none rounded-r-lg border-l-0 border-r" : "right-0"
+              "hover:bg-background/80 hover:w-12",
+              "transition-all duration-300 ease-out",
+              "shadow-[0_8px_32px_rgba(0,0,0,0.12)]",
+              "group",
+              isArabic ? "left-0 rounded-l-none rounded-r-2xl border-l-0 border-r" : "right-0"
             )}
           >
-            {isArabic ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-            <span className="sr-only">Open transcript</span>
+            <motion.div
+              animate={{ x: [0, -3, 0] }}
+              transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
+            >
+              {isArabic ? (
+                <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+              ) : (
+                <ChevronLeft className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+              )}
+            </motion.div>
           </motion.button>
         )}
       </AnimatePresence>
 
-      {/* Sidebar */}
+      {/* Sidebar - Premium glassmorphism design */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -100,106 +113,183 @@ export const TranscriptSidebar = ({
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             className={cn(
               "fixed top-0 h-full w-80 z-50",
-              "bg-background/95 backdrop-blur-xl",
-              "border-border shadow-2xl",
+              "bg-background/80 backdrop-blur-2xl",
+              "border-border/50",
               "flex flex-col",
+              "shadow-[0_0_60px_rgba(0,0,0,0.15)]",
               isArabic ? "left-0 border-r" : "right-0 border-l"
             )}
           >
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-border">
-              <div className="flex items-center gap-2">
-                <MessageSquare className="w-5 h-5 text-muted-foreground" />
-                <h2 className="font-semibold text-foreground">
-                  {isArabic ? 'سجل المحادثة' : 'Transcript'}
-                </h2>
-                <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-                  {messages.length}
-                </span>
+            {/* Header - Premium with gradient accent */}
+            <div className="relative">
+              <div className="flex items-center justify-between p-5 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                      <MessageSquare className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-primary/80 flex items-center justify-center">
+                      <span className="text-[8px] font-bold text-primary-foreground">{messages.length}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <h2 className="font-semibold text-foreground text-sm tracking-tight">
+                      {isArabic ? 'سجل المحادثة' : 'Transcript'}
+                    </h2>
+                    <p className="text-xs text-muted-foreground">
+                      {isArabic ? `${messages.length} رسالة` : `${messages.length} messages`}
+                    </p>
+                  </div>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={onToggle}
+                  className="h-8 w-8 rounded-lg hover:bg-muted/80 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
               </div>
-              <Button variant="ghost" size="icon" onClick={onToggle}>
-                <X className="w-4 h-4" />
-              </Button>
+              {/* Gradient accent line */}
+              <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
             </div>
 
-            {/* Search */}
-            <div className="p-3 border-b border-border">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            {/* Search - Premium floating design */}
+            <div className="p-4">
+              <div className={cn(
+                "relative transition-all duration-300",
+                isSearchFocused && "transform scale-[1.02]"
+              )}>
+                <Search className={cn(
+                  "absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors duration-200",
+                  isSearchFocused ? "text-primary" : "text-muted-foreground"
+                )} />
                 <Input
                   placeholder={isArabic ? 'بحث في المحادثة...' : 'Search messages...'}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 h-9 text-sm"
+                  onFocus={() => setIsSearchFocused(true)}
+                  onBlur={() => setIsSearchFocused(false)}
+                  className={cn(
+                    "pl-10 h-10 text-sm rounded-xl",
+                    "bg-muted/50 border-transparent",
+                    "placeholder:text-muted-foreground/60",
+                    "focus:bg-background focus:border-primary/20 focus:ring-2 focus:ring-primary/10",
+                    "transition-all duration-300"
+                  )}
                 />
               </div>
             </div>
 
-            {/* Messages */}
-            <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-              <div className="space-y-4">
+            {/* Messages - Premium card design */}
+            <ScrollArea className="flex-1 px-4" ref={scrollRef}>
+              <div className="space-y-3 pb-4">
                 {filteredMessages.length === 0 ? (
-                  <div className="text-center text-muted-foreground py-8">
-                    <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-20" />
-                    <p className="text-sm">
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex flex-col items-center justify-center py-16 px-4"
+                  >
+                    {/* Premium empty state with animated orb */}
+                    <div className="relative mb-6">
+                      <motion.div
+                        animate={{ 
+                          scale: [1, 1.1, 1],
+                          opacity: [0.3, 0.5, 0.3]
+                        }}
+                        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                        className="absolute inset-0 w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 blur-xl"
+                      />
+                      <div className="relative w-20 h-20 rounded-2xl bg-gradient-to-br from-muted/80 to-muted/40 flex items-center justify-center">
+                        <Sparkles className="w-8 h-8 text-muted-foreground/40" />
+                      </div>
+                    </div>
+                    <p className="text-sm font-medium text-foreground/80 mb-1">
                       {searchQuery
                         ? isArabic ? 'لا توجد نتائج' : 'No messages found'
                         : isArabic ? 'لا توجد رسائل بعد' : 'No messages yet'}
                     </p>
-                  </div>
+                    <p className="text-xs text-muted-foreground/60 text-center">
+                      {searchQuery
+                        ? isArabic ? 'جرب كلمات أخرى' : 'Try different keywords'
+                        : isArabic ? 'ابدأ محادثة مع AYN' : 'Start a conversation with AYN'}
+                    </p>
+                  </motion.div>
                 ) : (
-                  filteredMessages.map((msg) => (
-                    <TranscriptMessage
+                  filteredMessages.map((msg, index) => (
+                    <motion.div
                       key={msg.id}
-                      content={msg.content}
-                      sender={msg.sender}
-                      timestamp={msg.timestamp}
-                      emotion={(msg as Message & { emotion?: AYNEmotion }).emotion}
-                      mode={msg.sender === 'ayn' ? currentMode : undefined}
-                    />
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.03, duration: 0.3 }}
+                    >
+                      <TranscriptMessage
+                        content={msg.content}
+                        sender={msg.sender}
+                        timestamp={msg.timestamp}
+                        emotion={(msg as Message & { emotion?: AYNEmotion }).emotion}
+                        mode={msg.sender === 'ayn' ? currentMode : undefined}
+                      />
+                    </motion.div>
                   ))
                 )}
               </div>
             </ScrollArea>
 
-            {/* Actions */}
-            <div className="p-3 border-t border-border flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-1"
-                onClick={handleCopyAll}
-                disabled={messages.length === 0}
-              >
-                <Copy className="w-4 h-4 mr-2" />
-                {isArabic ? 'نسخ الكل' : 'Copy All'}
-              </Button>
-              {onClear && (
+            {/* Actions - Premium pill buttons */}
+            <div className="p-4 pt-2">
+              <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent mb-4" />
+              <div className="flex gap-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex-1 text-destructive hover:text-destructive"
-                  onClick={onClear}
+                  className={cn(
+                    "flex-1 h-10 rounded-xl",
+                    "bg-muted/30 border-border/50",
+                    "hover:bg-muted/60 hover:border-border",
+                    "transition-all duration-300",
+                    "disabled:opacity-40"
+                  )}
+                  onClick={handleCopyAll}
                   disabled={messages.length === 0}
                 >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  {isArabic ? 'مسح' : 'Clear'}
+                  <Copy className="w-4 h-4 mr-2" />
+                  {isArabic ? 'نسخ' : 'Copy'}
                 </Button>
-              )}
+                {onClear && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      "flex-1 h-10 rounded-xl",
+                      "bg-destructive/5 border-destructive/20",
+                      "text-destructive hover:bg-destructive/10 hover:border-destructive/30",
+                      "transition-all duration-300",
+                      "disabled:opacity-40"
+                    )}
+                    onClick={onClear}
+                    disabled={messages.length === 0}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    {isArabic ? 'مسح' : 'Clear'}
+                  </Button>
+                )}
+              </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Backdrop */}
+      {/* Backdrop - Premium blur */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
             onClick={onToggle}
-            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 md:hidden"
+            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 md:hidden"
           />
         )}
       </AnimatePresence>
