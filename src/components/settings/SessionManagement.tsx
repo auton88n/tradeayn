@@ -67,8 +67,42 @@ export const SessionManagement = () => {
     return <Monitor className="h-5 w-5" />;
   };
 
+  const parseUserAgentForDisplay = (ua: string): string => {
+    let browser = 'Browser';
+    let os = '';
+    
+    if (ua.includes('Chrome') && !ua.includes('Edg')) browser = 'Chrome';
+    else if (ua.includes('Safari') && !ua.includes('Chrome')) browser = 'Safari';
+    else if (ua.includes('Firefox')) browser = 'Firefox';
+    else if (ua.includes('Edg')) browser = 'Edge';
+    
+    if (ua.includes('Mac OS X')) os = 'macOS';
+    else if (ua.includes('Windows')) os = 'Windows';
+    else if (ua.includes('Linux') && !ua.includes('Android')) os = 'Linux';
+    else if (ua.includes('Android')) os = 'Android';
+    else if (ua.includes('iPhone')) os = 'iOS';
+    else if (ua.includes('iPad')) os = 'iPadOS';
+    
+    return os ? `${browser} on ${os}` : browser;
+  };
+
   const getDeviceName = (deviceInfo: Record<string, unknown> | null) => {
-    return String(deviceInfo?.browser || deviceInfo?.os || t('settings.unknownDevice'));
+    if (!deviceInfo) return t('settings.unknownDevice');
+    
+    const browser = String(deviceInfo.browser || '');
+    const os = String(deviceInfo.os || '');
+    
+    // If we have parsed values (not raw user agent), show "Browser on OS"
+    if (browser && os && !browser.includes('Mozilla')) {
+      return `${browser} on ${os}`;
+    }
+    
+    // Fallback: parse raw user agent if old format
+    if (browser.includes('Mozilla')) {
+      return parseUserAgentForDisplay(browser);
+    }
+    
+    return browser || os || t('settings.unknownDevice');
   };
 
   if (loading) {
