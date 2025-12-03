@@ -15,9 +15,9 @@ interface SuggestionsCardProps {
 
 // Arc positions relative to the eye center (cards curve around left side)
 const arcPositions = [
-  { x: -220, y: -90, rotate: -8 },   // Top-left arc
-  { x: -240, y: 0, rotate: 0 },      // Middle-left (furthest)
-  { x: -220, y: 90, rotate: 8 },     // Bottom-left arc
+  { x: -280, y: -90, rotate: -5 },   // Top-left arc
+  { x: -310, y: 0, rotate: 0 },      // Middle-left (furthest)
+  { x: -280, y: 90, rotate: 5 },     // Bottom-left arc
 ];
 
 export const SuggestionsCard = ({ suggestions, onSuggestionClick }: SuggestionsCardProps) => {
@@ -44,7 +44,7 @@ export const SuggestionsCard = ({ suggestions, onSuggestionClick }: SuggestionsC
             onClick={(e) => handleClick(suggestion, e)}
             className={cn(
               "absolute flex items-center gap-3",
-              "px-4 py-3 min-w-[180px] max-w-[220px]",
+              "px-4 py-3 min-w-[220px] max-w-[300px]",
               "bg-white/95 dark:bg-gray-900/95",
               "backdrop-blur-xl",
               "shadow-[0_8px_32px_rgba(0,0,0,0.08),0_2px_8px_rgba(0,0,0,0.04)]",
