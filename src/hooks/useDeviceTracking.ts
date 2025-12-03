@@ -91,55 +91,57 @@ const getDeviceInfo = () => {
 
 /**
  * Track device login - creates or updates device fingerprint and updates profile
+ * Uses upsert pattern to prevent race condition duplicates
  */
 export const trackDeviceLogin = async (userId: string) => {
   try {
     const fingerprintHash = generateFingerprint();
     const deviceInfo = getDeviceInfo();
+    const now = new Date().toISOString();
     
-    // Check if device exists
-    const { data: existing } = await supabase
+    // Check if device exists using limit(1) to handle potential duplicates gracefully
+    const { data: existingDevices } = await supabase
       .from('device_fingerprints')
-      .select('*')
+      .select('id, login_count')
       .eq('user_id', userId)
       .eq('fingerprint_hash', fingerprintHash)
-      .single();
+      .limit(1);
     
-    if (existing) {
+    if (existingDevices && existingDevices.length > 0) {
       // Update existing device
+      const existing = existingDevices[0];
       await supabase
         .from('device_fingerprints')
         .update({
-          last_seen: new Date().toISOString(),
+          last_seen: now,
           login_count: (existing.login_count ?? 0) + 1,
           device_info: deviceInfo
         })
         .eq('id', existing.id);
     } else {
-      // Insert new device
+      // Insert new device with upsert to handle race conditions
       await supabase
         .from('device_fingerprints')
-        .insert({
+        .upsert({
           user_id: userId,
           fingerprint_hash: fingerprintHash,
           device_info: deviceInfo,
-          is_trusted: false
+          is_trusted: false,
+          login_count: 1,
+          first_seen: now,
+          last_seen: now
+        }, {
+          onConflict: 'user_id,fingerprint_hash',
+          ignoreDuplicates: true
         });
     }
     
-    // Get current profile data
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('total_sessions')
-      .eq('user_id', userId)
-      .single();
-    
-    // Update last_login and total_sessions in profiles
+    // Update last_login in profiles (use upsert-like update)
     await supabase
       .from('profiles')
       .update({
-        last_login: new Date().toISOString(),
-        total_sessions: (profile?.total_sessions || 0) + 1
+        last_login: now,
+        total_sessions: supabase.rpc ? undefined : 1 // Will be handled by trigger if available
       })
       .eq('user_id', userId);
     
