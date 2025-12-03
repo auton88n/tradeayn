@@ -10,7 +10,7 @@ interface EmotionalEyeProps {
 }
 
 export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
-  const { emotionConfig, isAbsorbing, isBlinking, triggerBlink } = useAYNEmotion();
+  const { emotionConfig, isAbsorbing, isBlinking, triggerBlink, isResponding } = useAYNEmotion();
   const [isHovered, setIsHovered] = useState(false);
 
   // Mouse tracking
@@ -42,16 +42,18 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
     };
   }, [mouseX, mouseY]);
 
-  // Automatic blinking cycle
+  // Blink only when AYN is responding
   useEffect(() => {
+    if (!isResponding) return;
+    
     const interval = setInterval(() => {
       if (!isAbsorbing) {
         triggerBlink();
       }
-    }, 3000 + Math.random() * 1000);
+    }, 800 + Math.random() * 400); // Faster blinks while responding (0.8-1.2s)
 
     return () => clearInterval(interval);
-  }, [isAbsorbing, triggerBlink]);
+  }, [isAbsorbing, triggerBlink, isResponding]);
 
   const sizeClasses = {
     sm: 'w-[100px] h-[100px] md:w-[120px] md:h-[120px]',
