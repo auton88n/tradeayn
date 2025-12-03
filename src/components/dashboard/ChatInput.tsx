@@ -215,7 +215,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
         </div>}
 
       {/* Input Container - Two Row Layout */}
-      <div className="input-container relative">
+      <div className="input-container relative" dir="ltr">
         {/* Hidden File Input */}
         <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileInputChange} accept="image/*,.pdf,.doc,.docx,.txt,.json" />
 
