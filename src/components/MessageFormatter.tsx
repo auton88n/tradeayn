@@ -1,4 +1,5 @@
 import React from 'react';
+import ReactMarkdown from 'react-markdown';
 import { cn } from '@/lib/utils';
 import { sanitizeUserInput, isValidUserInput } from '@/lib/security';
 
@@ -11,122 +12,14 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
   // Sanitize content to prevent XSS attacks
   const sanitizedContent = isValidUserInput(content) ? content : sanitizeUserInput(content);
   
-  const formatMessage = (text: string) => {
-    // Split by code blocks first
-    const codeBlockRegex = /```([\s\S]*?)```/g;
-    const parts = [];
-    let lastIndex = 0;
-    let match;
-
-    while ((match = codeBlockRegex.exec(text)) !== null) {
-      // Add text before code block
-      if (match.index > lastIndex) {
-        parts.push({
-          type: 'text',
-          content: text.slice(lastIndex, match.index)
-        });
-      }
-      
-      // Add code block
-      parts.push({
-        type: 'code',
-        content: match[1].trim()
-      });
-      
-      lastIndex = match.index + match[0].length;
-    }
-    
-    // Add remaining text
-    if (lastIndex < text.length) {
-      parts.push({
-        type: 'text',
-        content: text.slice(lastIndex)
-      });
-    }
-
-    return parts.map((part, index) => {
-      if (part.type === 'code') {
-        return (
-          <div key={index} className="my-4 first:mt-0 last:mb-0">
-            <pre className="bg-muted border border-border rounded-lg p-4 overflow-x-auto">
-              <code className="text-sm font-mono text-current whitespace-pre">
-                {part.content}
-              </code>
-            </pre>
-          </div>
-        );
-      } else {
-        return (
-          <div key={index}>
-            {formatTextContent(part.content)}
-          </div>
-        );
-      }
-    });
-  };
-
-  const formatTable = (tableLines: string[], startKey: number) => {
-    if (tableLines.length < 2) return null;
-    
-    // Parse header row
-    const headerCells = tableLines[0]
-      .split('|')
-      .map(cell => cell.trim())
-      .filter(cell => cell.length > 0);
-    
-    // Skip separator row (index 1) and parse data rows
-    const dataRows = tableLines.slice(2).map(line => 
-      line.split('|').map(cell => cell.trim()).filter(cell => cell.length > 0)
-    );
-    
-    return (
-      <div key={`table-${startKey}`} className="overflow-x-auto my-4 first:mt-0 last:mb-0">
-        <table className="min-w-full border-collapse border border-border rounded-lg overflow-hidden">
-          <thead className="bg-muted/50">
-            <tr>
-              {headerCells.map((header, idx) => (
-                <th 
-                  key={`th-${idx}`} 
-                  className="px-4 py-2.5 text-left font-semibold border-b border-border text-sm"
-                >
-                  {formatInlineText(header)}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {dataRows.map((row, rowIdx) => (
-              <tr 
-                key={`tr-${rowIdx}`} 
-                className="hover:bg-muted/30 transition-colors"
-              >
-                {row.map((cell, cellIdx) => (
-                  <td 
-                    key={`td-${rowIdx}-${cellIdx}`} 
-                    className="px-4 py-2 border-b border-border/50 text-sm"
-                  >
-                    {formatInlineText(cell)}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    );
-  };
-
   // Preprocess to convert inline tables, numbered/bullet lists to proper newlines
   const preprocessContent = (text: string): string => {
     let processed = text;
     
     // 0. Convert inline markdown tables to multi-line format
-    // Pattern: "| Header | Header | |---|---| | data | data |"
     if (processed.includes('|') && processed.match(/\|[^|]+\|[^|]*\|[\s-:]+\|/)) {
-      // Split inline tables: add newline before separator row and data rows
       processed = processed.replace(/\|\s*\|---/g, '|\n|---');
       processed = processed.replace(/---\|\s*\|(?!\s*-)/g, '---|\n|');
-      // Split data rows (| followed by number or text after separator exists)
       processed = processed.replace(/\|\s*\|\s*(\d+)/g, '|\n| $1');
       processed = processed.replace(/\|\s*\|\s*([A-Za-z*])/g, '|\n| $1');
     }
@@ -137,337 +30,147 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
     }
     
     // 2. Convert inline bullet lists like "text: - **Item** - **Item**"
-    // Match " - " followed by bold text or capital letter (bullet pattern)
     if (processed.match(/[^-\n]\s+-\s+(\*\*|[A-Z])/)) {
       processed = processed.replace(/(\S)\s+-\s+(\*\*|[A-Z])/g, '$1\n- $2');
     }
     
     // 3. Convert inline bullets with em-dash "text – item – item"
     if (processed.match(/[^\n]\s+[–—]\s+\*\*/)) {
-      processed = processed.replace(/(\S)\s+[–—]\s+(\*\*)/g, '$1\n• $2');
+      processed = processed.replace(/(\S)\s+[–—]\s+(\*\*)/g, '$1\n- $2');
     }
     
     return processed;
   };
 
-  const formatTextContent = (text: string) => {
-    // Preprocess to handle inline numbered lists
-    const processedText = preprocessContent(text);
-    const lines = processedText.split('\n');
-    const elements: React.ReactNode[] = [];
-    let currentList: React.ReactElement | null = null;
-    let currentListType: string | null = null;
-    let i = 0;
-
-    while (i < lines.length) {
-      const line = lines[i].trim();
-      
-      // Check for table start (line contains | and next line is separator)
-      if (line.includes('|') && i + 1 < lines.length && lines[i + 1].match(/^\|?[\s-:|]+\|?$/)) {
-        if (currentList) {
-          elements.push(currentList);
-          currentList = null;
-          currentListType = null;
-        }
-        
-        // Collect all table lines
-        const tableLines: string[] = [line];
-        let j = i + 1;
-        while (j < lines.length && (lines[j].includes('|') || lines[j].match(/^\|?[\s-:|]+\|?$/))) {
-          tableLines.push(lines[j]);
-          j++;
-        }
-        
-        const table = formatTable(tableLines, i);
-        if (table) {
-          elements.push(table);
-        }
-        
-        i = j;
-        continue;
-      }
-      
-      if (!line) {
-        // Empty line - close current list and add spacing
-        if (currentList) {
-          elements.push(currentList);
-          currentList = null;
-          currentListType = null;
-        }
-        elements.push(<div key={`space-${i}`} className="h-3" />);
-        i++;
-        continue;
-      }
-
-      // Check for headers (# ## ### or ==== style)
-      if (line.startsWith('#')) {
-        if (currentList) {
-          elements.push(currentList);
-          currentList = null;
-          currentListType = null;
-        }
-        
-        const headerLevel = line.match(/^#+/)?.[0].length || 1;
-        const headerText = line.replace(/^#+\s*/, '');
-        const HeaderTag = `h${Math.min(headerLevel, 6)}` as keyof JSX.IntrinsicElements;
-        
-        elements.push(
-          <HeaderTag 
-            key={`header-${i}`} 
-            className={cn(
-              "font-semibold mt-4 mb-2 first:mt-0",
-              headerLevel === 1 && "text-xl font-bold",
-              headerLevel === 2 && "text-lg font-semibold", 
-              headerLevel === 3 && "text-base font-medium",
-              headerLevel >= 4 && "text-sm font-medium"
-            )}
-          >
-            {formatInlineText(headerText)}
-          </HeaderTag>
-        );
-      }
-      // Check for alternative header styles (=== or ---)
-      else if (line.match(/^={3,}|^-{3,}$/)) {
-        elements.push(<hr key={`divider-${i}`} className="my-4 border-border" />);
-      }
-      // Check for various bullet styles (-, *, +, •, ▪, ►, →, ✓, ✗, 🔸, 🔹, etc.)
-      else if (line.match(/^[-*+•▪►→✓✗🔸🔹⭐🎯💡⚡🚀✨💎🔥📊📈📉🎨🛠️⚙️💰📝🎪🌟🎈]\s/)) {
-        const bullet = line.match(/^[-*+•▪►→✓✗🔸🔹⭐🎯💡⚡🚀✨💎🔥📊📈📉🎨🛠️⚙️💰📝🎪🌟🎈]/)?.[0] || '•';
-        const listContent = formatInlineText(line.replace(/^[-*+•▪►→✓✗🔸🔹⭐🎯💡⚡🚀✨💎🔥📊📈📉🎨🛠️⚙️💰📝🎪🌟🎈]\s/, ''));
-        
-        if (currentListType !== 'ul') {
-          if (currentList) elements.push(currentList);
-          currentList = (
-            <ul key={`ul-${i}`} className="space-y-1 my-2 first:mt-0 last:mb-0 pl-2">
-              <li className="leading-relaxed flex items-start gap-2">
-                <span className="text-primary flex-shrink-0 mt-0.5 text-base leading-none">{bullet}</span>
-                <span className="flex-1">{listContent}</span>
-              </li>
-            </ul>
-          );
-          currentListType = 'ul';
-        } else {
-          // Add to existing list
-          const existingList = currentList as React.ReactElement;
-          currentList = React.cloneElement(existingList, {
-            children: [
-              ...React.Children.toArray(existingList.props.children),
-              <li key={`li-${i}`} className="leading-relaxed flex items-start gap-2">
-                <span className="text-primary flex-shrink-0 mt-0.5 text-base leading-none">{bullet}</span>
-                <span className="flex-1">{listContent}</span>
-              </li>
-            ]
-          });
-        }
-      }
-      // Check for numbered lists (1., 2., Step 1:, Phase 1, etc.)
-      else if (line.match(/^(\d+[\.\)\:]|Step\s+\d+[\:\.]|Phase\s+\d+[\:\.]|#\d+|\d+[\)|\.])\s/i)) {
-        const numberMatch = line.match(/^(\d+[\.\)\:]|Step\s+\d+[\:\.]|Phase\s+\d+[\:\.]|#\d+|\d+[\)|\.])\s/i);
-        const numberPart = numberMatch?.[1] || '';
-        const listContent = formatInlineText(line.replace(/^(\d+[\.\)\:]|Step\s+\d+[\:\.]|Phase\s+\d+[\:\.]|#\d+|\d+[\)|\.])\s/i, ''));
-        
-        if (currentListType !== 'ol') {
-          if (currentList) elements.push(currentList);
-          currentList = (
-            <ol key={`ol-${i}`} className="space-y-1 my-2 first:mt-0 last:mb-0 pl-2">
-              <li className="leading-relaxed flex items-start gap-2">
-                <span className="text-primary font-medium flex-shrink-0 mt-0.5 min-w-[2rem] text-sm">{numberPart}</span>
-                <span className="flex-1">{listContent}</span>
-              </li>
-            </ol>
-          );
-          currentListType = 'ol';
-        } else {
-          // Add to existing list
-          const existingList = currentList as React.ReactElement;
-          currentList = React.cloneElement(existingList, {
-            children: [
-              ...React.Children.toArray(existingList.props.children),
-              <li key={`li-${i}`} className="leading-relaxed flex items-start gap-2">
-                <span className="text-primary font-medium flex-shrink-0 mt-0.5 min-w-[2rem] text-sm">{numberPart}</span>
-                <span className="flex-1">{listContent}</span>
-              </li>
-            ]
-          });
-        }
-      }
-      // Check for special formatted lines (quotes, notes, warnings, etc.)
-      else if (line.match(/^(>|Note:|Warning:|Important:|Tip:|💡|⚠️|❗|🔔)/i)) {
-        if (currentList) {
-          elements.push(currentList);
-          currentList = null;
-          currentListType = null;
-        }
-        
-        const isQuote = line.startsWith('>');
-        const isNote = line.match(/^(Note:|💡)/i);
-        const isWarning = line.match(/^(Warning:|⚠️|❗)/i);
-        const isImportant = line.match(/^(Important:|🔔)/i);
-        
-        const content = line.replace(/^(>|Note:|Warning:|Important:|Tip:|💡|⚠️|❗|🔔)\s?/i, '');
-        
-        let className = "p-3 rounded-lg border-l-4 my-2 first:mt-0 last:mb-0";
-        let icon = "";
-        
-        if (isQuote) {
-          className += " bg-muted/50 border-l-muted-foreground italic";
-        } else if (isNote) {
-          className += " bg-blue-50 dark:bg-blue-950/20 border-l-blue-500 text-blue-900 dark:text-blue-100";
-          icon = "💡 ";
-        } else if (isWarning) {
-          className += " bg-yellow-50 dark:bg-yellow-950/20 border-l-yellow-500 text-yellow-900 dark:text-yellow-100";
-          icon = "⚠️ ";
-        } else if (isImportant) {
-          className += " bg-red-50 dark:bg-red-950/20 border-l-red-500 text-red-900 dark:text-red-100";
-          icon = "❗ ";
-        } else {
-          className += " bg-primary/5 border-l-primary";
-          icon = "🔔 ";
-        }
-        
-        elements.push(
-          <div key={`special-${i}`} className={className}>
-            {icon && <span className="mr-2">{icon}</span>}
-            {formatInlineText(content)}
-          </div>
-        );
-      }
-      // Regular paragraph - preserve emojis and special characters
-      else {
-        if (currentList) {
-          elements.push(currentList);
-          currentList = null;
-          currentListType = null;
-        }
-        
-        elements.push(
-          <p key={`p-${i}`} className="leading-relaxed mb-2 last:mb-0 text-current break-words">
-            {formatInlineText(line)}
-          </p>
-        );
-      }
-      
-      i++;
-    }
-
-    // Don't forget to add the last list if it exists
-    if (currentList) {
-      elements.push(currentList);
-    }
-
-    return elements;
-  };
-
-  const formatInlineText = (text: string) => {
-    // Handle inline code first
-    const inlineCodeRegex = /`([^`]+)`/g;
-    let parts = [];
-    let lastIndex = 0;
-    let match;
-
-    while ((match = inlineCodeRegex.exec(text)) !== null) {
-      // Add text before inline code
-      if (match.index > lastIndex) {
-        parts.push({
-          type: 'text',
-          content: text.slice(lastIndex, match.index)
-        });
-      }
-      
-      // Add inline code
-      parts.push({
-        type: 'inline-code',
-        content: match[1]
-      });
-      
-      lastIndex = match.index + match[0].length;
-    }
-    
-    // Add remaining text
-    if (lastIndex < text.length) {
-      parts.push({
-        type: 'text',
-        content: text.slice(lastIndex)
-      });
-    }
-
-    // If no inline code found, treat as single text part
-    if (parts.length === 0) {
-      parts = [{ type: 'text', content: text }];
-    }
-
-    return parts.map((part, index) => {
-      if (part.type === 'inline-code') {
-        return (
-          <code 
-            key={index} 
-            className="bg-muted text-current px-1.5 py-0.5 rounded text-sm font-mono border"
-          >
-            {part.content}
-          </code>
-        );
-      } else {
-        // Handle bold and italic in text
-        return formatBoldItalic(part.content, index);
-      }
-    });
-  };
-
-  const formatBoldItalic = (text: string, baseKey: number) => {
-    // Handle **bold**, *italic*, __underline__, ~~strikethrough~~, and other formatting
-    const formatRegex = /(\*\*\*([^*]+)\*\*\*|\*\*([^*]+)\*\*|\*([^*]+)\*|__([^_]+)__|~~([^~]+)~~|==([^=]+)==|\|\|([^|]+)\|\|)/g;
-    const parts = [];
-    let lastIndex = 0;
-    let match;
-
-    while ((match = formatRegex.exec(text)) !== null) {
-      // Add text before formatting
-      if (match.index > lastIndex) {
-        parts.push(text.slice(lastIndex, match.index));
-      }
-      
-      // Determine type and content
-      if (match[2]) {
-        // Bold and italic (***text***)
-        parts.push(<strong key={`bi-${baseKey}-${match.index}`} className="font-bold italic text-primary">{match[2]}</strong>);
-      } else if (match[3]) {
-        // Bold (**text**)
-        parts.push(<strong key={`b-${baseKey}-${match.index}`} className="font-bold text-primary">{match[3]}</strong>);
-      } else if (match[4]) {
-        // Italic (*text*)
-        parts.push(<em key={`i-${baseKey}-${match.index}`} className="italic text-muted-foreground">{match[4]}</em>);
-      } else if (match[5]) {
-        // Underline (__text__)
-        parts.push(<u key={`u-${baseKey}-${match.index}`} className="underline">{match[5]}</u>);
-      } else if (match[6]) {
-        // Strikethrough (~~text~~)
-        parts.push(<del key={`s-${baseKey}-${match.index}`} className="line-through opacity-75">{match[6]}</del>);
-      } else if (match[7]) {
-        // Highlight (==text==)
-        parts.push(<mark key={`h-${baseKey}-${match.index}`} className="bg-yellow-200 dark:bg-yellow-800 px-1 rounded">{match[7]}</mark>);
-      } else if (match[8]) {
-        // Spoiler (||text||)
-        parts.push(
-          <span key={`sp-${baseKey}-${match.index}`} className="bg-muted text-muted cursor-pointer hover:bg-transparent hover:text-foreground transition-all duration-200 px-1 rounded" title="Click to reveal">
-            {match[8]}
-          </span>
-        );
-      }
-      
-      lastIndex = match.index + match[0].length;
-    }
-    
-    // Add remaining text
-    if (lastIndex < text.length) {
-      parts.push(text.slice(lastIndex));
-    }
-
-    return parts.length > 1 ? parts : text;
-  };
+  const processedContent = preprocessContent(sanitizedContent);
 
   return (
     <div className={cn("space-y-2 leading-relaxed", className)}>
-      {formatMessage(sanitizedContent)}
+      <ReactMarkdown
+        components={{
+          // Bold text
+          strong: ({ children }) => (
+            <strong className="font-semibold text-primary">{children}</strong>
+          ),
+          // Italic text
+          em: ({ children }) => (
+            <em className="italic text-muted-foreground">{children}</em>
+          ),
+          // Unordered lists
+          ul: ({ children }) => (
+            <ul className="space-y-1 my-2 first:mt-0 last:mb-0 pl-2">{children}</ul>
+          ),
+          // Ordered lists
+          ol: ({ children }) => (
+            <ol className="space-y-1 my-2 first:mt-0 last:mb-0 pl-2 list-decimal list-inside">{children}</ol>
+          ),
+          // List items
+          li: ({ children }) => (
+            <li className="leading-relaxed">{children}</li>
+          ),
+          // Paragraphs
+          p: ({ children }) => (
+            <p className="leading-relaxed mb-2 last:mb-0 text-current break-words">{children}</p>
+          ),
+          // Code blocks and inline code
+          code: ({ children, className }) => {
+            const isBlock = className?.includes('language-');
+            if (isBlock) {
+              return (
+                <div className="my-4 first:mt-0 last:mb-0">
+                  <pre className="bg-muted border border-border rounded-lg p-4 overflow-x-auto">
+                    <code className="text-sm font-mono text-current whitespace-pre">
+                      {children}
+                    </code>
+                  </pre>
+                </div>
+              );
+            }
+            return (
+              <code className="bg-muted text-current px-1.5 py-0.5 rounded text-sm font-mono border">
+                {children}
+              </code>
+            );
+          },
+          // Pre blocks (for code)
+          pre: ({ children }) => (
+            <div className="my-4 first:mt-0 last:mb-0">
+              <pre className="bg-muted border border-border rounded-lg p-4 overflow-x-auto">
+                {children}
+              </pre>
+            </div>
+          ),
+          // Headers
+          h1: ({ children }) => (
+            <h1 className="text-xl font-bold mt-4 mb-2 first:mt-0">{children}</h1>
+          ),
+          h2: ({ children }) => (
+            <h2 className="text-lg font-semibold mt-4 mb-2 first:mt-0">{children}</h2>
+          ),
+          h3: ({ children }) => (
+            <h3 className="text-base font-medium mt-3 mb-2 first:mt-0">{children}</h3>
+          ),
+          h4: ({ children }) => (
+            <h4 className="text-sm font-medium mt-3 mb-2 first:mt-0">{children}</h4>
+          ),
+          // Blockquotes
+          blockquote: ({ children }) => (
+            <blockquote className="border-l-4 border-muted-foreground bg-muted/50 pl-4 py-2 italic my-2 first:mt-0 last:mb-0 rounded-r">
+              {children}
+            </blockquote>
+          ),
+          // Tables
+          table: ({ children }) => (
+            <div className="overflow-x-auto my-4 first:mt-0 last:mb-0">
+              <table className="min-w-full border-collapse border border-border rounded-lg overflow-hidden">
+                {children}
+              </table>
+            </div>
+          ),
+          thead: ({ children }) => (
+            <thead className="bg-muted/50">{children}</thead>
+          ),
+          tbody: ({ children }) => (
+            <tbody>{children}</tbody>
+          ),
+          tr: ({ children }) => (
+            <tr className="hover:bg-muted/30 transition-colors">{children}</tr>
+          ),
+          th: ({ children }) => (
+            <th className="px-4 py-2.5 text-left font-semibold border-b border-border text-sm">
+              {children}
+            </th>
+          ),
+          td: ({ children }) => (
+            <td className="px-4 py-2 border-b border-border/50 text-sm">{children}</td>
+          ),
+          // Horizontal rule
+          hr: () => (
+            <hr className="my-4 border-border" />
+          ),
+          // Links
+          a: ({ children, href }) => (
+            <a 
+              href={href} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-primary underline hover:text-primary/80 transition-colors"
+            >
+              {children}
+            </a>
+          ),
+          // Images
+          img: ({ src, alt }) => (
+            <img 
+              src={src} 
+              alt={alt || ''} 
+              className="max-w-full h-auto rounded-lg my-2"
+            />
+          ),
+        }}
+      >
+        {processedContent}
+      </ReactMarkdown>
     </div>
   );
 }
