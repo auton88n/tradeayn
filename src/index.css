@@ -1133,13 +1133,3 @@ button, a, input, textarea, select {
       min-width: 32px;
     }
   }
-
-/* ============================================
-   RTL FLEX REVERSAL FOR TOOLBAR
-   Allows natural RTL mirroring when dir="rtl"
-   ============================================ */
-
-[dir="rtl"].flex,
-[dir="rtl"] > .flex {
-  flex-direction: row-reverse;
-}
