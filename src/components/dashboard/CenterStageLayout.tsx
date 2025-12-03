@@ -227,6 +227,7 @@ export const CenterStageLayout = ({
   return (
     <div
       ref={containerRef}
+      dir="ltr"
       className="relative flex-1 flex flex-col items-center overflow-hidden"
     >
       {/* Background gradient */}
