@@ -88,18 +88,14 @@ export const TranscriptSidebar = ({
               "transition-all duration-300 ease-out",
               "shadow-lg",
               "group",
-              isArabic ? "left-0 rounded-l-none rounded-r-2xl border-l-0 border-r" : "right-0"
+              "right-0"
             )}
           >
             <motion.div
               animate={{ x: [0, -3, 0] }}
               transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
             >
-              {isArabic ? (
-                <ChevronRight className="w-5 h-5 text-foreground/60 group-hover:text-background transition-colors" />
-              ) : (
-                <ChevronLeft className="w-5 h-5 text-foreground/60 group-hover:text-background transition-colors" />
-              )}
+              <ChevronLeft className="w-5 h-5 text-foreground/60 group-hover:text-background transition-colors" />
             </motion.div>
           </motion.button>
         )}
@@ -109,9 +105,10 @@ export const TranscriptSidebar = ({
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ x: isArabic ? '-100%' : '100%', opacity: 0 }}
+            dir={isArabic ? 'rtl' : 'ltr'}
+            initial={{ x: '100%', opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            exit={{ x: isArabic ? '-100%' : '100%', opacity: 0 }}
+            exit={{ x: '100%', opacity: 0 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             className={cn(
               "fixed top-0 h-full w-80 z-50",
@@ -119,7 +116,7 @@ export const TranscriptSidebar = ({
               "border-border",
               "flex flex-col",
               "shadow-2xl",
-              isArabic ? "left-0 border-r" : "right-0 border-l"
+              "right-0 border-l"
             )}
           >
             {/* Header */}
