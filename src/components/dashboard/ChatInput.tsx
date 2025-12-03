@@ -224,7 +224,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
           <Textarea ref={textareaRef} value={inputMessage} onChange={handleTextareaChange} onKeyPress={handleKeyPress} onFocus={() => setIsInputFocused(true)} onBlur={() => setIsInputFocused(false)} placeholder="" disabled={isDisabled || isUploading} rows={1} unstyled={true} className="w-full resize-none min-h-[44px] max-h-[200px] text-base bg-transparent border-0 outline-none focus:ring-0 px-1 py-2" />
 
           {/* Typewriter Placeholder */}
-          {showPlaceholder && !inputMessage.trim() && !isInputFocused && <div className={cn("absolute top-[8px] pointer-events-none z-10 transition-all duration-300", direction === 'rtl' ? 'right-[4px]' : 'left-[4px]')}>
+          {showPlaceholder && !inputMessage.trim() && !isInputFocused && <div className="absolute top-[8px] left-[4px] pointer-events-none z-10 transition-all duration-300">
               <TypewriterText key={`${placeholderIndex}-${language}-${direction}`} text={placeholderTexts[placeholderIndex]} speed={50} className="typewriter-text text-muted-foreground" showCursor={true} />
             </div>}
 
