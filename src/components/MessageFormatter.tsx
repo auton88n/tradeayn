@@ -116,9 +116,20 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
     );
   };
 
-  // Preprocess to convert inline numbered/bullet lists to proper newlines
+  // Preprocess to convert inline tables, numbered/bullet lists to proper newlines
   const preprocessContent = (text: string): string => {
     let processed = text;
+    
+    // 0. Convert inline markdown tables to multi-line format
+    // Pattern: "| Header | Header | |---|---| | data | data |"
+    if (processed.includes('|') && processed.match(/\|[^|]+\|[^|]*\|[\s-:]+\|/)) {
+      // Split inline tables: add newline before separator row and data rows
+      processed = processed.replace(/\|\s*\|---/g, '|\n|---');
+      processed = processed.replace(/---\|\s*\|(?!\s*-)/g, '---|\n|');
+      // Split data rows (| followed by number or text after separator exists)
+      processed = processed.replace(/\|\s*\|\s*(\d+)/g, '|\n| $1');
+      processed = processed.replace(/\|\s*\|\s*([A-Za-z*])/g, '|\n| $1');
+    }
     
     // 1. Convert inline numbered lists like "1. item 2. item 3. item"
     if (processed.match(/\d+\.\s[^0-9]+\d+\.\s/)) {

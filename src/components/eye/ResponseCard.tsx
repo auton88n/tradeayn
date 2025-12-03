@@ -27,7 +27,7 @@ export const ResponseCard = ({ responses }: ResponseCardProps) => {
       <motion.div
         className={cn(
           "relative",
-          "w-[360px] min-w-[300px]",
+          "w-auto min-w-[320px] max-w-[520px]",
           "bg-white/95 dark:bg-gray-900/90",
           "backdrop-blur-md",
           "shadow-sm",
@@ -55,13 +55,15 @@ export const ResponseCard = ({ responses }: ResponseCardProps) => {
           damping: 26,
         }}
       >
-        {/* Content area */}
+        {/* Content area with proper scrolling */}
         <div className={cn(
-          "max-h-[50vh] overflow-y-auto",
-          "[&::-webkit-scrollbar]:w-1.5",
-          "[&::-webkit-scrollbar-track]:bg-transparent",
+          "max-h-[60vh] overflow-y-auto overflow-x-auto",
+          "[&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:h-2",
+          "[&::-webkit-scrollbar-track]:bg-gray-100/50 dark:[&::-webkit-scrollbar-track]:bg-gray-800/50",
+          "[&::-webkit-scrollbar-track]:rounded-full",
           "[&::-webkit-scrollbar-thumb]:bg-gray-300 dark:[&::-webkit-scrollbar-thumb]:bg-gray-600",
-          "[&::-webkit-scrollbar-thumb]:rounded-full"
+          "[&::-webkit-scrollbar-thumb]:rounded-full",
+          "[&::-webkit-scrollbar-thumb]:hover:bg-gray-400 dark:[&::-webkit-scrollbar-thumb]:hover:bg-gray-500"
         )}>
           <MessageFormatter 
             content={combinedContent} 
