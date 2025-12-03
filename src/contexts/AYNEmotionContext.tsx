@@ -14,8 +14,8 @@ export interface EmotionConfig {
 
 export const EMOTION_CONFIGS: Record<AYNEmotion, EmotionConfig> = {
   calm: {
-    color: 'hsl(0, 0%, 50%)',
-    glowColor: 'hsl(0, 0%, 80%)',
+    color: 'hsl(0, 0%, 100%)',
+    glowColor: 'hsl(0, 0%, 100%)',
     ringClass: 'ring-foreground/20',
     glowClass: 'shadow-[0_0_30px_hsl(0,0%,50%,0.2)]',
     irisScale: 1,
