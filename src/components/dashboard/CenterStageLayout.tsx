@@ -28,6 +28,7 @@ interface CenterStageLayoutProps {
   onDrop: (e: React.DragEvent) => void;
   fileInputRef: React.RefObject<HTMLInputElement>;
   sidebarOpen: boolean;
+  transcriptOpen?: boolean;
   modes: AIModeConfig[];
   onModeChange: (mode: AIMode) => void;
   prefillValue?: string;
@@ -51,6 +52,7 @@ export const CenterStageLayout = ({
   onDrop,
   fileInputRef,
   sidebarOpen,
+  transcriptOpen,
   modes,
   onModeChange,
   prefillValue,
@@ -335,6 +337,7 @@ export const CenterStageLayout = ({
         fileInputRef={fileInputRef}
         hasMessages={messages.length > 0}
         sidebarOpen={sidebarOpen}
+        transcriptOpen={transcriptOpen}
         modes={modes}
         onModeChange={onModeChange}
         prefillValue={prefillValue}

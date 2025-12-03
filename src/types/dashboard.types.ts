@@ -238,6 +238,7 @@ export interface ChatInputProps {
   fileInputRef: React.RefObject<HTMLInputElement>;
   hasMessages: boolean;
   sidebarOpen?: boolean;
+  transcriptOpen?: boolean;
   modes: AIModeConfig[];
   onModeChange: (mode: AIMode) => void;
   prefillValue?: string;

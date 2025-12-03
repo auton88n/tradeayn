@@ -565,6 +565,17 @@ button, a, input, textarea, select {
       left: 50%;
       transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
+
+    /* Transcript (right) sidebar OPEN adjustments */
+    .input-area.sidebar-open.transcript-open.bottom-position {
+      left: calc(50% + 120px - 160px); /* Offset left for both sidebars */
+      max-width: calc(100% - 480px - 48px); /* 240px left + 320px right + padding */
+    }
+
+    .input-area.sidebar-closed.transcript-open.bottom-position {
+      left: calc(50% - 160px); /* Offset left for right sidebar only */
+      max-width: calc(100% - 320px - 48px); /* 320px right + padding */
+    }
   }
 
   /* RTL Support */
