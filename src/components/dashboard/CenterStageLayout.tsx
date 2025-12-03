@@ -359,13 +359,11 @@ export const CenterStageLayout = ({
         >
           <EmotionalEye size="lg" />
 
-          {/* Unified Suggestions Card on the LEFT side of eye */}
-          <div className="absolute top-1/2 right-full -translate-y-1/2 mr-8">
-            <SuggestionsCard
-              suggestions={suggestionBubbles}
-              onSuggestionClick={handleSuggestionClick}
-            />
-          </div>
+          {/* Individual Suggestion Cards arcing around LEFT side of eye */}
+          <SuggestionsCard
+            suggestions={suggestionBubbles}
+            onSuggestionClick={handleSuggestionClick}
+          />
 
           {/* Unified Response Card on the RIGHT side of eye */}
           <div className="absolute top-1/2 left-full -translate-y-1/2 ml-8">

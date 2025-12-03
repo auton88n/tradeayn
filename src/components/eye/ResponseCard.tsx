@@ -31,12 +31,13 @@ export const ResponseCard = ({ responses }: ResponseCardProps) => {
       <motion.div
         className={cn(
           "relative",
-          isVeryLong ? "max-w-[600px]" : "max-w-[480px]",
+          "w-[480px] min-w-[420px]",
+          isVeryLong && "w-[560px]",
           "bg-white/98 dark:bg-gray-900/95",
           "backdrop-blur-xl",
           "shadow-[0_8px_32px_rgba(0,0,0,0.08),0_2px_8px_rgba(0,0,0,0.04)]",
           "border border-gray-200/60 dark:border-gray-800/50",
-          "px-5 py-4 rounded-2xl rounded-bl-md"
+          "px-6 py-5 rounded-2xl rounded-bl-md"
         )}
         initial={{
           x: -30,
