@@ -258,28 +258,23 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
             </div>}
         </div>
 
-        {/* Row 2: Toolbar */}
-        <div 
-          className="flex items-center justify-between w-full pt-2 mt-auto"
-          dir="ltr"
-        >
-          {/* Left: Action Buttons */}
-          <div className="flex items-center gap-1">
-            {/* Plus Button for File Attachment */}
-            {supportsFileAttachment && <button onClick={() => fileInputRef.current?.click()} disabled={isDisabled || isUploading} className="toolbar-button w-8 h-8 md:w-9 md:h-9" title="Attach file">
-                <Plus className="w-4 h-4" />
-              </button>}
+        {/* Row 2: Toolbar - ABSOLUTE POSITIONING TO LOCK BUTTON POSITIONS */}
+        <div className="relative w-full pt-2 mt-auto" style={{ height: '44px', direction: 'ltr' }}>
+          {/* Plus Button - ABSOLUTE LEFT */}
+          {supportsFileAttachment && (
+            <button 
+              onClick={() => fileInputRef.current?.click()} 
+              disabled={isDisabled || isUploading} 
+              className="toolbar-button w-8 h-8 md:w-9 md:h-9 absolute left-0 top-2" 
+              style={{ left: '0', position: 'absolute' }}
+              title="Attach file"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          )}
 
-            {/* Settings Button (future functionality) */}
-            
-
-            {/* History Button (future functionality) */}
-            
-          </div>
-
-          {/* Right: Mode Selector + Send Button */}
-          <div className="flex items-center gap-2">
-            {/* Mode Selector Dropdown */}
+          {/* Mode Selector - ABSOLUTE CENTER-RIGHT */}
+          <div className="absolute top-2" style={{ right: '52px', position: 'absolute' }}>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="mode-selector-button h-7 md:h-8 px-2 md:px-3 rounded-lg hover:bg-muted/80 transition-all">
@@ -298,32 +293,35 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
                   data-[side=bottom]:slide-in-from-top-2 data-[side=top]:slide-in-from-bottom-2"
               >
                 <div>
-                  {modes.map(mode => <DropdownMenuItem 
-                    key={mode.name} 
-                    onClick={() => onModeChange(mode.name)} 
-                    className="cursor-pointer hover:bg-accent/50 transition-colors"
-                  >
+                  {modes.map(mode => (
+                    <DropdownMenuItem 
+                      key={mode.name} 
+                      onClick={() => onModeChange(mode.name)} 
+                      className="cursor-pointer hover:bg-accent/50 transition-colors"
+                    >
                       <mode.icon className="w-4 h-4 mr-2" />
                       <span>{mode.translatedName}</span>
                       {selectedMode === mode.name && <span className="ml-auto text-primary">✓</span>}
-                    </DropdownMenuItem>)}
+                    </DropdownMenuItem>
+                  ))}
                 </div>
               </DropdownMenuContent>
             </DropdownMenu>
-
-            {/* Send Button */}
-            <button 
-              className={cn(
-                "send-button-square w-8 h-8 md:w-9 md:h-9 transition-all duration-200 active:scale-95 hover:scale-105", 
-                getSendButtonClass(selectedMode)
-              )} 
-              onClick={handleSend} 
-              disabled={!inputMessage.trim() && !selectedFile || isDisabled || isUploading} 
-              title="Send message"
-            >
-              <ArrowUp className="w-5 h-5 md:w-[22px] md:h-[22px]" strokeWidth={2.5} />
-            </button>
           </div>
+
+          {/* Send Button - ABSOLUTE RIGHT */}
+          <button 
+            className={cn(
+              "send-button-square w-8 h-8 md:w-9 md:h-9 transition-all duration-200 active:scale-95 hover:scale-105 absolute top-2", 
+              getSendButtonClass(selectedMode)
+            )}
+            style={{ right: '0', position: 'absolute' }}
+            onClick={handleSend} 
+            disabled={!inputMessage.trim() && !selectedFile || isDisabled || isUploading} 
+            title="Send message"
+          >
+            <ArrowUp className="w-5 h-5 md:w-[22px] md:h-[22px]" strokeWidth={2.5} />
+          </button>
         </div>
       </div>
     </div>;
