@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -106,14 +106,20 @@ export const useAuth = (user: User): UseAuthReturn => {
     setHasAcceptedTerms(accepted);
   }, [user.id]);
 
+  // Ref to prevent multiple device tracking calls
+  const hasTrackedDevice = useRef(false);
+
   // Load all auth data on mount and track device login
   useEffect(() => {
     checkAccess();
     checkAdminRole();
     loadUserProfile();
     
-    // Track device login
-    trackDeviceLogin(user.id);
+    // Track device login only once per session
+    if (!hasTrackedDevice.current) {
+      hasTrackedDevice.current = true;
+      trackDeviceLogin(user.id);
+    }
   }, [checkAccess, checkAdminRole, loadUserProfile, user.id]);
 
   return {
