@@ -189,7 +189,9 @@ export const Sidebar = ({
                 "pl-9 h-9 text-sm rounded-xl",
                 "bg-transparent border border-border",
                 "placeholder:text-foreground/40",
-                "focus:bg-background focus:border-foreground focus:ring-0",
+                "focus:bg-background focus:border-foreground/50",
+                "focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0",
+                "focus:outline-none focus-visible:outline-none",
                 "transition-all duration-300"
               )}
             />
@@ -372,7 +374,7 @@ export const Sidebar = ({
                 <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-500 border-2 border-background" />
               </div>
               <div className="flex-1 min-w-0 text-left">
-                <p className="text-sm font-medium truncate">
+                <p className="text-sm font-medium truncate text-foreground group-hover:text-background transition-colors">
                   {userName || t('common.user')}
                 </p>
                 <p className="text-xs text-foreground/60 group-hover:text-background/70 truncate">
