@@ -295,7 +295,7 @@ export const Sidebar = ({
                                 <div className="w-6 h-6 rounded-lg bg-black dark:bg-white group-hover:bg-background flex items-center justify-center flex-shrink-0 transition-colors">
                                   <MessageSquare className="w-3 h-3 text-white dark:text-black group-hover:text-foreground" />
                                 </div>
-                                <span className="text-sm font-medium truncate flex-1 min-w-0 text-black dark:text-white group-hover:text-background transition-colors">
+                                <span className="text-sm font-medium truncate flex-1 min-w-0 text-black dark:text-white">
                                   {chat.title}
                                 </span>
                                 <button
