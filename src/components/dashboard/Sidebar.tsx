@@ -279,6 +279,7 @@ export const Sidebar = ({
                           )}
                           <SidebarMenuButton 
                             onClick={() => !showChatSelection && onLoadChat(chat)} 
+                            tooltip={undefined}
                             className={cn(
                               "flex-1 h-auto py-3 px-3 rounded-xl group",
                               "hover:bg-foreground hover:text-background active:scale-[0.98]",
@@ -424,7 +425,7 @@ export const Sidebar = ({
             <Button 
               onClick={onLogout}
               variant="ghost" 
-              className="w-full justify-start h-9 px-3 rounded-lg text-destructive hover:bg-destructive hover:text-destructive-foreground"
+              className="w-full justify-start h-9 px-3 rounded-lg text-destructive hover:bg-destructive hover:text-white"
             >
               <LogOut className="w-4 h-4 mr-2.5" />
               {t('auth.signOut')}
