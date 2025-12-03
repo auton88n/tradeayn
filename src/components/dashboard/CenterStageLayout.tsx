@@ -93,7 +93,7 @@ export const CenterStageLayout = ({
     const inputRect = inputRef.current.getBoundingClientRect();
     return {
       x: inputRect.left + inputRect.width / 2,
-      y: inputRect.top,
+      y: inputRect.top + 30, // Offset to start from textarea area
     };
   }, []);
 
@@ -293,27 +293,26 @@ export const CenterStageLayout = ({
       )}
 
       {/* Input area - ChatInput handles its own fixed positioning */}
-      <div ref={inputRef}>
-        <ChatInput
-          onSend={handleSendWithAnimation}
-          isDisabled={isDisabled}
-          selectedMode={selectedMode}
-          selectedFile={selectedFile}
-          isUploading={isUploading}
-          isDragOver={isDragOver}
-          onFileSelect={onFileSelect}
-          onRemoveFile={onRemoveFile}
-          onDragEnter={onDragEnter}
-          onDragLeave={onDragLeave}
-          onDragOver={onDragOver}
-          onDrop={onDrop}
-          fileInputRef={fileInputRef}
-          hasMessages={messages.length > 0}
-          sidebarOpen={sidebarOpen}
-          modes={modes}
-          onModeChange={onModeChange}
-        />
-      </div>
+      <ChatInput
+        ref={inputRef}
+        onSend={handleSendWithAnimation}
+        isDisabled={isDisabled}
+        selectedMode={selectedMode}
+        selectedFile={selectedFile}
+        isUploading={isUploading}
+        isDragOver={isDragOver}
+        onFileSelect={onFileSelect}
+        onRemoveFile={onRemoveFile}
+        onDragEnter={onDragEnter}
+        onDragLeave={onDragLeave}
+        onDragOver={onDragOver}
+        onDrop={onDrop}
+        fileInputRef={fileInputRef}
+        hasMessages={messages.length > 0}
+        sidebarOpen={sidebarOpen}
+        modes={modes}
+        onModeChange={onModeChange}
+      />
     </div>
   );
 };

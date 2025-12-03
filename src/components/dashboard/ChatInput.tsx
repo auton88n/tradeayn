@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, forwardRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowUp, Paperclip, X, Plus, ChevronDown, SlidersHorizontal, Clock } from 'lucide-react';
@@ -18,7 +18,8 @@ const getSendButtonClass = (mode: string) => {
   if (modeName.includes('civil')) return 'mode-teal';
   return 'mode-default';
 };
-export const ChatInput = ({
+
+export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
   onSend,
   isDisabled,
   selectedMode,
@@ -36,7 +37,7 @@ export const ChatInput = ({
   sidebarOpen = true,
   modes,
   onModeChange
-}: ChatInputProps) => {
+}, ref) => {
   const [inputMessage, setInputMessage] = useState('');
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
@@ -128,7 +129,7 @@ export const ChatInput = ({
 
   // Enable file attachments for all modes
   const supportsFileAttachment = true;
-  return <div className={cn("input-area bottom-position", sidebarOpen ? "sidebar-open" : "sidebar-closed", isDragOver && "drag-over")} onDragEnter={onDragEnter} onDragLeave={onDragLeave} onDragOver={onDragOver} onDrop={onDrop}>
+  return <div ref={ref} className={cn("input-area bottom-position", sidebarOpen ? "sidebar-open" : "sidebar-closed", isDragOver && "drag-over")} onDragEnter={onDragEnter} onDragLeave={onDragLeave} onDragOver={onDragOver} onDrop={onDrop}>
       {/* Drag Overlay */}
       {isDragOver && <div className="absolute inset-0 bg-primary/10 backdrop-blur-sm rounded-3xl border-2 border-primary border-dashed flex flex-col items-center justify-center z-50 pointer-events-none">
           <Paperclip className="w-12 h-12 text-primary mb-2" />
@@ -229,4 +230,6 @@ export const ChatInput = ({
         </div>
       </div>
     </div>;
-};
+});
+
+ChatInput.displayName = 'ChatInput';
