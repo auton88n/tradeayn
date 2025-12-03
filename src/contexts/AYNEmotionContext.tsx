@@ -69,6 +69,15 @@ export const EMOTION_CONFIGS: Record<AYNEmotion, EmotionConfig> = {
   },
 };
 
+// Keywords that trigger excitement/surprise reaction
+const EXCITING_KEYWORDS = [
+  'amazing', 'incredible', 'perfect', 'excellent', 'brilliant', 'fantastic',
+  'wow', 'awesome', 'great', 'success', 'achievement', 'breakthrough',
+  'important', 'urgent', 'critical', 'milestone', 'winner', 'congratulations',
+  'exciting', 'love', 'best', 'outstanding', 'exceptional', 'remarkable',
+  'رائع', 'ممتاز', 'مذهل', 'عظيم', 'مبروك', 'نجاح', 'إنجاز'
+];
+
 interface AYNEmotionContextType {
   emotion: AYNEmotion;
   emotionConfig: EmotionConfig;
@@ -87,6 +96,10 @@ interface AYNEmotionContextType {
   triggerAttentionBlink: () => void;
   lastActivityTime: number;
   updateActivity: () => void;
+  // Surprise/excitement reaction
+  isSurprised: boolean;
+  triggerSurprise: () => void;
+  detectExcitement: (text: string) => boolean;
 }
 
 const AYNEmotionContext = createContext<AYNEmotionContextType | undefined>(undefined);
@@ -99,7 +112,9 @@ export const AYNEmotionProvider = ({ children }: { children: ReactNode }) => {
   const [isUserTyping, setIsUserTyping] = useState(false);
   const [isAttentive, setIsAttentive] = useState(false);
   const [lastActivityTime, setLastActivityTime] = useState(Date.now());
+  const [isSurprised, setIsSurprised] = useState(false);
   const blinkTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const surpriseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const setEmotion = useCallback((newEmotion: AYNEmotion) => {
     setEmotionState(newEmotion);
@@ -138,6 +153,29 @@ export const AYNEmotionProvider = ({ children }: { children: ReactNode }) => {
     setLastActivityTime(Date.now());
   }, []);
 
+  // Trigger brief surprise/excitement enlargement
+  const triggerSurprise = useCallback(() => {
+    if (surpriseTimeoutRef.current) {
+      clearTimeout(surpriseTimeoutRef.current);
+    }
+    setIsSurprised(true);
+    surpriseTimeoutRef.current = setTimeout(() => {
+      setIsSurprised(false);
+    }, 600);
+  }, []);
+
+  // Detect exciting keywords in text
+  const detectExcitement = useCallback((text: string): boolean => {
+    const lowerText = text.toLowerCase();
+    const hasExcitingKeyword = EXCITING_KEYWORDS.some(keyword => 
+      lowerText.includes(keyword.toLowerCase())
+    );
+    if (hasExcitingKeyword) {
+      triggerSurprise();
+    }
+    return hasExcitingKeyword;
+  }, [triggerSurprise]);
+
   const emotionConfig = EMOTION_CONFIGS[emotion];
 
   return (
@@ -159,6 +197,9 @@ export const AYNEmotionProvider = ({ children }: { children: ReactNode }) => {
         triggerAttentionBlink,
         lastActivityTime,
         updateActivity,
+        isSurprised,
+        triggerSurprise,
+        detectExcitement,
       }}
     >
       {children}

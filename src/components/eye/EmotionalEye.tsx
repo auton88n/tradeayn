@@ -19,7 +19,8 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
     isResponding,
     isUserTyping,
     isAttentive,
-    lastActivityTime
+    lastActivityTime,
+    isSurprised
   } = useAYNEmotion();
   const [isHovered, setIsHovered] = useState(false);
   const lastBlinkRef = useRef(Date.now());
@@ -209,8 +210,14 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
         style={{ x: combinedX, y: combinedY, rotate: smoothTilt }}
         className="relative z-10 flex items-center justify-center group cursor-pointer will-change-transform"
         initial={{ scale: 0.92, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
+        animate={{ 
+          scale: isSurprised ? 1.12 : 1, 
+          opacity: 1 
+        }}
+        transition={{ 
+          duration: isSurprised ? 0.2 : 0.6, 
+          ease: isSurprised ? [0.34, 1.56, 0.64, 1] : "easeOut" 
+        }}
         onMouseEnter={() => setIsHovered(true)} 
         onMouseLeave={() => setIsHovered(false)}
       >
