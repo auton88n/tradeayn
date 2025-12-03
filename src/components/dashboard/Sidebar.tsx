@@ -109,8 +109,8 @@ export const Sidebar = ({
             {/* Left: AYN Brand with Brain icon */}
             <div className="flex items-center gap-3">
               <div className="relative">
-                <div className="w-9 h-9 rounded-xl bg-foreground/10 flex items-center justify-center">
-                  <Brain className="w-4 h-4 text-foreground" />
+                <div className="w-9 h-9 rounded-xl bg-foreground flex items-center justify-center">
+                  <Brain className="w-4 h-4 text-background" />
                 </div>
                 {/* Status dot */}
                 <div className={cn(
@@ -278,17 +278,18 @@ export const Sidebar = ({
                           <SidebarMenuButton 
                             onClick={() => !showChatSelection && onLoadChat(chat)} 
                             className={cn(
-                              "flex-1 h-auto py-3 px-3 rounded-xl group !overflow-visible",
+                              "flex-1 h-auto py-3 px-3 rounded-xl group",
                               "hover:bg-foreground hover:text-background active:scale-[0.98]",
                               "transition-all duration-200",
                               isPinned && "bg-foreground/5 border border-border"
                             )}
+                            style={{ overflow: 'visible' }}
                           >
                             <div className="w-full space-y-1.5">
                               {/* Title row */}
                               <div className="flex items-center gap-2 w-full">
-                                <div className="w-6 h-6 rounded-lg bg-foreground/10 group-hover:bg-background/20 flex items-center justify-center flex-shrink-0 transition-colors">
-                                  <MessageSquare className="w-3 h-3 text-foreground/70 group-hover:text-background" />
+                                <div className="w-6 h-6 rounded-lg bg-foreground group-hover:bg-background flex items-center justify-center flex-shrink-0 transition-colors">
+                                  <MessageSquare className="w-3 h-3 text-background group-hover:text-foreground" />
                                 </div>
                                 <span className="text-sm font-medium truncate flex-1 min-w-0">
                                   {chat.title}
