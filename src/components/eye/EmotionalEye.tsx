@@ -86,8 +86,11 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
           animate={{ scale: [1, 1.01, 1] }}
           transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
         >
-          {/* soft inner ring */}
-          <div className="absolute inset-4 rounded-full bg-background/80 shadow-inner" />
+          {/* soft inner ring - EMOTION COLORED */}
+          <div 
+            className="absolute inset-4 rounded-full bg-background/80 shadow-inner transition-all duration-500"
+            style={{ border: `3px solid ${emotionConfig.color}` }}
+          />
 
           {/* actual eye (pupil + iris) - state-controlled blink */}
           <motion.svg 
@@ -117,16 +120,6 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
             {/* sclera subtle */}
             <circle cx="50" cy="50" r="48" fill="url(#emotional-sclera)" opacity="0.06" />
 
-            {/* Emotion-colored ring around the pupil (3rd circle) */}
-            <circle 
-              cx="50" 
-              cy="50" 
-              r={irisRadius + 8}
-              fill="none"
-              stroke={emotionConfig.color}
-              strokeWidth="3"
-              style={{ transition: 'stroke 0.5s ease, r 0.4s ease' }}
-            />
 
             {/* iris / pupil - PURE BLACK */}
             <circle 
