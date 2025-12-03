@@ -55,7 +55,7 @@ export const CenterStageLayout = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const eyeRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLDivElement>(null);
-  const { setEmotion, triggerAbsorption, triggerBlink, setIsResponding } = useAYNEmotion();
+  const { setEmotion, triggerAbsorption, triggerBlink, setIsResponding, detectExcitement } = useAYNEmotion();
   const {
     flyingBubble,
     responseBubbles,
@@ -166,6 +166,9 @@ export const CenterStageLayout = ({
         const emotion = analyzeResponseEmotion(lastMessage.content);
         setEmotion(emotion);
         setIsResponding(false);
+        
+        // Detect exciting keywords and trigger surprise enlargement
+        detectExcitement(lastMessage.content);
 
         // Emit response bubble
         const bubbleType = getBubbleType(lastMessage.content);
