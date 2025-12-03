@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
@@ -6,7 +7,7 @@ interface SuggestionBubbleProps {
   content: string;
   emoji?: string;
   isVisible: boolean;
-  onClick: (content: string) => void;
+  onClick: (content: string, emoji: string, position: { x: number; y: number }) => void;
   index: number;
 }
 
@@ -18,12 +19,25 @@ export const SuggestionBubble = ({
   onClick,
   index,
 }: SuggestionBubbleProps) => {
+  const bubbleRef = useRef<HTMLButtonElement>(null);
+
+  const handleClick = () => {
+    if (bubbleRef.current) {
+      const rect = bubbleRef.current.getBoundingClientRect();
+      onClick(content, emoji, {
+        x: rect.left + rect.width / 2 - 120, // Center adjustment
+        y: rect.top + rect.height / 2 - 24,
+      });
+    }
+  };
+
   return (
     <AnimatePresence>
       {isVisible && (
         <motion.button
+          ref={bubbleRef}
           key={id}
-          onClick={() => onClick(content)}
+          onClick={handleClick}
           className={cn(
             "group relative overflow-hidden",
             // Premium white glass card
@@ -43,25 +57,30 @@ export const SuggestionBubble = ({
             "cursor-pointer select-none"
           )}
           initial={{
-            x: -40,
+            x: -30,
+            y: 12,
             opacity: 0,
-            scale: 0.9,
+            scale: 0.85,
+            filter: 'blur(4px)',
           }}
           animate={{
             x: 0,
+            y: 0,
             opacity: 1,
             scale: 1,
+            filter: 'blur(0px)',
           }}
           exit={{
-            x: -30,
+            x: -20,
             opacity: 0,
-            scale: 0.95,
+            scale: 0.9,
+            filter: 'blur(2px)',
           }}
           transition={{
             type: 'spring',
-            stiffness: 300,
-            damping: 25,
-            delay: index * 0.08,
+            stiffness: 200,
+            damping: 20,
+            delay: index * 0.12,
           }}
           whileHover={{ x: 4 }}
         >

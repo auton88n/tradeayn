@@ -9,6 +9,15 @@ export interface FlyingBubble {
   endPosition: { x: number; y: number };
 }
 
+export interface FlyingSuggestion {
+  id: string;
+  content: string;
+  emoji: string;
+  status: 'flying' | 'absorbing' | 'done';
+  startPosition: { x: number; y: number };
+  endPosition: { x: number; y: number };
+}
+
 export interface ResponseBubble {
   id: string;
   content: string;
@@ -26,6 +35,7 @@ export interface SuggestionBubble {
 
 interface UseBubbleAnimationReturn {
   flyingBubble: FlyingBubble | null;
+  flyingSuggestion: FlyingSuggestion | null;
   responseBubbles: ResponseBubble[];
   suggestionBubbles: SuggestionBubble[];
   startMessageAnimation: (
@@ -34,6 +44,13 @@ interface UseBubbleAnimationReturn {
     eyePosition: { x: number; y: number }
   ) => void;
   completeAbsorption: () => void;
+  startSuggestionFlight: (
+    content: string,
+    emoji: string,
+    startPosition: { x: number; y: number },
+    endPosition: { x: number; y: number }
+  ) => void;
+  completeSuggestionAbsorption: () => void;
   emitResponseBubble: (content: string, type: BubbleType) => void;
   clearResponseBubbles: () => void;
   dismissBubble: (id: string) => void;
@@ -47,6 +64,7 @@ const MAX_VISIBLE_BUBBLES = 4;
 
 export const useBubbleAnimation = (): UseBubbleAnimationReturn => {
   const [flyingBubble, setFlyingBubble] = useState<FlyingBubble | null>(null);
+  const [flyingSuggestion, setFlyingSuggestion] = useState<FlyingSuggestion | null>(null);
   const [responseBubbles, setResponseBubbles] = useState<ResponseBubble[]>([]);
   const [suggestionBubbles, setSuggestionBubbles] = useState<SuggestionBubble[]>([]);
   const bubbleIdRef = useRef(0);
@@ -84,6 +102,44 @@ export const useBubbleAnimation = (): UseBubbleAnimationReturn => {
     // Clear after animation
     setTimeout(() => {
       setFlyingBubble(null);
+    }, 200);
+  }, []);
+
+  // Suggestion flight functions
+  const startSuggestionFlight = useCallback(
+    (
+      content: string,
+      emoji: string,
+      startPosition: { x: number; y: number },
+      endPosition: { x: number; y: number }
+    ) => {
+      const id = `flying-suggestion-${Date.now()}-${bubbleIdRef.current++}`;
+      
+      setFlyingSuggestion({
+        id,
+        content,
+        emoji,
+        status: 'flying',
+        startPosition,
+        endPosition,
+      });
+
+      // After flight completes, start absorption
+      setTimeout(() => {
+        setFlyingSuggestion((prev) =>
+          prev?.id === id ? { ...prev, status: 'absorbing' } : prev
+        );
+      }, 450);
+    },
+    []
+  );
+
+  const completeSuggestionAbsorption = useCallback(() => {
+    setFlyingSuggestion((prev) =>
+      prev ? { ...prev, status: 'done' } : null
+    );
+    setTimeout(() => {
+      setFlyingSuggestion(null);
     }, 200);
   }, []);
 
@@ -169,10 +225,13 @@ export const useBubbleAnimation = (): UseBubbleAnimationReturn => {
 
   return {
     flyingBubble,
+    flyingSuggestion,
     responseBubbles,
     suggestionBubbles,
     startMessageAnimation,
     completeAbsorption,
+    startSuggestionFlight,
+    completeSuggestionAbsorption,
     emitResponseBubble,
     clearResponseBubbles,
     dismissBubble,
