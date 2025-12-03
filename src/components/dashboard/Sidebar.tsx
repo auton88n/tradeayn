@@ -354,7 +354,11 @@ export const Sidebar = ({
           <PopoverTrigger asChild>
             <button className={cn(
               "flex items-center gap-3 p-4 w-full",
-              "cursor-pointer rounded-xl m-2 mb-3"
+              "cursor-pointer rounded-xl m-2 mb-3",
+              "bg-muted/50 hover:bg-muted",
+              "border border-border/50 hover:border-border",
+              "transition-all duration-200 ease-out",
+              "hover:shadow-md active:scale-[0.98]"
             )}>
               <div className="relative">
                 <Avatar className="w-10 h-10 ring-2 ring-border">
