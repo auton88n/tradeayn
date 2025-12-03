@@ -354,18 +354,12 @@ export const Sidebar = ({
           <PopoverTrigger asChild>
             <button className={cn(
               "flex items-center gap-3 p-4 w-full",
-              "hover:bg-foreground hover:text-background transition-all duration-300",
-              "cursor-pointer rounded-xl m-2 mb-3",
-              "group"
+              "cursor-pointer rounded-xl m-2 mb-3"
             )}>
               <div className="relative">
-                <Avatar className={cn(
-                  "w-10 h-10 ring-2 ring-border",
-                  "transition-all duration-300",
-                  "group-hover:ring-background/30 group-hover:scale-105"
-                )}>
+                <Avatar className="w-10 h-10 ring-2 ring-border">
                   <AvatarImage src={userAvatar} alt={userName || 'User'} />
-                  <AvatarFallback className="bg-foreground/10 text-foreground font-medium group-hover:bg-background/20 group-hover:text-background">
+                  <AvatarFallback className="bg-foreground/10 text-foreground font-medium">
                     {userName?.charAt(0) || userEmail?.charAt(0) || 'U'}
                   </AvatarFallback>
                 </Avatar>
@@ -373,10 +367,10 @@ export const Sidebar = ({
                 <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-500 border-2 border-background" />
               </div>
               <div className="flex-1 min-w-0 text-left">
-                <p className="text-sm font-medium truncate text-foreground group-hover:text-background transition-colors">
+                <p className="text-sm font-medium truncate text-black dark:text-white">
                   {userName || t('common.user')}
                 </p>
-                <p className="text-xs text-foreground/60 group-hover:text-background/70 truncate">
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                   {userEmail}
                 </p>
               </div>
