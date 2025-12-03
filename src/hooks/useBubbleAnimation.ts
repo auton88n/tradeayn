@@ -76,41 +76,27 @@ export const useBubbleAnimation = (): UseBubbleAnimationReturn => {
   const emitResponseBubble = useCallback((content: string, type: BubbleType) => {
     const id = `response-${Date.now()}-${bubbleIdRef.current++}`;
     
-    // Calculate position based on existing bubbles - stack vertically from eye level
-    const existingCount = responseBubbles.filter((b) => b.isVisible).length;
-    const yOffset = existingCount * 50;
-    
     const newBubble: ResponseBubble = {
       id,
       content,
       type,
       isVisible: true,
-      position: { x: 0, y: yOffset },
+      position: { x: 0, y: 0 },
     };
 
-    setResponseBubbles((prev) => {
-      // Keep max 3 visible bubbles
-      const visible = prev.filter((b) => b.isVisible);
-      if (visible.length >= 3) {
-        // Hide oldest
-        const oldest = visible[0];
-        return [
-          ...prev.map((b) =>
-            b.id === oldest.id ? { ...b, isVisible: false } : b
-          ),
-          newBubble,
-        ];
-      }
-      return [...prev, newBubble];
-    });
+    // Clear previous bubbles when new message arrives, then add new one
+    setResponseBubbles((prev) => [
+      ...prev.map((b) => ({ ...b, isVisible: false })),
+      newBubble,
+    ]);
 
-    // Auto-dismiss after 10 seconds
+    // Auto-dismiss after 5 minutes
     setTimeout(() => {
       setResponseBubbles((prev) =>
         prev.map((b) => (b.id === id ? { ...b, isVisible: false } : b))
       );
-    }, 10000);
-  }, [responseBubbles]);
+    }, 300000);
+  }, []);
 
   const clearResponseBubbles = useCallback(() => {
     setResponseBubbles((prev) =>
