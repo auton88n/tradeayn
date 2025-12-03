@@ -271,10 +271,10 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
             {/* sclera subtle */}
             <circle cx="50" cy="50" r="48" fill="url(#emotional-sclera)" opacity="0.06" />
 
-            {/* iris / pupil - emotion-tinted */}
+            {/* iris / pupil - always black, only brain changes color */}
             <defs>
               <radialGradient id="iris-gradient" cx="30%" cy="30%">
-                <stop offset="0%" stopColor={emotion === 'calm' ? '#1a1a1a' : emotionConfig.color} stopOpacity={emotion === 'calm' ? 1 : 0.3} />
+                <stop offset="0%" stopColor="#1a1a1a" stopOpacity="1" />
                 <stop offset="100%" stopColor="black" stopOpacity="1" />
               </radialGradient>
             </defs>
