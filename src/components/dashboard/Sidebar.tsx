@@ -420,7 +420,7 @@ export const Sidebar = ({
               className="w-full justify-start h-9 px-3 rounded-lg text-destructive hover:bg-destructive hover:text-white"
             >
               <LogOut className="w-4 h-4 mr-2.5" />
-              {t('auth.signOut')}
+              {t('common.signOut')}
             </Button>
           </PopoverContent>
         </Popover>
