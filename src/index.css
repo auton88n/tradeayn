@@ -615,7 +615,11 @@ button, a, input, textarea, select {
     margin-left: 0.5rem;
   }
 
-  /* RTL Layout - No global flex reversal (handled per-component) */
+  /* RTL Layout - Flex Direction Reversals */
+  [dir="rtl"] .flex {
+    flex-direction: row-reverse;
+  }
+
   [dir="rtl"] .flex-col {
     flex-direction: column;
   }
