@@ -280,7 +280,9 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
               flexDirection: 'row', 
               alignItems: 'center',
               gap: '0.25rem',
-              direction: 'ltr'
+              direction: 'ltr',
+              marginLeft: 0,
+              paddingLeft: 0
             }}
           >
             {/* Plus Button for File Attachment */}
