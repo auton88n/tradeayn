@@ -242,7 +242,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
         </div>
 
         {/* Row 2: Toolbar */}
-        <div className="flex items-center justify-between w-full pt-2">
+        <div className="flex items-center justify-between w-full pt-2" dir={direction}>
           {/* Left: Action Buttons */}
           <div className="flex items-center gap-1">
             {/* Plus Button for File Attachment */}
@@ -266,7 +266,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
                   <span className="text-xs md:text-sm font-medium truncate max-w-[80px] md:max-w-[120px]">
                     {modes.find(m => m.name === selectedMode)?.translatedName || 'Mode'}
                   </span>
-                  <ChevronDown className="w-3 h-3 ml-1 opacity-50" />
+                  <ChevronDown className={cn("w-3 h-3 opacity-50", direction === 'rtl' ? "mr-1" : "ml-1")} />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent 
@@ -282,9 +282,9 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
                   onClick={() => onModeChange(mode.name)} 
                   className="cursor-pointer hover:bg-accent/50 transition-colors"
                 >
-                    <mode.icon className="w-4 h-4 mr-2" />
+                    <mode.icon className={cn("w-4 h-4", direction === 'rtl' ? "ml-2" : "mr-2")} />
                     <span>{mode.translatedName}</span>
-                    {selectedMode === mode.name && <span className="ml-auto text-primary">✓</span>}
+                    {selectedMode === mode.name && <span className={cn("text-primary", direction === 'rtl' ? "mr-auto" : "ml-auto")}>✓</span>}
                   </DropdownMenuItem>)}
               </DropdownMenuContent>
             </DropdownMenu>
