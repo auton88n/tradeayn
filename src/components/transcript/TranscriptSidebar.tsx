@@ -134,7 +134,7 @@ export const TranscriptSidebar = ({
                   </div>
                   <div>
                     <h2 className="font-semibold text-foreground text-sm tracking-tight">
-                      {isArabic ? 'سجل المحادثة' : 'Transcript'}
+                      {isArabic ? 'محادثة' : 'Chat'}
                     </h2>
                     <p className="text-xs text-foreground/60">
                       {isArabic ? `${messages.length} رسالة` : `${messages.length} messages`}
