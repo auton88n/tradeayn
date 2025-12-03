@@ -1,1 +1,16 @@
 project_id = "dfkoxuokfkttjhfjcecx"
+
+[functions.ayn-webhook]
+verify_jwt = true
+
+[functions.file-upload]
+verify_jwt = true
+
+[functions.custom-auth-emails]
+verify_jwt = false
+
+[functions.ai-email-assistant]
+verify_jwt = true
+
+[functions.generate-suggestions]
+verify_jwt = true

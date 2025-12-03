@@ -10,9 +10,10 @@ import { ChatInput } from './ChatInput';
 import { useBubbleAnimation } from '@/hooks/useBubbleAnimation';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
 import { analyzeResponseEmotion, getBubbleType } from '@/utils/emotionMapping';
+import { supabase } from '@/integrations/supabase/client';
 import type { Message, AIMode, AIModeConfig } from '@/types/dashboard.types';
 
-// Default suggestions that AYN can offer
+// Fallback suggestions when API fails
 const DEFAULT_SUGGESTIONS = [
   { content: 'Tell me more', emoji: '💬' },
   { content: 'Explain simpler', emoji: '🔍' },
@@ -87,6 +88,30 @@ export const CenterStageLayout = ({
   const [lastProcessedMessageId, setLastProcessedMessageId] = useState<string | null>(null);
   const [showParticleBurst, setShowParticleBurst] = useState(false);
   const [burstPosition, setBurstPosition] = useState({ x: 0, y: 0 });
+  const [lastUserMessage, setLastUserMessage] = useState<string>('');
+
+  // Fetch dynamic suggestions based on conversation context
+  const fetchDynamicSuggestions = useCallback(async (userMessage: string, aynResponse: string, mode: AIMode) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-suggestions', {
+        body: { 
+          lastUserMessage: userMessage,
+          lastAynResponse: aynResponse,
+          mode 
+        }
+      });
+      
+      if (error) {
+        console.error('Failed to fetch suggestions:', error);
+        return DEFAULT_SUGGESTIONS;
+      }
+      
+      return data?.suggestions || DEFAULT_SUGGESTIONS;
+    } catch (err) {
+      console.error('Error fetching suggestions:', err);
+      return DEFAULT_SUGGESTIONS;
+    }
+  }, []);
 
   // Calculate eye position based on visible bubbles
   const visibleBubbles = responseBubbles.filter(b => b.isVisible);
@@ -136,6 +161,9 @@ export const CenterStageLayout = ({
   const handleSendWithAnimation = useCallback(
     async (content: string, file?: File | null) => {
       if (!content.trim() && !file) return;
+
+      // Track the user's message for suggestion context
+      setLastUserMessage(content);
 
       // Clear previous response bubbles and suggestions
       clearResponseBubbles();
@@ -283,13 +311,18 @@ export const CenterStageLayout = ({
           totalBubbles = 1;
         }
         
-        // Show suggestions after response bubbles finish appearing
-        setTimeout(() => {
-          emitSuggestions(DEFAULT_SUGGESTIONS);
+        // Show dynamic suggestions after response bubbles finish appearing
+        setTimeout(async () => {
+          const suggestions = await fetchDynamicSuggestions(
+            lastUserMessage || 'Hello',
+            lastMessage.content,
+            selectedMode
+          );
+          emitSuggestions(suggestions);
         }, totalBubbles * 600 + 800);
       }, 150); // Delay for blink animation
     }
-  }, [messages, lastProcessedMessageId, setEmotion, setIsResponding, emitResponseBubble, emitSuggestions, triggerBlink, detectExcitement]);
+  }, [messages, lastProcessedMessageId, setEmotion, setIsResponding, emitResponseBubble, emitSuggestions, triggerBlink, detectExcitement, fetchDynamicSuggestions, lastUserMessage, selectedMode]);
 
   // Update emotion when typing - only set thinking if not recently set from a response
   useEffect(() => {
