@@ -58,7 +58,7 @@ export const useBubbleAnimation = (): UseBubbleAnimationReturn => {
         setFlyingBubble((prev) =>
           prev?.id === id ? { ...prev, status: 'absorbing' } : prev
         );
-      }, 800);
+      }, 500);
     },
     []
   );

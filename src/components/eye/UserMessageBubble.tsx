@@ -29,33 +29,38 @@ export const UserMessageBubble = ({
       initial={{
         x: startPosition.x,
         y: startPosition.y,
-        scale: 0,
-        opacity: 0,
+        scale: 1,
+        opacity: 1,
+        rotate: 0,
       }}
       animate={
         status === 'flying'
           ? {
               x: endPosition.x,
               y: endPosition.y,
-              scale: 1,
+              scale: 0.85,
               opacity: 1,
+              rotate: -3,
             }
           : {
               x: endPosition.x,
               y: endPosition.y,
-              scale: 0.3,
+              scale: 0,
               opacity: 0,
+              rotate: 0,
             }
       }
       transition={
         status === 'flying'
           ? {
-              duration: 0.8,
-              ease: [0.4, 0.0, 0.2, 1],
+              type: 'spring',
+              stiffness: 300,
+              damping: 25,
+              mass: 0.8,
             }
           : {
-              duration: 0.2,
-              ease: 'easeOut',
+              duration: 0.15,
+              ease: 'easeIn',
             }
       }
       onAnimationComplete={() => {
