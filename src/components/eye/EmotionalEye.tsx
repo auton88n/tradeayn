@@ -20,7 +20,8 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
     isUserTyping,
     isAttentive,
     lastActivityTime,
-    isSurprised
+    isSurprised,
+    isPulsing
   } = useAYNEmotion();
   const [isHovered, setIsHovered] = useState(false);
   const lastBlinkRef = useRef(Date.now());
@@ -240,8 +241,48 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
             ease: "easeInOut" 
           }}
         >
-          {/* soft inner ring */}
-          <div className="absolute inset-4 rounded-full bg-background/80 shadow-inner" />
+        {/* Emotional Ring - Dynamic glow, breathing, and spinning */}
+        <motion.div 
+          className="absolute inset-4 rounded-full"
+          animate={{ 
+            scale: isPulsing 
+              ? [1, 1.15, 1] 
+              : isResponding || isAbsorbing 
+                ? [1, 1.06, 1] 
+                : [1, 1.02, 1],
+            rotate: emotion === 'thinking' ? [0, 360] : 0,
+            opacity: isResponding ? [0.85, 1, 0.85] : 0.9,
+          }}
+          transition={{ 
+            scale: { 
+              duration: isPulsing ? 0.4 : isResponding ? 1.5 : emotionConfig.breathingSpeed, 
+              repeat: isPulsing ? 0 : Infinity, 
+              ease: "easeInOut" 
+            },
+            rotate: { 
+              duration: 8, 
+              repeat: Infinity, 
+              ease: "linear" 
+            },
+            opacity: { 
+              duration: 2, 
+              repeat: Infinity, 
+              ease: "easeInOut" 
+            },
+          }}
+          style={{
+            backgroundColor: emotion === 'calm' 
+              ? 'hsla(220, 9%, 46%, 0.15)'
+              : `${emotionConfig.glowColor}20`,
+            boxShadow: isResponding || isUserTyping || isAttentive
+              ? `inset 0 2px 15px ${emotionConfig.glowColor}40, 0 0 25px ${emotionConfig.glowColor}30`
+              : 'inset 0 2px 10px hsla(0, 0%, 0%, 0.1)',
+            border: emotion === 'calm' 
+              ? '1px solid hsla(220, 9%, 46%, 0.2)'
+              : `1px solid ${emotionConfig.glowColor}40`,
+            transition: 'background-color 1.2s ease, box-shadow 0.8s ease, border-color 1.2s ease',
+          }}
+        />
 
           {/* actual eye (pupil + iris) - state-controlled blink */}
           <motion.svg 
