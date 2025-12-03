@@ -616,8 +616,7 @@ button, a, input, textarea, select {
   }
 
   /* RTL Layout - Flex Direction Reversals */
-  /* Only reverse flex containers that don't have explicit dir="ltr" */
-  [dir="rtl"] .flex:not([dir="ltr"]) {
+  [dir="rtl"] .flex {
     flex-direction: row-reverse;
   }
 
@@ -636,23 +635,7 @@ button, a, input, textarea, select {
     margin-left: 0;
   }
 
-  /* Force chat input toolbar to ALWAYS use LTR layout */
-  /* This keeps buttons in identical positions for both languages */
-  [dir="rtl"] .input-container,
-  [dir="rtl"] .input-container .flex,
-  [dir="rtl"] .input-area .flex,
-  [dir="rtl"] [dir="ltr"].flex {
-    flex-direction: row !important;
-  }
-
-  /* Keep column layouts as columns */
-  [dir="rtl"] .input-container.flex-col,
-  [dir="rtl"] .input-container .flex-col,
-  [dir="rtl"] .input-area .flex-col {
-    flex-direction: column !important;
-  }
-
-  /* Force chat input text to behave like LTR for layout, but allow RTL text */
+  /* Force chat input to behave like LTR for consistency */
   [dir="rtl"] .message-input {
     direction: ltr !important;
     text-align: left !important;
@@ -661,6 +644,12 @@ button, a, input, textarea, select {
   [dir="rtl"] .message-input::placeholder {
     direction: ltr !important;
     text-align: left !important;
+  }
+
+  /* Force input container to use LTR layout for consistency */
+  [dir="rtl"] .input-container {
+    direction: ltr !important;
+    flex-direction: row !important;
   }
 
   /* Remove old RTL input container rules - now handled above */
