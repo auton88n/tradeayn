@@ -274,9 +274,10 @@ export const CenterStageLayout = ({
         // Emit response bubble
         const bubbleType = getBubbleType(lastMessage.content);
       
-        // Split long responses into multiple bubbles with larger max length
+        // Clean and split long responses into multiple bubbles
         const maxLength = 300;
-        const response = lastMessage.content;
+        // Remove leading punctuation and excess whitespace
+        const response = lastMessage.content.replace(/^[!?\s]+/, '').trim();
         let totalBubbles = 0;
       
         if (response.length > maxLength) {
