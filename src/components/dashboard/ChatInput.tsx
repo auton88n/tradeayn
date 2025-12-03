@@ -260,7 +260,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
 
         {/* Row 2: Toolbar */}
         <div 
-          className="flex items-center justify-between w-full pt-2"
+          className="flex items-center justify-between w-full pt-2 mt-auto"
           dir={language === 'ar' ? 'rtl' : 'ltr'}
         >
           {/* Left: Action Buttons */}
