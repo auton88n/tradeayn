@@ -667,12 +667,8 @@ button, a, input, textarea, select {
     color: rgba(255, 255, 255, 0.5) !important;
   }
 
-  /* Auth label text - proper contrast for light and dark modes */
+  /* Auth label text */
   .auth-label {
-    color: black !important;
-  }
-
-  .dark .auth-label {
     color: white !important;
   }
 
