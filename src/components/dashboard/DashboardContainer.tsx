@@ -306,7 +306,7 @@ const DashboardContent = ({
   }, [handleNewChat]);
 
   return (
-    <div className="flex h-screen w-full">
+    <div className="flex h-screen w-full" dir="ltr">
       <ShadcnSidebar>
         <DashboardSidebar
           userName={auth.userProfile?.contact_person || user.user_metadata?.name || user.email?.split('@')[0]}
