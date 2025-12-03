@@ -116,8 +116,21 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
     );
   };
 
+  // Preprocess to convert inline numbered lists to proper newlines
+  const preprocessContent = (text: string): string => {
+    // Detect inline numbered lists like "1. item 2. item 3. item"
+    // Only convert if we find multiple consecutive numbered items
+    if (text.match(/\d+\.\s[^0-9]+\d+\.\s/)) {
+      // Insert newline before each numbered item (except the first if at start)
+      return text.replace(/(\s)(\d+)\.\s/g, '\n$2. ').trim();
+    }
+    return text;
+  };
+
   const formatTextContent = (text: string) => {
-    const lines = text.split('\n');
+    // Preprocess to handle inline numbered lists
+    const processedText = preprocessContent(text);
+    const lines = processedText.split('\n');
     const elements: React.ReactNode[] = [];
     let currentList: React.ReactElement | null = null;
     let currentListType: string | null = null;
