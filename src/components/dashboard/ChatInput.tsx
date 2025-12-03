@@ -259,9 +259,9 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
         </div>
 
         {/* Row 2: Toolbar */}
-        <div className="flex items-center justify-between w-full pt-2" dir="ltr">
+        <div className="flex items-center justify-between w-full pt-2" dir="ltr" style={{ flexDirection: 'row' }}>
           {/* Left: Action Buttons */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1" style={{ flexDirection: 'row' }}>
             {/* Plus Button for File Attachment */}
             {supportsFileAttachment && <button onClick={() => fileInputRef.current?.click()} disabled={isDisabled || isUploading} className="toolbar-button w-8 h-8 md:w-9 md:h-9" title="Attach file">
                 <Plus className="w-4 h-4" />
@@ -275,7 +275,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
           </div>
 
           {/* Right: Mode Selector + Send Button */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2" style={{ flexDirection: 'row' }}>
             {/* Mode Selector Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

@@ -652,6 +652,16 @@ button, a, input, textarea, select {
     flex-direction: row !important;
   }
 
+  /* Prevent flex reversal inside input container - override global RTL rule */
+  [dir="rtl"] .input-container .flex,
+  [dir="rtl"] .input-container [class*="flex"] {
+    flex-direction: row !important;
+  }
+
+  [dir="rtl"] .input-container .flex.flex-col {
+    flex-direction: column !important;
+  }
+
   /* Remove old RTL input container rules - now handled above */
 
   /* Auth input text - proper contrast for light and dark modes */
