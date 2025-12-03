@@ -202,70 +202,6 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
   // Breathing animation speed based on emotion
   const breathingDuration = emotionConfig.breathingSpeed;
 
-  // Get emotion-aware glow parameters
-  const getEmotionGlow = useCallback(() => {
-    const color = emotionConfig.color;
-    
-    switch (emotion) {
-      case 'happy':
-        return {
-          shadows: [
-            `0 10px 30px rgba(0,0,0,0.12), 0 0 20px ${color}15, 0 0 40px ${color}08`,
-            `0 10px 40px rgba(0,0,0,0.18), 0 0 50px ${color}25, 0 0 80px ${color}12`,
-            `0 10px 30px rgba(0,0,0,0.12), 0 0 20px ${color}15, 0 0 40px ${color}08`
-          ],
-          duration: 3.5
-        };
-      case 'excited':
-        return {
-          shadows: [
-            `0 10px 30px rgba(0,0,0,0.15), 0 0 25px ${color}20, 0 0 50px ${color}10`,
-            `0 10px 50px rgba(0,0,0,0.22), 0 0 60px ${color}35, 0 0 100px ${color}18`,
-            `0 10px 30px rgba(0,0,0,0.15), 0 0 25px ${color}20, 0 0 50px ${color}10`
-          ],
-          duration: 2
-        };
-      case 'thinking':
-        return {
-          shadows: [
-            `0 10px 25px rgba(0,0,0,0.1), 0 0 15px ${color}12, 0 0 30px ${color}06`,
-            `0 10px 35px rgba(0,0,0,0.15), 0 0 35px ${color}20, 0 0 60px ${color}10`,
-            `0 10px 25px rgba(0,0,0,0.1), 0 0 15px ${color}12, 0 0 30px ${color}06`
-          ],
-          duration: 5
-        };
-      case 'curious':
-        return {
-          shadows: [
-            `0 10px 28px rgba(0,0,0,0.12), 0 0 18px ${color}15, 0 0 35px ${color}08`,
-            `0 10px 42px rgba(0,0,0,0.18), 0 0 45px ${color}25, 0 0 70px ${color}12`,
-            `0 10px 28px rgba(0,0,0,0.12), 0 0 18px ${color}15, 0 0 35px ${color}08`
-          ],
-          duration: 3
-        };
-      case 'frustrated':
-        return {
-          shadows: [
-            `0 10px 20px rgba(0,0,0,0.08), 0 0 10px ${color}08`,
-            `0 10px 28px rgba(0,0,0,0.12), 0 0 20px ${color}15`,
-            `0 10px 20px rgba(0,0,0,0.08), 0 0 10px ${color}08`
-          ],
-          duration: 6
-        };
-      default: // calm
-        return {
-          shadows: [
-            '0 10px 25px rgba(0,0,0,0.1), 0 0 15px rgba(0,0,0,0.05)',
-            '0 10px 40px rgba(0,0,0,0.16), 0 0 40px rgba(0,0,0,0.08), 0 0 60px rgba(0,0,0,0.04)',
-            '0 10px 25px rgba(0,0,0,0.1), 0 0 15px rgba(0,0,0,0.05)'
-          ],
-          duration: 4
-        };
-    }
-  }, [emotion, emotionConfig.color]);
-
-  const glowParams = getEmotionGlow();
-
   return (
     <div className={cn("relative flex items-center justify-center", className)}>
       {/* Eye - centered with spring physics and emotion tilt */}
@@ -278,19 +214,21 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
         onMouseEnter={() => setIsHovered(true)} 
         onMouseLeave={() => setIsHovered(false)}
       >
-        {/* Outer casing with breathing and pulse-glow animation */}
+        {/* Outer casing with breathing animation */}
         <motion.div 
           className={cn(
             "relative rounded-full bg-background flex items-center justify-center overflow-hidden",
             sizeClasses[size]
           )}
+          style={{
+            boxShadow: '0 10px 30px rgba(0,0,0,0.15)'
+          }}
           animate={{ 
             scale: [1, 1.015, 1],
-            opacity: [1, 0.98, 1],
-            boxShadow: glowParams.shadows
+            opacity: [1, 0.98, 1]
           }}
           transition={{ 
-            duration: glowParams.duration, 
+            duration: breathingDuration, 
             repeat: Infinity, 
             ease: "easeInOut" 
           }}
