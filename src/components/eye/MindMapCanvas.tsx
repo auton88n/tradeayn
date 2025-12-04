@@ -138,10 +138,14 @@ export const MindMapCanvas: React.FC<MindMapCanvasProps> = ({
                   const nodeX = node.x || 0;
                   const nodeY = node.y || 0;
                   
-                  // Different sizes for different levels
-                  const width = node.level === 0 ? 160 : node.level === 1 ? 140 : 120;
-                  const height = node.level === 0 ? 60 : node.level === 1 ? 50 : 40;
-                  const fontSize = node.level === 0 ? 14 : node.level === 1 ? 12 : 11;
+                  // Different sizes for different levels - increased for better text display
+                  const width = node.level === 0 ? 220 : node.level === 1 ? 200 : 180;
+                  const height = node.level === 0 ? 70 : node.level === 1 ? 55 : 45;
+                  const fontSize = node.level === 0 ? 15 : node.level === 1 ? 13 : 12;
+                  const maxChars = Math.floor(width / (fontSize * 0.6));
+                  const displayLabel = node.label.length > maxChars 
+                    ? node.label.slice(0, maxChars - 2) + '…' 
+                    : node.label;
                   
                   return (
                     <motion.g
@@ -155,14 +159,17 @@ export const MindMapCanvas: React.FC<MindMapCanvasProps> = ({
                         stiffness: 200
                       }}
                     >
+                      {/* Tooltip title for full text on hover */}
+                      <title>{node.label}</title>
+                      
                       {/* Node background with shadow */}
                       <rect
-                        x={nodeX - width / 2 + 2}
-                        y={nodeY - height / 2 + 2}
+                        x={nodeX - width / 2 + 3}
+                        y={nodeY - height / 2 + 3}
                         width={width}
                         height={height}
                         rx={height / 2}
-                        fill="rgba(0,0,0,0.1)"
+                        fill="rgba(0,0,0,0.08)"
                       />
                       
                       {/* Node */}
@@ -172,9 +179,9 @@ export const MindMapCanvas: React.FC<MindMapCanvasProps> = ({
                         width={width}
                         height={height}
                         rx={height / 2}
-                        fill={node.level === 0 ? 'hsl(var(--primary))' : node.level === 1 ? 'rgb(59, 130, 246)' : 'white'}
-                        stroke={node.level === 2 ? 'rgb(229, 231, 235)' : 'none'}
-                        strokeWidth={1}
+                        fill={node.level === 0 ? 'hsl(var(--primary))' : node.level === 1 ? 'rgb(59, 130, 246)' : 'hsl(var(--card))'}
+                        stroke={node.level === 2 ? 'hsl(var(--border))' : 'none'}
+                        strokeWidth={1.5}
                         className="cursor-pointer transition-all hover:filter hover:brightness-110"
                       />
                       
@@ -186,14 +193,10 @@ export const MindMapCanvas: React.FC<MindMapCanvasProps> = ({
                         dominantBaseline="middle"
                         fontSize={fontSize}
                         fontWeight={node.level === 0 ? 600 : node.level === 1 ? 500 : 400}
-                        fill={node.level === 2 ? 'rgb(55, 65, 81)' : 'white'}
+                        fill={node.level === 2 ? 'hsl(var(--foreground))' : 'white'}
                         className="pointer-events-none select-none"
                       >
-                        {/* Truncate long text */}
-                        {node.label.length > (width / fontSize * 1.5) 
-                          ? node.label.slice(0, Math.floor(width / fontSize * 1.5)) + '...'
-                          : node.label
-                        }
+                        {displayLabel}
                       </text>
                     </motion.g>
                   );

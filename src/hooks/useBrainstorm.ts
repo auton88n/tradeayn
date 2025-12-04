@@ -130,17 +130,7 @@ export const useBrainstorm = () => {
 function calculateRadialPositions(nodes: BrainstormNode[]): BrainstormNode[] {
   const centerX = 400;
   const centerY = 300;
-  const levelRadii = [0, 150, 280]; // Distance from center for each level
-
-  // Group nodes by parent
-  const nodesByParent: Record<string, BrainstormNode[]> = {};
-  nodes.forEach(node => {
-    const parentKey = node.parentId || 'root';
-    if (!nodesByParent[parentKey]) {
-      nodesByParent[parentKey] = [];
-    }
-    nodesByParent[parentKey].push(node);
-  });
+  const levelRadii = [0, 220, 420]; // Increased distance from center for each level
 
   // Position central node
   const positionedNodes: BrainstormNode[] = [];
@@ -189,14 +179,14 @@ function calculateRadialPositions(nodes: BrainstormNode[]): BrainstormNode[] {
     // Calculate parent's angle from center
     const parentAngle = Math.atan2(parent.y - centerY, parent.x - centerX);
     
-    // Spread children in an arc around the parent's direction
-    const spreadAngle = Math.PI / 3; // 60 degree spread
+    // Wider spread angle (90 degrees) to prevent overlap
+    const spreadAngle = Math.PI / 2;
     const startAngle = parentAngle - spreadAngle / 2;
     const angleStep = children.length > 1 ? spreadAngle / (children.length - 1) : 0;
 
     children.forEach((child, index) => {
       const angle = children.length === 1 ? parentAngle : startAngle + angleStep * index;
-      const childRadius = 100; // Distance from parent
+      const childRadius = 150; // Increased distance from parent
       
       positionedNodes.push({
         ...child,
