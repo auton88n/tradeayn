@@ -21,39 +21,36 @@ serve(async (req) => {
       );
     }
 
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      console.error('LOVABLE_API_KEY not configured');
+    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+    if (!OPENAI_API_KEY) {
+      console.error('OPENAI_API_KEY not configured');
       return new Response(
         JSON.stringify({ error: 'Image generation service not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`Generating image for prompt: "${prompt.slice(0, 100)}..."`);
+    console.log(`Generating image with OpenAI for prompt: "${prompt.slice(0, 100)}..."`);
 
-    // Call Lovable AI Gateway with image generation model
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    // Call OpenAI Image Generation API
+    const response = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash-image-preview',
-        messages: [
-          {
-            role: 'user',
-            content: `Generate a high-quality, professional image: ${prompt}. Make it visually stunning with good composition and lighting.`
-          }
-        ],
-        modalities: ['image', 'text']
+        model: 'gpt-image-1',
+        prompt: `${prompt}. High quality, professional, visually stunning with good composition and lighting.`,
+        n: 1,
+        size: '1024x1024',
+        quality: 'high'
       })
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`AI Gateway error: ${response.status} - ${errorText}`);
+      console.error(`OpenAI API error: ${response.status} - ${errorText}`);
       
       if (response.status === 429) {
         return new Response(
@@ -62,9 +59,9 @@ serve(async (req) => {
         );
       }
       
-      if (response.status === 402) {
+      if (response.status === 402 || response.status === 401) {
         return new Response(
-          JSON.stringify({ error: 'Image generation credits exhausted. Please add credits.' }),
+          JSON.stringify({ error: 'API key issue. Please check your OpenAI API key.' }),
           { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -77,8 +74,8 @@ serve(async (req) => {
 
     const data = await response.json();
     
-    // Extract image from response
-    const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    // OpenAI returns data array with url or b64_json
+    const imageUrl = data.data?.[0]?.url || data.data?.[0]?.b64_json;
     
     if (!imageUrl) {
       console.error('No image in response:', JSON.stringify(data).slice(0, 500));
@@ -88,12 +85,12 @@ serve(async (req) => {
       );
     }
 
-    console.log('Image generated successfully');
+    console.log('Image generated successfully with OpenAI');
 
     return new Response(
       JSON.stringify({ 
         imageUrl,
-        message: data.choices?.[0]?.message?.content || 'Image generated successfully'
+        message: 'Image generated successfully'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
