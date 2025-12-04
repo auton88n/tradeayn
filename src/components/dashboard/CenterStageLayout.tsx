@@ -151,19 +151,28 @@ export const CenterStageLayout = ({
     }
   }
 
-  // Get eye position for bubble animations - uses stable container ref
-  // to calculate where the eye WILL be (center) rather than current animated position
+  // Get eye position for bubble animations - uses actual eye element ref for precise targeting
   const getEyePosition = useCallback(() => {
-    if (!eyeStageRef.current) {
-      return { x: window.innerWidth / 2, y: window.innerHeight / 3 };
+    // Use actual eye element for precise targeting
+    if (eyeRef.current) {
+      const eyeRect = eyeRef.current.getBoundingClientRect();
+      return {
+        x: eyeRect.left + eyeRect.width / 2,
+        y: eyeRect.top + eyeRect.height / 2,
+      };
     }
-    const stageRect = eyeStageRef.current.getBoundingClientRect();
-    // Return the actual eye position (accounting for eyeShiftX offset)
-    return {
-      x: stageRect.left + stageRect.width / 2 + eyeShiftX,
-      y: stageRect.top + stageRect.height / 2,
-    };
-  }, [eyeShiftX]);
+    
+    // Fallback to stage center
+    if (eyeStageRef.current) {
+      const stageRect = eyeStageRef.current.getBoundingClientRect();
+      return {
+        x: stageRect.left + stageRect.width / 2,
+        y: stageRect.top + stageRect.height / 2,
+      };
+    }
+    
+    return { x: window.innerWidth / 2, y: window.innerHeight / 3 };
+  }, []);
 
   // Get input position for bubble start
   const getInputPosition = useCallback(() => {
@@ -341,80 +350,131 @@ export const CenterStageLayout = ({
       {/* Central Eye Stage - centered in available space above input */}
       <div ref={eyeStageRef} className={cn(
         "flex-1 flex items-center justify-center relative",
-        isMobile ? "pb-40 pt-48" : "pb-32"
+        isSmallScreen ? "pb-32" : "pb-32"
       )}>
-        {/* Eye container - moves with eyeShiftX */}
-        <motion.div 
-          ref={eyeRef} 
-          className="relative"
-          animate={{ x: eyeShiftX }}
-          transition={{ 
-            type: 'spring', 
-            stiffness: 150, 
-            damping: 20, 
-            mass: 0.8 
-          }}
-        >
-          <EmotionalEye size={isMobile ? "md" : "lg"} />
+        {isSmallScreen ? (
+          // Mobile/Tablet: Flex column layout - eye above, response below
+          <div className="flex flex-col items-center gap-6">
+            <motion.div 
+              ref={eyeRef} 
+              className="relative"
+            >
+              <EmotionalEye size={isMobile ? "md" : "lg"} />
 
-          {/* Thinking indicator when typing - stays with eye */}
-          <AnimatePresence>
-            {isTyping && (
-              <motion.div
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0, opacity: 0 }}
-                className="absolute -bottom-16 left-1/2 -translate-x-1/2"
-              >
-                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-ayn-thinking/20 backdrop-blur-sm border border-ayn-thinking/30">
-                  <div className="flex gap-1">
-                    <motion.div
-                      className="w-2 h-2 rounded-full bg-ayn-thinking"
-                      animate={{ scale: [1, 1.3, 1] }}
-                      transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
-                    />
-                    <motion.div
-                      className="w-2 h-2 rounded-full bg-ayn-thinking"
-                      animate={{ scale: [1, 1.3, 1] }}
-                      transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
-                    />
-                    <motion.div
-                      className="w-2 h-2 rounded-full bg-ayn-thinking"
-                      animate={{ scale: [1, 1.3, 1] }}
-                      transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
-                    />
-                  </div>
-                  <span className="text-sm text-ayn-thinking">Thinking...</span>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
+              {/* Thinking indicator when typing */}
+              <AnimatePresence>
+                {isTyping && (
+                  <motion.div
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0, opacity: 0 }}
+                    className="absolute -bottom-14 left-1/2 -translate-x-1/2"
+                  >
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-ayn-thinking/20 backdrop-blur-sm border border-ayn-thinking/30">
+                      <div className="flex gap-1">
+                        <motion.div
+                          className="w-2 h-2 rounded-full bg-ayn-thinking"
+                          animate={{ scale: [1, 1.3, 1] }}
+                          transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
+                        />
+                        <motion.div
+                          className="w-2 h-2 rounded-full bg-ayn-thinking"
+                          animate={{ scale: [1, 1.3, 1] }}
+                          transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
+                        />
+                        <motion.div
+                          className="w-2 h-2 rounded-full bg-ayn-thinking"
+                          animate={{ scale: [1, 1.3, 1] }}
+                          transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
+                        />
+                      </div>
+                      <span className="text-sm text-ayn-thinking">Thinking...</span>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+            
+            {/* Response card directly below eye */}
+            <ResponseCard 
+              responses={responseBubbles} 
+              isMobile={isMobile}
+            />
+          </div>
+        ) : (
+          // Desktop: Horizontal layout with absolute positioning
+          <>
+            <motion.div 
+              ref={eyeRef} 
+              className="relative"
+              animate={{ x: eyeShiftX }}
+              transition={{ 
+                type: 'spring', 
+                stiffness: 150, 
+                damping: 20, 
+                mass: 0.8 
+              }}
+            >
+              <EmotionalEye size="lg" />
 
-        {/* Suggestion Cards - flexbox for small screens, absolute for desktop */}
-        <SuggestionsCard
-          suggestions={suggestionBubbles}
-          onSuggestionClick={handleSuggestionClick}
-          isMobile={isMobile}
-          isSmallScreen={isSmallScreen}
-          eyeShiftX={eyeShiftX}
-        />
+              {/* Thinking indicator when typing - stays with eye */}
+              <AnimatePresence>
+                {isTyping && (
+                  <motion.div
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0, opacity: 0 }}
+                    className="absolute -bottom-16 left-1/2 -translate-x-1/2"
+                  >
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-ayn-thinking/20 backdrop-blur-sm border border-ayn-thinking/30">
+                      <div className="flex gap-1">
+                        <motion.div
+                          className="w-2 h-2 rounded-full bg-ayn-thinking"
+                          animate={{ scale: [1, 1.3, 1] }}
+                          transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
+                        />
+                        <motion.div
+                          className="w-2 h-2 rounded-full bg-ayn-thinking"
+                          animate={{ scale: [1, 1.3, 1] }}
+                          transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
+                        />
+                        <motion.div
+                          className="w-2 h-2 rounded-full bg-ayn-thinking"
+                          animate={{ scale: [1, 1.3, 1] }}
+                          transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
+                        />
+                      </div>
+                      <span className="text-sm text-ayn-thinking">Thinking...</span>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
 
-        {/* Response Card - positioned relative to stage center */}
-        <div 
-          className="absolute"
-          style={{
-            top: isMobile ? 'calc(50% + 80px)' : '50%',
-            left: isMobile ? '50%' : `calc(50% + ${eyeShiftX + 140}px)`,
-            transform: isMobile ? 'translateX(-50%)' : 'translateY(-50%)',
-          }}
-        >
-          <ResponseCard 
-            responses={responseBubbles} 
-            isMobile={isMobile}
-            eyeShiftX={eyeShiftX}
-          />
-        </div>
+            {/* Suggestion Cards - desktop only */}
+            <SuggestionsCard
+              suggestions={suggestionBubbles}
+              onSuggestionClick={handleSuggestionClick}
+              isMobile={isMobile}
+              isSmallScreen={isSmallScreen}
+              eyeShiftX={eyeShiftX}
+            />
+
+            {/* Response Card - positioned to the right of eye */}
+            <div 
+              className="absolute"
+              style={{
+                top: '50%',
+                left: `calc(50% + ${eyeShiftX + 140}px)`,
+                transform: 'translateY(-50%)',
+              }}
+            >
+              <ResponseCard 
+                responses={responseBubbles} 
+              />
+            </div>
+          </>
+        )}
       </div>
 
       {/* Flying user message bubble */}
