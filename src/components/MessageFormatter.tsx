@@ -166,30 +166,34 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
                 {children}
               </blockquote>
             ),
-            // Tables (enhanced with GFM support)
+            // Tables (enhanced with GFM support and horizontal scrolling)
             table: ({ children }) => (
-              <div className="overflow-x-auto my-4 first:mt-0 last:mb-0 max-w-full">
-                <table className="min-w-full border-collapse border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden text-sm">
-                  {children}
-                </table>
+              <div className="my-4 first:mt-0 last:mb-0 rounded-xl border border-gray-200/80 dark:border-gray-700/60 overflow-hidden bg-gray-50/50 dark:bg-gray-800/30">
+                <div className="overflow-x-auto [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-gray-100/50 dark:[&::-webkit-scrollbar-track]:bg-gray-800/50 [&::-webkit-scrollbar-thumb]:bg-gray-300 dark:[&::-webkit-scrollbar-thumb]:bg-gray-600 [&::-webkit-scrollbar-thumb]:rounded-full">
+                  <table className="min-w-full border-collapse text-sm">
+                    {children}
+                  </table>
+                </div>
               </div>
             ),
             thead: ({ children }) => (
-              <thead className="bg-gray-50 dark:bg-gray-800">{children}</thead>
+              <thead className="bg-gray-100/80 dark:bg-gray-800/80">{children}</thead>
             ),
             tbody: ({ children }) => (
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">{children}</tbody>
+              <tbody className="divide-y divide-gray-200/60 dark:divide-gray-700/40">{children}</tbody>
             ),
             tr: ({ children }) => (
-              <tr className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">{children}</tr>
+              <tr className="even:bg-gray-50/50 dark:even:bg-gray-800/30 hover:bg-gray-100/70 dark:hover:bg-gray-700/40 transition-colors">{children}</tr>
             ),
             th: ({ children }) => (
-              <th className="px-4 py-2.5 text-left font-semibold border-b border-gray-200 dark:border-gray-700 text-sm text-gray-900 dark:text-white break-words">
+              <th className="px-4 py-3 text-left font-semibold text-sm text-gray-900 dark:text-white whitespace-nowrap border-b border-gray-200/80 dark:border-gray-700/60">
                 {children}
               </th>
             ),
             td: ({ children }) => (
-              <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200 break-words">{children}</td>
+              <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-200 whitespace-nowrap">
+                {children}
+              </td>
             ),
             // Horizontal rule
             hr: () => (
