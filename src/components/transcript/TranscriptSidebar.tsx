@@ -51,24 +51,29 @@ const TranscriptContent = ({
   onClear?: () => void;
   handleCopyAll: () => void;
 }) => (
-  <div className="flex flex-col h-full bg-background" dir={isArabic ? 'rtl' : 'ltr'}>
-    {/* Header */}
+  <div className="flex flex-col h-full bg-gradient-to-b from-background to-background/95" dir={isArabic ? 'rtl' : 'ltr'}>
+    {/* Premium Header */}
     <div className="relative">
-      <div className="flex items-center justify-between p-5 pb-4">
+      {/* Glassmorphism header background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-white/50 to-white/20 dark:from-gray-900/50 dark:to-gray-800/20 backdrop-blur-sm" />
+      
+      <div className="relative flex items-center justify-between p-5 pb-4">
         <div className="flex items-center gap-3">
           <div className="relative">
-            <div className="w-9 h-9 rounded-xl bg-foreground/10 flex items-center justify-center">
-              <MessageSquare className="w-4 h-4 text-foreground" />
+            {/* Premium icon container with gradient */}
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-foreground to-foreground/80 flex items-center justify-center shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
+              <MessageSquare className="w-4.5 h-4.5 text-background" />
             </div>
-            <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-foreground flex items-center justify-center">
-              <span className="text-[9px] font-bold text-background">{messages.length}</span>
+            {/* Message count badge */}
+            <div className="absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1 rounded-full bg-primary flex items-center justify-center shadow-sm">
+              <span className="text-[10px] font-bold text-primary-foreground">{messages.length}</span>
             </div>
           </div>
           <div>
             <h2 className="font-semibold text-foreground text-sm tracking-tight">
-              {isArabic ? 'محادثة' : 'Chat'}
+              {isArabic ? 'المحادثة' : 'Transcript'}
             </h2>
-            <p className="text-xs text-foreground/60">
+            <p className="text-xs text-muted-foreground">
               {isArabic ? `${messages.length} رسالة` : `${messages.length} messages`}
             </p>
           </div>
@@ -77,24 +82,36 @@ const TranscriptContent = ({
           variant="ghost" 
           size="icon" 
           onClick={() => onToggle(false)}
-          className="h-8 w-8 rounded-lg hover:bg-foreground hover:text-background transition-colors"
+          className={cn(
+            "h-9 w-9 rounded-xl",
+            "bg-gray-100/50 dark:bg-gray-800/50",
+            "hover:bg-foreground hover:text-background",
+            "border border-gray-200/50 dark:border-gray-700/50",
+            "transition-all duration-200",
+            "active:scale-95"
+          )}
         >
           <X className="w-4 h-4" />
         </Button>
       </div>
-      <div className="h-px bg-border" />
+      
+      {/* Gradient border */}
+      <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
     </div>
 
-    {/* Search */}
-    <div className="p-4">
+    {/* Premium Search */}
+    <div className="p-4 pt-3">
       <div className={cn(
-        "relative transition-transform duration-150",
-        isSearchFocused && "scale-[1.02]"
+        "relative transition-all duration-200",
+        isSearchFocused && "scale-[1.01]"
       )}>
+        {/* Search icon */}
         <Search className={cn(
-          "absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors duration-150",
-          isSearchFocused ? "text-foreground" : "text-foreground/50"
+          "absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 transition-all duration-200",
+          isSearchFocused ? "text-primary" : "text-muted-foreground"
         )} />
+        
+        {/* Glassmorphism search input */}
         <Input
           placeholder={isArabic ? 'بحث في المحادثة...' : 'Search messages...'}
           value={searchQuery}
@@ -102,11 +119,21 @@ const TranscriptContent = ({
           onFocus={() => setIsSearchFocused(true)}
           onBlur={() => setIsSearchFocused(false)}
           className={cn(
-            "pl-10 h-10 text-sm rounded-xl",
-            "bg-transparent border border-border",
-            "placeholder:text-foreground/40",
-            "focus:bg-background focus:border-foreground focus:ring-0",
-            "transition-colors duration-150"
+            "pl-10 h-11 text-sm rounded-xl",
+            // Glassmorphism background
+            "bg-gradient-to-br from-white/80 to-white/50 dark:from-gray-800/80 dark:to-gray-900/50",
+            "backdrop-blur-sm",
+            // Border styling
+            "border border-gray-200/60 dark:border-gray-700/40",
+            // Focus states
+            "focus:border-primary/50 focus:ring-2 focus:ring-primary/10",
+            "focus:bg-white dark:focus:bg-gray-800",
+            // Shadow
+            "shadow-[0_2px_8px_rgba(0,0,0,0.04)]",
+            "focus:shadow-[0_4px_12px_rgba(0,0,0,0.08)]",
+            // Placeholder
+            "placeholder:text-muted-foreground/60",
+            "transition-all duration-200"
           )}
         />
       </div>
@@ -151,42 +178,61 @@ const TranscriptContent = ({
       </div>
     </ScrollArea>
 
-    {/* Actions */}
-    <div className="p-4 pt-2">
-      <div className="h-px bg-border mb-4" />
-      <div className="flex gap-2">
+    {/* Premium Actions Footer */}
+    <div className="relative p-4 pt-2">
+      {/* Gradient border */}
+      <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent mb-4" />
+      
+      <div className="flex gap-2.5">
         <Button
           variant="outline"
           size="sm"
           className={cn(
-            "flex-1 h-10 rounded-xl",
-            "bg-transparent border border-border",
+            "flex-1 h-11 rounded-xl font-medium",
+            // Glassmorphism background
+            "bg-gradient-to-br from-white/80 to-white/50 dark:from-gray-800/80 dark:to-gray-900/50",
+            "backdrop-blur-sm",
+            "border border-gray-200/60 dark:border-gray-700/40",
+            // Shadow
+            "shadow-[0_2px_8px_rgba(0,0,0,0.04)]",
+            // Hover states
             "hover:bg-foreground hover:text-background hover:border-foreground",
-            "transition-colors duration-150",
-            "disabled:opacity-40"
+            "hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)]",
+            "transition-all duration-200",
+            "active:scale-[0.98]",
+            "disabled:opacity-40 disabled:pointer-events-none"
           )}
           onClick={handleCopyAll}
           disabled={messages.length === 0}
         >
           <Copy className="w-4 h-4 mr-2" />
-          {isArabic ? 'نسخ' : 'Copy'}
+          {isArabic ? 'نسخ الكل' : 'Copy All'}
         </Button>
         {onClear && (
           <Button
             variant="outline"
             size="sm"
             className={cn(
-              "flex-1 h-10 rounded-xl",
-              "bg-transparent border border-destructive/30",
-              "text-destructive hover:bg-destructive hover:text-destructive-foreground hover:border-destructive",
-              "transition-colors duration-150",
-              "disabled:opacity-40"
+              "flex-1 h-11 rounded-xl font-medium",
+              // Glassmorphism with destructive tint
+              "bg-gradient-to-br from-red-50/80 to-red-50/50 dark:from-red-950/30 dark:to-red-900/20",
+              "backdrop-blur-sm",
+              "border border-destructive/30",
+              "text-destructive",
+              // Shadow
+              "shadow-[0_2px_8px_rgba(0,0,0,0.04)]",
+              // Hover states
+              "hover:bg-destructive hover:text-destructive-foreground hover:border-destructive",
+              "hover:shadow-[0_4px_12px_rgba(239,68,68,0.2)]",
+              "transition-all duration-200",
+              "active:scale-[0.98]",
+              "disabled:opacity-40 disabled:pointer-events-none"
             )}
             onClick={onClear}
             disabled={messages.length === 0}
           >
             <Trash2 className="w-4 h-4 mr-2" />
-            {isArabic ? 'مسح' : 'Clear'}
+            {isArabic ? 'مسح الكل' : 'Clear All'}
           </Button>
         )}
       </div>
