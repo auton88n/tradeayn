@@ -346,25 +346,24 @@ export const TranscriptSidebar = ({
     );
   }
 
-  // Desktop: Fixed positioning with CSS transforms
+  // Desktop: Flex child with animated width (like left sidebar)
   return (
     <>
       <FloatingToggleButton />
-      {/* Sidebar - CSS transform */}
+      {/* Sidebar - Flex layout with width animation */}
       <div
         data-tutorial="transcript"
         className={cn(
-          "fixed top-0 h-full z-50",
-          "w-[420px]",
+          "h-full shrink-0 overflow-hidden",
           "bg-background backdrop-blur-lg",
           "border-l border-border",
-          "shadow-2xl",
-          "right-0",
-          "will-change-transform transition-transform duration-150 ease-out",
-          isOpen ? "translate-x-0" : "translate-x-full"
+          "transition-[width] duration-300 ease-out",
+          isOpen ? "w-[420px]" : "w-0"
         )}
       >
-        <TranscriptContent {...contentProps} />
+        <div className="w-[420px] h-full">
+          <TranscriptContent {...contentProps} />
+        </div>
       </div>
     </>
   );
