@@ -333,6 +333,7 @@ export const TranscriptSidebar = ({
         "shadow-lg hover:shadow-xl",
         "hover:scale-105 active:scale-95",
         "transition-all duration-300 ease-out",
+        "overflow-visible",
         isOpen ? "opacity-0 pointer-events-none scale-90" : "opacity-100 scale-100"
       )}
     >
