@@ -352,9 +352,12 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
             animationDuration: `${breathingDuration}s`
           }}
         >
-          {/* Emotional color ring - fills the space, changes color based on AYN's state */}
+          {/* Single inner ring - matching landing page */}
+          <div className="absolute inset-4 rounded-full bg-background/80 shadow-inner" />
+
+          {/* Emotional color ring - changes color based on AYN's state */}
           <motion.div 
-            className="absolute inset-4 rounded-full"
+            className="absolute inset-[15%] rounded-full"
             animate={{ 
               scale: isPulsing ? [1, 1.08, 1] : isResponding ? [1, 1.03, 1] : 1,
             }}
