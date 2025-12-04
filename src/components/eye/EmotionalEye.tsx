@@ -349,7 +349,6 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
             sizeClasses[size]
           )}
           style={{
-            boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
             animationDuration: `${breathingDuration}s`
           }}
         >
@@ -371,13 +370,7 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
           <motion.div 
             className="absolute inset-0 rounded-full"
             animate={{
-              boxShadow: isResponding 
-                ? [
-                    '0 8px 40px hsla(0, 0%, 0%, 0.06)',
-                    '0 12px 60px hsla(0, 0%, 0%, 0.1)',
-                    '0 8px 40px hsla(0, 0%, 0%, 0.06)'
-                  ]
-                : '0 8px 40px hsla(0, 0%, 0%, 0.06)'
+              boxShadow: 'none'
             }}
             transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
             style={{
