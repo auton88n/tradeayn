@@ -71,7 +71,7 @@ const TranscriptContent = ({
           </div>
           <div>
             <h2 className="font-semibold text-foreground text-sm tracking-tight">
-              {isArabic ? 'المحادثة' : 'Transcript'}
+              {isArabic ? 'الدردشة' : 'Chat'}
             </h2>
             <p className="text-xs text-muted-foreground">
               {isArabic ? `${messages.length} رسالة` : `${messages.length} messages`}
