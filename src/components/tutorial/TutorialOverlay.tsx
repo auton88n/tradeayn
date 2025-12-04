@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TutorialStep } from './TutorialStep';
-import { TUTORIAL_STEPS, TutorialStep as TutorialStepType } from '@/types/tutorial.types';
+import { TutorialStep as TutorialStepType } from '@/types/tutorial.types';
 import { cn } from '@/lib/utils';
 
 interface TutorialOverlayProps {
@@ -85,9 +85,8 @@ export const TutorialOverlay = ({
 
   if (!isActive || !currentStepData) return null;
 
-  // Calculate spotlight clip path
-  const padding = 12;
-  const borderRadius = 16;
+  // Calculate spotlight clip path with smooth rounded corners
+  const padding = 16;
   const spotlightPath = targetRect
     ? `polygon(
         0% 0%, 0% 100%, 
@@ -102,16 +101,21 @@ export const TutorialOverlay = ({
     : 'none';
 
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       <motion.div
+        key="tutorial-overlay"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
+        transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
         className="fixed inset-0 z-[200] pointer-events-auto"
       >
         {/* Dark overlay with spotlight cutout */}
-        <div
-          className="absolute inset-0 bg-black/70 transition-all duration-300"
+        <motion.div
+          className="absolute inset-0 bg-black/75"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
           style={{
             clipPath: spotlightPath,
           }}
@@ -121,49 +125,54 @@ export const TutorialOverlay = ({
         {/* Spotlight border/glow effect */}
         {targetRect && isTargetVisible && (
           <motion.div
+            key={`spotlight-${currentStep}`}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
+            transition={{ 
+              duration: 0.4, 
+              ease: [0.32, 0.72, 0, 1],
+              delay: 0.1
+            }}
             className={cn(
               "absolute pointer-events-none",
-              "border-2 border-primary/50",
-              "rounded-2xl",
-              "shadow-[0_0_30px_rgba(var(--primary),0.3)]"
+              "border-2 border-primary/60",
+              "rounded-2xl"
             )}
             style={{
               left: targetRect.left - padding,
               top: targetRect.top - padding,
               width: targetRect.width + padding * 2,
               height: targetRect.height + padding * 2,
+              boxShadow: '0 0 0 4px rgba(var(--primary), 0.1), 0 0 30px rgba(var(--primary), 0.2)',
             }}
           >
-            {/* Pulsing animation */}
+            {/* Subtle pulsing animation */}
             <motion.div
               animate={{ 
-                boxShadow: [
-                  '0 0 20px rgba(var(--primary), 0.2)',
-                  '0 0 40px rgba(var(--primary), 0.4)',
-                  '0 0 20px rgba(var(--primary), 0.2)',
-                ]
+                opacity: [0.5, 1, 0.5],
               }}
-              transition={{ duration: 2, repeat: Infinity }}
-              className="absolute inset-0 rounded-2xl"
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute inset-0 rounded-2xl border-2 border-primary/30"
             />
           </motion.div>
         )}
 
         {/* Tutorial step card */}
-        {targetRect && (
-          <TutorialStep
-            step={currentStepData}
-            currentStep={currentStep}
-            totalSteps={totalSteps}
-            targetRect={targetRect}
-            onNext={handleNext}
-            onPrev={onPrev}
-            onSkip={onSkip}
-            isLastStep={currentStep >= totalSteps - 1}
-          />
-        )}
+        <AnimatePresence mode="wait">
+          {targetRect && (
+            <TutorialStep
+              key={currentStep}
+              step={currentStepData}
+              currentStep={currentStep}
+              totalSteps={totalSteps}
+              targetRect={targetRect}
+              onNext={handleNext}
+              onPrev={onPrev}
+              onSkip={onSkip}
+              isLastStep={currentStep >= totalSteps - 1}
+            />
+          )}
+        </AnimatePresence>
 
         {/* Progress dots */}
         <div className="fixed bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-[201]">
@@ -172,14 +181,18 @@ export const TutorialOverlay = ({
               key={i}
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              transition={{ delay: i * 0.05 }}
+              transition={{ 
+                delay: i * 0.03,
+                duration: 0.2,
+                ease: [0.32, 0.72, 0, 1]
+              }}
               className={cn(
-                "w-2 h-2 rounded-full transition-all duration-300",
+                "h-2 rounded-full transition-all duration-300",
                 i === currentStep 
-                  ? "bg-primary w-6" 
+                  ? "bg-primary w-8" 
                   : i < currentStep 
-                    ? "bg-primary/60" 
-                    : "bg-white/30"
+                    ? "bg-primary/60 w-2" 
+                    : "bg-white/30 w-2"
               )}
             />
           ))}
