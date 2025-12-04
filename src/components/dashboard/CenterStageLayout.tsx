@@ -323,9 +323,10 @@ export const CenterStageLayout = ({
 
       {/* Central Eye Stage - centered in available space above input */}
       <div ref={eyeStageRef} className={cn(
-        "flex-1 flex items-center justify-center",
-        isMobile ? "pb-48 pt-4" : "pb-32"
+        "flex-1 flex items-center justify-center relative",
+        isMobile ? "pb-56 pt-4" : "pb-32"
       )}>
+        {/* Eye container - moves with eyeShiftX */}
         <motion.div 
           ref={eyeRef} 
           className="relative"
@@ -339,24 +340,7 @@ export const CenterStageLayout = ({
         >
           <EmotionalEye size={isMobile ? "md" : "lg"} />
 
-          {/* Individual Suggestion Cards - arc on desktop, below on mobile */}
-          <SuggestionsCard
-            suggestions={suggestionBubbles}
-            onSuggestionClick={handleSuggestionClick}
-            isMobile={isMobile}
-          />
-
-          {/* Unified Response Card - right on desktop, below on mobile */}
-          <div className={cn(
-            "absolute",
-            isMobile 
-              ? "top-full mt-6 left-1/2 -translate-x-1/2" 
-              : "top-1/2 left-full -translate-y-1/2 ml-8"
-          )}>
-            <ResponseCard responses={responseBubbles} />
-          </div>
-
-          {/* Thinking indicator when typing */}
+          {/* Thinking indicator when typing - stays with eye */}
           <AnimatePresence>
             {isTyping && (
               <motion.div
@@ -389,6 +373,30 @@ export const CenterStageLayout = ({
             )}
           </AnimatePresence>
         </motion.div>
+
+        {/* Suggestion Cards - positioned relative to stage center, accounts for eyeShiftX */}
+        <SuggestionsCard
+          suggestions={suggestionBubbles}
+          onSuggestionClick={handleSuggestionClick}
+          isMobile={isMobile}
+          eyeShiftX={eyeShiftX}
+        />
+
+        {/* Response Card - positioned relative to stage center */}
+        <div 
+          className="absolute"
+          style={{
+            top: isMobile ? 'calc(50% + 80px)' : '50%',
+            left: isMobile ? '50%' : `calc(50% + ${eyeShiftX + 180}px)`,
+            transform: isMobile ? 'translateX(-50%)' : 'translateY(-50%)',
+          }}
+        >
+          <ResponseCard 
+            responses={responseBubbles} 
+            isMobile={isMobile}
+            eyeShiftX={eyeShiftX}
+          />
+        </div>
       </div>
 
       {/* Flying user message bubble */}
