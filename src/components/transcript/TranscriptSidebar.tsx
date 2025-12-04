@@ -140,19 +140,57 @@ const TranscriptContent = ({
     <ScrollArea className="flex-1 px-4 overflow-x-hidden" ref={scrollRef}>
       <div className="space-y-3 pb-4">
         {filteredMessages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 px-4 animate-fade-in">
+          <div className="flex flex-col items-center justify-center py-12 px-4 animate-fade-in relative">
+            {/* Decorative dots pattern - top right */}
+            <div className="absolute top-4 right-4 grid grid-cols-3 gap-1.5 opacity-20">
+              {[...Array(9)].map((_, i) => (
+                <div key={i} className="w-1 h-1 rounded-full bg-foreground" />
+              ))}
+            </div>
+            
+            {/* Animated orbital brain icon */}
             <div className="relative mb-6">
-              <div className="absolute inset-0 w-20 h-20 rounded-full bg-foreground/10 blur-xl animate-pulse" />
-              <div className="relative w-20 h-20 rounded-2xl bg-black dark:bg-white border border-border flex items-center justify-center">
-                <Brain className="w-8 h-8 text-white dark:text-black" />
+              {/* Soft outer glow */}
+              <div className="absolute inset-[-12px] rounded-full bg-primary/20 blur-xl animate-pulse" />
+              
+              {/* Orbital ring with particles */}
+              <div className="absolute inset-[-16px] animate-[spin_20s_linear_infinite]">
+                {[0, 90, 180, 270].map((deg) => (
+                  <div
+                    key={deg}
+                    className="absolute w-2 h-2 rounded-full bg-primary/60"
+                    style={{
+                      top: '50%',
+                      left: '50%',
+                      transform: `rotate(${deg}deg) translateX(40px) translateY(-50%)`,
+                    }}
+                  />
+                ))}
+              </div>
+              
+              {/* Orbital path ring */}
+              <div className="absolute inset-[-16px] rounded-full border border-dashed border-foreground/10" />
+              
+              {/* Main circular icon */}
+              <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-foreground to-foreground/80 flex items-center justify-center shadow-xl animate-[bounce_3s_ease-in-out_infinite]">
+                <Brain className="w-8 h-8 text-background" />
               </div>
             </div>
-            <p className="text-sm font-medium text-foreground mb-1">
-              {searchQuery ? 'No messages found' : 'No messages yet'}
+            
+            {/* Better typography */}
+            <p className="text-base font-semibold text-foreground mb-2 text-center">
+              {searchQuery ? 'No messages found' : 'Your conversation starts here'}
             </p>
-            <p className="text-xs text-foreground/50 text-center">
-              {searchQuery ? 'Try different keywords' : 'Start a conversation with AYN'}
+            <p className="text-xs text-muted-foreground text-center max-w-[200px] leading-relaxed">
+              {searchQuery ? 'Try different keywords' : 'Send a message to AYN and watch your chat history build up'}
             </p>
+            
+            {/* Quick start hint chip */}
+            {!searchQuery && (
+              <div className="mt-6 px-3 py-1.5 rounded-full bg-muted/50 backdrop-blur-sm border border-border/50 flex items-center gap-1.5">
+                <span className="text-[10px] text-muted-foreground">✨ Type below to begin</span>
+              </div>
+            )}
           </div>
         ) : (
           filteredMessages.map((msg) => (
