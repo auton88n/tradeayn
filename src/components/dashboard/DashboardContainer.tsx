@@ -399,7 +399,7 @@ const DashboardContent = ({
         )}
       </AnimatePresence>
 
-      {/* Floating Menu Button - Desktop: show when closed, Mobile: show when closed */}
+      {/* Floating Menu Button - Desktop only */}
       <Button
         variant="ghost"
         size="icon"
@@ -412,14 +412,9 @@ const DashboardContent = ({
           "hover:bg-background hover:scale-105",
           "active:scale-95",
           "transition-all duration-200",
-          // Hide on mobile when sidebar is open (it has its own close button)
-          openMobile && "md:flex hidden",
-          // Hide on desktop when sidebar is open
-          open && "hidden md:hidden",
-          // Show on desktop when sidebar is closed
-          !open && "hidden md:flex",
-          // Show on mobile when sidebar is closed
-          !openMobile && "flex md:hidden"
+          // Desktop only - show when sidebar is closed
+          "hidden md:flex",
+          open && "md:hidden"
         )}
       >
         <Menu className="w-5 h-5" />
@@ -429,21 +424,34 @@ const DashboardContent = ({
         dir="ltr"
         className="flex-1 overflow-hidden flex flex-col"
       >
-        {/* Mobile header with sidebar trigger */}
-        <header className="md:hidden flex items-center justify-between p-3 border-b bg-background">
-          <div className="flex items-center">
-            <SidebarTrigger />
-            <span className="ml-3 font-semibold text-foreground">AYN AI</span>
+        {/* Mobile header - clean & centered */}
+        <header className="md:hidden flex items-center justify-between px-4 py-3 border-b bg-background/95 backdrop-blur-lg">
+          {/* Left: Menu button + Title */}
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleSidebar}
+              className="h-10 w-10 rounded-xl bg-muted/50 hover:bg-muted"
+            >
+              <Menu className="w-5 h-5" />
+            </Button>
+            <span className="font-semibold text-lg text-foreground">AYN AI</span>
           </div>
           
-          {/* Transcript toggle button - mobile only */}
+          {/* Right: Transcript toggle with message count */}
           <Button
             variant="ghost"
             size="icon"
             onClick={() => handleToggleTranscript()}
-            className="h-9 w-9"
+            className="h-10 w-10 rounded-xl bg-muted/50 hover:bg-muted relative"
           >
             <MessageSquare className="w-5 h-5" />
+            {messagesHook.messages.length > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-foreground text-background text-xs flex items-center justify-center font-medium">
+                {messagesHook.messages.length > 9 ? '9+' : messagesHook.messages.length}
+              </span>
+            )}
           </Button>
         </header>
 
