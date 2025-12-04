@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Brain, Smile, CircleDot, Zap, AlertCircle, HelpCircle, MessageSquare, Plus, FileText, Image, Lightbulb, Menu, History, User, Settings, LogOut } from 'lucide-react';
+import { Brain, Smile, CircleDot, Zap, AlertCircle, HelpCircle, MessageSquare, Plus, FileText, Image, Lightbulb, Search, X, User, Settings, LogOut, Copy, Trash2, ChevronDown, ArrowUp } from 'lucide-react';
 
 export const MeetAynIllustration = () => (
   <div className="relative w-full h-full flex items-center justify-center">
@@ -60,28 +60,41 @@ export const EmotionsIllustration = () => {
 };
 
 export const ChatIllustration = () => (
-  <div className="w-full h-full flex items-center justify-center">
-    <div className="w-full max-w-xs">
-      {/* Chat input mockup */}
-      <div className="bg-muted/50 rounded-2xl p-3 border border-border/50 shadow-lg">
-        <div className="flex items-center gap-2 mb-2">
-          <div className="flex-1 bg-background/50 rounded-lg px-3 py-2 text-sm text-muted-foreground">
-            Type your message here...
+  <div className="w-full h-full flex items-center justify-center px-4">
+    <div className="w-full max-w-md">
+      {/* Chat input mockup - matching actual design */}
+      <div className="bg-muted/30 rounded-2xl p-4 border border-border/30 shadow-xl">
+        {/* Text area */}
+        <div className="mb-3">
+          <div className="text-sm text-muted-foreground">
+            What business challenge are you facing?
           </div>
         </div>
+        
+        {/* Bottom toolbar */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
-              <Plus className="w-4 h-4 text-muted-foreground" />
-            </div>
+          {/* Plus button */}
+          <div className="w-10 h-10 rounded-xl border border-border/50 bg-background flex items-center justify-center">
+            <Plus className="w-5 h-5 text-muted-foreground" />
           </div>
-          <motion.div 
-            className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center"
-            animate={{ scale: [1, 1.1, 1] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-          >
-            <MessageSquare className="w-4 h-4 text-primary-foreground" />
-          </motion.div>
+          
+          {/* Right side */}
+          <div className="flex items-center gap-2">
+            {/* Mode selector */}
+            <div className="flex items-center gap-1 px-3 py-2 text-sm text-muted-foreground">
+              General
+              <ChevronDown className="w-4 h-4" />
+            </div>
+            
+            {/* Send button */}
+            <motion.div 
+              className="w-10 h-10 rounded-xl bg-foreground flex items-center justify-center"
+              animate={{ scale: [1, 1.05, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              <ArrowUp className="w-5 h-5 text-background" />
+            </motion.div>
+          </div>
         </div>
       </div>
     </div>
@@ -133,60 +146,144 @@ export const SuggestionsIllustration = () => (
 );
 
 export const NavigationIllustration = () => (
-  <div className="w-full h-full flex items-center justify-center">
-    <div className="w-48 bg-muted/30 rounded-xl border border-border/50 p-3 shadow-lg">
-      <div className="flex items-center gap-2 mb-4 pb-2 border-b border-border/30">
-        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-          <Brain className="w-4 h-4 text-primary" />
+  <div className="w-full h-full flex items-center justify-center px-4">
+    <div className="w-full max-w-[280px] bg-background rounded-2xl border border-border/50 shadow-xl overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b border-border/30">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-foreground flex items-center justify-center">
+            <Brain className="w-5 h-5 text-background" />
+          </div>
+          <div>
+            <div className="font-semibold text-sm">AYN AI</div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-green-500" />
+              <span className="text-xs text-muted-foreground">Active</span>
+            </div>
+          </div>
         </div>
-        <span className="text-sm font-medium">AYN AI</span>
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <X className="w-4 h-4" />
+        </div>
       </div>
       
-      <div className="space-y-2">
-        {['New Chat', 'Recent Chat 1', 'Recent Chat 2'].map((item, i) => (
-          <motion.div
-            key={item}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: i * 0.1 }}
-            className={`px-3 py-2 rounded-lg text-xs ${i === 0 ? 'bg-primary/10 text-primary' : 'text-muted-foreground'}`}
-          >
-            {item}
-          </motion.div>
-        ))}
+      {/* New Chat Button */}
+      <div className="p-3">
+        <motion.div 
+          className="w-full py-3 px-4 bg-foreground text-background rounded-full flex items-center justify-center gap-2 text-sm font-medium"
+          animate={{ scale: [1, 1.02, 1] }}
+          transition={{ duration: 2, repeat: Infinity }}
+        >
+          <Plus className="w-4 h-4" />
+          New Chat
+        </motion.div>
+      </div>
+      
+      {/* Search */}
+      <div className="px-3 pb-3">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-full border border-border/50 text-muted-foreground text-sm">
+          <Search className="w-4 h-4" />
+          Search chats...
+        </div>
+      </div>
+      
+      {/* Recent Chats */}
+      <div className="px-3 pb-4">
+        <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
+          Recent Chats
+        </div>
+        <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+          <div className="w-12 h-12 rounded-xl bg-muted/50 flex items-center justify-center mb-2">
+            <MessageSquare className="w-6 h-6" />
+          </div>
+          <span className="text-sm">No recent chats</span>
+        </div>
       </div>
     </div>
   </div>
 );
 
 export const HistoryIllustration = () => (
-  <div className="w-full h-full flex items-center justify-center">
-    <div className="w-56 bg-muted/30 rounded-xl border border-border/50 p-3 shadow-lg">
-      <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border/30">
-        <History className="w-4 h-4 text-muted-foreground" />
-        <span className="text-sm font-medium">Transcript</span>
+  <div className="w-full h-full flex items-center justify-center px-4">
+    <div className="w-full max-w-[280px] bg-background rounded-2xl border border-border/50 shadow-xl overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b border-border/30">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center relative">
+            <MessageSquare className="w-5 h-5" />
+            <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-primary text-[10px] text-primary-foreground flex items-center justify-center font-medium">
+              2
+            </div>
+          </div>
+          <div>
+            <div className="font-semibold text-sm">Chat</div>
+            <div className="text-xs text-muted-foreground">2 messages</div>
+          </div>
+        </div>
+        <X className="w-4 h-4 text-muted-foreground" />
       </div>
       
-      <div className="space-y-2">
-        {[
-          { sender: 'You', text: 'Hello AYN!' },
-          { sender: 'AYN', text: 'Hi! How can I help?' },
-        ].map((msg, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.2 }}
-            className={`p-2 rounded-lg text-xs ${
-              msg.sender === 'You' 
-                ? 'bg-primary/10 ml-4' 
-                : 'bg-muted/50 mr-4'
-            }`}
-          >
-            <span className="font-medium text-[10px] text-muted-foreground">{msg.sender}</span>
-            <p className="text-foreground">{msg.text}</p>
-          </motion.div>
-        ))}
+      {/* Search */}
+      <div className="p-3 border-b border-border/30">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-full border border-border/50 text-muted-foreground text-sm">
+          <Search className="w-4 h-4" />
+          Search messages...
+        </div>
+      </div>
+      
+      {/* Messages */}
+      <div className="p-3 space-y-3">
+        {/* User message */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="flex flex-col items-end"
+        >
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-xs font-medium">You</span>
+            <div className="w-6 h-6 rounded-full border border-border flex items-center justify-center">
+              <User className="w-3 h-3" />
+            </div>
+          </div>
+          <div className="bg-foreground text-background px-4 py-2 rounded-2xl rounded-br-md text-sm">
+            hello
+          </div>
+          <span className="text-[10px] text-muted-foreground mt-1">1:40 PM</span>
+        </motion.div>
+        
+        {/* AYN message */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="flex flex-col items-start"
+        >
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-6 h-6 rounded-full bg-foreground flex items-center justify-center">
+              <Brain className="w-3 h-3 text-background" />
+            </div>
+            <span className="text-xs font-medium">AYN</span>
+            <span className="text-xs">😌</span>
+            <span className="text-[10px] px-2 py-0.5 bg-muted rounded-full">General</span>
+          </div>
+          <div className="bg-muted/50 px-4 py-2 rounded-2xl rounded-bl-md text-sm max-w-[220px]">
+            😄 How's your day going? Anything on your mind?
+          </div>
+          <span className="text-[10px] text-muted-foreground mt-1">1:40 PM</span>
+        </motion.div>
+      </div>
+      
+      {/* Footer buttons */}
+      <div className="p-3 border-t border-border/30 flex gap-2">
+        <button className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl border border-border/50 text-sm">
+          <Copy className="w-4 h-4" />
+          Copy
+        </button>
+        <button className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl border border-red-200 text-red-500 text-sm">
+          <Trash2 className="w-4 h-4" />
+          Clear
+        </button>
       </div>
     </div>
   </div>
