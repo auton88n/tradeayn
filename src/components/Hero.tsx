@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowUp, Plus, ChevronDown, Brain } from 'lucide-react';
+import { ArrowUp, Plus, ChevronDown, Brain, SlidersHorizontal, Clock } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { TypewriterText } from '@/components/TypewriterText';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -515,10 +515,16 @@ export const Hero = ({
 
           {/* Toolbar Row */}
           <div className="flex items-center justify-between w-full pt-2">
-            {/* Left: Plus Button */}
+            {/* Left: Plus, Settings, History Buttons */}
             <div className="flex items-center gap-1">
               <button onClick={onGetStarted} className="w-10 h-10 rounded-xl border border-border/50 flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-all duration-200" title={language === 'ar' ? 'إرفاق ملف' : 'Attach file'}>
                 <Plus className="w-4 h-4" />
+              </button>
+              <button onClick={onGetStarted} className="w-10 h-10 rounded-xl border border-border/50 flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-all duration-200" title={language === 'ar' ? 'الإعدادات' : 'Settings'}>
+                <SlidersHorizontal className="w-4 h-4" />
+              </button>
+              <button onClick={onGetStarted} className="w-10 h-10 rounded-xl border border-border/50 flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-all duration-200" title={language === 'ar' ? 'السجل' : 'History'}>
+                <Clock className="w-4 h-4" />
               </button>
             </div>
 
