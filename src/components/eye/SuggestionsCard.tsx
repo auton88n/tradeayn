@@ -14,18 +14,18 @@ interface SuggestionsCardProps {
   isMobile?: boolean;
 }
 
-// Desktop: Arc positions relative to the eye center (cards curve around left side)
+// Desktop: Arc positions - reduced distances to stay within viewport
 const desktopPositions = [
-  { x: -380, y: -90, rotate: -5 },   // Top-left arc
-  { x: -420, y: 0, rotate: 0 },      // Middle-left (furthest)
-  { x: -380, y: 90, rotate: 5 },     // Bottom-left arc
+  { x: -260, y: -70, rotate: -3 },   // Top-left arc
+  { x: -290, y: 0, rotate: 0 },      // Middle-left
+  { x: -260, y: 70, rotate: 3 },     // Bottom-left arc
 ];
 
-// Mobile: Horizontal row below the eye
+// Mobile: Vertical stack below the eye (no horizontal spread)
 const mobilePositions = [
-  { x: -110, y: 200, rotate: 0 },
-  { x: 0, y: 200, rotate: 0 },
-  { x: 110, y: 200, rotate: 0 },
+  { x: 0, y: 160, rotate: 0 },
+  { x: 0, y: 220, rotate: 0 },
+  { x: 0, y: 280, rotate: 0 },
 ];
 
 export const SuggestionsCard = ({ suggestions, onSuggestionClick, isMobile = false }: SuggestionsCardProps) => {
@@ -54,8 +54,8 @@ export const SuggestionsCard = ({ suggestions, onSuggestionClick, isMobile = fal
             className={cn(
               "absolute flex items-center gap-2",
               isMobile 
-                ? "px-3 py-2 min-w-[100px] max-w-[140px]" 
-                : "px-4 py-3 min-w-[220px] max-w-[300px]",
+                ? "px-3 py-2 min-w-[160px] max-w-[220px]" 
+                : "px-4 py-3 min-w-[200px] max-w-[280px]",
               "bg-white/95 dark:bg-gray-900/95",
               "backdrop-blur-xl",
               "shadow-[0_8px_32px_rgba(0,0,0,0.08),0_2px_8px_rgba(0,0,0,0.04)]",
