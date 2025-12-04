@@ -349,12 +349,14 @@ export const CenterStageLayout = ({
 
       {/* Central Eye Stage - centered in available space above input */}
       <div ref={eyeStageRef} className={cn(
-        "flex-1 flex items-center justify-center relative",
-        isSmallScreen ? "pb-32" : "pb-32"
+        "flex-1 flex relative",
+        isSmallScreen 
+          ? "items-start justify-center pt-6 pb-28"
+          : "items-center justify-center pb-32"
       )}>
         {isSmallScreen ? (
           // Mobile/Tablet: Flex column layout - eye above, response below
-          <div className="flex flex-col items-center gap-6">
+          <div className="flex flex-col items-center gap-3 pt-4">
             <motion.div 
               ref={eyeRef} 
               className="relative"
@@ -368,38 +370,40 @@ export const CenterStageLayout = ({
                     initial={{ scale: 0, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     exit={{ scale: 0, opacity: 0 }}
-                    className="absolute -bottom-14 left-1/2 -translate-x-1/2"
+                    className="absolute -bottom-12 left-1/2 -translate-x-1/2"
                   >
-                    <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-ayn-thinking/20 backdrop-blur-sm border border-ayn-thinking/30">
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-ayn-thinking/20 backdrop-blur-sm border border-ayn-thinking/30">
                       <div className="flex gap-1">
                         <motion.div
-                          className="w-2 h-2 rounded-full bg-ayn-thinking"
+                          className="w-1.5 h-1.5 rounded-full bg-ayn-thinking"
                           animate={{ scale: [1, 1.3, 1] }}
                           transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
                         />
                         <motion.div
-                          className="w-2 h-2 rounded-full bg-ayn-thinking"
+                          className="w-1.5 h-1.5 rounded-full bg-ayn-thinking"
                           animate={{ scale: [1, 1.3, 1] }}
                           transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
                         />
                         <motion.div
-                          className="w-2 h-2 rounded-full bg-ayn-thinking"
+                          className="w-1.5 h-1.5 rounded-full bg-ayn-thinking"
                           animate={{ scale: [1, 1.3, 1] }}
                           transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
                         />
                       </div>
-                      <span className="text-sm text-ayn-thinking">Thinking...</span>
+                      <span className="text-xs text-ayn-thinking">Thinking...</span>
                     </div>
                   </motion.div>
                 )}
               </AnimatePresence>
             </motion.div>
             
-            {/* Response card directly below eye */}
-            <ResponseCard 
-              responses={responseBubbles} 
-              isMobile={isMobile}
-            />
+            {/* Response card directly below eye with safe margins */}
+            <div className="px-4 w-full flex justify-center">
+              <ResponseCard 
+                responses={responseBubbles} 
+                isMobile={isMobile}
+              />
+            </div>
           </div>
         ) : (
           // Desktop: Horizontal layout with absolute positioning
