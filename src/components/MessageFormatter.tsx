@@ -14,6 +14,24 @@ interface MessageFormatterProps {
   className?: string;
 }
 
+// Remove outer code fence wrapping if entire content is a single code block
+const unwrapCodeFences = (text: string): string => {
+  if (!text) return '';
+  
+  const trimmed = text.trim();
+  
+  // Check if entire content is wrapped in a single code block
+  // Pattern: ```optionalLanguage\ncontent\n```
+  const codeBlockMatch = trimmed.match(/^```[\w]*\n?([\s\S]*?)\n?```$/);
+  
+  if (codeBlockMatch) {
+    // Return the content inside the code fences
+    return codeBlockMatch[1].trim();
+  }
+  
+  return text;
+};
+
 // Decode HTML entities that may have been escaped during storage
 const decodeHtmlEntities = (text: string): string => {
   if (typeof window === 'undefined') return text;
@@ -36,10 +54,13 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
   const [lightboxImage, setLightboxImage] = useState<{ src: string; alt: string } | null>(null);
   const [copiedCodeId, setCopiedCodeId] = useState<string | null>(null);
 
-  // Step 1: Decode HTML entities first
-  const decodedContent = decodeHtmlEntities(content);
+  // Step 1: Unwrap outer code fences (if entire content is wrapped)
+  const unwrappedContent = unwrapCodeFences(content);
   
-  // Step 2: Sanitize content to prevent XSS attacks
+  // Step 2: Decode HTML entities
+  const decodedContent = decodeHtmlEntities(unwrappedContent);
+  
+  // Step 3: Sanitize content to prevent XSS attacks
   const sanitizedContent = isValidUserInput(decodedContent) ? decodedContent : sanitizeUserInput(decodedContent);
 
   const copyCodeToClipboard = async (code: string, id: string) => {
