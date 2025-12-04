@@ -355,7 +355,7 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
         >
           {/* Outer pulsing ring */}
           <motion.div
-            className="absolute inset-[-8%] rounded-full border-2 border-primary/10"
+            className="absolute inset-[-8%] rounded-full"
             animate={{
               scale: [1, 1.04, 1],
               opacity: isResponding ? [0.4, 0.8, 0.4] : [0.2, 0.4, 0.2],
@@ -381,7 +381,7 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
             }}
             transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
             style={{
-              background: 'radial-gradient(circle, hsla(0, 0%, 100%, 0.98) 0%, hsla(0, 0%, 98%, 0.85) 35%, hsla(0, 0%, 96%, 0.5) 55%, transparent 80%)',
+              background: 'radial-gradient(circle, hsla(0, 0%, 100%, 0.9) 0%, hsla(0, 0%, 100%, 0.6) 50%, transparent 100%)',
             }}
           />
 
@@ -397,8 +397,8 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
               ease: "linear"
             }}
             style={{
-              backgroundColor: 'hsl(0, 0%, 96%)',
-              boxShadow: 'inset 0 2px 8px hsla(0, 0%, 0%, 0.04)',
+              backgroundColor: 'transparent',
+              boxShadow: 'inset 0 4px 16px hsla(0, 0%, 0%, 0.03)',
             }}
           />
 
