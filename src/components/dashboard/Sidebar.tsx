@@ -370,99 +370,104 @@ export const Sidebar = ({
         </div>
       </SidebarContent>
 
-      <SidebarFooter>
-        <div className="h-px bg-border" />
-        
-        {/* User Profile */}
+      <SidebarFooter className="p-3">
+        {/* User Profile - Premium Glassmorphism Card */}
         <Popover open={profilePopoverOpen} onOpenChange={setProfilePopoverOpen}>
           <PopoverTrigger asChild>
             <button 
               data-tutorial="profile"
               className={cn(
-                "flex items-center gap-2.5 px-3 py-2.5",
-                "w-[calc(100%-1rem)] mx-2 mb-2",
-                "cursor-pointer rounded-lg",
-                "hover:bg-muted/60",
-                "transition-colors duration-150",
-                "active:scale-[0.99]",
-                "focus:outline-none focus-visible:ring-0"
+                "flex items-center gap-3 p-3 w-full",
+                "cursor-pointer rounded-xl",
+                "bg-muted/40 backdrop-blur-sm",
+                "border border-border/50",
+                "shadow-sm hover:shadow-md",
+                "hover:bg-muted/60 hover:border-border/70",
+                "hover:-translate-y-0.5",
+                "transition-all duration-200 ease-out",
+                "active:scale-[0.98]",
+                "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
               )}>
               <div className="relative flex-shrink-0">
-                <Avatar className="w-8 h-8">
+                <Avatar className="w-10 h-10 ring-2 ring-background shadow-sm">
                   <AvatarImage src={userAvatar} alt={userName || 'User'} />
-                  <AvatarFallback className="bg-muted text-foreground/70 text-xs font-medium">
+                  <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
                     {userName?.charAt(0) || userEmail?.charAt(0) || 'U'}
                   </AvatarFallback>
                 </Avatar>
-                <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-500 border-[1.5px] border-background" />
+                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-background shadow-sm" />
               </div>
               <div className="flex-1 min-w-0 text-left">
-                <p className="text-[13px] font-medium truncate text-foreground">
+                <p className="text-sm font-semibold truncate text-foreground">
                   {userName || 'User'}
                 </p>
-                <p className="text-[11px] text-muted-foreground truncate">
+                <p className="text-xs text-muted-foreground truncate">
                   {userEmail}
                 </p>
               </div>
-              <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/50 flex-shrink-0 pointer-events-none" />
+              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-background/80 shadow-sm">
+                <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+              </div>
             </button>
           </PopoverTrigger>
           <PopoverContent 
             className={cn(
-              "w-52 p-1.5 rounded-xl",
-              "bg-background backdrop-blur-xl",
-              "border-border shadow-xl",
+              "w-56 p-2 rounded-xl",
+              "bg-background/95 backdrop-blur-xl",
+              "border border-border/60 shadow-xl",
               "animate-in slide-in-from-bottom-2 fade-in-0 duration-200"
             )}
             align="start" 
             side="top"
             sideOffset={8}
           >
-            <Button 
-              onClick={() => setShowAvatarUpload(true)}
-              variant="ghost" 
-              className="w-full justify-start h-9 px-3 rounded-lg hover:bg-foreground hover:text-background"
-            >
-              <Camera className="w-4 h-4 mr-2.5" />
-              Change Photo
-            </Button>
-            <Button 
-              onClick={() => navigate('/settings')}
-              variant="ghost" 
-              className="w-full justify-start h-9 px-3 rounded-lg hover:bg-foreground hover:text-background"
-            >
-              <Settings className="w-4 h-4 mr-2.5" />
-              Settings
-            </Button>
-            <Button 
-              onClick={() => {
-                setProfilePopoverOpen(false);
-                onStartTutorial?.();
-              }}
-              variant="ghost" 
-              className="w-full justify-start h-9 px-3 rounded-lg hover:bg-foreground hover:text-background"
-            >
-              <GraduationCap className="w-4 h-4 mr-2.5" />
-              Tutorial
-            </Button>
-            {isAdmin && (
+            <div className="space-y-1">
               <Button 
-                onClick={onAdminPanelClick}
+                onClick={() => setShowAvatarUpload(true)}
                 variant="ghost" 
-                className="w-full justify-start h-9 px-3 rounded-lg hover:bg-foreground hover:text-background"
+                className="w-full justify-start h-10 px-3 rounded-lg hover:bg-muted transition-colors"
               >
-                <Shield className="w-4 h-4 mr-2.5" />
-                Admin Panel
+                <Camera className="w-4 h-4 mr-3 text-muted-foreground" />
+                <span>Change Photo</span>
               </Button>
-            )}
-            <div className="h-px bg-border my-1" />
+              <Button 
+                onClick={() => navigate('/settings')}
+                variant="ghost" 
+                className="w-full justify-start h-10 px-3 rounded-lg hover:bg-muted transition-colors"
+              >
+                <Settings className="w-4 h-4 mr-3 text-muted-foreground" />
+                <span>Settings</span>
+              </Button>
+              <Button 
+                onClick={() => {
+                  setProfilePopoverOpen(false);
+                  onStartTutorial?.();
+                }}
+                variant="ghost" 
+                className="w-full justify-start h-10 px-3 rounded-lg hover:bg-muted transition-colors"
+              >
+                <GraduationCap className="w-4 h-4 mr-3 text-muted-foreground" />
+                <span>Tutorial</span>
+              </Button>
+              {isAdmin && (
+                <Button 
+                  onClick={onAdminPanelClick}
+                  variant="ghost" 
+                  className="w-full justify-start h-10 px-3 rounded-lg hover:bg-muted transition-colors"
+                >
+                  <Shield className="w-4 h-4 mr-3 text-muted-foreground" />
+                  <span>Admin Panel</span>
+                </Button>
+              )}
+            </div>
+            <div className="h-px bg-border/60 my-2" />
             <Button 
               onClick={onLogout}
               variant="ghost" 
-              className="w-full justify-start h-9 px-3 rounded-lg text-destructive hover:bg-destructive hover:text-white"
+              className="w-full justify-start h-10 px-3 rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
             >
-              <LogOut className="w-4 h-4 mr-2.5" />
-              Sign Out
+              <LogOut className="w-4 h-4 mr-3" />
+              <span>Sign Out</span>
             </Button>
           </PopoverContent>
         </Popover>
