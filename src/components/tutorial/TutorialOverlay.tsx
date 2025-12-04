@@ -87,7 +87,7 @@ export const TutorialOverlay = ({
         />
 
         {/* Dynamic position based on step.position */}
-        <div className={`fixed z-[201] w-[90%] max-w-md ${
+        <div className={`fixed z-[210] w-[90%] max-w-md ${
           currentStepData.position === 'top' 
             ? 'top-8 md:top-12 left-1/2 -translate-x-1/2' 
             : currentStepData.position === 'bottom' 
