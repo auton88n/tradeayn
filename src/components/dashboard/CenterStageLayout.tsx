@@ -112,6 +112,45 @@ export const CenterStageLayout = ({
   const [showParticleBurst, setShowParticleBurst] = useState(false);
   const [burstPosition, setBurstPosition] = useState({ x: 0, y: 0 });
   const [lastUserMessage, setLastUserMessage] = useState<string>('');
+  const [currentGazeIndex, setCurrentGazeIndex] = useState<number | null>(null);
+
+  // Suggestion card Y positions for gaze targeting (matches SuggestionsCard desktopPositions)
+  const suggestionGazeTargets = [
+    { x: -15, y: -8 },   // Top card
+    { x: -15, y: 0 },    // Middle card  
+    { x: -15, y: 8 },    // Bottom card
+  ];
+
+  // Cycle through suggestion cards with glances
+  useEffect(() => {
+    const visibleSuggestions = suggestionBubbles.filter(s => s.isVisible);
+    
+    if (visibleSuggestions.length === 0 || isTyping || isMobile) {
+      setCurrentGazeIndex(null);
+      return;
+    }
+
+    // Initial delay before starting to glance
+    const initialDelay = setTimeout(() => {
+      setCurrentGazeIndex(0);
+    }, 800);
+
+    // Cycle through cards
+    const cycleInterval = setInterval(() => {
+      setCurrentGazeIndex(prev => {
+        if (prev === null) return 0;
+        const next = (prev + 1) % visibleSuggestions.length;
+        // Occasionally return to center (null) for natural feel
+        if (Math.random() < 0.2) return null;
+        return next;
+      });
+    }, 2500); // Glance every 2.5 seconds
+
+    return () => {
+      clearTimeout(initialDelay);
+      clearInterval(cycleInterval);
+    };
+  }, [suggestionBubbles, isTyping, isMobile]);
 
   // Fetch dynamic suggestions based on conversation context
   const fetchDynamicSuggestions = useCallback(async (userMessage: string, aynResponse: string, mode: AIMode) => {
@@ -152,9 +191,11 @@ export const CenterStageLayout = ({
     }
   }
 
-  // AI gaze target - eye looks towards suggestions when visible
+  // AI gaze target - eye looks at individual suggestion cards
   const gazeTarget = hasVisibleSuggestions && !isTyping && !isMobile
-    ? { x: -12, y: 0 } // Look left towards suggestions
+    ? currentGazeIndex !== null 
+      ? suggestionGazeTargets[currentGazeIndex] 
+      : { x: -12, y: 0 } // Default center-left when not looking at specific card
     : null;
 
   // Get eye position for bubble animations - uses actual eye element ref for precise targeting
