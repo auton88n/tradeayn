@@ -1181,19 +1181,26 @@ button, a, input, textarea, select {
 .tutorial-highlight {
   position: relative;
   z-index: 201 !important;
-  border-radius: 12px;
-  outline: 3px solid hsl(var(--primary) / 0.6);
-  outline-offset: 4px;
-  animation: tutorial-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  border-radius: 16px;
+  isolation: isolate;
+  box-shadow: 
+    0 0 0 4px hsl(var(--primary) / 0.5),
+    0 0 20px 8px hsl(var(--primary) / 0.3),
+    0 0 40px 16px hsl(var(--primary) / 0.15);
+  animation: tutorial-pulse 2s ease-in-out infinite;
 }
 
 @keyframes tutorial-pulse {
   0%, 100% {
-    outline-color: hsl(var(--primary) / 0.6);
-    outline-offset: 4px;
+    box-shadow: 
+      0 0 0 4px hsl(var(--primary) / 0.5),
+      0 0 20px 8px hsl(var(--primary) / 0.3),
+      0 0 40px 16px hsl(var(--primary) / 0.15);
   }
   50% {
-    outline-color: hsl(var(--primary) / 0.4);
-    outline-offset: 8px;
+    box-shadow: 
+      0 0 0 6px hsl(var(--primary) / 0.6),
+      0 0 30px 12px hsl(var(--primary) / 0.4),
+      0 0 60px 24px hsl(var(--primary) / 0.2);
   }
 }
