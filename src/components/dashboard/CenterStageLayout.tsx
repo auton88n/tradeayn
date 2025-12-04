@@ -585,7 +585,12 @@ export const CenterStageLayout = ({
 
       {/* Mobile suggestion chips - above input */}
       {isSmallScreen && (
-        <div className="fixed bottom-32 sm:bottom-36 left-0 right-0 z-40">
+        <div className={cn(
+          "fixed bottom-32 sm:bottom-36 z-40",
+          "transition-all duration-300 ease-out",
+          sidebarOpen ? "left-[260px]" : "left-4",
+          transcriptOpen ? "right-[300px]" : "right-4"
+        )}>
           <AnimatePresence>
             <MobileSuggestionChips
               suggestions={suggestionBubbles}
