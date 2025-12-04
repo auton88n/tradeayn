@@ -18,9 +18,9 @@ interface SuggestionsCardProps {
 
 // Desktop: Aligned column positions relative to stage center (will add eyeShiftX)
 const desktopPositions = [
-  { x: -400, y: -140, rotate: 0 },
-  { x: -400, y: -40, rotate: 0 },
-  { x: -400, y: 60, rotate: 0 },
+  { x: -400, y: -180, rotate: 0 },
+  { x: -400, y: -80, rotate: 0 },
+  { x: -400, y: 20, rotate: 0 },
 ];
 
 export const SuggestionsCard = ({ 
