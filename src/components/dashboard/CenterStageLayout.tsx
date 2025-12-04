@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { EmotionalEye } from '@/components/eye/EmotionalEye';
 import { UserMessageBubble } from '@/components/eye/UserMessageBubble';
 import { SuggestionsCard } from '@/components/eye/SuggestionsCard';
+import { MobileSuggestionChips } from '@/components/eye/MobileSuggestionChips';
 import { ResponseCard } from '@/components/eye/ResponseCard';
 import { FlyingSuggestionBubble } from '@/components/eye/FlyingSuggestionBubble';
 import { ParticleBurst } from '@/components/eye/ParticleBurst';
@@ -520,6 +521,18 @@ export const CenterStageLayout = ({
         position={burstPosition}
         particleCount={16}
       />
+
+      {/* Mobile suggestion chips - above input */}
+      {isSmallScreen && (
+        <div className="fixed bottom-24 left-0 right-0 z-40">
+          <AnimatePresence>
+            <MobileSuggestionChips
+              suggestions={suggestionBubbles}
+              onSuggestionClick={handleSuggestionClick}
+            />
+          </AnimatePresence>
+        </div>
+      )}
 
       {/* Input area - ChatInput handles its own fixed positioning */}
       <ChatInput
