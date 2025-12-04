@@ -80,8 +80,9 @@ export const ResponseCard = ({ responses, isMobile = false }: ResponseCardProps)
   if (visibleResponses.length === 0) return null;
 
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       <motion.div
+        key={visibleResponses[0]?.id || 'response-card'}
         className={cn(
           "relative group",
           // Responsive width and height constraints - uses min() for sidebar-aware sizing
@@ -110,24 +111,20 @@ export const ResponseCard = ({ responses, isMobile = false }: ResponseCardProps)
           "px-5 py-4 rounded-2xl"
         )}
         initial={{
-          x: -20,
-          scale: 0.95,
+          scale: 0.98,
           opacity: 0,
         }}
         animate={{
-          x: 0,
           scale: 1,
           opacity: 1,
         }}
         exit={{
-          x: -15,
-          scale: 0.97,
+          scale: 0.98,
           opacity: 0,
         }}
         transition={{
-          type: 'spring',
-          stiffness: 300,
-          damping: 26,
+          duration: 0.2,
+          ease: [0.32, 0.72, 0, 1],
         }}
       >
         {/* Animated accent line at top */}
