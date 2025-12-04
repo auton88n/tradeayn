@@ -86,7 +86,7 @@ export const TranscriptMessage = ({
         <div
           className={cn(
             "relative px-4 py-3 text-sm leading-relaxed",
-            "max-w-full overflow-hidden break-words [overflow-wrap:anywhere]",
+            "max-w-full break-words [overflow-wrap:anywhere]",
             "transition-all duration-300",
             isUser
               ? [
