@@ -110,6 +110,14 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
     if (prefillValue) {
       setInputMessage(prefillValue);
       setShowPlaceholder(false);
+      // Auto-resize textarea after React updates DOM
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.style.height = '52px';
+          textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 200) + 'px';
+          textareaRef.current.focus();
+        }
+      }, 0);
       if (onPrefillConsumed) onPrefillConsumed();
     }
   }, [prefillValue, onPrefillConsumed]);
