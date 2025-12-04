@@ -12,23 +12,24 @@ interface SuggestionsCardProps {
   suggestions: Suggestion[];
   onSuggestionClick: (content: string, emoji: string, position: { x: number; y: number }) => void;
   isMobile?: boolean;
+  eyeShiftX?: number; // Account for eye horizontal shift
 }
 
-// Desktop: Arc positions - reduced distances to stay within viewport
+// Desktop: Arc positions relative to stage center (will add eyeShiftX)
 const desktopPositions = [
-  { x: -260, y: -70, rotate: -3 },   // Top-left arc
-  { x: -290, y: 0, rotate: 0 },      // Middle-left
-  { x: -260, y: 70, rotate: 3 },     // Bottom-left arc
+  { x: -200, y: -70, rotate: -3 },   // Top-left arc
+  { x: -230, y: 0, rotate: 0 },      // Middle-left
+  { x: -200, y: 70, rotate: 3 },     // Bottom-left arc
 ];
 
-// Mobile: Vertical stack below the eye (no horizontal spread)
+// Mobile: Vertical stack below the eye center
 const mobilePositions = [
-  { x: 0, y: 160, rotate: 0 },
-  { x: 0, y: 220, rotate: 0 },
-  { x: 0, y: 280, rotate: 0 },
+  { x: 0, y: 120, rotate: 0 },
+  { x: 0, y: 175, rotate: 0 },
+  { x: 0, y: 230, rotate: 0 },
 ];
 
-export const SuggestionsCard = ({ suggestions, onSuggestionClick, isMobile = false }: SuggestionsCardProps) => {
+export const SuggestionsCard = ({ suggestions, onSuggestionClick, isMobile = false, eyeShiftX = 0 }: SuggestionsCardProps) => {
   const positions = isMobile ? mobilePositions : desktopPositions;
   const visibleSuggestions = suggestions.filter(s => s.isVisible).slice(0, 3);
 
@@ -66,7 +67,7 @@ export const SuggestionsCard = ({ suggestions, onSuggestionClick, isMobile = fal
               "transition-colors duration-150"
             )}
             style={{
-              left: `calc(50% + ${position.x}px)`,
+              left: `calc(50% + ${position.x + eyeShiftX}px)`,
               top: `calc(50% + ${position.y}px)`,
               transform: `translate(-50%, -50%) rotate(${position.rotate}deg)`,
             }}
