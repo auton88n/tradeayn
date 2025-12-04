@@ -152,6 +152,11 @@ export const CenterStageLayout = ({
     }
   }
 
+  // AI gaze target - eye looks towards suggestions when visible
+  const gazeTarget = hasVisibleSuggestions && !isTyping && !isMobile
+    ? { x: -12, y: 0 } // Look left towards suggestions
+    : null;
+
   // Get eye position for bubble animations - uses actual eye element ref for precise targeting
   const getEyePosition = useCallback(() => {
     // Use actual eye element for precise targeting
@@ -372,7 +377,7 @@ export const CenterStageLayout = ({
               ref={eyeRef} 
               className="relative"
             >
-              <EmotionalEye size={isMobile ? "md" : "lg"} />
+              <EmotionalEye size={isMobile ? "md" : "lg"} gazeTarget={gazeTarget} />
 
               {/* Thinking indicator when typing */}
               <AnimatePresence>
@@ -430,7 +435,7 @@ export const CenterStageLayout = ({
                 mass: 0.8 
               }}
             >
-              <EmotionalEye size="lg" />
+              <EmotionalEye size="lg" gazeTarget={gazeTarget} />
 
               {/* Thinking indicator when typing - stays with eye */}
               <AnimatePresence>

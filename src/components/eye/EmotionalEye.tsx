@@ -7,9 +7,10 @@ import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
 interface EmotionalEyeProps {
   size?: 'sm' | 'md' | 'lg';
   className?: string;
+  gazeTarget?: { x: number; y: number } | null; // AI gaze direction
 }
 
-export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
+export const EmotionalEye = ({ size = 'lg', className, gazeTarget }: EmotionalEyeProps) => {
   const { 
     emotionConfig,
     emotion,
@@ -32,9 +33,15 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
 
+  // AI gaze target (for looking at suggestions)
+  const aiGazeX = useMotionValue(0);
+  const aiGazeY = useMotionValue(0);
+
   const springConfig = { damping: 50, stiffness: 300 };
   const eyeX = useSpring(useTransform(mouseX, (v) => v * 0.015), springConfig);
   const eyeY = useSpring(useTransform(mouseY, (v) => v * 0.015), springConfig);
+  const smoothAiGazeX = useSpring(aiGazeX, { damping: 40, stiffness: 200 });
+  const smoothAiGazeY = useSpring(aiGazeY, { damping: 40, stiffness: 200 });
 
   // Micro-movement for idle "look around"
   const microX = useMotionValue(0);
@@ -42,9 +49,9 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
   const smoothMicroX = useSpring(microX, { damping: 30, stiffness: 100 });
   const smoothMicroY = useSpring(microY, { damping: 30, stiffness: 100 });
 
-  // Combined eye movement
-  const combinedX = useTransform([eyeX, smoothMicroX], ([eye, micro]) => (eye as number) + (micro as number));
-  const combinedY = useTransform([eyeY, smoothMicroY], ([eye, micro]) => (eye as number) + (micro as number));
+  // Combined eye movement (mouse + AI gaze + micro)
+  const combinedX = useTransform([eyeX, smoothMicroX, smoothAiGazeX], ([eye, micro, ai]) => (eye as number) + (micro as number) + (ai as number));
+  const combinedY = useTransform([eyeY, smoothMicroY, smoothAiGazeY], ([eye, micro, ai]) => (eye as number) + (micro as number) + (ai as number));
 
   // Mouse tracking effect
   useEffect(() => {
@@ -67,6 +74,19 @@ export const EmotionalEye = ({ size = 'lg', className }: EmotionalEyeProps) => {
       window.removeEventListener('mouseleave', onLeave);
     };
   }, [mouseX, mouseY]);
+
+  // AI gaze towards suggestions when visible
+  useEffect(() => {
+    if (gazeTarget && !isUserTyping && !isResponding) {
+      // Look towards the suggestion cards (left side)
+      aiGazeX.set(gazeTarget.x * 0.8); // Smooth multiplier for natural gaze
+      aiGazeY.set(gazeTarget.y * 0.3);
+    } else {
+      // Return to center
+      aiGazeX.set(0);
+      aiGazeY.set(0);
+    }
+  }, [gazeTarget, isUserTyping, isResponding, aiGazeX, aiGazeY]);
 
   // Smart blinking system - get random blink interval based on state
   const getBlinkInterval = useCallback(() => {
