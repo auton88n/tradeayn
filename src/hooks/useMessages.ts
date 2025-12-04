@@ -134,7 +134,7 @@ export const useMessages = (
         },
         allowPersonalization,
         detectedLanguage,
-        concise: true,
+        concise: false,
         timestamp: new Date().toISOString(),
         has_attachment: !!attachment,
         file_data: attachment || null
