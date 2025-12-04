@@ -382,13 +382,32 @@ button, a, input, textarea, select {
   .speech-bubble-content {
     word-wrap: break-word;
     overflow-wrap: break-word;
-    word-break: break-word;
     hyphens: auto;
   }
 
-  .speech-bubble-content * {
+  /* Apply word-breaking to text elements only, NOT tables */
+  .speech-bubble-content p,
+  .speech-bubble-content li,
+  .speech-bubble-content span,
+  .speech-bubble-content > div {
     max-width: 100%;
     overflow-wrap: break-word;
+    word-break: break-word;
+  }
+
+  /* Table-specific styles - NO aggressive word-breaking */
+  .speech-bubble-content table {
+    min-width: 100%;
+    table-layout: auto;
+    width: max-content;
+  }
+
+  .speech-bubble-content th,
+  .speech-bubble-content td {
+    min-width: 80px;
+    white-space: normal;
+    word-break: normal;
+    overflow-wrap: normal;
   }
 
   .speech-bubble-content code {
