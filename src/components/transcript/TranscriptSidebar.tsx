@@ -111,7 +111,8 @@ export const TranscriptSidebar = ({
             exit={{ x: '100%', opacity: 0 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             className={cn(
-              "fixed top-0 h-full w-80 z-50",
+              "fixed top-0 h-full z-50",
+              "w-full sm:w-72 md:w-80", // Full width on mobile, narrower on tablet/desktop
               "bg-background backdrop-blur-2xl",
               "border-border",
               "flex flex-col",
