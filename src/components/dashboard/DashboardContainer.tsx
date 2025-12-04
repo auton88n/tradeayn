@@ -437,14 +437,9 @@ const DashboardContent = ({
             variant="ghost"
             size="icon"
             onClick={() => handleToggleTranscript()}
-            className="h-10 w-10 rounded-xl bg-muted/50 hover:bg-muted relative"
+            className="h-10 w-10 rounded-xl bg-muted/50 hover:bg-muted"
           >
             <MessageSquare className="w-5 h-5" />
-            {messagesHook.messages.length > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-foreground text-background text-xs flex items-center justify-center font-medium">
-                {messagesHook.messages.length > 9 ? '9+' : messagesHook.messages.length}
-              </span>
-            )}
           </Button>
         </header>
 
