@@ -329,6 +329,41 @@ button, a, input, textarea, select {
     border: 1px solid hsl(var(--border) / 0.3);
   }
 
+  /* GPU-accelerated orbit animations */
+  .animate-orbit-slow {
+    animation: orbit-rotate 40s linear infinite;
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+  }
+
+  .animate-counter-orbit {
+    animation: counter-rotate 40s linear infinite;
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+  }
+
+  @keyframes orbit-rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes counter-rotate {
+    from { transform: rotate(0deg) translateX(var(--tx, 0)) translateY(var(--ty, 0)); }
+    to { transform: rotate(-360deg) translateX(var(--tx, 0)) translateY(var(--ty, 0)); }
+  }
+
+  /* Eye breathing animation - GPU accelerated */
+  .animate-eye-breathe {
+    animation: eye-breathe 4s ease-in-out infinite;
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+  }
+
+  @keyframes eye-breathe {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.015); opacity: 0.98; }
+  }
+
   /* Professional animated gradient backgrounds */
   .animated-gradient {
     background: linear-gradient(

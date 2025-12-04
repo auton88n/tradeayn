@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Phrase {
@@ -18,58 +17,44 @@ export const OrbitingCards = () => {
     { en: 'Consider it done.', ar: 'اعتبرها منجزة.' },
   ];
 
-  // Orbit settings
-  const radius = 180; // Distance from center
   const cardCount = 6;
-  const rotationDuration = 40; // Smooth, slow rotation
+  const radius = 180;
 
   return (
     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-      {phrases.slice(0, cardCount).map((phrase, index) => {
-        const angle = (index / cardCount) * 360;
+      {/* Single rotating container - much more performant */}
+      <div 
+        className="absolute animate-orbit-slow will-change-transform"
+        style={{ 
+          width: radius * 2, 
+          height: radius * 2,
+        }}
+      >
+        {phrases.slice(0, cardCount).map((phrase, index) => {
+          const angle = (index / cardCount) * 360;
+          const rad = (angle * Math.PI) / 180;
+          const x = Math.cos(rad) * radius;
+          const y = Math.sin(rad) * radius;
 
-        return (
-          <motion.div
-            key={index}
-            className="absolute"
-            style={{
-              left: '50%',
-              top: '50%',
-            }}
-            animate={{
-              rotate: [angle, angle + 360],
-            }}
-            transition={{
-              duration: rotationDuration,
-              repeat: Infinity,
-              ease: 'linear',
-            }}
-          >
-            {/* Position card at orbit radius */}
-            <motion.div
+          return (
+            <div
+              key={index}
+              className="absolute animate-counter-orbit will-change-transform"
               style={{
-                x: Math.cos((angle * Math.PI) / 180) * radius,
-                y: Math.sin((angle * Math.PI) / 180) * radius,
-              }}
-              animate={{
-                rotate: [-angle, -angle - 360],
-              }}
-              transition={{
-                duration: rotationDuration,
-                repeat: Infinity,
-                ease: 'linear',
+                left: '50%',
+                top: '50%',
+                transform: `translate(${x - 100}px, ${y - 20}px)`,
               }}
             >
-              {/* Card with premium glassmorphism */}
               <div className="orbit-card pointer-events-auto px-5 py-3 max-w-[200px]">
                 <p className="text-sm text-foreground/80 text-center leading-relaxed">
                   {language === 'ar' ? phrase.ar : phrase.en}
                 </p>
               </div>
-            </motion.div>
-          </motion.div>
-        );
-      })}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };
