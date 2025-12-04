@@ -17,16 +17,16 @@ interface SuggestionsCardProps {
 
 // Desktop: Arc positions relative to stage center (will add eyeShiftX)
 const desktopPositions = [
-  { x: -200, y: -70, rotate: -3 },   // Top-left arc
-  { x: -230, y: 0, rotate: 0 },      // Middle-left
-  { x: -200, y: 70, rotate: 3 },     // Bottom-left arc
+  { x: -160, y: -60, rotate: -3 },   // Top-left arc
+  { x: -180, y: 0, rotate: 0 },      // Middle-left (reduced from -230)
+  { x: -160, y: 60, rotate: 3 },     // Bottom-left arc
 ];
 
-// Mobile: Vertical stack below the eye center
+// Mobile: Horizontal spread ABOVE the eye (negative y values)
 const mobilePositions = [
-  { x: 0, y: 120, rotate: 0 },
-  { x: 0, y: 175, rotate: 0 },
-  { x: 0, y: 230, rotate: 0 },
+  { x: -70, y: -130, rotate: 0 },    // Top-left above eye
+  { x: 0, y: -170, rotate: 0 },      // Top-center above eye
+  { x: 70, y: -130, rotate: 0 },     // Top-right above eye
 ];
 
 export const SuggestionsCard = ({ suggestions, onSuggestionClick, isMobile = false, eyeShiftX = 0 }: SuggestionsCardProps) => {
