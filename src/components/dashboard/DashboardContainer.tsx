@@ -31,7 +31,7 @@ interface DashboardContainerProps {
   onAdminPanelClick?: () => void;
 }
 
-// Get modes with translations
+// Get modes with translations - Only General mode for now (other modes hidden for testing)
 const getModes = (t: (key: string) => string): AIModeConfig[] => [
   { 
     name: 'General', 
@@ -41,46 +41,12 @@ const getModes = (t: (key: string) => string): AIModeConfig[] => [
     color: 'text-slate-500',
     webhookUrl: ''
   },
-  { 
-    name: 'Nen Mode ⚡', 
-    translatedName: t('modes.nenMode') + ' ⚡',
-    description: 'Ultra-fast AI responses for quick insights',
-    icon: TrendingUp,
-    color: 'text-blue-500',
-    webhookUrl: ''
-  },
-  { 
-    name: 'Research Pro', 
-    translatedName: t('modes.researchPro'),
-    description: 'Deep research and comprehensive analysis',
-    icon: Search,
-    color: 'text-green-500',
-    webhookUrl: ''
-  },
-  { 
-    name: 'PDF Analyst', 
-    translatedName: t('modes.pdfAnalyst'),
-    description: 'Specialized document analysis and insights',
-    icon: FileText,
-    color: 'text-purple-500',
-    webhookUrl: ''
-  },
-  { 
-    name: 'Vision Lab', 
-    translatedName: t('modes.visionLab'),
-    description: 'Advanced image and visual content analysis',
-    icon: Eye,
-    color: 'text-orange-500',
-    webhookUrl: ''
-  },
-  { 
-    name: 'Civil Engineering', 
-    translatedName: t('modes.civilEngineering'),
-    description: 'Civil engineering analysis and calculations',
-    icon: Hammer,
-    color: 'text-teal-500',
-    webhookUrl: ''
-  },
+  // TODO: Re-enable these modes after testing
+  // { name: 'Nen Mode ⚡', translatedName: t('modes.nenMode') + ' ⚡', description: 'Ultra-fast AI responses', icon: TrendingUp, color: 'text-blue-500', webhookUrl: '' },
+  // { name: 'Research Pro', translatedName: t('modes.researchPro'), description: 'Deep research and analysis', icon: Search, color: 'text-green-500', webhookUrl: '' },
+  // { name: 'PDF Analyst', translatedName: t('modes.pdfAnalyst'), description: 'Document analysis', icon: FileText, color: 'text-purple-500', webhookUrl: '' },
+  // { name: 'Vision Lab', translatedName: t('modes.visionLab'), description: 'Image analysis', icon: Eye, color: 'text-orange-500', webhookUrl: '' },
+  // { name: 'Civil Engineering', translatedName: t('modes.civilEngineering'), description: 'Engineering calculations', icon: Hammer, color: 'text-teal-500', webhookUrl: '' },
 ];
 
 export const DashboardContainer = ({ user, isAdmin, onAdminPanelClick }: DashboardContainerProps) => {
@@ -93,7 +59,7 @@ export const DashboardContainer = ({ user, isAdmin, onAdminPanelClick }: Dashboa
   const fileUpload = useFileUpload(user.id);
   
   // State
-  const [selectedMode, setSelectedMode] = React.useState<AIMode>('Nen Mode ⚡');
+  const [selectedMode, setSelectedMode] = React.useState<AIMode>('General');
   const [allowPersonalization, setAllowPersonalization] = React.useState(false);
 
   // Messages hook - depends on other state
