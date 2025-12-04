@@ -113,7 +113,7 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
               
               if (isBlock) {
                 return (
-                  <div className="relative group my-3 first:mt-0 last:mb-0">
+                  <div className="relative group my-3 first:mt-0 last:mb-0 max-w-full overflow-hidden">
                     <button
                       onClick={() => copyCodeToClipboard(codeString, codeId)}
                       className={cn(
@@ -131,7 +131,7 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
                         <Copy size={14} />
                       )}
                     </button>
-                    <pre className="bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 pr-10 overflow-x-auto">
+                    <pre className="bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 pr-10 overflow-x-auto max-w-full w-full">
                       <code className="text-sm font-mono text-gray-800 dark:text-gray-200 whitespace-pre">
                         {children}
                       </code>

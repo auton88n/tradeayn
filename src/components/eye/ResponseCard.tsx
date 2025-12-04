@@ -157,7 +157,7 @@ export const ResponseCard = ({ responses, isMobile = false }: ResponseCardProps)
           className={cn(
             "speech-bubble-content",
             "max-h-[160px] sm:max-h-[200px] md:max-h-[240px] lg:max-h-[280px] overflow-y-auto overflow-x-auto",
-            "break-words",
+            "break-words max-w-full",
             // Premium thin scrollbar
             "[&::-webkit-scrollbar]:w-1.5",
             "[&::-webkit-scrollbar-track]:bg-transparent",
@@ -173,7 +173,7 @@ export const ResponseCard = ({ responses, isMobile = false }: ResponseCardProps)
         >
           <MessageFormatter 
             content={combinedContent} 
-            className="text-sm text-gray-700 dark:text-gray-200 leading-relaxed max-w-none break-words" 
+            className="text-sm text-gray-700 dark:text-gray-200 leading-relaxed max-w-full break-words [&_pre]:max-w-full [&_pre]:overflow-x-auto" 
           />
         </div>
 

@@ -82,10 +82,11 @@ export const TranscriptMessage = ({
       </div>
 
       {/* Premium Message Bubble - Matching ResponseCard */}
-      <div className={cn("inline-block max-w-[90%] min-w-0 overflow-hidden", isUser ? "ml-auto" : "mr-auto")}>
+      <div className={cn("inline-block max-w-[90%] min-w-0", isUser ? "ml-auto" : "mr-auto")}>
         <div
           className={cn(
             "relative px-4 py-3 text-sm leading-relaxed",
+            "max-w-full overflow-x-auto",
             "transition-all duration-300",
             isUser
               ? [
