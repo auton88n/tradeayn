@@ -22,7 +22,9 @@ interface ResponseCardProps {
   emotion?: AYNEmotion;
   timestamp?: Date;
   onRegenerate?: () => void;
-  onSave?: () => void;
+  onSave?: (content: string, mode?: string, emotion?: string) => Promise<boolean>;
+  onUnsave?: (id: string) => Promise<boolean>;
+  checkIfSaved?: (content: string) => string | null;
   isLoading?: boolean;
 }
 
@@ -97,6 +99,8 @@ export const ResponseCard = ({
   timestamp,
   onRegenerate,
   onSave,
+  onUnsave,
+  checkIfSaved,
   isLoading = false,
 }: ResponseCardProps) => {
   const contentRef = useRef<HTMLDivElement>(null);
@@ -105,7 +109,7 @@ export const ResponseCard = ({
   const [copied, setCopied] = useState(false);
   const [feedback, setFeedback] = useState<'up' | 'down' | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
+  const [savedId, setSavedId] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isNewContent, setIsNewContent] = useState(false);
 
@@ -157,9 +161,30 @@ export const ResponseCard = ({
     }
   };
 
-  const handleSave = () => {
-    setIsSaved(prev => !prev);
-    onSave?.();
+  // Check if already saved when content changes
+  useEffect(() => {
+    if (checkIfSaved && combinedContent) {
+      const existingId = checkIfSaved(combinedContent);
+      setSavedId(existingId);
+    }
+  }, [combinedContent, checkIfSaved]);
+
+  const handleSave = async () => {
+    if (savedId && onUnsave) {
+      // Already saved → unsave (delete)
+      const success = await onUnsave(savedId);
+      if (success) setSavedId(null);
+    } else if (onSave && combinedContent) {
+      // Not saved → save (insert)
+      const success = await onSave(combinedContent, mode, emotion);
+      if (success && checkIfSaved) {
+        // Refresh saved ID after save
+        setTimeout(() => {
+          const newId = checkIfSaved(combinedContent);
+          setSavedId(newId);
+        }, 100);
+      }
+    }
   };
 
   // Check if content is scrollable and track scroll position
@@ -418,10 +443,10 @@ export const ResponseCard = ({
               />
             )}
             <ActionButton 
-              icon={isSaved ? BookmarkCheck : Bookmark} 
-              label={isSaved ? "Saved" : "Save"} 
+              icon={savedId ? BookmarkCheck : Bookmark} 
+              label={savedId ? "Saved" : "Save"} 
               onClick={handleSave}
-              active={isSaved}
+              active={!!savedId}
               activeColor="text-yellow-500"
             />
           </div>

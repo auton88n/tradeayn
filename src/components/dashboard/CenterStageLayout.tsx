@@ -47,6 +47,8 @@ interface CenterStageLayoutProps {
   prefillValue?: string;
   onPrefillConsumed?: () => void;
   onSaveResponse?: (content: string, mode?: string, emotion?: string) => Promise<boolean>;
+  onDeleteSavedResponse?: (id: string) => Promise<boolean>;
+  isResponseSaved?: (content: string) => string | null;
 }
 
 export const CenterStageLayout = ({
@@ -72,6 +74,8 @@ export const CenterStageLayout = ({
   prefillValue,
   onPrefillConsumed,
   onSaveResponse,
+  onDeleteSavedResponse,
+  isResponseSaved,
 }: CenterStageLayoutProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const eyeStageRef = useRef<HTMLDivElement>(null);
@@ -453,10 +457,9 @@ animate={{
               responses={responseBubbles} 
               isMobile={isMobile}
               mode={selectedMode}
-              onSave={onSaveResponse ? () => {
-                const content = responseBubbles.filter(r => r.isVisible).map(r => r.content).join('\n\n');
-                if (content) onSaveResponse(content, selectedMode);
-              } : undefined}
+              onSave={onSaveResponse}
+              onUnsave={onDeleteSavedResponse}
+              checkIfSaved={isResponseSaved}
             />
           </div>
         </motion.div>

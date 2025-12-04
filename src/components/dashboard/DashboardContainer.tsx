@@ -486,6 +486,8 @@ const DashboardContent = ({
           prefillValue={replyPrefill}
           onPrefillConsumed={handlePrefillConsumed}
           onSaveResponse={savedResponsesHook.saveResponse}
+          onDeleteSavedResponse={savedResponsesHook.deleteSavedResponse}
+          isResponseSaved={savedResponsesHook.isResponseSaved}
         />
       </main>
 
