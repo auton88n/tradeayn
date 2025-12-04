@@ -351,20 +351,20 @@ export const TranscriptSidebar = ({
     <>
       <FloatingToggleButton />
       {/* Sidebar - Flex layout with width animation */}
-      <div
+      <aside
         data-tutorial="transcript"
         className={cn(
-          "h-full shrink-0 overflow-hidden",
-          "bg-background backdrop-blur-lg",
+          "relative h-full shrink-0 overflow-hidden",
+          "bg-background",
           "border-l border-border",
           "transition-[width] duration-300 ease-out",
           isOpen ? "w-[420px]" : "w-0"
         )}
       >
-        <div className="w-[420px] h-full">
+        <div className="absolute inset-0 w-[420px] h-full overflow-hidden">
           <TranscriptContent {...contentProps} />
         </div>
-      </div>
+      </aside>
     </>
   );
 };
