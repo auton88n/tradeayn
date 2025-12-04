@@ -12,6 +12,7 @@ import { useBubbleAnimation } from '@/hooks/useBubbleAnimation';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
 import { analyzeResponseEmotion, getBubbleType } from '@/utils/emotionMapping';
 import { supabase } from '@/integrations/supabase/client';
+import { useIsMobile } from '@/hooks/use-mobile';
 import type { Message, AIMode, AIModeConfig } from '@/types/dashboard.types';
 
 // Fallback suggestions when API fails
@@ -72,6 +73,7 @@ export const CenterStageLayout = ({
   const eyeStageRef = useRef<HTMLDivElement>(null); // Stable ref for eye center calculation
   const eyeRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
   const { setEmotion, triggerAbsorption, triggerBlink, setIsResponding, detectExcitement } = useAYNEmotion();
   const {
     flyingBubble,
@@ -116,16 +118,20 @@ export const CenterStageLayout = ({
     }
   }, []);
 
-  // Calculate eye position based on visible cards
+  // Calculate eye position based on visible cards - responsive values
   const hasVisibleResponses = responseBubbles.some(b => b.isVisible);
   const hasVisibleSuggestions = suggestionBubbles.some(s => s.isVisible);
   
   // Eye shifts left when responses are visible, right when only suggestions
+  // Mobile: no horizontal shift (stacked layout)
+  // Tablet/Desktop: progressive shift amounts
   let eyeShiftX = 0;
-  if (hasVisibleResponses) {
-    eyeShiftX = -100;
-  } else if (hasVisibleSuggestions) {
-    eyeShiftX = 60;
+  if (!isMobile) {
+    if (hasVisibleResponses) {
+      eyeShiftX = -100;
+    } else if (hasVisibleSuggestions) {
+      eyeShiftX = 60;
+    }
   }
 
   // Get eye position for bubble animations - uses stable container ref
@@ -316,7 +322,10 @@ export const CenterStageLayout = ({
       <div className="absolute inset-0 bg-gradient-to-b from-background via-background to-muted/10 pointer-events-none" />
 
       {/* Central Eye Stage - centered in available space above input */}
-      <div ref={eyeStageRef} className="flex-1 flex items-center justify-center pb-32">
+      <div ref={eyeStageRef} className={cn(
+        "flex-1 flex items-center justify-center",
+        isMobile ? "pb-48 pt-4" : "pb-32"
+      )}>
         <motion.div 
           ref={eyeRef} 
           className="relative"
@@ -328,16 +337,22 @@ export const CenterStageLayout = ({
             mass: 0.8 
           }}
         >
-          <EmotionalEye size="lg" />
+          <EmotionalEye size={isMobile ? "md" : "lg"} />
 
-          {/* Individual Suggestion Cards arcing around LEFT side of eye */}
+          {/* Individual Suggestion Cards - arc on desktop, below on mobile */}
           <SuggestionsCard
             suggestions={suggestionBubbles}
             onSuggestionClick={handleSuggestionClick}
+            isMobile={isMobile}
           />
 
-          {/* Unified Response Card on the RIGHT side of eye */}
-          <div className="absolute top-1/2 left-full -translate-y-1/2 ml-8">
+          {/* Unified Response Card - right on desktop, below on mobile */}
+          <div className={cn(
+            "absolute",
+            isMobile 
+              ? "top-full mt-6 left-1/2 -translate-x-1/2" 
+              : "top-1/2 left-full -translate-y-1/2 ml-8"
+          )}>
             <ResponseCard responses={responseBubbles} />
           </div>
 
