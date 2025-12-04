@@ -191,7 +191,7 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
               </th>
             ),
             td: ({ children }) => (
-              <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-200 whitespace-nowrap">
+              <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-200 break-words">
                 {children}
               </td>
             ),

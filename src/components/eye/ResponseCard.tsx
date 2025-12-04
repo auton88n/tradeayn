@@ -136,9 +136,9 @@ export const ResponseCard = ({ responses, isMobile = false }: ResponseCardProps)
         {/* Inner highlight shine */}
         <div className="absolute inset-x-4 top-0 h-[40%] bg-gradient-to-b from-white/30 to-transparent dark:from-white/10 rounded-t-xl pointer-events-none" />
 
-        {/* Brain Logo - Top Right (subtle) */}
+        {/* Brain Logo - Top Left (subtle) */}
         <motion.div 
-          className="absolute top-3 right-3 opacity-20 group-hover:opacity-40 transition-opacity duration-300"
+          className="absolute top-3 left-3 opacity-20 group-hover:opacity-40 transition-opacity duration-300"
           animate={{ 
             scale: [1, 1.05, 1],
           }}
@@ -156,7 +156,7 @@ export const ResponseCard = ({ responses, isMobile = false }: ResponseCardProps)
           ref={contentRef}
           className={cn(
             "speech-bubble-content",
-            "max-h-[160px] sm:max-h-[200px] md:max-h-[240px] lg:max-h-[280px] overflow-y-auto overflow-x-hidden",
+            "max-h-[160px] sm:max-h-[200px] md:max-h-[240px] lg:max-h-[280px] overflow-y-auto overflow-x-auto",
             "break-words",
             // Premium thin scrollbar
             "[&::-webkit-scrollbar]:w-1.5",
@@ -166,8 +166,8 @@ export const ResponseCard = ({ responses, isMobile = false }: ResponseCardProps)
             "[&::-webkit-scrollbar-thumb]:hover:bg-gray-400/60 dark:[&::-webkit-scrollbar-thumb]:hover:bg-gray-500/60",
             // iOS touch scrolling
             "[-webkit-overflow-scrolling:touch]",
-            // Padding for brain logo
-            "pl-6 pr-2 pt-1"
+            // Padding for brain logo on left
+            "pl-8 pr-2 pt-1"
           )}
           style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}
         >
