@@ -1,13 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { X, Search, Copy, Trash2, MessageSquare, Brain } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { TranscriptMessage } from './TranscriptMessage';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { useIsMobile } from '@/hooks/use-mobile';
 import type { Message } from '@/types/dashboard.types';
 import type { AYNEmotion } from '@/contexts/AYNEmotionContext';
 
@@ -34,7 +33,6 @@ const TranscriptContent = ({
   onToggle,
   onClear,
   handleCopyAll,
-  isMobile = false,
 }: {
   messages: Message[];
   filteredMessages: Message[];
@@ -48,12 +46,8 @@ const TranscriptContent = ({
   onToggle: (open?: boolean) => void;
   onClear?: () => void;
   handleCopyAll: () => void;
-  isMobile?: boolean;
 }) => (
-  <div className={cn(
-    "flex flex-col bg-gradient-to-b from-background to-background/95",
-    isMobile ? "h-screen" : "h-full"
-  )}>
+  <div className="flex flex-col h-full bg-gradient-to-b from-background to-background/95">
     {/* Premium Header */}
     <div className="relative">
       {/* Glassmorphism header background */}
@@ -274,7 +268,6 @@ export const TranscriptSidebar = ({
   onReply,
 }: TranscriptSidebarProps) => {
   const { toast } = useToast();
-  const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -324,15 +317,14 @@ export const TranscriptSidebar = ({
     onToggle,
     onClear,
     handleCopyAll,
-    isMobile,
   };
 
-  // Floating toggle button - top right corner (desktop only)
+  // Floating toggle button - works on all devices
   const FloatingToggleButton = () => (
     <button
       onClick={() => onToggle()}
       className={cn(
-        "fixed top-6 right-6 z-50",
+        "fixed top-6 right-6 z-40",
         "w-11 h-11 rounded-xl",
         "bg-background/80 backdrop-blur-sm border border-border",
         "text-foreground",
@@ -352,53 +344,38 @@ export const TranscriptSidebar = ({
     </button>
   );
 
-  // Mobile: Use Sheet component with FIXED full-screen settings
-  if (isMobile) {
-    return (
-      <Sheet open={isOpen} onOpenChange={onToggle}>
-        <SheetContent 
-          side="right"
-          className={cn(
-            "fixed inset-0",
-            "w-screen h-screen",
-            "max-w-none",
-            "p-0 m-0",
-            "border-0",
-            "z-50",
-            "[&>button]:hidden"
-          )}
-          style={{
-            width: '100vw',
-            height: '100vh',
-            maxWidth: '100vw',
-            maxHeight: '100vh',
-          }}
-        >
-          <TranscriptContent {...contentProps} />
-        </SheetContent>
-      </Sheet>
-    );
-  }
-
-  // Desktop: Flex child with animated width (like left sidebar)
+  // UNIFIED: Full-screen overlay for ALL devices (mobile, tablet, desktop)
   return (
     <>
       <FloatingToggleButton />
-      {/* Sidebar - Flex layout with width animation */}
-      <aside
-        data-tutorial="transcript"
-        className={cn(
-          "relative h-full shrink-0 overflow-hidden",
-          "bg-background",
-          "border-l border-border",
-          "transition-[width] duration-300 ease-out",
-          isOpen ? "w-[320px]" : "w-0"
+      
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            {/* Dark backdrop - click to close */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+              onClick={() => onToggle(false)}
+            />
+            
+            {/* Full-screen content panel - slides in from right */}
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="fixed inset-0 z-50 bg-background"
+              data-tutorial="transcript"
+            >
+              <TranscriptContent {...contentProps} />
+            </motion.div>
+          </>
         )}
-      >
-        <div className="absolute inset-0 w-[320px] h-full overflow-hidden">
-          <TranscriptContent {...contentProps} />
-        </div>
-      </aside>
+      </AnimatePresence>
     </>
   );
 };
