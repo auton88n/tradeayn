@@ -367,9 +367,26 @@ const DashboardContent = ({
         )}
       >
         {/* Mobile header with sidebar trigger */}
-        <header className="md:hidden flex items-center p-3 border-b bg-background">
-          <SidebarTrigger />
-          <span className="ml-3 font-semibold text-foreground">AYN AI</span>
+        <header className="md:hidden flex items-center justify-between p-3 border-b bg-background">
+          <div className="flex items-center">
+            <SidebarTrigger />
+            <span className="ml-3 font-semibold text-foreground">AYN AI</span>
+          </div>
+          
+          {/* Transcript toggle button - mobile only */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setTranscriptOpen(!transcriptOpen)}
+            className="relative h-9 w-9"
+          >
+            <MessageSquare className="w-5 h-5" />
+            {messagesHook.messages.length > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-foreground text-background text-[9px] font-bold flex items-center justify-center">
+                {messagesHook.messages.length > 99 ? '99+' : messagesHook.messages.length}
+              </span>
+            )}
+          </Button>
         </header>
 
         <CenterStageLayout
