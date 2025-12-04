@@ -98,7 +98,7 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
             ),
             // List items
             li: ({ children }) => (
-              <li className="leading-relaxed">{children}</li>
+              <li className="leading-relaxed break-words">{children}</li>
             ),
             // Paragraphs
             p: ({ children }) => (
@@ -184,12 +184,12 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
               <tr className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">{children}</tr>
             ),
             th: ({ children }) => (
-              <th className="px-4 py-2.5 text-left font-semibold border-b border-gray-200 dark:border-gray-700 text-sm text-gray-900 dark:text-white">
+              <th className="px-4 py-2.5 text-left font-semibold border-b border-gray-200 dark:border-gray-700 text-sm text-gray-900 dark:text-white break-words">
                 {children}
               </th>
             ),
             td: ({ children }) => (
-              <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200">{children}</td>
+              <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200 break-words">{children}</td>
             ),
             // Horizontal rule
             hr: () => (
