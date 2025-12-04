@@ -364,7 +364,7 @@ export const TranscriptSidebar = ({
       <Sheet open={isOpen} onOpenChange={onToggle}>
         <SheetContent 
           side="right" 
-          className="inset-0 w-full h-full sm:inset-y-0 sm:inset-x-auto sm:right-0 sm:left-auto sm:w-[400px] sm:max-w-[400px] p-0 [&>button]:hidden"
+          className="!inset-0 !w-full !h-full !max-w-full p-0 border-0 [&>button]:hidden"
         >
           <TranscriptContent {...contentProps} />
         </SheetContent>
