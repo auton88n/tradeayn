@@ -266,9 +266,10 @@ const DashboardContent = ({
     setTranscriptOpen(shouldOpen);
   }, [transcriptOpen, isMobile, setOpen, setOpenMobile]);
 
-  // Handle reply from transcript
+  // Handle reply from transcript - close sidebar and prefill input
   const handleReply = useCallback((quotedContent: string) => {
     setReplyPrefill(quotedContent);
+    setTranscriptOpen(false);
   }, []);
 
   const handlePrefillConsumed = useCallback(() => {
