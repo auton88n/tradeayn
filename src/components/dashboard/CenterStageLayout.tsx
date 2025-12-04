@@ -524,7 +524,7 @@ export const CenterStageLayout = ({
 
       {/* Mobile suggestion chips - above input */}
       {isSmallScreen && (
-        <div className="fixed bottom-36 sm:bottom-40 left-0 right-0 z-40">
+        <div className="fixed bottom-32 sm:bottom-36 left-0 right-0 z-40">
           <AnimatePresence>
             <MobileSuggestionChips
               suggestions={suggestionBubbles}
