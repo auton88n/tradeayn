@@ -35,15 +35,26 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
   const preprocessContent = (text: string): string => {
     let processed = text;
     
-    // 0. Convert inline markdown tables to multi-line format
-    // Detect tables by looking for separator pattern like |---|
-    if (processed.includes('|') && /\|-+\|/.test(processed)) {
-      // Simple approach: split every "| |" or "|  |" into separate lines
-      // This handles: "| Header | |---| | Data |" -> proper multi-line table
-      processed = processed.replace(/\|\s+\|/g, '|\n|');
+    // Robust inline markdown table detection and conversion
+    // Tables have: header row | separator row (|---|) | data rows
+    if (processed.includes('|') && /\|[\s-:]+\|/.test(processed)) {
+      // Step 1: Add newline before separator row pattern (|---|---|---|)
+      processed = processed.replace(
+        /\|\s*(\|[\s:]*-+[\s:]*)+\|/g, 
+        (match) => '\n' + match.trim()
+      );
       
-      // Also handle case where separator is directly adjacent: "||---"
-      processed = processed.replace(/\|\|/g, '|\n|');
+      // Step 2: Add newline before each data row - detect "| |" pattern
+      processed = processed.replace(/\|\s+\|(?!\s*[-:])/g, '|\n|');
+      
+      // Step 3: Handle separator directly after header: "Header||---"
+      processed = processed.replace(/\|\s*\|\s*[-:]/g, '|\n|');
+      
+      // Step 4: Ensure separator row has its own line
+      processed = processed.replace(/([^\n])\s*(\|[-:\s|]+\|)/g, '$1\n$2');
+      
+      // Step 5: Split rows that have "|" followed by space and another "|"
+      processed = processed.replace(/\|\s{2,}\|/g, '|\n|');
       
       // Clean up multiple newlines
       processed = processed.replace(/\n{3,}/g, '\n\n');
@@ -168,8 +179,8 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
             ),
             // Tables (enhanced with GFM support)
             table: ({ children }) => (
-              <div className="overflow-x-auto my-4 first:mt-0 last:mb-0">
-                <table className="min-w-full border-collapse border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+              <div className="overflow-x-auto my-4 first:mt-0 last:mb-0 max-w-full">
+                <table className="min-w-full border-collapse border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden text-sm">
                   {children}
                 </table>
               </div>
