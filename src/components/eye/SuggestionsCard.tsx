@@ -18,9 +18,9 @@ interface SuggestionsCardProps {
 
 // Desktop: Arc positions relative to stage center (will add eyeShiftX)
 const desktopPositions = [
-  { x: -180, y: -60, rotate: -3 },
-  { x: -200, y: 0, rotate: 0 },
-  { x: -180, y: 60, rotate: 3 },
+  { x: -300, y: -100, rotate: -2 },
+  { x: -320, y: 0, rotate: 0 },
+  { x: -300, y: 100, rotate: 2 },
 ];
 
 export const SuggestionsCard = ({ 
