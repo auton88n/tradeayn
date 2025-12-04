@@ -46,6 +46,7 @@ interface CenterStageLayoutProps {
   onModeChange: (mode: AIMode) => void;
   prefillValue?: string;
   onPrefillConsumed?: () => void;
+  onSaveResponse?: (content: string, mode?: string, emotion?: string) => Promise<boolean>;
 }
 
 export const CenterStageLayout = ({
@@ -70,6 +71,7 @@ export const CenterStageLayout = ({
   onModeChange,
   prefillValue,
   onPrefillConsumed,
+  onSaveResponse,
 }: CenterStageLayoutProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const eyeStageRef = useRef<HTMLDivElement>(null);
@@ -450,6 +452,11 @@ animate={{
             <ResponseCard 
               responses={responseBubbles} 
               isMobile={isMobile}
+              mode={selectedMode}
+              onSave={onSaveResponse ? () => {
+                const content = responseBubbles.filter(r => r.isVisible).map(r => r.content).join('\n\n');
+                if (content) onSaveResponse(content, selectedMode);
+              } : undefined}
             />
           </div>
         </motion.div>

@@ -14,6 +14,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { ProfileAvatarUpload } from './ProfileAvatarUpload';
+import { SavedResponsesSection } from './SavedResponsesSection';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import type { SidebarProps } from '@/types/dashboard.types';
@@ -41,7 +42,10 @@ export const Sidebar = ({
   isAdmin,
   onAdminPanelClick,
   onStartTutorial,
-  isTutorialProfileStep
+  isTutorialProfileStep,
+  savedResponses = [],
+  onDeleteSavedResponse,
+  isSavedResponsesLoading = false
 }: SidebarProps) => {
   const { t, language, direction } = useLanguage();
   const { toggleSidebar } = useSidebar();
@@ -180,6 +184,15 @@ export const Sidebar = ({
             </Button>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {/* Saved Responses Section */}
+        {savedResponses.length > 0 && onDeleteSavedResponse && (
+          <SavedResponsesSection
+            savedResponses={savedResponses}
+            onDelete={onDeleteSavedResponse}
+            isLoading={isSavedResponsesLoading}
+          />
+        )}
 
         {/* Search Input */}
         <div className="px-4 pb-3 flex-shrink-0">
