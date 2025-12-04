@@ -382,7 +382,7 @@ const DashboardContent = ({
           >
             <MessageSquare className="w-5 h-5" />
             {messagesHook.messages.length > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-foreground text-background text-[9px] font-bold flex items-center justify-center">
+              <span className="absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
                 {messagesHook.messages.length > 99 ? '99+' : messagesHook.messages.length}
               </span>
             )}
