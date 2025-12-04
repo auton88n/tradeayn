@@ -725,26 +725,15 @@ button, a, input, textarea, select {
     text-align: left !important;
   }
 
-  /* Force entire input area to use LTR layout for consistency */
-  [dir="rtl"] .input-area {
-    direction: ltr !important;
-  }
-
   /* Force input container to use LTR layout for consistency */
   [dir="rtl"] .input-container {
     direction: ltr !important;
     flex-direction: row !important;
   }
 
-  /* Prevent icon flipping inside input area */
-  [dir="rtl"] .input-area .lucide-arrow-right,
-  [dir="rtl"] .input-area .lucide-arrow-up,
-  [dir="rtl"] .input-area .lucide-send,
-  [dir="rtl"] .input-area .lucide-paperclip,
-  [dir="rtl"] .input-area .lucide-plus,
-  [dir="rtl"] .input-area .lucide-chevron-down {
-    transform: none !important;
-  }
+  /* Input container flex rules now in dedicated section at end of file */
+
+  /* Remove old RTL input container rules - now handled above */
 
   /* Auth input text - proper contrast for light and dark modes */
   .auth-input-text {

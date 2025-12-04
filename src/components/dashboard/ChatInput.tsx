@@ -204,7 +204,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
 
   // Enable file attachments for all modes
   const supportsFileAttachment = true;
-  return <div ref={ref} data-tutorial="chat-input" className={cn("input-area bottom-position", sidebarOpen ? "sidebar-open" : "sidebar-closed", transcriptOpen && "transcript-open", isDragOver && "drag-over")} style={{ direction: 'ltr' }} onDragEnter={onDragEnter} onDragLeave={onDragLeave} onDragOver={onDragOver} onDrop={onDrop}>
+  return <div ref={ref} data-tutorial="chat-input" className={cn("input-area bottom-position", sidebarOpen ? "sidebar-open" : "sidebar-closed", transcriptOpen && "transcript-open", isDragOver && "drag-over")} onDragEnter={onDragEnter} onDragLeave={onDragLeave} onDragOver={onDragOver} onDrop={onDrop}>
       {/* Drag Overlay */}
       {isDragOver && <div className="absolute inset-0 bg-primary/10 backdrop-blur-sm rounded-3xl border-2 border-primary border-dashed flex flex-col items-center justify-center z-50 pointer-events-none">
           <Paperclip className="w-12 h-12 text-primary mb-2" />
@@ -232,13 +232,17 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
             disabled={isDisabled || isUploading} 
             rows={1} 
             unstyled={true} 
+            dir={language === 'ar' ? 'rtl' : 'ltr'}
+            style={{ textAlign: language === 'ar' ? 'right' : 'left' }}
             className="w-full resize-none min-h-[44px] max-h-[200px] text-base bg-transparent border-0 outline-none focus:ring-0 px-1 py-2" 
-            style={{ textAlign: 'left', direction: 'ltr' }}
           />
 
           {/* Typewriter Placeholder */}
-          {showPlaceholder && !inputMessage.trim() && !isInputFocused && <div className="absolute top-[8px] left-[4px] pointer-events-none z-10 transition-all duration-300" style={{ textAlign: 'left' }}>
-              <TypewriterText key={`${placeholderIndex}-${language}`} text={placeholderTexts[placeholderIndex]} speed={50} className="typewriter-text text-muted-foreground" showCursor={true} forceDirection="ltr" />
+          {showPlaceholder && !inputMessage.trim() && !isInputFocused && <div className={cn(
+              "absolute top-[8px] pointer-events-none z-10 transition-all duration-300",
+              language === 'ar' ? 'right-[4px]' : 'left-[4px]'
+            )}>
+              <TypewriterText key={`${placeholderIndex}-${language}-${direction}`} text={placeholderTexts[placeholderIndex]} speed={50} className="typewriter-text text-muted-foreground" showCursor={true} />
             </div>}
 
           {/* Selected File Chip (BELOW textarea) */}

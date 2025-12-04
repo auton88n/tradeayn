@@ -8,7 +8,6 @@ interface TypewriterTextProps {
   onSkip?: () => void;
   showCursor?: boolean;
   className?: string;
-  forceDirection?: 'ltr' | 'rtl';
 }
 
 export const TypewriterText = ({ 
@@ -17,15 +16,13 @@ export const TypewriterText = ({
   onComplete, 
   onSkip,
   showCursor = false,
-  className = "",
-  forceDirection
+  className = "" 
 }: TypewriterTextProps) => {
   const [displayedText, setDisplayedText] = useState('');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
   const [showSkipButton, setShowSkipButton] = useState(false);
-  const { direction: contextDirection } = useLanguage();
-  const direction = forceDirection || contextDirection;
+  const { direction } = useLanguage();
 
   useEffect(() => {
     // Show skip option after 1 second of typing
@@ -69,7 +66,7 @@ export const TypewriterText = ({
     <div className="relative group">
       <div 
         className={`${className} cursor-pointer transition-all duration-300 ease-in-out ${!isComplete ? 'hover:opacity-80' : ''} ${direction === 'rtl' ? 'text-right' : 'text-left'}`}
-        style={{ direction: direction === 'rtl' ? 'rtl' : 'ltr', textAlign: forceDirection === 'ltr' ? 'left' : undefined }}
+        style={{ direction: direction === 'rtl' ? 'rtl' : 'ltr' }}
         onClick={handleClick}
       >
         <span className="whitespace-pre-wrap break-words">
