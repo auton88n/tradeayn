@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-import { Plus, LogOut, Trash2, Camera, Settings, X, MessageSquare, Search, Star, Shield, Brain, ChevronDown, GraduationCap } from 'lucide-react';
+import { Plus, LogOut, Trash2, Camera, Settings, X, MessageSquare, Search, Star, Shield, Brain, ChevronDown, GraduationCap, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -51,6 +51,7 @@ export const Sidebar = ({
     const stored = localStorage.getItem('pinnedChats');
     return stored ? new Set(JSON.parse(stored)) : new Set();
   });
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   // Control profile popover during tutorial
   useEffect(() => {
@@ -412,63 +413,115 @@ export const Sidebar = ({
           </PopoverTrigger>
           <PopoverContent 
             className={cn(
-              "w-56 p-2 rounded-xl",
+              "w-64 p-0 rounded-2xl overflow-hidden",
               "bg-background/95 backdrop-blur-xl",
-              "border border-border/60 shadow-xl",
+              "border border-border/60 shadow-2xl",
               "animate-in slide-in-from-bottom-2 fade-in-0 duration-200"
             )}
             align="start" 
             side="top"
             sideOffset={8}
           >
-            <div className="space-y-1">
+            {/* User Info Header */}
+            <div className="px-4 py-3 bg-muted/30">
+              <p className="text-sm font-semibold text-foreground truncate">{userName || 'User'}</p>
+              <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
+            </div>
+            
+            {/* Gradient Divider */}
+            <div className="h-px bg-gradient-to-r from-transparent via-border/60 to-transparent" />
+            
+            {/* Menu Items */}
+            <div className="p-2 space-y-0.5">
               <Button 
                 onClick={() => setShowAvatarUpload(true)}
                 variant="ghost" 
-                className="w-full justify-start h-10 px-3 rounded-lg hover:bg-muted transition-colors"
+                className="w-full justify-start h-11 px-3 gap-3 rounded-xl hover:bg-muted/60 transition-all duration-200 group"
               >
-                <Camera className="w-4 h-4 mr-3 text-muted-foreground" />
-                <span>Change Photo</span>
+                <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center group-hover:bg-muted group-hover:scale-105 transition-all duration-200">
+                  <Camera className="w-4 h-4 text-muted-foreground" />
+                </div>
+                <div className="flex flex-col items-start">
+                  <span className="text-sm font-medium">Change Photo</span>
+                  <span className="text-[10px] text-muted-foreground/70">Update your avatar</span>
+                </div>
               </Button>
+              
               <Button 
                 onClick={() => navigate('/settings')}
                 variant="ghost" 
-                className="w-full justify-start h-10 px-3 rounded-lg hover:bg-muted transition-colors"
+                className="w-full justify-start h-11 px-3 gap-3 rounded-xl hover:bg-muted/60 transition-all duration-200 group"
               >
-                <Settings className="w-4 h-4 mr-3 text-muted-foreground" />
-                <span>Settings</span>
+                <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center group-hover:bg-muted group-hover:scale-105 transition-all duration-200">
+                  <Settings className="w-4 h-4 text-muted-foreground" />
+                </div>
+                <div className="flex flex-col items-start">
+                  <span className="text-sm font-medium">Settings</span>
+                  <span className="text-[10px] text-muted-foreground/70">Preferences & account</span>
+                </div>
               </Button>
+              
               <Button 
                 onClick={() => {
                   setProfilePopoverOpen(false);
                   onStartTutorial?.();
                 }}
                 variant="ghost" 
-                className="w-full justify-start h-10 px-3 rounded-lg hover:bg-muted transition-colors"
+                className="w-full justify-start h-11 px-3 gap-3 rounded-xl hover:bg-muted/60 transition-all duration-200 group"
               >
-                <GraduationCap className="w-4 h-4 mr-3 text-muted-foreground" />
-                <span>Tutorial</span>
+                <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center group-hover:bg-muted group-hover:scale-105 transition-all duration-200">
+                  <GraduationCap className="w-4 h-4 text-muted-foreground" />
+                </div>
+                <div className="flex flex-col items-start">
+                  <span className="text-sm font-medium">Tutorial</span>
+                  <span className="text-[10px] text-muted-foreground/70">Learn how to use AYN</span>
+                </div>
               </Button>
+              
               {isAdmin && (
                 <Button 
                   onClick={onAdminPanelClick}
                   variant="ghost" 
-                  className="w-full justify-start h-10 px-3 rounded-lg hover:bg-muted transition-colors"
+                  className="w-full justify-start h-11 px-3 gap-3 rounded-xl hover:bg-muted/60 transition-all duration-200 group"
                 >
-                  <Shield className="w-4 h-4 mr-3 text-muted-foreground" />
-                  <span>Admin Panel</span>
+                  <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center group-hover:bg-muted group-hover:scale-105 transition-all duration-200">
+                    <Shield className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                  <div className="flex flex-col items-start">
+                    <span className="text-sm font-medium">Admin Panel</span>
+                    <span className="text-[10px] text-muted-foreground/70">Manage system</span>
+                  </div>
                 </Button>
               )}
             </div>
-            <div className="h-px bg-border/60 my-2" />
-            <Button 
-              onClick={onLogout}
-              variant="ghost" 
-              className="w-full justify-start h-10 px-3 rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
-            >
-              <LogOut className="w-4 h-4 mr-3" />
-              <span>Sign Out</span>
-            </Button>
+            
+            {/* Gradient Divider */}
+            <div className="h-px bg-gradient-to-r from-transparent via-border/60 to-transparent" />
+            
+            {/* Sign Out */}
+            <div className="p-2">
+              <Button 
+                onClick={async () => {
+                  setIsSigningOut(true);
+                  setProfilePopoverOpen(false);
+                  await onLogout();
+                }}
+                disabled={isSigningOut}
+                variant="ghost" 
+                className="w-full justify-start h-11 px-3 gap-3 rounded-xl text-destructive/80 hover:text-destructive hover:bg-destructive/8 transition-all duration-200 group"
+              >
+                <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center group-hover:bg-destructive/15 transition-all duration-200">
+                  {isSigningOut ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <LogOut className="w-4 h-4" />
+                  )}
+                </div>
+                <span className="text-sm font-medium">
+                  {isSigningOut ? 'Signing out...' : 'Sign Out'}
+                </span>
+              </Button>
+            </div>
           </PopoverContent>
         </Popover>
 
