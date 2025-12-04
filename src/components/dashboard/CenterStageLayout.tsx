@@ -263,26 +263,24 @@ export const CenterStageLayout = ({
       const eyePos = getEyePosition();
       startMessageAnimation(content, inputPos, eyePos);
 
-      // After flight completes, trigger eye absorption and send message
+      // After flight completes, trigger eye absorption and send message (reduced delays)
       setTimeout(() => {
         triggerBlink();
-        setTimeout(() => {
-          triggerAbsorption();
-          setEmotion('thinking');
-          setIsResponding(true);
-          
-          // Trigger particle burst at eye position
-          const eyePos = getEyePosition();
-          setBurstPosition(eyePos);
-          setShowParticleBurst(true);
-          setTimeout(() => setShowParticleBurst(false), 500);
-          
-          completeAbsorption();
+        triggerAbsorption();
+        setEmotion('thinking');
+        setIsResponding(true);
+        
+        // Trigger particle burst at fresh eye position
+        const freshEyePos = getEyePosition();
+        setBurstPosition(freshEyePos);
+        setShowParticleBurst(true);
+        setTimeout(() => setShowParticleBurst(false), 400);
+        
+        completeAbsorption();
 
-          // Actually send the message
-          onSendMessage(content, file);
-        }, 150);
-      }, 600);
+        // Actually send the message immediately
+        onSendMessage(content, file);
+      }, 350);
     },
     [
       clearResponseBubbles,
@@ -312,27 +310,27 @@ export const CenterStageLayout = ({
     
     startSuggestionFlight(content, emoji, clickPosition, eyePos);
 
-    // After flight completes, trigger absorption and send
+    // After flight completes, trigger absorption and send (reduced delays)
     setTimeout(() => {
       triggerBlink();
-      setTimeout(() => {
-        triggerAbsorption();
-        setEmotion('thinking');
-        setIsResponding(true);
-        
-        setBurstPosition(eyePos);
-        setShowParticleBurst(true);
-        setTimeout(() => setShowParticleBurst(false), 500);
-        
-        completeSuggestionAbsorption();
-        
-        // Clear previous response bubbles
-        clearResponseBubbles();
-        
-        // Send the message
-        onSendMessage(content, null);
-      }, 150);
-    }, 550);
+      triggerAbsorption();
+      setEmotion('thinking');
+      setIsResponding(true);
+      
+      // Get fresh eye position for particle burst
+      const freshEyePos = getEyePosition();
+      setBurstPosition(freshEyePos);
+      setShowParticleBurst(true);
+      setTimeout(() => setShowParticleBurst(false), 400);
+      
+      completeSuggestionAbsorption();
+      
+      // Clear previous response bubbles
+      clearResponseBubbles();
+      
+      // Send the message immediately
+      onSendMessage(content, null);
+    }, 300);
   }, [
     clearSuggestions,
     clearResponseBubbles,
@@ -376,7 +374,7 @@ export const CenterStageLayout = ({
         const response = lastMessage.content.replace(/^[!?\s]+/, '').trim();
         emitResponseBubble(response, bubbleType);
         
-        // Show dynamic suggestions after response bubble appears
+        // Show dynamic suggestions after response bubble appears (reduced delay)
         setTimeout(async () => {
           const suggestions = await fetchDynamicSuggestions(
             lastUserMessage || 'Hello',
@@ -384,8 +382,8 @@ export const CenterStageLayout = ({
             selectedMode
           );
           emitSuggestions(suggestions);
-        }, 1400);
-      }, 150); // Delay for blink animation
+        }, 600);
+      }, 50); // Minimal delay for blink
     }
   }, [messages, lastProcessedMessageId, setEmotion, setIsResponding, emitResponseBubble, emitSuggestions, triggerBlink, detectExcitement, fetchDynamicSuggestions, lastUserMessage, selectedMode]);
 

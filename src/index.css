@@ -11,14 +11,21 @@
   }
 }
 
-/* Theme transitions - scoped for performance */
-html, body {
-  transition: background-color 0.3s ease-out, color 0.3s ease-out;
+/* GPU acceleration for animations */
+.will-change-transform {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
-/* Interactive elements transitions only */
+/* Theme transitions - scoped for performance */
+html, body {
+  transition: background-color 0.2s ease-out, color 0.2s ease-out;
+}
+
+/* Interactive elements - faster transitions */
 button, a, input, textarea, select {
-  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
 }
 
 /* Exclude animated elements */
@@ -29,7 +36,13 @@ button, a, input, textarea, select {
 /* Smooth focus states */
 *:focus-visible {
   outline: none;
-  transition: box-shadow 0.2s ease;
+  transition: box-shadow 0.15s ease;
+}
+
+/* Sidebar performance optimization */
+[data-sidebar="sidebar"] {
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 /* AYN AI Business Consulting Platform Design System */

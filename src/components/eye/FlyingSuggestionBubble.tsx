@@ -1,3 +1,4 @@
+import { useRef, useLayoutEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
@@ -18,18 +19,30 @@ export const FlyingSuggestionBubble = ({
   endPosition,
   onComplete,
 }: FlyingSuggestionBubbleProps) => {
+  const bubbleRef = useRef<HTMLDivElement>(null);
+  const [dimensions, setDimensions] = useState({ width: 180, height: 50 });
+
+  // Measure actual bubble dimensions after render
+  useLayoutEffect(() => {
+    if (bubbleRef.current) {
+      const rect = bubbleRef.current.getBoundingClientRect();
+      setDimensions({ width: rect.width, height: rect.height });
+    }
+  }, [content]);
+
   if (status === 'done') return null;
 
-  // Calculate center offset for the bubble
-  const bubbleWidth = 180;
-  const bubbleHeight = 50;
+  // Use measured dimensions for precise centering
+  const halfWidth = dimensions.width / 2;
+  const halfHeight = dimensions.height / 2;
 
   return (
     <motion.div
+      ref={bubbleRef}
       className={cn(
         "fixed z-50 px-4 py-3 rounded-2xl",
         "bg-white/95 dark:bg-gray-900/90",
-        "backdrop-blur-xl",
+        "backdrop-blur-lg",
         "border border-gray-200/60 dark:border-gray-700/40",
         "shadow-[0_8px_24px_rgba(0,0,0,0.1)]",
         "pointer-events-none"
@@ -38,10 +51,11 @@ export const FlyingSuggestionBubble = ({
         left: 0,
         top: 0,
         transformOrigin: 'center center',
+        willChange: 'transform, opacity',
       }}
       initial={{
-        x: startPosition.x - bubbleWidth / 2,
-        y: startPosition.y - bubbleHeight / 2,
+        x: startPosition.x - halfWidth,
+        y: startPosition.y - halfHeight,
         scale: 1,
         opacity: 1,
         rotate: 0,
@@ -50,32 +64,32 @@ export const FlyingSuggestionBubble = ({
       animate={
         status === 'flying'
           ? {
-              x: endPosition.x - bubbleWidth / 2,
-              y: endPosition.y - bubbleHeight / 2,
+              x: endPosition.x - halfWidth,
+              y: endPosition.y - halfHeight,
               scale: 0.3,
               opacity: 1,
               rotate: 10,
               filter: 'blur(0px)',
             }
           : {
-              x: endPosition.x - bubbleWidth / 2,
-              y: endPosition.y - bubbleHeight / 2,
+              x: endPosition.x - halfWidth,
+              y: endPosition.y - halfHeight,
               scale: 0,
               opacity: 0,
               rotate: 0,
-              filter: 'blur(8px)',
+              filter: 'blur(6px)',
             }
       }
       transition={
         status === 'flying'
           ? {
               type: 'spring',
-              stiffness: 150,
-              damping: 16,
-              mass: 0.5,
+              stiffness: 200,
+              damping: 18,
+              mass: 0.4,
             }
           : {
-              duration: 0.2,
+              duration: 0.12,
               ease: [0.32, 0, 0.67, 0],
             }
       }
