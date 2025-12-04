@@ -86,7 +86,7 @@ export const ResponseCard = ({ responses, isMobile = false }: ResponseCardProps)
           "relative group",
           // Responsive width and height constraints
           "w-fit min-w-[280px] max-w-[calc(100vw-2rem)] sm:max-w-[640px] lg:max-w-[720px]",
-          "max-h-[260px] sm:max-h-[300px] md:max-h-[340px] lg:max-h-[380px]",
+          "max-h-[180px] sm:max-h-[200px] md:max-h-[220px] lg:max-h-[240px]",
           // Premium glass card with gradient
           "bg-gradient-to-br from-white/95 to-white/80 dark:from-gray-900/95 dark:to-gray-800/80",
           "backdrop-blur-xl",
@@ -137,7 +137,7 @@ export const ResponseCard = ({ responses, isMobile = false }: ResponseCardProps)
           ref={contentRef}
           className={cn(
             "speech-bubble-content",
-            "max-h-[180px] sm:max-h-[200px] md:max-h-[240px] lg:max-h-[280px] overflow-y-auto overflow-x-hidden",
+            "max-h-[100px] sm:max-h-[120px] md:max-h-[140px] lg:max-h-[160px] overflow-y-auto overflow-x-hidden",
             "break-words",
             // Premium thin scrollbar
             "[&::-webkit-scrollbar]:w-1.5",
