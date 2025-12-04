@@ -146,57 +146,52 @@ export const SuggestionsIllustration = () => (
 );
 
 export const NavigationIllustration = () => (
-  <div className="w-full h-full flex items-center justify-center px-4">
-    <div className="w-full max-w-[280px] bg-background rounded-2xl border border-border/50 shadow-xl overflow-hidden">
+  <div className="w-full h-full flex items-center justify-center">
+    <div className="w-56 bg-background rounded-xl border border-border/50 shadow-lg overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border/30">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-foreground flex items-center justify-center">
-            <Brain className="w-5 h-5 text-background" />
-          </div>
-          <div>
-            <div className="font-semibold text-sm">AYN AI</div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-green-500" />
-              <span className="text-xs text-muted-foreground">Active</span>
-            </div>
-          </div>
+      <div className="flex items-center gap-2 p-2.5 border-b border-border/30">
+        <div className="w-7 h-7 rounded-lg bg-foreground flex items-center justify-center">
+          <Brain className="w-4 h-4 text-background" />
         </div>
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <X className="w-4 h-4" />
+        <div>
+          <div className="font-semibold text-xs">AYN AI</div>
+          <div className="flex items-center gap-1">
+            <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+            <span className="text-[10px] text-muted-foreground">Active</span>
+          </div>
         </div>
       </div>
       
       {/* New Chat Button */}
-      <div className="p-3">
+      <div className="p-2">
         <motion.div 
-          className="w-full py-3 px-4 bg-foreground text-background rounded-full flex items-center justify-center gap-2 text-sm font-medium"
+          className="w-full py-2 px-3 bg-foreground text-background rounded-full flex items-center justify-center gap-1.5 text-xs font-medium"
           animate={{ scale: [1, 1.02, 1] }}
           transition={{ duration: 2, repeat: Infinity }}
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-3 h-3" />
           New Chat
         </motion.div>
       </div>
       
       {/* Search */}
-      <div className="px-3 pb-3">
-        <div className="flex items-center gap-2 px-3 py-2 rounded-full border border-border/50 text-muted-foreground text-sm">
-          <Search className="w-4 h-4" />
-          Search chats...
+      <div className="px-2 pb-2">
+        <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-full border border-border/50 text-muted-foreground text-xs">
+          <Search className="w-3 h-3" />
+          Search...
         </div>
       </div>
       
       {/* Recent Chats */}
-      <div className="px-3 pb-4">
-        <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
+      <div className="px-2 pb-2">
+        <div className="text-[9px] font-medium text-muted-foreground uppercase tracking-wider mb-1.5">
           Recent Chats
         </div>
-        <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-          <div className="w-12 h-12 rounded-xl bg-muted/50 flex items-center justify-center mb-2">
-            <MessageSquare className="w-6 h-6" />
+        <div className="flex flex-col items-center justify-center py-3 text-muted-foreground">
+          <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center mb-1">
+            <MessageSquare className="w-4 h-4" />
           </div>
-          <span className="text-sm">No recent chats</span>
+          <span className="text-[10px]">No recent chats</span>
         </div>
       </div>
     </div>
@@ -204,84 +199,73 @@ export const NavigationIllustration = () => (
 );
 
 export const HistoryIllustration = () => (
-  <div className="w-full h-full flex items-center justify-center px-4">
-    <div className="w-full max-w-[280px] bg-background rounded-2xl border border-border/50 shadow-xl overflow-hidden">
+  <div className="w-full h-full flex items-center justify-center">
+    <div className="w-56 bg-background rounded-xl border border-border/50 shadow-lg overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border/30">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center relative">
-            <MessageSquare className="w-5 h-5" />
-            <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-primary text-[10px] text-primary-foreground flex items-center justify-center font-medium">
+      <div className="flex items-center justify-between p-2 border-b border-border/30">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center relative">
+            <MessageSquare className="w-4 h-4" />
+            <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-[8px] text-primary-foreground flex items-center justify-center font-medium">
               2
             </div>
           </div>
           <div>
-            <div className="font-semibold text-sm">Chat</div>
-            <div className="text-xs text-muted-foreground">2 messages</div>
+            <div className="font-semibold text-xs">Chat</div>
+            <div className="text-[10px] text-muted-foreground">2 messages</div>
           </div>
         </div>
-        <X className="w-4 h-4 text-muted-foreground" />
-      </div>
-      
-      {/* Search */}
-      <div className="p-3 border-b border-border/30">
-        <div className="flex items-center gap-2 px-3 py-2 rounded-full border border-border/50 text-muted-foreground text-sm">
-          <Search className="w-4 h-4" />
-          Search messages...
-        </div>
+        <X className="w-3 h-3 text-muted-foreground" />
       </div>
       
       {/* Messages */}
-      <div className="p-3 space-y-3">
+      <div className="p-2 space-y-2">
         {/* User message */}
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: 5 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
           className="flex flex-col items-end"
         >
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-medium">You</span>
-            <div className="w-6 h-6 rounded-full border border-border flex items-center justify-center">
-              <User className="w-3 h-3" />
+          <div className="flex items-center gap-1 mb-0.5">
+            <span className="text-[10px] font-medium">You</span>
+            <div className="w-5 h-5 rounded-full border border-border flex items-center justify-center">
+              <User className="w-2.5 h-2.5" />
             </div>
           </div>
-          <div className="bg-foreground text-background px-4 py-2 rounded-2xl rounded-br-md text-sm">
+          <div className="bg-foreground text-background px-2.5 py-1 rounded-xl rounded-br-sm text-xs">
             hello
           </div>
-          <span className="text-[10px] text-muted-foreground mt-1">1:40 PM</span>
         </motion.div>
         
         {/* AYN message */}
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: 5 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
           className="flex flex-col items-start"
         >
-          <div className="flex items-center gap-2 mb-1">
-            <div className="w-6 h-6 rounded-full bg-foreground flex items-center justify-center">
-              <Brain className="w-3 h-3 text-background" />
+          <div className="flex items-center gap-1 mb-0.5">
+            <div className="w-5 h-5 rounded-full bg-foreground flex items-center justify-center">
+              <Brain className="w-2.5 h-2.5 text-background" />
             </div>
-            <span className="text-xs font-medium">AYN</span>
-            <span className="text-xs">😌</span>
-            <span className="text-[10px] px-2 py-0.5 bg-muted rounded-full">General</span>
+            <span className="text-[10px] font-medium">AYN</span>
+            <span className="text-[10px]">😌</span>
           </div>
-          <div className="bg-muted/50 px-4 py-2 rounded-2xl rounded-bl-md text-sm max-w-[220px]">
-            😄 How's your day going? Anything on your mind?
+          <div className="bg-muted/50 px-2.5 py-1 rounded-xl rounded-bl-sm text-xs max-w-[160px]">
+            😄 How's your day?
           </div>
-          <span className="text-[10px] text-muted-foreground mt-1">1:40 PM</span>
         </motion.div>
       </div>
       
       {/* Footer buttons */}
-      <div className="p-3 border-t border-border/30 flex gap-2">
-        <button className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl border border-border/50 text-sm">
-          <Copy className="w-4 h-4" />
+      <div className="p-2 border-t border-border/30 flex gap-1.5">
+        <button className="flex-1 flex items-center justify-center gap-1 py-1 rounded-lg border border-border/50 text-[10px]">
+          <Copy className="w-3 h-3" />
           Copy
         </button>
-        <button className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl border border-red-200 text-red-500 text-sm">
-          <Trash2 className="w-4 h-4" />
+        <button className="flex-1 flex items-center justify-center gap-1 py-1 rounded-lg border border-red-200 text-red-500 text-[10px]">
+          <Trash2 className="w-3 h-3" />
           Clear
         </button>
       </div>

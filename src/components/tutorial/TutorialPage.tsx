@@ -82,7 +82,7 @@ export const TutorialPage = ({
           </button>
 
           {/* Illustration area */}
-          <div className="h-48 bg-gradient-to-br from-muted/30 to-muted/10 flex items-center justify-center p-6">
+          <div className="h-64 bg-gradient-to-br from-muted/30 to-muted/10 flex items-center justify-center overflow-hidden">
             <AnimatePresence mode="wait">
               <motion.div
                 key={step.id}
@@ -90,7 +90,7 @@ export const TutorialPage = ({
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: isRTL ? 20 : -20 }}
                 transition={{ duration: 0.3 }}
-                className="w-full h-full"
+                className="w-full h-full flex items-center justify-center scale-[0.85]"
               >
                 <Illustration />
               </motion.div>
