@@ -98,7 +98,7 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
             ),
             // List items
             li: ({ children }) => (
-              <li className="leading-relaxed break-words [&>p]:inline [&>p]:m-0">{children}</li>
+              <li className="leading-relaxed break-words [overflow-wrap:anywhere] [&>p]:inline [&>p]:m-0">{children}</li>
             ),
             // Paragraphs
             p: ({ children }) => (
