@@ -295,13 +295,14 @@ export const Sidebar = ({
                             tooltip={undefined}
                             title=""
                             className={cn(
-                              "flex-1 h-auto py-3 px-3 rounded-xl overflow-hidden",
+                              "flex-1 h-auto py-3 px-3 rounded-xl",
                               "active:scale-[0.98]",
                               "transition-all duration-200",
                               isPinned && "bg-foreground/5 border border-border"
                             )}
+                            style={{ overflow: 'visible' }}
                           >
-                            <div className="w-full min-w-0 overflow-hidden space-y-1.5">
+                            <div className="w-full space-y-1.5">
                               {/* Title row */}
                               <div className="flex items-center gap-2 w-full">
                                 <div className="w-6 h-6 rounded-lg bg-black dark:bg-white flex items-center justify-center flex-shrink-0">
