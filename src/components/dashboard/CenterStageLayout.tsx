@@ -355,8 +355,18 @@ export const CenterStageLayout = ({
           : "items-center justify-center pb-32"
       )}>
         {isSmallScreen ? (
-          // Mobile/Tablet: Flex column layout - eye above, response below
-          <div className="flex flex-col items-center gap-3 pt-4">
+          // Mobile/Tablet: Eye centered when idle, moves up when response appears
+          <motion.div 
+            className="flex flex-col items-center gap-3 w-full"
+            animate={{
+              paddingTop: hasVisibleResponses ? '1rem' : '25vh',
+            }}
+            transition={{
+              type: 'spring',
+              stiffness: 200,
+              damping: 25,
+            }}
+          >
             <motion.div 
               ref={eyeRef} 
               className="relative"
@@ -404,7 +414,7 @@ export const CenterStageLayout = ({
                 isMobile={isMobile}
               />
             </div>
-          </div>
+          </motion.div>
         ) : (
           // Desktop: Horizontal layout with absolute positioning
           <>
