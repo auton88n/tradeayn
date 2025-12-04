@@ -34,6 +34,7 @@ const TranscriptContent = ({
   onToggle,
   onClear,
   handleCopyAll,
+  isMobile = false,
 }: {
   messages: Message[];
   filteredMessages: Message[];
@@ -47,8 +48,12 @@ const TranscriptContent = ({
   onToggle: (open?: boolean) => void;
   onClear?: () => void;
   handleCopyAll: () => void;
+  isMobile?: boolean;
 }) => (
-  <div className="flex flex-col h-full bg-gradient-to-b from-background to-background/95">
+  <div className={cn(
+    "flex flex-col bg-gradient-to-b from-background to-background/95",
+    isMobile ? "h-screen" : "h-full"
+  )}>
     {/* Premium Header */}
     <div className="relative">
       {/* Glassmorphism header background */}
@@ -68,10 +73,10 @@ const TranscriptContent = ({
           </div>
           <div>
             <h2 className="font-semibold text-foreground text-sm tracking-tight">
-              Chat
+              Chat Transcript
             </h2>
             <p className="text-xs text-muted-foreground">
-              {messages.length} messages
+              {messages.length} {messages.length === 1 ? 'message' : 'messages'}
             </p>
           </div>
         </div>
@@ -81,9 +86,9 @@ const TranscriptContent = ({
           onClick={() => onToggle(false)}
           className={cn(
             "h-9 w-9 rounded-xl",
-            "bg-gray-100/50 dark:bg-gray-800/50",
+            "bg-muted/50",
             "hover:bg-foreground hover:text-background",
-            "border border-gray-200/50 dark:border-gray-700/50",
+            "border border-border/50",
             "transition-all duration-200",
             "active:scale-95"
           )}
@@ -117,18 +122,13 @@ const TranscriptContent = ({
           onBlur={() => setIsSearchFocused(false)}
           className={cn(
             "pl-10 h-11 text-sm rounded-xl",
-            // Glassmorphism background
-            "bg-gradient-to-br from-white/80 to-white/50 dark:from-gray-800/80 dark:to-gray-900/50",
+            "bg-muted/50",
             "backdrop-blur-sm",
-            // Border styling
-            "border border-gray-200/60 dark:border-gray-700/40",
-            // Focus states
+            "border border-border/60",
             "focus:border-primary/50 focus:ring-2 focus:ring-primary/10",
-            "focus:bg-white dark:focus:bg-gray-800",
-            // Shadow
+            "focus:bg-background",
             "shadow-[0_2px_8px_rgba(0,0,0,0.04)]",
             "focus:shadow-[0_4px_12px_rgba(0,0,0,0.08)]",
-            // Placeholder
             "placeholder:text-muted-foreground/60",
             "transition-all duration-200"
           )}
@@ -220,13 +220,10 @@ const TranscriptContent = ({
           size="sm"
           className={cn(
             "flex-1 h-11 rounded-xl font-medium",
-            // Glassmorphism background
-            "bg-gradient-to-br from-white/80 to-white/50 dark:from-gray-800/80 dark:to-gray-900/50",
+            "bg-muted/50",
             "backdrop-blur-sm",
-            "border border-gray-200/60 dark:border-gray-700/40",
-            // Shadow
+            "border border-border/60",
             "shadow-[0_2px_8px_rgba(0,0,0,0.04)]",
-            // Hover states
             "hover:bg-foreground hover:text-background hover:border-foreground",
             "hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)]",
             "transition-all duration-200",
@@ -245,14 +242,11 @@ const TranscriptContent = ({
             size="sm"
             className={cn(
               "flex-1 h-11 rounded-xl font-medium",
-              // Glassmorphism with destructive tint
-              "bg-gradient-to-br from-red-50/80 to-red-50/50 dark:from-red-950/30 dark:to-red-900/20",
+              "bg-destructive/10",
               "backdrop-blur-sm",
               "border border-destructive/30",
               "text-destructive",
-              // Shadow
               "shadow-[0_2px_8px_rgba(0,0,0,0.04)]",
-              // Hover states
               "hover:bg-destructive hover:text-destructive-foreground hover:border-destructive",
               "hover:shadow-[0_4px_12px_rgba(239,68,68,0.2)]",
               "transition-all duration-200",
@@ -330,16 +324,17 @@ export const TranscriptSidebar = ({
     onToggle,
     onClear,
     handleCopyAll,
+    isMobile,
   };
 
-  // Floating toggle button - bottom right corner
+  // Floating toggle button - top right corner (desktop only)
   const FloatingToggleButton = () => (
     <button
       onClick={() => onToggle()}
       className={cn(
         "fixed top-6 right-6 z-50",
         "w-11 h-11 rounded-xl",
-        "bg-background/80 backdrop-blur-sm border",
+        "bg-background/80 backdrop-blur-sm border border-border",
         "text-foreground",
         "flex items-center justify-center",
         "shadow-lg hover:shadow-xl",
@@ -357,14 +352,27 @@ export const TranscriptSidebar = ({
     </button>
   );
 
-  // Mobile: Use Sheet component for proper drawer behavior
-  // Note: FloatingToggleButton is NOT rendered on mobile - mobile header handles transcript toggle
+  // Mobile: Use Sheet component with FIXED full-screen settings
   if (isMobile) {
     return (
       <Sheet open={isOpen} onOpenChange={onToggle}>
         <SheetContent 
-          side="right" 
-          className="!inset-0 !w-full !h-full !max-w-full p-0 border-0 [&>button]:hidden"
+          side="right"
+          className={cn(
+            "fixed inset-0",
+            "w-screen h-screen",
+            "max-w-none",
+            "p-0 m-0",
+            "border-0",
+            "z-50",
+            "[&>button]:hidden"
+          )}
+          style={{
+            width: '100vw',
+            height: '100vh',
+            maxWidth: '100vw',
+            maxHeight: '100vh',
+          }}
         >
           <TranscriptContent {...contentProps} />
         </SheetContent>
@@ -383,7 +391,7 @@ export const TranscriptSidebar = ({
           "relative h-full shrink-0 overflow-hidden",
           "bg-background",
           "border-l border-border",
-          "transition-[width] duration-200",
+          "transition-[width] duration-300 ease-out",
           isOpen ? "w-[320px]" : "w-0"
         )}
       >
