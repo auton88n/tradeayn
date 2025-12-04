@@ -134,7 +134,7 @@ const TranscriptContent = ({
     <ScrollArea className="flex-1 px-4" ref={scrollRef}>
       <div className="space-y-3 pb-4">
         {filteredMessages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 px-4 animate-fade-in relative">
+          <div className="flex flex-col items-center justify-center py-12 px-4 relative">
             {/* Decorative dots pattern - top right */}
             <div className="absolute top-4 right-4 grid grid-cols-3 gap-1.5 opacity-20">
               {[...Array(9)].map((_, i) => (
@@ -142,13 +142,13 @@ const TranscriptContent = ({
               ))}
             </div>
             
-            {/* Animated orbital brain icon */}
+            {/* Static brain icon - no continuous animations */}
             <div className="relative mb-6">
-              {/* Soft outer glow */}
-              <div className="absolute inset-[-12px] rounded-full bg-primary/20 blur-xl animate-pulse" />
+              {/* Soft outer glow - static */}
+              <div className="absolute inset-[-12px] rounded-full bg-primary/20 blur-xl" />
               
-              {/* Orbital ring with particles */}
-              <div className="absolute inset-[-16px] animate-[spin_20s_linear_infinite]">
+              {/* Static orbital particles */}
+              <div className="absolute inset-[-16px]">
                 {[0, 90, 180, 270].map((deg) => (
                   <div
                     key={deg}
@@ -165,8 +165,8 @@ const TranscriptContent = ({
               {/* Orbital path ring */}
               <div className="absolute inset-[-16px] rounded-full border border-dashed border-foreground/10" />
               
-              {/* Main circular icon */}
-              <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-foreground to-foreground/80 flex items-center justify-center shadow-xl animate-[bounce_3s_ease-in-out_infinite]">
+              {/* Main circular icon - static */}
+              <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-foreground to-foreground/80 flex items-center justify-center shadow-xl">
                 <Brain className="w-8 h-8 text-background" />
               </div>
             </div>
@@ -352,32 +352,32 @@ export const TranscriptSidebar = ({
       <AnimatePresence>
         {isOpen && (
           <>
-            {/* Dark backdrop - click to close */}
+            {/* Dark backdrop - solid color, no blur for performance */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+              exit={{ opacity: 0, transition: { duration: 0.1 } }}
+              transition={{ duration: 0.12 }}
+              className="fixed inset-0 z-50 bg-black/70"
               onClick={() => onToggle(false)}
             />
             
-            {/* Full-screen content panel - slides in from right with swipe-to-close */}
+            {/* Full-screen content panel - fast tween, GPU accelerated */}
             <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 30, stiffness: 500, mass: 0.8 }}
+              exit={{ x: '100%', transition: { duration: 0.15, ease: 'easeIn' } }}
+              transition={{ type: 'tween', duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
               drag="x"
               dragConstraints={{ left: 0, right: 0 }}
-              dragElastic={{ left: 0, right: 0.5 }}
+              dragElastic={{ left: 0, right: 0.4 }}
               onDragEnd={(_, info) => {
-                // Close if dragged more than 100px to the right or with high velocity
                 if (info.offset.x > 100 || info.velocity.x > 500) {
                   onToggle(false);
                 }
               }}
-              className="fixed inset-0 z-50 bg-background touch-pan-y"
+              className="fixed inset-0 z-50 bg-background touch-pan-y will-change-transform"
+              style={{ transform: 'translateZ(0)' }}
               data-tutorial="transcript"
             >
               <TranscriptContent {...contentProps} />
