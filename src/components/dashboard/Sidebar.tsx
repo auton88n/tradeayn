@@ -326,8 +326,8 @@ export const Sidebar = ({
                                   {formatCompactTime(new Date(chat.timestamp))}
                                 </span>
                               </div>
-                              {/* Preview text - using CSS truncate */}
-                              <p className="text-xs text-gray-500 dark:text-gray-400 truncate pl-8">
+                              {/* Preview text - 2 lines with ellipsis */}
+                              <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 pl-8 pr-2">
                                 {chat.lastMessage}
                               </p>
                             </div>
