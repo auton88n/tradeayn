@@ -415,7 +415,8 @@ serve(async (req) => {
         t = t.replace(nameRegex, '');
       }
 
-      return textProcessor.normalizeText(t);
+      // Preserve markdown formatting instead of normalizing to plain text
+      return textProcessor.preserveMarkdown(t);
     };
 
     // When personalization is enabled, normalize greetings to the user's contact person
@@ -445,7 +446,8 @@ serve(async (req) => {
         return `${p1}${greetCap} ${titleCase(name)}${punct} `;
       });
 
-      return textProcessor.normalizeText(t);
+      // Preserve markdown formatting instead of normalizing to plain text
+      return textProcessor.preserveMarkdown(t);
     };
 
     const sanitizedText = requestData.allowPersonalization ? applyPersonalization(processedText) : sanitizeNonPersonalized(processedText);
