@@ -40,11 +40,11 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-image-1',
-        prompt: `${prompt}. High quality, professional, visually stunning with good composition and lighting.`,
+        model: 'dall-e-3',
+        prompt: `${prompt}. High quality, professional, visually stunning.`,
         n: 1,
         size: '1024x1024',
-        quality: 'high'
+        quality: 'standard'
       })
     });
 
