@@ -46,7 +46,7 @@ export const MobileSuggestionChips = ({
               onClick={(e) => handleClick(suggestion, e)}
               className={cn(
                 "flex items-center gap-2",
-                "px-4 py-2.5",
+                "px-3 py-2",
                 // Premium glassmorphism
                 "bg-white/95 dark:bg-gray-900/90",
                 "backdrop-blur-xl",
@@ -61,7 +61,7 @@ export const MobileSuggestionChips = ({
                 "hover:border-primary/30",
                 "active:scale-95",
                 "transition-all duration-200 ease-out",
-                "max-w-[180px]",
+                "min-w-[140px] max-w-[280px]",
                 "cursor-pointer"
               )}
               initial={{ opacity: 0, scale: 0.8, y: 10 }}
@@ -78,7 +78,7 @@ export const MobileSuggestionChips = ({
             >
               <Sparkles className="w-3.5 h-3.5 text-primary/70 flex-shrink-0" />
               <span className="text-base flex-shrink-0">{suggestion.emoji}</span>
-              <span className="truncate">{suggestion.content}</span>
+              <span className="line-clamp-1 text-left flex-1">{suggestion.content}</span>
             </motion.button>
           ))}
         </AnimatePresence>

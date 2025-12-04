@@ -85,8 +85,8 @@ export const ResponseCard = ({ responses, isMobile = false }: ResponseCardProps)
         className={cn(
           "relative group overflow-hidden",
           // Responsive width and height constraints - uses min() for sidebar-aware sizing
-          "w-fit min-w-[280px] max-w-[min(calc(100vw-2rem),720px)] sm:max-w-[min(calc(100vw-3rem),640px)] lg:max-w-[min(calc(100%-2rem),720px)]",
-          "max-h-[240px] sm:max-h-[280px] md:max-h-[320px] lg:max-h-[360px]",
+          "w-fit min-w-[280px] max-w-[calc(100vw-2rem)] sm:max-w-[560px] lg:max-w-[640px]",
+          "max-h-[200px] sm:max-h-[240px] md:max-h-[280px] lg:max-h-[320px] mb-4",
           // Premium futuristic glassmorphism
           "bg-gradient-to-br from-white/90 via-white/85 to-gray-100/80",
           "dark:from-gray-900/90 dark:via-gray-800/85 dark:to-gray-900/80",

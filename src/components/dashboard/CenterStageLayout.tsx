@@ -389,7 +389,7 @@ export const CenterStageLayout = ({
         {/* Unified layout for all screen sizes */}
         <motion.div 
           className={cn(
-            "flex flex-col items-center gap-3 w-full px-4",
+            "flex flex-col items-center gap-6 w-full px-4",
             // Dynamic max-width based on sidebar states
             sidebarOpen && transcriptOpen && "lg:max-w-[calc(100vw-42rem)]",
             sidebarOpen && !transcriptOpen && "lg:max-w-[calc(100vw-22rem)]",
@@ -487,7 +487,7 @@ animate={{
 
       {/* Suggestion chips - ALL screen sizes (horizontal layout) */}
       <div className={cn(
-        "fixed bottom-32 sm:bottom-36 z-40",
+        "fixed bottom-28 sm:bottom-32 z-40",
         "flex justify-center",
         "transition-all duration-300 ease-out",
         "left-4 right-4",
