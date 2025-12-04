@@ -331,7 +331,7 @@ export const TranscriptSidebar = ({
         <Sheet open={isOpen} onOpenChange={onToggle}>
           <SheetContent 
             side="right" 
-            className="w-full sm:w-80 p-0 [&>button]:hidden"
+            className="w-full sm:w-96 p-0 [&>button]:hidden"
           >
             <TranscriptContent {...contentProps} />
           </SheetContent>
@@ -368,7 +368,7 @@ export const TranscriptSidebar = ({
         data-tutorial="transcript"
         className={cn(
           "fixed top-0 h-full z-50",
-          "w-80",
+          "w-96",
           "bg-background backdrop-blur-lg",
           "border-l border-border",
           "shadow-2xl",
