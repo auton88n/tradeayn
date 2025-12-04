@@ -78,28 +78,6 @@ export interface AIModeConfig {
 }
 
 // ============================================
-// VISUAL CANVAS TYPES
-// ============================================
-
-export type CanvasPanelPosition = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
-
-export interface VisualPanel {
-  id: string;
-  type: 'image' | 'chart' | 'diagram';
-  content: string; // base64 image or data
-  title?: string;
-  position: CanvasPanelPosition;
-  createdAt: Date;
-  prompt?: string; // Original prompt used to generate
-}
-
-export interface VisualResponseState {
-  panels: VisualPanel[];
-  isGenerating: boolean;
-  error: string | null;
-}
-
-// ============================================
 // WEBHOOK PAYLOAD TYPES
 // ============================================
 
@@ -223,16 +201,6 @@ export interface UseAuthReturn {
   acceptTerms: () => void;
 }
 
-export interface UseVisualResponsesReturn {
-  panels: VisualPanel[];
-  isGenerating: boolean;
-  error: string | null;
-  generateImage: (prompt: string) => Promise<void>;
-  closePanel: (panelId: string) => void;
-  clearAllPanels: () => void;
-  detectVisualIntent: (message: string) => boolean;
-}
-
 // ============================================
 // COMPONENT PROP TYPES
 // ============================================
@@ -301,18 +269,4 @@ export interface SidebarProps {
   onAdminPanelClick?: () => void;
   onStartTutorial?: () => void;
   isTutorialProfileStep?: boolean;
-}
-
-export interface CanvasPanelProps {
-  panel: VisualPanel;
-  eyePosition: { x: number; y: number };
-  onClose: (panelId: string) => void;
-  isGenerating?: boolean;
-}
-
-export interface VisualCanvasProps {
-  panels: VisualPanel[];
-  eyePosition: { x: number; y: number };
-  onClosePanel: (panelId: string) => void;
-  isGenerating?: boolean;
 }

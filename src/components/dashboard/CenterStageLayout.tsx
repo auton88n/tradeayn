@@ -7,18 +7,16 @@ import { MobileSuggestionChips } from '@/components/eye/MobileSuggestionChips';
 import { ResponseCard } from '@/components/eye/ResponseCard';
 import { FlyingSuggestionBubble } from '@/components/eye/FlyingSuggestionBubble';
 import { ParticleBurst } from '@/components/eye/ParticleBurst';
-import { MindMapCanvas } from '@/components/eye/MindMapCanvas';
 import { ChatInput } from './ChatInput';
 import { useBubbleAnimation } from '@/hooks/useBubbleAnimation';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
-import { useBrainstorm } from '@/hooks/useBrainstorm';
 import { analyzeResponseEmotion, getBubbleType } from '@/utils/emotionMapping';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useEyeContext } from '@/hooks/useEyeContext';
 import { useEyeBehaviorMatcher } from '@/hooks/useEyeBehaviorMatcher';
-import { useLanguage } from '@/contexts/LanguageContext';
 import type { Message, AIMode, AIModeConfig } from '@/types/dashboard.types';
+
 // Fallback suggestions when API fails
 const DEFAULT_SUGGESTIONS = [
   { content: 'Tell me more', emoji: '💬' },
@@ -78,7 +76,6 @@ export const CenterStageLayout = ({
   const eyeRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
-  const { language } = useLanguage();
   const { setEmotion, triggerAbsorption, triggerBlink, setIsResponding, detectExcitement, isUserTyping: contextIsTyping } = useAYNEmotion();
   const {
     flyingBubble,
@@ -100,15 +97,6 @@ export const CenterStageLayout = ({
   const [burstPosition, setBurstPosition] = useState({ x: 0, y: 0 });
   const [lastUserMessage, setLastUserMessage] = useState<string>('');
   const [currentGazeIndex, setCurrentGazeIndex] = useState<number | null>(null);
-
-  // Brainstorm Mind Map System
-  const {
-    brainstormData,
-    isGenerating: isGeneratingBrainstorm,
-    generateBrainstorm,
-    clearBrainstorm,
-    detectBrainstormIntent,
-  } = useBrainstorm();
 
   // AI Eye Behavior System
   const { context, recordAction } = useEyeContext({
@@ -228,7 +216,6 @@ export const CenterStageLayout = ({
     };
   }, []);
 
-
   // Handle sending message with bubble animation
   const handleSendWithAnimation = useCallback(
     async (content: string, file?: File | null) => {
@@ -240,11 +227,6 @@ export const CenterStageLayout = ({
       // Clear previous response bubbles and suggestions
       clearResponseBubbles();
       clearSuggestions();
-
-      // Check for brainstorm intent and trigger mind map generation
-      if (detectBrainstormIntent(content)) {
-        generateBrainstorm(content, language);
-      }
 
       // Start flying animation
       const inputPos = getInputPosition();
@@ -282,9 +264,6 @@ export const CenterStageLayout = ({
       setIsResponding,
       completeAbsorption,
       onSendMessage,
-      detectBrainstormIntent,
-      generateBrainstorm,
-      language,
     ]
   );
 
@@ -501,15 +480,6 @@ export const CenterStageLayout = ({
         position={burstPosition}
         particleCount={16}
       />
-
-      {/* Mind Map Canvas for brainstorming */}
-      {brainstormData && (
-        <MindMapCanvas
-          data={brainstormData}
-          isGenerating={isGeneratingBrainstorm}
-          onClose={clearBrainstorm}
-        />
-      )}
 
       {/* Suggestion chips - ALL screen sizes (horizontal layout) */}
       <div className={cn(
