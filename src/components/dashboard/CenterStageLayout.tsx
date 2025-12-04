@@ -15,6 +15,22 @@ import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@/hooks/use-mobile';
 import type { Message, AIMode, AIModeConfig } from '@/types/dashboard.types';
 
+// Hook to detect tablet breakpoint
+const useIsSmallScreen = () => {
+  const [isSmallScreen, setIsSmallScreen] = useState(false);
+  
+  useEffect(() => {
+    const checkSize = () => {
+      setIsSmallScreen(window.innerWidth < 1024);
+    };
+    checkSize();
+    window.addEventListener('resize', checkSize);
+    return () => window.removeEventListener('resize', checkSize);
+  }, []);
+  
+  return isSmallScreen;
+};
+
 // Fallback suggestions when API fails
 const DEFAULT_SUGGESTIONS = [
   { content: 'Tell me more', emoji: '💬' },
@@ -74,6 +90,7 @@ export const CenterStageLayout = ({
   const eyeRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
+  const isSmallScreen = useIsSmallScreen(); // < 1024px (mobile + tablet)
   const { setEmotion, triggerAbsorption, triggerBlink, setIsResponding, detectExcitement } = useAYNEmotion();
   const {
     flyingBubble,
@@ -374,11 +391,12 @@ export const CenterStageLayout = ({
           </AnimatePresence>
         </motion.div>
 
-        {/* Suggestion Cards - positioned relative to stage center, accounts for eyeShiftX */}
+        {/* Suggestion Cards - flexbox for small screens, absolute for desktop */}
         <SuggestionsCard
           suggestions={suggestionBubbles}
           onSuggestionClick={handleSuggestionClick}
           isMobile={isMobile}
+          isSmallScreen={isSmallScreen}
           eyeShiftX={eyeShiftX}
         />
 
