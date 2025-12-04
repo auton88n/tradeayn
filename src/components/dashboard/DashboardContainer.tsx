@@ -24,7 +24,7 @@ import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
 import { analyzeResponseEmotion } from '@/utils/emotionMapping';
 
 // Import icons for modes
-import { MessageSquare, TrendingUp, Search, FileText, Eye, Hammer, Menu, X } from 'lucide-react';
+import { MessageSquare, TrendingUp, Search, FileText, Eye, Hammer, Menu, X, Brain } from 'lucide-react';
 
 interface DashboardContainerProps {
   user: User;
@@ -418,28 +418,40 @@ const DashboardContent = ({
         className="flex-1 overflow-hidden flex flex-col"
       >
         {/* Mobile header - clean & centered */}
-        <header className="md:hidden flex items-center justify-between px-4 py-3 border-b bg-background/95 backdrop-blur-lg">
-          {/* Left: Menu button + Title */}
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleSidebar}
-              className="h-10 w-10 rounded-xl bg-muted/50 hover:bg-muted"
-            >
-              <Menu className="w-5 h-5" />
-            </Button>
-            <span className="font-semibold text-lg text-foreground">AYN AI</span>
+        <header className="md:hidden flex items-center justify-between px-4 py-3 
+          bg-background/98 backdrop-blur-xl 
+          border-b border-border/30
+          shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+          
+          {/* Left: Menu button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleSidebar}
+            className="h-9 w-9 rounded-full bg-muted/40 border border-border/40 
+              shadow-sm hover:shadow hover:bg-muted/60 transition-all duration-200"
+          >
+            <Menu className="w-4 h-4" />
+          </Button>
+          
+          {/* Center: Brand with Brain icon */}
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-muted/50 to-muted 
+              flex items-center justify-center shadow-inner border border-border/30">
+              <Brain className="w-3.5 h-3.5 text-foreground/60" />
+            </div>
+            <span className="font-semibold text-base tracking-tight">AYN</span>
           </div>
           
-          {/* Right: Transcript toggle with message count */}
+          {/* Right: Transcript toggle */}
           <Button
             variant="ghost"
             size="icon"
             onClick={() => handleToggleTranscript()}
-            className="h-10 w-10 rounded-xl bg-muted/50 hover:bg-muted"
+            className="h-9 w-9 rounded-full bg-muted/40 border border-border/40 
+              shadow-sm hover:shadow hover:bg-muted/60 transition-all duration-200"
           >
-            <MessageSquare className="w-5 h-5" />
+            <MessageSquare className="w-4 h-4" />
           </Button>
         </header>
 
