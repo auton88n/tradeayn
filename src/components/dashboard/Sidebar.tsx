@@ -307,7 +307,7 @@ export const Sidebar = ({
                                 <div className="w-6 h-6 rounded-lg bg-black dark:bg-white flex items-center justify-center flex-shrink-0">
                                   <MessageSquare className="w-3 h-3 text-white dark:text-black" />
                                 </div>
-                                <span className="text-sm font-medium truncate flex-1 min-w-0 text-black dark:text-white">
+                                <span className="text-sm font-medium truncate max-w-[100px] text-black dark:text-white">
                                   {chat.title}
                                 </span>
                                 <button
