@@ -7,9 +7,11 @@ import { MobileSuggestionChips } from '@/components/eye/MobileSuggestionChips';
 import { ResponseCard } from '@/components/eye/ResponseCard';
 import { FlyingSuggestionBubble } from '@/components/eye/FlyingSuggestionBubble';
 import { ParticleBurst } from '@/components/eye/ParticleBurst';
+import { VisualCanvas } from '@/components/eye/VisualCanvas';
 import { ChatInput } from './ChatInput';
 import { useBubbleAnimation } from '@/hooks/useBubbleAnimation';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
+import { useVisualResponses } from '@/hooks/useVisualResponses';
 import { analyzeResponseEmotion, getBubbleType } from '@/utils/emotionMapping';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -97,6 +99,16 @@ export const CenterStageLayout = ({
   const [burstPosition, setBurstPosition] = useState({ x: 0, y: 0 });
   const [lastUserMessage, setLastUserMessage] = useState<string>('');
   const [currentGazeIndex, setCurrentGazeIndex] = useState<number | null>(null);
+  const [eyePositionForCanvas, setEyePositionForCanvas] = useState({ x: 0, y: 0 });
+
+  // Visual Canvas System (desktop only)
+  const {
+    panels: visualPanels,
+    isGenerating: isGeneratingImage,
+    generateImage,
+    closePanel: closeVisualPanel,
+    detectVisualIntent,
+  } = useVisualResponses();
 
   // AI Eye Behavior System
   const { context, recordAction } = useEyeContext({
@@ -216,6 +228,30 @@ export const CenterStageLayout = ({
     };
   }, []);
 
+  // Update eye position for visual canvas (desktop only)
+  useEffect(() => {
+    if (isMobile) return;
+    
+    const updateEyePosition = () => {
+      const pos = getEyePosition();
+      setEyePositionForCanvas(pos);
+    };
+    
+    // Initial position
+    updateEyePosition();
+    
+    // Update on resize
+    window.addEventListener('resize', updateEyePosition);
+    
+    // Update periodically for dynamic layouts
+    const interval = setInterval(updateEyePosition, 1000);
+    
+    return () => {
+      window.removeEventListener('resize', updateEyePosition);
+      clearInterval(interval);
+    };
+  }, [isMobile, getEyePosition]);
+
   // Handle sending message with bubble animation
   const handleSendWithAnimation = useCallback(
     async (content: string, file?: File | null) => {
@@ -227,6 +263,11 @@ export const CenterStageLayout = ({
       // Clear previous response bubbles and suggestions
       clearResponseBubbles();
       clearSuggestions();
+
+      // Check for visual intent on desktop and trigger image generation
+      if (!isMobile && detectVisualIntent(content)) {
+        generateImage(content);
+      }
 
       // Start flying animation
       const inputPos = getInputPosition();
@@ -264,6 +305,9 @@ export const CenterStageLayout = ({
       setIsResponding,
       completeAbsorption,
       onSendMessage,
+      isMobile,
+      detectVisualIntent,
+      generateImage,
     ]
   );
 
@@ -480,6 +524,16 @@ export const CenterStageLayout = ({
         position={burstPosition}
         particleCount={16}
       />
+
+      {/* Visual Canvas - Desktop only */}
+      {!isMobile && (
+        <VisualCanvas
+          panels={visualPanels}
+          eyePosition={eyePositionForCanvas}
+          onClosePanel={closeVisualPanel}
+          isGenerating={isGeneratingImage}
+        />
+      )}
 
       {/* Suggestion chips - ALL screen sizes (horizontal layout) */}
       <div className={cn(
