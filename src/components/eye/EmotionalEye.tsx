@@ -345,11 +345,11 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
       >
         <div 
           className={cn(
-            "relative rounded-full bg-background flex items-center justify-center overflow-hidden animate-eye-breathe will-change-transform",
+            "relative rounded-full bg-background flex items-center justify-center animate-eye-breathe will-change-transform",
             sizeClasses[size]
           )}
           style={{
-            boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
+            boxShadow: '0 20px 60px -10px hsla(0, 0%, 0%, 0.12), 0 8px 24px -8px hsla(0, 0%, 0%, 0.08)',
             animationDuration: `${breathingDuration}s`
           }}
         >
@@ -373,15 +373,15 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
             animate={{
               boxShadow: isResponding 
                 ? [
-                    '0 8px 40px hsla(0, 0%, 0%, 0.06)',
-                    '0 12px 60px hsla(0, 0%, 0%, 0.1)',
-                    '0 8px 40px hsla(0, 0%, 0%, 0.06)'
+                    '0 8px 40px hsla(0, 0%, 0%, 0.04)',
+                    '0 12px 60px hsla(0, 0%, 0%, 0.06)',
+                    '0 8px 40px hsla(0, 0%, 0%, 0.04)'
                   ]
-                : '0 8px 40px hsla(0, 0%, 0%, 0.06)'
+                : 'none'
             }}
             transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
             style={{
-              background: 'radial-gradient(circle, hsla(0, 0%, 100%, 0.98) 0%, hsla(0, 0%, 98%, 0.85) 35%, hsla(0, 0%, 96%, 0.5) 55%, transparent 80%)',
+              background: 'radial-gradient(circle, hsl(var(--background)) 0%, hsl(var(--background)) 60%, transparent 100%)',
             }}
           />
 
