@@ -59,8 +59,6 @@ export const Sidebar = ({
   useEffect(() => {
     if (isTutorialProfileStep) {
       setProfilePopoverOpen(true);
-    } else {
-      setProfilePopoverOpen(false);
     }
   }, [isTutorialProfileStep]);
 
@@ -424,7 +422,10 @@ export const Sidebar = ({
               {t('settings.title')}
             </Button>
             <Button 
-              onClick={onStartTutorial}
+              onClick={() => {
+                setProfilePopoverOpen(false);
+                onStartTutorial?.();
+              }}
               variant="ghost" 
               className="w-full justify-start h-9 px-3 rounded-lg hover:bg-foreground hover:text-background"
             >
