@@ -378,6 +378,30 @@ button, a, input, textarea, select {
     background: hsl(var(--foreground));
   }
 
+  /* Speech bubble text wrapping fix */
+  .speech-bubble-content {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
+  }
+
+  .speech-bubble-content * {
+    max-width: 100%;
+    overflow-wrap: break-word;
+  }
+
+  .speech-bubble-content code {
+    word-break: break-all;
+    white-space: pre-wrap;
+  }
+
+  .speech-bubble-content pre {
+    overflow-x: auto;
+    word-wrap: normal;
+    max-width: 100%;
+  }
+
   /* Scroll Animation Utilities */
   .scroll-animate {
     opacity: 0;

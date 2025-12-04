@@ -79,8 +79,8 @@ export const AYNSpeechBubble = ({
           key={id}
           className={cn(
             "relative z-40 group",
-            // Responsive width - wider for better readability
-            "w-auto min-w-[240px] max-w-[calc(100vw-2rem)] sm:max-w-[520px]",
+            // Responsive width - fit content up to max width
+            "w-fit min-w-[200px] max-w-[calc(100vw-2rem)] sm:max-w-[600px]",
             // Premium white glass card
             "bg-white/98 dark:bg-gray-900/95",
             "backdrop-blur-xl",
@@ -141,7 +141,10 @@ export const AYNSpeechBubble = ({
           <div 
             ref={contentRef}
             className={cn(
-              "max-h-[450px] overflow-y-auto overflow-x-auto",
+              "speech-bubble-content",
+              "max-h-[450px] overflow-y-auto overflow-x-hidden",
+              // Word wrapping
+              "break-words",
               // Premium scrollbar styling - more visible
               "[&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:h-2",
               "[&::-webkit-scrollbar-track]:bg-muted/30",
@@ -154,10 +157,11 @@ export const AYNSpeechBubble = ({
               // Padding for copy button
               "pr-6"
             )}
+            style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}
           >
             <MessageFormatter 
               content={cleanedContent} 
-              className="text-sm text-gray-700 dark:text-gray-200 leading-relaxed [&_p]:mb-2 [&_p:last-child]:mb-0 [&_strong]:text-gray-900 dark:[&_strong]:text-white" 
+              className="text-sm text-gray-700 dark:text-gray-200 leading-relaxed [&_p]:mb-2 [&_p:last-child]:mb-0 [&_strong]:text-gray-900 dark:[&_strong]:text-white max-w-none break-words" 
             />
           </div>
 
