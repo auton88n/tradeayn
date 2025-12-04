@@ -585,8 +585,9 @@ export const CenterStageLayout = ({
       {isSmallScreen && (
         <div className={cn(
           "fixed bottom-32 sm:bottom-36 z-40",
-          "left-4 right-4",
-          "overflow-hidden",
+          "left-0 right-0",
+          "flex justify-center",
+          "px-4",
           "transition-all duration-300 ease-out"
         )}>
           <AnimatePresence>

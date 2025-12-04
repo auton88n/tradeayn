@@ -35,9 +35,9 @@ export const MobileSuggestionChips = ({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 10 }}
       transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-      className="w-full overflow-x-auto scrollbar-hide pb-3"
+      className="w-full pb-3"
     >
-      <div className="flex gap-2 justify-center px-4 w-full">
+      <div className="flex flex-wrap gap-2 justify-center items-center px-4 max-w-full mx-auto">
         <AnimatePresence mode="popLayout">
           {visibleSuggestions.map((suggestion, index) => (
             <motion.button
