@@ -378,14 +378,9 @@ const DashboardContent = ({
             variant="ghost"
             size="icon"
             onClick={() => setTranscriptOpen(!transcriptOpen)}
-            className="relative h-9 w-9"
+            className="h-9 w-9"
           >
             <MessageSquare className="w-5 h-5" />
-            {messagesHook.messages.length > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
-                {messagesHook.messages.length > 99 ? '99+' : messagesHook.messages.length}
-              </span>
-            )}
           </Button>
         </header>
 
