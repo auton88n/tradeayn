@@ -329,7 +329,12 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
   return (
     <div className={cn("relative flex items-center justify-center", className)}>
       <motion.div 
-        style={{ x: combinedX, y: combinedY, rotate: smoothTilt }}
+        style={{ 
+          x: combinedX, 
+          y: combinedY, 
+          rotate: smoothTilt,
+          filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.08))'
+        }}
         className="relative z-10 flex items-center justify-center group cursor-pointer will-change-transform"
         initial={{ scale: 0.92, opacity: 0 }}
         animate={{ 
@@ -345,11 +350,11 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
       >
         <div 
           className={cn(
-            "relative rounded-full bg-background flex items-center justify-center animate-eye-breathe will-change-transform",
+            "relative rounded-full bg-background flex items-center justify-center overflow-hidden animate-eye-breathe will-change-transform",
             sizeClasses[size]
           )}
           style={{
-            boxShadow: '0 20px 60px -10px hsla(0, 0%, 0%, 0.12), 0 8px 24px -8px hsla(0, 0%, 0%, 0.08)',
+            boxShadow: '0 10px 40px -5px rgba(0,0,0,0.1), 0 4px 20px -8px rgba(0,0,0,0.05)',
             animationDuration: `${breathingDuration}s`
           }}
         >
@@ -367,21 +372,15 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
             }}
           />
 
-          {/* Layer 1: Soft outer glow with enhanced pulse */}
+          {/* Layer 1: Soft inner highlight */}
           <motion.div 
             className="absolute inset-0 rounded-full"
             animate={{
-              boxShadow: isResponding 
-                ? [
-                    '0 8px 40px hsla(0, 0%, 0%, 0.04)',
-                    '0 12px 60px hsla(0, 0%, 0%, 0.06)',
-                    '0 8px 40px hsla(0, 0%, 0%, 0.04)'
-                  ]
-                : 'none'
+              opacity: isResponding ? [0.5, 0.8, 0.5] : 0.5
             }}
             transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
             style={{
-              background: 'radial-gradient(circle, hsl(var(--background)) 0%, hsl(var(--background)) 60%, transparent 100%)',
+              background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.4) 0%, transparent 50%)',
             }}
           />
 
