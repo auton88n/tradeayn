@@ -362,13 +362,22 @@ export const TranscriptSidebar = ({
               onClick={() => onToggle(false)}
             />
             
-            {/* Full-screen content panel - slides in from right */}
+            {/* Full-screen content panel - slides in from right with swipe-to-close */}
             <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="fixed inset-0 z-50 bg-background"
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={{ left: 0, right: 0.5 }}
+              onDragEnd={(_, info) => {
+                // Close if dragged more than 100px to the right or with high velocity
+                if (info.offset.x > 100 || info.velocity.x > 500) {
+                  onToggle(false);
+                }
+              }}
+              className="fixed inset-0 z-50 bg-background touch-pan-y"
               data-tutorial="transcript"
             >
               <TranscriptContent {...contentProps} />
