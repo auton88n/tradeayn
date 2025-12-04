@@ -37,6 +37,7 @@ export const FlyingSuggestionBubble = ({
       style={{
         left: 0,
         top: 0,
+        transformOrigin: 'center center',
       }}
       initial={{
         x: startPosition.x - bubbleWidth / 2,
