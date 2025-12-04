@@ -59,6 +59,8 @@ export const Sidebar = ({
   useEffect(() => {
     if (isTutorialProfileStep) {
       setProfilePopoverOpen(true);
+    } else if (profilePopoverOpen) {
+      setProfilePopoverOpen(false);
     }
   }, [isTutorialProfileStep]);
 
