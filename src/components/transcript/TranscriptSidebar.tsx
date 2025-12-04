@@ -309,7 +309,7 @@ export const TranscriptSidebar = ({
     <button
       onClick={() => onToggle()}
       className={cn(
-        "fixed bottom-6 right-6 z-40",
+        "fixed top-6 right-6 z-40",
         "w-14 h-14 rounded-2xl",
         "bg-foreground text-background",
         "flex items-center justify-center",
