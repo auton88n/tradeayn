@@ -86,7 +86,7 @@ export const ResponseCard = ({ responses, isMobile = false }: ResponseCardProps)
           "relative group",
           // Responsive width and height constraints
           "w-fit min-w-[280px] max-w-[calc(100vw-2rem)] sm:max-w-[640px] lg:max-w-[720px]",
-          "max-h-[180px] sm:max-h-[200px] md:max-h-[220px] lg:max-h-[240px]",
+          "max-h-[240px] sm:max-h-[280px] md:max-h-[320px] lg:max-h-[360px]",
           // Premium glass card with gradient
           "bg-gradient-to-br from-white/95 to-white/80 dark:from-gray-900/95 dark:to-gray-800/80",
           "backdrop-blur-xl",
@@ -137,7 +137,7 @@ export const ResponseCard = ({ responses, isMobile = false }: ResponseCardProps)
           ref={contentRef}
           className={cn(
             "speech-bubble-content",
-            "max-h-[100px] sm:max-h-[120px] md:max-h-[140px] lg:max-h-[160px] overflow-y-auto overflow-x-hidden",
+            "max-h-[160px] sm:max-h-[200px] md:max-h-[240px] lg:max-h-[280px] overflow-y-auto overflow-x-hidden",
             "break-words",
             // Premium thin scrollbar
             "[&::-webkit-scrollbar]:w-1.5",
@@ -161,7 +161,7 @@ export const ResponseCard = ({ responses, isMobile = false }: ResponseCardProps)
         {/* Fade gradient indicator when scrollable and not at bottom */}
         {isScrollable && !isAtBottom && (
           <div 
-            className="absolute bottom-14 left-0 right-0 h-12 bg-gradient-to-t from-white dark:from-gray-900 via-white/80 dark:via-gray-900/80 to-transparent pointer-events-none"
+            className="absolute bottom-14 left-0 right-0 h-6 bg-gradient-to-t from-white/60 dark:from-gray-900/60 to-transparent pointer-events-none"
             aria-hidden="true"
           />
         )}
