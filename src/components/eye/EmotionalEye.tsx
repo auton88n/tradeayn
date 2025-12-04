@@ -355,6 +355,26 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
           {/* Single inner ring - matching landing page */}
           <div className="absolute inset-4 rounded-full bg-background/80 shadow-inner" />
 
+          {/* Emotional color ring - changes color based on AYN's state */}
+          <motion.div 
+            className="absolute inset-[15%] rounded-full"
+            animate={{ 
+              scale: isPulsing ? [1, 1.08, 1] : isResponding ? [1, 1.03, 1] : 1,
+            }}
+            transition={{ 
+              scale: { duration: isPulsing ? 0.4 : 1.2, repeat: isPulsing ? 0 : Infinity, ease: "easeInOut" }
+            }}
+            style={{
+              backgroundColor: emotion === 'calm' 
+                ? 'hsl(var(--muted))' 
+                : emotionConfig.glowColor,
+              boxShadow: emotion !== 'calm' 
+                ? `0 0 20px ${emotionConfig.glowColor}, inset 0 0 10px ${emotionConfig.glowColor}40`
+                : 'inset 0 2px 8px rgba(0,0,0,0.05)',
+              transition: 'background-color 0.8s ease, box-shadow 0.8s ease',
+            }}
+          />
+
           {/* SVG with pupil and brain */}
           <motion.svg 
             viewBox="0 0 100 100" 
