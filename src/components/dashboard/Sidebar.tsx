@@ -208,9 +208,9 @@ export const Sidebar = ({
         </div>
 
         {/* Recent Chats Label and Actions */}
-        <div className="flex-shrink-0 px-4 pb-2">
+        <div className="flex-shrink-0 px-4 pb-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-foreground/50 uppercase tracking-wider">
+            <span className="text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-[0.08em]">
               Recent Chats
             </span>
             {recentChats.length > 0 && (
@@ -266,15 +266,18 @@ export const Sidebar = ({
 
         {/* Scrollable Chat List */}
         <div className="flex-1 overflow-hidden">
-          <ScrollArea className="h-full px-2">
-            <SidebarMenu className="space-y-1">
+          <ScrollArea className="h-full px-3">
+            <SidebarMenu className="space-y-0.5">
               {filteredAndSortedChats.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 px-4">
-                  <div className="w-12 h-12 rounded-xl bg-foreground/5 border border-border flex items-center justify-center mb-3">
-                    <MessageSquare className="w-5 h-5 text-foreground/30" />
+                <div className="flex flex-col items-center justify-center py-16 px-6">
+                  <div className="w-14 h-14 rounded-full bg-muted/40 flex items-center justify-center mb-4">
+                    <MessageSquare className="w-6 h-6 text-muted-foreground/40" />
                   </div>
-                  <p className="text-sm text-foreground/50 text-center">
-                    {searchQuery ? 'No chats found' : 'No recent chats'}
+                  <p className="text-sm font-medium text-muted-foreground mb-1">
+                    {searchQuery ? 'No chats found' : 'No conversations yet'}
+                  </p>
+                  <p className="text-xs text-muted-foreground/60 text-center">
+                    Start a new chat to begin
                   </p>
                 </div>
               ) : (
@@ -285,13 +288,16 @@ export const Sidebar = ({
                     return (
                       <SidebarMenuItem 
                         key={chat.sessionId}
-                        className="animate-in fade-in-0 slide-in-from-left-2 duration-300"
+                        className={cn(
+                          "relative animate-in fade-in-0 slide-in-from-left-2 duration-300",
+                          index > 0 && "before:absolute before:top-0 before:left-4 before:right-4 before:h-px before:bg-border/30"
+                        )}
                         style={{ 
                           animationDelay: `${index * 30}ms`,
                           animationFillMode: 'backwards'
                         }}
                       >
-                        <div className="flex items-center gap-2 w-full">
+                        <div className="flex items-center gap-2 w-full group">
                           {showChatSelection && (
                             <Checkbox 
                               checked={selectedChats.has(originalIndex)} 
@@ -304,41 +310,52 @@ export const Sidebar = ({
                             tooltip={undefined}
                             title=""
                             className={cn(
-                              "flex-1 h-auto py-3 px-3 rounded-xl overflow-hidden",
+                              "flex-1 h-auto py-3.5 px-3 rounded-xl overflow-hidden",
+                              "hover:bg-muted/50 hover:shadow-sm",
+                              "border border-transparent hover:border-border/40",
                               "active:scale-[0.98]",
-                              "transition-all duration-200",
-                              isPinned && "bg-foreground/5 border border-border"
+                              "transition-all duration-200 ease-out",
+                              isPinned && "bg-muted/30 border-border/30"
                             )}
                           >
-                            <div className="w-full min-w-0 overflow-hidden space-y-1.5">
-                              {/* Title row */}
-                              <div className="flex items-center gap-2 w-full">
-                                <div className="w-6 h-6 rounded-lg bg-black dark:bg-white flex items-center justify-center flex-shrink-0">
-                                  <MessageSquare className="w-3 h-3 text-white dark:text-black" />
+                            <div className="w-full min-w-0 overflow-hidden space-y-2">
+                              {/* Row 1: Icon + Title + Time */}
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                  <div className="w-8 h-8 rounded-full bg-muted/60 flex items-center justify-center flex-shrink-0">
+                                    <MessageSquare className="w-4 h-4 text-foreground/50" />
+                                  </div>
+                                  <span className="text-sm font-medium truncate text-foreground">
+                                    {chat.title}
+                                  </span>
                                 </div>
-                                <span className="text-sm font-medium truncate max-w-[100px] text-black dark:text-white">
-                                  {chat.title}
-                                </span>
-                                <button
-                                  onClick={(e) => togglePin(chat.sessionId, e)}
-                                  className={cn(
-                                    "p-1 rounded-md flex-shrink-0",
-                                    isPinned ? "opacity-100" : "opacity-50"
-                                  )}
-                                >
-                                  <Star className={cn(
-                                    "w-3 h-3",
-                                    isPinned ? "fill-amber-400 text-amber-400" : "text-gray-400"
-                                  )} />
-                                </button>
-                                <span className="text-[10px] text-gray-500 dark:text-gray-400 flex-shrink-0">
+                                <span className="text-[11px] text-muted-foreground flex-shrink-0">
                                   {formatCompactTime(new Date(chat.timestamp))}
                                 </span>
                               </div>
-                              {/* Preview text - 2 lines with ellipsis */}
-                              <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 pl-8 pr-2">
-                                {chat.lastMessage}
-                              </p>
+                              {/* Row 2: Preview + Star */}
+                              <div className="flex items-start justify-between gap-2 pl-[42px]">
+                                <p className="text-xs text-muted-foreground line-clamp-2 flex-1 leading-relaxed">
+                                  {chat.lastMessage}
+                                </p>
+                                <button
+                                  onClick={(e) => togglePin(chat.sessionId, e)}
+                                  className={cn(
+                                    "p-1.5 rounded-md transition-all duration-200 flex-shrink-0",
+                                    "opacity-0 group-hover:opacity-100",
+                                    isPinned && "opacity-100",
+                                    isPinned 
+                                      ? "text-amber-500 hover:text-amber-600" 
+                                      : "text-muted-foreground/40 hover:text-muted-foreground"
+                                  )}
+                                >
+                                  <Star className={cn(
+                                    "w-3.5 h-3.5 transition-transform duration-200",
+                                    isPinned && "fill-amber-500",
+                                    "group-hover:scale-110"
+                                  )} />
+                                </button>
+                              </div>
                             </div>
                           </SidebarMenuButton>
                         </div>
