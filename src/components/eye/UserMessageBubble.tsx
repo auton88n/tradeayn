@@ -62,10 +62,10 @@ export const UserMessageBubble = ({
           ? {
               x: endPosition.x - halfWidth,
               y: endPosition.y - halfHeight,
-              scale: 0.35,
-              opacity: 1,
-              rotate: -8,
-              filter: 'blur(0px)',
+              scale: [1, 0.85, 0.6, 0.35],
+              opacity: [1, 1, 0.95, 0.9],
+              rotate: [0, -3, -6, -8],
+              filter: ['blur(0px)', 'blur(0px)', 'blur(1px)', 'blur(2px)'],
             }
           : {
               x: endPosition.x - halfWidth,
@@ -73,19 +73,18 @@ export const UserMessageBubble = ({
               scale: 0,
               opacity: 0,
               rotate: 0,
-              filter: 'blur(4px)',
+              filter: 'blur(6px)',
             }
       }
       transition={
         status === 'flying'
           ? {
-              type: 'spring',
-              stiffness: 200,
-              damping: 20,
-              mass: 0.4,
+              duration: 0.45,
+              ease: [0.32, 0.72, 0, 1],
+              times: [0, 0.3, 0.7, 1],
             }
           : {
-              duration: 0.15,
+              duration: 0.12,
               ease: [0.32, 0, 0.67, 0],
             }
       }
