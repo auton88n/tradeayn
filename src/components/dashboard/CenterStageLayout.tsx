@@ -3,7 +3,6 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EmotionalEye } from '@/components/eye/EmotionalEye';
 import { UserMessageBubble } from '@/components/eye/UserMessageBubble';
-import { SuggestionsCard } from '@/components/eye/SuggestionsCard';
 import { MobileSuggestionChips } from '@/components/eye/MobileSuggestionChips';
 import { ResponseCard } from '@/components/eye/ResponseCard';
 import { FlyingSuggestionBubble } from '@/components/eye/FlyingSuggestionBubble';
@@ -17,22 +16,6 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useEyeContext } from '@/hooks/useEyeContext';
 import { useEyeBehaviorMatcher } from '@/hooks/useEyeBehaviorMatcher';
 import type { Message, AIMode, AIModeConfig } from '@/types/dashboard.types';
-
-// Hook to detect tablet breakpoint
-const useIsSmallScreen = () => {
-  const [isSmallScreen, setIsSmallScreen] = useState(false);
-  
-  useEffect(() => {
-    const checkSize = () => {
-      setIsSmallScreen(window.innerWidth < 1024);
-    };
-    checkSize();
-    window.addEventListener('resize', checkSize);
-    return () => window.removeEventListener('resize', checkSize);
-  }, []);
-  
-  return isSmallScreen;
-};
 
 // Fallback suggestions when API fails
 const DEFAULT_SUGGESTIONS = [
@@ -93,7 +76,6 @@ export const CenterStageLayout = ({
   const eyeRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
-  const isSmallScreen = useIsSmallScreen();
   const { setEmotion, triggerAbsorption, triggerBlink, setIsResponding, detectExcitement, isUserTyping: contextIsTyping } = useAYNEmotion();
   const {
     flyingBubble,
@@ -188,21 +170,9 @@ export const CenterStageLayout = ({
     }
   }, []);
 
-  // Calculate eye position based on visible cards - responsive values
+  // Track visible cards for animations
   const hasVisibleResponses = responseBubbles.some(b => b.isVisible);
   const hasVisibleSuggestions = suggestionBubbles.some(s => s.isVisible);
-  
-  // Eye shifts left when responses are visible, right when only suggestions
-  // Mobile: no horizontal shift (stacked layout)
-  // Tablet/Desktop: progressive shift amounts
-  let eyeShiftX = 0;
-  if (!isMobile) {
-    if (hasVisibleResponses) {
-      eyeShiftX = -60;  // Reduced shift
-    } else if (hasVisibleSuggestions) {
-      eyeShiftX = 40;   // Reduced shift
-    }
-  }
 
   // AI gaze target - eye looks at individual suggestion cards
   const gazeTarget = hasVisibleSuggestions && !isTyping && !isMobile
@@ -406,149 +376,79 @@ export const CenterStageLayout = ({
       <div className="absolute inset-0 bg-gradient-to-b from-background via-background to-muted/10 pointer-events-none" />
 
       {/* Central Eye Stage - centered in available space above input */}
-      <div ref={eyeStageRef} className={cn(
-        "flex-1 flex relative",
-        isSmallScreen 
-          ? "items-start justify-center pt-6 pb-28"
-          : "items-center justify-center pb-32"
-      )}>
-        {isSmallScreen ? (
-          // Mobile/Tablet: Eye centered when idle, moves up when response appears
-          <motion.div 
-            className="flex flex-col items-center gap-3 w-full"
-            animate={{
-              paddingTop: hasVisibleResponses ? '1rem' : '25vh',
-            }}
-            transition={{
-              type: 'spring',
-              stiffness: 200,
-              damping: 25,
-            }}
-          >
-            <motion.div 
-              ref={eyeRef} 
-              className="relative"
-              data-tutorial="eye"
-            >
-              <EmotionalEye size={isMobile ? "md" : "lg"} gazeTarget={gazeTarget} behaviorConfig={behaviorConfig} />
-
-              {/* Thinking indicator when typing */}
-              <AnimatePresence>
-                {isTyping && (
-                  <motion.div
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0, opacity: 0 }}
-                    className="absolute -bottom-12 left-1/2 -translate-x-1/2"
-                  >
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-ayn-thinking/20 backdrop-blur-sm border border-ayn-thinking/30">
-                      <div className="flex gap-1">
-                        <motion.div
-                          className="w-1.5 h-1.5 rounded-full bg-ayn-thinking"
-                          animate={{ scale: [1, 1.3, 1] }}
-                          transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
-                        />
-                        <motion.div
-                          className="w-1.5 h-1.5 rounded-full bg-ayn-thinking"
-                          animate={{ scale: [1, 1.3, 1] }}
-                          transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
-                        />
-                        <motion.div
-                          className="w-1.5 h-1.5 rounded-full bg-ayn-thinking"
-                          animate={{ scale: [1, 1.3, 1] }}
-                          transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
-                        />
-                      </div>
-                      <span className="text-xs text-ayn-thinking">Thinking...</span>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-            
-            {/* Response card directly below eye with safe margins */}
-            <div className="px-4 w-full flex justify-center">
-              <ResponseCard 
-                responses={responseBubbles} 
-                isMobile={isMobile}
-              />
-            </div>
-          </motion.div>
-        ) : (
-          // Desktop: Horizontal layout with absolute positioning
-          <>
-            <motion.div 
-              ref={eyeRef} 
-              className="relative"
-              data-tutorial="eye"
-              animate={{ x: eyeShiftX }}
-              transition={{ 
-                type: 'spring', 
-                stiffness: 150, 
-                damping: 20, 
-                mass: 0.8 
-              }}
-            >
-              <EmotionalEye size="lg" gazeTarget={gazeTarget} behaviorConfig={behaviorConfig} />
-
-              {/* Thinking indicator when typing - stays with eye */}
-              <AnimatePresence>
-                {isTyping && (
-                  <motion.div
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0, opacity: 0 }}
-                    className="absolute -bottom-16 left-1/2 -translate-x-1/2"
-                  >
-                    <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-ayn-thinking/20 backdrop-blur-sm border border-ayn-thinking/30">
-                      <div className="flex gap-1">
-                        <motion.div
-                          className="w-2 h-2 rounded-full bg-ayn-thinking"
-                          animate={{ scale: [1, 1.3, 1] }}
-                          transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
-                        />
-                        <motion.div
-                          className="w-2 h-2 rounded-full bg-ayn-thinking"
-                          animate={{ scale: [1, 1.3, 1] }}
-                          transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
-                        />
-                        <motion.div
-                          className="w-2 h-2 rounded-full bg-ayn-thinking"
-                          animate={{ scale: [1, 1.3, 1] }}
-                          transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
-                        />
-                      </div>
-                      <span className="text-sm text-ayn-thinking">Thinking...</span>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-
-            {/* Suggestion Cards - desktop only */}
-            <SuggestionsCard
-              suggestions={suggestionBubbles}
-              onSuggestionClick={handleSuggestionClick}
-              isMobile={isMobile}
-              isSmallScreen={isSmallScreen}
-              eyeShiftX={eyeShiftX}
-            />
-
-            {/* Response Card - positioned to the right of eye */}
-            <div 
-              className="absolute"
-              style={{
-                top: '50%',
-                left: `calc(50% + ${eyeShiftX + 140}px)`,
-                transform: 'translateY(-50%)',
-              }}
-            >
-              <ResponseCard 
-                responses={responseBubbles} 
-              />
-            </div>
-          </>
+      <div 
+        ref={eyeStageRef} 
+        className={cn(
+          "flex-1 flex relative",
+          "items-center justify-center",
+          "pb-32",
+          "transition-all duration-300 ease-out",
+          // Shift content when sidebars open on tablet+
+          sidebarOpen && "lg:ml-[10rem]",
+          transcriptOpen && "lg:mr-[10rem]"
         )}
+      >
+        {/* Unified layout for all screen sizes */}
+        <motion.div 
+          className="flex flex-col items-center gap-3 w-full"
+          animate={{
+            paddingTop: hasVisibleResponses ? '1rem' : isMobile ? '20vh' : '5vh',
+          }}
+          transition={{
+            type: 'spring',
+            stiffness: 200,
+            damping: 25,
+          }}
+        >
+          <motion.div 
+            ref={eyeRef} 
+            className="relative"
+            data-tutorial="eye"
+          >
+            <EmotionalEye size={isMobile ? "md" : "lg"} gazeTarget={gazeTarget} behaviorConfig={behaviorConfig} />
+
+            {/* Thinking indicator when typing */}
+            <AnimatePresence>
+              {isTyping && (
+                <motion.div
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0, opacity: 0 }}
+                  className="absolute -bottom-12 left-1/2 -translate-x-1/2"
+                >
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-ayn-thinking/20 backdrop-blur-sm border border-ayn-thinking/30">
+                    <div className="flex gap-1">
+                      <motion.div
+                        className="w-1.5 h-1.5 rounded-full bg-ayn-thinking"
+                        animate={{ scale: [1, 1.3, 1] }}
+                        transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
+                      />
+                      <motion.div
+                        className="w-1.5 h-1.5 rounded-full bg-ayn-thinking"
+                        animate={{ scale: [1, 1.3, 1] }}
+                        transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
+                      />
+                      <motion.div
+                        className="w-1.5 h-1.5 rounded-full bg-ayn-thinking"
+                        animate={{ scale: [1, 1.3, 1] }}
+                        transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
+                      />
+                    </div>
+                    <span className="text-xs text-ayn-thinking">Thinking...</span>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+          
+          {/* Response card directly below eye */}
+          <div className="px-4 w-full flex justify-center">
+            <ResponseCard 
+              responses={responseBubbles} 
+              isMobile={isMobile}
+            />
+          </div>
+        </motion.div>
       </div>
 
       {/* Flying user message bubble */}
@@ -581,26 +481,23 @@ export const CenterStageLayout = ({
         particleCount={16}
       />
 
-      {/* Mobile suggestion chips - above input */}
-      {isSmallScreen && (
-        <div className={cn(
-          "fixed bottom-32 sm:bottom-36 z-40",
-          "left-4 right-4",
-          "md:left-[21rem] md:right-4",
-          sidebarOpen && "md:left-[21rem]",
-          !sidebarOpen && "md:left-4",
-          transcriptOpen && "md:right-[21rem]",
-          "flex justify-center",
-          "transition-all duration-300 ease-out"
-        )}>
-          <AnimatePresence>
-            <MobileSuggestionChips
-              suggestions={suggestionBubbles}
-              onSuggestionClick={handleSuggestionClick}
-            />
-          </AnimatePresence>
-        </div>
-      )}
+      {/* Suggestion chips - ALL screen sizes (horizontal layout) */}
+      <div className={cn(
+        "fixed bottom-32 sm:bottom-36 z-40",
+        "left-4 right-4",
+        "flex justify-center",
+        "transition-all duration-300 ease-out",
+        // Shift with sidebars on tablet+
+        sidebarOpen && "lg:ml-[10rem]",
+        transcriptOpen && "lg:mr-[10rem]"
+      )}>
+        <AnimatePresence>
+          <MobileSuggestionChips
+            suggestions={suggestionBubbles}
+            onSuggestionClick={handleSuggestionClick}
+          />
+        </AnimatePresence>
+      </div>
 
       {/* Input area - ChatInput handles its own fixed positioning */}
       <ChatInput
