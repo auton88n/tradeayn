@@ -35,6 +35,11 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
   const preprocessContent = (text: string): string => {
     let processed = text;
     
+    // Normalize curly/smart quotes to straight quotes for markdown compatibility
+    processed = processed
+      .replace(/[\u2018\u2019]/g, "'")  // Single curly quotes → straight
+      .replace(/[\u201C\u201D]/g, '"'); // Double curly quotes → straight
+    
     // Robust inline markdown table detection and conversion
     // Tables have: header row | separator row (|---|) | data rows
     if (processed.includes('|') && /\|[\s-:]+\|/.test(processed)) {
