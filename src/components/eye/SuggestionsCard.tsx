@@ -47,6 +47,7 @@ export const SuggestionsCard = ({
 
   // Desktop: Absolute arc positioning on left side
   return (
+    <div data-tutorial="suggestions">
     <AnimatePresence>
       {visibleSuggestions.map((suggestion, index) => {
         const position = desktopPositions[index] || desktopPositions[0];
@@ -114,5 +115,6 @@ export const SuggestionsCard = ({
         );
       })}
     </AnimatePresence>
+    </div>
   );
 };

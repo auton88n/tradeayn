@@ -7,6 +7,8 @@ import { SidebarProvider, Sidebar as ShadcnSidebar, SidebarTrigger, useSidebar }
 import { Sidebar as DashboardSidebar } from './Sidebar';
 import { CenterStageLayout } from './CenterStageLayout';
 import { TranscriptSidebar } from '@/components/transcript/TranscriptSidebar';
+import { TutorialWelcome } from '@/components/tutorial/TutorialWelcome';
+import { TutorialOverlay } from '@/components/tutorial/TutorialOverlay';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { AIMode, FileAttachment, AIModeConfig, ChatHistory } from '@/types/dashboard.types';
@@ -16,6 +18,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useChatSession } from '@/hooks/useChatSession';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { useMessages } from '@/hooks/useMessages';
+import { useTutorial } from '@/hooks/useTutorial';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
 import { analyzeResponseEmotion } from '@/utils/emotionMapping';
 
@@ -276,6 +279,9 @@ const DashboardContent = ({
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [replyPrefill, setReplyPrefill] = useState<string>('');
   const { setEmotion, setIsResponding } = useAYNEmotion();
+  
+  // Tutorial system
+  const tutorial = useTutorial(user.id);
 
   // Handle reply from transcript
   const handleReply = useCallback((quotedContent: string) => {
@@ -306,8 +312,26 @@ const DashboardContent = ({
   }, [handleNewChat]);
 
   return (
-    <div className="flex h-screen w-full" dir="ltr">
-      <ShadcnSidebar>
+    <>
+      {/* Tutorial System */}
+      <TutorialWelcome
+        isOpen={tutorial.showWelcome}
+        onStart={tutorial.startTutorial}
+        onSkip={tutorial.dismissWelcome}
+      />
+      <TutorialOverlay
+        isActive={tutorial.isActive}
+        currentStep={tutorial.currentStep}
+        totalSteps={tutorial.totalSteps}
+        currentStepData={tutorial.currentStepData}
+        onNext={tutorial.nextStep}
+        onPrev={tutorial.prevStep}
+        onSkip={tutorial.skipTutorial}
+        onComplete={tutorial.completeTutorial}
+      />
+      
+      <div className="flex h-screen w-full" dir="ltr">
+        <ShadcnSidebar data-tutorial="sidebar">
         <DashboardSidebar
           userName={auth.userProfile?.contact_person || user.user_metadata?.name || user.email?.split('@')[0]}
           userEmail={auth.userProfile?.company_name || 'No company'}
@@ -411,13 +435,14 @@ const DashboardContent = ({
 
       {/* Right Sidebar - Transcript */}
       <TranscriptSidebar
-        messages={messagesHook.messages}
-        isOpen={transcriptOpen}
-        onToggle={() => setTranscriptOpen(!transcriptOpen)}
-        onClear={handleClearTranscript}
-        currentMode={selectedMode}
-        onReply={handleReply}
-      />
-    </div>
+          messages={messagesHook.messages}
+          isOpen={transcriptOpen}
+          onToggle={() => setTranscriptOpen(!transcriptOpen)}
+          onClear={handleClearTranscript}
+          currentMode={selectedMode}
+          onReply={handleReply}
+        />
+      </div>
+    </>
   );
 };

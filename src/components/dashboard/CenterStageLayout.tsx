@@ -430,6 +430,7 @@ export const CenterStageLayout = ({
             <motion.div 
               ref={eyeRef} 
               className="relative"
+              data-tutorial="eye"
             >
               <EmotionalEye size={isMobile ? "md" : "lg"} gazeTarget={gazeTarget} behaviorConfig={behaviorConfig} />
 
@@ -481,6 +482,7 @@ export const CenterStageLayout = ({
             <motion.div 
               ref={eyeRef} 
               className="relative"
+              data-tutorial="eye"
               animate={{ x: eyeShiftX }}
               transition={{ 
                 type: 'spring', 
