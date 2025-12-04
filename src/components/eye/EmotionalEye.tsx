@@ -85,22 +85,39 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
   const combinedX = useTransform([eyeX, smoothMicroX, smoothAiGazeX], ([eye, micro, ai]) => (eye as number) + (micro as number) + (ai as number));
   const combinedY = useTransform([eyeY, smoothMicroY, smoothAiGazeY], ([eye, micro, ai]) => (eye as number) + (micro as number) + (ai as number));
 
-  // Mouse tracking effect - respect behavior gaze pattern
+  // Mouse tracking effect - throttled for performance
   useEffect(() => {
     const gazePattern = behaviorConfig?.gazePattern ?? 'follow_mouse';
     
-    // Only track mouse if pattern allows
     if (gazePattern !== 'follow_mouse' && gazePattern !== 'wander' && gazePattern !== 'scan_screen') {
       mouseX.set(0);
       mouseY.set(0);
       return;
     }
 
+    let rafId: number | null = null;
+    let lastX = 0;
+    let lastY = 0;
+
     function onMove(e: MouseEvent) {
-      const cx = window.innerWidth / 2;
-      const cy = window.innerHeight / 2;
-      mouseX.set(e.clientX - cx);
-      mouseY.set(e.clientY - cy);
+      // Throttle with RAF for 60fps max
+      if (rafId !== null) return;
+      
+      rafId = requestAnimationFrame(() => {
+        const cx = window.innerWidth / 2;
+        const cy = window.innerHeight / 2;
+        const newX = e.clientX - cx;
+        const newY = e.clientY - cy;
+        
+        // Only update if moved significantly (reduces repaints)
+        if (Math.abs(newX - lastX) > 2 || Math.abs(newY - lastY) > 2) {
+          mouseX.set(newX);
+          mouseY.set(newY);
+          lastX = newX;
+          lastY = newY;
+        }
+        rafId = null;
+      });
     }
 
     function onLeave() {
@@ -113,6 +130,7 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
     return () => {
       window.removeEventListener('mousemove', onMove);
       window.removeEventListener('mouseleave', onLeave);
+      if (rafId !== null) cancelAnimationFrame(rafId);
     };
   }, [mouseX, mouseY, behaviorConfig?.gazePattern]);
 
@@ -325,22 +343,14 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
         onMouseEnter={() => setIsHovered(true)} 
         onMouseLeave={() => setIsHovered(false)}
       >
-        <motion.div 
+        <div 
           className={cn(
-            "relative rounded-full bg-background flex items-center justify-center overflow-hidden",
+            "relative rounded-full bg-background flex items-center justify-center overflow-hidden animate-eye-breathe will-change-transform",
             sizeClasses[size]
           )}
           style={{
-            boxShadow: '0 10px 30px rgba(0,0,0,0.15)'
-          }}
-          animate={{ 
-            scale: [1, 1.015, 1],
-            opacity: [1, 0.98, 1]
-          }}
-          transition={{ 
-            duration: breathingDuration, 
-            repeat: Infinity, 
-            ease: "easeInOut" 
+            boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
+            animationDuration: `${breathingDuration}s`
           }}
         >
           {/* Layer 1: Soft outer glow */}
@@ -468,7 +478,7 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
               />
             </foreignObject>
           </motion.svg>
-        </motion.div>
+        </div>
       </motion.div>
     </div>
   );
