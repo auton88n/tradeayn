@@ -4,9 +4,15 @@ import type { VisualPanel, CanvasPanelPosition, UseVisualResponsesReturn } from 
 
 // Visual intent detection keywords
 const VISUAL_TRIGGERS = {
-  generate: ['show me', 'generate', 'create', 'draw', 'visualize', 'imagine', 'make', 'design'],
+  // Direct phrases that ALWAYS trigger image generation
+  direct: ['show me', 'draw me', 'visualize', 'imagine', 'picture of', 'image of', 'أرني', 'ارسم لي', 'تخيل'],
+  // Generate keywords
+  generate: ['generate', 'create', 'draw', 'make', 'design', 'render', 'paint'],
+  // Arabic keywords  
   arabic: ['أرني', 'ارسم', 'اعرض', 'صور', 'تخيل', 'اصنع', 'صمم'],
+  // Image type keywords
   imageTypes: ['image', 'picture', 'diagram', 'chart', 'illustration', 'logo', 'photo', 'graphic', 'صورة', 'رسم'],
+  // Explicit full phrases
   explicit: ['can you show', 'let me see', 'make an image of', 'create a picture', 'generate an image'],
 };
 
@@ -21,6 +27,11 @@ export const useVisualResponses = (): UseVisualResponsesReturn => {
   // Detect if a message contains visual generation intent
   const detectVisualIntent = useCallback((message: string): boolean => {
     const lowerMessage = message.toLowerCase();
+    
+    // Check for DIRECT visual phrases first - these ALWAYS trigger images
+    for (const phrase of VISUAL_TRIGGERS.direct) {
+      if (lowerMessage.includes(phrase)) return true;
+    }
     
     // Check for explicit visual requests
     for (const phrase of VISUAL_TRIGGERS.explicit) {
