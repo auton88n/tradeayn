@@ -485,7 +485,7 @@ animate={{
         particleCount={16}
       />
 
-      {/* Suggestion chips - ALL screen sizes (horizontal layout) */}
+      {/* Suggestion chips temporarily disabled
       <div className={cn(
         "fixed bottom-28 sm:bottom-32 z-40",
         "flex justify-center",
@@ -502,6 +502,7 @@ animate={{
           />
         </AnimatePresence>
       </div>
+      */}
 
       {/* Input area - ChatInput handles its own fixed positioning */}
       <ChatInput
