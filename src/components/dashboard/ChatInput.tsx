@@ -113,8 +113,11 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
       // Auto-resize textarea after React updates DOM
       setTimeout(() => {
         if (textareaRef.current) {
-          textareaRef.current.style.height = '52px';
-          textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 200) + 'px';
+          // First reset to auto to get accurate scrollHeight
+          textareaRef.current.style.height = 'auto';
+          const scrollHeight = textareaRef.current.scrollHeight;
+          // Then set to actual content height, respecting max
+          textareaRef.current.style.height = Math.max(52, Math.min(scrollHeight, 200)) + 'px';
           textareaRef.current.focus();
         }
       }, 0);
@@ -177,8 +180,8 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
 
     // Auto-resize
     if (textareaRef.current) {
-      textareaRef.current.style.height = '52px';
-      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 200) + 'px';
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = Math.max(52, Math.min(textareaRef.current.scrollHeight, 200)) + 'px';
     }
   }, []);
   const handleFileClick = useCallback(() => {
@@ -212,13 +215,15 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
       <div className={cn("relative bg-background/95 backdrop-blur-xl border border-border rounded-2xl shadow-lg overflow-hidden transition-all duration-300", isDragOver && "border-primary shadow-xl", isInputFocused && "border-border/80 shadow-xl")}>
         {/* Row 1: Input area */}
         <div className="relative px-5 pt-4 pb-3">
-          <Textarea ref={textareaRef} value={inputMessage} onChange={handleTextareaChange} onKeyDown={handleKeyPress} onFocus={() => setIsInputFocused(true)} onBlur={() => setIsInputFocused(false)} disabled={isDisabled || isUploading} className={cn("w-full resize-none min-h-[52px] max-h-[200px]", "text-base md:text-lg bg-transparent", "border-0 focus-visible:ring-0 focus-visible:ring-offset-0", "text-foreground placeholder:text-muted-foreground", "disabled:opacity-50 disabled:cursor-not-allowed", "leading-relaxed")} style={{
+          <Textarea ref={textareaRef} value={inputMessage} onChange={handleTextareaChange} onKeyDown={handleKeyPress} onFocus={() => setIsInputFocused(true)} onBlur={() => setIsInputFocused(false)} disabled={isDisabled || isUploading} className={cn("w-full resize-none min-h-[52px] max-h-[200px]", "text-base md:text-lg bg-transparent", "border-0 focus-visible:ring-0 focus-visible:ring-offset-0", "text-foreground placeholder:text-muted-foreground", "disabled:opacity-50 disabled:cursor-not-allowed", "leading-relaxed", "overflow-y-auto")} style={{
           paddingRight: inputMessage.trim() ? '60px' : '12px',
-          paddingLeft: '12px'
+          paddingLeft: '12px',
+          paddingTop: '12px',
+          paddingBottom: '12px'
         }} />
 
           {/* Typewriter placeholder */}
-          {showPlaceholder && !inputMessage && <div className="absolute top-[18px] left-[32px] pointer-events-none">
+          {showPlaceholder && !inputMessage && <div className="absolute top-[26px] left-[32px] pointer-events-none">
               <motion.span key={currentPlaceholder} initial={{
             opacity: 0,
             y: 5
