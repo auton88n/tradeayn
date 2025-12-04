@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -40,7 +40,8 @@ export const Sidebar = ({
   onAvatarUpdated,
   isAdmin,
   onAdminPanelClick,
-  onStartTutorial
+  onStartTutorial,
+  isTutorialProfileStep
 }: SidebarProps) => {
   const { t, language, direction } = useLanguage();
   const { toggleSidebar } = useSidebar();
@@ -48,10 +49,20 @@ export const Sidebar = ({
   const [showAvatarUpload, setShowAvatarUpload] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [profilePopoverOpen, setProfilePopoverOpen] = useState(false);
   const [pinnedChats, setPinnedChats] = useState<Set<string>>(() => {
     const stored = localStorage.getItem('pinnedChats');
     return stored ? new Set(JSON.parse(stored)) : new Set();
   });
+
+  // Control profile popover during tutorial
+  useEffect(() => {
+    if (isTutorialProfileStep) {
+      setProfilePopoverOpen(true);
+    } else {
+      setProfilePopoverOpen(false);
+    }
+  }, [isTutorialProfileStep]);
 
   const formatCompactTime = (date: Date): string => {
     const now = new Date();
@@ -352,7 +363,7 @@ export const Sidebar = ({
         <div className="h-px bg-border" />
         
         {/* User Profile */}
-        <Popover>
+        <Popover open={profilePopoverOpen} onOpenChange={setProfilePopoverOpen}>
           <PopoverTrigger asChild>
             <button 
               data-tutorial="profile"

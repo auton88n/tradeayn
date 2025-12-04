@@ -388,6 +388,7 @@ const DashboardContent = ({
           isAdmin={isAdmin}
           onAdminPanelClick={onAdminPanelClick}
           onStartTutorial={tutorial.startTutorial}
+          isTutorialProfileStep={tutorial.isActive && tutorial.currentStepData?.id === 'profile'}
         />
       </ShadcnSidebar>
 

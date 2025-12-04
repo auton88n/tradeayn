@@ -268,4 +268,5 @@ export interface SidebarProps {
   isAdmin?: boolean;
   onAdminPanelClick?: () => void;
   onStartTutorial?: () => void;
+  isTutorialProfileStep?: boolean;
 }

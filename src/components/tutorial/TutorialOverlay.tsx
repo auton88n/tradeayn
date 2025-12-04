@@ -87,8 +87,14 @@ export const TutorialOverlay = ({
         />
 
         {/* Dynamic position based on step.position */}
-        <div className={`fixed left-1/2 -translate-x-1/2 z-[201] w-[90%] max-w-md ${
-          currentStepData.position === 'top' ? 'top-24' : 'bottom-8'
+        <div className={`fixed z-[201] w-[90%] max-w-md ${
+          currentStepData.position === 'top' 
+            ? 'top-20 left-1/2 -translate-x-1/2' 
+            : currentStepData.position === 'bottom' 
+            ? 'bottom-32 left-1/2 -translate-x-1/2'
+            : currentStepData.position === 'left'
+            ? 'top-1/2 -translate-y-1/2 left-4 md:left-72'
+            : 'top-1/2 -translate-y-1/2 right-4 md:right-8'
         }`}>
           <AnimatePresence mode="wait">
             <TutorialStep
