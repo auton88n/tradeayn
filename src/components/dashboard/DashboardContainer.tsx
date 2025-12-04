@@ -275,13 +275,34 @@ const DashboardContent = ({
   isAdmin?: boolean;
   onAdminPanelClick?: () => void;
 }) => {
-  const { open, toggleSidebar } = useSidebar();
+  const { open, setOpen, openMobile, setOpenMobile, isMobile, toggleSidebar } = useSidebar();
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [replyPrefill, setReplyPrefill] = useState<string>('');
   const { setEmotion, setIsResponding } = useAYNEmotion();
   
   // Tutorial system
   const tutorial = useTutorial(user.id);
+
+  // Mutual exclusivity: close transcript when left sidebar opens
+  useEffect(() => {
+    const sidebarIsOpen = isMobile ? openMobile : open;
+    if (sidebarIsOpen && transcriptOpen) {
+      setTranscriptOpen(false);
+    }
+  }, [open, openMobile, isMobile, transcriptOpen]);
+
+  // Handle transcript toggle with mutual exclusivity
+  const handleToggleTranscript = useCallback(() => {
+    if (!transcriptOpen) {
+      // Opening transcript - close left sidebar
+      if (isMobile) {
+        setOpenMobile(false);
+      } else {
+        setOpen(false);
+      }
+    }
+    setTranscriptOpen(!transcriptOpen);
+  }, [transcriptOpen, isMobile, setOpen, setOpenMobile]);
 
   // Handle reply from transcript
   const handleReply = useCallback((quotedContent: string) => {
@@ -424,7 +445,7 @@ const DashboardContent = ({
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setTranscriptOpen(!transcriptOpen)}
+            onClick={handleToggleTranscript}
             className="h-9 w-9"
           >
             <MessageSquare className="w-5 h-5" />
@@ -460,7 +481,7 @@ const DashboardContent = ({
       <TranscriptSidebar
           messages={messagesHook.messages}
           isOpen={transcriptOpen}
-          onToggle={() => setTranscriptOpen(!transcriptOpen)}
+          onToggle={handleToggleTranscript}
           onClear={handleClearTranscript}
           currentMode={selectedMode}
           onReply={handleReply}
