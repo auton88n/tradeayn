@@ -237,7 +237,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
 
           {/* Typewriter Placeholder */}
           {showPlaceholder && !inputMessage.trim() && !isInputFocused && <div className="absolute top-[8px] left-[4px] pointer-events-none z-10 transition-all duration-300">
-              <TypewriterText key={`${placeholderIndex}-${language}`} text={placeholderTexts[placeholderIndex]} speed={50} className="typewriter-text text-muted-foreground" showCursor={true} />
+              <TypewriterText key={`${placeholderIndex}-${language}`} text={placeholderTexts[placeholderIndex]} speed={50} className="typewriter-text text-muted-foreground" showCursor={true} forceDirection="ltr" />
             </div>}
 
           {/* Selected File Chip (BELOW textarea) */}

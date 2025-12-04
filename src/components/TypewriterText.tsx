@@ -8,6 +8,7 @@ interface TypewriterTextProps {
   onSkip?: () => void;
   showCursor?: boolean;
   className?: string;
+  forceDirection?: 'ltr' | 'rtl';
 }
 
 export const TypewriterText = ({ 
@@ -16,13 +17,15 @@ export const TypewriterText = ({
   onComplete, 
   onSkip,
   showCursor = false,
-  className = "" 
+  className = "",
+  forceDirection
 }: TypewriterTextProps) => {
   const [displayedText, setDisplayedText] = useState('');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
   const [showSkipButton, setShowSkipButton] = useState(false);
-  const { direction } = useLanguage();
+  const { direction: contextDirection } = useLanguage();
+  const direction = forceDirection || contextDirection;
 
   useEffect(() => {
     // Show skip option after 1 second of typing
