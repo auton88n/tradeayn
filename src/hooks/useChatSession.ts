@@ -129,15 +129,15 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
         }
       });
 
-      // Delete messages from database
+      // Delete messages from database with explicit user_id filter
       if (messageIdsToDelete.length > 0) {
         const { error } = await supabase
           .from('messages')
           .delete()
-          .in('id', messageIdsToDelete);
+          .in('id', messageIdsToDelete)
+          .eq('user_id', userId);
 
         if (error) {
-          console.error('Error deleting messages:', error);
           toast({
             title: t('error.deleteError') || 'Error',
             description: t('error.deleteChatsError') || 'Failed to delete some chat messages.',
@@ -147,11 +147,12 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
         }
       }
 
-      // Update local state
-      const updatedChats = recentChats.filter((_, index) => !selectedChats.has(index));
-      setRecentChats(updatedChats);
+      // Clear local state first
       setSelectedChats(new Set());
       setShowChatSelection(false);
+
+      // Refresh from database to ensure consistency
+      await loadRecentChats();
 
       toast({
         title: t('dashboard.chatsDeleted') || 'Chats Deleted',

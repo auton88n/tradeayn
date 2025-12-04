@@ -253,6 +253,21 @@ export const Sidebar = ({
           </div>
         </div>
 
+        {/* Delete Selected Button - At Top */}
+        {showChatSelection && selectedChats.size > 0 && (
+          <div className="px-4 pb-2">
+            <Button 
+              onClick={onDeleteSelected} 
+              variant="destructive" 
+              size="sm" 
+              className="w-full h-9 rounded-xl"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              {t('common.deleteSelected')} ({selectedChats.size})
+            </Button>
+          </div>
+        )}
+
         {/* Scrollable Chat List */}
         <div className="flex-1 overflow-hidden">
           <ScrollArea className="h-full px-2">
@@ -336,21 +351,6 @@ export const Sidebar = ({
                       </SidebarMenuItem>
                     );
                   })}
-                  
-                  {/* Delete Selected Button */}
-                  {showChatSelection && selectedChats.size > 0 && (
-                    <div className="px-2 pt-3">
-                      <Button 
-                        onClick={onDeleteSelected} 
-                        variant="destructive" 
-                        size="sm" 
-                        className="w-full h-9 rounded-xl"
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        {t('common.deleteSelected')} ({selectedChats.size})
-                      </Button>
-                    </div>
-                  )}
                 </>
               )}
             </SidebarMenu>
