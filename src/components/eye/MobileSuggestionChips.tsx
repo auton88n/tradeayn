@@ -37,7 +37,7 @@ export const MobileSuggestionChips = ({
       transition={{ type: 'spring', stiffness: 300, damping: 25 }}
       className="w-full pb-3 overflow-x-auto scrollbar-hide"
     >
-      <div className="flex flex-nowrap gap-2 justify-center items-center px-4 overflow-x-auto scrollbar-hide">
+      <div className="flex flex-wrap gap-2 justify-center items-center px-2 max-w-full">
         <AnimatePresence mode="popLayout">
           {visibleSuggestions.map((suggestion, index) => (
             <motion.button
@@ -54,8 +54,8 @@ export const MobileSuggestionChips = ({
                 "shadow-sm",
                 "active:scale-95",
                 "transition-colors duration-150",
-                "max-w-[calc(100vw-4rem)]",
-                "shrink-0"
+                "max-w-[200px]",
+                "flex-shrink-0"
               )}
               initial={{ opacity: 0, scale: 0.8, x: -20 }}
               animate={{ opacity: 1, scale: 1, x: 0 }}
@@ -69,7 +69,7 @@ export const MobileSuggestionChips = ({
               whileTap={{ scale: 0.95 }}
             >
               <span className="text-base flex-shrink-0">{suggestion.emoji}</span>
-              <span className="truncate">{suggestion.content}</span>
+              <span className="whitespace-nowrap text-ellipsis overflow-hidden">{suggestion.content}</span>
             </motion.button>
           ))}
         </AnimatePresence>

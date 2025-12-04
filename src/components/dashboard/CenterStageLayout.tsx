@@ -383,14 +383,18 @@ export const CenterStageLayout = ({
           "items-center justify-center",
           "pb-32",
           "transition-all duration-300 ease-out",
-          // Shift content when sidebars open on tablet+
-          sidebarOpen && "lg:ml-[10rem]",
-          transcriptOpen && "lg:mr-[10rem]"
+          "overflow-hidden"
         )}
       >
         {/* Unified layout for all screen sizes */}
         <motion.div 
-          className="flex flex-col items-center gap-3 w-full"
+          className={cn(
+            "flex flex-col items-center gap-3 w-full px-4",
+            // Dynamic max-width based on sidebar states
+            sidebarOpen && transcriptOpen && "lg:max-w-[calc(100vw-42rem)]",
+            sidebarOpen && !transcriptOpen && "lg:max-w-[calc(100vw-22rem)]",
+            !sidebarOpen && transcriptOpen && "lg:max-w-[calc(100vw-22rem)]"
+          )}
 animate={{
             paddingTop: hasVisibleResponses ? '0' : isMobile ? '10vh' : '2vh',
           }}
@@ -486,9 +490,10 @@ animate={{
         "fixed bottom-32 sm:bottom-36 z-40",
         "flex justify-center",
         "transition-all duration-300 ease-out",
-        // Dynamic left/right positioning based on sidebar states
-        sidebarOpen ? "lg:left-[21rem]" : "left-4",
-        transcriptOpen ? "lg:right-[21rem]" : "right-4"
+        "left-4 right-4",
+        sidebarOpen && "lg:left-[21rem]",
+        transcriptOpen && "lg:right-[21rem]",
+        "overflow-hidden"
       )}>
         <AnimatePresence>
           <MobileSuggestionChips
