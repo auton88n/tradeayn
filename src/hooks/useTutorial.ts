@@ -15,14 +15,12 @@ export const useTutorial = (userId?: string) => {
   // Check if tutorial should be shown
   useEffect(() => {
     const checkTutorialStatus = async () => {
-      // Check localStorage first for quick response
       const localCompleted = localStorage.getItem(STORAGE_KEY);
       if (localCompleted === 'true') {
         setState(prev => ({ ...prev, isCompleted: true }));
         return;
       }
 
-      // Check database if user is logged in
       if (userId) {
         const { data } = await supabase
           .from('user_settings')
@@ -30,13 +28,11 @@ export const useTutorial = (userId?: string) => {
           .eq('user_id', userId)
           .single();
 
-        // Type assertion since column was just added via migration
         const settings = data as { has_completed_tutorial?: boolean } | null;
         if (settings?.has_completed_tutorial) {
           localStorage.setItem(STORAGE_KEY, 'true');
           setState(prev => ({ ...prev, isCompleted: true }));
         } else {
-          // Show welcome for new users
           setState(prev => ({ ...prev, showWelcome: true }));
         }
       }
@@ -57,7 +53,6 @@ export const useTutorial = (userId?: string) => {
   const nextStep = useCallback(() => {
     setState(prev => {
       if (prev.currentStep >= TUTORIAL_STEPS.length - 1) {
-        // Tutorial complete
         return { ...prev, isActive: false, isCompleted: true };
       }
       return { ...prev, currentStep: prev.currentStep + 1 };
@@ -71,23 +66,10 @@ export const useTutorial = (userId?: string) => {
     }));
   }, []);
 
-  const skipTutorial = useCallback(() => {
-    setState(prev => ({
-      ...prev,
-      isActive: false,
-      showWelcome: false,
-      isCompleted: true,
-    }));
-    completeTutorial();
-  }, []);
-
   const completeTutorial = useCallback(async () => {
-    // Save to localStorage
     localStorage.setItem(STORAGE_KEY, 'true');
-    
     setState(prev => ({ ...prev, isActive: false, isCompleted: true }));
 
-    // Save to database if user is logged in
     if (userId) {
       await supabase
         .from('user_settings')
@@ -100,6 +82,16 @@ export const useTutorial = (userId?: string) => {
         });
     }
   }, [userId]);
+
+  const skipTutorial = useCallback(() => {
+    setState(prev => ({
+      ...prev,
+      isActive: false,
+      showWelcome: false,
+      isCompleted: true,
+    }));
+    completeTutorial();
+  }, [completeTutorial]);
 
   const resetTutorial = useCallback(() => {
     localStorage.removeItem(STORAGE_KEY);
