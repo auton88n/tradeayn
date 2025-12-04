@@ -330,19 +330,17 @@ export const TranscriptSidebar = ({
   );
 
   // Mobile: Use Sheet component for proper drawer behavior
+  // Note: FloatingToggleButton is NOT rendered on mobile - mobile header handles transcript toggle
   if (isMobile) {
     return (
-      <>
-        <FloatingToggleButton />
-        <Sheet open={isOpen} onOpenChange={onToggle}>
-          <SheetContent 
-            side="right" 
-            className="w-full sm:w-[320px] p-0 [&>button]:hidden"
-          >
-            <TranscriptContent {...contentProps} />
-          </SheetContent>
-        </Sheet>
-      </>
+      <Sheet open={isOpen} onOpenChange={onToggle}>
+        <SheetContent 
+          side="right" 
+          className="w-full sm:w-[320px] p-0 [&>button]:hidden"
+        >
+          <TranscriptContent {...contentProps} />
+        </SheetContent>
+      </Sheet>
     );
   }
 
