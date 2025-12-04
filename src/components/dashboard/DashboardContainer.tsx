@@ -292,8 +292,11 @@ const DashboardContent = ({
   }, [open, openMobile, isMobile, transcriptOpen]);
 
   // Handle transcript toggle with mutual exclusivity
-  const handleToggleTranscript = useCallback(() => {
-    if (!transcriptOpen) {
+  // Accepts optional boolean from Sheet's onOpenChange
+  const handleToggleTranscript = useCallback((newState?: boolean) => {
+    const shouldOpen = typeof newState === 'boolean' ? newState : !transcriptOpen;
+    
+    if (shouldOpen && !transcriptOpen) {
       // Opening transcript - close left sidebar
       if (isMobile) {
         setOpenMobile(false);
@@ -301,7 +304,7 @@ const DashboardContent = ({
         setOpen(false);
       }
     }
-    setTranscriptOpen(!transcriptOpen);
+    setTranscriptOpen(shouldOpen);
   }, [transcriptOpen, isMobile, setOpen, setOpenMobile]);
 
   // Handle reply from transcript
@@ -445,7 +448,7 @@ const DashboardContent = ({
           <Button
             variant="ghost"
             size="icon"
-            onClick={handleToggleTranscript}
+            onClick={() => handleToggleTranscript()}
             className="h-9 w-9"
           >
             <MessageSquare className="w-5 h-5" />
