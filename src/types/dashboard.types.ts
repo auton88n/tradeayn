@@ -267,4 +267,5 @@ export interface SidebarProps {
   onAvatarUpdated?: () => void;
   isAdmin?: boolean;
   onAdminPanelClick?: () => void;
+  onStartTutorial?: () => void;
 }

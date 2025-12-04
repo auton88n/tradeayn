@@ -368,6 +368,7 @@ const DashboardContent = ({
           onAvatarUpdated={auth.loadUserProfile}
           isAdmin={isAdmin}
           onAdminPanelClick={onAdminPanelClick}
+          onStartTutorial={tutorial.startTutorial}
         />
       </ShadcnSidebar>
 
