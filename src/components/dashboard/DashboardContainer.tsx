@@ -307,6 +307,13 @@ const DashboardContent = ({
     }
   }, [messagesHook.isTyping, messagesHook.messages, setEmotion, setIsResponding]);
 
+  // Auto-open transcript sidebar during tutorial
+  useEffect(() => {
+    if (tutorial.currentStepData?.id === 'transcript') {
+      setTranscriptOpen(true);
+    }
+  }, [tutorial.currentStepData?.id]);
+
   const handleClearTranscript = useCallback(() => {
     handleNewChat();
   }, [handleNewChat]);
