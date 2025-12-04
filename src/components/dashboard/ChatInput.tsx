@@ -233,10 +233,11 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
             rows={1} 
             unstyled={true} 
             className="w-full resize-none min-h-[44px] max-h-[200px] text-base bg-transparent border-0 outline-none focus:ring-0 px-1 py-2" 
+            style={{ textAlign: 'left', direction: 'ltr' }}
           />
 
           {/* Typewriter Placeholder */}
-          {showPlaceholder && !inputMessage.trim() && !isInputFocused && <div className="absolute top-[8px] left-[4px] pointer-events-none z-10 transition-all duration-300">
+          {showPlaceholder && !inputMessage.trim() && !isInputFocused && <div className="absolute top-[8px] left-[4px] pointer-events-none z-10 transition-all duration-300" style={{ textAlign: 'left' }}>
               <TypewriterText key={`${placeholderIndex}-${language}`} text={placeholderTexts[placeholderIndex]} speed={50} className="typewriter-text text-muted-foreground" showCursor={true} forceDirection="ltr" />
             </div>}
 
