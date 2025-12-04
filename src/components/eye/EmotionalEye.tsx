@@ -344,10 +344,10 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
         onMouseLeave={() => setIsHovered(false)}
       >
         <div 
-          className={cn(
-            "relative rounded-full bg-background flex items-center justify-center overflow-hidden animate-eye-breathe will-change-transform shadow-xl transition-shadow duration-300 hover:shadow-2xl",
-            sizeClasses[size]
-          )}
+      className={cn(
+        "relative rounded-full bg-background flex items-center justify-center overflow-hidden animate-eye-breathe will-change-transform shadow-xl",
+        sizeClasses[size]
+      )}
           style={{
             animationDuration: `${breathingDuration}s`
           }}
