@@ -4,7 +4,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { ArrowUp, Paperclip, X, Plus, ChevronDown, SlidersHorizontal, Clock } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { TypewriterText } from '@/components/TypewriterText';
-import { useLanguage } from '@/contexts/LanguageContext';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
 import { cn } from '@/lib/utils';
 import type { ChatInputProps } from '@/types/dashboard.types';
@@ -49,11 +48,6 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
   const [hasStartedTyping, setHasStartedTyping] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const {
-    t,
-    language,
-    direction
-  } = useLanguage();
   
   // Handle prefill value changes
   useEffect(() => {
@@ -79,24 +73,12 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
     updateActivity 
   } = useAYNEmotion();
 
-  // Get mode-specific placeholder texts
-  const getPlaceholderTexts = () => {
-    try {
-      const placeholders = t(`placeholders.${selectedMode}`);
-      if (Array.isArray(placeholders)) {
-        return placeholders;
-      }
-      if (typeof placeholders === 'string') {
-        return JSON.parse(placeholders);
-      }
-    } catch (error) {
-      console.error('Error getting placeholders:', error);
-    }
-
-    // Fallback
-    return [t('dashboard.placeholders.askAyn') || 'Ask AYN anything...', t('dashboard.placeholders.increaseRevenue') || 'How can I increase my revenue?', t('dashboard.placeholders.marketTrends') || 'What are the latest market trends?'];
-  };
-  const placeholderTexts = getPlaceholderTexts();
+  // Hardcoded English placeholder texts
+  const placeholderTexts = [
+    'Ask AYN anything...',
+    'How can I increase my revenue?',
+    'What are the latest market trends?'
+  ];
 
   // Manage placeholder visibility
   useEffect(() => {
@@ -232,17 +214,12 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
             disabled={isDisabled || isUploading} 
             rows={1} 
             unstyled={true} 
-            dir={language === 'ar' ? 'rtl' : 'ltr'}
-            style={{ textAlign: language === 'ar' ? 'right' : 'left' }}
             className="w-full resize-none min-h-[44px] max-h-[200px] text-base bg-transparent border-0 outline-none focus:ring-0 px-1 py-2" 
           />
 
           {/* Typewriter Placeholder */}
-          {showPlaceholder && !inputMessage.trim() && !isInputFocused && <div className={cn(
-              "absolute top-[8px] pointer-events-none z-10 transition-all duration-300",
-              language === 'ar' ? 'right-[4px]' : 'left-[4px]'
-            )}>
-              <TypewriterText key={`${placeholderIndex}-${language}-${direction}`} text={placeholderTexts[placeholderIndex]} speed={50} className="typewriter-text text-muted-foreground" showCursor={true} />
+          {showPlaceholder && !inputMessage.trim() && !isInputFocused && <div className="absolute top-[8px] left-[4px] pointer-events-none z-10 transition-all duration-300">
+              <TypewriterText key={placeholderIndex} text={placeholderTexts[placeholderIndex]} speed={50} className="typewriter-text text-muted-foreground" showCursor={true} />
             </div>}
 
           {/* Selected File Chip (BELOW textarea) */}

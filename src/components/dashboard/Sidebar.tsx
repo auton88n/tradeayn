@@ -10,8 +10,6 @@ import { format } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useSidebar } from '@/components/ui/sidebar';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { ProfileAvatarUpload } from './ProfileAvatarUpload';
 import { useNavigate } from 'react-router-dom';
@@ -43,7 +41,6 @@ export const Sidebar = ({
   onStartTutorial,
   isTutorialProfileStep
 }: SidebarProps) => {
-  const { t, language, direction } = useLanguage();
   const { toggleSidebar } = useSidebar();
   const navigate = useNavigate();
   const [showAvatarUpload, setShowAvatarUpload] = useState(false);
@@ -71,10 +68,10 @@ export const Sidebar = ({
     const diffHours = Math.floor(diffMins / 60);
     const diffDays = Math.floor(diffHours / 24);
     
-    if (diffMins < 1) return language === 'ar' ? 'الآن' : 'Now';
-    if (diffMins < 60) return `${diffMins}${language === 'ar' ? 'د' : 'm'}`;
-    if (diffHours < 24) return `${diffHours}${language === 'ar' ? 'س' : 'h'}`;
-    if (diffDays === 1) return language === 'ar' ? 'أمس' : 'Yesterday';
+    if (diffMins < 1) return 'Now';
+    if (diffMins < 60) return `${diffMins}m`;
+    if (diffHours < 24) return `${diffHours}h`;
+    if (diffDays === 1) return 'Yesterday';
     return format(date, 'MMM d');
   };
 
@@ -136,15 +133,14 @@ export const Sidebar = ({
               </div>
               <div>
                 <h1 className="text-sm font-semibold tracking-tight text-foreground">AYN AI</h1>
-                <p className="text-xs text-foreground/60">
-                  {isTyping ? t('common.thinking') : hasAccess ? t('common.active') : t('common.inactive')}
+              <p className="text-xs text-foreground/60">
+                  {isTyping ? 'Thinking...' : hasAccess ? 'Active' : 'Inactive'}
                 </p>
               </div>
             </div>
 
             {/* Right: Actions */}
             <div className="flex items-center gap-1">
-              <LanguageSwitcher />
               <ThemeToggle />
               <Button 
                 onClick={toggleSidebar} 
@@ -176,7 +172,7 @@ export const Sidebar = ({
               disabled={!hasAccess}
             >
               <Plus className="w-4 h-4 mr-2" />
-              {t('common.newChat')}
+              New Chat
             </Button>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -196,7 +192,7 @@ export const Sidebar = ({
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setIsSearchFocused(true)}
               onBlur={() => setIsSearchFocused(false)}
-              placeholder={language === 'ar' ? 'البحث في المحادثات...' : 'Search chats...'}
+              placeholder="Search chats..."
               className={cn(
                 "pl-9 h-9 text-sm rounded-xl",
                 "bg-transparent",
@@ -213,9 +209,9 @@ export const Sidebar = ({
 
         {/* Recent Chats Label and Actions */}
         <div className="flex-shrink-0 px-4 pb-2">
-          <div className={`flex items-center justify-between ${direction === 'rtl' ? 'flex-row-reverse' : ''}`}>
+          <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-foreground/50 uppercase tracking-wider">
-              {t('common.recentChats')}
+              Recent Chats
             </span>
             {recentChats.length > 0 && (
               <div className="flex gap-1">
@@ -226,7 +222,7 @@ export const Sidebar = ({
                     size="sm" 
                     className="h-6 px-2 text-xs text-foreground/60 hover:text-background hover:bg-foreground"
                   >
-                    {t('common.select')}
+                    Select
                   </Button>
                 ) : (
                   <>
@@ -236,7 +232,7 @@ export const Sidebar = ({
                       size="sm" 
                       className="h-6 px-2 text-xs hover:bg-foreground hover:text-background"
                     >
-                      {selectedChats.size === recentChats.length ? t('common.none') : t('common.all')}
+                      {selectedChats.size === recentChats.length ? 'None' : 'All'}
                     </Button>
                     <Button 
                       onClick={() => onShowChatSelection(false)} 
@@ -244,7 +240,7 @@ export const Sidebar = ({
                       size="sm" 
                       className="h-6 px-2 text-xs hover:bg-foreground hover:text-background"
                     >
-                      {t('common.cancel')}
+                      Cancel
                     </Button>
                   </>
                 )}
@@ -263,7 +259,7 @@ export const Sidebar = ({
               className="w-full h-9 rounded-xl"
             >
               <Trash2 className="w-4 h-4 mr-2" />
-              {t('common.deleteSelected')} ({selectedChats.size})
+              Delete Selected ({selectedChats.size})
             </Button>
           </div>
         )}
@@ -278,9 +274,7 @@ export const Sidebar = ({
                     <MessageSquare className="w-5 h-5 text-foreground/30" />
                   </div>
                   <p className="text-sm text-foreground/50 text-center">
-                    {searchQuery 
-                      ? (language === 'ar' ? 'لم يتم العثور على محادثات' : 'No chats found') 
-                      : t('common.noRecentChats')}
+                    {searchQuery ? 'No chats found' : 'No recent chats'}
                   </p>
                 </div>
               ) : (
@@ -386,7 +380,7 @@ export const Sidebar = ({
               </div>
               <div className="flex-1 min-w-0 text-left">
                 <p className="text-[13px] font-medium truncate text-foreground">
-                  {userName || t('common.user')}
+                  {userName || 'User'}
                 </p>
                 <p className="text-[11px] text-muted-foreground truncate">
                   {userEmail}
@@ -412,7 +406,7 @@ export const Sidebar = ({
               className="w-full justify-start h-9 px-3 rounded-lg hover:bg-foreground hover:text-background"
             >
               <Camera className="w-4 h-4 mr-2.5" />
-              {t('profile.changePhoto')}
+              Change Photo
             </Button>
             <Button 
               onClick={() => navigate('/settings')}
@@ -420,7 +414,7 @@ export const Sidebar = ({
               className="w-full justify-start h-9 px-3 rounded-lg hover:bg-foreground hover:text-background"
             >
               <Settings className="w-4 h-4 mr-2.5" />
-              {t('settings.title')}
+              Settings
             </Button>
             <Button 
               onClick={() => {
@@ -431,7 +425,7 @@ export const Sidebar = ({
               className="w-full justify-start h-9 px-3 rounded-lg hover:bg-foreground hover:text-background"
             >
               <GraduationCap className="w-4 h-4 mr-2.5" />
-              {t('tutorial.replay')}
+              Tutorial
             </Button>
             {isAdmin && (
               <Button 
@@ -440,7 +434,7 @@ export const Sidebar = ({
                 className="w-full justify-start h-9 px-3 rounded-lg hover:bg-foreground hover:text-background"
               >
                 <Shield className="w-4 h-4 mr-2.5" />
-                {t('admin.panel')}
+                Admin Panel
               </Button>
             )}
             <div className="h-px bg-border my-1" />
@@ -450,7 +444,7 @@ export const Sidebar = ({
               className="w-full justify-start h-9 px-3 rounded-lg text-destructive hover:bg-destructive hover:text-white"
             >
               <LogOut className="w-4 h-4 mr-2.5" />
-              {t('common.signOut')}
+              Sign Out
             </Button>
           </PopoverContent>
         </Popover>
