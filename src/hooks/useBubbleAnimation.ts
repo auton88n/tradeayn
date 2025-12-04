@@ -85,10 +85,12 @@ export const useBubbleAnimation = (): UseBubbleAnimationReturn => {
         endPosition: eyePosition,
       });
 
-      // After flight completes, start absorption
+      // After flight completes, start absorption (guard against race condition)
       setTimeout(() => {
         setFlyingBubble((prev) =>
-          prev?.id === id ? { ...prev, status: 'absorbing' } : prev
+          prev?.id === id && prev.status !== 'done'
+            ? { ...prev, status: 'absorbing' }
+            : prev
         );
       }, 500);
     },
@@ -124,10 +126,12 @@ export const useBubbleAnimation = (): UseBubbleAnimationReturn => {
         endPosition,
       });
 
-      // After flight completes, start absorption
+      // After flight completes, start absorption (guard against race condition)
       setTimeout(() => {
         setFlyingSuggestion((prev) =>
-          prev?.id === id ? { ...prev, status: 'absorbing' } : prev
+          prev?.id === id && prev.status !== 'done'
+            ? { ...prev, status: 'absorbing' }
+            : prev
         );
       }, 450);
     },
