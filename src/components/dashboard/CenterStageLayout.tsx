@@ -14,6 +14,8 @@ import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
 import { analyzeResponseEmotion, getBubbleType } from '@/utils/emotionMapping';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useEyeContext } from '@/hooks/useEyeContext';
+import { useEyeBehaviorMatcher } from '@/hooks/useEyeBehaviorMatcher';
 import type { Message, AIMode, AIModeConfig } from '@/types/dashboard.types';
 
 // Hook to detect tablet breakpoint
@@ -87,12 +89,12 @@ export const CenterStageLayout = ({
   onPrefillConsumed,
 }: CenterStageLayoutProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const eyeStageRef = useRef<HTMLDivElement>(null); // Stable ref for eye center calculation
+  const eyeStageRef = useRef<HTMLDivElement>(null);
   const eyeRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
-  const isSmallScreen = useIsSmallScreen(); // < 1024px (mobile + tablet)
-  const { setEmotion, triggerAbsorption, triggerBlink, setIsResponding, detectExcitement } = useAYNEmotion();
+  const isSmallScreen = useIsSmallScreen();
+  const { setEmotion, triggerAbsorption, triggerBlink, setIsResponding, detectExcitement, isUserTyping: contextIsTyping } = useAYNEmotion();
   const {
     flyingBubble,
     flyingSuggestion,
@@ -113,6 +115,17 @@ export const CenterStageLayout = ({
   const [burstPosition, setBurstPosition] = useState({ x: 0, y: 0 });
   const [lastUserMessage, setLastUserMessage] = useState<string>('');
   const [currentGazeIndex, setCurrentGazeIndex] = useState<number | null>(null);
+
+  // AI Eye Behavior System
+  const { context, recordAction } = useEyeContext({
+    eyeRef: eyeRef as React.RefObject<HTMLDivElement>,
+    currentMode: selectedMode,
+    isResponding: isTyping,
+    isUserTyping: contextIsTyping,
+    messageCount: messages.length,
+  });
+  
+  const { behaviorConfig } = useEyeBehaviorMatcher({ context, enabled: !isMobile });
 
   // Suggestion card Y positions for gaze targeting (matches SuggestionsCard desktopPositions)
   const suggestionGazeTargets = [
@@ -418,7 +431,7 @@ export const CenterStageLayout = ({
               ref={eyeRef} 
               className="relative"
             >
-              <EmotionalEye size={isMobile ? "md" : "lg"} gazeTarget={gazeTarget} />
+              <EmotionalEye size={isMobile ? "md" : "lg"} gazeTarget={gazeTarget} behaviorConfig={behaviorConfig} />
 
               {/* Thinking indicator when typing */}
               <AnimatePresence>
@@ -476,7 +489,7 @@ export const CenterStageLayout = ({
                 mass: 0.8 
               }}
             >
-              <EmotionalEye size="lg" gazeTarget={gazeTarget} />
+              <EmotionalEye size="lg" gazeTarget={gazeTarget} behaviorConfig={behaviorConfig} />
 
               {/* Thinking indicator when typing - stays with eye */}
               <AnimatePresence>
