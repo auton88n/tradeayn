@@ -20,7 +20,6 @@ import { useChatSession } from '@/hooks/useChatSession';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { useMessages } from '@/hooks/useMessages';
 import { useTutorial } from '@/hooks/useTutorial';
-import { useSavedResponses } from '@/hooks/useSavedResponses';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
 import { analyzeResponseEmotion } from '@/utils/emotionMapping';
 
@@ -59,7 +58,6 @@ export const DashboardContainer = ({ user, isAdmin, onAdminPanelClick }: Dashboa
   const auth = useAuth(user);
   const chatSession = useChatSession(user.id);
   const fileUpload = useFileUpload(user.id);
-  const savedResponsesHook = useSavedResponses();
   
   // State
   const [selectedMode, setSelectedMode] = React.useState<AIMode>('General');
@@ -193,7 +191,6 @@ export const DashboardContainer = ({ user, isAdmin, onAdminPanelClick }: Dashboa
       chatSession={chatSession}
       fileUpload={fileUpload}
       messagesHook={messagesHook}
-      savedResponsesHook={savedResponsesHook}
       selectedMode={selectedMode}
       modes={modes}
       setSelectedMode={setSelectedMode}
@@ -216,7 +213,6 @@ const DashboardContent = ({
   chatSession,
   fileUpload,
   messagesHook,
-  savedResponsesHook,
   selectedMode,
   modes,
   setSelectedMode,
@@ -234,7 +230,6 @@ const DashboardContent = ({
   chatSession: ReturnType<typeof useChatSession>;
   fileUpload: ReturnType<typeof useFileUpload>;
   messagesHook: ReturnType<typeof useMessages>;
-  savedResponsesHook: ReturnType<typeof useSavedResponses>;
   selectedMode: AIMode;
   modes: AIModeConfig[];
   setSelectedMode: (mode: AIMode) => void;
@@ -386,9 +381,6 @@ const DashboardContent = ({
           onAdminPanelClick={onAdminPanelClick}
               onStartTutorial={tutorial.startTutorial}
               isTutorialProfileStep={tutorial.isActive && tutorial.currentStepData?.id === 'profile'}
-              savedResponses={savedResponsesHook.savedResponses}
-              onDeleteSavedResponse={savedResponsesHook.deleteSavedResponse}
-              isSavedResponsesLoading={savedResponsesHook.isLoading}
             />
           </div>
         </ShadcnSidebar>
@@ -485,9 +477,6 @@ const DashboardContent = ({
           onModeChange={setSelectedMode}
           prefillValue={replyPrefill}
           onPrefillConsumed={handlePrefillConsumed}
-          onSaveResponse={savedResponsesHook.saveResponse}
-          onDeleteSavedResponse={savedResponsesHook.deleteSavedResponse}
-          isResponseSaved={savedResponsesHook.isResponseSaved}
         />
       </main>
 

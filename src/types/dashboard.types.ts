@@ -245,18 +245,6 @@ export interface ChatInputProps {
   onPrefillConsumed?: () => void;
 }
 
-export interface SavedResponse {
-  id: string;
-  user_id: string;
-  content: string;
-  mode: string | null;
-  emotion: string | null;
-  session_id: string | null;
-  title: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface SidebarProps {
   userName?: string;
   userEmail?: string;
@@ -281,7 +269,4 @@ export interface SidebarProps {
   onAdminPanelClick?: () => void;
   onStartTutorial?: () => void;
   isTutorialProfileStep?: boolean;
-  savedResponses?: SavedResponse[];
-  onDeleteSavedResponse?: (id: string) => Promise<boolean>;
-  isSavedResponsesLoading?: boolean;
 }
