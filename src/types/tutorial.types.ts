@@ -19,14 +19,14 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     targetSelector: '[data-tutorial="eye"]',
     title: 'tutorial.steps.eye.title',
     description: 'tutorial.steps.eye.description',
-    position: 'bottom',
+    position: 'top',
   },
   {
     id: 'eye-emotions',
     targetSelector: '[data-tutorial="eye"]',
     title: 'tutorial.steps.eyeEmotions.title',
     description: 'tutorial.steps.eyeEmotions.description',
-    position: 'bottom',
+    position: 'top',
   },
   {
     id: 'chat-input',
