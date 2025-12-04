@@ -18,5 +18,5 @@ verify_jwt = true
 [functions.generate-eye-behaviors]
 verify_jwt = true
 
-[functions.generate-image]
+[functions.generate-brainstorm]
 verify_jwt = true

@@ -7,18 +7,18 @@ import { MobileSuggestionChips } from '@/components/eye/MobileSuggestionChips';
 import { ResponseCard } from '@/components/eye/ResponseCard';
 import { FlyingSuggestionBubble } from '@/components/eye/FlyingSuggestionBubble';
 import { ParticleBurst } from '@/components/eye/ParticleBurst';
-import { VisualCanvas } from '@/components/eye/VisualCanvas';
+import { MindMapCanvas } from '@/components/eye/MindMapCanvas';
 import { ChatInput } from './ChatInput';
 import { useBubbleAnimation } from '@/hooks/useBubbleAnimation';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
-import { useVisualResponses } from '@/hooks/useVisualResponses';
+import { useBrainstorm } from '@/hooks/useBrainstorm';
 import { analyzeResponseEmotion, getBubbleType } from '@/utils/emotionMapping';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useEyeContext } from '@/hooks/useEyeContext';
 import { useEyeBehaviorMatcher } from '@/hooks/useEyeBehaviorMatcher';
+import { useLanguage } from '@/contexts/LanguageContext';
 import type { Message, AIMode, AIModeConfig } from '@/types/dashboard.types';
-
 // Fallback suggestions when API fails
 const DEFAULT_SUGGESTIONS = [
   { content: 'Tell me more', emoji: '💬' },
@@ -78,6 +78,7 @@ export const CenterStageLayout = ({
   const eyeRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
+  const { language } = useLanguage();
   const { setEmotion, triggerAbsorption, triggerBlink, setIsResponding, detectExcitement, isUserTyping: contextIsTyping } = useAYNEmotion();
   const {
     flyingBubble,
@@ -99,16 +100,15 @@ export const CenterStageLayout = ({
   const [burstPosition, setBurstPosition] = useState({ x: 0, y: 0 });
   const [lastUserMessage, setLastUserMessage] = useState<string>('');
   const [currentGazeIndex, setCurrentGazeIndex] = useState<number | null>(null);
-  const [eyePositionForCanvas, setEyePositionForCanvas] = useState({ x: 0, y: 0 });
 
-  // Visual Canvas System (desktop only)
+  // Brainstorm Mind Map System
   const {
-    panels: visualPanels,
-    isGenerating: isGeneratingImage,
-    generateImage,
-    closePanel: closeVisualPanel,
-    detectVisualIntent,
-  } = useVisualResponses();
+    brainstormData,
+    isGenerating: isGeneratingBrainstorm,
+    generateBrainstorm,
+    clearBrainstorm,
+    detectBrainstormIntent,
+  } = useBrainstorm();
 
   // AI Eye Behavior System
   const { context, recordAction } = useEyeContext({
@@ -228,29 +228,6 @@ export const CenterStageLayout = ({
     };
   }, []);
 
-  // Update eye position for visual canvas (desktop only)
-  useEffect(() => {
-    if (isMobile) return;
-    
-    const updateEyePosition = () => {
-      const pos = getEyePosition();
-      setEyePositionForCanvas(pos);
-    };
-    
-    // Initial position
-    updateEyePosition();
-    
-    // Update on resize
-    window.addEventListener('resize', updateEyePosition);
-    
-    // Update periodically for dynamic layouts
-    const interval = setInterval(updateEyePosition, 1000);
-    
-    return () => {
-      window.removeEventListener('resize', updateEyePosition);
-      clearInterval(interval);
-    };
-  }, [isMobile, getEyePosition]);
 
   // Handle sending message with bubble animation
   const handleSendWithAnimation = useCallback(
@@ -264,9 +241,9 @@ export const CenterStageLayout = ({
       clearResponseBubbles();
       clearSuggestions();
 
-      // Check for visual intent on desktop and trigger image generation
-      if (!isMobile && detectVisualIntent(content)) {
-        generateImage(content);
+      // Check for brainstorm intent and trigger mind map generation
+      if (detectBrainstormIntent(content)) {
+        generateBrainstorm(content, language);
       }
 
       // Start flying animation
@@ -305,9 +282,9 @@ export const CenterStageLayout = ({
       setIsResponding,
       completeAbsorption,
       onSendMessage,
-      isMobile,
-      detectVisualIntent,
-      generateImage,
+      detectBrainstormIntent,
+      generateBrainstorm,
+      language,
     ]
   );
 
@@ -525,13 +502,12 @@ export const CenterStageLayout = ({
         particleCount={16}
       />
 
-      {/* Visual Canvas - Desktop only */}
-      {!isMobile && (
-        <VisualCanvas
-          panels={visualPanels}
-          eyePosition={eyePositionForCanvas}
-          onClosePanel={closeVisualPanel}
-          isGenerating={isGeneratingImage}
+      {/* Mind Map Canvas for brainstorming */}
+      {brainstormData && (
+        <MindMapCanvas
+          data={brainstormData}
+          isGenerating={isGeneratingBrainstorm}
+          onClose={clearBrainstorm}
         />
       )}
 
