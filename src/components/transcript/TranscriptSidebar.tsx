@@ -55,15 +55,9 @@ const TranscriptContent = ({
       
       <div className="relative flex items-center justify-between p-5 pb-4">
         <div className="flex items-center gap-3">
-          <div className="relative">
-            {/* Premium icon container with gradient */}
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-foreground to-foreground/80 flex items-center justify-center shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
-              <MessageSquare className="w-4.5 h-4.5 text-background" />
-            </div>
-            {/* Message count badge */}
-            <div className="absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1 rounded-full bg-primary flex items-center justify-center shadow-sm">
-              <span className="text-[10px] font-bold text-primary-foreground">{messages.length}</span>
-            </div>
+          {/* Premium icon container with gradient */}
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-foreground to-foreground/80 flex items-center justify-center shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
+            <MessageSquare className="w-4.5 h-4.5 text-background" />
           </div>
           <div>
             <h2 className="font-semibold text-foreground text-sm tracking-tight">
@@ -338,11 +332,6 @@ export const TranscriptSidebar = ({
       )}
     >
       <MessageSquare className="w-5 h-5" />
-      {messages.length > 0 && (
-        <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center shadow-md">
-          {messages.length > 99 ? '99+' : messages.length}
-        </span>
-      )}
     </button>
   );
 
