@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { cn } from '@/lib/utils';
 import { sanitizeUserInput, isValidUserInput } from '@/lib/security';
+import { Copy, Check } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -14,9 +16,20 @@ interface MessageFormatterProps {
 
 export function MessageFormatter({ content, className }: MessageFormatterProps) {
   const [lightboxImage, setLightboxImage] = useState<{ src: string; alt: string } | null>(null);
+  const [copiedCodeId, setCopiedCodeId] = useState<string | null>(null);
 
   // Sanitize content to prevent XSS attacks
   const sanitizedContent = isValidUserInput(content) ? content : sanitizeUserInput(content);
+
+  const copyCodeToClipboard = async (code: string, id: string) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopiedCodeId(id);
+      setTimeout(() => setCopiedCodeId(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy code:', err);
+    }
+  };
   
   // Preprocess to convert inline tables, numbered/bullet lists to proper newlines
   const preprocessContent = (text: string): string => {
@@ -54,6 +67,7 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
     <>
       <div className={cn("space-y-2 leading-relaxed", className)}>
         <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
           components={{
             // Bold text
             strong: ({ children }) => (
@@ -62,6 +76,10 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
             // Italic text
             em: ({ children }) => (
               <em className="italic text-gray-600 dark:text-gray-300">{children}</em>
+            ),
+            // Strikethrough (GFM)
+            del: ({ children }) => (
+              <del className="line-through text-muted-foreground">{children}</del>
             ),
             // Unordered lists
             ul: ({ children }) => (
@@ -79,13 +97,34 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
             p: ({ children }) => (
               <p className="leading-relaxed mb-2 last:mb-0 text-current break-words">{children}</p>
             ),
-            // Code blocks and inline code
+            // Code blocks with copy button
             code: ({ children, className: codeClassName }) => {
-              const isBlock = codeClassName?.includes('language-');
+              const isBlock = codeClassName?.includes('language-') || 
+                (typeof children === 'string' && children.includes('\n'));
+              const codeString = String(children).replace(/\n$/, '');
+              const codeId = `code-${Math.random().toString(36).slice(2, 9)}`;
+              
               if (isBlock) {
                 return (
-                  <div className="my-4 first:mt-0 last:mb-0">
-                    <pre className="bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 overflow-x-auto">
+                  <div className="relative group my-3 first:mt-0 last:mb-0">
+                    <button
+                      onClick={() => copyCodeToClipboard(codeString, codeId)}
+                      className={cn(
+                        "absolute right-2 top-2 p-1.5 rounded-md z-10",
+                        "bg-gray-200/80 dark:bg-gray-700/80",
+                        "hover:bg-gray-300 dark:hover:bg-gray-600",
+                        "opacity-0 group-hover:opacity-100 transition-opacity",
+                        "text-gray-600 dark:text-gray-300"
+                      )}
+                      title="Copy code"
+                    >
+                      {copiedCodeId === codeId ? (
+                        <Check size={14} className="text-green-500" />
+                      ) : (
+                        <Copy size={14} />
+                      )}
+                    </button>
+                    <pre className="bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 pr-10 overflow-x-auto">
                       <code className="text-sm font-mono text-gray-800 dark:text-gray-200 whitespace-pre">
                         {children}
                       </code>
@@ -99,14 +138,8 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
                 </code>
               );
             },
-            // Pre blocks (for code)
-            pre: ({ children }) => (
-              <div className="my-4 first:mt-0 last:mb-0">
-                <pre className="bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 overflow-x-auto">
-                  {children}
-                </pre>
-              </div>
-            ),
+            // Pre blocks (for code) - let code component handle rendering
+            pre: ({ children }) => <>{children}</>,
             // Headers
             h1: ({ children }) => (
               <h1 className="text-xl font-bold mt-4 mb-2 first:mt-0 text-gray-900 dark:text-white">{children}</h1>
@@ -126,7 +159,7 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
                 {children}
               </blockquote>
             ),
-            // Tables
+            // Tables (enhanced with GFM support)
             table: ({ children }) => (
               <div className="overflow-x-auto my-4 first:mt-0 last:mb-0">
                 <table className="min-w-full border-collapse border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
