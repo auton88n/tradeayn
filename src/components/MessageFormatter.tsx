@@ -72,7 +72,7 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
 
   return (
     <>
-      <div className={cn("space-y-2 leading-relaxed", className)}>
+      <div className={cn("space-y-2 leading-relaxed break-words", className)}>
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           components={{
