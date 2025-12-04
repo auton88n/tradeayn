@@ -41,6 +41,13 @@ button, a, input, textarea, select {
 /* Sidebar performance optimization */
 [data-sidebar="sidebar"] {
   will-change: transform;
+  transition-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Smooth sidebar transitions */
+[data-tutorial="transcript"],
+.group.peer {
+  transition-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 /* AYN AI Business Consulting Platform Design System */

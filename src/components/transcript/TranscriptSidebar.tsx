@@ -357,7 +357,7 @@ export const TranscriptSidebar = ({
           "relative h-full shrink-0 overflow-hidden",
           "bg-background",
           "border-l border-border",
-          "transition-[width] duration-300 ease-out",
+          "transition-[width] duration-200",
           isOpen ? "w-[320px]" : "w-0"
         )}
       >
