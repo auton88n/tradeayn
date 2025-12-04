@@ -83,7 +83,7 @@ export const ResponseCard = ({ responses, isMobile = false }: ResponseCardProps)
     <AnimatePresence>
       <motion.div
         className={cn(
-          "relative group overflow-hidden",
+          "relative group",
           // Responsive width and height constraints - uses min() for sidebar-aware sizing
           "w-fit min-w-[280px] max-w-[calc(100vw-2rem)] sm:max-w-[560px] lg:max-w-[640px]",
           "max-h-[200px] sm:max-h-[240px] md:max-h-[280px] lg:max-h-[320px] mb-4",
@@ -96,9 +96,9 @@ export const ResponseCard = ({ responses, isMobile = false }: ResponseCardProps)
           "before:bg-gradient-to-r before:from-primary/20 before:via-purple-500/15 before:to-primary/20",
           "before:-z-10 before:opacity-0 group-hover:before:opacity-100",
           "before:transition-opacity before:duration-500",
-          // Layered shadows with color glow
-          "shadow-[0_8px_40px_rgba(0,0,0,0.06),0_0_0_1px_rgba(0,0,0,0.03),inset_0_1px_0_rgba(255,255,255,0.4)]",
-          "hover:shadow-[0_20px_60px_rgba(0,0,0,0.1),0_0_40px_rgba(147,51,234,0.06),inset_0_1px_0_rgba(255,255,255,0.5)]",
+          // Multi-layer realistic shadows with smooth fade
+          "shadow-[0_2px_8px_rgba(0,0,0,0.04),0_8px_32px_rgba(0,0,0,0.08),0_16px_64px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.5)]",
+          "hover:shadow-[0_4px_12px_rgba(0,0,0,0.06),0_16px_48px_rgba(0,0,0,0.12),0_24px_80px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)]",
           // Border with subtle glow on hover
           "border border-gray-200/60 dark:border-gray-700/50",
           "hover:border-primary/20 dark:hover:border-primary/30",

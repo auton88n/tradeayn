@@ -445,8 +445,8 @@ animate={{
             </AnimatePresence>
           </motion.div>
           
-          {/* Response card directly below eye */}
-          <div className="px-4 w-full flex justify-center">
+          {/* Response card directly below eye - padding prevents shadow clipping */}
+          <div className="px-6 py-4 w-full flex justify-center">
             <ResponseCard 
               responses={responseBubbles} 
               isMobile={isMobile}
