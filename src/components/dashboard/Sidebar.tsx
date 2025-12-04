@@ -319,7 +319,7 @@ export const Sidebar = ({
                             )}
                           >
                             <div className="w-full min-w-0 overflow-hidden space-y-2">
-                              {/* Row 1: Icon + Title + Time */}
+                              {/* Row 1: Icon + Title + Time + Star */}
                               <div className="flex items-center justify-between gap-2">
                                 <div className="flex items-center gap-2.5 min-w-0 flex-1">
                                   <div className="w-8 h-8 rounded-full bg-muted/60 flex items-center justify-center flex-shrink-0">
@@ -329,32 +329,33 @@ export const Sidebar = ({
                                     {chat.title}
                                   </span>
                                 </div>
-                                <span className="text-[11px] text-muted-foreground flex-shrink-0">
-                                  {formatCompactTime(new Date(chat.timestamp))}
-                                </span>
+                                <div className="flex items-center gap-1.5 flex-shrink-0">
+                                  <span className="text-[11px] text-muted-foreground">
+                                    {formatCompactTime(new Date(chat.timestamp))}
+                                  </span>
+                                  <button
+                                    onClick={(e) => togglePin(chat.sessionId, e)}
+                                    className={cn(
+                                      "p-1 rounded-md transition-all duration-200",
+                                      "opacity-0 group-hover:opacity-100",
+                                      isPinned && "opacity-100",
+                                      isPinned 
+                                        ? "text-amber-500 hover:text-amber-600" 
+                                        : "text-muted-foreground/40 hover:text-muted-foreground"
+                                    )}
+                                  >
+                                    <Star className={cn(
+                                      "w-3.5 h-3.5",
+                                      isPinned && "fill-amber-500"
+                                    )} />
+                                  </button>
+                                </div>
                               </div>
-                              {/* Row 2: Preview + Star */}
-                              <div className="flex items-start justify-between gap-2 pl-[42px]">
-                                <p className="text-xs text-muted-foreground line-clamp-2 flex-1 leading-relaxed">
+                              {/* Row 2: Preview only */}
+                              <div className="pl-[42px]">
+                                <p className="text-xs text-muted-foreground line-clamp-2 text-left leading-relaxed">
                                   {chat.lastMessage}
                                 </p>
-                                <button
-                                  onClick={(e) => togglePin(chat.sessionId, e)}
-                                  className={cn(
-                                    "p-1.5 rounded-md transition-all duration-200 flex-shrink-0",
-                                    "opacity-0 group-hover:opacity-100",
-                                    isPinned && "opacity-100",
-                                    isPinned 
-                                      ? "text-amber-500 hover:text-amber-600" 
-                                      : "text-muted-foreground/40 hover:text-muted-foreground"
-                                  )}
-                                >
-                                  <Star className={cn(
-                                    "w-3.5 h-3.5 transition-transform duration-200",
-                                    isPinned && "fill-amber-500",
-                                    "group-hover:scale-110"
-                                  )} />
-                                </button>
                               </div>
                             </div>
                           </SidebarMenuButton>
