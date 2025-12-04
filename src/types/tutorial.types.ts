@@ -1,9 +1,8 @@
 export interface TutorialStep {
   id: string;
-  targetSelector: string;
   title: string;
   description: string;
-  position: 'top' | 'bottom' | 'left' | 'right';
+  icon: string;
 }
 
 export interface TutorialState {
@@ -15,59 +14,51 @@ export interface TutorialState {
 
 export const TUTORIAL_STEPS: TutorialStep[] = [
   {
-    id: 'eye',
-    targetSelector: '[data-tutorial="eye"]',
-    title: 'tutorial.steps.eye.title',
-    description: 'tutorial.steps.eye.description',
-    position: 'top',
+    id: 'meet-ayn',
+    title: 'tutorial.steps.meetAyn.title',
+    description: 'tutorial.steps.meetAyn.description',
+    icon: 'Brain',
   },
   {
-    id: 'eye-emotions',
-    targetSelector: '[data-tutorial="eye"]',
-    title: 'tutorial.steps.eyeEmotions.title',
-    description: 'tutorial.steps.eyeEmotions.description',
-    position: 'top',
+    id: 'emotions',
+    title: 'tutorial.steps.emotions.title',
+    description: 'tutorial.steps.emotions.description',
+    icon: 'Palette',
   },
   {
-    id: 'chat-input',
-    targetSelector: '[data-tutorial="chat-input"]',
-    title: 'tutorial.steps.chatInput.title',
-    description: 'tutorial.steps.chatInput.description',
-    position: 'top',
+    id: 'chat',
+    title: 'tutorial.steps.chat.title',
+    description: 'tutorial.steps.chat.description',
+    icon: 'MessageSquare',
   },
   {
-    id: 'attachment',
-    targetSelector: '[data-tutorial="attachment"]',
-    title: 'tutorial.steps.attachment.title',
-    description: 'tutorial.steps.attachment.description',
-    position: 'top',
+    id: 'files',
+    title: 'tutorial.steps.files.title',
+    description: 'tutorial.steps.files.description',
+    icon: 'Paperclip',
   },
   {
     id: 'suggestions',
-    targetSelector: '[data-tutorial="suggestions"]',
     title: 'tutorial.steps.suggestions.title',
     description: 'tutorial.steps.suggestions.description',
-    position: 'right',
+    icon: 'Lightbulb',
   },
   {
-    id: 'sidebar',
-    targetSelector: '[data-tutorial="sidebar"]',
-    title: 'tutorial.steps.sidebar.title',
-    description: 'tutorial.steps.sidebar.description',
-    position: 'left',
+    id: 'navigation',
+    title: 'tutorial.steps.navigation.title',
+    description: 'tutorial.steps.navigation.description',
+    icon: 'Menu',
   },
   {
-    id: 'transcript',
-    targetSelector: '[data-tutorial="transcript"]',
-    title: 'tutorial.steps.transcript.title',
-    description: 'tutorial.steps.transcript.description',
-    position: 'left',
+    id: 'history',
+    title: 'tutorial.steps.history.title',
+    description: 'tutorial.steps.history.description',
+    icon: 'History',
   },
   {
     id: 'profile',
-    targetSelector: '[data-tutorial="profile"]',
     title: 'tutorial.steps.profile.title',
     description: 'tutorial.steps.profile.description',
-    position: 'top',
+    icon: 'User',
   },
 ];
