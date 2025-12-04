@@ -1183,12 +1183,16 @@ button, a, input, textarea, select {
   z-index: 201 !important;
   border-radius: 16px;
   isolation: isolate;
-  background: hsl(var(--background)) !important;
   box-shadow: 
     0 0 0 4px hsl(var(--primary) / 0.5),
     0 0 20px 8px hsl(var(--primary) / 0.3),
     0 0 40px 16px hsl(var(--primary) / 0.15);
   animation: tutorial-pulse 2s ease-in-out infinite;
+}
+
+/* Circular highlight for eye element */
+[data-tutorial="eye"].tutorial-highlight {
+  border-radius: 50%;
 }
 
 @keyframes tutorial-pulse {
