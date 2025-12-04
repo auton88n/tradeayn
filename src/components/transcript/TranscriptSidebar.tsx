@@ -357,7 +357,7 @@ export const TranscriptSidebar = ({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: 0.15 }}
               className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
               onClick={() => onToggle(false)}
             />
@@ -367,7 +367,7 @@ export const TranscriptSidebar = ({
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              transition={{ type: 'spring', damping: 30, stiffness: 500, mass: 0.8 }}
               drag="x"
               dragConstraints={{ left: 0, right: 0 }}
               dragElastic={{ left: 0, right: 0.5 }}
