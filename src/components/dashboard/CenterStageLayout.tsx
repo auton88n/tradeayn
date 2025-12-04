@@ -406,7 +406,7 @@ animate={{
         >
           <motion.div 
             ref={eyeRef} 
-            className="relative"
+            className="relative overflow-visible"
             data-tutorial="eye"
           >
             <EmotionalEye size={isMobile ? "md" : "lg"} gazeTarget={gazeTarget} behaviorConfig={behaviorConfig} />
@@ -418,7 +418,7 @@ animate={{
                   initial={{ scale: 0, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ scale: 0, opacity: 0 }}
-                  className="absolute -bottom-12 left-1/2 -translate-x-1/2"
+                  className="absolute -bottom-12 left-1/2 -translate-x-1/2 overflow-visible"
                 >
                   <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-ayn-thinking/20 backdrop-blur-sm border border-ayn-thinking/30">
                     <div className="flex gap-1">
@@ -438,7 +438,7 @@ animate={{
                         transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
                       />
                     </div>
-                    <span className="text-xs text-ayn-thinking">Thinking...</span>
+                    <span className="text-xs text-ayn-thinking whitespace-nowrap">Thinking...</span>
                   </div>
                 </motion.div>
               )}
