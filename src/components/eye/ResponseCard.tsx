@@ -78,8 +78,8 @@ export const ResponseCard = ({ responses }: ResponseCardProps) => {
       <motion.div
         className={cn(
           "relative group",
-          // Responsive width - slightly wider for better readability
-          "w-auto min-w-[280px] max-w-[calc(100vw-2rem)] sm:max-w-[560px]",
+          // Responsive width - fit content up to max width
+          "w-fit min-w-[280px] max-w-[calc(100vw-2rem)] sm:max-w-[560px]",
           // Premium glass card
           "bg-white/95 dark:bg-gray-900/90",
           "backdrop-blur-md",
@@ -130,7 +130,9 @@ export const ResponseCard = ({ responses }: ResponseCardProps) => {
         <div 
           ref={contentRef}
           className={cn(
-            "max-h-[450px] overflow-y-auto overflow-x-auto",
+            "speech-bubble-content",
+            "max-h-[450px] overflow-y-auto overflow-x-hidden",
+            "break-words",
             // Premium scrollbar styling - more visible
             "[&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:h-2",
             "[&::-webkit-scrollbar-track]:bg-muted/30",
@@ -143,10 +145,11 @@ export const ResponseCard = ({ responses }: ResponseCardProps) => {
             // Padding for copy button
             "pr-6"
           )}
+          style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}
         >
           <MessageFormatter 
             content={combinedContent} 
-            className="text-sm text-gray-700 dark:text-gray-200 leading-relaxed" 
+            className="text-sm text-gray-700 dark:text-gray-200 leading-relaxed max-w-none break-words" 
           />
         </div>
 
