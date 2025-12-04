@@ -515,6 +515,42 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_responses: {
+        Row: {
+          content: string
+          created_at: string
+          emotion: string | null
+          id: string
+          mode: string | null
+          session_id: string | null
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          emotion?: string | null
+          id?: string
+          mode?: string | null
+          session_id?: string | null
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          emotion?: string | null
+          id?: string
+          mode?: string | null
+          session_id?: string | null
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       security_audit_logs: {
         Row: {
           action: string

@@ -349,7 +349,7 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
             sizeClasses[size]
           )}
           style={{
-            boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.06), 0 12px 40px rgba(0,0,0,0.12), 0 24px 64px rgba(0,0,0,0.08)',
             animationDuration: `${breathingDuration}s`
           }}
         >
@@ -369,7 +369,7 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
 
           {/* Layer 1: Soft outer glow with enhanced pulse */}
           <motion.div 
-            className="absolute inset-0 rounded-full"
+            className="absolute inset-0 rounded-full shadow-[0_4px_16px_rgba(0,0,0,0.06)]"
             animate={{
               boxShadow: isResponding 
                 ? [
@@ -398,7 +398,7 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
             }}
             style={{
               backgroundColor: 'hsl(0, 0%, 96%)',
-              boxShadow: 'inset 0 2px 8px hsla(0, 0%, 0%, 0.04)',
+              boxShadow: 'inset 0 2px 8px hsla(0, 0%, 0%, 0.06), 0 2px 8px rgba(0,0,0,0.04)',
             }}
           />
 
