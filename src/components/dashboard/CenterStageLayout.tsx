@@ -128,9 +128,9 @@ export const CenterStageLayout = ({
   let eyeShiftX = 0;
   if (!isMobile) {
     if (hasVisibleResponses) {
-      eyeShiftX = -100;
+      eyeShiftX = -60;  // Reduced shift
     } else if (hasVisibleSuggestions) {
-      eyeShiftX = 60;
+      eyeShiftX = 40;   // Reduced shift
     }
   }
 
@@ -324,7 +324,7 @@ export const CenterStageLayout = ({
       {/* Central Eye Stage - centered in available space above input */}
       <div ref={eyeStageRef} className={cn(
         "flex-1 flex items-center justify-center relative",
-        isMobile ? "pb-56 pt-4" : "pb-32"
+        isMobile ? "pb-40 pt-48" : "pb-32"
       )}>
         {/* Eye container - moves with eyeShiftX */}
         <motion.div 
@@ -387,7 +387,7 @@ export const CenterStageLayout = ({
           className="absolute"
           style={{
             top: isMobile ? 'calc(50% + 80px)' : '50%',
-            left: isMobile ? '50%' : `calc(50% + ${eyeShiftX + 180}px)`,
+            left: isMobile ? '50%' : `calc(50% + ${eyeShiftX + 140}px)`,
             transform: isMobile ? 'translateX(-50%)' : 'translateY(-50%)',
           }}
         >
