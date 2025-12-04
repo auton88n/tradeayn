@@ -14,12 +14,33 @@ interface MessageFormatterProps {
   className?: string;
 }
 
+// Decode HTML entities that may have been escaped during storage
+const decodeHtmlEntities = (text: string): string => {
+  if (typeof window === 'undefined') return text;
+  
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = text;
+  const decoded = textarea.value;
+  
+  // Also handle common entities manually as fallback
+  return decoded
+    .replace(/&quot;/g, '"')
+    .replace(/&#x2F;/g, '/')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&');
+};
+
 export function MessageFormatter({ content, className }: MessageFormatterProps) {
   const [lightboxImage, setLightboxImage] = useState<{ src: string; alt: string } | null>(null);
   const [copiedCodeId, setCopiedCodeId] = useState<string | null>(null);
 
-  // Sanitize content to prevent XSS attacks
-  const sanitizedContent = isValidUserInput(content) ? content : sanitizeUserInput(content);
+  // Step 1: Decode HTML entities first
+  const decodedContent = decodeHtmlEntities(content);
+  
+  // Step 2: Sanitize content to prevent XSS attacks
+  const sanitizedContent = isValidUserInput(decodedContent) ? decodedContent : sanitizeUserInput(decodedContent);
 
   const copyCodeToClipboard = async (code: string, id: string) => {
     try {
@@ -106,8 +127,8 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
             ),
             // Code blocks with copy button
             code: ({ children, className: codeClassName }) => {
-              const isBlock = codeClassName?.includes('language-') || 
-                (typeof children === 'string' && children.includes('\n'));
+              // ONLY treat as code block if explicitly marked with language class
+              const isBlock = codeClassName?.includes('language-');
               const codeString = String(children).replace(/\n$/, '');
               const codeId = `code-${Math.random().toString(36).slice(2, 9)}`;
               
