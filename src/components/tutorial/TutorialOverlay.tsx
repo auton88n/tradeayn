@@ -86,8 +86,10 @@ export const TutorialOverlay = ({
           onClick={onSkip}
         />
 
-        {/* Fixed position tutorial card at bottom center */}
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[201] w-[90%] max-w-md">
+        {/* Dynamic position based on step.position */}
+        <div className={`fixed left-1/2 -translate-x-1/2 z-[201] w-[90%] max-w-md ${
+          currentStepData.position === 'top' ? 'top-24' : 'bottom-8'
+        }`}>
           <AnimatePresence mode="wait">
             <TutorialStep
               key={currentStep}
@@ -102,8 +104,10 @@ export const TutorialOverlay = ({
           </AnimatePresence>
         </div>
 
-        {/* Progress dots */}
-        <div className="fixed bottom-32 left-1/2 -translate-x-1/2 flex gap-2 z-[201]">
+        {/* Progress dots - position opposite of card */}
+        <div className={`fixed left-1/2 -translate-x-1/2 flex gap-2 z-[201] ${
+          currentStepData.position === 'top' ? 'top-48' : 'bottom-32'
+        }`}>
           {Array.from({ length: totalSteps }).map((_, i) => (
             <div
               key={i}
