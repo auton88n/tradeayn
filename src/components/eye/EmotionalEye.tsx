@@ -329,12 +329,7 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
   return (
     <div className={cn("relative flex items-center justify-center", className)}>
       <motion.div 
-        style={{ 
-          x: combinedX, 
-          y: combinedY, 
-          rotate: smoothTilt,
-          filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.08))'
-        }}
+        style={{ x: combinedX, y: combinedY, rotate: smoothTilt }}
         className="relative z-10 flex items-center justify-center group cursor-pointer will-change-transform"
         initial={{ scale: 0.92, opacity: 0 }}
         animate={{ 
@@ -354,7 +349,7 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
             sizeClasses[size]
           )}
           style={{
-            boxShadow: '0 10px 40px -5px rgba(0,0,0,0.1), 0 4px 20px -8px rgba(0,0,0,0.05)',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
             animationDuration: `${breathingDuration}s`
           }}
         >
@@ -372,15 +367,21 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
             }}
           />
 
-          {/* Layer 1: Soft inner highlight */}
+          {/* Layer 1: Soft outer glow with enhanced pulse */}
           <motion.div 
             className="absolute inset-0 rounded-full"
             animate={{
-              opacity: isResponding ? [0.5, 0.8, 0.5] : 0.5
+              boxShadow: isResponding 
+                ? [
+                    '0 8px 40px hsla(0, 0%, 0%, 0.06)',
+                    '0 12px 60px hsla(0, 0%, 0%, 0.1)',
+                    '0 8px 40px hsla(0, 0%, 0%, 0.06)'
+                  ]
+                : '0 8px 40px hsla(0, 0%, 0%, 0.06)'
             }}
             transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
             style={{
-              background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.4) 0%, transparent 50%)',
+              background: 'radial-gradient(circle, hsla(0, 0%, 100%, 0.98) 0%, hsla(0, 0%, 98%, 0.85) 35%, hsla(0, 0%, 96%, 0.5) 55%, transparent 80%)',
             }}
           />
 
