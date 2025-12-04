@@ -83,9 +83,9 @@ export const ResponseCard = ({ responses, isMobile = false }: ResponseCardProps)
     <AnimatePresence>
       <motion.div
         className={cn(
-          "relative group",
-          // Responsive width and height constraints
-          "w-fit min-w-[280px] max-w-[calc(100vw-2rem)] sm:max-w-[640px] lg:max-w-[720px]",
+          "relative group overflow-hidden",
+          // Responsive width and height constraints - uses min() for sidebar-aware sizing
+          "w-fit min-w-[280px] max-w-[min(calc(100vw-2rem),720px)] sm:max-w-[min(calc(100vw-3rem),640px)] lg:max-w-[min(calc(100%-2rem),720px)]",
           "max-h-[240px] sm:max-h-[280px] md:max-h-[320px] lg:max-h-[360px]",
           // Premium glass card with gradient
           "bg-gradient-to-br from-white/95 to-white/80 dark:from-gray-900/95 dark:to-gray-800/80",
