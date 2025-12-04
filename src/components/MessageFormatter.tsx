@@ -40,32 +40,16 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
       .replace(/[\u2018\u2019]/g, "'")  // Single curly quotes → straight
       .replace(/[\u201C\u201D]/g, '"'); // Double curly quotes → straight
     
-    // Robust inline markdown table detection and conversion
-    // Tables have: header row | separator row (|---|) | data rows
-    if (processed.includes('|') && /\|[\s-:]+\|/.test(processed)) {
-      // Step 1: Add newline before separator row pattern (|---|---|---|)
-      processed = processed.replace(
-        /\|\s*(\|[\s:]*-+[\s:]*)+\|/g, 
-        (match) => '\n' + match.trim()
-      );
-      
-      // Step 2: Add newline before each data row - detect "| |" pattern
-      processed = processed.replace(/\|\s+\|(?!\s*[-:])/g, '|\n|');
-      
-      // Step 3: Handle separator directly after header: "Header||---"
-      processed = processed.replace(/\|\s*\|\s*[-:]/g, '|\n|');
-      
-      // Step 4: Ensure separator row has its own line
-      processed = processed.replace(/([^\n])\s*(\|[-:\s|]+\|)/g, '$1\n$2');
-      
-      // Step 5: Split rows that have "|" followed by space and another "|"
-      processed = processed.replace(/\|\s{2,}\|/g, '|\n|');
-      
-      // Clean up multiple newlines
+    // Check if content contains a markdown table (has pipes and separator row)
+    const isTable = processed.includes('|') && /\|[\s-:]+\|/.test(processed);
+    
+    // For tables: just normalize excessive newlines, don't modify structure
+    if (isTable) {
       processed = processed.replace(/\n{3,}/g, '\n\n');
-      processed = processed.trim();
+      return processed;
     }
     
+    // Only apply list conversion for NON-table content
     // 1. Convert inline numbered lists like "1. item 2. item 3. item"
     if (processed.match(/\d+\.\s[^0-9]+\d+\.\s/)) {
       processed = processed.replace(/(\s)(\d+)\.\s/g, '\n$2. ').trim();
