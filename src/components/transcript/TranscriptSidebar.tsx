@@ -319,16 +319,17 @@ export const TranscriptSidebar = ({
     handleCopyAll,
   };
 
-  // Floating toggle button - works on all devices
+  // Floating toggle button - desktop only (mobile uses header button)
   const FloatingToggleButton = () => (
     <button
       onClick={() => onToggle()}
       className={cn(
         "fixed top-6 right-6 z-40",
+        "hidden md:flex",
         "w-11 h-11 rounded-xl",
         "bg-background/80 backdrop-blur-sm border border-border",
         "text-foreground",
-        "flex items-center justify-center",
+        "items-center justify-center",
         "shadow-lg hover:shadow-xl",
         "hover:scale-105 active:scale-95",
         "transition-all duration-300 ease-out",
