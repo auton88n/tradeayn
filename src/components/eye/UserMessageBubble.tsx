@@ -1,3 +1,4 @@
+import { useRef, useLayoutEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
@@ -16,14 +17,26 @@ export const UserMessageBubble = ({
   endPosition,
   onComplete,
 }: UserMessageBubbleProps) => {
+  const bubbleRef = useRef<HTMLDivElement>(null);
+  const [dimensions, setDimensions] = useState({ width: 140, height: 44 });
+
+  // Measure actual bubble dimensions after render
+  useLayoutEffect(() => {
+    if (bubbleRef.current) {
+      const rect = bubbleRef.current.getBoundingClientRect();
+      setDimensions({ width: rect.width, height: rect.height });
+    }
+  }, [content]);
+
   if (status === 'done') return null;
 
-  // Calculate center offset for the bubble (so it lands centered on eye)
-  const bubbleWidth = 140;
-  const bubbleHeight = 44;
+  // Use measured dimensions for precise centering
+  const halfWidth = dimensions.width / 2;
+  const halfHeight = dimensions.height / 2;
 
   return (
     <motion.div
+      ref={bubbleRef}
       className={cn(
         "fixed z-50 max-w-[300px] px-4 py-3 rounded-2xl",
         "bg-primary text-primary-foreground",
@@ -34,10 +47,11 @@ export const UserMessageBubble = ({
         left: 0,
         top: 0,
         transformOrigin: 'center center',
+        willChange: 'transform, opacity',
       }}
       initial={{
-        x: startPosition.x - bubbleWidth / 2,
-        y: startPosition.y - bubbleHeight / 2,
+        x: startPosition.x - halfWidth,
+        y: startPosition.y - halfHeight,
         scale: 1,
         opacity: 1,
         rotate: 0,
@@ -46,32 +60,32 @@ export const UserMessageBubble = ({
       animate={
         status === 'flying'
           ? {
-              x: endPosition.x - bubbleWidth / 2,
-              y: endPosition.y - bubbleHeight / 2,
+              x: endPosition.x - halfWidth,
+              y: endPosition.y - halfHeight,
               scale: 0.35,
               opacity: 1,
               rotate: -8,
               filter: 'blur(0px)',
             }
           : {
-              x: endPosition.x - bubbleWidth / 2,
-              y: endPosition.y - bubbleHeight / 2,
+              x: endPosition.x - halfWidth,
+              y: endPosition.y - halfHeight,
               scale: 0,
               opacity: 0,
               rotate: 0,
-              filter: 'blur(6px)',
+              filter: 'blur(4px)',
             }
       }
       transition={
         status === 'flying'
           ? {
               type: 'spring',
-              stiffness: 160,
-              damping: 18,
-              mass: 0.5,
+              stiffness: 200,
+              damping: 20,
+              mass: 0.4,
             }
           : {
-              duration: 0.25,
+              duration: 0.15,
               ease: [0.32, 0, 0.67, 0],
             }
       }
