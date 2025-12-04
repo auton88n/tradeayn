@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, Search, Copy, Trash2, ChevronLeft, MessageSquare, Brain } from 'lucide-react';
+import { X, Search, Copy, Trash2, MessageSquare, Brain } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -304,34 +304,39 @@ export const TranscriptSidebar = ({
     handleCopyAll,
   };
 
+  // Floating toggle button - bottom right corner
+  const FloatingToggleButton = () => (
+    <button
+      onClick={() => onToggle()}
+      className={cn(
+        "fixed bottom-6 right-6 z-40",
+        "w-14 h-14 rounded-2xl",
+        "bg-foreground text-background",
+        "flex items-center justify-center",
+        "shadow-xl hover:shadow-2xl",
+        "hover:scale-105 active:scale-95",
+        "transition-all duration-200 ease-out",
+        isOpen ? "opacity-0 pointer-events-none scale-90" : "opacity-100 scale-100"
+      )}
+    >
+      <MessageSquare className="w-6 h-6" />
+      {messages.length > 0 && (
+        <span className="absolute -top-1.5 -right-1.5 min-w-6 h-6 px-1.5 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shadow-md">
+          {messages.length > 99 ? '99+' : messages.length}
+        </span>
+      )}
+    </button>
+  );
+
   // Mobile: Use Sheet component for proper drawer behavior
   if (isMobile) {
     return (
       <>
-        {/* Toggle button when closed - mobile */}
-        <button
-          onClick={() => onToggle()}
-          className={cn(
-            "fixed top-1/2 -translate-y-1/2 z-40",
-            "w-10 h-24 rounded-l-2xl",
-            "bg-background",
-            "border border-border",
-            "flex items-center justify-center",
-            "hover:bg-foreground hover:text-background hover:w-12",
-            "transition-all duration-150 ease-out",
-            "shadow-lg",
-            "group",
-            "right-0",
-            isOpen ? "opacity-0 pointer-events-none translate-x-4" : "opacity-100 translate-x-0"
-          )}
-        >
-          <ChevronLeft className="w-5 h-5 text-foreground/60 group-hover:text-background transition-colors" />
-        </button>
-
+        <FloatingToggleButton />
         <Sheet open={isOpen} onOpenChange={onToggle}>
           <SheetContent 
             side="right" 
-            className="w-full sm:w-96 p-0 [&>button]:hidden"
+            className="w-full sm:w-[420px] p-0 [&>button]:hidden"
           >
             <TranscriptContent {...contentProps} />
           </SheetContent>
@@ -343,32 +348,13 @@ export const TranscriptSidebar = ({
   // Desktop: Fixed positioning with CSS transforms
   return (
     <>
-      {/* Toggle button when closed - desktop */}
-      <button
-        onClick={() => onToggle()}
-        className={cn(
-          "fixed top-1/2 -translate-y-1/2 z-40",
-          "w-10 h-24 rounded-l-2xl",
-          "bg-background",
-          "border border-border",
-          "flex items-center justify-center",
-          "hover:bg-foreground hover:text-background hover:w-12",
-          "transition-all duration-150 ease-out",
-          "shadow-lg",
-          "group",
-          "right-0",
-          isOpen ? "opacity-0 pointer-events-none translate-x-4" : "opacity-100 translate-x-0"
-        )}
-      >
-        <ChevronLeft className="w-5 h-5 text-foreground/60 group-hover:text-background transition-colors" />
-      </button>
-
+      <FloatingToggleButton />
       {/* Sidebar - CSS transform */}
       <div
         data-tutorial="transcript"
         className={cn(
           "fixed top-0 h-full z-50",
-          "w-96",
+          "w-[420px]",
           "bg-background backdrop-blur-lg",
           "border-l border-border",
           "shadow-2xl",
