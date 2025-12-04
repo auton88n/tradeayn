@@ -7,7 +7,6 @@ import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { TranscriptMessage } from './TranscriptMessage';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { useLanguage } from '@/contexts/LanguageContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import type { Message } from '@/types/dashboard.types';
 import type { AYNEmotion } from '@/contexts/AYNEmotionContext';
@@ -30,7 +29,6 @@ const TranscriptContent = ({
   isSearchFocused,
   setIsSearchFocused,
   scrollRef,
-  isArabic,
   currentMode,
   onReply,
   onToggle,
@@ -44,14 +42,13 @@ const TranscriptContent = ({
   isSearchFocused: boolean;
   setIsSearchFocused: (f: boolean) => void;
   scrollRef: React.RefObject<HTMLDivElement>;
-  isArabic: boolean;
   currentMode?: string;
   onReply?: (quotedContent: string) => void;
   onToggle: (open?: boolean) => void;
   onClear?: () => void;
   handleCopyAll: () => void;
 }) => (
-  <div className="flex flex-col h-full bg-gradient-to-b from-background to-background/95" dir={isArabic ? 'rtl' : 'ltr'}>
+  <div className="flex flex-col h-full bg-gradient-to-b from-background to-background/95">
     {/* Premium Header */}
     <div className="relative">
       {/* Glassmorphism header background */}
@@ -71,10 +68,10 @@ const TranscriptContent = ({
           </div>
           <div>
             <h2 className="font-semibold text-foreground text-sm tracking-tight">
-              {isArabic ? 'الدردشة' : 'Chat'}
+              Chat
             </h2>
             <p className="text-xs text-muted-foreground">
-              {isArabic ? `${messages.length} رسالة` : `${messages.length} messages`}
+              {messages.length} messages
             </p>
           </div>
         </div>
@@ -113,7 +110,7 @@ const TranscriptContent = ({
         
         {/* Glassmorphism search input */}
         <Input
-          placeholder={isArabic ? 'بحث في المحادثة...' : 'Search messages...'}
+          placeholder="Search messages..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           onFocus={() => setIsSearchFocused(true)}
@@ -151,14 +148,10 @@ const TranscriptContent = ({
               </div>
             </div>
             <p className="text-sm font-medium text-foreground mb-1">
-              {searchQuery
-                ? isArabic ? 'لا توجد نتائج' : 'No messages found'
-                : isArabic ? 'لا توجد رسائل بعد' : 'No messages yet'}
+              {searchQuery ? 'No messages found' : 'No messages yet'}
             </p>
             <p className="text-xs text-foreground/50 text-center">
-              {searchQuery
-                ? isArabic ? 'جرب كلمات أخرى' : 'Try different keywords'
-                : isArabic ? 'ابدأ محادثة مع AYN' : 'Start a conversation with AYN'}
+              {searchQuery ? 'Try different keywords' : 'Start a conversation with AYN'}
             </p>
           </div>
         ) : (
@@ -206,7 +199,7 @@ const TranscriptContent = ({
           disabled={messages.length === 0}
         >
           <Copy className="w-4 h-4 mr-2" />
-          {isArabic ? 'نسخ الكل' : 'Copy All'}
+          Copy All
         </Button>
         {onClear && (
           <Button
@@ -232,7 +225,7 @@ const TranscriptContent = ({
             disabled={messages.length === 0}
           >
             <Trash2 className="w-4 h-4 mr-2" />
-            {isArabic ? 'مسح الكل' : 'Clear All'}
+            Clear All
           </Button>
         )}
       </div>
@@ -249,12 +242,10 @@ export const TranscriptSidebar = ({
   onReply,
 }: TranscriptSidebarProps) => {
   const { toast } = useToast();
-  const { language } = useLanguage();
   const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const isArabic = language === 'ar';
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -277,12 +268,12 @@ export const TranscriptSidebar = ({
     try {
       await navigator.clipboard.writeText(text);
       toast({
-        title: isArabic ? 'تم النسخ' : 'Copied',
-        description: isArabic ? 'تم نسخ المحادثة' : 'Conversation copied to clipboard',
+        title: 'Copied',
+        description: 'Conversation copied to clipboard',
       });
     } catch {
       toast({
-        title: isArabic ? 'فشل النسخ' : 'Copy failed',
+        title: 'Copy failed',
         variant: 'destructive',
       });
     }
@@ -296,7 +287,6 @@ export const TranscriptSidebar = ({
     isSearchFocused,
     setIsSearchFocused,
     scrollRef,
-    isArabic,
     currentMode,
     onReply,
     onToggle,

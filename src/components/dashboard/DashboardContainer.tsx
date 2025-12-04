@@ -32,11 +32,11 @@ interface DashboardContainerProps {
   onAdminPanelClick?: () => void;
 }
 
-// Get modes with translations - Only General mode for now (other modes hidden for testing)
-const getModes = (t: (key: string) => string): AIModeConfig[] => [
+// Get modes - English only
+const getModes = (): AIModeConfig[] => [
   { 
     name: 'General', 
-    translatedName: t('modes.general'),
+    translatedName: 'General',
     description: 'General AI assistant for all your needs',
     icon: MessageSquare,
     color: 'text-slate-500',
@@ -52,7 +52,7 @@ const getModes = (t: (key: string) => string): AIModeConfig[] => [
 
 export const DashboardContainer = ({ user, isAdmin, onAdminPanelClick }: DashboardContainerProps) => {
   const { toast } = useToast();
-  const { t, language, setLanguage } = useLanguage();
+  const { language, setLanguage } = useLanguage();
   
   // Custom hooks
   const auth = useAuth(user);
@@ -74,8 +74,8 @@ export const DashboardContainer = ({ user, isAdmin, onAdminPanelClick }: Dashboa
     language
   );
 
-  // Get modes with translations
-  const modes = getModes(t);
+  // Get modes (English only)
+  const modes = getModes();
 
   // Load messages when session changes
   useEffect(() => {
@@ -100,8 +100,8 @@ export const DashboardContainer = ({ user, isAdmin, onAdminPanelClick }: Dashboa
   ) => {
     if (!auth.hasAccess || !auth.hasAcceptedTerms) {
       toast({
-        title: t('auth.accessRequired'),
-        description: t('auth.accessRequiredDesc'),
+        title: 'Access Required',
+        description: 'Please accept the terms to continue.',
         variant: "destructive"
       });
       return;
@@ -141,8 +141,7 @@ export const DashboardContainer = ({ user, isAdmin, onAdminPanelClick }: Dashboa
     messagesHook,
     chatSession,
     fileUpload,
-    toast,
-    t
+    toast
   ]);
 
   // Handle copy message

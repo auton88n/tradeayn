@@ -4,7 +4,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useAvatarUpload } from '@/hooks/useAvatarUpload';
-import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ProfileAvatarUploadProps {
   currentAvatarUrl?: string;
@@ -25,7 +24,6 @@ export const ProfileAvatarUpload = ({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const { uploadAvatar, removeAvatar, isUploading } = useAvatarUpload();
-  const { t } = useLanguage();
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -71,7 +69,7 @@ export const ProfileAvatarUpload = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{t('profile.changePhoto')}</DialogTitle>
+          <DialogTitle>Change Photo</DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col items-center gap-6 py-6">
@@ -115,7 +113,7 @@ export const ProfileAvatarUpload = ({
                   className="w-full"
                 >
                   <Camera className="w-4 h-4 mr-2" />
-                  {t('profile.uploadPhoto')}
+                  Upload Photo
                 </Button>
                 
                 {currentAvatarUrl && (
@@ -130,7 +128,7 @@ export const ProfileAvatarUpload = ({
                     ) : (
                       <X className="w-4 h-4 mr-2" />
                     )}
-                    {t('profile.removePhoto')}
+                    Remove Photo
                   </Button>
                 )}
               </>
@@ -144,7 +142,7 @@ export const ProfileAvatarUpload = ({
                   {isUploading ? (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   ) : (
-                    t('profile.confirmUpload')
+                    'Confirm Upload'
                   )}
                 </Button>
                 <Button
@@ -153,7 +151,7 @@ export const ProfileAvatarUpload = ({
                   variant="outline"
                   className="w-full"
                 >
-                  {t('common.cancel')}
+                  Cancel
                 </Button>
               </>
             )}
