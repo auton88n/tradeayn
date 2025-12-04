@@ -56,24 +56,36 @@ export const UserMessageBubble = ({
         opacity: 1,
         rotate: 0,
         filter: 'blur(0px)',
+        boxShadow: '0 0 0px transparent',
       }}
       animate={
         status === 'flying'
           ? {
               x: endPosition.x - halfWidth,
               y: endPosition.y - halfHeight,
-              scale: [1, 0.85, 0.6, 0.35],
-              opacity: [1, 1, 0.95, 0.9],
-              rotate: [0, -3, -6, -8],
-              filter: ['blur(0px)', 'blur(0px)', 'blur(1px)', 'blur(2px)'],
+              scale: [1, 0.85, 0.55, 0.25],
+              opacity: [1, 1, 0.95, 0.85],
+              rotate: [0, -3, -6, -10],
+              filter: ['blur(0px)', 'blur(0px)', 'blur(1px)', 'blur(3px)'],
+              boxShadow: [
+                '0 0 0px transparent',
+                '0 0 8px hsl(var(--primary) / 0.3)',
+                '0 0 16px hsl(var(--primary) / 0.5)',
+                '0 0 24px hsl(var(--primary) / 0.7)',
+              ],
             }
           : {
-              x: endPosition.x - halfWidth,
-              y: endPosition.y - halfHeight,
-              scale: 0,
-              opacity: 0,
-              rotate: 0,
-              filter: 'blur(6px)',
+              x: endPosition.x - halfWidth - 8,
+              y: endPosition.y - halfHeight - 5,
+              scale: [0.25, 0.1, 0],
+              opacity: [0.85, 0.4, 0],
+              rotate: -12,
+              filter: ['blur(3px)', 'blur(8px)', 'blur(14px)'],
+              boxShadow: [
+                '0 0 24px hsl(var(--primary) / 0.7)',
+                '0 0 40px hsl(var(--primary) / 0.9)',
+                '0 0 60px hsl(var(--primary))',
+              ],
             }
       }
       transition={
@@ -84,8 +96,9 @@ export const UserMessageBubble = ({
               times: [0, 0.3, 0.7, 1],
             }
           : {
-              duration: 0.12,
-              ease: [0.32, 0, 0.67, 0],
+              duration: 0.28,
+              ease: [0.55, 0.055, 0.675, 0.19],
+              times: [0, 0.5, 1],
             }
       }
       onAnimationComplete={() => {
