@@ -310,7 +310,7 @@ export const TranscriptSidebar = ({
       onClick={() => onToggle()}
       className={cn(
         "fixed top-6 right-6 z-40",
-        "w-14 h-14 rounded-2xl",
+        "w-11 h-11 rounded-xl",
         "bg-foreground text-background",
         "flex items-center justify-center",
         "shadow-xl hover:shadow-2xl",
@@ -319,9 +319,9 @@ export const TranscriptSidebar = ({
         isOpen ? "opacity-0 pointer-events-none scale-90" : "opacity-100 scale-100"
       )}
     >
-      <MessageSquare className="w-6 h-6" />
+      <MessageSquare className="w-5 h-5" />
       {messages.length > 0 && (
-        <span className="absolute -top-1.5 -right-1.5 min-w-6 h-6 px-1.5 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shadow-md">
+        <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center shadow-md">
           {messages.length > 99 ? '99+' : messages.length}
         </span>
       )}
