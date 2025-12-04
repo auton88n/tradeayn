@@ -224,7 +224,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
         }} />
 
           {/* Typewriter placeholder */}
-          {showPlaceholder && !inputMessage && <div className="absolute top-[26px] left-[32px] pointer-events-none">
+          {showPlaceholder && !inputMessage && !isInputFocused && <div className="absolute top-[26px] left-[32px] pointer-events-none">
               <motion.span key={currentPlaceholder} initial={{
             opacity: 0,
             y: 5
