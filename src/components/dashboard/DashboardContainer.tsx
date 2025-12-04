@@ -11,6 +11,7 @@ import { TutorialWelcome } from '@/components/tutorial/TutorialWelcome';
 import { TutorialOverlay } from '@/components/tutorial/TutorialOverlay';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { AIMode, FileAttachment, AIModeConfig, ChatHistory } from '@/types/dashboard.types';
 
 // Import custom hooks
@@ -384,17 +385,45 @@ const DashboardContent = ({
           </div>
         </ShadcnSidebar>
 
-      {/* Floating Menu Button - only show when sidebar is closed */}
-      {!open && (
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={toggleSidebar}
-          className="fixed top-4 left-4 z-50 hidden md:flex bg-background/80 backdrop-blur-sm border shadow-lg hover:shadow-xl transition-all duration-300"
-        >
-          <Menu className="w-5 h-5" />
-        </Button>
-      )}
+      {/* Mobile Backdrop Overlay */}
+      <AnimatePresence>
+        {openMobile && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 md:hidden"
+            onClick={() => setOpenMobile(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Floating Menu Button - Desktop: show when closed, Mobile: show when closed */}
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={toggleSidebar}
+        className={cn(
+          "fixed top-4 left-4 z-50",
+          "h-10 w-10 rounded-xl",
+          "bg-background/90 backdrop-blur-lg border border-border/60",
+          "shadow-lg hover:shadow-xl",
+          "hover:bg-background hover:scale-105",
+          "active:scale-95",
+          "transition-all duration-200",
+          // Hide on mobile when sidebar is open (it has its own close button)
+          openMobile && "md:flex hidden",
+          // Hide on desktop when sidebar is open
+          open && "hidden md:hidden",
+          // Show on desktop when sidebar is closed
+          !open && "hidden md:flex",
+          // Show on mobile when sidebar is closed
+          !openMobile && "flex md:hidden"
+        )}
+      >
+        <Menu className="w-5 h-5" />
+      </Button>
 
       <main 
         dir="ltr"

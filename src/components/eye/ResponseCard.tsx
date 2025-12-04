@@ -87,17 +87,23 @@ export const ResponseCard = ({ responses, isMobile = false }: ResponseCardProps)
           // Responsive width and height constraints - uses min() for sidebar-aware sizing
           "w-fit min-w-[280px] max-w-[min(calc(100vw-2rem),720px)] sm:max-w-[min(calc(100vw-3rem),640px)] lg:max-w-[min(calc(100%-2rem),720px)]",
           "max-h-[240px] sm:max-h-[280px] md:max-h-[320px] lg:max-h-[360px]",
-          // Premium glass card with gradient
-          "bg-gradient-to-br from-white/95 to-white/80 dark:from-gray-900/95 dark:to-gray-800/80",
-          "backdrop-blur-xl",
-          // Layered shadows for depth
-          "shadow-[0_8px_32px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.2)]",
-          "hover:shadow-[0_12px_40px_rgba(0,0,0,0.12),inset_0_1px_0_rgba(255,255,255,0.25)]",
-          // Border
-          "border border-gray-200/50 dark:border-gray-700/40",
-          "hover:border-gray-300/60 dark:hover:border-gray-600/50",
+          // Premium futuristic glassmorphism
+          "bg-gradient-to-br from-white/90 via-white/85 to-gray-100/80",
+          "dark:from-gray-900/90 dark:via-gray-800/85 dark:to-gray-900/80",
+          "backdrop-blur-2xl",
+          // Animated glow border effect
+          "before:absolute before:inset-0 before:rounded-2xl before:p-[1px]",
+          "before:bg-gradient-to-r before:from-primary/20 before:via-purple-500/15 before:to-primary/20",
+          "before:-z-10 before:opacity-0 group-hover:before:opacity-100",
+          "before:transition-opacity before:duration-500",
+          // Layered shadows with color glow
+          "shadow-[0_8px_40px_rgba(0,0,0,0.06),0_0_0_1px_rgba(0,0,0,0.03),inset_0_1px_0_rgba(255,255,255,0.4)]",
+          "hover:shadow-[0_20px_60px_rgba(0,0,0,0.1),0_0_40px_rgba(147,51,234,0.06),inset_0_1px_0_rgba(255,255,255,0.5)]",
+          // Border with subtle glow on hover
+          "border border-gray-200/60 dark:border-gray-700/50",
+          "hover:border-primary/20 dark:hover:border-primary/30",
           // Hover lift effect
-          "hover:-translate-y-0.5",
+          "hover:-translate-y-1",
           // Smooth transitions
           "transition-all duration-300 ease-out",
           // Padding and rounding
@@ -124,13 +130,26 @@ export const ResponseCard = ({ responses, isMobile = false }: ResponseCardProps)
           damping: 26,
         }}
       >
-        {/* Accent Line at Top */}
-        <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-primary/30 to-transparent rounded-t-2xl" />
+        {/* Animated accent line at top */}
+        <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-primary/40 to-transparent rounded-t-2xl group-hover:via-primary/60 transition-all duration-500" />
+        
+        {/* Inner highlight shine */}
+        <div className="absolute inset-x-4 top-0 h-[40%] bg-gradient-to-b from-white/30 to-transparent dark:from-white/10 rounded-t-xl pointer-events-none" />
 
-        {/* Brain Logo - Top Left */}
-        <div className="absolute top-3 left-3 opacity-25 group-hover:opacity-40 transition-opacity duration-300">
-          <Brain className="w-4 h-4 text-primary" />
-        </div>
+        {/* Brain Logo - Top Right (subtle) */}
+        <motion.div 
+          className="absolute top-3 right-3 opacity-20 group-hover:opacity-40 transition-opacity duration-300"
+          animate={{ 
+            scale: [1, 1.05, 1],
+          }}
+          transition={{ 
+            duration: 3, 
+            repeat: Infinity, 
+            ease: "easeInOut" 
+          }}
+        >
+          <Brain className="w-5 h-5 text-primary" />
+        </motion.div>
 
         {/* Content area with proper scrolling */}
         <div 
