@@ -345,102 +345,47 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
       >
         <div 
           className={cn(
-            "relative rounded-full bg-background flex items-center justify-center overflow-hidden animate-eye-breathe will-change-transform",
+            "relative rounded-full bg-white flex items-center justify-center overflow-hidden animate-eye-breathe will-change-transform",
             sizeClasses[size]
           )}
           style={{
             animationDuration: `${breathingDuration}s`
           }}
         >
-          {/* Outer pulsing ring */}
-          <motion.div
-            className="absolute inset-[-8%] rounded-full"
-            animate={{
-              scale: [1, 1.04, 1],
-              opacity: isResponding ? [0.4, 0.8, 0.4] : [0.2, 0.4, 0.2],
-            }}
-            transition={{
-              duration: isResponding ? 1.5 : 3,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-          />
-
-          {/* Layer 1: Soft outer glow with enhanced pulse */}
-          <motion.div 
-            className="absolute inset-0 rounded-full"
-            animate={{
-              boxShadow: 'none'
-            }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          {/* Layer 1: Subtle outer neumorphic ring */}
+          <div 
+            className="absolute inset-[8%] rounded-full"
             style={{
-              background: 'radial-gradient(circle, hsla(0, 0%, 100%, 0.9) 0%, hsla(0, 0%, 100%, 0.6) 50%, transparent 100%)',
+              backgroundColor: 'hsl(0, 0%, 95%)',
+              boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.04)'
             }}
           />
 
-          {/* Layer 2: Light gray outer ring with subtle rotation */}
-          <motion.div 
-            className="absolute inset-[15%] rounded-full"
-            animate={{
-              rotate: emotion === 'thinking' ? [0, 360] : 0,
-            }}
-            transition={{
-              duration: 20,
-              repeat: Infinity,
-              ease: "linear"
-            }}
+          {/* Layer 2: Inner gray ring */}
+          <div 
+            className="absolute inset-[18%] rounded-full"
             style={{
-              backgroundColor: 'transparent',
-              boxShadow: 'inset 0 4px 16px hsla(0, 0%, 0%, 0.03)',
+              backgroundColor: 'hsl(0, 0%, 90%)',
+              boxShadow: 'inset 0 1px 4px rgba(0,0,0,0.05)'
             }}
           />
 
-          {/* Layer 3: Emotional Ring with enhanced glow */}
+          {/* Layer 3: White ring (emotional color when active) */}
           <motion.div 
-            className="absolute inset-[30%] rounded-full"
+            className="absolute inset-[28%] rounded-full"
             animate={{ 
-              scale: isPulsing 
-                ? [1, 1.08, 1] 
-                : isResponding || isAbsorbing 
-                  ? [1, 1.05, 1] 
-                  : [1, 1.02, 1],
-              rotate: emotion === 'thinking' ? [0, 360] : 0,
-              boxShadow: isResponding || isPulsing
-                ? [
-                    `inset 0 2px 6px hsla(0, 0%, 0%, 0.08), 0 0 30px ${emotionConfig.glowColor}50`,
-                    `inset 0 2px 6px hsla(0, 0%, 0%, 0.08), 0 0 50px ${emotionConfig.glowColor}70`,
-                    `inset 0 2px 6px hsla(0, 0%, 0%, 0.08), 0 0 30px ${emotionConfig.glowColor}50`
-                  ]
-                : isUserTyping || isAttentive
-                  ? `inset 0 2px 6px hsla(0, 0%, 0%, 0.08), 0 0 25px ${emotionConfig.glowColor}40`
-                  : 'inset 0 2px 6px hsla(0, 0%, 0%, 0.06)'
+              scale: isPulsing ? [1, 1.08, 1] : isResponding ? [1, 1.05, 1] : 1,
             }}
             transition={{ 
-              scale: { 
-                duration: isPulsing ? 0.4 : isResponding ? 1.2 : emotionConfig.breathingSpeed, 
-                repeat: isPulsing ? 0 : Infinity, 
-                ease: "easeInOut" 
-              },
-              rotate: { 
-                duration: 8, 
-                repeat: Infinity, 
-                ease: "linear" 
-              },
-              boxShadow: {
-                duration: isPulsing ? 0.4 : 2,
-                repeat: isPulsing ? 0 : Infinity,
-                ease: "easeInOut"
-              }
+              scale: { duration: isPulsing ? 0.4 : 1.2, repeat: isPulsing ? 0 : Infinity, ease: "easeInOut" }
             }}
             style={{
-              backgroundColor: emotion === 'calm' 
-                ? 'transparent'
-                : emotionConfig.glowColor,
-              transition: 'background-color 1.2s ease',
+              backgroundColor: emotion === 'calm' ? 'white' : emotionConfig.glowColor,
+              transition: 'background-color 0.8s ease',
             }}
           />
 
-          {/* Layer 4: Black pupil with brain */}
+          {/* Layer 4: Solid black pupil with brain */}
           <motion.svg 
             viewBox="0 0 100 100" 
             className="w-[40%] h-[40%] relative z-10"
@@ -457,26 +402,12 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
               transformOrigin: 'center center'
             }}
           >
-            <defs>
-              <radialGradient id="emotional-sclera" cx="40%" cy="30%">
-                <stop offset="0%" stopColor="hsl(var(--background))" stopOpacity="0.9" />
-                <stop offset="80%" stopColor="hsl(var(--foreground))" stopOpacity="0.95" />
-              </radialGradient>
-            </defs>
-
-            <circle cx="50" cy="50" r="48" fill="url(#emotional-sclera)" opacity="0.06" />
-
-            <defs>
-              <radialGradient id="iris-gradient" cx="30%" cy="30%">
-                <stop offset="0%" stopColor="#1a1a1a" stopOpacity="1" />
-                <stop offset="100%" stopColor="black" stopOpacity="1" />
-              </radialGradient>
-            </defs>
+            {/* Solid black pupil */}
             <circle 
               cx="50" 
               cy="50" 
               r={irisRadius}
-              fill="url(#iris-gradient)"
+              fill="black"
               style={{
                 transition: isAbsorbing 
                   ? "r 0.15s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
