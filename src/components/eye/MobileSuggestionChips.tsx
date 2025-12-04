@@ -35,7 +35,7 @@ export const MobileSuggestionChips = ({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 10 }}
       transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-      className="w-full pb-3 overflow-hidden"
+      className="w-full pb-3 overflow-x-auto scrollbar-hide"
     >
       <div className="flex flex-nowrap gap-2 justify-center items-center px-4 overflow-x-auto scrollbar-hide">
         <AnimatePresence mode="popLayout">

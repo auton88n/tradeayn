@@ -81,7 +81,7 @@ export const TranscriptMessage = ({
       </div>
 
       {/* Premium Message Bubble */}
-      <div className={cn("block max-w-[85%] min-w-0 overflow-hidden", isUser ? "ml-auto" : "mr-auto")}>
+      <div className={cn("inline-block max-w-[85%] min-w-0 overflow-hidden", isUser ? "ml-auto" : "mr-auto")}>
         <div
           className={cn(
             "px-4 py-2.5 text-sm leading-relaxed",
