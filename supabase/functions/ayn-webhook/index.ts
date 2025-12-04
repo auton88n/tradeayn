@@ -66,7 +66,7 @@ const textProcessor = {
     return items;
   },
 
-  // Clean and normalize text
+  // Clean and normalize text (strips newlines - use for plain text only)
   normalizeText(text: string): string {
     if (!text) return '';
     
@@ -83,24 +83,58 @@ const textProcessor = {
       .replace(/\s+([,.!?;:])/g, '$1');
   },
 
+  // Preserve markdown formatting (keeps newlines for tables, lists, etc.)
+  preserveMarkdown(text: string): string {
+    if (!text) return '';
+    
+    return text
+      // Normalize excessive newlines (3+ → 2) but keep structure
+      .replace(/\n{3,}/g, '\n\n')
+      // Replace tabs with spaces but preserve structure
+      .replace(/\t/g, '  ')
+      // Trim each line but keep newlines
+      .split('\n')
+      .map(line => line.trimEnd())
+      .join('\n')
+      // Final trim
+      .trim();
+  },
+
   // Process raw response into clean text
   processResponse(rawText: string, contentType: string): string {
     let normalized = '';
+    let isMarkdownContent = false;
 
-    // Try single JSON first
-    if (contentType.includes('application/json') || rawText.trim().startsWith('{')) {
+    // Try JSON first (object OR array)
+    const trimmed = rawText.trim();
+    if (contentType.includes('application/json') || trimmed.startsWith('{') || trimmed.startsWith('[')) {
       try {
         const parsed = JSON.parse(rawText);
-        const content = this.extractContent(parsed);
-        if (content) {
-          normalized = content;
+        
+        // Handle ARRAY format: [{ output: "..." }]
+        if (Array.isArray(parsed)) {
+          const contents = parsed
+            .map(item => this.extractContent(item))
+            .filter(Boolean) as string[];
+          
+          if (contents.length > 0) {
+            normalized = contents.join('\n\n');  // Preserve paragraphs!
+            isMarkdownContent = true;
+          }
+        } else {
+          // Handle OBJECT format: { output: "..." }
+          const content = this.extractContent(parsed);
+          if (content) {
+            normalized = content;
+            isMarkdownContent = true;
+          }
         }
       } catch {
-        // Not single JSON, continue to NDJSON parsing
+        // Not valid JSON, continue to NDJSON parsing
       }
     }
 
-    // If no single JSON content found, try NDJSON
+    // If no JSON content found, try NDJSON
     if (!normalized && rawText.includes('\n')) {
       const ndjsonItems = this.parseNDJSON(rawText);
       if (ndjsonItems.length > 0) {
@@ -109,7 +143,8 @@ const textProcessor = {
           .filter(Boolean) as string[];
         
         if (contents.length > 0) {
-          normalized = contents.join(' ');
+          normalized = contents.join('\n\n');
+          isMarkdownContent = true;
         }
       }
     }
@@ -119,7 +154,9 @@ const textProcessor = {
       normalized = rawText;
     }
 
-    return this.normalizeText(normalized);
+    // Use preserveMarkdown for JSON content (keeps tables, lists intact)
+    // Use normalizeText only for raw text fallback
+    return isMarkdownContent ? this.preserveMarkdown(normalized) : this.normalizeText(normalized);
   }
 };
 
