@@ -35,7 +35,10 @@ export const SuggestionsCard = ({
 
   const visibleSuggestions = suggestions.filter(s => s.isVisible).slice(0, 3);
 
-  if (visibleSuggestions.length === 0) return null;
+  // Always render wrapper for tutorial highlighting, even when empty
+  if (visibleSuggestions.length === 0) {
+    return <div data-tutorial="suggestions" className="absolute left-1/4 top-1/2 -translate-y-1/2 min-h-[40px] min-w-[40px]" />;
+  }
 
   const handleClick = (suggestion: Suggestion, e: React.MouseEvent<HTMLButtonElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();

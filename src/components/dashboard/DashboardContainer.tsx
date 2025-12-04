@@ -350,8 +350,9 @@ const DashboardContent = ({
       />
       
       <div className="flex h-screen w-full" dir="ltr">
-        <ShadcnSidebar data-tutorial="sidebar">
-        <DashboardSidebar
+        <ShadcnSidebar>
+          <div data-tutorial="sidebar" className="h-full">
+            <DashboardSidebar
           userName={auth.userProfile?.contact_person || user.user_metadata?.name || user.email?.split('@')[0]}
           userEmail={auth.userProfile?.company_name || 'No company'}
           userAvatar={auth.userProfile?.avatar_url}
@@ -387,10 +388,11 @@ const DashboardContent = ({
           onAvatarUpdated={auth.loadUserProfile}
           isAdmin={isAdmin}
           onAdminPanelClick={onAdminPanelClick}
-          onStartTutorial={tutorial.startTutorial}
-          isTutorialProfileStep={tutorial.isActive && tutorial.currentStepData?.id === 'profile'}
-        />
-      </ShadcnSidebar>
+              onStartTutorial={tutorial.startTutorial}
+              isTutorialProfileStep={tutorial.isActive && tutorial.currentStepData?.id === 'profile'}
+            />
+          </div>
+        </ShadcnSidebar>
 
       {/* Floating Menu Button - only show when sidebar is closed */}
       {!open && (

@@ -54,7 +54,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     targetSelector: '[data-tutorial="sidebar"]',
     title: 'tutorial.steps.sidebar.title',
     description: 'tutorial.steps.sidebar.description',
-    position: 'right',
+    position: 'left',
   },
   {
     id: 'transcript',
