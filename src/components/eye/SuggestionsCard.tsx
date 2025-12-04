@@ -12,25 +12,24 @@ interface SuggestionsCardProps {
   suggestions: Suggestion[];
   onSuggestionClick: (content: string, emoji: string, position: { x: number; y: number }) => void;
   isMobile?: boolean;
-  eyeShiftX?: number; // Account for eye horizontal shift
+  isSmallScreen?: boolean; // Mobile + Tablet (< 1024px)
+  eyeShiftX?: number;
 }
 
 // Desktop: Arc positions relative to stage center (will add eyeShiftX)
 const desktopPositions = [
-  { x: -160, y: -60, rotate: -3 },   // Top-left arc
-  { x: -180, y: 0, rotate: 0 },      // Middle-left (reduced from -230)
-  { x: -160, y: 60, rotate: 3 },     // Bottom-left arc
+  { x: -180, y: -60, rotate: -3 },
+  { x: -200, y: 0, rotate: 0 },
+  { x: -180, y: 60, rotate: 3 },
 ];
 
-// Mobile: Horizontal spread ABOVE the eye (negative y values)
-const mobilePositions = [
-  { x: -70, y: -130, rotate: 0 },    // Top-left above eye
-  { x: 0, y: -170, rotate: 0 },      // Top-center above eye
-  { x: 70, y: -130, rotate: 0 },     // Top-right above eye
-];
-
-export const SuggestionsCard = ({ suggestions, onSuggestionClick, isMobile = false, eyeShiftX = 0 }: SuggestionsCardProps) => {
-  const positions = isMobile ? mobilePositions : desktopPositions;
+export const SuggestionsCard = ({ 
+  suggestions, 
+  onSuggestionClick, 
+  isMobile = false, 
+  isSmallScreen = false,
+  eyeShiftX = 0 
+}: SuggestionsCardProps) => {
   const visibleSuggestions = suggestions.filter(s => s.isVisible).slice(0, 3);
 
   if (visibleSuggestions.length === 0) return null;
@@ -43,10 +42,74 @@ export const SuggestionsCard = ({ suggestions, onSuggestionClick, isMobile = fal
     });
   };
 
+  // Mobile/Tablet: Use flexbox container above eye
+  if (isSmallScreen || isMobile) {
+    return (
+      <div 
+        className={cn(
+          "absolute left-0 right-0 flex flex-wrap justify-center gap-2 px-3",
+          isMobile ? "top-4" : "top-8"
+        )}
+      >
+        <AnimatePresence>
+          {visibleSuggestions.map((suggestion, index) => (
+            <motion.button
+              key={suggestion.id}
+              onClick={(e) => handleClick(suggestion, e)}
+              className={cn(
+                "flex items-center gap-2",
+                "px-3 py-2",
+                "bg-white/95 dark:bg-gray-900/95",
+                "backdrop-blur-xl",
+                "shadow-[0_8px_32px_rgba(0,0,0,0.08),0_2px_8px_rgba(0,0,0,0.04)]",
+                "border border-gray-200/60 dark:border-gray-700/40",
+                "rounded-xl",
+                "text-left group cursor-pointer",
+                "hover:bg-gray-50 dark:hover:bg-gray-800/80",
+                "transition-colors duration-150"
+              )}
+              initial={{ 
+                opacity: 0, 
+                y: -20, 
+                scale: 0.9,
+              }}
+              animate={{ 
+                opacity: 1, 
+                y: 0, 
+                scale: 1,
+              }}
+              exit={{ 
+                opacity: 0, 
+                y: -10, 
+                scale: 0.95,
+              }}
+              transition={{
+                type: 'spring',
+                stiffness: 200,
+                damping: 22,
+                delay: index * 0.08,
+              }}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+            >
+              <div className="w-6 h-6 rounded-lg bg-gray-100/80 dark:bg-gray-800/60 flex items-center justify-center flex-shrink-0">
+                <span className="text-sm">{suggestion.emoji}</span>
+              </div>
+              <span className="text-xs font-medium text-gray-700 dark:text-gray-200 line-clamp-1 max-w-[120px]">
+                {suggestion.content}
+              </span>
+            </motion.button>
+          ))}
+        </AnimatePresence>
+      </div>
+    );
+  }
+
+  // Desktop: Absolute arc positioning on left side
   return (
     <AnimatePresence>
       {visibleSuggestions.map((suggestion, index) => {
-        const position = positions[index] || positions[0];
+        const position = desktopPositions[index] || desktopPositions[0];
         
         return (
           <motion.button
@@ -54,9 +117,7 @@ export const SuggestionsCard = ({ suggestions, onSuggestionClick, isMobile = fal
             onClick={(e) => handleClick(suggestion, e)}
             className={cn(
               "absolute flex items-center gap-2",
-              isMobile 
-                ? "px-3 py-2 min-w-[160px] max-w-[220px]" 
-                : "px-4 py-3 min-w-[200px] max-w-[280px]",
+              "px-4 py-3 min-w-[200px] max-w-[280px]",
               "bg-white/95 dark:bg-gray-900/95",
               "backdrop-blur-xl",
               "shadow-[0_8px_32px_rgba(0,0,0,0.08),0_2px_8px_rgba(0,0,0,0.04)]",
@@ -103,16 +164,10 @@ export const SuggestionsCard = ({ suggestions, onSuggestionClick, isMobile = fal
             }}
             whileTap={{ scale: 0.98 }}
           >
-            <div className={cn(
-              "rounded-xl bg-gray-100/80 dark:bg-gray-800/60 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform",
-              isMobile ? "w-7 h-7" : "w-9 h-9"
-            )}>
-              <span className={isMobile ? "text-sm" : "text-lg"}>{suggestion.emoji}</span>
+            <div className="w-9 h-9 rounded-xl bg-gray-100/80 dark:bg-gray-800/60 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+              <span className="text-lg">{suggestion.emoji}</span>
             </div>
-            <span className={cn(
-              "font-medium text-gray-700 dark:text-gray-200 line-clamp-2",
-              isMobile ? "text-xs" : "text-sm"
-            )}>
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-200 line-clamp-2">
               {suggestion.content}
             </span>
           </motion.button>
