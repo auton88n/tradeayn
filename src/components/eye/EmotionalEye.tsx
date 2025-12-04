@@ -345,50 +345,20 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
       >
         <div 
           className={cn(
-            "relative rounded-full bg-white flex items-center justify-center overflow-hidden animate-eye-breathe will-change-transform",
+            "relative rounded-full bg-background flex items-center justify-center overflow-hidden animate-eye-breathe will-change-transform shadow-xl transition-shadow duration-300 hover:shadow-2xl",
             sizeClasses[size]
           )}
           style={{
             animationDuration: `${breathingDuration}s`
           }}
         >
-          {/* Layer 1: Subtle outer neumorphic ring */}
-          <div 
-            className="absolute inset-[8%] rounded-full"
-            style={{
-              backgroundColor: 'hsl(0, 0%, 95%)',
-              boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.04)'
-            }}
-          />
+          {/* Single inner ring - matching landing page */}
+          <div className="absolute inset-4 rounded-full bg-background/80 shadow-inner" />
 
-          {/* Layer 2: Inner gray ring */}
-          <div 
-            className="absolute inset-[18%] rounded-full"
-            style={{
-              backgroundColor: 'hsl(0, 0%, 90%)',
-              boxShadow: 'inset 0 1px 4px rgba(0,0,0,0.05)'
-            }}
-          />
-
-          {/* Layer 3: White ring (emotional color when active) */}
-          <motion.div 
-            className="absolute inset-[28%] rounded-full"
-            animate={{ 
-              scale: isPulsing ? [1, 1.08, 1] : isResponding ? [1, 1.05, 1] : 1,
-            }}
-            transition={{ 
-              scale: { duration: isPulsing ? 0.4 : 1.2, repeat: isPulsing ? 0 : Infinity, ease: "easeInOut" }
-            }}
-            style={{
-              backgroundColor: emotion === 'calm' ? 'white' : emotionConfig.glowColor,
-              transition: 'background-color 0.8s ease',
-            }}
-          />
-
-          {/* Layer 4: Solid black pupil with brain */}
+          {/* SVG with pupil and brain */}
           <motion.svg 
             viewBox="0 0 100 100" 
-            className="w-[40%] h-[40%] relative z-10"
+            className="w-[70%] h-[70%] relative z-10"
             xmlns="http://www.w3.org/2000/svg" 
             animate={{
               scaleY: isBlinking ? 0.05 : 1,
@@ -402,12 +372,22 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
               transformOrigin: 'center center'
             }}
           >
+            <defs>
+              <radialGradient id="sclera-gradient" cx="40%" cy="30%">
+                <stop offset="0%" stopColor="hsl(var(--background))" stopOpacity="0.9" />
+                <stop offset="80%" stopColor="hsl(var(--foreground))" stopOpacity="0.95" />
+              </radialGradient>
+            </defs>
+
+            {/* Sclera subtle */}
+            <circle cx="50" cy="50" r="48" fill="url(#sclera-gradient)" opacity="0.06" />
+
             {/* Solid black pupil */}
             <circle 
               cx="50" 
               cy="50" 
               r={irisRadius}
-              fill="black"
+              fill="hsl(var(--foreground))"
               style={{
                 transition: isAbsorbing 
                   ? "r 0.15s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
@@ -437,9 +417,10 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
               <Brain 
                 className="w-full h-full" 
                 style={{ 
-                  color: emotionConfig.color, 
+                  color: emotion === 'calm' ? 'hsl(var(--background))' : emotionConfig.color,
+                  opacity: 0.9,
                   transition: 'color 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                  filter: `drop-shadow(0 0 8px ${emotionConfig.color}40)`
+                  filter: emotion !== 'calm' ? `drop-shadow(0 0 8px ${emotionConfig.color}40)` : 'none'
                 }} 
               />
             </foreignObject>
