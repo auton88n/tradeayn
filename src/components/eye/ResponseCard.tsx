@@ -85,7 +85,7 @@ export const ResponseCard = ({ responses, isMobile = false }: ResponseCardProps)
         className={cn(
           "relative group",
           // Responsive width
-          "w-fit min-w-[280px] max-w-[calc(100vw-2rem)] sm:max-w-[560px]",
+          "w-fit min-w-[280px] max-w-[calc(100vw-2rem)] sm:max-w-[640px] lg:max-w-[720px]",
           // Premium glass card with gradient
           "bg-gradient-to-br from-white/95 to-white/80 dark:from-gray-900/95 dark:to-gray-800/80",
           "backdrop-blur-xl",
