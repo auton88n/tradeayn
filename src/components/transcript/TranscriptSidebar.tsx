@@ -15,7 +15,7 @@ import type { AYNEmotion } from '@/contexts/AYNEmotionContext';
 interface TranscriptSidebarProps {
   messages: Message[];
   isOpen: boolean;
-  onToggle: () => void;
+  onToggle: (open?: boolean) => void;
   onClear?: () => void;
   currentMode?: string;
   onReply?: (quotedContent: string) => void;
@@ -47,7 +47,7 @@ const TranscriptContent = ({
   isArabic: boolean;
   currentMode?: string;
   onReply?: (quotedContent: string) => void;
-  onToggle: () => void;
+  onToggle: (open?: boolean) => void;
   onClear?: () => void;
   handleCopyAll: () => void;
 }) => (
@@ -76,7 +76,7 @@ const TranscriptContent = ({
         <Button 
           variant="ghost" 
           size="icon" 
-          onClick={onToggle}
+          onClick={() => onToggle(false)}
           className="h-8 w-8 rounded-lg hover:bg-foreground hover:text-background transition-colors"
         >
           <X className="w-4 h-4" />
@@ -264,7 +264,7 @@ export const TranscriptSidebar = ({
       <>
         {/* Toggle button when closed - mobile */}
         <button
-          onClick={onToggle}
+          onClick={() => onToggle()}
           className={cn(
             "fixed top-1/2 -translate-y-1/2 z-40",
             "w-10 h-24 rounded-l-2xl",
@@ -299,7 +299,7 @@ export const TranscriptSidebar = ({
     <>
       {/* Toggle button when closed - desktop */}
       <button
-        onClick={onToggle}
+        onClick={() => onToggle()}
         className={cn(
           "fixed top-1/2 -translate-y-1/2 z-40",
           "w-10 h-24 rounded-l-2xl",
