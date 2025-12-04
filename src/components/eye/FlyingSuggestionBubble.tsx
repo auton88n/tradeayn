@@ -66,10 +66,10 @@ export const FlyingSuggestionBubble = ({
           ? {
               x: endPosition.x - halfWidth,
               y: endPosition.y - halfHeight,
-              scale: 0.3,
-              opacity: 1,
-              rotate: 10,
-              filter: 'blur(0px)',
+              scale: [1, 0.8, 0.5, 0.3],
+              opacity: [1, 1, 0.95, 0.9],
+              rotate: [0, 4, 7, 10],
+              filter: ['blur(0px)', 'blur(0px)', 'blur(1px)', 'blur(2px)'],
             }
           : {
               x: endPosition.x - halfWidth,
@@ -83,10 +83,9 @@ export const FlyingSuggestionBubble = ({
       transition={
         status === 'flying'
           ? {
-              type: 'spring',
-              stiffness: 200,
-              damping: 18,
-              mass: 0.4,
+              duration: 0.4,
+              ease: [0.32, 0.72, 0, 1],
+              times: [0, 0.3, 0.7, 1],
             }
           : {
               duration: 0.12,
