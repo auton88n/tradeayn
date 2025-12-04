@@ -353,15 +353,17 @@ export const Sidebar = ({
         {/* User Profile */}
         <Popover>
           <PopoverTrigger asChild>
-            <button className={cn(
-              "flex items-center gap-2.5 px-3 py-2.5",
-              "w-[calc(100%-1rem)] mx-2 mb-2",
-              "cursor-pointer rounded-lg",
-              "hover:bg-muted/60",
-              "transition-colors duration-150",
-              "active:scale-[0.99]",
-              "focus:outline-none focus-visible:ring-0"
-            )}>
+            <button 
+              data-tutorial="profile"
+              className={cn(
+                "flex items-center gap-2.5 px-3 py-2.5",
+                "w-[calc(100%-1rem)] mx-2 mb-2",
+                "cursor-pointer rounded-lg",
+                "hover:bg-muted/60",
+                "transition-colors duration-150",
+                "active:scale-[0.99]",
+                "focus:outline-none focus-visible:ring-0"
+              )}>
               <div className="relative flex-shrink-0">
                 <Avatar className="w-8 h-8">
                   <AvatarImage src={userAvatar} alt={userName || 'User'} />

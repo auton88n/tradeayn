@@ -26,11 +26,13 @@ export const useTutorial = (userId?: string) => {
       if (userId) {
         const { data } = await supabase
           .from('user_settings')
-          .select('has_completed_tutorial')
+          .select('*')
           .eq('user_id', userId)
           .single();
 
-        if (data?.has_completed_tutorial) {
+        // Type assertion since column was just added via migration
+        const settings = data as { has_completed_tutorial?: boolean } | null;
+        if (settings?.has_completed_tutorial) {
           localStorage.setItem(STORAGE_KEY, 'true');
           setState(prev => ({ ...prev, isCompleted: true }));
         } else {

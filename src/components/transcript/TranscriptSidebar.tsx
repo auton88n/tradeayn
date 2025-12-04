@@ -78,6 +78,7 @@ export const TranscriptSidebar = ({
             exit={{ opacity: 0, x: 20, scale: 0.9 }}
             transition={{ type: 'spring', stiffness: 400, damping: 25 }}
             onClick={onToggle}
+            data-tutorial="transcript"
             className={cn(
               "fixed top-1/2 -translate-y-1/2 z-40",
               "hidden md:flex",
