@@ -135,12 +135,12 @@ export const CenterStageLayout = ({
       return { x: window.innerWidth / 2, y: window.innerHeight / 3 };
     }
     const stageRect = eyeStageRef.current.getBoundingClientRect();
-    // Return the center of the stage container (where eye settles when eyeShiftX=0)
+    // Return the actual eye position (accounting for eyeShiftX offset)
     return {
-      x: stageRect.left + stageRect.width / 2,
+      x: stageRect.left + stageRect.width / 2 + eyeShiftX,
       y: stageRect.top + stageRect.height / 2,
     };
-  }, []);
+  }, [eyeShiftX]);
 
   // Get input position for bubble start
   const getInputPosition = useCallback(() => {
