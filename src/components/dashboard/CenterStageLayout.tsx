@@ -484,12 +484,11 @@ export const CenterStageLayout = ({
       {/* Suggestion chips - ALL screen sizes (horizontal layout) */}
       <div className={cn(
         "fixed bottom-32 sm:bottom-36 z-40",
-        "left-4 right-4",
         "flex justify-center",
         "transition-all duration-300 ease-out",
-        // Shift with sidebars on tablet+
-        sidebarOpen && "lg:ml-[10rem]",
-        transcriptOpen && "lg:mr-[10rem]"
+        // Dynamic left/right positioning based on sidebar states
+        sidebarOpen ? "lg:left-[21rem]" : "left-4",
+        transcriptOpen ? "lg:right-[21rem]" : "right-4"
       )}>
         <AnimatePresence>
           <MobileSuggestionChips
