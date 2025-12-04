@@ -441,7 +441,7 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
             }}
             style={{
               backgroundColor: emotion === 'calm' 
-                ? 'hsl(0, 0%, 88%)'
+                ? 'transparent'
                 : emotionConfig.glowColor,
               transition: 'background-color 1.2s ease',
             }}
