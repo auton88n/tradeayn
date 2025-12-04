@@ -1182,15 +1182,54 @@ button, a, input, textarea, select {
   position: relative;
   z-index: 201 !important;
   border-radius: 12px;
-  animation: tutorial-pulse 1.5s ease-in-out infinite;
-  box-shadow: 0 0 0 4px hsl(var(--primary) / 0.5), 0 0 20px hsl(var(--primary) / 0.3);
+  animation: tutorial-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  box-shadow: 
+    0 0 0 3px hsl(var(--primary) / 0.6), 
+    0 0 15px hsl(var(--primary) / 0.4),
+    inset 0 0 0 1px hsl(var(--primary) / 0.1);
+  transition: box-shadow 0.3s ease-out;
+}
+
+.tutorial-highlight::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 16px;
+  background: linear-gradient(
+    135deg,
+    hsl(var(--primary) / 0.15),
+    transparent 50%,
+    hsl(var(--primary) / 0.15)
+  );
+  z-index: -1;
+  animation: tutorial-glow-rotate 3s linear infinite;
 }
 
 @keyframes tutorial-pulse {
   0%, 100% {
-    box-shadow: 0 0 0 4px hsl(var(--primary) / 0.5), 0 0 20px hsl(var(--primary) / 0.3);
+    box-shadow: 
+      0 0 0 3px hsl(var(--primary) / 0.6), 
+      0 0 15px hsl(var(--primary) / 0.4),
+      inset 0 0 0 1px hsl(var(--primary) / 0.1);
+    transform: scale(1);
   }
   50% {
-    box-shadow: 0 0 0 8px hsl(var(--primary) / 0.3), 0 0 30px hsl(var(--primary) / 0.2);
+    box-shadow: 
+      0 0 0 6px hsl(var(--primary) / 0.4), 
+      0 0 25px hsl(var(--primary) / 0.3),
+      inset 0 0 0 1px hsl(var(--primary) / 0.2);
+    transform: scale(1.01);
+  }
+}
+
+@keyframes tutorial-glow-rotate {
+  0% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.5;
   }
 }

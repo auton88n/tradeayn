@@ -307,12 +307,24 @@ const DashboardContent = ({
     }
   }, [messagesHook.isTyping, messagesHook.messages, setEmotion, setIsResponding]);
 
-  // Auto-open transcript sidebar during tutorial
+  // Auto-open/close sidebars during tutorial steps
   useEffect(() => {
-    if (tutorial.currentStepData?.id === 'transcript') {
+    const stepId = tutorial.currentStepData?.id;
+    
+    // Open transcript when on transcript step
+    if (stepId === 'transcript') {
       setTranscriptOpen(true);
     }
-  }, [tutorial.currentStepData?.id]);
+    // Close transcript when moving past it
+    else if (transcriptOpen && tutorial.isActive && stepId !== 'transcript') {
+      setTranscriptOpen(false);
+    }
+    
+    // Open left sidebar when on sidebar step
+    if (stepId === 'sidebar' && !open) {
+      toggleSidebar();
+    }
+  }, [tutorial.currentStepData?.id, tutorial.isActive, open, toggleSidebar, transcriptOpen]);
 
   const handleClearTranscript = useCallback(() => {
     handleNewChat();
