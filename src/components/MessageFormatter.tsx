@@ -36,27 +36,18 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
     let processed = text;
     
     // 0. Convert inline markdown tables to multi-line format
-    // Detect tables by looking for pipe characters and separator patterns
-    if (processed.includes('|')) {
-      // Check if this looks like a table (has separator row pattern)
-      const hasSeparator = /\|[\s]*[-:]+[\s]*\|/.test(processed);
+    // Detect tables by looking for separator pattern like |---|
+    if (processed.includes('|') && /\|-+\|/.test(processed)) {
+      // Simple approach: split every "| |" or "|  |" into separate lines
+      // This handles: "| Header | |---| | Data |" -> proper multi-line table
+      processed = processed.replace(/\|\s+\|/g, '|\n|');
       
-      if (hasSeparator) {
-        // Split by pipe-space-pipe or pipe-pipe patterns to find row boundaries
-        // First, ensure separator rows are on their own line
-        processed = processed.replace(/\s*(\|(?:\s*:?-+:?\s*\|)+)/g, '\n$1\n');
-        
-        // Then handle content rows - add newline before | that starts a data row
-        // Match: end of cell (|) followed by start of new row (| content)
-        processed = processed.replace(/\|\s*\|(?!\s*[-:])/g, '|\n|');
-        
-        // Handle cases where rows are space-separated
-        processed = processed.replace(/\|\s{2,}\|/g, '|\n|');
-        
-        // Clean up multiple newlines
-        processed = processed.replace(/\n{3,}/g, '\n\n');
-        processed = processed.trim();
-      }
+      // Also handle case where separator is directly adjacent: "||---"
+      processed = processed.replace(/\|\|/g, '|\n|');
+      
+      // Clean up multiple newlines
+      processed = processed.replace(/\n{3,}/g, '\n\n');
+      processed = processed.trim();
     }
     
     // 1. Convert inline numbered lists like "1. item 2. item 3. item"
