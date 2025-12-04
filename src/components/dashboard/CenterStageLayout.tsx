@@ -391,8 +391,8 @@ export const CenterStageLayout = ({
         {/* Unified layout for all screen sizes */}
         <motion.div 
           className="flex flex-col items-center gap-3 w-full"
-          animate={{
-            paddingTop: hasVisibleResponses ? '1rem' : isMobile ? '20vh' : '5vh',
+animate={{
+            paddingTop: hasVisibleResponses ? '0' : isMobile ? '10vh' : '2vh',
           }}
           transition={{
             type: 'spring',
