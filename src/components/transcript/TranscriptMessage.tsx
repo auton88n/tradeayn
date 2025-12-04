@@ -81,15 +81,15 @@ export const TranscriptMessage = ({
       {/* Message Bubble - Premium Styling */}
       <div
         className={cn(
-          "px-4 py-3 rounded-2xl text-sm leading-relaxed",
+          "px-4 py-2.5 rounded-2xl text-sm leading-relaxed",
           "transition-all duration-200 ease-out",
           "hover:-translate-y-0.5",
           // Text wrapping
           "whitespace-normal break-words [word-break:break-word] [overflow-wrap:anywhere]",
           // Alignment
           isUser ? "ml-auto" : "mr-auto",
-          // Width
-          "max-w-[85%]",
+          // Width - fit content but cap at 85%
+          "w-fit max-w-[85%]",
           // User styling - Premium dark gradient
           isUser && [
             "bg-gradient-to-br from-gray-900 to-gray-800",
