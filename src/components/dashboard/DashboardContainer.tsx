@@ -71,7 +71,7 @@ export const DashboardContainer = ({ user, isAdmin, onAdminPanelClick }: Dashboa
     selectedMode,
     auth.userProfile,
     allowPersonalization,
-    language
+    'en'
   );
 
   // Get modes (English only)
@@ -107,13 +107,6 @@ export const DashboardContainer = ({ user, isAdmin, onAdminPanelClick }: Dashboa
       return;
     }
 
-    // Detect language and auto-switch
-    if (content) {
-      const detectedLang = detectLanguage(content);
-      if (detectedLang !== language) {
-        setLanguage(detectedLang);
-      }
-    }
 
     // Upload file if present
     let attachment: FileAttachment | null = null;
