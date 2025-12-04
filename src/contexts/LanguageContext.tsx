@@ -240,6 +240,9 @@ const translations = {
     'timeout.stayLoggedIn': 'Stay Logged In',
     'timeout.logoutNow': 'Log Out Now',
     
+    // Tutorial
+    'tutorial.replay': 'Tutorial',
+    
     // Admin Panel
     'admin.panel': 'Admin Panel',
     'admin.title': 'Admin Control Center',
@@ -772,6 +775,9 @@ const translations = {
     'timeout.secondsRemaining': 'ثانية متبقية',
     'timeout.stayLoggedIn': 'البقاء متصلاً',
     'timeout.logoutNow': 'تسجيل الخروج الآن',
+    
+    // Tutorial
+    'tutorial.replay': 'الدليل التعليمي',
     
     // Admin Panel
     'admin.panel': 'لوحة الإدارة',
