@@ -13,10 +13,9 @@ interface ResponseBubble {
 interface ResponseCardProps {
   responses: ResponseBubble[];
   isMobile?: boolean;
-  eyeShiftX?: number;
 }
 
-export const ResponseCard = ({ responses, isMobile = false, eyeShiftX = 0 }: ResponseCardProps) => {
+export const ResponseCard = ({ responses, isMobile = false }: ResponseCardProps) => {
   const contentRef = useRef<HTMLDivElement>(null);
   const [isScrollable, setIsScrollable] = useState(false);
   const [isAtBottom, setIsAtBottom] = useState(true);
