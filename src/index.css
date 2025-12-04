@@ -14,6 +14,7 @@
 /* GPU acceleration for animations */
 .will-change-transform {
   will-change: transform;
+  transform: translateZ(0);
   backface-visibility: hidden;
 }
 
@@ -41,6 +42,7 @@ button, a, input, textarea, select {
 /* Sidebar performance optimization */
 [data-sidebar="sidebar"] {
   will-change: transform;
+  transform: translateZ(0);
 }
 
 /* AYN AI Business Consulting Platform Design System */
