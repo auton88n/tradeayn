@@ -1,6 +1,7 @@
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Brain, User, Copy, Check, Reply } from 'lucide-react';
+import { MessageFormatter } from '@/components/MessageFormatter';
 import { useState } from 'react';
 import type { AYNEmotion } from '@/contexts/AYNEmotionContext';
 
@@ -91,7 +92,7 @@ export const TranscriptMessage = ({
               : "bg-muted/60 backdrop-blur-sm text-foreground rounded-2xl rounded-bl-md border border-border/30"
           )}
         >
-          <p className="whitespace-pre-wrap break-words overflow-hidden">{content}</p>
+          <MessageFormatter content={content} className="text-sm prose-sm max-w-none" />
         </div>
       </div>
 
