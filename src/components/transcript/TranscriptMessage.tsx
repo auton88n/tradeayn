@@ -81,7 +81,7 @@ export const TranscriptMessage = ({
       </div>
 
       {/* Premium Message Bubble */}
-      <div className={cn("inline-block max-w-[85%]", isUser ? "ml-auto" : "mr-auto")}>
+      <div className={cn("block max-w-[85%] min-w-0 overflow-hidden", isUser ? "ml-auto" : "mr-auto")}>
         <div
           className={cn(
             "px-4 py-2.5 text-sm leading-relaxed",
@@ -91,7 +91,7 @@ export const TranscriptMessage = ({
               : "bg-muted/60 backdrop-blur-sm text-foreground rounded-2xl rounded-bl-md border border-border/30"
           )}
         >
-          <p className="whitespace-pre-wrap break-words">{content}</p>
+          <p className="whitespace-pre-wrap break-words overflow-hidden">{content}</p>
         </div>
       </div>
 

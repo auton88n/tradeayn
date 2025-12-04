@@ -113,7 +113,7 @@ const TranscriptContent = ({
     </div>
 
     {/* Messages */}
-    <ScrollArea className="flex-1 px-4" ref={scrollRef}>
+    <ScrollArea className="flex-1 px-4 overflow-x-hidden" ref={scrollRef}>
       <div className="space-y-3 pb-4">
         {filteredMessages.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 px-4 animate-fade-in">

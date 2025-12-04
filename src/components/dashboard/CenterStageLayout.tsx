@@ -585,9 +585,9 @@ export const CenterStageLayout = ({
       {isSmallScreen && (
         <div className={cn(
           "fixed bottom-32 sm:bottom-36 z-40",
-          "transition-all duration-300 ease-out",
-          sidebarOpen ? "left-[260px]" : "left-4",
-          transcriptOpen ? "right-[300px]" : "right-4"
+          "left-4 right-4",
+          "overflow-hidden",
+          "transition-all duration-300 ease-out"
         )}>
           <AnimatePresence>
             <MobileSuggestionChips
