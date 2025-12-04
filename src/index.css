@@ -1177,18 +1177,20 @@ button, a, input, textarea, select {
     }
   }
 
-  /* Tutorial highlight effect */
-  .tutorial-highlight {
-    position: relative;
-    z-index: 201;
-    animation: tutorial-pulse 2s infinite ease-in-out;
-  }
+/* Tutorial highlight effect */
+.tutorial-highlight {
+  position: relative;
+  z-index: 201 !important;
+  border-radius: 12px;
+  animation: tutorial-pulse 1.5s ease-in-out infinite;
+  box-shadow: 0 0 0 4px hsl(var(--primary) / 0.5), 0 0 20px hsl(var(--primary) / 0.3);
+}
 
-  @keyframes tutorial-pulse {
-    0%, 100% {
-      box-shadow: 0 0 0 0 hsl(var(--primary) / 0.4);
-    }
-    50% {
-      box-shadow: 0 0 0 8px hsl(var(--primary) / 0);
-    }
+@keyframes tutorial-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 4px hsl(var(--primary) / 0.5), 0 0 20px hsl(var(--primary) / 0.3);
   }
+  50% {
+    box-shadow: 0 0 0 8px hsl(var(--primary) / 0.3), 0 0 30px hsl(var(--primary) / 0.2);
+  }
+}
