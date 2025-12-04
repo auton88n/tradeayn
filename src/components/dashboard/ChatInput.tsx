@@ -174,6 +174,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
     }
   }, [handleSend]);
   const handleTextareaChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    // Value comes from RTL textarea but content is LTR
     const value = e.target.value;
     setInputMessage(value);
     setShowPlaceholder(!value);
@@ -215,7 +216,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
       <div className={cn("relative bg-background/95 backdrop-blur-xl border border-border rounded-2xl shadow-lg overflow-hidden transition-all duration-300", isDragOver && "border-primary shadow-xl", isInputFocused && "border-border/80 shadow-xl")}>
         {/* Row 1: Input area */}
         <div className="relative px-5 pt-4 pb-3">
-          <Textarea ref={textareaRef} value={inputMessage} onChange={handleTextareaChange} onKeyDown={handleKeyPress} onFocus={() => setIsInputFocused(true)} onBlur={() => setIsInputFocused(false)} disabled={isDisabled || isUploading} className={cn("w-full resize-none min-h-[52px] max-h-[200px]", "text-base md:text-lg bg-transparent", "border-0 focus-visible:ring-0 focus-visible:ring-offset-0", "text-foreground placeholder:text-muted-foreground", "disabled:opacity-50 disabled:cursor-not-allowed", "leading-relaxed", "overflow-y-auto")} style={{
+          <Textarea ref={textareaRef} value={inputMessage} onChange={handleTextareaChange} onKeyDown={handleKeyPress} onFocus={() => setIsInputFocused(true)} onBlur={() => setIsInputFocused(false)} disabled={isDisabled || isUploading} className={cn("w-full resize-none min-h-[52px] max-h-[200px]", "text-base md:text-lg bg-transparent", "border-0 focus-visible:ring-0 focus-visible:ring-offset-0", "text-foreground placeholder:text-muted-foreground", "disabled:opacity-50 disabled:cursor-not-allowed", "leading-relaxed", "overflow-y-auto", "scrollbar-left")} style={{
           paddingRight: inputMessage.trim() ? '60px' : '12px',
           paddingLeft: '12px',
           paddingTop: '12px',

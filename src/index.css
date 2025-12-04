@@ -9,6 +9,19 @@
   .shadow-inner { 
     box-shadow: inset 0 12px 30px rgba(0, 0, 0, 0.06); 
   }
+  /* Left-side scrollbar utility */
+  .scrollbar-left {
+    direction: rtl;
+  }
+  .scrollbar-left > * {
+    direction: ltr;
+  }
+  /* For textarea specifically - restore text alignment */
+  textarea.scrollbar-left {
+    direction: rtl;
+    text-align: left;
+    unicode-bidi: plaintext;
+  }
 }
 
 /* GPU acceleration for animations */
