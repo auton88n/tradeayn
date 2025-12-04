@@ -490,31 +490,57 @@ export const Hero = ({
         </motion.div>
       </div>
 
-      {/* Demo Chat Input */}
-      <motion.div initial={{
-      opacity: 0,
-      y: 20
-    }} animate={{
-      opacity: 1,
-      y: 0
-    }} transition={{
-      duration: 0.8,
-      delay: 0.6,
-      ease: [0.32, 0.72, 0, 1]
-    }} className="mt-16 w-full max-w-2xl">
-        <div className="relative bg-background/90 dark:bg-background/90 backdrop-blur-md border border-border/50 rounded-3xl shadow-xl p-3">
-          {/* Textarea */}
-          <div className="w-full relative">
-            <Textarea ref={textareaRef} value={inputMessage} onChange={handleTextareaChange} onKeyPress={handleKeyPress} onFocus={() => setIsFocused(true)} onBlur={() => setIsFocused(false)} placeholder="" rows={1} unstyled={true} className="w-full resize-none min-h-[44px] max-h-[120px] text-base bg-transparent px-2 py-2" />
+      {/* Demo Chat Input - TWO ROW LAYOUT */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        transition={{ duration: 0.8, delay: 0.6, ease: [0.32, 0.72, 0, 1] }} 
+        className="mt-16 w-full max-w-2xl"
+      >
+        <div className="relative bg-background/90 dark:bg-background/90 backdrop-blur-md border border-border/50 rounded-3xl shadow-xl overflow-hidden">
+          
+          {/* ROW 1: Input Area */}
+          <div className="relative px-5 pt-4 pb-3">
+            <Textarea 
+              ref={textareaRef} 
+              value={inputMessage} 
+              onChange={handleTextareaChange} 
+              onKeyPress={handleKeyPress} 
+              onFocus={() => setIsFocused(true)} 
+              onBlur={() => setIsFocused(false)} 
+              placeholder="" 
+              rows={1} 
+              unstyled={true} 
+              className="w-full resize-none min-h-[52px] max-h-[200px] text-lg bg-transparent pr-14" 
+            />
 
             {/* Typewriter Placeholder */}
-            {inputMessage.length === 0 && !isFocused && <div className={cn("absolute top-[10px] pointer-events-none z-10", language === 'ar' ? 'right-[8px]' : 'left-[8px]')}>
-                <TypewriterText key={`${placeholderIndex}-${language}`} text={placeholderTexts[placeholderIndex]} speed={50} className="text-muted-foreground" showCursor={true} />
-              </div>}
-          </div>
+            {inputMessage.length === 0 && !isFocused && (
+              <div className={cn("absolute top-[18px] pointer-events-none z-10", language === 'ar' ? 'right-[20px]' : 'left-[20px]')}>
+                <TypewriterText 
+                  key={`${placeholderIndex}-${language}`} 
+                  text={placeholderTexts[placeholderIndex]} 
+                  speed={50} 
+                  className="text-muted-foreground text-lg" 
+                  showCursor={true} 
+                />
+              </div>
+            )}
 
-          {/* Toolbar Row */}
-          <div className="flex items-center justify-between w-full pt-2">
+            {/* Send button - absolute positioned in corner, only shows when text exists */}
+            {inputMessage.trim() && (
+              <button 
+                onClick={handleSend}
+                className="absolute bottom-3 right-4 w-10 h-10 rounded-xl bg-gradient-to-br from-foreground to-foreground/90 text-background flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
+                title={language === 'ar' ? 'إرسال' : 'Send message'}
+              >
+                <ArrowUp className="w-5 h-5" strokeWidth={2.5} />
+              </button>
+            )}
+          </div>
+          
+          {/* ROW 2: Action Buttons - with border separator */}
+          <div className="flex items-center justify-between px-4 pb-3 pt-2 border-t border-border/50">
             {/* Left: Plus, Settings, History Buttons */}
             <div className="flex items-center gap-1">
               <button onClick={onGetStarted} className="w-10 h-10 rounded-xl border border-border/50 flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-all duration-200" title={language === 'ar' ? 'إرفاق ملف' : 'Attach file'}>
@@ -528,22 +554,15 @@ export const Hero = ({
               </button>
             </div>
 
-            {/* Right: Mode Selector + Send Button */}
-            <div className="flex items-center gap-2">
-              {/* Static Mode Selector (triggers auth on click) */}
-              <button onClick={onGetStarted} className="h-8 px-3 rounded-lg border border-border/50 flex items-center gap-1 hover:bg-muted/80 transition-all">
-                <span className="text-sm font-medium">
-                  {language === 'ar' ? 'عام' : 'General'}
-                </span>
-                <ChevronDown className="w-3 h-3 opacity-50" />
-              </button>
-
-              {/* Send Button */}
-              <button className="w-9 h-9 rounded-xl bg-gradient-to-br from-foreground to-foreground/90 text-background flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100" onClick={handleSend} disabled={!inputMessage.trim()} title={language === 'ar' ? 'إرسال' : 'Send message'}>
-                <ArrowUp className="w-5 h-5" strokeWidth={2.5} />
-              </button>
-            </div>
+            {/* Right: Mode Selector only */}
+            <button onClick={onGetStarted} className="h-8 px-3 rounded-lg border border-border/50 flex items-center gap-1 hover:bg-muted/80 transition-all">
+              <span className="text-sm font-medium">
+                {language === 'ar' ? 'عام' : 'General'}
+              </span>
+              <ChevronDown className="w-3 h-3 opacity-50" />
+            </button>
           </div>
+          
         </div>
       </motion.div>
     </section>;
