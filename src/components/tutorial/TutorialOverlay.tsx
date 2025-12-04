@@ -104,23 +104,6 @@ export const TutorialOverlay = ({
           </AnimatePresence>
         </div>
 
-        {/* Progress dots - position opposite of card */}
-        <div className={`fixed left-1/2 -translate-x-1/2 flex gap-2 z-[201] ${
-          currentStepData.position === 'top' ? 'top-48' : 'bottom-32'
-        }`}>
-          {Array.from({ length: totalSteps }).map((_, i) => (
-            <div
-              key={i}
-              className={`h-2 rounded-full transition-all duration-300 ${
-                i === currentStep 
-                  ? "bg-primary w-6" 
-                  : i < currentStep 
-                    ? "bg-primary/60 w-2" 
-                    : "bg-white/40 w-2"
-              }`}
-            />
-          ))}
-        </div>
       </motion.div>
     </AnimatePresence>
   );
