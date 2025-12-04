@@ -279,45 +279,12 @@ export const CenterStageLayout = ({
         // Emit response bubble
         const bubbleType = getBubbleType(lastMessage.content);
       
-        // Clean and split long responses into multiple bubbles
-        const maxLength = 300;
-        // Remove leading punctuation and excess whitespace
+        // Clean leading punctuation and whitespace, emit full response as single bubble
+        // ResponseCard handles scrolling for long content - no splitting needed
         const response = lastMessage.content.replace(/^[!?\s]+/, '').trim();
-        let totalBubbles = 0;
-      
-        if (response.length > maxLength) {
-          const sentences = response.match(/[^.!?]+[.!?]+/g) || [response];
-          let currentBubble = '';
-          let bubbleIndex = 0;
+        emitResponseBubble(response, bubbleType);
         
-          sentences.forEach((sentence) => {
-            if ((currentBubble + sentence).length <= maxLength) {
-              currentBubble += sentence;
-            } else {
-              if (currentBubble) {
-                const bubbleContent = currentBubble.trim();
-                setTimeout(() => {
-                  emitResponseBubble(bubbleContent, bubbleType);
-                }, bubbleIndex * 600);
-                bubbleIndex++;
-              }
-              currentBubble = sentence;
-            }
-          });
-        
-          if (currentBubble) {
-            setTimeout(() => {
-              emitResponseBubble(currentBubble.trim(), bubbleType);
-            }, bubbleIndex * 600);
-            bubbleIndex++;
-          }
-          totalBubbles = bubbleIndex;
-        } else {
-          emitResponseBubble(response, bubbleType);
-          totalBubbles = 1;
-        }
-        
-        // Show dynamic suggestions after response bubbles finish appearing
+        // Show dynamic suggestions after response bubble appears
         setTimeout(async () => {
           const suggestions = await fetchDynamicSuggestions(
             lastUserMessage || 'Hello',
@@ -325,7 +292,7 @@ export const CenterStageLayout = ({
             selectedMode
           );
           emitSuggestions(suggestions);
-        }, totalBubbles * 600 + 800);
+        }, 1400);
       }, 150); // Delay for blink animation
     }
   }, [messages, lastProcessedMessageId, setEmotion, setIsResponding, emitResponseBubble, emitSuggestions, triggerBlink, detectExcitement, fetchDynamicSuggestions, lastUserMessage, selectedMode]);
