@@ -98,7 +98,7 @@ const Index = () => {
       clearTimeout(fallbackTimeout);
       subscription.unsubscribe();
     };
-  }, [loading]);
+  }, []);
 
   if (loading) {
     return <AYNLoader />;

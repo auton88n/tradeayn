@@ -194,6 +194,7 @@ export interface UseAuthReturn {
   hasAccess: boolean;
   hasAcceptedTerms: boolean;
   isAdmin: boolean;
+  isAuthLoading: boolean;
   userProfile: UserProfile | null;
   checkAccess: () => Promise<void>;
   checkAdminRole: () => Promise<void>;
