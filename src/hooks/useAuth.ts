@@ -8,11 +8,17 @@ import type { UserProfile, UseAuthReturn } from '@/types/dashboard.types';
 
 export const useAuth = (user: User): UseAuthReturn => {
   const [hasAccess, setHasAccess] = useState(false);
-  const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const { t } = useLanguage();
+
+  // Initialize hasAcceptedTerms synchronously from localStorage
+  const termsKey = `ayn_terms_accepted_${user.id}`;
+  const [hasAcceptedTerms, setHasAcceptedTerms] = useState(() => {
+    return localStorage.getItem(termsKey) === 'true';
+  });
 
   // Check if user has active access
   const checkAccess = useCallback(async () => {
@@ -89,7 +95,6 @@ export const useAuth = (user: User): UseAuthReturn => {
 
   // Accept terms and conditions
   const acceptTerms = useCallback(() => {
-    const termsKey = `ayn_terms_accepted_${user.id}`;
     localStorage.setItem(termsKey, 'true');
     setHasAcceptedTerms(true);
 
@@ -97,23 +102,27 @@ export const useAuth = (user: User): UseAuthReturn => {
       title: t('auth.welcomeTitle'),
       description: t('auth.welcomeDesc')
     });
-  }, [user.id, toast, t]);
-
-  // Check terms acceptance on mount
-  useEffect(() => {
-    const termsKey = `ayn_terms_accepted_${user.id}`;
-    const accepted = localStorage.getItem(termsKey) === 'true';
-    setHasAcceptedTerms(accepted);
-  }, [user.id]);
+  }, [termsKey, toast, t]);
 
   // Ref to prevent multiple device tracking calls
   const hasTrackedDevice = useRef(false);
 
   // Load all auth data on mount and track device login
   useEffect(() => {
-    checkAccess();
-    checkAdminRole();
-    loadUserProfile();
+    const initAuth = async () => {
+      setIsLoading(true);
+      
+      // Run all checks in parallel
+      await Promise.all([
+        checkAccess(),
+        checkAdminRole(),
+        loadUserProfile()
+      ]);
+      
+      setIsLoading(false);
+    };
+    
+    initAuth();
     
     // Track device login only once per session
     if (!hasTrackedDevice.current) {
@@ -126,6 +135,7 @@ export const useAuth = (user: User): UseAuthReturn => {
     hasAccess,
     hasAcceptedTerms,
     isAdmin,
+    isLoading,
     userProfile,
     checkAccess,
     checkAdminRole,
