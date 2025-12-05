@@ -171,9 +171,23 @@ export const DashboardContainer = ({ user, isAdmin, onAdminPanelClick }: Dashboa
     messagesHook.setMessages([]);
   }, [chatSession, messagesHook]);
 
-  // Handle logout
+  // Handle logout with timeout to prevent hanging
   const handleLogout = useCallback(async () => {
-    await supabase.auth.signOut();
+    try {
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Sign out timeout')), 5000);
+      });
+      
+      await Promise.race([
+        supabase.auth.signOut(),
+        timeoutPromise
+      ]);
+    } catch (error) {
+      // Force local logout by clearing storage
+      localStorage.removeItem('sb-dfkoxuokfkttjhfjcecx-auth-token');
+      sessionStorage.clear();
+      window.location.href = '/';
+    }
   }, []);
 
   return (
