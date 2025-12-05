@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
+import { memo } from 'react';
 import { cn } from '@/lib/utils';
 import { hapticFeedback } from '@/lib/haptics';
 import { useSoundContext } from '@/contexts/SoundContext';
@@ -25,7 +26,7 @@ const desktopPositions = [
   { x: -400, y: 20, rotate: 0 },
 ];
 
-export const SuggestionsCard = ({ 
+const SuggestionsCardComponent = ({ 
   suggestions, 
   onSuggestionClick, 
   isMobile = false, 
@@ -68,13 +69,12 @@ export const SuggestionsCard = ({
             className={cn(
               "absolute flex items-center gap-2",
               "px-4 py-3 min-w-[200px] max-w-[280px]",
-              "bg-white/95 dark:bg-gray-900/95",
-              "backdrop-blur-xl",
-              "shadow-[0_8px_32px_rgba(0,0,0,0.08),0_2px_8px_rgba(0,0,0,0.04)]",
-              "border border-gray-200/60 dark:border-gray-700/40",
+              // Simplified: solid background instead of blur for performance
+              "bg-background border border-border/50",
+              "shadow-lg",
               "rounded-2xl",
               "text-left group cursor-pointer",
-              "hover:bg-gray-50 dark:hover:bg-gray-800/80",
+              "hover:bg-muted",
               "transition-colors duration-150"
             )}
             style={{
@@ -114,10 +114,10 @@ export const SuggestionsCard = ({
             }}
             whileTap={{ scale: 0.98 }}
           >
-            <div className="w-9 h-9 rounded-xl bg-gray-100/80 dark:bg-gray-800/60 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+            <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform duration-150">
               <span className="text-lg">{suggestion.emoji}</span>
             </div>
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-200 line-clamp-2">
+            <span className="text-sm font-medium text-foreground line-clamp-2">
               {suggestion.content}
             </span>
           </motion.button>
@@ -127,3 +127,6 @@ export const SuggestionsCard = ({
     </div>
   );
 };
+
+// Memoize to prevent unnecessary re-renders
+export const SuggestionsCard = memo(SuggestionsCardComponent);

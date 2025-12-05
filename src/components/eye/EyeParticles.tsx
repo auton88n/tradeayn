@@ -1,6 +1,8 @@
 import { motion, AnimatePresence } from 'framer-motion';
+import { memo } from 'react';
 import { cn } from '@/lib/utils';
 import { AYNEmotion, EMOTION_CONFIGS } from '@/contexts/AYNEmotionContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface EyeParticlesProps {
   emotion: AYNEmotion;
@@ -18,21 +20,24 @@ interface Particle {
   angle: number;
 }
 
-export const EyeParticles = ({ emotion, isActive, size = 260 }: EyeParticlesProps) => {
+const EyeParticlesComponent = ({ emotion, isActive, size = 260 }: EyeParticlesProps) => {
   const config = EMOTION_CONFIGS[emotion];
   const particleType = config.particleType;
+  const isMobile = useIsMobile();
 
-  if (particleType === 'none' || !isActive) return null;
+  // Disable particles on mobile for better performance
+  if (particleType === 'none' || !isActive || isMobile) return null;
 
   const radius = size * 0.6;
-  const particles: Particle[] = Array.from({ length: 8 }, (_, i) => ({
+  // Reduce particle count from 8 to 5 for performance
+  const particles: Particle[] = Array.from({ length: 5 }, (_, i) => ({
     id: i,
-    x: Math.cos((i / 8) * Math.PI * 2) * radius,
-    y: Math.sin((i / 8) * Math.PI * 2) * radius,
+    x: Math.cos((i / 5) * Math.PI * 2) * radius,
+    y: Math.sin((i / 5) * Math.PI * 2) * radius,
     size: 4 + Math.random() * 4,
-    delay: i * 0.1,
-    duration: 2 + Math.random() * 1,
-    angle: (i / 8) * 360,
+    delay: i * 0.15,
+    duration: 2.5 + Math.random() * 1,
+    angle: (i / 5) * 360,
   }));
 
   return (
@@ -51,6 +56,8 @@ export const EyeParticles = ({ emotion, isActive, size = 260 }: EyeParticlesProp
     </div>
   );
 };
+
+export const EyeParticles = memo(EyeParticlesComponent);
 
 const SparkleParticles = ({ particles, color }: { particles: Particle[]; color: string }) => (
   <>

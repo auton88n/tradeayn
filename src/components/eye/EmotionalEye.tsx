@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, memo } from 'react';
 import { motion, useMotionValue, useSpring, useTransform, useReducedMotion } from 'framer-motion';
 import { Brain } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -9,6 +9,7 @@ import { useIdleDetection } from '@/hooks/useIdleDetection';
 import { useEyeGestures } from '@/hooks/useEyeGestures';
 import { EyeParticles } from './EyeParticles';
 import { ThinkingDots } from './ThinkingDots';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface EmotionalEyeProps {
   size?: 'sm' | 'md' | 'lg';
@@ -17,7 +18,7 @@ interface EmotionalEyeProps {
   behaviorConfig?: BehaviorConfig | null; // AI-driven behavior from matcher
 }
 
-export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfig }: EmotionalEyeProps) => {
+const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorConfig }: EmotionalEyeProps) => {
   const { 
     emotionConfig,
     emotion,
@@ -41,6 +42,7 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
   const idleBlinkIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const checkInTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const prevBlinkingRef = useRef(false);
+  const isMobile = useIsMobile();
   
   // Performance optimizations
   const prefersReducedMotion = useReducedMotion();
@@ -282,12 +284,10 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
     tiltRotation.set(tilt);
   }, [emotion, getMicroParams, tiltRotation, behaviorConfig]);
 
-  // Micro-movements when idle - PAUSED when deep idle or reduced motion
+  // Micro-movements when idle - DISABLED on mobile for performance
   useEffect(() => {
-    const gazePattern = behaviorConfig?.gazePattern ?? 'follow_mouse';
-    
-    // Stop micro-movements when deep idle, reduced motion, or during actions
-    if (isUserTyping || isResponding || isAbsorbing || isDeepIdle || prefersReducedMotion) {
+    // Disable micro-movements on mobile devices for better performance
+    if (isMobile || isUserTyping || isResponding || isAbsorbing || isDeepIdle || prefersReducedMotion) {
       microX.set(0);
       microY.set(0);
       return;
@@ -295,7 +295,7 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
 
     const { range, interval } = getMicroParams();
     // Longer intervals when idle to reduce CPU
-    const adjustedInterval = interval * 1.5;
+    const adjustedInterval = interval * 2;
 
     const microMovementInterval = setInterval(() => {
       const newX = (Math.random() - 0.5) * range;
@@ -305,7 +305,7 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
     }, adjustedInterval);
 
     return () => clearInterval(microMovementInterval);
-  }, [isUserTyping, isResponding, isAbsorbing, isDeepIdle, prefersReducedMotion, microX, microY, getMicroParams, behaviorConfig?.gazePattern]);
+  }, [isMobile, isUserTyping, isResponding, isAbsorbing, isDeepIdle, prefersReducedMotion, microX, microY, getMicroParams]);
 
   const sizeClasses = {
     sm: 'w-[100px] h-[100px] md:w-[120px] md:h-[120px]',
@@ -491,3 +491,6 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
     </div>
   );
 };
+
+// Memoize the component to prevent unnecessary re-renders
+export const EmotionalEye = memo(EmotionalEyeComponent);

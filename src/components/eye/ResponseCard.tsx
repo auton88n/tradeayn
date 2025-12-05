@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useRef, useState, useEffect, useCallback, memo } from 'react';
 import { cn } from '@/lib/utils';
 import { StreamingMarkdown } from '@/components/eye/StreamingMarkdown';
 import { MessageFormatter } from '@/components/MessageFormatter';
@@ -17,7 +17,7 @@ interface ResponseCardProps {
   isMobile?: boolean;
 }
 
-export const ResponseCard = ({ responses, isMobile = false }: ResponseCardProps) => {
+const ResponseCardComponent = ({ responses, isMobile = false }: ResponseCardProps) => {
   const contentRef = useRef<HTMLDivElement>(null);
   const [isScrollable, setIsScrollable] = useState(false);
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -105,28 +105,20 @@ export const ResponseCard = ({ responses, isMobile = false }: ResponseCardProps)
         key={visibleResponses[0]?.id || 'response-card'}
         className={cn(
           "relative group flex flex-col",
-          // Responsive width and height constraints - uses min() for sidebar-aware sizing
+          // Responsive width and height constraints
           "w-fit min-w-[280px] max-w-[calc(100vw-2rem)] sm:max-w-[560px] lg:max-w-[640px]",
           "max-h-[min(280px,40vh)] mb-4",
-          // Premium futuristic glassmorphism
-          "bg-gradient-to-br from-white/90 via-white/85 to-gray-100/80",
-          "dark:from-gray-900/90 dark:via-gray-800/85 dark:to-gray-900/80",
-          "backdrop-blur-2xl",
-          // Animated glow border effect
-          "before:absolute before:inset-0 before:rounded-2xl before:p-[1px]",
-          "before:bg-gradient-to-r before:from-primary/20 before:via-purple-500/15 before:to-primary/20",
-          "before:-z-10 before:opacity-0 group-hover:before:opacity-100",
-          "before:transition-opacity before:duration-500",
-          // Multi-layer realistic shadows with smooth fade
-          "shadow-[0_2px_8px_rgba(0,0,0,0.04),0_8px_32px_rgba(0,0,0,0.08),0_16px_64px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.5)]",
-          "hover:shadow-[0_4px_12px_rgba(0,0,0,0.06),0_16px_48px_rgba(0,0,0,0.12),0_24px_80px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)]",
-          // Border with subtle glow on hover
-          "border border-gray-200/60 dark:border-gray-700/50",
-          "hover:border-primary/20 dark:hover:border-primary/30",
+          // Simplified solid background instead of glassmorphism for performance
+          "bg-background/98",
+          "dark:bg-gray-900/95",
+          // Subtle shadow
+          "shadow-lg",
+          // Border
+          "border border-border/40",
           // Hover lift effect
-          "hover:-translate-y-1",
+          "hover:-translate-y-0.5",
           // Smooth transitions
-          "transition-all duration-300 ease-out",
+          "transition-transform duration-200 ease-out",
           // Padding and rounding
           "px-5 py-4 rounded-2xl"
         )}
@@ -147,26 +139,16 @@ export const ResponseCard = ({ responses, isMobile = false }: ResponseCardProps)
           ease: [0.32, 0.72, 0, 1],
         }}
       >
-        {/* Animated accent line at top */}
-        <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-primary/40 to-transparent rounded-t-2xl group-hover:via-primary/60 transition-all duration-500" />
+        {/* Animated accent line at top - simplified */}
+        <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-primary/30 to-transparent rounded-t-2xl" />
         
-        {/* Inner highlight shine */}
-        <div className="absolute inset-x-4 top-0 h-[40%] bg-gradient-to-b from-white/30 to-transparent dark:from-white/10 rounded-t-xl pointer-events-none" />
+        {/* Inner highlight shine - removed animation */}
+        <div className="absolute inset-x-4 top-0 h-[30%] bg-gradient-to-b from-white/20 to-transparent dark:from-white/5 rounded-t-xl pointer-events-none" />
 
-        {/* Brain Logo - Top Left (subtle) */}
-        <motion.div 
-          className="absolute top-3 left-3 opacity-20 group-hover:opacity-40 transition-opacity duration-300"
-          animate={{ 
-            scale: [1, 1.05, 1],
-          }}
-          transition={{ 
-            duration: 3, 
-            repeat: Infinity, 
-            ease: "easeInOut" 
-          }}
-        >
+        {/* Brain Logo - Top Left (static for performance) */}
+        <div className="absolute top-3 left-3 opacity-20">
           <Brain className="w-5 h-5 text-primary" />
-        </motion.div>
+        </div>
 
         {/* Content area with proper scrolling */}
         <div 
@@ -270,3 +252,6 @@ export const ResponseCard = ({ responses, isMobile = false }: ResponseCardProps)
     </AnimatePresence>
   );
 };
+
+// Memoize to prevent unnecessary re-renders
+export const ResponseCard = memo(ResponseCardComponent);

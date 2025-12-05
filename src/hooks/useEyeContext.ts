@@ -103,9 +103,9 @@ export const useEyeContext = ({
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, [eyeRef]);
 
-  // Update context periodically
+  // Update context periodically - optimized to 500ms (2x/sec) instead of 200ms (5x/sec)
   useEffect(() => {
-    const updateInterval = setInterval(() => {
+    const updateContext = () => {
       const now = Date.now();
       const timeSinceLastKeystroke = now - lastKeystrokeRef.current;
       const timeSinceLastMouseMove = now - lastMouseMoveRef.current;
@@ -142,7 +142,18 @@ export const useEyeContext = ({
       if (timeSinceLastKeystroke > 5000) {
         keystrokeCountRef.current = 0;
       }
-    }, 200); // Update 5x per second
+    };
+
+    // Use requestIdleCallback when available for non-critical updates
+    const scheduleUpdate = () => {
+      if ('requestIdleCallback' in window) {
+        (window as Window & { requestIdleCallback: (cb: () => void) => number }).requestIdleCallback(updateContext, { timeout: 500 });
+      } else {
+        updateContext();
+      }
+    };
+
+    const updateInterval = setInterval(scheduleUpdate, 500); // Update 2x per second instead of 5x
 
     return () => clearInterval(updateInterval);
   }, [currentMode, isResponding, isUserTyping, messageCount]);

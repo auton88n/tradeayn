@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode, useRef } from 'react';
+import React, { createContext, useContext, useState, useCallback, ReactNode, useRef, useMemo } from 'react';
 
 export type AYNEmotion = 'calm' | 'happy' | 'excited' | 'thinking' | 'frustrated' | 'curious';
 
@@ -208,7 +208,8 @@ export const AYNEmotionProvider = ({ children }: { children: ReactNode }) => {
     }, 250);
   }, []);
 
-  const emotionConfig = EMOTION_CONFIGS[emotion];
+  // Memoize emotionConfig to prevent unnecessary re-renders
+  const emotionConfig = useMemo(() => EMOTION_CONFIGS[emotion], [emotion]);
 
   return (
     <AYNEmotionContext.Provider

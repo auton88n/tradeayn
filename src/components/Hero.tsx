@@ -159,8 +159,8 @@ export const Hero = ({
     // Initial run
     runAnimationCycle();
 
-    // Repeat every 3 seconds
-    const interval = setInterval(runAnimationCycle, 3000);
+    // Repeat every 4 seconds (slower for performance)
+    const interval = setInterval(runAnimationCycle, 4000);
     return () => clearInterval(interval);
   }, []);
 
@@ -262,7 +262,7 @@ export const Hero = ({
                 animate={{ x: cardPositions.topLeft.x, y: cardPositions.topLeft.y, opacity: 1, scale: 1 }}
                 exit={{ x: 0, y: 0, scale: 0.2, opacity: 0 }}
                 transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-                className="absolute rounded-2xl backdrop-blur-md bg-background/95 border border-border/40 shadow-lg px-2 sm:px-3 py-1.5 sm:py-2 z-20 max-w-[140px] sm:max-w-none"
+                className="absolute rounded-2xl bg-background border border-border/40 shadow-lg px-2 sm:px-3 py-1.5 sm:py-2 z-20 max-w-[140px] sm:max-w-none"
               >
                 <div className="flex items-center gap-1.5 sm:gap-2">
                   <Brain className="w-3 h-3 sm:w-4 sm:h-4 text-foreground/70 flex-shrink-0" />
@@ -281,7 +281,7 @@ export const Hero = ({
                 animate={{ x: cardPositions.middleLeft.x, y: cardPositions.middleLeft.y, opacity: 1, scale: 1 }}
                 exit={{ x: 0, y: 0, scale: 0.2, opacity: 0 }}
                 transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-                className="absolute rounded-2xl backdrop-blur-md bg-background/95 border border-border/40 shadow-lg px-2 sm:px-3 py-1.5 sm:py-2 z-20 max-w-[140px] sm:max-w-none"
+                className="absolute rounded-2xl bg-background border border-border/40 shadow-lg px-2 sm:px-3 py-1.5 sm:py-2 z-20 max-w-[140px] sm:max-w-none"
               >
                 <div className="flex items-center gap-1.5 sm:gap-2">
                   <Brain className="w-3 h-3 sm:w-4 sm:h-4 text-foreground/70 flex-shrink-0" />
@@ -300,7 +300,7 @@ export const Hero = ({
                 animate={{ x: cardPositions.bottomLeft.x, y: cardPositions.bottomLeft.y, opacity: 1, scale: 1 }}
                 exit={{ x: 0, y: 0, scale: 0.2, opacity: 0 }}
                 transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-                className="absolute rounded-2xl backdrop-blur-md bg-background/95 border border-border/40 shadow-lg px-2 sm:px-3 py-1.5 sm:py-2 z-20 max-w-[140px] sm:max-w-none"
+                className="absolute rounded-2xl bg-background border border-border/40 shadow-lg px-2 sm:px-3 py-1.5 sm:py-2 z-20 max-w-[140px] sm:max-w-none"
               >
                 <div className="flex items-center gap-1.5 sm:gap-2">
                   <Brain className="w-3 h-3 sm:w-4 sm:h-4 text-foreground/70 flex-shrink-0" />
@@ -319,7 +319,7 @@ export const Hero = ({
                 animate={{ x: cardPositions.topRight.x, y: cardPositions.topRight.y, opacity: 1, scale: 1 }}
                 exit={{ x: 0, y: 0, scale: 0.2, opacity: 0 }}
                 transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-                className="absolute rounded-2xl backdrop-blur-md bg-background/95 border border-border/40 shadow-lg px-2 sm:px-3 py-1.5 sm:py-2 z-20 max-w-[140px] sm:max-w-none"
+                className="absolute rounded-2xl bg-background border border-border/40 shadow-lg px-2 sm:px-3 py-1.5 sm:py-2 z-20 max-w-[140px] sm:max-w-none"
               >
                 <div className="flex items-center gap-1.5 sm:gap-2">
                   <Brain className="w-3 h-3 sm:w-4 sm:h-4 text-foreground/70 flex-shrink-0" />
@@ -338,7 +338,7 @@ export const Hero = ({
                 animate={{ x: cardPositions.middleRight.x, y: cardPositions.middleRight.y, opacity: 1, scale: 1 }}
                 exit={{ x: 0, y: 0, scale: 0.2, opacity: 0 }}
                 transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-                className="absolute rounded-2xl backdrop-blur-md bg-background/95 border border-border/40 shadow-lg px-2 sm:px-3 py-1.5 sm:py-2 z-20 max-w-[140px] sm:max-w-none"
+                className="absolute rounded-2xl bg-background border border-border/40 shadow-lg px-2 sm:px-3 py-1.5 sm:py-2 z-20 max-w-[140px] sm:max-w-none"
               >
                 <div className="flex items-center gap-1.5 sm:gap-2">
                   <Brain className="w-3 h-3 sm:w-4 sm:h-4 text-foreground/70 flex-shrink-0" />
@@ -357,7 +357,7 @@ export const Hero = ({
                 animate={{ x: cardPositions.bottomRight.x, y: cardPositions.bottomRight.y, opacity: 1, scale: 1 }}
                 exit={{ x: 0, y: 0, scale: 0.2, opacity: 0 }}
                 transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-                className="absolute rounded-2xl backdrop-blur-md bg-background/95 border border-border/40 shadow-lg px-2 sm:px-3 py-1.5 sm:py-2 z-20 max-w-[140px] sm:max-w-none"
+                className="absolute rounded-2xl bg-background border border-border/40 shadow-lg px-2 sm:px-3 py-1.5 sm:py-2 z-20 max-w-[140px] sm:max-w-none"
               >
                 <div className="flex items-center gap-1.5 sm:gap-2">
                   <Brain className="w-3 h-3 sm:w-4 sm:h-4 text-foreground/70 flex-shrink-0" />
