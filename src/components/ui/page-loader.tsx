@@ -3,28 +3,29 @@ import { Brain, Shield } from 'lucide-react';
 export const AYNLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
     <div className="flex flex-col items-center gap-6">
-      {/* Eye container with glow */}
-      <div className="relative">
-        {/* Outer glow ring */}
-        <div className="absolute inset-0 rounded-full bg-primary/20 blur-xl animate-pulse" />
+      {/* Eye container */}
+      <div className="relative w-24 h-24 animate-eye-breathe">
+        {/* Outer glow */}
+        <div className="absolute inset-0 rounded-full bg-primary/10 blur-xl animate-pulse" />
         
         {/* Main eye circle */}
-        <div className="relative w-24 h-24 rounded-full bg-background shadow-xl border border-border/50 flex items-center justify-center">
+        <div className="relative w-full h-full rounded-full bg-background shadow-xl">
           {/* Inner ring */}
-          <div className="absolute inset-3 rounded-full border border-border/30" />
+          <div className="absolute inset-3 rounded-full bg-background/80 shadow-inner" />
           
           {/* Emotional ring */}
           <div className="absolute inset-[15%] rounded-full bg-muted/50 animate-pulse" />
           
-          {/* Brain icon */}
-          <Brain className="w-8 h-8 text-primary animate-spin-slow" />
+          {/* Black pupil */}
+          <div className="absolute inset-[30%] rounded-full bg-foreground flex items-center justify-center">
+            {/* White brain icon */}
+            <Brain className="w-1/2 h-1/2 text-background" />
+          </div>
         </div>
       </div>
       
       {/* Loading text */}
-      <div className="text-center animate-fade-in">
-        <p className="text-muted-foreground font-medium">Loading AYN...</p>
-      </div>
+      <p className="text-muted-foreground font-medium animate-pulse">Loading AYN...</p>
     </div>
   </div>
 );
@@ -32,14 +33,17 @@ export const AYNLoader = () => (
 export const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
     <div className="flex flex-col items-center gap-4">
-      <div className="relative">
+      <div className="relative w-16 h-16 animate-eye-breathe">
         <div className="absolute inset-0 rounded-full bg-primary/10 blur-lg animate-pulse" />
-        <div className="relative w-16 h-16 rounded-full bg-background shadow-lg border border-border/50 flex items-center justify-center">
-          <div className="absolute inset-2 rounded-full border border-border/20" />
-          <Brain className="w-6 h-6 text-primary animate-spin-slow" />
+        <div className="relative w-full h-full rounded-full bg-background shadow-lg">
+          <div className="absolute inset-2 rounded-full bg-background/80 shadow-inner" />
+          <div className="absolute inset-[18%] rounded-full bg-muted/40 animate-pulse" />
+          <div className="absolute inset-[32%] rounded-full bg-foreground flex items-center justify-center">
+            <Brain className="w-1/2 h-1/2 text-background" />
+          </div>
         </div>
       </div>
-      <p className="text-muted-foreground text-sm">Loading...</p>
+      <p className="text-muted-foreground text-sm animate-pulse">Loading...</p>
     </div>
   </div>
 );
@@ -47,15 +51,17 @@ export const PageLoader = () => (
 export const DashboardLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
     <div className="flex flex-col items-center gap-6">
-      <div className="relative">
-        <div className="absolute inset-0 rounded-full bg-primary/20 blur-xl animate-pulse" />
-        <div className="relative w-20 h-20 rounded-full bg-background shadow-xl border border-border/50 flex items-center justify-center">
-          <div className="absolute inset-3 rounded-full border border-border/30" />
-          <div className="absolute inset-[18%] rounded-full bg-muted/40 animate-pulse" />
-          <Brain className="w-7 h-7 text-primary animate-spin-slow" />
+      <div className="relative w-20 h-20 animate-eye-breathe">
+        <div className="absolute inset-0 rounded-full bg-primary/15 blur-xl animate-pulse" />
+        <div className="relative w-full h-full rounded-full bg-background shadow-xl">
+          <div className="absolute inset-3 rounded-full bg-background/80 shadow-inner" />
+          <div className="absolute inset-[18%] rounded-full bg-muted/50 animate-pulse" />
+          <div className="absolute inset-[32%] rounded-full bg-foreground flex items-center justify-center">
+            <Brain className="w-1/2 h-1/2 text-background" />
+          </div>
         </div>
       </div>
-      <p className="text-muted-foreground font-medium">Loading Dashboard...</p>
+      <p className="text-muted-foreground font-medium animate-pulse">Loading Dashboard...</p>
     </div>
   </div>
 );
@@ -63,15 +69,17 @@ export const DashboardLoader = () => (
 export const AdminLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
     <div className="flex flex-col items-center gap-6">
-      <div className="relative">
+      <div className="relative w-20 h-20 animate-eye-breathe">
         <div className="absolute inset-0 rounded-full bg-purple-500/20 blur-xl animate-pulse" />
-        <div className="relative w-20 h-20 rounded-full bg-background shadow-xl border border-border/50 flex items-center justify-center">
-          <div className="absolute inset-3 rounded-full border border-purple-500/30" />
-          <div className="absolute inset-[18%] rounded-full bg-purple-500/10 animate-pulse" />
-          <Shield className="w-7 h-7 text-purple-500 animate-spin-slow" />
+        <div className="relative w-full h-full rounded-full bg-background shadow-xl">
+          <div className="absolute inset-3 rounded-full bg-background/80 shadow-inner" />
+          <div className="absolute inset-[18%] rounded-full bg-purple-500/20 animate-pulse" />
+          <div className="absolute inset-[32%] rounded-full bg-foreground flex items-center justify-center">
+            <Shield className="w-1/2 h-1/2 text-background" />
+          </div>
         </div>
       </div>
-      <p className="text-muted-foreground font-medium">Loading Admin Panel...</p>
+      <p className="text-muted-foreground font-medium animate-pulse">Loading Admin Panel...</p>
     </div>
   </div>
 );
