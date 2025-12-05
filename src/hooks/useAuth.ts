@@ -185,6 +185,11 @@ export const useAuth = (user: User): UseAuthReturn => {
       hasTrackedDevice.current = true;
       setTimeout(() => trackDeviceLogin(user.id), 0);
     }
+    
+    // Cleanup: Reset ref for StrictMode re-mount
+    return () => {
+      isInitialized.current = false;
+    };
   }, [user.id, checkAccess, checkAdminRole, loadUserProfile, checkTermsAcceptance]);
 
   return {
