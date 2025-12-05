@@ -18,7 +18,6 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import influencerSitePreview from '@/assets/influencer-site-preview.png';
-
 const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [demoMessage, setDemoMessage] = useState('');
@@ -45,7 +44,6 @@ const LandingPage = () => {
   const handleMouseLeave = () => {
     // Don't collapse if a dropdown is open
     if (isDropdownOpen) return;
-    
     collapseTimeoutRef.current = setTimeout(() => {
       setIsMenuExpanded(false);
     }, 300);
@@ -64,7 +62,9 @@ const LandingPage = () => {
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+      element.scrollIntoView({
+        behavior: 'smooth'
+      });
       setIsMenuExpanded(false);
     }
   };
@@ -185,7 +185,6 @@ const LandingPage = () => {
       </div>;
   };
   const [activeServiceIndex, setActiveServiceIndex] = useState(0);
-  
   const services = [{
     number: '01',
     slug: 'influencer-sites',
@@ -205,82 +204,97 @@ const LandingPage = () => {
     description: language === 'ar' ? 'وفّر أكثر من 15 ساعة أسبوعياً عبر أتمتة المهام المتكررة وربط أنظمتك ببعضها.' : 'Save 15+ hours per week by automating repetitive tasks and connecting your business systems.',
     features: language === 'ar' ? ['سير عمل مصمم لاحتياجاتك', 'بدون برمجة أو تعقيد', 'نتائج فورية ملموسة'] : ['Custom workflows', 'No-code setup', 'Instant time savings']
   }];
-  
   const activeService = services[activeServiceIndex];
   return <div className="min-h-screen bg-background scroll-smooth">
       {/* Vertical Dropdown Navigation */}
       <nav className="fixed top-4 md:top-6 left-4 md:left-6 z-50 animate-fade-in">
         <div className="relative">
           {/* Logo Pill - Always visible, acts as trigger */}
-          <motion.div
-            ref={menuRef}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-            className="flex items-center gap-2 px-3 py-2.5 bg-card/80 backdrop-blur-xl border border-border rounded-full shadow-2xl cursor-pointer"
-          >
+          <motion.div ref={menuRef} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} className="flex items-center gap-2 px-3 py-2.5 bg-card/80 backdrop-blur-xl border border-border rounded-full shadow-2xl cursor-pointer">
             <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-foreground flex items-center justify-center">
               <Brain className="w-4 h-4 md:w-5 md:h-5 text-background" />
             </div>
             <AnimatePresence mode="popLayout">
-              {isMenuExpanded && (
-                <motion.span
-                  initial={{ width: 0, opacity: 0 }}
-                  animate={{ width: 'auto', opacity: 1 }}
-                  exit={{ width: 0, opacity: 0 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                  className="text-lg md:text-xl font-bold tracking-tight overflow-hidden whitespace-nowrap"
-                >
+              {isMenuExpanded && <motion.span initial={{
+              width: 0,
+              opacity: 0
+            }} animate={{
+              width: 'auto',
+              opacity: 1
+            }} exit={{
+              width: 0,
+              opacity: 0
+            }} transition={{
+              type: "spring",
+              stiffness: 400,
+              damping: 30
+            }} className="text-lg md:text-xl font-bold tracking-tight overflow-hidden whitespace-nowrap">
                   AYN
-                </motion.span>
-              )}
+                </motion.span>}
             </AnimatePresence>
-            <motion.div
-              animate={{ rotate: isMenuExpanded ? 180 : 0 }}
-              transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            >
+            <motion.div animate={{
+            rotate: isMenuExpanded ? 180 : 0
+          }} transition={{
+            type: "spring",
+            stiffness: 400,
+            damping: 30
+          }}>
               <ChevronDown className="w-4 h-4 text-muted-foreground" />
             </motion.div>
           </motion.div>
 
           {/* Dropdown Panel */}
           <AnimatePresence>
-            {isMenuExpanded && (
-              <motion.div
-                initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                className="absolute top-full left-0 mt-2 min-w-[200px] bg-card/95 backdrop-blur-xl border border-border rounded-2xl shadow-2xl overflow-hidden"
-                onMouseEnter={handleMouseEnter}
-                onMouseLeave={handleMouseLeave}
-              >
+            {isMenuExpanded && <motion.div initial={{
+            opacity: 0,
+            y: -10,
+            scale: 0.95
+          }} animate={{
+            opacity: 1,
+            y: 0,
+            scale: 1
+          }} exit={{
+            opacity: 0,
+            y: -10,
+            scale: 0.95
+          }} transition={{
+            type: "spring",
+            stiffness: 400,
+            damping: 25
+          }} className="absolute top-full left-0 mt-2 min-w-[200px] bg-card/95 backdrop-blur-xl border border-border rounded-2xl shadow-2xl overflow-hidden" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
                 {/* Navigation Links */}
                 <div className="p-2">
-                  <motion.button
-                    initial={{ x: -20, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 0.05 }}
-                    onClick={() => scrollToSection('about')}
-                    className="w-full text-left px-4 py-2.5 rounded-xl hover:bg-muted transition-colors text-sm font-medium"
-                  >
+                  <motion.button initial={{
+                x: -20,
+                opacity: 0
+              }} animate={{
+                x: 0,
+                opacity: 1
+              }} transition={{
+                delay: 0.05
+              }} onClick={() => scrollToSection('about')} className="w-full text-left px-4 py-2.5 rounded-xl hover:bg-muted transition-colors text-sm font-medium">
                     {language === 'ar' ? 'عن AYN' : 'About'}
                   </motion.button>
-                  <motion.button
-                    initial={{ x: -20, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 0.1 }}
-                    onClick={() => scrollToSection('services')}
-                    className="w-full text-left px-4 py-2.5 rounded-xl hover:bg-muted transition-colors text-sm font-medium"
-                  >
+                  <motion.button initial={{
+                x: -20,
+                opacity: 0
+              }} animate={{
+                x: 0,
+                opacity: 1
+              }} transition={{
+                delay: 0.1
+              }} onClick={() => scrollToSection('services')} className="w-full text-left px-4 py-2.5 rounded-xl hover:bg-muted transition-colors text-sm font-medium">
                     {language === 'ar' ? 'خدماتنا' : 'Services'}
                   </motion.button>
-                  <motion.button
-                    initial={{ x: -20, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 0.15 }}
-                    onClick={() => scrollToSection('contact')}
-                    className="w-full text-left px-4 py-2.5 rounded-xl hover:bg-muted transition-colors text-sm font-medium"
-                  >
+                  <motion.button initial={{
+                x: -20,
+                opacity: 0
+              }} animate={{
+                x: 0,
+                opacity: 1
+              }} transition={{
+                delay: 0.15
+              }} onClick={() => scrollToSection('contact')} className="w-full text-left px-4 py-2.5 rounded-xl hover:bg-muted transition-colors text-sm font-medium">
                     {language === 'ar' ? 'تواصل معنا' : 'Contact'}
                   </motion.button>
                 </div>
@@ -289,12 +303,15 @@ const LandingPage = () => {
                 <div className="h-px bg-border mx-2" />
 
                 {/* Settings Row */}
-                <motion.div
-                  initial={{ x: -20, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  transition={{ delay: 0.2 }}
-                  className="p-2 flex items-center justify-between px-4"
-                >
+                <motion.div initial={{
+              x: -20,
+              opacity: 0
+            }} animate={{
+              x: 0,
+              opacity: 1
+            }} transition={{
+              delay: 0.2
+            }} className="p-2 flex items-center justify-between px-4">
                   <LanguageSwitcher onOpenChange={handleDropdownOpenChange} />
                   <ThemeToggle />
                 </motion.div>
@@ -303,24 +320,23 @@ const LandingPage = () => {
                 <div className="h-px bg-border mx-2" />
 
                 {/* CTA Button */}
-                <motion.div
-                  initial={{ x: -20, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  transition={{ delay: 0.25 }}
-                  className="p-3"
-                >
-                  <Button
-                    onClick={() => {
-                      setIsMenuExpanded(false);
-                      setShowAuthModal(true);
-                    }}
-                    className="w-full rounded-xl"
-                  >
+                <motion.div initial={{
+              x: -20,
+              opacity: 0
+            }} animate={{
+              x: 0,
+              opacity: 1
+            }} transition={{
+              delay: 0.25
+            }} className="p-3">
+                  <Button onClick={() => {
+                setIsMenuExpanded(false);
+                setShowAuthModal(true);
+              }} className="w-full rounded-xl">
                     {t('nav.getStarted')}
                   </Button>
                 </motion.div>
-              </motion.div>
-            )}
+              </motion.div>}
           </AnimatePresence>
         </div>
       </nav>
@@ -341,16 +357,10 @@ const LandingPage = () => {
               </div>
               
               <div className="flex flex-col gap-4">
-                <button
-                  onClick={() => scrollToSection('about')}
-                  className="text-left py-2 text-sm font-medium hover:text-foreground/80 transition-colors"
-                >
+                <button onClick={() => scrollToSection('about')} className="text-left py-2 text-sm font-medium hover:text-foreground/80 transition-colors">
                   {language === 'ar' ? 'عن AYN' : 'About'}
                 </button>
-                <button
-                  onClick={() => scrollToSection('services')}
-                  className="text-left py-2 text-sm font-medium hover:text-foreground/80 transition-colors"
-                >
+                <button onClick={() => scrollToSection('services')} className="text-left py-2 text-sm font-medium hover:text-foreground/80 transition-colors">
                   {language === 'ar' ? 'خدماتنا' : 'Services'}
                 </button>
                 
@@ -459,14 +469,19 @@ const LandingPage = () => {
           {/* Single Service Showcase */}
           <ScrollReveal>
             <AnimatePresence mode="wait">
-              <motion.div
-                key={activeServiceIndex}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-                className="group"
-              >
+              <motion.div key={activeServiceIndex} initial={{
+              opacity: 0,
+              y: 20
+            }} animate={{
+              opacity: 1,
+              y: 0
+            }} exit={{
+              opacity: 0,
+              y: -20
+            }} transition={{
+              duration: 0.4,
+              ease: [0.32, 0.72, 0, 1]
+            }} className="group">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center">
                   {/* Text content */}
                   <div className="space-y-5 md:space-y-6 order-2 md:order-1">
@@ -478,12 +493,10 @@ const LandingPage = () => {
                     
                     {/* Features list */}
                     <ul className="space-y-3 pt-2 md:pt-4">
-                      {activeService.features.map((feature, i) => (
-                        <li key={i} className="flex items-center gap-3">
+                      {activeService.features.map((feature, i) => <li key={i} className="flex items-center gap-3">
                           <CheckCircle className="w-5 h-5 text-foreground flex-shrink-0" />
                           <span className="text-sm md:text-base text-foreground/80">{feature}</span>
-                        </li>
-                      ))}
+                        </li>)}
                     </ul>
 
                     <div className="pt-4 md:pt-6">
@@ -498,25 +511,20 @@ const LandingPage = () => {
 
                   {/* 3D Floating Image */}
                   <div className="order-1 md:order-2 perspective-1000 relative">
-                    <motion.div 
-                      className="relative rounded-2xl md:rounded-3xl overflow-hidden"
-                      whileHover={{ 
-                        rotateY: 0, 
-                        rotateX: 0,
-                        scale: 1.02,
-                      }}
-                      transition={{ type: "spring", stiffness: 200, damping: 20 }}
-                      style={{ 
-                        transformStyle: "preserve-3d",
-                        transform: "perspective(1000px) rotateY(-6deg) rotateX(4deg)",
-                        boxShadow: "0 25px 80px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05)"
-                      }}
-                    >
-                      <img 
-                        src={influencerSitePreview}
-                        alt="Premium Influencer Website Preview"
-                        className="w-full h-auto"
-                      />
+                    <motion.div className="relative rounded-2xl md:rounded-3xl overflow-hidden" whileHover={{
+                    rotateY: 0,
+                    rotateX: 0,
+                    scale: 1.02
+                  }} transition={{
+                    type: "spring",
+                    stiffness: 200,
+                    damping: 20
+                  }} style={{
+                    transformStyle: "preserve-3d",
+                    transform: "perspective(1000px) rotateY(-6deg) rotateX(4deg)",
+                    boxShadow: "0 25px 80px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05)"
+                  }}>
+                      <img alt="Premium Influencer Website Preview" className="w-full h-auto" src="/lovable-uploads/3ea89149-d723-445b-ade7-3eeba6957115.png" />
                     </motion.div>
                     
                     {/* Shadow underneath for 3D depth */}
@@ -529,19 +537,7 @@ const LandingPage = () => {
 
           {/* Navigation Dots */}
           <div className="flex gap-3 justify-center mt-10 md:mt-16">
-            {services.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setActiveServiceIndex(i)}
-                className={cn(
-                  "w-3 h-3 rounded-full transition-all duration-300",
-                  i === activeServiceIndex 
-                    ? "bg-foreground scale-125" 
-                    : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
-                )}
-                aria-label={`View service ${i + 1}`}
-              />
-            ))}
+            {services.map((_, i) => <button key={i} onClick={() => setActiveServiceIndex(i)} className={cn("w-3 h-3 rounded-full transition-all duration-300", i === activeServiceIndex ? "bg-foreground scale-125" : "bg-muted-foreground/30 hover:bg-muted-foreground/50")} aria-label={`View service ${i + 1}`} />)}
           </div>
         </div>
       </section>
