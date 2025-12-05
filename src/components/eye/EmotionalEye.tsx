@@ -394,11 +394,11 @@ const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorCon
           }}
         >
           {/* Inner shadow ring - matching landing page dark mode */}
-          <div className="absolute inset-2 rounded-full bg-neutral-100 dark:bg-neutral-900 shadow-[inset_0_4px_16px_rgba(0,0,0,0.08)] dark:shadow-[inset_0_4px_16px_rgba(0,0,0,0.3)]" />
+          <div className="absolute inset-2 rounded-full shadow-[inset_0_4px_16px_rgba(0,0,0,0.08)] dark:shadow-[inset_0_4px_16px_rgba(0,0,0,0.3)]" />
 
           {/* Emotional color ring - changes color based on AYN's state */}
           <motion.div 
-            className="absolute inset-[8%] rounded-full bg-neutral-200 dark:bg-neutral-800"
+            className="absolute inset-[15%] rounded-full bg-neutral-200 dark:bg-neutral-800"
             animate={{ 
               // Only animate scale when actively pulsing, no infinite animations
               scale: isPulsing ? [1, 1.08, 1] : 1,
