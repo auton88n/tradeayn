@@ -17,9 +17,7 @@ import { z } from 'zod';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import influencerSitePreview from '@/assets/influencer-site-preview.png';
-import aiAgentsPreview from '@/assets/ai-agents-preview.png';
-import automationPreview from '@/assets/automation-preview.png';
+import { PhoneMockup, AIBrainMockup, AutomationMockup } from './3d';
 const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [demoMessage, setDemoMessage] = useState('');
@@ -511,22 +509,26 @@ const LandingPage = () => {
                     </div>
                   </div>
 
-                  {/* 3D Floating Image */}
+                  {/* 3D Interactive Mockup */}
                   <div className="order-1 md:order-2 perspective-1000 relative">
-                    <motion.div className="relative rounded-2xl md:rounded-3xl overflow-hidden" whileHover={{
-                    rotateY: 0,
-                    rotateX: 0,
-                    scale: 1.02
-                  }} transition={{
-                    type: "spring",
-                    stiffness: 200,
-                    damping: 20
-                  }} style={{
-                    transformStyle: "preserve-3d",
-                    transform: "perspective(1000px) rotateY(-6deg) rotateX(4deg)",
-                    boxShadow: "0 25px 80px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05)"
-                  }}>
-                      
+                    <motion.div 
+                      className="relative rounded-2xl md:rounded-3xl overflow-hidden aspect-[4/3] bg-background/50"
+                      whileHover={{
+                        scale: 1.02
+                      }} 
+                      transition={{
+                        type: "spring",
+                        stiffness: 200,
+                        damping: 20
+                      }} 
+                      style={{
+                        boxShadow: "0 25px 80px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05)"
+                      }}
+                    >
+                      {/* 3D Scene based on active service */}
+                      {activeServiceIndex === 0 && <PhoneMockup />}
+                      {activeServiceIndex === 1 && <AIBrainMockup />}
+                      {activeServiceIndex === 2 && <AutomationMockup />}
                       
                       {/* Powered by AYN Badge */}
                       <div className="absolute bottom-4 right-4 z-10 flex items-center gap-2 bg-black/70 backdrop-blur-sm rounded-full px-3 py-1.5 border border-white/10 shadow-lg">
