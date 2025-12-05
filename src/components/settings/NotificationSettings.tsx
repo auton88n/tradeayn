@@ -3,6 +3,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useUserSettings } from '@/hooks/useUserSettings';
+import { useSoundContextOptional } from '@/contexts/SoundContext';
 import { Loader2 } from 'lucide-react';
 export const NotificationSettings = () => {
   const {
@@ -14,6 +15,13 @@ export const NotificationSettings = () => {
     updating,
     updateSettings
   } = useUserSettings();
+  const soundContext = useSoundContextOptional();
+
+  const handleSoundToggle = (checked: boolean) => {
+    updateSettings({ in_app_sounds: checked });
+    // Also update SoundContext for immediate effect
+    soundContext?.setEnabled(checked);
+  };
   if (loading || !settings) {
     return <div className="flex items-center justify-center p-8">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -73,9 +81,11 @@ export const NotificationSettings = () => {
                 {t('settings.soundsDesc')}
               </p>
             </div>
-            <Switch checked={settings.in_app_sounds} onCheckedChange={checked => updateSettings({
-            in_app_sounds: checked
-          })} disabled={updating} />
+            <Switch 
+              checked={settings.in_app_sounds} 
+              onCheckedChange={handleSoundToggle} 
+              disabled={updating} 
+            />
           </div>
 
           <div className="flex items-center justify-between">
