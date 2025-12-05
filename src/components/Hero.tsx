@@ -31,60 +31,60 @@ export const Hero = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const previousCardRef = useRef<number | null>(null);
 
-  // Responsive card positions
+  // Responsive card positions - pushed further out to avoid overlap
   const getCardPositions = () => {
     if (isMobile) {
       return {
         topLeft: {
-          x: -80,
-          y: -55
+          x: -120,
+          y: -70
         },
         middleLeft: {
-          x: -95,
+          x: -140,
           y: 0
         },
         bottomLeft: {
-          x: -80,
-          y: 55
+          x: -120,
+          y: 70
         },
         topRight: {
-          x: 80,
-          y: -55
+          x: 120,
+          y: -70
         },
         middleRight: {
-          x: 95,
+          x: 140,
           y: 0
         },
         bottomRight: {
-          x: 80,
-          y: 55
+          x: 120,
+          y: 70
         }
       };
     }
     return {
       topLeft: {
-        x: -160,
-        y: -100
+        x: -180,
+        y: -110
       },
       middleLeft: {
-        x: -190,
+        x: -210,
         y: 0
       },
       bottomLeft: {
-        x: -160,
-        y: 100
+        x: -180,
+        y: 110
       },
       topRight: {
-        x: 160,
-        y: -100
+        x: 180,
+        y: -110
       },
       middleRight: {
-        x: 190,
+        x: 210,
         y: 0
       },
       bottomRight: {
-        x: 160,
-        y: 100
+        x: 180,
+        y: 110
       }
     };
   };
@@ -297,11 +297,11 @@ export const Hero = ({
                 animate={{ x: cardPositions.topLeft.x, y: cardPositions.topLeft.y, opacity: 1, scale: 1 }}
                 exit={{ x: 0, y: 0, scale: 0.2, opacity: 0 }}
                 transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-                className="absolute w-auto max-w-[160px] sm:max-w-[190px] rounded-2xl backdrop-blur-md bg-background/90 border border-border/30 shadow-lg p-2 sm:p-3 z-20"
+                className="absolute rounded-2xl backdrop-blur-md bg-background/95 border border-border/40 shadow-lg px-3 py-2 z-20"
               >
-                <div className="flex items-start gap-1.5 sm:gap-2">
-                  <Brain className="w-3 h-3 sm:w-4 sm:h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
-                  <span className="text-[10px] sm:text-xs md:text-sm font-medium text-foreground whitespace-nowrap">{CARDS[0]}</span>
+                <div className="flex items-center gap-2">
+                  <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0" />
+                  <span className="text-xs sm:text-sm font-medium text-foreground whitespace-nowrap">{CARDS[0]}</span>
                 </div>
               </motion.div>
             )}
@@ -316,11 +316,11 @@ export const Hero = ({
                 animate={{ x: cardPositions.middleLeft.x, y: cardPositions.middleLeft.y, opacity: 1, scale: 1 }}
                 exit={{ x: 0, y: 0, scale: 0.2, opacity: 0 }}
                 transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-                className="absolute w-auto max-w-[160px] sm:max-w-[200px] rounded-2xl backdrop-blur-md bg-background/90 border border-border/30 shadow-lg p-2 sm:p-3 z-20"
+                className="absolute rounded-2xl backdrop-blur-md bg-background/95 border border-border/40 shadow-lg px-3 py-2 z-20"
               >
-                <div className="flex items-start gap-1.5 sm:gap-2">
-                  <Brain className="w-3 h-3 sm:w-4 sm:h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
-                  <span className="text-[10px] sm:text-xs md:text-sm font-medium text-foreground whitespace-nowrap">{CARDS[1]}</span>
+                <div className="flex items-center gap-2">
+                  <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0" />
+                  <span className="text-xs sm:text-sm font-medium text-foreground whitespace-nowrap">{CARDS[1]}</span>
                 </div>
               </motion.div>
             )}
@@ -335,11 +335,11 @@ export const Hero = ({
                 animate={{ x: cardPositions.bottomLeft.x, y: cardPositions.bottomLeft.y, opacity: 1, scale: 1 }}
                 exit={{ x: 0, y: 0, scale: 0.2, opacity: 0 }}
                 transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-                className="absolute w-auto max-w-[160px] sm:max-w-[190px] rounded-2xl backdrop-blur-md bg-background/90 border border-border/30 shadow-lg p-2 sm:p-3 z-20"
+                className="absolute rounded-2xl backdrop-blur-md bg-background/95 border border-border/40 shadow-lg px-3 py-2 z-20"
               >
-                <div className="flex items-start gap-1.5 sm:gap-2">
-                  <Brain className="w-3 h-3 sm:w-4 sm:h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
-                  <span className="text-[10px] sm:text-xs md:text-sm font-medium text-foreground whitespace-nowrap">{CARDS[2]}</span>
+                <div className="flex items-center gap-2">
+                  <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0" />
+                  <span className="text-xs sm:text-sm font-medium text-foreground whitespace-nowrap">{CARDS[2]}</span>
                 </div>
               </motion.div>
             )}
@@ -354,11 +354,11 @@ export const Hero = ({
                 animate={{ x: cardPositions.topRight.x, y: cardPositions.topRight.y, opacity: 1, scale: 1 }}
                 exit={{ x: 0, y: 0, scale: 0.2, opacity: 0 }}
                 transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-                className="absolute w-auto max-w-[160px] sm:max-w-[190px] rounded-2xl backdrop-blur-md bg-background/90 border border-border/30 shadow-lg p-2 sm:p-3 z-20"
+                className="absolute rounded-2xl backdrop-blur-md bg-background/95 border border-border/40 shadow-lg px-3 py-2 z-20"
               >
-                <div className="flex items-start gap-1.5 sm:gap-2">
-                  <Brain className="w-3 h-3 sm:w-4 sm:h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
-                  <span className="text-[10px] sm:text-xs md:text-sm font-medium text-foreground whitespace-nowrap">{CARDS[3]}</span>
+                <div className="flex items-center gap-2">
+                  <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0" />
+                  <span className="text-xs sm:text-sm font-medium text-foreground whitespace-nowrap">{CARDS[3]}</span>
                 </div>
               </motion.div>
             )}
@@ -373,11 +373,11 @@ export const Hero = ({
                 animate={{ x: cardPositions.middleRight.x, y: cardPositions.middleRight.y, opacity: 1, scale: 1 }}
                 exit={{ x: 0, y: 0, scale: 0.2, opacity: 0 }}
                 transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-                className="absolute w-auto max-w-[180px] sm:max-w-[200px] rounded-2xl backdrop-blur-md bg-background/90 border border-border/30 shadow-lg p-2 sm:p-3 z-20"
+                className="absolute rounded-2xl backdrop-blur-md bg-background/95 border border-border/40 shadow-lg px-3 py-2 z-20"
               >
-                <div className="flex items-start gap-1.5 sm:gap-2">
-                  <Brain className="w-3 h-3 sm:w-4 sm:h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
-                  <span className="text-[10px] sm:text-xs md:text-sm font-medium text-foreground whitespace-nowrap">{CARDS[4]}</span>
+                <div className="flex items-center gap-2">
+                  <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0" />
+                  <span className="text-xs sm:text-sm font-medium text-foreground whitespace-nowrap">{CARDS[4]}</span>
                 </div>
               </motion.div>
             )}
@@ -392,11 +392,11 @@ export const Hero = ({
                 animate={{ x: cardPositions.bottomRight.x, y: cardPositions.bottomRight.y, opacity: 1, scale: 1 }}
                 exit={{ x: 0, y: 0, scale: 0.2, opacity: 0 }}
                 transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-                className="absolute w-auto max-w-[160px] sm:max-w-[190px] rounded-2xl backdrop-blur-md bg-background/90 border border-border/30 shadow-lg p-2 sm:p-3 z-20"
+                className="absolute rounded-2xl backdrop-blur-md bg-background/95 border border-border/40 shadow-lg px-3 py-2 z-20"
               >
-                <div className="flex items-start gap-1.5 sm:gap-2">
-                  <Brain className="w-3 h-3 sm:w-4 sm:h-4 text-foreground/70 flex-shrink-0 mt-0.5" />
-                  <span className="text-[10px] sm:text-xs md:text-sm font-medium text-foreground whitespace-nowrap">{CARDS[5]}</span>
+                <div className="flex items-center gap-2">
+                  <Brain className="w-4 h-4 text-foreground/70 flex-shrink-0" />
+                  <span className="text-xs sm:text-sm font-medium text-foreground whitespace-nowrap">{CARDS[5]}</span>
                 </div>
               </motion.div>
             )}
