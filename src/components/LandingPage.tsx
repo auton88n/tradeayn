@@ -16,6 +16,8 @@ import { Hero } from './Hero';
 import { z } from 'zod';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Link } from 'react-router-dom';
+
 const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [demoMessage, setDemoMessage] = useState('');
@@ -181,22 +183,29 @@ const LandingPage = () => {
         {children}
       </div>;
   };
+  const [activeServiceIndex, setActiveServiceIndex] = useState(0);
+  
   const services = [{
     number: '01',
+    slug: 'influencer-sites',
     title: language === 'ar' ? 'مواقع فاخرة للمؤثرين' : 'Premium Influencer Sites',
     description: language === 'ar' ? 'موقع إلكتروني احترافي يعكس هويتك ويجذب فرص التعاون والشراكات.' : 'Luxury websites custom-built to showcase your personal brand and attract collaboration opportunities.',
     features: language === 'ar' ? ['تصميم حصري يليق بعلامتك', 'معرض أعمال تفاعلي', 'محسّن لجذب العملاء'] : ['Custom luxury design', 'Interactive portfolio', 'Conversion optimized']
   }, {
     number: '02',
+    slug: 'ai-agents',
     title: language === 'ar' ? 'مساعد ذكي لعملك' : 'Custom AI Agents',
     description: language === 'ar' ? 'مساعد ذكي يعمل على مدار الساعة، مدرّب على بيانات شركتك لخدمة عملائك وتبسيط عملياتك.' : '24/7 intelligent assistants trained on your business data to automate customer support and operations.',
     features: language === 'ar' ? ['يفهم العربية والإنجليزية بطلاقة', 'يتكامل مع أنظمتك الحالية', 'يتطور ويتعلم باستمرار'] : ['Natural language understanding', 'Integrates with existing systems', 'Continuous learning']
   }, {
     number: '03',
+    slug: 'automation',
     title: language === 'ar' ? 'أتمتة المهام الروتينية' : 'Process Automation',
     description: language === 'ar' ? 'وفّر أكثر من 15 ساعة أسبوعياً عبر أتمتة المهام المتكررة وربط أنظمتك ببعضها.' : 'Save 15+ hours per week by automating repetitive tasks and connecting your business systems.',
     features: language === 'ar' ? ['سير عمل مصمم لاحتياجاتك', 'بدون برمجة أو تعقيد', 'نتائج فورية ملموسة'] : ['Custom workflows', 'No-code setup', 'Instant time savings']
   }];
+  
+  const activeService = services[activeServiceIndex];
   return <div className="min-h-screen bg-background scroll-smooth">
       {/* Vertical Dropdown Navigation */}
       <nav className="fixed top-4 md:top-6 left-4 md:left-6 z-50 animate-fade-in">
@@ -431,12 +440,12 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Services Section - Magazine Editorial Layout */}
+      {/* Services Section - Single Service Showcase */}
       <section id="services" className="py-16 md:py-32 px-4 md:px-6">
         <div className="container mx-auto max-w-6xl">
           {/* Section header */}
           <ScrollReveal>
-            <div className="text-center mb-12 md:mb-24">
+            <div className="text-center mb-12 md:mb-16">
               <span className="text-sm font-mono text-muted-foreground tracking-wider uppercase mb-4 block">
                 {language === 'ar' ? 'خدماتنا' : 'What We Do Best'}
               </span>
@@ -446,44 +455,72 @@ const LandingPage = () => {
             </div>
           </ScrollReveal>
 
-          {/* Service cards - Floating, borderless */}
-          <div className="space-y-16 md:space-y-32">
-            {services.map((service, index) => <ScrollReveal key={index} delay={index * 0.2}>
-                <div className="group">
-                  <div className={cn("grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 items-center", index % 2 === 1 && "md:grid-flow-dense")}>
-                    {/* Text content */}
-                    <div className={cn("space-y-4 md:space-y-6", index % 2 === 1 && "md:col-start-2")}>
-                      <span className="text-sm font-mono text-muted-foreground">{service.number}</span>
-                      <h3 className="text-2xl md:text-4xl lg:text-5xl font-bold leading-tight">{service.title}</h3>
-                      <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
-                        {service.description}
-                      </p>
-                      
-                      {/* Features list */}
-                      <ul className="space-y-2 md:space-y-3 pt-2 md:pt-4">
-                        {service.features.map((feature, i) => <li key={i} className="flex items-center gap-2 md:gap-3">
-                            <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-foreground flex-shrink-0" />
-                            <span className="text-sm md:text-base text-foreground/80">{feature}</span>
-                          </li>)}
-                      </ul>
+          {/* Single Service Showcase */}
+          <ScrollReveal>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeServiceIndex}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
+                className="group"
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center">
+                  {/* Text content */}
+                  <div className="space-y-5 md:space-y-6 order-2 md:order-1">
+                    <span className="text-sm font-mono text-muted-foreground">{activeService.number}</span>
+                    <h3 className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight font-serif">{activeService.title}</h3>
+                    <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
+                      {activeService.description}
+                    </p>
+                    
+                    {/* Features list */}
+                    <ul className="space-y-3 pt-2 md:pt-4">
+                      {activeService.features.map((feature, i) => (
+                        <li key={i} className="flex items-center gap-3">
+                          <CheckCircle className="w-5 h-5 text-foreground flex-shrink-0" />
+                          <span className="text-sm md:text-base text-foreground/80">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
 
-                      <div className="pt-4 md:pt-6">
-                        <Button onClick={() => setShowAuthModal(true)} variant="outline" className="group/btn">
+                    <div className="pt-4 md:pt-6">
+                      <Link to={`/services/${activeService.slug}`}>
+                        <Button variant="outline" className="group/btn">
                           {language === 'ar' ? 'اكتشف المزيد' : 'Learn More'}
                           <ArrowRight className="ml-2 w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
                         </Button>
-                      </div>
+                      </Link>
                     </div>
+                  </div>
 
-                    {/* Visual placeholder */}
-                    <div className={cn("aspect-square rounded-2xl md:rounded-3xl bg-muted/50 border border-border hover-glow transition-all duration-500", index % 2 === 1 && "md:col-start-1 md:row-start-1")}>
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Brain className="w-12 h-12 md:w-16 md:h-16 text-muted-foreground/30" />
-                      </div>
+                  {/* Visual placeholder */}
+                  <div className="aspect-square rounded-2xl md:rounded-3xl bg-muted/30 border border-border overflow-hidden order-1 md:order-2 hover-glow transition-all duration-500">
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted/50 to-muted/20">
+                      <Brain className="w-16 h-16 md:w-24 md:h-24 text-muted-foreground/20" />
                     </div>
                   </div>
                 </div>
-              </ScrollReveal>)}
+              </motion.div>
+            </AnimatePresence>
+          </ScrollReveal>
+
+          {/* Navigation Dots */}
+          <div className="flex gap-3 justify-center mt-10 md:mt-16">
+            {services.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setActiveServiceIndex(i)}
+                className={cn(
+                  "w-3 h-3 rounded-full transition-all duration-300",
+                  i === activeServiceIndex 
+                    ? "bg-foreground scale-125" 
+                    : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
+                )}
+                aria-label={`View service ${i + 1}`}
+              />
+            ))}
           </div>
         </div>
       </section>
