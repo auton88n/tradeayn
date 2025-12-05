@@ -15,31 +15,57 @@ const Index = () => {
   const loadingResolved = useRef(false);
 
   useEffect(() => {
-    // Timeout after 10 seconds if auth doesn't respond
+    // Timeout after 8 seconds if auth doesn't respond
     const timeoutId = setTimeout(() => {
       if (!loadingResolved.current) {
-        setHasTimeout(true);
+        console.log('Auth timeout - showing landing page');
+        setHasTimeout(false); // Don't show error, just show landing
         setLoading(false);
       }
-    }, 10000);
+    }, 8000);
 
-    // Set up auth state listener
+    // Check for existing session first (faster)
+    const initAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Auth error:', error);
+        }
+        
+        if (!loadingResolved.current) {
+          loadingResolved.current = true;
+          setSession(session);
+          setUser(session?.user ?? null);
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error('Auth init error:', err);
+        if (!loadingResolved.current) {
+          loadingResolved.current = true;
+          setLoading(false);
+        }
+      }
+    };
+
+    initAuth();
+
+    // Set up auth state listener for subsequent changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        loadingResolved.current = true;
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
+        // Only handle auth changes after initial load
+        if (loadingResolved.current) {
+          setSession(session);
+          setUser(session?.user ?? null);
+        } else {
+          // Also resolve initial loading if auth state fires first
+          loadingResolved.current = true;
+          setSession(session);
+          setUser(session?.user ?? null);
+          setLoading(false);
+        }
       }
     );
-
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      loadingResolved.current = true;
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
 
     return () => {
       clearTimeout(timeoutId);
