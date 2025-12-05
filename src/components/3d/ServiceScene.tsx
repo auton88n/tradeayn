@@ -1,27 +1,73 @@
 import { Canvas } from '@react-three/fiber';
-import { Environment, PerspectiveCamera } from '@react-three/drei';
+import { Environment, PerspectiveCamera, ContactShadows } from '@react-three/drei';
+import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import { Suspense, ReactNode } from 'react';
 
 interface ServiceSceneProps {
   children: ReactNode;
   cameraPosition?: [number, number, number];
+  showShadows?: boolean;
 }
 
-const ServiceScene = ({ children, cameraPosition = [0, 0, 5] }: ServiceSceneProps) => {
+const ServiceScene = ({ 
+  children, 
+  cameraPosition = [0, 0, 5],
+  showShadows = true 
+}: ServiceSceneProps) => {
   return (
     <div className="w-full h-full min-h-[300px] md:min-h-[400px]">
       <Canvas
         dpr={[1, 2]}
-        gl={{ antialias: true, alpha: true }}
+        gl={{ 
+          antialias: true, 
+          alpha: true,
+          powerPreference: 'high-performance'
+        }}
         style={{ background: 'transparent' }}
       >
         <Suspense fallback={null}>
-          <PerspectiveCamera makeDefault position={cameraPosition} fov={45} />
-          <ambientLight intensity={0.4} />
-          <directionalLight position={[5, 5, 5]} intensity={0.6} />
-          <pointLight position={[-5, -5, 5]} intensity={0.3} color="#8b5cf6" />
+          <PerspectiveCamera makeDefault position={cameraPosition} fov={40} />
+          
+          {/* Premium lighting setup */}
+          <ambientLight intensity={0.3} />
+          <directionalLight 
+            position={[5, 5, 5]} 
+            intensity={0.8} 
+            castShadow
+          />
+          <directionalLight 
+            position={[-5, 3, 2]} 
+            intensity={0.4} 
+            color="#e0e7ff"
+          />
+          <pointLight position={[0, -3, 3]} intensity={0.3} color="#fef3c7" />
+          
           {children}
-          <Environment preset="city" />
+          
+          {/* HDR Environment for realistic reflections */}
+          <Environment preset="studio" />
+          
+          {/* Contact shadows for grounding */}
+          {showShadows && (
+            <ContactShadows 
+              position={[0, -2.5, 0]} 
+              opacity={0.4} 
+              scale={10} 
+              blur={2.5}
+              far={4}
+            />
+          )}
+          
+          {/* Post-processing effects */}
+          <EffectComposer>
+            <Bloom 
+              luminanceThreshold={0.8}
+              luminanceSmoothing={0.9}
+              intensity={0.6}
+              radius={0.8}
+            />
+            <Vignette eskil={false} offset={0.1} darkness={0.3} />
+          </EffectComposer>
         </Suspense>
       </Canvas>
     </div>
