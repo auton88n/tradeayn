@@ -444,14 +444,14 @@ const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorCon
             </defs>
 
             {/* Sclera subtle */}
-            <circle cx="50" cy="50" r="48" fill="url(#sclera-gradient)" opacity="0.06" />
+            <circle cx="50" cy="50" r="48" fill="url(#sclera-gradient)" opacity="0.03" />
 
-            {/* Solid black pupil */}
+            {/* Solid black pupil - always black regardless of theme */}
             <circle 
               cx="50" 
               cy="50" 
               r={irisRadius}
-              fill="hsl(var(--foreground))"
+              fill="#000000"
               style={{
                 transition: isAbsorbing 
                   ? "r 0.15s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
@@ -481,7 +481,7 @@ const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorCon
               <Brain 
                 className="w-full h-full" 
                 style={{ 
-                  color: emotion === 'calm' ? 'hsl(var(--background))' : emotionConfig.color,
+                  color: emotion === 'calm' ? '#FFFFFF' : emotionConfig.color,
                   opacity: 0.9,
                   transition: 'color 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)',
                   filter: emotion !== 'calm' ? `drop-shadow(0 0 8px ${emotionConfig.color}40)` : 'none'
