@@ -323,12 +323,18 @@ export const Sidebar = ({
                               className="ml-2"
                             />
                           )}
-                          <SidebarMenuButton 
+                          <div 
                             onClick={() => !showChatSelection && onLoadChat(chat)} 
-                            tooltip={undefined}
-                            title=""
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                if (!showChatSelection) onLoadChat(chat);
+                              }
+                            }}
                             className={cn(
-                              "flex-1 h-auto py-3.5 px-3 rounded-xl overflow-hidden",
+                              "flex-1 h-auto py-3.5 px-3 rounded-xl overflow-hidden cursor-pointer",
                               "hover:bg-muted/50 hover:shadow-sm",
                               "border border-transparent hover:border-border/40",
                               "active:scale-[0.98]",
@@ -376,7 +382,7 @@ export const Sidebar = ({
                                 </p>
                               </div>
                             </div>
-                          </SidebarMenuButton>
+                          </div>
                         </div>
                       </SidebarMenuItem>
                     );
