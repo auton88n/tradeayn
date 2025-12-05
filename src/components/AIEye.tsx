@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { motion, useMotionValue, useTransform, useSpring } from 'framer-motion';
+import { Brain } from 'lucide-react';
 
 export const AIEye = () => {
   const mouseX = useMotionValue(0);
@@ -40,12 +41,37 @@ export const AIEye = () => {
             style={{ x: smoothX, y: smoothY }}
             className="absolute inset-0 flex items-center justify-center"
           >
-            {/* Iris */}
-            <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-neutral-800 to-black dark:from-neutral-200 dark:to-white shadow-lg" />
+            {/* SVG with pupil and brain - matching EmotionalEye */}
+            <svg 
+              viewBox="0 0 100 100" 
+              className="w-[70%] h-[70%]"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              {/* Solid black pupil */}
+              <circle 
+                cx="50" 
+                cy="50" 
+                r="32"
+                fill="#000000"
+              />
+              
+              {/* Brain icon */}
+              <foreignObject 
+                x={50 - 32 * 0.6} 
+                y={50 - 32 * 0.6} 
+                width={32 * 1.2} 
+                height={32 * 1.2}
+              >
+                <Brain 
+                  className="w-full h-full" 
+                  style={{ 
+                    color: '#FFFFFF',
+                    opacity: 0.9
+                  }} 
+                />
+              </foreignObject>
+            </svg>
           </motion.div>
-
-          {/* Single highlight reflection - top left */}
-          <div className="absolute top-6 left-8 md:top-8 md:left-10 lg:top-10 lg:left-12 w-3 h-3 md:w-4 md:h-4 rounded-full bg-white/60 dark:bg-white/40" />
         </div>
       </div>
     </div>
