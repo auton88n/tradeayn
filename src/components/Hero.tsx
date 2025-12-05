@@ -205,9 +205,14 @@ export const Hero = ({
       duration: 0.8,
       ease: [0.32, 0.72, 0, 1]
     }} className="w-full max-w-4xl text-center mb-4 md:mb-6">
-        <h1 className="font-display text-5xl sm:text-6xl md:text-8xl lg:text-[10rem] font-bold tracking-[-0.02em] text-foreground mb-2 md:mb-3">
+        <motion.h1 
+          initial={{ opacity: 0, y: 30, filter: 'blur(10px)', scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, filter: 'blur(0px)', scale: 1 }}
+          transition={{ duration: 1, delay: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
+          className="font-display text-5xl sm:text-6xl md:text-8xl lg:text-[10rem] font-bold tracking-[-0.02em] text-foreground mb-2 md:mb-3"
+        >
           {language === 'ar' ? 'تعرّف على AYN' : 'Meet AYN'}
-        </h1>
+        </motion.h1>
         <motion.p 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
