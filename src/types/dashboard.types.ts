@@ -252,6 +252,7 @@ export interface SidebarProps {
   userAvatar?: string;
   isTyping: boolean;
   hasAccess: boolean;
+  isAuthLoading?: boolean;
   selectedMode: AIMode;
   modes: AIModeConfig[];
   recentChats: ChatHistory[];

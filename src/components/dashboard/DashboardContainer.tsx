@@ -356,6 +356,7 @@ const DashboardContent = ({
           userAvatar={auth.userProfile?.avatar_url}
           isTyping={messagesHook.isTyping}
           hasAccess={auth.hasAccess}
+          isAuthLoading={auth.isAuthLoading}
           selectedMode={selectedMode}
           modes={modes}
           recentChats={chatSession.recentChats}
