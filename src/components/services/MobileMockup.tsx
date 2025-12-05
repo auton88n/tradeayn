@@ -23,16 +23,9 @@ const MobileMockup = () => {
         }} whileInView={{
           y: 0,
           opacity: 1
-        }} animate={{
-          y: [0, -8, 0]
         }} transition={{
           duration: 0.6,
-          ease: [0.32, 0.72, 0, 1],
-          y: {
-            duration: 4,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }
+          ease: [0.32, 0.72, 0, 1]
         }} viewport={{
           once: true
         }}>
@@ -193,9 +186,9 @@ const MobileMockup = () => {
           </div>
         </motion.div>
 
-        {/* Instagram Card - Top Right Overlapping */}
+        {/* Instagram Card - Top Right */}
         <motion.div 
-          className="absolute -top-4 -right-32 lg:-right-48 bg-neutral-900/95 backdrop-blur-sm shadow-2xl rounded-2xl p-4 border border-neutral-800 z-20 cursor-pointer"
+          className="absolute top-8 -right-40 lg:-right-56 bg-neutral-900/95 backdrop-blur-sm shadow-2xl rounded-2xl p-4 border border-neutral-800 z-20 cursor-pointer"
           initial={{ scale: 0.8, opacity: 0, x: 20 }}
           whileInView={{ scale: 1, opacity: 1, x: 0 }}
           whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
@@ -232,9 +225,9 @@ const MobileMockup = () => {
           </div>
         </motion.div>
 
-        {/* Engagement Card - Right Middle Overlapping */}
+        {/* Engagement Card - Bottom Right */}
         <motion.div 
-          className="absolute top-36 -right-8 bg-neutral-900/95 backdrop-blur-sm shadow-xl rounded-xl p-3 border border-neutral-800 z-20 cursor-pointer"
+          className="absolute bottom-32 -right-20 lg:-right-28 bg-neutral-900/95 backdrop-blur-sm shadow-xl rounded-xl p-3 border border-neutral-800 z-20 cursor-pointer"
           initial={{ scale: 0.8, opacity: 0 }}
           whileInView={{ scale: 1, opacity: 1 }}
           whileHover={{ scale: 1.08, transition: { duration: 0.2 } }}
@@ -257,9 +250,9 @@ const MobileMockup = () => {
           </div>
         </motion.div>
 
-        {/* Top Engagement Badge - Bottom Overlapping */}
+        {/* Top Engagement Badge - Bottom Center */}
         <motion.div 
-          className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-neutral-900/95 backdrop-blur-sm shadow-xl rounded-full px-5 py-2.5 border border-neutral-800 flex items-center gap-2 z-20 cursor-pointer"
+          className="absolute -bottom-14 left-1/2 -translate-x-1/2 bg-neutral-900/95 backdrop-blur-sm shadow-xl rounded-full px-5 py-2.5 border border-neutral-800 flex items-center gap-2 z-20 cursor-pointer"
           initial={{ scale: 0.8, opacity: 0, y: 20 }}
           whileInView={{ scale: 1, opacity: 1, y: 0 }}
           whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
@@ -270,9 +263,9 @@ const MobileMockup = () => {
           <p className="text-[11px] text-neutral-300 whitespace-nowrap">Top 5% Engagement Rate in Fashion Niche</p>
         </motion.div>
 
-        {/* TikTok Card - Left Top */}
+        {/* TikTok Card - Top Left */}
         <motion.div 
-          className="absolute -top-8 -left-32 lg:-left-48 bg-neutral-900/95 backdrop-blur-sm shadow-2xl rounded-2xl p-4 border border-neutral-800 z-20 hidden md:block cursor-pointer"
+          className="absolute -top-12 -left-40 lg:-left-56 bg-neutral-900/95 backdrop-blur-sm shadow-2xl rounded-2xl p-4 border border-neutral-800 z-20 hidden md:block cursor-pointer"
           initial={{ scale: 0.8, opacity: 0, x: -20 }}
           whileInView={{ scale: 1, opacity: 1, x: 0 }}
           whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
@@ -311,9 +304,9 @@ const MobileMockup = () => {
           </div>
         </motion.div>
 
-        {/* Demographics Card - Left Bottom */}
+        {/* Demographics Card - Bottom Left */}
         <motion.div 
-          className="absolute bottom-24 -left-16 lg:-left-40 bg-neutral-900/95 backdrop-blur-sm shadow-xl rounded-2xl p-4 border border-neutral-800 z-20 hidden lg:block cursor-pointer"
+          className="absolute bottom-8 -left-32 lg:-left-48 bg-neutral-900/95 backdrop-blur-sm shadow-xl rounded-2xl p-4 border border-neutral-800 z-20 hidden lg:block cursor-pointer"
           initial={{ scale: 0.8, opacity: 0, x: -20 }}
           whileInView={{ scale: 1, opacity: 1, x: 0 }}
           whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
