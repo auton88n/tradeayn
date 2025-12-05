@@ -377,7 +377,7 @@ export const CenterStageLayout = ({
         className={cn(
           "flex-1 flex relative",
           "items-center justify-center",
-          "pb-40 md:pb-36", // Space for fixed input
+          "pb-28 md:pb-24", // Space for compact input
           "transition-all duration-300 ease-out",
           "overflow-hidden"
         )}
@@ -385,7 +385,7 @@ export const CenterStageLayout = ({
         {/* Unified layout for all screen sizes */}
         <motion.div 
           className={cn(
-            "flex flex-col items-center gap-6 w-full px-4",
+            "flex flex-col items-center gap-4 w-full px-4",
             // Dynamic max-width based on sidebar states
             sidebarOpen && transcriptOpen && "lg:max-w-[calc(100vw-42rem)]",
             sidebarOpen && !transcriptOpen && "lg:max-w-[calc(100vw-22rem)]",
@@ -432,7 +432,7 @@ animate={{
           </motion.div>
           
           {/* Response card directly below eye - constrained height prevents pushing input */}
-          <div className="px-6 py-4 w-full flex justify-center max-h-[45vh] overflow-hidden">
+          <div className="px-4 py-2 w-full flex justify-center max-h-[35vh] overflow-hidden">
             <ResponseCard 
               responses={responseBubbles} 
               isMobile={isMobile}
