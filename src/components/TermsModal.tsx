@@ -24,7 +24,7 @@ export const TermsModal = ({ open, onAccept }: TermsModalProps) => {
 
   return (
     <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent className="glass sm:max-w-2xl max-h-[80vh]">
+      <DialogContent className="glass sm:max-w-2xl max-h-[80vh] z-[9999]">
         <DialogHeader>
           <DialogTitle className="text-center gradient-text-hero text-2xl flex items-center justify-center gap-3">
             <Shield className="w-6 h-6" />

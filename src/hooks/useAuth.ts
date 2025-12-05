@@ -122,24 +122,60 @@ export const useAuth = (user: User): UseAuthReturn => {
     }
   }, [user.id, handleAuthFailure, resetAuthFailures]);
 
-  // Accept terms and conditions
-  const acceptTerms = useCallback(() => {
-    const termsKey = `ayn_terms_accepted_${user.id}`;
-    localStorage.setItem(termsKey, 'true');
-    setHasAcceptedTerms(true);
+  // Check terms acceptance from database
+  const checkTermsAcceptance = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('user_settings')
+        .select('has_accepted_terms')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-    toast({
-      title: t('auth.welcomeTitle'),
-      description: t('auth.welcomeDesc')
-    });
+      if (error) {
+        handleAuthFailure(error, 'checkTermsAcceptance');
+        return;
+      }
+
+      resetAuthFailures();
+      setHasAcceptedTerms(data?.has_accepted_terms ?? false);
+    } catch (error) {
+      handleAuthFailure(error as { code?: string; message?: string }, 'checkTermsAcceptance');
+    }
+  }, [user.id, handleAuthFailure, resetAuthFailures]);
+
+  // Accept terms and conditions - save to database
+  const acceptTerms = useCallback(async () => {
+    try {
+      // Upsert user_settings with has_accepted_terms = true
+      const { error } = await supabase
+        .from('user_settings')
+        .upsert({
+          user_id: user.id,
+          has_accepted_terms: true,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id'
+        });
+
+      if (error) {
+        console.error('Error saving terms acceptance:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to save terms acceptance. Please try again.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      setHasAcceptedTerms(true);
+      toast({
+        title: t('auth.welcomeTitle'),
+        description: t('auth.welcomeDesc')
+      });
+    } catch (error) {
+      console.error('Error accepting terms:', error);
+    }
   }, [user.id, toast, t]);
-
-  // Check terms acceptance on mount
-  useEffect(() => {
-    const termsKey = `ayn_terms_accepted_${user.id}`;
-    const accepted = localStorage.getItem(termsKey) === 'true';
-    setHasAcceptedTerms(accepted);
-  }, [user.id]);
 
   // Ref to prevent multiple device tracking calls
   const hasTrackedDevice = useRef(false);
@@ -149,13 +185,14 @@ export const useAuth = (user: User): UseAuthReturn => {
     checkAccess();
     checkAdminRole();
     loadUserProfile();
+    checkTermsAcceptance();
     
     // Track device login only once per session
     if (!hasTrackedDevice.current) {
       hasTrackedDevice.current = true;
       trackDeviceLogin(user.id);
     }
-  }, [checkAccess, checkAdminRole, loadUserProfile, user.id]);
+  }, [checkAccess, checkAdminRole, loadUserProfile, checkTermsAcceptance, user.id]);
 
   return {
     hasAccess,

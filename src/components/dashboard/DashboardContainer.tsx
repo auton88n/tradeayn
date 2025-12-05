@@ -15,7 +15,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { AIMode, FileAttachment, AIModeConfig, ChatHistory } from '@/types/dashboard.types';
 
 // Import custom hooks
-import { useAuth } from '@/hooks/useAuth';
+import type { UseAuthReturn } from '@/types/dashboard.types';
 import { useChatSession } from '@/hooks/useChatSession';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { useMessages } from '@/hooks/useMessages';
@@ -28,6 +28,7 @@ import { MessageSquare, TrendingUp, Search, FileText, Eye, Hammer, Menu, X, Brai
 
 interface DashboardContainerProps {
   user: User;
+  auth: UseAuthReturn;
   isAdmin?: boolean;
   onAdminPanelClick?: () => void;
 }
@@ -50,12 +51,11 @@ const getModes = (): AIModeConfig[] => [
   // { name: 'Civil Engineering', translatedName: t('modes.civilEngineering'), description: 'Engineering calculations', icon: Hammer, color: 'text-teal-500', webhookUrl: '' },
 ];
 
-export const DashboardContainer = ({ user, isAdmin, onAdminPanelClick }: DashboardContainerProps) => {
+export const DashboardContainer = ({ user, auth, isAdmin, onAdminPanelClick }: DashboardContainerProps) => {
   const { toast } = useToast();
   const { language, setLanguage } = useLanguage();
   
   // Custom hooks
-  const auth = useAuth(user);
   const chatSession = useChatSession(user.id);
   const fileUpload = useFileUpload(user.id);
   
@@ -232,7 +232,7 @@ const DashboardContent = ({
   onAdminPanelClick
 }: {
   user: User;
-  auth: ReturnType<typeof useAuth>;
+  auth: UseAuthReturn;
   chatSession: ReturnType<typeof useChatSession>;
   fileUpload: ReturnType<typeof useFileUpload>;
   messagesHook: ReturnType<typeof useMessages>;
