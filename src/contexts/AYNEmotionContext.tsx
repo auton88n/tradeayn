@@ -103,6 +103,9 @@ interface AYNEmotionContextType {
   // Pulse effect for new messages
   isPulsing: boolean;
   triggerPulse: () => void;
+  // Wink interaction
+  isWinking: boolean;
+  triggerWink: () => void;
 }
 
 const AYNEmotionContext = createContext<AYNEmotionContextType | undefined>(undefined);
@@ -117,9 +120,11 @@ export const AYNEmotionProvider = ({ children }: { children: ReactNode }) => {
   const [lastActivityTime, setLastActivityTime] = useState(Date.now());
   const [isSurprised, setIsSurprised] = useState(false);
   const [isPulsing, setIsPulsing] = useState(false);
+  const [isWinking, setIsWinking] = useState(false);
   const blinkTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const surpriseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pulseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const winkTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const setEmotion = useCallback((newEmotion: AYNEmotion) => {
     setEmotionState(newEmotion);
@@ -192,6 +197,17 @@ export const AYNEmotionProvider = ({ children }: { children: ReactNode }) => {
     }, 400);
   }, []);
 
+  // Trigger wink (asymmetric blink)
+  const triggerWink = useCallback(() => {
+    if (winkTimeoutRef.current) {
+      clearTimeout(winkTimeoutRef.current);
+    }
+    setIsWinking(true);
+    winkTimeoutRef.current = setTimeout(() => {
+      setIsWinking(false);
+    }, 250);
+  }, []);
+
   const emotionConfig = EMOTION_CONFIGS[emotion];
 
   return (
@@ -218,6 +234,8 @@ export const AYNEmotionProvider = ({ children }: { children: ReactNode }) => {
         detectExcitement,
         isPulsing,
         triggerPulse,
+        isWinking,
+        triggerWink,
       }}
     >
       {children}
