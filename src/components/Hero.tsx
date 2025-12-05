@@ -36,55 +36,55 @@ export const Hero = ({
     if (isMobile) {
       return {
         topLeft: {
-          x: -100,
-          y: -70
+          x: -80,
+          y: -55
         },
         middleLeft: {
-          x: -120,
+          x: -95,
           y: 0
         },
         bottomLeft: {
-          x: -100,
-          y: 70
+          x: -80,
+          y: 55
         },
         topRight: {
-          x: 100,
-          y: -70
+          x: 80,
+          y: -55
         },
         middleRight: {
-          x: 120,
+          x: 95,
           y: 0
         },
         bottomRight: {
-          x: 100,
-          y: 70
+          x: 80,
+          y: 55
         }
       };
     }
     return {
       topLeft: {
-        x: -180,
-        y: -120
+        x: -160,
+        y: -100
       },
       middleLeft: {
-        x: -220,
+        x: -190,
         y: 0
       },
       bottomLeft: {
-        x: -180,
-        y: 120
+        x: -160,
+        y: 100
       },
       topRight: {
-        x: 180,
-        y: -120
+        x: 160,
+        y: -100
       },
       middleRight: {
-        x: 220,
+        x: 190,
         y: 0
       },
       bottomRight: {
-        x: 180,
-        y: 120
+        x: 160,
+        y: 100
       }
     };
   };
@@ -225,7 +225,7 @@ export const Hero = ({
     textarea.style.height = newHeight + 'px';
   };
   const CARDS = language === 'ar' ? CARDS_AR : CARDS_EN;
-  return <section ref={containerRef} className="relative min-h-screen flex flex-col items-center pt-16 md:pt-20 pb-8 px-4 md:px-12 lg:px-24 overflow-hidden" aria-label="Hero">
+  return <section ref={containerRef} className="relative min-h-[100dvh] flex flex-col items-center justify-between pt-20 md:pt-24 pb-6 md:pb-8 px-4 md:px-12 lg:px-24 overflow-hidden" aria-label="Hero">
       {/* Subtle vignette / soft gradient background */}
       <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-background via-background to-muted/10" />
 
@@ -240,7 +240,7 @@ export const Hero = ({
       duration: 0.8,
       ease: [0.32, 0.72, 0, 1]
     }} className="w-full max-w-4xl text-center mb-4 md:mb-6">
-        <h1 className="font-serif text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight text-foreground mb-2 md:mb-3">
+        <h1 className="font-serif text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight text-foreground mb-2 md:mb-3">
           {language === 'ar' ? 'تعرّف على AYN' : 'Meet AYN'}
         </h1>
         <motion.p 
@@ -256,9 +256,9 @@ export const Hero = ({
       </motion.div>
 
       {/* Central area with eye and cards */}
-      <div className="relative w-full max-w-5xl mt-0 md:mt-2 flex items-center justify-center">
+      <div className="relative w-full max-w-5xl flex-1 flex items-center justify-center">
         {/* ring / subtle light behind the eye */}
-        <div className="absolute w-[280px] h-[280px] md:w-[420px] md:h-[420px] lg:w-[520px] lg:h-[520px] xl:w-[640px] xl:h-[640px] rounded-full -z-10 pointer-events-none
+        <div className="absolute w-[200px] h-[200px] sm:w-[280px] sm:h-[280px] md:w-[360px] md:h-[360px] lg:w-[480px] lg:h-[480px] rounded-full -z-10 pointer-events-none
                         bg-gradient-to-b from-transparent via-muted/30 to-transparent" />
 
         {/* Floating particles - reduced to 3 for performance */}
@@ -286,8 +286,8 @@ export const Hero = ({
           />
         </div>
 
-        {/* Cards - optimized animations without blur filters */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none will-change-transform">
+        {/* Cards - optimized animations without blur filters - hidden on very small screens */}
+        <div className="absolute inset-0 hidden sm:flex items-center justify-center pointer-events-none will-change-transform">
           {/* Top-left card */}
           <AnimatePresence mode="popLayout">
             {visibleCardIndex === 0 && (
@@ -411,7 +411,7 @@ export const Hero = ({
               animate={{ scale: 1.1, opacity: 0.4 }}
               exit={{ scale: 1.3, opacity: 0 }}
               transition={{ duration: 0.25, ease: "easeOut" }}
-              className="absolute w-[140px] h-[140px] md:w-[180px] md:h-[180px] lg:w-[220px] lg:h-[220px] rounded-full bg-foreground/8 pointer-events-none z-10" 
+              className="absolute w-[100px] h-[100px] sm:w-[140px] sm:h-[140px] md:w-[160px] md:h-[160px] lg:w-[200px] lg:h-[200px] rounded-full bg-foreground/8 pointer-events-none z-10" 
             />
           )}
         </AnimatePresence>
@@ -424,7 +424,7 @@ export const Hero = ({
               initial={{ scale: 0.6, opacity: 0.3 }}
               animate={{ scale: 2, opacity: 0 }}
               transition={{ duration: 0.6, ease: "easeOut" }}
-              className="absolute w-[160px] h-[160px] md:w-[220px] md:h-[220px] lg:w-[260px] lg:h-[260px] rounded-full border border-foreground/10 pointer-events-none" 
+              className="absolute w-[120px] h-[120px] sm:w-[160px] sm:h-[160px] md:w-[200px] md:h-[200px] lg:w-[240px] lg:h-[240px] rounded-full border border-foreground/10 pointer-events-none" 
             />
           )}
         </AnimatePresence>
@@ -441,7 +441,7 @@ export const Hero = ({
         >
           {/* Outer casing - simplified hover effects */}
           <motion.div 
-            className="relative w-[160px] h-[160px] md:w-[220px] md:h-[220px] lg:w-[260px] lg:h-[260px] rounded-full bg-background flex items-center justify-center shadow-xl group-hover:shadow-2xl group-hover:scale-[1.03] overflow-hidden transition-shadow duration-300" 
+            className="relative w-[120px] h-[120px] sm:w-[160px] sm:h-[160px] md:w-[200px] md:h-[200px] lg:w-[240px] lg:h-[240px] rounded-full bg-background flex items-center justify-center shadow-xl group-hover:shadow-2xl group-hover:scale-[1.03] overflow-hidden transition-shadow duration-300" 
             animate={{ scale: [1, 1.01, 1] }}
             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
           >

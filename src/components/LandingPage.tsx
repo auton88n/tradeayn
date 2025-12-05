@@ -197,7 +197,7 @@ const LandingPage = () => {
     description: language === 'ar' ? 'وفّر أكثر من 15 ساعة أسبوعياً عبر أتمتة المهام المتكررة وربط أنظمتك ببعضها.' : 'Save 15+ hours per week by automating repetitive tasks and connecting your business systems.',
     features: language === 'ar' ? ['سير عمل مصمم لاحتياجاتك', 'بدون برمجة أو تعقيد', 'نتائج فورية ملموسة'] : ['Custom workflows', 'No-code setup', 'Instant time savings']
   }];
-  return <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background scroll-smooth">
       {/* Vertical Dropdown Navigation */}
       <nav className="fixed top-4 md:top-6 left-4 md:left-6 z-50 animate-fade-in">
         <div className="relative">
