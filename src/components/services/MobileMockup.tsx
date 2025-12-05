@@ -14,18 +14,31 @@ const MobileMockup = () => {
   const navDots = [0, 1, 2, 3, 4];
   return <div className="relative flex justify-center items-center py-8">
       {/* iPhone Frame */}
-      <motion.div className="relative w-[220px] h-[440px] bg-neutral-900 rounded-[40px] p-2 shadow-2xl" initial={{
-      y: 20,
-      opacity: 0
-    }} whileInView={{
-      y: 0,
-      opacity: 1
-    }} transition={{
-      duration: 0.6,
-      ease: [0.32, 0.72, 0, 1]
-    }} viewport={{
-      once: true
-    }}>
+      <motion.div 
+        className="relative w-[220px] h-[440px] bg-neutral-900 rounded-[40px] p-2 shadow-2xl" 
+        initial={{
+          y: 20,
+          opacity: 0
+        }} 
+        whileInView={{
+          y: 0,
+          opacity: 1
+        }} 
+        animate={{
+          y: [0, -8, 0]
+        }}
+        transition={{
+          duration: 0.6,
+          ease: [0.32, 0.72, 0, 1],
+          y: {
+            duration: 4,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }
+        }} 
+        viewport={{
+          once: true
+        }}>
         {/* Screen */}
         <div className="w-full h-full bg-neutral-950 rounded-[32px] overflow-hidden relative">
           {/* Notch */}
