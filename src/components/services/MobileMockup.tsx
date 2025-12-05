@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { Mail, Instagram } from 'lucide-react';
+
 const MobileMockup = () => {
   const stats = [{
     value: '3.2M',
@@ -12,7 +13,90 @@ const MobileMockup = () => {
     label: 'Brand Deals'
   }];
   const navDots = [0, 1, 2, 3, 4];
-  return <div className="relative flex justify-center items-center py-8">
+
+  return (
+    <div className="relative flex justify-center items-center py-8 gap-8">
+      {/* Laptop Frame */}
+      <motion.div 
+        className="relative hidden md:block"
+        initial={{ y: 20, opacity: 0 }}
+        whileInView={{ y: 0, opacity: 1 }}
+        animate={{ y: [0, -6, 0] }}
+        transition={{
+          duration: 0.6,
+          ease: [0.32, 0.72, 0, 1],
+          y: { duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }
+        }}
+        viewport={{ once: true }}
+      >
+        {/* Laptop Screen */}
+        <div className="w-[340px] h-[220px] bg-neutral-800 rounded-t-xl p-2 shadow-2xl">
+          {/* Screen Content */}
+          <div className="w-full h-full bg-neutral-950 rounded-lg overflow-hidden relative flex flex-col items-center justify-center px-6">
+            {/* Name Section */}
+            <motion.div 
+              className="text-center mb-2"
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.5 }}
+              viewport={{ once: true }}
+            >
+              <h2 className="font-serif italic text-[28px] leading-tight">
+                <span className="text-rose-400">SARAH</span>
+              </h2>
+              <h2 className="font-serif italic text-[28px] leading-tight text-white -mt-1">
+                JOHNSON
+              </h2>
+            </motion.div>
+
+            {/* Subtitle */}
+            <motion.p 
+              className="text-rose-400/80 text-[10px] tracking-wider uppercase mb-2"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              transition={{ delay: 0.5, duration: 0.5 }}
+              viewport={{ once: true }}
+            >
+              Fashion & Lifestyle Influencer
+            </motion.p>
+
+            {/* Stats Row */}
+            <div className="flex gap-3 mb-3">
+              {stats.map((stat, i) => (
+                <motion.div 
+                  key={i} 
+                  className="bg-neutral-800/60 backdrop-blur-sm rounded-lg py-2 px-3 text-center border border-neutral-700/30"
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6 + i * 0.1, duration: 0.4 }}
+                  viewport={{ once: true }}
+                >
+                  <p className="text-white font-serif text-[13px] font-medium">{stat.value}</p>
+                  <p className="text-neutral-500 text-[7px] uppercase tracking-wide">{stat.label}</p>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* CTA Button */}
+            <motion.button 
+              className="flex items-center gap-1.5 bg-white text-neutral-900 rounded-full px-4 py-1.5 text-[9px] font-medium shadow-lg"
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.8, duration: 0.4 }}
+              viewport={{ once: true }}
+            >
+              <Mail className="w-3 h-3" />
+              Work With Me
+            </motion.button>
+          </div>
+        </div>
+        {/* Laptop Base */}
+        <div className="w-[380px] h-[12px] bg-neutral-700 rounded-b-xl mx-auto relative -mt-0.5">
+          <div className="absolute inset-x-0 top-0 h-[2px] bg-neutral-600 rounded-t-sm" />
+          <div className="absolute left-1/2 -translate-x-1/2 top-1 w-16 h-1 bg-neutral-600 rounded-full" />
+        </div>
+      </motion.div>
+
       {/* iPhone Frame */}
       <motion.div 
         className="relative w-[220px] h-[440px] bg-neutral-900 rounded-[40px] p-2 shadow-2xl" 
@@ -212,9 +296,8 @@ const MobileMockup = () => {
           </div>
         </div>
       </motion.div>
-
-      {/* Additional Floating Card - Left Side */}
-      
-    </div>;
+    </div>
+  );
 };
+
 export default MobileMockup;
