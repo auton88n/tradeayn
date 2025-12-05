@@ -156,12 +156,17 @@ export const Hero = ({
       }, 2700);
     };
 
-    // Initial run
-    runAnimationCycle();
+    // Initial delay of 2.5s before first card burst (after eye appears)
+    const initialDelay = setTimeout(() => {
+      runAnimationCycle();
+    }, 2500);
 
     // Repeat every 4 seconds (slower for performance)
-    const interval = setInterval(runAnimationCycle, 4000);
-    return () => clearInterval(interval);
+    const interval = setInterval(runAnimationCycle, 6500); // 2500 + 4000
+    return () => {
+      clearTimeout(initialDelay);
+      clearInterval(interval);
+    };
   }, []);
 
   // Handle send
@@ -195,35 +200,26 @@ export const Hero = ({
       <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-background via-background to-muted/10" />
 
       {/* Headline */}
-      <motion.div initial={{
-      opacity: 0,
-      y: 20
-    }} animate={{
-      opacity: 1,
-      y: 0
-    }} transition={{
-      duration: 0.8,
-      ease: [0.32, 0.72, 0, 1]
-    }} className="w-full max-w-4xl text-center mb-4 md:mb-6">
+      <div className="w-full max-w-4xl text-center mb-4 md:mb-6">
         <motion.h1 
-          initial={{ opacity: 0, y: 30, filter: 'blur(10px)', scale: 0.95 }}
+          initial={{ opacity: 0, y: 30, filter: 'blur(12px)', scale: 0.95 }}
           animate={{ opacity: 1, y: 0, filter: 'blur(0px)', scale: 1 }}
-          transition={{ duration: 1, delay: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
+          transition={{ duration: 1, delay: 0, ease: [0.25, 0.46, 0.45, 0.94] }}
           className="font-display text-5xl sm:text-6xl md:text-8xl lg:text-[10rem] font-bold tracking-[-0.02em] text-foreground mb-2 md:mb-3"
         >
           {language === 'ar' ? 'تعرّف على AYN' : 'Meet AYN'}
         </motion.h1>
         <motion.p 
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4, ease: [0.32, 0.72, 0, 1] }}
+          transition={{ duration: 0.7, delay: 1.2, ease: [0.32, 0.72, 0, 1] }}
           className="text-lg md:text-xl lg:text-2xl text-muted-foreground font-light max-w-2xl mx-auto"
         >
           {language === 'ar' 
             ? 'الذكاء الاصطناعي الذي يرى، يستمع، ويفهم عالمك.' 
             : 'The AI that sees, listens, and understands your world.'}
         </motion.p>
-      </motion.div>
+      </div>
 
       {/* Central area with eye and cards */}
       <div className="relative w-full max-w-5xl flex-1 flex items-center justify-center">
@@ -232,7 +228,12 @@ export const Hero = ({
                         bg-gradient-to-b from-transparent via-muted/30 to-transparent" />
 
         {/* Floating particles - reduced to 3 for performance */}
-        <div className="absolute inset-0 pointer-events-none overflow-visible hidden md:block will-change-transform">
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, delay: 1.8, ease: "easeOut" }}
+          className="absolute inset-0 pointer-events-none overflow-visible hidden md:block will-change-transform"
+        >
           {/* Particle 1 */}
           <motion.div 
             className="absolute w-2 h-2 rounded-full bg-foreground/15" 
@@ -254,7 +255,7 @@ export const Hero = ({
             animate={{ y: [0, -10, 0], opacity: [0.4, 0.6, 0.4] }}
             transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 2 }}
           />
-        </div>
+        </motion.div>
 
         {/* Cards - optimized animations without blur filters - visible on all devices */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none will-change-transform overflow-visible">
@@ -403,9 +404,9 @@ export const Hero = ({
         <motion.div 
           style={{ x: eyeX, y: eyeY }}
           className="relative z-10 flex items-center justify-center group cursor-pointer will-change-transform" 
-          initial={{ scale: 0.92, opacity: 0 }}
+          initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
+          transition={{ duration: 0.8, delay: 1.5, ease: [0.34, 1.56, 0.64, 1] }}
           onMouseEnter={() => setIsHovered(true)} 
           onMouseLeave={() => setIsHovered(false)}
         >
@@ -473,9 +474,9 @@ export const Hero = ({
 
       {/* Demo Chat Input - TWO ROW LAYOUT - matches dashboard */}
       <motion.div 
-        initial={{ opacity: 0, y: 20 }} 
+        initial={{ opacity: 0, y: 30 }} 
         animate={{ opacity: 1, y: 0 }} 
-        transition={{ duration: 0.8, delay: 0.6, ease: [0.32, 0.72, 0, 1] }} 
+        transition={{ duration: 0.8, delay: 2.2, ease: [0.32, 0.72, 0, 1] }}
         className="mt-8 md:mt-10 w-full max-w-2xl"
       >
         <div className="relative bg-background/90 dark:bg-background/90 backdrop-blur-md border border-border rounded-2xl shadow-lg overflow-hidden">
