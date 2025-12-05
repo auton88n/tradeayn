@@ -11,16 +11,16 @@ interface ParticleBurstProps {
 export const ParticleBurst = ({
   isActive,
   position,
-  particleCount = 16,
+  particleCount = 10, // Reduced from 16
   color = 'hsl(var(--primary))',
 }: ParticleBurstProps) => {
-  // Generate random particles with consistent positions per render
+  // Generate fewer particles for better performance
   const particles = useMemo(() => {
     return Array.from({ length: particleCount }, (_, i) => {
       const angle = (i / particleCount) * Math.PI * 2;
-      const distance = 50 + Math.random() * 70;
-      const size = 4 + Math.random() * 5;
-      const duration = 0.5 + Math.random() * 0.3;
+      const distance = 40 + Math.random() * 50; // Shorter distance
+      const size = 3 + Math.random() * 4;
+      const duration = 0.35 + Math.random() * 0.2; // Faster
       
       return {
         id: i,
@@ -28,57 +28,44 @@ export const ParticleBurst = ({
         distance,
         size,
         duration,
-        // Calculate end position based on angle
         endX: Math.cos(angle) * distance,
         endY: Math.sin(angle) * distance,
-        // Randomize initial delay for stagger effect
-        delay: Math.random() * 0.05,
+        delay: Math.random() * 0.03,
       };
     });
   }, [particleCount]);
 
-  // Secondary ring of smaller particles
+  // Reduced secondary particles
   const secondaryParticles = useMemo(() => {
-    return Array.from({ length: 8 }, (_, i) => {
-      const angle = (i / 8) * Math.PI * 2 + Math.PI / 8;
-      const distance = 30 + Math.random() * 40;
+    return Array.from({ length: 5 }, (_, i) => { // Reduced from 8
+      const angle = (i / 5) * Math.PI * 2 + Math.PI / 5;
+      const distance = 25 + Math.random() * 30;
       
       return {
         id: i,
         endX: Math.cos(angle) * distance,
         endY: Math.sin(angle) * distance,
-        duration: 0.35 + Math.random() * 0.2,
-        delay: 0.05 + Math.random() * 0.05,
+        duration: 0.25 + Math.random() * 0.15,
+        delay: 0.03 + Math.random() * 0.03,
       };
     });
   }, []);
 
-  // Imploding particles that move FROM outer edge TO center
+  // Reduced imploding particles
   const implosionParticles = useMemo(() => {
-    return Array.from({ length: 10 }, (_, i) => {
-      const angle = (i / 10) * Math.PI * 2;
-      const startDistance = 60 + Math.random() * 30;
+    return Array.from({ length: 6 }, (_, i) => { // Reduced from 10
+      const angle = (i / 6) * Math.PI * 2;
+      const startDistance = 45 + Math.random() * 20;
       
       return {
         id: i,
         startX: Math.cos(angle) * startDistance,
         startY: Math.sin(angle) * startDistance,
-        size: 2 + Math.random() * 3,
-        duration: 0.2 + Math.random() * 0.15,
-        delay: Math.random() * 0.08,
+        size: 2 + Math.random() * 2,
+        duration: 0.18 + Math.random() * 0.1,
+        delay: Math.random() * 0.05,
       };
     });
-  }, []);
-
-  // Energy trail dots
-  const energyTrail = useMemo(() => {
-    return Array.from({ length: 6 }, (_, i) => ({
-      id: i,
-      angle: Math.random() * Math.PI * 2,
-      distance: 15 + i * 8,
-      size: 4 - i * 0.5,
-      delay: i * 0.03,
-    }));
   }, []);
 
   return (
@@ -197,37 +184,7 @@ export const ParticleBurst = ({
             />
           ))}
 
-          {/* Energy trail dots */}
-          {energyTrail.map((dot) => (
-            <motion.div
-              key={`trail-${dot.id}`}
-              className="absolute rounded-full"
-              style={{
-                width: dot.size,
-                height: dot.size,
-                left: -dot.size / 2,
-                top: -dot.size / 2,
-                background: `linear-gradient(135deg, white, ${color})`,
-              }}
-              initial={{
-                x: Math.cos(dot.angle) * dot.distance,
-                y: Math.sin(dot.angle) * dot.distance,
-                scale: 1,
-                opacity: 0.8,
-              }}
-              animate={{
-                x: 0,
-                y: 0,
-                scale: 0,
-                opacity: 0,
-              }}
-              transition={{
-                duration: 0.25,
-                delay: dot.delay,
-                ease: [0.55, 0.055, 0.675, 0.19],
-              }}
-            />
-          ))}
+          {/* Energy trail removed for performance */}
 
           {/* Primary particles */}
           {particles.map((particle) => (

@@ -1,9 +1,10 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { motion, useMotionValue, useSpring, useTransform, useReducedMotion } from 'framer-motion';
 import { Brain } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
 import { BehaviorConfig } from '@/types/eyeBehavior.types';
+import { useIdleDetection } from '@/hooks/useIdleDetection';
 
 interface EmotionalEyeProps {
   size?: 'sm' | 'md' | 'lg';
@@ -33,6 +34,10 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
   const lastBlinkRef = useRef(Date.now());
   const idleBlinkIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const checkInTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Performance optimizations
+  const prefersReducedMotion = useReducedMotion();
+  const { isDeepIdle } = useIdleDetection({ idleThreshold: 15, deepIdleThreshold: 30 });
 
   // Mouse tracking for gaze
   const mouseX = useMotionValue(0);
@@ -66,20 +71,21 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
   const gazeIntensity = behaviorConfig?.gazeIntensity ?? 0.4;
   const gazeSpeed = behaviorConfig?.gazeSpeed ?? 0.4;
 
+  // Optimized spring config - higher damping for faster settling
   const springConfig = { 
-    damping: 50 - (gazeSpeed * 30), // Higher speed = lower damping
-    stiffness: 200 + (gazeSpeed * 200) 
+    damping: 80 - (gazeSpeed * 20), // Higher damping = faster settling
+    stiffness: 300 + (gazeSpeed * 100) 
   };
   const eyeX = useSpring(useTransform(mouseX, (v) => v * 0.015 * gazeIntensity * 2), springConfig);
   const eyeY = useSpring(useTransform(mouseY, (v) => v * 0.015 * gazeIntensity * 2), springConfig);
-  const smoothAiGazeX = useSpring(aiGazeX, { damping: 40, stiffness: 200 });
-  const smoothAiGazeY = useSpring(aiGazeY, { damping: 40, stiffness: 200 });
+  const smoothAiGazeX = useSpring(aiGazeX, { damping: 60, stiffness: 250 });
+  const smoothAiGazeY = useSpring(aiGazeY, { damping: 60, stiffness: 250 });
 
-  // Micro-movement for idle "look around"
+  // Micro-movement for idle "look around" - higher damping
   const microX = useMotionValue(0);
   const microY = useMotionValue(0);
-  const smoothMicroX = useSpring(microX, { damping: 30, stiffness: 100 });
-  const smoothMicroY = useSpring(microY, { damping: 30, stiffness: 100 });
+  const smoothMicroX = useSpring(microX, { damping: 50, stiffness: 150 });
+  const smoothMicroY = useSpring(microY, { damping: 50, stiffness: 150 });
 
   // Combined eye movement (mouse + AI gaze + micro)
   const combinedX = useTransform([eyeX, smoothMicroX, smoothAiGazeX], ([eye, micro, ai]) => (eye as number) + (micro as number) + (ai as number));
@@ -258,42 +264,30 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
     tiltRotation.set(tilt);
   }, [emotion, getMicroParams, tiltRotation, behaviorConfig]);
 
-  // Micro-movements when idle
+  // Micro-movements when idle - PAUSED when deep idle or reduced motion
   useEffect(() => {
     const gazePattern = behaviorConfig?.gazePattern ?? 'follow_mouse';
     
-    if (isUserTyping || isResponding || isAbsorbing) {
+    // Stop micro-movements when deep idle, reduced motion, or during actions
+    if (isUserTyping || isResponding || isAbsorbing || isDeepIdle || prefersReducedMotion) {
       microX.set(0);
       microY.set(0);
       return;
     }
 
-    // Enhanced wandering for certain patterns
-    if (gazePattern === 'wander' || gazePattern === 'scan_screen') {
-      const { range, interval } = getMicroParams();
-      const adjustedRange = gazePattern === 'scan_screen' ? range * 1.5 : range;
-      
-      const microMovementInterval = setInterval(() => {
-        const newX = (Math.random() - 0.5) * adjustedRange;
-        const newY = (Math.random() - 0.5) * (adjustedRange * 0.75);
-        microX.set(newX);
-        microY.set(newY);
-      }, interval * 0.7);
-
-      return () => clearInterval(microMovementInterval);
-    }
-
-    // Default micro-movements
     const { range, interval } = getMicroParams();
+    // Longer intervals when idle to reduce CPU
+    const adjustedInterval = interval * 1.5;
+
     const microMovementInterval = setInterval(() => {
       const newX = (Math.random() - 0.5) * range;
       const newY = (Math.random() - 0.5) * (range * 0.75);
       microX.set(newX);
       microY.set(newY);
-    }, interval + Math.random() * (interval * 0.4));
+    }, adjustedInterval);
 
     return () => clearInterval(microMovementInterval);
-  }, [isUserTyping, isResponding, isAbsorbing, microX, microY, getMicroParams, behaviorConfig?.gazePattern]);
+  }, [isUserTyping, isResponding, isAbsorbing, isDeepIdle, prefersReducedMotion, microX, microY, getMicroParams, behaviorConfig?.gazePattern]);
 
   const sizeClasses = {
     sm: 'w-[100px] h-[100px] md:w-[120px] md:h-[120px]',
@@ -344,10 +338,12 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
         onMouseLeave={() => setIsHovered(false)}
       >
         <div 
-      className={cn(
-        "relative rounded-full bg-background flex items-center justify-center overflow-hidden animate-eye-breathe will-change-transform shadow-xl",
-        sizeClasses[size]
-      )}
+          className={cn(
+            "relative rounded-full bg-background flex items-center justify-center overflow-hidden will-change-transform shadow-xl",
+            sizeClasses[size],
+            // Only animate breathing when not deep idle and no reduced motion preference
+            !isDeepIdle && !prefersReducedMotion && "animate-eye-breathe"
+          )}
           style={{
             animationDuration: `${breathingDuration}s`
           }}
@@ -359,10 +355,11 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
           <motion.div 
             className="absolute inset-[15%] rounded-full"
             animate={{ 
-              scale: isPulsing ? [1, 1.08, 1] : isResponding ? [1, 1.03, 1] : 1,
+              // Only animate scale when actively pulsing, no infinite animations
+              scale: isPulsing ? [1, 1.08, 1] : 1,
             }}
             transition={{ 
-              scale: { duration: isPulsing ? 0.4 : 1.2, repeat: isPulsing ? 0 : Infinity, ease: "easeInOut" }
+              scale: { duration: 0.4, ease: "easeInOut" }
             }}
             style={{
               backgroundColor: emotion === 'calm' 
@@ -371,7 +368,7 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
               boxShadow: emotion !== 'calm' 
                 ? `0 0 20px ${emotionConfig.glowColor}, inset 0 0 10px ${emotionConfig.glowColor}40`
                 : 'inset 0 2px 8px rgba(0,0,0,0.05)',
-              transition: 'background-color 0.8s ease, box-shadow 0.8s ease',
+              transition: 'background-color 0.6s ease, box-shadow 0.6s ease',
             }}
           />
 

@@ -116,36 +116,28 @@ export const CenterStageLayout = ({
     { x: -15, y: 8 },    // Bottom card
   ];
 
-  // Cycle through suggestion cards with glances
+  // Cycle through suggestion cards with glances - only when suggestions visible
   useEffect(() => {
     const visibleSuggestions = suggestionBubbles.filter(s => s.isVisible);
     
-    if (visibleSuggestions.length === 0 || isTyping || isMobile) {
+    // Stop cycling when no suggestions, typing, or on mobile
+    if (visibleSuggestions.length === 0 || isTyping || isMobile || contextIsTyping) {
       setCurrentGazeIndex(null);
       return;
     }
 
-    // Initial delay before starting to glance
-    const initialDelay = setTimeout(() => {
-      setCurrentGazeIndex(0);
-    }, 800);
-
-    // Cycle through cards
+    // Longer intervals to reduce CPU usage
     const cycleInterval = setInterval(() => {
       setCurrentGazeIndex(prev => {
         if (prev === null) return 0;
         const next = (prev + 1) % visibleSuggestions.length;
-        // Occasionally return to center (null) for natural feel
-        if (Math.random() < 0.2) return null;
+        if (Math.random() < 0.3) return null; // More frequent returns to center
         return next;
       });
-    }, 2500); // Glance every 2.5 seconds
+    }, 3500); // Slower cycling (was 2500)
 
-    return () => {
-      clearTimeout(initialDelay);
-      clearInterval(cycleInterval);
-    };
-  }, [suggestionBubbles, isTyping, isMobile]);
+    return () => clearInterval(cycleInterval);
+  }, [suggestionBubbles, isTyping, isMobile, contextIsTyping]);
 
   // Fetch dynamic suggestions based on conversation context
   const fetchDynamicSuggestions = useCallback(async (userMessage: string, aynResponse: string, mode: AIMode) => {
@@ -411,32 +403,22 @@ animate={{
           >
             <EmotionalEye size={isMobile ? "md" : "lg"} gazeTarget={gazeTarget} behaviorConfig={behaviorConfig} />
 
-            {/* Thinking indicator when typing */}
+            {/* Thinking indicator when typing - simplified animation */}
             <AnimatePresence>
               {isTyping && (
                 <motion.div
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0, opacity: 0 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.15 }}
                   className="absolute -bottom-12 left-1/2 -translate-x-1/2 overflow-visible"
                 >
                   <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-ayn-thinking/20 backdrop-blur-sm border border-ayn-thinking/30">
                     <div className="flex gap-1">
-                      <motion.div
-                        className="w-1.5 h-1.5 rounded-full bg-ayn-thinking"
-                        animate={{ scale: [1, 1.3, 1] }}
-                        transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
-                      />
-                      <motion.div
-                        className="w-1.5 h-1.5 rounded-full bg-ayn-thinking"
-                        animate={{ scale: [1, 1.3, 1] }}
-                        transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
-                      />
-                      <motion.div
-                        className="w-1.5 h-1.5 rounded-full bg-ayn-thinking"
-                        animate={{ scale: [1, 1.3, 1] }}
-                        transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
-                      />
+                      {/* CSS-based animation instead of framer-motion */}
+                      <div className="w-1.5 h-1.5 rounded-full bg-ayn-thinking animate-bounce-dot" style={{ animationDelay: '0ms' }} />
+                      <div className="w-1.5 h-1.5 rounded-full bg-ayn-thinking animate-bounce-dot" style={{ animationDelay: '150ms' }} />
+                      <div className="w-1.5 h-1.5 rounded-full bg-ayn-thinking animate-bounce-dot" style={{ animationDelay: '300ms' }} />
                     </div>
                     <span className="text-xs text-ayn-thinking whitespace-nowrap">Thinking...</span>
                   </div>
