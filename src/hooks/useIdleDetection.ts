@@ -22,13 +22,12 @@ export const useIdleDetection = ({
   });
   
   const lastActivityRef = useRef(Date.now());
-  const intervalRef = useRef<number | null>(null);
+  const rafRef = useRef<number | null>(null);
 
   const updateActivity = useCallback(() => {
     lastActivityRef.current = Date.now();
-    // Only update state if we were idle (prevents unnecessary re-renders)
     setState(prev => {
-      if (prev.isIdle || prev.isDeepIdle || prev.secondsSinceActivity > 0) {
+      if (prev.isIdle || prev.isDeepIdle) {
         return { isIdle: false, isDeepIdle: false, secondsSinceActivity: 0 };
       }
       return prev;
@@ -38,50 +37,33 @@ export const useIdleDetection = ({
   useEffect(() => {
     const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
     
-    // Throttle event handling to prevent excessive calls
-    let lastEventTime = 0;
-    const throttledUpdate = () => {
-      const now = Date.now();
-      if (now - lastEventTime > 1000) { // Max once per second
-        lastEventTime = now;
-        updateActivity();
-      }
-    };
-
     events.forEach(event => {
-      window.addEventListener(event, throttledUpdate, { passive: true });
+      window.addEventListener(event, updateActivity, { passive: true });
     });
 
-    // Check idle state every 2 seconds (reduced from 1 second)
-    intervalRef.current = window.setInterval(() => {
+    // Check idle state every second
+    const checkIdle = () => {
       const now = Date.now();
       const secondsSince = Math.floor((now - lastActivityRef.current) / 1000);
       
-      setState(prev => {
-        const newIsIdle = secondsSince >= idleThreshold;
-        const newIsDeepIdle = secondsSince >= deepIdleThreshold;
-        
-        // Only update if values changed
-        if (prev.isIdle !== newIsIdle || 
-            prev.isDeepIdle !== newIsDeepIdle || 
-            prev.secondsSinceActivity !== secondsSince) {
-          return {
-            isIdle: newIsIdle,
-            isDeepIdle: newIsDeepIdle,
-            secondsSinceActivity: secondsSince,
-          };
-        }
-        return prev;
+      setState({
+        isIdle: secondsSince >= idleThreshold,
+        isDeepIdle: secondsSince >= deepIdleThreshold,
+        secondsSinceActivity: secondsSince,
       });
-    }, 2000);
+      
+      rafRef.current = requestAnimationFrame(() => {
+        setTimeout(checkIdle, 1000);
+      });
+    };
+
+    checkIdle();
 
     return () => {
       events.forEach(event => {
-        window.removeEventListener(event, throttledUpdate);
+        window.removeEventListener(event, updateActivity);
       });
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, [idleThreshold, deepIdleThreshold, updateActivity]);
 

@@ -156,22 +156,20 @@ export const Hero = ({
     return () => clearInterval(interval);
   }, [inputMessage, isFocused, placeholderTexts.length]);
 
-  // Unified animation cycle - 3.5 second rhythm with visibility pause
+  // Unified animation cycle - 3 second rhythm
+  // 0.0s: Eye blinks (preparing to speak)
+  // 0.15s: Card bursts out (eye speaks)
+  // 2.4s: Card returns + absorption pulse
+  // 3.0s: Cycle repeats
   useEffect(() => {
-    let interval: ReturnType<typeof setInterval>;
-    let timeouts: ReturnType<typeof setTimeout>[] = [];
-    
     const runAnimationCycle = () => {
-      // Don't run if tab is hidden
-      if (document.hidden) return;
-      
-      // Phase 1: Blink
+      // Phase 1: Blink (0ms) - eye prepares to speak
       setIsBlinking(true);
 
-      // Phase 2: Emit card
-      const t1 = setTimeout(() => {
-        if (document.hidden) return;
+      // Phase 2: Emit card (150ms after blink completes)
+      setTimeout(() => {
         setIsBlinking(false);
+        // Get a random card that's different from the previous one
         let availableIndices = [0, 1, 2, 3, 4, 5];
         if (previousCardRef.current !== null) {
           availableIndices = availableIndices.filter(i => i !== previousCardRef.current);
@@ -180,48 +178,25 @@ export const Hero = ({
         previousCardRef.current = randomIndex;
         setVisibleCardIndex(randomIndex);
       }, 150);
-      timeouts.push(t1);
 
-      // Phase 3: Start absorption
-      const t2 = setTimeout(() => {
-        if (document.hidden) return;
+      // Phase 3: Start absorption (2400ms - card returns)
+      setTimeout(() => {
         setAbsorptionPulse(true);
         setVisibleCardIndex(null);
-      }, 2600);
-      timeouts.push(t2);
+      }, 2400);
 
-      // Phase 4: Reset
-      const t3 = setTimeout(() => {
+      // Phase 4: Reset absorption pulse (2700ms)
+      setTimeout(() => {
         setAbsorptionPulse(false);
-      }, 2900);
-      timeouts.push(t3);
+      }, 2700);
     };
 
     // Initial run
     runAnimationCycle();
 
-    // Repeat every 3.5 seconds (slightly longer for CPU breathing room)
-    interval = setInterval(runAnimationCycle, 3500);
-    
-    // Pause when tab hidden
-    const handleVisibility = () => {
-      if (document.hidden) {
-        clearInterval(interval);
-        timeouts.forEach(clearTimeout);
-        timeouts = [];
-      } else {
-        runAnimationCycle();
-        interval = setInterval(runAnimationCycle, 3500);
-      }
-    };
-    
-    document.addEventListener('visibilitychange', handleVisibility);
-    
-    return () => {
-      clearInterval(interval);
-      timeouts.forEach(clearTimeout);
-      document.removeEventListener('visibilitychange', handleVisibility);
-    };
+    // Repeat every 3 seconds
+    const interval = setInterval(runAnimationCycle, 3000);
+    return () => clearInterval(interval);
   }, []);
 
   // Handle send

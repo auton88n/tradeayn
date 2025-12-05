@@ -129,34 +129,17 @@ export const CenterStageLayout = ({
       return;
     }
 
-    // Only run when tab is visible
-    let cycleInterval: ReturnType<typeof setInterval>;
-    
-    const startCycling = () => {
-      cycleInterval = setInterval(() => {
-        if (document.hidden) return; // Skip when tab hidden
-        setCurrentGazeIndex(prev => {
-          if (prev === null) return 0;
-          const next = (prev + 1) % visibleSuggestions.length;
-          if (Math.random() < 0.35) return null;
-          return next;
-        });
-      }, 4000); // Even slower cycling
-    };
-    
-    startCycling();
-    
-    const handleVisibility = () => {
-      clearInterval(cycleInterval);
-      if (!document.hidden) startCycling();
-    };
-    
-    document.addEventListener('visibilitychange', handleVisibility);
+    // Longer intervals to reduce CPU usage
+    const cycleInterval = setInterval(() => {
+      setCurrentGazeIndex(prev => {
+        if (prev === null) return 0;
+        const next = (prev + 1) % visibleSuggestions.length;
+        if (Math.random() < 0.3) return null; // More frequent returns to center
+        return next;
+      });
+    }, 3500); // Slower cycling (was 2500)
 
-    return () => {
-      clearInterval(cycleInterval);
-      document.removeEventListener('visibilitychange', handleVisibility);
-    };
+    return () => clearInterval(cycleInterval);
   }, [suggestionBubbles, isTyping, isMobile, contextIsTyping]);
 
   // Fetch dynamic suggestions based on conversation context

@@ -973,7 +973,6 @@ export type Database = {
         Args: { p_endpoint: string; p_user_id: string }
         Returns: boolean
       }
-      cleanup_location_data: { Args: never; Returns: undefined }
       cleanup_old_security_logs: { Args: never; Returns: undefined }
       cleanup_old_system_reports: { Args: never; Returns: undefined }
       cleanup_security_data: { Args: never; Returns: undefined }
