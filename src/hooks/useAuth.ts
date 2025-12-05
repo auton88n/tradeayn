@@ -104,13 +104,17 @@ export const useAuth = (user: User): UseAuthReturn => {
     });
   }, [termsKey, toast, t]);
 
-  // Ref to prevent multiple device tracking calls
+  // Refs to prevent multiple calls
   const hasTrackedDevice = useRef(false);
+  const hasInitialized = useRef(false);
 
   // Load all auth data on mount and track device login
   useEffect(() => {
     const initAuth = async () => {
-      setIsLoading(true);
+      // Only set loading true on first initialization
+      if (!hasInitialized.current) {
+        setIsLoading(true);
+      }
       
       // Run all checks in parallel
       await Promise.all([
@@ -119,6 +123,7 @@ export const useAuth = (user: User): UseAuthReturn => {
         loadUserProfile()
       ]);
       
+      hasInitialized.current = true;
       setIsLoading(false);
     };
     
