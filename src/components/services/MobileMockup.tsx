@@ -195,9 +195,10 @@ const MobileMockup = () => {
 
         {/* Instagram Card - Top Right Overlapping */}
         <motion.div 
-          className="absolute -top-4 -right-32 lg:-right-48 bg-neutral-900/95 backdrop-blur-sm shadow-2xl rounded-2xl p-4 border border-neutral-800 z-20"
+          className="absolute -top-4 -right-32 lg:-right-48 bg-neutral-900/95 backdrop-blur-sm shadow-2xl rounded-2xl p-4 border border-neutral-800 z-20 cursor-pointer"
           initial={{ scale: 0.8, opacity: 0, x: 20 }}
           whileInView={{ scale: 1, opacity: 1, x: 0 }}
+          whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
           animate={{ y: [0, -5, 0] }}
           transition={{
             delay: 0.5,
@@ -233,9 +234,10 @@ const MobileMockup = () => {
 
         {/* Engagement Card - Right Middle Overlapping */}
         <motion.div 
-          className="absolute top-36 -right-8 bg-neutral-900/95 backdrop-blur-sm shadow-xl rounded-xl p-3 border border-neutral-800 z-20"
+          className="absolute top-36 -right-8 bg-neutral-900/95 backdrop-blur-sm shadow-xl rounded-xl p-3 border border-neutral-800 z-20 cursor-pointer"
           initial={{ scale: 0.8, opacity: 0 }}
           whileInView={{ scale: 1, opacity: 1 }}
+          whileHover={{ scale: 1.08, transition: { duration: 0.2 } }}
           animate={{ y: [0, -4, 0] }}
           transition={{
             delay: 0.7,
@@ -257,9 +259,10 @@ const MobileMockup = () => {
 
         {/* Top Engagement Badge - Bottom Overlapping */}
         <motion.div 
-          className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-neutral-900/95 backdrop-blur-sm shadow-xl rounded-full px-5 py-2.5 border border-neutral-800 flex items-center gap-2 z-20"
+          className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-neutral-900/95 backdrop-blur-sm shadow-xl rounded-full px-5 py-2.5 border border-neutral-800 flex items-center gap-2 z-20 cursor-pointer"
           initial={{ scale: 0.8, opacity: 0, y: 20 }}
           whileInView={{ scale: 1, opacity: 1, y: 0 }}
+          whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
           transition={{ delay: 0.9, duration: 0.5 }}
           viewport={{ once: true }}
         >
@@ -269,9 +272,10 @@ const MobileMockup = () => {
 
         {/* TikTok Card - Left Top */}
         <motion.div 
-          className="absolute -top-8 -left-32 lg:-left-48 bg-neutral-900/95 backdrop-blur-sm shadow-2xl rounded-2xl p-4 border border-neutral-800 z-20 hidden md:block"
+          className="absolute -top-8 -left-32 lg:-left-48 bg-neutral-900/95 backdrop-blur-sm shadow-2xl rounded-2xl p-4 border border-neutral-800 z-20 hidden md:block cursor-pointer"
           initial={{ scale: 0.8, opacity: 0, x: -20 }}
           whileInView={{ scale: 1, opacity: 1, x: 0 }}
+          whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
           animate={{ y: [0, -6, 0] }}
           transition={{
             delay: 0.6,
@@ -309,9 +313,10 @@ const MobileMockup = () => {
 
         {/* Demographics Card - Left Bottom */}
         <motion.div 
-          className="absolute bottom-24 -left-16 lg:-left-40 bg-neutral-900/95 backdrop-blur-sm shadow-xl rounded-2xl p-4 border border-neutral-800 z-20 hidden lg:block"
+          className="absolute bottom-24 -left-16 lg:-left-40 bg-neutral-900/95 backdrop-blur-sm shadow-xl rounded-2xl p-4 border border-neutral-800 z-20 hidden lg:block cursor-pointer"
           initial={{ scale: 0.8, opacity: 0, x: -20 }}
           whileInView={{ scale: 1, opacity: 1, x: 0 }}
+          whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
           animate={{ y: [0, -4, 0] }}
           transition={{
             delay: 0.8,
