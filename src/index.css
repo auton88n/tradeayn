@@ -33,6 +33,13 @@
 /* Theme transitions - scoped for performance */
 html, body {
   transition: background-color 0.2s ease-out, color 0.2s ease-out;
+  scroll-behavior: smooth;
+}
+
+/* Ensure smooth scrolling works everywhere */
+html {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Interactive elements - faster transitions */
