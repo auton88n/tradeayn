@@ -73,23 +73,29 @@ export const useAuth = (user: User): UseAuthReturn => {
 
   // Load user profile
   const loadUserProfile = useCallback(async () => {
+    console.log('[useAuth] Loading profile for user:', user.id);
     try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('user_id, contact_person, company_name, business_type, business_context, avatar_url')
-      .eq('user_id', user.id)
-      .maybeSingle();
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_id, contact_person, company_name, business_type, business_context, avatar_url')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      console.log('[useAuth] Profile query result:', { data, error });
 
       if (error) {
-        console.error('Error loading profile:', error);
+        console.error('[useAuth] Error loading profile:', error);
         return;
       }
 
       if (data) {
+        console.log('[useAuth] Setting user profile:', data);
         setUserProfile(data as UserProfile);
+      } else {
+        console.log('[useAuth] No profile data returned - user may not have a profile yet');
       }
     } catch (error) {
-      console.error('Profile loading error:', error);
+      console.error('[useAuth] Profile loading error:', error);
     }
   }, [user.id]);
 
