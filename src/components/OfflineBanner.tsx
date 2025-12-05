@@ -1,9 +1,28 @@
-import { WifiOff } from 'lucide-react';
+import { useEffect, useRef } from 'react';
+import { WifiOff, Wifi } from 'lucide-react';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from '@/hooks/use-toast';
 
 export const OfflineBanner = () => {
   const isOnline = useOnlineStatus();
+  const wasOffline = useRef(false);
+
+  useEffect(() => {
+    if (!isOnline) {
+      wasOffline.current = true;
+    } else if (wasOffline.current) {
+      wasOffline.current = false;
+      toast({
+        description: (
+          <div className="flex items-center gap-2">
+            <Wifi className="w-4 h-4 text-green-500" />
+            <span>Back online</span>
+          </div>
+        ),
+      });
+    }
+  }, [isOnline]);
 
   return (
     <AnimatePresence>
