@@ -6,6 +6,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { trackDeviceLogin } from '@/hooks/useDeviceTracking';
 import type { UserProfile, UseAuthReturn } from '@/types/dashboard.types';
 
+const MAX_AUTH_FAILURES = 2;
+
 export const useAuth = (user: User): UseAuthReturn => {
   const [hasAccess, setHasAccess] = useState(false);
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
@@ -13,6 +15,30 @@ export const useAuth = (user: User): UseAuthReturn => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const { toast } = useToast();
   const { t } = useLanguage();
+  
+  // Track consecutive auth failures to detect invalid sessions
+  const authFailureCount = useRef(0);
+  
+  const handleAuthFailure = useCallback((error: { code?: string; message?: string }, context: string) => {
+    console.error(`Auth error in ${context}:`, error);
+    
+    // Check if this is an auth-related error
+    if (error.code === 'PGRST301' || error.message?.includes('JWT') || error.code === '401') {
+      authFailureCount.current++;
+      
+      if (authFailureCount.current >= MAX_AUTH_FAILURES) {
+        console.warn('Multiple auth failures detected, forcing session reset');
+        localStorage.removeItem('sb-dfkoxuokfkttjhfjcecx-auth-token');
+        sessionStorage.clear();
+        window.location.href = '/';
+      }
+    }
+  }, []);
+  
+  // Reset failure count on successful queries
+  const resetAuthFailures = useCallback(() => {
+    authFailureCount.current = 0;
+  }, []);
 
   // Check if user has active access
   const checkAccess = useCallback(async () => {
@@ -24,9 +50,12 @@ export const useAuth = (user: User): UseAuthReturn => {
         .maybeSingle();
 
       if (error) {
-        console.error('Error checking access:', error);
+        handleAuthFailure(error, 'checkAccess');
         return;
       }
+
+      // Success - reset failure count
+      resetAuthFailures();
 
       if (!data) {
         setHasAccess(false);
@@ -36,9 +65,9 @@ export const useAuth = (user: User): UseAuthReturn => {
       const isActive = data.is_active && (!data.expires_at || new Date(data.expires_at) > new Date());
       setHasAccess(isActive);
     } catch (error) {
-      console.error('Access check error:', error);
+      handleAuthFailure(error as { code?: string; message?: string }, 'checkAccess');
     }
-  }, [user.id]);
+  }, [user.id, handleAuthFailure, resetAuthFailures]);
 
   // Check if user is admin
   const checkAdminRole = useCallback(async () => {
@@ -50,9 +79,12 @@ export const useAuth = (user: User): UseAuthReturn => {
         .maybeSingle();
 
       if (error) {
-        console.error('Error checking role:', error);
+        handleAuthFailure(error, 'checkAdminRole');
         return;
       }
+
+      // Success - reset failure count
+      resetAuthFailures();
 
       if (!data) {
         setIsAdmin(false);
@@ -61,31 +93,34 @@ export const useAuth = (user: User): UseAuthReturn => {
 
       setIsAdmin(data.role === 'admin');
     } catch (error) {
-      console.error('Role check error:', error);
+      handleAuthFailure(error as { code?: string; message?: string }, 'checkAdminRole');
     }
-  }, [user.id]);
+  }, [user.id, handleAuthFailure, resetAuthFailures]);
 
   // Load user profile
   const loadUserProfile = useCallback(async () => {
     try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('user_id, contact_person, company_name, business_type, business_context, avatar_url')
-      .eq('user_id', user.id)
-      .maybeSingle();
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_id, contact_person, company_name, business_type, business_context, avatar_url')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
       if (error) {
-        console.error('Error loading profile:', error);
+        handleAuthFailure(error, 'loadUserProfile');
         return;
       }
+
+      // Success - reset failure count
+      resetAuthFailures();
 
       if (data) {
         setUserProfile(data as UserProfile);
       }
     } catch (error) {
-      console.error('Profile loading error:', error);
+      handleAuthFailure(error as { code?: string; message?: string }, 'loadUserProfile');
     }
-  }, [user.id]);
+  }, [user.id, handleAuthFailure, resetAuthFailures]);
 
   // Accept terms and conditions
   const acceptTerms = useCallback(() => {

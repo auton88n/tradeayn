@@ -7,6 +7,32 @@ import { AYNLoader, DashboardLoader, PageLoader } from '@/components/ui/page-loa
 const LandingPage = lazy(() => import('@/components/LandingPage'));
 const Dashboard = lazy(() => import('@/components/Dashboard'));
 
+// Validate session by making a test query
+const validateSession = async (session: Session): Promise<Session | null> => {
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .select('user_id')
+      .eq('user_id', session.user.id)
+      .maybeSingle();
+    
+    // If we get a JWT error or auth error, session is invalid
+    if (error && (error.code === 'PGRST301' || error.message?.includes('JWT') || error.code === '401')) {
+      console.warn('Invalid session detected, clearing auth state');
+      localStorage.removeItem('sb-dfkoxuokfkttjhfjcecx-auth-token');
+      sessionStorage.clear();
+      return null;
+    }
+    
+    return session;
+  } catch (err) {
+    console.error('Session validation failed:', err);
+    localStorage.removeItem('sb-dfkoxuokfkttjhfjcecx-auth-token');
+    sessionStorage.clear();
+    return null;
+  }
+};
+
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -25,28 +51,45 @@ const Index = () => {
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         if (mounted) {
-          setSession(session);
-          setUser(session?.user ?? null);
+          if (session) {
+            // Validate session before trusting it
+            const validatedSession = await validateSession(session);
+            setSession(validatedSession);
+            setUser(validatedSession?.user ?? null);
+          } else {
+            setSession(null);
+            setUser(null);
+          }
           setLoading(false);
         }
       }
     );
 
-    // Check for existing session with error handling
+    // Check for existing session with validation
     supabase.auth.getSession()
-      .then(({ data: { session } }) => {
+      .then(async ({ data: { session } }) => {
         if (mounted) {
-          setSession(session);
-          setUser(session?.user ?? null);
+          if (session) {
+            // Validate the session is actually working
+            const validatedSession = await validateSession(session);
+            setSession(validatedSession);
+            setUser(validatedSession?.user ?? null);
+          } else {
+            setSession(null);
+            setUser(null);
+          }
           setLoading(false);
         }
       })
       .catch((error) => {
         console.error('Auth session check failed:', error);
         if (mounted) {
-          setLoading(false); // Show landing page instead of hanging
+          // Clear potentially corrupted auth state
+          localStorage.removeItem('sb-dfkoxuokfkttjhfjcecx-auth-token');
+          sessionStorage.clear();
+          setLoading(false);
         }
       });
 
