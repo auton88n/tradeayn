@@ -827,6 +827,7 @@ export type Database = {
           email_system_alerts: boolean | null
           email_usage_warnings: boolean | null
           email_weekly_summary: boolean | null
+          has_accepted_terms: boolean | null
           has_completed_tutorial: boolean | null
           id: string
           in_app_sounds: boolean | null
@@ -843,6 +844,7 @@ export type Database = {
           email_system_alerts?: boolean | null
           email_usage_warnings?: boolean | null
           email_weekly_summary?: boolean | null
+          has_accepted_terms?: boolean | null
           has_completed_tutorial?: boolean | null
           id?: string
           in_app_sounds?: boolean | null
@@ -859,6 +861,7 @@ export type Database = {
           email_system_alerts?: boolean | null
           email_usage_warnings?: boolean | null
           email_weekly_summary?: boolean | null
+          has_accepted_terms?: boolean | null
           has_completed_tutorial?: boolean | null
           id?: string
           in_app_sounds?: boolean | null
