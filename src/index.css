@@ -4,7 +4,7 @@
 
 @layer utilities {
   .font-display { 
-    font-family: "DM Serif Display", ui-serif, Georgia, "Times New Roman", serif; 
+    font-family: "Cormorant Garamond", ui-serif, Georgia, "Times New Roman", serif; 
   }
   .shadow-inner { 
     box-shadow: inset 0 12px 30px rgba(0, 0, 0, 0.06); 
@@ -99,8 +99,7 @@ button, a, input, textarea, select {
 }
 
 /* AYN AI Business Consulting Platform Design System */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-@import url("https://fonts.googleapis.com/css2?family=Inter&display=swap");
+/* Fonts loaded via index.html for better performance */
 
 @layer base {
   :root {
@@ -204,20 +203,28 @@ button, a, input, textarea, select {
 
   body {
     @apply bg-background text-foreground font-sans;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
     min-height: 100vh;
     letter-spacing: -0.01em;
+    font-feature-settings: 'kern' 1, 'liga' 1;
   }
 
   /* Premium Typography */
   .font-serif {
-    font-family: 'DM Serif Display', Georgia, serif;
+    font-family: 'Cormorant Garamond', Georgia, serif;
   }
 
   .text-display {
-    font-family: 'DM Serif Display', Georgia, serif;
-    letter-spacing: -0.04em;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    letter-spacing: -0.03em;
     line-height: 0.9;
+    font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
+  }
+
+  .text-display-lg {
+    font-size: clamp(3rem, 10vw, 9rem);
+    line-height: 0.9;
+    font-weight: 600;
   }
 
   /* Subtle Noise Texture */

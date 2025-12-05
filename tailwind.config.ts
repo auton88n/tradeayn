@@ -18,31 +18,27 @@ export default {
     		}
     	},
     	extend: {
-    		fontFamily: {
-    			sans: [
-    				'Inter',
-    				'-apple-system',
-    				'BlinkMacSystemFont',
-    				'Segoe UI',
-    				'system-ui',
-    				'sans-serif'
-    			],
-    			serif: [
-    				'Playfair Display',
-    				'Georgia',
-    				'serif'
-    			],
-    			mono: [
-    				'ui-monospace',
-    				'SFMono-Regular',
-    				'Menlo',
-    				'Monaco',
-    				'Consolas',
-    				'Liberation Mono',
-    				'Courier New',
-    				'monospace'
-    			]
-    		},
+		fontFamily: {
+			sans: [
+				'Space Grotesk',
+				'-apple-system',
+				'BlinkMacSystemFont',
+				'system-ui',
+				'sans-serif'
+			],
+			serif: [
+				'Cormorant Garamond',
+				'Georgia',
+				'serif'
+			],
+			mono: [
+				'JetBrains Mono',
+				'ui-monospace',
+				'SFMono-Regular',
+				'Consolas',
+				'monospace'
+			]
+		},
     		colors: {
     			border: 'hsl(var(--border))',
     			input: 'hsl(var(--input))',
