@@ -117,7 +117,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
           textareaRef.current.style.height = 'auto';
           const scrollHeight = textareaRef.current.scrollHeight;
           // Then set to actual content height, respecting max (280px)
-          textareaRef.current.style.height = Math.max(52, Math.min(scrollHeight, 280)) + 'px';
+          textareaRef.current.style.height = Math.max(44, Math.min(scrollHeight, 200)) + 'px';
           textareaRef.current.focus();
         }
       }, 0);
@@ -161,7 +161,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
     setInputMessage('');
     setShowPlaceholder(true);
     if (textareaRef.current) {
-      textareaRef.current.style.height = '52px';
+      textareaRef.current.style.height = '44px';
     }
     setTimeout(() => {
       triggerAttentionBlink();
@@ -182,7 +182,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
     // Auto-resize with increased max-height
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = Math.max(52, Math.min(textareaRef.current.scrollHeight, 280)) + 'px';
+      textareaRef.current.style.height = Math.max(44, Math.min(textareaRef.current.scrollHeight, 200)) + 'px';
     }
   }, []);
   const handleFileClick = useCallback(() => {
@@ -198,7 +198,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
       onFileSelect(file);
     }
   }, [onFileSelect]);
-  return <div className={cn("relative w-full transition-all duration-300 px-4 pb-4", isDragOver && "bg-primary/5")} onDragEnter={onDragEnter} onDragLeave={onDragLeave} onDragOver={onDragOver} onDrop={onDrop}>
+  return <div className={cn("relative w-full transition-all duration-300 px-3 pb-3", isDragOver && "bg-primary/5")} onDragEnter={onDragEnter} onDragLeave={onDragLeave} onDragOver={onDragOver} onDrop={onDrop}>
       {/* Drag overlay */}
       <AnimatePresence>
         {isDragOver && <motion.div initial={{
@@ -215,7 +215,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
       {/* Main container */}
       <div className={cn("relative bg-background/95 backdrop-blur-xl border border-border rounded-2xl shadow-lg overflow-hidden transition-all duration-300", isDragOver && "border-primary shadow-xl", isInputFocused && "border-border/80 shadow-xl")}>
         {/* Row 1: Input area with flexbox layout */}
-        <div className="flex items-end gap-3 px-5 pt-4 pb-3">
+        <div className="flex items-end gap-3 px-4 pt-3 pb-2">
           <div className="relative flex-1 min-w-0">
             <Textarea 
               ref={textareaRef} 
@@ -226,20 +226,20 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
               onBlur={() => setIsInputFocused(false)} 
               disabled={isDisabled || isUploading} 
               className={cn(
-                "w-full resize-none min-h-[52px] max-h-[280px]",
-                "text-base md:text-lg bg-transparent",
+                "w-full resize-none min-h-[44px] max-h-[200px]",
+                "text-base bg-transparent",
                 "border-0 focus-visible:ring-0 focus-visible:ring-offset-0",
                 "text-foreground placeholder:text-muted-foreground",
                 "disabled:opacity-50 disabled:cursor-not-allowed",
                 "leading-relaxed",
                 "overflow-y-auto",
-                "px-3 py-3"
-              )} 
+                "px-2 py-2"
+              )}
             />
 
             {/* Typewriter placeholder */}
             {showPlaceholder && !inputMessage && !isInputFocused && (
-              <div className="absolute top-[14px] left-[14px] pointer-events-none">
+              <div className="absolute top-[10px] left-[10px] pointer-events-none">
                 <motion.span 
                   key={currentPlaceholder} 
                   initial={{ opacity: 0, y: 5 }} 
@@ -314,7 +314,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
         </AnimatePresence>
 
         {/* Row 2: Toolbar */}
-        <div className="flex items-center justify-between px-4 py-2.5 border-t border-border/30 bg-muted/20">
+        <div className="flex items-center justify-between px-3 py-2 border-t border-border/30 bg-muted/20">
           {/* Left: Action buttons */}
           <div className="flex items-center gap-1">
             <button onClick={handleFileClick} disabled={isDisabled || isUploading} className={cn("p-2 rounded-lg", "hover:bg-muted/60", "transition-all duration-200", "disabled:opacity-50 disabled:cursor-not-allowed")}>
