@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Mail, Instagram } from 'lucide-react';
+import { Mail, Instagram, TrendingUp, Users, Heart, Eye } from 'lucide-react';
 import influencerBg from '@/assets/influencer-woman-bg.jpg';
 const MobileMockup = () => {
   const stats = [{
@@ -344,28 +344,154 @@ const MobileMockup = () => {
         </div>
       </motion.div>
       
-      {/* Floating Elements */}
-      <motion.div className="absolute -right-4 top-16 bg-neutral-900 shadow-lg rounded-xl p-3 border border-neutral-800" initial={{
-      scale: 0.8,
-      opacity: 0
-    }} whileInView={{
-      scale: 1,
-      opacity: 1
-    }} transition={{
-      delay: 0.5,
-      duration: 0.4
-    }} viewport={{
-      once: true
-    }}>
+      {/* Floating Platform Stats Cards */}
+      
+      {/* TikTok Card - Left */}
+      <motion.div 
+        className="absolute -left-8 lg:-left-16 top-8 bg-neutral-900/95 backdrop-blur-sm shadow-xl rounded-2xl p-4 border border-neutral-800 hidden md:block"
+        initial={{ scale: 0.8, opacity: 0, x: -20 }}
+        whileInView={{ scale: 1, opacity: 1, x: 0 }}
+        animate={{ y: [0, -6, 0] }}
+        transition={{
+          delay: 0.6,
+          duration: 0.5,
+          y: { duration: 3.5, repeat: Infinity, ease: "easeInOut" }
+        }}
+        viewport={{ once: true }}
+      >
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-10 h-10 rounded-xl bg-neutral-800 flex items-center justify-center">
+            <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-white font-semibold text-sm">TikTok</p>
+            <p className="text-neutral-500 text-[10px]">Social Platform</p>
+          </div>
+        </div>
+        <div className="flex gap-4">
+          <div>
+            <p className="text-rose-400 font-bold text-lg">2.1M</p>
+            <p className="text-neutral-500 text-[9px] flex items-center gap-1"><Users className="w-3 h-3" /> Followers</p>
+          </div>
+          <div>
+            <p className="text-rose-400 font-bold text-lg">12.3%</p>
+            <p className="text-neutral-500 text-[9px] flex items-center gap-1"><Heart className="w-3 h-3" /> Engagement</p>
+          </div>
+          <div>
+            <p className="text-white font-bold text-lg">500K</p>
+            <p className="text-neutral-500 text-[9px] flex items-center gap-1"><Eye className="w-3 h-3" /> Avg Views</p>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Instagram Card - Right */}
+      <motion.div 
+        className="absolute -right-8 lg:-right-16 top-8 bg-neutral-900/95 backdrop-blur-sm shadow-xl rounded-2xl p-4 border border-neutral-800 hidden md:block"
+        initial={{ scale: 0.8, opacity: 0, x: 20 }}
+        whileInView={{ scale: 1, opacity: 1, x: 0 }}
+        animate={{ y: [0, -5, 0] }}
+        transition={{
+          delay: 0.7,
+          duration: 0.5,
+          y: { duration: 3.8, repeat: Infinity, ease: "easeInOut", delay: 0.3 }
+        }}
+        viewport={{ once: true }}
+      >
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 flex items-center justify-center">
+            <Instagram className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <p className="text-white font-semibold text-sm">Instagram</p>
+            <p className="text-neutral-500 text-[10px]">Social Platform</p>
+          </div>
+        </div>
+        <div className="flex gap-4">
+          <div>
+            <p className="text-rose-400 font-bold text-lg">1.1M</p>
+            <p className="text-neutral-500 text-[9px] flex items-center gap-1"><Users className="w-3 h-3" /> Followers</p>
+          </div>
+          <div>
+            <p className="text-rose-400 font-bold text-lg">6.8%</p>
+            <p className="text-neutral-500 text-[9px] flex items-center gap-1"><Heart className="w-3 h-3" /> Engagement</p>
+          </div>
+          <div>
+            <p className="text-white font-bold text-lg">150K</p>
+            <p className="text-neutral-500 text-[9px] flex items-center gap-1"><Eye className="w-3 h-3" /> Avg Views</p>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Engagement Boost Card - Top Right */}
+      <motion.div 
+        className="absolute right-4 lg:right-20 top-48 bg-neutral-900/95 backdrop-blur-sm shadow-lg rounded-xl p-3 border border-neutral-800"
+        initial={{ scale: 0.8, opacity: 0 }}
+        whileInView={{ scale: 1, opacity: 1 }}
+        animate={{ y: [0, -4, 0] }}
+        transition={{
+          delay: 0.8,
+          duration: 0.4,
+          y: { duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.5 }
+        }}
+        viewport={{ once: true }}
+      >
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-full bg-rose-500/20 flex items-center justify-center">
-            <span className="text-rose-400 text-xs">↑</span>
+            <TrendingUp className="w-4 h-4 text-rose-400" />
           </div>
           <div>
             <p className="text-[10px] text-neutral-500">Engagement</p>
             <p className="text-xs font-bold text-rose-400">+24%</p>
           </div>
         </div>
+      </motion.div>
+
+      {/* Demographics Card - Bottom */}
+      <motion.div 
+        className="absolute left-1/2 -translate-x-1/2 -bottom-4 bg-neutral-900/95 backdrop-blur-sm shadow-xl rounded-2xl p-4 border border-neutral-800 hidden lg:block"
+        initial={{ scale: 0.8, opacity: 0, y: 20 }}
+        whileInView={{ scale: 1, opacity: 1, y: 0 }}
+        transition={{ delay: 0.9, duration: 0.5 }}
+        viewport={{ once: true }}
+      >
+        <p className="text-white font-semibold text-xs mb-3">Audience Demographics</p>
+        <div className="flex gap-4">
+          <div className="bg-neutral-800/60 rounded-lg px-4 py-2 text-center">
+            <p className="text-white font-bold text-lg">68%</p>
+            <p className="text-rose-400 text-[9px]">Female</p>
+          </div>
+          <div className="bg-neutral-800/60 rounded-lg px-4 py-2 text-center">
+            <p className="text-white font-bold text-lg">82%</p>
+            <p className="text-neutral-400 text-[9px]">Age 18-34</p>
+          </div>
+          <div className="bg-neutral-800/60 rounded-lg px-4 py-2 text-center">
+            <p className="text-white font-bold text-lg">45%</p>
+            <p className="text-neutral-400 text-[9px]">USA</p>
+          </div>
+          <div className="bg-neutral-800/60 rounded-lg px-4 py-2 text-center">
+            <p className="text-white font-bold text-lg">30%</p>
+            <p className="text-neutral-400 text-[9px]">UK/EU</p>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Top Engagement Badge */}
+      <motion.div 
+        className="absolute left-4 lg:left-20 bottom-20 bg-neutral-900/95 backdrop-blur-sm shadow-lg rounded-full px-4 py-2 border border-neutral-800 hidden md:flex items-center gap-2"
+        initial={{ scale: 0.8, opacity: 0 }}
+        whileInView={{ scale: 1, opacity: 1 }}
+        animate={{ y: [0, -3, 0] }}
+        transition={{
+          delay: 1,
+          duration: 0.4,
+          y: { duration: 2.8, repeat: Infinity, ease: "easeInOut", delay: 0.7 }
+        }}
+        viewport={{ once: true }}
+      >
+        <TrendingUp className="w-4 h-4 text-rose-400" />
+        <p className="text-[10px] text-neutral-300">Top 5% Engagement Rate in Fashion Niche</p>
       </motion.div>
     </div>;
 };
