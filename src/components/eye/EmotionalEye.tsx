@@ -380,7 +380,7 @@ const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorCon
         onTouchEnd={gestureHandlers.onTouchEnd}
       >
         {/* Soft outer glow halo - radial gradient for smooth edges */}
-        <div className="absolute -inset-8 rounded-full blur-3xl pointer-events-none bg-[radial-gradient(circle,_rgba(229,229,229,0.4)_0%,_transparent_70%)] dark:bg-[radial-gradient(circle,_rgba(38,38,38,0.2)_0%,_transparent_70%)]" />
+        <div className="absolute -inset-8 rounded-full blur-3xl pointer-events-none bg-[radial-gradient(circle,_rgba(229,229,229,0.3)_0%,_transparent_85%)] dark:bg-[radial-gradient(circle,_rgba(38,38,38,0.15)_0%,_transparent_85%)]" />
         
         <div 
           className={cn(
