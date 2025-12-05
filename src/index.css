@@ -58,31 +58,42 @@ button, a, input, textarea, select {
   transition: box-shadow 0.15s ease;
 }
 
-/* Custom Scrollbar - Solid, non-transparent */
+/* Transparent Scrollbar - Hidden by default, visible on hover */
 ::-webkit-scrollbar {
-  width: 12px;
-  height: 12px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: hsl(var(--muted));
-  border-radius: 6px;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--foreground) / 0.3);
-  border-radius: 6px;
-  border: 3px solid hsl(var(--muted));
+  background: transparent;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--foreground) / 0.5);
+  background: hsl(var(--foreground) / 0.2);
 }
 
-/* Firefox scrollbar */
+/* Show scrollbar thumb on container hover */
+*:hover::-webkit-scrollbar-thumb {
+  background: hsl(var(--foreground) / 0.15);
+}
+
+*:hover::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--foreground) / 0.3);
+}
+
+/* Firefox scrollbar - transparent */
 * {
   scrollbar-width: thin;
-  scrollbar-color: hsl(var(--foreground) / 0.3) hsl(var(--muted));
+  scrollbar-color: transparent transparent;
+}
+
+*:hover {
+  scrollbar-color: hsl(var(--foreground) / 0.15) transparent;
 }
 
 /* Sidebar performance optimization */
