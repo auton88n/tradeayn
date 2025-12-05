@@ -531,6 +531,14 @@ const LandingPage = () => {
                         className="w-full h-auto" 
                         src={activeServiceIndex === 0 ? influencerSitePreview : activeServiceIndex === 1 ? aiAgentsPreview : automationPreview} 
                       />
+                      
+                      {/* Powered by AYN Badge */}
+                      <div className="absolute bottom-4 right-4 z-10 flex items-center gap-2 bg-black/70 backdrop-blur-sm rounded-full px-3 py-1.5 border border-white/10 shadow-lg">
+                        <Brain className="w-4 h-4 text-white" />
+                        <span className="text-xs font-medium text-white tracking-wide">
+                          Powered by AYN
+                        </span>
+                      </div>
                     </motion.div>
                     
                     {/* Shadow underneath for 3D depth */}
