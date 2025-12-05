@@ -4,7 +4,8 @@
 
 @layer utilities {
   .font-display { 
-    font-family: "Cormorant Garamond", ui-serif, Georgia, "Times New Roman", serif; 
+    font-family: "Syne", system-ui, sans-serif;
+    letter-spacing: -0.02em;
   }
   .shadow-inner { 
     box-shadow: inset 0 12px 30px rgba(0, 0, 0, 0.06); 
@@ -203,7 +204,7 @@ button, a, input, textarea, select {
 
   body {
     @apply bg-background text-foreground font-sans;
-    font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
     min-height: 100vh;
     letter-spacing: -0.01em;
     font-feature-settings: 'kern' 1, 'liga' 1;
@@ -211,20 +212,21 @@ button, a, input, textarea, select {
 
   /* Premium Typography */
   .font-serif {
-    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-family: 'Syne', system-ui, sans-serif;
+    letter-spacing: -0.02em;
   }
 
   .text-display {
-    font-family: 'Cormorant Garamond', Georgia, serif;
-    letter-spacing: -0.03em;
-    line-height: 0.9;
-    font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
+    font-family: 'Syne', system-ui, sans-serif;
+    letter-spacing: -0.02em;
+    line-height: 0.95;
+    font-feature-settings: 'kern' 1, 'liga' 1;
   }
 
   .text-display-lg {
     font-size: clamp(3rem, 10vw, 9rem);
-    line-height: 0.9;
-    font-weight: 600;
+    line-height: 0.95;
+    font-weight: 700;
   }
 
   /* Subtle Noise Texture */
