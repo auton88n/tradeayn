@@ -205,7 +205,7 @@ export const Hero = ({
       duration: 0.8,
       ease: [0.32, 0.72, 0, 1]
     }} className="w-full max-w-4xl text-center mb-4 md:mb-6">
-        <h1 className="font-serif text-5xl sm:text-6xl md:text-8xl lg:text-[10rem] font-semibold tracking-[-0.03em] text-foreground mb-2 md:mb-3">
+        <h1 className="font-display text-5xl sm:text-6xl md:text-8xl lg:text-[10rem] font-bold tracking-[-0.02em] text-foreground mb-2 md:mb-3">
           {language === 'ar' ? 'تعرّف على AYN' : 'Meet AYN'}
         </h1>
         <motion.p 

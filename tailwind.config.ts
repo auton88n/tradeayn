@@ -20,16 +20,21 @@ export default {
     	extend: {
 		fontFamily: {
 			sans: [
-				'Space Grotesk',
+				'Inter',
 				'-apple-system',
 				'BlinkMacSystemFont',
 				'system-ui',
 				'sans-serif'
 			],
 			serif: [
-				'Cormorant Garamond',
-				'Georgia',
-				'serif'
+				'Syne',
+				'system-ui',
+				'sans-serif'
+			],
+			display: [
+				'Syne',
+				'system-ui',
+				'sans-serif'
 			],
 			mono: [
 				'JetBrains Mono',
