@@ -116,8 +116,8 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
           // First reset to auto to get accurate scrollHeight
           textareaRef.current.style.height = 'auto';
           const scrollHeight = textareaRef.current.scrollHeight;
-          // Then set to actual content height, respecting max
-          textareaRef.current.style.height = Math.max(52, Math.min(scrollHeight, 200)) + 'px';
+          // Then set to actual content height, respecting max (280px)
+          textareaRef.current.style.height = Math.max(52, Math.min(scrollHeight, 280)) + 'px';
           textareaRef.current.focus();
         }
       }, 0);
@@ -179,10 +179,10 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
     setInputMessage(value);
     setShowPlaceholder(!value);
 
-    // Auto-resize
+    // Auto-resize with increased max-height
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = Math.max(52, Math.min(textareaRef.current.scrollHeight, 200)) + 'px';
+      textareaRef.current.style.height = Math.max(52, Math.min(textareaRef.current.scrollHeight, 280)) + 'px';
     }
   }, []);
   const handleFileClick = useCallback(() => {
@@ -214,50 +214,70 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
 
       {/* Main container */}
       <div className={cn("relative bg-background/95 backdrop-blur-xl border border-border rounded-2xl shadow-lg overflow-hidden transition-all duration-300", isDragOver && "border-primary shadow-xl", isInputFocused && "border-border/80 shadow-xl")}>
-        {/* Row 1: Input area */}
-        <div className="relative px-5 pt-4 pb-3">
-          <Textarea ref={textareaRef} value={inputMessage} onChange={handleTextareaChange} onKeyDown={handleKeyPress} onFocus={() => setIsInputFocused(true)} onBlur={() => setIsInputFocused(false)} disabled={isDisabled || isUploading} className={cn("w-full resize-none min-h-[52px] max-h-[200px]", "text-base md:text-lg bg-transparent", "border-0 focus-visible:ring-0 focus-visible:ring-offset-0", "text-foreground placeholder:text-muted-foreground", "disabled:opacity-50 disabled:cursor-not-allowed", "leading-relaxed", "overflow-y-auto", "scrollbar-left")} style={{
-          paddingRight: inputMessage.trim() ? '60px' : '12px',
-          paddingLeft: '12px',
-          paddingTop: '12px',
-          paddingBottom: '12px'
-        }} />
+        {/* Row 1: Input area with flexbox layout */}
+        <div className="flex items-end gap-3 px-5 pt-4 pb-3">
+          <div className="relative flex-1 min-w-0">
+            <Textarea 
+              ref={textareaRef} 
+              value={inputMessage} 
+              onChange={handleTextareaChange} 
+              onKeyDown={handleKeyPress} 
+              onFocus={() => setIsInputFocused(true)} 
+              onBlur={() => setIsInputFocused(false)} 
+              disabled={isDisabled || isUploading} 
+              className={cn(
+                "w-full resize-none min-h-[52px] max-h-[280px]",
+                "text-base md:text-lg bg-transparent",
+                "border-0 focus-visible:ring-0 focus-visible:ring-offset-0",
+                "text-foreground placeholder:text-muted-foreground",
+                "disabled:opacity-50 disabled:cursor-not-allowed",
+                "leading-relaxed",
+                "overflow-y-auto",
+                "px-3 py-3"
+              )} 
+            />
 
-          {/* Typewriter placeholder */}
-          {showPlaceholder && !inputMessage && !isInputFocused && <div className="absolute top-[26px] left-[32px] pointer-events-none">
-              <motion.span key={currentPlaceholder} initial={{
-            opacity: 0,
-            y: 5
-          }} animate={{
-            opacity: 0.5,
-            y: 0
-          }} exit={{
-            opacity: 0,
-            y: -5
-          }} transition={{
-            duration: 0.3
-          }} className="text-muted-foreground text-base md:text-lg">
-                {placeholders[currentPlaceholder]}
-              </motion.span>
-            </div>}
+            {/* Typewriter placeholder */}
+            {showPlaceholder && !inputMessage && !isInputFocused && (
+              <div className="absolute top-[14px] left-[14px] pointer-events-none">
+                <motion.span 
+                  key={currentPlaceholder} 
+                  initial={{ opacity: 0, y: 5 }} 
+                  animate={{ opacity: 0.5, y: 0 }} 
+                  exit={{ opacity: 0, y: -5 }} 
+                  transition={{ duration: 0.3 }} 
+                  className="text-muted-foreground text-base md:text-lg"
+                >
+                  {placeholders[currentPlaceholder]}
+                </motion.span>
+              </div>
+            )}
+          </div>
 
-          {/* Send button - only shows when text input exists */}
+          {/* Send button - flexbox aligned to bottom */}
           <AnimatePresence>
-            {inputMessage.trim() && !isDisabled && <motion.button initial={{
-            scale: 0,
-            opacity: 0
-          }} animate={{
-            scale: 1,
-            opacity: 1
-          }} exit={{
-            scale: 0,
-            opacity: 0
-          }} transition={{
-            duration: 0.15,
-            ease: "easeOut"
-          }} onClick={handleSend} disabled={isDisabled || isUploading} className={cn("absolute bottom-4 right-5", "w-10 h-10 rounded-xl", "flex items-center justify-center", "transition-all duration-200", "hover:scale-105 active:scale-95", "shadow-lg hover:shadow-xl", "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100", getSendButtonClass(selectedMode))}>
+            {inputMessage.trim() && !isDisabled && (
+              <motion.button 
+                initial={{ scale: 0, opacity: 0 }} 
+                animate={{ scale: 1, opacity: 1 }} 
+                exit={{ scale: 0, opacity: 0 }} 
+                transition={{ duration: 0.15, ease: "easeOut" }} 
+                onClick={handleSend} 
+                disabled={isDisabled || isUploading} 
+                className={cn(
+                  "shrink-0 mb-1",
+                  "w-10 h-10 rounded-xl",
+                  "flex items-center justify-center",
+                  "transition-all duration-200",
+                  "hover:scale-105 active:scale-95",
+                  "shadow-lg hover:shadow-xl",
+                  "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100",
+                  getSendButtonClass(selectedMode)
+                )}
+              >
                 <ArrowUp className="w-5 h-5" strokeWidth={2.5} />
-              </motion.button>}
+              </motion.button>
+            )}
           </AnimatePresence>
         </div>
 
