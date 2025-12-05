@@ -1,204 +1,273 @@
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Float, Sphere } from '@react-three/drei';
+import { Float, MeshTransmissionMaterial, Sphere } from '@react-three/drei';
 import * as THREE from 'three';
 import ServiceScene from './ServiceScene';
 
-// Neural connection line
-const NeuralConnection = ({ 
+// Neural pulse along a tube
+const NeuralTube = ({ 
   start, 
   end, 
-  delay 
+  delay,
+  color = "#06b6d4"
 }: { 
-  start: [number, number, number]; 
-  end: [number, number, number]; 
+  start: THREE.Vector3; 
+  end: THREE.Vector3;
   delay: number;
+  color?: string;
 }) => {
-  const lineRef = useRef<THREE.Line | null>(null);
+  const pulseRef = useRef<THREE.Mesh>(null);
   
-  const points = useMemo(() => {
-    const curve = new THREE.QuadraticBezierCurve3(
-      new THREE.Vector3(...start),
-      new THREE.Vector3(
-        (start[0] + end[0]) / 2 + (Math.random() - 0.5) * 0.5,
-        (start[1] + end[1]) / 2 + (Math.random() - 0.5) * 0.5,
-        (start[2] + end[2]) / 2 + (Math.random() - 0.5) * 0.5
-      ),
-      new THREE.Vector3(...end)
-    );
-    return curve.getPoints(20);
+  const curve = useMemo(() => {
+    const mid = new THREE.Vector3().lerpVectors(start, end, 0.5);
+    mid.z += (Math.random() - 0.5) * 0.5;
+    return new THREE.QuadraticBezierCurve3(start, mid, end);
   }, [start, end]);
 
+  const tubeGeometry = useMemo(() => {
+    return new THREE.TubeGeometry(curve, 32, 0.015, 8, false);
+  }, [curve]);
+
   useFrame((state) => {
-    if (lineRef.current) {
-      const material = lineRef.current.material as THREE.LineBasicMaterial;
-      material.opacity = 0.3 + Math.sin(state.clock.elapsedTime * 2 + delay) * 0.3;
+    if (pulseRef.current) {
+      const t = ((state.clock.elapsedTime * 0.5 + delay) % 1);
+      const point = curve.getPoint(t);
+      pulseRef.current.position.copy(point);
+      pulseRef.current.scale.setScalar(0.8 + Math.sin(state.clock.elapsedTime * 3) * 0.2);
     }
   });
 
-  const lineObject = useMemo(() => {
-    const geometry = new THREE.BufferGeometry().setFromPoints(points);
-    const material = new THREE.LineBasicMaterial({ color: '#00d4ff', transparent: true, opacity: 0.5 });
-    const line = new THREE.Line(geometry, material);
-    return line;
-  }, [points]);
-
-  return <primitive ref={lineRef} object={lineObject} />
+  return (
+    <group>
+      <mesh geometry={tubeGeometry}>
+        <meshPhysicalMaterial
+          color={color}
+          metalness={0.3}
+          roughness={0.4}
+          transparent
+          opacity={0.6}
+          emissive={color}
+          emissiveIntensity={0.3}
+        />
+      </mesh>
+      <mesh ref={pulseRef}>
+        <sphereGeometry args={[0.04, 16, 16]} />
+        <meshPhysicalMaterial
+          color="#ffffff"
+          emissive={color}
+          emissiveIntensity={2}
+          transparent
+          opacity={0.9}
+        />
+      </mesh>
+    </group>
+  );
 };
 
 // Glowing neural node
 const NeuralNode = ({ 
   position, 
-  size = 0.08, 
-  delay = 0 
+  delay,
+  size = 0.08,
+  color = "#8b5cf6"
 }: { 
-  position: [number, number, number]; 
-  size?: number; 
-  delay?: number;
+  position: THREE.Vector3; 
+  delay: number;
+  size?: number;
+  color?: string;
 }) => {
   const meshRef = useRef<THREE.Mesh>(null);
+  const glowRef = useRef<THREE.Mesh>(null);
   
   useFrame((state) => {
     if (meshRef.current) {
-      const scale = 1 + Math.sin(state.clock.elapsedTime * 3 + delay) * 0.3;
-      meshRef.current.scale.setScalar(scale);
+      const pulse = Math.sin(state.clock.elapsedTime * 2 + delay) * 0.15 + 1;
+      meshRef.current.scale.setScalar(pulse);
+    }
+    if (glowRef.current) {
+      const glow = Math.sin(state.clock.elapsedTime * 3 + delay) * 0.3 + 0.7;
+      (glowRef.current.material as THREE.MeshBasicMaterial).opacity = glow * 0.5;
     }
   });
 
   return (
-    <mesh ref={meshRef} position={position}>
-      <sphereGeometry args={[size, 16, 16]} />
-      <meshStandardMaterial 
-        color="#00d4ff" 
-        emissive="#00d4ff" 
-        emissiveIntensity={1}
-        transparent
-        opacity={0.9}
-      />
-    </mesh>
+    <group position={position}>
+      <mesh ref={glowRef} scale={2.5}>
+        <sphereGeometry args={[size, 16, 16]} />
+        <meshBasicMaterial color={color} transparent opacity={0.3} />
+      </mesh>
+      <mesh ref={meshRef}>
+        <sphereGeometry args={[size, 32, 32]} />
+        <meshPhysicalMaterial
+          color={color}
+          metalness={0.5}
+          roughness={0.2}
+          clearcoat={1}
+          emissive={color}
+          emissiveIntensity={0.8}
+        />
+      </mesh>
+    </group>
   );
 };
 
-// Orbiting particle
-const OrbitingParticle = ({ 
+// Orbiting data particle
+const DataParticle = ({ 
   radius, 
   speed, 
-  offset, 
-  axis 
+  offset,
+  axis = 'y',
+  color = "#06b6d4"
 }: { 
   radius: number; 
-  speed: number; 
+  speed: number;
   offset: number;
-  axis: 'x' | 'y' | 'z';
+  axis?: 'x' | 'y' | 'z';
+  color?: string;
 }) => {
   const meshRef = useRef<THREE.Mesh>(null);
   
   useFrame((state) => {
     if (meshRef.current) {
       const t = state.clock.elapsedTime * speed + offset;
-      if (axis === 'x') {
-        meshRef.current.position.set(Math.cos(t) * radius, Math.sin(t) * radius, 0);
-      } else if (axis === 'y') {
-        meshRef.current.position.set(Math.cos(t) * radius, 0, Math.sin(t) * radius);
+      if (axis === 'y') {
+        meshRef.current.position.x = Math.cos(t) * radius;
+        meshRef.current.position.z = Math.sin(t) * radius;
+        meshRef.current.position.y = Math.sin(t * 2) * 0.3;
+      } else if (axis === 'x') {
+        meshRef.current.position.y = Math.cos(t) * radius;
+        meshRef.current.position.z = Math.sin(t) * radius;
+        meshRef.current.position.x = Math.sin(t * 2) * 0.3;
       } else {
-        meshRef.current.position.set(0, Math.cos(t) * radius, Math.sin(t) * radius);
+        meshRef.current.position.x = Math.cos(t) * radius;
+        meshRef.current.position.y = Math.sin(t) * radius;
+        meshRef.current.position.z = Math.sin(t * 2) * 0.3;
       }
     }
   });
 
   return (
     <mesh ref={meshRef}>
-      <sphereGeometry args={[0.04, 8, 8]} />
-      <meshStandardMaterial color="#06b6d4" emissive="#06b6d4" emissiveIntensity={0.8} />
+      <sphereGeometry args={[0.03, 8, 8]} />
+      <meshBasicMaterial color={color} transparent opacity={0.9} />
     </mesh>
   );
 };
 
 const BrainModel = () => {
   const brainRef = useRef<THREE.Group>(null);
-
-  useFrame((state) => {
-    if (brainRef.current) {
-      brainRef.current.rotation.y = state.clock.elapsedTime * 0.2;
-    }
-  });
-
-  // Generate random node positions
-  const nodes: [number, number, number][] = useMemo(() => {
-    const positions: [number, number, number][] = [];
-    for (let i = 0; i < 20; i++) {
-      const theta = Math.random() * Math.PI * 2;
-      const phi = Math.random() * Math.PI;
-      const r = 0.8 + Math.random() * 0.4;
-      positions.push([
-        r * Math.sin(phi) * Math.cos(theta),
-        r * Math.sin(phi) * Math.sin(theta),
-        r * Math.cos(phi)
-      ]);
+  const coreRef = useRef<THREE.Mesh>(null);
+  
+  const nodePositions = useMemo(() => {
+    const positions: THREE.Vector3[] = [];
+    const count = 12;
+    for (let i = 0; i < count; i++) {
+      const phi = Math.acos(-1 + (2 * i) / count);
+      const theta = Math.sqrt(count * Math.PI) * phi;
+      const radius = 0.85 + Math.random() * 0.15;
+      positions.push(new THREE.Vector3(
+        radius * Math.sin(phi) * Math.cos(theta),
+        radius * Math.sin(phi) * Math.sin(theta),
+        radius * Math.cos(phi)
+      ));
     }
     return positions;
   }, []);
 
-  // Generate connections between nearby nodes
   const connections = useMemo(() => {
-    const conns: { start: [number, number, number]; end: [number, number, number] }[] = [];
-    for (let i = 0; i < nodes.length; i++) {
-      for (let j = i + 1; j < nodes.length; j++) {
-        const dist = Math.sqrt(
-          Math.pow(nodes[i][0] - nodes[j][0], 2) +
-          Math.pow(nodes[i][1] - nodes[j][1], 2) +
-          Math.pow(nodes[i][2] - nodes[j][2], 2)
-        );
-        if (dist < 0.8 && conns.length < 30) {
-          conns.push({ start: nodes[i], end: nodes[j] });
+    const conns: Array<{ start: THREE.Vector3; end: THREE.Vector3 }> = [];
+    for (let i = 0; i < nodePositions.length; i++) {
+      for (let j = i + 1; j < nodePositions.length; j++) {
+        if (nodePositions[i].distanceTo(nodePositions[j]) < 1.5) {
+          conns.push({ start: nodePositions[i], end: nodePositions[j] });
         }
       }
     }
     return conns;
-  }, [nodes]);
+  }, [nodePositions]);
+
+  useFrame((state) => {
+    if (brainRef.current) {
+      brainRef.current.rotation.y = state.clock.elapsedTime * 0.15;
+    }
+    if (coreRef.current) {
+      const pulse = Math.sin(state.clock.elapsedTime * 2) * 0.1 + 1;
+      coreRef.current.scale.setScalar(pulse);
+    }
+  });
 
   return (
-    <Float speed={1.5} rotationIntensity={0.2} floatIntensity={0.4}>
+    <Float speed={1} rotationIntensity={0.1} floatIntensity={0.3}>
       <group ref={brainRef}>
-        {/* Core brain sphere - icosahedron for geometric look */}
-        <mesh>
-          <icosahedronGeometry args={[1, 1]} />
-          <meshStandardMaterial 
-            color="#0a1628"
-            metalness={0.8}
-            roughness={0.2}
-            transparent
-            opacity={0.6}
-            wireframe
-          />
-        </mesh>
-
-        {/* Inner glow */}
-        <Sphere args={[0.7, 32, 32]}>
-          <meshStandardMaterial 
-            color="#00d4ff"
-            emissive="#00d4ff"
-            emissiveIntensity={0.3}
-            transparent
-            opacity={0.2}
+        {/* Glass brain shell */}
+        <Sphere args={[1, 64, 64]}>
+          <MeshTransmissionMaterial
+            backside
+            samples={16}
+            thickness={0.5}
+            chromaticAberration={0.05}
+            anisotropy={0.5}
+            distortion={0.2}
+            distortionScale={0.3}
+            temporalDistortion={0.2}
+            transmission={0.92}
+            roughness={0.05}
+            color="#c4b5fd"
+            ior={1.5}
           />
         </Sphere>
 
+        {/* Inner geometric core */}
+        <mesh ref={coreRef}>
+          <icosahedronGeometry args={[0.35, 1]} />
+          <meshPhysicalMaterial
+            color="#8b5cf6"
+            metalness={0.8}
+            roughness={0.2}
+            emissive="#8b5cf6"
+            emissiveIntensity={1}
+          />
+        </mesh>
+
+        {/* Central glow */}
+        <mesh scale={0.5}>
+          <sphereGeometry args={[1, 32, 32]} />
+          <meshBasicMaterial color="#c4b5fd" transparent opacity={0.3} />
+        </mesh>
+
         {/* Neural nodes */}
-        {nodes.map((pos, i) => (
-          <NeuralNode key={i} position={pos} delay={i * 0.3} size={0.06 + Math.random() * 0.04} />
+        {nodePositions.map((pos, i) => (
+          <NeuralNode 
+            key={i} 
+            position={pos} 
+            delay={i * 0.5}
+            size={0.06 + Math.random() * 0.03}
+            color={i % 3 === 0 ? "#8b5cf6" : i % 3 === 1 ? "#06b6d4" : "#ec4899"}
+          />
         ))}
 
         {/* Neural connections */}
         {connections.map((conn, i) => (
-          <NeuralConnection key={i} start={conn.start} end={conn.end} delay={i * 0.2} />
+          <NeuralTube
+            key={i}
+            start={conn.start}
+            end={conn.end}
+            delay={i * 0.3}
+            color={i % 2 === 0 ? "#06b6d4" : "#8b5cf6"}
+          />
         ))}
 
         {/* Orbiting particles */}
-        <OrbitingParticle radius={1.5} speed={0.8} offset={0} axis="x" />
-        <OrbitingParticle radius={1.6} speed={0.6} offset={Math.PI / 2} axis="y" />
-        <OrbitingParticle radius={1.4} speed={1} offset={Math.PI} axis="z" />
-        <OrbitingParticle radius={1.7} speed={0.5} offset={Math.PI * 1.5} axis="x" />
+        {[...Array(8)].map((_, i) => (
+          <DataParticle
+            key={i}
+            radius={1.4 + (i % 3) * 0.2}
+            speed={0.5 + i * 0.1}
+            offset={i * Math.PI / 4}
+            axis={i % 3 === 0 ? 'y' : i % 3 === 1 ? 'x' : 'z'}
+            color={i % 2 === 0 ? "#06b6d4" : "#a855f7"}
+          />
+        ))}
       </group>
     </Float>
   );
@@ -206,12 +275,12 @@ const BrainModel = () => {
 
 const AIBrainMockup = () => {
   return (
-    <ServiceScene cameraPosition={[0, 0, 5]}>
+    <ServiceScene cameraPosition={[0, 0, 4.5]}>
       <BrainModel />
-      {/* Cyan accent lights */}
-      <pointLight position={[3, 2, 3]} intensity={1} color="#00d4ff" />
-      <pointLight position={[-3, -2, 2]} intensity={0.8} color="#06b6d4" />
-      <pointLight position={[0, 3, 0]} intensity={0.5} color="#8b5cf6" />
+      <pointLight position={[3, 2, 3]} intensity={2} color="#06b6d4" />
+      <pointLight position={[-3, -1, 2]} intensity={1.5} color="#8b5cf6" />
+      <pointLight position={[0, -3, 2]} intensity={0.8} color="#ec4899" />
+      <spotLight position={[0, 5, 3]} intensity={0.5} color="#ffffff" angle={0.5} />
     </ServiceScene>
   );
 };
