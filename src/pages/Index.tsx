@@ -1,7 +1,7 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect, lazy, Suspense, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
-import { AYNLoader, DashboardLoader, PageLoader } from '@/components/ui/page-loader';
+import { AYNLoader, DashboardLoader, PageLoader, TimeoutError } from '@/components/ui/page-loader';
 
 // Lazy load heavy components for better initial load time
 const LandingPage = lazy(() => import('@/components/LandingPage'));
@@ -11,11 +11,22 @@ const Index = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasTimeout, setHasTimeout] = useState(false);
+  const loadingResolved = useRef(false);
 
   useEffect(() => {
+    // Timeout after 10 seconds if auth doesn't respond
+    const timeoutId = setTimeout(() => {
+      if (!loadingResolved.current) {
+        setHasTimeout(true);
+        setLoading(false);
+      }
+    }, 10000);
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        loadingResolved.current = true;
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -24,13 +35,22 @@ const Index = () => {
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      loadingResolved.current = true;
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(timeoutId);
+      subscription.unsubscribe();
+    };
   }, []);
+
+  // Show timeout error with retry option
+  if (hasTimeout) {
+    return <TimeoutError onRetry={() => window.location.reload()} />;
+  }
 
   if (loading) {
     return <AYNLoader />;
