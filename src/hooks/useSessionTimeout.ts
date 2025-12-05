@@ -21,7 +21,21 @@ export const useSessionTimeout = (config: SessionTimeoutConfig = {}) => {
 
   const logout = useCallback(async () => {
     clearAllTimers();
-    await supabase.auth.signOut();
+    try {
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Sign out timeout')), 5000);
+      });
+      
+      await Promise.race([
+        supabase.auth.signOut(),
+        timeoutPromise
+      ]);
+    } catch (error) {
+      // Force local logout by clearing storage
+      localStorage.removeItem('sb-dfkoxuokfkttjhfjcecx-auth-token');
+      sessionStorage.clear();
+      window.location.href = '/';
+    }
   }, []);
 
   const clearAllTimers = () => {

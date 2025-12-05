@@ -518,10 +518,17 @@ export const Sidebar = ({
             {/* Sign Out */}
             <div className="p-2">
               <Button 
-                onClick={() => {
+                onClick={async () => {
                   setIsSigningOut(true);
                   setProfilePopoverOpen(false);
-                  onLogout(); // Fire-and-forget for instant feedback
+                  try {
+                    await onLogout();
+                  } catch (error) {
+                    // Force logout on error
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    window.location.href = '/';
+                  }
                 }}
                 disabled={isSigningOut}
                 variant="ghost" 
