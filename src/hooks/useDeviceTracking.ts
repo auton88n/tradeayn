@@ -90,8 +90,8 @@ const getDeviceInfo = () => {
 };
 
 /**
- * Track device login - creates or updates device fingerprint and updates profile
- * Uses upsert pattern to prevent race condition duplicates
+ * Track device login - optimized with parallel operations
+ * Uses database RPC function for atomic upsert
  */
 export const trackDeviceLogin = async (userId: string) => {
   try {
@@ -99,60 +99,22 @@ export const trackDeviceLogin = async (userId: string) => {
     const deviceInfo = getDeviceInfo();
     const now = new Date().toISOString();
     
-    // Check if device exists using limit(1) to handle potential duplicates gracefully
-    const { data: existingDevices } = await supabase
-      .from('device_fingerprints')
-      .select('id, login_count')
-      .eq('user_id', userId)
-      .eq('fingerprint_hash', fingerprintHash)
-      .limit(1);
+    // Use database RPC for atomic device fingerprint recording (handles upsert + increment)
+    // and update profile in parallel
+    await Promise.all([
+      supabase.rpc('record_device_fingerprint', {
+        _user_id: userId,
+        _fingerprint_hash: fingerprintHash,
+        _device_info: deviceInfo
+      }),
+      
+      supabase
+        .from('profiles')
+        .update({ last_login: now })
+        .eq('user_id', userId)
+    ]);
     
-    if (existingDevices && existingDevices.length > 0) {
-      // Update existing device
-      const existing = existingDevices[0];
-      await supabase
-        .from('device_fingerprints')
-        .update({
-          last_seen: now,
-          login_count: (existing.login_count ?? 0) + 1,
-          device_info: deviceInfo
-        })
-        .eq('id', existing.id);
-    } else {
-      // Insert new device with upsert to handle race conditions
-      await supabase
-        .from('device_fingerprints')
-        .upsert({
-          user_id: userId,
-          fingerprint_hash: fingerprintHash,
-          device_info: deviceInfo,
-          is_trusted: false,
-          login_count: 1,
-          first_seen: now,
-          last_seen: now
-        }, {
-          onConflict: 'user_id,fingerprint_hash',
-          ignoreDuplicates: true
-        });
-    }
-    
-    // Update last_login in profiles
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('total_sessions')
-      .eq('user_id', userId)
-      .maybeSingle();
-    
-    await supabase
-      .from('profiles')
-      .update({
-        last_login: now,
-        total_sessions: (profile?.total_sessions ?? 0) + 1
-      })
-      .eq('user_id', userId);
-    
-  } catch (error) {
-    console.error('Error tracking device login:', error);
+  } catch {
     // Don't throw - tracking shouldn't break login flow
   }
 };

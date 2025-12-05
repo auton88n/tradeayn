@@ -23,7 +23,7 @@ export const useSessionTimeout = (config: SessionTimeoutConfig = {}) => {
     clearAllTimers();
     try {
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Sign out timeout')), 5000);
+        setTimeout(() => reject(new Error('Sign out timeout')), 2000);
       });
       
       await Promise.race([

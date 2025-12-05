@@ -49,46 +49,46 @@ const Index = () => {
       }
     }, 8000);
 
-    // Set up auth state listener
+    // Set up auth state listener - trust Supabase for normal auth events
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (mounted) {
-          if (session) {
-            // Validate session before trusting it
-            const validatedSession = await validateSession(session);
-            setSession(validatedSession);
-            setUser(validatedSession?.user ?? null);
-          } else {
-            setSession(null);
-            setUser(null);
-          }
+      (event, session) => {
+        if (!mounted) return;
+        
+        // Trust Supabase auth for normal events (no redundant validation)
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
+          setSession(session);
+          setUser(session?.user ?? null);
           setLoading(false);
+          return;
         }
+        
+        // Handle sign out
+        if (event === 'SIGNED_OUT') {
+          setSession(null);
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+        
+        // For other events, update state normally
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
       }
     );
 
-    // Check for existing session with validation
+    // Check for existing session - trust Supabase without extra validation
     supabase.auth.getSession()
-      .then(async ({ data: { session } }) => {
+      .then(({ data: { session } }) => {
         if (mounted) {
-          if (session) {
-            // Validate the session is actually working
-            const validatedSession = await validateSession(session);
-            setSession(validatedSession);
-            setUser(validatedSession?.user ?? null);
-          } else {
-            setSession(null);
-            setUser(null);
-          }
+          setSession(session);
+          setUser(session?.user ?? null);
           setLoading(false);
         }
       })
       .catch((error) => {
         console.error('Auth session check failed:', error);
         if (mounted) {
-          // Clear potentially corrupted auth state
-          localStorage.removeItem('sb-dfkoxuokfkttjhfjcecx-auth-token');
-          sessionStorage.clear();
           setLoading(false);
         }
       });
