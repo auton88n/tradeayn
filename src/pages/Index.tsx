@@ -12,16 +12,24 @@ const Index = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasTimeout, setHasTimeout] = useState(false);
+  const [isSlowConnection, setIsSlowConnection] = useState(false);
   const loadingResolved = useRef(false);
 
   useEffect(() => {
-    // Timeout after 10 seconds if auth doesn't respond
+    // Show slow connection message after 5 seconds
+    const slowConnectionId = setTimeout(() => {
+      if (!loadingResolved.current) {
+        setIsSlowConnection(true);
+      }
+    }, 5000);
+
+    // Timeout after 20 seconds if auth doesn't respond
     const timeoutId = setTimeout(() => {
       if (!loadingResolved.current) {
         setHasTimeout(true);
         setLoading(false);
       }
-    }, 10000);
+    }, 20000);
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -30,6 +38,7 @@ const Index = () => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+        setIsSlowConnection(false);
       }
     );
 
@@ -39,9 +48,11 @@ const Index = () => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      setIsSlowConnection(false);
     });
 
     return () => {
+      clearTimeout(slowConnectionId);
       clearTimeout(timeoutId);
       subscription.unsubscribe();
     };
@@ -53,7 +64,7 @@ const Index = () => {
   }
 
   if (loading) {
-    return <AYNLoader />;
+    return <AYNLoader isSlowConnection={isSlowConnection} />;
   }
 
   return user ? (
