@@ -13,9 +13,9 @@ const MobileMockup = () => {
     label: 'Brand Deals'
   }];
   const navDots = [0, 1, 2, 3, 4];
-  return <div className="relative flex justify-center items-center py-16 lg:py-8">
+  return <div className="relative flex justify-center items-center py-8 px-4 md:px-16 lg:px-32">
       {/* Phone-Centric Layout Container */}
-      <div className="relative">
+      <div className="relative mx-auto">
         {/* iPhone Frame - Center */}
         <div className="relative w-[280px] h-[560px] bg-neutral-900 rounded-[50px] p-2.5 shadow-2xl z-10">
           {/* Screen */}
@@ -177,41 +177,41 @@ const MobileMockup = () => {
 
         {/* Instagram Card - Top Right */}
         <motion.div 
-          className="absolute top-8 -right-28 lg:-right-48 bg-neutral-900/95 backdrop-blur-sm shadow-2xl rounded-2xl p-3 lg:p-4 border border-neutral-800 z-20 cursor-pointer"
+          className="absolute top-4 right-[-100px] md:right-[-140px] lg:right-[-180px] bg-neutral-900/95 backdrop-blur-sm shadow-2xl rounded-2xl p-2.5 md:p-3 lg:p-4 border border-neutral-800 z-20 cursor-pointer hidden sm:block"
           initial={{ scale: 0.8, opacity: 0, x: 20 }}
           whileInView={{ scale: 1, opacity: 1, x: 0 }}
           whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
           transition={{ delay: 0.5, duration: 0.5 }}
           viewport={{ once: true }}
         >
-          <div className="flex items-center gap-2 lg:gap-3 mb-2 lg:mb-3">
-            <div className="w-9 h-9 lg:w-11 lg:h-11 rounded-xl bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 flex items-center justify-center">
-              <Instagram className="w-4 h-4 lg:w-5 lg:h-5 text-white" />
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-8 h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 rounded-xl bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 flex items-center justify-center">
+              <Instagram className="w-3.5 h-3.5 md:w-4 md:h-4 lg:w-5 lg:h-5 text-white" />
             </div>
             <div>
-              <p className="text-white font-semibold text-xs lg:text-sm">Instagram</p>
-              <p className="text-neutral-500 text-[9px] lg:text-[10px]">Social Platform</p>
+              <p className="text-white font-semibold text-[10px] md:text-xs lg:text-sm">Instagram</p>
+              <p className="text-neutral-500 text-[8px] md:text-[9px]">Social Platform</p>
             </div>
           </div>
-          <div className="flex gap-3 lg:gap-4">
+          <div className="flex gap-2 md:gap-3 lg:gap-4">
             <div>
-              <p className="text-[#E1306C] font-bold text-lg lg:text-xl">1.1M</p>
-              <p className="text-neutral-500 text-[8px] lg:text-[9px] flex items-center gap-1"><Users className="w-3 h-3" /> Followers</p>
+              <p className="text-[#E1306C] font-bold text-sm md:text-base lg:text-lg">1.1M</p>
+              <p className="text-neutral-500 text-[7px] md:text-[8px] flex items-center gap-0.5"><Users className="w-2.5 h-2.5" /> Followers</p>
             </div>
             <div>
-              <p className="text-[#E1306C] font-bold text-lg lg:text-xl">6.8%</p>
-              <p className="text-neutral-500 text-[8px] lg:text-[9px] flex items-center gap-1"><Heart className="w-3 h-3" /> Engagement</p>
+              <p className="text-[#E1306C] font-bold text-sm md:text-base lg:text-lg">6.8%</p>
+              <p className="text-neutral-500 text-[7px] md:text-[8px] flex items-center gap-0.5"><Heart className="w-2.5 h-2.5" /> Engage</p>
             </div>
             <div>
-              <p className="text-white font-bold text-lg lg:text-xl">150K</p>
-              <p className="text-neutral-500 text-[8px] lg:text-[9px] flex items-center gap-1"><Eye className="w-3 h-3" /> Avg Views</p>
+              <p className="text-white font-bold text-sm md:text-base lg:text-lg">150K</p>
+              <p className="text-neutral-500 text-[7px] md:text-[8px] flex items-center gap-0.5"><Eye className="w-2.5 h-2.5" /> Views</p>
             </div>
           </div>
         </motion.div>
 
         {/* Engagement Card - Bottom Right */}
         <motion.div 
-          className="absolute bottom-32 -right-16 lg:-right-28 bg-neutral-900/95 backdrop-blur-sm shadow-xl rounded-xl p-2.5 lg:p-3 border border-neutral-800 z-20 cursor-pointer"
+          className="absolute bottom-24 right-[-80px] md:right-[-100px] lg:right-[-120px] bg-neutral-900/95 backdrop-blur-sm shadow-xl rounded-xl p-2 md:p-2.5 lg:p-3 border border-neutral-800 z-20 cursor-pointer hidden sm:block"
           initial={{ scale: 0.8, opacity: 0 }}
           whileInView={{ scale: 1, opacity: 1 }}
           whileHover={{ scale: 1.08, transition: { duration: 0.2 } }}
@@ -219,83 +219,83 @@ const MobileMockup = () => {
           viewport={{ once: true }}
         >
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
-              <TrendingUp className="w-4 h-4 lg:w-5 lg:h-5 text-emerald-400" />
+            <div className="w-7 h-7 md:w-8 md:h-8 lg:w-9 lg:h-9 rounded-full bg-emerald-500/20 flex items-center justify-center">
+              <TrendingUp className="w-3.5 h-3.5 md:w-4 md:h-4 text-emerald-400" />
             </div>
             <div>
-              <p className="text-[10px] lg:text-[11px] text-neutral-500">Engagement</p>
-              <p className="text-sm lg:text-base font-bold text-emerald-400">+24%</p>
+              <p className="text-[9px] md:text-[10px] text-neutral-500">Engagement</p>
+              <p className="text-xs md:text-sm font-bold text-emerald-400">+24%</p>
             </div>
           </div>
         </motion.div>
 
         {/* Top Engagement Badge - Bottom Center */}
         <motion.div 
-          className="absolute -bottom-14 left-1/2 -translate-x-1/2 bg-neutral-900/95 backdrop-blur-sm shadow-xl rounded-full px-4 lg:px-5 py-2 lg:py-2.5 border border-neutral-800 flex items-center gap-2 z-20 cursor-pointer"
+          className="absolute bottom-[-30px] left-1/2 -translate-x-1/2 bg-neutral-900/95 backdrop-blur-sm shadow-xl rounded-full px-3 md:px-4 py-1.5 md:py-2 border border-neutral-800 flex items-center gap-1.5 md:gap-2 z-20 cursor-pointer"
           initial={{ scale: 0.8, opacity: 0, y: 20 }}
           whileInView={{ scale: 1, opacity: 1, y: 0 }}
           whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
           transition={{ delay: 0.9, duration: 0.5 }}
           viewport={{ once: true }}
         >
-          <TrendingUp className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-emerald-400" />
-          <p className="text-[10px] lg:text-[11px] text-neutral-300 whitespace-nowrap">Top 5% Engagement Rate in Fashion</p>
+          <TrendingUp className="w-3 h-3 md:w-3.5 md:h-3.5 text-emerald-400" />
+          <p className="text-[9px] md:text-[10px] text-neutral-300 whitespace-nowrap">Top 5% Engagement in Fashion</p>
         </motion.div>
 
         {/* TikTok Card - Top Left */}
         <motion.div 
-          className="absolute -top-12 -left-28 lg:-left-48 bg-neutral-900/95 backdrop-blur-sm shadow-2xl rounded-2xl p-3 lg:p-4 border border-neutral-800 z-20 hidden md:block cursor-pointer"
+          className="absolute top-[-20px] left-[-100px] md:left-[-140px] lg:left-[-180px] bg-neutral-900/95 backdrop-blur-sm shadow-2xl rounded-2xl p-2.5 md:p-3 lg:p-4 border border-neutral-800 z-20 hidden md:block cursor-pointer"
           initial={{ scale: 0.8, opacity: 0, x: -20 }}
           whileInView={{ scale: 1, opacity: 1, x: 0 }}
           whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
           transition={{ delay: 0.6, duration: 0.5 }}
           viewport={{ once: true }}
         >
-          <div className="flex items-center gap-2 lg:gap-3 mb-2 lg:mb-3">
-            <div className="w-9 h-9 lg:w-11 lg:h-11 rounded-xl bg-neutral-800 flex items-center justify-center">
-              <svg className="w-4 h-4 lg:w-5 lg:h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-8 h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 rounded-xl bg-neutral-800 flex items-center justify-center">
+              <svg className="w-3.5 h-3.5 md:w-4 md:h-4 lg:w-5 lg:h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" />
               </svg>
             </div>
             <div>
-              <p className="text-white font-semibold text-xs lg:text-sm">TikTok</p>
-              <p className="text-neutral-500 text-[9px] lg:text-[10px]">Social Platform</p>
+              <p className="text-white font-semibold text-[10px] md:text-xs lg:text-sm">TikTok</p>
+              <p className="text-neutral-500 text-[8px] md:text-[9px]">Social Platform</p>
             </div>
           </div>
-          <div className="flex gap-3 lg:gap-4">
+          <div className="flex gap-2 md:gap-3 lg:gap-4">
             <div>
-              <p className="text-[#00f2ea] font-bold text-lg lg:text-xl">2.1M</p>
-              <p className="text-neutral-500 text-[8px] lg:text-[9px] flex items-center gap-1"><Users className="w-3 h-3" /> Followers</p>
+              <p className="text-[#00f2ea] font-bold text-sm md:text-base lg:text-lg">2.1M</p>
+              <p className="text-neutral-500 text-[7px] md:text-[8px] flex items-center gap-0.5"><Users className="w-2.5 h-2.5" /> Followers</p>
             </div>
             <div>
-              <p className="text-[#00f2ea] font-bold text-lg lg:text-xl">12.3%</p>
-              <p className="text-neutral-500 text-[8px] lg:text-[9px] flex items-center gap-1"><Heart className="w-3 h-3" /> Engagement</p>
+              <p className="text-[#00f2ea] font-bold text-sm md:text-base lg:text-lg">12.3%</p>
+              <p className="text-neutral-500 text-[7px] md:text-[8px] flex items-center gap-0.5"><Heart className="w-2.5 h-2.5" /> Engage</p>
             </div>
             <div>
-              <p className="text-white font-bold text-lg lg:text-xl">500K</p>
-              <p className="text-neutral-500 text-[8px] lg:text-[9px] flex items-center gap-1"><Eye className="w-3 h-3" /> Avg Views</p>
+              <p className="text-white font-bold text-sm md:text-base lg:text-lg">500K</p>
+              <p className="text-neutral-500 text-[7px] md:text-[8px] flex items-center gap-0.5"><Eye className="w-2.5 h-2.5" /> Views</p>
             </div>
           </div>
         </motion.div>
 
         {/* Demographics Card - Bottom Left */}
         <motion.div 
-          className="absolute bottom-8 -left-24 lg:-left-40 bg-neutral-900/95 backdrop-blur-sm shadow-xl rounded-2xl p-3 lg:p-4 border border-neutral-800 z-20 hidden lg:block cursor-pointer"
+          className="absolute bottom-16 left-[-90px] md:left-[-120px] lg:left-[-150px] bg-neutral-900/95 backdrop-blur-sm shadow-xl rounded-2xl p-2.5 md:p-3 lg:p-4 border border-neutral-800 z-20 hidden lg:block cursor-pointer"
           initial={{ scale: 0.8, opacity: 0, x: -20 }}
           whileInView={{ scale: 1, opacity: 1, x: 0 }}
           whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
           transition={{ delay: 0.8, duration: 0.5 }}
           viewport={{ once: true }}
         >
-          <p className="text-white font-semibold text-[10px] lg:text-xs mb-2 lg:mb-3">Audience Demographics</p>
-          <div className="flex gap-2 lg:gap-3">
-            <div className="bg-neutral-800/70 rounded-xl px-2.5 lg:px-3 py-1.5 lg:py-2 text-center">
-              <p className="text-white font-bold text-base lg:text-lg">68%</p>
-              <p className="text-[#E1306C] text-[7px] lg:text-[8px]">Female</p>
+          <p className="text-white font-semibold text-[9px] md:text-[10px] lg:text-xs mb-2">Audience Demographics</p>
+          <div className="flex gap-2">
+            <div className="bg-neutral-800/70 rounded-xl px-2 md:px-2.5 py-1.5 text-center">
+              <p className="text-white font-bold text-sm md:text-base">68%</p>
+              <p className="text-[#E1306C] text-[7px]">Female</p>
             </div>
-            <div className="bg-neutral-800/70 rounded-xl px-2.5 lg:px-3 py-1.5 lg:py-2 text-center">
-              <p className="text-white font-bold text-base lg:text-lg">82%</p>
-              <p className="text-neutral-400 text-[7px] lg:text-[8px]">Age 18-34</p>
+            <div className="bg-neutral-800/70 rounded-xl px-2 md:px-2.5 py-1.5 text-center">
+              <p className="text-white font-bold text-sm md:text-base">82%</p>
+              <p className="text-neutral-400 text-[7px]">Age 18-34</p>
             </div>
           </div>
         </motion.div>

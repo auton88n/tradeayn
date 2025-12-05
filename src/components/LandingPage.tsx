@@ -476,7 +476,7 @@ const LandingPage = () => {
             <ScrollReveal>
               <Link to={`/services/${services[0].slug}`} className="block h-full">
                 <motion.div 
-                  className="bg-muted/50 rounded-3xl p-6 md:p-8 h-full min-h-[500px] lg:row-span-2 flex flex-col group cursor-pointer"
+                  className="bg-muted/50 rounded-3xl p-6 md:p-8 h-full min-h-[500px] lg:row-span-2 flex flex-col group cursor-pointer overflow-visible"
                   whileHover={{ y: -4 }}
                   transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
                 >
@@ -489,7 +489,7 @@ const LandingPage = () => {
                       {services[0].description}
                     </p>
                   </div>
-                  <div className="flex-1 flex items-center justify-center">
+                  <div className="flex-1 flex items-center justify-center overflow-visible">
                     {services[0].mockup}
                   </div>
                   <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors mt-4">
