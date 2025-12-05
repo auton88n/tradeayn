@@ -137,7 +137,7 @@ export const Sidebar = ({
               <div>
                 <h1 className="text-sm font-semibold tracking-tight text-foreground">AYN AI</h1>
               <p className="text-xs text-foreground/60">
-                  {isTyping ? 'Thinking...' : hasAccess ? 'Active' : 'Inactive'}
+                  {isTyping ? 'Thinking...' : hasAccess ? 'Active' : hasAccess === false ? 'Inactive' : 'Loading...'}
                 </p>
               </div>
             </div>

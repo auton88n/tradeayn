@@ -17,6 +17,8 @@ export const useAuth = (user: User): UseAuthReturn => {
   const { toast } = useToast();
   const { t } = useLanguage();
   
+  console.log('🔵 [useAuth] Hook initialized with user.id:', user?.id);
+  
   // Track consecutive auth failures to detect invalid sessions
   const authFailureCount = useRef(0);
   
@@ -43,6 +45,7 @@ export const useAuth = (user: User): UseAuthReturn => {
 
   // Check if user has active access
   const checkAccess = useCallback(async () => {
+    console.log('🔵 [checkAccess] Starting query for user.id:', user.id);
     try {
       const { data, error } = await supabase
         .from('access_grants')
@@ -50,7 +53,10 @@ export const useAuth = (user: User): UseAuthReturn => {
         .eq('user_id', user.id)
         .maybeSingle();
 
+      console.log('🔵 [checkAccess] Query result:', { data, error });
+
       if (error) {
+        console.error('❌ [checkAccess] Query error:', error);
         handleAuthFailure(error, 'checkAccess');
         return;
       }
@@ -59,13 +65,16 @@ export const useAuth = (user: User): UseAuthReturn => {
       resetAuthFailures();
 
       if (!data) {
+        console.log('⚠️ [checkAccess] No data found, setting hasAccess=false');
         setHasAccess(false);
         return;
       }
 
       const isActive = data.is_active && (!data.expires_at || new Date(data.expires_at) > new Date());
+      console.log('🟢 [checkAccess] Setting hasAccess to:', isActive);
       setHasAccess(isActive);
     } catch (error) {
+      console.error('❌ [checkAccess] Caught exception:', error);
       handleAuthFailure(error as { code?: string; message?: string }, 'checkAccess');
     }
   }, [user.id, handleAuthFailure, resetAuthFailures]);
@@ -183,13 +192,16 @@ export const useAuth = (user: User): UseAuthReturn => {
 
   // Load all auth data on mount in parallel and track device login non-blocking
   useEffect(() => {
+    console.log('🔵 [useAuth] useEffect triggered, user.id:', user.id);
+    
     // Run all auth checks in parallel for faster loading
     Promise.all([
-      checkAccess(),
-      checkAdminRole(),
-      loadUserProfile(),
-      checkTermsAcceptance()
+      checkAccess().then(() => console.log('✅ [useAuth] checkAccess complete')),
+      checkAdminRole().then(() => console.log('✅ [useAuth] checkAdminRole complete')),
+      loadUserProfile().then(() => console.log('✅ [useAuth] loadUserProfile complete')),
+      checkTermsAcceptance().then(() => console.log('✅ [useAuth] checkTermsAcceptance complete'))
     ]).finally(() => {
+      console.log('🟢 [useAuth] All checks complete, setting isAuthLoading=false');
       setIsAuthLoading(false);
     });
     
