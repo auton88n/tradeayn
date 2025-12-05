@@ -97,6 +97,121 @@ const MobileMockup = () => {
         </div>
       </motion.div>
 
+      {/* Tablet Frame */}
+      <motion.div 
+        className="relative hidden lg:block"
+        initial={{ y: 20, opacity: 0 }}
+        whileInView={{ y: 0, opacity: 1 }}
+        animate={{ y: [0, -7, 0] }}
+        transition={{
+          duration: 0.6,
+          ease: [0.32, 0.72, 0, 1],
+          y: { duration: 4.2, repeat: Infinity, ease: "easeInOut", delay: 0.25 }
+        }}
+        viewport={{ once: true }}
+      >
+        <div className="w-[260px] h-[340px] bg-neutral-800 rounded-[24px] p-3 shadow-2xl">
+          {/* Camera */}
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 w-2 h-2 bg-neutral-700 rounded-full" />
+          
+          {/* Screen Content */}
+          <div className="w-full h-full bg-neutral-950 rounded-[16px] overflow-hidden relative flex flex-col items-center justify-center px-6 pt-4">
+            {/* Name Section */}
+            <motion.div 
+              className="text-center mb-3"
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.35, duration: 0.5 }}
+              viewport={{ once: true }}
+            >
+              <h2 className="font-serif italic text-[26px] leading-tight">
+                <span className="text-rose-400">SARAH</span>
+              </h2>
+              <h2 className="font-serif italic text-[26px] leading-tight text-white -mt-1">
+                JOHNSON
+              </h2>
+            </motion.div>
+
+            {/* Subtitle */}
+            <motion.p 
+              className="text-rose-400/80 text-[9px] tracking-wider uppercase mb-2"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              transition={{ delay: 0.45, duration: 0.5 }}
+              viewport={{ once: true }}
+            >
+              Fashion & Lifestyle Influencer
+            </motion.p>
+
+            {/* Bio */}
+            <motion.p 
+              className="text-neutral-500 text-[8px] text-center leading-relaxed mb-4 px-2 max-w-[200px]"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              transition={{ delay: 0.5, duration: 0.5 }}
+              viewport={{ once: true }}
+            >
+              Creating authentic content that inspires millions worldwide. Let's collaborate and build something amazing together.
+            </motion.p>
+
+            {/* Stats Row */}
+            <div className="flex gap-2 mb-4">
+              {stats.map((stat, i) => (
+                <motion.div 
+                  key={i} 
+                  className="bg-neutral-800/60 backdrop-blur-sm rounded-lg py-2 px-3 text-center border border-neutral-700/30"
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.55 + i * 0.1, duration: 0.4 }}
+                  viewport={{ once: true }}
+                >
+                  <p className="text-white font-serif text-[12px] font-medium">{stat.value}</p>
+                  <p className="text-neutral-500 text-[6px] uppercase tracking-wide">{stat.label}</p>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* CTA Button */}
+            <motion.button 
+              className="flex items-center gap-1.5 bg-white text-neutral-900 rounded-full px-4 py-1.5 text-[9px] font-medium shadow-lg mb-3"
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.75, duration: 0.4 }}
+              viewport={{ once: true }}
+            >
+              <Mail className="w-3 h-3" />
+              Work With Me
+            </motion.button>
+
+            {/* Social Icons */}
+            <motion.div 
+              className="flex gap-3"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              transition={{ delay: 0.85, duration: 0.4 }}
+              viewport={{ once: true }}
+            >
+              <div className="w-7 h-7 rounded-full bg-neutral-800/80 border border-neutral-700/50 flex items-center justify-center">
+                <Instagram className="w-3.5 h-3.5 text-neutral-400" />
+              </div>
+              <div className="w-7 h-7 rounded-full bg-neutral-800/80 border border-neutral-700/50 flex items-center justify-center">
+                <svg className="w-3.5 h-3.5 text-neutral-400" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" />
+                </svg>
+              </div>
+              <div className="w-7 h-7 rounded-full bg-neutral-800/80 border border-neutral-700/50 flex items-center justify-center">
+                <svg className="w-3.5 h-3.5 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M3 3v18h18" />
+                  <path d="M18 17V9" />
+                  <path d="M13 17V5" />
+                  <path d="M8 17v-3" />
+                </svg>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </motion.div>
+
       {/* iPhone Frame */}
       <motion.div 
         className="relative w-[220px] h-[440px] bg-neutral-900 rounded-[40px] p-2 shadow-2xl" 
