@@ -25,45 +25,47 @@ export const AIEye = () => {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, [mouseX, mouseY]);
 
+  const irisRadius = 28;
+
   return (
     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
       <div className="relative">
-        {/* Single soft glow halo - radial gradient for smooth edges */}
+        {/* Soft outer glow halo - radial gradient for smooth edges */}
         <div className="absolute -inset-8 rounded-full blur-3xl bg-[radial-gradient(circle,_rgba(229,229,229,0.3)_0%,_transparent_85%)] dark:bg-[radial-gradient(circle,_rgba(38,38,38,0.15)_0%,_transparent_85%)]" />
 
-        {/* Main eye - perfect circle with clean Apple-style design */}
-        <div className="relative w-40 h-40 md:w-48 md:h-48 lg:w-64 lg:h-64 rounded-full bg-gradient-to-b from-white to-neutral-100 dark:from-neutral-900 dark:to-neutral-950">
-          {/* Inner shadow ring for depth */}
-          <div className="absolute inset-2 rounded-full shadow-[inset_0_4px_16px_rgba(0,0,0,0.1)] dark:shadow-[inset_0_4px_16px_rgba(0,0,0,0.3)]" />
+        {/* Main eye container - exact same as EmotionalEye */}
+        <div className="relative w-40 h-40 md:w-48 md:h-48 lg:w-64 lg:h-64 rounded-full bg-gradient-to-b from-white to-neutral-100 dark:from-neutral-900 dark:to-neutral-950 flex items-center justify-center overflow-hidden">
+          {/* Inner shadow ring - matching EmotionalEye */}
+          <div className="absolute inset-2 rounded-full shadow-[inset_0_4px_16px_rgba(0,0,0,0.08)] dark:shadow-[inset_0_4px_16px_rgba(0,0,0,0.3)]" />
 
-          {/* Gray ring to match EmotionalEye */}
+          {/* Gray ring - exact same as EmotionalEye */}
           <div className="absolute inset-[15%] rounded-full bg-neutral-200 dark:bg-neutral-800" />
 
           {/* Iris container - cursor tracking */}
           <motion.div
             style={{ x: smoothX, y: smoothY }}
-            className="absolute inset-0 flex items-center justify-center"
+            className="relative z-10 w-[70%] h-[70%] flex items-center justify-center"
           >
             {/* SVG with pupil and brain - matching EmotionalEye */}
             <svg 
               viewBox="0 0 100 100" 
-              className="w-[70%] h-[70%]"
+              className="w-full h-full"
               xmlns="http://www.w3.org/2000/svg"
             >
               {/* Solid black pupil */}
               <circle 
                 cx="50" 
                 cy="50" 
-                r="28"
+                r={irisRadius}
                 fill="#000000"
               />
               
               {/* Brain icon */}
               <foreignObject 
-                x={50 - 28 * 0.6} 
-                y={50 - 28 * 0.6} 
-                width={28 * 1.2} 
-                height={28 * 1.2}
+                x={50 - irisRadius * 0.6} 
+                y={50 - irisRadius * 0.6} 
+                width={irisRadius * 1.2} 
+                height={irisRadius * 1.2}
               >
                 <Brain 
                   className="w-full h-full" 
