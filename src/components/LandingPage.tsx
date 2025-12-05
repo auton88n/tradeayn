@@ -17,6 +17,7 @@ import { z } from 'zod';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import influencerSitePreview from '@/assets/influencer-site-preview.png';
 
 const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -495,64 +496,48 @@ const LandingPage = () => {
                     </div>
                   </div>
 
-                  {/* 3D Visual Card */}
-                  <div className="order-1 md:order-2 perspective-1000">
+                  {/* 3D Browser Mockup */}
+                  <div className="order-1 md:order-2 perspective-1000 relative">
                     <motion.div 
-                      className="relative aspect-[4/3] rounded-2xl md:rounded-3xl overflow-hidden shadow-2xl"
-                      initial={{ rotateY: -5, rotateX: 5 }}
+                      className="relative rounded-xl md:rounded-2xl overflow-hidden"
                       whileHover={{ 
                         rotateY: 0, 
                         rotateX: 0,
                         scale: 1.02,
-                        boxShadow: "0 50px 100px -20px rgba(0, 0, 0, 0.25), 0 30px 60px -30px rgba(0, 0, 0, 0.3)"
                       }}
                       transition={{ type: "spring", stiffness: 200, damping: 20 }}
                       style={{ 
                         transformStyle: "preserve-3d",
-                        transform: "perspective(1000px) rotateY(-8deg) rotateX(5deg)",
+                        transform: "perspective(1000px) rotateY(-6deg) rotateX(4deg)",
+                        boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.1)"
                       }}
                     >
-                      {/* Dark gradient background like reference */}
-                      <div className="absolute inset-0 bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900" />
-                      
-                      {/* Content overlay */}
-                      <div className="relative z-10 w-full h-full p-6 md:p-8 flex flex-col justify-between">
-                        {/* Header */}
-                        <div>
-                          <h3 className="text-2xl md:text-4xl font-serif font-bold text-rose-300/80 leading-tight">
-                            SARAH
-                          </h3>
-                          <h3 className="text-3xl md:text-5xl font-serif font-bold text-white leading-tight">
-                            JOHNSON
-                          </h3>
-                          <p className="text-rose-300/60 text-sm md:text-base mt-2">
-                            Fashion & Lifestyle Influencer
-                          </p>
+                      {/* Browser Chrome */}
+                      <div className="bg-neutral-800 px-4 py-3 flex items-center gap-2">
+                        <div className="flex gap-1.5">
+                          <div className="w-3 h-3 rounded-full bg-red-500/80" />
+                          <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
+                          <div className="w-3 h-3 rounded-full bg-green-500/80" />
                         </div>
-                        
-                        {/* Stats */}
-                        <div className="flex gap-3 mt-4">
-                          <div className="bg-neutral-800/80 backdrop-blur rounded-lg px-3 py-2 text-center">
-                            <div className="text-white font-bold text-lg md:text-xl">3.2M</div>
-                            <div className="text-neutral-400 text-xs">Followers</div>
-                          </div>
-                          <div className="bg-neutral-800/80 backdrop-blur rounded-lg px-3 py-2 text-center">
-                            <div className="text-white font-bold text-lg md:text-xl">8.5%</div>
-                            <div className="text-neutral-400 text-xs">Engagement</div>
-                          </div>
-                          <div className="bg-neutral-800/80 backdrop-blur rounded-lg px-3 py-2 text-center">
-                            <div className="text-white font-bold text-lg md:text-xl">50+</div>
-                            <div className="text-neutral-400 text-xs">Brand Deals</div>
+                        <div className="flex-1 mx-4">
+                          <div className="bg-neutral-700 rounded-md px-3 py-1.5 text-xs text-neutral-400 text-center">
+                            sarahjohnson.com
                           </div>
                         </div>
                       </div>
-
-                      {/* Floating reflection/glow effect */}
-                      <div className="absolute -bottom-4 left-4 right-4 h-8 bg-gradient-to-b from-white/5 to-transparent blur-xl rounded-full" />
+                      
+                      {/* Website Content - Full Image */}
+                      <div className="bg-neutral-900">
+                        <img 
+                          src={influencerSitePreview}
+                          alt="Premium Influencer Website Preview"
+                          className="w-full h-auto object-contain"
+                        />
+                      </div>
                     </motion.div>
                     
-                    {/* Shadow underneath for 3D effect */}
-                    <div className="absolute -bottom-4 left-8 right-8 h-8 bg-black/20 blur-2xl rounded-full transform -skew-x-6" />
+                    {/* Shadow underneath for 3D depth */}
+                    <div className="absolute -bottom-6 left-6 right-6 h-12 bg-black/15 dark:bg-black/30 blur-2xl rounded-full" />
                   </div>
                 </div>
               </motion.div>
