@@ -13,6 +13,7 @@ export const useAuth = (user: User): UseAuthReturn => {
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
   const { toast } = useToast();
   const { t } = useLanguage();
   
@@ -188,7 +189,9 @@ export const useAuth = (user: User): UseAuthReturn => {
       checkAdminRole(),
       loadUserProfile(),
       checkTermsAcceptance()
-    ]);
+    ]).finally(() => {
+      setIsAuthLoading(false);
+    });
     
     // Track device login non-blocking (don't wait for it)
     if (!hasTrackedDevice.current) {
@@ -204,6 +207,7 @@ export const useAuth = (user: User): UseAuthReturn => {
     hasAccess,
     hasAcceptedTerms,
     isAdmin,
+    isAuthLoading,
     userProfile,
     checkAccess,
     checkAdminRole,

@@ -121,9 +121,9 @@ export default function Dashboard({ user }: DashboardProps) {
         />
       )}
 
-      {/* Terms Modal - shows when terms not accepted */}
+      {/* Terms Modal - shows when terms not accepted (only after auth loading completes) */}
       <TermsModal
-        open={!auth.hasAcceptedTerms}
+        open={!auth.isAuthLoading && !auth.hasAcceptedTerms}
         onAccept={auth.acceptTerms}
       />
 
