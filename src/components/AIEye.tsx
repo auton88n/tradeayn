@@ -36,6 +36,9 @@ export const AIEye = () => {
           {/* Inner shadow ring for depth */}
           <div className="absolute inset-2 rounded-full shadow-[inset_0_4px_16px_rgba(0,0,0,0.1)] dark:shadow-[inset_0_4px_16px_rgba(0,0,0,0.3)]" />
 
+          {/* Gray ring to match EmotionalEye */}
+          <div className="absolute inset-[15%] rounded-full bg-neutral-200 dark:bg-neutral-800" />
+
           {/* Iris container - cursor tracking */}
           <motion.div
             style={{ x: smoothX, y: smoothY }}
