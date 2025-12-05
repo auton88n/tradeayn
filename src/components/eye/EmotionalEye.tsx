@@ -384,7 +384,7 @@ const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorCon
         
         <div 
           className={cn(
-            "relative rounded-full bg-gradient-to-b from-white to-neutral-100 dark:from-neutral-900 dark:to-neutral-950 flex items-center justify-center overflow-hidden will-change-transform eye-shadow",
+            "relative rounded-full bg-gradient-to-b from-white to-neutral-100 dark:from-neutral-900 dark:to-neutral-950 flex items-center justify-center overflow-hidden will-change-transform",
             sizeClasses[size],
             // Only animate breathing when not deep idle and no reduced motion preference
             !isDeepIdle && !prefersReducedMotion && "animate-eye-breathe"
