@@ -394,7 +394,7 @@ export const Hero = ({
           )}
         </AnimatePresence>
 
-        {/* Eye - centered with spring physics - simplified shadows */}
+        {/* Eye - Clean minimal design matching dashboard EmotionalEye */}
         <motion.div 
           style={{ x: eyeX, y: eyeY }}
           className="relative z-10 flex items-center justify-center group cursor-pointer will-change-transform" 
@@ -404,50 +404,61 @@ export const Hero = ({
           onMouseEnter={() => setIsHovered(true)} 
           onMouseLeave={() => setIsHovered(false)}
         >
-          {/* Outer casing - simplified hover effects */}
+          {/* Soft outer glow halo - radial gradient for smooth edges */}
+          <div className="absolute -inset-8 rounded-full blur-2xl pointer-events-none bg-[radial-gradient(circle,_rgba(229,229,229,0.3)_0%,_transparent_70%)] dark:bg-[radial-gradient(circle,_rgba(38,38,38,0.15)_0%,_transparent_70%)]" />
+
+          {/* Main eye container - matches EmotionalEye exactly */}
           <motion.div 
-            className="relative w-[120px] h-[120px] sm:w-[160px] sm:h-[160px] md:w-[200px] md:h-[200px] lg:w-[240px] lg:h-[240px] rounded-full bg-background flex items-center justify-center shadow-xl group-hover:shadow-2xl group-hover:scale-[1.03] overflow-hidden transition-shadow duration-300" 
+            className="relative w-[120px] h-[120px] sm:w-[160px] sm:h-[160px] md:w-[200px] md:h-[200px] lg:w-[240px] lg:h-[240px] rounded-full bg-white dark:bg-neutral-900 flex items-center justify-center overflow-hidden shadow-xl"
             animate={{ scale: [1, 1.01, 1] }}
             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
           >
-            {/* soft inner ring */}
-            <div className="absolute inset-4 rounded-full bg-background/80 shadow-inner"></div>
+            {/* Inner shadow for depth */}
+            <div className="absolute inset-2 rounded-full shadow-[inset_0_4px_16px_rgba(0,0,0,0.06)] dark:shadow-[inset_0_4px_16px_rgba(0,0,0,0.25)]" />
 
-            {/* actual eye (pupil + iris) - state-controlled blink */}
-            <motion.svg viewBox="0 0 100 100" className="w-[70%] h-[70%] relative" xmlns="http://www.w3.org/2000/svg" animate={{
-            scaleY: isBlinking ? 0.05 : 1,
-            opacity: isBlinking ? 0.7 : 1
-          }} transition={{
-            duration: isBlinking ? 0.08 : 0.12,
-            ease: isBlinking ? [0.55, 0.055, 0.675, 0.19] : [0.34, 1.56, 0.64, 1]
-          }} style={{
-            transformOrigin: 'center center'
-          }}>
-              {/* iris subtle gradient */}
-              <defs>
-                <radialGradient id="g1" cx="50%" cy="40%">
-                  <stop offset="0%" stopColor="hsl(var(--foreground))" stopOpacity="0.12" />
-                  <stop offset="45%" stopColor="hsl(var(--foreground))" stopOpacity="0.06" />
-                  <stop offset="100%" stopColor="hsl(var(--foreground))" stopOpacity="0.9" />
-                </radialGradient>
-                <radialGradient id="g2" cx="40%" cy="30%">
-                  <stop offset="0%" stopColor="hsl(var(--background))" stopOpacity="0.9" />
-                  <stop offset="80%" stopColor="hsl(var(--foreground))" stopOpacity="0.95" />
-                </radialGradient>
-              </defs>
+            {/* Gray ring - neutral color */}
+            <div className="absolute inset-[15%] rounded-full bg-neutral-200 dark:bg-neutral-800" />
 
-              {/* sclera subtle */}
-              <circle cx="50" cy="50" r="48" fill="url(#g2)" opacity="0.06" />
-
-              {/* iris / pupil - black circle that dilates on blink (anticipation), contracts on absorption */}
-              <circle cx="50" cy="50" r={absorptionPulse ? "22" : isBlinking ? "30" : isHovered ? "32" : "28"} fill="black" style={{
-              transition: absorptionPulse ? "r 0.15s cubic-bezier(0.55, 0.055, 0.675, 0.19)" : isBlinking ? "r 0.08s cubic-bezier(0.55, 0.055, 0.675, 0.19)" : "r 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)"
-            }} />
+            {/* Iris container with SVG */}
+            <motion.svg 
+              viewBox="0 0 100 100" 
+              className="w-[70%] h-[70%] relative z-10"
+              xmlns="http://www.w3.org/2000/svg"
+              animate={{
+                scaleY: isBlinking ? 0.05 : 1,
+                opacity: isBlinking ? 0.7 : 1
+              }}
+              transition={{
+                duration: isBlinking ? 0.08 : 0.12,
+                ease: isBlinking ? [0.55, 0.055, 0.675, 0.19] : [0.34, 1.56, 0.64, 1]
+              }}
+              style={{ transformOrigin: 'center center' }}
+            >
+              {/* Solid black pupil */}
+              <circle 
+                cx="50" 
+                cy="50" 
+                r={absorptionPulse ? 22 : isHovered ? 32 : 28}
+                fill="#000000"
+                style={{
+                  transition: absorptionPulse 
+                    ? "r 0.15s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
+                    : "r 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)"
+                }}
+              />
               
-              {/* Brain logo centered inside the black pupil - smaller */}
-              <foreignObject x={absorptionPulse ? "36" : isBlinking ? "32" : isHovered ? "30" : "32"} y={absorptionPulse ? "36" : isBlinking ? "32" : isHovered ? "30" : "32"} width={absorptionPulse ? "28" : isBlinking ? "36" : isHovered ? "40" : "36"} height={absorptionPulse ? "28" : isBlinking ? "36" : isHovered ? "40" : "36"} style={{
-              transition: absorptionPulse ? "all 0.15s cubic-bezier(0.55, 0.055, 0.675, 0.19)" : isBlinking ? "all 0.08s cubic-bezier(0.55, 0.055, 0.675, 0.19)" : "all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)"
-            }}>
+              {/* Brain icon - always white */}
+              <foreignObject 
+                x={absorptionPulse ? 36 : isHovered ? 30 : 32} 
+                y={absorptionPulse ? 36 : isHovered ? 30 : 32} 
+                width={absorptionPulse ? 28 : isHovered ? 40 : 36} 
+                height={absorptionPulse ? 28 : isHovered ? 40 : 36}
+                style={{
+                  transition: absorptionPulse 
+                    ? "all 0.15s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
+                    : "all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)"
+                }}
+              >
                 <Brain className="w-full h-full text-white/90" />
               </foreignObject>
             </motion.svg>
