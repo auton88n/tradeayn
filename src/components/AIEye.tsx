@@ -54,16 +54,16 @@ export const AIEye = () => {
               <circle 
                 cx="50" 
                 cy="50" 
-                r="32"
+                r="28"
                 fill="#000000"
               />
               
               {/* Brain icon */}
               <foreignObject 
-                x={50 - 32 * 0.6} 
-                y={50 - 32 * 0.6} 
-                width={32 * 1.2} 
-                height={32 * 1.2}
+                x={50 - 28 * 0.6} 
+                y={50 - 28 * 0.6} 
+                width={28 * 1.2} 
+                height={28 * 1.2}
               >
                 <Brain 
                   className="w-full h-full" 
