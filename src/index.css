@@ -58,6 +58,33 @@ button, a, input, textarea, select {
   transition: box-shadow 0.15s ease;
 }
 
+/* Custom Scrollbar - Solid, non-transparent */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--foreground) / 0.3);
+  border-radius: 6px;
+  border: 3px solid hsl(var(--muted));
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--foreground) / 0.5);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--foreground) / 0.3) hsl(var(--muted));
+}
+
 /* Sidebar performance optimization */
 [data-sidebar="sidebar"] {
   will-change: transform;
