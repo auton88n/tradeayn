@@ -383,16 +383,49 @@ button, a, input, textarea, select {
     to { transform: rotate(-360deg) translateX(var(--tx, 0)) translateY(var(--ty, 0)); }
   }
 
-  /* Eye breathing animation - GPU accelerated */
+  /* Eye breathing animation - GPU accelerated, pausable */
   .animate-eye-breathe {
-    animation: eye-breathe 4s ease-in-out infinite;
+    animation: eye-breathe 5s ease-in-out infinite;
     transform-style: preserve-3d;
     backface-visibility: hidden;
   }
 
   @keyframes eye-breathe {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.015); opacity: 0.98; }
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.01); }
+  }
+
+  /* Bounce dot animation for thinking indicator */
+  .animate-bounce-dot {
+    animation: bounce-dot 0.6s ease-in-out infinite;
+  }
+
+  @keyframes bounce-dot {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.3); }
+  }
+
+  /* Reduced motion preferences */
+  @media (prefers-reduced-motion: reduce) {
+    .animate-eye-breathe,
+    .animate-orbit-slow,
+    .animate-counter-orbit,
+    .animate-bounce-dot {
+      animation: none !important;
+    }
+    
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* Pause animations when tab not visible */
+  .tab-hidden .animate-eye-breathe,
+  .tab-hidden .animate-orbit-slow,
+  .tab-hidden .animate-counter-orbit {
+    animation-play-state: paused;
   }
 
   /* Professional animated gradient backgrounds */
