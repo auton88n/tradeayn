@@ -22,6 +22,7 @@ export const Sidebar = ({
   userEmail,
   userAvatar,
   isTyping,
+  isLoading,
   hasAccess,
   selectedMode,
   modes,
@@ -127,17 +128,20 @@ export const Sidebar = ({
                 {/* Status dot */}
                 <div className={cn(
                   "absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background",
-                  hasAccess ? "bg-green-500" : "bg-foreground/30"
+                  isLoading ? "bg-amber-500" : hasAccess ? "bg-green-500" : "bg-foreground/30"
                 )}>
-                  {isTyping && (
-                    <span className="absolute inset-0 rounded-full bg-green-500 animate-ping opacity-75" />
+                  {(isTyping || isLoading) && (
+                    <span className={cn(
+                      "absolute inset-0 rounded-full animate-ping opacity-75",
+                      isLoading ? "bg-amber-500" : "bg-green-500"
+                    )} />
                   )}
                 </div>
               </div>
               <div>
                 <h1 className="text-sm font-semibold tracking-tight text-foreground">AYN AI</h1>
-              <p className="text-xs text-foreground/60">
-                  {isTyping ? 'Thinking...' : hasAccess ? 'Active' : 'Inactive'}
+                <p className="text-xs text-foreground/60">
+                  {isTyping ? 'Thinking...' : isLoading ? 'Connecting...' : hasAccess ? 'Active' : 'Inactive'}
                 </p>
               </div>
             </div>

@@ -341,6 +341,7 @@ const DashboardContent = ({
           userEmail={auth.userProfile?.company_name || 'No company'}
           userAvatar={auth.userProfile?.avatar_url}
           isTyping={messagesHook.isTyping}
+          isLoading={auth.isLoading}
           hasAccess={auth.hasAccess}
           selectedMode={selectedMode}
           modes={modes}
