@@ -377,7 +377,7 @@ export const CenterStageLayout = ({
         className={cn(
           "flex-1 flex relative",
           "items-center justify-center",
-          "pb-32",
+          "pb-40 md:pb-36", // Space for fixed input
           "transition-all duration-300 ease-out",
           "overflow-hidden"
         )}
@@ -431,8 +431,8 @@ animate={{
             </AnimatePresence>
           </motion.div>
           
-          {/* Response card directly below eye - padding prevents shadow clipping */}
-          <div className="px-6 py-4 w-full flex justify-center">
+          {/* Response card directly below eye - constrained height prevents pushing input */}
+          <div className="px-6 py-4 w-full flex justify-center max-h-[45vh] overflow-hidden">
             <ResponseCard 
               responses={responseBubbles} 
               isMobile={isMobile}
@@ -490,10 +490,18 @@ animate={{
       </div>
       */}
 
-      {/* Input area - ChatInput handles its own fixed positioning */}
-      <ChatInput
-        ref={inputRef}
-        onSend={handleSendWithAnimation}
+      {/* Input area - Fixed at bottom */}
+      <div 
+        className={cn(
+          "fixed bottom-0 left-0 right-0 z-30",
+          "transition-all duration-300",
+          sidebarOpen && "lg:left-[20rem]",
+          transcriptOpen && "lg:right-[20rem]"
+        )}
+      >
+        <ChatInput
+          ref={inputRef}
+          onSend={handleSendWithAnimation}
         isDisabled={isDisabled}
         selectedMode={selectedMode}
         selectedFile={selectedFile}
@@ -514,6 +522,7 @@ animate={{
         prefillValue={prefillValue}
         onPrefillConsumed={onPrefillConsumed}
       />
+      </div>
     </div>
   );
 };
