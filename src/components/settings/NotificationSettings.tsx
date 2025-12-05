@@ -1,10 +1,11 @@
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Slider } from '@/components/ui/slider';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useUserSettings } from '@/hooks/useUserSettings';
 import { useSoundContextOptional } from '@/contexts/SoundContext';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Volume1, Volume2 } from 'lucide-react';
 export const NotificationSettings = () => {
   const {
     t
@@ -87,6 +88,29 @@ export const NotificationSettings = () => {
               disabled={updating} 
             />
           </div>
+
+          {settings.in_app_sounds && soundContext && (
+            <div className="space-y-3 pt-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm">Volume</Label>
+                <span className="text-sm text-muted-foreground">
+                  {Math.round(soundContext.volume * 100)}%
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Volume1 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <Slider
+                  value={[soundContext.volume]}
+                  onValueChange={([value]) => soundContext.setVolume(value)}
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  className="flex-1"
+                />
+                <Volume2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              </div>
+            </div>
+          )}
 
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
