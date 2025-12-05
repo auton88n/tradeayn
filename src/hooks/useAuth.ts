@@ -8,17 +8,11 @@ import type { UserProfile, UseAuthReturn } from '@/types/dashboard.types';
 
 export const useAuth = (user: User): UseAuthReturn => {
   const [hasAccess, setHasAccess] = useState(false);
+  const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const { t } = useLanguage();
-
-  // Initialize hasAcceptedTerms synchronously from localStorage
-  const termsKey = `ayn_terms_accepted_${user.id}`;
-  const [hasAcceptedTerms, setHasAcceptedTerms] = useState(() => {
-    return localStorage.getItem(termsKey) === 'true';
-  });
 
   // Check if user has active access
   const checkAccess = useCallback(async () => {
@@ -73,34 +67,29 @@ export const useAuth = (user: User): UseAuthReturn => {
 
   // Load user profile
   const loadUserProfile = useCallback(async () => {
-    console.log('[useAuth] Loading profile for user:', user.id);
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('user_id, contact_person, company_name, business_type, business_context, avatar_url')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      console.log('[useAuth] Profile query result:', { data, error });
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('user_id, contact_person, company_name, business_type, business_context, avatar_url')
+      .eq('user_id', user.id)
+      .maybeSingle();
 
       if (error) {
-        console.error('[useAuth] Error loading profile:', error);
+        console.error('Error loading profile:', error);
         return;
       }
 
       if (data) {
-        console.log('[useAuth] Setting user profile:', data);
         setUserProfile(data as UserProfile);
-      } else {
-        console.log('[useAuth] No profile data returned - user may not have a profile yet');
       }
     } catch (error) {
-      console.error('[useAuth] Profile loading error:', error);
+      console.error('Profile loading error:', error);
     }
   }, [user.id]);
 
   // Accept terms and conditions
   const acceptTerms = useCallback(() => {
+    const termsKey = `ayn_terms_accepted_${user.id}`;
     localStorage.setItem(termsKey, 'true');
     setHasAcceptedTerms(true);
 
@@ -108,32 +97,23 @@ export const useAuth = (user: User): UseAuthReturn => {
       title: t('auth.welcomeTitle'),
       description: t('auth.welcomeDesc')
     });
-  }, [termsKey, toast, t]);
+  }, [user.id, toast, t]);
 
-  // Refs to prevent multiple calls
+  // Check terms acceptance on mount
+  useEffect(() => {
+    const termsKey = `ayn_terms_accepted_${user.id}`;
+    const accepted = localStorage.getItem(termsKey) === 'true';
+    setHasAcceptedTerms(accepted);
+  }, [user.id]);
+
+  // Ref to prevent multiple device tracking calls
   const hasTrackedDevice = useRef(false);
-  const hasInitialized = useRef(false);
 
   // Load all auth data on mount and track device login
   useEffect(() => {
-    const initAuth = async () => {
-      // Only set loading true on first initialization
-      if (!hasInitialized.current) {
-        setIsLoading(true);
-      }
-      
-      // Run all checks in parallel
-      await Promise.all([
-        checkAccess(),
-        checkAdminRole(),
-        loadUserProfile()
-      ]);
-      
-      hasInitialized.current = true;
-      setIsLoading(false);
-    };
-    
-    initAuth();
+    checkAccess();
+    checkAdminRole();
+    loadUserProfile();
     
     // Track device login only once per session
     if (!hasTrackedDevice.current) {
@@ -146,7 +126,6 @@ export const useAuth = (user: User): UseAuthReturn => {
     hasAccess,
     hasAcceptedTerms,
     isAdmin,
-    isLoading,
     userProfile,
     checkAccess,
     checkAdminRole,

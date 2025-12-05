@@ -12,9 +12,10 @@ import { TutorialOverlay } from '@/components/tutorial/TutorialOverlay';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { AIMode, FileAttachment, AIModeConfig, ChatHistory, UseAuthReturn } from '@/types/dashboard.types';
+import type { AIMode, FileAttachment, AIModeConfig, ChatHistory } from '@/types/dashboard.types';
 
 // Import custom hooks
+import { useAuth } from '@/hooks/useAuth';
 import { useChatSession } from '@/hooks/useChatSession';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { useMessages } from '@/hooks/useMessages';
@@ -27,7 +28,7 @@ import { MessageSquare, TrendingUp, Search, FileText, Eye, Hammer, Menu, X, Brai
 
 interface DashboardContainerProps {
   user: User;
-  auth: UseAuthReturn;
+  isAdmin?: boolean;
   onAdminPanelClick?: () => void;
 }
 
@@ -49,11 +50,12 @@ const getModes = (): AIModeConfig[] => [
   // { name: 'Civil Engineering', translatedName: t('modes.civilEngineering'), description: 'Engineering calculations', icon: Hammer, color: 'text-teal-500', webhookUrl: '' },
 ];
 
-export const DashboardContainer = ({ user, auth, onAdminPanelClick }: DashboardContainerProps) => {
+export const DashboardContainer = ({ user, isAdmin, onAdminPanelClick }: DashboardContainerProps) => {
   const { toast } = useToast();
   const { language, setLanguage } = useLanguage();
   
   // Custom hooks
+  const auth = useAuth(user);
   const chatSession = useChatSession(user.id);
   const fileUpload = useFileUpload(user.id);
   
@@ -190,7 +192,7 @@ export const DashboardContainer = ({ user, auth, onAdminPanelClick }: DashboardC
       handleReplyToMessage={handleReplyToMessage}
       handleSendMessage={handleSendMessage}
       handleLogout={handleLogout}
-      isAdmin={auth.isAdmin}
+      isAdmin={isAdmin}
       onAdminPanelClick={onAdminPanelClick}
     />
   );
@@ -216,7 +218,7 @@ const DashboardContent = ({
   onAdminPanelClick
 }: {
   user: User;
-  auth: UseAuthReturn;
+  auth: ReturnType<typeof useAuth>;
   chatSession: ReturnType<typeof useChatSession>;
   fileUpload: ReturnType<typeof useFileUpload>;
   messagesHook: ReturnType<typeof useMessages>;
@@ -339,7 +341,6 @@ const DashboardContent = ({
           userEmail={auth.userProfile?.company_name || 'No company'}
           userAvatar={auth.userProfile?.avatar_url}
           isTyping={messagesHook.isTyping}
-          isLoading={auth.isLoading}
           hasAccess={auth.hasAccess}
           selectedMode={selectedMode}
           modes={modes}
@@ -458,7 +459,7 @@ const DashboardContent = ({
           messages={messagesHook.messages}
           onSendMessage={handleSendMessage}
           isTyping={messagesHook.isTyping}
-          isDisabled={auth.isLoading ? false : (!auth.hasAccess || !auth.hasAcceptedTerms)}
+          isDisabled={!auth.hasAccess || !auth.hasAcceptedTerms}
           selectedMode={selectedMode}
           selectedFile={fileUpload.selectedFile}
           isUploading={fileUpload.isUploading}

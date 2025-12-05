@@ -194,7 +194,6 @@ export interface UseAuthReturn {
   hasAccess: boolean;
   hasAcceptedTerms: boolean;
   isAdmin: boolean;
-  isLoading: boolean;
   userProfile: UserProfile | null;
   checkAccess: () => Promise<void>;
   checkAdminRole: () => Promise<void>;
@@ -251,7 +250,6 @@ export interface SidebarProps {
   userEmail?: string;
   userAvatar?: string;
   isTyping: boolean;
-  isLoading?: boolean;
   hasAccess: boolean;
   selectedMode: AIMode;
   modes: AIModeConfig[];

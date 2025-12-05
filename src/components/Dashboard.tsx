@@ -121,9 +121,9 @@ export default function Dashboard({ user }: DashboardProps) {
         />
       )}
 
-      {/* Terms Modal - shows only after auth loading completes and terms not accepted */}
+      {/* Terms Modal - shows when terms not accepted */}
       <TermsModal
-        open={!auth.isLoading && !auth.hasAcceptedTerms}
+        open={!auth.hasAcceptedTerms}
         onAccept={auth.acceptTerms}
       />
 
@@ -146,7 +146,7 @@ export default function Dashboard({ user }: DashboardProps) {
         <SidebarProvider>
           <DashboardContainer 
             user={user}
-            auth={auth}
+            isAdmin={auth.isAdmin}
             onAdminPanelClick={() => setActiveView('admin')}
           />
         </SidebarProvider>
