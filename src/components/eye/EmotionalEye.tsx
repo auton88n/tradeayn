@@ -6,6 +6,9 @@ import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
 import { useSoundContextOptional } from '@/contexts/SoundContext';
 import { BehaviorConfig } from '@/types/eyeBehavior.types';
 import { useIdleDetection } from '@/hooks/useIdleDetection';
+import { useEyeGestures } from '@/hooks/useEyeGestures';
+import { EyeParticles } from './EyeParticles';
+import { ThinkingDots } from './ThinkingDots';
 
 interface EmotionalEyeProps {
   size?: 'sm' | 'md' | 'lg';
@@ -29,7 +32,8 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
     isSurprised,
     triggerSurprise,
     isPulsing,
-    triggerPulse
+    triggerPulse,
+    isWinking
   } = useAYNEmotion();
   const soundContext = useSoundContextOptional();
   const [isHovered, setIsHovered] = useState(false);
@@ -41,6 +45,9 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
   // Performance optimizations
   const prefersReducedMotion = useReducedMotion();
   const { isDeepIdle } = useIdleDetection({ idleThreshold: 15, deepIdleThreshold: 30 });
+  
+  // Eye gestures for click interactions
+  const { isSquished, handlers: gestureHandlers } = useEyeGestures();
 
   // Mouse tracking for gaze
   const mouseX = useMotionValue(0);
@@ -331,22 +338,46 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
   const irisRadius = getIrisRadius();
   const breathingDuration = emotionConfig.breathingSpeed;
 
+  // Calculate eye size for particles
+  const eyeSizeMap = { sm: 120, md: 180, lg: 260 };
+  const eyeSize = eyeSizeMap[size];
+
   return (
     <div className={cn("relative flex items-center justify-center", className)}>
+      {/* Particle effects based on emotion */}
+      <EyeParticles 
+        emotion={emotion} 
+        isActive={!prefersReducedMotion && (emotion !== 'calm' || isResponding)} 
+        size={eyeSize}
+      />
+      
+      {/* Thinking dots when processing */}
+      <ThinkingDots 
+        isVisible={isResponding && !prefersReducedMotion} 
+        color={emotionConfig.glowColor}
+        size={eyeSize}
+      />
+      
       <motion.div 
         style={{ x: combinedX, y: combinedY, rotate: smoothTilt }}
         className="relative z-10 flex items-center justify-center group cursor-pointer will-change-transform"
         initial={{ scale: 0.92, opacity: 0 }}
         animate={{ 
-          scale: isSurprised ? 1.12 : 1, 
+          scale: isSurprised ? 1.12 : isSquished ? 0.9 : 1, 
           opacity: 1 
         }}
         transition={{ 
-          duration: isSurprised ? 0.2 : 0.6, 
+          duration: isSurprised ? 0.2 : isSquished ? 0.1 : 0.6, 
           ease: isSurprised ? [0.34, 1.56, 0.64, 1] : "easeOut" 
         }}
         onMouseEnter={() => setIsHovered(true)} 
-        onMouseLeave={() => setIsHovered(false)}
+        onMouseLeave={() => { setIsHovered(false); gestureHandlers.onMouseLeave(); }}
+        onClick={gestureHandlers.onClick}
+        onDoubleClick={gestureHandlers.onDoubleClick}
+        onMouseDown={gestureHandlers.onMouseDown}
+        onMouseUp={gestureHandlers.onMouseUp}
+        onTouchStart={gestureHandlers.onTouchStart}
+        onTouchEnd={gestureHandlers.onTouchEnd}
       >
         <div 
           className={cn(
@@ -389,11 +420,13 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
             className="w-[70%] h-[70%] relative z-10"
             xmlns="http://www.w3.org/2000/svg" 
             animate={{
-              scaleY: isBlinking ? 0.05 : 1,
-              opacity: isBlinking ? 0.7 : 1
+              scaleY: isBlinking ? 0.05 : isSquished ? 0.7 : 1,
+              scaleX: isWinking ? 0.85 : isSquished ? 1.1 : 1,
+              opacity: isBlinking ? 0.7 : 1,
+              skewX: isWinking ? 5 : 0,
             }} 
             transition={{
-              duration: isBlinking ? 0.08 : 0.12,
+              duration: isBlinking ? 0.08 : isWinking ? 0.12 : 0.12,
               ease: isBlinking ? [0.55, 0.055, 0.675, 0.19] : [0.34, 1.56, 0.64, 1]
             }} 
             style={{
