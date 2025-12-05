@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-import { Plus, LogOut, Trash2, Camera, Settings, X, MessageSquare, Search, Star, Shield, Brain, ChevronDown, GraduationCap, Loader2 } from 'lucide-react';
+import { Plus, LogOut, Trash2, Camera, Settings, X, MessageSquare, Search, Star, Shield, Brain, ChevronDown, GraduationCap, Loader2, Volume2, VolumeX } from 'lucide-react';
 import { format } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -15,6 +15,7 @@ import { ProfileAvatarUpload } from './ProfileAvatarUpload';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import type { SidebarProps } from '@/types/dashboard.types';
+import { useSoundContextOptional } from '@/contexts/SoundContext';
 
 export const Sidebar = ({
   userName,
@@ -43,6 +44,7 @@ export const Sidebar = ({
 }: SidebarProps) => {
   const { toggleSidebar } = useSidebar();
   const navigate = useNavigate();
+  const soundContext = useSoundContextOptional();
   const [showAvatarUpload, setShowAvatarUpload] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -142,6 +144,21 @@ export const Sidebar = ({
 
             {/* Right: Actions */}
             <div className="flex items-center gap-1">
+              {soundContext && (
+                <Button
+                  onClick={() => soundContext.toggleEnabled()}
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 rounded-lg hover:bg-foreground hover:text-background transition-colors"
+                  title={soundContext.enabled ? 'Mute sounds' : 'Enable sounds'}
+                >
+                  {soundContext.enabled ? (
+                    <Volume2 className="h-4 w-4" />
+                  ) : (
+                    <VolumeX className="h-4 w-4" />
+                  )}
+                </Button>
+              )}
               <ThemeToggle />
               <Button 
                 onClick={toggleSidebar} 
