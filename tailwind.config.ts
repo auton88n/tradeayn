@@ -28,7 +28,7 @@ export default {
     				'sans-serif'
     			],
     			serif: [
-    				'DM Serif Display',
+    				'Playfair Display',
     				'Georgia',
     				'serif'
     			],
