@@ -17,7 +17,10 @@ import { z } from 'zod';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { PhoneMockup, AIBrainMockup, AutomationMockup } from './3d';
+import influencerSitePreview from '@/assets/influencer-site-preview.png';
+import aiAgentsPreview from '@/assets/ai-agents-preview.png';
+import automationPreview from '@/assets/automation-preview.png';
+
 const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [demoMessage, setDemoMessage] = useState('');
@@ -525,10 +528,12 @@ const LandingPage = () => {
                         boxShadow: "0 25px 80px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05)"
                       }}
                     >
-                      {/* 3D Scene based on active service */}
-                      {activeServiceIndex === 0 && <PhoneMockup />}
-                      {activeServiceIndex === 1 && <AIBrainMockup />}
-                      {activeServiceIndex === 2 && <AutomationMockup />}
+                      {/* Service Preview Image */}
+                      <img 
+                        src={activeServiceIndex === 0 ? influencerSitePreview : activeServiceIndex === 1 ? aiAgentsPreview : automationPreview}
+                        alt={activeService.title}
+                        className="w-full h-full object-cover"
+                      />
                       
                       {/* Powered by AYN Badge */}
                       <div className="absolute bottom-4 right-4 z-10 flex items-center gap-2 bg-black/70 backdrop-blur-sm rounded-full px-3 py-1.5 border border-white/10 shadow-lg">
