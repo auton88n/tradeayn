@@ -1,7 +1,11 @@
 import { Brain, Shield, RefreshCw } from 'lucide-react';
 import { Button } from './button';
 
-export const AYNLoader = () => (
+interface AYNLoaderProps {
+  isSlowConnection?: boolean;
+}
+
+export const AYNLoader = ({ isSlowConnection = false }: AYNLoaderProps) => (
   <div className="min-h-screen flex items-center justify-center bg-background">
     <div className="flex flex-col items-center gap-6">
       {/* Eye container */}
@@ -26,7 +30,16 @@ export const AYNLoader = () => (
       </div>
       
       {/* Loading text */}
-      <p className="text-muted-foreground font-medium animate-pulse">Loading AYN...</p>
+      <div className="flex flex-col items-center gap-2">
+        <p className="text-muted-foreground font-medium animate-pulse">
+          {isSlowConnection ? 'Still connecting...' : 'Loading AYN...'}
+        </p>
+        {isSlowConnection && (
+          <p className="text-muted-foreground/70 text-sm">
+            This is taking a while. Checking your connection...
+          </p>
+        )}
+      </div>
     </div>
   </div>
 );
