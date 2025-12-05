@@ -496,10 +496,10 @@ const LandingPage = () => {
                     </div>
                   </div>
 
-                  {/* 3D Browser Mockup */}
+                  {/* 3D Floating Image */}
                   <div className="order-1 md:order-2 perspective-1000 relative">
                     <motion.div 
-                      className="relative rounded-xl md:rounded-2xl overflow-hidden"
+                      className="relative rounded-2xl md:rounded-3xl overflow-hidden"
                       whileHover={{ 
                         rotateY: 0, 
                         rotateX: 0,
@@ -509,35 +509,18 @@ const LandingPage = () => {
                       style={{ 
                         transformStyle: "preserve-3d",
                         transform: "perspective(1000px) rotateY(-6deg) rotateX(4deg)",
-                        boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.1)"
+                        boxShadow: "0 25px 80px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05)"
                       }}
                     >
-                      {/* Browser Chrome */}
-                      <div className="bg-neutral-800 px-4 py-3 flex items-center gap-2">
-                        <div className="flex gap-1.5">
-                          <div className="w-3 h-3 rounded-full bg-red-500/80" />
-                          <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
-                          <div className="w-3 h-3 rounded-full bg-green-500/80" />
-                        </div>
-                        <div className="flex-1 mx-4">
-                          <div className="bg-neutral-700 rounded-md px-3 py-1.5 text-xs text-neutral-400 text-center">
-                            sarahjohnson.com
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Website Content - Full Image */}
-                      <div className="bg-neutral-900">
-                        <img 
-                          src={influencerSitePreview}
-                          alt="Premium Influencer Website Preview"
-                          className="w-full h-auto object-contain"
-                        />
-                      </div>
+                      <img 
+                        src={influencerSitePreview}
+                        alt="Premium Influencer Website Preview"
+                        className="w-full h-auto"
+                      />
                     </motion.div>
                     
                     {/* Shadow underneath for 3D depth */}
-                    <div className="absolute -bottom-6 left-6 right-6 h-12 bg-black/15 dark:bg-black/30 blur-2xl rounded-full" />
+                    <div className="absolute -bottom-8 left-8 right-8 h-16 bg-black/20 dark:bg-black/40 blur-3xl rounded-full" />
                   </div>
                 </div>
               </motion.div>
