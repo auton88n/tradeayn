@@ -1,7 +1,9 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import { cn } from '@/lib/utils';
+import { StreamingMarkdown } from '@/components/eye/StreamingMarkdown';
 import { MessageFormatter } from '@/components/MessageFormatter';
+import { hapticFeedback } from '@/lib/haptics';
 import { Copy, Check, ThumbsUp, ThumbsDown, Brain } from 'lucide-react';
 
 interface ResponseBubble {
@@ -21,25 +23,43 @@ export const ResponseCard = ({ responses, isMobile = false }: ResponseCardProps)
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [copied, setCopied] = useState(false);
   const [feedback, setFeedback] = useState<'up' | 'down' | null>(null);
+  const [isStreaming, setIsStreaming] = useState(true);
+  const [lastResponseId, setLastResponseId] = useState<string | null>(null);
 
   const visibleResponses = responses.filter(r => r.isVisible);
+  const currentResponseId = visibleResponses[0]?.id;
 
   // Combine all responses into single content
   const combinedContent = visibleResponses
     .map(r => r.content.replace(/^[!?\s]+/, '').trim())
     .join('\n\n');
 
+  // Reset streaming state when new response arrives
+  useEffect(() => {
+    if (currentResponseId && currentResponseId !== lastResponseId) {
+      setIsStreaming(true);
+      setLastResponseId(currentResponseId);
+    }
+  }, [currentResponseId, lastResponseId]);
+
+  const handleStreamComplete = useCallback(() => {
+    setIsStreaming(false);
+    hapticFeedback('light');
+  }, []);
+
   const copyContent = async () => {
     try {
       await navigator.clipboard.writeText(combinedContent);
+      hapticFeedback('success');
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy:', err);
+    } catch {
+      hapticFeedback('heavy');
     }
   };
 
   const handleFeedback = (type: 'up' | 'down') => {
+    hapticFeedback('light');
     setFeedback(prev => prev === type ? null : type);
   };
 
@@ -168,10 +188,21 @@ export const ResponseCard = ({ responses, isMobile = false }: ResponseCardProps)
           )}
           style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}
         >
-          <MessageFormatter 
-            content={combinedContent} 
-            className="text-sm text-gray-700 dark:text-gray-200 leading-relaxed max-w-full break-words [&_pre]:max-w-full [&_pre]:overflow-x-auto" 
-          />
+          {/* Streaming text effect for new responses */}
+          {isStreaming ? (
+            <StreamingMarkdown 
+              content={combinedContent}
+              speed={30}
+              onComplete={handleStreamComplete}
+              enableHaptics={isMobile}
+              className="max-w-full break-words [&_pre]:max-w-full [&_pre]:overflow-x-auto"
+            />
+          ) : (
+            <MessageFormatter 
+              content={combinedContent} 
+              className="text-sm text-gray-700 dark:text-gray-200 leading-relaxed max-w-full break-words [&_pre]:max-w-full [&_pre]:overflow-x-auto" 
+            />
+          )}
         </div>
 
         {/* Fade gradient indicator when scrollable and not at bottom */}

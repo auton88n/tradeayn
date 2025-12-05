@@ -15,6 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useEyeContext } from '@/hooks/useEyeContext';
 import { useEyeBehaviorMatcher } from '@/hooks/useEyeBehaviorMatcher';
+import { hapticFeedback } from '@/lib/haptics';
 import type { Message, AIMode, AIModeConfig } from '@/types/dashboard.types';
 
 // Fallback suggestions when API fails
@@ -324,6 +325,9 @@ export const CenterStageLayout = ({
         const emotion = analyzeResponseEmotion(lastMessage.content);
         setEmotion(emotion);
         setIsResponding(false);
+        
+        // Haptic feedback when response arrives
+        hapticFeedback('notification');
         
         // Detect exciting keywords and trigger surprise enlargement
         detectExcitement(lastMessage.content);

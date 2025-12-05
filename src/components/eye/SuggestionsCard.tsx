@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { hapticFeedback } from '@/lib/haptics';
 
 interface Suggestion {
   id: string;
@@ -41,6 +42,7 @@ export const SuggestionsCard = ({
   }
 
   const handleClick = (suggestion: Suggestion, e: React.MouseEvent<HTMLButtonElement>) => {
+    hapticFeedback('medium');
     const rect = e.currentTarget.getBoundingClientRect();
     onSuggestionClick(suggestion.content, suggestion.emoji, {
       x: rect.left + rect.width / 2,
