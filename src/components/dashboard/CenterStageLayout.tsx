@@ -495,8 +495,8 @@ animate={{
         className={cn(
           "fixed bottom-0 left-0 right-0 z-30",
           "transition-all duration-300",
-          sidebarOpen && "lg:left-[20rem]",
-          transcriptOpen && "lg:right-[20rem]"
+          sidebarOpen && "md:left-[20rem]",
+          transcriptOpen && "md:right-[20rem]"
         )}
       >
         <ChatInput
