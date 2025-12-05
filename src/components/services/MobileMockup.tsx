@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { Mail, Instagram } from 'lucide-react';
+import influencerBg from '@/assets/influencer-woman-bg.jpg';
 const MobileMockup = () => {
   const stats = [{
     value: '3.2M',
@@ -43,6 +44,12 @@ const MobileMockup = () => {
           
           {/* Screen Content */}
           <div className="w-full h-full bg-neutral-950 rounded-[16px] overflow-hidden relative flex flex-col items-center justify-center px-6 pt-4">
+            {/* Background Image */}
+            <div 
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30"
+              style={{ backgroundImage: `url(${influencerBg})` }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/80 to-neutral-950/40" />
             {/* Name Section */}
             <motion.div className="text-center mb-3" initial={{
             opacity: 0,
@@ -195,8 +202,15 @@ const MobileMockup = () => {
             </div>
           </div>
           
+          {/* Background Image */}
+          <div 
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30"
+            style={{ backgroundImage: `url(${influencerBg})` }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/80 to-neutral-950/40" />
+          
           {/* Main Content */}
-          <div className="flex flex-col items-center justify-center h-full px-4 pb-6 pt-4 -mt-4">
+          <div className="flex flex-col items-center justify-center h-full px-4 pb-6 pt-4 -mt-4 relative z-10">
             {/* Name Section */}
             <motion.div className="text-center mb-2" initial={{
             opacity: 0,
