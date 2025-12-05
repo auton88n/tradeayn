@@ -379,9 +379,12 @@ const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorCon
         onTouchStart={gestureHandlers.onTouchStart}
         onTouchEnd={gestureHandlers.onTouchEnd}
       >
+        {/* Soft outer glow halo - matching landing page */}
+        <div className="absolute -inset-8 rounded-full bg-gradient-to-b from-neutral-200/40 to-transparent dark:from-neutral-800/20 blur-3xl pointer-events-none" />
+        
         <div 
           className={cn(
-            "relative rounded-full bg-background flex items-center justify-center overflow-hidden will-change-transform shadow-xl",
+            "relative rounded-full bg-gradient-to-b from-white to-neutral-100 dark:from-neutral-900 dark:to-neutral-950 flex items-center justify-center overflow-hidden will-change-transform shadow-xl",
             sizeClasses[size],
             // Only animate breathing when not deep idle and no reduced motion preference
             !isDeepIdle && !prefersReducedMotion && "animate-eye-breathe"
@@ -390,12 +393,12 @@ const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorCon
             animationDuration: `${breathingDuration}s`
           }}
         >
-          {/* Single inner ring - matching landing page */}
-          <div className="absolute inset-4 rounded-full bg-background/80 shadow-inner" />
+          {/* Inner shadow ring - matching landing page dark mode */}
+          <div className="absolute inset-2 rounded-full shadow-[inset_0_4px_16px_rgba(0,0,0,0.08)] dark:shadow-[inset_0_4px_16px_rgba(0,0,0,0.3)]" />
 
           {/* Emotional color ring - changes color based on AYN's state */}
           <motion.div 
-            className="absolute inset-[15%] rounded-full"
+            className="absolute inset-[15%] rounded-full bg-neutral-200 dark:bg-neutral-800"
             animate={{ 
               // Only animate scale when actively pulsing, no infinite animations
               scale: isPulsing ? [1, 1.08, 1] : 1,
@@ -405,11 +408,11 @@ const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorCon
             }}
             style={{
               backgroundColor: emotion === 'calm' 
-                ? 'hsl(var(--muted))' 
+                ? undefined // Let className handle it
                 : emotionConfig.glowColor,
               boxShadow: emotion !== 'calm' 
                 ? `0 0 20px ${emotionConfig.glowColor}, inset 0 0 10px ${emotionConfig.glowColor}40`
-                : 'inset 0 2px 8px rgba(0,0,0,0.05)',
+                : 'inset 0 4px 12px rgba(0,0,0,0.08)',
               transition: 'background-color 0.6s ease, box-shadow 0.6s ease',
             }}
           />
@@ -435,8 +438,8 @@ const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorCon
           >
             <defs>
               <radialGradient id="sclera-gradient" cx="40%" cy="30%">
-                <stop offset="0%" stopColor="hsl(var(--background))" stopOpacity="0.9" />
-                <stop offset="80%" stopColor="hsl(var(--foreground))" stopOpacity="0.95" />
+                <stop offset="0%" className="[stop-color:hsl(var(--background))]" stopOpacity="0.9" />
+                <stop offset="80%" className="[stop-color:hsl(var(--foreground))]" stopOpacity="0.15" />
               </radialGradient>
             </defs>
 
