@@ -1,6 +1,5 @@
 import { Canvas } from '@react-three/fiber';
 import { Environment, PerspectiveCamera, ContactShadows } from '@react-three/drei';
-import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import { Suspense, ReactNode } from 'react';
 
 interface ServiceSceneProps {
@@ -29,7 +28,7 @@ const ServiceScene = ({
           <PerspectiveCamera makeDefault position={cameraPosition} fov={40} />
           
           {/* Premium lighting setup */}
-          <ambientLight intensity={0.3} />
+          <ambientLight intensity={0.4} />
           <directionalLight 
             position={[5, 5, 5]} 
             intensity={0.8} 
@@ -57,17 +56,6 @@ const ServiceScene = ({
               far={4}
             />
           )}
-          
-          {/* Post-processing effects */}
-          <EffectComposer>
-            <Bloom 
-              luminanceThreshold={0.8}
-              luminanceSmoothing={0.9}
-              intensity={0.6}
-              radius={0.8}
-            />
-            <Vignette eskil={false} offset={0.1} darkness={0.3} />
-          </EffectComposer>
         </Suspense>
       </Canvas>
     </div>
