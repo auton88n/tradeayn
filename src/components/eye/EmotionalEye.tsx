@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, memo } from 'react';
 import { motion, useMotionValue, useSpring, useTransform, useReducedMotion } from 'framer-motion';
 import { Brain } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -7,6 +7,7 @@ import { useSoundContextOptional } from '@/contexts/SoundContext';
 import { BehaviorConfig } from '@/types/eyeBehavior.types';
 import { useIdleDetection } from '@/hooks/useIdleDetection';
 import { useEyeGestures } from '@/hooks/useEyeGestures';
+import { useVisibilityPause } from '@/hooks/useVisibilityPause';
 import { EyeParticles } from './EyeParticles';
 import { ThinkingDots } from './ThinkingDots';
 
@@ -44,6 +45,7 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
   
   // Performance optimizations
   const prefersReducedMotion = useReducedMotion();
+  const isTabVisible = useVisibilityPause();
   const { isDeepIdle } = useIdleDetection({ idleThreshold: 15, deepIdleThreshold: 30 });
   
   // Eye gestures for click interactions
@@ -184,18 +186,27 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
     return 3000 + Math.random() * 2000;
   }, [isUserTyping, isResponding, behaviorConfig?.blinkFrequency, behaviorConfig?.blinkPattern]);
 
-  // Idle blinking effect
+  // Idle blinking effect - pauses when tab hidden
   useEffect(() => {
     if (idleBlinkIntervalRef.current) {
-      clearInterval(idleBlinkIntervalRef.current);
+      clearTimeout(idleBlinkIntervalRef.current);
       idleBlinkIntervalRef.current = null;
     }
+
+    // Don't schedule blinks when tab is hidden
+    if (!isTabVisible) return;
 
     const scheduleNextBlink = () => {
       const interval = getBlinkInterval();
       if (interval === null) return;
 
       idleBlinkIntervalRef.current = setTimeout(() => {
+        // Skip if tab became hidden
+        if (document.hidden) {
+          scheduleNextBlink();
+          return;
+        }
+        
         if (!isAbsorbing && !isAttentive) {
           const now = Date.now();
           if (now - lastBlinkRef.current > 500) {
@@ -219,29 +230,32 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
         clearTimeout(idleBlinkIntervalRef.current);
       }
     };
-  }, [isAbsorbing, isAttentive, getBlinkInterval, triggerBlink, behaviorConfig?.blinkPattern]);
+  }, [isAbsorbing, isAttentive, getBlinkInterval, triggerBlink, behaviorConfig?.blinkPattern, isTabVisible]);
 
-  // "Check-in" blink after long user inactivity
+  // "Check-in" blink after long user inactivity - only when tab visible
   useEffect(() => {
     if (checkInTimeoutRef.current) {
       clearTimeout(checkInTimeoutRef.current);
     }
 
+    // Don't schedule when tab hidden
+    if (!isTabVisible) return;
+
     checkInTimeoutRef.current = setTimeout(() => {
-      if (!isUserTyping && !isResponding && !isAbsorbing) {
+      if (!isUserTyping && !isResponding && !isAbsorbing && !document.hidden) {
         triggerBlink();
         setTimeout(() => {
-          triggerBlink();
+          if (!document.hidden) triggerBlink();
         }, 300);
       }
-    }, 10000);
+    }, 12000); // Increased from 10s to 12s
 
     return () => {
       if (checkInTimeoutRef.current) {
         clearTimeout(checkInTimeoutRef.current);
       }
     };
-  }, [lastActivityTime, isUserTyping, isResponding, isAbsorbing, triggerBlink]);
+  }, [lastActivityTime, isUserTyping, isResponding, isAbsorbing, triggerBlink, isTabVisible]);
 
   // Get micro-movement params from behavior or emotion
   const getMicroParams = useCallback(() => {
@@ -282,12 +296,10 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
     tiltRotation.set(tilt);
   }, [emotion, getMicroParams, tiltRotation, behaviorConfig]);
 
-  // Micro-movements when idle - PAUSED when deep idle or reduced motion
+  // Micro-movements when idle - PAUSED when deep idle, reduced motion, or tab hidden
   useEffect(() => {
-    const gazePattern = behaviorConfig?.gazePattern ?? 'follow_mouse';
-    
-    // Stop micro-movements when deep idle, reduced motion, or during actions
-    if (isUserTyping || isResponding || isAbsorbing || isDeepIdle || prefersReducedMotion) {
+    // Stop micro-movements when deep idle, reduced motion, tab hidden, or during actions
+    if (isUserTyping || isResponding || isAbsorbing || isDeepIdle || prefersReducedMotion || !isTabVisible) {
       microX.set(0);
       microY.set(0);
       return;
@@ -295,9 +307,12 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
 
     const { range, interval } = getMicroParams();
     // Longer intervals when idle to reduce CPU
-    const adjustedInterval = interval * 1.5;
+    const adjustedInterval = interval * 2;
 
     const microMovementInterval = setInterval(() => {
+      // Skip when tab hidden
+      if (document.hidden) return;
+      
       const newX = (Math.random() - 0.5) * range;
       const newY = (Math.random() - 0.5) * (range * 0.75);
       microX.set(newX);
@@ -305,7 +320,7 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
     }, adjustedInterval);
 
     return () => clearInterval(microMovementInterval);
-  }, [isUserTyping, isResponding, isAbsorbing, isDeepIdle, prefersReducedMotion, microX, microY, getMicroParams, behaviorConfig?.gazePattern]);
+  }, [isUserTyping, isResponding, isAbsorbing, isDeepIdle, prefersReducedMotion, isTabVisible, microX, microY, getMicroParams]);
 
   const sizeClasses = {
     sm: 'w-[100px] h-[100px] md:w-[120px] md:h-[120px]',
