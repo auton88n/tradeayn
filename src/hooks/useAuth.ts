@@ -17,15 +17,15 @@ export const useAuth = (user: User): UseAuthReturn => {
   const { toast } = useToast();
   const { t } = useLanguage();
   
-  console.log('🔵 [useAuth] Hook initialized with user.id:', user?.id);
-  
-  // Track consecutive auth failures to detect invalid sessions
+  // Refs for preventing multiple initializations and tracking failures
+  const isInitialized = useRef(false);
+  const hasTrackedDevice = useRef(false);
   const authFailureCount = useRef(0);
   
+  // Stable error handler using ref pattern
   const handleAuthFailure = useCallback((error: { code?: string; message?: string }, context: string) => {
     console.error(`Auth error in ${context}:`, error);
     
-    // Check if this is an auth-related error
     if (error.code === 'PGRST301' || error.message?.includes('JWT') || error.code === '401') {
       authFailureCount.current++;
       
@@ -37,15 +37,9 @@ export const useAuth = (user: User): UseAuthReturn => {
       }
     }
   }, []);
-  
-  // Reset failure count on successful queries
-  const resetAuthFailures = useCallback(() => {
-    authFailureCount.current = 0;
-  }, []);
 
   // Check if user has active access
   const checkAccess = useCallback(async () => {
-    console.log('🔵 [checkAccess] Starting query for user.id:', user.id);
     try {
       const { data, error } = await supabase
         .from('access_grants')
@@ -53,31 +47,24 @@ export const useAuth = (user: User): UseAuthReturn => {
         .eq('user_id', user.id)
         .maybeSingle();
 
-      console.log('🔵 [checkAccess] Query result:', { data, error });
-
       if (error) {
-        console.error('❌ [checkAccess] Query error:', error);
         handleAuthFailure(error, 'checkAccess');
         return;
       }
 
-      // Success - reset failure count
-      resetAuthFailures();
+      authFailureCount.current = 0;
 
       if (!data) {
-        console.log('⚠️ [checkAccess] No data found, setting hasAccess=false');
         setHasAccess(false);
         return;
       }
 
       const isActive = data.is_active && (!data.expires_at || new Date(data.expires_at) > new Date());
-      console.log('🟢 [checkAccess] Setting hasAccess to:', isActive);
       setHasAccess(isActive);
     } catch (error) {
-      console.error('❌ [checkAccess] Caught exception:', error);
       handleAuthFailure(error as { code?: string; message?: string }, 'checkAccess');
     }
-  }, [user.id, handleAuthFailure, resetAuthFailures]);
+  }, [user.id, handleAuthFailure]);
 
   // Check if user is admin
   const checkAdminRole = useCallback(async () => {
@@ -93,19 +80,12 @@ export const useAuth = (user: User): UseAuthReturn => {
         return;
       }
 
-      // Success - reset failure count
-      resetAuthFailures();
-
-      if (!data) {
-        setIsAdmin(false);
-        return;
-      }
-
-      setIsAdmin(data.role === 'admin');
+      authFailureCount.current = 0;
+      setIsAdmin(data?.role === 'admin');
     } catch (error) {
       handleAuthFailure(error as { code?: string; message?: string }, 'checkAdminRole');
     }
-  }, [user.id, handleAuthFailure, resetAuthFailures]);
+  }, [user.id, handleAuthFailure]);
 
   // Load user profile
   const loadUserProfile = useCallback(async () => {
@@ -121,16 +101,14 @@ export const useAuth = (user: User): UseAuthReturn => {
         return;
       }
 
-      // Success - reset failure count
-      resetAuthFailures();
-
+      authFailureCount.current = 0;
       if (data) {
         setUserProfile(data as UserProfile);
       }
     } catch (error) {
       handleAuthFailure(error as { code?: string; message?: string }, 'loadUserProfile');
     }
-  }, [user.id, handleAuthFailure, resetAuthFailures]);
+  }, [user.id, handleAuthFailure]);
 
   // Check terms acceptance from database
   const checkTermsAcceptance = useCallback(async () => {
@@ -146,17 +124,16 @@ export const useAuth = (user: User): UseAuthReturn => {
         return;
       }
 
-      resetAuthFailures();
+      authFailureCount.current = 0;
       setHasAcceptedTerms(data?.has_accepted_terms ?? false);
     } catch (error) {
       handleAuthFailure(error as { code?: string; message?: string }, 'checkTermsAcceptance');
     }
-  }, [user.id, handleAuthFailure, resetAuthFailures]);
+  }, [user.id, handleAuthFailure]);
 
   // Accept terms and conditions - save to database
   const acceptTerms = useCallback(async () => {
     try {
-      // Upsert user_settings with has_accepted_terms = true
       const { error } = await supabase
         .from('user_settings')
         .upsert({
@@ -187,33 +164,28 @@ export const useAuth = (user: User): UseAuthReturn => {
     }
   }, [user.id, toast, t]);
 
-  // Ref to prevent multiple device tracking calls
-  const hasTrackedDevice = useRef(false);
-
-  // Load all auth data on mount in parallel and track device login non-blocking
+  // Load all auth data on mount - runs exactly once per user
   useEffect(() => {
-    console.log('🔵 [useAuth] useEffect triggered, user.id:', user.id);
+    // Prevent double initialization from React StrictMode
+    if (isInitialized.current) return;
+    isInitialized.current = true;
     
     // Run all auth checks in parallel for faster loading
     Promise.all([
-      checkAccess().then(() => console.log('✅ [useAuth] checkAccess complete')),
-      checkAdminRole().then(() => console.log('✅ [useAuth] checkAdminRole complete')),
-      loadUserProfile().then(() => console.log('✅ [useAuth] loadUserProfile complete')),
-      checkTermsAcceptance().then(() => console.log('✅ [useAuth] checkTermsAcceptance complete'))
+      checkAccess(),
+      checkAdminRole(),
+      loadUserProfile(),
+      checkTermsAcceptance()
     ]).finally(() => {
-      console.log('🟢 [useAuth] All checks complete, setting isAuthLoading=false');
       setIsAuthLoading(false);
     });
     
-    // Track device login non-blocking (don't wait for it)
+    // Track device login non-blocking
     if (!hasTrackedDevice.current) {
       hasTrackedDevice.current = true;
-      // Use setTimeout to make it non-blocking
-      setTimeout(() => {
-        trackDeviceLogin(user.id);
-      }, 0);
+      setTimeout(() => trackDeviceLogin(user.id), 0);
     }
-  }, [checkAccess, checkAdminRole, loadUserProfile, checkTermsAcceptance, user.id]);
+  }, [user.id, checkAccess, checkAdminRole, loadUserProfile, checkTermsAcceptance]);
 
   return {
     hasAccess,
