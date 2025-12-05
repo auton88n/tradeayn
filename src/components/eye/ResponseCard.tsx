@@ -104,7 +104,7 @@ export const ResponseCard = ({ responses, isMobile = false }: ResponseCardProps)
       <motion.div
         key={visibleResponses[0]?.id || 'response-card'}
         className={cn(
-          "relative group",
+          "relative group flex flex-col",
           // Responsive width and height constraints - uses min() for sidebar-aware sizing
           "w-fit min-w-[280px] max-w-[calc(100vw-2rem)] sm:max-w-[560px] lg:max-w-[640px]",
           "max-h-[min(280px,40vh)] mb-4",
@@ -173,7 +173,7 @@ export const ResponseCard = ({ responses, isMobile = false }: ResponseCardProps)
           ref={contentRef}
           className={cn(
             "speech-bubble-content",
-            "max-h-[min(220px,35vh)] overflow-y-auto overflow-x-auto",
+            "flex-1 min-h-0 overflow-y-auto overflow-x-auto",
             "break-words max-w-full",
             // Premium thin scrollbar
             "[&::-webkit-scrollbar]:w-1.5",
@@ -214,7 +214,7 @@ export const ResponseCard = ({ responses, isMobile = false }: ResponseCardProps)
         )}
 
         {/* Action Footer */}
-        <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200/40 dark:border-gray-700/40">
+        <div className="flex-shrink-0 flex items-center justify-between mt-3 pt-3 border-t border-gray-200/40 dark:border-gray-700/40">
           {/* Copy Button */}
           <button
             onClick={copyContent}
