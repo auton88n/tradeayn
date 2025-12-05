@@ -20,7 +20,6 @@ import { Link } from 'react-router-dom';
 import influencerSitePreview from '@/assets/influencer-site-preview.png';
 import aiAgentsPreview from '@/assets/ai-agents-preview.png';
 import automationPreview from '@/assets/automation-preview.png';
-
 const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [demoMessage, setDemoMessage] = useState('');
@@ -514,35 +513,7 @@ const LandingPage = () => {
 
                   {/* 3D Interactive Mockup */}
                   <div className="order-1 md:order-2 perspective-1000 relative">
-                    <motion.div 
-                      className="relative rounded-2xl md:rounded-3xl overflow-hidden aspect-[4/3] bg-background/50"
-                      whileHover={{
-                        scale: 1.02
-                      }} 
-                      transition={{
-                        type: "spring",
-                        stiffness: 200,
-                        damping: 20
-                      }} 
-                      style={{
-                        boxShadow: "0 25px 80px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05)"
-                      }}
-                    >
-                      {/* Service Preview Image */}
-                      <img 
-                        src={activeServiceIndex === 0 ? influencerSitePreview : activeServiceIndex === 1 ? aiAgentsPreview : automationPreview}
-                        alt={activeService.title}
-                        className="w-full h-full object-cover"
-                      />
-                      
-                      {/* Powered by AYN Badge */}
-                      <div className="absolute bottom-4 right-4 z-10 flex items-center gap-2 bg-black/70 backdrop-blur-sm rounded-full px-3 py-1.5 border border-white/10 shadow-lg">
-                        <Brain className="w-4 h-4 text-white" />
-                        <span className="text-xs font-medium text-white tracking-wide">
-                          Powered by AYN
-                        </span>
-                      </div>
-                    </motion.div>
+                    
                     
                     {/* Shadow underneath for 3D depth */}
                     <div className="absolute -bottom-8 left-8 right-8 h-16 bg-black/20 dark:bg-black/40 blur-3xl rounded-full" />
