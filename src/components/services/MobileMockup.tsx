@@ -17,18 +17,7 @@ const MobileMockup = () => {
       {/* Phone-Centric Layout Container */}
       <div className="relative">
         {/* iPhone Frame - Center */}
-        <motion.div className="relative w-[280px] h-[560px] bg-neutral-900 rounded-[50px] p-2.5 shadow-2xl z-10" initial={{
-          y: 20,
-          opacity: 0
-        }} whileInView={{
-          y: 0,
-          opacity: 1
-        }} transition={{
-          duration: 0.6,
-          ease: [0.32, 0.72, 0, 1]
-        }} viewport={{
-          once: true
-        }}>
+        <div className="relative w-[280px] h-[560px] bg-neutral-900 rounded-[50px] p-2.5 shadow-2xl z-10">
           {/* Screen */}
           <div className="w-full h-full bg-neutral-950 rounded-[40px] overflow-hidden relative">
             {/* Notch */}
@@ -184,7 +173,7 @@ const MobileMockup = () => {
               }} />)}
             </div>
           </div>
-        </motion.div>
+        </div>
 
         {/* Instagram Card - Top Right */}
         <motion.div 
