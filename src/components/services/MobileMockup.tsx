@@ -192,12 +192,7 @@ const MobileMockup = () => {
           initial={{ scale: 0.8, opacity: 0, x: 20 }}
           whileInView={{ scale: 1, opacity: 1, x: 0 }}
           whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
-          animate={{ y: [0, -5, 0] }}
-          transition={{
-            delay: 0.5,
-            duration: 0.5,
-            y: { duration: 3.5, repeat: Infinity, ease: "easeInOut" }
-          }}
+          transition={{ delay: 0.5, duration: 0.5 }}
           viewport={{ once: true }}
         >
           <div className="flex items-center gap-3 mb-3">
@@ -231,12 +226,7 @@ const MobileMockup = () => {
           initial={{ scale: 0.8, opacity: 0 }}
           whileInView={{ scale: 1, opacity: 1 }}
           whileHover={{ scale: 1.08, transition: { duration: 0.2 } }}
-          animate={{ y: [0, -4, 0] }}
-          transition={{
-            delay: 0.7,
-            duration: 0.4,
-            y: { duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.3 }
-          }}
+          transition={{ delay: 0.7, duration: 0.4 }}
           viewport={{ once: true }}
         >
           <div className="flex items-center gap-2">
@@ -269,12 +259,7 @@ const MobileMockup = () => {
           initial={{ scale: 0.8, opacity: 0, x: -20 }}
           whileInView={{ scale: 1, opacity: 1, x: 0 }}
           whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
-          animate={{ y: [0, -6, 0] }}
-          transition={{
-            delay: 0.6,
-            duration: 0.5,
-            y: { duration: 3.8, repeat: Infinity, ease: "easeInOut", delay: 0.2 }
-          }}
+          transition={{ delay: 0.6, duration: 0.5 }}
           viewport={{ once: true }}
         >
           <div className="flex items-center gap-3 mb-3">
@@ -310,12 +295,7 @@ const MobileMockup = () => {
           initial={{ scale: 0.8, opacity: 0, x: -20 }}
           whileInView={{ scale: 1, opacity: 1, x: 0 }}
           whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
-          animate={{ y: [0, -4, 0] }}
-          transition={{
-            delay: 0.8,
-            duration: 0.5,
-            y: { duration: 3.2, repeat: Infinity, ease: "easeInOut", delay: 0.5 }
-          }}
+          transition={{ delay: 0.8, duration: 0.5 }}
           viewport={{ once: true }}
         >
           <p className="text-white font-semibold text-xs mb-3">Audience Demographics</p>
