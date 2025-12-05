@@ -180,17 +180,23 @@ export const useAuth = (user: User): UseAuthReturn => {
   // Ref to prevent multiple device tracking calls
   const hasTrackedDevice = useRef(false);
 
-  // Load all auth data on mount and track device login
+  // Load all auth data on mount in parallel and track device login non-blocking
   useEffect(() => {
-    checkAccess();
-    checkAdminRole();
-    loadUserProfile();
-    checkTermsAcceptance();
+    // Run all auth checks in parallel for faster loading
+    Promise.all([
+      checkAccess(),
+      checkAdminRole(),
+      loadUserProfile(),
+      checkTermsAcceptance()
+    ]);
     
-    // Track device login only once per session
+    // Track device login non-blocking (don't wait for it)
     if (!hasTrackedDevice.current) {
       hasTrackedDevice.current = true;
-      trackDeviceLogin(user.id);
+      // Use setTimeout to make it non-blocking
+      setTimeout(() => {
+        trackDeviceLogin(user.id);
+      }, 0);
     }
   }, [checkAccess, checkAdminRole, loadUserProfile, checkTermsAcceptance, user.id]);
 
