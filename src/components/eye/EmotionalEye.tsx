@@ -3,6 +3,7 @@ import { motion, useMotionValue, useSpring, useTransform, useReducedMotion } fro
 import { Brain } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
+import { useSoundContextOptional } from '@/contexts/SoundContext';
 import { BehaviorConfig } from '@/types/eyeBehavior.types';
 import { useIdleDetection } from '@/hooks/useIdleDetection';
 
@@ -30,10 +31,12 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
     isPulsing,
     triggerPulse
   } = useAYNEmotion();
+  const soundContext = useSoundContextOptional();
   const [isHovered, setIsHovered] = useState(false);
   const lastBlinkRef = useRef(Date.now());
   const idleBlinkIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const checkInTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const prevBlinkingRef = useRef(false);
   
   // Performance optimizations
   const prefersReducedMotion = useReducedMotion();
@@ -66,6 +69,14 @@ export const EmotionalEye = ({ size = 'lg', className, gazeTarget, behaviorConfi
       }
     }
   }, [behaviorConfig, emotion, setEmotion, triggerSurprise, triggerPulse]);
+
+  // Play blink sound when blinking starts
+  useEffect(() => {
+    if (isBlinking && !prevBlinkingRef.current) {
+      soundContext?.playSound('blink');
+    }
+    prevBlinkingRef.current = isBlinking;
+  }, [isBlinking, soundContext]);
 
   // Get gaze intensity from behavior or default
   const gazeIntensity = behaviorConfig?.gazeIntensity ?? 0.4;

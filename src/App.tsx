@@ -7,8 +7,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AYNEmotionProvider } from "@/contexts/AYNEmotionContext";
+import { SoundProvider } from "@/contexts/SoundContext";
 import { PageLoader } from "@/components/ui/page-loader";
-
 // Lazy load all route pages for code splitting
 const Index = lazy(() => import("./pages/Index"));
 const Settings = lazy(() => import("./pages/Settings"));
@@ -22,21 +22,23 @@ const App = () => (
     <LanguageProvider>
       <ThemeProvider defaultTheme="light" storageKey="ayn-theme">
         <AYNEmotionProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Suspense fallback={<PageLoader />}>
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/reset-password" element={<ResetPassword />} />
-                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </Suspense>
-            </BrowserRouter>
-          </TooltipProvider>
+          <SoundProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <Suspense fallback={<PageLoader />}>
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/settings" element={<Settings />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
+                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </Suspense>
+              </BrowserRouter>
+            </TooltipProvider>
+          </SoundProvider>
         </AYNEmotionProvider>
       </ThemeProvider>
     </LanguageProvider>

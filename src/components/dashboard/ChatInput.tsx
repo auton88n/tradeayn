@@ -5,6 +5,7 @@ import { Plus, ChevronDown, ArrowUp, FileText, X, Image } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
+import { useSoundContext } from '@/contexts/SoundContext';
 import type { AIMode } from '@/types/dashboard.types';
 interface ChatInputProps {
   onSend: (message: string, file?: File | null) => void;
@@ -104,6 +105,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
     updateActivity,
     triggerAttentionBlink
   } = useAYNEmotion();
+  const { playSound, playModeChange } = useSoundContext();
 
   // Handle prefilled input
   useEffect(() => {
@@ -157,6 +159,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
   const handleSend = useCallback(() => {
     if (!inputMessage.trim() && !selectedFile) return;
     if (isDisabled || isUploading) return;
+    playSound('message-send');
     onSend(inputMessage.trim(), selectedFile);
     setInputMessage('');
     setShowPlaceholder(true);
@@ -166,7 +169,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
     setTimeout(() => {
       triggerAttentionBlink();
     }, 100);
-  }, [inputMessage, selectedFile, isDisabled, isUploading, onSend, triggerAttentionBlink]);
+  }, [inputMessage, selectedFile, isDisabled, isUploading, onSend, triggerAttentionBlink, playSound]);
   const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -334,7 +337,10 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              {modes.map(mode => <DropdownMenuItem key={mode.name} onClick={() => onModeChange(mode.name as AIMode)} className="flex items-center gap-2 cursor-pointer">
+              {modes.map(mode => <DropdownMenuItem key={mode.name} onClick={() => {
+                playModeChange(mode.name);
+                onModeChange(mode.name as AIMode);
+              }} className="flex items-center gap-2 cursor-pointer">
                   <span>{mode.icon}</span>
                   <span>{mode.translatedName}</span>
                 </DropdownMenuItem>)}
