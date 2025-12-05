@@ -18,6 +18,8 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import influencerSitePreview from '@/assets/influencer-site-preview.png';
+import aiAgentsPreview from '@/assets/ai-agents-preview.png';
+import automationPreview from '@/assets/automation-preview.png';
 const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [demoMessage, setDemoMessage] = useState('');
@@ -524,7 +526,11 @@ const LandingPage = () => {
                     transform: "perspective(1000px) rotateY(-6deg) rotateX(4deg)",
                     boxShadow: "0 25px 80px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05)"
                   }}>
-                      <img alt="Premium Influencer Website Preview" className="w-full h-auto" src="/lovable-uploads/3ea89149-d723-445b-ade7-3eeba6957115.png" />
+                      <img 
+                        alt={activeService.title} 
+                        className="w-full h-auto" 
+                        src={activeServiceIndex === 0 ? influencerSitePreview : activeServiceIndex === 1 ? aiAgentsPreview : automationPreview} 
+                      />
                     </motion.div>
                     
                     {/* Shadow underneath for 3D depth */}
