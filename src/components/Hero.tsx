@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowUp, Plus, ChevronDown, Brain, SlidersHorizontal, Clock } from 'lucide-react';
+import { ArrowUp, Plus, ChevronDown, Brain } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { TypewriterText } from '@/components/TypewriterText';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -239,7 +239,7 @@ export const Hero = ({
     }} transition={{
       duration: 0.8,
       ease: [0.32, 0.72, 0, 1]
-    }} className="w-full max-w-4xl text-center mb-8 md:mb-12">
+    }} className="w-full max-w-4xl text-center mb-4 md:mb-6">
         <h1 className="font-serif text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight text-foreground mb-4 md:mb-6">
           {language === 'ar' ? 'تعرّف على AYN' : 'Meet AYN'}
         </h1>
@@ -256,7 +256,7 @@ export const Hero = ({
       </motion.div>
 
       {/* Central area with eye and cards */}
-      <div className="relative w-full max-w-5xl mt-4 md:mt-8 flex items-center justify-center">
+      <div className="relative w-full max-w-5xl mt-0 md:mt-2 flex items-center justify-center">
         {/* ring / subtle light behind the eye */}
         <div className="absolute w-[280px] h-[280px] md:w-[420px] md:h-[420px] lg:w-[520px] lg:h-[520px] xl:w-[640px] xl:h-[640px] rounded-full -z-10 pointer-events-none
                         bg-gradient-to-b from-transparent via-muted/30 to-transparent" />
@@ -490,17 +490,17 @@ export const Hero = ({
         </motion.div>
       </div>
 
-      {/* Demo Chat Input - TWO ROW LAYOUT */}
+      {/* Demo Chat Input - TWO ROW LAYOUT - matches dashboard */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }} 
         animate={{ opacity: 1, y: 0 }} 
         transition={{ duration: 0.8, delay: 0.6, ease: [0.32, 0.72, 0, 1] }} 
-        className="mt-16 w-full max-w-2xl"
+        className="mt-8 md:mt-10 w-full max-w-2xl"
       >
-        <div className="relative bg-background/90 dark:bg-background/90 backdrop-blur-md border border-border/50 rounded-3xl shadow-xl overflow-hidden">
+        <div className="relative bg-background/90 dark:bg-background/90 backdrop-blur-md border border-border rounded-2xl shadow-lg overflow-hidden">
           
           {/* ROW 1: Input Area */}
-          <div className="relative px-5 pt-4 pb-3">
+          <div className="relative px-4 pt-3 pb-2">
             <Textarea 
               ref={textareaRef} 
               value={inputMessage} 
@@ -511,17 +511,17 @@ export const Hero = ({
               placeholder="" 
               rows={1} 
               unstyled={true} 
-              className="w-full resize-none min-h-[52px] max-h-[200px] text-lg bg-transparent pr-14" 
+              className="w-full resize-none min-h-[44px] max-h-[200px] text-base bg-transparent pr-12" 
             />
 
             {/* Typewriter Placeholder */}
             {inputMessage.length === 0 && !isFocused && (
-              <div className={cn("absolute top-[18px] pointer-events-none z-10", language === 'ar' ? 'right-[20px]' : 'left-[20px]')}>
+              <div className={cn("absolute top-[14px] pointer-events-none z-10", language === 'ar' ? 'right-[16px]' : 'left-[16px]')}>
                 <TypewriterText 
                   key={`${placeholderIndex}-${language}`} 
                   text={placeholderTexts[placeholderIndex]} 
                   speed={50} 
-                  className="text-muted-foreground text-lg" 
+                  className="text-muted-foreground text-base" 
                   showCursor={true} 
                 />
               </div>
@@ -531,7 +531,7 @@ export const Hero = ({
             {inputMessage.trim() && (
               <button 
                 onClick={handleSend}
-                className="absolute bottom-3 right-4 w-10 h-10 rounded-xl bg-gradient-to-br from-foreground to-foreground/90 text-background flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
+                className="absolute bottom-2 right-3 w-9 h-9 rounded-xl bg-gradient-to-br from-foreground to-foreground/90 text-background flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
                 title={language === 'ar' ? 'إرسال' : 'Send message'}
               >
                 <ArrowUp className="w-5 h-5" strokeWidth={2.5} />
@@ -540,17 +540,11 @@ export const Hero = ({
           </div>
           
           {/* ROW 2: Action Buttons - with border separator */}
-          <div className="flex items-center justify-between px-4 pb-3 pt-2 border-t border-border/50">
-            {/* Left: Plus, Settings, History Buttons */}
+          <div className="flex items-center justify-between px-3 py-2 border-t border-border/30 bg-muted/20">
+            {/* Left: Plus Button only */}
             <div className="flex items-center gap-1">
-              <button onClick={onGetStarted} className="w-10 h-10 rounded-xl border border-border/50 flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-all duration-200" title={language === 'ar' ? 'إرفاق ملف' : 'Attach file'}>
+              <button onClick={onGetStarted} className="w-9 h-9 rounded-xl border border-border/50 flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-all duration-200" title={language === 'ar' ? 'إرفاق ملف' : 'Attach file'}>
                 <Plus className="w-4 h-4" />
-              </button>
-              <button onClick={onGetStarted} className="w-10 h-10 rounded-xl border border-border/50 flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-all duration-200" title={language === 'ar' ? 'الإعدادات' : 'Settings'}>
-                <SlidersHorizontal className="w-4 h-4" />
-              </button>
-              <button onClick={onGetStarted} className="w-10 h-10 rounded-xl border border-border/50 flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-all duration-200" title={language === 'ar' ? 'السجل' : 'History'}>
-                <Clock className="w-4 h-4" />
               </button>
             </div>
 
