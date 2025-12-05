@@ -384,7 +384,7 @@ const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorCon
         
         <div 
           className={cn(
-            "relative rounded-full bg-gradient-to-b from-white to-neutral-100 dark:from-neutral-900 dark:to-neutral-950 flex items-center justify-center overflow-hidden will-change-transform shadow-xl",
+            "relative rounded-full bg-gradient-to-b from-white to-neutral-100 dark:from-neutral-900 dark:to-neutral-950 flex items-center justify-center overflow-hidden will-change-transform eye-shadow",
             sizeClasses[size],
             // Only animate breathing when not deep idle and no reduced motion preference
             !isDeepIdle && !prefersReducedMotion && "animate-eye-breathe"
@@ -412,7 +412,7 @@ const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorCon
                 : emotionConfig.glowColor,
               boxShadow: emotion !== 'calm' 
                 ? `0 0 20px ${emotionConfig.glowColor}, inset 0 0 10px ${emotionConfig.glowColor}40`
-                : 'inset 0 4px 12px rgba(0,0,0,0.08)',
+                : 'none',
               transition: 'background-color 0.6s ease, box-shadow 0.6s ease',
             }}
           />
@@ -436,15 +436,7 @@ const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorCon
               transformOrigin: 'center center'
             }}
           >
-            <defs>
-              <radialGradient id="sclera-gradient" cx="40%" cy="30%">
-                <stop offset="0%" className="[stop-color:hsl(var(--background))]" stopOpacity="0.9" />
-                <stop offset="80%" className="[stop-color:hsl(var(--foreground))]" stopOpacity="0.15" />
-              </radialGradient>
-            </defs>
-
-            {/* Sclera subtle */}
-            <circle cx="50" cy="50" r="48" fill="url(#sclera-gradient)" opacity="0.03" />
+            {/* Sclera gradient removed to eliminate border lines */}
 
             {/* Solid black pupil - always black regardless of theme */}
             <circle 
