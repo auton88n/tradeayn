@@ -225,7 +225,7 @@ export const Hero = ({
     textarea.style.height = newHeight + 'px';
   };
   const CARDS = language === 'ar' ? CARDS_AR : CARDS_EN;
-  return <section ref={containerRef} className="relative min-h-screen flex flex-col items-center justify-center py-16 md:py-24 px-4 md:px-12 lg:px-24 overflow-hidden" aria-label="Hero">
+  return <section ref={containerRef} className="relative min-h-screen flex flex-col items-center justify-center py-8 md:py-16 px-4 md:px-12 lg:px-24 overflow-hidden" aria-label="Hero">
       {/* Subtle vignette / soft gradient background */}
       <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-background via-background to-muted/10" />
 
