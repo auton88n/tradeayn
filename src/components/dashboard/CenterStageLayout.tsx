@@ -10,6 +10,7 @@ import { ParticleBurst } from '@/components/eye/ParticleBurst';
 import { ChatInput } from './ChatInput';
 import { useBubbleAnimation } from '@/hooks/useBubbleAnimation';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
+import { useSoundContext } from '@/contexts/SoundContext';
 import { analyzeResponseEmotion, getBubbleType } from '@/utils/emotionMapping';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -78,6 +79,7 @@ export const CenterStageLayout = ({
   const inputRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const { setEmotion, triggerAbsorption, triggerBlink, setIsResponding, detectExcitement, isUserTyping: contextIsTyping } = useAYNEmotion();
+  const { playSound, playEmotion } = useSoundContext();
   const {
     flyingBubble,
     flyingSuggestion,
@@ -230,6 +232,7 @@ export const CenterStageLayout = ({
       setTimeout(() => {
         triggerBlink();
         triggerAbsorption();
+        playSound('message-absorb');
         setEmotion('thinking');
         setIsResponding(true);
         
@@ -277,6 +280,7 @@ export const CenterStageLayout = ({
     setTimeout(() => {
       triggerBlink();
       triggerAbsorption();
+      playSound('message-absorb');
       setEmotion('thinking');
       setIsResponding(true);
       
@@ -324,6 +328,8 @@ export const CenterStageLayout = ({
       setTimeout(() => {
         const emotion = analyzeResponseEmotion(lastMessage.content);
         setEmotion(emotion);
+        playSound('response-received');
+        playEmotion(emotion);
         setIsResponding(false);
         
         // Haptic feedback when response arrives
