@@ -495,11 +495,64 @@ const LandingPage = () => {
                     </div>
                   </div>
 
-                  {/* Visual placeholder */}
-                  <div className="aspect-square rounded-2xl md:rounded-3xl bg-muted/30 border border-border overflow-hidden order-1 md:order-2 hover-glow transition-all duration-500">
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted/50 to-muted/20">
-                      <Brain className="w-16 h-16 md:w-24 md:h-24 text-muted-foreground/20" />
-                    </div>
+                  {/* 3D Visual Card */}
+                  <div className="order-1 md:order-2 perspective-1000">
+                    <motion.div 
+                      className="relative aspect-[4/3] rounded-2xl md:rounded-3xl overflow-hidden shadow-2xl"
+                      initial={{ rotateY: -5, rotateX: 5 }}
+                      whileHover={{ 
+                        rotateY: 0, 
+                        rotateX: 0,
+                        scale: 1.02,
+                        boxShadow: "0 50px 100px -20px rgba(0, 0, 0, 0.25), 0 30px 60px -30px rgba(0, 0, 0, 0.3)"
+                      }}
+                      transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                      style={{ 
+                        transformStyle: "preserve-3d",
+                        transform: "perspective(1000px) rotateY(-8deg) rotateX(5deg)",
+                      }}
+                    >
+                      {/* Dark gradient background like reference */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900" />
+                      
+                      {/* Content overlay */}
+                      <div className="relative z-10 w-full h-full p-6 md:p-8 flex flex-col justify-between">
+                        {/* Header */}
+                        <div>
+                          <h3 className="text-2xl md:text-4xl font-serif font-bold text-rose-300/80 leading-tight">
+                            SARAH
+                          </h3>
+                          <h3 className="text-3xl md:text-5xl font-serif font-bold text-white leading-tight">
+                            JOHNSON
+                          </h3>
+                          <p className="text-rose-300/60 text-sm md:text-base mt-2">
+                            Fashion & Lifestyle Influencer
+                          </p>
+                        </div>
+                        
+                        {/* Stats */}
+                        <div className="flex gap-3 mt-4">
+                          <div className="bg-neutral-800/80 backdrop-blur rounded-lg px-3 py-2 text-center">
+                            <div className="text-white font-bold text-lg md:text-xl">3.2M</div>
+                            <div className="text-neutral-400 text-xs">Followers</div>
+                          </div>
+                          <div className="bg-neutral-800/80 backdrop-blur rounded-lg px-3 py-2 text-center">
+                            <div className="text-white font-bold text-lg md:text-xl">8.5%</div>
+                            <div className="text-neutral-400 text-xs">Engagement</div>
+                          </div>
+                          <div className="bg-neutral-800/80 backdrop-blur rounded-lg px-3 py-2 text-center">
+                            <div className="text-white font-bold text-lg md:text-xl">50+</div>
+                            <div className="text-neutral-400 text-xs">Brand Deals</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Floating reflection/glow effect */}
+                      <div className="absolute -bottom-4 left-4 right-4 h-8 bg-gradient-to-b from-white/5 to-transparent blur-xl rounded-full" />
+                    </motion.div>
+                    
+                    {/* Shadow underneath for 3D effect */}
+                    <div className="absolute -bottom-4 left-8 right-8 h-8 bg-black/20 blur-2xl rounded-full transform -skew-x-6" />
                   </div>
                 </div>
               </motion.div>
