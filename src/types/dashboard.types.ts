@@ -251,6 +251,7 @@ export interface SidebarProps {
   userEmail?: string;
   userAvatar?: string;
   isTyping: boolean;
+  isLoading?: boolean;
   hasAccess: boolean;
   selectedMode: AIMode;
   modes: AIModeConfig[];
