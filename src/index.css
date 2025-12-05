@@ -58,42 +58,19 @@ button, a, input, textarea, select {
   transition: box-shadow 0.15s ease;
 }
 
-/* Transparent Scrollbar - Hidden by default, visible on hover */
+/* Completely invisible scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  display: none;
 }
 
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: transparent;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--foreground) / 0.2);
-}
-
-/* Show scrollbar thumb on container hover */
-*:hover::-webkit-scrollbar-thumb {
-  background: hsl(var(--foreground) / 0.15);
-}
-
-*:hover::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--foreground) / 0.3);
-}
-
-/* Firefox scrollbar - transparent */
+/* Firefox - hide scrollbar */
 * {
-  scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
+  scrollbar-width: none;
 }
 
-*:hover {
-  scrollbar-color: hsl(var(--foreground) / 0.15) transparent;
+/* IE/Edge - hide scrollbar */
+* {
+  -ms-overflow-style: none;
 }
 
 /* Sidebar performance optimization */
