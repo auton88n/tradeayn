@@ -526,11 +526,7 @@ const LandingPage = () => {
                     transform: "perspective(1000px) rotateY(-6deg) rotateX(4deg)",
                     boxShadow: "0 25px 80px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05)"
                   }}>
-                      <img 
-                        alt={activeService.title} 
-                        className="w-full h-auto" 
-                        src={activeServiceIndex === 0 ? influencerSitePreview : activeServiceIndex === 1 ? aiAgentsPreview : automationPreview} 
-                      />
+                      
                       
                       {/* Powered by AYN Badge */}
                       <div className="absolute bottom-4 right-4 z-10 flex items-center gap-2 bg-black/70 backdrop-blur-sm rounded-full px-3 py-1.5 border border-white/10 shadow-lg">
