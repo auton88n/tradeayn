@@ -10,6 +10,7 @@ import { AYNEmotionProvider } from "@/contexts/AYNEmotionContext";
 import { SoundProvider } from "@/contexts/SoundContext";
 import { PageLoader } from "@/components/ui/page-loader";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { OfflineBanner } from "@/components/OfflineBanner";
 
 // Lazy load all route pages for code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -26,6 +27,7 @@ const App = () => (
         <AYNEmotionProvider>
           <SoundProvider>
             <TooltipProvider>
+              <OfflineBanner />
               <Toaster />
               <Sonner />
               <BrowserRouter>
