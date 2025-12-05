@@ -30,6 +30,21 @@
   backface-visibility: hidden;
 }
 
+/* Pause animations when tab is hidden */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Pause infinite animations when page is not visible */
+.animation-paused,
+html:not(:focus-within) .pause-when-hidden {
+  animation-play-state: paused !important;
+}
+
 /* Theme transitions - scoped for performance */
 html, body {
   transition: background-color 0.2s ease-out, color 0.2s ease-out;
