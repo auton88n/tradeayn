@@ -103,37 +103,30 @@ const ResponseCardComponent = ({ responses, isMobile = false }: ResponseCardProp
     <AnimatePresence mode="wait">
       <motion.div
         key={visibleResponses[0]?.id || 'response-card'}
+        layout={false}
         className={cn(
           "relative group flex flex-col",
           // Responsive width and height constraints
           "w-fit min-w-[280px] max-w-[calc(100vw-2rem)] sm:max-w-[560px] lg:max-w-[640px]",
           "max-h-[min(280px,40vh)] mb-4",
-          // Simplified solid background instead of glassmorphism for performance
-          "bg-background/98",
-          "dark:bg-gray-900/95",
+          // Solid background for performance (no backdrop-blur)
+          "bg-background dark:bg-gray-900",
           // Subtle shadow
           "shadow-lg",
           // Border
           "border border-border/40",
-          // Hover lift effect
-          "hover:-translate-y-0.5",
-          // Smooth transitions
-          "transition-transform duration-200 ease-out",
           // Padding and rounding
-          "px-5 py-4 rounded-2xl"
+          "px-5 py-4 rounded-2xl",
+          // CSS containment for performance isolation
+          "contain-layout contain-paint"
         )}
-        initial={{
-          scale: 0.98,
-          opacity: 0,
+        style={{
+          willChange: 'transform, opacity',
+          transform: 'translateZ(0)', // Force GPU layer
         }}
-        animate={{
-          scale: 1,
-          opacity: 1,
-        }}
-        exit={{
-          scale: 0.98,
-          opacity: 0,
-        }}
+        initial={{ scale: 0.98, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.98, opacity: 0 }}
         transition={{
           duration: 0.2,
           ease: [0.32, 0.72, 0, 1],
@@ -174,7 +167,7 @@ const ResponseCardComponent = ({ responses, isMobile = false }: ResponseCardProp
           {isStreaming ? (
             <StreamingMarkdown 
               content={combinedContent}
-              speed={30}
+              speed={50}
               onComplete={handleStreamComplete}
               enableHaptics={isMobile}
               className="max-w-full break-words [&_pre]:max-w-full [&_pre]:overflow-x-auto"
