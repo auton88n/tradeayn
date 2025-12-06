@@ -17,9 +17,7 @@ export const useAuth = (user: User): UseAuthReturn => {
   const { toast } = useToast();
   const { t } = useLanguage();
   
-  // Refs for preventing multiple initializations and tracking failures
-  // Track which user was initialized (survives StrictMode remounts)
-  const lastInitializedUserId = useRef<string | null>(null);
+  // Refs for tracking device and auth failures
   const hasTrackedDevice = useRef(false);
   const authFailureCount = useRef(0);
   
@@ -166,90 +164,140 @@ export const useAuth = (user: User): UseAuthReturn => {
     }
   }, [user.id, toast, t]);
 
-  // Load all auth data on mount - runs exactly once per user
+  // Load all auth data on mount
   useEffect(() => {
-    // Safety check
+    console.log('[useAuth] Effect triggered for user:', user?.id);
+    
     if (!user?.id) {
+      console.log('[useAuth] No user ID, setting loading false');
       setIsAuthLoading(false);
       return;
     }
-    
-    // Skip if already initialized for THIS user (survives StrictMode double-mount)
-    if (lastInitializedUserId.current === user.id) {
-      setIsAuthLoading(false);
-      return;
-    }
-    
-    // Mark this user as initialized
-    lastInitializedUserId.current = user.id;
-    
-    // Mounted flag to prevent state updates after unmount
+
+    // Local flag prevents StrictMode double-run (resets on unmount)
+    let hasRun = false;
     let isMounted = true;
     
-    // Safety timeout - force loading false after 10 seconds no matter what
-    const safetyTimeout = setTimeout(() => {
-      if (isMounted) {
-        console.warn('[useAuth] Safety timeout reached - forcing loading to false');
-        setIsAuthLoading(false);
-      }
-    }, 10000);
-    
-    // Run all auth checks in parallel for speed
+    // Timeout IDs declared at top level for proper cleanup
+    let initDelay: NodeJS.Timeout;
+    let safetyTimeout: NodeJS.Timeout;
+
     const runAuthChecks = async () => {
+      // Prevent double-run in StrictMode
+      if (hasRun) {
+        console.log('[useAuth] Already ran, skipping');
+        return;
+      }
+      hasRun = true;
+
       try {
+        // Verify session before running queries (ensures auth context is ready)
+        console.log('[useAuth] Verifying session...');
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+        if (!isMounted) {
+          console.log('[useAuth] Unmounted during session check');
+          return;
+        }
+
+        if (!session || sessionError) {
+          console.error('[useAuth] No valid session:', sessionError);
+          setIsAuthLoading(false);
+          return;
+        }
+
+        console.log('[useAuth] Session verified ✓ Running queries...');
+
+        // Start safety timeout AFTER session verification
+        safetyTimeout = setTimeout(() => {
+          if (isMounted) {
+            console.warn('[useAuth] ⚠️ Safety timeout - queries taking >10s');
+            setIsAuthLoading(false);
+          }
+        }, 10000);
+
+        // Run all queries in parallel
         const [accessResult, roleResult, profileResult, settingsResult] = await Promise.all([
           supabase.from('access_grants').select('is_active, expires_at').eq('user_id', user.id).maybeSingle(),
           supabase.from('user_roles').select('role').eq('user_id', user.id).maybeSingle(),
           supabase.from('profiles').select('user_id, contact_person, company_name, business_type, business_context, avatar_url').eq('user_id', user.id).maybeSingle(),
           supabase.from('user_settings').select('has_accepted_terms').eq('user_id', user.id).maybeSingle()
         ]);
-        
-        if (!isMounted) return; // Don't update state if unmounted
-        
+
+        console.log('[useAuth] ✓ Queries complete:', {
+          access: !!accessResult.data,
+          role: !!roleResult.data,
+          profile: !!profileResult.data,
+          settings: !!settingsResult.data
+        });
+
+        if (!isMounted) {
+          console.log('[useAuth] Unmounted after queries');
+          return;
+        }
+
         // Process access
         if (!accessResult.error && accessResult.data) {
           const isActive = accessResult.data.is_active && 
             (!accessResult.data.expires_at || new Date(accessResult.data.expires_at) > new Date());
+          console.log('[useAuth] → hasAccess:', isActive);
           setHasAccess(isActive);
+        } else {
+          console.log('[useAuth] → No access grant or error:', accessResult.error);
         }
-        
+
         // Process admin role
         if (!roleResult.error) {
-          setIsAdmin(roleResult.data?.role === 'admin');
+          const isAdminRole = roleResult.data?.role === 'admin';
+          console.log('[useAuth] → isAdmin:', isAdminRole);
+          setIsAdmin(isAdminRole);
         }
-        
+
         // Process profile
         if (!profileResult.error && profileResult.data) {
+          console.log('[useAuth] → userProfile:', profileResult.data);
           setUserProfile(profileResult.data as UserProfile);
+        } else {
+          console.log('[useAuth] → No profile or error:', profileResult.error);
         }
-        
+
         // Process terms
         if (!settingsResult.error) {
-          setHasAcceptedTerms(settingsResult.data?.has_accepted_terms ?? false);
+          const hasTerms = settingsResult.data?.has_accepted_terms ?? false;
+          console.log('[useAuth] → hasAcceptedTerms:', hasTerms);
+          setHasAcceptedTerms(hasTerms);
         }
+
       } catch (error) {
-        console.error('[useAuth] Error in auth checks:', error);
+        console.error('[useAuth] ❌ Error in auth checks:', error);
       } finally {
         clearTimeout(safetyTimeout);
         if (isMounted) {
+          console.log('[useAuth] ✓ Complete - setting isAuthLoading = false');
           setIsAuthLoading(false);
         }
       }
     };
-    
-    runAuthChecks();
-    
-    // Track device login non-blocking
+
+    // Start after 100ms delay to ensure Supabase client is ready
+    initDelay = setTimeout(() => {
+      console.log('[useAuth] Init delay complete, starting checks');
+      runAuthChecks();
+    }, 100);
+
+    // Track device login (non-blocking)
     if (!hasTrackedDevice.current) {
       hasTrackedDevice.current = true;
       setTimeout(() => trackDeviceLogin(user.id), 0);
     }
-    
-    // Cleanup - only prevent stale state updates, keep user ID ref intact
+
+    // Cleanup - clear both timeouts and prevent stale updates
     return () => {
+      console.log('[useAuth] Cleanup called');
       isMounted = false;
+      clearTimeout(initDelay);
       clearTimeout(safetyTimeout);
-      // Don't reset lastInitializedUserId - it should persist across StrictMode remounts
+      // hasRun resets automatically (local variable)
     };
   }, [user.id]);
 
