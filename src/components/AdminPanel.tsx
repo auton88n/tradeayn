@@ -111,12 +111,18 @@ export const AdminPanel = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
 
-  // Optimized data fetching with better error handling and memoization
+  // Optimized data fetching with timeout protection and non-blocking error handling
   const fetchData = useCallback(async () => {
     setIsLoading(true);
+    
+    // Create timeout promise to prevent indefinite loading
+    const timeout = new Promise<'timeout'>((resolve) => 
+      setTimeout(() => resolve('timeout'), 15000)
+    );
+    
     try {
-      // Fetch access grants and profiles with optimized queries
-      const [accessResult, profilesResult, usageResult, todayUsageResult] = await Promise.all([
+      // Fetch all data with 15 second timeout
+      const dataPromise = Promise.all([
         supabase
           .from('access_grants')
           .select('*')
@@ -137,17 +143,34 @@ export const AdminPanel = () => {
           .limit(500)
       ]);
 
-      if (accessResult.error) throw accessResult.error;
-      if (profilesResult.error) throw profilesResult.error;
+      const raceResult = await Promise.race([dataPromise, timeout]);
+      
+      if (raceResult === 'timeout') {
+        throw new Error('Request timeout');
+      }
+
+      const [accessResult, profilesResult, usageResult, todayUsageResult] = raceResult;
+
+      // Debug logging for each query result
+      if (accessResult.error) console.warn('Admin fetch - access_grants error:', accessResult.error.message);
+      if (profilesResult.error) console.warn('Admin fetch - profiles error:', profilesResult.error.message);
+      if (usageResult.error) console.warn('Admin fetch - get_usage_stats error:', usageResult.error.message);
+      if (todayUsageResult.error) console.warn('Admin fetch - usage_logs error:', todayUsageResult.error.message);
+
+      // Non-blocking: use empty arrays as fallback for failed queries
+      const accessData = accessResult.error ? [] : (accessResult.data || []);
+      const profilesData = profilesResult.error ? [] : (profilesResult.data || []);
+      const usageData = usageResult.error ? [] : (usageResult.data || []);
+      const todayUsageData = todayUsageResult.error ? [] : (todayUsageResult.data || []);
       
       // Create a map of user_id to profile for efficient lookup
-      const profilesMap = (profilesResult.data || []).reduce((acc, profile) => {
+      const profilesMap = profilesData.reduce((acc: Record<string, Profile>, profile: Profile) => {
         acc[profile.user_id] = profile;
         return acc;
       }, {} as Record<string, Profile>);
 
       // Create a map of user_id to email from usage stats
-      const emailsMap = (usageResult.data || []).reduce((acc: Record<string, string>, stat: UsageStats) => {
+      const emailsMap = (usageData as UsageStats[]).reduce((acc: Record<string, string>, stat: UsageStats) => {
         if (stat.user_id && stat.user_email) {
           acc[stat.user_id] = stat.user_email;
         }
@@ -155,26 +178,22 @@ export const AdminPanel = () => {
       }, {} as Record<string, string>);
 
       // Enrich access data with profile information and email
-      const enrichedAccessData = (accessResult.data || []).map(grant => ({
+      const enrichedAccessData = accessData.map((grant) => ({
         ...grant,
         profiles: profilesMap[grant.user_id] || null,
         user_email: emailsMap[grant.user_id] || null
       }));
       
       setAllUsers(enrichedAccessData);
+      setUsageStats(usageData as UsageStats[]);
 
-      if (!usageResult.error && usageResult.data) {
-        setUsageStats(usageResult.data);
-      }
-
-      // Calculate system metrics efficiently with error handling
+      // Calculate system metrics efficiently
       const totalUsers = enrichedAccessData.length;
-      const activeUsers = enrichedAccessData.filter(u => u.is_active).length;
-      const pendingRequests = enrichedAccessData.filter(u => !u.is_active && !u.granted_at).length;
-      const todayMessages = todayUsageResult.data?.reduce((sum, log) => sum + (log.usage_count || 0), 0) || 0;
-      const totalMessages = usageResult.data?.reduce((sum: number, stat: UsageStats) => sum + (stat.current_usage || 0), 0) || 0;
+      const activeUsers = enrichedAccessData.filter((u) => u.is_active).length;
+      const pendingRequests = enrichedAccessData.filter((u) => !u.is_active && !u.granted_at).length;
+      const todayMessages = todayUsageData.reduce((sum: number, log: { usage_count: number | null }) => sum + (log.usage_count || 0), 0);
+      const totalMessages = (usageData as UsageStats[]).reduce((sum: number, stat: UsageStats) => sum + (stat.current_usage || 0), 0);
       
-      // Set system metrics with calculated values
       setSystemMetrics({
         totalUsers,
         activeUsers,
@@ -184,9 +203,23 @@ export const AdminPanel = () => {
       });
 
     } catch (error) {
+      console.error('Admin panel fetch error:', error);
+      // Set empty defaults so panel still loads
+      setAllUsers([]);
+      setUsageStats([]);
+      setSystemMetrics({
+        totalUsers: 0,
+        activeUsers: 0,
+        pendingRequests: 0,
+        totalMessages: 0,
+        todayMessages: 0
+      });
+      
       toast({
-        title: "Error",
-        description: "Unable to fetch admin data. Please try again.",
+        title: "Warning",
+        description: error instanceof Error && error.message === 'Request timeout' 
+          ? "Data fetch timed out. Showing limited data."
+          : "Unable to fetch some admin data. Showing available data.",
         variant: "destructive"
       });
     } finally {
