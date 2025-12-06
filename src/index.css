@@ -443,7 +443,23 @@ button, a, input, textarea, select {
 
   @keyframes eye-breathe {
     0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.01); }
+    50% { transform: scale(1.015); }
+  }
+
+  /* Eye glow breathing animation */
+  .animate-glow-breathe {
+    animation: glow-breathe 4s ease-in-out infinite;
+  }
+
+  @keyframes glow-breathe {
+    0%, 100% { 
+      opacity: 0.3;
+      transform: scale(1);
+    }
+    50% { 
+      opacity: 0.5;
+      transform: scale(1.08);
+    }
   }
 
   /* Bounce dot animation for thinking indicator */
