@@ -3,7 +3,7 @@ import { renderHook } from '@testing-library/react';
 import { useAuth } from '../useAuth';
 import { createMockSupabaseClient } from '@/test/mocks/supabase';
 import { mockToast } from '@/test/mocks/contexts';
-import type { User } from '@supabase/supabase-js';
+import type { User, Session } from '@supabase/supabase-js';
 
 // Mock supabase client
 const mockSupabase = createMockSupabaseClient();
@@ -23,6 +23,15 @@ const mockUser: User = {
   user_metadata: {},
   aud: 'authenticated',
   created_at: new Date().toISOString(),
+};
+
+const mockSession: Session = {
+  access_token: 'test-access-token',
+  refresh_token: 'test-refresh-token',
+  expires_in: 3600,
+  expires_at: Date.now() / 1000 + 3600,
+  token_type: 'bearer',
+  user: mockUser,
 };
 
 const waitFor = async (callback: () => void, timeout = 1000) => {
@@ -51,7 +60,7 @@ describe('useAuth', () => {
         error: null,
       });
 
-      const { result } = renderHook(() => useAuth(mockUser));
+      const { result } = renderHook(() => useAuth(mockUser, mockSession));
 
       await waitFor(() => {
         expect(result.current.hasAccess).toBe(true);
@@ -64,7 +73,7 @@ describe('useAuth', () => {
         error: null,
       });
 
-      const { result } = renderHook(() => useAuth(mockUser));
+      const { result } = renderHook(() => useAuth(mockUser, mockSession));
 
       await waitFor(() => {
         expect(result.current.hasAccess).toBe(false);
@@ -80,7 +89,7 @@ describe('useAuth', () => {
         error: null,
       });
 
-      const { result } = renderHook(() => useAuth(mockUser));
+      const { result } = renderHook(() => useAuth(mockUser, mockSession));
 
       await waitFor(() => {
         expect(result.current.hasAccess).toBe(false);
@@ -93,7 +102,7 @@ describe('useAuth', () => {
         error: null,
       });
 
-      const { result } = renderHook(() => useAuth(mockUser));
+      const { result } = renderHook(() => useAuth(mockUser, mockSession));
 
       await waitFor(() => {
         expect(result.current.hasAccess).toBe(false);
@@ -108,7 +117,7 @@ describe('useAuth', () => {
         error: { message: 'Database error' },
       });
 
-      const { result } = renderHook(() => useAuth(mockUser));
+      const { result } = renderHook(() => useAuth(mockUser, mockSession));
 
       await waitFor(() => {
         expect(consoleError).toHaveBeenCalled();
@@ -125,7 +134,7 @@ describe('useAuth', () => {
         .mockResolvedValueOnce({ data: null, error: null }) // access_grants
         .mockResolvedValueOnce({ data: { role: 'admin' }, error: null }); // user_roles
 
-      const { result } = renderHook(() => useAuth(mockUser));
+      const { result } = renderHook(() => useAuth(mockUser, mockSession));
 
       await waitFor(() => {
         expect(result.current.isAdmin).toBe(true);
@@ -137,7 +146,7 @@ describe('useAuth', () => {
         .mockResolvedValueOnce({ data: null, error: null }) // access_grants
         .mockResolvedValueOnce({ data: { role: 'user' }, error: null }); // user_roles
 
-      const { result } = renderHook(() => useAuth(mockUser));
+      const { result } = renderHook(() => useAuth(mockUser, mockSession));
 
       await waitFor(() => {
         expect(result.current.isAdmin).toBe(false);
@@ -149,7 +158,7 @@ describe('useAuth', () => {
         .mockResolvedValueOnce({ data: null, error: null }) // access_grants
         .mockResolvedValueOnce({ data: null, error: null }); // user_roles
 
-      const { result } = renderHook(() => useAuth(mockUser));
+      const { result } = renderHook(() => useAuth(mockUser, mockSession));
 
       await waitFor(() => {
         expect(result.current.isAdmin).toBe(false);
@@ -173,7 +182,7 @@ describe('useAuth', () => {
         .mockResolvedValueOnce({ data: null, error: null }) // user_roles
         .mockResolvedValueOnce({ data: mockProfile, error: null }); // profiles
 
-      const { result } = renderHook(() => useAuth(mockUser));
+      const { result } = renderHook(() => useAuth(mockUser, mockSession));
 
       await waitFor(() => {
         expect(result.current.userProfile).toEqual(mockProfile);
@@ -186,7 +195,7 @@ describe('useAuth', () => {
         .mockResolvedValueOnce({ data: null, error: null }) // user_roles
         .mockResolvedValueOnce({ data: null, error: null }); // profiles
 
-      const { result } = renderHook(() => useAuth(mockUser));
+      const { result } = renderHook(() => useAuth(mockUser, mockSession));
 
       await waitFor(() => {
         expect(result.current.userProfile).toBeNull();
@@ -201,7 +210,7 @@ describe('useAuth', () => {
         .mockResolvedValueOnce({ data: null, error: null })
         .mockResolvedValueOnce({ data: null, error: null });
 
-      const { result } = renderHook(() => useAuth(mockUser));
+      const { result } = renderHook(() => useAuth(mockUser, mockSession));
 
       await waitFor(() => {
         expect(result.current.hasAcceptedTerms).toBe(false);
@@ -225,7 +234,7 @@ describe('useAuth', () => {
         .mockResolvedValueOnce({ data: null, error: null })
         .mockResolvedValueOnce({ data: null, error: null });
 
-      const { result } = renderHook(() => useAuth(mockUser));
+      const { result } = renderHook(() => useAuth(mockUser, mockSession));
 
       await waitFor(() => {
         expect(result.current.hasAcceptedTerms).toBe(true);

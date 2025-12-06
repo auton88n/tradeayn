@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { User } from '@supabase/supabase-js';
+import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -8,7 +8,7 @@ import type { UserProfile, UseAuthReturn } from '@/types/dashboard.types';
 
 const MAX_AUTH_FAILURES = 2;
 
-export const useAuth = (user: User): UseAuthReturn => {
+export const useAuth = (user: User, session: Session): UseAuthReturn => {
   const [hasAccess, setHasAccess] = useState(false);
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -199,28 +199,9 @@ export const useAuth = (user: User): UseAuthReturn => {
       }, 10000);
 
       try {
-        // Wait for Supabase client to have a valid session (max 5 retries)
-        let retries = 0;
-        let session = null;
-        
-        while (retries < 5 && !session && isMounted) {
-          const { data } = await supabase.auth.getSession();
-          session = data.session;
-          
-          if (!session) {
-            console.log(`[useAuth] Session not ready, retry ${retries + 1}/5...`);
-            await new Promise(resolve => setTimeout(resolve, 200));
-            retries++;
-          }
-        }
-
-        if (!session) {
-          console.error('[useAuth] No session after retries, aborting');
-          setIsAuthLoading(false);
-          return;
-        }
-
-        console.log('[useAuth] Session ready ✓ Starting queries for user:', user.id);
+        // Session is passed from Index.tsx - no need to fetch it again
+        // This avoids the getSession() deadlock that was causing queries to hang
+        console.log('[useAuth] Session available ✓ Starting queries for user:', user.id);
 
         // Run all queries in parallel
         const [accessResult, roleResult, profileResult, settingsResult] = await Promise.all([

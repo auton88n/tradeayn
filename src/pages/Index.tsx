@@ -104,9 +104,9 @@ const Index = () => {
     return <AYNLoader />;
   }
 
-  return user ? (
+  return user && session ? (
     <Suspense fallback={<DashboardLoader />}>
-      <Dashboard user={user} />
+      <Dashboard user={user} session={session} />
     </Suspense>
   ) : (
     <Suspense fallback={<PageLoader />}>
