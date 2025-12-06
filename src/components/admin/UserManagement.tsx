@@ -1,5 +1,4 @@
 import { useState, useMemo } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -8,13 +7,13 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { 
-  Users, CheckCircle, XCircle, Clock, Building, Mail, Phone, Shield, Eye, Edit,
-  Search, Filter, Download, UserPlus, UserMinus, MoreVertical, Settings, Loader2
+  Users, CheckCircle, XCircle, Clock, Building, Mail, 
+  Search, Download, Settings, Loader2, UserCheck, UserX
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useLanguage } from '@/contexts/LanguageContext';
 import { EditLimitModal } from './EditLimitModal';
+import { motion } from 'framer-motion';
 
 interface Profile {
   id: string;
@@ -43,6 +42,23 @@ interface UserManagementProps {
   onRefresh: () => void;
 }
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.05 }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 10 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { duration: 0.3, ease: [0.32, 0.72, 0, 1] }
+  }
+};
+
 export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -53,42 +69,18 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
   const [bulkAction, setBulkAction] = useState('');
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
   const { toast } = useToast();
-  const { t, language } = useLanguage();
 
   const getStatusInfo = (grant: AccessGrantWithProfile) => {
     if (!grant.is_active && !grant.granted_at) {
-      return {
-        icon: Clock,
-        label: t('admin.pending'),
-        variant: 'secondary' as const,
-        color: 'text-yellow-600'
-      };
+      return { icon: Clock, label: 'Pending', variant: 'secondary' as const, color: 'text-amber-600' };
     }
-
     if (!grant.is_active) {
-      return {
-        icon: XCircle,
-        label: t('admin.deniedRevoked'),
-        variant: 'destructive' as const,
-        color: 'text-red-600'
-      };
+      return { icon: XCircle, label: 'Revoked', variant: 'destructive' as const, color: 'text-red-600' };
     }
-
     if (grant.expires_at && new Date(grant.expires_at) < new Date()) {
-      return {
-        icon: XCircle,
-        label: t('admin.expired'),
-        variant: 'destructive' as const,
-        color: 'text-red-600'
-      };
+      return { icon: XCircle, label: 'Expired', variant: 'destructive' as const, color: 'text-red-600' };
     }
-
-    return {
-      icon: CheckCircle,
-      label: t('admin.active'),
-      variant: 'default' as const,
-      color: 'text-green-600'
-    };
+    return { icon: CheckCircle, label: 'Active', variant: 'default' as const, color: 'text-emerald-600' };
   };
 
   const filteredUsers = useMemo(() => {
@@ -111,27 +103,14 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
     try {
       const { error } = await supabase
         .from('access_grants')
-        .update({
-          is_active: false,
-          notes: 'Access revoked by administrator'
-        })
+        .update({ is_active: false, notes: 'Access revoked by administrator' })
         .eq('user_id', userId);
 
       if (error) throw error;
-
-      toast({
-        title: t('admin.accessRevoked'),
-        description: t('admin.accessRevokedDesc')
-      });
-      
+      toast({ title: "Access Revoked", description: "User access has been revoked." });
       onRefresh();
     } catch (error) {
-      console.error('Error revoking access:', error);
-      toast({
-        title: "Error",
-        description: "Failed to revoke user access.",
-        variant: "destructive"
-      });
+      toast({ title: "Error", description: "Failed to revoke user access.", variant: "destructive" });
     }
   };
 
@@ -139,28 +118,14 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
     try {
       const { error } = await supabase
         .from('access_grants')
-        .update({
-          is_active: true,
-          granted_at: new Date().toISOString(),
-          notes: 'Access granted by administrator'
-        })
+        .update({ is_active: true, granted_at: new Date().toISOString(), notes: 'Access granted by administrator' })
         .eq('user_id', userId);
 
       if (error) throw error;
-
-      toast({
-        title: t('admin.accessRestored'),
-        description: t('admin.accessRestoredDesc')
-      });
-      
+      toast({ title: "Access Granted", description: "User access has been granted." });
       onRefresh();
     } catch (error) {
-      console.error('Error granting access:', error);
-      toast({
-        title: "Error",
-        description: "Failed to grant user access.",
-        variant: "destructive"
-      });
+      toast({ title: "Error", description: "Failed to grant user access.", variant: "destructive" });
     }
   };
 
@@ -172,20 +137,10 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
         .in('user_id', userIds);
 
       if (error) throw error;
-
-      toast({
-        title: t('admin.limitsUpdated'),
-        description: `${t('admin.limitsUpdatedDesc')} (${userIds.length} ${t('admin.users')})`
-      });
-      
+      toast({ title: "Limits Updated", description: `Updated limits for ${userIds.length} user(s)` });
       onRefresh();
     } catch (error) {
-      console.error('Error updating limits:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update user limits.",
-        variant: "destructive"
-      });
+      toast({ title: "Error", description: "Failed to update user limits.", variant: "destructive" });
     }
   };
 
@@ -238,11 +193,7 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
     link.download = `ayn-users-${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
     URL.revokeObjectURL(url);
-
-    toast({
-      title: t('admin.exportComplete'),
-      description: t('admin.exportCompleteDesc')
-    });
+    toast({ title: "Export Complete", description: "User data exported to CSV file." });
   };
 
   const handleBulkAction = async () => {
@@ -254,10 +205,7 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
         case 'activate':
           const { error: activateError } = await supabase
             .from('access_grants')
-            .update({ 
-              is_active: true,
-              granted_at: new Date().toISOString()
-            })
+            .update({ is_active: true, granted_at: new Date().toISOString() })
             .in('user_id', selectedUsers);
           if (activateError) throw activateError;
           break;
@@ -279,13 +227,10 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
           break;
           
         case 'delete':
-          // Confirm deletion
           if (!confirm(`Are you sure you want to delete ${selectedUsers.length} user(s)? This action cannot be undone.`)) {
             setBulkActionLoading(false);
             return;
           }
-          
-          // Delete user data
           await supabase.from('messages').delete().in('user_id', selectedUsers);
           await supabase.from('user_settings').delete().in('user_id', selectedUsers);
           await supabase.from('device_fingerprints').delete().in('user_id', selectedUsers);
@@ -294,287 +239,224 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
           break;
       }
       
-      toast({
-        title: 'Success',
-        description: `Bulk action "${bulkAction}" completed for ${selectedUsers.length} users`
-      });
-      
+      toast({ title: 'Success', description: `Bulk action completed for ${selectedUsers.length} users` });
       setSelectedUsers([]);
       setBulkAction('');
       onRefresh();
-      
     } catch (error) {
-      console.error('Bulk action error:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to complete bulk action',
-        variant: 'destructive'
-      });
+      toast({ title: 'Error', description: 'Failed to complete bulk action', variant: 'destructive' });
     } finally {
       setBulkActionLoading(false);
     }
   };
 
   return (
-    <div className="space-y-6" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-      {/* Header and Controls */}
-      <div className={`flex items-center justify-between ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-        <div className={language === 'ar' ? 'text-right' : ''}>
-          <h2 className="text-2xl font-bold">{t('admin.userManagement')}</h2>
-          <p className="text-muted-foreground">{t('admin.userManagementDesc')}</p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-serif font-medium">User Management</h2>
+          <p className="text-sm text-muted-foreground">Manage user access and permissions</p>
         </div>
-        <div className={`flex items-center gap-3 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+        <div className="flex items-center gap-3">
           {selectedUsers.length > 0 && (
             <>
               <Select value={bulkAction} onValueChange={setBulkAction}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder={t('admin.bulkActions')} />
+                <SelectTrigger className="w-44 bg-background/50 border-border/50">
+                  <SelectValue placeholder="Bulk actions..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="activate">{t('admin.activateSelected')}</SelectItem>
-                  <SelectItem value="deactivate">{t('admin.deactivateSelected')}</SelectItem>
-                  <SelectItem value="reset_usage">{t('admin.resetUsageSelected')}</SelectItem>
-                  <SelectItem value="delete">{t('admin.deleteSelected')}</SelectItem>
+                  <SelectItem value="activate">Activate Selected</SelectItem>
+                  <SelectItem value="deactivate">Deactivate Selected</SelectItem>
+                  <SelectItem value="reset_usage">Reset Usage</SelectItem>
+                  <SelectItem value="delete">Delete Selected</SelectItem>
                 </SelectContent>
               </Select>
-              <Button 
-                onClick={handleBulkAction} 
-                disabled={!bulkAction || bulkActionLoading}
-                size="sm"
-              >
-                {bulkActionLoading ? (
-                  <>
-                    <Loader2 className={`w-4 w-4 animate-spin ${language === 'ar' ? 'ml-2' : 'mr-2'}`} />
-                    Processing...
-                  </>
-                ) : (
-                  'Apply'
-                )}
+              <Button onClick={handleBulkAction} disabled={!bulkAction || bulkActionLoading} size="sm">
+                {bulkActionLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Apply
               </Button>
-              <Button onClick={handleBulkEditLimits} variant="outline" size="sm">
-                <Settings className={`w-4 h-4 ${language === 'ar' ? 'ml-2' : 'mr-2'}`} />
-                {t('admin.bulkEditLimits')} ({selectedUsers.length})
+              <Button onClick={handleBulkEditLimits} variant="outline" size="sm" className="gap-2">
+                <Settings className="w-4 h-4" />
+                Edit Limits ({selectedUsers.length})
               </Button>
             </>
           )}
-          <Button onClick={exportUserData} variant="outline" size="sm">
-            <Download className={`w-4 h-4 ${language === 'ar' ? 'ml-2' : 'mr-2'}`} />
-            {t('admin.export')}
+          <Button onClick={exportUserData} variant="outline" size="sm" className="gap-2">
+            <Download className="w-4 h-4" />
+            Export
           </Button>
         </div>
       </div>
 
-      {/* Filters and Search */}
-      <Card>
-        <CardHeader>
-          <CardTitle className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-            <Filter className="w-5 h-5" />
-            {t('admin.filtersSearch')}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className={`flex flex-col sm:flex-row gap-4 ${language === 'ar' ? 'sm:flex-row-reverse' : ''}`}>
-            <div className="flex-1">
-              <div className="relative">
-                <Search className={`absolute ${language === 'ar' ? 'right-3' : 'left-3'} top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4`} />
-                <Input
-                  placeholder={t('admin.searchPlaceholder')}
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className={language === 'ar' ? 'pr-10 text-right' : 'pl-10'}
-                />
-              </div>
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder={t('admin.filterStatus')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('admin.allUsers')}</SelectItem>
-                <SelectItem value="active">{t('admin.activeOnly')}</SelectItem>
-                <SelectItem value="inactive">{t('admin.inactiveOnly')}</SelectItem>
-                <SelectItem value="pending">{t('admin.pendingOnly')}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex-1 relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by company, contact, or email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 bg-background/50 border-border/50"
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-44 bg-background/50 border-border/50">
+            <SelectValue placeholder="Filter status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Users</SelectItem>
+            <SelectItem value="active">Active Only</SelectItem>
+            <SelectItem value="inactive">Inactive Only</SelectItem>
+            <SelectItem value="pending">Pending Only</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* User Count */}
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Users className="w-4 h-4" />
+        <span>{filteredUsers.length} users</span>
+      </div>
 
       {/* User List */}
-      <Card>
-        <CardHeader>
-          <CardTitle className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-            <Users className="w-5 h-5" />
-            {t('admin.usersCount')} ({filteredUsers.length})
-          </CardTitle>
-          <CardDescription>
-            {t('admin.managePermissions')}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ScrollArea className="h-[600px]">
-            <div className="space-y-4">
-              {filteredUsers.map((user) => {
-                const statusInfo = getStatusInfo(user);
-                const StatusIcon = statusInfo.icon;
-                
-                return (
-                  <div key={user.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
-                    <div className={`flex items-center justify-between ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-                      <div className={`flex items-center gap-4 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-                        <Checkbox
-                          checked={selectedUsers.includes(user.user_id)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedUsers([...selectedUsers, user.user_id]);
-                            } else {
-                              setSelectedUsers(selectedUsers.filter(id => id !== user.user_id));
-                            }
-                          }}
-                        />
-                        
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                          <Building className="w-5 h-5" />
-                        </div>
-                        
-                        <div className={`space-y-1 ${language === 'ar' ? 'text-right' : ''}`}>
-                          <div className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-                            <h3 className="font-semibold">{user.profiles?.company_name || t('admin.unknownCompany')}</h3>
-                            <Badge variant={statusInfo.variant} className={`flex items-center gap-1 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-                              <StatusIcon className="w-3 h-3" />
-                              {statusInfo.label}
-                            </Badge>
-                          </div>
-                          <div className={`flex items-center gap-4 text-sm text-muted-foreground ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-                            <span className={`flex items-center gap-1 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-                              <Mail className="w-3 h-3" />
-                              {user.user_email || t('admin.noEmail')}
-                            </span>
-                            <span className={`flex items-center gap-1 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-                              <Phone className="w-3 h-3" />
-                              {user.profiles?.contact_person || t('admin.noContact')}
-                            </span>
-                          </div>
-                          <div className="space-y-2">
-                            <div className={`flex items-center gap-4 text-xs text-muted-foreground ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-                              <span className={`flex items-center gap-1 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-                                {t('admin.usage')}: {user.current_month_usage || 0}
-                                {user.monthly_limit ? ` / ${user.monthly_limit}` : ` / ${t('admin.unlimited')}`}
-                                {user.monthly_limit && (
-                                  <Badge variant="outline" className="text-xs">
-                                    {Math.round(getUsagePercentage(user.current_month_usage ?? 0, user.monthly_limit))}%
-                                  </Badge>
-                                )}
-                              </span>
-                              <span>
-                                {t('admin.created')}: {new Date(user.created_at).toLocaleDateString()}
-                              </span>
-                            </div>
-                            {user.monthly_limit && (
-                              <Progress 
-                                value={getUsagePercentage(user.current_month_usage ?? 0, user.monthly_limit)} 
-                                className="h-1.5"
-                              />
-                            )}
-                          </div>
+      <div className="rounded-2xl border border-border/50 bg-background overflow-hidden">
+        <ScrollArea className="h-[600px]">
+          <motion.div 
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="p-4 space-y-3"
+          >
+            {filteredUsers.map((user) => {
+              const statusInfo = getStatusInfo(user);
+              const StatusIcon = statusInfo.icon;
+              const usagePercent = getUsagePercentage(user.current_month_usage ?? 0, user.monthly_limit);
+              
+              return (
+                <motion.div 
+                  key={user.id}
+                  variants={itemVariants}
+                  className="group p-5 rounded-xl border border-border/30 bg-background hover:border-border/60 hover:shadow-sm transition-all duration-200"
+                >
+                  <div className="flex items-center gap-4">
+                    <Checkbox
+                      checked={selectedUsers.includes(user.user_id)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedUsers([...selectedUsers, user.user_id]);
+                        } else {
+                          setSelectedUsers(selectedUsers.filter(id => id !== user.user_id));
+                        }
+                      }}
+                      className="shrink-0"
+                    />
+                    
+                    <div className="w-11 h-11 rounded-xl bg-foreground/5 flex items-center justify-center shrink-0">
+                      <Building className="w-5 h-5 text-foreground/60" />
+                    </div>
+                    
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <div className="flex items-center gap-3">
+                        <h3 className="font-medium truncate">{user.profiles?.company_name || 'Unknown Company'}</h3>
+                        <div className={`
+                          inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium
+                          ${user.is_active 
+                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' 
+                            : !user.granted_at 
+                              ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                              : 'bg-red-500/10 text-red-600 dark:text-red-400'
+                          }
+                        `}>
+                          <StatusIcon className="w-3 h-3" />
+                          {statusInfo.label}
                         </div>
                       </div>
                       
-                      <div className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEditLimit(user)}
-                        >
-                          <Edit className={`w-4 h-4 ${language === 'ar' ? 'ml-1' : 'mr-1'}`} />
-                          {t('admin.editLimit')}
-                        </Button>
-                        {user.is_active ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleRevokeAccess(user.user_id)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <UserMinus className={`w-4 h-4 ${language === 'ar' ? 'ml-1' : 'mr-1'}`} />
-                            {t('admin.revoke')}
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleGrantAccess(user.user_id)}
-                            className="text-green-600 hover:text-green-700"
-                          >
-                            <UserPlus className={`w-4 h-4 ${language === 'ar' ? 'ml-1' : 'mr-1'}`} />
-                            {t('admin.grantAccess')}
-                          </Button>
-                        )}
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => {
-                            toast({
-                              title: t('admin.userDetails'),
-                              description: `${user.profiles?.company_name || 'Unknown Company'} - ${user.user_email || 'No email'} - Usage: ${user.current_month_usage}/${user.monthly_limit || 'Unlimited'}`
-                            });
-                          }}
-                        >
-                          <Eye className={`w-4 h-4 ${language === 'ar' ? 'ml-1' : 'mr-1'}`} />
-                          {t('admin.view')}
-                        </Button>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-1.5">
+                          <Mail className="w-3.5 h-3.5" />
+                          {user.user_email || 'No email'}
+                        </span>
+                        <span className="text-muted-foreground/50">•</span>
+                        <span>{user.profiles?.contact_person || 'No contact'}</span>
+                      </div>
+                      
+                      {/* Usage Bar */}
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1 max-w-[200px]">
+                          <Progress value={usagePercent} className="h-1.5" />
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {user.current_month_usage ?? 0} / {user.monthly_limit ?? '∞'}
+                        </span>
                       </div>
                     </div>
+                    
+                    {/* Actions */}
+                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleEditLimit(user)}
+                        className="h-8 px-3 text-xs"
+                      >
+                        Edit Limit
+                      </Button>
+                      
+                      {user.is_active ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleRevokeAccess(user.user_id)}
+                          className="h-8 px-3 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+                        >
+                          <UserX className="w-3.5 h-3.5 mr-1.5" />
+                          Revoke
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleGrantAccess(user.user_id)}
+                          className="h-8 px-3 text-xs text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950"
+                        >
+                          <UserCheck className="w-3.5 h-3.5 mr-1.5" />
+                          Grant
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                );
-              })}
-              
-              {filteredUsers.length === 0 && (
-                <div className={`text-center py-8 ${language === 'ar' ? 'text-right' : ''}`}>
-                  <Users className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium">{t('admin.noUsersFound')}</h3>
-                  <p className="text-muted-foreground">{t('admin.adjustCriteria')}</p>
-                </div>
-              )}
-            </div>
-          </ScrollArea>
-        </CardContent>
-      </Card>
+                </motion.div>
+              );
+            })}
+            
+            {filteredUsers.length === 0 && (
+              <div className="text-center py-12 text-muted-foreground">
+                No users found matching your criteria.
+              </div>
+            )}
+          </motion.div>
+        </ScrollArea>
+      </div>
 
-      {/* Edit Limit Modals */}
-      {editingUser && (
-        <EditLimitModal
-          isOpen={editModalOpen}
-          onClose={() => {
-            setEditModalOpen(false);
-            setEditingUser(null);
-          }}
-          onConfirm={confirmUpdateLimit}
-          users={[{
-            user_id: editingUser.user_id,
-            user_email: editingUser.user_email || undefined,
-            company_name: editingUser.profiles?.company_name || undefined,
-            current_month_usage: editingUser.current_month_usage ?? 0,
-            monthly_limit: editingUser.monthly_limit
-          }]}
-        />
-      )}
-
+      {/* Modals */}
       <EditLimitModal
-        isOpen={bulkEditModalOpen}
-        onClose={() => setBulkEditModalOpen(false)}
+        open={editModalOpen}
+        onOpenChange={setEditModalOpen}
+        currentLimit={editingUser?.monthly_limit ?? null}
+        onConfirm={confirmUpdateLimit}
+        title="Edit User Limit"
+        description={`Set monthly message limit for ${editingUser?.profiles?.company_name || 'user'}`}
+      />
+      
+      <EditLimitModal
+        open={bulkEditModalOpen}
+        onOpenChange={setBulkEditModalOpen}
+        currentLimit={null}
         onConfirm={confirmBulkUpdateLimits}
-        users={selectedUsers.map(userId => {
-          const user = allUsers.find(u => u.user_id === userId);
-          return {
-            user_id: userId,
-            user_email: user?.user_email || undefined,
-            company_name: user?.profiles?.company_name || undefined,
-            current_month_usage: user?.current_month_usage ?? 0,
-            monthly_limit: user?.monthly_limit || null
-          };
-        })}
-        isBulk={true}
+        title="Bulk Edit Limits"
+        description={`Set monthly message limit for ${selectedUsers.length} selected users`}
       />
     </div>
   );
