@@ -5,12 +5,13 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useTheme } from '@/components/theme-provider';
 import { 
-  Crown, RefreshCw, Activity, BarChart3, Settings, Users, Brain, ArrowLeft, Moon, Sun
+  Crown, RefreshCw, Activity, BarChart3, Settings, Users, Brain, ArrowLeft, Moon, Sun, HeartPulse
 } from 'lucide-react';
 import { AdminDashboard } from './admin/AdminDashboard';
 import { UserManagement } from './admin/UserManagement';
 import { SystemSettings } from './admin/SystemSettings';
 import { RateLimitMonitoring } from './admin/RateLimitMonitoring';
+import { SystemHealthMonitor } from './admin/SystemHealthMonitor';
 import { ErrorBoundary } from './ErrorBoundary';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -73,6 +74,7 @@ const tabs = [
   { id: 'overview', label: 'Dashboard', icon: BarChart3 },
   { id: 'users', label: 'Users', icon: Users },
   { id: 'rate-limits', label: 'Rate Limits', icon: Activity },
+  { id: 'health', label: 'System Health', icon: HeartPulse },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
@@ -514,6 +516,12 @@ export const AdminPanel = () => {
             {activeTab === 'rate-limits' && (
               <ErrorBoundary>
                 <RateLimitMonitoring />
+              </ErrorBoundary>
+            )}
+
+            {activeTab === 'health' && (
+              <ErrorBoundary>
+                <SystemHealthMonitor />
               </ErrorBoundary>
             )}
 
