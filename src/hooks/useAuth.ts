@@ -6,7 +6,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { trackDeviceLogin } from '@/hooks/useDeviceTracking';
 import type { UserProfile, UseAuthReturn } from '@/types/dashboard.types';
 
-const MAX_AUTH_FAILURES = 2;
+const QUERY_TIMEOUT_MS = 5000;
 
 export const useAuth = (user: User, session: Session): UseAuthReturn => {
   const [hasAccess, setHasAccess] = useState(false);
@@ -17,26 +17,7 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
   const { toast } = useToast();
   const { t } = useLanguage();
   
-  // Refs for tracking device and auth failures
   const hasTrackedDevice = useRef(false);
-  const authFailureCount = useRef(0);
-  
-  
-  // Stable error handler using ref pattern
-  const handleAuthFailure = useCallback((error: { code?: string; message?: string }, context: string) => {
-    console.error(`Auth error in ${context}:`, error);
-    
-    if (error.code === 'PGRST301' || error.message?.includes('JWT') || error.code === '401') {
-      authFailureCount.current++;
-      
-      if (authFailureCount.current >= MAX_AUTH_FAILURES) {
-        console.warn('Multiple auth failures detected, forcing session reset');
-        localStorage.removeItem('sb-dfkoxuokfkttjhfjcecx-auth-token');
-        sessionStorage.clear();
-        window.location.href = '/';
-      }
-    }
-  }, []);
 
   // Check if user has active access
   const checkAccess = useCallback(async () => {
@@ -48,11 +29,9 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
         .maybeSingle();
 
       if (error) {
-        handleAuthFailure(error, 'checkAccess');
+        console.error('checkAccess error:', error);
         return;
       }
-
-      authFailureCount.current = 0;
 
       if (!data) {
         setHasAccess(false);
@@ -62,9 +41,9 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
       const isActive = data.is_active && (!data.expires_at || new Date(data.expires_at) > new Date());
       setHasAccess(isActive);
     } catch (error) {
-      handleAuthFailure(error as { code?: string; message?: string }, 'checkAccess');
+      console.error('checkAccess error:', error);
     }
-  }, [user.id, handleAuthFailure]);
+  }, [user.id]);
 
   // Check if user is admin
   const checkAdminRole = useCallback(async () => {
@@ -76,16 +55,15 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
         .maybeSingle();
 
       if (error) {
-        handleAuthFailure(error, 'checkAdminRole');
+        console.error('checkAdminRole error:', error);
         return;
       }
 
-      authFailureCount.current = 0;
       setIsAdmin(data?.role === 'admin');
     } catch (error) {
-      handleAuthFailure(error as { code?: string; message?: string }, 'checkAdminRole');
+      console.error('checkAdminRole error:', error);
     }
-  }, [user.id, handleAuthFailure]);
+  }, [user.id]);
 
   // Load user profile
   const loadUserProfile = useCallback(async () => {
@@ -97,18 +75,17 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
         .maybeSingle();
 
       if (error) {
-        handleAuthFailure(error, 'loadUserProfile');
+        console.error('loadUserProfile error:', error);
         return;
       }
 
-      authFailureCount.current = 0;
       if (data) {
         setUserProfile(data as UserProfile);
       }
     } catch (error) {
-      handleAuthFailure(error as { code?: string; message?: string }, 'loadUserProfile');
+      console.error('loadUserProfile error:', error);
     }
-  }, [user.id, handleAuthFailure]);
+  }, [user.id]);
 
   // Check terms acceptance from database
   const checkTermsAcceptance = useCallback(async () => {
@@ -120,18 +97,17 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
         .maybeSingle();
 
       if (error) {
-        handleAuthFailure(error, 'checkTermsAcceptance');
+        console.error('checkTermsAcceptance error:', error);
         return;
       }
 
-      authFailureCount.current = 0;
       setHasAcceptedTerms(data?.has_accepted_terms ?? false);
     } catch (error) {
-      handleAuthFailure(error as { code?: string; message?: string }, 'checkTermsAcceptance');
+      console.error('checkTermsAcceptance error:', error);
     }
-  }, [user.id, handleAuthFailure]);
+  }, [user.id]);
 
-  // Accept terms and conditions - save to database
+  // Accept terms and conditions
   const acceptTerms = useCallback(async () => {
     try {
       const { error } = await supabase
@@ -164,134 +140,95 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
     }
   }, [user.id, toast, t]);
 
-  // Load all auth data on mount
+  // Load all auth data on mount - IMMEDIATE execution, NO auth method calls
   useEffect(() => {
-    console.log('[useAuth] Effect triggered for user:', user?.id);
+    console.log('[useAuth] Starting for user:', user?.id);
     
-    if (!user?.id) {
-      console.log('[useAuth] No user ID, setting loading false');
+    if (!user?.id || !session) {
+      console.log('[useAuth] No user/session, done');
       setIsAuthLoading(false);
       return;
     }
 
-    // Local flag prevents StrictMode double-run (resets on unmount)
-    let hasRun = false;
     let isMounted = true;
-    
-    // Timeout IDs declared at top level for proper cleanup
-    let initDelay: NodeJS.Timeout;
-    let safetyTimeout: NodeJS.Timeout;
+    let hasRun = false;
 
-    const runAuthChecks = async () => {
-      // Prevent double-run in StrictMode
-      if (hasRun) {
-        console.log('[useAuth] Already ran, skipping');
-        return;
-      }
+    const runQueries = async () => {
+      if (hasRun) return;
       hasRun = true;
 
-      // Start safety timeout before queries
-      safetyTimeout = setTimeout(() => {
-        if (isMounted) {
-          console.warn('[useAuth] ⚠️ Safety timeout - queries taking >10s');
-          setIsAuthLoading(false);
-        }
-      }, 10000);
+      console.log('[useAuth] Running queries immediately');
 
       try {
-        // Ensure Supabase client has the session before making authenticated queries
-        // This is critical - the client needs the session internally for RLS to work
-        await supabase.auth.setSession({
-          access_token: session.access_token,
-          refresh_token: session.refresh_token,
-        });
-        
-        console.log('[useAuth] Session set ✓ Starting queries for user:', user.id);
-
-        // Run all queries in parallel
-        const [accessResult, roleResult, profileResult, settingsResult] = await Promise.all([
-          supabase.from('access_grants').select('is_active, expires_at').eq('user_id', user.id).maybeSingle(),
-          supabase.from('user_roles').select('role').eq('user_id', user.id).maybeSingle(),
-          supabase.from('profiles').select('user_id, contact_person, company_name, business_type, business_context, avatar_url').eq('user_id', user.id).maybeSingle(),
-          supabase.from('user_settings').select('has_accepted_terms').eq('user_id', user.id).maybeSingle()
+        // Race queries against timeout - prevents infinite hang
+        const results = await Promise.race([
+          Promise.all([
+            supabase.from('access_grants').select('is_active, expires_at').eq('user_id', user.id).maybeSingle(),
+            supabase.from('user_roles').select('role').eq('user_id', user.id).maybeSingle(),
+            supabase.from('profiles').select('user_id, contact_person, company_name, business_type, business_context, avatar_url').eq('user_id', user.id).maybeSingle(),
+            supabase.from('user_settings').select('has_accepted_terms').eq('user_id', user.id).maybeSingle()
+          ]),
+          new Promise<never>((_, reject) => 
+            setTimeout(() => reject(new Error('Query timeout')), QUERY_TIMEOUT_MS)
+          )
         ]);
 
-        console.log('[useAuth] ✓ Queries complete:', {
-          access: !!accessResult.data,
-          role: !!roleResult.data,
-          profile: !!profileResult.data,
-          settings: !!settingsResult.data
-        });
+        if (!isMounted) return;
 
-        if (!isMounted) {
-          console.log('[useAuth] Unmounted after queries');
-          return;
-        }
+        const [accessResult, roleResult, profileResult, settingsResult] = results;
+
+        console.log('[useAuth] Queries complete:', {
+          access: !accessResult.error,
+          role: !roleResult.error,
+          profile: !profileResult.error,
+          settings: !settingsResult.error
+        });
 
         // Process access
         if (!accessResult.error && accessResult.data) {
           const isActive = accessResult.data.is_active && 
             (!accessResult.data.expires_at || new Date(accessResult.data.expires_at) > new Date());
-          console.log('[useAuth] → hasAccess:', isActive);
           setHasAccess(isActive);
-        } else {
-          console.log('[useAuth] → No access grant or error:', accessResult.error);
         }
 
         // Process admin role
         if (!roleResult.error) {
-          const isAdminRole = roleResult.data?.role === 'admin';
-          console.log('[useAuth] → isAdmin:', isAdminRole);
-          setIsAdmin(isAdminRole);
+          setIsAdmin(roleResult.data?.role === 'admin');
         }
 
         // Process profile
         if (!profileResult.error && profileResult.data) {
-          console.log('[useAuth] → userProfile:', profileResult.data);
           setUserProfile(profileResult.data as UserProfile);
-        } else {
-          console.log('[useAuth] → No profile or error:', profileResult.error);
         }
 
         // Process terms
         if (!settingsResult.error) {
-          const hasTerms = settingsResult.data?.has_accepted_terms ?? false;
-          console.log('[useAuth] → hasAcceptedTerms:', hasTerms);
-          setHasAcceptedTerms(hasTerms);
+          setHasAcceptedTerms(settingsResult.data?.has_accepted_terms ?? false);
         }
 
       } catch (error) {
-        console.error('[useAuth] ❌ Error in auth checks:', error);
+        console.error('[useAuth] Error:', error);
       } finally {
-        clearTimeout(safetyTimeout);
         if (isMounted) {
-          console.log('[useAuth] ✓ Complete - setting isAuthLoading = false');
+          console.log('[useAuth] Done');
           setIsAuthLoading(false);
         }
       }
     };
 
-    // Start after 100ms delay to ensure Supabase client is ready
-    initDelay = setTimeout(() => {
-      console.log('[useAuth] Init delay complete, starting checks');
-      runAuthChecks();
-    }, 100);
+    // Execute IMMEDIATELY - no delays
+    runQueries();
 
-    // Track device login (non-blocking)
+    // Track device (non-blocking)
     if (!hasTrackedDevice.current) {
       hasTrackedDevice.current = true;
       setTimeout(() => trackDeviceLogin(user.id), 0);
     }
 
-    // Cleanup - clear both timeouts and prevent stale updates
     return () => {
-      console.log('[useAuth] Cleanup called');
       isMounted = false;
-      clearTimeout(initDelay);
-      clearTimeout(safetyTimeout);
-      // hasRun resets automatically (local variable)
     };
-  }, [user.id]);
+  }, [user?.id, session]);
 
   return {
     hasAccess,
