@@ -1,4 +1,4 @@
-import { User } from '@supabase/supabase-js';
+import { User, Session } from '@supabase/supabase-js';
 import { DashboardContainer } from './dashboard/DashboardContainer';
 import { TermsModal } from './TermsModal';
 import { MaintenanceBanner } from './MaintenanceBanner';
@@ -15,10 +15,11 @@ const AdminPanel = lazy(() => import('./AdminPanel').then(module => ({ default: 
 
 interface DashboardProps {
   user: User;
+  session: Session;
 }
 
-export default function Dashboard({ user }: DashboardProps) {
-  const auth = useAuth(user);
+export default function Dashboard({ user, session }: DashboardProps) {
+  const auth = useAuth(user, session);
   const [activeView, setActiveView] = useState<'chat' | 'admin'>('chat');
   const [maintenanceConfig, setMaintenanceConfig] = useState({
     enableMaintenance: false,
