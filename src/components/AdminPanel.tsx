@@ -76,7 +76,11 @@ const tabs = [
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
-export const AdminPanel = () => {
+interface AdminPanelProps {
+  onBackClick?: () => void;
+}
+
+export const AdminPanel = ({ onBackClick }: AdminPanelProps) => {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   
@@ -402,7 +406,7 @@ export const AdminPanel = () => {
             <div className="flex items-center gap-4">
               {/* Back Button */}
               <Button
-                onClick={() => navigate('/')}
+                onClick={onBackClick || (() => navigate('/'))}
                 variant="ghost"
                 size="icon"
                 className="w-10 h-10 rounded-xl hover:bg-muted/50 transition-colors"
