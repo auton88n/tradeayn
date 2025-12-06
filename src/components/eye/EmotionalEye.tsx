@@ -379,8 +379,16 @@ const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorCon
         onTouchStart={gestureHandlers.onTouchStart}
         onTouchEnd={gestureHandlers.onTouchEnd}
       >
-        {/* Soft outer glow halo - radial gradient with breathing animation */}
-        <div className="absolute -inset-8 rounded-full blur-3xl pointer-events-none bg-[radial-gradient(circle,_rgba(229,229,229,0.3)_0%,_transparent_85%)] dark:bg-[radial-gradient(circle,_rgba(38,38,38,0.15)_0%,_transparent_85%)] animate-glow-breathe" />
+        {/* Soft outer glow halo - radial gradient with breathing animation and emotional color */}
+        <div 
+          className="absolute -inset-8 rounded-full blur-3xl pointer-events-none animate-glow-breathe"
+          style={{
+            background: emotion === 'calm'
+              ? 'radial-gradient(circle, rgba(229,229,229,0.3) 0%, transparent 85%)'
+              : `radial-gradient(circle, ${emotionConfig.glowColor}40 0%, transparent 85%)`,
+            transition: 'background 0.6s ease',
+          }}
+        />
         
         <div 
           className={cn(
