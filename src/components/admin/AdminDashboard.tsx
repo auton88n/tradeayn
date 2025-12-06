@@ -1,11 +1,8 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
-  Users, Activity, Clock, MessageSquare, Building
+  Users, Activity, Clock, MessageSquare, Building, TrendingUp, ArrowUpRight
 } from 'lucide-react';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { motion } from 'framer-motion';
 
 interface SystemMetrics {
   totalUsers: number;
@@ -37,8 +34,24 @@ interface AdminDashboardProps {
   allUsers: AccessGrantWithProfile[];
 }
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { duration: 0.5, ease: "easeOut" }
+  }
+};
+
 export const AdminDashboard = ({ systemMetrics, allUsers }: AdminDashboardProps) => {
-  const { t, language } = useLanguage();
   // Calculate weekly growth based on actual data
   const oneWeekAgo = new Date();
   oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
@@ -51,93 +64,133 @@ export const AdminDashboard = ({ systemMetrics, allUsers }: AdminDashboardProps)
     user.is_active && user.granted_at && new Date(user.granted_at) >= oneWeekAgo
   ).length;
 
+  const metrics = [
+    {
+      label: 'Total Users',
+      value: systemMetrics?.totalUsers || 0,
+      change: `+${usersThisWeek} this week`,
+      icon: Users,
+      trend: 'up'
+    },
+    {
+      label: 'Active Users',
+      value: systemMetrics?.activeUsers || 0,
+      change: `+${activeUsersThisWeek} activated`,
+      icon: Activity,
+      trend: 'up'
+    },
+    {
+      label: 'Pending Requests',
+      value: systemMetrics?.pendingRequests || 0,
+      change: 'Needs review',
+      icon: Clock,
+      trend: 'neutral'
+    },
+    {
+      label: 'Messages Today',
+      value: systemMetrics?.todayMessages || 0,
+      change: `${systemMetrics?.totalMessages || 0} total`,
+      icon: MessageSquare,
+      trend: 'up'
+    }
+  ];
+
   return (
-    <div className="space-y-6" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-      {/* Key Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-          <CardHeader className={`flex flex-row items-center justify-between space-y-0 pb-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-            <CardTitle className="text-sm font-medium">{t('admin.totalUsers')}</CardTitle>
-            <Users className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-700">{systemMetrics?.totalUsers || 0}</div>
-            <p className="text-xs text-blue-600">
-              +{usersThisWeek} this week
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-          <CardHeader className={`flex flex-row items-center justify-between space-y-0 pb-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-            <CardTitle className="text-sm font-medium">{t('admin.activeUsers')}</CardTitle>
-            <Activity className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-700">{systemMetrics?.activeUsers || 0}</div>
-            <p className="text-xs text-green-600">
-              +{activeUsersThisWeek} activated this week
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200">
-          <CardHeader className={`flex flex-row items-center justify-between space-y-0 pb-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-            <CardTitle className="text-sm font-medium">{t('admin.pendingRequests')}</CardTitle>
-            <Clock className="h-4 w-4 text-yellow-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-700">{systemMetrics?.pendingRequests || 0}</div>
-            <p className="text-xs text-yellow-600">
-              {t('admin.needsReview')}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-          <CardHeader className={`flex flex-row items-center justify-between space-y-0 pb-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-            <CardTitle className="text-sm font-medium">{t('admin.messagesToday')}</CardTitle>
-            <MessageSquare className="h-4 w-4 text-purple-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-700">{systemMetrics?.todayMessages || 0}</div>
-            <p className="text-xs text-purple-600">
-              Total: {systemMetrics?.totalMessages || 0}
-            </p>
-          </CardContent>
-        </Card>
+    <motion.div 
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="space-y-8"
+    >
+      {/* Metrics Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        {metrics.map((metric, index) => {
+          const Icon = metric.icon;
+          
+          return (
+            <motion.div
+              key={metric.label}
+              variants={itemVariants}
+              whileHover={{ y: -2, transition: { duration: 0.2 } }}
+              className="group relative overflow-hidden rounded-2xl bg-background border border-border/50 p-6 transition-all duration-300 hover:border-border hover:shadow-lg"
+            >
+              {/* Subtle gradient overlay on hover */}
+              <div className="absolute inset-0 bg-gradient-to-br from-foreground/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              
+              <div className="relative">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-foreground/5 flex items-center justify-center">
+                    <Icon className="w-5 h-5 text-foreground/60" />
+                  </div>
+                  {metric.trend === 'up' && (
+                    <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                      <TrendingUp className="w-3 h-3" />
+                      <ArrowUpRight className="w-3 h-3" />
+                    </div>
+                  )}
+                </div>
+                
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground font-medium">{metric.label}</p>
+                  <p className="text-3xl font-serif font-medium tracking-tight">{metric.value.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground">{metric.change}</p>
+                </div>
+              </div>
+            </motion.div>
+          );
+        })}
       </div>
 
       {/* Recent Activity */}
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('admin.recentActivity')}</CardTitle>
-          <CardDescription>Latest user activities and access grants</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ScrollArea className="h-[400px]">
-            <div className="space-y-3">
-              {allUsers.slice(0, 10).map((user) => (
-                <div key={user.id} className={`flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Building className="w-4 h-4" />
+      <motion.div 
+        variants={itemVariants}
+        className="rounded-2xl border border-border/50 bg-background overflow-hidden"
+      >
+        <div className="px-6 py-5 border-b border-border/50">
+          <h2 className="text-lg font-serif font-medium">Recent Activity</h2>
+          <p className="text-sm text-muted-foreground">Latest user activities and access grants</p>
+        </div>
+        
+        <ScrollArea className="h-[420px]">
+          <div className="p-4">
+            <div className="space-y-2">
+              {allUsers.slice(0, 12).map((user, index) => (
+                <motion.div 
+                  key={user.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.05, duration: 0.3 }}
+                  className="group flex items-center gap-4 p-4 rounded-xl hover:bg-muted/50 transition-all duration-200"
+                >
+                  <div className="w-10 h-10 rounded-full bg-foreground/5 flex items-center justify-center shrink-0">
+                    <Building className="w-4 h-4 text-foreground/60" />
                   </div>
-                  <div className={`flex-1 ${language === 'ar' ? 'text-right' : ''}`}>
-                    <p className="font-medium text-sm">{user.profiles?.company_name || t('admin.unknownCompany')}</p>
-                    <p className="text-xs text-muted-foreground">
+                  
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm truncate">
+                      {user.profiles?.company_name || 'Unknown Company'}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
                       {user.user_email && `${user.user_email} • `}
-                      {user.is_active ? t('admin.accessGranted') : t('admin.pending')} • {new Date(user.created_at).toLocaleDateString()}
+                      {user.is_active ? 'Access granted' : 'Pending'} • {new Date(user.created_at).toLocaleDateString()}
                     </p>
                   </div>
-                  <Badge variant={user.is_active ? 'default' : 'secondary'}>
-                    {user.is_active ? t('admin.active') : t('admin.pending')}
-                  </Badge>
-                </div>
+                  
+                  <div className={`
+                    px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200
+                    ${user.is_active 
+                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' 
+                      : 'bg-muted text-muted-foreground'
+                    }
+                  `}>
+                    {user.is_active ? 'Active' : 'Pending'}
+                  </div>
+                </motion.div>
               ))}
             </div>
-          </ScrollArea>
-        </CardContent>
-      </Card>
-    </div>
+          </div>
+        </ScrollArea>
+      </motion.div>
+    </motion.div>
   );
 };

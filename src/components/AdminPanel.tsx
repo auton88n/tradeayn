@@ -1,18 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { 
-  Crown, RefreshCw, Activity, BarChart3, Settings, Users
+  Crown, RefreshCw, Activity, BarChart3, Settings, Users, Brain
 } from 'lucide-react';
 import { AdminDashboard } from './admin/AdminDashboard';
 import { UserManagement } from './admin/UserManagement';
 import { SystemSettings } from './admin/SystemSettings';
 import { RateLimitMonitoring } from './admin/RateLimitMonitoring';
 import { ErrorBoundary } from './ErrorBoundary';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface Profile {
   id: string;
@@ -69,8 +67,14 @@ interface SystemConfig {
   notificationEmail: string;
 }
 
+const tabs = [
+  { id: 'overview', label: 'Dashboard', icon: BarChart3 },
+  { id: 'users', label: 'Users', icon: Users },
+  { id: 'rate-limits', label: 'Rate Limits', icon: Activity },
+  { id: 'settings', label: 'Settings', icon: Settings },
+];
+
 export const AdminPanel = () => {
-  const { t, language } = useLanguage();
   // Core State
   const [allUsers, setAllUsers] = useState<AccessGrantWithProfile[]>([]);
   const [usageStats, setUsageStats] = useState<UsageStats[]>([]);
@@ -106,12 +110,12 @@ export const AdminPanel = () => {
           .from('access_grants')
           .select('*')
           .order('created_at', { ascending: false })
-          .limit(1000), // Add limit for better performance
+          .limit(1000),
         
         supabase
           .from('profiles')
           .select('id, user_id, company_name, contact_person, created_at')
-          .limit(1000), // Add limit for better performance
+          .limit(1000),
         
         supabase.rpc('get_usage_stats'),
         
@@ -119,7 +123,7 @@ export const AdminPanel = () => {
           .from('usage_logs')
           .select('usage_count, created_at')
           .gte('created_at', new Date().toISOString().split('T')[0])
-          .limit(500) // Add limit for better performance
+          .limit(500)
       ]);
 
       if (accessResult.error) throw accessResult.error;
@@ -205,12 +209,10 @@ export const AdminPanel = () => {
           maxConcurrentSessions?: number;
         }
         
-        // Find and process each config type
         const maintenanceModeData = data.find(item => item.key === 'maintenance_mode');
         const defaultSettingsData = data.find(item => item.key === 'default_settings');
         const securitySettingsData = data.find(item => item.key === 'security_settings');
         
-        // Update system config from database
         if (maintenanceModeData?.value && typeof maintenanceModeData.value === 'object') {
           const maintenanceMode = maintenanceModeData.value as ConfigValue;
           setSystemConfig(prev => ({
@@ -254,10 +256,8 @@ export const AdminPanel = () => {
       const updatedConfig = { ...systemConfig, ...newConfig };
       setSystemConfig(updatedConfig);
       
-      // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       
-      // Save to database based on which fields changed
       if ('enableMaintenance' in newConfig || 'maintenanceMessage' in newConfig || 
           'maintenanceStartTime' in newConfig || 'maintenanceEndTime' in newConfig) {
         await supabase
@@ -306,7 +306,6 @@ export const AdminPanel = () => {
           }, { onConflict: 'key' });
       }
       
-      // Also save maintenance config to localStorage for dashboard access
       const maintenanceConfig = {
         enableMaintenance: updatedConfig.enableMaintenance,
         maintenanceMessage: updatedConfig.maintenanceMessage,
@@ -317,7 +316,7 @@ export const AdminPanel = () => {
       
       toast({
         title: "Configuration Updated",
-        description: t('admin.configSaved')
+        description: "Settings saved successfully"
       });
     } catch (error) {
       toast({
@@ -333,13 +332,11 @@ export const AdminPanel = () => {
     loadSystemConfig();
   }, [fetchData, loadSystemConfig]);
 
-  // System maintenance functions
   const performSystemMaintenance = async (action: string) => {
     try {
-      // Mock system maintenance actions
       switch (action) {
         case 'backup':
-          await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate backup
+          await new Promise(resolve => setTimeout(resolve, 2000));
           toast({ title: "Backup Complete", description: "Database backup has been created successfully." });
           break;
         case 'clear_cache':
@@ -364,82 +361,138 @@ export const AdminPanel = () => {
 
   if (isLoading) {
     return (
-      <Card className="p-6">
-        <div className={`flex items-center gap-3 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-          <Activity className="w-5 h-5 animate-spin" />
-          <span>{t('admin.loading')}</span>
-        </div>
-      </Card>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex flex-col items-center gap-4"
+        >
+          <div className="relative">
+            <div className="w-16 h-16 rounded-full bg-foreground/5 flex items-center justify-center">
+              <Brain className="w-8 h-8 text-foreground/60 animate-pulse" />
+            </div>
+            <div className="absolute inset-0 rounded-full border-2 border-foreground/10 border-t-foreground/40 animate-spin" />
+          </div>
+          <p className="text-sm text-muted-foreground font-medium">Loading admin panel...</p>
+        </motion.div>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-6" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-      {/* Header with Real-time Controls */}
-      <div className={`flex items-center justify-between ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-        <div className={language === 'ar' ? 'text-right' : ''}>
-          <h1 className={`text-3xl font-bold flex items-center gap-3 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-            <Crown className="w-8 h-8 text-primary" />
-            {t('admin.title')}
-          </h1>
-          <p className="text-muted-foreground">{t('admin.subtitle')}</p>
+    <div className="min-h-screen bg-background">
+      {/* Premium Header */}
+      <motion.header 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
+        className="border-b border-border/40 bg-background/80 backdrop-blur-xl sticky top-0 z-50"
+      >
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <div className="w-12 h-12 rounded-2xl bg-foreground flex items-center justify-center shadow-lg">
+                  <Crown className="w-6 h-6 text-background" />
+                </div>
+                <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-background" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-serif font-medium tracking-tight">Admin Console</h1>
+                <p className="text-sm text-muted-foreground">Manage users, settings & system health</p>
+              </div>
+            </div>
+            
+            <Button 
+              onClick={fetchData} 
+              variant="outline" 
+              size="sm"
+              className="gap-2 bg-background/50 backdrop-blur-sm border-border/50 hover:bg-muted/50 transition-all duration-200"
+              disabled={isLoading}
+            >
+              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
         </div>
-        <div className={`flex items-center gap-3 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-          <Button onClick={fetchData} variant="outline" size="sm" disabled={isLoading}>
-            <RefreshCw className={`w-4 h-4 ${language === 'ar' ? 'ml-2' : 'mr-2'} ${isLoading ? 'animate-spin' : ''}`} />
-            {t('admin.refresh')}
-          </Button>
+      </motion.header>
+
+      {/* Navigation Tabs */}
+      <div className="border-b border-border/40 bg-muted/30">
+        <div className="max-w-7xl mx-auto px-6">
+          <nav className="flex gap-1">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`
+                    relative flex items-center gap-2 px-5 py-4 text-sm font-medium transition-all duration-200
+                    ${isActive 
+                      ? 'text-foreground' 
+                      : 'text-muted-foreground hover:text-foreground/80'
+                    }
+                  `}
+                >
+                  <Icon className="w-4 h-4" />
+                  {tab.label}
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeTab"
+                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-foreground"
+                      transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </nav>
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview" className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-            <BarChart3 className="w-4 h-4" />
-            {t('admin.dashboard')}
-          </TabsTrigger>
-          <TabsTrigger value="users" className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-            <Users className="w-4 h-4" />
-            {t('admin.users')}
-          </TabsTrigger>
-          <TabsTrigger value="rate-limits" className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-            <Activity className="w-4 h-4" />
-            Rate Limits
-          </TabsTrigger>
-          <TabsTrigger value="settings" className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-            <Settings className="w-4 h-4" />
-            {t('admin.settings')}
-          </TabsTrigger>
-        </TabsList>
+      {/* Content Area */}
+      <main className="max-w-7xl mx-auto px-6 py-8">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+          >
+            {activeTab === 'overview' && (
+              <ErrorBoundary>
+                <AdminDashboard systemMetrics={systemMetrics} allUsers={allUsers} />
+              </ErrorBoundary>
+            )}
 
-        <TabsContent value="overview">
-          <ErrorBoundary>
-            <AdminDashboard systemMetrics={systemMetrics} allUsers={allUsers} />
-          </ErrorBoundary>
-        </TabsContent>
+            {activeTab === 'users' && (
+              <ErrorBoundary>
+                <UserManagement allUsers={allUsers} onRefresh={fetchData} />
+              </ErrorBoundary>
+            )}
 
-        <TabsContent value="users">
-          <ErrorBoundary>
-            <UserManagement allUsers={allUsers} onRefresh={fetchData} />
-          </ErrorBoundary>
-        </TabsContent>
+            {activeTab === 'rate-limits' && (
+              <ErrorBoundary>
+                <RateLimitMonitoring />
+              </ErrorBoundary>
+            )}
 
-        <TabsContent value="rate-limits">
-          <ErrorBoundary>
-            <RateLimitMonitoring />
-          </ErrorBoundary>
-        </TabsContent>
-
-        <TabsContent value="settings">
-          <ErrorBoundary>
-            <SystemSettings 
-              systemConfig={systemConfig}
-              onUpdateConfig={updateSystemConfig}
-              onPerformMaintenance={performSystemMaintenance}
-            />
-          </ErrorBoundary>
-        </TabsContent>
-      </Tabs>
+            {activeTab === 'settings' && (
+              <ErrorBoundary>
+                <SystemSettings 
+                  systemConfig={systemConfig}
+                  onUpdateConfig={updateSystemConfig}
+                  onPerformMaintenance={performSystemMaintenance}
+                />
+              </ErrorBoundary>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </main>
     </div>
   );
 };
