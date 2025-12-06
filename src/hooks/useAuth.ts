@@ -199,9 +199,14 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
       }, 10000);
 
       try {
-        // Session is passed from Index.tsx - no need to fetch it again
-        // This avoids the getSession() deadlock that was causing queries to hang
-        console.log('[useAuth] Session available ✓ Starting queries for user:', user.id);
+        // Ensure Supabase client has the session before making authenticated queries
+        // This is critical - the client needs the session internally for RLS to work
+        await supabase.auth.setSession({
+          access_token: session.access_token,
+          refresh_token: session.refresh_token,
+        });
+        
+        console.log('[useAuth] Session set ✓ Starting queries for user:', user.id);
 
         // Run all queries in parallel
         const [accessResult, roleResult, profileResult, settingsResult] = await Promise.all([
