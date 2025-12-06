@@ -17,9 +17,30 @@ import {
   Wifi,
   WifiOff,
   TrendingUp,
-  AlertCircle
+  AlertCircle,
+  BarChart2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer,
+  Area,
+  AreaChart,
+  Legend
+} from 'recharts';
+
+interface HistoricalMetric {
+  id: string;
+  mode_name: string;
+  status: 'online' | 'offline' | 'degraded' | 'unknown';
+  response_time_ms: number | null;
+  last_checked_at: string;
+}
 
 interface HealthMetric {
   id: string;
@@ -85,11 +106,13 @@ const STATUS_CONFIG = {
 
 export const SystemHealthMonitor = () => {
   const [healthMetrics, setHealthMetrics] = useState<HealthMetric[]>([]);
+  const [historicalData, setHistoricalData] = useState<HistoricalMetric[]>([]);
   const [aiModeConfigs, setAiModeConfigs] = useState<AIModeConfig[]>([]);
   const [recentErrors, setRecentErrors] = useState<SecurityLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isChecking, setIsChecking] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState<number | null>(null);
+  const [selectedChartMode, setSelectedChartMode] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchHealthData = useCallback(async () => {
@@ -110,6 +133,17 @@ export const SystemHealthMonitor = () => {
         }
       });
       setHealthMetrics(Array.from(latestMetrics.values()));
+
+      // Fetch historical data (last 24 hours)
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const { data: histData, error: histError } = await supabase
+        .from('webhook_health_metrics')
+        .select('id, mode_name, status, response_time_ms, last_checked_at')
+        .gte('last_checked_at', twentyFourHoursAgo)
+        .order('last_checked_at', { ascending: true });
+
+      if (histError) throw histError;
+      setHistoricalData((histData || []) as HistoricalMetric[]);
 
       // Fetch AI mode configs
       const { data: configs, error: configsError } = await supabase
@@ -225,6 +259,54 @@ export const SystemHealthMonitor = () => {
     return date.toLocaleDateString();
   };
 
+  // Prepare chart data for response times
+  const getChartData = (modeName?: string | null) => {
+    const filtered = modeName 
+      ? historicalData.filter(h => h.mode_name === modeName)
+      : historicalData;
+
+    // Group by hour for better visualization
+    const hourlyData = new Map<string, { 
+      time: string; 
+      avgResponseTime: number; 
+      count: number;
+      onlineCount: number;
+      offlineCount: number;
+      degradedCount: number;
+    }>();
+
+    filtered.forEach(metric => {
+      const date = new Date(metric.last_checked_at);
+      const hourKey = `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:00`;
+      
+      const existing = hourlyData.get(hourKey) || {
+        time: hourKey,
+        avgResponseTime: 0,
+        count: 0,
+        onlineCount: 0,
+        offlineCount: 0,
+        degradedCount: 0,
+      };
+
+      existing.count += 1;
+      existing.avgResponseTime += metric.response_time_ms || 0;
+      if (metric.status === 'online') existing.onlineCount += 1;
+      if (metric.status === 'offline') existing.offlineCount += 1;
+      if (metric.status === 'degraded') existing.degradedCount += 1;
+
+      hourlyData.set(hourKey, existing);
+    });
+
+    return Array.from(hourlyData.values()).map(d => ({
+      ...d,
+      avgResponseTime: d.count > 0 ? Math.round(d.avgResponseTime / d.count) : 0,
+      uptimePercent: d.count > 0 ? Math.round((d.onlineCount / d.count) * 100) : 100,
+    }));
+  };
+
+  // Get unique mode names from historical data
+  const uniqueModes = [...new Set(historicalData.map(h => h.mode_name))];
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -321,6 +403,227 @@ export const SystemHealthMonitor = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Uptime History Charts */}
+      <div>
+        <h3 className="text-lg font-medium mb-4 flex items-center gap-2">
+          <BarChart2 className="w-5 h-5" />
+          24-Hour Health Trends
+        </h3>
+
+        {historicalData.length > 0 ? (
+          <div className="space-y-4">
+            {/* Mode Filter */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <Button
+                variant={selectedChartMode === null ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSelectedChartMode(null)}
+                className="text-xs"
+              >
+                All Modes
+              </Button>
+              {uniqueModes.map(mode => (
+                <Button
+                  key={mode}
+                  variant={selectedChartMode === mode ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedChartMode(mode)}
+                  className="text-xs"
+                >
+                  {mode}
+                </Button>
+              ))}
+            </div>
+
+            {/* Response Time Chart */}
+            <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base font-medium flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  Response Time (ms)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={getChartData(selectedChartMode)}>
+                      <defs>
+                        <linearGradient id="responseTimeGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
+                      <XAxis 
+                        dataKey="time" 
+                        tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                        axisLine={{ stroke: 'hsl(var(--border))' }}
+                      />
+                      <YAxis 
+                        tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                        axisLine={{ stroke: 'hsl(var(--border))' }}
+                        unit="ms"
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'hsl(var(--card))', 
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '12px',
+                          boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                        }}
+                        labelStyle={{ color: 'hsl(var(--foreground))' }}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="avgResponseTime"
+                        stroke="hsl(var(--primary))"
+                        strokeWidth={2}
+                        fill="url(#responseTimeGradient)"
+                        name="Avg Response Time"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Uptime Percentage Chart */}
+            <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base font-medium flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4" />
+                  Uptime Percentage
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={getChartData(selectedChartMode)}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
+                      <XAxis 
+                        dataKey="time" 
+                        tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                        axisLine={{ stroke: 'hsl(var(--border))' }}
+                      />
+                      <YAxis 
+                        domain={[0, 100]}
+                        tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                        axisLine={{ stroke: 'hsl(var(--border))' }}
+                        unit="%"
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'hsl(var(--card))', 
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '12px',
+                          boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                        }}
+                        labelStyle={{ color: 'hsl(var(--foreground))' }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="uptimePercent"
+                        stroke="#10b981"
+                        strokeWidth={2}
+                        dot={{ fill: '#10b981', strokeWidth: 0, r: 3 }}
+                        activeDot={{ r: 5, fill: '#10b981' }}
+                        name="Uptime %"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Status Distribution Chart */}
+            <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base font-medium flex items-center gap-2">
+                  <Activity className="w-4 h-4" />
+                  Status Distribution Over Time
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={getChartData(selectedChartMode)}>
+                      <defs>
+                        <linearGradient id="onlineGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
+                          <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                        </linearGradient>
+                        <linearGradient id="degradedGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.4} />
+                          <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                        </linearGradient>
+                        <linearGradient id="offlineGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#ef4444" stopOpacity={0.4} />
+                          <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
+                      <XAxis 
+                        dataKey="time" 
+                        tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                        axisLine={{ stroke: 'hsl(var(--border))' }}
+                      />
+                      <YAxis 
+                        tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                        axisLine={{ stroke: 'hsl(var(--border))' }}
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'hsl(var(--card))', 
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '12px',
+                          boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                        }}
+                        labelStyle={{ color: 'hsl(var(--foreground))' }}
+                      />
+                      <Legend />
+                      <Area
+                        type="monotone"
+                        dataKey="onlineCount"
+                        stackId="1"
+                        stroke="#10b981"
+                        fill="url(#onlineGradient)"
+                        name="Online"
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="degradedCount"
+                        stackId="1"
+                        stroke="#f59e0b"
+                        fill="url(#degradedGradient)"
+                        name="Degraded"
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="offlineCount"
+                        stackId="1"
+                        stroke="#ef4444"
+                        fill="url(#offlineGradient)"
+                        name="Offline"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        ) : (
+          <Card className="bg-muted/30 border-dashed">
+            <CardContent className="p-8 text-center">
+              <BarChart2 className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+              <h4 className="font-medium mb-2">No Historical Data Yet</h4>
+              <p className="text-sm text-muted-foreground">
+                Run health checks to start collecting data for trend analysis.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
 
       {/* Webhook Health Grid */}
       <div>
