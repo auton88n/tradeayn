@@ -101,6 +101,18 @@ export const CenterStageLayout = ({
   const [lastUserMessage, setLastUserMessage] = useState<string>('');
   const [currentGazeIndex, setCurrentGazeIndex] = useState<number | null>(null);
 
+  // Reset all visual state when messages are cleared (new chat started)
+  useEffect(() => {
+    if (messages.length === 0) {
+      clearResponseBubbles();
+      clearSuggestions();
+      setLastProcessedMessageId(null);
+      setLastUserMessage('');
+      setEmotion('calm');
+      setIsResponding(false);
+    }
+  }, [messages.length, clearResponseBubbles, clearSuggestions, setEmotion, setIsResponding]);
+
   // AI Eye Behavior System
   const { context, recordAction } = useEyeContext({
     eyeRef: eyeRef as React.RefObject<HTMLDivElement>,
