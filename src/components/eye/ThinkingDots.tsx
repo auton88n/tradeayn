@@ -50,26 +50,6 @@ const ThinkingDotsComponent = ({ isVisible, color, size = 260 }: ThinkingDotsPro
           />
         ))}
       </motion.div>
-
-      {/* Pulsing ring - simplified */}
-      <motion.div
-        className="absolute left-1/2 top-1/2 rounded-full border"
-        style={{
-          width: radius * 2,
-          height: radius * 2,
-          borderColor: dotColor,
-          transform: 'translate(-50%, -50%)',
-          opacity: 0.25,
-        }}
-        animate={{
-          scale: [1, 1.03, 1],
-        }}
-        transition={{
-          duration: 2.5,
-          repeat: Infinity,
-          ease: 'easeInOut',
-        }}
-      />
     </div>
   );
 };
