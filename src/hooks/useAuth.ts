@@ -21,7 +21,6 @@ export const useAuth = (user: User): UseAuthReturn => {
   const isInitialized = useRef(false);
   const hasTrackedDevice = useRef(false);
   const authFailureCount = useRef(0);
-  const isAuthRunning = useRef(false); // Track if auth checks are currently running
   
   
   // Stable error handler using ref pattern
@@ -174,69 +173,65 @@ export const useAuth = (user: User): UseAuthReturn => {
       return;
     }
     
-    // Check if already running OR already initialized
-    if (isAuthRunning.current || isInitialized.current) {
-      // FIX: If already initialized and not running, ensure loading is false
-      if (isInitialized.current && !isAuthRunning.current) {
-        setIsAuthLoading(false);
-      }
+    // Prevent duplicate runs
+    if (isInitialized.current) {
+      setIsAuthLoading(false); // Ensure loading is false on re-mount
       return;
     }
     
-    isAuthRunning.current = true;
     isInitialized.current = true;
     
-    // Run auth checks directly inline to avoid ref race condition
+    // Mounted flag to prevent state updates after unmount
+    let isMounted = true;
+    
+    // Safety timeout - force loading false after 10 seconds no matter what
+    const safetyTimeout = setTimeout(() => {
+      if (isMounted) {
+        console.warn('[useAuth] Safety timeout reached - forcing loading to false');
+        setIsAuthLoading(false);
+      }
+    }, 10000);
+    
+    // Run all auth checks in parallel for speed
     const runAuthChecks = async () => {
       try {
-        // Check access
-        const { data: accessData, error: accessError } = await supabase
-          .from('access_grants')
-          .select('is_active, expires_at')
-          .eq('user_id', user.id)
-          .maybeSingle();
+        const [accessResult, roleResult, profileResult, settingsResult] = await Promise.all([
+          supabase.from('access_grants').select('is_active, expires_at').eq('user_id', user.id).maybeSingle(),
+          supabase.from('user_roles').select('role').eq('user_id', user.id).maybeSingle(),
+          supabase.from('profiles').select('user_id, contact_person, company_name, business_type, business_context, avatar_url').eq('user_id', user.id).maybeSingle(),
+          supabase.from('user_settings').select('has_accepted_terms').eq('user_id', user.id).maybeSingle()
+        ]);
         
-        if (!accessError && accessData) {
-          const isActive = accessData.is_active && 
-            (!accessData.expires_at || new Date(accessData.expires_at) > new Date());
+        if (!isMounted) return; // Don't update state if unmounted
+        
+        // Process access
+        if (!accessResult.error && accessResult.data) {
+          const isActive = accessResult.data.is_active && 
+            (!accessResult.data.expires_at || new Date(accessResult.data.expires_at) > new Date());
           setHasAccess(isActive);
         }
         
-        // Check admin role
-        const { data: roleData, error: roleError } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id)
-          .maybeSingle();
-        
-        if (!roleError) {
-          setIsAdmin(roleData?.role === 'admin');
+        // Process admin role
+        if (!roleResult.error) {
+          setIsAdmin(roleResult.data?.role === 'admin');
         }
         
-        // Load user profile
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('user_id, contact_person, company_name, business_type, business_context, avatar_url')
-          .eq('user_id', user.id)
-          .maybeSingle();
-        
-        if (!profileError && profileData) {
-          setUserProfile(profileData as UserProfile);
+        // Process profile
+        if (!profileResult.error && profileResult.data) {
+          setUserProfile(profileResult.data as UserProfile);
         }
         
-        // Check terms acceptance
-        const { data: settingsData, error: settingsError } = await supabase
-          .from('user_settings')
-          .select('has_accepted_terms')
-          .eq('user_id', user.id)
-          .maybeSingle();
-        
-        if (!settingsError) {
-          setHasAcceptedTerms(settingsData?.has_accepted_terms ?? false);
+        // Process terms
+        if (!settingsResult.error) {
+          setHasAcceptedTerms(settingsResult.data?.has_accepted_terms ?? false);
         }
+      } catch (error) {
+        console.error('[useAuth] Error in auth checks:', error);
       } finally {
-        isAuthRunning.current = false;
-        setIsAuthLoading(false);
+        clearTimeout(safetyTimeout);
+        if (isMounted) {
+          setIsAuthLoading(false);
+        }
       }
     };
     
@@ -248,11 +243,12 @@ export const useAuth = (user: User): UseAuthReturn => {
       setTimeout(() => trackDeviceLogin(user.id), 0);
     }
     
-    // Cleanup: Reset running state but keep initialized
+    // Cleanup
     return () => {
-      isAuthRunning.current = false;
+      isMounted = false;
+      clearTimeout(safetyTimeout);
     };
-  }, [user.id]); // Only user.id - no callback dependencies
+  }, [user.id]);
 
   return {
     hasAccess,
