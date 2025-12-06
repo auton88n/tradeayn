@@ -188,6 +188,42 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
     }
   }, [selectedChats, recentChats]);
 
+  // Delete all chats for the user
+  const deleteAllChats = useCallback(async () => {
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .delete()
+        .eq('user_id', userId);
+
+      if (error) {
+        toast({
+          title: 'Error',
+          description: 'Failed to delete all chat history.',
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Clear local state
+      setRecentChats([]);
+      setSelectedChats(new Set());
+      setShowChatSelection(false);
+
+      toast({
+        title: 'All Chats Deleted',
+        description: 'Your entire chat history has been cleared.',
+      });
+    } catch (error) {
+      console.error('Error deleting all chats:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete chat history.',
+        variant: "destructive"
+      });
+    }
+  }, [userId, toast]);
+
   // Load recent chats on mount
   useEffect(() => {
     loadRecentChats();
@@ -204,6 +240,7 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
     startNewChat,
     loadChat,
     deleteSelectedChats,
+    deleteAllChats,
     toggleChatSelection,
     selectAllChats
   };

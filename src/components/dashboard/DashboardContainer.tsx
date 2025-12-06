@@ -382,6 +382,7 @@ const DashboardContent = ({
             }
           }}
           onDeleteSelected={chatSession.deleteSelectedChats}
+          onDeleteAllChats={chatSession.deleteAllChats}
           onShowChatSelection={chatSession.setShowChatSelection}
           onLogout={handleLogout}
           onAvatarUpdated={auth.loadUserProfile}
