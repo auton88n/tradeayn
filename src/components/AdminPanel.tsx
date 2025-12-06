@@ -111,18 +111,13 @@ export const AdminPanel = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
 
-  // Optimized data fetching with timeout protection and non-blocking error handling
+  // Optimized data fetching with Promise.allSettled for independent queries
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     
-    // Create timeout promise to prevent indefinite loading
-    const timeout = new Promise<'timeout'>((resolve) => 
-      setTimeout(() => resolve('timeout'), 15000)
-    );
-    
     try {
-      // Fetch all data with 15 second timeout
-      const dataPromise = Promise.all([
+      // Use Promise.allSettled so one failing query doesn't block others
+      const results = await Promise.allSettled([
         supabase
           .from('access_grants')
           .select('*')
@@ -134,8 +129,6 @@ export const AdminPanel = () => {
           .select('id, user_id, company_name, contact_person, created_at')
           .limit(1000),
         
-        supabase.rpc('get_usage_stats'),
-        
         supabase
           .from('usage_logs')
           .select('usage_count, created_at')
@@ -143,25 +136,24 @@ export const AdminPanel = () => {
           .limit(500)
       ]);
 
-      const raceResult = await Promise.race([dataPromise, timeout]);
+      // Extract results safely - each query is independent
+      const accessResult = results[0].status === 'fulfilled' ? results[0].value : null;
+      const profilesResult = results[1].status === 'fulfilled' ? results[1].value : null;
+      const todayUsageResult = results[2].status === 'fulfilled' ? results[2].value : null;
+
+      // Debug logging
+      if (results[0].status === 'rejected') console.warn('Admin fetch - access_grants failed:', results[0].reason);
+      if (results[1].status === 'rejected') console.warn('Admin fetch - profiles failed:', results[1].reason);
+      if (results[2].status === 'rejected') console.warn('Admin fetch - usage_logs failed:', results[2].reason);
       
-      if (raceResult === 'timeout') {
-        throw new Error('Request timeout');
-      }
+      if (accessResult?.error) console.warn('Admin fetch - access_grants error:', accessResult.error.message);
+      if (profilesResult?.error) console.warn('Admin fetch - profiles error:', profilesResult.error.message);
+      if (todayUsageResult?.error) console.warn('Admin fetch - usage_logs error:', todayUsageResult.error.message);
 
-      const [accessResult, profilesResult, usageResult, todayUsageResult] = raceResult;
-
-      // Debug logging for each query result
-      if (accessResult.error) console.warn('Admin fetch - access_grants error:', accessResult.error.message);
-      if (profilesResult.error) console.warn('Admin fetch - profiles error:', profilesResult.error.message);
-      if (usageResult.error) console.warn('Admin fetch - get_usage_stats error:', usageResult.error.message);
-      if (todayUsageResult.error) console.warn('Admin fetch - usage_logs error:', todayUsageResult.error.message);
-
-      // Non-blocking: use empty arrays as fallback for failed queries
-      const accessData = accessResult.error ? [] : (accessResult.data || []);
-      const profilesData = profilesResult.error ? [] : (profilesResult.data || []);
-      const usageData = usageResult.error ? [] : (usageResult.data || []);
-      const todayUsageData = todayUsageResult.error ? [] : (todayUsageResult.data || []);
+      // Use empty arrays as fallback for failed queries
+      const accessData = accessResult?.data || [];
+      const profilesData = profilesResult?.data || [];
+      const todayUsageData = todayUsageResult?.data || [];
       
       // Create a map of user_id to profile for efficient lookup
       const profilesMap = profilesData.reduce((acc: Record<string, Profile>, profile: Profile) => {
@@ -169,30 +161,38 @@ export const AdminPanel = () => {
         return acc;
       }, {} as Record<string, Profile>);
 
-      // Create a map of user_id to email from usage stats
-      const emailsMap = (usageData as UsageStats[]).reduce((acc: Record<string, string>, stat: UsageStats) => {
-        if (stat.user_id && stat.user_email) {
-          acc[stat.user_id] = stat.user_email;
-        }
-        return acc;
-      }, {} as Record<string, string>);
-
-      // Enrich access data with profile information and email
+      // Enrich access data with profile information
       const enrichedAccessData = accessData.map((grant) => ({
         ...grant,
         profiles: profilesMap[grant.user_id] || null,
-        user_email: emailsMap[grant.user_id] || null
+        user_email: null // Email not available without auth.users access
       }));
       
       setAllUsers(enrichedAccessData);
-      setUsageStats(usageData as UsageStats[]);
+
+      // Build usage stats client-side from access_grants data (no RPC call needed)
+      const clientUsageStats: UsageStats[] = accessData
+        .filter((grant) => grant.is_active)
+        .map((grant) => ({
+          user_id: grant.user_id,
+          user_email: 'N/A', // Email not available from client
+          company_name: profilesMap[grant.user_id]?.company_name || 'Unknown',
+          monthly_limit: grant.monthly_limit || 0,
+          current_usage: grant.current_month_usage || 0,
+          usage_percentage: grant.monthly_limit 
+            ? Math.round(((grant.current_month_usage || 0) / grant.monthly_limit) * 100) 
+            : 0,
+          reset_date: grant.usage_reset_date || ''
+        }));
+      
+      setUsageStats(clientUsageStats);
 
       // Calculate system metrics efficiently
       const totalUsers = enrichedAccessData.length;
       const activeUsers = enrichedAccessData.filter((u) => u.is_active).length;
       const pendingRequests = enrichedAccessData.filter((u) => !u.is_active && !u.granted_at).length;
       const todayMessages = todayUsageData.reduce((sum: number, log: { usage_count: number | null }) => sum + (log.usage_count || 0), 0);
-      const totalMessages = (usageData as UsageStats[]).reduce((sum: number, stat: UsageStats) => sum + (stat.current_usage || 0), 0);
+      const totalMessages = clientUsageStats.reduce((sum: number, stat: UsageStats) => sum + (stat.current_usage || 0), 0);
       
       setSystemMetrics({
         totalUsers,
@@ -217,9 +217,7 @@ export const AdminPanel = () => {
       
       toast({
         title: "Warning",
-        description: error instanceof Error && error.message === 'Request timeout' 
-          ? "Data fetch timed out. Showing limited data."
-          : "Unable to fetch some admin data. Showing available data.",
+        description: "Unable to fetch some admin data. Showing available data.",
         variant: "destructive"
       });
     } finally {
