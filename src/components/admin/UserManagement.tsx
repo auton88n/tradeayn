@@ -55,7 +55,7 @@ const itemVariants = {
   visible: { 
     opacity: 1, 
     y: 0,
-    transition: { duration: 0.3, ease: [0.32, 0.72, 0, 1] }
+    transition: { duration: 0.3 }
   }
 };
 
@@ -440,23 +440,40 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
         </ScrollArea>
       </div>
 
-      {/* Modals */}
+      {/* Edit Limit Modal - Single User */}
       <EditLimitModal
-        open={editModalOpen}
-        onOpenChange={setEditModalOpen}
-        currentLimit={editingUser?.monthly_limit ?? null}
+        isOpen={editModalOpen}
+        onClose={() => {
+          setEditModalOpen(false);
+          setEditingUser(null);
+        }}
+        users={editingUser ? [{
+          user_id: editingUser.user_id,
+          user_email: editingUser.user_email ?? undefined,
+          company_name: editingUser.profiles?.company_name ?? undefined,
+          current_month_usage: editingUser.current_month_usage ?? 0,
+          monthly_limit: editingUser.monthly_limit
+        }] : []}
         onConfirm={confirmUpdateLimit}
-        title="Edit User Limit"
-        description={`Set monthly message limit for ${editingUser?.profiles?.company_name || 'user'}`}
+        isBulk={false}
       />
-      
+
+      {/* Edit Limit Modal - Bulk */}
       <EditLimitModal
-        open={bulkEditModalOpen}
-        onOpenChange={setBulkEditModalOpen}
-        currentLimit={null}
+        isOpen={bulkEditModalOpen}
+        onClose={() => setBulkEditModalOpen(false)}
+        users={selectedUsers.map(userId => {
+          const user = allUsers.find(u => u.user_id === userId);
+          return {
+            user_id: userId,
+            user_email: user?.user_email ?? undefined,
+            company_name: user?.profiles?.company_name ?? undefined,
+            current_month_usage: user?.current_month_usage ?? 0,
+            monthly_limit: user?.monthly_limit ?? null
+          };
+        })}
         onConfirm={confirmBulkUpdateLimits}
-        title="Bulk Edit Limits"
-        description={`Set monthly message limit for ${selectedUsers.length} selected users`}
+        isBulk={true}
       />
     </div>
   );
