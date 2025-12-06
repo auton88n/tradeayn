@@ -247,6 +247,7 @@ export const useAuth = (user: User): UseAuthReturn => {
     return () => {
       isMounted = false;
       clearTimeout(safetyTimeout);
+      isInitialized.current = false; // Reset so second StrictMode mount runs checks
     };
   }, [user.id]);
 
