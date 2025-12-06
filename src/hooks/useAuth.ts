@@ -7,7 +7,7 @@ import type { UserProfile, UseAuthReturn } from '@/types/dashboard.types';
 
 // Direct Supabase REST API - bypasses client internal state issues
 const SUPABASE_URL = 'https://dfkoxuokfkttjhfjcecx.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRma294dW9rZmt0dGpoZmpjZWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcyNjczMTcsImV4cCI6MjA2Mjg0MzMxN30.iUgS0ZQkcVedAORsNfNPhah7Y0Yp2BjE5ih7cCXYfek';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRma294dW9rZmt0dGpoZmpjZWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYzNTg4NzMsImV4cCI6MjA3MTkzNDg3M30.Th_-ds6dHsxIhRpkzJLREwBIVdgkcdm2SmMNDmjNbxw';
 
 const QUERY_TIMEOUT_MS = 5000;
 
