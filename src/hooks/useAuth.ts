@@ -23,11 +23,6 @@ export const useAuth = (user: User): UseAuthReturn => {
   const authFailureCount = useRef(0);
   const isAuthRunning = useRef(false); // Track if auth checks are currently running
   
-  // Refs for stable callback references (prevents dependency changes)
-  const checkAccessRef = useRef<() => Promise<void>>();
-  const checkAdminRoleRef = useRef<() => Promise<void>>();
-  const loadUserProfileRef = useRef<() => Promise<void>>();
-  const checkTermsAcceptanceRef = useRef<() => Promise<void>>();
   
   // Stable error handler using ref pattern
   const handleAuthFailure = useCallback((error: { code?: string; message?: string }, context: string) => {
@@ -171,14 +166,6 @@ export const useAuth = (user: User): UseAuthReturn => {
     }
   }, [user.id, toast, t]);
 
-  // Keep refs updated with latest callbacks
-  useEffect(() => {
-    checkAccessRef.current = checkAccess;
-    checkAdminRoleRef.current = checkAdminRole;
-    loadUserProfileRef.current = loadUserProfile;
-    checkTermsAcceptanceRef.current = checkTermsAcceptance;
-  }, [checkAccess, checkAdminRole, loadUserProfile, checkTermsAcceptance]);
-
   // Load all auth data on mount - runs exactly once per user
   useEffect(() => {
     // Safety check
@@ -199,16 +186,61 @@ export const useAuth = (user: User): UseAuthReturn => {
     isAuthRunning.current = true;
     isInitialized.current = true;
     
-    // Call callbacks via refs (stable, no dependency changes)
-    Promise.all([
-      checkAccessRef.current?.(),
-      checkAdminRoleRef.current?.(),
-      loadUserProfileRef.current?.(),
-      checkTermsAcceptanceRef.current?.()
-    ]).finally(() => {
-      isAuthRunning.current = false;
-      setIsAuthLoading(false);
-    });
+    // Run auth checks directly inline to avoid ref race condition
+    const runAuthChecks = async () => {
+      try {
+        // Check access
+        const { data: accessData, error: accessError } = await supabase
+          .from('access_grants')
+          .select('is_active, expires_at')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        if (!accessError && accessData) {
+          const isActive = accessData.is_active && 
+            (!accessData.expires_at || new Date(accessData.expires_at) > new Date());
+          setHasAccess(isActive);
+        }
+        
+        // Check admin role
+        const { data: roleData, error: roleError } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        if (!roleError) {
+          setIsAdmin(roleData?.role === 'admin');
+        }
+        
+        // Load user profile
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('user_id, contact_person, company_name, business_type, business_context, avatar_url')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        if (!profileError && profileData) {
+          setUserProfile(profileData as UserProfile);
+        }
+        
+        // Check terms acceptance
+        const { data: settingsData, error: settingsError } = await supabase
+          .from('user_settings')
+          .select('has_accepted_terms')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        if (!settingsError) {
+          setHasAcceptedTerms(settingsData?.has_accepted_terms ?? false);
+        }
+      } finally {
+        isAuthRunning.current = false;
+        setIsAuthLoading(false);
+      }
+    };
+    
+    runAuthChecks();
     
     // Track device login non-blocking
     if (!hasTrackedDevice.current) {
