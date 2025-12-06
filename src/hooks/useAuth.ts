@@ -199,9 +199,28 @@ export const useAuth = (user: User): UseAuthReturn => {
       }, 10000);
 
       try {
-        // No need to verify session - Index.tsx already verified it
-        // The user prop wouldn't exist if session was invalid
-        console.log('[useAuth] Starting queries for user:', user.id);
+        // Wait for Supabase client to have a valid session (max 5 retries)
+        let retries = 0;
+        let session = null;
+        
+        while (retries < 5 && !session && isMounted) {
+          const { data } = await supabase.auth.getSession();
+          session = data.session;
+          
+          if (!session) {
+            console.log(`[useAuth] Session not ready, retry ${retries + 1}/5...`);
+            await new Promise(resolve => setTimeout(resolve, 200));
+            retries++;
+          }
+        }
+
+        if (!session) {
+          console.error('[useAuth] No session after retries, aborting');
+          setIsAuthLoading(false);
+          return;
+        }
+
+        console.log('[useAuth] Session ready ✓ Starting queries for user:', user.id);
 
         // Run all queries in parallel
         const [accessResult, roleResult, profileResult, settingsResult] = await Promise.all([
