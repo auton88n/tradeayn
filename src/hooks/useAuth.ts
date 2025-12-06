@@ -187,8 +187,12 @@ export const useAuth = (user: User): UseAuthReturn => {
       return;
     }
     
-    // Check if already running OR already initialized - NO loading state change here!
+    // Check if already running OR already initialized
     if (isAuthRunning.current || isInitialized.current) {
+      // FIX: If already initialized and not running, ensure loading is false
+      if (isInitialized.current && !isAuthRunning.current) {
+        setIsAuthLoading(false);
+      }
       return;
     }
     
