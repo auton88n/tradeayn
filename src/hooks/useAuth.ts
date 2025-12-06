@@ -190,31 +190,18 @@ export const useAuth = (user: User): UseAuthReturn => {
       }
       hasRun = true;
 
-      try {
-        // Verify session before running queries (ensures auth context is ready)
-        console.log('[useAuth] Verifying session...');
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-        if (!isMounted) {
-          console.log('[useAuth] Unmounted during session check');
-          return;
-        }
-
-        if (!session || sessionError) {
-          console.error('[useAuth] No valid session:', sessionError);
+      // Start safety timeout before queries
+      safetyTimeout = setTimeout(() => {
+        if (isMounted) {
+          console.warn('[useAuth] ⚠️ Safety timeout - queries taking >10s');
           setIsAuthLoading(false);
-          return;
         }
+      }, 10000);
 
-        console.log('[useAuth] Session verified ✓ Running queries...');
-
-        // Start safety timeout AFTER session verification
-        safetyTimeout = setTimeout(() => {
-          if (isMounted) {
-            console.warn('[useAuth] ⚠️ Safety timeout - queries taking >10s');
-            setIsAuthLoading(false);
-          }
-        }, 10000);
+      try {
+        // No need to verify session - Index.tsx already verified it
+        // The user prop wouldn't exist if session was invalid
+        console.log('[useAuth] Starting queries for user:', user.id);
 
         // Run all queries in parallel
         const [accessResult, roleResult, profileResult, settingsResult] = await Promise.all([
