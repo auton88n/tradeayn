@@ -91,21 +91,22 @@ const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorCon
   const gazeIntensity = behaviorConfig?.gazeIntensity ?? 0.4;
   const gazeSpeed = behaviorConfig?.gazeSpeed ?? 0.4;
 
-  // Optimized spring config - higher damping for faster settling
+  // Optimized spring config - higher damping for faster, smoother settling
   const springConfig = { 
-    damping: 80 - (gazeSpeed * 20), // Higher damping = faster settling
-    stiffness: 300 + (gazeSpeed * 100) 
+    damping: 90 - (gazeSpeed * 15), // Higher damping = faster, smoother settling
+    stiffness: 250 + (gazeSpeed * 80),
+    mass: 0.8 // Lower mass for quicker response
   };
-  const eyeX = useSpring(useTransform(mouseX, (v) => v * 0.015 * gazeIntensity * 2), springConfig);
-  const eyeY = useSpring(useTransform(mouseY, (v) => v * 0.015 * gazeIntensity * 2), springConfig);
-  const smoothAiGazeX = useSpring(aiGazeX, { damping: 60, stiffness: 250 });
-  const smoothAiGazeY = useSpring(aiGazeY, { damping: 60, stiffness: 250 });
+  const eyeX = useSpring(useTransform(mouseX, (v) => v * 0.012 * gazeIntensity * 2), springConfig);
+  const eyeY = useSpring(useTransform(mouseY, (v) => v * 0.012 * gazeIntensity * 2), springConfig);
+  const smoothAiGazeX = useSpring(aiGazeX, { damping: 70, stiffness: 200, mass: 0.6 });
+  const smoothAiGazeY = useSpring(aiGazeY, { damping: 70, stiffness: 200, mass: 0.6 });
 
-  // Micro-movement for idle "look around" - higher damping
+  // Micro-movement for idle "look around" - optimized for smoothness
   const microX = useMotionValue(0);
   const microY = useMotionValue(0);
-  const smoothMicroX = useSpring(microX, { damping: 50, stiffness: 150 });
-  const smoothMicroY = useSpring(microY, { damping: 50, stiffness: 150 });
+  const smoothMicroX = useSpring(microX, { damping: 60, stiffness: 120, mass: 0.5 });
+  const smoothMicroY = useSpring(microY, { damping: 60, stiffness: 120, mass: 0.5 });
 
   // Combined eye movement (mouse + AI gaze + micro)
   const combinedX = useTransform([eyeX, smoothMicroX, smoothAiGazeX], ([eye, micro, ai]) => (eye as number) + (micro as number) + (ai as number));
@@ -275,9 +276,9 @@ const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorCon
     }
   }, [emotion, behaviorConfig]);
 
-  // Head tilt based on behavior/emotion
+  // Head tilt based on behavior/emotion - smoother spring
   const tiltRotation = useMotionValue(0);
-  const smoothTilt = useSpring(tiltRotation, { damping: 40, stiffness: 80 });
+  const smoothTilt = useSpring(tiltRotation, { damping: 50, stiffness: 60, mass: 0.8 });
 
   useEffect(() => {
     const { tilt } = getMicroParams();
@@ -359,16 +360,23 @@ const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorCon
       />
       
       <motion.div 
-        style={{ x: combinedX, y: combinedY, rotate: smoothTilt }}
-        className="relative z-10 flex items-center justify-center group cursor-pointer will-change-transform"
-        initial={{ scale: 0.92, opacity: 0 }}
+        style={{ 
+          x: combinedX, 
+          y: combinedY, 
+          rotate: smoothTilt,
+          willChange: 'transform'
+        }}
+        className="relative z-10 flex items-center justify-center group cursor-pointer"
+        initial={{ opacity: 0, y: 8 }}
         animate={{ 
-          scale: isSurprised ? 1.12 : isSquished ? 0.9 : 1, 
-          opacity: 1 
+          scale: isSurprised ? 1.1 : isSquished ? 0.92 : 1, 
+          opacity: 1,
+          y: 0
         }}
         transition={{ 
-          duration: isSurprised ? 0.2 : isSquished ? 0.1 : 0.6, 
-          ease: isSurprised ? [0.34, 1.56, 0.64, 1] : "easeOut" 
+          opacity: { duration: 0.3, ease: [0.25, 0.1, 0.25, 1] },
+          y: { duration: 0.35, ease: [0.25, 0.1, 0.25, 1] },
+          scale: { duration: isSurprised ? 0.15 : isSquished ? 0.08 : 0.4, ease: [0.25, 0.1, 0.25, 1] }
         }}
         onMouseEnter={() => setIsHovered(true)} 
         onMouseLeave={() => { setIsHovered(false); gestureHandlers.onMouseLeave(); }}
@@ -379,14 +387,15 @@ const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorCon
         onTouchStart={gestureHandlers.onTouchStart}
         onTouchEnd={gestureHandlers.onTouchEnd}
       >
-        {/* Soft outer glow halo - radial gradient with breathing animation and emotional color */}
+        {/* Soft outer glow halo - simplified for performance */}
         <div 
-          className="absolute -inset-8 rounded-full blur-3xl pointer-events-none animate-glow-breathe"
+          className="absolute -inset-8 rounded-full pointer-events-none"
           style={{
             background: emotion === 'calm'
-              ? 'radial-gradient(circle, rgba(229,229,229,0.3) 0%, transparent 85%)'
-              : `radial-gradient(circle, ${emotionConfig.glowColor}40 0%, transparent 85%)`,
-            transition: 'background 0.6s ease',
+              ? 'radial-gradient(circle, rgba(229,229,229,0.25) 0%, transparent 80%)'
+              : `radial-gradient(circle, ${emotionConfig.glowColor}30 0%, transparent 80%)`,
+            filter: 'blur(24px)',
+            transition: 'background 0.5s ease-out',
           }}
         />
         
@@ -408,40 +417,40 @@ const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorCon
           <motion.div 
             className="absolute inset-[15%] rounded-full bg-neutral-200 dark:bg-neutral-800"
             animate={{ 
-              // Only animate scale when actively pulsing, no infinite animations
-              scale: isPulsing ? [1, 1.08, 1] : 1,
+              scale: isPulsing ? [1, 1.06, 1] : 1,
             }}
             transition={{ 
-              scale: { duration: 0.4, ease: "easeInOut" }
+              scale: { duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }
             }}
             style={{
               backgroundColor: emotion === 'calm' 
-                ? undefined // Let className handle it
+                ? undefined
                 : emotionConfig.glowColor,
               boxShadow: emotion !== 'calm' 
-                ? `0 0 20px ${emotionConfig.glowColor}, inset 0 0 10px ${emotionConfig.glowColor}40`
+                ? `0 0 16px ${emotionConfig.glowColor}80, inset 0 0 8px ${emotionConfig.glowColor}30`
                 : 'none',
-              transition: 'background-color 0.6s ease, box-shadow 0.6s ease',
+              transition: 'background-color 0.5s ease-out, box-shadow 0.5s ease-out',
             }}
           />
 
-          {/* SVG with pupil and brain */}
+          {/* SVG with pupil and brain - optimized transitions */}
           <motion.svg 
             viewBox="0 0 100 100" 
             className="w-[70%] h-[70%] relative z-10"
             xmlns="http://www.w3.org/2000/svg" 
             animate={{
-              scaleY: isBlinking ? 0.05 : isSquished ? 0.7 : 1,
-              scaleX: isWinking ? 0.85 : isSquished ? 1.1 : 1,
-              opacity: isBlinking ? 0.7 : 1,
-              skewX: isWinking ? 5 : 0,
+              scaleY: isBlinking ? 0.05 : isSquished ? 0.75 : 1,
+              scaleX: isWinking ? 0.88 : isSquished ? 1.08 : 1,
+              opacity: isBlinking ? 0.8 : 1,
+              skewX: isWinking ? 4 : 0,
             }} 
             transition={{
-              duration: isBlinking ? 0.08 : isWinking ? 0.12 : 0.12,
-              ease: isBlinking ? [0.55, 0.055, 0.675, 0.19] : [0.34, 1.56, 0.64, 1]
+              duration: isBlinking ? 0.06 : isWinking ? 0.1 : 0.15,
+              ease: [0.25, 0.1, 0.25, 1]
             }} 
             style={{
-              transformOrigin: 'center center'
+              transformOrigin: 'center center',
+              willChange: 'transform'
             }}
           >
             {/* Sclera gradient removed to eliminate border lines */}
@@ -482,9 +491,9 @@ const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorCon
                 className="w-full h-full" 
                 style={{ 
                   color: emotion === 'calm' ? '#FFFFFF' : emotionConfig.color,
-                  opacity: 0.9,
-                  transition: 'color 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                  filter: emotion !== 'calm' ? `drop-shadow(0 0 8px ${emotionConfig.color}40)` : 'none'
+                  opacity: 0.92,
+                  transition: 'color 0.5s ease-out, filter 0.5s ease-out',
+                  filter: emotion !== 'calm' ? `drop-shadow(0 0 6px ${emotionConfig.color}30)` : 'none'
                 }} 
               />
             </foreignObject>
