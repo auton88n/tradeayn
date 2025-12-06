@@ -38,6 +38,19 @@
   backface-visibility: hidden;
 }
 
+/* CSS Containment for performance isolation */
+.contain-layout {
+  contain: layout;
+}
+
+.contain-paint {
+  contain: paint;
+}
+
+.contain-layout-paint {
+  contain: layout paint;
+}
+
 /* CSS Containment for performance-critical elements */
 .contain-layout {
   contain: layout;

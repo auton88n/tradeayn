@@ -31,17 +31,18 @@ export const StreamingMarkdown = memo(({
     ? content 
     : words.slice(0, displayedWordCount).join('');
 
-  // Streaming animation
+  // Streaming animation - batch 3 words at a time for performance
   useEffect(() => {
     if (isSkipped || isComplete) return;
 
     if (displayedWordCount < words.length) {
       const timer = setTimeout(() => {
         setDisplayedWordCount(prev => {
-          const next = prev + 1;
+          // Batch 3 words per update for smoother performance
+          const next = Math.min(prev + 3, words.length);
           
-          // Haptic pulse every 15 words (subtle feedback)
-          if (enableHaptics && next % 15 === 0) {
+          // Haptic pulse every 30 words (reduced frequency)
+          if (enableHaptics && Math.floor(next / 30) > Math.floor(prev / 30)) {
             hapticFeedback('pulse');
           }
           
@@ -78,21 +79,28 @@ export const StreamingMarkdown = memo(({
 
   return (
     <div 
-      className={cn("relative", className)}
+      className={cn("relative contain-layout", className)}
       onClick={handleSkip}
+      style={{ willChange: 'contents' }}
     >
       <MessageFormatter 
         content={visibleContent}
         className="text-sm text-gray-700 dark:text-gray-200 leading-relaxed"
       />
       
-      {/* Blinking cursor while streaming */}
+      {/* Blinking cursor while streaming - CSS animation only */}
       {!isComplete && (
-        <span className="inline-block w-0.5 h-4 ml-0.5 bg-primary/70 animate-pulse" />
+        <span 
+          className="inline-block w-0.5 h-4 ml-0.5 bg-primary/70" 
+          style={{ 
+            animation: 'pulse 1s ease-in-out infinite',
+            willChange: 'opacity'
+          }}
+        />
       )}
       
-      {/* Skip hint - shows after 1 second */}
-      {!isComplete && progress > 10 && (
+      {/* Skip hint - shows after some progress */}
+      {!isComplete && progress > 15 && (
         <div className="absolute -bottom-6 left-0 text-[10px] text-muted-foreground/60 animate-fade-in">
           Click to skip
         </div>
