@@ -384,8 +384,7 @@ export const CenterStageLayout = ({
           "flex-1 flex relative",
           "items-center justify-center",
           "pb-28 md:pb-24", // Space for compact input
-          "transition-all duration-300 ease-out",
-          "overflow-hidden"
+          "transition-all duration-300 ease-out"
         )}
       >
         {/* Unified layout for all screen sizes */}
