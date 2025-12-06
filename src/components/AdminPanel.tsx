@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useTheme } from '@/components/theme-provider';
 import { 
-  Crown, RefreshCw, Activity, BarChart3, Settings, Users, Brain
+  Crown, RefreshCw, Activity, BarChart3, Settings, Users, Brain, ArrowLeft, Moon, Sun
 } from 'lucide-react';
 import { AdminDashboard } from './admin/AdminDashboard';
 import { UserManagement } from './admin/UserManagement';
@@ -75,6 +77,9 @@ const tabs = [
 ];
 
 export const AdminPanel = () => {
+  const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
+  
   // Core State
   const [allUsers, setAllUsers] = useState<AccessGrantWithProfile[]>([]);
   const [usageStats, setUsageStats] = useState<UsageStats[]>([]);
@@ -99,6 +104,10 @@ export const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState('overview');
   
   const { toast } = useToast();
+
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
 
   // Optimized data fetching with better error handling and memoization
   const fetchData = useCallback(async () => {
@@ -391,6 +400,16 @@ export const AdminPanel = () => {
         <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
+              {/* Back Button */}
+              <Button
+                onClick={() => navigate('/')}
+                variant="ghost"
+                size="icon"
+                className="w-10 h-10 rounded-xl hover:bg-muted/50 transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              
               <div className="relative">
                 <div className="w-12 h-12 rounded-2xl bg-foreground flex items-center justify-center shadow-lg">
                   <Crown className="w-6 h-6 text-background" />
@@ -403,16 +422,33 @@ export const AdminPanel = () => {
               </div>
             </div>
             
-            <Button 
-              onClick={fetchData} 
-              variant="outline" 
-              size="sm"
-              className="gap-2 bg-background/50 backdrop-blur-sm border-border/50 hover:bg-muted/50 transition-all duration-200"
-              disabled={isLoading}
-            >
-              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
+            <div className="flex items-center gap-3">
+              {/* Theme Toggle */}
+              <Button
+                onClick={toggleTheme}
+                variant="outline"
+                size="icon"
+                className="w-10 h-10 rounded-xl bg-background/50 backdrop-blur-sm border-border/50 hover:bg-muted/50 transition-all duration-200"
+              >
+                {theme === 'dark' ? (
+                  <Sun className="w-4 h-4" />
+                ) : (
+                  <Moon className="w-4 h-4" />
+                )}
+              </Button>
+              
+              {/* Refresh Button */}
+              <Button 
+                onClick={fetchData} 
+                variant="outline" 
+                size="sm"
+                className="gap-2 bg-background/50 backdrop-blur-sm border-border/50 hover:bg-muted/50 transition-all duration-200"
+                disabled={isLoading}
+              >
+                <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+            </div>
           </div>
         </div>
       </motion.header>
