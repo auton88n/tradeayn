@@ -1,75 +1,34 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { ChatHistory, Message, UseChatSessionReturn } from '@/types/dashboard.types';
 
-const CHAT_CACHE_KEY = 'ayn_recent_chats_cache';
-
-// Helper to safely parse cached chats
-const getCachedChats = (userId: string): ChatHistory[] => {
-  try {
-    const cached = localStorage.getItem(`${CHAT_CACHE_KEY}_${userId}`);
-    if (!cached) return [];
-    
-    const parsed = JSON.parse(cached);
-    // Restore Date objects from ISO strings
-    return parsed.map((chat: ChatHistory) => ({
-      ...chat,
-      timestamp: new Date(chat.timestamp),
-      messages: chat.messages.map(m => ({
-        ...m,
-        timestamp: new Date(m.timestamp)
-      }))
-    }));
-  } catch {
-    return [];
-  }
-};
-
-// Helper to cache chats
-const setCachedChats = (userId: string, chats: ChatHistory[]) => {
-  try {
-    localStorage.setItem(`${CHAT_CACHE_KEY}_${userId}`, JSON.stringify(chats));
-  } catch {
-    // Ignore storage errors
-  }
-};
-
 export const useChatSession = (userId: string): UseChatSessionReturn => {
   const [currentSessionId, setCurrentSessionId] = useState(() => crypto.randomUUID());
-  // Initialize from cache immediately to prevent empty flash
-  const [recentChats, setRecentChats] = useState<ChatHistory[]>(() => getCachedChats(userId));
+  const [recentChats, setRecentChats] = useState<ChatHistory[]>([]);
   const [selectedChats, setSelectedChats] = useState<Set<number>>(new Set());
   const [showChatSelection, setShowChatSelection] = useState(false);
   const { toast } = useToast();
   const { t } = useLanguage();
-  const isLoadingRef = useRef(false);
 
   // Load recent chat history
   const loadRecentChats = useCallback(async () => {
-    // Prevent duplicate loads
-    if (isLoadingRef.current) return;
-    isLoadingRef.current = true;
-    
     try {
       const { data, error } = await supabase
         .from('messages')
         .select('id, content, created_at, sender, session_id')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
-        .limit(200);
+        .limit(100);
 
       if (error) {
         console.error('Error loading recent chats:', error);
-        isLoadingRef.current = false;
         return;
       }
 
       if (!data || data.length === 0) {
         setRecentChats([]);
-        setCachedChats(userId, []);
-        isLoadingRef.current = false;
         return;
       }
 
@@ -124,15 +83,11 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
           };
         })
         .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()) // Sort by most recent
-        .slice(0, 20); // Limit to latest 20 sessions
+        .slice(0, 10); // Limit to latest 10 sessions
 
       setRecentChats(chatHistories);
-      // Cache the results for instant load next time
-      setCachedChats(userId, chatHistories);
     } catch (error) {
       console.error('Error loading recent chats:', error);
-    } finally {
-      isLoadingRef.current = false;
     }
   }, [userId]);
 

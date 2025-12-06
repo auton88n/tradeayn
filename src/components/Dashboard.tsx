@@ -9,44 +9,9 @@ import { useState, useEffect, lazy, Suspense } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLoader } from '@/components/ui/page-loader';
-import { AdminPanelErrorBoundary } from './AdminPanelErrorBoundary';
 
-// Lazy load AdminPanel with cache-busting retry logic
-const lazyWithCacheBusting = <T extends React.ComponentType<unknown>>(
-  importFn: () => Promise<{ default: T }>,
-  retries = 3,
-  delay = 1000
-): Promise<{ default: T }> => {
-  return new Promise((resolve, reject) => {
-    const attempt = (retriesLeft: number, useCache = true) => {
-      // On retry, add cache-busting query parameter
-      const importPromise = useCache 
-        ? importFn()
-        : import(/* @vite-ignore */ `./AdminPanel.tsx?t=${Date.now()}`).then(m => ({ default: m.AdminPanel as T }));
-      
-      importPromise
-        .then(resolve)
-        .catch((error) => {
-          console.warn(`AdminPanel import failed, retries left: ${retriesLeft}`, error);
-          
-          if (retriesLeft <= 0) {
-            reject(error);
-            return;
-          }
-          
-          // Retry with cache-busting after delay
-          setTimeout(() => {
-            attempt(retriesLeft - 1, false);
-          }, delay);
-        });
-    };
-    attempt(retries, true);
-  });
-};
-
-const AdminPanel = lazy(() => 
-  lazyWithCacheBusting(() => import('./AdminPanel').then(module => ({ default: module.AdminPanel })))
-);
+// Lazy load AdminPanel (only needed for admins)
+const AdminPanel = lazy(() => import('./AdminPanel').then(module => ({ default: module.AdminPanel })));
 
 interface DashboardProps {
   user: User;
@@ -56,7 +21,6 @@ interface DashboardProps {
 export default function Dashboard({ user, session }: DashboardProps) {
   const auth = useAuth(user, session);
   const [activeView, setActiveView] = useState<'chat' | 'admin'>('chat');
-  const [adminLoadError, setAdminLoadError] = useState(false);
   const [maintenanceConfig, setMaintenanceConfig] = useState({
     enableMaintenance: false,
     maintenanceMessage: 'System is currently under maintenance.',
@@ -175,11 +139,9 @@ export default function Dashboard({ user, session }: DashboardProps) {
       {/* Main Content - conditionally render based on active view */}
       {activeView === 'admin' && auth.isAdmin ? (
         <div className="min-h-screen p-6 pt-16 bg-background">
-          <AdminPanelErrorBoundary onError={() => setAdminLoadError(true)}>
-            <Suspense fallback={<AdminLoader />}>
-              <AdminPanel />
-            </Suspense>
-          </AdminPanelErrorBoundary>
+          <Suspense fallback={<AdminLoader />}>
+            <AdminPanel />
+          </Suspense>
         </div>
       ) : (
         <SidebarProvider>
