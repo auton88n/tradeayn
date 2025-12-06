@@ -9,50 +9,43 @@ import { useState, useEffect, lazy, Suspense } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLoader } from '@/components/ui/page-loader';
-import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
+import { AdminPanelErrorBoundary } from './AdminPanelErrorBoundary';
 
-// Lazy load AdminPanel with retry logic for cache/network failures
-const lazyRetry = <T extends React.ComponentType<unknown>>(
-  componentImport: () => Promise<{ default: T }>,
+// Lazy load AdminPanel with cache-busting retry logic
+const lazyWithCacheBusting = <T extends React.ComponentType<unknown>>(
+  importFn: () => Promise<{ default: T }>,
   retries = 3,
   delay = 1000
 ): Promise<{ default: T }> => {
   return new Promise((resolve, reject) => {
-    const attempt = (retriesLeft: number) => {
-      componentImport()
+    const attempt = (retriesLeft: number, useCache = true) => {
+      // On retry, add cache-busting query parameter
+      const importPromise = useCache 
+        ? importFn()
+        : import(/* @vite-ignore */ `./AdminPanel.tsx?t=${Date.now()}`).then(m => ({ default: m.AdminPanel as T }));
+      
+      importPromise
         .then(resolve)
         .catch((error) => {
+          console.warn(`AdminPanel import failed, retries left: ${retriesLeft}`, error);
+          
           if (retriesLeft <= 0) {
             reject(error);
             return;
           }
-          // Clear module cache and retry after delay
+          
+          // Retry with cache-busting after delay
           setTimeout(() => {
-            attempt(retriesLeft - 1);
+            attempt(retriesLeft - 1, false);
           }, delay);
         });
     };
-    attempt(retries);
+    attempt(retries, true);
   });
 };
 
 const AdminPanel = lazy(() => 
-  lazyRetry(() => import('./AdminPanel').then(module => ({ default: module.AdminPanel })))
-);
-
-// Fallback component for admin panel load failures
-const AdminLoadError = ({ onRetry }: { onRetry: () => void }) => (
-  <div className="flex flex-col items-center justify-center min-h-screen gap-4 p-6">
-    <div className="text-center space-y-2">
-      <h2 className="text-xl font-semibold text-foreground">Failed to load Admin Panel</h2>
-      <p className="text-muted-foreground">This may be due to a network issue or cached files.</p>
-    </div>
-    <Button onClick={onRetry} className="gap-2">
-      <RefreshCw className="h-4 w-4" />
-      Reload Page
-    </Button>
-  </div>
+  lazyWithCacheBusting(() => import('./AdminPanel').then(module => ({ default: module.AdminPanel })))
 );
 
 interface DashboardProps {
@@ -70,10 +63,6 @@ export default function Dashboard({ user, session }: DashboardProps) {
     maintenanceStartTime: '',
     maintenanceEndTime: '',
   });
-
-  const handleReloadPage = () => {
-    window.location.reload();
-  };
 
   // Session timeout with 30-minute inactivity auto-logout
   const sessionTimeout = useSessionTimeout({
@@ -186,13 +175,11 @@ export default function Dashboard({ user, session }: DashboardProps) {
       {/* Main Content - conditionally render based on active view */}
       {activeView === 'admin' && auth.isAdmin ? (
         <div className="min-h-screen p-6 pt-16 bg-background">
-          {adminLoadError ? (
-            <AdminLoadError onRetry={handleReloadPage} />
-          ) : (
+          <AdminPanelErrorBoundary onError={() => setAdminLoadError(true)}>
             <Suspense fallback={<AdminLoader />}>
               <AdminPanel />
             </Suspense>
-          )}
+          </AdminPanelErrorBoundary>
         </div>
       ) : (
         <SidebarProvider>
