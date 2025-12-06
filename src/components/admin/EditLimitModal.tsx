@@ -62,6 +62,11 @@ export const EditLimitModal = ({ isOpen, onClose, onConfirm, users, isBulk = fal
     return Math.min((usage / limit) * 100, 100);
   };
 
+  // Safety guard - don't render if users is empty
+  if (!users || users.length === 0) {
+    return null;
+  }
+
   const user = users[0]; // For single user editing
   
   return (
