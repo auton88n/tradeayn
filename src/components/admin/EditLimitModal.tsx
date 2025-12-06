@@ -5,28 +5,41 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { useLanguage } from '@/contexts/LanguageContext';
 import { Loader2, Users, Infinity } from 'lucide-react';
+
+interface UserData {
+  user_id: string;
+  user_email?: string;
+  company_name?: string;
+  current_month_usage: number;
+  monthly_limit: number | null;
+}
 
 interface EditLimitModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (newLimit: number | null) => Promise<void>;
-  users: Array<{
-    user_id: string;
-    user_email?: string;
-    company_name?: string;
-    current_month_usage: number;
-    monthly_limit: number | null;
-  }>;
+  users: UserData[];
   isBulk?: boolean;
 }
 
-export const EditLimitModal = ({ isOpen, onClose, onConfirm, users, isBulk = false }: EditLimitModalProps) => {
+export const EditLimitModal = ({ 
+  isOpen, 
+  onClose, 
+  onConfirm, 
+  users, 
+  isBulk = false 
+}: EditLimitModalProps) => {
   const [newLimit, setNewLimit] = useState<string>('');
   const [isUnlimited, setIsUnlimited] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { t, language } = useLanguage();
+
+  // Safety guard
+  if (!users || users.length === 0) {
+    return null;
+  }
+
+  const user = users[0];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,9 +52,7 @@ export const EditLimitModal = ({ isOpen, onClose, onConfirm, users, isBulk = fal
     try {
       const limitValue = isUnlimited ? null : Number(newLimit);
       await onConfirm(limitValue);
-      onClose();
-      setNewLimit('');
-      setIsUnlimited(false);
+      handleClose();
     } catch (error) {
       console.error('Error updating limit:', error);
     } finally {
@@ -62,36 +73,29 @@ export const EditLimitModal = ({ isOpen, onClose, onConfirm, users, isBulk = fal
     return Math.min((usage / limit) * 100, 100);
   };
 
-  // Safety guard - don't render if users is empty
-  if (!users || users.length === 0) {
-    return null;
-  }
-
-  const user = users[0]; // For single user editing
-  
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className={`flex items-center gap-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+          <DialogTitle className="flex items-center gap-2">
             <Users className="w-5 h-5" />
-            {isBulk ? t('admin.editBulkLimits') : t('admin.editUserLimit')}
+            {isBulk ? 'Edit Bulk Limits' : 'Edit User Limit'}
           </DialogTitle>
-          <DialogDescription className={language === 'ar' ? 'text-right' : ''}>
+          <DialogDescription>
             {isBulk 
-              ? `${t('admin.editingLimitsFor')} ${users.length} ${t('admin.users')}`
-              : `${t('admin.editingLimitFor')} ${user?.company_name || user?.user_email}`
+              ? `Editing limits for ${users.length} users`
+              : `Editing limit for ${user.company_name || user.user_email || 'User'}`
             }
           </DialogDescription>
         </DialogHeader>
 
-        {!isBulk && user && (
+        {!isBulk && (
           <div className="space-y-4 py-4">
-            <div className={`p-3 bg-muted/50 rounded-lg ${language === 'ar' ? 'text-right' : ''}`}>
-              <div className={`flex items-center justify-between mb-2 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-                <span className="text-sm font-medium">{t('admin.currentUsage')}</span>
+            <div className="p-3 bg-muted/50 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium">Current Usage</span>
                 <Badge variant="outline">
-                  {user.current_month_usage} / {user.monthly_limit || t('admin.unlimited')}
+                  {user.current_month_usage} / {user.monthly_limit ?? '∞'}
                 </Badge>
               </div>
               {user.monthly_limit && (
@@ -106,9 +110,7 @@ export const EditLimitModal = ({ isOpen, onClose, onConfirm, users, isBulk = fal
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="limit" className={language === 'ar' ? 'text-right block' : ''}>
-              {t('admin.monthlyLimit')}
-            </Label>
+            <Label htmlFor="limit">Monthly Limit</Label>
             <div className="flex items-center gap-2">
               <div className="flex-1">
                 <Input
@@ -117,43 +119,42 @@ export const EditLimitModal = ({ isOpen, onClose, onConfirm, users, isBulk = fal
                   value={newLimit}
                   onChange={(e) => setNewLimit(e.target.value)}
                   disabled={isUnlimited || isLoading}
-                  placeholder={t('admin.enterLimit')}
+                  placeholder="Enter limit"
                   min="0"
-                  className={language === 'ar' ? 'text-right' : ''}
                 />
               </div>
               <Button
                 type="button"
-                variant={isUnlimited ? "default" : "outline"}
+                variant={isUnlimited ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => {
                   setIsUnlimited(!isUnlimited);
                   if (!isUnlimited) setNewLimit('');
                 }}
                 disabled={isLoading}
-                className={`flex items-center gap-1 ${language === 'ar' ? 'flex-row-reverse' : ''}`}
+                className="flex items-center gap-1"
               >
                 <Infinity className="w-4 h-4" />
-                {t('admin.unlimited')}
+                Unlimited
               </Button>
             </div>
           </div>
 
-          <DialogFooter className={language === 'ar' ? 'flex-row-reverse' : ''}>
+          <DialogFooter>
             <Button
               type="button"
               variant="outline"
               onClick={handleClose}
               disabled={isLoading}
             >
-              {t('common.cancel')}
+              Cancel
             </Button>
             <Button
               type="submit"
               disabled={(!isUnlimited && (!newLimit || isNaN(Number(newLimit)) || Number(newLimit) < 0)) || isLoading}
             >
-              {isLoading && <Loader2 className={`w-4 h-4 animate-spin ${language === 'ar' ? 'ml-2' : 'mr-2'}`} />}
-              {t('admin.updateLimit')}
+              {isLoading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+              Update Limit
             </Button>
           </DialogFooter>
         </form>

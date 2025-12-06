@@ -1,32 +1,33 @@
 import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from 'sonner';
 import { 
-  Settings, Shield, AlertTriangle, Save
+  Settings, 
+  AlertTriangle, 
+  Users, 
+  Shield,
+  Save,
+  Loader2
 } from 'lucide-react';
-import { motion } from 'framer-motion';
 
 interface SystemConfig {
-  defaultMonthlyLimit: number;
-  autoApproveRequests: boolean;
-  requireAdminApproval: boolean;
-  sessionTimeout: number;
-  enableAuditLogging: boolean;
-  maxConcurrentSessions: number;
-  rateLimitPerMinute: number;
-  enableMaintenance: boolean;
+  maintenanceMode: boolean;
   maintenanceMessage: string;
-  maintenanceStartTime: string;
-  maintenanceEndTime: string;
-  notificationEmail: string;
+  defaultMonthlyLimit: number;
+  requireApproval: boolean;
+  maxLoginAttempts: number;
+  sessionTimeout: number;
 }
 
 interface SystemSettingsProps {
   systemConfig: SystemConfig;
-  onUpdateConfig: (newConfig: Partial<SystemConfig>) => void;
-  onPerformMaintenance: (action: string) => void;
+  onUpdateConfig: (updates: Partial<SystemConfig>) => Promise<void>;
 }
 
 const containerVariants = {
@@ -42,244 +43,175 @@ const itemVariants = {
   visible: { 
     opacity: 1, 
     y: 0,
-    transition: { duration: 0.5 }
+    transition: { duration: 0.3 }
   }
 };
 
-export const SystemSettings = ({ 
-  systemConfig, 
-  onUpdateConfig, 
-  onPerformMaintenance 
-}: SystemSettingsProps) => {
-  const [saving, setSaving] = useState(false);
+export const SystemSettings = ({ systemConfig, onUpdateConfig }: SystemSettingsProps) => {
+  const [localConfig, setLocalConfig] = useState(systemConfig);
+  const [isSaving, setIsSaving] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
 
-  const handleConfigUpdate = async (updates: Partial<SystemConfig>) => {
-    setSaving(true);
+  const handleChange = <K extends keyof SystemConfig>(key: K, value: SystemConfig[K]) => {
+    setLocalConfig(prev => ({ ...prev, [key]: value }));
+    setHasChanges(true);
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
     try {
-      await onUpdateConfig(updates);
+      await onUpdateConfig(localConfig);
+      setHasChanges(false);
+      toast.success('Settings saved');
+    } catch (error) {
+      toast.error('Failed to save settings');
     } finally {
-      setSaving(false);
+      setIsSaving(false);
     }
   };
 
   return (
-    <motion.div 
+    <motion.div
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="space-y-8"
+      className="space-y-6"
     >
-      {/* Header */}
-      <div>
-        <h2 className="text-xl font-serif font-medium">System Configuration</h2>
-        <p className="text-sm text-muted-foreground">Configure system-wide settings and security</p>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Maintenance Mode */}
-        <motion.div 
-          variants={itemVariants}
-          className="rounded-2xl border border-border/50 bg-background overflow-hidden"
-        >
-          <div className="px-6 py-5 border-b border-border/50 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
-              <AlertTriangle className="w-5 h-5 text-amber-600" />
-            </div>
-            <div>
-              <h3 className="font-medium">Maintenance Mode</h3>
-              <p className="text-sm text-muted-foreground">Control system availability</p>
-            </div>
-          </div>
-          
-          <div className="p-6 space-y-5">
+      {/* Maintenance Mode */}
+      <motion.div variants={itemVariants}>
+        <Card className="border-0 shadow-sm bg-card/50 backdrop-blur-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-orange-500" />
+              Maintenance Mode
+            </CardTitle>
+            <CardDescription>
+              Enable to show maintenance message to all users
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <label className="text-sm font-medium">Enable Maintenance</label>
-                <p className="text-xs text-muted-foreground">Show maintenance banner to users</p>
-              </div>
-              <Switch 
-                checked={systemConfig.enableMaintenance}
-                onCheckedChange={(checked) => handleConfigUpdate({ enableMaintenance: checked })}
-                disabled={saving}
+              <Label htmlFor="maintenance-mode">Enable Maintenance Mode</Label>
+              <Switch
+                id="maintenance-mode"
+                checked={localConfig.maintenanceMode}
+                onCheckedChange={(checked) => handleChange('maintenanceMode', checked)}
               />
             </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Maintenance Message</label>
-              <Textarea 
-                value={systemConfig.maintenanceMessage}
-                onChange={(e) => onUpdateConfig({ maintenanceMessage: e.target.value })}
-                placeholder="Enter maintenance message..."
-                rows={3}
-                className="bg-muted/30 border-border/50 resize-none"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
+            
+            {localConfig.maintenanceMode && (
               <div className="space-y-2">
-                <label className="text-sm font-medium">Start Time</label>
-                <Input 
-                  type="datetime-local" 
-                  value={systemConfig.maintenanceStartTime}
-                  onChange={(e) => onUpdateConfig({ maintenanceStartTime: e.target.value })}
-                  className="bg-muted/30 border-border/50"
+                <Label htmlFor="maintenance-message">Maintenance Message</Label>
+                <Textarea
+                  id="maintenance-message"
+                  value={localConfig.maintenanceMessage}
+                  onChange={(e) => handleChange('maintenanceMessage', e.target.value)}
+                  placeholder="Enter message to display during maintenance..."
+                  rows={3}
                 />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">End Time</label>
-                <Input 
-                  type="datetime-local" 
-                  value={systemConfig.maintenanceEndTime}
-                  onChange={(e) => onUpdateConfig({ maintenanceEndTime: e.target.value })}
-                  className="bg-muted/30 border-border/50"
-                />
-              </div>
-            </div>
-
-            {systemConfig.enableMaintenance && (
-              <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                <div className="flex items-center gap-2 mb-2">
-                  <AlertTriangle className="w-4 h-4 text-amber-600" />
-                  <span className="text-sm font-medium text-amber-800 dark:text-amber-200">Preview</span>
-                </div>
-                <p className="text-sm text-amber-700 dark:text-amber-300">
-                  {systemConfig.maintenanceMessage || 'Your maintenance message will appear here'}
-                </p>
               </div>
             )}
-          </div>
-        </motion.div>
+          </CardContent>
+        </Card>
+      </motion.div>
 
-        {/* Default User Settings */}
-        <motion.div 
-          variants={itemVariants}
-          className="rounded-2xl border border-border/50 bg-background overflow-hidden"
+      {/* User Settings */}
+      <motion.div variants={itemVariants}>
+        <Card className="border-0 shadow-sm bg-card/50 backdrop-blur-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-blue-500" />
+              Default User Settings
+            </CardTitle>
+            <CardDescription>
+              Settings applied to new users
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="monthly-limit">Default Monthly Limit</Label>
+                <Input
+                  id="monthly-limit"
+                  type="number"
+                  value={localConfig.defaultMonthlyLimit}
+                  onChange={(e) => handleChange('defaultMonthlyLimit', Number(e.target.value))}
+                  min={0}
+                />
+              </div>
+              
+              <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+                <Label htmlFor="require-approval">Require Approval</Label>
+                <Switch
+                  id="require-approval"
+                  checked={localConfig.requireApproval}
+                  onCheckedChange={(checked) => handleChange('requireApproval', checked)}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Security Settings */}
+      <motion.div variants={itemVariants}>
+        <Card className="border-0 shadow-sm bg-card/50 backdrop-blur-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="w-5 h-5 text-green-500" />
+              Security Settings
+            </CardTitle>
+            <CardDescription>
+              Configure authentication and session security
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="max-attempts">Max Login Attempts</Label>
+                <Input
+                  id="max-attempts"
+                  type="number"
+                  value={localConfig.maxLoginAttempts}
+                  onChange={(e) => handleChange('maxLoginAttempts', Number(e.target.value))}
+                  min={1}
+                  max={10}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="session-timeout">Session Timeout (minutes)</Label>
+                <Input
+                  id="session-timeout"
+                  type="number"
+                  value={localConfig.sessionTimeout}
+                  onChange={(e) => handleChange('sessionTimeout', Number(e.target.value))}
+                  min={5}
+                  max={120}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Save Button */}
+      {hasChanges && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex justify-end"
         >
-          <div className="px-6 py-5 border-b border-border/50 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-foreground/5 flex items-center justify-center">
-              <Settings className="w-5 h-5 text-foreground/60" />
-            </div>
-            <div>
-              <h3 className="font-medium">Default User Settings</h3>
-              <p className="text-sm text-muted-foreground">Configure new user defaults</p>
-            </div>
-          </div>
-          
-          <div className="p-6 space-y-5">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Default Monthly Limit</label>
-              <Input 
-                type="number" 
-                value={systemConfig.defaultMonthlyLimit}
-                onChange={(e) => onUpdateConfig({ defaultMonthlyLimit: parseInt(e.target.value) })}
-                className="bg-muted/30 border-border/50"
-              />
-              <p className="text-xs text-muted-foreground">Messages per month for new users</p>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <label className="text-sm font-medium">Auto-approve Requests</label>
-                <p className="text-xs text-muted-foreground">Automatically grant access to new users</p>
-              </div>
-              <Switch 
-                checked={systemConfig.autoApproveRequests}
-                onCheckedChange={(checked) => onUpdateConfig({ autoApproveRequests: checked })}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Notification Email</label>
-              <Input 
-                type="email" 
-                value={systemConfig.notificationEmail}
-                onChange={(e) => onUpdateConfig({ notificationEmail: e.target.value })}
-                placeholder="admin@example.com"
-                className="bg-muted/30 border-border/50"
-              />
-              <p className="text-xs text-muted-foreground">Receive alerts about new registrations</p>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Session Timeout (hours)</label>
-              <Input 
-                type="number" 
-                value={systemConfig.sessionTimeout}
-                onChange={(e) => onUpdateConfig({ sessionTimeout: parseInt(e.target.value) })}
-                className="bg-muted/30 border-border/50"
-              />
-            </div>
-          </div>
+          <Button onClick={handleSave} disabled={isSaving}>
+            {isSaving ? (
+              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+            ) : (
+              <Save className="w-4 h-4 mr-2" />
+            )}
+            Save Changes
+          </Button>
         </motion.div>
-
-        {/* Security Settings */}
-        <motion.div 
-          variants={itemVariants}
-          className="rounded-2xl border border-border/50 bg-background overflow-hidden lg:col-span-2"
-        >
-          <div className="px-6 py-5 border-b border-border/50 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-foreground/5 flex items-center justify-center">
-              <Shield className="w-5 h-5 text-foreground/60" />
-            </div>
-            <div>
-              <h3 className="font-medium">Security & Access Control</h3>
-              <p className="text-sm text-muted-foreground">Configure security policies</p>
-            </div>
-          </div>
-          
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-5">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <label className="text-sm font-medium">Require Admin Approval</label>
-                    <p className="text-xs text-muted-foreground">New users need admin approval</p>
-                  </div>
-                  <Switch 
-                    checked={systemConfig.requireAdminApproval}
-                    onCheckedChange={(checked) => onUpdateConfig({ requireAdminApproval: checked })}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <label className="text-sm font-medium">Enable Audit Logging</label>
-                    <p className="text-xs text-muted-foreground">Log all security events</p>
-                  </div>
-                  <Switch 
-                    checked={systemConfig.enableAuditLogging}
-                    onCheckedChange={(checked) => onUpdateConfig({ enableAuditLogging: checked })}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-5">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Rate Limit (per minute)</label>
-                  <Input 
-                    type="number" 
-                    value={systemConfig.rateLimitPerMinute}
-                    onChange={(e) => onUpdateConfig({ rateLimitPerMinute: parseInt(e.target.value) })}
-                    className="bg-muted/30 border-border/50"
-                  />
-                  <p className="text-xs text-muted-foreground">Max API requests per minute</p>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Max Concurrent Sessions</label>
-                  <Input 
-                    type="number" 
-                    value={systemConfig.maxConcurrentSessions}
-                    onChange={(e) => onUpdateConfig({ maxConcurrentSessions: parseInt(e.target.value) })}
-                    className="bg-muted/30 border-border/50"
-                  />
-                  <p className="text-xs text-muted-foreground">Active sessions per user</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      </div>
+      )}
     </motion.div>
   );
 };

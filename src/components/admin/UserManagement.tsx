@@ -1,26 +1,38 @@
 import { useState, useMemo } from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Progress } from '@/components/ui/progress';
-import { 
-  Users, CheckCircle, XCircle, Clock, Building, Mail, 
-  Search, Download, Settings, Loader2, UserCheck, UserX
-} from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { EditLimitModal } from './EditLimitModal';
 import { motion } from 'framer-motion';
+import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { toast } from 'sonner';
+import { 
+  Search, 
+  Download, 
+  MoreVertical,
+  UserCheck,
+  UserX,
+  Edit,
+  Trash2,
+  Filter,
+  CheckSquare
+} from 'lucide-react';
+import { format } from 'date-fns';
+import { EditLimitModal } from './EditLimitModal';
 
 interface Profile {
-  id: string;
-  user_id: string;
   company_name: string | null;
   contact_person: string | null;
-  created_at: string;
+  avatar_url: string | null;
 }
 
 interface AccessGrantWithProfile {
@@ -29,12 +41,11 @@ interface AccessGrantWithProfile {
   is_active: boolean;
   granted_at: string | null;
   expires_at: string | null;
-  notes: string | null;
-  created_at: string;
-  monthly_limit: number | null;
   current_month_usage: number | null;
-  user_email?: string | null;
+  monthly_limit: number | null;
+  created_at: string;
   profiles: Profile | null;
+  user_email?: string;
 }
 
 interface UserManagementProps {
@@ -51,430 +62,381 @@ const containerVariants = {
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 10 },
+  hidden: { opacity: 0, x: -10 },
   visible: { 
     opacity: 1, 
-    y: 0,
-    transition: { duration: 0.3 }
+    x: 0,
+    transition: { duration: 0.2 }
   }
 };
 
 export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
-  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'pending' | 'revoked'>('all');
+  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [editingUser, setEditingUser] = useState<AccessGrantWithProfile | null>(null);
-  const [bulkEditModalOpen, setBulkEditModalOpen] = useState(false);
-  const [bulkAction, setBulkAction] = useState('');
-  const [bulkActionLoading, setBulkActionLoading] = useState(false);
-  const { toast } = useToast();
-
-  const getStatusInfo = (grant: AccessGrantWithProfile) => {
-    if (!grant.is_active && !grant.granted_at) {
-      return { icon: Clock, label: 'Pending', variant: 'secondary' as const, color: 'text-amber-600' };
-    }
-    if (!grant.is_active) {
-      return { icon: XCircle, label: 'Revoked', variant: 'destructive' as const, color: 'text-red-600' };
-    }
-    if (grant.expires_at && new Date(grant.expires_at) < new Date()) {
-      return { icon: XCircle, label: 'Expired', variant: 'destructive' as const, color: 'text-red-600' };
-    }
-    return { icon: CheckCircle, label: 'Active', variant: 'default' as const, color: 'text-emerald-600' };
-  };
+  const [bulkEditUsers, setBulkEditUsers] = useState<AccessGrantWithProfile[]>([]);
 
   const filteredUsers = useMemo(() => {
     return allUsers.filter(user => {
-      const matchesSearch = !searchTerm || 
-        user.profiles?.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.profiles?.contact_person?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.user_email?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = 
+        (user.profiles?.company_name?.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (user.profiles?.contact_person?.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (user.user_email?.toLowerCase().includes(searchQuery.toLowerCase()));
       
-      const matchesStatus = statusFilter === 'all' || 
+      const matchesStatus = 
+        statusFilter === 'all' ||
         (statusFilter === 'active' && user.is_active) ||
-        (statusFilter === 'inactive' && !user.is_active) ||
-        (statusFilter === 'pending' && !user.is_active && !user.granted_at);
+        (statusFilter === 'pending' && !user.is_active && !user.granted_at) ||
+        (statusFilter === 'revoked' && !user.is_active && user.granted_at);
       
-      return matchesSearch && matchesStatus;
+      return (matchesSearch || !searchQuery) && matchesStatus;
     });
-  }, [allUsers, searchTerm, statusFilter]);
+  }, [allUsers, searchQuery, statusFilter]);
 
-  const handleRevokeAccess = async (userId: string) => {
+  const toggleUserSelection = (userId: string) => {
+    const newSelected = new Set(selectedUsers);
+    if (newSelected.has(userId)) {
+      newSelected.delete(userId);
+    } else {
+      newSelected.add(userId);
+    }
+    setSelectedUsers(newSelected);
+  };
+
+  const handleActivate = async (userId: string) => {
     try {
       const { error } = await supabase
         .from('access_grants')
-        .update({ is_active: false, notes: 'Access revoked by administrator' })
+        .update({ is_active: true, granted_at: new Date().toISOString() })
         .eq('user_id', userId);
-
+      
       if (error) throw error;
-      toast({ title: "Access Revoked", description: "User access has been revoked." });
+      toast.success('User activated');
       onRefresh();
     } catch (error) {
-      toast({ title: "Error", description: "Failed to revoke user access.", variant: "destructive" });
+      toast.error('Failed to activate user');
     }
   };
 
-  const handleGrantAccess = async (userId: string) => {
+  const handleDeactivate = async (userId: string) => {
     try {
       const { error } = await supabase
         .from('access_grants')
-        .update({ is_active: true, granted_at: new Date().toISOString(), notes: 'Access granted by administrator' })
+        .update({ is_active: false })
         .eq('user_id', userId);
-
+      
       if (error) throw error;
-      toast({ title: "Access Granted", description: "User access has been granted." });
+      toast.success('User deactivated');
       onRefresh();
     } catch (error) {
-      toast({ title: "Error", description: "Failed to grant user access.", variant: "destructive" });
+      toast.error('Failed to deactivate user');
     }
   };
 
-  const handleUpdateUserLimits = async (userIds: string[], newLimit: number | null) => {
+  const handleUpdateLimit = async (newLimit: number | null) => {
+    if (!editingUser) return;
+    
     try {
       const { error } = await supabase
         .from('access_grants')
         .update({ monthly_limit: newLimit })
-        .in('user_id', userIds);
-
+        .eq('user_id', editingUser.user_id);
+      
       if (error) throw error;
-      toast({ title: "Limits Updated", description: `Updated limits for ${userIds.length} user(s)` });
+      toast.success('Limit updated');
+      setEditingUser(null);
       onRefresh();
     } catch (error) {
-      toast({ title: "Error", description: "Failed to update user limits.", variant: "destructive" });
+      toast.error('Failed to update limit');
     }
   };
 
-  const handleEditLimit = (user: AccessGrantWithProfile) => {
-    setEditingUser(user);
-    setEditModalOpen(true);
-  };
-
-  const handleBulkEditLimits = () => {
-    setBulkEditModalOpen(true);
-  };
-
-  const confirmUpdateLimit = async (newLimit: number | null) => {
-    if (editingUser) {
-      await handleUpdateUserLimits([editingUser.user_id], newLimit);
+  const handleBulkUpdateLimit = async (newLimit: number | null) => {
+    if (bulkEditUsers.length === 0) return;
+    
+    try {
+      const userIds = bulkEditUsers.map(u => u.user_id);
+      const { error } = await supabase
+        .from('access_grants')
+        .update({ monthly_limit: newLimit })
+        .in('user_id', userIds);
+      
+      if (error) throw error;
+      toast.success(`Updated ${bulkEditUsers.length} users`);
+      setBulkEditUsers([]);
+      setSelectedUsers(new Set());
+      onRefresh();
+    } catch (error) {
+      toast.error('Failed to update limits');
     }
   };
 
-  const confirmBulkUpdateLimits = async (newLimit: number | null) => {
-    await handleUpdateUserLimits(selectedUsers, newLimit);
-    setSelectedUsers([]);
+  const handleBulkAction = async (action: 'activate' | 'deactivate' | 'delete') => {
+    if (selectedUsers.size === 0) return;
+    
+    try {
+      const userIds = Array.from(selectedUsers);
+      
+      if (action === 'activate') {
+        await supabase
+          .from('access_grants')
+          .update({ is_active: true, granted_at: new Date().toISOString() })
+          .in('user_id', userIds);
+      } else if (action === 'deactivate') {
+        await supabase
+          .from('access_grants')
+          .update({ is_active: false })
+          .in('user_id', userIds);
+      } else if (action === 'delete') {
+        await supabase
+          .from('access_grants')
+          .delete()
+          .in('user_id', userIds);
+      }
+      
+      toast.success(`${action === 'delete' ? 'Deleted' : action === 'activate' ? 'Activated' : 'Deactivated'} ${selectedUsers.size} users`);
+      setSelectedUsers(new Set());
+      onRefresh();
+    } catch (error) {
+      toast.error('Bulk action failed');
+    }
   };
 
-  const getUsagePercentage = (usage: number, limit: number | null) => {
-    if (!limit) return 0;
+  const exportUsers = () => {
+    const csv = [
+      ['Company', 'Contact', 'Status', 'Usage', 'Limit', 'Created'],
+      ...filteredUsers.map(u => [
+        u.profiles?.company_name || '',
+        u.profiles?.contact_person || '',
+        u.is_active ? 'Active' : 'Pending',
+        u.current_month_usage || 0,
+        u.monthly_limit || 'Unlimited',
+        format(new Date(u.created_at), 'yyyy-MM-dd'),
+      ])
+    ].map(row => row.join(',')).join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `users-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const getUsagePercent = (usage: number | null, limit: number | null) => {
+    if (!limit || !usage) return 0;
     return Math.min((usage / limit) * 100, 100);
   };
 
-  const exportUserData = () => {
-    const csvContent = [
-      ['Email', 'Company', 'Contact Person', 'Status', 'Monthly Limit', 'Current Usage', 'Usage %', 'Created Date'].join(','),
-      ...filteredUsers.map(user => [
-        user.user_email || 'N/A',
-        user.profiles?.company_name || 'N/A',
-        user.profiles?.contact_person || 'N/A',
-        user.is_active ? 'Active' : 'Inactive',
-        user.monthly_limit || 'Unlimited',
-        user.current_month_usage || 0,
-        user.monthly_limit && user.current_month_usage !== null 
-          ? ((user.current_month_usage / user.monthly_limit) * 100).toFixed(1) + '%' 
-          : 'N/A',
-        new Date(user.created_at).toLocaleDateString()
-      ].join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `ayn-users-${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-    toast({ title: "Export Complete", description: "User data exported to CSV file." });
-  };
-
-  const handleBulkAction = async () => {
-    if (selectedUsers.length === 0 || !bulkAction) return;
-    
-    setBulkActionLoading(true);
-    try {
-      switch (bulkAction) {
-        case 'activate':
-          const { error: activateError } = await supabase
-            .from('access_grants')
-            .update({ is_active: true, granted_at: new Date().toISOString() })
-            .in('user_id', selectedUsers);
-          if (activateError) throw activateError;
-          break;
-          
-        case 'deactivate':
-          const { error: deactivateError } = await supabase
-            .from('access_grants')
-            .update({ is_active: false })
-            .in('user_id', selectedUsers);
-          if (deactivateError) throw deactivateError;
-          break;
-          
-        case 'reset_usage':
-          const { error: resetError } = await supabase
-            .from('access_grants')
-            .update({ current_month_usage: 0 })
-            .in('user_id', selectedUsers);
-          if (resetError) throw resetError;
-          break;
-          
-        case 'delete':
-          if (!confirm(`Are you sure you want to delete ${selectedUsers.length} user(s)? This action cannot be undone.`)) {
-            setBulkActionLoading(false);
-            return;
-          }
-          await supabase.from('messages').delete().in('user_id', selectedUsers);
-          await supabase.from('user_settings').delete().in('user_id', selectedUsers);
-          await supabase.from('device_fingerprints').delete().in('user_id', selectedUsers);
-          await supabase.from('access_grants').delete().in('user_id', selectedUsers);
-          await supabase.from('profiles').delete().in('user_id', selectedUsers);
-          break;
-      }
-      
-      toast({ title: 'Success', description: `Bulk action completed for ${selectedUsers.length} users` });
-      setSelectedUsers([]);
-      setBulkAction('');
-      onRefresh();
-    } catch (error) {
-      toast({ title: 'Error', description: 'Failed to complete bulk action', variant: 'destructive' });
-    } finally {
-      setBulkActionLoading(false);
-    }
-  };
-
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-serif font-medium">User Management</h2>
-          <p className="text-sm text-muted-foreground">Manage user access and permissions</p>
-        </div>
-        <div className="flex items-center gap-3">
-          {selectedUsers.length > 0 && (
-            <>
-              <Select value={bulkAction} onValueChange={setBulkAction}>
-                <SelectTrigger className="w-44 bg-background/50 border-border/50">
-                  <SelectValue placeholder="Bulk actions..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="activate">Activate Selected</SelectItem>
-                  <SelectItem value="deactivate">Deactivate Selected</SelectItem>
-                  <SelectItem value="reset_usage">Reset Usage</SelectItem>
-                  <SelectItem value="delete">Delete Selected</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button onClick={handleBulkAction} disabled={!bulkAction || bulkActionLoading} size="sm">
-                {bulkActionLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                Apply
+    <>
+      <Card className="border-0 shadow-sm bg-card/50 backdrop-blur-sm">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>User Management</CardTitle>
+              <CardDescription>{filteredUsers.length} users</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              {selectedUsers.size > 0 && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <CheckSquare className="w-4 h-4 mr-2" />
+                      {selectedUsers.size} selected
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem onClick={() => handleBulkAction('activate')}>
+                      <UserCheck className="w-4 h-4 mr-2" />
+                      Activate All
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleBulkAction('deactivate')}>
+                      <UserX className="w-4 h-4 mr-2" />
+                      Deactivate All
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => {
+                      const users = allUsers.filter(u => selectedUsers.has(u.user_id));
+                      setBulkEditUsers(users);
+                    }}>
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit Limits
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => handleBulkAction('delete')}
+                      className="text-destructive"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete All
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+              <Button variant="outline" size="sm" onClick={exportUsers}>
+                <Download className="w-4 h-4 mr-2" />
+                Export
               </Button>
-              <Button onClick={handleBulkEditLimits} variant="outline" size="sm" className="gap-2">
-                <Settings className="w-4 h-4" />
-                Edit Limits ({selectedUsers.length})
-              </Button>
-            </>
-          )}
-          <Button onClick={exportUserData} variant="outline" size="sm" className="gap-2">
-            <Download className="w-4 h-4" />
-            Export
-          </Button>
-        </div>
-      </div>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Filters */}
+          <div className="flex gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search users..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Filter className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => setStatusFilter('all')}>All</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setStatusFilter('active')}>Active</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setStatusFilter('pending')}>Pending</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setStatusFilter('revoked')}>Revoked</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by company, contact, or email..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-background/50 border-border/50"
-          />
-        </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-44 bg-background/50 border-border/50">
-            <SelectValue placeholder="Filter status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Users</SelectItem>
-            <SelectItem value="active">Active Only</SelectItem>
-            <SelectItem value="inactive">Inactive Only</SelectItem>
-            <SelectItem value="pending">Pending Only</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* User Count */}
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Users className="w-4 h-4" />
-        <span>{filteredUsers.length} users</span>
-      </div>
-
-      {/* User List */}
-      <div className="rounded-2xl border border-border/50 bg-background overflow-hidden">
-        <ScrollArea className="h-[600px]">
-          <motion.div 
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="p-4 space-y-3"
-          >
-            {filteredUsers.map((user) => {
-              const statusInfo = getStatusInfo(user);
-              const StatusIcon = statusInfo.icon;
-              const usagePercent = getUsagePercentage(user.current_month_usage ?? 0, user.monthly_limit);
-              
-              return (
-                <motion.div 
-                  key={user.id}
-                  variants={itemVariants}
-                  className="group p-5 rounded-xl border border-border/30 bg-background hover:border-border/60 hover:shadow-sm transition-all duration-200"
-                >
-                  <div className="flex items-center gap-4">
-                    <Checkbox
-                      checked={selectedUsers.includes(user.user_id)}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          setSelectedUsers([...selectedUsers, user.user_id]);
-                        } else {
-                          setSelectedUsers(selectedUsers.filter(id => id !== user.user_id));
-                        }
-                      }}
-                      className="shrink-0"
-                    />
-                    
-                    <div className="w-11 h-11 rounded-xl bg-foreground/5 flex items-center justify-center shrink-0">
-                      <Building className="w-5 h-5 text-foreground/60" />
+          {/* User List */}
+          <ScrollArea className="h-[400px]">
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              className="space-y-2"
+            >
+              {filteredUsers.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  No users found
+                </p>
+              ) : (
+                filteredUsers.map((user) => (
+                  <motion.div
+                    key={user.id}
+                    variants={itemVariants}
+                    className={`flex items-center justify-between p-4 rounded-xl border transition-colors ${
+                      selectedUsers.has(user.user_id) 
+                        ? 'bg-primary/5 border-primary/20' 
+                        : 'bg-card hover:bg-muted/50 border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <input
+                        type="checkbox"
+                        checked={selectedUsers.has(user.user_id)}
+                        onChange={() => toggleUserSelection(user.user_id)}
+                        className="w-4 h-4 rounded border-muted-foreground/30"
+                      />
+                      <Avatar className="w-10 h-10">
+                        <AvatarFallback className="bg-primary/10 text-primary">
+                          {(user.profiles?.company_name || 'U').charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium">
+                          {user.profiles?.company_name || user.profiles?.contact_person || 'Unknown'}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(user.created_at), 'MMM d, yyyy')}
+                        </p>
+                      </div>
                     </div>
-                    
-                    <div className="flex-1 min-w-0 space-y-2">
-                      <div className="flex items-center gap-3">
-                        <h3 className="font-medium truncate">{user.profiles?.company_name || 'Unknown Company'}</h3>
-                        <div className={`
-                          inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium
-                          ${user.is_active 
-                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' 
-                            : !user.granted_at 
-                              ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
-                              : 'bg-red-500/10 text-red-600 dark:text-red-400'
-                          }
-                        `}>
-                          <StatusIcon className="w-3 h-3" />
-                          {statusInfo.label}
+
+                    <div className="flex items-center gap-4">
+                      {/* Usage */}
+                      <div className="w-32">
+                        <div className="flex justify-between text-xs mb-1">
+                          <span>{user.current_month_usage ?? 0}</span>
+                          <span className="text-muted-foreground">
+                            {user.monthly_limit || '∞'}
+                          </span>
                         </div>
+                        <Progress 
+                          value={getUsagePercent(user.current_month_usage, user.monthly_limit)} 
+                          className="h-1.5"
+                        />
                       </div>
-                      
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1.5">
-                          <Mail className="w-3.5 h-3.5" />
-                          {user.user_email || 'No email'}
-                        </span>
-                        <span className="text-muted-foreground/50">•</span>
-                        <span>{user.profiles?.contact_person || 'No contact'}</span>
-                      </div>
-                      
-                      {/* Usage Bar */}
-                      <div className="flex items-center gap-3">
-                        <div className="flex-1 max-w-[200px]">
-                          <Progress value={usagePercent} className="h-1.5" />
-                        </div>
-                        <span className="text-xs text-muted-foreground">
-                          {user.current_month_usage ?? 0} / {user.monthly_limit ?? '∞'}
-                        </span>
-                      </div>
+
+                      {/* Status */}
+                      <Badge variant={user.is_active ? 'default' : 'secondary'}>
+                        {user.is_active ? 'Active' : 'Pending'}
+                      </Badge>
+
+                      {/* Actions */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="w-8 h-8">
+                            <MoreVertical className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => setEditingUser(user)}>
+                            <Edit className="w-4 h-4 mr-2" />
+                            Edit Limit
+                          </DropdownMenuItem>
+                          {user.is_active ? (
+                            <DropdownMenuItem onClick={() => handleDeactivate(user.user_id)}>
+                              <UserX className="w-4 h-4 mr-2" />
+                              Deactivate
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem onClick={() => handleActivate(user.user_id)}>
+                              <UserCheck className="w-4 h-4 mr-2" />
+                              Activate
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
-                    
-                    {/* Actions */}
-                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleEditLimit(user)}
-                        className="h-8 px-3 text-xs"
-                      >
-                        Edit Limit
-                      </Button>
-                      
-                      {user.is_active ? (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleRevokeAccess(user.user_id)}
-                          className="h-8 px-3 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
-                        >
-                          <UserX className="w-3.5 h-3.5 mr-1.5" />
-                          Revoke
-                        </Button>
-                      ) : (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleGrantAccess(user.user_id)}
-                          className="h-8 px-3 text-xs text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950"
-                        >
-                          <UserCheck className="w-3.5 h-3.5 mr-1.5" />
-                          Grant
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })}
-            
-            {filteredUsers.length === 0 && (
-              <div className="text-center py-12 text-muted-foreground">
-                No users found matching your criteria.
-              </div>
-            )}
-          </motion.div>
-        </ScrollArea>
-      </div>
+                  </motion.div>
+                ))
+              )}
+            </motion.div>
+          </ScrollArea>
+        </CardContent>
+      </Card>
 
       {/* Edit Limit Modal - Single User */}
-      <EditLimitModal
-        isOpen={editModalOpen}
-        onClose={() => {
-          setEditModalOpen(false);
-          setEditingUser(null);
-        }}
-        users={editingUser ? [{
-          user_id: editingUser.user_id,
-          user_email: editingUser.user_email ?? undefined,
-          company_name: editingUser.profiles?.company_name ?? undefined,
-          current_month_usage: editingUser.current_month_usage ?? 0,
-          monthly_limit: editingUser.monthly_limit
-        }] : []}
-        onConfirm={confirmUpdateLimit}
-        isBulk={false}
-      />
+      {editingUser && (
+        <EditLimitModal
+          isOpen={true}
+          onClose={() => setEditingUser(null)}
+          onConfirm={handleUpdateLimit}
+          users={[{
+            user_id: editingUser.user_id,
+            company_name: editingUser.profiles?.company_name ?? undefined,
+            current_month_usage: editingUser.current_month_usage ?? 0,
+            monthly_limit: editingUser.monthly_limit,
+          }]}
+        />
+      )}
 
       {/* Edit Limit Modal - Bulk */}
-      <EditLimitModal
-        isOpen={bulkEditModalOpen}
-        onClose={() => setBulkEditModalOpen(false)}
-        users={selectedUsers.map(userId => {
-          const user = allUsers.find(u => u.user_id === userId);
-          return {
-            user_id: userId,
-            user_email: user?.user_email ?? undefined,
-            company_name: user?.profiles?.company_name ?? undefined,
-            current_month_usage: user?.current_month_usage ?? 0,
-            monthly_limit: user?.monthly_limit ?? null
-          };
-        })}
-        onConfirm={confirmBulkUpdateLimits}
-        isBulk={true}
-      />
-    </div>
+      {bulkEditUsers.length > 0 && (
+        <EditLimitModal
+          isOpen={true}
+          onClose={() => setBulkEditUsers([])}
+          onConfirm={handleBulkUpdateLimit}
+          users={bulkEditUsers.map(u => ({
+            user_id: u.user_id,
+            company_name: u.profiles?.company_name ?? undefined,
+            current_month_usage: u.current_month_usage ?? 0,
+            monthly_limit: u.monthly_limit,
+          }))}
+          isBulk
+        />
+      )}
+    </>
   );
 };
