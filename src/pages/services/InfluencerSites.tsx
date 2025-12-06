@@ -1,85 +1,57 @@
 import { Link } from 'react-router-dom';
-import { Brain, ArrowLeft, CheckCircle, Sparkles, Palette, Smartphone, Zap, Users, TrendingUp, Layout, Globe, Shield, Star } from 'lucide-react';
+import { Brain, ArrowLeft, Palette, Smartphone, Zap, Layout, TrendingUp, Globe, Instagram, Play, Heart, Eye, BarChart3, Users, Star, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useLanguage } from '@/contexts/LanguageContext';
 import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
+
 const InfluencerSites = () => {
-  const {
-    language
-  } = useLanguage();
-  const stats = [{
-    number: '50+',
-    label: language === 'ar' ? 'مشروع منجز' : 'Projects Delivered'
-  }, {
-    number: '95%',
-    label: language === 'ar' ? 'معدل رضا العملاء' : 'Client Retention'
-  }, {
-    number: '2x',
-    label: language === 'ar' ? 'زيادة الحجوزات' : 'Booking Increase'
-  }, {
-    number: '48h',
-    label: language === 'ar' ? 'وقت التسليم' : 'Turnaround Time'
-  }];
-  const features = [{
-    icon: Palette,
-    title: language === 'ar' ? 'تصميم حصري' : 'Custom Luxury Design',
-    description: language === 'ar' ? 'تصميم فريد يعكس هويتك الشخصية ويميزك عن المنافسين' : 'Unique design that reflects your personal brand and sets you apart from competitors'
-  }, {
-    icon: Smartphone,
-    title: language === 'ar' ? 'متجاوب مع الجوال' : 'Mobile First',
-    description: language === 'ar' ? 'تجربة مثالية على جميع الأجهزة، من الهاتف للحاسوب' : 'Perfect experience across all devices, from mobile to desktop'
-  }, {
-    icon: Zap,
-    title: language === 'ar' ? 'سرعة فائقة' : 'Lightning Fast',
-    description: language === 'ar' ? 'تحميل سريع يحافظ على زوارك ويحسن ترتيبك في محركات البحث' : 'Fast loading keeps visitors engaged and improves your search rankings'
-  }, {
-    icon: Layout,
-    title: language === 'ar' ? 'معرض أعمال تفاعلي' : 'Interactive Portfolio',
-    description: language === 'ar' ? 'اعرض أعمالك بطريقة احترافية تجذب العلامات التجارية' : 'Showcase your work professionally to attract brand partnerships'
-  }, {
-    icon: TrendingUp,
-    title: language === 'ar' ? 'محسّن للتحويل' : 'Conversion Optimized',
-    description: language === 'ar' ? 'صفحات مصممة لتحويل الزوار إلى عملاء وشراكات' : 'Pages designed to convert visitors into clients and partnerships'
-  }, {
-    icon: Globe,
-    title: language === 'ar' ? 'دعم متعدد اللغات' : 'Multi-language Support',
-    description: language === 'ar' ? 'وصول جمهور عالمي بمحتوى متعدد اللغات' : 'Reach a global audience with multi-language content support'
-  }];
-  const process = [{
-    step: '01',
-    title: language === 'ar' ? 'الاكتشاف' : 'Discovery',
-    description: language === 'ar' ? 'نفهم علامتك وأهدافك' : 'We understand your brand and goals'
-  }, {
-    step: '02',
-    title: language === 'ar' ? 'التصميم' : 'Design',
-    description: language === 'ar' ? 'نصمم تجربة فريدة لك' : 'We craft a unique experience for you'
-  }, {
-    step: '03',
-    title: language === 'ar' ? 'التطوير' : 'Development',
-    description: language === 'ar' ? 'نبني موقعك بأحدث التقنيات' : 'We build with cutting-edge tech'
-  }, {
-    step: '04',
-    title: language === 'ar' ? 'الإطلاق' : 'Launch',
-    description: language === 'ar' ? 'نطلق موقعك للعالم' : 'We launch your site to the world'
-  }];
-  const portfolio = [{
-    title: language === 'ar' ? 'مشروع ١' : 'Project 1',
-    category: language === 'ar' ? 'مؤثر أزياء' : 'Fashion Influencer'
-  }, {
-    title: language === 'ar' ? 'مشروع ٢' : 'Project 2',
-    category: language === 'ar' ? 'مدون سفر' : 'Travel Blogger'
-  }, {
-    title: language === 'ar' ? 'مشروع ٣' : 'Project 3',
-    category: language === 'ar' ? 'مؤثر لياقة' : 'Fitness Influencer'
-  }];
-  return <div className="min-h-screen bg-background">
+  const features = [
+    {
+      icon: Palette,
+      title: 'Custom Luxury Design',
+      description: 'Unique design that reflects your personal brand and sets you apart from competitors'
+    },
+    {
+      icon: Smartphone,
+      title: 'Mobile First',
+      description: 'Perfect experience across all devices, from mobile to desktop'
+    },
+    {
+      icon: Zap,
+      title: 'Lightning Fast',
+      description: 'Fast loading keeps visitors engaged and improves your search rankings'
+    },
+    {
+      icon: Layout,
+      title: 'Interactive Portfolio',
+      description: 'Showcase your work professionally to attract brand partnerships'
+    },
+    {
+      icon: TrendingUp,
+      title: 'Conversion Optimized',
+      description: 'Pages designed to convert visitors into clients and partnerships'
+    },
+    {
+      icon: Globe,
+      title: 'Multi-language Support',
+      description: 'Reach a global audience with multi-language content support'
+    }
+  ];
+
+  const process = [
+    { step: '01', title: 'Discovery', description: 'We understand your brand and goals' },
+    { step: '02', title: 'Design', description: 'We craft a unique experience for you' },
+    { step: '03', title: 'Development', description: 'We build with cutting-edge tech' },
+    { step: '04', title: 'Launch', description: 'We launch your site to the world' }
+  ];
+
+  return (
+    <div className="min-h-screen bg-neutral-950 text-white">
       {/* Navigation */}
       <nav className="fixed top-4 md:top-6 left-4 md:left-6 z-50">
         <Link to="/">
-          <Button variant="ghost" className="gap-2 bg-card/80 backdrop-blur-xl border border-border rounded-full px-4 py-2 hover:bg-card">
+          <Button variant="ghost" className="gap-2 bg-neutral-900/80 backdrop-blur-xl border border-neutral-800 rounded-full px-4 py-2 hover:bg-neutral-800 text-white">
             <ArrowLeft className="w-4 h-4" />
-            <span className="hidden sm:inline">{language === 'ar' ? 'الرئيسية' : 'Back'}</span>
+            <span className="hidden sm:inline">Back</span>
           </Button>
         </Link>
       </nav>
@@ -87,200 +59,562 @@ const InfluencerSites = () => {
       {/* Hero Section */}
       <section className="pt-24 pb-16 md:pt-32 md:pb-24 px-4 md:px-6">
         <div className="container mx-auto max-w-6xl">
-          <motion.div initial={{
-          opacity: 0,
-          y: 30
-        }} animate={{
-          opacity: 1,
-          y: 0
-        }} transition={{
-          duration: 0.6,
-          ease: [0.32, 0.72, 0, 1]
-        }} className="text-center">
-            <span className="text-sm font-mono text-muted-foreground tracking-wider uppercase mb-4 block">
-              01 — {language === 'ar' ? 'خدماتنا' : 'Our Services'}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-center"
+          >
+            <span className="text-sm font-mono text-neutral-500 tracking-wider uppercase mb-4 block">
+              01 — Our Services
             </span>
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-serif font-bold mb-6 leading-tight">
-              {language === 'ar' ? 'مواقع فاخرة' : 'Premium Influencer'}
+              Premium Influencer
               <br />
-              <span className="text-muted-foreground">{language === 'ar' ? 'للمؤثرين' : 'Sites'}</span>
+              <span className="text-rose-400">Sites</span>
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-              {language === 'ar' ? 'مواقع إلكترونية احترافية مصممة خصيصاً للمؤثرين وصناع المحتوى. اجذب المزيد من الشراكات وارتقِ بعلامتك الشخصية.' : 'Luxury websites custom-built for influencers and content creators. Attract more partnerships and elevate your personal brand.'}
+            <p className="text-lg md:text-xl text-neutral-400 max-w-2xl mx-auto mb-8">
+              Luxury websites custom-built for influencers and content creators. Attract more partnerships and elevate your personal brand.
             </p>
             <Link to="/#contact">
-              <Button size="lg" className="rounded-full px-8">
-                {language === 'ar' ? 'ابدأ مشروعك' : 'Start Your Project'}
+              <Button size="lg" className="rounded-full px-8 bg-white text-neutral-950 hover:bg-neutral-200">
+                Start Your Project
               </Button>
             </Link>
           </motion.div>
         </div>
       </section>
 
-      {/* Stats Section */}
-      
-
-      {/* Features Section */}
-      <section className="py-16 md:py-32 px-4 md:px-6">
+      {/* What You'll Get - Hero Section Showcase */}
+      <section className="py-16 md:py-24 px-4 md:px-6 bg-neutral-900/50">
         <div className="container mx-auto max-w-6xl">
-          <motion.div initial={{
-          opacity: 0,
-          y: 20
-        }} whileInView={{
-          opacity: 1,
-          y: 0
-        }} viewport={{
-          once: true
-        }} className="text-center mb-12 md:mb-16">
-            <span className="text-sm font-mono text-muted-foreground tracking-wider uppercase mb-4 block">
-              {language === 'ar' ? 'ما نقدمه' : "What's Included"}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
+            <span className="text-sm font-mono text-rose-400 tracking-wider uppercase mb-4 block">
+              What You'll Get
             </span>
-            <h2 className="text-3xl md:text-5xl font-serif font-bold">
-              {language === 'ar' ? 'كل ما تحتاجه للتميز' : 'Everything You Need to Stand Out'}
+            <h2 className="text-3xl md:text-5xl font-serif font-bold mb-4">
+              Stunning <span className="text-rose-400">Hero Section</span>
             </h2>
+            <p className="text-neutral-400 max-w-xl mx-auto">
+              Make a powerful first impression with a captivating hero that showcases your brand
+            </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-            {features.map((feature, index) => <motion.div key={index} initial={{
-            opacity: 0,
-            y: 20
-          }} whileInView={{
-            opacity: 1,
-            y: 0
-          }} viewport={{
-            once: true
-          }} transition={{
-            delay: index * 0.1,
-            duration: 0.5
-          }} className="p-6 md:p-8 rounded-2xl bg-muted/30 border border-border hover:bg-muted/50 transition-all duration-300 group">
-                <div className="w-12 h-12 rounded-xl bg-foreground/5 flex items-center justify-center mb-4 group-hover:bg-foreground/10 transition-colors">
-                  <feature.icon className="w-6 h-6 text-foreground" />
+          {/* Hero Preview Mockup */}
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            className="relative max-w-4xl mx-auto"
+          >
+            <div className="rounded-2xl overflow-hidden border border-neutral-800 bg-neutral-900 shadow-2xl">
+              {/* Browser Chrome */}
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-neutral-800 bg-neutral-900">
+                <div className="flex gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-red-500" />
+                  <div className="w-3 h-3 rounded-full bg-yellow-500" />
+                  <div className="w-3 h-3 rounded-full bg-green-500" />
                 </div>
-                <h3 className="text-lg md:text-xl font-bold mb-2">{feature.title}</h3>
-                <p className="text-sm md:text-base text-muted-foreground leading-relaxed">{feature.description}</p>
-              </motion.div>)}
+                <div className="flex-1 mx-4">
+                  <div className="bg-neutral-800 rounded-full px-4 py-1.5 text-xs text-neutral-400 text-center">
+                    sarahjohnson.com
+                  </div>
+                </div>
+              </div>
+              
+              {/* Hero Content Preview */}
+              <div className="relative aspect-[16/10] bg-gradient-to-br from-neutral-900 via-neutral-950 to-neutral-900 overflow-hidden">
+                {/* Background Image Simulation */}
+                <div className="absolute inset-0 bg-gradient-to-r from-neutral-950 via-neutral-950/80 to-transparent z-10" />
+                <div className="absolute right-0 top-0 bottom-0 w-1/2 bg-gradient-to-l from-rose-950/20 to-transparent" />
+                
+                {/* Content */}
+                <div className="relative z-20 flex items-center h-full p-8 md:p-12">
+                  <div className="max-w-md">
+                    <p className="text-rose-400 text-sm font-medium mb-2">Fashion & Lifestyle Influencer</p>
+                    <h3 className="text-3xl md:text-5xl font-bold text-white mb-4">SARAH JOHNSON</h3>
+                    <p className="text-neutral-400 text-sm mb-6">
+                      Creating inspiring content that blends high fashion with everyday lifestyle. Join 3M+ followers on this journey of style and authenticity.
+                    </p>
+                    <div className="flex gap-4">
+                      <div className="text-center">
+                        <div className="text-xl font-bold text-white">3.2M</div>
+                        <div className="text-xs text-neutral-500">Followers</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-xl font-bold text-white">8.5%</div>
+                        <div className="text-xs text-neutral-500">Engagement</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-xl font-bold text-white">50+</div>
+                        <div className="text-xs text-neutral-500">Brand Deals</div>
+                      </div>
+                    </div>
+                    <Button className="mt-6 bg-rose-500 hover:bg-rose-600 text-white rounded-full px-6">
+                      Work With Me
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Floating Social Icons */}
+                <div className="absolute right-8 top-1/2 -translate-y-1/2 flex flex-col gap-4 z-20">
+                  <div className="w-10 h-10 rounded-full bg-neutral-800/80 flex items-center justify-center">
+                    <Instagram className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="w-10 h-10 rounded-full bg-neutral-800/80 flex items-center justify-center">
+                    <Play className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="w-10 h-10 rounded-full bg-neutral-800/80 flex items-center justify-center">
+                    <BarChart3 className="w-5 h-5 text-white" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Floating Feature Cards */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.4 }}
+              className="absolute -left-4 md:-left-16 top-1/2 -translate-y-1/2 hidden md:block"
+            >
+              <div className="bg-neutral-800/90 backdrop-blur-sm border border-neutral-700 rounded-xl p-4 shadow-xl">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center">
+                    <Instagram className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <div className="text-white font-bold">2.8M</div>
+                    <div className="text-xs text-neutral-400">Instagram</div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.5 }}
+              className="absolute -right-4 md:-right-16 top-1/3 hidden md:block"
+            >
+              <div className="bg-neutral-800/90 backdrop-blur-sm border border-neutral-700 rounded-xl p-4 shadow-xl">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-cyan-600 flex items-center justify-center">
+                    <Play className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <div className="text-white font-bold">1.5M</div>
+                    <div className="text-xs text-neutral-400">TikTok</div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Analytics Section Showcase */}
+      <section className="py-16 md:py-24 px-4 md:px-6">
+        <div className="container mx-auto max-w-6xl">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+            >
+              <span className="text-sm font-mono text-rose-400 tracking-wider uppercase mb-4 block">
+                Analytics Dashboard
+              </span>
+              <h2 className="text-3xl md:text-4xl font-serif font-bold mb-4">
+                Platform <span className="text-rose-400">Stats</span>
+              </h2>
+              <p className="text-neutral-400 mb-6">
+                Show brands exactly why they should work with you. Your analytics dashboard displays real-time follower counts, engagement rates, and audience demographics across all platforms.
+              </p>
+              <ul className="space-y-3">
+                {['Cross-platform analytics', 'Real-time engagement tracking', 'Audience demographics breakdown', 'Achievement badges'].map((item, i) => (
+                  <li key={i} className="flex items-center gap-3 text-neutral-300">
+                    <CheckCircle className="w-5 h-5 text-rose-400" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="relative"
+            >
+              {/* Stats Preview */}
+              <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 space-y-4">
+                <div className="text-sm font-mono text-neutral-500 uppercase tracking-wider">Analytics</div>
+                <h3 className="text-2xl font-bold text-white">Platform Stats</h3>
+                
+                <div className="grid grid-cols-2 gap-4 mt-6">
+                  {/* TikTok Card */}
+                  <div className="bg-neutral-800/50 rounded-xl p-4 border border-neutral-700">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center">
+                        <Play className="w-4 h-4 text-cyan-400" />
+                      </div>
+                      <span className="text-white font-medium">TikTok</span>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-neutral-500 text-sm">Followers</span>
+                        <span className="text-cyan-400 font-bold">1.5M</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-neutral-500 text-sm">Engagement</span>
+                        <span className="text-cyan-400 font-bold">12.3%</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-neutral-500 text-sm">Avg Views</span>
+                        <span className="text-cyan-400 font-bold">850K</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Instagram Card */}
+                  <div className="bg-neutral-800/50 rounded-xl p-4 border border-neutral-700">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-8 h-8 rounded-full bg-pink-500/20 flex items-center justify-center">
+                        <Instagram className="w-4 h-4 text-pink-400" />
+                      </div>
+                      <span className="text-white font-medium">Instagram</span>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-neutral-500 text-sm">Followers</span>
+                        <span className="text-pink-400 font-bold">2.8M</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-neutral-500 text-sm">Engagement</span>
+                        <span className="text-pink-400 font-bold">8.5%</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-neutral-500 text-sm">Avg Likes</span>
+                        <span className="text-pink-400 font-bold">125K</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Demographics */}
+                <div className="bg-neutral-800/50 rounded-xl p-4 border border-neutral-700 mt-4">
+                  <div className="text-sm text-neutral-500 mb-3">Audience Demographics</div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-white">68%</div>
+                      <div className="text-xs text-neutral-500">Female</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-white">72%</div>
+                      <div className="text-xs text-neutral-500">Age 18-34</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-white">45%</div>
+                      <div className="text-xs text-neutral-500">USA</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Achievement Badge */}
+                <div className="flex justify-center mt-4">
+                  <div className="inline-flex items-center gap-2 bg-emerald-500/20 text-emerald-400 px-4 py-2 rounded-full text-sm font-medium">
+                    <Star className="w-4 h-4" />
+                    Top 5% Engagement Rate
+                  </div>
+                </div>
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Portfolio Section */}
-      <section className="py-16 md:py-32 px-4 md:px-6 bg-muted/20">
+      {/* Brand Partnerships Showcase */}
+      <section className="py-16 md:py-24 px-4 md:px-6 bg-neutral-900/50">
         <div className="container mx-auto max-w-6xl">
-          <motion.div initial={{
-          opacity: 0,
-          y: 20
-        }} whileInView={{
-          opacity: 1,
-          y: 0
-        }} viewport={{
-          once: true
-        }} className="text-center mb-12 md:mb-16">
-            <span className="text-sm font-mono text-muted-foreground tracking-wider uppercase mb-4 block">
-              {language === 'ar' ? 'أعمالنا' : 'Our Work'}
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="order-2 lg:order-1"
+            >
+              {/* Brands Preview */}
+              <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
+                <div className="text-sm font-mono text-neutral-500 uppercase tracking-wider mb-2">Collaborations</div>
+                <h3 className="text-2xl font-bold text-white mb-6">Brand Partnerships</h3>
+                
+                <div className="space-y-4">
+                  {/* Brand Card 1 */}
+                  <div className="bg-neutral-800/50 rounded-xl p-4 border border-neutral-700 flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center font-bold text-black text-lg">N</div>
+                    <div className="flex-1">
+                      <div className="text-white font-medium">Nike</div>
+                      <div className="text-neutral-500 text-sm">Summer Collection 2024</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm text-neutral-400">2.1M views</div>
+                      <div className="inline-block bg-rose-500/20 text-rose-400 text-xs px-2 py-1 rounded-full">Sponsored</div>
+                    </div>
+                  </div>
+
+                  {/* Brand Card 2 */}
+                  <div className="bg-neutral-800/50 rounded-xl p-4 border border-neutral-700 flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center font-bold text-black text-lg">S</div>
+                    <div className="flex-1">
+                      <div className="text-white font-medium">Sephora</div>
+                      <div className="text-neutral-500 text-sm">Beauty Essentials</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm text-neutral-400">1.8M views</div>
+                      <div className="inline-block bg-purple-500/20 text-purple-400 text-xs px-2 py-1 rounded-full">Review</div>
+                    </div>
+                  </div>
+
+                  {/* Brand Card 3 */}
+                  <div className="bg-neutral-800/50 rounded-xl p-4 border border-neutral-700 flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center font-bold text-black text-lg">Z</div>
+                    <div className="flex-1">
+                      <div className="text-white font-medium">Zara</div>
+                      <div className="text-neutral-500 text-sm">Fall Fashion Line</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm text-neutral-400">1.5M views</div>
+                      <div className="inline-block bg-amber-500/20 text-amber-400 text-xs px-2 py-1 rounded-full">Collab</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Brand Logos */}
+                <div className="mt-6 pt-4 border-t border-neutral-800">
+                  <div className="text-xs text-neutral-500 mb-3">Trusted by leading brands</div>
+                  <div className="flex gap-6 items-center justify-center opacity-50">
+                    {['NIKE', 'CHANEL', 'GUCCI', 'PRADA'].map((brand, i) => (
+                      <div key={i} className="text-white font-bold text-sm tracking-wider">{brand}</div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="order-1 lg:order-2"
+            >
+              <span className="text-sm font-mono text-rose-400 tracking-wider uppercase mb-4 block">
+                Partnerships Section
+              </span>
+              <h2 className="text-3xl md:text-4xl font-serif font-bold mb-4">
+                Brand <span className="text-rose-400">Collaborations</span>
+              </h2>
+              <p className="text-neutral-400 mb-6">
+                Showcase your brand partnerships to attract new collaborations. Display campaign results, view counts, and partnership types to demonstrate your value to potential brand partners.
+              </p>
+              <ul className="space-y-3">
+                {['Campaign performance metrics', 'Partnership type badges', 'Brand logo showcase', 'Results-driven display'].map((item, i) => (
+                  <li key={i} className="flex items-center gap-3 text-neutral-300">
+                    <CheckCircle className="w-5 h-5 text-rose-400" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Portfolio Gallery Showcase */}
+      <section className="py-16 md:py-24 px-4 md:px-6">
+        <div className="container mx-auto max-w-6xl">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+            >
+              <span className="text-sm font-mono text-rose-400 tracking-wider uppercase mb-4 block">
+                Content Gallery
+              </span>
+              <h2 className="text-3xl md:text-4xl font-serif font-bold mb-4">
+                Recent <span className="text-rose-400">Content</span>
+              </h2>
+              <p className="text-neutral-400 mb-6">
+                Display your best-performing content beautifully. Your portfolio gallery showcases your work with platform badges, view counts, and engagement metrics.
+              </p>
+              <ul className="space-y-3">
+                {['Interactive content grid', 'Platform-specific badges', 'Performance overlays', 'Filterable by content type'].map((item, i) => (
+                  <li key={i} className="flex items-center gap-3 text-neutral-300">
+                    <CheckCircle className="w-5 h-5 text-rose-400" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+            >
+              {/* Portfolio Preview */}
+              <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
+                <div className="text-sm font-mono text-neutral-500 uppercase tracking-wider mb-2">Portfolio</div>
+                <h3 className="text-2xl font-bold text-white mb-6">Recent Content</h3>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { platform: 'tiktok', views: '2.1M', likes: '245K', color: 'cyan' },
+                    { platform: 'instagram', views: '1.8M', likes: '198K', color: 'pink' },
+                    { platform: 'instagram', views: '1.5M', likes: '167K', color: 'pink' },
+                    { platform: 'tiktok', views: '1.2M', likes: '134K', color: 'cyan' }
+                  ].map((item, i) => (
+                    <div key={i} className="relative aspect-[4/5] rounded-xl bg-neutral-800 overflow-hidden group cursor-pointer">
+                      {/* Placeholder gradient */}
+                      <div className={`absolute inset-0 bg-gradient-to-br ${item.color === 'cyan' ? 'from-cyan-900/50 to-neutral-900' : 'from-pink-900/50 to-neutral-900'}`} />
+                      
+                      {/* Platform badge */}
+                      <div className="absolute top-2 left-2 z-10">
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center ${item.color === 'cyan' ? 'bg-cyan-500' : 'bg-gradient-to-br from-purple-500 to-pink-500'}`}>
+                          {item.platform === 'tiktok' ? <Play className="w-3 h-3 text-white" /> : <Instagram className="w-3 h-3 text-white" />}
+                        </div>
+                      </div>
+                      
+                      {/* Stats overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-3">
+                        <div className="flex gap-3 text-white text-xs">
+                          <span className="flex items-center gap-1">
+                            <Eye className="w-3 h-3" /> {item.views}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Heart className="w-3 h-3" /> {item.likes}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <Button variant="outline" className="w-full mt-4 border-neutral-700 text-white hover:bg-neutral-800">
+                  View All Content
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="py-16 md:py-24 px-4 md:px-6 bg-neutral-900/50">
+        <div className="container mx-auto max-w-6xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
+            <span className="text-sm font-mono text-rose-400 tracking-wider uppercase mb-4 block">
+              What's Included
             </span>
             <h2 className="text-3xl md:text-5xl font-serif font-bold">
-              {language === 'ar' ? 'مشاريع مميزة' : 'Featured Projects'}
+              Everything You Need to <span className="text-rose-400">Stand Out</span>
             </h2>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-            {portfolio.map((project, index) => <motion.div key={index} initial={{
-            opacity: 0,
-            y: 20
-          }} whileInView={{
-            opacity: 1,
-            y: 0
-          }} viewport={{
-            once: true
-          }} transition={{
-            delay: index * 0.1,
-            duration: 0.5
-          }} className="aspect-[4/5] rounded-2xl bg-muted/50 border border-border overflow-hidden group cursor-pointer relative">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Brain className="w-16 h-16 text-muted-foreground/20" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {features.map((feature, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                className="p-6 rounded-2xl bg-neutral-800/30 border border-neutral-800 hover:bg-neutral-800/50 transition-all duration-300 group"
+              >
+                <div className="w-12 h-12 rounded-xl bg-rose-500/10 flex items-center justify-center mb-4 group-hover:bg-rose-500/20 transition-colors">
+                  <feature.icon className="w-6 h-6 text-rose-400" />
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-t from-background/90 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
-                  <div>
-                    <h3 className="text-lg font-bold mb-1">{project.title}</h3>
-                    <p className="text-sm text-muted-foreground">{project.category}</p>
-                  </div>
-                </div>
-              </motion.div>)}
+                <h3 className="text-lg font-bold mb-2 text-white">{feature.title}</h3>
+                <p className="text-sm text-neutral-400 leading-relaxed">{feature.description}</p>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* Process Section */}
-      <section className="py-16 md:py-32 px-4 md:px-6">
+      <section className="py-16 md:py-24 px-4 md:px-6">
         <div className="container mx-auto max-w-6xl">
-          <motion.div initial={{
-          opacity: 0,
-          y: 20
-        }} whileInView={{
-          opacity: 1,
-          y: 0
-        }} viewport={{
-          once: true
-        }} className="text-center mb-12 md:mb-16">
-            <span className="text-sm font-mono text-muted-foreground tracking-wider uppercase mb-4 block">
-              {language === 'ar' ? 'كيف نعمل' : 'Our Process'}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
+            <span className="text-sm font-mono text-rose-400 tracking-wider uppercase mb-4 block">
+              Our Process
             </span>
             <h2 className="text-3xl md:text-5xl font-serif font-bold">
-              {language === 'ar' ? 'من الفكرة إلى الإطلاق' : 'From Idea to Launch'}
+              From Idea to <span className="text-rose-400">Launch</span>
             </h2>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            {process.map((step, index) => <motion.div key={index} initial={{
-            opacity: 0,
-            y: 20
-          }} whileInView={{
-            opacity: 1,
-            y: 0
-          }} viewport={{
-            once: true
-          }} transition={{
-            delay: index * 0.15,
-            duration: 0.5
-          }} className="text-center md:text-left">
-                <div className="text-4xl md:text-5xl font-bold font-mono text-muted-foreground/30 mb-4">{step.step}</div>
-                <h3 className="text-xl font-bold mb-2">{step.title}</h3>
-                <p className="text-sm text-muted-foreground">{step.description}</p>
-              </motion.div>)}
+            {process.map((step, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.15 }}
+                className="text-center md:text-left"
+              >
+                <div className="text-5xl font-bold font-mono text-neutral-800 mb-4">{step.step}</div>
+                <h3 className="text-xl font-bold mb-2 text-white">{step.title}</h3>
+                <p className="text-sm text-neutral-400">{step.description}</p>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Social Proof Section */}
-      
-
       {/* CTA Section */}
-      <section className="py-16 md:py-32 px-4 md:px-6">
+      <section className="py-16 md:py-24 px-4 md:px-6 bg-gradient-to-b from-neutral-900/50 to-neutral-950">
         <div className="container mx-auto max-w-4xl text-center">
-          <motion.div initial={{
-          opacity: 0,
-          y: 20
-        }} whileInView={{
-          opacity: 1,
-          y: 0
-        }} viewport={{
-          once: true
-        }}>
-            <h2 className="text-3xl md:text-5xl lg:text-6xl font-serif font-bold mb-6">
-              {language === 'ar' ? 'مستعد للارتقاء بعلامتك؟' : 'Ready to Elevate Your Brand?'}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-3xl md:text-5xl lg:text-6xl font-serif font-bold mb-6 text-white">
+              Ready to Elevate Your <span className="text-rose-400">Brand</span>?
             </h2>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-              {language === 'ar' ? 'دعنا نصمم لك موقعاً يعكس تميزك ويجذب الفرص التي تستحقها.' : "Let's create a website that reflects your uniqueness and attracts the opportunities you deserve."}
+            <p className="text-lg md:text-xl text-neutral-400 max-w-2xl mx-auto mb-8">
+              Let's create a website that reflects your uniqueness and attracts the opportunities you deserve.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/#contact">
-                <Button size="lg" className="rounded-full px-8 w-full sm:w-auto">
-                  {language === 'ar' ? 'ابدأ مشروعك' : 'Start Your Project'}
+                <Button size="lg" className="rounded-full px-8 w-full sm:w-auto bg-rose-500 hover:bg-rose-600 text-white">
+                  Start Your Project
                 </Button>
               </Link>
               <Link to="/">
-                <Button size="lg" variant="outline" className="rounded-full px-8 w-full sm:w-auto">
-                  {language === 'ar' ? 'تصفح خدماتنا' : 'View All Services'}
+                <Button size="lg" variant="outline" className="rounded-full px-8 w-full sm:w-auto border-neutral-700 text-white hover:bg-neutral-800">
+                  View All Services
                 </Button>
               </Link>
             </div>
@@ -289,18 +623,20 @@ const InfluencerSites = () => {
       </section>
 
       {/* Footer */}
-      <footer className="py-6 border-t border-border">
+      <footer className="py-6 border-t border-neutral-800">
         <div className="container max-w-6xl mx-auto px-6">
           <div className="flex items-center justify-center gap-3">
             <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-              <div className="w-8 h-8 rounded-lg bg-foreground flex items-center justify-center">
-                <Brain className="w-5 h-5 text-background" />
+              <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center">
+                <Brain className="w-5 h-5 text-neutral-950" />
               </div>
-              <span className="text-2xl font-bold">AYN</span>
+              <span className="text-2xl font-bold text-white">AYN</span>
             </Link>
           </div>
         </div>
       </footer>
-    </div>;
+    </div>
+  );
 };
+
 export default InfluencerSites;
