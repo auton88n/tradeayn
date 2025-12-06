@@ -905,48 +905,6 @@ export type Database = {
         }
         Relationships: []
       }
-      webhook_health_metrics: {
-        Row: {
-          created_at: string
-          error_message: string | null
-          failure_count_24h: number | null
-          id: string
-          last_checked_at: string
-          mode_name: string
-          response_time_ms: number | null
-          status: string
-          success_count_24h: number | null
-          updated_at: string
-          webhook_url: string
-        }
-        Insert: {
-          created_at?: string
-          error_message?: string | null
-          failure_count_24h?: number | null
-          id?: string
-          last_checked_at?: string
-          mode_name: string
-          response_time_ms?: number | null
-          status?: string
-          success_count_24h?: number | null
-          updated_at?: string
-          webhook_url: string
-        }
-        Update: {
-          created_at?: string
-          error_message?: string | null
-          failure_count_24h?: number | null
-          id?: string
-          last_checked_at?: string
-          mode_name?: string
-          response_time_ms?: number | null
-          status?: string
-          success_count_24h?: number | null
-          updated_at?: string
-          webhook_url?: string
-        }
-        Relationships: []
-      }
       webhook_rate_limits: {
         Row: {
           created_at: string
@@ -1019,7 +977,6 @@ export type Database = {
         Returns: boolean
       }
       cleanup_location_data: { Args: never; Returns: undefined }
-      cleanup_old_health_metrics: { Args: never; Returns: undefined }
       cleanup_old_security_logs: { Args: never; Returns: undefined }
       cleanup_old_system_reports: { Args: never; Returns: undefined }
       cleanup_security_data: { Args: never; Returns: undefined }

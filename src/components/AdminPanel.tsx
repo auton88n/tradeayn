@@ -5,13 +5,12 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useTheme } from '@/components/theme-provider';
 import { 
-  Crown, RefreshCw, Activity, BarChart3, Settings, Users, Brain, ArrowLeft, Moon, Sun, HeartPulse
+  Crown, RefreshCw, Activity, BarChart3, Settings, Users, Brain, ArrowLeft, Moon, Sun
 } from 'lucide-react';
 import { AdminDashboard } from './admin/AdminDashboard';
 import { UserManagement } from './admin/UserManagement';
 import { SystemSettings } from './admin/SystemSettings';
 import { RateLimitMonitoring } from './admin/RateLimitMonitoring';
-import { SystemHealthMonitor } from './admin/SystemHealthMonitor';
 import { ErrorBoundary } from './ErrorBoundary';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -74,7 +73,6 @@ const tabs = [
   { id: 'overview', label: 'Dashboard', icon: BarChart3 },
   { id: 'users', label: 'Users', icon: Users },
   { id: 'rate-limits', label: 'Rate Limits', icon: Activity },
-  { id: 'health', label: 'System Health', icon: HeartPulse },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
@@ -111,13 +109,12 @@ export const AdminPanel = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
 
-  // Optimized data fetching with Promise.allSettled for independent queries
+  // Optimized data fetching with better error handling and memoization
   const fetchData = useCallback(async () => {
     setIsLoading(true);
-    
     try {
-      // Use Promise.allSettled so one failing query doesn't block others
-      const results = await Promise.allSettled([
+      // Fetch access grants and profiles with optimized queries
+      const [accessResult, profilesResult, usageResult, todayUsageResult] = await Promise.all([
         supabase
           .from('access_grants')
           .select('*')
@@ -129,6 +126,8 @@ export const AdminPanel = () => {
           .select('id, user_id, company_name, contact_person, created_at')
           .limit(1000),
         
+        supabase.rpc('get_usage_stats'),
+        
         supabase
           .from('usage_logs')
           .select('usage_count, created_at')
@@ -136,64 +135,44 @@ export const AdminPanel = () => {
           .limit(500)
       ]);
 
-      // Extract results safely - each query is independent
-      const accessResult = results[0].status === 'fulfilled' ? results[0].value : null;
-      const profilesResult = results[1].status === 'fulfilled' ? results[1].value : null;
-      const todayUsageResult = results[2].status === 'fulfilled' ? results[2].value : null;
-
-      // Debug logging
-      if (results[0].status === 'rejected') console.warn('Admin fetch - access_grants failed:', results[0].reason);
-      if (results[1].status === 'rejected') console.warn('Admin fetch - profiles failed:', results[1].reason);
-      if (results[2].status === 'rejected') console.warn('Admin fetch - usage_logs failed:', results[2].reason);
-      
-      if (accessResult?.error) console.warn('Admin fetch - access_grants error:', accessResult.error.message);
-      if (profilesResult?.error) console.warn('Admin fetch - profiles error:', profilesResult.error.message);
-      if (todayUsageResult?.error) console.warn('Admin fetch - usage_logs error:', todayUsageResult.error.message);
-
-      // Use empty arrays as fallback for failed queries
-      const accessData = accessResult?.data || [];
-      const profilesData = profilesResult?.data || [];
-      const todayUsageData = todayUsageResult?.data || [];
+      if (accessResult.error) throw accessResult.error;
+      if (profilesResult.error) throw profilesResult.error;
       
       // Create a map of user_id to profile for efficient lookup
-      const profilesMap = profilesData.reduce((acc: Record<string, Profile>, profile: Profile) => {
+      const profilesMap = (profilesResult.data || []).reduce((acc, profile) => {
         acc[profile.user_id] = profile;
         return acc;
       }, {} as Record<string, Profile>);
 
-      // Enrich access data with profile information
-      const enrichedAccessData = accessData.map((grant) => ({
+      // Create a map of user_id to email from usage stats
+      const emailsMap = (usageResult.data || []).reduce((acc: Record<string, string>, stat: UsageStats) => {
+        if (stat.user_id && stat.user_email) {
+          acc[stat.user_id] = stat.user_email;
+        }
+        return acc;
+      }, {} as Record<string, string>);
+
+      // Enrich access data with profile information and email
+      const enrichedAccessData = (accessResult.data || []).map(grant => ({
         ...grant,
         profiles: profilesMap[grant.user_id] || null,
-        user_email: null // Email not available without auth.users access
+        user_email: emailsMap[grant.user_id] || null
       }));
       
       setAllUsers(enrichedAccessData);
 
-      // Build usage stats client-side from access_grants data (no RPC call needed)
-      const clientUsageStats: UsageStats[] = accessData
-        .filter((grant) => grant.is_active)
-        .map((grant) => ({
-          user_id: grant.user_id,
-          user_email: 'N/A', // Email not available from client
-          company_name: profilesMap[grant.user_id]?.company_name || 'Unknown',
-          monthly_limit: grant.monthly_limit || 0,
-          current_usage: grant.current_month_usage || 0,
-          usage_percentage: grant.monthly_limit 
-            ? Math.round(((grant.current_month_usage || 0) / grant.monthly_limit) * 100) 
-            : 0,
-          reset_date: grant.usage_reset_date || ''
-        }));
-      
-      setUsageStats(clientUsageStats);
+      if (!usageResult.error && usageResult.data) {
+        setUsageStats(usageResult.data);
+      }
 
-      // Calculate system metrics efficiently
+      // Calculate system metrics efficiently with error handling
       const totalUsers = enrichedAccessData.length;
-      const activeUsers = enrichedAccessData.filter((u) => u.is_active).length;
-      const pendingRequests = enrichedAccessData.filter((u) => !u.is_active && !u.granted_at).length;
-      const todayMessages = todayUsageData.reduce((sum: number, log: { usage_count: number | null }) => sum + (log.usage_count || 0), 0);
-      const totalMessages = clientUsageStats.reduce((sum: number, stat: UsageStats) => sum + (stat.current_usage || 0), 0);
+      const activeUsers = enrichedAccessData.filter(u => u.is_active).length;
+      const pendingRequests = enrichedAccessData.filter(u => !u.is_active && !u.granted_at).length;
+      const todayMessages = todayUsageResult.data?.reduce((sum, log) => sum + (log.usage_count || 0), 0) || 0;
+      const totalMessages = usageResult.data?.reduce((sum: number, stat: UsageStats) => sum + (stat.current_usage || 0), 0) || 0;
       
+      // Set system metrics with calculated values
       setSystemMetrics({
         totalUsers,
         activeUsers,
@@ -203,21 +182,9 @@ export const AdminPanel = () => {
       });
 
     } catch (error) {
-      console.error('Admin panel fetch error:', error);
-      // Set empty defaults so panel still loads
-      setAllUsers([]);
-      setUsageStats([]);
-      setSystemMetrics({
-        totalUsers: 0,
-        activeUsers: 0,
-        pendingRequests: 0,
-        totalMessages: 0,
-        todayMessages: 0
-      });
-      
       toast({
-        title: "Warning",
-        description: "Unable to fetch some admin data. Showing available data.",
+        title: "Error",
+        description: "Unable to fetch admin data. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -547,12 +514,6 @@ export const AdminPanel = () => {
             {activeTab === 'rate-limits' && (
               <ErrorBoundary>
                 <RateLimitMonitoring />
-              </ErrorBoundary>
-            )}
-
-            {activeTab === 'health' && (
-              <ErrorBoundary>
-                <SystemHealthMonitor />
               </ErrorBoundary>
             )}
 
