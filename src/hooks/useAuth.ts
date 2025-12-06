@@ -21,6 +21,7 @@ export const useAuth = (user: User): UseAuthReturn => {
   const isInitialized = useRef(false);
   const hasTrackedDevice = useRef(false);
   const authFailureCount = useRef(0);
+  const isAuthRunning = useRef(false); // Track if auth checks are currently running
   
   // Refs for stable callback references (prevents dependency changes)
   const checkAccessRef = useRef<() => Promise<void>>();
@@ -186,12 +187,12 @@ export const useAuth = (user: User): UseAuthReturn => {
       return;
     }
     
-    // Prevent double initialization
-    if (isInitialized.current) {
-      setIsAuthLoading(false);
+    // Check if already running OR already initialized - NO loading state change here!
+    if (isAuthRunning.current || isInitialized.current) {
       return;
     }
     
+    isAuthRunning.current = true;
     isInitialized.current = true;
     
     // Call callbacks via refs (stable, no dependency changes)
@@ -201,6 +202,7 @@ export const useAuth = (user: User): UseAuthReturn => {
       loadUserProfileRef.current?.(),
       checkTermsAcceptanceRef.current?.()
     ]).finally(() => {
+      isAuthRunning.current = false;
       setIsAuthLoading(false);
     });
     
@@ -210,8 +212,10 @@ export const useAuth = (user: User): UseAuthReturn => {
       setTimeout(() => trackDeviceLogin(user.id), 0);
     }
     
-    // DON'T reset isInitialized in cleanup - keep it stable
-    return () => {};
+    // Cleanup: Reset running state but keep initialized
+    return () => {
+      isAuthRunning.current = false;
+    };
   }, [user.id]); // Only user.id - no callback dependencies
 
   return {
