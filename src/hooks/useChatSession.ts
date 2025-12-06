@@ -20,7 +20,7 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
         .select('id, content, created_at, sender, session_id')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
-        .limit(100);
+        .limit(200);
 
       if (error) {
         console.error('Error loading recent chats:', error);
@@ -83,7 +83,7 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
           };
         })
         .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()) // Sort by most recent
-        .slice(0, 10); // Limit to latest 10 sessions
+        .slice(0, 20); // Limit to latest 20 sessions
 
       setRecentChats(chatHistories);
     } catch (error) {

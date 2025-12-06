@@ -9,9 +9,51 @@ import { useState, useEffect, lazy, Suspense } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLoader } from '@/components/ui/page-loader';
+import { Button } from '@/components/ui/button';
+import { RefreshCw } from 'lucide-react';
 
-// Lazy load AdminPanel (only needed for admins)
-const AdminPanel = lazy(() => import('./AdminPanel').then(module => ({ default: module.AdminPanel })));
+// Lazy load AdminPanel with retry logic for cache/network failures
+const lazyRetry = <T extends React.ComponentType<unknown>>(
+  componentImport: () => Promise<{ default: T }>,
+  retries = 3,
+  delay = 1000
+): Promise<{ default: T }> => {
+  return new Promise((resolve, reject) => {
+    const attempt = (retriesLeft: number) => {
+      componentImport()
+        .then(resolve)
+        .catch((error) => {
+          if (retriesLeft <= 0) {
+            reject(error);
+            return;
+          }
+          // Clear module cache and retry after delay
+          setTimeout(() => {
+            attempt(retriesLeft - 1);
+          }, delay);
+        });
+    };
+    attempt(retries);
+  });
+};
+
+const AdminPanel = lazy(() => 
+  lazyRetry(() => import('./AdminPanel').then(module => ({ default: module.AdminPanel })))
+);
+
+// Fallback component for admin panel load failures
+const AdminLoadError = ({ onRetry }: { onRetry: () => void }) => (
+  <div className="flex flex-col items-center justify-center min-h-screen gap-4 p-6">
+    <div className="text-center space-y-2">
+      <h2 className="text-xl font-semibold text-foreground">Failed to load Admin Panel</h2>
+      <p className="text-muted-foreground">This may be due to a network issue or cached files.</p>
+    </div>
+    <Button onClick={onRetry} className="gap-2">
+      <RefreshCw className="h-4 w-4" />
+      Reload Page
+    </Button>
+  </div>
+);
 
 interface DashboardProps {
   user: User;
@@ -21,12 +63,17 @@ interface DashboardProps {
 export default function Dashboard({ user, session }: DashboardProps) {
   const auth = useAuth(user, session);
   const [activeView, setActiveView] = useState<'chat' | 'admin'>('chat');
+  const [adminLoadError, setAdminLoadError] = useState(false);
   const [maintenanceConfig, setMaintenanceConfig] = useState({
     enableMaintenance: false,
     maintenanceMessage: 'System is currently under maintenance.',
     maintenanceStartTime: '',
     maintenanceEndTime: '',
   });
+
+  const handleReloadPage = () => {
+    window.location.reload();
+  };
 
   // Session timeout with 30-minute inactivity auto-logout
   const sessionTimeout = useSessionTimeout({
@@ -139,9 +186,13 @@ export default function Dashboard({ user, session }: DashboardProps) {
       {/* Main Content - conditionally render based on active view */}
       {activeView === 'admin' && auth.isAdmin ? (
         <div className="min-h-screen p-6 pt-16 bg-background">
-          <Suspense fallback={<AdminLoader />}>
-            <AdminPanel />
-          </Suspense>
+          {adminLoadError ? (
+            <AdminLoadError onRetry={handleReloadPage} />
+          ) : (
+            <Suspense fallback={<AdminLoader />}>
+              <AdminPanel />
+            </Suspense>
+          )}
         </div>
       ) : (
         <SidebarProvider>
