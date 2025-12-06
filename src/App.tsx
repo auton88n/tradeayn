@@ -18,6 +18,8 @@ const Settings = lazy(() => import("./pages/Settings"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const InfluencerSites = lazy(() => import("./pages/services/InfluencerSites"));
+const AIAgents = lazy(() => import("./pages/services/AIAgents"));
+const Automation = lazy(() => import("./pages/services/Automation"));
 
 const queryClient = new QueryClient();
 
@@ -39,6 +41,8 @@ const App = () => (
                       <Route path="/settings" element={<Settings />} />
                       <Route path="/reset-password" element={<ResetPassword />} />
                       <Route path="/services/influencer-sites" element={<InfluencerSites />} />
+                      <Route path="/services/ai-agents" element={<AIAgents />} />
+                      <Route path="/services/automation" element={<Automation />} />
                       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                       <Route path="*" element={<NotFound />} />
                     </Routes>
