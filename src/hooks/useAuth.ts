@@ -18,7 +18,8 @@ export const useAuth = (user: User): UseAuthReturn => {
   const { t } = useLanguage();
   
   // Refs for preventing multiple initializations and tracking failures
-  const isInitialized = useRef(false);
+  // Track which user was initialized (survives StrictMode remounts)
+  const lastInitializedUserId = useRef<string | null>(null);
   const hasTrackedDevice = useRef(false);
   const authFailureCount = useRef(0);
   
@@ -173,13 +174,14 @@ export const useAuth = (user: User): UseAuthReturn => {
       return;
     }
     
-    // Prevent duplicate runs
-    if (isInitialized.current) {
-      setIsAuthLoading(false); // Ensure loading is false on re-mount
+    // Skip if already initialized for THIS user (survives StrictMode double-mount)
+    if (lastInitializedUserId.current === user.id) {
+      setIsAuthLoading(false);
       return;
     }
     
-    isInitialized.current = true;
+    // Mark this user as initialized
+    lastInitializedUserId.current = user.id;
     
     // Mounted flag to prevent state updates after unmount
     let isMounted = true;
@@ -243,11 +245,11 @@ export const useAuth = (user: User): UseAuthReturn => {
       setTimeout(() => trackDeviceLogin(user.id), 0);
     }
     
-    // Cleanup
+    // Cleanup - only prevent stale state updates, keep user ID ref intact
     return () => {
       isMounted = false;
       clearTimeout(safetyTimeout);
-      isInitialized.current = false; // Reset so second StrictMode mount runs checks
+      // Don't reset lastInitializedUserId - it should persist across StrictMode remounts
     };
   }, [user.id]);
 
