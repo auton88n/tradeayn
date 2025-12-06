@@ -16,6 +16,17 @@ import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import type { SidebarProps } from '@/types/dashboard.types';
 import { useSoundContextOptional } from '@/contexts/SoundContext';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 export const Sidebar = ({
   userName,
   userEmail,
@@ -34,6 +45,7 @@ export const Sidebar = ({
   onToggleChatSelection,
   onSelectAllChats,
   onDeleteSelected,
+  onDeleteAllChats,
   onShowChatSelection,
   onLogout,
   onAvatarUpdated,
@@ -56,6 +68,7 @@ export const Sidebar = ({
     return stored ? new Set(JSON.parse(stored)) : new Set();
   });
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [isDeletingAll, setIsDeletingAll] = useState(false);
 
   // Control profile popover during tutorial
   useEffect(() => {
@@ -169,9 +182,40 @@ export const Sidebar = ({
               Recent Chats
             </span>
             {recentChats.length > 0 && <div className="flex gap-1">
-                {!showChatSelection ? <Button onClick={() => onShowChatSelection(true)} variant="ghost" size="sm" className="h-6 px-2 text-xs text-foreground/60 hover:text-background hover:bg-foreground">
-                    Select
-                  </Button> : <>
+                {!showChatSelection ? <>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-destructive/70 hover:text-destructive hover:bg-destructive/10">
+                          Clear All
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="rounded-2xl">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete All Chat History?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently delete all {recentChats.length} conversation(s). This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={async () => {
+                              setIsDeletingAll(true);
+                              await onDeleteAllChats();
+                              setIsDeletingAll(false);
+                            }}
+                            className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            {isDeletingAll ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
+                            Delete All
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                    <Button onClick={() => onShowChatSelection(true)} variant="ghost" size="sm" className="h-6 px-2 text-xs text-foreground/60 hover:text-background hover:bg-foreground">
+                      Select
+                    </Button>
+                  </> : <>
                     <Button onClick={onSelectAllChats} variant="ghost" size="sm" className="h-6 px-2 text-xs hover:bg-foreground hover:text-background">
                       {selectedChats.size === recentChats.length ? 'None' : 'All'}
                     </Button>

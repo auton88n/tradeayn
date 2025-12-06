@@ -186,6 +186,7 @@ export interface UseChatSessionReturn {
   startNewChat: () => void;
   loadChat: (chatHistory: ChatHistory) => Message[];
   deleteSelectedChats: () => Promise<void>;
+  deleteAllChats: () => Promise<void>;
   toggleChatSelection: (index: number) => void;
   selectAllChats: () => void;
 }
@@ -264,6 +265,7 @@ export interface SidebarProps {
   onToggleChatSelection: (index: number) => void;
   onSelectAllChats: () => void;
   onDeleteSelected: () => Promise<void>;
+  onDeleteAllChats: () => Promise<void>;
   onShowChatSelection: (show: boolean) => void;
   onLogout: () => Promise<void>;
   onAvatarUpdated?: () => void;
