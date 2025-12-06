@@ -22,6 +22,12 @@ export const useAuth = (user: User): UseAuthReturn => {
   const hasTrackedDevice = useRef(false);
   const authFailureCount = useRef(0);
   
+  // Refs for stable callback references (prevents dependency changes)
+  const checkAccessRef = useRef<() => Promise<void>>();
+  const checkAdminRoleRef = useRef<() => Promise<void>>();
+  const loadUserProfileRef = useRef<() => Promise<void>>();
+  const checkTermsAcceptanceRef = useRef<() => Promise<void>>();
+  
   // Stable error handler using ref pattern
   const handleAuthFailure = useCallback((error: { code?: string; message?: string }, context: string) => {
     console.error(`Auth error in ${context}:`, error);
@@ -164,18 +170,36 @@ export const useAuth = (user: User): UseAuthReturn => {
     }
   }, [user.id, toast, t]);
 
+  // Keep refs updated with latest callbacks
+  useEffect(() => {
+    checkAccessRef.current = checkAccess;
+    checkAdminRoleRef.current = checkAdminRole;
+    loadUserProfileRef.current = loadUserProfile;
+    checkTermsAcceptanceRef.current = checkTermsAcceptance;
+  }, [checkAccess, checkAdminRole, loadUserProfile, checkTermsAcceptance]);
+
   // Load all auth data on mount - runs exactly once per user
   useEffect(() => {
-    // Prevent double initialization from React StrictMode
-    if (isInitialized.current) return;
+    // Safety check
+    if (!user?.id) {
+      setIsAuthLoading(false);
+      return;
+    }
+    
+    // Prevent double initialization
+    if (isInitialized.current) {
+      setIsAuthLoading(false);
+      return;
+    }
+    
     isInitialized.current = true;
     
-    // Run all auth checks in parallel for faster loading
+    // Call callbacks via refs (stable, no dependency changes)
     Promise.all([
-      checkAccess(),
-      checkAdminRole(),
-      loadUserProfile(),
-      checkTermsAcceptance()
+      checkAccessRef.current?.(),
+      checkAdminRoleRef.current?.(),
+      loadUserProfileRef.current?.(),
+      checkTermsAcceptanceRef.current?.()
     ]).finally(() => {
       setIsAuthLoading(false);
     });
@@ -186,11 +210,9 @@ export const useAuth = (user: User): UseAuthReturn => {
       setTimeout(() => trackDeviceLogin(user.id), 0);
     }
     
-    // Cleanup: Reset ref for StrictMode re-mount
-    return () => {
-      isInitialized.current = false;
-    };
-  }, [user.id, checkAccess, checkAdminRole, loadUserProfile, checkTermsAcceptance]);
+    // DON'T reset isInitialized in cleanup - keep it stable
+    return () => {};
+  }, [user.id]); // Only user.id - no callback dependencies
 
   return {
     hasAccess,
