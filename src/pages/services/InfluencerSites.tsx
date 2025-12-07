@@ -510,25 +510,33 @@ const InfluencerSites = () => {
                   platform: 'tiktok',
                   views: '2.1M',
                   likes: '245K',
-                  color: 'cyan'
+                  color: 'cyan',
+                  image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400&h=500&fit=crop'
                 }, {
                   platform: 'instagram',
                   views: '1.8M',
                   likes: '198K',
-                  color: 'pink'
+                  color: 'pink',
+                  image: 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=400&h=500&fit=crop'
                 }, {
                   platform: 'instagram',
                   views: '1.5M',
                   likes: '167K',
-                  color: 'pink'
+                  color: 'pink',
+                  image: 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=400&h=500&fit=crop'
                 }, {
                   platform: 'tiktok',
                   views: '1.2M',
                   likes: '134K',
-                  color: 'cyan'
+                  color: 'cyan',
+                  image: 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=400&h=500&fit=crop'
                 }].map((item, i) => <div key={i} className="relative aspect-[4/5] rounded-xl bg-neutral-800 overflow-hidden group cursor-pointer">
-                      {/* Placeholder gradient */}
-                      <div className={`absolute inset-0 bg-gradient-to-br ${item.color === 'cyan' ? 'from-cyan-900/50 to-neutral-900' : 'from-pink-900/50 to-neutral-900'}`} />
+                      {/* Content image */}
+                      <img 
+                        src={item.image} 
+                        alt="Content" 
+                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
                       
                       {/* Platform badge */}
                       <div className="absolute top-2 left-2 z-10">
