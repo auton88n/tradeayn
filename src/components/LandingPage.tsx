@@ -11,7 +11,6 @@ import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { TypewriterText } from './TypewriterText';
-import { ConversationExamples } from './ConversationExamples';
 import { Hero } from './Hero';
 import { z } from 'zod';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
