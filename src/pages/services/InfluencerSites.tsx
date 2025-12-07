@@ -2,50 +2,50 @@ import { Link } from 'react-router-dom';
 import { Brain, ArrowLeft, Palette, Smartphone, Zap, Layout, TrendingUp, Globe, Instagram, Play, Heart, Eye, BarChart3, Users, Star, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
-
 const InfluencerSites = () => {
-  const features = [
-    {
-      icon: Palette,
-      title: 'Custom Luxury Design',
-      description: 'Unique design that reflects your personal brand and sets you apart from competitors'
-    },
-    {
-      icon: Smartphone,
-      title: 'Mobile First',
-      description: 'Perfect experience across all devices, from mobile to desktop'
-    },
-    {
-      icon: Zap,
-      title: 'Lightning Fast',
-      description: 'Fast loading keeps visitors engaged and improves your search rankings'
-    },
-    {
-      icon: Layout,
-      title: 'Interactive Portfolio',
-      description: 'Showcase your work professionally to attract brand partnerships'
-    },
-    {
-      icon: TrendingUp,
-      title: 'Conversion Optimized',
-      description: 'Pages designed to convert visitors into clients and partnerships'
-    },
-    {
-      icon: Globe,
-      title: 'Multi-language Support',
-      description: 'Reach a global audience with multi-language content support'
-    }
-  ];
-
-  const process = [
-    { step: '01', title: 'Discovery', description: 'We understand your brand and goals' },
-    { step: '02', title: 'Design', description: 'We craft a unique experience for you' },
-    { step: '03', title: 'Development', description: 'We build with cutting-edge tech' },
-    { step: '04', title: 'Launch', description: 'We launch your site to the world' }
-  ];
-
-  return (
-    <div className="min-h-screen bg-neutral-950 text-white">
+  const features = [{
+    icon: Palette,
+    title: 'Custom Luxury Design',
+    description: 'Unique design that reflects your personal brand and sets you apart from competitors'
+  }, {
+    icon: Smartphone,
+    title: 'Mobile First',
+    description: 'Perfect experience across all devices, from mobile to desktop'
+  }, {
+    icon: Zap,
+    title: 'Lightning Fast',
+    description: 'Fast loading keeps visitors engaged and improves your search rankings'
+  }, {
+    icon: Layout,
+    title: 'Interactive Portfolio',
+    description: 'Showcase your work professionally to attract brand partnerships'
+  }, {
+    icon: TrendingUp,
+    title: 'Conversion Optimized',
+    description: 'Pages designed to convert visitors into clients and partnerships'
+  }, {
+    icon: Globe,
+    title: 'Multi-language Support',
+    description: 'Reach a global audience with multi-language content support'
+  }];
+  const process = [{
+    step: '01',
+    title: 'Discovery',
+    description: 'We understand your brand and goals'
+  }, {
+    step: '02',
+    title: 'Design',
+    description: 'We craft a unique experience for you'
+  }, {
+    step: '03',
+    title: 'Development',
+    description: 'We build with cutting-edge tech'
+  }, {
+    step: '04',
+    title: 'Launch',
+    description: 'We launch your site to the world'
+  }];
+  return <div className="min-h-screen bg-neutral-950 text-white">
       {/* Navigation */}
       <nav className="fixed top-4 md:top-6 left-4 md:left-6 z-50">
         <Link to="/">
@@ -59,15 +59,16 @@ const InfluencerSites = () => {
       {/* Hero Section */}
       <section className="pt-24 pb-16 md:pt-32 md:pb-24 px-4 md:px-6">
         <div className="container mx-auto max-w-6xl">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center"
-          >
-            <span className="text-sm font-mono text-neutral-500 tracking-wider uppercase mb-4 block">
-              01 — Our Services
-            </span>
+          <motion.div initial={{
+          opacity: 0,
+          y: 30
+        }} animate={{
+          opacity: 1,
+          y: 0
+        }} transition={{
+          duration: 0.6
+        }} className="text-center">
+            
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-serif font-bold mb-6 leading-tight">
               Premium Influencer
               <br />
@@ -88,12 +89,15 @@ const InfluencerSites = () => {
       {/* What You'll Get - Hero Section Showcase */}
       <section className="py-16 md:py-24 px-4 md:px-6 bg-neutral-900/50">
         <div className="container mx-auto max-w-6xl">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-12"
-          >
+          <motion.div initial={{
+          opacity: 0,
+          y: 20
+        }} whileInView={{
+          opacity: 1,
+          y: 0
+        }} viewport={{
+          once: true
+        }} className="text-center mb-12">
             <span className="text-sm font-mono text-rose-400 tracking-wider uppercase mb-4 block">
               What You'll Get
             </span>
@@ -106,13 +110,17 @@ const InfluencerSites = () => {
           </motion.div>
 
           {/* Hero Preview Mockup */}
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
-            className="relative max-w-4xl mx-auto"
-          >
+          <motion.div initial={{
+          opacity: 0,
+          y: 40
+        }} whileInView={{
+          opacity: 1,
+          y: 0
+        }} viewport={{
+          once: true
+        }} transition={{
+          delay: 0.2
+        }} className="relative max-w-4xl mx-auto">
             <div className="rounded-2xl overflow-hidden border border-neutral-800 bg-neutral-900 shadow-2xl">
               {/* Browser Chrome */}
               <div className="flex items-center gap-2 px-4 py-3 border-b border-neutral-800 bg-neutral-900">
@@ -178,13 +186,17 @@ const InfluencerSites = () => {
             </div>
 
             {/* Floating Feature Cards */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.4 }}
-              className="absolute -left-4 md:-left-16 top-1/2 -translate-y-1/2 hidden md:block"
-            >
+            <motion.div initial={{
+            opacity: 0,
+            x: -20
+          }} whileInView={{
+            opacity: 1,
+            x: 0
+          }} viewport={{
+            once: true
+          }} transition={{
+            delay: 0.4
+          }} className="absolute -left-4 md:-left-16 top-1/2 -translate-y-1/2 hidden md:block">
               <div className="bg-neutral-800/90 backdrop-blur-sm border border-neutral-700 rounded-xl p-4 shadow-xl">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center">
@@ -198,13 +210,17 @@ const InfluencerSites = () => {
               </div>
             </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.5 }}
-              className="absolute -right-4 md:-right-16 top-1/3 hidden md:block"
-            >
+            <motion.div initial={{
+            opacity: 0,
+            x: 20
+          }} whileInView={{
+            opacity: 1,
+            x: 0
+          }} viewport={{
+            once: true
+          }} transition={{
+            delay: 0.5
+          }} className="absolute -right-4 md:-right-16 top-1/3 hidden md:block">
               <div className="bg-neutral-800/90 backdrop-blur-sm border border-neutral-700 rounded-xl p-4 shadow-xl">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-cyan-600 flex items-center justify-center">
@@ -225,11 +241,15 @@ const InfluencerSites = () => {
       <section className="py-16 md:py-24 px-4 md:px-6">
         <div className="container mx-auto max-w-6xl">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-            >
+            <motion.div initial={{
+            opacity: 0,
+            x: -30
+          }} whileInView={{
+            opacity: 1,
+            x: 0
+          }} viewport={{
+            once: true
+          }}>
               <span className="text-sm font-mono text-rose-400 tracking-wider uppercase mb-4 block">
                 Analytics Dashboard
               </span>
@@ -240,21 +260,22 @@ const InfluencerSites = () => {
                 Show brands exactly why they should work with you. Your analytics dashboard displays real-time follower counts, engagement rates, and audience demographics across all platforms.
               </p>
               <ul className="space-y-3">
-                {['Cross-platform analytics', 'Real-time engagement tracking', 'Audience demographics breakdown', 'Achievement badges'].map((item, i) => (
-                  <li key={i} className="flex items-center gap-3 text-neutral-300">
+                {['Cross-platform analytics', 'Real-time engagement tracking', 'Audience demographics breakdown', 'Achievement badges'].map((item, i) => <li key={i} className="flex items-center gap-3 text-neutral-300">
                     <CheckCircle className="w-5 h-5 text-rose-400" />
                     {item}
-                  </li>
-                ))}
+                  </li>)}
               </ul>
             </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="relative"
-            >
+            <motion.div initial={{
+            opacity: 0,
+            x: 30
+          }} whileInView={{
+            opacity: 1,
+            x: 0
+          }} viewport={{
+            once: true
+          }} className="relative">
               {/* Stats Preview */}
               <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 space-y-4">
                 <div className="text-sm font-mono text-neutral-500 uppercase tracking-wider">Analytics</div>
@@ -346,12 +367,15 @@ const InfluencerSites = () => {
       <section className="py-16 md:py-24 px-4 md:px-6 bg-neutral-900/50">
         <div className="container mx-auto max-w-6xl">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="order-2 lg:order-1"
-            >
+            <motion.div initial={{
+            opacity: 0,
+            x: -30
+          }} whileInView={{
+            opacity: 1,
+            x: 0
+          }} viewport={{
+            once: true
+          }} className="order-2 lg:order-1">
               {/* Brands Preview */}
               <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
                 <div className="text-sm font-mono text-neutral-500 uppercase tracking-wider mb-2">Collaborations</div>
@@ -402,20 +426,21 @@ const InfluencerSites = () => {
                 <div className="mt-6 pt-4 border-t border-neutral-800">
                   <div className="text-xs text-neutral-500 mb-3">Trusted by leading brands</div>
                   <div className="flex gap-6 items-center justify-center opacity-50">
-                    {['NIKE', 'CHANEL', 'GUCCI', 'PRADA'].map((brand, i) => (
-                      <div key={i} className="text-white font-bold text-sm tracking-wider">{brand}</div>
-                    ))}
+                    {['NIKE', 'CHANEL', 'GUCCI', 'PRADA'].map((brand, i) => <div key={i} className="text-white font-bold text-sm tracking-wider">{brand}</div>)}
                   </div>
                 </div>
               </div>
             </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="order-1 lg:order-2"
-            >
+            <motion.div initial={{
+            opacity: 0,
+            x: 30
+          }} whileInView={{
+            opacity: 1,
+            x: 0
+          }} viewport={{
+            once: true
+          }} className="order-1 lg:order-2">
               <span className="text-sm font-mono text-rose-400 tracking-wider uppercase mb-4 block">
                 Partnerships Section
               </span>
@@ -426,12 +451,10 @@ const InfluencerSites = () => {
                 Showcase your brand partnerships to attract new collaborations. Display campaign results, view counts, and partnership types to demonstrate your value to potential brand partners.
               </p>
               <ul className="space-y-3">
-                {['Campaign performance metrics', 'Partnership type badges', 'Brand logo showcase', 'Results-driven display'].map((item, i) => (
-                  <li key={i} className="flex items-center gap-3 text-neutral-300">
+                {['Campaign performance metrics', 'Partnership type badges', 'Brand logo showcase', 'Results-driven display'].map((item, i) => <li key={i} className="flex items-center gap-3 text-neutral-300">
                     <CheckCircle className="w-5 h-5 text-rose-400" />
                     {item}
-                  </li>
-                ))}
+                  </li>)}
               </ul>
             </motion.div>
           </div>
@@ -442,11 +465,15 @@ const InfluencerSites = () => {
       <section className="py-16 md:py-24 px-4 md:px-6">
         <div className="container mx-auto max-w-6xl">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-            >
+            <motion.div initial={{
+            opacity: 0,
+            x: -30
+          }} whileInView={{
+            opacity: 1,
+            x: 0
+          }} viewport={{
+            once: true
+          }}>
               <span className="text-sm font-mono text-rose-400 tracking-wider uppercase mb-4 block">
                 Content Gallery
               </span>
@@ -457,33 +484,49 @@ const InfluencerSites = () => {
                 Display your best-performing content beautifully. Your portfolio gallery showcases your work with platform badges, view counts, and engagement metrics.
               </p>
               <ul className="space-y-3">
-                {['Interactive content grid', 'Platform-specific badges', 'Performance overlays', 'Filterable by content type'].map((item, i) => (
-                  <li key={i} className="flex items-center gap-3 text-neutral-300">
+                {['Interactive content grid', 'Platform-specific badges', 'Performance overlays', 'Filterable by content type'].map((item, i) => <li key={i} className="flex items-center gap-3 text-neutral-300">
                     <CheckCircle className="w-5 h-5 text-rose-400" />
                     {item}
-                  </li>
-                ))}
+                  </li>)}
               </ul>
             </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-            >
+            <motion.div initial={{
+            opacity: 0,
+            x: 30
+          }} whileInView={{
+            opacity: 1,
+            x: 0
+          }} viewport={{
+            once: true
+          }}>
               {/* Portfolio Preview */}
               <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
                 <div className="text-sm font-mono text-neutral-500 uppercase tracking-wider mb-2">Portfolio</div>
                 <h3 className="text-2xl font-bold text-white mb-6">Recent Content</h3>
                 
                 <div className="grid grid-cols-2 gap-3">
-                  {[
-                    { platform: 'tiktok', views: '2.1M', likes: '245K', color: 'cyan' },
-                    { platform: 'instagram', views: '1.8M', likes: '198K', color: 'pink' },
-                    { platform: 'instagram', views: '1.5M', likes: '167K', color: 'pink' },
-                    { platform: 'tiktok', views: '1.2M', likes: '134K', color: 'cyan' }
-                  ].map((item, i) => (
-                    <div key={i} className="relative aspect-[4/5] rounded-xl bg-neutral-800 overflow-hidden group cursor-pointer">
+                  {[{
+                  platform: 'tiktok',
+                  views: '2.1M',
+                  likes: '245K',
+                  color: 'cyan'
+                }, {
+                  platform: 'instagram',
+                  views: '1.8M',
+                  likes: '198K',
+                  color: 'pink'
+                }, {
+                  platform: 'instagram',
+                  views: '1.5M',
+                  likes: '167K',
+                  color: 'pink'
+                }, {
+                  platform: 'tiktok',
+                  views: '1.2M',
+                  likes: '134K',
+                  color: 'cyan'
+                }].map((item, i) => <div key={i} className="relative aspect-[4/5] rounded-xl bg-neutral-800 overflow-hidden group cursor-pointer">
                       {/* Placeholder gradient */}
                       <div className={`absolute inset-0 bg-gradient-to-br ${item.color === 'cyan' ? 'from-cyan-900/50 to-neutral-900' : 'from-pink-900/50 to-neutral-900'}`} />
                       
@@ -505,8 +548,7 @@ const InfluencerSites = () => {
                           </span>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    </div>)}
                 </div>
 
                 <Button variant="outline" className="w-full mt-4 border-neutral-700 text-white hover:bg-neutral-800">
@@ -521,12 +563,15 @@ const InfluencerSites = () => {
       {/* Features Section */}
       <section className="py-16 md:py-24 px-4 md:px-6 bg-neutral-900/50">
         <div className="container mx-auto max-w-6xl">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-12"
-          >
+          <motion.div initial={{
+          opacity: 0,
+          y: 20
+        }} whileInView={{
+          opacity: 1,
+          y: 0
+        }} viewport={{
+          once: true
+        }} className="text-center mb-12">
             <span className="text-sm font-mono text-rose-400 tracking-wider uppercase mb-4 block">
               What's Included
             </span>
@@ -536,22 +581,23 @@ const InfluencerSites = () => {
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((feature, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                className="p-6 rounded-2xl bg-neutral-800/30 border border-neutral-800 hover:bg-neutral-800/50 transition-all duration-300 group"
-              >
+            {features.map((feature, index) => <motion.div key={index} initial={{
+            opacity: 0,
+            y: 20
+          }} whileInView={{
+            opacity: 1,
+            y: 0
+          }} viewport={{
+            once: true
+          }} transition={{
+            delay: index * 0.1
+          }} className="p-6 rounded-2xl bg-neutral-800/30 border border-neutral-800 hover:bg-neutral-800/50 transition-all duration-300 group">
                 <div className="w-12 h-12 rounded-xl bg-rose-500/10 flex items-center justify-center mb-4 group-hover:bg-rose-500/20 transition-colors">
                   <feature.icon className="w-6 h-6 text-rose-400" />
                 </div>
                 <h3 className="text-lg font-bold mb-2 text-white">{feature.title}</h3>
                 <p className="text-sm text-neutral-400 leading-relaxed">{feature.description}</p>
-              </motion.div>
-            ))}
+              </motion.div>)}
           </div>
         </div>
       </section>
@@ -559,12 +605,15 @@ const InfluencerSites = () => {
       {/* Process Section */}
       <section className="py-16 md:py-24 px-4 md:px-6">
         <div className="container mx-auto max-w-6xl">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-12"
-          >
+          <motion.div initial={{
+          opacity: 0,
+          y: 20
+        }} whileInView={{
+          opacity: 1,
+          y: 0
+        }} viewport={{
+          once: true
+        }} className="text-center mb-12">
             <span className="text-sm font-mono text-rose-400 tracking-wider uppercase mb-4 block">
               Our Process
             </span>
@@ -574,20 +623,21 @@ const InfluencerSites = () => {
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            {process.map((step, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.15 }}
-                className="text-center md:text-left"
-              >
+            {process.map((step, index) => <motion.div key={index} initial={{
+            opacity: 0,
+            y: 20
+          }} whileInView={{
+            opacity: 1,
+            y: 0
+          }} viewport={{
+            once: true
+          }} transition={{
+            delay: index * 0.15
+          }} className="text-center md:text-left">
                 <div className="text-5xl font-bold font-mono text-neutral-800 mb-4">{step.step}</div>
                 <h3 className="text-xl font-bold mb-2 text-white">{step.title}</h3>
                 <p className="text-sm text-neutral-400">{step.description}</p>
-              </motion.div>
-            ))}
+              </motion.div>)}
           </div>
         </div>
       </section>
@@ -595,11 +645,15 @@ const InfluencerSites = () => {
       {/* CTA Section */}
       <section className="py-16 md:py-24 px-4 md:px-6 bg-gradient-to-b from-neutral-900/50 to-neutral-950">
         <div className="container mx-auto max-w-4xl text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
+          <motion.div initial={{
+          opacity: 0,
+          y: 20
+        }} whileInView={{
+          opacity: 1,
+          y: 0
+        }} viewport={{
+          once: true
+        }}>
             <h2 className="text-3xl md:text-5xl lg:text-6xl font-serif font-bold mb-6 text-white">
               Ready to Elevate Your <span className="text-rose-400">Brand</span>?
             </h2>
@@ -635,8 +689,6 @@ const InfluencerSites = () => {
           </div>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default InfluencerSites;
