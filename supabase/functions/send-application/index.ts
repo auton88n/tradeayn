@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
-import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
+import { Resend } from "npm:resend@2.0.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -80,24 +80,8 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Application saved with ID: ${application.id}`);
 
-    // Setup SMTP client
-    const smtpHost = Deno.env.get("SMTP_HOST")!;
-    const smtpPort = parseInt(Deno.env.get("SMTP_PORT") || "465");
-    const smtpUser = Deno.env.get("SMTP_USER")!;
-    const smtpPass = Deno.env.get("SMTP_PASS")!;
-
-    const client = new SMTPClient({
-      connection: {
-        hostname: smtpHost,
-        port: smtpPort,
-        tls: true,
-        auth: {
-          username: smtpUser,
-          password: smtpPass,
-        },
-      },
-    });
-
+    // Initialize Resend client
+    const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
     const serviceName = SERVICE_NAMES[serviceType] || serviceType;
 
     // Build custom fields HTML for team email
@@ -112,9 +96,9 @@ const handler = async (req: Request): Promise<Response> => {
 
     try {
       // Send confirmation email to applicant
-      await client.send({
-        from: smtpUser,
-        to: email,
+      const confirmationResult = await resend.emails.send({
+        from: "AYN <noreply@aynn.io>",
+        to: [email],
         replyTo: "info@aynn.io",
         subject: `Thank you for your interest in ${serviceName}!`,
         html: `
@@ -156,12 +140,12 @@ const handler = async (req: Request): Promise<Response> => {
         `,
       });
 
-      console.log(`Confirmation email sent to ${email}`);
+      console.log(`Confirmation email sent to ${email}:`, confirmationResult);
 
       // Send notification email to team
-      await client.send({
-        from: smtpUser,
-        to: "info@aynn.io",
+      const notificationResult = await resend.emails.send({
+        from: "AYN Applications <noreply@aynn.io>",
+        to: ["info@aynn.io"],
         subject: `New ${serviceName} Application from ${fullName}`,
         html: `
           <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
@@ -194,7 +178,7 @@ const handler = async (req: Request): Promise<Response> => {
         `,
       });
 
-      console.log(`Notification email sent to info@aynn.io`);
+      console.log(`Notification email sent to info@aynn.io:`, notificationResult);
 
     } catch (emailError) {
       console.error("Email sending error:", emailError);
@@ -207,8 +191,6 @@ const handler = async (req: Request): Promise<Response> => {
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
-    } finally {
-      await client.close();
     }
 
     return new Response(
