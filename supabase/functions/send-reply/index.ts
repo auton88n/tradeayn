@@ -116,7 +116,7 @@ Visit AYN
 
     try {
       await smtpClient.send({
-        from: "AYN Team <info@aynn.io>",
+        from: smtpUser,
         to: recipientEmail,
         subject: subject,
         content: message,
