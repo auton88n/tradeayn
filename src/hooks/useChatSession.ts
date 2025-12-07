@@ -18,10 +18,18 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
   
   // Track loaded session count for pagination
   const loadedSessionsRef = useRef(0);
+  // Guard to prevent duplicate concurrent calls
+  const isLoadingRef = useRef(false);
+  // Debounce timer for realtime updates
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load recent chat history with pagination
   const loadRecentChats = useCallback(async (reset = true) => {
     if (!userId) return;
+    // Prevent duplicate concurrent calls
+    if (isLoadingRef.current) return;
+    
+    isLoadingRef.current = true;
     
     try {
       setError(null);
@@ -38,8 +46,12 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
         .order('created_at', { ascending: false })
         .limit(200); // Fetch more to ensure we have enough sessions
       
-      const timeoutPromise = new Promise<{ data: null; error: Error }>((_, reject) => 
-        setTimeout(() => reject(new Error('Request timeout - please try again')), 8000)
+      // Resolve with error object instead of rejecting to match Supabase response format
+      const timeoutPromise = new Promise<{ data: null; error: Error }>((resolve) => 
+        setTimeout(() => resolve({ 
+          data: null, 
+          error: new Error('Request timeout - please try again') 
+        }), 8000)
       );
       
       const { data, error: queryError } = await Promise.race([queryPromise, timeoutPromise]);
@@ -135,6 +147,7 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
       });
     } finally {
       setIsLoadingChats(false);
+      isLoadingRef.current = false;
     }
   }, [userId, toast]);
 
@@ -366,13 +379,21 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
           filter: `user_id=eq.${userId}`
         },
         () => {
-          // Reload chats when messages change
-          loadRecentChats();
+          // Debounce realtime updates to prevent rapid-fire reloads
+          if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current);
+          }
+          debounceTimerRef.current = setTimeout(() => {
+            loadRecentChats();
+          }, 500);
         }
       )
       .subscribe();
     
     return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
       supabase.removeChannel(subscription);
     };
   }, [userId, loadRecentChats]);
