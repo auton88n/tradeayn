@@ -22,19 +22,28 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
     console.log('[useChatSession] Loading recent chats for user:', userId);
     
     try {
-      const { data, error } = await supabase
+      console.log('[useChatSession] Executing query...');
+      
+      // Add timeout to prevent hanging
+      const queryPromise = supabase
         .from('messages')
         .select('id, content, created_at, sender, session_id')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(100);
+      
+      const timeoutPromise = new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error('Query timeout')), 5000)
+      );
+      
+      const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as Awaited<typeof queryPromise>;
+
+      console.log('[useChatSession] Query completed, data:', data?.length ?? 0, 'error:', error?.message ?? 'none');
 
       if (error) {
         console.error('[useChatSession] Error loading recent chats:', error);
         return;
       }
-      
-      console.log('[useChatSession] Loaded messages:', data?.length ?? 0);
 
       if (!data || data.length === 0) {
         setRecentChats([]);
