@@ -7,6 +7,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
 import { useSoundContext } from '@/contexts/SoundContext';
 import type { AIMode } from '@/types/dashboard.types';
+import { useToast } from '@/hooks/use-toast';
+
 interface ChatInputProps {
   onSend: (message: string, file?: File | null) => void;
   isDisabled?: boolean;
@@ -14,6 +16,7 @@ interface ChatInputProps {
   onModeChange: (mode: AIMode) => void;
   selectedFile?: File | null;
   isUploading?: boolean;
+  isTyping?: boolean; // AI is currently responding
   isDragOver?: boolean;
   onDragEnter?: (e: React.DragEvent) => void;
   onDragLeave?: (e: React.DragEvent) => void;
@@ -82,6 +85,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
   onModeChange,
   selectedFile = null,
   isUploading = false,
+  isTyping = false,
   isDragOver = false,
   onDragEnter,
   onDragLeave,
@@ -93,6 +97,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
   prefillValue = '',
   onPrefillConsumed
 }, ref) => {
+  const { toast } = useToast();
   const [inputMessage, setInputMessage] = useState('');
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [currentPlaceholder, setCurrentPlaceholder] = useState(0);
@@ -159,6 +164,16 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
   const handleSend = useCallback(() => {
     if (!inputMessage.trim() && !selectedFile) return;
     if (isDisabled || isUploading) return;
+    
+    // Prevent sending while AI is responding
+    if (isTyping) {
+      toast({
+        title: "Please wait",
+        description: "AYN is still thinking...",
+      });
+      return;
+    }
+    
     playSound('message-send');
     onSend(inputMessage.trim(), selectedFile);
     setInputMessage('');
@@ -169,7 +184,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
     setTimeout(() => {
       triggerAttentionBlink();
     }, 100);
-  }, [inputMessage, selectedFile, isDisabled, isUploading, onSend, triggerAttentionBlink, playSound]);
+  }, [inputMessage, selectedFile, isDisabled, isUploading, isTyping, onSend, triggerAttentionBlink, playSound, toast]);
   const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
