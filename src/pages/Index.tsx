@@ -40,26 +40,38 @@ const Index = () => {
 
   useEffect(() => {
     let mounted = true;
+    let subscription: { unsubscribe: () => void } | null = null;
 
-    // Set up auth state listener FIRST - this is the primary auth handler
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (!mounted) return;
-        
-        console.log('[Index] Auth event:', event, !!session);
-        
-        // Update state for all auth events
-        setSession(session);
-        setUser(session?.user ?? null);
+    // Safety timeout - if auth doesn't resolve in 3 seconds, show landing page
+    const authTimeout = setTimeout(() => {
+      if (mounted) {
+        console.warn('[Index] Auth timeout, showing landing page');
         setLoading(false);
       }
-    );
+    }, 3000);
 
-    // THEN check for existing session
+    try {
+      // Set up auth state listener
+      const { data } = supabase.auth.onAuthStateChange(
+        (event, session) => {
+          if (!mounted) return;
+          clearTimeout(authTimeout);
+          setSession(session);
+          setUser(session?.user ?? null);
+          setLoading(false);
+        }
+      );
+      subscription = data.subscription;
+    } catch (err) {
+      console.error('[Index] onAuthStateChange setup failed:', err);
+      if (mounted) setLoading(false);
+    }
+
+    // Check for existing session
     supabase.auth.getSession()
       .then(({ data: { session } }) => {
-        console.log('[Index] getSession result:', !!session);
         if (mounted) {
+          clearTimeout(authTimeout);
           setSession(session);
           setUser(session?.user ?? null);
           setLoading(false);
@@ -67,14 +79,13 @@ const Index = () => {
       })
       .catch((error) => {
         console.error('[Index] Auth session check failed:', error);
-        if (mounted) {
-          setLoading(false);
-        }
+        if (mounted) setLoading(false);
       });
 
     return () => {
       mounted = false;
-      subscription.unsubscribe();
+      clearTimeout(authTimeout);
+      subscription?.unsubscribe();
     };
   }, []);
 
