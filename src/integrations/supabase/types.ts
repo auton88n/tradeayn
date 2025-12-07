@@ -617,45 +617,6 @@ export type Database = {
         }
         Relationships: []
       }
-      service_applications: {
-        Row: {
-          created_at: string
-          custom_fields: Json | null
-          email: string
-          full_name: string
-          id: string
-          message: string | null
-          phone: string | null
-          service_type: string
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          custom_fields?: Json | null
-          email: string
-          full_name: string
-          id?: string
-          message?: string | null
-          phone?: string | null
-          service_type: string
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          custom_fields?: Json | null
-          email?: string
-          full_name?: string
-          id?: string
-          message?: string | null
-          phone?: string | null
-          service_type?: string
-          status?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       system_config: {
         Row: {
           created_at: string | null

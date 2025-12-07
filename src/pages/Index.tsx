@@ -40,52 +40,63 @@ const Index = () => {
 
   useEffect(() => {
     let mounted = true;
-    let subscription: { unsubscribe: () => void } | null = null;
-
-    // Safety timeout - if auth doesn't resolve in 3 seconds, show landing page
-    const authTimeout = setTimeout(() => {
-      if (mounted) {
-        console.warn('[Index] Auth timeout, showing landing page');
+    
+    // Fallback: if auth doesn't respond in 8 seconds, show landing page anyway
+    const fallbackTimeout = setTimeout(() => {
+      if (mounted && loading) {
+        console.warn('Auth check timed out, proceeding to landing page');
         setLoading(false);
       }
-    }, 3000);
+    }, 8000);
 
-    try {
-      // Set up auth state listener
-      const { data } = supabase.auth.onAuthStateChange(
-        (event, session) => {
-          if (!mounted) return;
-          clearTimeout(authTimeout);
+    // Set up auth state listener - trust Supabase for normal auth events
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (!mounted) return;
+        
+        // Trust Supabase auth for normal events (no redundant validation)
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
           setSession(session);
           setUser(session?.user ?? null);
           setLoading(false);
+          return;
         }
-      );
-      subscription = data.subscription;
-    } catch (err) {
-      console.error('[Index] onAuthStateChange setup failed:', err);
-      if (mounted) setLoading(false);
-    }
+        
+        // Handle sign out
+        if (event === 'SIGNED_OUT') {
+          setSession(null);
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+        
+        // For other events, update state normally
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+      }
+    );
 
-    // Check for existing session
+    // Check for existing session - trust Supabase without extra validation
     supabase.auth.getSession()
       .then(({ data: { session } }) => {
         if (mounted) {
-          clearTimeout(authTimeout);
           setSession(session);
           setUser(session?.user ?? null);
           setLoading(false);
         }
       })
       .catch((error) => {
-        console.error('[Index] Auth session check failed:', error);
-        if (mounted) setLoading(false);
+        console.error('Auth session check failed:', error);
+        if (mounted) {
+          setLoading(false);
+        }
       });
 
     return () => {
       mounted = false;
-      clearTimeout(authTimeout);
-      subscription?.unsubscribe();
+      clearTimeout(fallbackTimeout);
+      subscription.unsubscribe();
     };
   }, []);
 

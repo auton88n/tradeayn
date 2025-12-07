@@ -1,75 +1,51 @@
-import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Brain, ArrowLeft, Palette, Smartphone, Zap, Layout, TrendingUp, Globe, Instagram, Play, Heart, Eye, BarChart3, Users, Star, CheckCircle, Mail } from 'lucide-react';
-import influencerBg from '@/assets/influencer-woman-bg.jpg';
+import { Brain, ArrowLeft, Palette, Smartphone, Zap, Layout, TrendingUp, Globe, Instagram, Play, Heart, Eye, BarChart3, Users, Star, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
-import { ServiceApplicationForm } from '@/components/services/ServiceApplicationForm';
 
 const InfluencerSites = () => {
-  useEffect(() => {
-    // Update page title
-    document.title = 'Premium Content Creator Websites | AYN';
-    
-    // Update meta description
-    const metaDescription = document.querySelector('meta[name="description"]');
-    if (metaDescription) {
-      metaDescription.setAttribute('content', 'Custom luxury websites for content creators. Showcase your brand, grow your audience, and land partnerships with a stunning personal website built by AYN.');
+  const features = [
+    {
+      icon: Palette,
+      title: 'Custom Luxury Design',
+      description: 'Unique design that reflects your personal brand and sets you apart from competitors'
+    },
+    {
+      icon: Smartphone,
+      title: 'Mobile First',
+      description: 'Perfect experience across all devices, from mobile to desktop'
+    },
+    {
+      icon: Zap,
+      title: 'Lightning Fast',
+      description: 'Fast loading keeps visitors engaged and improves your search rankings'
+    },
+    {
+      icon: Layout,
+      title: 'Interactive Portfolio',
+      description: 'Showcase your work professionally to attract brand partnerships'
+    },
+    {
+      icon: TrendingUp,
+      title: 'Conversion Optimized',
+      description: 'Pages designed to convert visitors into clients and partnerships'
+    },
+    {
+      icon: Globe,
+      title: 'Multi-language Support',
+      description: 'Reach a global audience with multi-language content support'
     }
-    
-    // Cleanup - restore original on unmount
-    return () => {
-      document.title = 'AYN';
-      const meta = document.querySelector('meta[name="description"]');
-      if (meta) {
-        meta.setAttribute('content', 'Your AI-Powered Business Growth Partner. Get strategic insights, market research, sales optimization, and trend analysis from AYN AI consultant.');
-      }
-    };
-  }, []);
+  ];
 
-  const features = [{
-    icon: Palette,
-    title: 'Custom Luxury Design',
-    description: 'Unique design that reflects your personal brand and sets you apart from competitors'
-  }, {
-    icon: Smartphone,
-    title: 'Mobile First',
-    description: 'Perfect experience across all devices, from mobile to desktop'
-  }, {
-    icon: Zap,
-    title: 'Lightning Fast',
-    description: 'Fast loading keeps visitors engaged and improves your search rankings'
-  }, {
-    icon: Layout,
-    title: 'Interactive Portfolio',
-    description: 'Showcase your work professionally to attract brand partnerships'
-  }, {
-    icon: TrendingUp,
-    title: 'Conversion Optimized',
-    description: 'Pages designed to convert visitors into clients and partnerships'
-  }, {
-    icon: Globe,
-    title: 'Multi-language Support',
-    description: 'Reach a global audience with multi-language content support'
-  }];
-  const process = [{
-    step: '01',
-    title: 'Discovery',
-    description: 'We understand your brand and goals'
-  }, {
-    step: '02',
-    title: 'Design',
-    description: 'We craft a unique experience for you'
-  }, {
-    step: '03',
-    title: 'Development',
-    description: 'We build with cutting-edge tech'
-  }, {
-    step: '04',
-    title: 'Launch',
-    description: 'We launch your site to the world'
-  }];
-  return <div className="min-h-screen bg-neutral-950 text-white">
+  const process = [
+    { step: '01', title: 'Discovery', description: 'We understand your brand and goals' },
+    { step: '02', title: 'Design', description: 'We craft a unique experience for you' },
+    { step: '03', title: 'Development', description: 'We build with cutting-edge tech' },
+    { step: '04', title: 'Launch', description: 'We launch your site to the world' }
+  ];
+
+  return (
+    <div className="min-h-screen bg-neutral-950 text-white">
       {/* Navigation */}
       <nav className="fixed top-4 md:top-6 left-4 md:left-6 z-50">
         <Link to="/">
@@ -83,29 +59,28 @@ const InfluencerSites = () => {
       {/* Hero Section */}
       <section className="pt-24 pb-16 md:pt-32 md:pb-24 px-4 md:px-6">
         <div className="container mx-auto max-w-6xl">
-          <motion.div initial={{
-          opacity: 0,
-          y: 30
-        }} animate={{
-          opacity: 1,
-          y: 0
-        }} transition={{
-          duration: 0.6
-        }} className="text-center">
-            
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-center"
+          >
+            <span className="text-sm font-mono text-neutral-500 tracking-wider uppercase mb-4 block">
+              01 — Our Services
+            </span>
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-serif font-bold mb-6 leading-tight">
-              Premium Content Creator
+              Premium Influencer
               <br />
               <span className="text-rose-400">Sites</span>
             </h1>
             <p className="text-lg md:text-xl text-neutral-400 max-w-2xl mx-auto mb-8">
-              Luxury websites custom-built for content creators and digital influencers. Attract more partnerships and elevate your personal brand.
+              Luxury websites custom-built for influencers and content creators. Attract more partnerships and elevate your personal brand.
             </p>
-            <a href="#apply">
+            <Link to="/#contact">
               <Button size="lg" className="rounded-full px-8 bg-white text-neutral-950 hover:bg-neutral-200">
                 Start Your Project
               </Button>
-            </a>
+            </Link>
           </motion.div>
         </div>
       </section>
@@ -113,15 +88,12 @@ const InfluencerSites = () => {
       {/* What You'll Get - Hero Section Showcase */}
       <section className="py-16 md:py-24 px-4 md:px-6 bg-neutral-900/50">
         <div className="container mx-auto max-w-6xl">
-          <motion.div initial={{
-          opacity: 0,
-          y: 20
-        }} whileInView={{
-          opacity: 1,
-          y: 0
-        }} viewport={{
-          once: true
-        }} className="text-center mb-12">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
             <span className="text-sm font-mono text-rose-400 tracking-wider uppercase mb-4 block">
               What You'll Get
             </span>
@@ -134,17 +106,13 @@ const InfluencerSites = () => {
           </motion.div>
 
           {/* Hero Preview Mockup */}
-          <motion.div initial={{
-          opacity: 0,
-          y: 40
-        }} whileInView={{
-          opacity: 1,
-          y: 0
-        }} viewport={{
-          once: true
-        }} transition={{
-          delay: 0.2
-        }} className="relative max-w-4xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            className="relative max-w-4xl mx-auto"
+          >
             <div className="rounded-2xl overflow-hidden border border-neutral-800 bg-neutral-900 shadow-2xl">
               {/* Browser Chrome */}
               <div className="flex items-center gap-2 px-4 py-3 border-b border-neutral-800 bg-neutral-900">
@@ -154,62 +122,48 @@ const InfluencerSites = () => {
                   <div className="w-3 h-3 rounded-full bg-green-500" />
                 </div>
                 <div className="flex-1 mx-4">
-                <div className="bg-neutral-800 rounded-full px-4 py-1.5 text-xs text-neutral-400 text-center">
-                  sarahjohnson.aynn.io
-                </div>
+                  <div className="bg-neutral-800 rounded-full px-4 py-1.5 text-xs text-neutral-400 text-center">
+                    sarahjohnson.com
+                  </div>
                 </div>
               </div>
               
               {/* Hero Content Preview */}
-              <div className="relative aspect-[16/10] bg-neutral-900 overflow-hidden">
-                {/* Woman Background Image */}
-                <img 
-                  src={influencerBg}
-                  alt="Content Creator"
-                  className="absolute right-0 top-0 h-[120%] w-full object-cover object-center opacity-60"
-                />
-                {/* Gradient overlay for readability */}
-                <div className="absolute inset-0 bg-gradient-to-r from-neutral-950 via-neutral-950/40 to-transparent z-10" />
+              <div className="relative aspect-[16/10] bg-gradient-to-br from-neutral-900 via-neutral-950 to-neutral-900 overflow-hidden">
+                {/* Background Image Simulation */}
+                <div className="absolute inset-0 bg-gradient-to-r from-neutral-950 via-neutral-950/80 to-transparent z-10" />
+                <div className="absolute right-0 top-0 bottom-0 w-1/2 bg-gradient-to-l from-rose-950/20 to-transparent" />
                 
                 {/* Content */}
                 <div className="relative z-20 flex items-center h-full p-8 md:p-12">
                   <div className="max-w-md">
-                    {/* Serif Italic Name */}
-                    <h3 className="text-3xl md:text-5xl font-serif italic mb-2">
-                      <span className="text-rose-400">SARAH</span>{' '}
-                      <span className="text-white">JOHNSON</span>
-                    </h3>
-                    <p className="text-neutral-400 text-sm font-medium mb-4">Fashion & Lifestyle Creator</p>
-                    <p className="text-neutral-500 text-sm mb-6 max-w-sm">
-                      Inspiring 3M+ followers with authentic fashion content, sustainable living tips, and lifestyle inspiration across TikTok and Instagram.
+                    <p className="text-rose-400 text-sm font-medium mb-2">Fashion & Lifestyle Influencer</p>
+                    <h3 className="text-3xl md:text-5xl font-bold text-white mb-4">SARAH JOHNSON</h3>
+                    <p className="text-neutral-400 text-sm mb-6">
+                      Creating inspiring content that blends high fashion with everyday lifestyle. Join 3M+ followers on this journey of style and authenticity.
                     </p>
-                    
-                    {/* Stat Cards */}
-                    <div className="flex gap-3 mb-6">
-                      <div className="bg-neutral-800/80 rounded-xl px-4 py-3 text-center">
-                        <div className="text-xl font-serif font-bold text-white">3.2M</div>
-                        <div className="text-xs text-neutral-500">Total Followers</div>
+                    <div className="flex gap-4">
+                      <div className="text-center">
+                        <div className="text-xl font-bold text-white">3.2M</div>
+                        <div className="text-xs text-neutral-500">Followers</div>
                       </div>
-                      <div className="bg-neutral-800/80 rounded-xl px-4 py-3 text-center">
-                        <div className="text-xl font-serif font-bold text-white">8.5%</div>
+                      <div className="text-center">
+                        <div className="text-xl font-bold text-white">8.5%</div>
                         <div className="text-xs text-neutral-500">Engagement</div>
                       </div>
-                      <div className="bg-neutral-800/80 rounded-xl px-4 py-3 text-center">
-                        <div className="text-xl font-serif font-bold text-white">50+</div>
+                      <div className="text-center">
+                        <div className="text-xl font-bold text-white">50+</div>
                         <div className="text-xs text-neutral-500">Brand Deals</div>
                       </div>
                     </div>
-                    
-                    {/* White Button with Mail Icon */}
-                    <Button className="bg-white hover:bg-neutral-200 text-neutral-900 rounded-full px-6 gap-2">
-                      <Mail className="w-4 h-4" />
-                      Let's Collaborate
+                    <Button className="mt-6 bg-rose-500 hover:bg-rose-600 text-white rounded-full px-6">
+                      Work With Me
                     </Button>
                   </div>
                 </div>
 
-                {/* Social Icons - Bottom Center */}
-                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-3 z-20">
+                {/* Floating Social Icons */}
+                <div className="absolute right-8 top-1/2 -translate-y-1/2 flex flex-col gap-4 z-20">
                   <div className="w-10 h-10 rounded-full bg-neutral-800/80 flex items-center justify-center">
                     <Instagram className="w-5 h-5 text-white" />
                   </div>
@@ -220,17 +174,49 @@ const InfluencerSites = () => {
                     <BarChart3 className="w-5 h-5 text-white" />
                   </div>
                 </div>
-
-                {/* Navigation Dots - Right Side */}
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-20">
-                  <div className="w-2 h-2 rounded-full bg-white" />
-                  <div className="w-2 h-2 rounded-full bg-neutral-600" />
-                  <div className="w-2 h-2 rounded-full bg-neutral-600" />
-                  <div className="w-2 h-2 rounded-full bg-neutral-600" />
-                  <div className="w-2 h-2 rounded-full bg-neutral-600" />
-                </div>
               </div>
             </div>
+
+            {/* Floating Feature Cards */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.4 }}
+              className="absolute -left-4 md:-left-16 top-1/2 -translate-y-1/2 hidden md:block"
+            >
+              <div className="bg-neutral-800/90 backdrop-blur-sm border border-neutral-700 rounded-xl p-4 shadow-xl">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center">
+                    <Instagram className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <div className="text-white font-bold">2.8M</div>
+                    <div className="text-xs text-neutral-400">Instagram</div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.5 }}
+              className="absolute -right-4 md:-right-16 top-1/3 hidden md:block"
+            >
+              <div className="bg-neutral-800/90 backdrop-blur-sm border border-neutral-700 rounded-xl p-4 shadow-xl">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-cyan-600 flex items-center justify-center">
+                    <Play className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <div className="text-white font-bold">1.5M</div>
+                    <div className="text-xs text-neutral-400">TikTok</div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
           </motion.div>
         </div>
       </section>
@@ -239,15 +225,11 @@ const InfluencerSites = () => {
       <section className="py-16 md:py-24 px-4 md:px-6">
         <div className="container mx-auto max-w-6xl">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <motion.div initial={{
-            opacity: 0,
-            x: -30
-          }} whileInView={{
-            opacity: 1,
-            x: 0
-          }} viewport={{
-            once: true
-          }}>
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+            >
               <span className="text-sm font-mono text-rose-400 tracking-wider uppercase mb-4 block">
                 Analytics Dashboard
               </span>
@@ -258,22 +240,21 @@ const InfluencerSites = () => {
                 Show brands exactly why they should work with you. Your analytics dashboard displays real-time follower counts, engagement rates, and audience demographics across all platforms.
               </p>
               <ul className="space-y-3">
-                {['Cross-platform analytics', 'Real-time engagement tracking', 'Audience demographics breakdown', 'Achievement badges'].map((item, i) => <li key={i} className="flex items-center gap-3 text-neutral-300">
+                {['Cross-platform analytics', 'Real-time engagement tracking', 'Audience demographics breakdown', 'Achievement badges'].map((item, i) => (
+                  <li key={i} className="flex items-center gap-3 text-neutral-300">
                     <CheckCircle className="w-5 h-5 text-rose-400" />
                     {item}
-                  </li>)}
+                  </li>
+                ))}
               </ul>
             </motion.div>
 
-            <motion.div initial={{
-            opacity: 0,
-            x: 30
-          }} whileInView={{
-            opacity: 1,
-            x: 0
-          }} viewport={{
-            once: true
-          }} className="relative">
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="relative"
+            >
               {/* Stats Preview */}
               <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 space-y-4">
                 <div className="text-sm font-mono text-neutral-500 uppercase tracking-wider">Analytics</div>
@@ -365,15 +346,12 @@ const InfluencerSites = () => {
       <section className="py-16 md:py-24 px-4 md:px-6 bg-neutral-900/50">
         <div className="container mx-auto max-w-6xl">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <motion.div initial={{
-            opacity: 0,
-            x: -30
-          }} whileInView={{
-            opacity: 1,
-            x: 0
-          }} viewport={{
-            once: true
-          }} className="order-2 lg:order-1">
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="order-2 lg:order-1"
+            >
               {/* Brands Preview */}
               <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
                 <div className="text-sm font-mono text-neutral-500 uppercase tracking-wider mb-2">Collaborations</div>
@@ -424,21 +402,20 @@ const InfluencerSites = () => {
                 <div className="mt-6 pt-4 border-t border-neutral-800">
                   <div className="text-xs text-neutral-500 mb-3">Trusted by leading brands</div>
                   <div className="flex gap-6 items-center justify-center opacity-50">
-                    {['NIKE', 'CHANEL', 'GUCCI', 'PRADA'].map((brand, i) => <div key={i} className="text-white font-bold text-sm tracking-wider">{brand}</div>)}
+                    {['NIKE', 'CHANEL', 'GUCCI', 'PRADA'].map((brand, i) => (
+                      <div key={i} className="text-white font-bold text-sm tracking-wider">{brand}</div>
+                    ))}
                   </div>
                 </div>
               </div>
             </motion.div>
 
-            <motion.div initial={{
-            opacity: 0,
-            x: 30
-          }} whileInView={{
-            opacity: 1,
-            x: 0
-          }} viewport={{
-            once: true
-          }} className="order-1 lg:order-2">
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="order-1 lg:order-2"
+            >
               <span className="text-sm font-mono text-rose-400 tracking-wider uppercase mb-4 block">
                 Partnerships Section
               </span>
@@ -449,10 +426,12 @@ const InfluencerSites = () => {
                 Showcase your brand partnerships to attract new collaborations. Display campaign results, view counts, and partnership types to demonstrate your value to potential brand partners.
               </p>
               <ul className="space-y-3">
-                {['Campaign performance metrics', 'Partnership type badges', 'Brand logo showcase', 'Results-driven display'].map((item, i) => <li key={i} className="flex items-center gap-3 text-neutral-300">
+                {['Campaign performance metrics', 'Partnership type badges', 'Brand logo showcase', 'Results-driven display'].map((item, i) => (
+                  <li key={i} className="flex items-center gap-3 text-neutral-300">
                     <CheckCircle className="w-5 h-5 text-rose-400" />
                     {item}
-                  </li>)}
+                  </li>
+                ))}
               </ul>
             </motion.div>
           </div>
@@ -463,15 +442,11 @@ const InfluencerSites = () => {
       <section className="py-16 md:py-24 px-4 md:px-6">
         <div className="container mx-auto max-w-6xl">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <motion.div initial={{
-            opacity: 0,
-            x: -30
-          }} whileInView={{
-            opacity: 1,
-            x: 0
-          }} viewport={{
-            once: true
-          }}>
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+            >
               <span className="text-sm font-mono text-rose-400 tracking-wider uppercase mb-4 block">
                 Content Gallery
               </span>
@@ -482,59 +457,35 @@ const InfluencerSites = () => {
                 Display your best-performing content beautifully. Your portfolio gallery showcases your work with platform badges, view counts, and engagement metrics.
               </p>
               <ul className="space-y-3">
-                {['Interactive content grid', 'Platform-specific badges', 'Performance overlays', 'Filterable by content type'].map((item, i) => <li key={i} className="flex items-center gap-3 text-neutral-300">
+                {['Interactive content grid', 'Platform-specific badges', 'Performance overlays', 'Filterable by content type'].map((item, i) => (
+                  <li key={i} className="flex items-center gap-3 text-neutral-300">
                     <CheckCircle className="w-5 h-5 text-rose-400" />
                     {item}
-                  </li>)}
+                  </li>
+                ))}
               </ul>
             </motion.div>
 
-            <motion.div initial={{
-            opacity: 0,
-            x: 30
-          }} whileInView={{
-            opacity: 1,
-            x: 0
-          }} viewport={{
-            once: true
-          }}>
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+            >
               {/* Portfolio Preview */}
               <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
                 <div className="text-sm font-mono text-neutral-500 uppercase tracking-wider mb-2">Portfolio</div>
                 <h3 className="text-2xl font-bold text-white mb-6">Recent Content</h3>
                 
                 <div className="grid grid-cols-2 gap-3">
-                  {[{
-                  platform: 'tiktok',
-                  views: '2.1M',
-                  likes: '245K',
-                  color: 'cyan',
-                  image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400&h=500&fit=crop'
-                }, {
-                  platform: 'instagram',
-                  views: '1.8M',
-                  likes: '198K',
-                  color: 'pink',
-                  image: 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=400&h=500&fit=crop'
-                }, {
-                  platform: 'instagram',
-                  views: '1.5M',
-                  likes: '167K',
-                  color: 'pink',
-                  image: 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=400&h=500&fit=crop'
-                }, {
-                  platform: 'tiktok',
-                  views: '1.2M',
-                  likes: '134K',
-                  color: 'cyan',
-                  image: 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=400&h=500&fit=crop'
-                }].map((item, i) => <div key={i} className="relative aspect-[4/5] rounded-xl bg-neutral-800 overflow-hidden group cursor-pointer">
-                      {/* Content image */}
-                      <img 
-                        src={item.image} 
-                        alt="Content" 
-                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      />
+                  {[
+                    { platform: 'tiktok', views: '2.1M', likes: '245K', color: 'cyan' },
+                    { platform: 'instagram', views: '1.8M', likes: '198K', color: 'pink' },
+                    { platform: 'instagram', views: '1.5M', likes: '167K', color: 'pink' },
+                    { platform: 'tiktok', views: '1.2M', likes: '134K', color: 'cyan' }
+                  ].map((item, i) => (
+                    <div key={i} className="relative aspect-[4/5] rounded-xl bg-neutral-800 overflow-hidden group cursor-pointer">
+                      {/* Placeholder gradient */}
+                      <div className={`absolute inset-0 bg-gradient-to-br ${item.color === 'cyan' ? 'from-cyan-900/50 to-neutral-900' : 'from-pink-900/50 to-neutral-900'}`} />
                       
                       {/* Platform badge */}
                       <div className="absolute top-2 left-2 z-10">
@@ -554,7 +505,8 @@ const InfluencerSites = () => {
                           </span>
                         </div>
                       </div>
-                    </div>)}
+                    </div>
+                  ))}
                 </div>
 
                 <Button variant="outline" className="w-full mt-4 border-neutral-700 text-white hover:bg-neutral-800">
@@ -569,15 +521,12 @@ const InfluencerSites = () => {
       {/* Features Section */}
       <section className="py-16 md:py-24 px-4 md:px-6 bg-neutral-900/50">
         <div className="container mx-auto max-w-6xl">
-          <motion.div initial={{
-          opacity: 0,
-          y: 20
-        }} whileInView={{
-          opacity: 1,
-          y: 0
-        }} viewport={{
-          once: true
-        }} className="text-center mb-12">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
             <span className="text-sm font-mono text-rose-400 tracking-wider uppercase mb-4 block">
               What's Included
             </span>
@@ -587,23 +536,22 @@ const InfluencerSites = () => {
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((feature, index) => <motion.div key={index} initial={{
-            opacity: 0,
-            y: 20
-          }} whileInView={{
-            opacity: 1,
-            y: 0
-          }} viewport={{
-            once: true
-          }} transition={{
-            delay: index * 0.1
-          }} className="p-6 rounded-2xl bg-neutral-800/30 border border-neutral-800 hover:bg-neutral-800/50 transition-all duration-300 group">
+            {features.map((feature, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                className="p-6 rounded-2xl bg-neutral-800/30 border border-neutral-800 hover:bg-neutral-800/50 transition-all duration-300 group"
+              >
                 <div className="w-12 h-12 rounded-xl bg-rose-500/10 flex items-center justify-center mb-4 group-hover:bg-rose-500/20 transition-colors">
                   <feature.icon className="w-6 h-6 text-rose-400" />
                 </div>
                 <h3 className="text-lg font-bold mb-2 text-white">{feature.title}</h3>
                 <p className="text-sm text-neutral-400 leading-relaxed">{feature.description}</p>
-              </motion.div>)}
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
@@ -611,15 +559,12 @@ const InfluencerSites = () => {
       {/* Process Section */}
       <section className="py-16 md:py-24 px-4 md:px-6">
         <div className="container mx-auto max-w-6xl">
-          <motion.div initial={{
-          opacity: 0,
-          y: 20
-        }} whileInView={{
-          opacity: 1,
-          y: 0
-        }} viewport={{
-          once: true
-        }} className="text-center mb-12">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
             <span className="text-sm font-mono text-rose-400 tracking-wider uppercase mb-4 block">
               Our Process
             </span>
@@ -629,56 +574,51 @@ const InfluencerSites = () => {
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            {process.map((step, index) => <motion.div key={index} initial={{
-            opacity: 0,
-            y: 20
-          }} whileInView={{
-            opacity: 1,
-            y: 0
-          }} viewport={{
-            once: true
-          }} transition={{
-            delay: index * 0.15
-          }} className="text-center md:text-left">
+            {process.map((step, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.15 }}
+                className="text-center md:text-left"
+              >
                 <div className="text-5xl font-bold font-mono text-neutral-800 mb-4">{step.step}</div>
                 <h3 className="text-xl font-bold mb-2 text-white">{step.title}</h3>
                 <p className="text-sm text-neutral-400">{step.description}</p>
-              </motion.div>)}
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Application Form Section */}
-      <section id="apply" className="py-16 md:py-24 px-4 md:px-6 bg-gradient-to-b from-neutral-900/50 to-neutral-950">
-        <div className="container mx-auto max-w-2xl">
-          <ServiceApplicationForm
-            serviceType="content_creator"
-            serviceName="Content Creator Website"
-            accentColor="#f43f5e"
-            customFields={[
-              {
-                name: 'socialHandles',
-                label: 'Social Media Handles',
-                type: 'text',
-                placeholder: '@yourusername on Instagram, TikTok, etc.',
-                required: true,
-              },
-              {
-                name: 'followerCount',
-                label: 'Total Follower Count',
-                type: 'select',
-                options: ['Under 10K', '10K - 50K', '50K - 100K', '100K - 500K', '500K - 1M', '1M+'],
-                required: true,
-              },
-              {
-                name: 'contentNiche',
-                label: 'Content Niche',
-                type: 'text',
-                placeholder: 'e.g., Fashion, Tech, Travel, Fitness',
-                required: true,
-              },
-            ]}
-          />
+      {/* CTA Section */}
+      <section className="py-16 md:py-24 px-4 md:px-6 bg-gradient-to-b from-neutral-900/50 to-neutral-950">
+        <div className="container mx-auto max-w-4xl text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-3xl md:text-5xl lg:text-6xl font-serif font-bold mb-6 text-white">
+              Ready to Elevate Your <span className="text-rose-400">Brand</span>?
+            </h2>
+            <p className="text-lg md:text-xl text-neutral-400 max-w-2xl mx-auto mb-8">
+              Let's create a website that reflects your uniqueness and attracts the opportunities you deserve.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link to="/#contact">
+                <Button size="lg" className="rounded-full px-8 w-full sm:w-auto bg-rose-500 hover:bg-rose-600 text-white">
+                  Start Your Project
+                </Button>
+              </Link>
+              <Link to="/">
+                <Button size="lg" variant="outline" className="rounded-full px-8 w-full sm:w-auto border-neutral-700 text-white hover:bg-neutral-800">
+                  View All Services
+                </Button>
+              </Link>
+            </div>
+          </motion.div>
         </div>
       </section>
 
@@ -695,6 +635,8 @@ const InfluencerSites = () => {
           </div>
         </div>
       </footer>
-    </div>;
+    </div>
+  );
 };
+
 export default InfluencerSites;

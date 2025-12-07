@@ -2,7 +2,6 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, Brain, Zap, Clock, Settings, Link2, BarChart3, Shield, Bell, FileText, Mail, Calendar, Database, Share2, Workflow, Play, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { ServiceApplicationForm } from '@/components/services/ServiceApplicationForm';
 
 const Automation = () => {
   const fadeInUp = {
@@ -90,11 +89,9 @@ const Automation = () => {
               Save 15+ hours per week by automating repetitive tasks. Focus on what matters while we handle the rest.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a href="#apply">
-                <Button size="lg" className="bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-6 text-lg rounded-full">
-                  Start Automating
-                </Button>
-              </a>
+              <Button size="lg" className="bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-6 text-lg rounded-full">
+                Start Automating
+              </Button>
               <Link to="/#services">
                 <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10 px-8 py-6 text-lg rounded-full">
                   View All Services
@@ -530,44 +527,32 @@ const Automation = () => {
         </div>
       </section>
 
-      {/* Application Form Section */}
-      <section id="apply" className="py-16 md:py-24 px-4 md:px-6 bg-gradient-to-b from-neutral-900 to-neutral-950">
-        <div className="container mx-auto max-w-2xl">
-          <ServiceApplicationForm
-            serviceType="automation"
-            serviceName="Process Automation"
-            accentColor="#10b981"
-            customFields={[
-              {
-                name: 'businessName',
-                label: 'Business Name',
-                type: 'text',
-                placeholder: 'Your company name',
-                required: true,
-              },
-              {
-                name: 'currentTools',
-                label: 'Current Tools You Use',
-                type: 'text',
-                placeholder: 'e.g., Google Workspace, Slack, HubSpot, QuickBooks...',
-                required: false,
-              },
-              {
-                name: 'processesToAutomate',
-                label: 'Processes to Automate',
-                type: 'textarea',
-                placeholder: 'Describe the repetitive tasks or workflows you want to automate...',
-                required: true,
-              },
-              {
-                name: 'teamSize',
-                label: 'Team Size',
-                type: 'select',
-                options: ['Just me', '2-5', '6-20', '21-50', '51-200', '200+'],
-                required: false,
-              },
-            ]}
-          />
+      {/* CTA Section */}
+      <section className="py-16 md:py-24 px-4 md:px-6 bg-gradient-to-b from-neutral-900 to-neutral-950">
+        <div className="container mx-auto max-w-4xl text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <h2 className="text-3xl md:text-4xl lg:text-6xl font-serif font-bold mb-6">
+              Ready to Reclaim <span className="text-emerald-400">Your Time?</span>
+            </h2>
+            <p className="text-lg md:text-xl text-neutral-400 max-w-2xl mx-auto mb-8 md:mb-10 px-4">
+              Join thousands of businesses saving 15+ hours every week with intelligent automation.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center px-4">
+              <Button size="lg" className="bg-emerald-500 hover:bg-emerald-600 text-white px-8 md:px-10 py-5 md:py-6 text-base md:text-lg rounded-full w-full sm:w-auto">
+                Start Automating
+              </Button>
+              <Link to="/#services" className="w-full sm:w-auto">
+                <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10 px-8 md:px-10 py-5 md:py-6 text-base md:text-lg rounded-full w-full">
+                  View All Services
+                </Button>
+              </Link>
+            </div>
+          </motion.div>
         </div>
       </section>
 

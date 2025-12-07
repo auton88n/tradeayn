@@ -139,24 +139,33 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
 
   // Load all auth data on mount - DIRECT FETCH, no Supabase client
   useEffect(() => {
+    console.log('[useAuth] Starting for user:', user?.id);
+    
     if (!user?.id || !session?.access_token) {
+      console.log('[useAuth] No user/session, done');
       setIsAuthLoading(false);
       return;
     }
 
     let isMounted = true;
+    let hasRun = false;
 
     const runQueries = async () => {
+      if (hasRun) return;
+      hasRun = true;
+
+      console.log('[useAuth] Running direct fetch queries');
+
       try {
         // Race queries against timeout - direct fetch bypasses Supabase client
         const results = await Promise.race([
           Promise.all([
-            fetchFromSupabase(`access_grants?user_id=eq.${user.id}&select=is_active,expires_at`, session.access_token).catch(() => []),
-            fetchFromSupabase(`user_roles?user_id=eq.${user.id}&select=role`, session.access_token).catch(() => []),
-            fetchFromSupabase(`profiles?user_id=eq.${user.id}&select=user_id,contact_person,company_name,business_type,business_context,avatar_url`, session.access_token).catch(() => []),
-            fetchFromSupabase(`user_settings?user_id=eq.${user.id}&select=has_accepted_terms`, session.access_token).catch(() => [])
+            fetchFromSupabase(`access_grants?user_id=eq.${user.id}&select=is_active,expires_at`, session.access_token),
+            fetchFromSupabase(`user_roles?user_id=eq.${user.id}&select=role`, session.access_token),
+            fetchFromSupabase(`profiles?user_id=eq.${user.id}&select=user_id,contact_person,company_name,business_type,business_context,avatar_url`, session.access_token),
+            fetchFromSupabase(`user_settings?user_id=eq.${user.id}&select=has_accepted_terms`, session.access_token)
           ]),
-          new Promise<[never[], never[], never[], never[]]>((_, reject) => 
+          new Promise<never>((_, reject) => 
             setTimeout(() => reject(new Error('Query timeout')), QUERY_TIMEOUT_MS)
           )
         ]);
@@ -164,6 +173,13 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
         if (!isMounted) return;
 
         const [accessData, roleData, profileData, settingsData] = results;
+
+        console.log('[useAuth] Queries complete:', {
+          access: !!accessData,
+          role: !!roleData,
+          profile: !!profileData,
+          settings: !!settingsData
+        });
 
         // Process access
         if (accessData && accessData.length > 0) {
@@ -174,9 +190,7 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
         }
 
         // Process admin role
-        const isAdminRole = roleData?.[0]?.role === 'admin';
-        console.log('[useAuth] Admin role check:', { roleData, isAdminRole });
-        setIsAdmin(isAdminRole);
+        setIsAdmin(roleData?.[0]?.role === 'admin');
 
         // Process profile
         if (profileData && profileData.length > 0) {
@@ -190,6 +204,7 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
         console.error('[useAuth] Error:', error);
       } finally {
         if (isMounted) {
+          console.log('[useAuth] Done');
           setIsAuthLoading(false);
         }
       }
