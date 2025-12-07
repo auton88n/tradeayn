@@ -1,9 +1,31 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Brain, ArrowLeft, Palette, Smartphone, Zap, Layout, TrendingUp, Globe, Instagram, Play, Heart, Eye, BarChart3, Users, Star, CheckCircle, Mail } from 'lucide-react';
 import influencerBg from '@/assets/influencer-woman-bg.jpg';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
+
 const InfluencerSites = () => {
+  useEffect(() => {
+    // Update page title
+    document.title = 'Premium Content Creator Websites | AYN';
+    
+    // Update meta description
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.setAttribute('content', 'Custom luxury websites for content creators. Showcase your brand, grow your audience, and land partnerships with a stunning personal website built by AYN.');
+    }
+    
+    // Cleanup - restore original on unmount
+    return () => {
+      document.title = 'AYN';
+      const meta = document.querySelector('meta[name="description"]');
+      if (meta) {
+        meta.setAttribute('content', 'Your AI-Powered Business Growth Partner. Get strategic insights, market research, sales optimization, and trend analysis from AYN AI consultant.');
+      }
+    };
+  }, []);
+
   const features = [{
     icon: Palette,
     title: 'Custom Luxury Design',
