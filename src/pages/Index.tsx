@@ -21,10 +21,7 @@ const Index = () => {
       try {
         // Get initial session with 3-second timeout
         const timeoutPromise = new Promise<null>((resolve) => 
-          setTimeout(() => {
-            console.warn('[Index] Session check timeout');
-            resolve(null);
-          }, 3000)
+          setTimeout(() => resolve(null), 3000)
         );
 
         const sessionPromise = supabase.auth.getSession();
@@ -35,8 +32,8 @@ const Index = () => {
           setUser(result.data.session.user);
           setLoading(true); // Only show loader when actually loading dashboard
         }
-      } catch (error) {
-        console.error('[Index] Error getting session:', error);
+      } catch {
+        // Silent failure - show landing page
       } finally {
         if (mounted) {
           setIsInitialized(true);
