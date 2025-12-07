@@ -211,14 +211,20 @@ export const useMessages = (
 
     } catch (error) {
       setIsTyping(false);
-      console.error('Message send failed:', error);
 
-      // Remove the failed user message from UI
-      setMessages(prev => prev.filter(m => m.id !== userMessage.id));
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: "I'm sorry, I'm having trouble connecting right now. Please try again in a moment.",
+        sender: 'ayn',
+        timestamp: new Date(),
+        status: 'error'
+      };
+
+      setMessages(prev => [...prev, errorMessage]);
 
       toast({
-        title: "Message Failed",
-        description: "Unable to send your message. Please try again.",
+        title: "Connection Error",
+        description: "Unable to reach AYN. Please try again.",
         variant: "destructive"
       });
     }

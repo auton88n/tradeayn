@@ -351,54 +351,45 @@ const DashboardContent = ({
         <ShadcnSidebar>
           <div data-tutorial="sidebar" className="h-full">
             <DashboardSidebar
-              userName={auth.userProfile?.contact_person || user.user_metadata?.name || user.email?.split('@')[0]}
-              userEmail={auth.userProfile?.company_name || 'No company'}
-              userAvatar={auth.userProfile?.avatar_url}
-              isTyping={messagesHook.isTyping}
-              hasAccess={auth.hasAccess}
-              isAuthLoading={auth.isAuthLoading}
-              selectedMode={selectedMode}
-              modes={modes}
-              recentChats={chatSession.recentChats}
-              showChatSelection={chatSession.showChatSelection}
-              selectedChats={chatSession.selectedChats}
-              onModeSelect={setSelectedMode}
-              onNewChat={handleNewChat}
-              onLoadChat={handleLoadChat}
-              onToggleChatSelection={(index) => {
-                const newSelected = new Set(chatSession.selectedChats);
-                if (newSelected.has(index)) {
-                  newSelected.delete(index);
-                } else {
-                  newSelected.add(index);
-                }
-                chatSession.setSelectedChats(newSelected);
-              }}
-              onSelectAllChats={() => {
-                if (chatSession.selectedChats.size === chatSession.recentChats.length) {
-                  chatSession.setSelectedChats(new Set());
-                } else {
-                  chatSession.setSelectedChats(new Set(chatSession.recentChats.map((_chat: unknown, i: number) => i)));
-                }
-              }}
-              onDeleteSelected={chatSession.deleteSelectedChats}
-              onDeleteAllChats={chatSession.deleteAllChats}
-              onShowChatSelection={chatSession.setShowChatSelection}
-              onLogout={handleLogout}
-              onAvatarUpdated={auth.loadUserProfile}
-              isAdmin={isAdmin}
-              onAdminPanelClick={onAdminPanelClick}
+          userName={auth.userProfile?.contact_person || user.user_metadata?.name || user.email?.split('@')[0]}
+          userEmail={auth.userProfile?.company_name || 'No company'}
+          userAvatar={auth.userProfile?.avatar_url}
+          isTyping={messagesHook.isTyping}
+          hasAccess={auth.hasAccess}
+          isAuthLoading={auth.isAuthLoading}
+          selectedMode={selectedMode}
+          modes={modes}
+          recentChats={chatSession.recentChats}
+          showChatSelection={chatSession.showChatSelection}
+          selectedChats={chatSession.selectedChats}
+          onModeSelect={setSelectedMode}
+          onNewChat={handleNewChat}
+          onLoadChat={handleLoadChat}
+          onToggleChatSelection={(index) => {
+            const newSelected = new Set(chatSession.selectedChats);
+            if (newSelected.has(index)) {
+              newSelected.delete(index);
+            } else {
+              newSelected.add(index);
+            }
+            chatSession.setSelectedChats(newSelected);
+          }}
+          onSelectAllChats={() => {
+            if (chatSession.selectedChats.size === chatSession.recentChats.length) {
+              chatSession.setSelectedChats(new Set());
+            } else {
+              chatSession.setSelectedChats(new Set(chatSession.recentChats.map((_chat: unknown, i: number) => i)));
+            }
+          }}
+          onDeleteSelected={chatSession.deleteSelectedChats}
+          onDeleteAllChats={chatSession.deleteAllChats}
+          onShowChatSelection={chatSession.setShowChatSelection}
+          onLogout={handleLogout}
+          onAvatarUpdated={auth.loadUserProfile}
+          isAdmin={isAdmin}
+          onAdminPanelClick={onAdminPanelClick}
               onStartTutorial={tutorial.startTutorial}
               isTutorialProfileStep={tutorial.isActive && tutorial.currentStepData?.id === 'profile'}
-              // New props for pagination, pinning, and error handling
-              onLoadMoreChats={chatSession.loadMoreChats}
-              hasMoreChats={chatSession.hasMoreChats}
-              isLoadingMore={chatSession.isLoadingMore}
-              isLoadingChats={chatSession.isLoadingChats}
-              onPinChat={chatSession.pinChat}
-              onUnpinChat={chatSession.unpinChat}
-              chatError={chatSession.error}
-              onRetryLoadChats={chatSession.loadRecentChats}
             />
           </div>
         </ShadcnSidebar>
