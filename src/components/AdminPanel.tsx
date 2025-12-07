@@ -154,7 +154,17 @@ export const AdminPanel = ({ onBackClick }: AdminPanelProps) => {
   }, []);
 
   useEffect(() => {
+    console.log('[AdminPanel] Fetching data...');
     fetchData();
+    
+    // Safety timeout - if data doesn't load in 8 seconds, stop loading spinner
+    const safetyTimeout = setTimeout(() => {
+      console.warn('[AdminPanel] Safety timeout triggered after 8s');
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }, 8000);
+    
+    return () => clearTimeout(safetyTimeout);
   }, [fetchData]);
 
   const handleRefresh = () => {

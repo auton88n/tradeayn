@@ -41,17 +41,18 @@ const Index = () => {
   useEffect(() => {
     let mounted = true;
     
-    // Fallback: if auth doesn't respond in 8 seconds, show landing page anyway
+    // Fallback: if auth doesn't respond in 10 seconds, show landing page anyway
     const fallbackTimeout = setTimeout(() => {
       if (mounted && loading) {
-        console.warn('Auth check timed out, proceeding to landing page');
+        console.warn('[Index] Auth timeout after 10s, showing landing page');
         setLoading(false);
       }
-    }, 8000);
+    }, 10000);
 
     // Set up auth state listener - trust Supabase for normal auth events
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log('[Index] onAuthStateChange:', event, !!session);
         if (!mounted) return;
         
         // Trust Supabase auth for normal events (no redundant validation)
@@ -78,8 +79,10 @@ const Index = () => {
     );
 
     // Check for existing session - trust Supabase without extra validation
+    console.log('[Index] Checking existing session...');
     supabase.auth.getSession()
       .then(({ data: { session } }) => {
+        console.log('[Index] getSession result:', !!session);
         if (mounted) {
           setSession(session);
           setUser(session?.user ?? null);
@@ -87,7 +90,7 @@ const Index = () => {
         }
       })
       .catch((error) => {
-        console.error('Auth session check failed:', error);
+        console.error('[Index] Auth session check failed:', error);
         if (mounted) {
           setLoading(false);
         }
