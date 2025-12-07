@@ -143,10 +143,10 @@ const InfluencerSites = () => {
                 <img 
                   src={influencerBg}
                   alt="Influencer"
-                  className="absolute right-0 top-0 h-full w-4/5 object-cover object-center opacity-60"
+                  className="absolute right-0 top-0 h-full w-full object-cover object-top opacity-60"
                 />
                 {/* Gradient overlay for readability */}
-                <div className="absolute inset-0 bg-gradient-to-r from-neutral-950 via-neutral-950/70 to-transparent z-10" />
+                <div className="absolute inset-0 bg-gradient-to-r from-neutral-950 via-neutral-950/50 to-neutral-950/20 z-10" />
                 
                 {/* Content */}
                 <div className="relative z-20 flex items-center h-full p-8 md:p-12">
