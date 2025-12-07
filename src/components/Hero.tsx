@@ -199,25 +199,48 @@ export const Hero = ({
       {/* Subtle vignette / soft gradient background */}
       <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-background via-background to-muted/10" />
 
-      {/* Headline */}
-      <div className="w-full max-w-4xl text-center mb-4 md:mb-6">
+      {/* Headline - Premium Editorial Layout */}
+      <div className="w-full max-w-4xl text-center mb-6 md:mb-10">
+        {/* Small intro label */}
+        <motion.span 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0, ease: [0.32, 0.72, 0, 1] }}
+          className="inline-block text-[10px] sm:text-xs font-mono uppercase tracking-[0.3em] text-muted-foreground/70 mb-3 md:mb-4"
+        >
+          {language === 'ar' ? '◦ مرحباً ◦' : '◦ Introducing ◦'}
+        </motion.span>
+        
+        {/* Main AYN title - dramatic sizing with letter spacing */}
         <motion.h1 
           initial={{ opacity: 0, y: 30, filter: 'blur(12px)', scale: 0.95 }}
           animate={{ opacity: 1, y: 0, filter: 'blur(0px)', scale: 1 }}
-          transition={{ duration: 1, delay: 0, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="font-display text-5xl sm:text-6xl md:text-8xl lg:text-[10rem] font-bold tracking-[-0.02em] text-foreground mb-2 md:mb-3"
+          transition={{ duration: 1, delay: 0.15, ease: [0.25, 0.46, 0.45, 0.94] }}
+          className="font-display text-6xl sm:text-7xl md:text-9xl lg:text-[11rem] font-bold tracking-[0.08em] text-foreground mb-4 md:mb-6"
         >
-          {language === 'ar' ? 'تعرّف على AYN' : 'Meet AYN'}
+          AYN
         </motion.h1>
+        
+        {/* Decorative divider */}
+        <motion.div 
+          initial={{ scaleX: 0, opacity: 0 }}
+          animate={{ scaleX: 1, opacity: 1 }}
+          transition={{ duration: 0.8, delay: 0.9, ease: [0.32, 0.72, 0, 1] }}
+          className="w-16 md:w-24 h-px bg-gradient-to-r from-transparent via-foreground/30 to-transparent mx-auto mb-4 md:mb-6"
+        />
+        
+        {/* Subtitle with emphasized "Intelligent" */}
         <motion.p 
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 1.2, ease: [0.32, 0.72, 0, 1] }}
-          className="text-lg md:text-xl lg:text-2xl text-muted-foreground font-light max-w-2xl mx-auto"
+          className="text-base sm:text-lg md:text-xl lg:text-2xl text-muted-foreground font-light max-w-xl mx-auto leading-relaxed"
         >
-          {language === 'ar' 
-            ? 'الذكاء الاصطناعي الذي يرى، يستمع، ويفهم عالمك.' 
-            : 'The Intelligent companion that helps you organize, plan, and live better'}
+          {language === 'ar' ? (
+            <>الرفيق <span className="italic font-normal text-foreground/80">الذكي</span> الذي يساعدك على التنظيم والتخطيط والعيش بشكل أفضل</>
+          ) : (
+            <>The <span className="italic font-normal text-foreground/80">Intelligent</span> companion that helps you organize, plan, and live better</>
+          )}
         </motion.p>
       </div>
 
