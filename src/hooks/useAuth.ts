@@ -5,8 +5,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { trackDeviceLogin } from '@/hooks/useDeviceTracking';
 import type { UserProfile, UseAuthReturn } from '@/types/dashboard.types';
 
-// Import Supabase config from centralized client
-import { supabase } from '@/integrations/supabase/client';
+// Supabase config - using direct fetch to avoid client deadlocks
 
 // Get URL and key from environment - centralized source of truth
 const SUPABASE_URL = 'https://dfkoxuokfkttjhfjcecx.supabase.co';
@@ -71,8 +70,8 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
       const record = data[0];
       const isActive = record.is_active && (!record.expires_at || new Date(record.expires_at) > new Date());
       setHasAccess(isActive);
-    } catch (error) {
-      console.error('checkAccess error:', error);
+    } catch {
+      // Silent failure - access denied by default
     }
   }, [user.id, session.access_token]);
 
@@ -85,8 +84,8 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
       );
 
       setIsAdmin(data?.[0]?.role === 'admin');
-    } catch (error) {
-      console.error('checkAdminRole error:', error);
+    } catch {
+      // Silent failure - non-admin by default
     }
   }, [user.id, session.access_token]);
 
@@ -101,8 +100,8 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
       if (data && data.length > 0) {
         setUserProfile(data[0] as UserProfile);
       }
-    } catch (error) {
-      console.error('loadUserProfile error:', error);
+    } catch {
+      // Silent failure - no profile
     }
   }, [user.id, session.access_token]);
 
@@ -130,8 +129,7 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
         title: t('auth.welcomeTitle'),
         description: t('auth.welcomeDesc')
       });
-    } catch (error) {
-      console.error('Error accepting terms:', error);
+    } catch {
       toast({
         title: 'Error',
         description: 'Failed to save terms acceptance. Please try again.',
