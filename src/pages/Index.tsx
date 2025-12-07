@@ -40,46 +40,25 @@ const Index = () => {
 
   useEffect(() => {
     let mounted = true;
-    
-    // Fallback: if auth doesn't respond in 8 seconds, show landing page anyway
-    const fallbackTimeout = setTimeout(() => {
-      if (mounted && loading) {
-        console.warn('Auth check timed out, proceeding to landing page');
-        setLoading(false);
-      }
-    }, 8000);
 
-    // Set up auth state listener - trust Supabase for normal auth events
+    // Set up auth state listener FIRST - this is the primary auth handler
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (!mounted) return;
         
-        // Trust Supabase auth for normal events (no redundant validation)
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
-          setSession(session);
-          setUser(session?.user ?? null);
-          setLoading(false);
-          return;
-        }
+        console.log('[Index] Auth event:', event, !!session);
         
-        // Handle sign out
-        if (event === 'SIGNED_OUT') {
-          setSession(null);
-          setUser(null);
-          setLoading(false);
-          return;
-        }
-        
-        // For other events, update state normally
+        // Update state for all auth events
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
       }
     );
 
-    // Check for existing session - trust Supabase without extra validation
+    // THEN check for existing session
     supabase.auth.getSession()
       .then(({ data: { session } }) => {
+        console.log('[Index] getSession result:', !!session);
         if (mounted) {
           setSession(session);
           setUser(session?.user ?? null);
@@ -87,7 +66,7 @@ const Index = () => {
         }
       })
       .catch((error) => {
-        console.error('Auth session check failed:', error);
+        console.error('[Index] Auth session check failed:', error);
         if (mounted) {
           setLoading(false);
         }
@@ -95,7 +74,6 @@ const Index = () => {
 
     return () => {
       mounted = false;
-      clearTimeout(fallbackTimeout);
       subscription.unsubscribe();
     };
   }, []);
