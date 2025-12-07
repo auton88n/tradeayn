@@ -1,50 +1,64 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useLanguage } from '@/contexts/LanguageContext';
 import type { ChatHistory, Message, UseChatSessionReturn } from '@/types/dashboard.types';
+
+const CHATS_PER_PAGE = 10;
 
 export const useChatSession = (userId: string): UseChatSessionReturn => {
   const [currentSessionId, setCurrentSessionId] = useState(() => crypto.randomUUID());
   const [recentChats, setRecentChats] = useState<ChatHistory[]>([]);
   const [selectedChats, setSelectedChats] = useState<Set<number>>(new Set());
   const [showChatSelection, setShowChatSelection] = useState(false);
+  const [hasMoreChats, setHasMoreChats] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isLoadingChats, setIsLoadingChats] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  const { t } = useLanguage();
+  
+  // Track loaded session count for pagination
+  const loadedSessionsRef = useRef(0);
 
-  // Load recent chat history
-  const loadRecentChats = useCallback(async () => {
-    if (!userId) {
-      return;
-    }
+  // Load recent chat history with pagination
+  const loadRecentChats = useCallback(async (reset = true) => {
+    if (!userId) return;
     
     try {
+      setError(null);
+      if (reset) {
+        setIsLoadingChats(true);
+        loadedSessionsRef.current = 0;
+      }
       
-      // Wrap query with 5-second timeout
+      // Fetch messages with timeout
       const queryPromise = supabase
         .from('messages')
         .select('id, content, created_at, sender, session_id')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
-        .limit(100);
+        .limit(200); // Fetch more to ensure we have enough sessions
       
-      const result = await Promise.race([
-        queryPromise,
-        new Promise<{ data: null; error: Error }>((resolve) => 
-          setTimeout(() => resolve({ data: null, error: new Error('Query timeout after 5s') }), 5000)
-        )
-      ]);
+      const timeoutPromise = new Promise<{ data: null; error: Error }>((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout - please try again')), 8000)
+      );
       
-      const { data, error } = result;
+      const { data, error: queryError } = await Promise.race([queryPromise, timeoutPromise]);
 
-      if (error) {
-        return;
-      }
+      if (queryError) throw queryError;
 
       if (!data || data.length === 0) {
         setRecentChats([]);
+        setHasMoreChats(false);
         return;
       }
+
+      // Fetch pinned sessions
+      const { data: pinnedData } = await supabase
+        .from('pinned_sessions')
+        .select('session_id')
+        .eq('user_id', userId);
+      
+      const pinnedSet = new Set(pinnedData?.map(p => p.session_id) || []);
 
       // Group messages by session_id
       interface ProcessedMessage {
@@ -58,7 +72,6 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
 
       data.forEach(message => {
         const sessionId = message.session_id;
-        // Skip messages without a session_id
         if (!sessionId) return;
         
         if (!sessionGroups[sessionId]) {
@@ -72,13 +85,10 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
         });
       });
 
-      // Convert to ChatHistory format, sorted by most recent session
-      const chatHistories: ChatHistory[] = Object.entries(sessionGroups)
+      // Convert to ChatHistory format with isPinned flag
+      const allChats: ChatHistory[] = Object.entries(sessionGroups)
         .map(([sessionId, messages]) => {
-          // Sort messages chronologically for proper conversation flow
           const sortedMessages = messages.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
-
-          // Find the first user message for the title
           const firstUserMessage = sortedMessages.find(msg => msg.sender === 'user');
           const lastMessage = sortedMessages[sortedMessages.length - 1];
 
@@ -93,17 +103,103 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
               : lastMessage.content,
             timestamp: lastMessage.timestamp,
             messages: sortedMessages,
-            sessionId: sessionId
+            sessionId: sessionId,
+            isPinned: pinnedSet.has(sessionId)
           };
         })
-        .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()) // Sort by most recent
-        .slice(0, 10); // Limit to latest 10 sessions
+        .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
-      setRecentChats(chatHistories);
-    } catch (error) {
-      console.error('Error loading recent chats:', error);
+      // For reset, show first page; for append, add next page
+      const startIndex = reset ? 0 : loadedSessionsRef.current;
+      const endIndex = startIndex + CHATS_PER_PAGE;
+      const pageChats = allChats.slice(startIndex, endIndex);
+      
+      loadedSessionsRef.current = endIndex;
+      setHasMoreChats(endIndex < allChats.length);
+
+      if (reset) {
+        setRecentChats(pageChats);
+      } else {
+        setRecentChats(prev => [...prev, ...pageChats]);
+      }
+      
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load chats';
+      console.error('Error loading recent chats:', err);
+      setError(errorMessage);
+      
+      toast({
+        title: "Failed to load chats",
+        description: errorMessage,
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoadingChats(false);
     }
-  }, [userId]);
+  }, [userId, toast]);
+
+  // Load more chats (pagination)
+  const loadMoreChats = useCallback(async () => {
+    if (!hasMoreChats || isLoadingMore) return;
+    
+    setIsLoadingMore(true);
+    await loadRecentChats(false);
+    setIsLoadingMore(false);
+  }, [hasMoreChats, isLoadingMore, loadRecentChats]);
+
+  // Pin a chat session
+  const pinChat = useCallback(async (sessionId: string) => {
+    if (!userId) return;
+    
+    try {
+      const { error } = await supabase
+        .from('pinned_sessions')
+        .insert({ user_id: userId, session_id: sessionId });
+      
+      if (error) throw error;
+      
+      // Update local state immediately
+      setRecentChats(prev => prev.map(chat => 
+        chat.sessionId === sessionId ? { ...chat, isPinned: true } : chat
+      ));
+      
+      toast({ title: "Chat pinned" });
+    } catch (err) {
+      console.error('Failed to pin chat:', err);
+      toast({ 
+        title: "Failed to pin chat", 
+        variant: "destructive" 
+      });
+    }
+  }, [userId, toast]);
+
+  // Unpin a chat session
+  const unpinChat = useCallback(async (sessionId: string) => {
+    if (!userId) return;
+    
+    try {
+      const { error } = await supabase
+        .from('pinned_sessions')
+        .delete()
+        .eq('user_id', userId)
+        .eq('session_id', sessionId);
+      
+      if (error) throw error;
+      
+      // Update local state immediately
+      setRecentChats(prev => prev.map(chat => 
+        chat.sessionId === sessionId ? { ...chat, isPinned: false } : chat
+      ));
+      
+      toast({ title: "Chat unpinned" });
+    } catch (err) {
+      console.error('Failed to unpin chat:', err);
+      toast({ 
+        title: "Failed to unpin chat", 
+        variant: "destructive" 
+      });
+    }
+  }, [userId, toast]);
 
   // Start a new chat session
   const startNewChat = useCallback(() => {
@@ -111,22 +207,22 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
     setCurrentSessionId(newSessionId);
     
     toast({
-      title: t('common.newChat'),
-      description: t('dashboard.newChatDesc') || 'You can now start a fresh conversation with AYN.',
+      title: 'New Chat',
+      description: 'You can now start a fresh conversation with AYN.',
     });
-  }, [toast, t]);
+  }, [toast]);
 
   // Load an existing chat
   const loadChat = useCallback((chatHistory: ChatHistory): Message[] => {
     setCurrentSessionId(chatHistory.sessionId as `${string}-${string}-${string}-${string}-${string}`);
     
     toast({
-      title: t('dashboard.chatLoaded') || 'Chat Loaded',
-      description: `${t('dashboard.loadedConversation') || 'Loaded conversation'}: ${chatHistory.title}`,
+      title: 'Chat Loaded',
+      description: `Loaded conversation: ${chatHistory.title}`,
     });
 
     return chatHistory.messages;
-  }, [toast, t]);
+  }, [toast]);
 
   // Delete selected chats
   const deleteSelectedChats = useCallback(async () => {
@@ -135,15 +231,15 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
     try {
       const chatIndicesToDelete = Array.from(selectedChats);
       const messageIdsToDelete: string[] = [];
+      const sessionIdsToDelete: string[] = [];
 
-      // Collect message IDs from selected chats
       chatIndicesToDelete.forEach(index => {
         if (recentChats[index]) {
           messageIdsToDelete.push(...recentChats[index].messages.map(m => m.id));
+          sessionIdsToDelete.push(recentChats[index].sessionId);
         }
       });
 
-      // Delete messages from database with explicit user_id filter
       if (messageIdsToDelete.length > 0) {
         const { error } = await supabase
           .from('messages')
@@ -153,34 +249,40 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
 
         if (error) {
           toast({
-            title: t('error.deleteError') || 'Error',
-            description: t('error.deleteChatsError') || 'Failed to delete some chat messages.',
+            title: 'Error',
+            description: 'Failed to delete some chat messages.',
             variant: "destructive"
           });
           return;
         }
+        
+        // Also delete any pinned references
+        if (sessionIdsToDelete.length > 0) {
+          await supabase
+            .from('pinned_sessions')
+            .delete()
+            .eq('user_id', userId)
+            .in('session_id', sessionIdsToDelete);
+        }
       }
 
-      // Clear local state first
       setSelectedChats(new Set());
       setShowChatSelection(false);
-
-      // Refresh from database to ensure consistency
       await loadRecentChats();
 
       toast({
-        title: t('dashboard.chatsDeleted') || 'Chats Deleted',
-        description: `${t('dashboard.successfullyDeleted') || 'Successfully deleted'} ${selectedChats.size} ${t('dashboard.conversations') || 'conversation(s)'}.`,
+        title: 'Chats Deleted',
+        description: `Successfully deleted ${selectedChats.size} conversation(s).`,
       });
-    } catch (error) {
-      console.error('Error deleting chats:', error);
+    } catch (err) {
+      console.error('Error deleting chats:', err);
       toast({
-        title: t('error.deleteError') || 'Error',
-        description: t('error.deleteChatsError') || 'Failed to delete selected chats.',
+        title: 'Error',
+        description: 'Failed to delete selected chats.',
         variant: "destructive"
       });
     }
-  }, [selectedChats, recentChats, toast, t]);
+  }, [selectedChats, recentChats, userId, toast, loadRecentChats]);
 
   // Toggle chat selection
   const toggleChatSelection = useCallback((index: number) => {
@@ -205,6 +307,12 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
   // Delete all chats for the user
   const deleteAllChats = useCallback(async () => {
     try {
+      // Delete all pinned sessions first
+      await supabase
+        .from('pinned_sessions')
+        .delete()
+        .eq('user_id', userId);
+        
       const { error } = await supabase
         .from('messages')
         .delete()
@@ -219,17 +327,17 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
         return;
       }
 
-      // Clear local state
       setRecentChats([]);
       setSelectedChats(new Set());
       setShowChatSelection(false);
+      setHasMoreChats(false);
 
       toast({
         title: 'All Chats Deleted',
         description: 'Your entire chat history has been cleared.',
       });
-    } catch (error) {
-      console.error('Error deleting all chats:', error);
+    } catch (err) {
+      console.error('Error deleting all chats:', err);
       toast({
         title: 'Error',
         description: 'Failed to delete chat history.',
@@ -243,6 +351,32 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
     loadRecentChats();
   }, [loadRecentChats]);
 
+  // Real-time sync for cross-tab updates
+  useEffect(() => {
+    if (!userId) return;
+    
+    const subscription = supabase
+      .channel('recent-chats-sync')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'messages',
+          filter: `user_id=eq.${userId}`
+        },
+        () => {
+          // Reload chats when messages change
+          loadRecentChats();
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  }, [userId, loadRecentChats]);
+
   return {
     currentSessionId,
     recentChats,
@@ -250,12 +384,22 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
     showChatSelection,
     setSelectedChats,
     setShowChatSelection,
-    loadRecentChats,
+    loadRecentChats: () => loadRecentChats(true),
     startNewChat,
     loadChat,
     deleteSelectedChats,
     deleteAllChats,
     toggleChatSelection,
-    selectAllChats
+    selectAllChats,
+    // Pagination
+    loadMoreChats,
+    hasMoreChats,
+    isLoadingMore,
+    isLoadingChats,
+    // Pin functionality
+    pinChat,
+    unpinChat,
+    // Error handling
+    error
   };
 };

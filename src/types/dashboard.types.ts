@@ -54,6 +54,7 @@ export interface ChatHistory {
   timestamp: Date;
   messages: Message[];
   sessionId: string;
+  isPinned?: boolean;
 }
 
 // ============================================
@@ -189,6 +190,16 @@ export interface UseChatSessionReturn {
   deleteAllChats: () => Promise<void>;
   toggleChatSelection: (index: number) => void;
   selectAllChats: () => void;
+  // Pagination
+  loadMoreChats: () => Promise<void>;
+  hasMoreChats: boolean;
+  isLoadingMore: boolean;
+  isLoadingChats: boolean;
+  // Pin functionality
+  pinChat: (sessionId: string) => Promise<void>;
+  unpinChat: (sessionId: string) => Promise<void>;
+  // Error handling
+  error: string | null;
 }
 
 export interface UseAuthReturn {
