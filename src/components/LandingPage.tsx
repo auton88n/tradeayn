@@ -392,7 +392,7 @@ const LandingPage = () => {
         <div className="container mx-auto max-w-6xl text-center">
           <ScrollReveal>
             <span className="text-sm font-mono text-muted-foreground tracking-wider uppercase mb-4 block">
-              {language === 'ar' ? 'تعرّف على AYN' : 'Meet AYN'}
+              {language === 'ar' ? 'عن AYN' : 'About AYN'}
             </span>
 
             <h2 className="text-3xl md:text-5xl lg:text-6xl font-serif font-bold mb-4 md:mb-6">
