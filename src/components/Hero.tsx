@@ -404,9 +404,8 @@ export const Hero = ({
         <motion.div 
           style={{ x: eyeX, y: eyeY }}
           className="relative z-10 flex items-center justify-center group cursor-pointer will-change-transform" 
-          initial={{ scale: 0.8, opacity: 0 }}
+          initial={{ scale: 1, opacity: 1 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.8, delay: 1.5, ease: [0.34, 1.56, 0.64, 1] }}
           onMouseEnter={() => setIsHovered(true)} 
           onMouseLeave={() => setIsHovered(false)}
         >
@@ -474,9 +473,8 @@ export const Hero = ({
 
       {/* Demo Chat Input - TWO ROW LAYOUT - matches dashboard */}
       <motion.div 
-        initial={{ opacity: 0, y: 30 }} 
+        initial={{ opacity: 1, y: 0 }} 
         animate={{ opacity: 1, y: 0 }} 
-        transition={{ duration: 0.8, delay: 2.2, ease: [0.32, 0.72, 0, 1] }}
         className="mt-8 md:mt-10 w-full max-w-2xl"
       >
         <div className="relative bg-background/90 dark:bg-background/90 backdrop-blur-md border border-border rounded-2xl shadow-lg overflow-hidden">
