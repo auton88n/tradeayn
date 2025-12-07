@@ -139,10 +139,7 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
 
   // Load all auth data on mount - DIRECT FETCH, no Supabase client
   useEffect(() => {
-    console.log('[useAuth] Starting for user:', user?.id);
-    
     if (!user?.id || !session?.access_token) {
-      console.log('[useAuth] No user/session, done');
       setIsAuthLoading(false);
       return;
     }
@@ -153,8 +150,6 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
     const runQueries = async () => {
       if (hasRun) return;
       hasRun = true;
-
-      console.log('[useAuth] Running direct fetch queries');
 
       try {
         // Race queries against timeout - direct fetch bypasses Supabase client
@@ -173,13 +168,6 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
         if (!isMounted) return;
 
         const [accessData, roleData, profileData, settingsData] = results;
-
-        console.log('[useAuth] Queries complete:', {
-          access: !!accessData,
-          role: !!roleData,
-          profile: !!profileData,
-          settings: !!settingsData
-        });
 
         // Process access
         if (accessData && accessData.length > 0) {
@@ -200,11 +188,10 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
         // Process terms
         setHasAcceptedTerms(settingsData?.[0]?.has_accepted_terms ?? false);
 
-      } catch (error) {
-        console.error('[useAuth] Error:', error);
+      } catch {
+        // Auth queries failed, but still allow loading to complete
       } finally {
         if (isMounted) {
-          console.log('[useAuth] Done');
           setIsAuthLoading(false);
         }
       }

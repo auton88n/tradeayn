@@ -18,15 +18,13 @@ const validateSession = async (session: Session): Promise<Session | null> => {
     
     // If we get a JWT error or auth error, session is invalid
     if (error && (error.code === 'PGRST301' || error.message?.includes('JWT') || error.code === '401')) {
-      console.warn('Invalid session detected, clearing auth state');
       localStorage.removeItem('sb-dfkoxuokfkttjhfjcecx-auth-token');
       sessionStorage.clear();
       return null;
     }
     
     return session;
-  } catch (err) {
-    console.error('Session validation failed:', err);
+  } catch {
     localStorage.removeItem('sb-dfkoxuokfkttjhfjcecx-auth-token');
     sessionStorage.clear();
     return null;
@@ -44,7 +42,6 @@ const Index = () => {
     // Fallback: if auth doesn't respond in 10 seconds, show landing page anyway
     const fallbackTimeout = setTimeout(() => {
       if (mounted && loading) {
-        console.warn('[Index] Auth timeout after 10s, showing landing page');
         setLoading(false);
       }
     }, 10000);
@@ -52,7 +49,6 @@ const Index = () => {
     // Set up auth state listener - trust Supabase for normal auth events
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log('[Index] onAuthStateChange:', event, !!session);
         if (!mounted) return;
         
         // Trust Supabase auth for normal events (no redundant validation)
@@ -79,18 +75,15 @@ const Index = () => {
     );
 
     // Check for existing session - trust Supabase without extra validation
-    console.log('[Index] Checking existing session...');
     supabase.auth.getSession()
       .then(({ data: { session } }) => {
-        console.log('[Index] getSession result:', !!session);
         if (mounted) {
           setSession(session);
           setUser(session?.user ?? null);
           setLoading(false);
         }
       })
-      .catch((error) => {
-        console.error('[Index] Auth session check failed:', error);
+      .catch(() => {
         if (mounted) {
           setLoading(false);
         }

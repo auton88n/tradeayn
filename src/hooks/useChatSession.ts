@@ -15,12 +15,10 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
   // Load recent chat history
   const loadRecentChats = useCallback(async () => {
     if (!userId) {
-      console.log('[useChatSession] No userId, skipping loadRecentChats');
       return;
     }
     
     try {
-      console.log('[useChatSession] Loading recent chats for user:', userId);
       
       // Wrap query with 5-second timeout
       const queryPromise = supabase
@@ -40,11 +38,8 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
       const { data, error } = result;
 
       if (error) {
-        console.error('[useChatSession] Error loading recent chats:', error);
         return;
       }
-      
-      console.log('[useChatSession] Loaded', data?.length || 0, 'messages');
 
       if (!data || data.length === 0) {
         setRecentChats([]);
