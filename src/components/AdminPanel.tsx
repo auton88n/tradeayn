@@ -99,6 +99,15 @@ export const AdminPanel = ({ onBackClick }: AdminPanelProps) => {
   });
 
   const fetchData = useCallback(async () => {
+    console.log('[AdminPanel] Starting fetchData...');
+    
+    // Safety timeout - force loading to stop after 5 seconds
+    const timeout = setTimeout(() => {
+      console.warn('[AdminPanel] Fetch timeout - forcing loading to stop');
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }, 5000);
+    
     try {
       // Fetch all data in parallel
       const [usersResult, profilesResult, messagesResult, configResult] = await Promise.all([
@@ -107,6 +116,13 @@ export const AdminPanel = ({ onBackClick }: AdminPanelProps) => {
         supabase.from('messages').select('id', { count: 'exact' }).gte('created_at', new Date().toISOString().split('T')[0]),
         supabase.from('system_config').select('key, value'),
       ]);
+
+      console.log('[AdminPanel] Data loaded:', {
+        users: usersResult.data?.length ?? 0,
+        profiles: profilesResult.data?.length ?? 0,
+        messages: messagesResult.count ?? 0,
+        config: configResult.data?.length ?? 0,
+      });
 
       if (usersResult.error) throw usersResult.error;
       
@@ -148,9 +164,10 @@ export const AdminPanel = ({ onBackClick }: AdminPanelProps) => {
         }));
       }
     } catch (error) {
-      console.error('Error fetching admin data:', error);
+      console.error('[AdminPanel] Error fetching admin data:', error);
       toast.error('Failed to load admin data');
     } finally {
+      clearTimeout(timeout);
       setIsLoading(false);
       setIsRefreshing(false);
     }

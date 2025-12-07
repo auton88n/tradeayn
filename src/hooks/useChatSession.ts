@@ -14,6 +14,13 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
 
   // Load recent chat history
   const loadRecentChats = useCallback(async () => {
+    if (!userId) {
+      console.log('[useChatSession] No userId, skipping loadRecentChats');
+      return;
+    }
+    
+    console.log('[useChatSession] Loading recent chats for user:', userId);
+    
     try {
       const { data, error } = await supabase
         .from('messages')
@@ -23,9 +30,11 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
         .limit(100);
 
       if (error) {
-        console.error('Error loading recent chats:', error);
+        console.error('[useChatSession] Error loading recent chats:', error);
         return;
       }
+      
+      console.log('[useChatSession] Loaded messages:', data?.length ?? 0);
 
       if (!data || data.length === 0) {
         setRecentChats([]);
