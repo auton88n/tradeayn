@@ -71,12 +71,12 @@ const InfluencerSites = () => {
         }} className="text-center">
             
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-serif font-bold mb-6 leading-tight">
-              Premium Influencer
+              Premium Content Creator
               <br />
               <span className="text-rose-400">Sites</span>
             </h1>
             <p className="text-lg md:text-xl text-neutral-400 max-w-2xl mx-auto mb-8">
-              Luxury websites custom-built for influencers and content creators. Attract more partnerships and elevate your personal brand.
+              Luxury websites custom-built for content creators and digital influencers. Attract more partnerships and elevate your personal brand.
             </p>
             <Link to="/#contact">
               <Button size="lg" className="rounded-full px-8 bg-white text-neutral-950 hover:bg-neutral-200">
@@ -142,7 +142,7 @@ const InfluencerSites = () => {
                 {/* Woman Background Image */}
                 <img 
                   src={influencerBg}
-                  alt="Influencer"
+                  alt="Content Creator"
                   className="absolute right-0 top-0 h-[120%] w-full object-cover object-center opacity-60"
                 />
                 {/* Gradient overlay for readability */}
@@ -156,7 +156,7 @@ const InfluencerSites = () => {
                       <span className="text-rose-400">SARAH</span>{' '}
                       <span className="text-white">JOHNSON</span>
                     </h3>
-                    <p className="text-neutral-400 text-sm font-medium mb-4">Fashion & Lifestyle Influencer</p>
+                    <p className="text-neutral-400 text-sm font-medium mb-4">Fashion & Lifestyle Creator</p>
                     <p className="text-neutral-500 text-sm mb-6 max-w-sm">
                       Inspiring 3M+ followers with authentic fashion content, sustainable living tips, and lifestyle inspiration across TikTok and Instagram.
                     </p>
@@ -180,7 +180,7 @@ const InfluencerSites = () => {
                     {/* White Button with Mail Icon */}
                     <Button className="bg-white hover:bg-neutral-200 text-neutral-900 rounded-full px-6 gap-2">
                       <Mail className="w-4 h-4" />
-                      Work With Me
+                      Let's Collaborate
                     </Button>
                   </div>
                 </div>
