@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Brain, ArrowRight, CheckCircle, Send, Loader2, Sparkles, Globe, Shield, Menu, ChevronDown } from 'lucide-react';
+import { Brain, ArrowRight, CheckCircle, Send, Loader2, Sparkles, Clock, Shield, Menu, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -387,20 +387,20 @@ const LandingPage = () => {
       {/* Hero Section - Premium AI Eye Experience */}
       <Hero onGetStarted={() => setShowAuthModal(true)} onDemoMessage={msg => setDemoMessage(msg)} />
 
-      {/* About AYN - Value Proposition Section */}
+      {/* Meet AYN - Value Proposition Section */}
       <section id="about" className="py-16 md:py-32 px-4 md:px-6">
         <div className="container mx-auto max-w-6xl text-center">
           <ScrollReveal>
             <span className="text-sm font-mono text-muted-foreground tracking-wider uppercase mb-4 block">
-              {language === 'ar' ? 'من نحن' : 'About AYN'}
+              {language === 'ar' ? 'تعرّف على AYN' : 'Meet AYN'}
             </span>
 
             <h2 className="text-3xl md:text-5xl lg:text-6xl font-serif font-bold mb-4 md:mb-6">
-              {language === 'ar' ? 'ذكاء اصطناعي مصمّم لك' : 'AI That Actually Understands You'}
+              {language === 'ar' ? 'رفيقك الذكي في الحياة' : 'Your Intelligent Life Companion'}
             </h2>
 
             <p className="text-base md:text-xl text-muted-foreground max-w-3xl mx-auto mb-10 md:mb-16">
-              {language === 'ar' ? 'صُنع للشرق الأوسط. يجمع بين أحدث تقنيات الذكاء الاصطناعي وفهم عميق لأسواقنا. نتكلم لغتك—بكل معانيها.' : 'Built for the Middle East, AYN combines cutting-edge AI with deep understanding of regional business needs. We speak your language—literally and figuratively.'}
+              {language === 'ar' ? 'يتعلم AYN عاداتك، يتوقع احتياجاتك، ويساعدك على التنقل في الحياة بوضوح—من تخطيط يومك إلى اتخاذ قرارات مدروسة.' : 'AYN learns your habits, anticipates your needs, and helps you navigate life with clarity—from planning your day to making thoughtful decisions.'}
             </p>
           </ScrollReveal>
 
@@ -412,10 +412,10 @@ const LandingPage = () => {
                   <Brain className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
                 </div>
                 <h3 className="text-lg md:text-xl font-bold">
-                  {language === 'ar' ? 'يفهم عملك' : 'Contextual Intelligence'}
+                  {language === 'ar' ? 'فهم متكيّف' : 'Adaptive Understanding'}
                 </h3>
                 <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-                  {language === 'ar' ? 'يدرك تفاصيل مجالك ونموذج عملك والتحديات التي تواجهها' : 'Understands your industry, business model, and specific challenges'}
+                  {language === 'ar' ? 'يتعلم تفضيلاتك وروتينك وأهدافك ليقدم لك إرشادات مخصصة' : 'Learns your preferences, routines, and goals to offer personalized guidance'}
                 </p>
               </div>
             </ScrollReveal>
@@ -423,13 +423,13 @@ const LandingPage = () => {
             <ScrollReveal delay={0.2}>
               <div className="text-center space-y-3 md:space-y-4">
                 <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-muted/50 mx-auto flex items-center justify-center">
-                  <Globe className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
+                  <Clock className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
                 </div>
                 <h3 className="text-lg md:text-xl font-bold">
-                  {language === 'ar' ? 'عربي وإنجليزي بطلاقة' : 'Bilingual by Design'}
+                  {language === 'ar' ? 'متاح دائماً' : 'Always Available'}
                 </h3>
                 <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-                  {language === 'ar' ? 'تنقّل بين اللغتين بسلاسة تامة وفهم طبيعي' : 'Seamlessly switch between Arabic and English with native understanding'}
+                  {language === 'ar' ? 'رفيق مدروس جاهز لمساعدتك على مدار الساعة، متى احتجت إليه' : 'A thoughtful companion ready to help, 24/7, whenever you need it'}
                 </p>
               </div>
             </ScrollReveal>
@@ -440,10 +440,10 @@ const LandingPage = () => {
                   <Shield className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
                 </div>
                 <h3 className="text-lg md:text-xl font-bold">
-                  {language === 'ar' ? 'حماية بمستوى البنوك' : 'Enterprise Security'}
+                  {language === 'ar' ? 'خصوصيتك محمية' : 'Your Privacy, Protected'}
                 </h3>
                 <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-                  {language === 'ar' ? 'تشفير متقدم وخصوصية مطلقة لبياناتك' : 'Bank-level encryption with complete data privacy and compliance'}
+                  {language === 'ar' ? 'بياناتك الشخصية تبقى خاصة مع حماية شاملة من طرف إلى طرف' : 'Your personal data stays private with end-to-end security'}
                 </p>
               </div>
             </ScrollReveal>
