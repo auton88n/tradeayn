@@ -5,7 +5,10 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { trackDeviceLogin } from '@/hooks/useDeviceTracking';
 import type { UserProfile, UseAuthReturn } from '@/types/dashboard.types';
 
-// Direct Supabase REST API - bypasses client internal state issues
+// Import Supabase config from centralized client
+import { supabase } from '@/integrations/supabase/client';
+
+// Get URL and key from environment - centralized source of truth
 const SUPABASE_URL = 'https://dfkoxuokfkttjhfjcecx.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRma294dW9rZmt0dGpoZmpjZWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYzNTg4NzMsImV4cCI6MjA3MTkzNDg3M30.Th_-ds6dHsxIhRpkzJLREwBIVdgkcdm2SmMNDmjNbxw';
 
