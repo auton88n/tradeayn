@@ -168,7 +168,8 @@ Best regards,<br>The AYN Team
         from: smtpUser,
         to: email,
         subject: `Thank you for your interest in ${serviceName}!`,
-        html: confirmationHtml,
+        content: confirmationHtml,
+        mimeContent: ["text/html"],
       });
 
       console.info(`Confirmation email sent to ${email}`);
@@ -267,8 +268,9 @@ Application ID: ${application.id}
       await smtpClient.send({
         from: smtpUser,
         to: "info@aynn.io",
-        subject: `${serviceEmoji} New ${serviceName} Application from ${fullName}`,
-        html: notificationHtml,
+        subject: `New ${serviceName} Application from ${fullName}`,
+        content: notificationHtml,
+        mimeContent: ["text/html"],
       });
 
       console.info(`Notification email sent to info@aynn.io`);
