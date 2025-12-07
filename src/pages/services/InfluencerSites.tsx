@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Brain, ArrowLeft, Palette, Smartphone, Zap, Layout, TrendingUp, Globe, Instagram, Play, Heart, Eye, BarChart3, Users, Star, CheckCircle } from 'lucide-react';
+import { Brain, ArrowLeft, Palette, Smartphone, Zap, Layout, TrendingUp, Globe, Instagram, Play, Heart, Eye, BarChart3, Users, Star, CheckCircle, Mail } from 'lucide-react';
 import influencerBg from '@/assets/influencer-woman-bg.jpg';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
@@ -143,106 +143,68 @@ const InfluencerSites = () => {
                 <img 
                   src={influencerBg}
                   alt="Influencer"
-                  className="absolute right-0 top-0 h-full w-2/3 object-cover object-top opacity-50"
+                  className="absolute right-0 top-0 h-full w-3/4 object-cover object-top opacity-30"
                 />
                 {/* Gradient overlay for readability */}
-                <div className="absolute inset-0 bg-gradient-to-r from-neutral-950 via-neutral-950/90 to-neutral-950/30 z-10" />
+                <div className="absolute inset-0 bg-gradient-to-r from-neutral-950 via-neutral-950/80 to-neutral-950/40 z-10" />
                 
                 {/* Content */}
                 <div className="relative z-20 flex items-center h-full p-8 md:p-12">
                   <div className="max-w-md">
-                    <p className="text-rose-400 text-sm font-medium mb-2">Fashion & Lifestyle Influencer</p>
-                    <h3 className="text-3xl md:text-5xl font-bold text-white mb-4">SARAH JOHNSON</h3>
-                    <p className="text-neutral-400 text-sm mb-6">
-                      Creating inspiring content that blends high fashion with everyday lifestyle. Join 3M+ followers on this journey of style and authenticity.
+                    {/* Serif Italic Name */}
+                    <h3 className="text-3xl md:text-5xl font-serif italic mb-2">
+                      <span className="text-rose-400">SARAH</span>{' '}
+                      <span className="text-white">JOHNSON</span>
+                    </h3>
+                    <p className="text-neutral-400 text-sm font-medium mb-4">Fashion & Lifestyle Influencer</p>
+                    <p className="text-neutral-500 text-sm mb-6 max-w-sm">
+                      Inspiring 3M+ followers with authentic fashion content, sustainable living tips, and lifestyle inspiration across TikTok and Instagram.
                     </p>
-                    <div className="flex gap-4">
-                      <div className="text-center">
-                        <div className="text-xl font-bold text-white">3.2M</div>
-                        <div className="text-xs text-neutral-500">Followers</div>
+                    
+                    {/* Stat Cards */}
+                    <div className="flex gap-3 mb-6">
+                      <div className="bg-neutral-800/80 rounded-xl px-4 py-3 text-center">
+                        <div className="text-xl font-serif font-bold text-white">3.2M</div>
+                        <div className="text-xs text-neutral-500">Total Followers</div>
                       </div>
-                      <div className="text-center">
-                        <div className="text-xl font-bold text-white">8.5%</div>
+                      <div className="bg-neutral-800/80 rounded-xl px-4 py-3 text-center">
+                        <div className="text-xl font-serif font-bold text-white">8.5%</div>
                         <div className="text-xs text-neutral-500">Engagement</div>
                       </div>
-                      <div className="text-center">
-                        <div className="text-xl font-bold text-white">50+</div>
+                      <div className="bg-neutral-800/80 rounded-xl px-4 py-3 text-center">
+                        <div className="text-xl font-serif font-bold text-white">50+</div>
                         <div className="text-xs text-neutral-500">Brand Deals</div>
                       </div>
                     </div>
-                    <Button className="mt-6 bg-rose-500 hover:bg-rose-600 text-white rounded-full px-6">
+                    
+                    {/* White Button with Mail Icon */}
+                    <Button className="bg-white hover:bg-neutral-200 text-neutral-900 rounded-full px-6 gap-2">
+                      <Mail className="w-4 h-4" />
                       Work With Me
                     </Button>
                   </div>
                 </div>
 
-                {/* Floating Analytics Cards - Inside Mockup */}
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.4 }}
-                  className="absolute bottom-6 right-6 z-30 hidden sm:block"
-                >
-                  <div className="bg-neutral-800/90 backdrop-blur-sm border border-neutral-700 rounded-xl p-3 shadow-xl">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center">
-                        <Instagram className="w-4 h-4 text-white" />
-                      </div>
-                      <div>
-                        <div className="text-white font-bold text-sm">2.8M</div>
-                        <div className="text-xs text-neutral-400">Instagram</div>
-                      </div>
-                    </div>
+                {/* Social Icons - Bottom Center */}
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-3 z-20">
+                  <div className="w-10 h-10 rounded-full bg-neutral-800/80 flex items-center justify-center">
+                    <Instagram className="w-5 h-5 text-white" />
                   </div>
-                </motion.div>
+                  <div className="w-10 h-10 rounded-full bg-neutral-800/80 flex items-center justify-center">
+                    <Play className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="w-10 h-10 rounded-full bg-neutral-800/80 flex items-center justify-center">
+                    <BarChart3 className="w-5 h-5 text-white" />
+                  </div>
+                </div>
 
-                <motion.div 
-                  initial={{ opacity: 0, y: -20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.5 }}
-                  className="absolute top-6 right-6 z-30 hidden sm:block"
-                >
-                  <div className="bg-neutral-800/90 backdrop-blur-sm border border-neutral-700 rounded-xl p-3 shadow-xl">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-cyan-400 to-cyan-600 flex items-center justify-center">
-                        <Play className="w-4 h-4 text-white" />
-                      </div>
-                      <div>
-                        <div className="text-white font-bold text-sm">1.5M</div>
-                        <div className="text-xs text-neutral-400">TikTok</div>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.6 }}
-                  className="absolute bottom-6 right-32 z-30 hidden md:block"
-                >
-                  <div className="bg-emerald-500/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-xl">
-                    <div className="flex items-center gap-2">
-                      <TrendingUp className="w-3 h-3 text-white" />
-                      <span className="text-white font-medium text-xs">Top 5% Engagement</span>
-                    </div>
-                  </div>
-                </motion.div>
-
-                {/* Floating Social Icons */}
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-20">
-                  <div className="w-8 h-8 rounded-full bg-neutral-800/80 flex items-center justify-center">
-                    <Instagram className="w-4 h-4 text-white" />
-                  </div>
-                  <div className="w-8 h-8 rounded-full bg-neutral-800/80 flex items-center justify-center">
-                    <Play className="w-4 h-4 text-white" />
-                  </div>
-                  <div className="w-8 h-8 rounded-full bg-neutral-800/80 flex items-center justify-center">
-                    <BarChart3 className="w-4 h-4 text-white" />
-                  </div>
+                {/* Navigation Dots - Right Side */}
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-20">
+                  <div className="w-2 h-2 rounded-full bg-white" />
+                  <div className="w-2 h-2 rounded-full bg-neutral-600" />
+                  <div className="w-2 h-2 rounded-full bg-neutral-600" />
+                  <div className="w-2 h-2 rounded-full bg-neutral-600" />
+                  <div className="w-2 h-2 rounded-full bg-neutral-600" />
                 </div>
               </div>
             </div>
