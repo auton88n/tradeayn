@@ -104,14 +104,6 @@ const handler = async (req: Request): Promise<Response> => {
     const dateStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     const firstName = fullName.split(' ')[0];
 
-    // Build custom fields rows
-    let customFieldsRows = '';
-    if (customFields && Object.keys(customFields).length > 0) {
-      customFieldsRows = Object.entries(customFields)
-        .map(([key, value]) => `<tr><td style="padding:12px 16px;color:#6b7280;font-size:14px;border-bottom:1px solid #f3f4f6;">${key}</td><td style="padding:12px 16px;color:#111827;font-size:14px;font-weight:500;border-bottom:1px solid #f3f4f6;">${value}</td></tr>`)
-        .join('');
-    }
-
     // Initialize SMTP client
     const smtpClient = new SMTPClient({
       connection: {
@@ -127,29 +119,50 @@ const handler = async (req: Request): Promise<Response> => {
 
     try {
       // Confirmation email to applicant
-      const confirmationHtml = [
-        '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>',
-        '<body style="margin:0;padding:0;background-color:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif;">',
-        '<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f3f4f6;padding:40px 20px;"><tr><td align="center">',
-        '<table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.05);">',
-        '<tr><td style="background:linear-gradient(135deg,#111827 0%,#1f2937 100%);padding:40px 32px;text-align:center;">',
-        `<h1 style="margin:0;color:#ffffff;font-size:28px;font-weight:700;letter-spacing:-0.5px;">Thank You, ${firstName}!</h1>`,
-        '<p style="margin:12px 0 0;color:#9ca3af;font-size:16px;">We received your application</p>',
-        '</td></tr>',
-        '<tr><td style="padding:32px;">',
-        '<div style="background:#f9fafb;border-radius:12px;padding:24px;margin-bottom:24px;">',
-        '<p style="margin:0 0 8px;color:#6b7280;font-size:14px;text-transform:uppercase;letter-spacing:0.5px;">Service Selected</p>',
-        `<p style="margin:0;color:#111827;font-size:20px;font-weight:600;">${serviceEmoji} ${serviceName}</p>`,
-        '</div>',
-        '<p style="margin:0 0 16px;color:#374151;font-size:16px;line-height:1.6;">Thank you for your interest in our services. Our team will review your application and get back to you within 24-48 hours.</p>',
-        '<p style="margin:0 0 24px;color:#374151;font-size:16px;line-height:1.6;">In the meantime, feel free to reply to this email if you have any questions.</p>',
-        '<div style="text-align:center;padding-top:16px;">',
-        '<a href="https://aynn.io" style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:600;font-size:16px;">Visit AYN</a>',
-        '</div></td></tr>',
-        '<tr><td style="padding:24px 32px;background:#f9fafb;text-align:center;border-top:1px solid #e5e7eb;">',
-        '<p style="margin:0;color:#9ca3af;font-size:14px;">AYN - Your Intelligent Life Companion</p>',
-        '</td></tr></table></td></tr></table></body></html>'
-      ].join('');
+      const confirmationHtml = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background-color:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#ffffff;">
+<tr>
+<td align="center">
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background-color:#ffffff;">
+<tr>
+<td style="padding:60px 40px 40px 40px;text-align:center;">
+<h1 style="margin:0;color:#000000;font-size:56px;font-weight:900;letter-spacing:-2px;">AYN</h1>
+<div style="width:40px;height:3px;background-color:#000000;margin:20px auto;"></div>
+</td>
+</tr>
+<tr>
+<td style="padding:0 40px 60px 40px;">
+<h2 style="color:#000000;font-size:28px;font-weight:600;margin:0 0 20px 0;line-height:1.3;">
+${serviceEmoji} Thank You, ${firstName}!
+</h2>
+<p style="color:#666666;font-size:17px;line-height:1.7;margin:0 0 32px 0;">
+We've received your application for <strong style="color:#000000;">${serviceName}</strong> and we're excited to learn more about your project.
+</p>
+<p style="color:#666666;font-size:17px;line-height:1.7;margin:0 0 32px 0;">
+Our team will review your submission and get back to you within 24-48 hours.
+</p>
+<div style="margin:40px 0;">
+<a href="https://aynn.io" style="display:inline-block;background-color:#000000;color:#ffffff;padding:16px 40px;text-decoration:none;border-radius:8px;font-weight:600;font-size:16px;">
+Visit AYN
+</a>
+</div>
+<p style="color:#999999;font-size:14px;margin:40px 0 0 0;line-height:1.6;">
+Best regards,<br>The AYN Team
+</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+</body>
+</html>`;
 
       await smtpClient.send({
         from: smtpUser,
@@ -160,45 +173,96 @@ const handler = async (req: Request): Promise<Response> => {
 
       console.info(`Confirmation email sent to ${email}`);
 
-      // Team notification email
-      const phoneRow = phone ? `<tr><td style="padding-bottom:12px;"><p style="margin:0 0 4px;color:#6b7280;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">Phone</p><p style="margin:0;"><a href="tel:${phone}" style="color:#111827;font-size:16px;text-decoration:none;">${phone}</a></p></td></tr>` : '';
-      const messageSection = message ? `<div style="margin-bottom:24px;"><p style="margin:0 0 8px;color:#6b7280;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">Message</p><div style="background:#f9fafb;border-radius:12px;padding:16px;border-left:4px solid #111827;"><p style="margin:0;color:#374151;font-size:15px;line-height:1.6;">${message}</p></div></div>` : '';
-      const customFieldsSection = customFieldsRows ? `<div style="margin-bottom:24px;"><p style="margin:0 0 8px;color:#6b7280;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">Additional Details</p><table style="width:100%;border-collapse:collapse;background:#f9fafb;border-radius:12px;overflow:hidden;">${customFieldsRows}</table></div>` : '';
+      // Team notification email - build dynamic sections
+      const phoneRow = phone ? `<tr>
+<td style="padding-bottom:20px;">
+<p style="margin:0 0 6px;color:#999999;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Phone</p>
+<p style="margin:0;"><a href="tel:${phone}" style="color:#000000;font-size:16px;text-decoration:underline;">${phone}</a></p>
+</td>
+</tr>` : '';
 
-      const notificationHtml = [
-        '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>',
-        '<body style="margin:0;padding:0;background-color:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif;">',
-        '<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f3f4f6;padding:40px 20px;"><tr><td align="center">',
-        '<table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.05);">',
-        '<tr><td style="background:linear-gradient(135deg,#111827 0%,#1f2937 100%);padding:32px;">',
-        '<table width="100%" cellpadding="0" cellspacing="0"><tr>',
-        '<td><span style="display:inline-block;background:rgba(255,255,255,0.15);color:#ffffff;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">New Application</span></td>',
-        `<td align="right"><span style="color:#9ca3af;font-size:14px;">${dateStr}</span></td>`,
-        '</tr></table>',
-        `<h1 style="margin:16px 0 0;color:#ffffff;font-size:24px;font-weight:700;">${serviceEmoji} ${serviceName}</h1>`,
-        '</td></tr>',
-        '<tr><td style="padding:32px;">',
-        '<div style="background:#f9fafb;border-radius:12px;padding:20px;margin-bottom:24px;">',
-        '<table width="100%" cellpadding="0" cellspacing="0">',
-        '<tr><td style="padding-bottom:16px;">',
-        '<p style="margin:0 0 4px;color:#6b7280;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">Full Name</p>',
-        `<p style="margin:0;color:#111827;font-size:18px;font-weight:600;">${fullName}</p>`,
-        '</td></tr>',
-        '<tr><td style="padding-bottom:12px;">',
-        '<p style="margin:0 0 4px;color:#6b7280;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">Email</p>',
-        `<p style="margin:0;"><a href="mailto:${email}" style="color:#2563eb;font-size:16px;text-decoration:none;">${email}</a></p>`,
-        '</td></tr>',
-        phoneRow,
-        '</table></div>',
-        messageSection,
-        customFieldsSection,
-        '<div style="text-align:center;padding-top:8px;">',
-        `<a href="mailto:${email}?subject=Re: Your ${serviceName} Application" style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:600;font-size:16px;">Reply to ${firstName}</a>`,
-        '</div></td></tr>',
-        '<tr><td style="padding:20px 32px;background:#f9fafb;text-align:center;border-top:1px solid #e5e7eb;">',
-        `<p style="margin:0;color:#9ca3af;font-size:13px;">Application ID: ${application.id}</p>`,
-        '</td></tr></table></td></tr></table></body></html>'
-      ].join('');
+      const messageSection = message ? `<div style="border-top:1px solid #e5e7eb;padding-top:24px;margin-bottom:24px;">
+<p style="margin:0 0 6px;color:#999999;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Message</p>
+<p style="margin:0;color:#000000;font-size:16px;line-height:1.7;">${message}</p>
+</div>` : '';
+
+      let customFieldsSection = '';
+      if (customFields && Object.keys(customFields).length > 0) {
+        const rows = Object.entries(customFields)
+          .map(([key, value]) => `<tr>
+<td style="padding-bottom:20px;">
+<p style="margin:0 0 6px;color:#999999;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">${key}</p>
+<p style="margin:0;color:#000000;font-size:16px;">${value}</p>
+</td>
+</tr>`)
+          .join('');
+        customFieldsSection = `<div style="border-top:1px solid #e5e7eb;padding-top:24px;margin-bottom:24px;">
+<table width="100%" cellpadding="0" cellspacing="0">
+${rows}
+</table>
+</div>`;
+      }
+
+      const notificationHtml = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background-color:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#ffffff;">
+<tr>
+<td align="center">
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background-color:#ffffff;">
+<tr>
+<td style="padding:60px 40px 40px 40px;text-align:center;">
+<h1 style="margin:0;color:#000000;font-size:56px;font-weight:900;letter-spacing:-2px;">AYN</h1>
+<div style="width:40px;height:3px;background-color:#000000;margin:20px auto;"></div>
+</td>
+</tr>
+<tr>
+<td style="padding:0 40px 60px 40px;">
+<h2 style="color:#000000;font-size:28px;font-weight:600;margin:0 0 20px 0;line-height:1.3;">
+${serviceEmoji} New ${serviceName} Application
+</h2>
+<p style="color:#666666;font-size:17px;line-height:1.7;margin:0 0 32px 0;">
+Received on ${dateStr}
+</p>
+<div style="border-top:1px solid #e5e7eb;padding-top:24px;margin-bottom:24px;">
+<table width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td style="padding-bottom:20px;">
+<p style="margin:0 0 6px;color:#999999;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Full Name</p>
+<p style="margin:0;color:#000000;font-size:18px;font-weight:600;">${fullName}</p>
+</td>
+</tr>
+<tr>
+<td style="padding-bottom:20px;">
+<p style="margin:0 0 6px;color:#999999;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Email</p>
+<p style="margin:0;"><a href="mailto:${email}" style="color:#000000;font-size:16px;text-decoration:underline;">${email}</a></p>
+</td>
+</tr>
+${phoneRow}
+</table>
+</div>
+${messageSection}
+${customFieldsSection}
+<div style="margin:40px 0;">
+<a href="mailto:${email}?subject=Re: Your ${serviceName} Application" style="display:inline-block;background-color:#000000;color:#ffffff;padding:16px 40px;text-decoration:none;border-radius:8px;font-weight:600;font-size:16px;">
+Reply to ${firstName}
+</a>
+</div>
+<p style="color:#999999;font-size:14px;margin:40px 0 0 0;line-height:1.6;">
+Application ID: ${application.id}
+</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+</body>
+</html>`;
 
       await smtpClient.send({
         from: smtpUser,
