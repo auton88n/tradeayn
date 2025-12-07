@@ -1,34 +1,23 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowUp, Plus, ChevronDown, Brain } from 'lucide-react';
-import { Textarea } from '@/components/ui/textarea';
-import { TypewriterText } from '@/components/TypewriterText';
+import { ArrowRight, Brain } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+
 interface HeroProps {
   onGetStarted: () => void;
-  onDemoMessage?: (message: string) => void;
 }
 const CARDS_EN = ["Always watching over you.", "I understand context.", "Ready when you are.", "Let me handle that.", "Optimizing your workflow.", "Done. What's next?"];
 const CARDS_AR = ["معك في كل خطوة.", "أفهم ما تحتاجه.", "جاهز لخدمتك.", "اترك الأمر لي.", "أُنجز المهام بذكاء.", "تمّ. ماذا بعد؟"];
-export const Hero = ({
-  onGetStarted,
-  onDemoMessage
-}: HeroProps) => {
-  const {
-    language
-  } = useLanguage();
+export const Hero = ({ onGetStarted }: HeroProps) => {
+  const { language } = useLanguage();
   const isMobile = useIsMobile();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isHovered, setIsHovered] = useState(false);
-  const [inputMessage, setInputMessage] = useState('');
-  const [placeholderIndex, setPlaceholderIndex] = useState(0);
-  const [isFocused, setIsFocused] = useState(false);
   const [visibleCardIndex, setVisibleCardIndex] = useState<number | null>(null);
   const [absorptionPulse, setAbsorptionPulse] = useState(false);
   const [isBlinking, setIsBlinking] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const previousCardRef = useRef<number | null>(null);
 
   // Responsive card positions - mobile uses top/bottom layout to avoid horizontal clipping
@@ -109,17 +98,6 @@ export const Hero = ({
     };
   }, [mouseX, mouseY]);
 
-  // Placeholder texts for demo input
-  const placeholderTexts = language === 'ar' ? ['كيف أضاعف أرباحي؟', 'أعطني خطة تسويق فعّالة', 'ما الفرص الجديدة في سوقي؟'] : ['How can I increase my revenue?', 'Suggest a marketing strategy', 'Analyze market trends in my industry'];
-
-  // Rotate placeholder texts
-  useEffect(() => {
-    if (inputMessage.length > 0 || isFocused) return;
-    const interval = setInterval(() => {
-      setPlaceholderIndex(prev => (prev + 1) % placeholderTexts.length);
-    }, 3500);
-    return () => clearInterval(interval);
-  }, [inputMessage, isFocused, placeholderTexts.length]);
 
   // Unified animation cycle - 3 second rhythm
   // 0.0s: Eye blinks (preparing to speak)
@@ -169,31 +147,6 @@ export const Hero = ({
     };
   }, []);
 
-  // Handle send
-  const handleSend = () => {
-    if (!inputMessage.trim()) return;
-    // Store message for after authentication
-    sessionStorage.setItem('demoMessage', inputMessage);
-    if (onDemoMessage) onDemoMessage(inputMessage);
-    onGetStarted();
-  };
-
-  // Handle key press
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
-  // Handle textarea change
-  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInputMessage(e.target.value);
-    const textarea = e.target;
-    textarea.style.height = 'auto';
-    const newHeight = Math.min(textarea.scrollHeight, 120);
-    textarea.style.height = newHeight + 'px';
-  };
   const CARDS = language === 'ar' ? CARDS_AR : CARDS_EN;
   return <section ref={containerRef} className="relative min-h-[100dvh] flex flex-col items-center justify-between pt-20 md:pt-24 pb-6 md:pb-8 px-4 md:px-12 lg:px-24 overflow-hidden" aria-label="Hero">
       {/* Subtle vignette / soft gradient background */}
@@ -471,73 +424,21 @@ export const Hero = ({
         </motion.div>
       </div>
 
-      {/* Demo Chat Input - TWO ROW LAYOUT - matches dashboard */}
+      {/* Get Started CTA Button */}
       <motion.div 
-        initial={{ opacity: 1, y: 0 }} 
-        animate={{ opacity: 1, y: 0 }} 
-        className="mt-8 md:mt-10 w-full max-w-2xl"
+        initial={{ opacity: 0, y: 20 }} 
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 1.4, ease: [0.32, 0.72, 0, 1] }}
+        className="mt-8 md:mt-12"
       >
-        <div className="relative bg-background/90 dark:bg-background/90 backdrop-blur-md border border-border rounded-2xl shadow-lg overflow-hidden">
-          
-          {/* ROW 1: Input Area */}
-          <div className="relative px-4 pt-3 pb-2">
-            <Textarea 
-              ref={textareaRef} 
-              value={inputMessage} 
-              onChange={handleTextareaChange} 
-              onKeyPress={handleKeyPress} 
-              onFocus={() => setIsFocused(true)} 
-              onBlur={() => setIsFocused(false)} 
-              placeholder="" 
-              rows={1} 
-              unstyled={true} 
-              className="w-full resize-none min-h-[44px] max-h-[200px] text-base bg-transparent pr-12" 
-            />
-
-            {/* Typewriter Placeholder */}
-            {inputMessage.length === 0 && !isFocused && (
-              <div className={cn("absolute top-[14px] pointer-events-none z-10", language === 'ar' ? 'right-[16px]' : 'left-[16px]')}>
-                <TypewriterText 
-                  key={`${placeholderIndex}-${language}`} 
-                  text={placeholderTexts[placeholderIndex]} 
-                  speed={50} 
-                  className="text-muted-foreground text-base" 
-                  showCursor={true} 
-                />
-              </div>
-            )}
-
-            {/* Send button - absolute positioned in corner, only shows when text exists */}
-            {inputMessage.trim() && (
-              <button 
-                onClick={handleSend}
-                className="absolute bottom-2 right-3 w-9 h-9 rounded-xl bg-gradient-to-br from-foreground to-foreground/90 text-background flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
-                title={language === 'ar' ? 'إرسال' : 'Send message'}
-              >
-                <ArrowUp className="w-5 h-5" strokeWidth={2.5} />
-              </button>
-            )}
-          </div>
-          
-          {/* ROW 2: Action Buttons - with border separator */}
-          <div className="flex items-center justify-between px-3 py-2 border-t border-border/30 bg-muted/20">
-            {/* Left: Plus Button only */}
-            <div className="flex items-center gap-1">
-              <button onClick={onGetStarted} className="w-9 h-9 rounded-xl border border-border/50 flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-all duration-200" title={language === 'ar' ? 'إرفاق ملف' : 'Attach file'}>
-                <Plus className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Right: Mode Selector only */}
-            <button onClick={onGetStarted} className="h-8 px-3 rounded-lg border border-border/50 flex items-center gap-1 hover:bg-muted/80 transition-all">
-              <span className="text-sm font-medium">
-                {language === 'ar' ? 'عام' : 'General'}
-              </span>
-              <ChevronDown className="w-3 h-3 opacity-50" />
-            </button>
-          </div>
-          
-        </div>
+        <Button 
+          onClick={onGetStarted}
+          size="lg"
+          className="px-8 py-6 text-lg rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 group"
+        >
+          {language === 'ar' ? 'ابدأ الآن' : 'Get Started'}
+          <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+        </Button>
       </motion.div>
     </section>;
 };
