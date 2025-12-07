@@ -413,6 +413,27 @@ export type Database = {
         }
         Relationships: []
       }
+      pinned_sessions: {
+        Row: {
+          id: string
+          pinned_at: string | null
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          pinned_at?: string | null
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          pinned_at?: string | null
+          session_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           account_status: string | null
