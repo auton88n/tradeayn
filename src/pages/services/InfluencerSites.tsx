@@ -4,6 +4,7 @@ import { Brain, ArrowLeft, Palette, Smartphone, Zap, Layout, TrendingUp, Globe, 
 import influencerBg from '@/assets/influencer-woman-bg.jpg';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
+import { ServiceApplicationForm } from '@/components/services/ServiceApplicationForm';
 
 const InfluencerSites = () => {
   useEffect(() => {
@@ -100,11 +101,11 @@ const InfluencerSites = () => {
             <p className="text-lg md:text-xl text-neutral-400 max-w-2xl mx-auto mb-8">
               Luxury websites custom-built for content creators and digital influencers. Attract more partnerships and elevate your personal brand.
             </p>
-            <Link to="/#contact">
+            <a href="#apply">
               <Button size="lg" className="rounded-full px-8 bg-white text-neutral-950 hover:bg-neutral-200">
                 Start Your Project
               </Button>
-            </Link>
+            </a>
           </motion.div>
         </div>
       </section>
@@ -647,37 +648,37 @@ const InfluencerSites = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-16 md:py-24 px-4 md:px-6 bg-gradient-to-b from-neutral-900/50 to-neutral-950">
-        <div className="container mx-auto max-w-4xl text-center">
-          <motion.div initial={{
-          opacity: 0,
-          y: 20
-        }} whileInView={{
-          opacity: 1,
-          y: 0
-        }} viewport={{
-          once: true
-        }}>
-            <h2 className="text-3xl md:text-5xl lg:text-6xl font-serif font-bold mb-6 text-white">
-              Ready to Elevate Your <span className="text-rose-400">Brand</span>?
-            </h2>
-            <p className="text-lg md:text-xl text-neutral-400 max-w-2xl mx-auto mb-8">
-              Let's create a website that reflects your uniqueness and attracts the opportunities you deserve.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/#contact">
-                <Button size="lg" className="rounded-full px-8 w-full sm:w-auto bg-rose-500 hover:bg-rose-600 text-white">
-                  Start Your Project
-                </Button>
-              </Link>
-              <Link to="/">
-                <Button size="lg" variant="outline" className="rounded-full px-8 w-full sm:w-auto border-neutral-700 text-white hover:bg-neutral-800">
-                  View All Services
-                </Button>
-              </Link>
-            </div>
-          </motion.div>
+      {/* Application Form Section */}
+      <section id="apply" className="py-16 md:py-24 px-4 md:px-6 bg-gradient-to-b from-neutral-900/50 to-neutral-950">
+        <div className="container mx-auto max-w-2xl">
+          <ServiceApplicationForm
+            serviceType="content_creator"
+            serviceName="Content Creator Website"
+            accentColor="#f43f5e"
+            customFields={[
+              {
+                name: 'socialHandles',
+                label: 'Social Media Handles',
+                type: 'text',
+                placeholder: '@yourusername on Instagram, TikTok, etc.',
+                required: true,
+              },
+              {
+                name: 'followerCount',
+                label: 'Total Follower Count',
+                type: 'select',
+                options: ['Under 10K', '10K - 50K', '50K - 100K', '100K - 500K', '500K - 1M', '1M+'],
+                required: true,
+              },
+              {
+                name: 'contentNiche',
+                label: 'Content Niche',
+                type: 'text',
+                placeholder: 'e.g., Fashion, Tech, Travel, Fitness',
+                required: true,
+              },
+            ]}
+          />
         </div>
       </section>
 

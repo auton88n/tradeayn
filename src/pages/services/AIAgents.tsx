@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, Brain, MessageSquare, Zap, Globe, Users, BarChart3, Clock, Bot, Headphones, Languages, UserCheck, Shield, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
+import { ServiceApplicationForm } from '@/components/services/ServiceApplicationForm';
 
 const AIAgents = () => {
   const fadeInUp = {
@@ -76,9 +77,11 @@ const AIAgents = () => {
               24/7 intelligent assistants trained on your business data to handle customer inquiries, qualify leads, and drive conversions.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="bg-purple-500 hover:bg-purple-600 text-white px-8 py-6 text-lg rounded-full">
-                Start Your Project
-              </Button>
+              <a href="#apply">
+                <Button size="lg" className="bg-purple-500 hover:bg-purple-600 text-white px-8 py-6 text-lg rounded-full">
+                  Start Your Project
+                </Button>
+              </a>
               <Link to="/#services">
                 <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10 px-8 py-6 text-lg rounded-full">
                   View All Services
@@ -452,32 +455,44 @@ const AIAgents = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-16 md:py-24 px-4 md:px-6 bg-gradient-to-b from-neutral-900 to-neutral-950">
-        <div className="container mx-auto max-w-4xl text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-            <h2 className="text-3xl md:text-4xl lg:text-6xl font-serif font-bold mb-6">
-              Ready to Automate <span className="text-purple-400">Customer Support?</span>
-            </h2>
-            <p className="text-lg md:text-xl text-neutral-400 max-w-2xl mx-auto mb-8 md:mb-10 px-4">
-              Join businesses saving 40+ hours per week with AI-powered customer service that never sleeps.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center px-4">
-              <Button size="lg" className="bg-purple-500 hover:bg-purple-600 text-white px-8 md:px-10 py-5 md:py-6 text-base md:text-lg rounded-full w-full sm:w-auto">
-                Start Your Project
-              </Button>
-              <Link to="/#services" className="w-full sm:w-auto">
-                <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10 px-8 md:px-10 py-5 md:py-6 text-base md:text-lg rounded-full w-full">
-                  View All Services
-                </Button>
-              </Link>
-            </div>
-          </motion.div>
+      {/* Application Form Section */}
+      <section id="apply" className="py-16 md:py-24 px-4 md:px-6 bg-gradient-to-b from-neutral-900 to-neutral-950">
+        <div className="container mx-auto max-w-2xl">
+          <ServiceApplicationForm
+            serviceType="ai_agents"
+            serviceName="AI Agent"
+            accentColor="#a855f7"
+            customFields={[
+              {
+                name: 'businessName',
+                label: 'Business Name',
+                type: 'text',
+                placeholder: 'Your company name',
+                required: true,
+              },
+              {
+                name: 'industry',
+                label: 'Industry',
+                type: 'select',
+                options: ['E-commerce', 'SaaS', 'Healthcare', 'Real Estate', 'Financial Services', 'Education', 'Other'],
+                required: true,
+              },
+              {
+                name: 'useCase',
+                label: 'Primary Use Case',
+                type: 'textarea',
+                placeholder: 'Describe what you want your AI agent to do (e.g., customer support, lead qualification, booking)...',
+                required: true,
+              },
+              {
+                name: 'monthlyVolume',
+                label: 'Expected Monthly Conversations',
+                type: 'select',
+                options: ['Under 1,000', '1,000 - 5,000', '5,000 - 20,000', '20,000 - 100,000', '100,000+'],
+                required: false,
+              },
+            ]}
+          />
         </div>
       </section>
 
