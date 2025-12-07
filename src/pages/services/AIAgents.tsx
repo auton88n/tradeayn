@@ -44,15 +44,15 @@ const AIAgents = () => {
   return (
     <div className="min-h-screen bg-neutral-950 text-white">
       {/* Back Button */}
-      <Link to="/" className="fixed top-6 left-6 z-50">
-        <Button variant="ghost" className="text-white/70 hover:text-white hover:bg-white/10 gap-2">
+      <Link to="/" className="fixed top-4 md:top-6 left-4 md:left-6 z-50">
+        <Button variant="ghost" className="text-white/70 hover:text-white hover:bg-white/10 gap-2 bg-neutral-900/80 backdrop-blur-xl border border-neutral-800 rounded-full px-4 py-2">
           <ArrowLeft className="w-4 h-4" />
-          Back
+          <span className="hidden sm:inline">Back</span>
         </Button>
       </Link>
 
       {/* Hero Section */}
-      <section className="min-h-screen flex items-center justify-center px-6 py-24 relative overflow-hidden">
+      <section className="min-h-screen flex items-center justify-center px-4 md:px-6 py-20 md:py-24 relative overflow-hidden">
         {/* Background Glow */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-purple-500/20 rounded-full blur-[150px]" />
@@ -69,10 +69,10 @@ const AIAgents = () => {
             <span className="text-sm font-mono text-purple-400 tracking-wider uppercase mb-4 block">
               02 — Our Services
             </span>
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif font-bold mb-6">
+            <h1 className="text-4xl md:text-6xl lg:text-8xl font-serif font-bold mb-6">
               Custom AI <span className="text-purple-400">Agents</span>
             </h1>
-            <p className="text-xl md:text-2xl text-neutral-400 max-w-3xl mx-auto mb-10">
+            <p className="text-lg md:text-xl lg:text-2xl text-neutral-400 max-w-3xl mx-auto mb-8 md:mb-10 px-4">
               24/7 intelligent assistants trained on your business data to handle customer inquiries, qualify leads, and drive conversions.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -90,7 +90,7 @@ const AIAgents = () => {
       </section>
 
       {/* Chat Interface Showcase */}
-      <section className="py-24 px-6">
+      <section className="py-16 md:py-24 px-4 md:px-6">
         <div className="container mx-auto max-w-6xl">
           <motion.div 
             className="text-center mb-16"
@@ -134,7 +134,7 @@ const AIAgents = () => {
               </div>
 
               {/* Chat Interface */}
-              <div className="p-8 min-h-[500px] bg-gradient-to-br from-neutral-900 to-neutral-950">
+              <div className="p-4 md:p-8 min-h-[350px] md:min-h-[500px] bg-gradient-to-br from-neutral-900 to-neutral-950">
                 <div className="max-w-2xl mx-auto space-y-6">
                   {/* AI Message */}
                   <div className="flex gap-3">
@@ -175,57 +175,57 @@ const AIAgents = () => {
               </div>
             </div>
 
-            {/* Floating Stats Cards */}
+            {/* Floating Stats Cards - Hidden on mobile */}
             <motion.div 
-              className="absolute -right-4 top-1/4 bg-neutral-900/90 backdrop-blur-xl border border-purple-500/20 rounded-2xl p-4 shadow-xl"
+              className="absolute -right-4 lg:-right-16 top-1/4 bg-neutral-900/90 backdrop-blur-xl border border-purple-500/20 rounded-2xl p-3 md:p-4 shadow-xl hidden md:block"
               initial={{ opacity: 0, x: 20 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.3 }}
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
-                  <Zap className="w-5 h-5 text-purple-400" />
+                <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                  <Zap className="w-4 h-4 md:w-5 md:h-5 text-purple-400" />
                 </div>
                 <div>
                   <p className="text-xs text-neutral-500">Avg. Response</p>
-                  <p className="text-lg font-bold text-purple-400">&lt; 2 seconds</p>
+                  <p className="text-base md:text-lg font-bold text-purple-400">&lt; 2 seconds</p>
                 </div>
               </div>
             </motion.div>
 
             <motion.div 
-              className="absolute -left-4 top-1/2 bg-neutral-900/90 backdrop-blur-xl border border-green-500/20 rounded-2xl p-4 shadow-xl"
+              className="absolute -left-4 lg:-left-16 top-1/2 bg-neutral-900/90 backdrop-blur-xl border border-green-500/20 rounded-2xl p-3 md:p-4 shadow-xl hidden md:block"
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.4 }}
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center">
-                  <BarChart3 className="w-5 h-5 text-green-400" />
+                <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-green-500/20 flex items-center justify-center">
+                  <BarChart3 className="w-4 h-4 md:w-5 md:h-5 text-green-400" />
                 </div>
                 <div>
                   <p className="text-xs text-neutral-500">Accuracy Rate</p>
-                  <p className="text-lg font-bold text-green-400">97.5%</p>
+                  <p className="text-base md:text-lg font-bold text-green-400">97.5%</p>
                 </div>
               </div>
             </motion.div>
 
             <motion.div 
-              className="absolute -right-4 bottom-1/4 bg-neutral-900/90 backdrop-blur-xl border border-blue-500/20 rounded-2xl p-4 shadow-xl"
+              className="absolute -right-4 lg:-right-16 bottom-1/4 bg-neutral-900/90 backdrop-blur-xl border border-blue-500/20 rounded-2xl p-3 md:p-4 shadow-xl hidden md:block"
               initial={{ opacity: 0, x: 20 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.5 }}
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
-                  <Languages className="w-5 h-5 text-blue-400" />
+                <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                  <Languages className="w-4 h-4 md:w-5 md:h-5 text-blue-400" />
                 </div>
                 <div>
                   <p className="text-xs text-neutral-500">Languages</p>
-                  <p className="text-lg font-bold text-blue-400">12+ Supported</p>
+                  <p className="text-base md:text-lg font-bold text-blue-400">12+ Supported</p>
                 </div>
               </div>
             </motion.div>
@@ -234,7 +234,7 @@ const AIAgents = () => {
       </section>
 
       {/* Multi-Channel Deployment */}
-      <section className="py-24 px-6 bg-neutral-900/50">
+      <section className="py-16 md:py-24 px-4 md:px-6 bg-neutral-900/50">
         <div className="container mx-auto max-w-6xl">
           <motion.div 
             className="text-center mb-16"
@@ -246,7 +246,7 @@ const AIAgents = () => {
             <span className="text-sm font-mono text-purple-400 tracking-wider uppercase mb-4 block">
               Deployment
             </span>
-            <h2 className="text-4xl md:text-5xl font-serif font-bold mb-4">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif font-bold mb-4">
               One AI, <span className="text-purple-400">Everywhere</span>
             </h2>
             <p className="text-lg text-neutral-400 max-w-2xl mx-auto">
@@ -255,7 +255,7 @@ const AIAgents = () => {
           </motion.div>
 
           <motion.div 
-            className="grid grid-cols-2 md:grid-cols-4 gap-6"
+            className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6"
             variants={staggerContainer}
             initial="initial"
             whileInView="animate"
@@ -264,14 +264,14 @@ const AIAgents = () => {
             {channels.map((channel, index) => (
               <motion.div
                 key={channel.name}
-                className="bg-neutral-900 border border-neutral-800 rounded-2xl p-8 text-center hover:border-purple-500/30 transition-colors group"
+                className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 md:p-8 text-center hover:border-purple-500/30 transition-colors group"
                 variants={fadeInUp}
               >
-                <div className={`w-16 h-16 ${channel.color} rounded-2xl mx-auto mb-4 flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                  <channel.icon className="w-8 h-8 text-white" />
+                <div className={`w-12 h-12 md:w-16 md:h-16 ${channel.color} rounded-xl md:rounded-2xl mx-auto mb-3 md:mb-4 flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                  <channel.icon className="w-6 h-6 md:w-8 md:h-8 text-white" />
                 </div>
-                <h3 className="font-semibold text-lg">{channel.name}</h3>
-                <p className="text-sm text-green-400 mt-2">Connected</p>
+                <h3 className="font-semibold text-sm md:text-lg">{channel.name}</h3>
+                <p className="text-xs md:text-sm text-green-400 mt-1 md:mt-2">Connected</p>
               </motion.div>
             ))}
           </motion.div>
@@ -279,7 +279,7 @@ const AIAgents = () => {
       </section>
 
       {/* Analytics Dashboard Preview */}
-      <section className="py-24 px-6">
+      <section className="py-16 md:py-24 px-4 md:px-6">
         <div className="container mx-auto max-w-6xl">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <motion.div
@@ -291,7 +291,7 @@ const AIAgents = () => {
               <span className="text-sm font-mono text-purple-400 tracking-wider uppercase mb-4 block">
                 Insights
               </span>
-              <h2 className="text-4xl md:text-5xl font-serif font-bold mb-6">
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif font-bold mb-6">
                 Analytics & <span className="text-purple-400">Insights</span>
               </h2>
               <p className="text-lg text-neutral-400 mb-8">
@@ -366,7 +366,7 @@ const AIAgents = () => {
       </section>
 
       {/* Features Grid */}
-      <section className="py-24 px-6 bg-neutral-900/50">
+      <section className="py-16 md:py-24 px-4 md:px-6 bg-neutral-900/50">
         <div className="container mx-auto max-w-6xl">
           <motion.div 
             className="text-center mb-16"
@@ -378,13 +378,13 @@ const AIAgents = () => {
             <span className="text-sm font-mono text-purple-400 tracking-wider uppercase mb-4 block">
               Features
             </span>
-            <h2 className="text-4xl md:text-5xl font-serif font-bold">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif font-bold">
               Everything You <span className="text-purple-400">Need</span>
             </h2>
           </motion.div>
 
           <motion.div 
-            className="grid md:grid-cols-2 lg:grid-cols-3 gap-6"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6"
             variants={staggerContainer}
             initial="initial"
             whileInView="animate"
@@ -393,14 +393,14 @@ const AIAgents = () => {
             {features.map((feature, index) => (
               <motion.div
                 key={feature.title}
-                className="bg-neutral-900 border border-neutral-800 rounded-2xl p-8 hover:border-purple-500/30 transition-colors"
+                className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 md:p-8 hover:border-purple-500/30 transition-colors"
                 variants={fadeInUp}
               >
-                <div className="w-14 h-14 bg-purple-500/10 rounded-2xl flex items-center justify-center mb-6">
-                  <feature.icon className="w-7 h-7 text-purple-400" />
+                <div className="w-12 h-12 md:w-14 md:h-14 bg-purple-500/10 rounded-xl md:rounded-2xl flex items-center justify-center mb-4 md:mb-6">
+                  <feature.icon className="w-6 h-6 md:w-7 md:h-7 text-purple-400" />
                 </div>
-                <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
-                <p className="text-neutral-400">{feature.description}</p>
+                <h3 className="text-lg md:text-xl font-bold mb-2 md:mb-3">{feature.title}</h3>
+                <p className="text-sm md:text-base text-neutral-400">{feature.description}</p>
               </motion.div>
             ))}
           </motion.div>
@@ -408,7 +408,7 @@ const AIAgents = () => {
       </section>
 
       {/* How It Works */}
-      <section className="py-24 px-6">
+      <section className="py-16 md:py-24 px-4 md:px-6">
         <div className="container mx-auto max-w-6xl">
           <motion.div 
             className="text-center mb-16"
@@ -420,13 +420,13 @@ const AIAgents = () => {
             <span className="text-sm font-mono text-purple-400 tracking-wider uppercase mb-4 block">
               Process
             </span>
-            <h2 className="text-4xl md:text-5xl font-serif font-bold">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif font-bold">
               How It <span className="text-purple-400">Works</span>
             </h2>
           </motion.div>
 
           <motion.div 
-            className="grid md:grid-cols-4 gap-8"
+            className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8"
             variants={staggerContainer}
             initial="initial"
             whileInView="animate"
@@ -439,13 +439,13 @@ const AIAgents = () => {
                 variants={fadeInUp}
               >
                 {index < steps.length - 1 && (
-                  <div className="hidden md:block absolute top-8 left-1/2 w-full h-px bg-neutral-800" />
+                  <div className="hidden md:block absolute top-6 md:top-8 left-1/2 w-full h-px bg-neutral-800" />
                 )}
-                <div className="w-16 h-16 bg-purple-500/20 border border-purple-500/30 rounded-2xl mx-auto mb-6 flex items-center justify-center relative z-10">
-                  <span className="text-xl font-bold text-purple-400">{step.number}</span>
+                <div className="w-12 h-12 md:w-16 md:h-16 bg-purple-500/20 border border-purple-500/30 rounded-xl md:rounded-2xl mx-auto mb-4 md:mb-6 flex items-center justify-center relative z-10">
+                  <span className="text-lg md:text-xl font-bold text-purple-400">{step.number}</span>
                 </div>
-                <h3 className="text-xl font-bold mb-2">{step.title}</h3>
-                <p className="text-neutral-400 text-sm">{step.description}</p>
+                <h3 className="text-lg md:text-xl font-bold mb-1 md:mb-2">{step.title}</h3>
+                <p className="text-neutral-400 text-xs md:text-sm">{step.description}</p>
               </motion.div>
             ))}
           </motion.div>
@@ -453,7 +453,7 @@ const AIAgents = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 px-6 bg-gradient-to-b from-neutral-900 to-neutral-950">
+      <section className="py-16 md:py-24 px-4 md:px-6 bg-gradient-to-b from-neutral-900 to-neutral-950">
         <div className="container mx-auto max-w-4xl text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -461,18 +461,18 @@ const AIAgents = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold mb-6">
+            <h2 className="text-3xl md:text-4xl lg:text-6xl font-serif font-bold mb-6">
               Ready to Automate <span className="text-purple-400">Customer Support?</span>
             </h2>
-            <p className="text-xl text-neutral-400 max-w-2xl mx-auto mb-10">
+            <p className="text-lg md:text-xl text-neutral-400 max-w-2xl mx-auto mb-8 md:mb-10 px-4">
               Join businesses saving 40+ hours per week with AI-powered customer service that never sleeps.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="bg-purple-500 hover:bg-purple-600 text-white px-10 py-6 text-lg rounded-full">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center px-4">
+              <Button size="lg" className="bg-purple-500 hover:bg-purple-600 text-white px-8 md:px-10 py-5 md:py-6 text-base md:text-lg rounded-full w-full sm:w-auto">
                 Start Your Project
               </Button>
-              <Link to="/#services">
-                <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10 px-10 py-6 text-lg rounded-full">
+              <Link to="/#services" className="w-full sm:w-auto">
+                <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10 px-8 md:px-10 py-5 md:py-6 text-base md:text-lg rounded-full w-full">
                   View All Services
                 </Button>
               </Link>
@@ -482,7 +482,7 @@ const AIAgents = () => {
       </section>
 
       {/* Footer */}
-      <footer className="py-12 px-6 border-t border-neutral-800">
+      <footer className="py-8 md:py-12 px-4 md:px-6 border-t border-neutral-800">
         <div className="container mx-auto max-w-6xl">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-3">
