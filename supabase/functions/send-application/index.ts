@@ -115,6 +115,7 @@ const handler = async (req: Request): Promise<Response> => {
       await client.send({
         from: smtpUser,
         to: email,
+        replyTo: "info@aynn.io",
         subject: `Thank you for your interest in ${serviceName}!`,
         html: `
           <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
@@ -137,7 +138,7 @@ const handler = async (req: Request): Promise<Response> => {
             
             <div style="background: #f5f5f5; padding: 20px; border-radius: 12px; margin: 30px 0;">
               <p style="color: #666; font-size: 14px; margin: 0;">
-                In the meantime, feel free to reply to this email with any additional details or questions you may have.
+                Have questions? Simply reply to this email and we'll get back to you.
               </p>
             </div>
             
