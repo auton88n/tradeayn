@@ -200,12 +200,12 @@ export const Hero = ({
       <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-background via-background to-muted/10" />
 
       {/* Headline */}
-      <div className="w-full max-w-4xl text-center mb-4 md:mb-6">
+      <div className="w-full max-w-4xl text-center mb-6 md:mb-8">
         <motion.h1 
           initial={{ opacity: 0, y: 30, filter: 'blur(12px)', scale: 0.95 }}
           animate={{ opacity: 1, y: 0, filter: 'blur(0px)', scale: 1 }}
           transition={{ duration: 1, delay: 0, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="font-display text-5xl sm:text-6xl md:text-8xl lg:text-[10rem] font-bold tracking-[-0.02em] text-foreground mb-2 md:mb-3"
+          className="font-display text-6xl sm:text-7xl md:text-9xl lg:text-[120px] font-black tracking-[-0.015em] text-foreground leading-[1.1] mb-4 md:mb-6"
         >
           {language === 'ar' ? 'تعرّف على AYN' : 'Meet AYN'}
         </motion.h1>
@@ -213,10 +213,10 @@ export const Hero = ({
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 1.2, ease: [0.32, 0.72, 0, 1] }}
-          className="text-lg md:text-xl lg:text-2xl text-muted-foreground font-light max-w-2xl mx-auto"
+          className="text-xl sm:text-2xl md:text-3xl text-foreground/65 font-medium max-w-4xl mx-auto leading-relaxed tracking-normal"
         >
           {language === 'ar' 
-            ? 'الذكاء الاصطناعي الذي يرى، يستمع، ويفهم عالمك.' 
+            ? 'الرفيق الذكي الذي يساعدك على التنظيم والتخطيط والعيش بشكل أفضل' 
             : 'The Intelligent companion that helps you organize, plan, and live better'}
         </motion.p>
       </div>
