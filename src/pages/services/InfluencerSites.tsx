@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Brain, ArrowLeft, Palette, Smartphone, Zap, Layout, TrendingUp, Globe, Instagram, Play, Heart, Eye, BarChart3, Users, Star, CheckCircle } from 'lucide-react';
+import influencerBg from '@/assets/influencer-woman-bg.jpg';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 const InfluencerSites = () => {
@@ -137,10 +138,15 @@ const InfluencerSites = () => {
               </div>
               
               {/* Hero Content Preview */}
-              <div className="relative aspect-[16/10] bg-gradient-to-br from-neutral-900 via-neutral-950 to-neutral-900 overflow-hidden">
-                {/* Background Image Simulation */}
-                <div className="absolute inset-0 bg-gradient-to-r from-neutral-950 via-neutral-950/80 to-transparent z-10" />
-                <div className="absolute right-0 top-0 bottom-0 w-1/2 bg-gradient-to-l from-rose-950/20 to-transparent" />
+              <div className="relative aspect-[16/10] bg-neutral-900 overflow-hidden">
+                {/* Woman Background Image */}
+                <img 
+                  src={influencerBg}
+                  alt="Influencer"
+                  className="absolute right-0 top-0 h-full w-2/3 object-cover object-top opacity-50"
+                />
+                {/* Gradient overlay for readability */}
+                <div className="absolute inset-0 bg-gradient-to-r from-neutral-950 via-neutral-950/90 to-neutral-950/30 z-10" />
                 
                 {/* Content */}
                 <div className="relative z-20 flex items-center h-full p-8 md:p-12">
@@ -170,69 +176,76 @@ const InfluencerSites = () => {
                   </div>
                 </div>
 
+                {/* Floating Analytics Cards - Inside Mockup */}
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.4 }}
+                  className="absolute bottom-6 right-6 z-30 hidden sm:block"
+                >
+                  <div className="bg-neutral-800/90 backdrop-blur-sm border border-neutral-700 rounded-xl p-3 shadow-xl">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center">
+                        <Instagram className="w-4 h-4 text-white" />
+                      </div>
+                      <div>
+                        <div className="text-white font-bold text-sm">2.8M</div>
+                        <div className="text-xs text-neutral-400">Instagram</div>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+
+                <motion.div 
+                  initial={{ opacity: 0, y: -20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.5 }}
+                  className="absolute top-6 right-6 z-30 hidden sm:block"
+                >
+                  <div className="bg-neutral-800/90 backdrop-blur-sm border border-neutral-700 rounded-xl p-3 shadow-xl">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-cyan-400 to-cyan-600 flex items-center justify-center">
+                        <Play className="w-4 h-4 text-white" />
+                      </div>
+                      <div>
+                        <div className="text-white font-bold text-sm">1.5M</div>
+                        <div className="text-xs text-neutral-400">TikTok</div>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.6 }}
+                  className="absolute bottom-6 right-32 z-30 hidden md:block"
+                >
+                  <div className="bg-emerald-500/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-xl">
+                    <div className="flex items-center gap-2">
+                      <TrendingUp className="w-3 h-3 text-white" />
+                      <span className="text-white font-medium text-xs">Top 5% Engagement</span>
+                    </div>
+                  </div>
+                </motion.div>
+
                 {/* Floating Social Icons */}
-                <div className="absolute right-8 top-1/2 -translate-y-1/2 flex flex-col gap-4 z-20">
-                  <div className="w-10 h-10 rounded-full bg-neutral-800/80 flex items-center justify-center">
-                    <Instagram className="w-5 h-5 text-white" />
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-20">
+                  <div className="w-8 h-8 rounded-full bg-neutral-800/80 flex items-center justify-center">
+                    <Instagram className="w-4 h-4 text-white" />
                   </div>
-                  <div className="w-10 h-10 rounded-full bg-neutral-800/80 flex items-center justify-center">
-                    <Play className="w-5 h-5 text-white" />
+                  <div className="w-8 h-8 rounded-full bg-neutral-800/80 flex items-center justify-center">
+                    <Play className="w-4 h-4 text-white" />
                   </div>
-                  <div className="w-10 h-10 rounded-full bg-neutral-800/80 flex items-center justify-center">
-                    <BarChart3 className="w-5 h-5 text-white" />
+                  <div className="w-8 h-8 rounded-full bg-neutral-800/80 flex items-center justify-center">
+                    <BarChart3 className="w-4 h-4 text-white" />
                   </div>
                 </div>
               </div>
             </div>
-
-            {/* Floating Feature Cards */}
-            <motion.div initial={{
-            opacity: 0,
-            x: -20
-          }} whileInView={{
-            opacity: 1,
-            x: 0
-          }} viewport={{
-            once: true
-          }} transition={{
-            delay: 0.4
-          }} className="absolute -left-4 md:-left-16 top-1/2 -translate-y-1/2 hidden md:block">
-              <div className="bg-neutral-800/90 backdrop-blur-sm border border-neutral-700 rounded-xl p-4 shadow-xl">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center">
-                    <Instagram className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <div className="text-white font-bold">2.8M</div>
-                    <div className="text-xs text-neutral-400">Instagram</div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div initial={{
-            opacity: 0,
-            x: 20
-          }} whileInView={{
-            opacity: 1,
-            x: 0
-          }} viewport={{
-            once: true
-          }} transition={{
-            delay: 0.5
-          }} className="absolute -right-4 md:-right-16 top-1/3 hidden md:block">
-              <div className="bg-neutral-800/90 backdrop-blur-sm border border-neutral-700 rounded-xl p-4 shadow-xl">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-cyan-600 flex items-center justify-center">
-                    <Play className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <div className="text-white font-bold">1.5M</div>
-                    <div className="text-xs text-neutral-400">TikTok</div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
           </motion.div>
         </div>
       </section>
