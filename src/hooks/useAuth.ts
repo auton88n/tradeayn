@@ -174,7 +174,9 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
         }
 
         // Process admin role
-        setIsAdmin(roleData?.[0]?.role === 'admin');
+        const isAdminRole = roleData?.[0]?.role === 'admin';
+        console.log('[useAuth] Admin role check:', { roleData, isAdminRole });
+        setIsAdmin(isAdminRole);
 
         // Process profile
         if (profileData && profileData.length > 0) {
