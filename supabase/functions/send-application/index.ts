@@ -22,8 +22,13 @@ const SERVICE_NAMES: Record<string, string> = {
   automation: 'Process Automation'
 };
 
+const SERVICE_EMOJIS: Record<string, string> = {
+  content_creator: '🌟',
+  ai_agents: '🤖',
+  automation: '⚡'
+};
+
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -31,7 +36,6 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { serviceType, fullName, email, phone, message, customFields }: ApplicationRequest = await req.json();
 
-    // Validate required fields
     if (!serviceType || !fullName || !email) {
       return new Response(
         JSON.stringify({ error: "Missing required fields: serviceType, fullName, email" }),
@@ -39,7 +43,6 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return new Response(
@@ -50,12 +53,10 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Processing application from ${fullName} (${email}) for ${serviceType}`);
 
-    // Initialize Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Save to database
     const { data: application, error: dbError } = await supabase
       .from("service_applications")
       .insert({
@@ -80,112 +81,110 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Application saved with ID: ${application.id}`);
 
-    // Initialize Resend client
     const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
     const serviceName = SERVICE_NAMES[serviceType] || serviceType;
+    const serviceEmoji = SERVICE_EMOJIS[serviceType] || '📋';
+    const dateStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const firstName = fullName.split(' ')[0];
 
-    // Build custom fields HTML for team email
-    let customFieldsHtml = '';
+    // Build custom fields rows
+    let customFieldsRows = '';
     if (customFields && Object.keys(customFields).length > 0) {
-      customFieldsHtml = '<h3 style="color: #666; margin-top: 20px;">Additional Details:</h3><ul style="color: #333;">';
-      for (const [key, value] of Object.entries(customFields)) {
-        customFieldsHtml += `<li><strong>${key}:</strong> ${value}</li>`;
-      }
-      customFieldsHtml += '</ul>';
+      customFieldsRows = Object.entries(customFields)
+        .map(([key, value]) => `<tr><td style="padding:12px 16px;color:#6b7280;font-size:14px;border-bottom:1px solid #f3f4f6;">${key}</td><td style="padding:12px 16px;color:#111827;font-size:14px;font-weight:500;border-bottom:1px solid #f3f4f6;">${value}</td></tr>`)
+        .join('');
     }
 
     try {
-      // Send confirmation email to applicant
+      // Confirmation email to applicant
+      const confirmationHtml = [
+        '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>',
+        '<body style="margin:0;padding:0;background-color:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif;">',
+        '<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f3f4f6;padding:40px 20px;"><tr><td align="center">',
+        '<table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.05);">',
+        '<tr><td style="background:linear-gradient(135deg,#111827 0%,#1f2937 100%);padding:40px 32px;text-align:center;">',
+        `<h1 style="margin:0;color:#ffffff;font-size:28px;font-weight:700;letter-spacing:-0.5px;">Thank You, ${firstName}!</h1>`,
+        '<p style="margin:12px 0 0;color:#9ca3af;font-size:16px;">We received your application</p>',
+        '</td></tr>',
+        '<tr><td style="padding:32px;">',
+        '<div style="background:#f9fafb;border-radius:12px;padding:24px;margin-bottom:24px;">',
+        '<p style="margin:0 0 8px;color:#6b7280;font-size:14px;text-transform:uppercase;letter-spacing:0.5px;">Service Selected</p>',
+        `<p style="margin:0;color:#111827;font-size:20px;font-weight:600;">${serviceEmoji} ${serviceName}</p>`,
+        '</div>',
+        '<p style="margin:0 0 16px;color:#374151;font-size:16px;line-height:1.6;">Thank you for your interest in our services. Our team will review your application and get back to you within 24-48 hours.</p>',
+        '<p style="margin:0 0 24px;color:#374151;font-size:16px;line-height:1.6;">In the meantime, feel free to reply to this email if you have any questions.</p>',
+        '<div style="text-align:center;padding-top:16px;">',
+        '<a href="https://aynn.io" style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:600;font-size:16px;">Visit AYN</a>',
+        '</div></td></tr>',
+        '<tr><td style="padding:24px 32px;background:#f9fafb;text-align:center;border-top:1px solid #e5e7eb;">',
+        '<p style="margin:0;color:#9ca3af;font-size:14px;">AYN - Your Intelligent Life Companion</p>',
+        '</td></tr></table></td></tr></table></body></html>'
+      ].join('');
+
       const confirmationResult = await resend.emails.send({
         from: "AYN <noreply@aynn.io>",
         to: [email],
         replyTo: "info@aynn.io",
         subject: `Thank you for your interest in ${serviceName}!`,
-        html: `
-          <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
-            <div style="text-align: center; margin-bottom: 40px;">
-              <h1 style="font-size: 28px; color: #0a0a0a; margin: 0;">AYN</h1>
-              <p style="color: #666; margin-top: 8px;">Your Intelligent Life Companion</p>
-            </div>
-            
-            <h2 style="color: #0a0a0a; font-size: 24px;">Hi ${fullName},</h2>
-            
-            <p style="color: #333; font-size: 16px; line-height: 1.6;">
-              Thank you for reaching out about our <strong>${serviceName}</strong> service. 
-              We've received your application and our team is excited to learn more about your project.
-            </p>
-            
-            <p style="color: #333; font-size: 16px; line-height: 1.6;">
-              Expect to hear from us within <strong>24-48 hours</strong> at this email address. 
-              Our reply will come from <a href="mailto:info@aynn.io" style="color: #0a0a0a;">info@aynn.io</a>.
-            </p>
-            
-            <div style="background: #f5f5f5; padding: 20px; border-radius: 12px; margin: 30px 0;">
-              <p style="color: #666; font-size: 14px; margin: 0;">
-                Have questions? Simply reply to this email and we'll get back to you.
-              </p>
-            </div>
-            
-            <p style="color: #333; font-size: 16px;">
-              Best regards,<br>
-              <strong>The AYN Team</strong>
-            </p>
-            
-            <hr style="border: none; border-top: 1px solid #eee; margin: 40px 0 20px;">
-            
-            <p style="color: #999; font-size: 12px; text-align: center;">
-              © ${new Date().getFullYear()} AYN. All rights reserved.
-            </p>
-          </div>
-        `,
+        html: confirmationHtml,
       });
 
-      console.log(`Confirmation email sent to ${email}:`, confirmationResult);
+      console.log(`Confirmation email sent to ${email}:`, JSON.stringify(confirmationResult, null, 2));
 
-      // Send notification email to team
+      // Team notification email
+      const phoneRow = phone ? `<tr><td style="padding-bottom:12px;"><p style="margin:0 0 4px;color:#6b7280;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">Phone</p><p style="margin:0;"><a href="tel:${phone}" style="color:#111827;font-size:16px;text-decoration:none;">${phone}</a></p></td></tr>` : '';
+      const messageSection = message ? `<div style="margin-bottom:24px;"><p style="margin:0 0 8px;color:#6b7280;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">Message</p><div style="background:#f9fafb;border-radius:12px;padding:16px;border-left:4px solid #111827;"><p style="margin:0;color:#374151;font-size:15px;line-height:1.6;">${message}</p></div></div>` : '';
+      const customFieldsSection = customFieldsRows ? `<div style="margin-bottom:24px;"><p style="margin:0 0 8px;color:#6b7280;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">Additional Details</p><table style="width:100%;border-collapse:collapse;background:#f9fafb;border-radius:12px;overflow:hidden;">${customFieldsRows}</table></div>` : '';
+
+      const notificationHtml = [
+        '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>',
+        '<body style="margin:0;padding:0;background-color:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif;">',
+        '<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f3f4f6;padding:40px 20px;"><tr><td align="center">',
+        '<table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.05);">',
+        '<tr><td style="background:linear-gradient(135deg,#111827 0%,#1f2937 100%);padding:32px;">',
+        '<table width="100%" cellpadding="0" cellspacing="0"><tr>',
+        '<td><span style="display:inline-block;background:rgba(255,255,255,0.15);color:#ffffff;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">New Application</span></td>',
+        `<td align="right"><span style="color:#9ca3af;font-size:14px;">${dateStr}</span></td>`,
+        '</tr></table>',
+        `<h1 style="margin:16px 0 0;color:#ffffff;font-size:24px;font-weight:700;">${serviceEmoji} ${serviceName}</h1>`,
+        '</td></tr>',
+        '<tr><td style="padding:32px;">',
+        '<div style="background:#f9fafb;border-radius:12px;padding:20px;margin-bottom:24px;">',
+        '<table width="100%" cellpadding="0" cellspacing="0">',
+        '<tr><td style="padding-bottom:16px;">',
+        '<p style="margin:0 0 4px;color:#6b7280;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">Full Name</p>',
+        `<p style="margin:0;color:#111827;font-size:18px;font-weight:600;">${fullName}</p>`,
+        '</td></tr>',
+        '<tr><td style="padding-bottom:12px;">',
+        '<p style="margin:0 0 4px;color:#6b7280;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">Email</p>',
+        `<p style="margin:0;"><a href="mailto:${email}" style="color:#2563eb;font-size:16px;text-decoration:none;">${email}</a></p>`,
+        '</td></tr>',
+        phoneRow,
+        '</table></div>',
+        messageSection,
+        customFieldsSection,
+        '<div style="text-align:center;padding-top:8px;">',
+        `<a href="mailto:${email}?subject=Re: Your ${serviceName} Application" style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:600;font-size:16px;">Reply to ${firstName}</a>`,
+        '</div></td></tr>',
+        '<tr><td style="padding:20px 32px;background:#f9fafb;text-align:center;border-top:1px solid #e5e7eb;">',
+        `<p style="margin:0;color:#9ca3af;font-size:13px;">Application ID: ${application.id}</p>`,
+        '</td></tr></table></td></tr></table></body></html>'
+      ].join('');
+
       const notificationResult = await resend.emails.send({
         from: "AYN Applications <noreply@aynn.io>",
         to: ["info@aynn.io"],
-        subject: `New ${serviceName} Application from ${fullName}`,
-        html: `
-          <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
-            <h1 style="color: #0a0a0a; font-size: 24px; margin-bottom: 30px;">New Service Application</h1>
-            
-            <div style="background: #f5f5f5; padding: 24px; border-radius: 12px; margin-bottom: 20px;">
-              <h2 style="color: #0a0a0a; font-size: 18px; margin: 0 0 16px;">Service: ${serviceName}</h2>
-              <p style="color: #333; margin: 8px 0;"><strong>Name:</strong> ${fullName}</p>
-              <p style="color: #333; margin: 8px 0;"><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
-              ${phone ? `<p style="color: #333; margin: 8px 0;"><strong>Phone:</strong> ${phone}</p>` : ''}
-              ${message ? `<p style="color: #333; margin: 8px 0;"><strong>Message:</strong> ${message}</p>` : ''}
-            </div>
-            
-            ${customFieldsHtml}
-            
-            <div style="margin-top: 30px;">
-              <p style="color: #666; font-size: 14px;">
-                Application ID: <code>${application.id}</code><br>
-                Submitted: ${new Date().toLocaleString('en-US', { timeZone: 'UTC' })} UTC
-              </p>
-            </div>
-            
-            <div style="margin-top: 30px;">
-              <a href="mailto:${email}?subject=Re: Your ${serviceName} Application" 
-                 style="background: #0a0a0a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block;">
-                Reply to ${fullName}
-              </a>
-            </div>
-          </div>
-        `,
+        subject: `${serviceEmoji} New ${serviceName} Application from ${fullName}`,
+        html: notificationHtml,
       });
 
-      console.log(`Notification email sent to info@aynn.io:`, notificationResult);
+      console.log(`Notification email sent to info@aynn.io:`, JSON.stringify(notificationResult, null, 2));
 
     } catch (emailError) {
       console.error("Email sending error:", emailError);
-      // Don't fail the request if emails fail - application is already saved
       return new Response(
-        JSON.stringify({ 
-          success: true, 
+        JSON.stringify({
+          success: true,
           applicationId: application.id,
           warning: "Application saved but email notification failed"
         }),
@@ -194,8 +193,8 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         applicationId: application.id,
         message: "Application submitted successfully"
       }),
