@@ -77,15 +77,12 @@ export const DashboardContainer = ({ user, auth, isAdmin, onAdminPanelClick }: D
   // Get modes (English only)
   const modes = getModes();
 
-  // Load messages when session changes
+  // Load messages when session changes (only when we have a valid session ID)
   useEffect(() => {
-    messagesHook.loadMessages();
+    if (chatSession.currentSessionId) {
+      messagesHook.loadMessages();
+    }
   }, [chatSession.currentSessionId]);
-
-  // Load recent chats on mount
-  useEffect(() => {
-    chatSession.loadRecentChats();
-  }, []);
 
   // Detect language from user input and auto-switch
   const detectLanguage = useCallback((text: string): 'ar' | 'en' => {
@@ -98,7 +95,8 @@ export const DashboardContainer = ({ user, auth, isAdmin, onAdminPanelClick }: D
     content: string,
     fileToUpload?: File | null
   ) => {
-    if (!auth.hasAccess || !auth.hasAcceptedTerms) {
+    // Don't block if auth is still loading - allow message to proceed
+    if (!auth.isAuthLoading && (!auth.hasAccess || !auth.hasAcceptedTerms)) {
       toast({
         title: 'Access Required',
         description: 'Please accept the terms to continue.',
@@ -128,6 +126,7 @@ export const DashboardContainer = ({ user, auth, isAdmin, onAdminPanelClick }: D
   }, [
     auth.hasAccess,
     auth.hasAcceptedTerms,
+    auth.isAuthLoading,
     detectLanguage,
     language,
     setLanguage,
@@ -475,7 +474,7 @@ const DashboardContent = ({
           messages={messagesHook.messages}
           onSendMessage={handleSendMessage}
           isTyping={messagesHook.isTyping}
-          isDisabled={!auth.hasAccess || !auth.hasAcceptedTerms}
+          isDisabled={auth.isAuthLoading ? false : (!auth.hasAccess || !auth.hasAcceptedTerms)}
           selectedMode={selectedMode}
           selectedFile={fileUpload.selectedFile}
           isUploading={fileUpload.isUploading}
