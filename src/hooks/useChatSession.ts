@@ -5,10 +5,11 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import type { ChatHistory, Message, UseChatSessionReturn } from '@/types/dashboard.types';
 
 export const useChatSession = (userId: string): UseChatSessionReturn => {
-  const [currentSessionId, setCurrentSessionId] = useState(() => crypto.randomUUID());
+  const [currentSessionId, setCurrentSessionId] = useState<string>('');
   const [recentChats, setRecentChats] = useState<ChatHistory[]>([]);
   const [selectedChats, setSelectedChats] = useState<Set<number>>(new Set());
   const [showChatSelection, setShowChatSelection] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   const { toast } = useToast();
   const { t } = useLanguage();
 
@@ -238,10 +239,38 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
     }
   }, [userId, toast]);
 
-  // Load recent chats on mount
+  // Load recent chats on mount and set initial session
   useEffect(() => {
-    loadRecentChats();
-  }, [loadRecentChats]);
+    const initializeSession = async () => {
+      if (!userId || isInitialized) return;
+      
+      try {
+        // Check for most recent session with messages
+        const { data } = await supabase
+          .from('messages')
+          .select('session_id')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(1);
+        
+        if (data && data.length > 0 && data[0].session_id) {
+          setCurrentSessionId(data[0].session_id);
+        } else {
+          // No existing messages, generate new session
+          setCurrentSessionId(crypto.randomUUID());
+        }
+        
+        setIsInitialized(true);
+        await loadRecentChats();
+      } catch {
+        // Fallback to new session on error
+        setCurrentSessionId(crypto.randomUUID());
+        setIsInitialized(true);
+      }
+    };
+    
+    initializeSession();
+  }, [userId, isInitialized, loadRecentChats]);
 
   return {
     currentSessionId,
