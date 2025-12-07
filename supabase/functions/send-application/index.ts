@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
-import { Resend } from "npm:resend@2.0.0";
+import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -51,7 +51,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    console.log(`Processing application from ${fullName} (${email}) for ${serviceType}`);
+    console.info(`Processing application from ${fullName} (${email}) for ${serviceType}`);
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -79,9 +79,26 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    console.log(`Application saved with ID: ${application.id}`);
+    console.info(`Application saved with ID: ${application.id}`);
 
-    const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+    // Check SMTP credentials
+    const smtpHost = Deno.env.get("SMTP_HOST");
+    const smtpPort = Deno.env.get("SMTP_PORT");
+    const smtpUser = Deno.env.get("SMTP_USER");
+    const smtpPass = Deno.env.get("SMTP_PASS");
+
+    if (!smtpHost || !smtpUser || !smtpPass) {
+      console.warn("SMTP credentials not configured, skipping email notifications");
+      return new Response(
+        JSON.stringify({
+          success: true,
+          applicationId: application.id,
+          message: "Application saved (email notifications skipped - SMTP not configured)"
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const serviceName = SERVICE_NAMES[serviceType] || serviceType;
     const serviceEmoji = SERVICE_EMOJIS[serviceType] || '📋';
     const dateStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -94,6 +111,19 @@ const handler = async (req: Request): Promise<Response> => {
         .map(([key, value]) => `<tr><td style="padding:12px 16px;color:#6b7280;font-size:14px;border-bottom:1px solid #f3f4f6;">${key}</td><td style="padding:12px 16px;color:#111827;font-size:14px;font-weight:500;border-bottom:1px solid #f3f4f6;">${value}</td></tr>`)
         .join('');
     }
+
+    // Initialize SMTP client
+    const smtpClient = new SMTPClient({
+      connection: {
+        hostname: smtpHost,
+        port: parseInt(smtpPort || "465"),
+        tls: true,
+        auth: {
+          username: smtpUser,
+          password: smtpPass,
+        },
+      },
+    });
 
     try {
       // Confirmation email to applicant
@@ -121,15 +151,14 @@ const handler = async (req: Request): Promise<Response> => {
         '</td></tr></table></td></tr></table></body></html>'
       ].join('');
 
-      const confirmationResult = await resend.emails.send({
-        from: "AYN <noreply@aynn.io>",
-        to: [email],
-        replyTo: "info@aynn.io",
+      await smtpClient.send({
+        from: smtpUser,
+        to: email,
         subject: `Thank you for your interest in ${serviceName}!`,
         html: confirmationHtml,
       });
 
-      console.log(`Confirmation email sent to ${email}:`, JSON.stringify(confirmationResult, null, 2));
+      console.info(`Confirmation email sent to ${email}`);
 
       // Team notification email
       const phoneRow = phone ? `<tr><td style="padding-bottom:12px;"><p style="margin:0 0 4px;color:#6b7280;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">Phone</p><p style="margin:0;"><a href="tel:${phone}" style="color:#111827;font-size:16px;text-decoration:none;">${phone}</a></p></td></tr>` : '';
@@ -171,17 +200,24 @@ const handler = async (req: Request): Promise<Response> => {
         '</td></tr></table></td></tr></table></body></html>'
       ].join('');
 
-      const notificationResult = await resend.emails.send({
-        from: "AYN Applications <noreply@aynn.io>",
-        to: ["info@aynn.io"],
+      await smtpClient.send({
+        from: smtpUser,
+        to: "info@aynn.io",
         subject: `${serviceEmoji} New ${serviceName} Application from ${fullName}`,
         html: notificationHtml,
       });
 
-      console.log(`Notification email sent to info@aynn.io:`, JSON.stringify(notificationResult, null, 2));
+      console.info(`Notification email sent to info@aynn.io`);
+
+      await smtpClient.close();
 
     } catch (emailError) {
       console.error("Email sending error:", emailError);
+      try {
+        await smtpClient.close();
+      } catch {
+        // Ignore close errors
+      }
       return new Response(
         JSON.stringify({
           success: true,
