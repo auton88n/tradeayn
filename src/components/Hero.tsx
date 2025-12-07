@@ -217,7 +217,7 @@ export const Hero = ({
         >
           {language === 'ar' 
             ? 'الذكاء الاصطناعي الذي يرى، يستمع، ويفهم عالمك.' 
-            : 'The Intelligent companion that helps you organize, plan, and live better'}
+            : 'The intelligent companion that helps you organize, plan, and live better'}
         </motion.p>
       </div>
 
