@@ -400,7 +400,7 @@ const LandingPage = () => {
             </h2>
 
             <p className="text-base md:text-xl text-muted-foreground max-w-3xl mx-auto mb-10 md:mb-16">
-              {language === 'ar' ? 'يتعلم AYN عاداتك، يتوقع احتياجاتك، ويساعدك على التنقل في الحياة بوضوح—من تخطيط يومك إلى اتخاذ قرارات مدروسة.' : 'AYN learns your habits, anticipates your needs, and helps you navigate life with clarity—from planning your day to making thoughtful decisions.'}
+              {language === 'ar' ? 'يتعرف AYN عليك. يتعلم عاداتك، يفهم أهدافك، ويساعدك على البقاء منظماً ومركزاً كل يوم.' : 'AYN gets to know you. It learns your habits, understands your goals, and helps you stay organized and focused every day.'}
             </p>
           </ScrollReveal>
 
