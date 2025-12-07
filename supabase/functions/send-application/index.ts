@@ -189,10 +189,18 @@ Best regards,<br>The AYN Team
 
       let customFieldsSection = '';
       if (customFields && Object.keys(customFields).length > 0) {
+        // Convert camelCase to readable format (e.g., "contentNiche" -> "Content Niche")
+        const formatLabel = (key: string) => {
+          return key
+            .replace(/([A-Z])/g, ' $1')
+            .replace(/^./, str => str.toUpperCase())
+            .trim();
+        };
+        
         const rows = Object.entries(customFields)
           .map(([key, value]) => `<tr>
 <td style="padding-bottom:20px;">
-<p style="margin:0 0 6px;color:#999999;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">${key}</p>
+<p style="margin:0 0 6px;color:#999999;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">${formatLabel(key)}</p>
 <p style="margin:0;color:#000000;font-size:16px;">${value}</p>
 </td>
 </tr>`)
