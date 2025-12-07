@@ -147,90 +147,94 @@ const Automation = () => {
               </div>
 
               {/* Workflow Builder */}
-              <div className="p-4 md:p-8 min-h-[400px] md:min-h-[500px] bg-gradient-to-br from-neutral-900 to-neutral-950">
-                <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 md:mb-8 gap-4">
+              <div className="p-3 sm:p-4 md:p-8 min-h-[280px] sm:min-h-[350px] md:min-h-[500px] bg-gradient-to-br from-neutral-900 to-neutral-950">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 md:mb-8 gap-3 sm:gap-4">
                   <div>
-                    <h3 className="text-lg md:text-xl font-bold">Lead to CRM Pipeline</h3>
-                    <p className="text-xs md:text-sm text-neutral-500">Automatically qualify and sync new leads</p>
+                    <h3 className="text-base sm:text-lg md:text-xl font-bold">Lead to CRM Pipeline</h3>
+                    <p className="text-[10px] sm:text-xs md:text-sm text-neutral-500">Automatically qualify and sync new leads</p>
                   </div>
-                  <div className="flex items-center gap-2 md:gap-3">
-                    <span className="px-2 md:px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-xs md:text-sm">Active</span>
-                    <Button size="sm" variant="outline" className="border-neutral-700 text-neutral-300 text-xs md:text-sm">
-                      <Play className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" /> Run Now
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 sm:py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-[10px] sm:text-xs md:text-sm">Active</span>
+                    <Button size="sm" variant="outline" className="border-neutral-700 text-neutral-300 text-[10px] sm:text-xs md:text-sm h-7 sm:h-8 px-2 sm:px-3">
+                      <Play className="w-3 h-3 mr-1" /> Run Now
                     </Button>
                   </div>
                 </div>
 
-                {/* Workflow Nodes - Horizontal scroll on mobile */}
-                <div className="overflow-x-auto pb-4 -mx-4 px-4 md:mx-0 md:px-0">
-                  <div className="flex items-center justify-start md:justify-center gap-2 md:gap-4 py-8 md:py-12 min-w-max md:min-w-0">
-                    {/* Trigger */}
-                    <div className="bg-emerald-500/20 border border-emerald-500/30 rounded-xl p-4 md:p-6 text-center min-w-[120px] md:min-w-[160px]">
-                      <div className="w-10 h-10 md:w-12 md:h-12 bg-emerald-500 rounded-lg md:rounded-xl mx-auto mb-2 md:mb-3 flex items-center justify-center">
-                        <Mail className="w-5 h-5 md:w-6 md:h-6 text-white" />
+                {/* Workflow Nodes - Horizontal scroll on mobile with hint */}
+                <div className="relative">
+                  <div className="overflow-x-auto pb-2 sm:pb-4 scrollbar-thin scrollbar-thumb-neutral-700 scrollbar-track-transparent">
+                    <div className="flex items-center justify-start md:justify-center gap-1.5 sm:gap-2 md:gap-4 py-4 sm:py-8 md:py-12 min-w-max md:min-w-0 px-1">
+                      {/* Trigger */}
+                      <div className="bg-emerald-500/20 border border-emerald-500/30 rounded-lg sm:rounded-xl p-2.5 sm:p-4 md:p-6 text-center min-w-[90px] sm:min-w-[110px] md:min-w-[160px]">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-emerald-500 rounded-lg mx-auto mb-1.5 sm:mb-2 md:mb-3 flex items-center justify-center">
+                          <Mail className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white" />
+                        </div>
+                        <p className="font-medium text-xs sm:text-sm md:text-base">New Email</p>
+                        <p className="text-[10px] sm:text-xs text-neutral-500 mt-0.5 sm:mt-1">Trigger</p>
                       </div>
-                      <p className="font-medium text-sm md:text-base">New Email</p>
-                      <p className="text-xs text-neutral-500 mt-1">Trigger</p>
-                    </div>
 
-                    <div className="w-6 md:w-12 h-px bg-emerald-500/30 relative flex-shrink-0">
-                      <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 md:w-2 md:h-2 bg-emerald-500 rounded-full" />
-                    </div>
-
-                    {/* Process */}
-                    <div className="bg-blue-500/20 border border-blue-500/30 rounded-xl p-4 md:p-6 text-center min-w-[120px] md:min-w-[160px]">
-                      <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-500 rounded-lg md:rounded-xl mx-auto mb-2 md:mb-3 flex items-center justify-center">
-                        <Brain className="w-5 h-5 md:w-6 md:h-6 text-white" />
+                      <div className="w-4 sm:w-6 md:w-12 h-px bg-emerald-500/30 relative flex-shrink-0">
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-1 sm:w-1.5 sm:h-1.5 md:w-2 md:h-2 bg-emerald-500 rounded-full" />
                       </div>
-                      <p className="font-medium text-sm md:text-base">AI Analysis</p>
-                      <p className="text-xs text-neutral-500 mt-1">Process</p>
-                    </div>
 
-                    <div className="w-6 md:w-12 h-px bg-blue-500/30 relative flex-shrink-0">
-                      <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 md:w-2 md:h-2 bg-blue-500 rounded-full" />
-                    </div>
-
-                    {/* Condition */}
-                    <div className="bg-amber-500/20 border border-amber-500/30 rounded-xl p-4 md:p-6 text-center min-w-[120px] md:min-w-[160px]">
-                      <div className="w-10 h-10 md:w-12 md:h-12 bg-amber-500 rounded-lg md:rounded-xl mx-auto mb-2 md:mb-3 flex items-center justify-center">
-                        <Workflow className="w-5 h-5 md:w-6 md:h-6 text-white" />
+                      {/* Process */}
+                      <div className="bg-blue-500/20 border border-blue-500/30 rounded-lg sm:rounded-xl p-2.5 sm:p-4 md:p-6 text-center min-w-[90px] sm:min-w-[110px] md:min-w-[160px]">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-blue-500 rounded-lg mx-auto mb-1.5 sm:mb-2 md:mb-3 flex items-center justify-center">
+                          <Brain className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white" />
+                        </div>
+                        <p className="font-medium text-xs sm:text-sm md:text-base">AI Analysis</p>
+                        <p className="text-[10px] sm:text-xs text-neutral-500 mt-0.5 sm:mt-1">Process</p>
                       </div>
-                      <p className="font-medium text-sm md:text-base">Score Check</p>
-                      <p className="text-xs text-neutral-500 mt-1">Condition</p>
-                    </div>
 
-                    <div className="w-6 md:w-12 h-px bg-amber-500/30 relative flex-shrink-0">
-                      <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 md:w-2 md:h-2 bg-amber-500 rounded-full" />
-                    </div>
-
-                    {/* Action */}
-                    <div className="bg-purple-500/20 border border-purple-500/30 rounded-xl p-4 md:p-6 text-center min-w-[120px] md:min-w-[160px]">
-                      <div className="w-10 h-10 md:w-12 md:h-12 bg-purple-500 rounded-lg md:rounded-xl mx-auto mb-2 md:mb-3 flex items-center justify-center">
-                        <Database className="w-5 h-5 md:w-6 md:h-6 text-white" />
+                      <div className="w-4 sm:w-6 md:w-12 h-px bg-blue-500/30 relative flex-shrink-0">
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-1 sm:w-1.5 sm:h-1.5 md:w-2 md:h-2 bg-blue-500 rounded-full" />
                       </div>
-                      <p className="font-medium text-sm md:text-base">Add to CRM</p>
-                      <p className="text-xs text-neutral-500 mt-1">Action</p>
+
+                      {/* Condition */}
+                      <div className="bg-amber-500/20 border border-amber-500/30 rounded-lg sm:rounded-xl p-2.5 sm:p-4 md:p-6 text-center min-w-[90px] sm:min-w-[110px] md:min-w-[160px]">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-amber-500 rounded-lg mx-auto mb-1.5 sm:mb-2 md:mb-3 flex items-center justify-center">
+                          <Workflow className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white" />
+                        </div>
+                        <p className="font-medium text-xs sm:text-sm md:text-base">Score Check</p>
+                        <p className="text-[10px] sm:text-xs text-neutral-500 mt-0.5 sm:mt-1">Condition</p>
+                      </div>
+
+                      <div className="w-4 sm:w-6 md:w-12 h-px bg-amber-500/30 relative flex-shrink-0">
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-1 sm:w-1.5 sm:h-1.5 md:w-2 md:h-2 bg-amber-500 rounded-full" />
+                      </div>
+
+                      {/* Action */}
+                      <div className="bg-purple-500/20 border border-purple-500/30 rounded-lg sm:rounded-xl p-2.5 sm:p-4 md:p-6 text-center min-w-[90px] sm:min-w-[110px] md:min-w-[160px]">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-purple-500 rounded-lg mx-auto mb-1.5 sm:mb-2 md:mb-3 flex items-center justify-center">
+                          <Database className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white" />
+                        </div>
+                        <p className="font-medium text-xs sm:text-sm md:text-base">Add to CRM</p>
+                        <p className="text-[10px] sm:text-xs text-neutral-500 mt-0.5 sm:mt-1">Action</p>
+                      </div>
                     </div>
                   </div>
+                  {/* Scroll hint for mobile */}
+                  <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-neutral-900 to-transparent pointer-events-none md:hidden" />
                 </div>
 
                 {/* Stats Row */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mt-6 md:mt-8">
-                  <div className="bg-neutral-800/50 rounded-xl p-3 md:p-4 text-center">
-                    <p className="text-xl md:text-2xl font-bold text-emerald-400">2,847</p>
-                    <p className="text-xs text-neutral-500">Runs Today</p>
+                <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 mt-4 sm:mt-6 md:mt-8">
+                  <div className="bg-neutral-800/50 rounded-lg sm:rounded-xl p-2 sm:p-3 md:p-4 text-center">
+                    <p className="text-base sm:text-xl md:text-2xl font-bold text-emerald-400">2,847</p>
+                    <p className="text-[10px] sm:text-xs text-neutral-500">Runs Today</p>
                   </div>
-                  <div className="bg-neutral-800/50 rounded-xl p-3 md:p-4 text-center">
-                    <p className="text-xl md:text-2xl font-bold text-blue-400">99.8%</p>
-                    <p className="text-xs text-neutral-500">Success Rate</p>
+                  <div className="bg-neutral-800/50 rounded-lg sm:rounded-xl p-2 sm:p-3 md:p-4 text-center">
+                    <p className="text-base sm:text-xl md:text-2xl font-bold text-blue-400">99.8%</p>
+                    <p className="text-[10px] sm:text-xs text-neutral-500">Success Rate</p>
                   </div>
-                  <div className="bg-neutral-800/50 rounded-xl p-3 md:p-4 text-center">
-                    <p className="text-xl md:text-2xl font-bold text-amber-400">1.2s</p>
-                    <p className="text-xs text-neutral-500">Avg. Time</p>
+                  <div className="bg-neutral-800/50 rounded-lg sm:rounded-xl p-2 sm:p-3 md:p-4 text-center">
+                    <p className="text-base sm:text-xl md:text-2xl font-bold text-amber-400">1.2s</p>
+                    <p className="text-[10px] sm:text-xs text-neutral-500">Avg. Time</p>
                   </div>
-                  <div className="bg-neutral-800/50 rounded-xl p-3 md:p-4 text-center">
-                    <p className="text-xl md:text-2xl font-bold text-purple-400">847</p>
-                    <p className="text-xs text-neutral-500">Leads Synced</p>
+                  <div className="bg-neutral-800/50 rounded-lg sm:rounded-xl p-2 sm:p-3 md:p-4 text-center">
+                    <p className="text-base sm:text-xl md:text-2xl font-bold text-purple-400">847</p>
+                    <p className="text-[10px] sm:text-xs text-neutral-500">Leads Synced</p>
                   </div>
                 </div>
               </div>
