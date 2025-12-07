@@ -314,43 +314,43 @@ const AIAgents = () => {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6"
+              className="bg-neutral-900 border border-neutral-800 rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6"
             >
               {/* Mini Dashboard */}
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="bg-neutral-800/50 rounded-xl p-4">
-                  <p className="text-sm text-neutral-500 mb-1">Conversations</p>
-                  <p className="text-3xl font-bold text-purple-400">12,459</p>
-                  <p className="text-xs text-green-400 mt-1">↑ 23% this month</p>
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-6">
+                <div className="bg-neutral-800/50 rounded-lg sm:rounded-xl p-2 sm:p-3 md:p-4">
+                  <p className="text-[10px] sm:text-xs md:text-sm text-neutral-500 mb-0.5 sm:mb-1">Conversations</p>
+                  <p className="text-lg sm:text-2xl md:text-3xl font-bold text-purple-400">12,459</p>
+                  <p className="text-[10px] sm:text-xs text-green-400 mt-0.5 sm:mt-1">↑ 23% this month</p>
                 </div>
-                <div className="bg-neutral-800/50 rounded-xl p-4">
-                  <p className="text-sm text-neutral-500 mb-1">Satisfaction</p>
-                  <p className="text-3xl font-bold text-green-400">4.8/5</p>
-                  <p className="text-xs text-green-400 mt-1">↑ 0.3 from last month</p>
+                <div className="bg-neutral-800/50 rounded-lg sm:rounded-xl p-2 sm:p-3 md:p-4">
+                  <p className="text-[10px] sm:text-xs md:text-sm text-neutral-500 mb-0.5 sm:mb-1">Satisfaction</p>
+                  <p className="text-lg sm:text-2xl md:text-3xl font-bold text-green-400">4.8/5</p>
+                  <p className="text-[10px] sm:text-xs text-green-400 mt-0.5 sm:mt-1">↑ 0.3 from last month</p>
                 </div>
-                <div className="bg-neutral-800/50 rounded-xl p-4">
-                  <p className="text-sm text-neutral-500 mb-1">Avg. Response</p>
-                  <p className="text-3xl font-bold text-blue-400">1.2s</p>
-                  <p className="text-xs text-green-400 mt-1">↓ 0.5s improvement</p>
+                <div className="bg-neutral-800/50 rounded-lg sm:rounded-xl p-2 sm:p-3 md:p-4">
+                  <p className="text-[10px] sm:text-xs md:text-sm text-neutral-500 mb-0.5 sm:mb-1">Avg. Response</p>
+                  <p className="text-lg sm:text-2xl md:text-3xl font-bold text-blue-400">1.2s</p>
+                  <p className="text-[10px] sm:text-xs text-green-400 mt-0.5 sm:mt-1">↓ 0.5s improvement</p>
                 </div>
-                <div className="bg-neutral-800/50 rounded-xl p-4">
-                  <p className="text-sm text-neutral-500 mb-1">Resolution Rate</p>
-                  <p className="text-3xl font-bold text-amber-400">89%</p>
-                  <p className="text-xs text-green-400 mt-1">↑ 5% this month</p>
+                <div className="bg-neutral-800/50 rounded-lg sm:rounded-xl p-2 sm:p-3 md:p-4">
+                  <p className="text-[10px] sm:text-xs md:text-sm text-neutral-500 mb-0.5 sm:mb-1">Resolution Rate</p>
+                  <p className="text-lg sm:text-2xl md:text-3xl font-bold text-amber-400">89%</p>
+                  <p className="text-[10px] sm:text-xs text-green-400 mt-0.5 sm:mt-1">↑ 5% this month</p>
                 </div>
               </div>
               
               {/* Activity Chart Placeholder */}
-              <div className="bg-neutral-800/50 rounded-xl p-4">
-                <p className="text-sm text-neutral-500 mb-4">Weekly Activity</p>
-                <div className="flex items-end gap-2 h-24">
+              <div className="bg-neutral-800/50 rounded-lg sm:rounded-xl p-2 sm:p-3 md:p-4">
+                <p className="text-[10px] sm:text-xs md:text-sm text-neutral-500 mb-2 sm:mb-4">Weekly Activity</p>
+                <div className="flex items-end gap-1 sm:gap-2 h-16 sm:h-20 md:h-24">
                   {[40, 65, 45, 80, 55, 90, 70].map((height, i) => (
                     <div key={i} className="flex-1 bg-purple-500/30 rounded-t" style={{ height: `${height}%` }}>
                       <div className="w-full bg-purple-500 rounded-t" style={{ height: '60%' }} />
                     </div>
                   ))}
                 </div>
-                <div className="flex justify-between mt-2 text-xs text-neutral-500">
+                <div className="flex justify-between mt-1 sm:mt-2 text-[8px] sm:text-[10px] md:text-xs text-neutral-500">
                   <span>Mon</span>
                   <span>Tue</span>
                   <span>Wed</span>
