@@ -11,7 +11,6 @@ import { SoundProvider } from "@/contexts/SoundContext";
 import { PageLoader } from "@/components/ui/page-loader";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { OfflineBanner } from "@/components/OfflineBanner";
-import SupportWidget from "@/components/support/SupportWidget";
 
 // Lazy load all route pages for code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -37,7 +36,6 @@ const App = () => (
               <OfflineBanner />
               <Toaster />
               <Sonner />
-              <SupportWidget />
               <BrowserRouter>
                 <ErrorBoundary>
                   <Suspense fallback={<PageLoader />}>
