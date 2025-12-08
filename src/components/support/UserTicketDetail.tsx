@@ -264,11 +264,11 @@ export function UserTicketDetail({ ticketId, onBack }: UserTicketDetailProps) {
                 }}
               />
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2">
               <Button
                 onClick={handleSendMessage}
                 disabled={!newMessage.trim() || sending}
-                className="flex-1 gap-2"
+                className="w-full gap-2"
               >
                 <Send className="w-4 h-4" />
                 {sending ? 'Sending...' : 'Send Reply'}
@@ -277,7 +277,7 @@ export function UserTicketDetail({ ticketId, onBack }: UserTicketDetailProps) {
                 variant="outline"
                 onClick={handleCloseTicket}
                 disabled={closing}
-                className="gap-2"
+                className="w-full gap-2"
               >
                 <CheckCircle className="w-4 h-4" />
                 {closing ? 'Closing...' : 'Close Ticket'}
