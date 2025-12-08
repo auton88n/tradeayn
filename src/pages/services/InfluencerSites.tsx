@@ -37,7 +37,7 @@ const InfluencerSites = () => {
         email: formData.email,
         phone: formData.phone || null,
         message: formData.message || null,
-        service_type: 'content-creator-sites',
+        service_type: 'content_creator',
         status: 'new'
       });
 
