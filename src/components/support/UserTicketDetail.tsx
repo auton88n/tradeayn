@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ArrowLeft, Send, CheckCircle, Brain, User } from 'lucide-react';
+import { ArrowLeft, Send, Trash2, Brain, User } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
@@ -133,23 +133,23 @@ export function UserTicketDetail({ ticketId, onBack }: UserTicketDetailProps) {
     }
   };
 
-  const handleCloseTicket = async () => {
+  const handleDeleteTicket = async () => {
     if (!ticket) return;
 
     setClosing(true);
     try {
       const { error } = await supabase
         .from('support_tickets')
-        .update({ status: 'closed' })
+        .delete()
         .eq('id', ticketId);
 
       if (error) throw error;
 
-      toast.success('Ticket closed');
-      fetchTicketData();
+      toast.success('Ticket deleted');
+      onBack();
     } catch (error) {
-      console.error('Error closing ticket:', error);
-      toast.error('Failed to close ticket');
+      console.error('Error deleting ticket:', error);
+      toast.error('Failed to delete ticket');
     } finally {
       setClosing(false);
     }
@@ -275,12 +275,12 @@ export function UserTicketDetail({ ticketId, onBack }: UserTicketDetailProps) {
               </Button>
               <Button
                 variant="outline"
-                onClick={handleCloseTicket}
+                onClick={handleDeleteTicket}
                 disabled={closing}
-                className="w-full gap-2"
+                className="w-full gap-2 text-destructive hover:text-destructive"
               >
-                <CheckCircle className="w-4 h-4" />
-                {closing ? 'Closing...' : 'Close Ticket'}
+                <Trash2 className="w-4 h-4" />
+                {closing ? 'Deleting...' : 'Delete Ticket'}
               </Button>
             </div>
           </>
