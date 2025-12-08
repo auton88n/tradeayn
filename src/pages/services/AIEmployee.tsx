@@ -310,6 +310,12 @@ const AIEmployee = () => {
                   <span className="text-sm text-cyan-400 font-medium">{item.ai}</span>
                 </div>
               </div>)}
+            {/* Estimate Note */}
+            <div className="p-4 border-t border-neutral-800 bg-neutral-800/30">
+              <p className="text-xs text-neutral-500 text-center italic">
+                {language === 'ar' ? '* الأرقام تقديرية وقد تختلف حسب الموقع والصناعة' : language === 'fr' ? '* Les chiffres sont des estimations et peuvent varier selon la région et le secteur' : '* Figures are estimates and may vary by location and industry'}
+              </p>
+            </div>
           </motion.div>
 
           {/* Savings Callout */}
