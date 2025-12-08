@@ -1,4 +1,4 @@
-import { useRef, useCallback, useEffect, useState } from 'react';
+import { useRef, useCallback, useEffect, useState, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EmotionalEye } from '@/components/eye/EmotionalEye';
@@ -100,6 +100,21 @@ export const CenterStageLayout = ({
   const [burstPosition, setBurstPosition] = useState({ x: 0, y: 0 });
   const [lastUserMessage, setLastUserMessage] = useState<string>('');
   const [currentGazeIndex, setCurrentGazeIndex] = useState<number | null>(null);
+
+  // Memoize animation configs to prevent recreation on every render
+  const bubbleAnimationConfig = useMemo(() => ({
+    initial: { scale: 0, opacity: 0, y: 100 },
+    animate: { scale: 1, opacity: 1, y: 0 },
+    exit: { scale: 0, opacity: 0, y: -50 },
+    transition: { duration: 0.4, ease: [0.32, 0.72, 0, 1] }
+  }), []);
+
+  const responseBubbleConfig = useMemo(() => ({
+    initial: { opacity: 0, scale: 0.8, y: -20 },
+    animate: { opacity: 1, scale: 1, y: 0 },
+    exit: { opacity: 0, scale: 0.8, y: 20 },
+    transition: { duration: 0.3, ease: [0.34, 1.56, 0.64, 1] }
+  }), []);
 
   // Reset all visual state when messages are cleared (new chat started)
   useEffect(() => {

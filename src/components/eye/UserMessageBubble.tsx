@@ -1,4 +1,4 @@
-import { useRef, useLayoutEffect, useState } from 'react';
+import { useRef, useLayoutEffect, useState, memo } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
@@ -10,7 +10,7 @@ interface UserMessageBubbleProps {
   onComplete?: () => void;
 }
 
-export const UserMessageBubble = ({
+const UserMessageBubbleComponent = ({
   content,
   status,
   startPosition,
@@ -111,3 +111,14 @@ export const UserMessageBubble = ({
     </motion.div>
   );
 };
+
+export const UserMessageBubble = memo(UserMessageBubbleComponent, (prevProps, nextProps) => {
+  return (
+    prevProps.content === nextProps.content &&
+    prevProps.status === nextProps.status &&
+    prevProps.startPosition.x === nextProps.startPosition.x &&
+    prevProps.startPosition.y === nextProps.startPosition.y &&
+    prevProps.endPosition.x === nextProps.endPosition.x &&
+    prevProps.endPosition.y === nextProps.endPosition.y
+  );
+});
