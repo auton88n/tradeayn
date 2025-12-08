@@ -2,7 +2,7 @@ import React, { useEffect, useCallback, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useLanguage } from '@/contexts/LanguageContext';
+
 import { SidebarProvider, Sidebar as ShadcnSidebar, SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { Sidebar as DashboardSidebar } from './Sidebar';
 import { CenterStageLayout } from './CenterStageLayout';
@@ -53,7 +53,7 @@ const getModes = (): AIModeConfig[] => [
 
 export const DashboardContainer = ({ user, auth, isAdmin, onAdminPanelClick }: DashboardContainerProps) => {
   const { toast } = useToast();
-  const { language, setLanguage } = useLanguage();
+  
   
   // Custom hooks
   const chatSession = useChatSession(user.id);
@@ -84,11 +84,6 @@ export const DashboardContainer = ({ user, auth, isAdmin, onAdminPanelClick }: D
     }
   }, [chatSession.currentSessionId]);
 
-  // Detect language from user input and auto-switch
-  const detectLanguage = useCallback((text: string): 'ar' | 'en' => {
-    const arabicPattern = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
-    return arabicPattern.test(text) ? 'ar' : 'en';
-  }, []);
 
   // Handle send message with file upload
   const handleSendMessage = useCallback(async (
@@ -127,9 +122,6 @@ export const DashboardContainer = ({ user, auth, isAdmin, onAdminPanelClick }: D
     auth.hasAccess,
     auth.hasAcceptedTerms,
     auth.isAuthLoading,
-    detectLanguage,
-    language,
-    setLanguage,
     messagesHook,
     chatSession,
     fileUpload,
