@@ -228,20 +228,20 @@ const LandingPage = () => {
   const services = [{
     number: '01',
     slug: 'content-creator-sites',
-    title: language === 'ar' ? 'مواقع فاخرة لصناع المحتوى' : 'Premium Content Creator Sites',
-    description: language === 'ar' ? 'موقع إلكتروني احترافي يعكس هويتك ويجذب فرص التعاون والشراكات.' : 'Luxury websites custom-built to showcase your personal brand.',
+    title: language === 'ar' ? 'مواقع فاخرة لصناع المحتوى' : language === 'fr' ? 'Sites Premium pour Créateurs' : 'Premium Content Creator Sites',
+    description: language === 'ar' ? 'موقع إلكتروني احترافي يعكس هويتك ويجذب فرص التعاون والشراكات.' : language === 'fr' ? 'Sites web de luxe conçus pour mettre en valeur votre marque personnelle.' : 'Luxury websites custom-built to showcase your personal brand.',
     mockup: <MobileMockup />
   }, {
     number: '02',
     slug: 'ai-agents',
-    title: language === 'ar' ? 'مساعد ذكي لعملك' : 'Custom AI Agents',
-    description: language === 'ar' ? 'مساعد ذكي يعمل على مدار الساعة لخدمة عملائك.' : '24/7 intelligent assistants trained on your business.',
+    title: language === 'ar' ? 'مساعد ذكي لعملك' : language === 'fr' ? 'Agents IA Personnalisés' : 'Custom AI Agents',
+    description: language === 'ar' ? 'مساعد ذكي يعمل على مدار الساعة لخدمة عملائك.' : language === 'fr' ? 'Assistants intelligents 24/7 formés sur votre entreprise.' : '24/7 intelligent assistants trained on your business.',
     mockup: <DeviceMockups />
   }, {
     number: '03',
     slug: 'automation',
-    title: language === 'ar' ? 'أتمتة العمليات' : 'Process Automation',
-    description: language === 'ar' ? 'أتمتة سير العمل لتوفير الوقت وتقليل الأخطاء في أي عمل.' : 'Automate workflows to save time and reduce errors in any business.',
+    title: language === 'ar' ? 'أتمتة العمليات' : language === 'fr' ? 'Automatisation des Processus' : 'Process Automation',
+    description: language === 'ar' ? 'أتمتة سير العمل لتوفير الوقت وتقليل الأخطاء في أي عمل.' : language === 'fr' ? 'Automatisez les flux de travail pour gagner du temps.' : 'Automate workflows to save time and reduce errors in any business.',
     mockup: <FloatingIcons />
   }];
   return <div className="min-h-screen bg-background scroll-smooth">
@@ -312,7 +312,7 @@ const LandingPage = () => {
               }} transition={{
                 delay: 0.05
               }} onClick={() => scrollToSection('about')} className="w-full text-left px-4 py-2.5 rounded-xl hover:bg-muted transition-colors text-sm font-medium">
-                    {language === 'ar' ? 'عن AYN' : 'About'}
+                    {language === 'ar' ? 'عن AYN' : language === 'fr' ? 'À Propos' : 'About'}
                   </motion.button>
                   <motion.button initial={{
                 x: -20,
@@ -323,7 +323,7 @@ const LandingPage = () => {
               }} transition={{
                 delay: 0.1
               }} onClick={() => scrollToSection('services')} className="w-full text-left px-4 py-2.5 rounded-xl hover:bg-muted transition-colors text-sm font-medium">
-                    {language === 'ar' ? 'خدماتنا' : 'Services'}
+                    {language === 'ar' ? 'خدماتنا' : language === 'fr' ? 'Services' : 'Services'}
                   </motion.button>
                   <motion.button initial={{
                 x: -20,
@@ -334,7 +334,7 @@ const LandingPage = () => {
               }} transition={{
                 delay: 0.15
               }} onClick={() => scrollToSection('contact')} className="w-full text-left px-4 py-2.5 rounded-xl hover:bg-muted transition-colors text-sm font-medium">
-                    {language === 'ar' ? 'تواصل معنا' : 'Contact'}
+                    {language === 'ar' ? 'تواصل معنا' : language === 'fr' ? 'Contact' : 'Contact'}
                   </motion.button>
                 </div>
 
@@ -397,20 +397,20 @@ const LandingPage = () => {
               
               <div className="flex flex-col gap-4">
                 <button onClick={() => scrollToSection('about')} className="text-left py-2 text-sm font-medium hover:text-foreground/80 transition-colors">
-                  {language === 'ar' ? 'عن AYN' : 'About'}
+                  {language === 'ar' ? 'عن AYN' : language === 'fr' ? 'À Propos' : 'About'}
                 </button>
                 <button onClick={() => scrollToSection('services')} className="text-left py-2 text-sm font-medium hover:text-foreground/80 transition-colors">
-                  {language === 'ar' ? 'خدماتنا' : 'Services'}
+                  {language === 'ar' ? 'خدماتنا' : language === 'fr' ? 'Services' : 'Services'}
                 </button>
                 
                 <div className="h-px bg-border my-2" />
                 
                 <div className="flex items-center justify-between py-2">
-                  <span className="text-sm text-muted-foreground">{language === 'ar' ? 'اللغة' : 'Language'}</span>
+                  <span className="text-sm text-muted-foreground">{language === 'ar' ? 'اللغة' : language === 'fr' ? 'Langue' : 'Language'}</span>
                   <LanguageSwitcher onOpenChange={handleDropdownOpenChange} />
                 </div>
                 <div className="flex items-center justify-between py-2">
-                  <span className="text-sm text-muted-foreground">{language === 'ar' ? 'المظهر' : 'Theme'}</span>
+                  <span className="text-sm text-muted-foreground">{language === 'ar' ? 'المظهر' : language === 'fr' ? 'Thème' : 'Theme'}</span>
                   <ThemeToggle />
                 </div>
                 
@@ -437,15 +437,15 @@ const LandingPage = () => {
         <div className="container mx-auto max-w-6xl text-center">
           <ScrollReveal>
             <span className="text-sm font-mono text-muted-foreground tracking-wider uppercase mb-4 block">
-              {language === 'ar' ? 'من نحن' : 'About AYN'}
+              {language === 'ar' ? 'من نحن' : language === 'fr' ? 'À Propos d\'AYN' : 'About AYN'}
             </span>
 
             <h2 className="text-3xl md:text-5xl lg:text-6xl font-serif font-bold mb-4 md:mb-6">
-              {language === 'ar' ? 'رفيقك الذكي في الحياة' : 'Your Intelligent Life Companion'}
+              {language === 'ar' ? 'رفيقك الذكي في الحياة' : language === 'fr' ? 'Votre Compagnon de Vie Intelligent' : 'Your Intelligent Life Companion'}
             </h2>
 
             <p className="text-base md:text-xl text-muted-foreground max-w-3xl mx-auto mb-10 md:mb-16">
-              {language === 'ar' ? 'AYN يتعرّف عليك. يتعلم عاداتك، يفهم أهدافك، ويساعدك على البقاء منظمًا ومركزًا كل يوم.' : 'AYN gets to know you. It learns your habits, understands your goals, and helps you stay organized and focused every day.'}
+              {language === 'ar' ? 'AYN يتعرّف عليك. يتعلم عاداتك، يفهم أهدافك، ويساعدك على البقاء منظمًا ومركزًا كل يوم.' : language === 'fr' ? 'AYN apprend à vous connaître. Il comprend vos habitudes, vos objectifs, et vous aide à rester organisé et concentré chaque jour.' : 'AYN gets to know you. It learns your habits, understands your goals, and helps you stay organized and focused every day.'}
             </p>
           </ScrollReveal>
 
@@ -457,10 +457,10 @@ const LandingPage = () => {
                   <Brain className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
                 </div>
                 <h3 className="text-lg md:text-xl font-bold">
-                  {language === 'ar' ? 'يتكيّف معك' : 'Adaptive Understanding'}
+                  {language === 'ar' ? 'يتكيّف معك' : language === 'fr' ? 'Compréhension Adaptative' : 'Adaptive Understanding'}
                 </h3>
                 <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-                  {language === 'ar' ? 'يتعلم تفضيلاتك ويقدم لك إرشادات مخصصة تناسب أسلوب حياتك.' : 'Learns your preferences over time and offers personalized guidance tailored to you.'}
+                  {language === 'ar' ? 'يتعلم تفضيلاتك ويقدم لك إرشادات مخصصة تناسب أسلوب حياتك.' : language === 'fr' ? 'Apprend vos préférences et offre des conseils personnalisés adaptés à vous.' : 'Learns your preferences over time and offers personalized guidance tailored to you.'}
                 </p>
               </div>
             </ScrollReveal>
@@ -471,10 +471,10 @@ const LandingPage = () => {
                   <Sparkles className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
                 </div>
                 <h3 className="text-lg md:text-xl font-bold">
-                  {language === 'ar' ? 'دائمًا بجانبك' : 'Always Available'}
+                  {language === 'ar' ? 'دائمًا بجانبك' : language === 'fr' ? 'Toujours Disponible' : 'Always Available'}
                 </h3>
                 <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-                  {language === 'ar' ? 'رفيق متاح على مدار الساعة، جاهز لمساعدتك في أي وقت.' : 'A thoughtful companion available 24/7, ready to help whenever you need support or clarity.'}
+                  {language === 'ar' ? 'رفيق متاح على مدار الساعة، جاهز لمساعدتك في أي وقت.' : language === 'fr' ? 'Un compagnon attentionné disponible 24/7, prêt à vous aider quand vous en avez besoin.' : 'A thoughtful companion available 24/7, ready to help whenever you need support or clarity.'}
                 </p>
               </div>
             </ScrollReveal>
@@ -485,10 +485,10 @@ const LandingPage = () => {
                   <Shield className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
                 </div>
                 <h3 className="text-lg md:text-xl font-bold">
-                  {language === 'ar' ? 'خصوصيتك محمية' : 'Your Privacy, Protected'}
+                  {language === 'ar' ? 'خصوصيتك محمية' : language === 'fr' ? 'Votre Vie Privée, Protégée' : 'Your Privacy, Protected'}
                 </h3>
                 <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-                  {language === 'ar' ? 'محادثاتك وبياناتك مشفرة بالكامل. لا نشارك معلوماتك أبدًا.' : 'Your conversations and data are secured with end-to-end encryption. We never share your information.'}
+                  {language === 'ar' ? 'محادثاتك وبياناتك مشفرة بالكامل. لا نشارك معلوماتك أبدًا.' : language === 'fr' ? 'Vos conversations et données sont sécurisées avec un chiffrement de bout en bout.' : 'Your conversations and data are secured with end-to-end encryption. We never share your information.'}
                 </p>
               </div>
             </ScrollReveal>
@@ -503,11 +503,13 @@ const LandingPage = () => {
           <ScrollReveal>
             <div className="text-center mb-12 md:mb-16">
               <span className="text-sm font-mono text-muted-foreground tracking-wider uppercase mb-4 block">
-                {language === 'ar' ? 'خدماتنا' : 'What We Do'}
+                {language === 'ar' ? 'خدماتنا' : language === 'fr' ? 'Ce Que Nous Faisons' : 'What We Do'}
               </span>
               <h2 className="text-3xl md:text-5xl lg:text-6xl font-serif mb-4 md:mb-6">
                 {language === 'ar' ? (
                   <>ثلاث طرق <span className="font-bold">لتبسيط حياتك</span></>
+                ) : language === 'fr' ? (
+                  <>Trois Façons de <span className="font-bold">Simplifier Votre Vie</span></>
                 ) : (
                   <>Three Ways We Help <span className="font-bold">Simplify Your Life</span></>
                 )}
@@ -538,7 +540,7 @@ const LandingPage = () => {
                     {services[0].mockup}
                   </div>
                   <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors mt-4">
-                    {language === 'ar' ? 'اكتشف المزيد' : 'Learn More'}
+                    {language === 'ar' ? 'اكتشف المزيد' : language === 'fr' ? 'En Savoir Plus' : 'Learn More'}
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </div>
                 </motion.div>
@@ -565,7 +567,7 @@ const LandingPage = () => {
                           {services[1].description}
                         </p>
                         <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors mt-4">
-                          {language === 'ar' ? 'اكتشف المزيد' : 'Learn More'}
+                          {language === 'ar' ? 'اكتشف المزيد' : language === 'fr' ? 'En Savoir Plus' : 'Learn More'}
                           <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                         </div>
                       </div>
@@ -595,7 +597,7 @@ const LandingPage = () => {
                           {services[2].description}
                         </p>
                         <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors mt-4">
-                          {language === 'ar' ? 'اكتشف المزيد' : 'Learn More'}
+                          {language === 'ar' ? 'اكتشف المزيد' : language === 'fr' ? 'En Savoir Plus' : 'Learn More'}
                           <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                         </div>
                       </div>
@@ -617,13 +619,13 @@ const LandingPage = () => {
           <ScrollReveal>
             <div className="text-center mb-10 md:mb-16">
               <span className="text-sm font-mono text-muted-foreground tracking-wider uppercase mb-4 block">
-                {language === 'ar' ? 'راسلنا' : 'Get In Touch'}
+                {language === 'ar' ? 'راسلنا' : language === 'fr' ? 'Contactez-Nous' : 'Get In Touch'}
               </span>
               <h2 className="text-3xl md:text-5xl lg:text-6xl font-serif font-bold mb-4 md:mb-6">
-                {language === 'ar' ? 'دعنا نتحدث' : "Let's Start a Conversation"}
+                {language === 'ar' ? 'دعنا نتحدث' : language === 'fr' ? 'Commençons une Conversation' : "Let's Start a Conversation"}
               </h2>
               <p className="text-base md:text-lg text-muted-foreground max-w-xl mx-auto">
-                {language === 'ar' ? 'شاركنا فكرتك، ودعنا نحوّلها إلى واقع' : "Tell us about your project and we'll help transform your vision into reality"}
+                {language === 'ar' ? 'شاركنا فكرتك، ودعنا نحوّلها إلى واقع' : language === 'fr' ? 'Parlez-nous de votre projet et nous vous aiderons à réaliser votre vision' : "Tell us about your project and we'll help transform your vision into reality"}
               </p>
             </div>
           </ScrollReveal>
@@ -636,10 +638,10 @@ const LandingPage = () => {
                   <CheckCircle className="w-8 h-8 text-background" />
                 </div>
                 <h3 className="text-2xl font-bold mb-3">
-                  {language === 'ar' ? 'شكراً لك!' : 'Thank You!'}
+                  {language === 'ar' ? 'شكراً لك!' : language === 'fr' ? 'Merci!' : 'Thank You!'}
                 </h3>
                 <p className="text-muted-foreground">
-                  {language === 'ar' ? 'سنرد عليك خلال 24 ساعة' : "We'll be in touch within 24 hours"}
+                  {language === 'ar' ? 'سنرد عليك خلال 24 ساعة' : language === 'fr' ? 'Nous vous contacterons dans 24 heures' : "We'll be in touch within 24 hours"}
                 </p>
               </div> :
           // Contact form
@@ -647,36 +649,36 @@ const LandingPage = () => {
                 {/* Name input */}
                 <div className="space-y-2 group">
                   <label htmlFor="name" className="text-sm font-mono uppercase tracking-wider text-muted-foreground">
-                    {language === 'ar' ? 'الاسم' : 'Name'}
+                    {language === 'ar' ? 'الاسم' : language === 'fr' ? 'Nom' : 'Name'}
                   </label>
                   <Input id="name" type="text" value={contactForm.name} onChange={e => setContactForm({
                 ...contactForm,
                 name: e.target.value
-              })} placeholder={language === 'ar' ? 'الاسم الكامل' : 'Your full name'} className={cn("h-14 bg-transparent border-2 border-border rounded-none text-base transition-all duration-300", "focus:border-foreground focus:ring-0", "group-hover:border-muted-foreground", contactErrors.name && "border-destructive")} disabled={isSubmitting} />
+              })} placeholder={language === 'ar' ? 'الاسم الكامل' : language === 'fr' ? 'Votre nom complet' : 'Your full name'} className={cn("h-14 bg-transparent border-2 border-border rounded-none text-base transition-all duration-300", "focus:border-foreground focus:ring-0", "group-hover:border-muted-foreground", contactErrors.name && "border-destructive")} disabled={isSubmitting} />
                   {contactErrors.name && <p className="text-sm text-destructive animate-slide-down-fade">{contactErrors.name}</p>}
                 </div>
 
                 {/* Email input */}
                 <div className="space-y-2 group">
                   <label htmlFor="email" className="text-sm font-mono uppercase tracking-wider text-muted-foreground">
-                    {language === 'ar' ? 'البريد الإلكتروني' : 'Email'}
+                    {language === 'ar' ? 'البريد الإلكتروني' : language === 'fr' ? 'Email' : 'Email'}
                   </label>
                   <Input id="email" type="email" value={contactForm.email} onChange={e => setContactForm({
                 ...contactForm,
                 email: e.target.value
-              })} placeholder={language === 'ar' ? 'بريدك الإلكتروني' : 'your@email.com'} className={cn("h-14 bg-transparent border-2 border-border rounded-none text-base transition-all duration-300", "focus:border-foreground focus:ring-0", "group-hover:border-muted-foreground", contactErrors.email && "border-destructive")} disabled={isSubmitting} />
+              })} placeholder={language === 'ar' ? 'بريدك الإلكتروني' : language === 'fr' ? 'votre@email.com' : 'your@email.com'} className={cn("h-14 bg-transparent border-2 border-border rounded-none text-base transition-all duration-300", "focus:border-foreground focus:ring-0", "group-hover:border-muted-foreground", contactErrors.email && "border-destructive")} disabled={isSubmitting} />
                   {contactErrors.email && <p className="text-sm text-destructive animate-slide-down-fade">{contactErrors.email}</p>}
                 </div>
 
                 {/* Message textarea */}
                 <div className="space-y-2 group">
                   <label htmlFor="message" className="text-sm font-mono uppercase tracking-wider text-muted-foreground">
-                    {language === 'ar' ? 'الرسالة' : 'Message'}
+                    {language === 'ar' ? 'الرسالة' : language === 'fr' ? 'Message' : 'Message'}
                   </label>
                   <Textarea id="message" value={contactForm.message} onChange={e => setContactForm({
                 ...contactForm,
                 message: e.target.value
-              })} placeholder={language === 'ar' ? 'كيف يمكننا مساعدتك؟' : 'Tell us about your project...'} rows={6} className={cn("bg-transparent border-2 border-border rounded-none text-base transition-all duration-300 resize-none", "focus:border-foreground focus:ring-0", "group-hover:border-muted-foreground", contactErrors.message && "border-destructive")} disabled={isSubmitting} />
+              })} placeholder={language === 'ar' ? 'كيف يمكننا مساعدتك؟' : language === 'fr' ? 'Parlez-nous de votre projet...' : 'Tell us about your project...'} rows={6} className={cn("bg-transparent border-2 border-border rounded-none text-base transition-all duration-300 resize-none", "focus:border-foreground focus:ring-0", "group-hover:border-muted-foreground", contactErrors.message && "border-destructive")} disabled={isSubmitting} />
                   {contactErrors.message && <p className="text-sm text-destructive animate-slide-down-fade">{contactErrors.message}</p>}
                 </div>
 
@@ -684,9 +686,9 @@ const LandingPage = () => {
                 <Button type="submit" size="lg" disabled={isSubmitting} className={cn("w-full h-14 rounded-none font-mono uppercase tracking-wider transition-all duration-300", "hover:shadow-2xl")}>
                   {isSubmitting ? <>
                       <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      {language === 'ar' ? 'جارٍ الإرسال...' : 'Sending...'}
+                      {language === 'ar' ? 'جارٍ الإرسال...' : language === 'fr' ? 'Envoi...' : 'Sending...'}
                     </> : <>
-                      {language === 'ar' ? 'أرسل' : 'Send Message'}
+                      {language === 'ar' ? 'أرسل' : language === 'fr' ? 'Envoyer' : 'Send Message'}
                       <Send className="ml-2 h-5 w-5" />
                     </>}
                 </Button>
