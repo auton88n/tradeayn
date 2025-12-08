@@ -15,13 +15,39 @@ interface ApplicationEmailRequest {
   formData?: Record<string, unknown>;
 }
 
+// HTML entity escaping to prevent HTML injection
+const escapeHtml = (str: string): string => {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+};
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { serviceType, applicantName, applicantEmail, applicantPhone, message, formData }: ApplicationEmailRequest = await req.json();
+    const { serviceType: rawServiceType, applicantName: rawApplicantName, applicantEmail: rawApplicantEmail, applicantPhone: rawApplicantPhone, message: rawMessage, formData: rawFormData }: ApplicationEmailRequest = await req.json();
+    
+    // Escape user inputs to prevent HTML injection
+    const serviceType = escapeHtml(rawServiceType);
+    const applicantName = escapeHtml(rawApplicantName);
+    const applicantEmail = escapeHtml(rawApplicantEmail);
+    const applicantPhone = rawApplicantPhone ? escapeHtml(rawApplicantPhone) : undefined;
+    const message = rawMessage ? escapeHtml(rawMessage) : undefined;
+    
+    // Escape form data values
+    const formData = rawFormData ? Object.fromEntries(
+      Object.entries(rawFormData).map(([key, value]) => [
+        key,
+        typeof value === 'string' ? escapeHtml(value) : 
+        Array.isArray(value) ? value.map(v => typeof v === 'string' ? escapeHtml(v) : v) : value
+      ])
+    ) : undefined;
 
     console.log(`Processing application email for ${serviceType} from ${applicantEmail}`);
 

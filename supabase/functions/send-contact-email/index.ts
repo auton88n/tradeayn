@@ -12,13 +12,28 @@ interface ContactEmailRequest {
   message: string;
 }
 
+// HTML entity escaping to prevent HTML injection
+const escapeHtml = (str: string): string => {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+};
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { name, email, message }: ContactEmailRequest = await req.json();
+    const { name: rawName, email: rawEmail, message: rawMessage }: ContactEmailRequest = await req.json();
+    
+    // Escape user inputs to prevent HTML injection
+    const name = escapeHtml(rawName);
+    const email = escapeHtml(rawEmail);
+    const message = escapeHtml(rawMessage);
 
     console.log(`Processing contact form submission from ${email}`);
 
