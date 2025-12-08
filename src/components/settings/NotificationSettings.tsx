@@ -9,11 +9,12 @@ import { Loader2, Volume1, Volume2 } from 'lucide-react';
 
 interface NotificationSettingsProps {
   userId: string;
+  accessToken: string;
 }
 
-export const NotificationSettings = ({ userId }: NotificationSettingsProps) => {
+export const NotificationSettings = ({ userId, accessToken }: NotificationSettingsProps) => {
   const { t } = useLanguage();
-  const { settings, loading, updating, updateSettings } = useUserSettings(userId);
+  const { settings, loading, updating, updateSettings } = useUserSettings(userId, accessToken);
   const soundContext = useSoundContextOptional();
 
   const handleSoundToggle = (checked: boolean) => {

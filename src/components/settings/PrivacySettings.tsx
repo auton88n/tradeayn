@@ -21,7 +21,7 @@ export const PrivacySettings = ({ userId, session }: PrivacySettingsProps) => {
   const { t } = useLanguage();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { settings, loading, updating, updateSettings } = useUserSettings(userId);
+  const { settings, loading, updating, updateSettings } = useUserSettings(userId, session.access_token);
 
   const token = session.access_token;
 
