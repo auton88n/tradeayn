@@ -101,21 +101,21 @@ const SupportWidget: React.FC = () => {
                   <TabsList className="grid w-full grid-cols-3 bg-muted/40 p-1 rounded-xl border border-border/30">
                     <TabsTrigger 
                       value="chat" 
-                      className="flex items-center gap-1.5 text-xs rounded-lg data-[state=active]:bg-white data-[state=active]:dark:bg-gray-800 data-[state=active]:shadow-sm data-[state=active]:border-border/50 transition-all"
+                      className="flex items-center gap-1.5 text-xs rounded-lg text-muted-foreground data-[state=active]:text-foreground data-[state=active]:bg-white data-[state=active]:dark:bg-gray-800 data-[state=active]:shadow-sm transition-all"
                     >
-                      <Brain className="h-3.5 w-3.5" />
-                      AI Chat
+                      <Brain className="h-3.5 w-3.5 shrink-0" />
+                      <span>AI Chat</span>
                     </TabsTrigger>
                     <TabsTrigger 
                       value="ticket" 
-                      className="flex items-center gap-1.5 text-xs rounded-lg data-[state=active]:bg-white data-[state=active]:dark:bg-gray-800 data-[state=active]:shadow-sm data-[state=active]:border-border/50 transition-all"
+                      className="flex items-center gap-1.5 text-xs rounded-lg text-muted-foreground data-[state=active]:text-foreground data-[state=active]:bg-white data-[state=active]:dark:bg-gray-800 data-[state=active]:shadow-sm transition-all"
                     >
-                      <Ticket className="h-3.5 w-3.5" />
-                      Ticket
+                      <Ticket className="h-3.5 w-3.5 shrink-0" />
+                      <span>Ticket</span>
                     </TabsTrigger>
                     <TabsTrigger 
                       value="faq" 
-                      className="flex items-center gap-1.5 text-xs rounded-lg data-[state=active]:bg-white data-[state=active]:dark:bg-gray-800 data-[state=active]:shadow-sm data-[state=active]:border-border/50 transition-all"
+                      className="flex items-center gap-1.5 text-xs rounded-lg text-muted-foreground data-[state=active]:text-foreground data-[state=active]:bg-white data-[state=active]:dark:bg-gray-800 data-[state=active]:shadow-sm transition-all"
                     >
                       <HelpCircle className="h-3.5 w-3.5 shrink-0" />
                       <span>FAQ</span>
