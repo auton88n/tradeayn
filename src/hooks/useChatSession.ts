@@ -1,33 +1,8 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseApi } from '@/lib/supabaseApi';
 import { useToast } from '@/hooks/use-toast';
 import type { ChatHistory, Message, UseChatSessionReturn } from '@/types/dashboard.types';
-
-// Same constants from useAuth.ts - direct REST API bypasses deadlocking Supabase client
-const SUPABASE_URL = 'https://dfkoxuokfkttjhfjcecx.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRma294dW9rZmt0dGpoZmpjZWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYzNTg4NzMsImV4cCI6MjA3MTkzNDg3M30.Th_-ds6dHsxIhRpkzJLREwBIVdgkcdm2SmMNDmjNbxw';
-
-// Helper for direct REST API calls (bypasses deadlocking Supabase client)
-const fetchFromSupabase = async (
-  endpoint: string,
-  token: string
-): Promise<any> => {
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}`, {
-    headers: {
-      'apikey': SUPABASE_KEY,
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`API error: ${response.status}`);
-  }
-
-  const text = await response.text();
-  return text ? JSON.parse(text) : null;
-};
 
 export const useChatSession = (userId: string, session: Session | null): UseChatSessionReturn => {
   const [currentSessionId, setCurrentSessionId] = useState<string>('');
@@ -45,9 +20,13 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
     }
     
     try {
-      console.log('[useChatSession] Loading recent chats via REST API...');
-      
-      const data = await fetchFromSupabase(
+      const data = await supabaseApi.get<Array<{
+        id: string;
+        content: string;
+        created_at: string;
+        sender: string;
+        session_id: string | null;
+      }>>(
         `messages?user_id=eq.${userId}&select=id,content,created_at,sender,session_id&order=created_at.desc&limit=100`,
         session.access_token
       );
@@ -67,7 +46,7 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
       
       const sessionGroups: { [key: string]: ProcessedMessage[] } = {};
 
-      data.forEach((message: { id: string; content: string; created_at: string; sender: string; session_id: string | null }) => {
+      data.forEach((message) => {
         const sessionId = message.session_id;
         // Skip messages without a session_id
         if (!sessionId) return;
@@ -110,10 +89,9 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
         .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()) // Sort by most recent
         .slice(0, 10); // Limit to latest 10 sessions
 
-      console.log('[useChatSession] Loaded', chatHistories.length, 'conversations');
       setRecentChats(chatHistories);
-    } catch (error) {
-      console.error('[useChatSession] Error loading recent chats:', error);
+    } catch {
+      // Error loading chats
     }
   }, [userId, session]);
 
@@ -155,22 +133,17 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
         }
       });
 
-      // Delete messages from database with explicit user_id filter
-      if (messageIdsToDelete.length > 0) {
-        const { error } = await supabase
-          .from('messages')
-          .delete()
-          .in('id', messageIdsToDelete)
-          .eq('user_id', userId);
-
-        if (error) {
-          toast({
-            title: 'Error',
-            description: 'Failed to delete some chat messages.',
-            variant: "destructive"
-          });
-          return;
-        }
+      // Delete messages from database using REST API
+      if (messageIdsToDelete.length > 0 && session) {
+        // Delete each message individually (REST API limitation with IN clause)
+        await Promise.all(
+          messageIdsToDelete.map(id =>
+            supabaseApi.delete(
+              `messages?id=eq.${id}&user_id=eq.${userId}`,
+              session.access_token
+            )
+          )
+        );
       }
 
       // Clear local state first
@@ -216,20 +189,13 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
 
   // Delete all chats for the user
   const deleteAllChats = useCallback(async () => {
+    if (!session) return;
+    
     try {
-      const { error } = await supabase
-        .from('messages')
-        .delete()
-        .eq('user_id', userId);
-
-      if (error) {
-        toast({
-          title: 'Error',
-          description: 'Failed to delete all chat history.',
-          variant: "destructive"
-        });
-        return;
-      }
+      await supabaseApi.delete(
+        `messages?user_id=eq.${userId}`,
+        session.access_token
+      );
 
       // Clear local state
       setRecentChats([]);
@@ -240,8 +206,7 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
         title: 'All Chats Deleted',
         description: 'Your entire chat history has been cleared.',
       });
-    } catch (error) {
-      console.error('Error deleting all chats:', error);
+    } catch {
       toast({
         title: 'Error',
         description: 'Failed to delete chat history.',
@@ -250,7 +215,7 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
     }
   }, [userId, toast]);
 
-  // Load recent chats on mount and set initial session using direct REST API
+  // Load recent chats on mount and set initial session using REST API
   useEffect(() => {
     const initializeSession = async () => {
       // Skip if no user or already initialized for this user
@@ -258,33 +223,27 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
       
       // Skip if no session available
       if (!session) {
-        console.warn('[useChatSession] No session available for initialization');
         setCurrentSessionId(crypto.randomUUID());
         lastInitializedUserId.current = userId;
         return;
       }
       
-      console.log('[useChatSession] Initializing for user:', userId);
-      
       try {
-        // Check for most recent session with messages using direct REST API
-        const data = await fetchFromSupabase(
+        // Check for most recent session with messages using REST API
+        const data = await supabaseApi.get<Array<{ session_id: string }>>(
           `messages?user_id=eq.${userId}&select=session_id&order=created_at.desc&limit=1`,
           session.access_token
         );
         
         if (data && data.length > 0 && data[0].session_id) {
-          console.log('[useChatSession] Found existing session:', data[0].session_id);
           setCurrentSessionId(data[0].session_id);
         } else {
-          console.log('[useChatSession] No existing session, creating new one');
           setCurrentSessionId(crypto.randomUUID());
         }
         
         lastInitializedUserId.current = userId;
         await loadRecentChats();
-      } catch (err) {
-        console.error('[useChatSession] Error initializing:', err);
+      } catch {
         setCurrentSessionId(crypto.randomUUID());
         lastInitializedUserId.current = userId;
       }

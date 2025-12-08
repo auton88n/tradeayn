@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { supabase } from '@/integrations/supabase/client';
+import { Session } from '@supabase/supabase-js';
+import { supabaseApi } from '@/lib/supabaseApi';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +27,10 @@ interface RateLimitStat {
   last_activity: string;
 }
 
+interface RateLimitMonitoringProps {
+  session: Session;
+}
+
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -43,16 +48,14 @@ const itemVariants = {
   }
 };
 
-export const RateLimitMonitoring = () => {
+export const RateLimitMonitoring = ({ session }: RateLimitMonitoringProps) => {
   const [stats, setStats] = useState<RateLimitStat[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const fetchStats = useCallback(async () => {
     try {
-      const { data, error } = await supabase.rpc('get_rate_limit_stats');
-      
-      if (error) throw error;
+      const data = await supabaseApi.rpc<RateLimitStat[]>('get_rate_limit_stats', session.access_token);
       setStats(data || []);
     } catch (error) {
       console.error('Error fetching rate limit stats:', error);
@@ -61,7 +64,7 @@ export const RateLimitMonitoring = () => {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, []);
+  }, [session.access_token]);
 
   useEffect(() => {
     fetchStats();
@@ -71,15 +74,14 @@ export const RateLimitMonitoring = () => {
 
   const handleUnblock = async (userId: string, endpoint: string) => {
     try {
-      const { error } = await supabase.rpc('admin_unblock_user', {
+      await supabaseApi.rpc('admin_unblock_user', session.access_token, {
         p_user_id: userId,
         p_endpoint: endpoint
       });
-      
-      if (error) throw error;
       toast.success('User unblocked');
       fetchStats();
     } catch (error) {
+      console.error('Error unblocking user:', error);
       toast.error('Failed to unblock user');
     }
   };

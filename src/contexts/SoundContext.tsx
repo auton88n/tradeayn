@@ -1,6 +1,7 @@
 import React, { createContext, useContext, ReactNode, useEffect, useState, useCallback } from 'react';
 import { getSoundGenerator, SoundType } from '@/lib/soundGenerator';
 import { supabase } from '@/integrations/supabase/client';
+import { supabaseApi } from '@/lib/supabaseApi';
 
 interface SoundContextType {
   playSound: (soundType: SoundType) => void;
@@ -31,29 +32,30 @@ export const SoundProvider = ({ children }: { children: ReactNode }) => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
 
   const soundGenerator = getSoundGenerator();
 
-  // Load initial state from database
+  // Load initial state from database using REST API
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) {
           setIsLoading(false);
           return;
         }
         
-        setUserId(user.id);
+        setUserId(session.user.id);
+        setAccessToken(session.access_token);
 
-        const { data, error } = await supabase
-          .from('user_settings')
-          .select('in_app_sounds')
-          .eq('user_id', user.id)
-          .single();
+        const data = await supabaseApi.get<{ in_app_sounds: boolean }[]>(
+          `user_settings?user_id=eq.${session.user.id}&select=in_app_sounds`,
+          session.access_token
+        );
 
-        if (!error && data) {
-          setEnabledState(data.in_app_sounds ?? true);
+        if (data && data.length > 0) {
+          setEnabledState(data[0].in_app_sounds ?? true);
         }
       } catch {
         // Silently fail, use default
@@ -68,18 +70,23 @@ export const SoundProvider = ({ children }: { children: ReactNode }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
         setUserId(session.user.id);
-        // Reload settings for new user
-        const { data } = await supabase
-          .from('user_settings')
-          .select('in_app_sounds')
-          .eq('user_id', session.user.id)
-          .single();
+        setAccessToken(session.access_token);
         
-        if (data) {
-          setEnabledState(data.in_app_sounds ?? true);
+        try {
+          const data = await supabaseApi.get<{ in_app_sounds: boolean }[]>(
+            `user_settings?user_id=eq.${session.user.id}&select=in_app_sounds`,
+            session.access_token
+          );
+          
+          if (data && data.length > 0) {
+            setEnabledState(data[0].in_app_sounds ?? true);
+          }
+        } catch {
+          // Silently fail
         }
       } else if (event === 'SIGNED_OUT') {
         setUserId(null);
+        setAccessToken(null);
         setEnabledState(true); // Reset to default
       }
     });
@@ -105,18 +112,19 @@ export const SoundProvider = ({ children }: { children: ReactNode }) => {
   const setEnabled = useCallback(async (newEnabled: boolean) => {
     setEnabledState(newEnabled);
     
-    // Sync to database if logged in
-    if (userId) {
+    // Sync to database if logged in using REST API
+    if (userId && accessToken) {
       try {
-        await supabase
-          .from('user_settings')
-          .update({ in_app_sounds: newEnabled, updated_at: new Date().toISOString() })
-          .eq('user_id', userId);
+        await supabaseApi.patch(
+          `user_settings?user_id=eq.${userId}`,
+          accessToken,
+          { in_app_sounds: newEnabled, updated_at: new Date().toISOString() }
+        );
       } catch {
         // Silently fail, local state already updated
       }
     }
-  }, [userId]);
+  }, [userId, accessToken]);
 
   const setVolume = useCallback((newVolume: number) => {
     setVolumeState(Math.max(0, Math.min(1, newVolume)));

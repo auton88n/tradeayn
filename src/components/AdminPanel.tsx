@@ -326,12 +326,13 @@ export const AdminPanel = ({ session, onBackClick }: AdminPanelProps) => {
               )}
               {activeTab === 'users' && (
                 <UserManagement 
+                  session={session}
                   allUsers={allUsers} 
                   onRefresh={fetchData} 
                 />
               )}
               {activeTab === 'rate-limits' && (
-                <RateLimitMonitoring />
+                <RateLimitMonitoring session={session} />
               )}
               {activeTab === 'settings' && (
                 <SystemSettings 
