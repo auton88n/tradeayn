@@ -341,8 +341,8 @@ const AIEmployee = () => {
       </section>
 
       {/* Final CTA */}
-      <section className="py-16 md:py-24 px-4 md:px-6 bg-gradient-to-b from-neutral-900/50 to-neutral-950">
-        <div className="container mx-auto max-w-3xl text-center">
+      <section className="py-24 md:py-32 px-4 md:px-6 bg-gradient-to-b from-neutral-900 to-neutral-950">
+        <div className="container mx-auto max-w-4xl text-center">
           <motion.div initial={{
           opacity: 0,
           y: 20
@@ -352,15 +352,23 @@ const AIEmployee = () => {
         }} viewport={{
           once: true
         }}>
-            <h2 className="text-3xl md:text-5xl font-serif font-bold mb-6">{t.readyToHire}</h2>
-            <p className="text-lg text-neutral-400 mb-8 max-w-xl mx-auto">{t.ctaDesc}</p>
+            <h2 className="text-3xl md:text-4xl lg:text-6xl font-serif font-bold mb-6">
+              {language === 'ar' ? (
+                <>هل أنت مستعد لتوظيف <span className="text-cyan-400">موظفك الذكي</span>؟</>
+              ) : language === 'fr' ? (
+                <>Prêt à Embaucher Votre <span className="text-cyan-400">Employé IA</span>?</>
+              ) : (
+                <>Ready to Hire Your <span className="text-cyan-400">AI Employee</span>?</>
+              )}
+            </h2>
+            <p className="text-lg md:text-xl text-neutral-400 mb-10 max-w-2xl mx-auto">{t.ctaDesc}</p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button size="lg" className="rounded-full px-8 bg-cyan-500 text-neutral-950 hover:bg-cyan-400" onClick={() => setIsModalOpen(true)}>
+              <Button size="lg" className="rounded-full px-8 md:px-10 py-5 md:py-6 text-base md:text-lg bg-cyan-500 text-neutral-950 hover:bg-cyan-400 w-full sm:w-auto" onClick={() => setIsModalOpen(true)}>
                 {t.startProject}
-                <ArrowRight className="ml-2 w-4 h-4" />
+                <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
-              <Link to="/">
-                <Button size="lg" variant="outline" className="rounded-full px-8 border-neutral-700 text-white hover:bg-neutral-800">
+              <Link to="/#services">
+                <Button size="lg" variant="outline" className="rounded-full px-8 md:px-10 py-5 md:py-6 text-base md:text-lg border-white/20 text-white hover:bg-white/10 w-full sm:w-auto">
                   {language === 'ar' ? 'عرض الخدمات' : language === 'fr' ? 'Voir les Services' : 'View Services'}
                 </Button>
               </Link>
@@ -368,6 +376,14 @@ const AIEmployee = () => {
           </motion.div>
         </div>
       </section>
+
+      {/* Footer */}
+      <footer className="py-8 md:py-12 px-4 md:px-6 border-t border-neutral-800">
+        <div className="container mx-auto max-w-7xl flex items-center justify-center gap-2">
+          <Brain className="w-5 h-5 text-cyan-400" />
+          <span className="text-sm text-neutral-400">AYN</span>
+        </div>
+      </footer>
 
       {/* Application Modal */}
       <Dialog open={isModalOpen} onOpenChange={handleCloseModal}>
