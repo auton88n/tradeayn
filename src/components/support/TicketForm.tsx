@@ -50,6 +50,9 @@ const TicketForm: React.FC<TicketFormProps> = ({ onSuccess }) => {
 
       if (user?.id) {
         ticketData.user_id = user.id;
+        // Store email in guest_email for easier admin access (even for logged-in users)
+        ticketData.guest_email = user.email;
+        ticketData.guest_name = formData.name || user.email?.split('@')[0];
       } else {
         ticketData.guest_email = formData.email;
         ticketData.guest_name = formData.name;
