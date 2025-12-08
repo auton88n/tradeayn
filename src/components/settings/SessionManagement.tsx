@@ -23,12 +23,13 @@ import { formatDistanceToNow } from 'date-fns';
 interface SessionManagementProps {
   userId: string;
   userEmail: string;
+  accessToken: string;
 }
 
-export const SessionManagement = ({ userId, userEmail }: SessionManagementProps) => {
+export const SessionManagement = ({ userId, userEmail, accessToken }: SessionManagementProps) => {
   const { t } = useLanguage();
   const { toast } = useToast();
-  const { sessions, loading, revokeSession, signOutAllDevices } = useUserSettings(userId);
+  const { sessions, loading, revokeSession, signOutAllDevices } = useUserSettings(userId, accessToken);
   const [changingPassword, setChangingPassword] = useState(false);
 
   const handlePasswordChange = async () => {

@@ -55,9 +55,9 @@ const Settings = () => {
     <SettingsLayout>
       {{
         account: <AccountPreferences userId={user.id} userEmail={user.email || ''} accessToken={session.access_token} />,
-        notifications: <NotificationSettings userId={user.id} />,
+        notifications: <NotificationSettings userId={user.id} accessToken={session.access_token} />,
         privacy: <PrivacySettings userId={user.id} session={session} />,
-        sessions: <SessionManagement userId={user.id} userEmail={user.email || ''} />,
+        sessions: <SessionManagement userId={user.id} userEmail={user.email || ''} accessToken={session.access_token} />,
       }}
     </SettingsLayout>
   );

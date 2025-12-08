@@ -24,7 +24,7 @@ import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
 import { analyzeResponseEmotion } from '@/utils/emotionMapping';
 
 // Import icons for modes
-import { MessageSquare, TrendingUp, Search, FileText, Eye, Hammer, Menu, X, Brain } from 'lucide-react';
+import { MessageSquare, Menu, Brain } from 'lucide-react';
 
 interface DashboardContainerProps {
   user: User;
