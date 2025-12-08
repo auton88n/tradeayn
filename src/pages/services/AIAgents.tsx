@@ -511,7 +511,7 @@ const AIAgents = () => {
       {/* Footer */}
       <footer className="py-8 md:py-12 px-4 md:px-6 border-t border-neutral-800">
         <div className="container mx-auto max-w-6xl">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="flex flex-col md:flex-row justify-center items-center gap-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-purple-500 flex items-center justify-center">
                 <Brain className="w-6 h-6 text-white" />
