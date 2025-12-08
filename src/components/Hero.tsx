@@ -158,7 +158,7 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
           initial={{ opacity: 0, y: 30, filter: 'blur(12px)', scale: 0.95 }}
           animate={{ opacity: 1, y: 0, filter: 'blur(0px)', scale: 1 }}
           transition={{ duration: 1, delay: 0, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="font-display font-bold tracking-[-0.02em] text-foreground mb-2 md:mb-3 text-4xl sm:text-5xl md:text-6xl lg:text-7xl"
+          className="font-display font-bold tracking-[-0.02em] text-foreground mb-2 md:mb-3 text-5xl sm:text-6xl md:text-7xl lg:text-8xl"
         >
           {language === 'ar' ? 'تعرّف على AYN' : language === 'fr' ? 'Découvrez AYN' : 'Meet AYN'}
         </motion.h1>
