@@ -1,9 +1,73 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import influencerWomanBg from '@/assets/influencer-woman-bg.jpg';
-import { Brain, ArrowLeft, ArrowRight, Palette, Smartphone, Zap, Layout, TrendingUp, Globe, Instagram, Play, Heart, Eye, BarChart3, Users, Star, CheckCircle, MessageCircle } from 'lucide-react';
+import { Brain, ArrowLeft, ArrowRight, Palette, Smartphone, Zap, Layout, TrendingUp, Globe, Instagram, Play, Heart, Eye, BarChart3, Users, Star, CheckCircle, MessageCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+
 const InfluencerSites = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    phone: '',
+    message: ''
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.fullName || !formData.email) {
+      toast({ title: 'Please fill in required fields', variant: 'destructive' });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      // Save to database
+      const { error: dbError } = await supabase.from('service_applications').insert({
+        full_name: formData.fullName,
+        email: formData.email,
+        phone: formData.phone || null,
+        message: formData.message || null,
+        service_type: 'content-creator-sites',
+        status: 'new'
+      });
+
+      if (dbError) throw dbError;
+
+      // Send email notification
+      await supabase.functions.invoke('send-application-email', {
+        body: {
+          applicantName: formData.fullName,
+          applicantEmail: formData.email,
+          applicantPhone: formData.phone,
+          message: formData.message,
+          serviceType: 'Content Creator Sites'
+        }
+      });
+
+      setIsSuccess(true);
+      setFormData({ fullName: '', email: '', phone: '', message: '' });
+    } catch (error) {
+      console.error('Submission error:', error);
+      toast({ title: 'Something went wrong. Please try again.', variant: 'destructive' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setIsSuccess(false);
+  };
   const features = [{
     icon: Palette,
     title: 'Custom Luxury Design',
@@ -78,11 +142,13 @@ const InfluencerSites = () => {
             <p className="text-lg md:text-xl text-neutral-400 max-w-2xl mx-auto mb-8">
               Luxury websites custom-built for content creators. Attract more partnerships and elevate your personal brand.
             </p>
-            <Link to="/services/influencer-sites/apply">
-              <Button size="lg" className="rounded-full px-8 bg-white text-neutral-950 hover:bg-neutral-200">
-                Start Your Project
-              </Button>
-            </Link>
+            <Button 
+              size="lg" 
+              className="rounded-full px-8 bg-white text-neutral-950 hover:bg-neutral-200"
+              onClick={() => setIsModalOpen(true)}
+            >
+              Start Your Project
+            </Button>
           </motion.div>
         </div>
       </section>
@@ -721,11 +787,13 @@ const InfluencerSites = () => {
               Let's create a website that reflects your uniqueness and attracts the opportunities you deserve.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/services/influencer-sites/apply">
-                <Button size="lg" className="rounded-full px-8 w-full sm:w-auto bg-rose-500 hover:bg-rose-600 text-white">
-                  Start Your Project
-                </Button>
-              </Link>
+              <Button 
+                size="lg" 
+                className="rounded-full px-8 w-full sm:w-auto bg-rose-500 hover:bg-rose-600 text-white"
+                onClick={() => setIsModalOpen(true)}
+              >
+                Start Your Project
+              </Button>
               <Link to="/">
                 <Button size="lg" variant="outline" className="rounded-full px-8 w-full sm:w-auto border-neutral-700 text-white hover:bg-neutral-800">
                   View All Services
@@ -749,6 +817,111 @@ const InfluencerSites = () => {
           </div>
         </div>
       </footer>
+
+      {/* Application Modal */}
+      <Dialog open={isModalOpen} onOpenChange={handleCloseModal}>
+        <DialogContent className="sm:max-w-md bg-neutral-900 border-neutral-800 text-white">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-serif">
+              {isSuccess ? 'Thank You!' : 'Start Your Project'}
+            </DialogTitle>
+            <DialogDescription className="text-neutral-400">
+              {isSuccess 
+                ? "We've received your request and will be in touch within 24 hours."
+                : "Tell us about yourself and we'll reach out to discuss your vision."
+              }
+            </DialogDescription>
+          </DialogHeader>
+          
+          {isSuccess ? (
+            <div className="py-6 text-center">
+              <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="w-8 h-8 text-green-500" />
+              </div>
+              <Button 
+                onClick={handleCloseModal}
+                className="rounded-full bg-white text-neutral-950 hover:bg-neutral-200"
+              >
+                Close
+              </Button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="fullName" className="text-neutral-300">Full Name *</Label>
+                <Input
+                  id="fullName"
+                  value={formData.fullName}
+                  onChange={(e) => setFormData(prev => ({ ...prev, fullName: e.target.value }))}
+                  placeholder="Your name"
+                  className="bg-neutral-800 border-neutral-700 text-white placeholder:text-neutral-500"
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-neutral-300">Email *</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                  placeholder="your@email.com"
+                  className="bg-neutral-800 border-neutral-700 text-white placeholder:text-neutral-500"
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="phone" className="text-neutral-300">Phone (optional)</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                  placeholder="+1 (555) 000-0000"
+                  className="bg-neutral-800 border-neutral-700 text-white placeholder:text-neutral-500"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="message" className="text-neutral-300">Brief Message (optional)</Label>
+                <Textarea
+                  id="message"
+                  value={formData.message}
+                  onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
+                  placeholder="Tell us briefly about your project..."
+                  rows={3}
+                  className="bg-neutral-800 border-neutral-700 text-white placeholder:text-neutral-500 resize-none"
+                />
+              </div>
+              
+              <div className="flex flex-col gap-3 pt-2">
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="w-full rounded-full bg-rose-500 hover:bg-rose-600 text-white"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    'Submit Request'
+                  )}
+                </Button>
+                <Link 
+                  to="/services/content-creator-sites/apply" 
+                  className="text-sm text-neutral-400 hover:text-white text-center transition-colors"
+                >
+                  Need to tell us more? Use our detailed form →
+                </Link>
+              </div>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>;
 };
 export default InfluencerSites;
