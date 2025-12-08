@@ -467,9 +467,9 @@ const LandingPage = () => {
               </span>
               <h2 className="text-3xl md:text-5xl lg:text-6xl font-serif mb-4 md:mb-6">
                 {language === 'ar' ? (
-                  <>ثلاث خطوات <span className="font-bold">لتنمية عملك</span> بالذكاء الاصطناعي</>
+                  <>ثلاث طرق <span className="font-bold">لتبسيط حياتك</span></>
                 ) : (
-                  <>Three Steps To <span className="font-bold">Grow Your Business</span> With AI</>
+                  <>Three Ways We Help <span className="font-bold">Simplify Your Life</span></>
                 )}
               </h2>
             </div>
