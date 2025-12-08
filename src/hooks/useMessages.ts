@@ -47,6 +47,7 @@ export const useMessages = (
 ): UseMessagesReturn => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
+  const [lastSuggestedEmotion, setLastSuggestedEmotion] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Load messages from database for current session using direct REST API
@@ -233,6 +234,11 @@ export const useMessages = (
 
       const webhookData = await webhookResponse.json();
 
+      // Extract suggested emotion from backend
+      if (webhookData?.suggestedAynEmotion) {
+        setLastSuggestedEmotion(webhookData.suggestedAynEmotion);
+      }
+
       // Extract response (handle both string and nested object formats)
       const response = typeof webhookData?.response === 'string'
         ? webhookData.response
@@ -316,6 +322,7 @@ export const useMessages = (
   return {
     messages,
     isTyping,
+    lastSuggestedEmotion,
     loadMessages,
     sendMessage,
     setMessages
