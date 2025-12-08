@@ -488,7 +488,7 @@ const LandingPage = () => {
                   {language === 'ar' ? 'خصوصيتك محمية' : language === 'fr' ? 'Votre Vie Privée, Protégée' : 'Your Privacy, Protected'}
                 </h3>
                 <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-                  {language === 'ar' ? 'محادثاتك وبياناتك مشفرة بالكامل.' : language === 'fr' ? 'Vos conversations et données sont sécurisées avec un chiffrement de bout en bout.' : 'Your conversations and data are secured with end-to-end encryption. We never share your information.'}
+                  {language === 'ar' ? 'محادثاتك وبياناتك مشفرة بالكامل.' : language === 'fr' ? 'Vos conversations et données sont sécurisées avec un chiffrement de bout en bout.' : 'Your conversations and data are secured with end-to-end encryption.'}
                 </p>
               </div>
             </ScrollReveal>
