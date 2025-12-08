@@ -302,12 +302,12 @@ const DashboardContent = ({
   useEffect(() => {
     const stepId = tutorial.currentStepData?.id;
     
-    // Open transcript when on transcript step
-    if (stepId === 'transcript') {
+    // Open transcript when on history step
+    if (stepId === 'history') {
       setTranscriptOpen(true);
     }
     // Close transcript when moving past it
-    else if (transcriptOpen && tutorial.isActive && stepId !== 'transcript') {
+    else if (transcriptOpen && tutorial.isActive && stepId !== 'history') {
       setTranscriptOpen(false);
     }
     
