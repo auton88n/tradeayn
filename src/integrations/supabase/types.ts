@@ -1058,6 +1058,7 @@ export type Database = {
         Args: { _email: string }
         Returns: boolean
       }
+      check_contact_rate_limit: { Args: { _email: string }; Returns: boolean }
       check_emergency_shutdown: { Args: never; Returns: boolean }
       check_rate_limit: {
         Args: {
