@@ -30,7 +30,6 @@ export type Database = {
           updated_at: string
           usage_reset_date: string | null
           user_id: string
-          wallet_address: string | null
         }
         Insert: {
           auth_method?: string | null
@@ -47,7 +46,6 @@ export type Database = {
           updated_at?: string
           usage_reset_date?: string | null
           user_id: string
-          wallet_address?: string | null
         }
         Update: {
           auth_method?: string | null
@@ -64,7 +62,6 @@ export type Database = {
           updated_at?: string
           usage_reset_date?: string | null
           user_id?: string
-          wallet_address?: string | null
         }
         Relationships: []
       }
@@ -962,39 +959,6 @@ export type Database = {
         }
         Relationships: []
       }
-      wallet_addresses: {
-        Row: {
-          created_at: string
-          id: string
-          is_primary: boolean | null
-          updated_at: string
-          user_id: string
-          verified: boolean | null
-          wallet_address: string
-          wallet_type: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          is_primary?: boolean | null
-          updated_at?: string
-          user_id: string
-          verified?: boolean | null
-          wallet_address: string
-          wallet_type?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          is_primary?: boolean | null
-          updated_at?: string
-          user_id?: string
-          verified?: boolean | null
-          wallet_address?: string
-          wallet_type?: string
-        }
-        Relationships: []
-      }
       webhook_health_metrics: {
         Row: {
           created_at: string
@@ -1075,10 +1039,6 @@ export type Database = {
       admin_unblock_user: {
         Args: { p_endpoint?: string; p_user_id: string }
         Returns: undefined
-      }
-      authenticate_or_create_solana_user: {
-        Args: { _user_metadata?: Json; _wallet_address: string }
-        Returns: string
       }
       check_api_rate_limit: {
         Args: {
