@@ -83,12 +83,11 @@ const handler = async (req: Request): Promise<Response> => {
 
     const smtpHost = Deno.env.get("SMTP_HOST");
     const smtpPort = parseInt(Deno.env.get("SMTP_PORT") || "465");
-    const smtpUser = Deno.env.get("SMTP_USER"); // noreply@ for SMTP auth
-    const smtpPass = Deno.env.get("SMTP_PASS");
     const infoEmail = Deno.env.get("SMTP_USER_") || "info@aynn.io"; // info@ for sending admin replies
+    const infoPass = Deno.env.get("SMTP_PASS_"); // info@ password
 
-    if (!smtpHost || !smtpUser || !smtpPass) {
-      throw new Error("SMTP configuration missing");
+    if (!smtpHost || !infoEmail || !infoPass) {
+      throw new Error("SMTP configuration missing for info@ email");
     }
 
     // Premium black-and-white AYN branded email template
@@ -134,8 +133,8 @@ If you have any questions, simply reply to this email and we'll get back to you.
           port: smtpPort,
           tls: true,
           auth: {
-            username: smtpUser,
-            password: smtpPass,
+            username: infoEmail,  // Authenticate as info@aynn.io
+            password: infoPass,   // Using info@ password
           },
         },
       });
