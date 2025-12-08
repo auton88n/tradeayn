@@ -17,6 +17,8 @@ const Index = lazy(() => import("./pages/Index"));
 const Settings = lazy(() => import("./pages/Settings"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const AIEmployee = lazy(() => import("./pages/services/AIEmployee"));
+const AIEmployeeApply = lazy(() => import("./pages/services/AIEmployeeApply"));
 const InfluencerSites = lazy(() => import("./pages/services/InfluencerSites"));
 const InfluencerSitesApply = lazy(() => import("./pages/services/InfluencerSitesApply"));
 const AIAgents = lazy(() => import("./pages/services/AIAgents"));
@@ -44,6 +46,8 @@ const App = () => (
                       <Route path="/" element={<Index />} />
                       <Route path="/settings" element={<Settings />} />
                       <Route path="/reset-password" element={<ResetPassword />} />
+                      <Route path="/services/ai-employee" element={<AIEmployee />} />
+                      <Route path="/services/ai-employee/apply" element={<AIEmployeeApply />} />
                       <Route path="/services/content-creator-sites" element={<InfluencerSites />} />
                       <Route path="/services/content-creator-sites/apply" element={<InfluencerSitesApply />} />
                       <Route path="/services/ai-agents" element={<AIAgents />} />

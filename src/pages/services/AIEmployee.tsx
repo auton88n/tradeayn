@@ -1,0 +1,471 @@
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Brain, ArrowLeft, ArrowRight, Users, Headphones, TrendingUp, Calculator, FileText, MessageCircle, Clock, DollarSign, Heart, Plane, GraduationCap, CheckCircle, Loader2, Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { motion } from 'framer-motion';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { supabaseApi, SUPABASE_ANON_KEY } from '@/lib/supabaseApi';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+import { useLanguage } from '@/contexts/LanguageContext';
+
+const AIEmployee = () => {
+  const { language } = useLanguage();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    phone: '',
+    message: ''
+  });
+
+  const t = {
+    back: language === 'ar' ? 'عودة' : language === 'fr' ? 'Retour' : 'Back',
+    heroTitle: language === 'ar' ? 'موظفين بالذكاء الاصطناعي' : language === 'fr' ? 'Employés IA' : 'AI Employees',
+    heroSubtitle: language === 'ar' ? 'وظّف موظفين بالذكاء الاصطناعي يعملون ٢٤ ساعة، لا يحتاجون إجازات، ويكلفون جزءاً بسيطاً من الموظف التقليدي.' : language === 'fr' ? 'Embauchez des employés IA qui travaillent 24h/24, ne prennent jamais de vacances et coûtent une fraction des employés traditionnels.' : 'Hire AI team members who work 24/7, never take vacations, and cost a fraction of traditional employees.',
+    startProject: language === 'ar' ? 'ابدأ الآن' : language === 'fr' ? 'Commencer' : 'Get Started',
+    availableRoles: language === 'ar' ? 'الوظائف المتاحة' : language === 'fr' ? 'Rôles Disponibles' : 'Available Roles',
+    aiEmployees: language === 'ar' ? 'موظفين بالذكاء الاصطناعي' : language === 'fr' ? 'Employés IA' : 'AI Employees',
+    rolesSubtitle: language === 'ar' ? 'اختر الوظيفة التي يحتاجها عملك' : language === 'fr' ? 'Choisissez le rôle dont votre entreprise a besoin' : 'Choose the role your business needs',
+    costSavings: language === 'ar' ? 'توفير التكاليف' : language === 'fr' ? 'Économies' : 'Cost Savings',
+    compareTitle: language === 'ar' ? 'قارن التكلفة' : language === 'fr' ? 'Comparez les Coûts' : 'Compare the Costs',
+    compareSubtitle: language === 'ar' ? 'اكتشف كم يمكنك توفيره مع موظفي الذكاء الاصطناعي' : language === 'fr' ? 'Découvrez combien vous pouvez économiser avec les employés IA' : 'See how much you can save with AI employees',
+    traditional: language === 'ar' ? 'موظف تقليدي' : language === 'fr' ? 'Employé Traditionnel' : 'Traditional Employee',
+    aiEmployee: language === 'ar' ? 'موظف ذكاء اصطناعي' : language === 'fr' ? 'Employé IA' : 'AI Employee',
+    perYear: language === 'ar' ? 'سنوياً' : language === 'fr' ? '/an' : '/year',
+    perMonth: language === 'ar' ? 'شهرياً' : language === 'fr' ? '/mois' : '/month',
+    readyToHire: language === 'ar' ? 'جاهز للتوظيف؟' : language === 'fr' ? 'Prêt à Embaucher?' : 'Ready to Hire?',
+    ctaDesc: language === 'ar' ? 'ابدأ مع موظف ذكاء اصطناعي اليوم ووفّر آلاف الدولارات سنوياً' : language === 'fr' ? 'Commencez avec un employé IA aujourd\'hui et économisez des milliers par an' : 'Start with an AI employee today and save thousands per year',
+    formTitle: language === 'ar' ? 'احصل على موظف AI' : language === 'fr' ? 'Obtenez un Employé IA' : 'Get an AI Employee',
+    formDesc: language === 'ar' ? 'أخبرنا عن احتياجاتك وسنتواصل معك قريباً.' : language === 'fr' ? 'Parlez-nous de vos besoins et nous vous contacterons.' : 'Tell us about your needs and we\'ll get back to you.',
+    fullName: language === 'ar' ? 'الاسم الكامل' : language === 'fr' ? 'Nom Complet' : 'Full Name',
+    email: language === 'ar' ? 'البريد الإلكتروني' : language === 'fr' ? 'Email' : 'Email',
+    phone: language === 'ar' ? 'رقم الجوال' : language === 'fr' ? 'Téléphone' : 'Phone',
+    message: language === 'ar' ? 'ما الوظيفة التي تحتاجها؟' : language === 'fr' ? 'De quel rôle avez-vous besoin?' : 'What role do you need?',
+    optional: language === 'ar' ? 'اختياري' : language === 'fr' ? 'Optionnel' : 'Optional',
+    submit: language === 'ar' ? 'إرسال الطلب' : language === 'fr' ? 'Soumettre' : 'Submit Request',
+    submitting: language === 'ar' ? 'جاري الإرسال...' : language === 'fr' ? 'Envoi...' : 'Submitting...',
+    successTitle: language === 'ar' ? 'تم الإرسال!' : language === 'fr' ? 'Soumis!' : 'Request Submitted!',
+    successDesc: language === 'ar' ? 'شكراً لك! سنتواصل معك خلال ٢٤-٤٨ ساعة.' : language === 'fr' ? 'Merci! Nous vous contacterons dans 24-48 heures.' : 'Thank you! We\'ll be in touch within 24-48 hours.',
+    close: language === 'ar' ? 'إغلاق' : language === 'fr' ? 'Fermer' : 'Close'
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.fullName || !formData.email) {
+      toast({
+        title: language === 'ar' ? 'يرجى ملء الحقول المطلوبة' : language === 'fr' ? 'Veuillez remplir les champs requis' : 'Please fill in required fields',
+        variant: 'destructive'
+      });
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await supabaseApi.post(
+        'service_applications',
+        SUPABASE_ANON_KEY,
+        {
+          full_name: formData.fullName,
+          email: formData.email,
+          phone: formData.phone || null,
+          message: formData.message || null,
+          service_type: 'ai_employee',
+          status: 'new'
+        }
+      );
+
+      await supabase.functions.invoke('send-application-email', {
+        body: {
+          applicantName: formData.fullName,
+          applicantEmail: formData.email,
+          applicantPhone: formData.phone,
+          message: formData.message,
+          serviceType: 'AI Employee'
+        }
+      });
+
+      setIsSuccess(true);
+      setFormData({ fullName: '', email: '', phone: '', message: '' });
+    } catch (error) {
+      console.error('Submission error:', error);
+      toast({
+        title: language === 'ar' ? 'حدث خطأ. يرجى المحاولة مرة أخرى.' : language === 'fr' ? 'Une erreur s\'est produite. Veuillez réessayer.' : 'Something went wrong. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setIsSuccess(false);
+  };
+
+  const roles = [
+    {
+      icon: Users,
+      title: language === 'ar' ? 'مساعد موارد بشرية' : language === 'fr' ? 'Assistant RH' : 'HR Assistant',
+      description: language === 'ar' ? 'يتعامل مع استفسارات التوظيف، فرز المتقدمين، جدولة المقابلات، وتأهيل الموظفين الجدد' : language === 'fr' ? 'Gère les demandes d\'emploi, trie les candidats, planifie les entretiens et intègre les nouvelles recrues' : 'Handle job inquiries, screen applicants, schedule interviews, and onboard new hires',
+      benefits: [
+        language === 'ar' ? 'لا حاجة لقسم موارد بشرية' : language === 'fr' ? 'Pas besoin de département RH' : 'No HR department needed',
+        language === 'ar' ? 'فرز آلي للسير الذاتية' : language === 'fr' ? 'Tri automatique des CV' : 'Automatic resume screening',
+        language === 'ar' ? 'جدولة ذكية للمقابلات' : language === 'fr' ? 'Planification intelligente des entretiens' : 'Smart interview scheduling'
+      ],
+      color: 'text-blue-400'
+    },
+    {
+      icon: Headphones,
+      title: language === 'ar' ? 'دعم العملاء' : language === 'fr' ? 'Support Client' : 'Customer Support',
+      description: language === 'ar' ? 'يجيب على الأسئلة الشائعة، يتعامل مع الشكاوى، ويحول المشاكل المعقدة للفريق' : language === 'fr' ? 'Répond aux FAQ, gère les plaintes et transmet les problèmes complexes à l\'équipe' : 'Answer FAQs, handle complaints, and route complex issues to your team',
+      benefits: [
+        language === 'ar' ? 'صفر تكاليف تأمين صحي' : language === 'fr' ? 'Zéro frais d\'assurance santé' : '$0 healthcare costs',
+        language === 'ar' ? 'متاح ٢٤/٧' : language === 'fr' ? 'Disponible 24/7' : '24/7 availability',
+        language === 'ar' ? 'ردود فورية' : language === 'fr' ? 'Réponses instantanées' : 'Instant responses'
+      ],
+      color: 'text-green-400'
+    },
+    {
+      icon: TrendingUp,
+      title: language === 'ar' ? 'مندوب مبيعات' : language === 'fr' ? 'Commercial' : 'Sales Rep',
+      description: language === 'ar' ? 'يؤهل العملاء المحتملين، يتابع الاستفسارات، ويجدول العروض التقديمية' : language === 'fr' ? 'Qualifie les prospects, suit les demandes et planifie les démos' : 'Qualify leads, follow up on inquiries, and schedule demos',
+      benefits: [
+        language === 'ar' ? 'لا يفوّت أي عميل' : language === 'fr' ? 'Ne manque jamais un prospect' : 'Never misses a lead',
+        language === 'ar' ? 'يعمل أثناء نومك' : language === 'fr' ? 'Travaille pendant que vous dormez' : 'Works while you sleep',
+        language === 'ar' ? 'متابعة تلقائية' : language === 'fr' ? 'Suivi automatique' : 'Automatic follow-ups'
+      ],
+      color: 'text-purple-400'
+    },
+    {
+      icon: Calculator,
+      title: language === 'ar' ? 'مساعد محاسبة' : language === 'fr' ? 'Assistant Comptable' : 'Accounting Assistant',
+      description: language === 'ar' ? 'تذكيرات الفواتير، تصنيف المصروفات، وإنشاء التقارير المالية' : language === 'fr' ? 'Rappels de factures, catégorisation des dépenses et génération de rapports' : 'Invoice reminders, expense categorization, and report generation',
+      benefits: [
+        language === 'ar' ? 'لا حاجة لتغطية الإجازات' : language === 'fr' ? 'Pas besoin de couverture vacances' : 'No vacation coverage needed',
+        language === 'ar' ? 'دقة عالية' : language === 'fr' ? 'Haute précision' : 'High accuracy',
+        language === 'ar' ? 'تقارير آلية' : language === 'fr' ? 'Rapports automatisés' : 'Automated reports'
+      ],
+      color: 'text-yellow-400'
+    },
+    {
+      icon: FileText,
+      title: language === 'ar' ? 'مساعد إداري' : language === 'fr' ? 'Assistant Administratif' : 'Admin Assistant',
+      description: language === 'ar' ? 'إدارة البريد الإلكتروني، الجدولة، وتنظيم المستندات' : language === 'fr' ? 'Gestion des emails, planification et organisation des documents' : 'Email management, scheduling, and document organization',
+      benefits: [
+        language === 'ar' ? 'يعمل في العطلات بدون أجر إضافي' : language === 'fr' ? 'Travaille les jours fériés sans heures supplémentaires' : 'Works holidays without overtime',
+        language === 'ar' ? 'لا يمرض أبداً' : language === 'fr' ? 'Ne tombe jamais malade' : 'Never gets sick',
+        language === 'ar' ? 'تنظيم مثالي' : language === 'fr' ? 'Organisation parfaite' : 'Perfect organization'
+      ],
+      color: 'text-orange-400'
+    },
+    {
+      icon: MessageCircle,
+      title: language === 'ar' ? 'مدير وسائل التواصل' : language === 'fr' ? 'Community Manager' : 'Social Media Manager',
+      description: language === 'ar' ? 'جدولة المحتوى، الرد على التفاعلات، وتتبع التحليلات' : language === 'fr' ? 'Planification du contenu, réponses aux interactions et suivi des analyses' : 'Content scheduling, engagement responses, and analytics tracking',
+      benefits: [
+        language === 'ar' ? 'نشر متسق عبر المناطق الزمنية' : language === 'fr' ? 'Publication cohérente sur tous les fuseaux horaires' : 'Consistent posting across time zones',
+        language === 'ar' ? 'ردود سريعة' : language === 'fr' ? 'Réponses rapides' : 'Fast responses',
+        language === 'ar' ? 'تحليلات مفصلة' : language === 'fr' ? 'Analyses détaillées' : 'Detailed analytics'
+      ],
+      color: 'text-pink-400'
+    }
+  ];
+
+  const comparisons = [
+    { label: language === 'ar' ? 'الراتب السنوي' : language === 'fr' ? 'Salaire Annuel' : 'Annual Salary', traditional: '$50,000+', ai: '$5,988/year', icon: DollarSign },
+    { label: language === 'ar' ? 'التأمين الصحي' : language === 'fr' ? 'Assurance Santé' : 'Health Insurance', traditional: '$8,000+', ai: '$0', icon: Heart },
+    { label: language === 'ar' ? 'الإجازات المدفوعة' : language === 'fr' ? 'Congés Payés' : 'Paid Vacations', traditional: '15-20 days', ai: language === 'ar' ? 'يعمل ٢٤/٧/٣٦٥' : language === 'fr' ? 'Travaille 24/7/365' : 'Works 24/7/365', icon: Plane },
+    { label: language === 'ar' ? 'الأيام المرضية' : language === 'fr' ? 'Jours de Maladie' : 'Sick Days', traditional: '5-10 days', ai: language === 'ar' ? 'لا يمرض أبداً' : language === 'fr' ? 'Ne tombe jamais malade' : 'Never gets sick', icon: Heart },
+    { label: language === 'ar' ? 'وقت التدريب' : language === 'fr' ? 'Temps de Formation' : 'Training Time', traditional: '2-4 weeks', ai: language === 'ar' ? 'نشر فوري' : language === 'fr' ? 'Déploiement instantané' : 'Instant deployment', icon: GraduationCap },
+    { label: language === 'ar' ? 'ساعات العمل' : language === 'fr' ? 'Heures de Travail' : 'Working Hours', traditional: '40 hrs/week', ai: language === 'ar' ? 'غير محدود' : language === 'fr' ? 'Illimité' : 'Unlimited', icon: Clock }
+  ];
+
+  return (
+    <div className="min-h-screen bg-neutral-950 text-white">
+      {/* Navigation */}
+      <nav className="fixed top-4 md:top-6 left-4 md:left-6 z-50">
+        <Link to="/">
+          <Button variant="ghost" className="gap-2 bg-neutral-900/80 backdrop-blur-xl border border-neutral-800 rounded-full px-4 py-2 hover:bg-neutral-800 text-white">
+            <ArrowLeft className="w-4 h-4" />
+            <span className="hidden sm:inline">{t.back}</span>
+          </Button>
+        </Link>
+      </nav>
+
+      {/* Hero Section */}
+      <section className="pt-24 pb-16 md:pt-32 md:pb-24 px-4 md:px-6">
+        <div className="container mx-auto max-w-6xl">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-center"
+          >
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-500/10 border border-cyan-500/20 mb-8">
+              <Sparkles className="w-4 h-4 text-cyan-400" />
+              <span className="text-sm text-cyan-400">01</span>
+            </div>
+            
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-serif font-bold mb-6 leading-tight">
+              {language === 'ar' ? (
+                <>موظفين بالذكاء<br /><span className="text-cyan-400">الاصطناعي</span></>
+              ) : language === 'fr' ? (
+                <>Employés<br /><span className="text-cyan-400">IA</span></>
+              ) : (
+                <>AI<br /><span className="text-cyan-400">Employees</span></>
+              )}
+            </h1>
+            <p className="text-lg md:text-xl text-neutral-400 max-w-2xl mx-auto mb-8">
+              {t.heroSubtitle}
+            </p>
+            <Button
+              size="lg"
+              className="rounded-full px-8 bg-cyan-500 text-neutral-950 hover:bg-cyan-400"
+              onClick={() => setIsModalOpen(true)}
+            >
+              {t.startProject}
+            </Button>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Available Roles Section */}
+      <section className="py-16 md:py-24 px-4 md:px-6 bg-neutral-900/50">
+        <div className="container mx-auto max-w-6xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
+            <span className="text-sm font-mono text-cyan-400 tracking-wider uppercase mb-4 block">
+              {t.availableRoles}
+            </span>
+            <h2 className="text-3xl md:text-5xl font-serif font-bold mb-4">
+              {language === 'ar' ? (
+                <>اختر <span className="text-cyan-400">موظفك</span></>
+              ) : language === 'fr' ? (
+                <>Choisissez Votre <span className="text-cyan-400">Employé</span></>
+              ) : (
+                <>Choose Your <span className="text-cyan-400">Employee</span></>
+              )}
+            </h2>
+            <p className="text-neutral-400 max-w-xl mx-auto">{t.rolesSubtitle}</p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {roles.map((role, index) => (
+              <motion.div
+                key={role.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                className="bg-neutral-900/80 border border-neutral-800 rounded-2xl p-6 hover:border-cyan-500/50 transition-all duration-300 group"
+              >
+                <div className={`w-12 h-12 rounded-xl bg-neutral-800 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform ${role.color}`}>
+                  <role.icon className="w-6 h-6" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">{role.title}</h3>
+                <p className="text-sm text-neutral-400 mb-4">{role.description}</p>
+                <ul className="space-y-2">
+                  {role.benefits.map((benefit, i) => (
+                    <li key={i} className="flex items-center gap-2 text-sm text-neutral-300">
+                      <CheckCircle className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+                      {benefit}
+                    </li>
+                  ))}
+                </ul>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Cost Comparison Section */}
+      <section className="py-16 md:py-24 px-4 md:px-6">
+        <div className="container mx-auto max-w-4xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
+            <span className="text-sm font-mono text-cyan-400 tracking-wider uppercase mb-4 block">
+              {t.costSavings}
+            </span>
+            <h2 className="text-3xl md:text-5xl font-serif font-bold mb-4">{t.compareTitle}</h2>
+            <p className="text-neutral-400 max-w-xl mx-auto">{t.compareSubtitle}</p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="bg-neutral-900/80 border border-neutral-800 rounded-2xl overflow-hidden"
+          >
+            {/* Header */}
+            <div className="grid grid-cols-3 gap-4 p-4 md:p-6 bg-neutral-800/50 border-b border-neutral-800">
+              <div className="text-sm font-medium text-neutral-400"></div>
+              <div className="text-center">
+                <span className="text-sm font-medium text-neutral-400">{t.traditional}</span>
+              </div>
+              <div className="text-center">
+                <span className="text-sm font-medium text-cyan-400">{t.aiEmployee}</span>
+              </div>
+            </div>
+
+            {/* Rows */}
+            {comparisons.map((item, index) => (
+              <div
+                key={item.label}
+                className={`grid grid-cols-3 gap-4 p-4 md:p-6 ${index !== comparisons.length - 1 ? 'border-b border-neutral-800' : ''}`}
+              >
+                <div className="flex items-center gap-3">
+                  <item.icon className="w-5 h-5 text-neutral-500 flex-shrink-0" />
+                  <span className="text-sm text-neutral-300">{item.label}</span>
+                </div>
+                <div className="text-center">
+                  <span className="text-sm text-red-400">{item.traditional}</span>
+                </div>
+                <div className="text-center">
+                  <span className="text-sm text-cyan-400 font-medium">{item.ai}</span>
+                </div>
+              </div>
+            ))}
+          </motion.div>
+
+          {/* Savings Callout */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            className="mt-8 text-center"
+          >
+            <div className="inline-block bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 rounded-2xl px-8 py-6">
+              <p className="text-sm text-neutral-400 mb-2">
+                {language === 'ar' ? 'التوفير السنوي المتوقع' : language === 'fr' ? 'Économies Annuelles Estimées' : 'Estimated Annual Savings'}
+              </p>
+              <p className="text-4xl md:text-5xl font-bold text-cyan-400">$52,000+</p>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Final CTA */}
+      <section className="py-16 md:py-24 px-4 md:px-6 bg-gradient-to-b from-neutral-900/50 to-neutral-950">
+        <div className="container mx-auto max-w-3xl text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-3xl md:text-5xl font-serif font-bold mb-6">{t.readyToHire}</h2>
+            <p className="text-lg text-neutral-400 mb-8 max-w-xl mx-auto">{t.ctaDesc}</p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Button
+                size="lg"
+                className="rounded-full px-8 bg-cyan-500 text-neutral-950 hover:bg-cyan-400"
+                onClick={() => setIsModalOpen(true)}
+              >
+                {t.startProject}
+                <ArrowRight className="ml-2 w-4 h-4" />
+              </Button>
+              <Link to="/">
+                <Button size="lg" variant="outline" className="rounded-full px-8 border-neutral-700 text-white hover:bg-neutral-800">
+                  {language === 'ar' ? 'عرض الخدمات' : language === 'fr' ? 'Voir les Services' : 'View Services'}
+                </Button>
+              </Link>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Application Modal */}
+      <Dialog open={isModalOpen} onOpenChange={handleCloseModal}>
+        <DialogContent className="sm:max-w-md bg-neutral-900 border-neutral-800 text-white">
+          {isSuccess ? (
+            <div className="text-center py-8">
+              <div className="w-16 h-16 rounded-full bg-cyan-500/20 flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="w-8 h-8 text-cyan-400" />
+              </div>
+              <DialogTitle className="text-xl font-bold mb-2">{t.successTitle}</DialogTitle>
+              <DialogDescription className="text-neutral-400 mb-6">{t.successDesc}</DialogDescription>
+              <Button onClick={handleCloseModal} className="bg-cyan-500 text-neutral-950 hover:bg-cyan-400">
+                {t.close}
+              </Button>
+            </div>
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-xl font-bold">{t.formTitle}</DialogTitle>
+                <DialogDescription className="text-neutral-400">{t.formDesc}</DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">{t.fullName} *</Label>
+                  <Input
+                    id="fullName"
+                    value={formData.fullName}
+                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                    className="bg-neutral-800 border-neutral-700"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">{t.email} *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="bg-neutral-800 border-neutral-700"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">{t.phone} <span className="text-neutral-500">({t.optional})</span></Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="bg-neutral-800 border-neutral-700"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="message">{t.message} <span className="text-neutral-500">({t.optional})</span></Label>
+                  <Textarea
+                    id="message"
+                    value={formData.message}
+                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                    className="bg-neutral-800 border-neutral-700 min-h-[100px]"
+                    placeholder={language === 'ar' ? 'مثال: أحتاج مساعد موارد بشرية ودعم عملاء' : language === 'fr' ? 'Ex: J\'ai besoin d\'un assistant RH et support client' : 'E.g., I need an HR Assistant and Customer Support'}
+                  />
+                </div>
+                <Button type="submit" className="w-full bg-cyan-500 text-neutral-950 hover:bg-cyan-400" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {t.submitting}
+                    </>
+                  ) : (
+                    t.submit
+                  )}
+                </Button>
+              </form>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+export default AIEmployee;

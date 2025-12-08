@@ -247,6 +247,74 @@ export type Database = {
         }
         Relationships: []
       }
+      creator_profiles: {
+        Row: {
+          application_id: string | null
+          bio: string | null
+          content_niche: string[] | null
+          created_at: string | null
+          display_name: string
+          engagement_rate: number | null
+          follower_count: string | null
+          id: string
+          instagram_handle: string | null
+          is_published: boolean | null
+          is_verified: boolean | null
+          profile_image_url: string | null
+          tiktok_handle: string | null
+          twitter_handle: string | null
+          updated_at: string | null
+          user_id: string | null
+          youtube_handle: string | null
+        }
+        Insert: {
+          application_id?: string | null
+          bio?: string | null
+          content_niche?: string[] | null
+          created_at?: string | null
+          display_name: string
+          engagement_rate?: number | null
+          follower_count?: string | null
+          id?: string
+          instagram_handle?: string | null
+          is_published?: boolean | null
+          is_verified?: boolean | null
+          profile_image_url?: string | null
+          tiktok_handle?: string | null
+          twitter_handle?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          youtube_handle?: string | null
+        }
+        Update: {
+          application_id?: string | null
+          bio?: string | null
+          content_niche?: string[] | null
+          created_at?: string | null
+          display_name?: string
+          engagement_rate?: number | null
+          follower_count?: string | null
+          id?: string
+          instagram_handle?: string | null
+          is_published?: boolean | null
+          is_verified?: boolean | null
+          profile_image_url?: string | null
+          tiktok_handle?: string | null
+          twitter_handle?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          youtube_handle?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_profiles_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "service_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       device_fingerprints: {
         Row: {
           created_at: string
