@@ -38,7 +38,7 @@ const InfluencerSitesApply = () => {
       const { error: dbError } = await supabase
         .from('service_applications')
         .insert({
-          service_type: 'influencer-sites',
+          service_type: 'content-creator-sites',
           full_name: formData.fullName,
           email: formData.email,
           phone: formData.phone || null,
@@ -60,7 +60,7 @@ const InfluencerSitesApply = () => {
       // Send email notifications
       await supabase.functions.invoke('send-application-email', {
         body: {
-          serviceType: 'Premium Influencer Sites',
+          serviceType: 'Premium Content Creator Sites',
           applicantName: formData.fullName,
           applicantEmail: formData.email,
           formData: formData
@@ -90,7 +90,7 @@ const InfluencerSitesApply = () => {
           </div>
           <h1 className="text-3xl font-serif font-bold mb-4">Application Received!</h1>
           <p className="text-muted-foreground mb-8">
-            Thank you for your interest in our Premium Influencer Sites service. 
+            Thank you for your interest in our Premium Content Creator Sites service.
             We'll review your application and get back to you within 24-48 hours.
           </p>
           <Button onClick={() => navigate('/services/influencer-sites')}>
@@ -112,7 +112,7 @@ const InfluencerSitesApply = () => {
             </Button>
           </Link>
           <div>
-            <h1 className="font-serif text-xl font-bold">Apply for Premium Influencer Sites</h1>
+            <h1 className="font-serif text-xl font-bold">Apply for Premium Content Creator Sites</h1>
             <p className="text-sm text-muted-foreground">Tell us about your project</p>
           </div>
         </div>

@@ -69,12 +69,12 @@ const InfluencerSites = () => {
               01 — Our Services
             </span>
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-serif font-bold mb-6 leading-tight">
-              Premium Influencer
+              Premium Content Creator
               <br />
               <span className="text-rose-400">Sites</span>
             </h1>
             <p className="text-lg md:text-xl text-neutral-400 max-w-2xl mx-auto mb-8">
-              Luxury websites custom-built for influencers and content creators. Attract more partnerships and elevate your personal brand.
+              Luxury websites custom-built for content creators. Attract more partnerships and elevate your personal brand.
             </p>
             <Link to="/services/influencer-sites/apply">
               <Button size="lg" className="rounded-full px-8 bg-white text-neutral-950 hover:bg-neutral-200">
