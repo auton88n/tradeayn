@@ -11,9 +11,10 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
-
 const InfluencerSites = () => {
-  const { language } = useLanguage();
+  const {
+    language
+  } = useLanguage();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -59,20 +60,23 @@ const InfluencerSites = () => {
     successDesc: language === 'ar' ? 'شكراً لك! سنتواصل معك خلال ٢٤-٤٨ ساعة.' : language === 'fr' ? 'Merci pour votre intérêt! Nous vous contacterons dans 24-48 heures.' : 'Thank you for your interest! We\'ll be in touch within 24-48 hours.',
     close: language === 'ar' ? 'إغلاق' : language === 'fr' ? 'Fermer' : 'Close',
     needMoreOptions: language === 'ar' ? 'تحتاج المزيد؟' : language === 'fr' ? 'Besoin de plus d\'options?' : 'Need more options?',
-    detailedForm: language === 'ar' ? 'املأ النموذج المفصل' : language === 'fr' ? 'Remplir le formulaire détaillé' : 'Fill out the detailed form',
+    detailedForm: language === 'ar' ? 'املأ النموذج المفصل' : language === 'fr' ? 'Remplir le formulaire détaillé' : 'Fill out the detailed form'
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.fullName || !formData.email) {
-      toast({ title: language === 'ar' ? 'يرجى ملء الحقول المطلوبة' : language === 'fr' ? 'Veuillez remplir les champs requis' : 'Please fill in required fields', variant: 'destructive' });
+      toast({
+        title: language === 'ar' ? 'يرجى ملء الحقول المطلوبة' : language === 'fr' ? 'Veuillez remplir les champs requis' : 'Please fill in required fields',
+        variant: 'destructive'
+      });
       return;
     }
-
     setIsSubmitting(true);
     try {
       // Save to database
-      const { error: dbError } = await supabase.from('service_applications').insert({
+      const {
+        error: dbError
+      } = await supabase.from('service_applications').insert({
         full_name: formData.fullName,
         email: formData.email,
         phone: formData.phone || null,
@@ -80,7 +84,6 @@ const InfluencerSites = () => {
         service_type: 'content_creator',
         status: 'new'
       });
-
       if (dbError) throw dbError;
 
       // Send email notification
@@ -93,22 +96,27 @@ const InfluencerSites = () => {
           serviceType: 'Content Creator Sites'
         }
       });
-
       setIsSuccess(true);
-      setFormData({ fullName: '', email: '', phone: '', message: '' });
+      setFormData({
+        fullName: '',
+        email: '',
+        phone: '',
+        message: ''
+      });
     } catch (error) {
       console.error('Submission error:', error);
-      toast({ title: language === 'ar' ? 'حدث خطأ. يرجى المحاولة مرة أخرى.' : language === 'fr' ? 'Une erreur s\'est produite. Veuillez réessayer.' : 'Something went wrong. Please try again.', variant: 'destructive' });
+      toast({
+        title: language === 'ar' ? 'حدث خطأ. يرجى المحاولة مرة أخرى.' : language === 'fr' ? 'Une erreur s\'est produite. Veuillez réessayer.' : 'Something went wrong. Please try again.',
+        variant: 'destructive'
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
-
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setIsSuccess(false);
   };
-  
   const features = [{
     icon: Palette,
     title: language === 'ar' ? 'تصميم احترافي مخصص' : language === 'fr' ? 'Design Luxueux Personnalisé' : 'Custom Luxury Design',
@@ -134,7 +142,6 @@ const InfluencerSites = () => {
     title: language === 'ar' ? 'دعم لغات متعددة' : language === 'fr' ? 'Support Multilingue' : 'Multi-language Support',
     description: language === 'ar' ? 'وصول عالمي بدعم لغات متعددة' : language === 'fr' ? 'Touchez une audience mondiale' : 'Reach a global audience with multi-language content support'
   }];
-  
   const process = [{
     step: '01',
     title: language === 'ar' ? 'التعرف' : language === 'fr' ? 'Découverte' : 'Discovery',
@@ -152,7 +159,6 @@ const InfluencerSites = () => {
     title: language === 'ar' ? 'الإطلاق' : language === 'fr' ? 'Lancement' : 'Launch',
     description: language === 'ar' ? 'نطلق موقعك للعالم' : language === 'fr' ? 'Nous lançons votre site au monde' : 'We launch your site to the world'
   }];
-
   return <div className="min-h-screen bg-neutral-950 text-white">
       {/* Navigation */}
       <nav className="fixed top-4 md:top-6 left-4 md:left-6 z-50">
@@ -178,22 +184,12 @@ const InfluencerSites = () => {
         }} className="text-center">
             
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-serif font-bold mb-6 leading-tight">
-              {language === 'ar' ? (
-                <>مواقع فاخرة لصنّاع <br /><span className="text-rose-400">المحتوى</span></>
-              ) : language === 'fr' ? (
-                <>Sites Premium pour <br /><span className="text-rose-400">Créateurs</span></>
-              ) : (
-                <>Premium Content Creator<br /><span className="text-rose-400">Sites</span></>
-              )}
+              {language === 'ar' ? <>مواقع فاخرة لصنّاع <br /><span className="text-rose-400">المحتوى</span></> : language === 'fr' ? <>Sites Premium pour <br /><span className="text-rose-400">Créateurs</span></> : <>Premium Content Creator<br /><span className="text-rose-400">Sites</span></>}
             </h1>
             <p className="text-lg md:text-xl text-neutral-400 max-w-2xl mx-auto mb-8">
               {t.heroSubtitle}
             </p>
-            <Button 
-              size="lg" 
-              className="rounded-full px-8 bg-white text-neutral-950 hover:bg-neutral-200"
-              onClick={() => setIsModalOpen(true)}
-            >
+            <Button size="lg" className="rounded-full px-8 bg-white text-neutral-950 hover:bg-neutral-200" onClick={() => setIsModalOpen(true)}>
               {t.startProject}
             </Button>
           </motion.div>
@@ -216,13 +212,7 @@ const InfluencerSites = () => {
               {t.whatYoullGet}
             </span>
             <h2 className="text-3xl md:text-5xl font-serif font-bold mb-4">
-              {language === 'ar' ? (
-                <>قسم رئيسي <span className="text-rose-400">مذهل</span></>
-              ) : language === 'fr' ? (
-                <>Section Hero <span className="text-rose-400">Époustouflante</span></>
-              ) : (
-                <>Stunning <span className="text-rose-400">Hero Section</span></>
-              )}
+              {language === 'ar' ? <>قسم رئيسي <span className="text-rose-400">مذهل</span></> : language === 'fr' ? <>Section Hero <span className="text-rose-400">Époustouflante</span></> : <>Stunning <span className="text-rose-400">Hero Section</span></>}
             </h2>
             <p className="text-neutral-400 max-w-xl mx-auto">
               {t.heroDesc}
@@ -307,7 +297,17 @@ const InfluencerSites = () => {
             </div>
 
             {/* Floating Stats Cards - Only on larger screens */}
-            <motion.div dir="ltr" initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: 0.4 }} className="absolute -right-4 lg:-right-20 top-1/4 bg-neutral-900/90 backdrop-blur-xl border border-rose-500/20 rounded-2xl p-4 shadow-xl hidden md:block">
+            <motion.div dir="ltr" initial={{
+            opacity: 0,
+            x: 20
+          }} whileInView={{
+            opacity: 1,
+            x: 0
+          }} viewport={{
+            once: true
+          }} transition={{
+            delay: 0.4
+          }} className="absolute -right-4 lg:-right-20 top-1/4 bg-neutral-900/90 backdrop-blur-xl border border-rose-500/20 rounded-2xl p-4 shadow-xl hidden md:block">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center">
                   <Instagram className="w-5 h-5 text-white" />
@@ -319,19 +319,19 @@ const InfluencerSites = () => {
               </div>
             </motion.div>
 
-            <motion.div dir="ltr" initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: 0.5 }} className="absolute -left-4 lg:-left-20 top-1/2 bg-neutral-900/90 backdrop-blur-xl border border-cyan-500/20 rounded-2xl p-4 shadow-xl hidden md:block">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-cyan-600 flex items-center justify-center">
-                  <Play className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <p className="text-xs text-neutral-500">TikTok</p>
-                  <p className="text-lg font-bold text-cyan-400">1.1M</p>
-                </div>
-              </div>
-            </motion.div>
+            
 
-            <motion.div dir="ltr" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.6 }} className="absolute -right-4 lg:-right-16 bottom-1/4 bg-neutral-900/90 backdrop-blur-xl border border-emerald-500/20 rounded-2xl p-4 shadow-xl hidden md:block">
+            <motion.div dir="ltr" initial={{
+            opacity: 0,
+            y: 20
+          }} whileInView={{
+            opacity: 1,
+            y: 0
+          }} viewport={{
+            once: true
+          }} transition={{
+            delay: 0.6
+          }} className="absolute -right-4 lg:-right-16 bottom-1/4 bg-neutral-900/90 backdrop-blur-xl border border-emerald-500/20 rounded-2xl p-4 shadow-xl hidden md:block">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
                   <TrendingUp className="w-5 h-5 text-emerald-400" />
@@ -349,18 +349,20 @@ const InfluencerSites = () => {
       {/* Analytics Dashboard Section */}
       <section className="py-16 md:py-24 px-4 md:px-6">
         <div className="container mx-auto max-w-6xl">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-12">
+          <motion.div initial={{
+          opacity: 0,
+          y: 20
+        }} whileInView={{
+          opacity: 1,
+          y: 0
+        }} viewport={{
+          once: true
+        }} className="text-center mb-12">
             <span className="text-sm font-mono text-rose-400 tracking-wider uppercase mb-4 block">
               {t.platformStats}
             </span>
             <h2 className="text-3xl md:text-5xl font-serif font-bold mb-4">
-              {language === 'ar' ? (
-                <>لوحة <span className="text-rose-400">التحليلات</span></>
-              ) : language === 'fr' ? (
-                <>Tableau de Bord <span className="text-rose-400">Analytique</span></>
-              ) : (
-                <><span className="text-rose-400">Analytics</span> Dashboard</>
-              )}
+              {language === 'ar' ? <>لوحة <span className="text-rose-400">التحليلات</span></> : language === 'fr' ? <>Tableau de Bord <span className="text-rose-400">Analytique</span></> : <><span className="text-rose-400">Analytics</span> Dashboard</>}
             </h2>
             <p className="text-neutral-400 max-w-2xl mx-auto">
               {t.analyticsDesc}
@@ -368,7 +370,17 @@ const InfluencerSites = () => {
           </motion.div>
 
           {/* Dashboard Preview */}
-          <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }} className="relative max-w-4xl mx-auto" dir="ltr">
+          <motion.div initial={{
+          opacity: 0,
+          y: 40
+        }} whileInView={{
+          opacity: 1,
+          y: 0
+        }} viewport={{
+          once: true
+        }} transition={{
+          delay: 0.2
+        }} className="relative max-w-4xl mx-auto" dir="ltr">
             <div className="rounded-2xl overflow-hidden border border-neutral-800 bg-neutral-900 shadow-2xl p-6 md:p-8" dir="ltr">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <div className="bg-neutral-800/50 rounded-xl p-4">
@@ -395,11 +407,13 @@ const InfluencerSites = () => {
 
               {/* Chart placeholder */}
               <div className="bg-neutral-800/50 rounded-xl p-4 h-48 flex items-end gap-2">
-                {[40, 65, 45, 80, 55, 90, 70, 85, 60, 95, 75, 88].map((height, i) => (
-                  <div key={i} className="flex-1 bg-rose-500/30 rounded-t" style={{ height: `${height}%` }}>
-                    <div className="w-full bg-rose-500 rounded-t" style={{ height: '60%' }} />
-                  </div>
-                ))}
+                {[40, 65, 45, 80, 55, 90, 70, 85, 60, 95, 75, 88].map((height, i) => <div key={i} className="flex-1 bg-rose-500/30 rounded-t" style={{
+                height: `${height}%`
+              }}>
+                    <div className="w-full bg-rose-500 rounded-t" style={{
+                  height: '60%'
+                }} />
+                  </div>)}
               </div>
             </div>
           </motion.div>
@@ -409,18 +423,20 @@ const InfluencerSites = () => {
       {/* Features Grid */}
       <section className="py-16 md:py-24 px-4 md:px-6 bg-neutral-900/50">
         <div className="container mx-auto max-w-6xl">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-12">
+          <motion.div initial={{
+          opacity: 0,
+          y: 20
+        }} whileInView={{
+          opacity: 1,
+          y: 0
+        }} viewport={{
+          once: true
+        }} className="text-center mb-12">
             <span className="text-sm font-mono text-rose-400 tracking-wider uppercase mb-4 block">
               {t.features}
             </span>
             <h2 className="text-3xl md:text-5xl font-serif font-bold mb-4">
-              {language === 'ar' ? (
-                <>مميزات <span className="text-rose-400">متميزة</span></>
-              ) : language === 'fr' ? (
-                <>Fonctionnalités <span className="text-rose-400">Premium</span></>
-              ) : (
-                <>Premium <span className="text-rose-400">Features</span></>
-              )}
+              {language === 'ar' ? <>مميزات <span className="text-rose-400">متميزة</span></> : language === 'fr' ? <>Fonctionnalités <span className="text-rose-400">Premium</span></> : <>Premium <span className="text-rose-400">Features</span></>}
             </h2>
             <p className="text-neutral-400 max-w-xl mx-auto">
               {t.everythingYouNeed}
@@ -428,22 +444,23 @@ const InfluencerSites = () => {
           </motion.div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((feature, index) => (
-              <motion.div 
-                key={feature.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 hover:border-rose-500/30 transition-colors"
-              >
+            {features.map((feature, index) => <motion.div key={feature.title} initial={{
+            opacity: 0,
+            y: 20
+          }} whileInView={{
+            opacity: 1,
+            y: 0
+          }} viewport={{
+            once: true
+          }} transition={{
+            delay: index * 0.1
+          }} className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 hover:border-rose-500/30 transition-colors">
                 <div className="w-12 h-12 bg-rose-500/10 rounded-xl flex items-center justify-center mb-4">
                   <feature.icon className="w-6 h-6 text-rose-400" />
                 </div>
                 <h3 className="text-lg font-bold mb-2">{feature.title}</h3>
                 <p className="text-neutral-400 text-sm">{feature.description}</p>
-              </motion.div>
-            ))}
+              </motion.div>)}
           </div>
         </div>
       </section>
@@ -451,18 +468,20 @@ const InfluencerSites = () => {
       {/* How It Works */}
       <section className="py-16 md:py-24 px-4 md:px-6">
         <div className="container mx-auto max-w-6xl">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-12">
+          <motion.div initial={{
+          opacity: 0,
+          y: 20
+        }} whileInView={{
+          opacity: 1,
+          y: 0
+        }} viewport={{
+          once: true
+        }} className="text-center mb-12">
             <span className="text-sm font-mono text-rose-400 tracking-wider uppercase mb-4 block">
               {t.ourProcess}
             </span>
             <h2 className="text-3xl md:text-5xl font-serif font-bold mb-4">
-              {language === 'ar' ? (
-                <>كيف <span className="text-rose-400">يعمل</span></>
-              ) : language === 'fr' ? (
-                <>Comment Ça <span className="text-rose-400">Marche</span></>
-              ) : (
-                <>How It <span className="text-rose-400">Works</span></>
-              )}
+              {language === 'ar' ? <>كيف <span className="text-rose-400">يعمل</span></> : language === 'fr' ? <>Comment Ça <span className="text-rose-400">Marche</span></> : <>How It <span className="text-rose-400">Works</span></>}
             </h2>
             <p className="text-neutral-400 max-w-xl mx-auto">
               {t.fromConceptToLaunch}
@@ -470,25 +489,24 @@ const InfluencerSites = () => {
           </motion.div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
-            {process.map((step, index) => (
-              <motion.div 
-                key={step.step}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                className="text-center relative"
-              >
-                {index < process.length - 1 && (
-                  <div className="hidden md:block absolute top-8 left-1/2 w-full h-px bg-neutral-800" />
-                )}
+            {process.map((step, index) => <motion.div key={step.step} initial={{
+            opacity: 0,
+            y: 20
+          }} whileInView={{
+            opacity: 1,
+            y: 0
+          }} viewport={{
+            once: true
+          }} transition={{
+            delay: index * 0.1
+          }} className="text-center relative">
+                {index < process.length - 1 && <div className="hidden md:block absolute top-8 left-1/2 w-full h-px bg-neutral-800" />}
                 <div className="w-16 h-16 bg-rose-500/20 border border-rose-500/30 rounded-2xl mx-auto mb-4 flex items-center justify-center relative z-10">
                   <span className="text-xl font-bold text-rose-400">{step.step}</span>
                 </div>
                 <h3 className="text-lg font-bold mb-2">{step.title}</h3>
                 <p className="text-neutral-400 text-sm">{step.description}</p>
-              </motion.div>
-            ))}
+              </motion.div>)}
           </div>
         </div>
       </section>
@@ -496,25 +514,25 @@ const InfluencerSites = () => {
       {/* CTA Section */}
       <section className="py-16 md:py-24 px-4 md:px-6 bg-gradient-to-b from-neutral-900 to-neutral-950">
         <div className="container mx-auto max-w-4xl text-center">
-          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
+          <motion.div initial={{
+          opacity: 0,
+          y: 30
+        }} whileInView={{
+          opacity: 1,
+          y: 0
+        }} viewport={{
+          once: true
+        }} transition={{
+          duration: 0.6
+        }}>
             <h2 className="text-3xl md:text-4xl lg:text-6xl font-serif font-bold mb-6">
-              {language === 'ar' ? (
-                <>مستعد <span className="text-rose-400">للتميز؟</span></>
-              ) : language === 'fr' ? (
-                <>Prêt à Vous <span className="text-rose-400">Démarquer?</span></>
-              ) : (
-                <>Ready to <span className="text-rose-400">Stand Out?</span></>
-              )}
+              {language === 'ar' ? <>مستعد <span className="text-rose-400">للتميز؟</span></> : language === 'fr' ? <>Prêt à Vous <span className="text-rose-400">Démarquer?</span></> : <>Ready to <span className="text-rose-400">Stand Out?</span></>}
             </h2>
             <p className="text-lg md:text-xl text-neutral-400 max-w-2xl mx-auto mb-8 md:mb-10 px-4">
               {t.ctaDesc}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center px-4">
-              <Button 
-                size="lg" 
-                className="bg-rose-500 hover:bg-rose-600 text-white px-8 md:px-10 py-5 md:py-6 text-base md:text-lg rounded-full w-full sm:w-auto"
-                onClick={() => setIsModalOpen(true)}
-              >
+              <Button size="lg" className="bg-rose-500 hover:bg-rose-600 text-white px-8 md:px-10 py-5 md:py-6 text-base md:text-lg rounded-full w-full sm:w-auto" onClick={() => setIsModalOpen(true)}>
                 {t.startYourProject}
               </Button>
               <Link to="/#services" className="w-full sm:w-auto">
@@ -544,8 +562,7 @@ const InfluencerSites = () => {
       {/* Application Modal */}
       <Dialog open={isModalOpen} onOpenChange={handleCloseModal}>
         <DialogContent className="bg-neutral-900 border-neutral-800 text-white max-w-md">
-          {isSuccess ? (
-            <div className="text-center py-8">
+          {isSuccess ? <div className="text-center py-8">
               <div className="w-16 h-16 bg-rose-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <CheckCircle className="w-8 h-8 text-rose-400" />
               </div>
@@ -554,9 +571,7 @@ const InfluencerSites = () => {
               <Button onClick={handleCloseModal} className="bg-rose-500 hover:bg-rose-600">
                 {t.close}
               </Button>
-            </div>
-          ) : (
-            <>
+            </div> : <>
               <DialogHeader>
                 <DialogTitle className="text-xl font-serif">{t.formTitle}</DialogTitle>
                 <DialogDescription className="text-neutral-400">{t.formDesc}</DialogDescription>
@@ -565,66 +580,41 @@ const InfluencerSites = () => {
               <form onSubmit={handleSubmit} className="space-y-4 mt-4">
                 <div className="space-y-2">
                   <Label htmlFor="fullName">{t.fullName} *</Label>
-                  <Input
-                    id="fullName"
-                    required
-                    value={formData.fullName}
-                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                    className="bg-neutral-800 border-neutral-700 text-white"
-                    placeholder={language === 'ar' ? 'اسمك' : language === 'fr' ? 'Votre nom' : 'Your name'}
-                  />
+                  <Input id="fullName" required value={formData.fullName} onChange={e => setFormData({
+                ...formData,
+                fullName: e.target.value
+              })} className="bg-neutral-800 border-neutral-700 text-white" placeholder={language === 'ar' ? 'اسمك' : language === 'fr' ? 'Votre nom' : 'Your name'} />
                 </div>
                 
                 <div className="space-y-2">
                   <Label htmlFor="email">{t.email} *</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    required
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="bg-neutral-800 border-neutral-700 text-white"
-                    placeholder={language === 'ar' ? 'بريدك@email.com' : 'your@email.com'}
-                  />
+                  <Input id="email" type="email" required value={formData.email} onChange={e => setFormData({
+                ...formData,
+                email: e.target.value
+              })} className="bg-neutral-800 border-neutral-700 text-white" placeholder={language === 'ar' ? 'بريدك@email.com' : 'your@email.com'} />
                 </div>
                 
                 <div className="space-y-2">
                   <Label htmlFor="phone">{t.phone} ({t.optional})</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="bg-neutral-800 border-neutral-700 text-white"
-                    placeholder="+1 (555) 000-0000"
-                  />
+                  <Input id="phone" type="tel" value={formData.phone} onChange={e => setFormData({
+                ...formData,
+                phone: e.target.value
+              })} className="bg-neutral-800 border-neutral-700 text-white" placeholder="+1 (555) 000-0000" />
                 </div>
                 
                 <div className="space-y-2">
                   <Label htmlFor="message">{t.message} ({t.optional})</Label>
-                  <Textarea
-                    id="message"
-                    value={formData.message}
-                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                    className="bg-neutral-800 border-neutral-700 text-white resize-none"
-                    placeholder={language === 'ar' ? 'أخبرنا عن احتياجاتك...' : language === 'fr' ? 'Parlez-nous de vos besoins...' : 'Tell us about your needs...'}
-                    rows={3}
-                  />
+                  <Textarea id="message" value={formData.message} onChange={e => setFormData({
+                ...formData,
+                message: e.target.value
+              })} className="bg-neutral-800 border-neutral-700 text-white resize-none" placeholder={language === 'ar' ? 'أخبرنا عن احتياجاتك...' : language === 'fr' ? 'Parlez-nous de vos besoins...' : 'Tell us about your needs...'} rows={3} />
                 </div>
                 
-                <Button 
-                  type="submit" 
-                  className="w-full bg-rose-500 hover:bg-rose-600"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <>
+                <Button type="submit" className="w-full bg-rose-500 hover:bg-rose-600" disabled={isSubmitting}>
+                  {isSubmitting ? <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       {t.submitting}
-                    </>
-                  ) : (
-                    t.submit
-                  )}
+                    </> : t.submit}
                 </Button>
                 
                 <p className="text-xs text-neutral-500 text-center">
@@ -634,11 +624,9 @@ const InfluencerSites = () => {
                   </Link>
                 </p>
               </form>
-            </>
-          )}
+            </>}
         </DialogContent>
       </Dialog>
     </div>;
 };
-
 export default InfluencerSites;
