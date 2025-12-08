@@ -228,20 +228,20 @@ const LandingPage = () => {
   const services = [{
     number: '01',
     slug: 'content-creator-sites',
-    title: language === 'ar' ? 'مواقع فاخرة لصناع المحتوى' : language === 'fr' ? 'Sites Premium pour Créateurs' : 'Premium Content Creator Sites',
-    description: language === 'ar' ? 'موقع إلكتروني احترافي يعكس هويتك ويجذب فرص التعاون والشراكات.' : language === 'fr' ? 'Sites web de luxe conçus pour mettre en valeur votre marque personnelle.' : 'Luxury websites custom-built to showcase your personal brand.',
+    title: language === 'ar' ? 'مواقع لصناع المحتوى' : language === 'fr' ? 'Sites Premium pour Créateurs' : 'Premium Content Creator Sites',
+    description: language === 'ar' ? 'موقع احترافي يعكس هويتك ويجذب فرص التعاون.' : language === 'fr' ? 'Sites web de luxe conçus pour mettre en valeur votre marque personnelle.' : 'Luxury websites custom-built to showcase your personal brand.',
     mockup: <MobileMockup />
   }, {
     number: '02',
     slug: 'ai-agents',
     title: language === 'ar' ? 'مساعد ذكي لعملك' : language === 'fr' ? 'Agents IA Personnalisés' : 'Custom AI Agents',
-    description: language === 'ar' ? 'مساعد ذكي يعمل على مدار الساعة لخدمة عملائك.' : language === 'fr' ? 'Assistants intelligents 24/7 formés sur votre entreprise.' : '24/7 intelligent assistants trained on your business.',
+    description: language === 'ar' ? 'مساعد ذكي يعمل ٢٤ ساعة لخدمة عملائك.' : language === 'fr' ? 'Assistants intelligents 24/7 formés sur votre entreprise.' : '24/7 intelligent assistants trained on your business.',
     mockup: <DeviceMockups />
   }, {
     number: '03',
     slug: 'automation',
     title: language === 'ar' ? 'أتمتة العمليات' : language === 'fr' ? 'Automatisation des Processus' : 'Process Automation',
-    description: language === 'ar' ? 'أتمتة سير العمل لتوفير الوقت وتقليل الأخطاء في أي عمل.' : language === 'fr' ? 'Automatisez les flux de travail pour gagner du temps.' : 'Automate workflows to save time and reduce errors in any business.',
+    description: language === 'ar' ? 'أتمتة المهام المتكررة لتوفير الوقت والجهد.' : language === 'fr' ? 'Automatisez les flux de travail pour gagner du temps.' : 'Automate workflows to save time and reduce errors in any business.',
     mockup: <FloatingIcons />
   }];
   return <div className="min-h-screen bg-background scroll-smooth">
@@ -441,11 +441,11 @@ const LandingPage = () => {
             </span>
 
             <h2 className="text-3xl md:text-5xl lg:text-6xl font-serif font-bold mb-4 md:mb-6">
-              {language === 'ar' ? 'رفيقك الذكي في الحياة' : language === 'fr' ? 'Votre Compagnon de Vie Intelligent' : 'Your Intelligent Life Companion'}
+              {language === 'ar' ? 'رفيقك الذكي' : language === 'fr' ? 'Votre Compagnon de Vie Intelligent' : 'Your Intelligent Life Companion'}
             </h2>
 
             <p className="text-base md:text-xl text-muted-foreground max-w-3xl mx-auto mb-10 md:mb-16">
-              {language === 'ar' ? 'AYN يتعرّف عليك. يتعلم عاداتك، يفهم أهدافك، ويساعدك على البقاء منظمًا ومركزًا كل يوم.' : language === 'fr' ? 'AYN apprend à vous connaître. Il comprend vos habitudes, vos objectifs, et vous aide à rester organisé et concentré chaque jour.' : 'AYN gets to know you. It learns your habits, understands your goals, and helps you stay organized and focused every day.'}
+              {language === 'ar' ? 'AYN يتعرّف عليك ويتعلم عاداتك ويساعدك على البقاء منظماً ومركزاً كل يوم.' : language === 'fr' ? 'AYN apprend à vous connaître. Il comprend vos habitudes, vos objectifs, et vous aide à rester organisé et concentré chaque jour.' : 'AYN gets to know you. It learns your habits, understands your goals, and helps you stay organized and focused every day.'}
             </p>
           </ScrollReveal>
 
@@ -460,7 +460,7 @@ const LandingPage = () => {
                   {language === 'ar' ? 'يتكيّف معك' : language === 'fr' ? 'Compréhension Adaptative' : 'Adaptive Understanding'}
                 </h3>
                 <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-                  {language === 'ar' ? 'يتعلم تفضيلاتك ويقدم لك إرشادات مخصصة تناسب أسلوب حياتك.' : language === 'fr' ? 'Apprend vos préférences et offre des conseils personnalisés adaptés à vous.' : 'Learns your preferences over time and offers personalized guidance tailored to you.'}
+                  {language === 'ar' ? 'يتعلم تفضيلاتك ويقدم إرشادات تناسبك.' : language === 'fr' ? 'Apprend vos préférences et offre des conseils personnalisés adaptés à vous.' : 'Learns your preferences over time and offers personalized guidance tailored to you.'}
                 </p>
               </div>
             </ScrollReveal>
@@ -471,10 +471,10 @@ const LandingPage = () => {
                   <Sparkles className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
                 </div>
                 <h3 className="text-lg md:text-xl font-bold">
-                  {language === 'ar' ? 'دائمًا بجانبك' : language === 'fr' ? 'Toujours Disponible' : 'Always Available'}
+                  {language === 'ar' ? 'دائماً بجانبك' : language === 'fr' ? 'Toujours Disponible' : 'Always Available'}
                 </h3>
                 <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-                  {language === 'ar' ? 'رفيق متاح على مدار الساعة، جاهز لمساعدتك في أي وقت.' : language === 'fr' ? 'Un compagnon attentionné disponible 24/7, prêt à vous aider quand vous en avez besoin.' : 'A thoughtful companion available 24/7, ready to help whenever you need support or clarity.'}
+                  {language === 'ar' ? 'رفيق متاح ٢٤ ساعة جاهز لمساعدتك.' : language === 'fr' ? 'Un compagnon attentionné disponible 24/7, prêt à vous aider quand vous en avez besoin.' : 'A thoughtful companion available 24/7, ready to help whenever you need support or clarity.'}
                 </p>
               </div>
             </ScrollReveal>
@@ -488,7 +488,7 @@ const LandingPage = () => {
                   {language === 'ar' ? 'خصوصيتك محمية' : language === 'fr' ? 'Votre Vie Privée, Protégée' : 'Your Privacy, Protected'}
                 </h3>
                 <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-                  {language === 'ar' ? 'محادثاتك وبياناتك مشفرة بالكامل. لا نشارك معلوماتك أبدًا.' : language === 'fr' ? 'Vos conversations et données sont sécurisées avec un chiffrement de bout en bout.' : 'Your conversations and data are secured with end-to-end encryption. We never share your information.'}
+                  {language === 'ar' ? 'محادثاتك وبياناتك مشفرة بالكامل.' : language === 'fr' ? 'Vos conversations et données sont sécurisées avec un chiffrement de bout en bout.' : 'Your conversations and data are secured with end-to-end encryption. We never share your information.'}
                 </p>
               </div>
             </ScrollReveal>
