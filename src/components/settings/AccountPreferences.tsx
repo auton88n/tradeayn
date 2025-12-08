@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,14 +13,18 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader2 } from 'lucide-react';
 import { useSettingsContext } from '@/contexts/SettingsContext';
 
-export const AccountPreferences = () => {
+interface AccountPreferencesProps {
+  userId: string;
+  userEmail: string;
+}
+
+export const AccountPreferences = ({ userId, userEmail }: AccountPreferencesProps) => {
   const { t } = useLanguage();
   const { toast } = useToast();
   const { searchTerm, registerFormChange } = useSettingsContext();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showAvatarUpload, setShowAvatarUpload] = useState(false);
-  const [userEmail, setUserEmail] = useState('');
   const [profile, setProfile] = useState({
     contact_person: '',
     company_name: '',
@@ -32,7 +36,7 @@ export const AccountPreferences = () => {
 
   useEffect(() => {
     loadProfile();
-  }, []);
+  }, [userId]);
 
   // Track unsaved changes
   useEffect(() => {
@@ -41,16 +45,13 @@ export const AccountPreferences = () => {
   }, [profile, originalProfile, registerFormChange]);
 
   const loadProfile = async () => {
+    if (!userId) return;
+
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      setUserEmail(user.email || '');
-
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .single();
 
       if (error) throw error;
@@ -73,11 +74,10 @@ export const AccountPreferences = () => {
   };
 
   const handleSave = async () => {
+    if (!userId) return;
+    
     setSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -86,7 +86,7 @@ export const AccountPreferences = () => {
           business_type: profile.business_type,
           business_context: profile.business_context,
         })
-        .eq('user_id', user.id);
+        .eq('user_id', userId);
 
       if (error) throw error;
 

@@ -26,7 +26,8 @@ export interface DeviceSession {
   is_trusted: boolean;
 }
 
-export const useUserSettings = () => {
+// Accept userId as parameter to avoid getUser() deadlock
+export const useUserSettings = (userId: string) => {
   const { toast } = useToast();
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [sessions, setSessions] = useState<DeviceSession[]>([]);
@@ -34,14 +35,16 @@ export const useUserSettings = () => {
   const [updating, setUpdating] = useState(false);
 
   const fetchSettings = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
 
+    try {
       const { data, error } = await supabase
         .from('user_settings')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .single();
 
       if (error) {
@@ -49,7 +52,7 @@ export const useUserSettings = () => {
         if (error.code === 'PGRST116') {
           const { data: newSettings, error: insertError } = await supabase
             .from('user_settings')
-            .insert({ user_id: user.id })
+            .insert({ user_id: userId })
             .select()
             .single();
 
@@ -102,14 +105,13 @@ export const useUserSettings = () => {
   };
 
   const fetchSessions = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+    if (!userId) return;
 
+    try {
       const { data, error } = await supabase
         .from('device_fingerprints')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .order('last_seen', { ascending: false });
 
       if (error) throw error;
@@ -131,17 +133,14 @@ export const useUserSettings = () => {
   };
 
   const updateSettings = async (updates: Partial<UserSettings>) => {
-    if (!settings) return;
+    if (!settings || !userId) return;
 
     setUpdating(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
       const { error } = await supabase
         .from('user_settings')
         .update(updates)
-        .eq('user_id', user.id);
+        .eq('user_id', userId);
 
       if (error) throw error;
 
@@ -187,14 +186,13 @@ export const useUserSettings = () => {
   };
 
   const signOutAllDevices = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+    if (!userId) return;
 
+    try {
       const { error } = await supabase
         .from('device_fingerprints')
         .delete()
-        .eq('user_id', user.id);
+        .eq('user_id', userId);
 
       if (error) throw error;
 
@@ -215,9 +213,11 @@ export const useUserSettings = () => {
   };
 
   useEffect(() => {
-    fetchSettings();
-    fetchSessions();
-  }, []);
+    if (userId) {
+      fetchSettings();
+      fetchSessions();
+    }
+  }, [userId]);
 
   return {
     settings,

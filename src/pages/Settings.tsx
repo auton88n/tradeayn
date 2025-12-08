@@ -51,10 +51,10 @@ const Settings = () => {
   return (
     <SettingsLayout>
       {{
-        account: <AccountPreferences />,
-        notifications: <NotificationSettings />,
-        privacy: <PrivacySettings />,
-        sessions: <SessionManagement />,
+        account: <AccountPreferences userId={user.id} userEmail={user.email || ''} />,
+        notifications: <NotificationSettings userId={user.id} />,
+        privacy: <PrivacySettings userId={user.id} />,
+        sessions: <SessionManagement userId={user.id} userEmail={user.email || ''} />,
       }}
     </SettingsLayout>
   );

@@ -20,30 +20,32 @@ import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Monitor, Smartphone, Tablet, LogOut, Key } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
-export const SessionManagement = () => {
+interface SessionManagementProps {
+  userId: string;
+  userEmail: string;
+}
+
+export const SessionManagement = ({ userId, userEmail }: SessionManagementProps) => {
   const { t } = useLanguage();
   const { toast } = useToast();
-  const { sessions, loading, revokeSession, signOutAllDevices } = useUserSettings();
+  const { sessions, loading, revokeSession, signOutAllDevices } = useUserSettings(userId);
   const [changingPassword, setChangingPassword] = useState(false);
 
   const handlePasswordChange = async () => {
     try {
       setChangingPassword(true);
-      
-      // Get current user email
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user?.email) {
+
+      if (!userEmail) {
         throw new Error('No email found');
       }
-      
+
       // Send password reset email
-      const { error } = await supabase.auth.resetPasswordForEmail(
-        user.email,
-        { redirectTo: `${window.location.origin}/reset-password` }
-      );
-      
+      const { error } = await supabase.auth.resetPasswordForEmail(userEmail, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
       if (error) throw error;
-      
+
       toast({
         title: t('common.success'),
         description: t('settings.passwordResetEmailSent'),
@@ -70,38 +72,38 @@ export const SessionManagement = () => {
   const parseUserAgentForDisplay = (ua: string): string => {
     let browser = 'Browser';
     let os = '';
-    
+
     if (ua.includes('Chrome') && !ua.includes('Edg')) browser = 'Chrome';
     else if (ua.includes('Safari') && !ua.includes('Chrome')) browser = 'Safari';
     else if (ua.includes('Firefox')) browser = 'Firefox';
     else if (ua.includes('Edg')) browser = 'Edge';
-    
+
     if (ua.includes('Mac OS X')) os = 'macOS';
     else if (ua.includes('Windows')) os = 'Windows';
     else if (ua.includes('Linux') && !ua.includes('Android')) os = 'Linux';
     else if (ua.includes('Android')) os = 'Android';
     else if (ua.includes('iPhone')) os = 'iOS';
     else if (ua.includes('iPad')) os = 'iPadOS';
-    
+
     return os ? `${browser} on ${os}` : browser;
   };
 
   const getDeviceName = (deviceInfo: Record<string, unknown> | null) => {
     if (!deviceInfo) return t('settings.unknownDevice');
-    
+
     const browser = String(deviceInfo.browser || '');
     const os = String(deviceInfo.os || '');
-    
+
     // If we have parsed values (not raw user agent), show "Browser on OS"
     if (browser && os && !browser.includes('Mozilla')) {
       return `${browser} on ${os}`;
     }
-    
+
     // Fallback: parse raw user agent if old format
     if (browser.includes('Mozilla')) {
       return parseUserAgentForDisplay(browser);
     }
-    
+
     return browser || os || t('settings.unknownDevice');
   };
 
@@ -198,8 +200,8 @@ export const SessionManagement = () => {
                 {t('settings.changePasswordDesc')}
               </p>
             </div>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="gap-2"
               onClick={handlePasswordChange}
               disabled={changingPassword}
