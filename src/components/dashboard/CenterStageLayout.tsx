@@ -17,6 +17,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useEyeContext } from '@/hooks/useEyeContext';
 import { useEyeBehaviorMatcher } from '@/hooks/useEyeBehaviorMatcher';
 import { hapticFeedback } from '@/lib/haptics';
+import { analyzeUserEmotion, getEmpathyResponse } from '@/utils/userEmotionDetection';
 import type { Message, AIMode, AIModeConfig } from '@/types/dashboard.types';
 
 // Fallback suggestions when API fails
@@ -78,7 +79,7 @@ export const CenterStageLayout = ({
   const eyeRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
-  const { setEmotion, triggerAbsorption, triggerBlink, setIsResponding, detectExcitement, isUserTyping: contextIsTyping } = useAYNEmotion();
+  const { setEmotion, triggerAbsorption, triggerBlink, setIsResponding, detectExcitement, isUserTyping: contextIsTyping, triggerPulse } = useAYNEmotion();
   const { playSound, playEmotion } = useSoundContext();
   const {
     flyingBubble,
@@ -231,6 +232,21 @@ export const CenterStageLayout = ({
       // Track the user's message for suggestion context
       setLastUserMessage(content);
 
+      // Analyze user's emotional state and respond empathetically
+      const userEmotionAnalysis = analyzeUserEmotion(content);
+      const empathyResponse = getEmpathyResponse(userEmotionAnalysis.emotion);
+      
+      // AYN shows empathetic response to user's emotion before processing
+      if (userEmotionAnalysis.emotion !== 'neutral' && userEmotionAnalysis.intensity > 0.3) {
+        setEmotion(empathyResponse.aynEmotion);
+        hapticFeedback(empathyResponse.hapticType);
+        
+        // Extra empathy for strong emotions
+        if (userEmotionAnalysis.intensity > 0.6) {
+          triggerPulse(); // Gentle acknowledgment pulse
+        }
+      }
+
       // Clear previous response bubbles and suggestions
       clearResponseBubbles();
       clearSuggestions();
@@ -272,6 +288,7 @@ export const CenterStageLayout = ({
       setIsResponding,
       completeAbsorption,
       onSendMessage,
+      triggerPulse,
     ]
   );
 
