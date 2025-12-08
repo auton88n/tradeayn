@@ -5,6 +5,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AISupportChat from './AISupportChat';
 import TicketForm from './TicketForm';
 import FAQBrowser from './FAQBrowser';
+import { TicketList } from './TicketList';
+import { UserTicketDetail } from './UserTicketDetail';
 
 interface SupportWidgetProps {
   open: boolean;
@@ -13,13 +15,27 @@ interface SupportWidgetProps {
 
 const SupportWidget: React.FC<SupportWidgetProps> = ({ open, onClose }) => {
   const [activeTab, setActiveTab] = useState('chat');
+  const [ticketView, setTicketView] = useState<'list' | 'form' | 'detail'>('list');
+  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
 
   // Reset to chat tab when opened
   useEffect(() => {
     if (open) {
       setActiveTab('chat');
+      setTicketView('list');
+      setSelectedTicketId(null);
     }
   }, [open]);
+
+  const handleSelectTicket = (ticketId: string) => {
+    setSelectedTicketId(ticketId);
+    setTicketView('detail');
+  };
+
+  const handleBackToList = () => {
+    setTicketView('list');
+    setSelectedTicketId(null);
+  };
 
   return (
     <AnimatePresence>
@@ -99,7 +115,21 @@ const SupportWidget: React.FC<SupportWidgetProps> = ({ open, onClose }) => {
                     <AISupportChat onNeedTicket={() => setActiveTab('ticket')} />
                   </TabsContent>
                   <TabsContent value="ticket" className="h-full m-0 p-0">
-                    <TicketForm onSuccess={() => setActiveTab('chat')} />
+                    {ticketView === 'list' && (
+                      <TicketList
+                        onNewTicket={() => setTicketView('form')}
+                        onSelectTicket={handleSelectTicket}
+                      />
+                    )}
+                    {ticketView === 'form' && (
+                      <TicketForm onSuccess={() => setTicketView('list')} />
+                    )}
+                    {ticketView === 'detail' && selectedTicketId && (
+                      <UserTicketDetail
+                        ticketId={selectedTicketId}
+                        onBack={handleBackToList}
+                      />
+                    )}
                   </TabsContent>
                   <TabsContent value="faq" className="h-full m-0 p-0">
                     <FAQBrowser />
