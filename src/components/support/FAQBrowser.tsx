@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+import MessageFormatter from '@/components/MessageFormatter';
 
 interface FAQItem {
   id: string;
@@ -152,8 +153,8 @@ const FAQBrowser: React.FC = () => {
                           exit={{ height: 0, opacity: 0 }}
                           className="border-t border-border"
                         >
-                          <div className="p-3 text-sm text-muted-foreground">
-                            {faq.answer}
+                          <div className="p-3 text-sm text-muted-foreground [&_ul]:list-disc [&_ul]:pl-4 [&_ul]:my-1 [&_ul]:space-y-0.5 [&_ol]:list-decimal [&_ol]:pl-4 [&_ol]:my-1 [&_ol]:space-y-0.5 [&_p]:my-1 [&_strong]:text-foreground">
+                            <MessageFormatter content={faq.answer} />
                           </div>
                           <div className="px-3 pb-3 flex items-center justify-between">
                             <div className="flex items-center gap-3 text-xs text-muted-foreground">
