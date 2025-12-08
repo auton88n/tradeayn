@@ -43,8 +43,8 @@ const App = () => (
                       <Route path="/" element={<Index />} />
                       <Route path="/settings" element={<Settings />} />
                       <Route path="/reset-password" element={<ResetPassword />} />
-                      <Route path="/services/influencer-sites" element={<InfluencerSites />} />
-                      <Route path="/services/influencer-sites/apply" element={<InfluencerSitesApply />} />
+                      <Route path="/services/content-creator-sites" element={<InfluencerSites />} />
+                      <Route path="/services/content-creator-sites/apply" element={<InfluencerSitesApply />} />
                       <Route path="/services/ai-agents" element={<AIAgents />} />
                       <Route path="/services/ai-agents/apply" element={<AIAgentsApply />} />
                       <Route path="/services/automation" element={<Automation />} />
