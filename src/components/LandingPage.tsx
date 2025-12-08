@@ -21,6 +21,7 @@ import DeviceMockups from './services/DeviceMockups';
 import FloatingIcons from './services/FloatingIcons';
 const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [pendingMessage, setPendingMessage] = useState<string>('');
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -383,7 +384,13 @@ const LandingPage = () => {
       </div>
 
       {/* Hero Section - Premium AI Eye Experience */}
-      <Hero onGetStarted={() => setShowAuthModal(true)} />
+      <Hero onGetStarted={(prefillMessage) => {
+        if (prefillMessage) {
+          setPendingMessage(prefillMessage);
+          localStorage.setItem('ayn_pending_message', prefillMessage);
+        }
+        setShowAuthModal(true);
+      }} />
 
       {/* About AYN - Value Proposition Section */}
       <section id="about" className="py-16 md:py-32 px-4 md:px-6">
