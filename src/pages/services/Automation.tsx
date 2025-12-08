@@ -143,7 +143,7 @@ const Automation = () => {
                 </div>
                 <div className="flex-1 mx-4">
                   <div className="bg-neutral-700 rounded-lg px-4 py-1.5 text-sm text-neutral-400 text-center">
-                    dashboard.ayn.ai/workflows
+                    dashboard.aynn.io/workflows
                   </div>
                 </div>
               </div>
@@ -168,11 +168,12 @@ const Automation = () => {
                   <div className="overflow-x-auto pb-2 sm:pb-4 scrollbar-thin scrollbar-thumb-neutral-700 scrollbar-track-transparent">
                     <div className="flex items-center justify-start md:justify-center gap-1.5 sm:gap-2 md:gap-4 py-4 sm:py-8 md:py-12 min-w-max md:min-w-0 px-1">
                       {/* Trigger */}
+                      {/* Trigger - AI Analysis */}
                       <div className="bg-emerald-500/20 border border-emerald-500/30 rounded-lg sm:rounded-xl p-2.5 sm:p-4 md:p-6 text-center min-w-[90px] sm:min-w-[110px] md:min-w-[160px]">
                         <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-emerald-500 rounded-lg mx-auto mb-1.5 sm:mb-2 md:mb-3 flex items-center justify-center">
-                          <Mail className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white" />
+                          <Brain className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white" />
                         </div>
-                        <p className="font-medium text-xs sm:text-sm md:text-base">New Email</p>
+                        <p className="font-medium text-xs sm:text-sm md:text-base">AI Analysis</p>
                         <p className="text-[10px] sm:text-xs text-neutral-500 mt-0.5 sm:mt-1">Trigger</p>
                       </div>
 
@@ -180,33 +181,20 @@ const Automation = () => {
                         <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-1 sm:w-1.5 sm:h-1.5 md:w-2 md:h-2 bg-emerald-500 rounded-full" />
                       </div>
 
-                      {/* Process */}
-                      <div className="bg-blue-500/20 border border-blue-500/30 rounded-lg sm:rounded-xl p-2.5 sm:p-4 md:p-6 text-center min-w-[90px] sm:min-w-[110px] md:min-w-[160px]">
-                        <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-blue-500 rounded-lg mx-auto mb-1.5 sm:mb-2 md:mb-3 flex items-center justify-center">
-                          <Brain className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white" />
-                        </div>
-                        <p className="font-medium text-xs sm:text-sm md:text-base">AI Analysis</p>
-                        <p className="text-[10px] sm:text-xs text-neutral-500 mt-0.5 sm:mt-1">Process</p>
-                      </div>
-
-                      <div className="w-4 sm:w-6 md:w-12 h-px bg-blue-500/30 relative flex-shrink-0">
-                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-1 sm:w-1.5 sm:h-1.5 md:w-2 md:h-2 bg-blue-500 rounded-full" />
-                      </div>
-
-                      {/* Condition */}
+                      {/* Process - Score Check */}
                       <div className="bg-amber-500/20 border border-amber-500/30 rounded-lg sm:rounded-xl p-2.5 sm:p-4 md:p-6 text-center min-w-[90px] sm:min-w-[110px] md:min-w-[160px]">
                         <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-amber-500 rounded-lg mx-auto mb-1.5 sm:mb-2 md:mb-3 flex items-center justify-center">
                           <Workflow className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white" />
                         </div>
                         <p className="font-medium text-xs sm:text-sm md:text-base">Score Check</p>
-                        <p className="text-[10px] sm:text-xs text-neutral-500 mt-0.5 sm:mt-1">Condition</p>
+                        <p className="text-[10px] sm:text-xs text-neutral-500 mt-0.5 sm:mt-1">Process</p>
                       </div>
 
                       <div className="w-4 sm:w-6 md:w-12 h-px bg-amber-500/30 relative flex-shrink-0">
                         <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-1 sm:w-1.5 sm:h-1.5 md:w-2 md:h-2 bg-amber-500 rounded-full" />
                       </div>
 
-                      {/* Action */}
+                      {/* Action - Add to CRM */}
                       <div className="bg-purple-500/20 border border-purple-500/30 rounded-lg sm:rounded-xl p-2.5 sm:p-4 md:p-6 text-center min-w-[90px] sm:min-w-[110px] md:min-w-[160px]">
                         <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-purple-500 rounded-lg mx-auto mb-1.5 sm:mb-2 md:mb-3 flex items-center justify-center">
                           <Database className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white" />
