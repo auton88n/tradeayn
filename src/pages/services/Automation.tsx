@@ -297,9 +297,9 @@ const Automation = () => {
             </p>
           </motion.div>
 
-          <motion.div className="relative" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }}>
+          <motion.div className="relative" dir="ltr" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }}>
             {/* Browser Mockup */}
-            <div className="bg-neutral-900 rounded-2xl border border-neutral-800 overflow-hidden shadow-2xl">
+            <div className="bg-neutral-900 rounded-2xl border border-neutral-800 overflow-hidden shadow-2xl" dir="ltr">
               <div className="bg-neutral-800 px-4 py-3 flex items-center gap-2">
                 <div className="flex gap-2">
                   <div className="w-3 h-3 rounded-full bg-red-500/80" />
