@@ -3,11 +3,35 @@ import { renderHook, act } from '@testing-library/react';
 import { useChatSession } from '../useChatSession';
 import { createMockSupabaseClient } from '@/test/mocks/supabase';
 import { mockToast } from '@/test/mocks/contexts';
+import type { Session } from '@supabase/supabase-js';
 
 const mockSupabase = createMockSupabaseClient();
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: mockSupabase,
 }));
+
+// Mock fetch for direct REST API calls
+global.fetch = vi.fn().mockResolvedValue({
+  ok: true,
+  text: () => Promise.resolve('[]'),
+});
+
+// Mock session for tests
+const mockSession: Session = {
+  access_token: 'test-access-token',
+  refresh_token: 'test-refresh-token',
+  expires_in: 3600,
+  expires_at: Date.now() / 1000 + 3600,
+  token_type: 'bearer',
+  user: {
+    id: 'test-user-id',
+    email: 'test@example.com',
+    app_metadata: {},
+    user_metadata: {},
+    aud: 'authenticated',
+    created_at: new Date().toISOString(),
+  },
+};
 
 const waitFor = async (callback: () => void, timeout = 1000) => {
   const startTime = Date.now();
@@ -25,6 +49,7 @@ const waitFor = async (callback: () => void, timeout = 1000) => {
 describe('useChatSession', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    (global.fetch as ReturnType<typeof vi.fn>).mockReset();
   });
 
   describe('loadRecentChats', () => {
@@ -53,12 +78,12 @@ describe('useChatSession', () => {
         },
       ];
 
-      mockSupabase._mocks.order.mockResolvedValueOnce({
-        data: mockMessages,
-        error: null,
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        ok: true,
+        text: () => Promise.resolve(JSON.stringify(mockMessages)),
       });
 
-      const { result } = renderHook(() => useChatSession('test-user-id'));
+      const { result } = renderHook(() => useChatSession('test-user-id', mockSession));
 
       await act(async () => {
         await result.current.loadRecentChats();
@@ -87,12 +112,12 @@ describe('useChatSession', () => {
         },
       ];
 
-      mockSupabase._mocks.order.mockResolvedValueOnce({
-        data: mockMessages,
-        error: null,
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        ok: true,
+        text: () => Promise.resolve(JSON.stringify(mockMessages)),
       });
 
-      const { result } = renderHook(() => useChatSession('test-user-id'));
+      const { result } = renderHook(() => useChatSession('test-user-id', mockSession));
 
       await act(async () => {
         await result.current.loadRecentChats();
@@ -122,12 +147,12 @@ describe('useChatSession', () => {
         },
       ];
 
-      mockSupabase._mocks.order.mockResolvedValueOnce({
-        data: mockMessages,
-        error: null,
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        ok: true,
+        text: () => Promise.resolve(JSON.stringify(mockMessages)),
       });
 
-      const { result } = renderHook(() => useChatSession('test-user-id'));
+      const { result } = renderHook(() => useChatSession('test-user-id', mockSession));
 
       await act(async () => {
         await result.current.loadRecentChats();
@@ -148,12 +173,12 @@ describe('useChatSession', () => {
         session_id: `session-${i}`,
       }));
 
-      mockSupabase._mocks.order.mockResolvedValueOnce({
-        data: mockMessages,
-        error: null,
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        ok: true,
+        text: () => Promise.resolve(JSON.stringify(mockMessages)),
       });
 
-      const { result } = renderHook(() => useChatSession('test-user-id'));
+      const { result } = renderHook(() => useChatSession('test-user-id', mockSession));
 
       await act(async () => {
         await result.current.loadRecentChats();
@@ -165,12 +190,12 @@ describe('useChatSession', () => {
     });
 
     it('should handle empty chat history', async () => {
-      mockSupabase._mocks.order.mockResolvedValueOnce({
-        data: [],
-        error: null,
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        ok: true,
+        text: () => Promise.resolve('[]'),
       });
 
-      const { result } = renderHook(() => useChatSession('test-user-id'));
+      const { result } = renderHook(() => useChatSession('test-user-id', mockSession));
 
       await act(async () => {
         await result.current.loadRecentChats();
@@ -184,7 +209,12 @@ describe('useChatSession', () => {
 
   describe('startNewChat', () => {
     it('should generate new UUID for session', () => {
-      const { result } = renderHook(() => useChatSession('test-user-id'));
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: true,
+        text: () => Promise.resolve('[]'),
+      });
+      
+      const { result } = renderHook(() => useChatSession('test-user-id', mockSession));
       
       const initialSessionId = result.current.currentSessionId;
 
@@ -193,11 +223,16 @@ describe('useChatSession', () => {
       });
 
       expect(result.current.currentSessionId).not.toBe(initialSessionId);
-      expect(result.current.currentSessionId).toMatch(/^test-uuid-/);
+      expect(result.current.currentSessionId).toMatch(/^[a-f0-9-]+$/);
     });
 
     it('should show toast notification', () => {
-      const { result } = renderHook(() => useChatSession('test-user-id'));
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: true,
+        text: () => Promise.resolve('[]'),
+      });
+      
+      const { result } = renderHook(() => useChatSession('test-user-id', mockSession));
 
       act(() => {
         result.current.startNewChat();
@@ -209,7 +244,12 @@ describe('useChatSession', () => {
 
   describe('loadChat', () => {
     it('should set current session ID from chat history', () => {
-      const { result } = renderHook(() => useChatSession('test-user-id'));
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: true,
+        text: () => Promise.resolve('[]'),
+      });
+      
+      const { result } = renderHook(() => useChatSession('test-user-id', mockSession));
       
       const chatHistory = {
         title: 'Test Chat',
@@ -227,7 +267,12 @@ describe('useChatSession', () => {
     });
 
     it('should return messages from chat history', () => {
-      const { result } = renderHook(() => useChatSession('test-user-id'));
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: true,
+        text: () => Promise.resolve('[]'),
+      });
+      
+      const { result } = renderHook(() => useChatSession('test-user-id', mockSession));
       
       const messages = [
         {
@@ -257,8 +302,9 @@ describe('useChatSession', () => {
 
   describe('deleteSelectedChats', () => {
     it('should delete messages from database', async () => {
-      mockSupabase._mocks.order.mockResolvedValueOnce({
-        data: [
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: true,
+        text: () => Promise.resolve(JSON.stringify([
           {
             id: 'msg-1',
             content: 'Test',
@@ -266,8 +312,7 @@ describe('useChatSession', () => {
             created_at: new Date().toISOString(),
             session_id: 'session-1',
           },
-        ],
-        error: null,
+        ])),
       });
 
       mockSupabase._mocks.delete.mockResolvedValueOnce({
@@ -275,7 +320,7 @@ describe('useChatSession', () => {
         error: null,
       });
 
-      const { result } = renderHook(() => useChatSession('test-user-id'));
+      const { result } = renderHook(() => useChatSession('test-user-id', mockSession));
 
       await act(async () => {
         await result.current.loadRecentChats();
@@ -293,8 +338,9 @@ describe('useChatSession', () => {
     });
 
     it('should update local state after deletion', async () => {
-      mockSupabase._mocks.order.mockResolvedValueOnce({
-        data: [
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        ok: true,
+        text: () => Promise.resolve(JSON.stringify([
           {
             id: 'msg-1',
             content: 'Test 1',
@@ -309,8 +355,7 @@ describe('useChatSession', () => {
             created_at: '2024-01-02T10:00:00Z',
             session_id: 'session-2',
           },
-        ],
-        error: null,
+        ])),
       });
 
       mockSupabase._mocks.delete.mockResolvedValueOnce({
@@ -318,7 +363,21 @@ describe('useChatSession', () => {
         error: null,
       });
 
-      const { result } = renderHook(() => useChatSession('test-user-id'));
+      // Mock for the refresh after delete
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        ok: true,
+        text: () => Promise.resolve(JSON.stringify([
+          {
+            id: 'msg-2',
+            content: 'Test 2',
+            sender: 'user',
+            created_at: '2024-01-02T10:00:00Z',
+            session_id: 'session-2',
+          },
+        ])),
+      });
+
+      const { result } = renderHook(() => useChatSession('test-user-id', mockSession));
 
       await act(async () => {
         await result.current.loadRecentChats();
@@ -340,8 +399,9 @@ describe('useChatSession', () => {
     });
 
     it('should clear selection after deletion', async () => {
-      mockSupabase._mocks.order.mockResolvedValueOnce({
-        data: [
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: true,
+        text: () => Promise.resolve(JSON.stringify([
           {
             id: 'msg-1',
             content: 'Test',
@@ -349,8 +409,7 @@ describe('useChatSession', () => {
             created_at: new Date().toISOString(),
             session_id: 'session-1',
           },
-        ],
-        error: null,
+        ])),
       });
 
       mockSupabase._mocks.delete.mockResolvedValueOnce({
@@ -358,7 +417,7 @@ describe('useChatSession', () => {
         error: null,
       });
 
-      const { result } = renderHook(() => useChatSession('test-user-id'));
+      const { result } = renderHook(() => useChatSession('test-user-id', mockSession));
 
       await act(async () => {
         await result.current.loadRecentChats();
@@ -378,8 +437,9 @@ describe('useChatSession', () => {
     it('should handle deletion errors gracefully', async () => {
       const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      mockSupabase._mocks.order.mockResolvedValueOnce({
-        data: [
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: true,
+        text: () => Promise.resolve(JSON.stringify([
           {
             id: 'msg-1',
             content: 'Test',
@@ -387,8 +447,7 @@ describe('useChatSession', () => {
             created_at: new Date().toISOString(),
             session_id: 'session-1',
           },
-        ],
-        error: null,
+        ])),
       });
 
       mockSupabase._mocks.delete.mockResolvedValueOnce({
@@ -396,7 +455,7 @@ describe('useChatSession', () => {
         error: { message: 'Delete failed' },
       });
 
-      const { result } = renderHook(() => useChatSession('test-user-id'));
+      const { result } = renderHook(() => useChatSession('test-user-id', mockSession));
 
       await act(async () => {
         await result.current.loadRecentChats();
@@ -424,8 +483,9 @@ describe('useChatSession', () => {
 
   describe('chat selection', () => {
     it('should toggle individual chat selection', async () => {
-      mockSupabase._mocks.order.mockResolvedValueOnce({
-        data: [
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: true,
+        text: () => Promise.resolve(JSON.stringify([
           {
             id: 'msg-1',
             content: 'Test',
@@ -433,11 +493,10 @@ describe('useChatSession', () => {
             created_at: new Date().toISOString(),
             session_id: 'session-1',
           },
-        ],
-        error: null,
+        ])),
       });
 
-      const { result } = renderHook(() => useChatSession('test-user-id'));
+      const { result } = renderHook(() => useChatSession('test-user-id', mockSession));
 
       await act(async () => {
         await result.current.loadRecentChats();
@@ -457,8 +516,9 @@ describe('useChatSession', () => {
     });
 
     it('should select/deselect all chats', async () => {
-      mockSupabase._mocks.order.mockResolvedValueOnce({
-        data: [
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: true,
+        text: () => Promise.resolve(JSON.stringify([
           {
             id: 'msg-1',
             content: 'Test 1',
@@ -473,11 +533,10 @@ describe('useChatSession', () => {
             created_at: '2024-01-02T10:00:00Z',
             session_id: 'session-2',
           },
-        ],
-        error: null,
+        ])),
       });
 
-      const { result } = renderHook(() => useChatSession('test-user-id'));
+      const { result } = renderHook(() => useChatSession('test-user-id', mockSession));
 
       await act(async () => {
         await result.current.loadRecentChats();

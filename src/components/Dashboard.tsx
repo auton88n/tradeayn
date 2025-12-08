@@ -147,6 +147,7 @@ export default function Dashboard({ user, session }: DashboardProps) {
         <SidebarProvider>
           <DashboardContainer 
             user={user}
+            session={session}
             auth={auth}
             isAdmin={auth.isAdmin}
             onAdminPanelClick={() => setActiveView('admin')}

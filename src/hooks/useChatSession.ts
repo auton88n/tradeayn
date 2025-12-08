@@ -1,9 +1,35 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { ChatHistory, Message, UseChatSessionReturn } from '@/types/dashboard.types';
 
-export const useChatSession = (userId: string): UseChatSessionReturn => {
+// Same constants from useAuth.ts - direct REST API bypasses deadlocking Supabase client
+const SUPABASE_URL = 'https://dfkoxuokfkttjhfjcecx.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRma294dW9rZmt0dGpoZmpjZWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYzNTg4NzMsImV4cCI6MjA3MTkzNDg3M30.Th_-ds6dHsxIhRpkzJLREwBIVdgkcdm2SmMNDmjNbxw';
+
+// Helper for direct REST API calls (bypasses deadlocking Supabase client)
+const fetchFromSupabase = async (
+  endpoint: string,
+  token: string
+): Promise<any> => {
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}`, {
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`API error: ${response.status}`);
+  }
+
+  const text = await response.text();
+  return text ? JSON.parse(text) : null;
+};
+
+export const useChatSession = (userId: string, session: Session | null): UseChatSessionReturn => {
   const [currentSessionId, setCurrentSessionId] = useState<string>('');
   const [recentChats, setRecentChats] = useState<ChatHistory[]>([]);
   const [selectedChats, setSelectedChats] = useState<Set<number>>(new Set());
@@ -11,34 +37,20 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
   const lastInitializedUserId = useRef<string | null>(null);
   const { toast } = useToast();
 
-  // Load recent chat history
+  // Load recent chat history using direct REST API
   const loadRecentChats = useCallback(async () => {
-    if (!userId) {
+    if (!userId || !session) {
+      console.warn('[useChatSession] No userId or session available');
       return;
     }
     
     try {
+      console.log('[useChatSession] Loading recent chats via REST API...');
       
-      // Wrap query with 5-second timeout
-      const queryPromise = supabase
-        .from('messages')
-        .select('id, content, created_at, sender, session_id')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(100);
-      
-      const result = await Promise.race([
-        queryPromise,
-        new Promise<{ data: null; error: Error }>((resolve) => 
-          setTimeout(() => resolve({ data: null, error: new Error('Query timeout after 5s') }), 5000)
-        )
-      ]);
-      
-      const { data, error } = result;
-
-      if (error) {
-        return;
-      }
+      const data = await fetchFromSupabase(
+        `messages?user_id=eq.${userId}&select=id,content,created_at,sender,session_id&order=created_at.desc&limit=100`,
+        session.access_token
+      );
 
       if (!data || data.length === 0) {
         setRecentChats([]);
@@ -55,7 +67,7 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
       
       const sessionGroups: { [key: string]: ProcessedMessage[] } = {};
 
-      data.forEach(message => {
+      data.forEach((message: { id: string; content: string; created_at: string; sender: string; session_id: string | null }) => {
         const sessionId = message.session_id;
         // Skip messages without a session_id
         if (!sessionId) return;
@@ -98,11 +110,12 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
         .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()) // Sort by most recent
         .slice(0, 10); // Limit to latest 10 sessions
 
+      console.log('[useChatSession] Loaded', chatHistories.length, 'conversations');
       setRecentChats(chatHistories);
     } catch (error) {
-      console.error('Error loading recent chats:', error);
+      console.error('[useChatSession] Error loading recent chats:', error);
     }
-  }, [userId]);
+  }, [userId, session]);
 
   // Start a new chat session
   const startNewChat = useCallback(() => {
@@ -237,34 +250,28 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
     }
   }, [userId, toast]);
 
-  // Load recent chats on mount and set initial session
+  // Load recent chats on mount and set initial session using direct REST API
   useEffect(() => {
     const initializeSession = async () => {
       // Skip if no user or already initialized for this user
       if (!userId || lastInitializedUserId.current === userId) return;
       
+      // Skip if no session available
+      if (!session) {
+        console.warn('[useChatSession] No session available for initialization');
+        setCurrentSessionId(crypto.randomUUID());
+        lastInitializedUserId.current = userId;
+        return;
+      }
+      
       console.log('[useChatSession] Initializing for user:', userId);
       
       try {
-        // Check for most recent session with messages
-        const { data, error } = await supabase
-          .from('messages')
-          .select('session_id')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false })
-          .limit(1);
-        
-        if (error) {
-          console.error('[useChatSession] Error fetching session:', error);
-          toast({
-            title: 'Error',
-            description: 'Failed to load chat history.',
-            variant: "destructive"
-          });
-          setCurrentSessionId(crypto.randomUUID());
-          lastInitializedUserId.current = userId;
-          return;
-        }
+        // Check for most recent session with messages using direct REST API
+        const data = await fetchFromSupabase(
+          `messages?user_id=eq.${userId}&select=session_id&order=created_at.desc&limit=1`,
+          session.access_token
+        );
         
         if (data && data.length > 0 && data[0].session_id) {
           console.log('[useChatSession] Found existing session:', data[0].session_id);
@@ -284,7 +291,7 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
     };
     
     initializeSession();
-  }, [userId, loadRecentChats, toast]);
+  }, [userId, session, loadRecentChats]);
 
   return {
     currentSessionId,
