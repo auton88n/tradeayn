@@ -68,6 +68,17 @@ const Support = () => {
     }
   };
 
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      open: 'Open',
+      in_progress: 'In Progress',
+      waiting_reply: 'Response Received',
+      resolved: 'Resolved',
+      closed: 'Closed',
+    };
+    return labels[status] || status.replace('_', ' ');
+  };
+
   const translations = {
     en: {
       title: 'Support Center',
@@ -207,7 +218,7 @@ const Support = () => {
                               </div>
                             </div>
                             <Badge className={getStatusColor(ticket.status)}>
-                              {ticket.status.replace('_', ' ')}
+                              {getStatusLabel(ticket.status)}
                             </Badge>
                           </div>
                         </div>
