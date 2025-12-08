@@ -26,6 +26,7 @@ import { UserManagement } from '@/components/admin/UserManagement';
 import { RateLimitMonitoring } from '@/components/admin/RateLimitMonitoring';
 import { SystemSettings } from '@/components/admin/SystemSettings';
 import { ApplicationManagement, ServiceApplication } from '@/components/admin/ApplicationManagement';
+import SupportManagement from '@/components/admin/SupportManagement';
 
 // Supabase config - use direct values to avoid any import issues
 const SUPABASE_URL = 'https://dfkoxuokfkttjhfjcecx.supabase.co';
@@ -345,6 +346,9 @@ export const AdminPanel = ({ session, onBackClick }: AdminPanelProps) => {
                   applications={applications}
                   onRefresh={fetchData}
                 />
+              )}
+              {activeTab === 'support' && (
+                <SupportManagement />
               )}
               {activeTab === 'users' && (
                 <UserManagement 
