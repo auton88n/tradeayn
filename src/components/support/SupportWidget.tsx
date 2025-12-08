@@ -24,23 +24,21 @@ const SupportWidget: React.FC<SupportWidgetProps> = ({ open, onClose }) => {
   return (
     <AnimatePresence>
       {open && (
-        <>
-          {/* Backdrop */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={onClose}
+        >
+          {/* Premium Support Panel - Centered */}
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
-            onClick={onClose}
-          />
-          
-          {/* Premium Support Panel */}
-          <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
             transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-            className="fixed bottom-6 right-6 z-50 w-[400px] max-w-[calc(100vw-48px)] max-h-[600px] overflow-hidden rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.12),0_20px_60px_rgba(0,0,0,0.08)]"
+            className="w-[400px] max-w-[calc(100vw-32px)] max-h-[80vh] overflow-hidden rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.12),0_20px_60px_rgba(0,0,0,0.08)]"
+            onClick={(e) => e.stopPropagation()}
           >
             {/* Glass panel with accent line */}
             <div className="relative bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-border/50">
@@ -110,7 +108,7 @@ const SupportWidget: React.FC<SupportWidgetProps> = ({ open, onClose }) => {
               </Tabs>
             </div>
           </motion.div>
-        </>
+        </motion.div>
       )}
     </AnimatePresence>
   );
