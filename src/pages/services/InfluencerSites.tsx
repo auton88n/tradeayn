@@ -460,7 +460,7 @@ const InfluencerSites = () => {
           }} transition={{
             delay: index * 0.1
           }} className="text-center relative">
-                {index < process.length - 1 && <div className="hidden md:block absolute top-8 left-1/2 w-full h-px bg-neutral-800" />}
+                {index < process.length - 1 && <div dir="ltr" className="hidden md:block absolute top-8 left-1/2 w-full h-px bg-neutral-800" />}
                 <div className="w-16 h-16 bg-rose-500/20 border border-rose-500/30 rounded-2xl mx-auto mb-4 flex items-center justify-center relative z-10">
                   <span className="text-xl font-bold text-rose-400">{step.step}</span>
                 </div>
