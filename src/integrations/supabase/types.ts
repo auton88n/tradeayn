@@ -176,6 +176,47 @@ export type Database = {
         }
         Relationships: []
       }
+      application_replies: {
+        Row: {
+          application_id: string
+          created_at: string | null
+          email_error: string | null
+          email_sent: boolean | null
+          id: string
+          message: string
+          sent_by: string | null
+          subject: string
+        }
+        Insert: {
+          application_id: string
+          created_at?: string | null
+          email_error?: string | null
+          email_sent?: boolean | null
+          id?: string
+          message: string
+          sent_by?: string | null
+          subject: string
+        }
+        Update: {
+          application_id?: string
+          created_at?: string | null
+          email_error?: string | null
+          email_sent?: boolean | null
+          id?: string
+          message?: string
+          sent_by?: string | null
+          subject?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "application_replies_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "service_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contact_messages: {
         Row: {
           created_at: string
@@ -667,11 +708,15 @@ export type Database = {
       }
       service_applications: {
         Row: {
+          assigned_to: string | null
           created_at: string
           custom_fields: Json | null
           email: string
+          email_error: string | null
+          email_sent: boolean | null
           full_name: string
           id: string
+          last_contacted_at: string | null
           message: string | null
           phone: string | null
           service_type: string
@@ -679,11 +724,15 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          assigned_to?: string | null
           created_at?: string
           custom_fields?: Json | null
           email: string
+          email_error?: string | null
+          email_sent?: boolean | null
           full_name: string
           id?: string
+          last_contacted_at?: string | null
           message?: string | null
           phone?: string | null
           service_type: string
@@ -691,11 +740,15 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          assigned_to?: string | null
           created_at?: string
           custom_fields?: Json | null
           email?: string
+          email_error?: string | null
+          email_sent?: boolean | null
           full_name?: string
           id?: string
+          last_contacted_at?: string | null
           message?: string | null
           phone?: string | null
           service_type?: string

@@ -5,6 +5,7 @@ import { useTheme } from 'next-themes';
 import { Session } from '@supabase/supabase-js';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { 
   ArrowLeft, 
@@ -15,6 +16,7 @@ import {
   Users, 
   Shield, 
   Settings,
+  FileText,
   Loader2
 } from 'lucide-react';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -22,6 +24,7 @@ import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { UserManagement } from '@/components/admin/UserManagement';
 import { RateLimitMonitoring } from '@/components/admin/RateLimitMonitoring';
 import { SystemSettings } from '@/components/admin/SystemSettings';
+import { ApplicationManagement, ServiceApplication } from '@/components/admin/ApplicationManagement';
 
 // Supabase config - use direct values to avoid any import issues
 const SUPABASE_URL = 'https://dfkoxuokfkttjhfjcecx.supabase.co';
@@ -71,6 +74,7 @@ interface AdminPanelProps {
 
 const tabs = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+  { id: 'applications', label: 'Applications', icon: FileText },
   { id: 'users', label: 'Users', icon: Users },
   { id: 'rate-limits', label: 'Rate Limits', icon: Shield },
   { id: 'settings', label: 'Settings', icon: Settings },
@@ -84,6 +88,7 @@ export const AdminPanel = ({ session, onBackClick }: AdminPanelProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [allUsers, setAllUsers] = useState<AccessGrantWithProfile[]>([]);
+  const [applications, setApplications] = useState<ServiceApplication[]>([]);
   const [systemMetrics, setSystemMetrics] = useState<SystemMetrics>({
     totalUsers: 0,
     activeUsers: 0,
@@ -123,11 +128,12 @@ export const AdminPanel = ({ session, onBackClick }: AdminPanelProps) => {
   const fetchData = useCallback(async () => {
     try {
       // Fetch all data in parallel using direct REST API
-      const [usersData, profilesData, messagesData, configData] = await Promise.all([
+      const [usersData, profilesData, messagesData, configData, applicationsData] = await Promise.all([
         fetchWithAuth('access_grants?select=*&order=created_at.desc'),
         fetchWithAuth('profiles?select=user_id,company_name,contact_person,avatar_url'),
         fetchWithAuth(`messages?select=id&created_at=gte.${new Date().toISOString().split('T')[0]}`),
         fetchWithAuth('system_config?select=key,value'),
+        fetchWithAuth('service_applications?select=*&order=created_at.desc'),
       ]);
 
       // Map profiles to users
@@ -141,6 +147,7 @@ export const AdminPanel = ({ session, onBackClick }: AdminPanelProps) => {
       }));
 
       setAllUsers(usersWithProfiles);
+      setApplications(applicationsData || []);
 
       // Calculate metrics
       const activeCount = usersWithProfiles.filter((u: AccessGrantWithProfile) => u.is_active).length;
@@ -287,9 +294,10 @@ export const AdminPanel = ({ session, onBackClick }: AdminPanelProps) => {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 p-1 bg-muted/50 rounded-xl w-fit">
+      <div className="flex gap-2 p-1 bg-muted/50 rounded-xl w-fit flex-wrap">
         {tabs.map(tab => {
           const Icon = tab.icon;
+          const newAppsCount = tab.id === 'applications' ? applications.filter(a => a.status === 'new').length : 0;
           return (
             <button
               key={tab.id}
@@ -302,6 +310,11 @@ export const AdminPanel = ({ session, onBackClick }: AdminPanelProps) => {
             >
               <Icon className="w-4 h-4" />
               {tab.label}
+              {newAppsCount > 0 && (
+                <Badge variant="destructive" className="ml-1 text-xs px-1.5 py-0">
+                  {newAppsCount}
+                </Badge>
+              )}
             </button>
           );
         })}
@@ -322,6 +335,13 @@ export const AdminPanel = ({ session, onBackClick }: AdminPanelProps) => {
                 <AdminDashboard 
                   systemMetrics={systemMetrics} 
                   allUsers={allUsers} 
+                />
+              )}
+              {activeTab === 'applications' && (
+                <ApplicationManagement
+                  session={session}
+                  applications={applications}
+                  onRefresh={fetchData}
                 />
               )}
               {activeTab === 'users' && (
