@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode, useRef, useMemo } from 'react';
+import { hapticFeedback } from '@/lib/haptics';
 
 export type AYNEmotion = 'calm' | 'happy' | 'excited' | 'thinking' | 'frustrated' | 'curious';
 
@@ -127,11 +128,18 @@ export const AYNEmotionProvider = ({ children }: { children: ReactNode }) => {
   const winkTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const setEmotion = useCallback((newEmotion: AYNEmotion) => {
-    setEmotionState(newEmotion);
+    setEmotionState(prevEmotion => {
+      // Trigger haptic feedback when emotion changes
+      if (newEmotion !== prevEmotion) {
+        hapticFeedback(newEmotion);
+      }
+      return newEmotion;
+    });
   }, []);
 
   const triggerAbsorption = useCallback(() => {
     setIsAbsorbing(true);
+    hapticFeedback('light'); // Subtle feedback when message absorbed
     setTimeout(() => setIsAbsorbing(false), 300);
   }, []);
 
@@ -169,6 +177,7 @@ export const AYNEmotionProvider = ({ children }: { children: ReactNode }) => {
       clearTimeout(surpriseTimeoutRef.current);
     }
     setIsSurprised(true);
+    hapticFeedback('excited'); // Two quick bursts for excitement
     surpriseTimeoutRef.current = setTimeout(() => {
       setIsSurprised(false);
     }, 600);
@@ -192,6 +201,7 @@ export const AYNEmotionProvider = ({ children }: { children: ReactNode }) => {
       clearTimeout(pulseTimeoutRef.current);
     }
     setIsPulsing(true);
+    hapticFeedback('pulse'); // Subtle pulse for new message
     pulseTimeoutRef.current = setTimeout(() => {
       setIsPulsing(false);
     }, 400);
