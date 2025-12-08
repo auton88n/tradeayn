@@ -394,11 +394,11 @@ const LandingPage = () => {
             </span>
 
             <h2 className="text-3xl md:text-5xl lg:text-6xl font-serif font-bold mb-4 md:mb-6">
-              {language === 'ar' ? 'ذكاء اصطناعي مصمّم لك' : 'AI That Actually Understands You'}
+              {language === 'ar' ? 'رفيقك الذكي في الحياة' : 'Your Intelligent Life Companion'}
             </h2>
 
             <p className="text-base md:text-xl text-muted-foreground max-w-3xl mx-auto mb-10 md:mb-16">
-              {language === 'ar' ? 'صُنع للشرق الأوسط. يجمع بين أحدث تقنيات الذكاء الاصطناعي وفهم عميق لأسواقنا. نتكلم لغتك—بكل معانيها.' : 'Built for the Middle East, AYN combines cutting-edge AI with deep understanding of regional business needs. We speak your language—literally and figuratively.'}
+              {language === 'ar' ? 'AYN يتعرّف عليك. يتعلم عاداتك، يفهم أهدافك، ويساعدك على البقاء منظمًا ومركزًا كل يوم.' : 'AYN gets to know you. It learns your habits, understands your goals, and helps you stay organized and focused every day.'}
             </p>
           </ScrollReveal>
 
@@ -410,10 +410,10 @@ const LandingPage = () => {
                   <Brain className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
                 </div>
                 <h3 className="text-lg md:text-xl font-bold">
-                  {language === 'ar' ? 'يفهم عملك' : 'Contextual Intelligence'}
+                  {language === 'ar' ? 'يتكيّف معك' : 'Adaptive Understanding'}
                 </h3>
                 <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-                  {language === 'ar' ? 'يدرك تفاصيل مجالك ونموذج عملك والتحديات التي تواجهها' : 'Understands your industry, business model, and specific challenges'}
+                  {language === 'ar' ? 'يتعلم تفضيلاتك ويقدم لك إرشادات مخصصة تناسب أسلوب حياتك.' : 'Learns your preferences over time and offers personalized guidance tailored to you.'}
                 </p>
               </div>
             </ScrollReveal>
@@ -421,13 +421,13 @@ const LandingPage = () => {
             <ScrollReveal delay={0.2}>
               <div className="text-center space-y-3 md:space-y-4">
                 <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-muted/50 mx-auto flex items-center justify-center">
-                  <Globe className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
+                  <Sparkles className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
                 </div>
                 <h3 className="text-lg md:text-xl font-bold">
-                  {language === 'ar' ? 'عربي وإنجليزي بطلاقة' : 'Bilingual by Design'}
+                  {language === 'ar' ? 'دائمًا بجانبك' : 'Always Available'}
                 </h3>
                 <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-                  {language === 'ar' ? 'تنقّل بين اللغتين بسلاسة تامة وفهم طبيعي' : 'Seamlessly switch between Arabic and English with native understanding'}
+                  {language === 'ar' ? 'رفيق متاح على مدار الساعة، جاهز لمساعدتك في أي وقت.' : 'A thoughtful companion available 24/7, ready to help whenever you need support or clarity.'}
                 </p>
               </div>
             </ScrollReveal>
@@ -438,10 +438,10 @@ const LandingPage = () => {
                   <Shield className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
                 </div>
                 <h3 className="text-lg md:text-xl font-bold">
-                  {language === 'ar' ? 'حماية بمستوى البنوك' : 'Enterprise Security'}
+                  {language === 'ar' ? 'خصوصيتك محمية' : 'Your Privacy, Protected'}
                 </h3>
                 <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-                  {language === 'ar' ? 'تشفير متقدم وخصوصية مطلقة لبياناتك' : 'Bank-level encryption with complete data privacy and compliance'}
+                  {language === 'ar' ? 'محادثاتك وبياناتك مشفرة بالكامل. لا نشارك معلوماتك أبدًا.' : 'Your conversations and data are secured with end-to-end encryption. We never share your information.'}
                 </p>
               </div>
             </ScrollReveal>
