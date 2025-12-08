@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from 'next-themes';
-import { supabase } from '@/integrations/supabase/client';
+import { Session } from '@supabase/supabase-js';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
@@ -22,6 +22,10 @@ import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { UserManagement } from '@/components/admin/UserManagement';
 import { RateLimitMonitoring } from '@/components/admin/RateLimitMonitoring';
 import { SystemSettings } from '@/components/admin/SystemSettings';
+
+// Supabase config - use direct values to avoid any import issues
+const SUPABASE_URL = 'https://dfkoxuokfkttjhfjcecx.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRma294dW9rZmt0dGpoZmpjZWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYzNTg4NzMsImV4cCI6MjA3MTkzNDg3M30.Th_-ds6dHsxIhRpkzJLREwBIVdgkcdm2SmMNDmjNbxw';
 
 // Types
 interface Profile {
@@ -61,6 +65,7 @@ interface SystemConfig {
 }
 
 interface AdminPanelProps {
+  session: Session;
   onBackClick?: () => void;
 }
 
@@ -71,7 +76,7 @@ const tabs = [
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
-export const AdminPanel = ({ onBackClick }: AdminPanelProps) => {
+export const AdminPanel = ({ session, onBackClick }: AdminPanelProps) => {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   
@@ -95,24 +100,42 @@ export const AdminPanel = ({ onBackClick }: AdminPanelProps) => {
     sessionTimeout: 30,
   });
 
+  // Direct REST API fetch to avoid Supabase client deadlock
+  const fetchWithAuth = useCallback(async (endpoint: string, options: RequestInit = {}) => {
+    const token = session.access_token;
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}`, {
+      ...options,
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'apikey': SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+    
+    return response.json();
+  }, [session.access_token]);
+
   const fetchData = useCallback(async () => {
     try {
-      // Fetch all data in parallel
-      const [usersResult, profilesResult, messagesResult, configResult] = await Promise.all([
-        supabase.from('access_grants').select('*').order('created_at', { ascending: false }),
-        supabase.from('profiles').select('user_id, company_name, contact_person, avatar_url'),
-        supabase.from('messages').select('id', { count: 'exact' }).gte('created_at', new Date().toISOString().split('T')[0]),
-        supabase.from('system_config').select('key, value'),
+      // Fetch all data in parallel using direct REST API
+      const [usersData, profilesData, messagesData, configData] = await Promise.all([
+        fetchWithAuth('access_grants?select=*&order=created_at.desc'),
+        fetchWithAuth('profiles?select=user_id,company_name,contact_person,avatar_url'),
+        fetchWithAuth(`messages?select=id&created_at=gte.${new Date().toISOString().split('T')[0]}`),
+        fetchWithAuth('system_config?select=key,value'),
       ]);
 
-      if (usersResult.error) throw usersResult.error;
-      
       // Map profiles to users
       const profilesMap = new Map(
-        (profilesResult.data || []).map(p => [p.user_id, p])
+        (profilesData || []).map((p: { user_id: string; company_name: string | null; contact_person: string | null; avatar_url: string | null }) => [p.user_id, p])
       );
 
-      const usersWithProfiles: AccessGrantWithProfile[] = (usersResult.data || []).map(user => ({
+      const usersWithProfiles: AccessGrantWithProfile[] = (usersData || []).map((user: AccessGrantWithProfile) => ({
         ...user,
         profiles: profilesMap.get(user.user_id) || null,
       }));
@@ -120,20 +143,20 @@ export const AdminPanel = ({ onBackClick }: AdminPanelProps) => {
       setAllUsers(usersWithProfiles);
 
       // Calculate metrics
-      const activeCount = usersWithProfiles.filter(u => u.is_active).length;
-      const pendingCount = usersWithProfiles.filter(u => !u.is_active && !u.granted_at).length;
+      const activeCount = usersWithProfiles.filter((u: AccessGrantWithProfile) => u.is_active).length;
+      const pendingCount = usersWithProfiles.filter((u: AccessGrantWithProfile) => !u.is_active && !u.granted_at).length;
       
       setSystemMetrics({
         totalUsers: usersWithProfiles.length,
         activeUsers: activeCount,
         pendingUsers: pendingCount,
-        todayMessages: messagesResult.count || 0,
+        todayMessages: messagesData?.length || 0,
         weeklyGrowth: 0,
       });
 
       // Parse system config
-      if (configResult.data) {
-        const configMap = new Map(configResult.data.map(c => [c.key, c.value]));
+      if (configData) {
+        const configMap = new Map((configData as { key: string; value: unknown }[]).map((c: { key: string; value: unknown }) => [c.key, c.value]));
         setSystemConfig(prev => ({
           ...prev,
           maintenanceMode: (configMap.get('maintenance_mode') as boolean) || false,
@@ -151,7 +174,7 @@ export const AdminPanel = ({ onBackClick }: AdminPanelProps) => {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, []);
+  }, [fetchWithAuth]);
 
   useEffect(() => {
     fetchData();
@@ -192,9 +215,13 @@ export const AdminPanel = ({ onBackClick }: AdminPanelProps) => {
       for (const [key, value] of Object.entries(updates)) {
         const dbKey = keyMap[key];
         if (dbKey) {
-          await supabase
-            .from('system_config')
-            .upsert({ key: dbKey, value, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+          await fetchWithAuth(`system_config?key=eq.${dbKey}`, {
+            method: 'POST',
+            headers: {
+              'Prefer': 'resolution=merge-duplicates',
+            },
+            body: JSON.stringify({ key: dbKey, value, updated_at: new Date().toISOString() }),
+          });
         }
       }
 

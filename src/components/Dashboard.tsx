@@ -139,8 +139,8 @@ export default function Dashboard({ user, session }: DashboardProps) {
       {/* Main Content - conditionally render based on active view */}
       {activeView === 'admin' && auth.isAdmin ? (
         <div className="min-h-screen p-6 pt-16 bg-background">
-        <Suspense fallback={<AdminLoader />}>
-            <AdminPanel onBackClick={() => setActiveView('chat')} />
+          <Suspense fallback={<AdminLoader />}>
+            <AdminPanel session={session} onBackClick={() => setActiveView('chat')} />
           </Suspense>
         </div>
       ) : (
