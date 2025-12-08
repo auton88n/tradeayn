@@ -60,6 +60,11 @@ const AIAgents = () => {
     needMoreOptions: language === 'ar' ? 'تحتاج المزيد؟' : language === 'fr' ? 'Besoin de plus d\'options?' : 'Need more options?',
     detailedForm: language === 'ar' ? 'املأ النموذج المفصل' : language === 'fr' ? 'Remplir le formulaire détaillé' : 'Fill out the detailed form',
     connected: language === 'ar' ? 'متصل' : language === 'fr' ? 'Connecté' : 'Connected',
+    avgResponse: language === 'ar' ? 'متوسط الاستجابة' : language === 'fr' ? 'Réponse Moy.' : 'Avg. Response',
+    avgResponseValue: language === 'ar' ? 'أقل من ٢ ثانية' : language === 'fr' ? '< 2 secondes' : '< 2 seconds',
+    accuracyRate: language === 'ar' ? 'نسبة الدقة' : language === 'fr' ? 'Taux de Précision' : 'Accuracy Rate',
+    languages: language === 'ar' ? 'اللغات' : language === 'fr' ? 'Langues' : 'Languages',
+    languagesValue: language === 'ar' ? '+١٢ لغة مدعومة' : language === 'fr' ? '12+ Supportées' : '12+ Supported',
   };
 
   const fadeInUp = {
@@ -324,8 +329,8 @@ const AIAgents = () => {
                   <Zap className="w-4 h-4 md:w-5 md:h-5 text-purple-400" />
                 </div>
                 <div>
-                  <p className="text-xs text-neutral-500">Avg. Response</p>
-                  <p className="text-base md:text-lg font-bold text-purple-400">&lt; 2 seconds</p>
+                  <p className="text-xs text-neutral-500">{t.avgResponse}</p>
+                  <p className="text-base md:text-lg font-bold text-purple-400">{t.avgResponseValue}</p>
                 </div>
               </div>
             </motion.div>
@@ -336,7 +341,7 @@ const AIAgents = () => {
                   <BarChart3 className="w-4 h-4 md:w-5 md:h-5 text-green-400" />
                 </div>
                 <div>
-                  <p className="text-xs text-neutral-500">Accuracy Rate</p>
+                  <p className="text-xs text-neutral-500">{t.accuracyRate}</p>
                   <p className="text-base md:text-lg font-bold text-green-400">97.5%</p>
                 </div>
               </div>
@@ -348,8 +353,8 @@ const AIAgents = () => {
                   <Languages className="w-4 h-4 md:w-5 md:h-5 text-blue-400" />
                 </div>
                 <div>
-                  <p className="text-xs text-neutral-500">Languages</p>
-                  <p className="text-base md:text-lg font-bold text-blue-400">12+ Supported</p>
+                  <p className="text-xs text-neutral-500">{t.languages}</p>
+                  <p className="text-base md:text-lg font-bold text-blue-400">{t.languagesValue}</p>
                 </div>
               </div>
             </motion.div>
