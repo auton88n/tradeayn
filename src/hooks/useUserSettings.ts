@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseApi } from '@/lib/supabaseApi';
 import { useToast } from '@/hooks/use-toast';
 
 export interface UserSettings {
@@ -26,8 +26,8 @@ export interface DeviceSession {
   is_trusted: boolean;
 }
 
-// Accept userId as parameter to avoid getUser() deadlock
-export const useUserSettings = (userId: string) => {
+// Accept userId and accessToken as parameters to use REST API
+export const useUserSettings = (userId: string, accessToken?: string) => {
   const { toast } = useToast();
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [sessions, setSessions] = useState<DeviceSession[]>([]);
@@ -35,60 +35,56 @@ export const useUserSettings = (userId: string) => {
   const [updating, setUpdating] = useState(false);
 
   const fetchSettings = async () => {
-    if (!userId) {
+    if (!userId || !accessToken) {
       setLoading(false);
       return;
     }
 
     try {
-      const { data, error } = await supabase
-        .from('user_settings')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
+      const data = await supabaseApi.get<UserSettings[]>(
+        `user_settings?user_id=eq.${userId}`,
+        accessToken
+      );
 
-      if (error) {
-        // If no settings exist, create default settings
-        if (error.code === 'PGRST116') {
-          const { data: newSettings, error: insertError } = await supabase
-            .from('user_settings')
-            .insert({ user_id: userId })
-            .select()
-            .single();
+      if (!data || data.length === 0) {
+        // No settings exist, create default settings
+        const newSettings = await supabaseApi.post<UserSettings[]>(
+          'user_settings',
+          accessToken,
+          { user_id: userId }
+        );
 
-          if (insertError) throw insertError;
-          // Normalize newly created settings
+        if (newSettings && newSettings.length > 0) {
+          const created = newSettings[0];
           const normalizedNewSettings: UserSettings = {
-            id: newSettings.id,
-            user_id: newSettings.user_id,
-            email_system_alerts: newSettings.email_system_alerts ?? true,
-            email_usage_warnings: newSettings.email_usage_warnings ?? true,
-            email_marketing: newSettings.email_marketing ?? false,
-            email_weekly_summary: newSettings.email_weekly_summary ?? false,
-            in_app_sounds: newSettings.in_app_sounds ?? true,
-            desktop_notifications: newSettings.desktop_notifications ?? false,
-            allow_personalization: newSettings.allow_personalization ?? false,
-            store_chat_history: newSettings.store_chat_history ?? true,
-            share_anonymous_data: newSettings.share_anonymous_data ?? false,
+            id: created.id,
+            user_id: created.user_id,
+            email_system_alerts: created.email_system_alerts ?? true,
+            email_usage_warnings: created.email_usage_warnings ?? true,
+            email_marketing: created.email_marketing ?? false,
+            email_weekly_summary: created.email_weekly_summary ?? false,
+            in_app_sounds: created.in_app_sounds ?? true,
+            desktop_notifications: created.desktop_notifications ?? false,
+            allow_personalization: created.allow_personalization ?? false,
+            store_chat_history: created.store_chat_history ?? true,
+            share_anonymous_data: created.share_anonymous_data ?? false,
           };
           setSettings(normalizedNewSettings);
-        } else {
-          throw error;
         }
       } else {
-        // Normalize settings data with defaults for boolean fields
+        const fetched = data[0];
         const normalizedSettings: UserSettings = {
-          id: data.id,
-          user_id: data.user_id,
-          email_system_alerts: data.email_system_alerts ?? true,
-          email_usage_warnings: data.email_usage_warnings ?? true,
-          email_marketing: data.email_marketing ?? false,
-          email_weekly_summary: data.email_weekly_summary ?? false,
-          in_app_sounds: data.in_app_sounds ?? true,
-          desktop_notifications: data.desktop_notifications ?? false,
-          allow_personalization: data.allow_personalization ?? false,
-          store_chat_history: data.store_chat_history ?? true,
-          share_anonymous_data: data.share_anonymous_data ?? false,
+          id: fetched.id,
+          user_id: fetched.user_id,
+          email_system_alerts: fetched.email_system_alerts ?? true,
+          email_usage_warnings: fetched.email_usage_warnings ?? true,
+          email_marketing: fetched.email_marketing ?? false,
+          email_weekly_summary: fetched.email_weekly_summary ?? false,
+          in_app_sounds: fetched.in_app_sounds ?? true,
+          desktop_notifications: fetched.desktop_notifications ?? false,
+          allow_personalization: fetched.allow_personalization ?? false,
+          store_chat_history: fetched.store_chat_history ?? true,
+          share_anonymous_data: fetched.share_anonymous_data ?? false,
         };
         setSettings(normalizedSettings);
       }
@@ -105,19 +101,15 @@ export const useUserSettings = (userId: string) => {
   };
 
   const fetchSessions = async () => {
-    if (!userId) return;
+    if (!userId || !accessToken) return;
 
     try {
-      const { data, error } = await supabase
-        .from('device_fingerprints')
-        .select('*')
-        .eq('user_id', userId)
-        .order('last_seen', { ascending: false });
-
-      if (error) throw error;
+      const data = await supabaseApi.get<DeviceSession[]>(
+        `device_fingerprints?user_id=eq.${userId}&order=last_seen.desc`,
+        accessToken
+      );
       
-      // Normalize session data with defaults for nullable fields
-      const normalizedSessions: DeviceSession[] = (data || []).map(session => ({
+      const normalizedSessions: DeviceSession[] = (data || []).map((session: DeviceSession) => ({
         id: session.id,
         fingerprint_hash: session.fingerprint_hash,
         device_info: session.device_info as Record<string, unknown> | null,
@@ -133,16 +125,15 @@ export const useUserSettings = (userId: string) => {
   };
 
   const updateSettings = async (updates: Partial<UserSettings>) => {
-    if (!settings || !userId) return;
+    if (!settings || !userId || !accessToken) return;
 
     setUpdating(true);
     try {
-      const { error } = await supabase
-        .from('user_settings')
-        .update(updates)
-        .eq('user_id', userId);
-
-      if (error) throw error;
+      await supabaseApi.patch(
+        `user_settings?user_id=eq.${userId}`,
+        accessToken,
+        updates
+      );
 
       setSettings({ ...settings, ...updates });
       toast({
@@ -162,13 +153,13 @@ export const useUserSettings = (userId: string) => {
   };
 
   const revokeSession = async (sessionId: string) => {
+    if (!accessToken) return;
+    
     try {
-      const { error } = await supabase
-        .from('device_fingerprints')
-        .delete()
-        .eq('id', sessionId);
-
-      if (error) throw error;
+      await supabaseApi.delete(
+        `device_fingerprints?id=eq.${sessionId}`,
+        accessToken
+      );
 
       setSessions(sessions.filter(s => s.id !== sessionId));
       toast({
@@ -186,16 +177,16 @@ export const useUserSettings = (userId: string) => {
   };
 
   const signOutAllDevices = async () => {
-    if (!userId) return;
+    if (!userId || !accessToken) return;
 
     try {
-      const { error } = await supabase
-        .from('device_fingerprints')
-        .delete()
-        .eq('user_id', userId);
+      await supabaseApi.delete(
+        `device_fingerprints?user_id=eq.${userId}`,
+        accessToken
+      );
 
-      if (error) throw error;
-
+      // Import supabase client only for signOut
+      const { supabase } = await import('@/integrations/supabase/client');
       await supabase.auth.signOut();
       
       toast({
@@ -213,11 +204,11 @@ export const useUserSettings = (userId: string) => {
   };
 
   useEffect(() => {
-    if (userId) {
+    if (userId && accessToken) {
       fetchSettings();
       fetchSessions();
     }
-  }, [userId]);
+  }, [userId, accessToken]);
 
   return {
     settings,

@@ -49,30 +49,3 @@ export function isValidUserInput(input: string): boolean {
 
   return !dangerousPatterns.some(pattern => pattern.test(input));
 }
-
-/**
- * Rate limiting check (client-side helper)
- */
-export function checkRateLimit(
-  key: string, 
-  maxAttempts: number = 5, 
-  windowMs: number = 15 * 60 * 1000 // 15 minutes
-): boolean {
-  const now = Date.now();
-  const windowKey = `rate_limit_${key}`;
-  
-  const storedData = localStorage.getItem(windowKey);
-  let attempts: number[] = storedData ? JSON.parse(storedData) : [];
-  
-  // Clean old attempts outside the window
-  attempts = attempts.filter(timestamp => now - timestamp < windowMs);
-  
-  if (attempts.length >= maxAttempts) {
-    return false; // Rate limit exceeded
-  }
-  
-  attempts.push(now);
-  localStorage.setItem(windowKey, JSON.stringify(attempts));
-  
-  return true;
-}

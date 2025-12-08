@@ -44,12 +44,6 @@ const getModes = (): AIModeConfig[] => [
     color: 'text-slate-500',
     webhookUrl: ''
   },
-  // TODO: Re-enable these modes after testing
-  // { name: 'Nen Mode ⚡', translatedName: t('modes.nenMode') + ' ⚡', description: 'Ultra-fast AI responses', icon: TrendingUp, color: 'text-blue-500', webhookUrl: '' },
-  // { name: 'Research Pro', translatedName: t('modes.researchPro'), description: 'Deep research and analysis', icon: Search, color: 'text-green-500', webhookUrl: '' },
-  // { name: 'PDF Analyst', translatedName: t('modes.pdfAnalyst'), description: 'Document analysis', icon: FileText, color: 'text-purple-500', webhookUrl: '' },
-  // { name: 'Vision Lab', translatedName: t('modes.visionLab'), description: 'Image analysis', icon: Eye, color: 'text-orange-500', webhookUrl: '' },
-  // { name: 'Civil Engineering', translatedName: t('modes.civilEngineering'), description: 'Engineering calculations', icon: Hammer, color: 'text-teal-500', webhookUrl: '' },
 ];
 
 export const DashboardContainer = ({ user, session, auth, isAdmin, onAdminPanelClick }: DashboardContainerProps) => {
