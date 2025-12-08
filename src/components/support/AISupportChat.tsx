@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Send, Bot, User, Ticket } from 'lucide-react';
+import { Send, Brain, User, Ticket, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { MessageFormatter } from '@/components/MessageFormatter';
 
 interface Message {
   id: string;
@@ -22,7 +23,7 @@ const AISupportChat: React.FC<AISupportChatProps> = ({ onNeedTicket }) => {
     {
       id: '1',
       role: 'assistant',
-      content: "Hi! I'm AYN's AI support assistant. How can I help you today? I can answer questions about features, troubleshoot issues, or help you create a support ticket.",
+      content: "Hi! I'm **AYN's AI support assistant**. How can I help you today?\n\nI can:\n- Answer questions about features\n- Troubleshoot issues\n- Help you create a support ticket",
     },
   ]);
   const [input, setInput] = useState('');
@@ -83,7 +84,7 @@ const AISupportChat: React.FC<AISupportChatProps> = ({ onNeedTicket }) => {
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: "I'm having trouble responding right now. Would you like to create a support ticket instead?",
+        content: "I'm having trouble responding right now. Would you like to **create a support ticket** instead?",
       };
       setMessages(prev => [...prev, errorMessage]);
       setShowTicketPrompt(true);
@@ -101,32 +102,44 @@ const AISupportChat: React.FC<AISupportChatProps> = ({ onNeedTicket }) => {
 
   return (
     <div className="flex flex-col h-full">
-      <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-        <div className="space-y-4">
+      <ScrollArea className="flex-1 px-3 py-4" ref={scrollRef}>
+        <div className="space-y-3">
           {messages.map((message, index) => (
             <motion.div
               key={message.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-              className={`flex gap-2 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              initial={{ opacity: 0, y: 8, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ 
+                delay: index * 0.03,
+                type: 'spring',
+                stiffness: 400,
+                damping: 25
+              }}
+              className={`flex gap-2.5 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               {message.role === 'assistant' && (
-                <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                  <Bot className="h-4 w-4 text-primary" />
+                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 backdrop-blur-sm flex items-center justify-center shrink-0 shadow-sm border border-primary/10">
+                  <Brain className="h-4 w-4 text-primary" />
                 </div>
               )}
               <div
-                className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${
+                className={`max-w-[85%] rounded-2xl text-sm overflow-hidden ${
                   message.role === 'user'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted/70 text-foreground'
+                    ? 'bg-foreground text-background px-4 py-2.5 shadow-md'
+                    : 'bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm text-foreground px-4 py-3 shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-border/50'
                 }`}
               >
-                {message.content}
+                {message.role === 'assistant' ? (
+                  <MessageFormatter 
+                    content={message.content} 
+                    className="text-sm [&_p]:text-sm [&_li]:text-sm [&_h1]:text-base [&_h2]:text-sm [&_h3]:text-sm [&_pre]:text-xs [&_code]:text-xs"
+                  />
+                ) : (
+                  <span>{message.content}</span>
+                )}
               </div>
               {message.role === 'user' && (
-                <div className="h-7 w-7 rounded-full bg-foreground/10 flex items-center justify-center shrink-0">
+                <div className="h-8 w-8 rounded-full bg-foreground/10 flex items-center justify-center shrink-0 border border-border/50">
                   <User className="h-4 w-4 text-foreground" />
                 </div>
               )}
@@ -134,33 +147,44 @@ const AISupportChat: React.FC<AISupportChatProps> = ({ onNeedTicket }) => {
           ))}
 
           {isLoading && (
-            <div className="flex gap-2 justify-start">
-              <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                <Bot className="h-4 w-4 text-primary" />
+            <motion.div 
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex gap-2.5 justify-start"
+            >
+              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 backdrop-blur-sm flex items-center justify-center shrink-0 shadow-sm border border-primary/10">
+                <Brain className="h-4 w-4 text-primary animate-pulse" />
               </div>
-              <div className="bg-muted/70 rounded-2xl px-4 py-2.5">
-                <div className="flex gap-1">
-                  <span className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <span className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <span className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-2xl px-4 py-3 shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-border/50">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 bg-primary/60 rounded-full animate-[pulse_1s_ease-in-out_infinite]" />
+                  <span className="w-2 h-2 bg-primary/60 rounded-full animate-[pulse_1s_ease-in-out_infinite_150ms]" />
+                  <span className="w-2 h-2 bg-primary/60 rounded-full animate-[pulse_1s_ease-in-out_infinite_300ms]" />
+                  <span className="text-xs text-muted-foreground ml-1.5">Thinking...</span>
                 </div>
               </div>
-            </div>
+            </motion.div>
           )}
 
           {showTicketPrompt && (
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-primary/5 border border-primary/20 rounded-xl p-3 text-center"
+              initial={{ opacity: 0, y: 8, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              className="bg-gradient-to-br from-primary/5 to-primary/10 backdrop-blur-sm border border-primary/20 rounded-2xl p-4 text-center shadow-sm"
             >
-              <p className="text-sm text-muted-foreground mb-2">
-                Need to speak with a human?
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <p className="text-sm font-medium text-foreground">
+                  Need to speak with a human?
+                </p>
+              </div>
+              <p className="text-xs text-muted-foreground mb-3">
+                Our support team typically responds within 24 hours
               </p>
               <Button
                 size="sm"
                 onClick={onNeedTicket}
-                className="gap-1.5"
+                className="gap-1.5 shadow-md hover:shadow-lg transition-shadow"
               >
                 <Ticket className="h-4 w-4" />
                 Create Support Ticket
@@ -170,20 +194,22 @@ const AISupportChat: React.FC<AISupportChatProps> = ({ onNeedTicket }) => {
         </div>
       </ScrollArea>
 
-      <div className="p-3 border-t border-border bg-background">
+      {/* Premium Input Area */}
+      <div className="p-3 border-t border-border/50 bg-gradient-to-t from-muted/30 to-transparent">
         <div className="flex gap-2">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Type your question..."
+            placeholder="Ask anything..."
             disabled={isLoading}
-            className="flex-1"
+            className="flex-1 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-border/50 focus-visible:ring-primary/30 rounded-xl"
           />
           <Button
             size="icon"
             onClick={sendMessage}
             disabled={!input.trim() || isLoading}
+            className="rounded-xl shadow-md hover:shadow-lg transition-all shrink-0"
           >
             <Send className="h-4 w-4" />
           </Button>
