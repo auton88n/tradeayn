@@ -142,9 +142,7 @@ const Automation = () => {
         }} transition={{
           duration: 0.8
         }}>
-            <span className="text-sm font-mono text-emerald-400 tracking-wider uppercase mb-4 block">
-              03 — Our Services
-            </span>
+            
             <h1 className="text-4xl md:text-6xl lg:text-8xl font-serif font-bold mb-6">
               Process <span className="text-emerald-400">Automation</span>
             </h1>
@@ -453,7 +451,10 @@ const Automation = () => {
 
           {/* Desktop: Orbiting layout */}
             <div className="hidden md:flex items-center justify-center mt-8 mb-16">
-              <div className="relative flex items-center justify-center" style={{ width: '200px', height: '200px' }}>
+              <div className="relative flex items-center justify-center" style={{
+              width: '200px',
+              height: '200px'
+            }}>
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/30">
                   <Brain className="w-8 h-8 text-white" />
                 </div>
