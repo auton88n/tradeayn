@@ -445,7 +445,7 @@ const LandingPage = () => {
             </h2>
 
             <p className="text-base md:text-xl text-muted-foreground max-w-3xl mx-auto mb-10 md:mb-16">
-              {language === 'ar' ? 'AYN يتعرّف عليك ويتعلم عاداتك ويساعدك على البقاء منظماً ومركزاً كل يوم.' : language === 'fr' ? 'AYN apprend à vous connaître. Il comprend vos habitudes, vos objectifs, et vous aide à rester organisé et concentré chaque jour.' : 'AYN gets to know you. It learns your habits, understands your goals, and helps you stay organized and focused every day.'}
+              {language === 'ar' ? 'AYN يتعرّف عليك ويتعلم عاداتك ويساعدك على البقاء منظماً كل يوم.' : language === 'fr' ? 'AYN apprend à vous connaître. Il comprend vos habitudes, vos objectifs, et vous aide à rester organisé et concentré chaque jour.' : 'AYN gets to know you. It learns your habits, understands your goals, and helps you stay organized and focused every day.'}
             </p>
           </ScrollReveal>
 
