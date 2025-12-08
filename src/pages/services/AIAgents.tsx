@@ -65,6 +65,14 @@ const AIAgents = () => {
     accuracyRate: language === 'ar' ? 'نسبة الدقة' : language === 'fr' ? 'Taux de Précision' : 'Accuracy Rate',
     languages: language === 'ar' ? 'اللغات' : language === 'fr' ? 'Langues' : 'Languages',
     languagesValue: language === 'ar' ? '+١٢ لغة مدعومة' : language === 'fr' ? '12+ Supportées' : '12+ Supported',
+    // Chat mockup translations
+    chatGreeting: language === 'ar' ? 'مرحباً! أنا مساعدك الذكي. كيف يمكنني مساعدتك اليوم؟' : language === 'fr' ? 'Bonjour ! Je suis votre assistant IA. Comment puis-je vous aider ?' : "Hello! I'm your AI assistant. How can I help you today?",
+    chatQuestion: language === 'ar' ? 'ما هي خيارات الأسعار لديكم؟' : language === 'fr' ? 'Quelles sont vos options de tarification ?' : 'What are your pricing options?',
+    chatAnswer: language === 'ar' ? 'سؤال رائع! نقدم ثلاث خطط مرنة:' : language === 'fr' ? 'Excellente question ! Nous proposons trois formules flexibles :' : 'Great question! We offer three flexible plans:',
+    planStarter: language === 'ar' ? 'المبتدئ: $99/شهر - مثالي للشركات الصغيرة' : language === 'fr' ? 'Starter: 99$/mois - Parfait pour les petites entreprises' : 'Starter: $99/mo - Perfect for small businesses',
+    planPro: language === 'ar' ? 'الاحترافي: $249/شهر - مثالي للفرق النامية' : language === 'fr' ? 'Pro: 249$/mois - Idéal pour les équipes en croissance' : 'Pro: $249/mo - Ideal for growing teams',
+    planEnterprise: language === 'ar' ? 'المؤسسات: أسعار مخصصة للمؤسسات الكبيرة' : language === 'fr' ? 'Entreprise: Tarification personnalisée' : 'Enterprise: Custom pricing for large organizations',
+    chatFollowUp: language === 'ar' ? 'هل تريد أن أشرح لك ميزات كل خطة؟' : language === 'fr' ? 'Voulez-vous que je vous explique les fonctionnalités ?' : 'Would you like me to explain the features of each plan?',
   };
 
   const fadeInUp = {
@@ -291,13 +299,13 @@ const AIAgents = () => {
                       <Bot className="w-5 h-5 text-purple-400" />
                     </div>
                     <div className="bg-neutral-800/50 rounded-2xl rounded-tl-md px-5 py-4 max-w-md">
-                      <p className="text-neutral-200">Hello! I'm your AI assistant. How can I help you today?</p>
+                      <p className="text-neutral-200">{t.chatGreeting}</p>
                     </div>
                   </div>
 
-                  <div className="flex gap-3 justify-end">
+                  <div className={`flex gap-3 justify-end ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
                     <div className="bg-purple-500/20 rounded-2xl rounded-tr-md px-5 py-4 max-w-md">
-                      <p className="text-neutral-200">What are your pricing options?</p>
+                      <p className="text-neutral-200">{t.chatQuestion}</p>
                     </div>
                     <div className="w-10 h-10 rounded-full bg-neutral-700 flex items-center justify-center flex-shrink-0">
                       <span className="text-sm font-medium">JD</span>
@@ -309,13 +317,13 @@ const AIAgents = () => {
                       <Bot className="w-5 h-5 text-purple-400" />
                     </div>
                     <div className="bg-neutral-800/50 rounded-2xl rounded-tl-md px-5 py-4 max-w-md">
-                      <p className="text-neutral-200">Great question! We offer three flexible plans:</p>
+                      <p className="text-neutral-200">{t.chatAnswer}</p>
                       <ul className="mt-3 space-y-2 text-neutral-300 text-sm">
-                        <li>• <strong>Starter:</strong> $99/mo - Perfect for small businesses</li>
-                        <li>• <strong>Pro:</strong> $249/mo - Ideal for growing teams</li>
-                        <li>• <strong>Enterprise:</strong> Custom pricing for large organizations</li>
+                        <li>• {t.planStarter}</li>
+                        <li>• {t.planPro}</li>
+                        <li>• {t.planEnterprise}</li>
                       </ul>
-                      <p className="mt-3 text-neutral-200">Would you like me to explain the features of each plan?</p>
+                      <p className="mt-3 text-neutral-200">{t.chatFollowUp}</p>
                     </div>
                   </div>
                 </div>
