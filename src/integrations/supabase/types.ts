@@ -803,6 +803,7 @@ export type Database = {
           created_at: string
           guest_email: string | null
           guest_name: string | null
+          has_unread_reply: boolean
           id: string
           priority: Database["public"]["Enums"]["support_ticket_priority"]
           status: Database["public"]["Enums"]["support_ticket_status"]
@@ -816,6 +817,7 @@ export type Database = {
           created_at?: string
           guest_email?: string | null
           guest_name?: string | null
+          has_unread_reply?: boolean
           id?: string
           priority?: Database["public"]["Enums"]["support_ticket_priority"]
           status?: Database["public"]["Enums"]["support_ticket_status"]
@@ -829,6 +831,7 @@ export type Database = {
           created_at?: string
           guest_email?: string | null
           guest_name?: string | null
+          has_unread_reply?: boolean
           id?: string
           priority?: Database["public"]["Enums"]["support_ticket_priority"]
           status?: Database["public"]["Enums"]["support_ticket_status"]

@@ -20,6 +20,7 @@ interface SupportTicket {
   category: string;
   created_at: string;
   updated_at: string;
+  has_unread_reply: boolean;
 }
 
 const statusColors: Record<string, string> = {
@@ -113,7 +114,12 @@ export function TicketList({ onNewTicket, onSelectTicket }: TicketListProps) {
               className="w-full text-left p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors border border-border/30 hover:border-border/50"
             >
               <div className="flex items-start justify-between gap-2 mb-2">
-                <h4 className="font-medium text-sm line-clamp-2">{ticket.subject}</h4>
+                <div className="flex items-center gap-2">
+                  {ticket.has_unread_reply && (
+                    <span className="w-2 h-2 rounded-full bg-primary animate-pulse shrink-0" />
+                  )}
+                  <h4 className="font-medium text-sm line-clamp-2">{ticket.subject}</h4>
+                </div>
                 <Badge variant="secondary" className={`text-xs shrink-0 ${statusColors[ticket.status]}`}>
                   {statusLabels[ticket.status]}
                 </Badge>

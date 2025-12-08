@@ -114,9 +114,19 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
 
       if (error) throw error;
 
-      // Update ticket status to waiting_reply if it was open
+      // Update ticket status to waiting_reply and mark as unread if it was open
       if (status === 'open' && !isInternalNote) {
-        await updateStatus('waiting_reply');
+        await supabase
+          .from('support_tickets')
+          .update({ status: 'waiting_reply', has_unread_reply: true })
+          .eq('id', ticket.id);
+        setStatus('waiting_reply');
+      } else if (!isInternalNote) {
+        // Mark as unread for any non-internal reply
+        await supabase
+          .from('support_tickets')
+          .update({ has_unread_reply: true })
+          .eq('id', ticket.id);
       }
 
       setNewMessage('');
