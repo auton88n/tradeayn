@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { ChatHistory, Message, UseChatSessionReturn } from '@/types/dashboard.types';
@@ -8,7 +8,7 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
   const [recentChats, setRecentChats] = useState<ChatHistory[]>([]);
   const [selectedChats, setSelectedChats] = useState<Set<number>>(new Set());
   const [showChatSelection, setShowChatSelection] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const lastInitializedUserId = useRef<string | null>(null);
   const { toast } = useToast();
 
   // Load recent chat history
@@ -240,35 +240,51 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
   // Load recent chats on mount and set initial session
   useEffect(() => {
     const initializeSession = async () => {
-      if (!userId || isInitialized) return;
+      // Skip if no user or already initialized for this user
+      if (!userId || lastInitializedUserId.current === userId) return;
+      
+      console.log('[useChatSession] Initializing for user:', userId);
       
       try {
         // Check for most recent session with messages
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('messages')
           .select('session_id')
           .eq('user_id', userId)
           .order('created_at', { ascending: false })
           .limit(1);
         
+        if (error) {
+          console.error('[useChatSession] Error fetching session:', error);
+          toast({
+            title: 'Error',
+            description: 'Failed to load chat history.',
+            variant: "destructive"
+          });
+          setCurrentSessionId(crypto.randomUUID());
+          lastInitializedUserId.current = userId;
+          return;
+        }
+        
         if (data && data.length > 0 && data[0].session_id) {
+          console.log('[useChatSession] Found existing session:', data[0].session_id);
           setCurrentSessionId(data[0].session_id);
         } else {
-          // No existing messages, generate new session
+          console.log('[useChatSession] No existing session, creating new one');
           setCurrentSessionId(crypto.randomUUID());
         }
         
-        setIsInitialized(true);
+        lastInitializedUserId.current = userId;
         await loadRecentChats();
-      } catch {
-        // Fallback to new session on error
+      } catch (err) {
+        console.error('[useChatSession] Error initializing:', err);
         setCurrentSessionId(crypto.randomUUID());
-        setIsInitialized(true);
+        lastInitializedUserId.current = userId;
       }
     };
     
     initializeSession();
-  }, [userId, isInitialized, loadRecentChats]);
+  }, [userId, loadRecentChats, toast]);
 
   return {
     currentSessionId,
