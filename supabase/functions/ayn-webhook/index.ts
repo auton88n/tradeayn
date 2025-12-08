@@ -23,6 +23,21 @@ interface WebhookRequest {
   } | null;
   sessionId?: string;
   conversationHistory?: any[];
+  emotionHistory?: EmotionHistoryEntry[];
+}
+
+interface EmotionHistoryEntry {
+  emotion: UserEmotion;
+  intensity: number;
+  timestamp: string;
+}
+
+interface MoodPattern {
+  trend: 'improving' | 'declining' | 'stable' | 'volatile';
+  dominantEmotion: UserEmotion;
+  averageIntensity: number;
+  emotionCounts: Record<UserEmotion, number>;
+  adaptiveContext: string;
 }
 
 interface WebhookResponse {
@@ -35,6 +50,7 @@ interface WebhookResponse {
   error?: string;
   userEmotion?: EmotionAnalysis;
   suggestedAynEmotion?: string;
+  moodPattern?: MoodPattern;
 }
 
 // Emotion detection types and logic (ported from frontend)
@@ -153,6 +169,131 @@ function getEmpathyResponse(emotion: UserEmotion): { aynEmotion: string } {
     neutral: 'calm'
   };
   return { aynEmotion: mapping[emotion] || 'calm' };
+}
+
+// Mood pattern analysis - tracks emotion history to detect trends
+function analyzeMoodPattern(emotionHistory: EmotionHistoryEntry[], currentEmotion: EmotionAnalysis): MoodPattern {
+  const allEmotions = [...emotionHistory, { 
+    emotion: currentEmotion.emotion, 
+    intensity: currentEmotion.intensity, 
+    timestamp: new Date().toISOString() 
+  }];
+  
+  // Count emotions
+  const emotionCounts: Record<UserEmotion, number> = {
+    happy: 0, sad: 0, frustrated: 0, excited: 0, anxious: 0, confused: 0, neutral: 0
+  };
+  
+  let totalIntensity = 0;
+  for (const entry of allEmotions) {
+    emotionCounts[entry.emotion]++;
+    totalIntensity += entry.intensity;
+  }
+  
+  // Find dominant emotion
+  let dominantEmotion: UserEmotion = 'neutral';
+  let maxCount = 0;
+  for (const [emotion, count] of Object.entries(emotionCounts)) {
+    if (count > maxCount) {
+      maxCount = count;
+      dominantEmotion = emotion as UserEmotion;
+    }
+  }
+  
+  const averageIntensity = allEmotions.length > 0 ? totalIntensity / allEmotions.length : 0;
+  
+  // Determine trend based on recent vs earlier emotions
+  let trend: 'improving' | 'declining' | 'stable' | 'volatile' = 'stable';
+  
+  if (allEmotions.length >= 3) {
+    const positiveEmotions = ['happy', 'excited'];
+    const negativeEmotions = ['sad', 'frustrated', 'anxious'];
+    
+    const recentHalf = allEmotions.slice(-Math.ceil(allEmotions.length / 2));
+    const earlierHalf = allEmotions.slice(0, Math.floor(allEmotions.length / 2));
+    
+    const recentPositive = recentHalf.filter(e => positiveEmotions.includes(e.emotion)).length;
+    const recentNegative = recentHalf.filter(e => negativeEmotions.includes(e.emotion)).length;
+    const earlierPositive = earlierHalf.filter(e => positiveEmotions.includes(e.emotion)).length;
+    const earlierNegative = earlierHalf.filter(e => negativeEmotions.includes(e.emotion)).length;
+    
+    // Check for volatility (frequent emotion changes)
+    let changes = 0;
+    for (let i = 1; i < allEmotions.length; i++) {
+      if (allEmotions[i].emotion !== allEmotions[i-1].emotion) changes++;
+    }
+    const volatilityRatio = changes / Math.max(allEmotions.length - 1, 1);
+    
+    if (volatilityRatio > 0.7) {
+      trend = 'volatile';
+    } else if (recentPositive > earlierPositive && recentNegative < earlierNegative) {
+      trend = 'improving';
+    } else if (recentNegative > earlierNegative && recentPositive < earlierPositive) {
+      trend = 'declining';
+    }
+  }
+  
+  // Generate adaptive context based on pattern
+  const adaptiveContext = generateAdaptiveContext(trend, dominantEmotion, averageIntensity, emotionCounts);
+  
+  return {
+    trend,
+    dominantEmotion,
+    averageIntensity,
+    emotionCounts,
+    adaptiveContext
+  };
+}
+
+function generateAdaptiveContext(
+  trend: 'improving' | 'declining' | 'stable' | 'volatile',
+  dominantEmotion: UserEmotion,
+  averageIntensity: number,
+  emotionCounts: Record<UserEmotion, number>
+): string {
+  const contexts: string[] = [];
+  
+  // Trend-based context
+  switch (trend) {
+    case 'improving':
+      contexts.push('User mood is improving throughout the conversation. Maintain positive momentum.');
+      break;
+    case 'declining':
+      contexts.push('User mood has been declining. Be extra supportive and patient. Acknowledge any difficulties.');
+      break;
+    case 'volatile':
+      contexts.push('User emotions are fluctuating. Provide steady, grounding responses.');
+      break;
+  }
+  
+  // Dominant emotion context
+  if (dominantEmotion !== 'neutral') {
+    const persistentThreshold = 3;
+    if (emotionCounts[dominantEmotion] >= persistentThreshold) {
+      switch (dominantEmotion) {
+        case 'frustrated':
+          contexts.push('User has shown persistent frustration. Consider offering alternative approaches or asking if they need a break.');
+          break;
+        case 'confused':
+          contexts.push('User has been frequently confused. Simplify explanations and check understanding more often.');
+          break;
+        case 'anxious':
+          contexts.push('User has shown ongoing anxiety. Be reassuring and break down tasks into smaller steps.');
+          break;
+        case 'happy':
+        case 'excited':
+          contexts.push('User has been consistently positive. Match their enthusiasm!');
+          break;
+      }
+    }
+  }
+  
+  // High intensity warning
+  if (averageIntensity > 0.7) {
+    contexts.push('User is expressing emotions with high intensity. Be attentive and responsive.');
+  }
+  
+  return contexts.join(' ');
 }
 
 // Enhanced text processing utilities
@@ -397,7 +538,13 @@ serve(async (req) => {
     // Analyze user emotion from message
     const userEmotionAnalysis = analyzeUserEmotion(sanitizedMessage);
     const emotionContext = getEmotionContext(userEmotionAnalysis);
+    
+    // Analyze mood patterns from emotion history
+    const emotionHistory = requestData.emotionHistory || [];
+    const moodPattern = analyzeMoodPattern(emotionHistory, userEmotionAnalysis);
+    
     console.log(`[${requestId}] Detected user emotion:`, userEmotionAnalysis);
+    console.log(`[${requestId}] Mood pattern:`, { trend: moodPattern.trend, dominant: moodPattern.dominantEmotion });
 
     console.log(`[${requestId}] Edge function started`);
     console.log(`[${requestId}] User ID:`, requestData.userId);
@@ -483,7 +630,9 @@ serve(async (req) => {
         sessionId: requestData.sessionId,
         conversationHistory: requestData.conversationHistory,
         userEmotion: userEmotionAnalysis,
-        emotionContext: emotionContext
+        emotionContext: emotionContext,
+        moodPattern: moodPattern,
+        adaptiveContext: moodPattern.adaptiveContext
       }),
     });
 
@@ -596,7 +745,7 @@ serve(async (req) => {
       personalizationEnabled: requestData.allowPersonalization
     });
 
-    // Prepare response with emotion data
+    // Prepare response with emotion data and mood pattern
     const response: WebhookResponse = {
       response: finalText || 'I received your message but got an empty response. Please try again.',
       status: upstream.ok ? 'success' : 'upstream_error',
@@ -605,7 +754,8 @@ serve(async (req) => {
         contentType
       },
       userEmotion: userEmotionAnalysis,
-      suggestedAynEmotion: getEmpathyResponse(userEmotionAnalysis.emotion).aynEmotion
+      suggestedAynEmotion: getEmpathyResponse(userEmotionAnalysis.emotion).aynEmotion,
+      moodPattern: moodPattern
     };
 
     if (!upstream.ok) {

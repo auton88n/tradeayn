@@ -95,6 +95,20 @@ export interface WebhookPayload {
   timestamp: string;
   has_attachment: boolean;
   file_data: FileAttachment | null;
+  emotionHistory?: EmotionHistoryEntry[];
+}
+
+export interface EmotionHistoryEntry {
+  emotion: string;
+  intensity: number;
+  timestamp: string;
+}
+
+export interface MoodPattern {
+  trend: 'improving' | 'declining' | 'stable' | 'volatile';
+  dominantEmotion: string;
+  averageIntensity: number;
+  adaptiveContext: string;
 }
 
 export interface ConversationHistoryItem {
@@ -157,6 +171,7 @@ export interface UseMessagesReturn {
   messages: Message[];
   isTyping: boolean;
   lastSuggestedEmotion: string | null;
+  moodPattern: MoodPattern | null;
   loadMessages: () => Promise<void>;
   sendMessage: (content: string, attachment?: FileAttachment | null) => Promise<void>;
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>;

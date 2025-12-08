@@ -7,7 +7,9 @@ import type {
   UserProfile, 
   AIMode,
   UseMessagesReturn,
-  WebhookPayload 
+  WebhookPayload,
+  EmotionHistoryEntry,
+  MoodPattern
 } from '@/types/dashboard.types';
 
 // Same constants from useAuth.ts - direct REST API bypasses deadlocking Supabase client
@@ -48,6 +50,8 @@ export const useMessages = (
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [lastSuggestedEmotion, setLastSuggestedEmotion] = useState<string | null>(null);
+  const [moodPattern, setMoodPattern] = useState<MoodPattern | null>(null);
+  const [emotionHistory, setEmotionHistory] = useState<EmotionHistoryEntry[]>([]);
   const { toast } = useToast();
 
   // Load messages from database for current session using direct REST API
@@ -193,7 +197,8 @@ export const useMessages = (
         concise: false,
         timestamp: new Date().toISOString(),
         has_attachment: !!attachment,
-        file_data: attachment || null
+        file_data: attachment || null,
+        emotionHistory: emotionHistory.slice(-10) // Send last 10 emotions for pattern analysis
       };
 
       // Call webhook via direct fetch to avoid deadlocks
@@ -237,6 +242,20 @@ export const useMessages = (
       // Extract suggested emotion from backend
       if (webhookData?.suggestedAynEmotion) {
         setLastSuggestedEmotion(webhookData.suggestedAynEmotion);
+      }
+
+      // Extract and store mood pattern
+      if (webhookData?.moodPattern) {
+        setMoodPattern(webhookData.moodPattern);
+      }
+
+      // Track emotion history from user emotion
+      if (webhookData?.userEmotion) {
+        setEmotionHistory(prev => [...prev.slice(-9), {
+          emotion: webhookData.userEmotion.emotion,
+          intensity: webhookData.userEmotion.intensity,
+          timestamp: new Date().toISOString()
+        }]);
       }
 
       // Extract response (handle both string and nested object formats)
@@ -323,6 +342,7 @@ export const useMessages = (
     messages,
     isTyping,
     lastSuggestedEmotion,
+    moodPattern,
     loadMessages,
     sendMessage,
     setMessages
