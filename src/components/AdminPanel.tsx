@@ -15,15 +15,13 @@ import {
   Users, 
   Shield, 
   Settings,
-  Loader2,
-  FileText
+  Loader2
 } from 'lucide-react';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { UserManagement } from '@/components/admin/UserManagement';
 import { RateLimitMonitoring } from '@/components/admin/RateLimitMonitoring';
 import { SystemSettings } from '@/components/admin/SystemSettings';
-import { ApplicationsManagement } from '@/components/admin/ApplicationsManagement';
 
 // Types
 interface Profile {
@@ -69,7 +67,6 @@ interface AdminPanelProps {
 const tabs = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
   { id: 'users', label: 'Users', icon: Users },
-  { id: 'applications', label: 'Applications', icon: FileText },
   { id: 'rate-limits', label: 'Rate Limits', icon: Shield },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
@@ -305,9 +302,6 @@ export const AdminPanel = ({ onBackClick }: AdminPanelProps) => {
                   allUsers={allUsers} 
                   onRefresh={fetchData} 
                 />
-              )}
-              {activeTab === 'applications' && (
-                <ApplicationsManagement />
               )}
               {activeTab === 'rate-limits' && (
                 <RateLimitMonitoring />
