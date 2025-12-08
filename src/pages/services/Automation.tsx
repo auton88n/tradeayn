@@ -389,16 +389,16 @@ const Automation = () => {
               </div>
             </div>
 
-            {/* Desktop: Orbiting layout */}
-            <div className="hidden md:flex justify-center mb-20">
+          {/* Desktop: Orbiting layout */}
+            <div className="hidden md:flex justify-center mt-20 mb-32">
               <div className="relative">
-                <div className="w-24 h-24 md:w-32 md:h-32 bg-emerald-500 rounded-2xl md:rounded-3xl flex items-center justify-center shadow-lg shadow-emerald-500/30">
-                  <Brain className="w-12 h-12 md:w-16 md:h-16 text-white" />
+                <div className="w-32 h-32 bg-emerald-500 rounded-3xl flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                  <Brain className="w-16 h-16 text-white" />
                 </div>
                 {/* Orbiting connections */}
                 <div className="absolute w-[380px] h-[380px] -top-[124px] -left-[124px]">
                   {integrations.map((integration, index) => {
-                    const angle = (index * 360) / integrations.length;
+                    const angle = (index * 360) / integrations.length + 22.5;
                     const radius = 150;
                     const x = Math.cos((angle * Math.PI) / 180) * radius;
                     const y = Math.sin((angle * Math.PI) / 180) * radius;
@@ -423,7 +423,7 @@ const Automation = () => {
               </div>
             </div>
 
-            <p className="text-center text-neutral-400 mt-12">
+            <p className="text-center text-neutral-400 mt-8">
               And <span className="text-emerald-400 font-bold">500+ more</span> integrations available
             </p>
           </motion.div>
