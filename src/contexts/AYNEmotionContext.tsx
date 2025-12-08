@@ -107,6 +107,9 @@ interface AYNEmotionContextType {
   // Wink interaction
   isWinking: boolean;
   triggerWink: () => void;
+  // Empathy responses to user emotions
+  triggerEmpathyBlink: () => void;
+  triggerEmpathyPulse: () => void;
 }
 
 const AYNEmotionContext = createContext<AYNEmotionContextType | undefined>(undefined);
@@ -260,6 +263,8 @@ export const AYNEmotionProvider = ({ children }: { children: ReactNode }) => {
         triggerPulse,
         isWinking,
         triggerWink,
+        triggerEmpathyBlink,
+        triggerEmpathyPulse,
       }}
     >
       {children}
