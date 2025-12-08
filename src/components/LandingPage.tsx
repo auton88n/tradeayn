@@ -187,8 +187,8 @@ const LandingPage = () => {
   };
   const services = [{
     number: '01',
-    slug: 'influencer-sites',
-    title: language === 'ar' ? 'مواقع فاخرة للمؤثرين' : 'Premium Influencer Sites',
+    slug: 'content-creator-sites',
+    title: language === 'ar' ? 'مواقع فاخرة لصناع المحتوى' : 'Premium Content Creator Sites',
     description: language === 'ar' ? 'موقع إلكتروني احترافي يعكس هويتك ويجذب فرص التعاون والشراكات.' : 'Luxury websites custom-built to showcase your personal brand.',
     mockup: <MobileMockup />
   }, {
@@ -200,8 +200,8 @@ const LandingPage = () => {
   }, {
     number: '03',
     slug: 'automation',
-    title: language === 'ar' ? 'أتمتة المهام' : 'Process Automation',
-    description: language === 'ar' ? 'وفّر أكثر من 15 ساعة أسبوعياً عبر الأتمتة.' : 'Save 15+ hours per week by automating tasks.',
+    title: language === 'ar' ? 'أتمتة العمليات' : 'Process Automation',
+    description: language === 'ar' ? 'أتمتة سير العمل لتوفير الوقت وتقليل الأخطاء في أي عمل.' : 'Automate workflows to save time and reduce errors in any business.',
     mockup: <FloatingIcons />
   }];
   return <div className="min-h-screen bg-background scroll-smooth">
