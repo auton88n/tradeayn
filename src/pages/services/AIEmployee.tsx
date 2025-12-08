@@ -143,7 +143,7 @@ const AIEmployee = () => {
   const comparisons = [{
     label: language === 'ar' ? 'الراتب السنوي' : language === 'fr' ? 'Salaire Annuel' : 'Annual Salary',
     traditional: '$35,000 - $65,000',
-    ai: '$499/month',
+    ai: '$1000 - $2000/month',
     icon: DollarSign
   }, {
     label: language === 'ar' ? 'التأمين الصحي' : language === 'fr' ? 'Assurance Santé' : 'Health Insurance',
