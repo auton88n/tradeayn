@@ -111,7 +111,7 @@ export default function Dashboard({ user, session }: DashboardProps) {
   }, []);
 
   return (
-    <div className="relative min-h-screen">
+    <div dir="ltr" className="relative min-h-screen">
       {/* Maintenance Banner - positioned at top */}
       {maintenanceConfig.enableMaintenance && (
         <MaintenanceBanner
