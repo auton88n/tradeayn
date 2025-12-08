@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback, useState } from 'react';
-import { User } from '@supabase/supabase-js';
+import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -28,6 +28,7 @@ import { MessageSquare, TrendingUp, Search, FileText, Eye, Hammer, Menu, X, Brai
 
 interface DashboardContainerProps {
   user: User;
+  session: Session;
   auth: UseAuthReturn;
   isAdmin?: boolean;
   onAdminPanelClick?: () => void;
@@ -51,12 +52,12 @@ const getModes = (): AIModeConfig[] => [
   // { name: 'Civil Engineering', translatedName: t('modes.civilEngineering'), description: 'Engineering calculations', icon: Hammer, color: 'text-teal-500', webhookUrl: '' },
 ];
 
-export const DashboardContainer = ({ user, auth, isAdmin, onAdminPanelClick }: DashboardContainerProps) => {
+export const DashboardContainer = ({ user, session, auth, isAdmin, onAdminPanelClick }: DashboardContainerProps) => {
   const { toast } = useToast();
   
   
-  // Custom hooks
-  const chatSession = useChatSession(user.id);
+  // Custom hooks - pass session to useChatSession for direct REST API calls
+  const chatSession = useChatSession(user.id, session);
   const fileUpload = useFileUpload(user.id);
   
   // State
