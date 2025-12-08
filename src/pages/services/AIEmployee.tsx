@@ -208,7 +208,7 @@ const AIEmployee = () => {
           >
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-500/10 border border-cyan-500/20 mb-8">
               <Sparkles className="w-4 h-4 text-cyan-400" />
-              <span className="text-sm text-cyan-400">01</span>
+              <span className="text-sm text-cyan-400">04</span>
             </div>
             
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-serif font-bold mb-6 leading-tight">

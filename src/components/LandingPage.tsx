@@ -228,28 +228,28 @@ const LandingPage = () => {
 
   const services = [{
     number: '01',
-    slug: 'ai-employee',
-    title: language === 'ar' ? 'موظفين بالذكاء الاصطناعي' : language === 'fr' ? 'Employés IA' : 'AI Employees',
-    description: language === 'ar' ? 'موظفين يعملون ٢٤ ساعة بدون إجازات أو تأمين صحي.' : language === 'fr' ? 'Employés qui travaillent 24h/24 sans vacances ni assurance santé.' : 'Employees who work 24/7 with no vacations or healthcare costs.',
-    mockup: <AIEmployeeMockup />
-  }, {
-    number: '02',
     slug: 'content-creator-sites',
     title: language === 'ar' ? 'مواقع لصناع المحتوى' : language === 'fr' ? 'Sites Premium pour Créateurs' : 'Premium Content Creator Sites',
     description: language === 'ar' ? 'موقع احترافي يعكس هويتك ويجذب فرص التعاون.' : language === 'fr' ? 'Sites web de luxe conçus pour mettre en valeur votre marque personnelle.' : 'Luxury websites custom-built to showcase your personal brand.',
     mockup: <MobileMockup />
   }, {
-    number: '03',
+    number: '02',
     slug: 'ai-agents',
     title: language === 'ar' ? 'مساعد ذكي لعملك' : language === 'fr' ? 'Agents IA Personnalisés' : 'Custom AI Agents',
     description: language === 'ar' ? 'مساعد ذكي يعمل ٢٤ ساعة لخدمة عملائك.' : language === 'fr' ? 'Assistants intelligents 24/7 formés sur votre entreprise.' : '24/7 intelligent assistants trained on your business.',
     mockup: <DeviceMockups />
   }, {
-    number: '04',
+    number: '03',
     slug: 'automation',
     title: language === 'ar' ? 'أتمتة العمليات' : language === 'fr' ? 'Automatisation des Processus' : 'Process Automation',
     description: language === 'ar' ? 'أتمتة المهام المتكررة لتوفير الوقت والجهد.' : language === 'fr' ? 'Automatisez les flux de travail pour gagner du temps.' : 'Automate workflows to save time and reduce errors in any business.',
     mockup: <FloatingIcons />
+  }, {
+    number: '04',
+    slug: 'ai-employee',
+    title: language === 'ar' ? 'موظفين بالذكاء الاصطناعي' : language === 'fr' ? 'Employés IA' : 'AI Employees',
+    description: language === 'ar' ? 'موظفين يعملون ٢٤ ساعة بدون إجازات أو تأمين صحي.' : language === 'fr' ? 'Employés qui travaillent 24h/24 sans vacances ni assurance santé.' : 'Employees who work 24/7 with no vacations or healthcare costs.',
+    mockup: <AIEmployeeMockup />
   }];
   return <div className="min-h-screen bg-background scroll-smooth">
       {/* Vertical Dropdown Navigation */}
@@ -527,78 +527,48 @@ const LandingPage = () => {
             </div>
           </ScrollReveal>
 
-          {/* Bento Grid */}
+          {/* Bento Grid - 4 Services */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Large Card - Left (Influencer Sites) */}
-            <ScrollReveal>
-              <Link to={`/services/${services[0].slug}`} className="block h-full">
-                <motion.div 
-                  className="bg-muted/50 rounded-3xl p-6 md:p-8 h-full min-h-[500px] lg:row-span-2 flex flex-col group cursor-pointer overflow-visible"
-                  whileHover={{ y: -4 }}
-                  transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
-                >
-                  <div className="mb-4">
-                    <span className="text-xs font-mono text-muted-foreground">{services[0].number}</span>
-                    <h3 className="text-2xl md:text-3xl font-bold mt-2 group-hover:text-primary transition-colors">
-                      {services[0].title}
-                    </h3>
-                    <p className="text-sm md:text-base text-muted-foreground mt-2">
-                      {services[0].description}
-                    </p>
-                  </div>
-                  <div className="flex-1 flex items-center justify-center overflow-visible">
-                    {services[0].mockup}
-                  </div>
-                  <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors mt-4">
-                    {language === 'ar' ? 'اكتشف المزيد' : language === 'fr' ? 'En Savoir Plus' : 'Learn More'}
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </motion.div>
-              </Link>
-            </ScrollReveal>
-
-            {/* Right Column - Two Stacked Cards */}
+            {/* Left Column */}
             <div className="flex flex-col gap-6">
-              {/* Top Right Card (AI Agents) */}
-              <ScrollReveal delay={0.1}>
-                <Link to={`/services/${services[1].slug}`} className="block">
+              {/* Top Left - Content Creator Sites */}
+              <ScrollReveal>
+                <Link to={`/services/${services[0].slug}`} className="block">
                   <motion.div 
-                    className="bg-muted/50 rounded-3xl p-6 md:p-8 group cursor-pointer"
+                    className="bg-muted/50 rounded-3xl p-6 md:p-8 min-h-[320px] lg:min-h-[380px] flex flex-col group cursor-pointer overflow-visible"
                     whileHover={{ y: -4 }}
                     transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
                   >
-                    <div className="flex flex-col md:flex-row gap-6 items-center">
-                      <div className="flex-1">
-                        <span className="text-xs font-mono text-muted-foreground">{services[1].number}</span>
-                        <h3 className="text-xl md:text-2xl font-bold mt-2 group-hover:text-primary transition-colors">
-                          {services[1].title}
-                        </h3>
-                        <p className="text-sm text-muted-foreground mt-2">
-                          {services[1].description}
-                        </p>
-                        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors mt-4">
-                          {language === 'ar' ? 'اكتشف المزيد' : language === 'fr' ? 'En Savoir Plus' : 'Learn More'}
-                          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                        </div>
-                      </div>
-                      <div className="w-full md:w-[240px] flex-shrink-0">
-                        {services[1].mockup}
-                      </div>
+                    <div className="mb-4">
+                      <span className="text-xs font-mono text-muted-foreground">{services[0].number}</span>
+                      <h3 className="text-xl md:text-2xl font-bold mt-2 group-hover:text-primary transition-colors">
+                        {services[0].title}
+                      </h3>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        {services[0].description}
+                      </p>
+                    </div>
+                    <div className="flex-1 flex items-center justify-center overflow-visible">
+                      {services[0].mockup}
+                    </div>
+                    <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors mt-4">
+                      {language === 'ar' ? 'اكتشف المزيد' : language === 'fr' ? 'En Savoir Plus' : 'Learn More'}
+                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     </div>
                   </motion.div>
                 </Link>
               </ScrollReveal>
 
-              {/* Bottom Right Card (Automation) */}
+              {/* Bottom Left - Automation */}
               <ScrollReveal delay={0.2}>
                 <Link to={`/services/${services[2].slug}`} className="block">
                   <motion.div 
-                    className="bg-muted/50 rounded-3xl p-6 md:p-8 group cursor-pointer"
+                    className="bg-muted/50 rounded-3xl p-6 md:p-8 min-h-[280px] group cursor-pointer"
                     whileHover={{ y: -4 }}
                     transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
                   >
-                    <div className="flex flex-col md:flex-row gap-6 items-center">
-                      <div className="flex-1">
+                    <div className="flex flex-col gap-4">
+                      <div>
                         <span className="text-xs font-mono text-muted-foreground">{services[2].number}</span>
                         <h3 className="text-xl md:text-2xl font-bold mt-2 group-hover:text-primary transition-colors">
                           {services[2].title}
@@ -606,14 +576,75 @@ const LandingPage = () => {
                         <p className="text-sm text-muted-foreground mt-2">
                           {services[2].description}
                         </p>
-                        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors mt-4">
-                          {language === 'ar' ? 'اكتشف المزيد' : language === 'fr' ? 'En Savoir Plus' : 'Learn More'}
-                          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                        </div>
                       </div>
-                      <div className="w-full md:w-[240px] flex-shrink-0">
+                      <div className="flex-1 flex items-center justify-center h-[120px]">
                         {services[2].mockup}
                       </div>
+                      <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                        {language === 'ar' ? 'اكتشف المزيد' : language === 'fr' ? 'En Savoir Plus' : 'Learn More'}
+                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+                  </motion.div>
+                </Link>
+              </ScrollReveal>
+            </div>
+
+            {/* Right Column */}
+            <div className="flex flex-col gap-6">
+              {/* Top Right - AI Agents */}
+              <ScrollReveal delay={0.1}>
+                <Link to={`/services/${services[1].slug}`} className="block">
+                  <motion.div 
+                    className="bg-muted/50 rounded-3xl p-6 md:p-8 min-h-[280px] group cursor-pointer"
+                    whileHover={{ y: -4 }}
+                    transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+                  >
+                    <div className="flex flex-col gap-4">
+                      <div>
+                        <span className="text-xs font-mono text-muted-foreground">{services[1].number}</span>
+                        <h3 className="text-xl md:text-2xl font-bold mt-2 group-hover:text-primary transition-colors">
+                          {services[1].title}
+                        </h3>
+                        <p className="text-sm text-muted-foreground mt-2">
+                          {services[1].description}
+                        </p>
+                      </div>
+                      <div className="flex-1 flex items-center justify-center h-[120px]">
+                        {services[1].mockup}
+                      </div>
+                      <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                        {language === 'ar' ? 'اكتشف المزيد' : language === 'fr' ? 'En Savoir Plus' : 'Learn More'}
+                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+                  </motion.div>
+                </Link>
+              </ScrollReveal>
+
+              {/* Bottom Right - AI Employees */}
+              <ScrollReveal delay={0.3}>
+                <Link to={`/services/${services[3].slug}`} className="block">
+                  <motion.div 
+                    className="bg-muted/50 rounded-3xl p-6 md:p-8 min-h-[320px] lg:min-h-[380px] flex flex-col group cursor-pointer overflow-visible"
+                    whileHover={{ y: -4 }}
+                    transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+                  >
+                    <div className="mb-4">
+                      <span className="text-xs font-mono text-muted-foreground">{services[3].number}</span>
+                      <h3 className="text-xl md:text-2xl font-bold mt-2 group-hover:text-primary transition-colors">
+                        {services[3].title}
+                      </h3>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        {services[3].description}
+                      </p>
+                    </div>
+                    <div className="flex-1 flex items-center justify-center overflow-visible">
+                      {services[3].mockup}
+                    </div>
+                    <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors mt-4">
+                      {language === 'ar' ? 'اكتشف المزيد' : language === 'fr' ? 'En Savoir Plus' : 'Learn More'}
+                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     </div>
                   </motion.div>
                 </Link>
