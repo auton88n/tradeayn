@@ -23,6 +23,7 @@ const AIAgents = lazy(() => import("./pages/services/AIAgents"));
 const AIAgentsApply = lazy(() => import("./pages/services/AIAgentsApply"));
 const Automation = lazy(() => import("./pages/services/Automation"));
 const AutomationApply = lazy(() => import("./pages/services/AutomationApply"));
+const Support = lazy(() => import("./pages/Support"));
 
 const queryClient = new QueryClient();
 
@@ -49,6 +50,7 @@ const App = () => (
                       <Route path="/services/ai-agents/apply" element={<AIAgentsApply />} />
                       <Route path="/services/automation" element={<Automation />} />
                       <Route path="/services/automation/apply" element={<AutomationApply />} />
+                      <Route path="/support" element={<Support />} />
                       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                       <Route path="*" element={<NotFound />} />
                     </Routes>

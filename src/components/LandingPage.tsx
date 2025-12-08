@@ -336,6 +336,19 @@ const LandingPage = () => {
               }} onClick={() => scrollToSection('contact')} className="w-full text-left px-4 py-2.5 rounded-xl hover:bg-muted transition-colors text-sm font-medium">
                     {language === 'ar' ? 'تواصل معنا' : language === 'fr' ? 'Contact' : 'Contact'}
                   </motion.button>
+                  <motion.div initial={{
+                x: -20,
+                opacity: 0
+              }} animate={{
+                x: 0,
+                opacity: 1
+              }} transition={{
+                delay: 0.2
+              }}>
+                    <Link to="/support" onClick={() => setIsMenuExpanded(false)} className="block w-full text-left px-4 py-2.5 rounded-xl hover:bg-muted transition-colors text-sm font-medium">
+                      {language === 'ar' ? 'الدعم' : language === 'fr' ? 'Support' : 'Support'}
+                    </Link>
+                  </motion.div>
                 </div>
 
                 {/* Separator */}
@@ -349,7 +362,7 @@ const LandingPage = () => {
               x: 0,
               opacity: 1
             }} transition={{
-              delay: 0.2
+              delay: 0.25
             }} className="p-2 flex items-center justify-between px-4">
                   <LanguageSwitcher onOpenChange={handleDropdownOpenChange} />
                   <ThemeToggle />
@@ -366,7 +379,7 @@ const LandingPage = () => {
               x: 0,
               opacity: 1
             }} transition={{
-              delay: 0.25
+              delay: 0.3
             }} className="p-3">
                   <Button onClick={() => {
                 setIsMenuExpanded(false);
@@ -402,6 +415,12 @@ const LandingPage = () => {
                 <button onClick={() => scrollToSection('services')} className="text-left py-2 text-sm font-medium hover:text-foreground/80 transition-colors">
                   {language === 'ar' ? 'خدماتنا' : language === 'fr' ? 'Services' : 'Services'}
                 </button>
+                <button onClick={() => scrollToSection('contact')} className="text-left py-2 text-sm font-medium hover:text-foreground/80 transition-colors">
+                  {language === 'ar' ? 'تواصل معنا' : language === 'fr' ? 'Contact' : 'Contact'}
+                </button>
+                <Link to="/support" className="block text-left py-2 text-sm font-medium hover:text-foreground/80 transition-colors">
+                  {language === 'ar' ? 'الدعم' : language === 'fr' ? 'Support' : 'Support'}
+                </Link>
                 
                 <div className="h-px bg-border my-2" />
                 
