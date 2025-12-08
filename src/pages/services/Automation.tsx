@@ -23,41 +23,41 @@ const Automation = () => {
     message: ''
   });
 
-  // Translations
+  // Translations - Improved Arabic with natural, commonly-used phrases
   const t = {
-    back: language === 'ar' ? 'رجوع' : language === 'fr' ? 'Retour' : 'Back',
+    back: language === 'ar' ? 'عودة' : language === 'fr' ? 'Retour' : 'Back',
     heroTitle: language === 'ar' ? 'أتمتة العمليات' : language === 'fr' ? 'Automatisation des Processus' : 'Process Automation',
-    heroSubtitle: language === 'ar' ? 'وفّر 15+ ساعة أسبوعياً بأتمتة المهام المتكررة. ركز على ما يهم بينما نتولى الباقي.' : language === 'fr' ? 'Économisez 15+ heures par semaine en automatisant les tâches répétitives. Concentrez-vous sur l\'essentiel.' : 'Save 15+ hours per week by automating repetitive tasks. Focus on what matters while we handle the rest.',
-    startAutomating: language === 'ar' ? 'ابدأ الأتمتة' : language === 'fr' ? 'Commencer l\'Automatisation' : 'Start Automating',
-    viewAllServices: language === 'ar' ? 'عرض جميع الخدمات' : language === 'fr' ? 'Voir Tous les Services' : 'View All Services',
-    whatYoullGet: language === 'ar' ? 'ما ستحصل عليه' : language === 'fr' ? 'Ce Que Vous Obtiendrez' : "What You'll Get",
-    workflowDashboard: language === 'ar' ? 'لوحة سير العمل' : language === 'fr' ? 'Tableau de Bord des Flux' : 'Workflow Dashboard',
-    dashboardDesc: language === 'ar' ? 'منشئ سير عمل مرئي يجعل الأتمتة في متناول الجميع في فريقك.' : language === 'fr' ? 'Constructeur de flux visuel qui rend l\'automatisation accessible à toute votre équipe.' : 'Visual workflow builder that makes automation accessible to everyone on your team.',
+    heroSubtitle: language === 'ar' ? 'وفّر أكثر من ١٥ ساعة أسبوعياً بأتمتة المهام المتكررة. ركّز على الأهم ودعنا نهتم بالباقي.' : language === 'fr' ? 'Économisez 15+ heures par semaine en automatisant les tâches répétitives. Concentrez-vous sur l\'essentiel.' : 'Save 15+ hours per week by automating repetitive tasks. Focus on what matters while we handle the rest.',
+    startAutomating: language === 'ar' ? 'ابدأ الآن' : language === 'fr' ? 'Commencer l\'Automatisation' : 'Start Automating',
+    viewAllServices: language === 'ar' ? 'عرض كل الخدمات' : language === 'fr' ? 'Voir Tous les Services' : 'View All Services',
+    whatYoullGet: language === 'ar' ? 'ماذا ستحصل' : language === 'fr' ? 'Ce Que Vous Obtiendrez' : "What You'll Get",
+    workflowDashboard: language === 'ar' ? 'لوحة التحكم' : language === 'fr' ? 'Tableau de Bord des Flux' : 'Workflow Dashboard',
+    dashboardDesc: language === 'ar' ? 'أداة بناء مرئية تجعل الأتمتة سهلة لكل فريقك.' : language === 'fr' ? 'Constructeur de flux visuel qui rend l\'automatisation accessible à toute votre équipe.' : 'Visual workflow builder that makes automation accessible to everyone on your team.',
     templates: language === 'ar' ? 'القوالب' : language === 'fr' ? 'Modèles' : 'Templates',
-    popularAutomations: language === 'ar' ? 'الأتمتة الشائعة' : language === 'fr' ? 'Automatisations Populaires' : 'Popular Automations',
-    templatesDesc: language === 'ar' ? 'ابدأ بقوالب مجربة وخصصها لتناسب سير عملك.' : language === 'fr' ? 'Commencez avec des modèles éprouvés et personnalisez-les.' : 'Start with proven templates and customize them to fit your workflow.',
+    popularAutomations: language === 'ar' ? 'أتمتة شائعة' : language === 'fr' ? 'Automatisations Populaires' : 'Popular Automations',
+    templatesDesc: language === 'ar' ? 'ابدأ بقوالب جاهزة وخصصها حسب احتياجك.' : language === 'fr' ? 'Commencez avec des modèles éprouvés et personnalisez-les.' : 'Start with proven templates and customize them to fit your workflow.',
     features: language === 'ar' ? 'المميزات' : language === 'fr' ? 'Fonctionnalités' : 'Features',
     everythingYouNeed: language === 'ar' ? 'كل ما تحتاجه' : language === 'fr' ? 'Tout Ce Dont Vous Avez Besoin' : 'Everything You Need',
-    process: language === 'ar' ? 'العملية' : language === 'fr' ? 'Processus' : 'Process',
-    howItWorks: language === 'ar' ? 'كيف يعمل' : language === 'fr' ? 'Comment Ça Marche' : 'How It Works',
-    readyToReclaim: language === 'ar' ? 'مستعد لاستعادة وقتك؟' : language === 'fr' ? 'Prêt à Récupérer Votre Temps?' : 'Ready to Reclaim Your Time?',
-    ctaDesc: language === 'ar' ? 'انضم لآلاف الشركات التي توفر 15+ ساعة أسبوعياً مع الأتمتة الذكية.' : language === 'fr' ? 'Rejoignez des milliers d\'entreprises qui économisent 15+ heures chaque semaine.' : 'Join thousands of businesses saving 15+ hours every week with intelligent automation.',
+    process: language === 'ar' ? 'الخطوات' : language === 'fr' ? 'Processus' : 'Process',
+    howItWorks: language === 'ar' ? 'طريقة العمل' : language === 'fr' ? 'Comment Ça Marche' : 'How It Works',
+    readyToReclaim: language === 'ar' ? 'جاهز لتوفير وقتك؟' : language === 'fr' ? 'Prêt à Récupérer Votre Temps?' : 'Ready to Reclaim Your Time?',
+    ctaDesc: language === 'ar' ? 'انضم لآلاف الشركات التي توفر أكثر من ١٥ ساعة أسبوعياً مع الأتمتة الذكية.' : language === 'fr' ? 'Rejoignez des milliers d\'entreprises qui économisent 15+ heures chaque semaine.' : 'Join thousands of businesses saving 15+ hours every week with intelligent automation.',
     formTitle: language === 'ar' ? 'ابدأ مع الأتمتة' : language === 'fr' ? 'Commencer avec l\'Automatisation' : 'Get Started with Automation',
-    formDesc: language === 'ar' ? 'أخبرنا عنك وسنتواصل معك خلال 24-48 ساعة.' : language === 'fr' ? 'Parlez-nous de vous et nous vous contacterons dans 24-48 heures.' : 'Tell us a bit about yourself and we\'ll reach out within 24-48 hours.',
+    formDesc: language === 'ar' ? 'أخبرنا عنك وسنتواصل معك خلال ٢٤-٤٨ ساعة.' : language === 'fr' ? 'Parlez-nous de vous et nous vous contacterons dans 24-48 heures.' : 'Tell us a bit about yourself and we\'ll reach out within 24-48 hours.',
     fullName: language === 'ar' ? 'الاسم الكامل' : language === 'fr' ? 'Nom Complet' : 'Full Name',
     email: language === 'ar' ? 'البريد الإلكتروني' : language === 'fr' ? 'Email' : 'Email',
-    phone: language === 'ar' ? 'الهاتف' : language === 'fr' ? 'Téléphone' : 'Phone',
+    phone: language === 'ar' ? 'رقم الجوال' : language === 'fr' ? 'Téléphone' : 'Phone',
     optional: language === 'ar' ? 'اختياري' : language === 'fr' ? 'optionnel' : 'optional',
-    message: language === 'ar' ? 'رسالة موجزة' : language === 'fr' ? 'Message Bref' : 'Brief Message',
+    message: language === 'ar' ? 'رسالتك' : language === 'fr' ? 'Message Bref' : 'Brief Message',
     submit: language === 'ar' ? 'إرسال الطلب' : language === 'fr' ? 'Soumettre la Demande' : 'Submit Application',
-    submitting: language === 'ar' ? 'جارٍ الإرسال...' : language === 'fr' ? 'Envoi...' : 'Submitting...',
-    successTitle: language === 'ar' ? 'تم إرسال الطلب!' : language === 'fr' ? 'Demande Soumise!' : 'Application Submitted!',
-    successDesc: language === 'ar' ? 'سنتواصل معك خلال 24-48 ساعة.' : language === 'fr' ? 'Nous vous contacterons dans 24-48 heures.' : 'We\'ll be in touch within 24-48 hours.',
+    submitting: language === 'ar' ? 'جاري الإرسال...' : language === 'fr' ? 'Envoi...' : 'Submitting...',
+    successTitle: language === 'ar' ? 'تم الإرسال!' : language === 'fr' ? 'Demande Soumise!' : 'Application Submitted!',
+    successDesc: language === 'ar' ? 'سنتواصل معك خلال ٢٤-٤٨ ساعة.' : language === 'fr' ? 'Nous vous contacterons dans 24-48 heures.' : 'We\'ll be in touch within 24-48 hours.',
     close: language === 'ar' ? 'إغلاق' : language === 'fr' ? 'Fermer' : 'Close',
-    needMoreOptions: language === 'ar' ? 'تحتاج خيارات أكثر؟' : language === 'fr' ? 'Besoin de plus d\'options?' : 'Need more options?',
-    detailedForm: language === 'ar' ? 'املأ النموذج التفصيلي' : language === 'fr' ? 'Remplir le formulaire détaillé' : 'Fill out the detailed form',
+    needMoreOptions: language === 'ar' ? 'تحتاج المزيد؟' : language === 'fr' ? 'Besoin de plus d\'options?' : 'Need more options?',
+    detailedForm: language === 'ar' ? 'املأ النموذج المفصل' : language === 'fr' ? 'Remplir le formulaire détaillé' : 'Fill out the detailed form',
     active: language === 'ar' ? 'نشط' : language === 'fr' ? 'Actif' : 'Active',
-    runNow: language === 'ar' ? 'تشغيل الآن' : language === 'fr' ? 'Exécuter' : 'Run Now',
+    runNow: language === 'ar' ? 'تشغيل' : language === 'fr' ? 'Exécuter' : 'Run Now',
     save: language === 'ar' ? 'وفّر' : language === 'fr' ? 'Économisez' : 'Save',
     hrsWeek: language === 'ar' ? 'س/أسبوع' : language === 'fr' ? 'h/sem' : 'hrs/week',
   };
@@ -134,34 +134,34 @@ const Automation = () => {
 
   const automations = [{
     icon: Mail,
-    title: language === 'ar' ? 'مزامنة البريد مع CRM' : language === 'fr' ? 'Sync Email vers CRM' : 'Email to CRM Sync',
+    title: language === 'ar' ? 'ربط البريد بالـ CRM' : language === 'fr' ? 'Sync Email vers CRM' : 'Email to CRM Sync',
     hours: '5',
-    description: language === 'ar' ? 'تسجيل رسائل البريد وإنشاء جهات الاتصال تلقائياً' : language === 'fr' ? 'Journaliser les emails et créer des contacts automatiquement' : 'Auto-log emails and create contacts'
+    description: language === 'ar' ? 'حفظ الرسائل وإنشاء جهات اتصال تلقائياً' : language === 'fr' ? 'Journaliser les emails et créer des contacts automatiquement' : 'Auto-log emails and create contacts'
   }, {
     icon: FileText,
     title: language === 'ar' ? 'معالجة الفواتير' : language === 'fr' ? 'Traitement des Factures' : 'Invoice Processing',
     hours: '8',
-    description: language === 'ar' ? 'استخراج البيانات وتحديث المحاسبة' : language === 'fr' ? 'Extraire les données et mettre à jour la comptabilité' : 'Extract data and update accounting'
+    description: language === 'ar' ? 'استخراج البيانات وتحديث الحسابات' : language === 'fr' ? 'Extraire les données et mettre à jour la comptabilité' : 'Extract data and update accounting'
   }, {
     icon: Database,
-    title: language === 'ar' ? 'تأهيل العملاء المحتملين' : language === 'fr' ? 'Qualification des Leads' : 'Lead Qualification',
+    title: language === 'ar' ? 'تأهيل العملاء' : language === 'fr' ? 'Qualification des Leads' : 'Lead Qualification',
     hours: '10',
-    description: language === 'ar' ? 'تقييم وتوجيه العملاء المحتملين تلقائياً' : language === 'fr' ? 'Noter et router les leads automatiquement' : 'Score and route leads automatically'
+    description: language === 'ar' ? 'تقييم وتوزيع العملاء تلقائياً' : language === 'fr' ? 'Noter et router les leads automatiquement' : 'Score and route leads automatically'
   }, {
     icon: BarChart3,
     title: language === 'ar' ? 'إنشاء التقارير' : language === 'fr' ? 'Génération de Rapports' : 'Report Generation',
     hours: '6',
-    description: language === 'ar' ? 'تقارير أسبوعية/شهرية آلية' : language === 'fr' ? 'Rapports hebdomadaires/mensuels automatisés' : 'Automated weekly/monthly reports'
+    description: language === 'ar' ? 'تقارير أسبوعية وشهرية آلية' : language === 'fr' ? 'Rapports hebdomadaires/mensuels automatisés' : 'Automated weekly/monthly reports'
   }, {
     icon: Calendar,
     title: language === 'ar' ? 'جدولة الاجتماعات' : language === 'fr' ? 'Planificateur de Réunions' : 'Meeting Scheduler',
     hours: '3',
-    description: language === 'ar' ? 'حجز ذكي وتذكيرات' : language === 'fr' ? 'Réservation intelligente et rappels' : 'Smart booking and reminders'
+    description: language === 'ar' ? 'حجز ذكي مع تذكيرات' : language === 'fr' ? 'Réservation intelligente et rappels' : 'Smart booking and reminders'
   }, {
     icon: Share2,
-    title: language === 'ar' ? 'النشر الاجتماعي' : language === 'fr' ? 'Publication Sociale' : 'Social Publishing',
+    title: language === 'ar' ? 'النشر على السوشيال' : language === 'fr' ? 'Publication Sociale' : 'Social Publishing',
     hours: '4',
-    description: language === 'ar' ? 'جدولة ونشر المحتوى عبر المنصات' : language === 'fr' ? 'Planifier et publier du contenu' : 'Schedule and cross-post content'
+    description: language === 'ar' ? 'جدولة ونشر المحتوى تلقائياً' : language === 'fr' ? 'Planifier et publier du contenu' : 'Schedule and cross-post content'
   }];
 
   const integrations = [{
@@ -186,46 +186,46 @@ const Automation = () => {
 
   const features = [{
     icon: Settings,
-    title: language === 'ar' ? 'منشئ بدون كود' : language === 'fr' ? 'Constructeur Sans Code' : 'No-Code Builder',
-    description: language === 'ar' ? 'أنشئ سير العمل بدون كتابة كود' : language === 'fr' ? 'Créez des flux sans écrire de code' : 'Build workflows without writing code'
+    title: language === 'ar' ? 'بدون برمجة' : language === 'fr' ? 'Constructeur Sans Code' : 'No-Code Builder',
+    description: language === 'ar' ? 'أنشئ الأتمتة بدون كتابة كود' : language === 'fr' ? 'Créez des flux sans écrire de code' : 'Build workflows without writing code'
   }, {
     icon: Link2,
-    title: language === 'ar' ? '500+ تكامل' : language === 'fr' ? '500+ Intégrations' : '500+ Integrations',
+    title: language === 'ar' ? 'أكثر من ٥٠٠ تطبيق' : language === 'fr' ? '500+ Intégrations' : '500+ Integrations',
     description: language === 'ar' ? 'اربط جميع أدواتك المفضلة' : language === 'fr' ? 'Connectez tous vos outils favoris' : 'Connect all your favorite tools'
   }, {
     icon: BarChart3,
-    title: language === 'ar' ? 'مراقبة مباشرة' : language === 'fr' ? 'Surveillance en Temps Réel' : 'Real-time Monitoring',
-    description: language === 'ar' ? 'تتبع كل أتمتة في الوقت الفعلي' : language === 'fr' ? 'Suivez chaque automatisation en temps réel' : 'Track every automation in real-time'
+    title: language === 'ar' ? 'متابعة مباشرة' : language === 'fr' ? 'Surveillance en Temps Réel' : 'Real-time Monitoring',
+    description: language === 'ar' ? 'تابع كل أتمتة لحظة بلحظة' : language === 'fr' ? 'Suivez chaque automatisation en temps réel' : 'Track every automation in real-time'
   }, {
     icon: Shield,
     title: language === 'ar' ? 'معالجة الأخطاء' : language === 'fr' ? 'Gestion des Erreurs' : 'Error Handling',
-    description: language === 'ar' ? 'إعادة محاولة ذكية واستعادة من الفشل' : language === 'fr' ? 'Réessai intelligent et récupération d\'échec' : 'Smart retry and failure recovery'
+    description: language === 'ar' ? 'إعادة محاولة ذكية عند الفشل' : language === 'fr' ? 'Réessai intelligent et récupération d\'échec' : 'Smart retry and failure recovery'
   }, {
     icon: Clock,
-    title: language === 'ar' ? 'تشغيل مجدول' : language === 'fr' ? 'Déclencheurs Programmés' : 'Scheduled Triggers',
-    description: language === 'ar' ? 'شغّل الأتمتة حسب جدولك' : language === 'fr' ? 'Exécutez les automatisations selon votre planning' : 'Run automations on your schedule'
+    title: language === 'ar' ? 'جدولة مرنة' : language === 'fr' ? 'Déclencheurs Programmés' : 'Scheduled Triggers',
+    description: language === 'ar' ? 'شغّل الأتمتة بالوقت المناسب' : language === 'fr' ? 'Exécutez les automatisations selon votre planning' : 'Run automations on your schedule'
   }, {
     icon: Zap,
-    title: language === 'ar' ? 'ويب هوك مخصص' : language === 'fr' ? 'Webhooks Personnalisés' : 'Custom Webhooks',
-    description: language === 'ar' ? 'تفعيل من أي حدث خارجي' : language === 'fr' ? 'Déclenchez depuis n\'importe quel événement externe' : 'Trigger from any external event'
+    title: language === 'ar' ? 'ربط مخصص' : language === 'fr' ? 'Webhooks Personnalisés' : 'Custom Webhooks',
+    description: language === 'ar' ? 'تفعيل من أي تطبيق خارجي' : language === 'fr' ? 'Déclenchez depuis n\'importe quel événement externe' : 'Trigger from any external event'
   }];
 
   const steps = [{
     number: '01',
     title: language === 'ar' ? 'التحديد' : language === 'fr' ? 'Identifier' : 'Identify',
-    description: language === 'ar' ? 'حدد المهام المتكررة والاختناقات' : language === 'fr' ? 'Cartographiez vos tâches répétitives' : 'Map your repetitive tasks and bottlenecks'
+    description: language === 'ar' ? 'نحدد المهام المتكررة معاً' : language === 'fr' ? 'Cartographiez vos tâches répétitives' : 'Map your repetitive tasks and bottlenecks'
   }, {
     number: '02',
     title: language === 'ar' ? 'التصميم' : language === 'fr' ? 'Concevoir' : 'Design',
-    description: language === 'ar' ? 'إنشاء مخططات سير عمل محسّنة' : language === 'fr' ? 'Créez des flux de travail optimisés' : 'Create optimized workflow blueprints'
+    description: language === 'ar' ? 'نصمم خطة العمل المناسبة' : language === 'fr' ? 'Créez des flux de travail optimisés' : 'Create optimized workflow blueprints'
   }, {
     number: '03',
-    title: language === 'ar' ? 'الأتمتة' : language === 'fr' ? 'Automatiser' : 'Automate',
-    description: language === 'ar' ? 'بناء واختبار الأتمتة الخاصة بك' : language === 'fr' ? 'Construisez et testez vos automatisations' : 'Build and test your automations'
+    title: language === 'ar' ? 'البناء' : language === 'fr' ? 'Automatiser' : 'Automate',
+    description: language === 'ar' ? 'نبني ونختبر الأتمتة' : language === 'fr' ? 'Construisez et testez vos automatisations' : 'Build and test your automations'
   }, {
     number: '04',
-    title: language === 'ar' ? 'المراقبة' : language === 'fr' ? 'Surveiller' : 'Monitor',
-    description: language === 'ar' ? 'تتبع الأداء والتحسين' : language === 'fr' ? 'Suivez les performances et optimisez' : 'Track performance and optimize'
+    title: language === 'ar' ? 'المتابعة' : language === 'fr' ? 'Surveiller' : 'Monitor',
+    description: language === 'ar' ? 'نتابع الأداء ونحسّنه' : language === 'fr' ? 'Suivez les performances et optimisez' : 'Track performance and optimize'
   }];
 
   return <div className="min-h-screen bg-neutral-950 text-white">

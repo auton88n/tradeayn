@@ -23,42 +23,42 @@ const AIAgents = () => {
     message: ''
   });
 
-  // Translations
+  // Translations - Improved Arabic with natural, commonly-used phrases
   const t = {
-    back: language === 'ar' ? 'رجوع' : language === 'fr' ? 'Retour' : 'Back',
-    heroTitle: language === 'ar' ? 'وكلاء ذكاء اصطناعي مخصصون' : language === 'fr' ? 'Agents IA Personnalisés' : 'Custom AI Agents',
-    heroSubtitle: language === 'ar' ? 'مساعدون أذكياء يعملون على مدار الساعة، مدربون على بيانات عملك للتعامل مع استفسارات العملاء وتأهيل العملاء المحتملين.' : language === 'fr' ? 'Assistants intelligents 24/7 formés sur les données de votre entreprise pour gérer les demandes clients et qualifier les prospects.' : '24/7 intelligent assistants trained on your business data to handle customer inquiries, qualify leads, and drive conversions.',
-    startProject: language === 'ar' ? 'ابدأ مشروعك' : language === 'fr' ? 'Démarrer Votre Projet' : 'Start Your Project',
-    viewAllServices: language === 'ar' ? 'عرض جميع الخدمات' : language === 'fr' ? 'Voir Tous les Services' : 'View All Services',
-    whatYoullGet: language === 'ar' ? 'ما ستحصل عليه' : language === 'fr' ? 'Ce Que Vous Obtiendrez' : "What You'll Get",
-    intelligentChat: language === 'ar' ? 'واجهة محادثة ذكية' : language === 'fr' ? 'Interface de Chat Intelligente' : 'Intelligent Chat Interface',
-    chatDesc: language === 'ar' ? 'مساعد ذكي يفهم السياق، يتذكر المحادثات، ويقدم ردود بشرية.' : language === 'fr' ? 'Un assistant IA puissant qui comprend le contexte et livre des réponses humaines.' : 'A powerful AI assistant that understands context, remembers conversations, and delivers human-like responses.',
+    back: language === 'ar' ? 'عودة' : language === 'fr' ? 'Retour' : 'Back',
+    heroTitle: language === 'ar' ? 'مساعدين ذكاء اصطناعي' : language === 'fr' ? 'Agents IA Personnalisés' : 'Custom AI Agents',
+    heroSubtitle: language === 'ar' ? 'مساعدون أذكياء يعملون ٢٤ ساعة، مدربون على بيانات عملك للرد على العملاء وتأهيل المبيعات.' : language === 'fr' ? 'Assistants intelligents 24/7 formés sur les données de votre entreprise pour gérer les demandes clients et qualifier les prospects.' : '24/7 intelligent assistants trained on your business data to handle customer inquiries, qualify leads, and drive conversions.',
+    startProject: language === 'ar' ? 'ابدأ الآن' : language === 'fr' ? 'Démarrer Votre Projet' : 'Start Your Project',
+    viewAllServices: language === 'ar' ? 'عرض كل الخدمات' : language === 'fr' ? 'Voir Tous les Services' : 'View All Services',
+    whatYoullGet: language === 'ar' ? 'ماذا ستحصل' : language === 'fr' ? 'Ce Que Vous Obtiendrez' : "What You'll Get",
+    intelligentChat: language === 'ar' ? 'محادثة ذكية' : language === 'fr' ? 'Interface de Chat Intelligente' : 'Intelligent Chat Interface',
+    chatDesc: language === 'ar' ? 'مساعد ذكي يفهم السياق ويتذكر المحادثات ويرد بشكل طبيعي.' : language === 'fr' ? 'Un assistant IA puissant qui comprend le contexte et livre des réponses humaines.' : 'A powerful AI assistant that understands context, remembers conversations, and delivers human-like responses.',
     deployment: language === 'ar' ? 'النشر' : language === 'fr' ? 'Déploiement' : 'Deployment',
-    oneAiEverywhere: language === 'ar' ? 'ذكاء واحد، في كل مكان' : language === 'fr' ? 'Une IA, Partout' : 'One AI, Everywhere',
-    deployDesc: language === 'ar' ? 'انشر وكيل الذكاء الاصطناعي عبر جميع القنوات حيث يتواجد عملاؤك، مع قاعدة معرفية موحدة.' : language === 'fr' ? 'Déployez votre agent IA sur tous les canaux où se trouvent vos clients.' : 'Deploy your AI agent across all the channels where your customers are, with a unified knowledge base.',
-    insights: language === 'ar' ? 'الرؤى' : language === 'fr' ? 'Insights' : 'Insights',
-    analyticsInsights: language === 'ar' ? 'التحليلات والرؤى' : language === 'fr' ? 'Analytiques & Insights' : 'Analytics & Insights',
-    analyticsDesc: language === 'ar' ? 'تتبع كل محادثة، قياس الأداء، وتحسين وكيل الذكاء الاصطناعي باستمرار.' : language === 'fr' ? 'Suivez chaque conversation, mesurez les performances et améliorez continuellement votre agent IA.' : 'Track every conversation, measure performance, and continuously improve your AI agent with actionable insights.',
+    oneAiEverywhere: language === 'ar' ? 'مساعد واحد، في كل مكان' : language === 'fr' ? 'Une IA, Partout' : 'One AI, Everywhere',
+    deployDesc: language === 'ar' ? 'انشر مساعدك الذكي على جميع المنصات التي يستخدمها عملاؤك.' : language === 'fr' ? 'Déployez votre agent IA sur tous les canaux où se trouvent vos clients.' : 'Deploy your AI agent across all the channels where your customers are, with a unified knowledge base.',
+    insights: language === 'ar' ? 'التحليلات' : language === 'fr' ? 'Insights' : 'Insights',
+    analyticsInsights: language === 'ar' ? 'التحليلات والتقارير' : language === 'fr' ? 'Analytiques & Insights' : 'Analytics & Insights',
+    analyticsDesc: language === 'ar' ? 'تابع كل محادثة وقِس الأداء وطوّر مساعدك باستمرار.' : language === 'fr' ? 'Suivez chaque conversation, mesurez les performances et améliorez continuellement votre agent IA.' : 'Track every conversation, measure performance, and continuously improve your AI agent with actionable insights.',
     features: language === 'ar' ? 'المميزات' : language === 'fr' ? 'Fonctionnalités' : 'Features',
     everythingYouNeed: language === 'ar' ? 'كل ما تحتاجه' : language === 'fr' ? 'Tout Ce Dont Vous Avez Besoin' : 'Everything You Need',
-    process: language === 'ar' ? 'العملية' : language === 'fr' ? 'Processus' : 'Process',
-    howItWorks: language === 'ar' ? 'كيف يعمل' : language === 'fr' ? 'Comment Ça Marche' : 'How It Works',
-    readyToAutomate: language === 'ar' ? 'مستعد لأتمتة خدمة العملاء؟' : language === 'fr' ? 'Prêt à Automatiser le Support Client?' : 'Ready to Automate Customer Support?',
-    ctaDesc: language === 'ar' ? 'انضم للشركات التي توفر 40+ ساعة أسبوعياً مع خدمة عملاء مدعومة بالذكاء الاصطناعي.' : language === 'fr' ? 'Rejoignez les entreprises qui économisent 40+ heures par semaine avec un service client IA.' : 'Join businesses saving 40+ hours per week with AI-powered customer service that never sleeps.',
-    formTitle: language === 'ar' ? 'ابدأ مع وكلاء الذكاء الاصطناعي' : language === 'fr' ? 'Commencer avec les Agents IA' : 'Get Started with AI Agents',
-    formDesc: language === 'ar' ? 'أخبرنا عنك وسنتواصل معك خلال 24-48 ساعة.' : language === 'fr' ? 'Parlez-nous de vous et nous vous contacterons dans 24-48 heures.' : 'Tell us a bit about yourself and we\'ll reach out within 24-48 hours.',
+    process: language === 'ar' ? 'الخطوات' : language === 'fr' ? 'Processus' : 'Process',
+    howItWorks: language === 'ar' ? 'طريقة العمل' : language === 'fr' ? 'Comment Ça Marche' : 'How It Works',
+    readyToAutomate: language === 'ar' ? 'جاهز لأتمتة خدمة العملاء؟' : language === 'fr' ? 'Prêt à Automatiser le Support Client?' : 'Ready to Automate Customer Support?',
+    ctaDesc: language === 'ar' ? 'انضم للشركات التي توفر أكثر من ٤٠ ساعة أسبوعياً مع خدمة عملاء ذكية.' : language === 'fr' ? 'Rejoignez les entreprises qui économisent 40+ heures par semaine avec un service client IA.' : 'Join businesses saving 40+ hours per week with AI-powered customer service that never sleeps.',
+    formTitle: language === 'ar' ? 'ابدأ مع المساعد الذكي' : language === 'fr' ? 'Commencer avec les Agents IA' : 'Get Started with AI Agents',
+    formDesc: language === 'ar' ? 'أخبرنا عنك وسنتواصل معك خلال ٢٤-٤٨ ساعة.' : language === 'fr' ? 'Parlez-nous de vous et nous vous contacterons dans 24-48 heures.' : 'Tell us a bit about yourself and we\'ll reach out within 24-48 hours.',
     fullName: language === 'ar' ? 'الاسم الكامل' : language === 'fr' ? 'Nom Complet' : 'Full Name',
     email: language === 'ar' ? 'البريد الإلكتروني' : language === 'fr' ? 'Email' : 'Email',
-    phone: language === 'ar' ? 'الهاتف' : language === 'fr' ? 'Téléphone' : 'Phone',
+    phone: language === 'ar' ? 'رقم الجوال' : language === 'fr' ? 'Téléphone' : 'Phone',
     optional: language === 'ar' ? 'اختياري' : language === 'fr' ? 'optionnel' : 'optional',
-    message: language === 'ar' ? 'رسالة موجزة' : language === 'fr' ? 'Message Bref' : 'Brief Message',
+    message: language === 'ar' ? 'رسالتك' : language === 'fr' ? 'Message Bref' : 'Brief Message',
     submit: language === 'ar' ? 'إرسال الطلب' : language === 'fr' ? 'Soumettre la Demande' : 'Submit Application',
-    submitting: language === 'ar' ? 'جارٍ الإرسال...' : language === 'fr' ? 'Envoi...' : 'Submitting...',
-    successTitle: language === 'ar' ? 'تم إرسال الطلب!' : language === 'fr' ? 'Demande Soumise!' : 'Application Submitted!',
-    successDesc: language === 'ar' ? 'سنتواصل معك خلال 24-48 ساعة.' : language === 'fr' ? 'Nous vous contacterons dans 24-48 heures.' : 'We\'ll be in touch within 24-48 hours.',
+    submitting: language === 'ar' ? 'جاري الإرسال...' : language === 'fr' ? 'Envoi...' : 'Submitting...',
+    successTitle: language === 'ar' ? 'تم الإرسال!' : language === 'fr' ? 'Demande Soumise!' : 'Application Submitted!',
+    successDesc: language === 'ar' ? 'سنتواصل معك خلال ٢٤-٤٨ ساعة.' : language === 'fr' ? 'Nous vous contacterons dans 24-48 heures.' : 'We\'ll be in touch within 24-48 hours.',
     close: language === 'ar' ? 'إغلاق' : language === 'fr' ? 'Fermer' : 'Close',
-    needMoreOptions: language === 'ar' ? 'تحتاج خيارات أكثر؟' : language === 'fr' ? 'Besoin de plus d\'options?' : 'Need more options?',
-    detailedForm: language === 'ar' ? 'املأ النموذج التفصيلي' : language === 'fr' ? 'Remplir le formulaire détaillé' : 'Fill out the detailed form',
+    needMoreOptions: language === 'ar' ? 'تحتاج المزيد؟' : language === 'fr' ? 'Besoin de plus d\'options?' : 'Need more options?',
+    detailedForm: language === 'ar' ? 'املأ النموذج المفصل' : language === 'fr' ? 'Remplir le formulaire détaillé' : 'Fill out the detailed form',
     connected: language === 'ar' ? 'متصل' : language === 'fr' ? 'Connecté' : 'Connected',
   };
 
@@ -134,32 +134,32 @@ const AIAgents = () => {
 
   const features = [{
     icon: Clock,
-    title: language === 'ar' ? 'متاح 24/7' : language === 'fr' ? 'Disponible 24/7' : '24/7 Availability',
-    description: language === 'ar' ? 'لا تفوت أي استفسار من العملاء، ليلاً أو نهاراً' : language === 'fr' ? 'Ne manquez jamais une demande client, jour et nuit' : 'Never miss a customer inquiry, day or night'
+    title: language === 'ar' ? 'متاح ٢٤ ساعة' : language === 'fr' ? 'Disponible 24/7' : '24/7 Availability',
+    description: language === 'ar' ? 'لا تفوت أي رسالة من العملاء' : language === 'fr' ? 'Ne manquez jamais une demande client, jour et nuit' : 'Never miss a customer inquiry, day or night'
   }, {
     icon: Brain,
     title: language === 'ar' ? 'تدريب مخصص' : language === 'fr' ? 'Formation Personnalisée' : 'Custom Training',
-    description: language === 'ar' ? 'مدرب خصيصاً على بيانات عملك' : language === 'fr' ? 'Formé spécifiquement sur les données de votre entreprise' : 'Trained specifically on your business data'
+    description: language === 'ar' ? 'مدرب على بيانات عملك' : language === 'fr' ? 'Formé spécifiquement sur les données de votre entreprise' : 'Trained specifically on your business data'
   }, {
     icon: Languages,
-    title: language === 'ar' ? 'متعدد اللغات' : language === 'fr' ? 'Multilingue' : 'Multi-language',
-    description: language === 'ar' ? 'يتحدث العربية والإنجليزية والمزيد' : language === 'fr' ? 'Parle arabe, anglais et plus' : 'Fluent in Arabic, English, and more'
+    title: language === 'ar' ? 'يدعم لغات متعددة' : language === 'fr' ? 'Multilingue' : 'Multi-language',
+    description: language === 'ar' ? 'يتحدث العربية والإنجليزية وغيرها' : language === 'fr' ? 'Parle arabe, anglais et plus' : 'Fluent in Arabic, English, and more'
   }, {
     icon: UserCheck,
-    title: language === 'ar' ? 'تحويل للبشر' : language === 'fr' ? 'Transfert Humain' : 'Human Handoff',
-    description: language === 'ar' ? 'يحول المشاكل المعقدة بسلاسة' : language === 'fr' ? 'Transfère les problèmes complexes en douceur' : 'Seamlessly escalates complex issues'
+    title: language === 'ar' ? 'تحويل للفريق' : language === 'fr' ? 'Transfert Humain' : 'Human Handoff',
+    description: language === 'ar' ? 'يحول الحالات المعقدة للفريق' : language === 'fr' ? 'Transfère les problèmes complexes en douceur' : 'Seamlessly escalates complex issues'
   }, {
     icon: BarChart3,
-    title: language === 'ar' ? 'لوحة التحليلات' : language === 'fr' ? 'Tableau de Bord' : 'Analytics Dashboard',
-    description: language === 'ar' ? 'تتبع الأداء والرؤى' : language === 'fr' ? 'Suivez les performances et les insights' : 'Track performance and insights'
+    title: language === 'ar' ? 'لوحة تحكم' : language === 'fr' ? 'Tableau de Bord' : 'Analytics Dashboard',
+    description: language === 'ar' ? 'تابع الأداء والإحصائيات' : language === 'fr' ? 'Suivez les performances et les insights' : 'Track performance and insights'
   }, {
     icon: Shield,
-    title: language === 'ar' ? 'صوت العلامة التجارية' : language === 'fr' ? 'Voix de Marque' : 'Brand Voice',
-    description: language === 'ar' ? 'يطابق نبرة شركتك بشكل مثالي' : language === 'fr' ? 'Correspond parfaitement au ton de votre entreprise' : 'Matches your company tone perfectly'
+    title: language === 'ar' ? 'هوية علامتك' : language === 'fr' ? 'Voix de Marque' : 'Brand Voice',
+    description: language === 'ar' ? 'يتحدث بأسلوب شركتك' : language === 'fr' ? 'Correspond parfaitement au ton de votre entreprise' : 'Matches your company tone perfectly'
   }];
 
   const channels = [{
-    name: language === 'ar' ? 'ودجت الموقع' : language === 'fr' ? 'Widget Web' : 'Website Widget',
+    name: language === 'ar' ? 'موقعك الإلكتروني' : language === 'fr' ? 'Widget Web' : 'Website Widget',
     icon: Globe,
     color: 'bg-purple-500'
   }, {
@@ -178,20 +178,20 @@ const AIAgents = () => {
 
   const steps = [{
     number: '01',
-    title: language === 'ar' ? 'الاكتشاف' : language === 'fr' ? 'Découverte' : 'Discovery',
-    description: language === 'ar' ? 'نتعرف على عملك من الداخل' : language === 'fr' ? 'Nous apprenons votre entreprise de fond en comble' : 'We learn your business inside and out'
+    title: language === 'ar' ? 'التعرف' : language === 'fr' ? 'Découverte' : 'Discovery',
+    description: language === 'ar' ? 'نتعرف على عملك بالتفصيل' : language === 'fr' ? 'Nous apprenons votre entreprise de fond en comble' : 'We learn your business inside and out'
   }, {
     number: '02',
     title: language === 'ar' ? 'التدريب' : language === 'fr' ? 'Formation' : 'Training',
-    description: language === 'ar' ? 'الذكاء الاصطناعي يتعلم من مستنداتك' : language === 'fr' ? 'L\'IA apprend de vos documents et FAQ' : 'AI learns from your documents and FAQs'
+    description: language === 'ar' ? 'نُدرب المساعد على بياناتك' : language === 'fr' ? 'L\'IA apprend de vos documents et FAQ' : 'AI learns from your documents and FAQs'
   }, {
     number: '03',
-    title: language === 'ar' ? 'التكامل' : language === 'fr' ? 'Intégration' : 'Integration',
-    description: language === 'ar' ? 'النشر عبر جميع قنواتك' : language === 'fr' ? 'Déployez sur tous vos canaux' : 'Deploy across all your channels'
+    title: language === 'ar' ? 'الربط' : language === 'fr' ? 'Intégration' : 'Integration',
+    description: language === 'ar' ? 'ننشره على جميع منصاتك' : language === 'fr' ? 'Déployez sur tous vos canaux' : 'Deploy across all your channels'
   }, {
     number: '04',
     title: language === 'ar' ? 'الإطلاق' : language === 'fr' ? 'Lancement' : 'Launch',
-    description: language === 'ar' ? 'انطلق مع دعم الذكاء الاصطناعي 24/7' : language === 'fr' ? 'Lancez avec un support IA 24/7' : 'Go live with 24/7 AI support'
+    description: language === 'ar' ? 'ابدأ مع دعم ذكي ٢٤ ساعة' : language === 'fr' ? 'Lancez avec un support IA 24/7' : 'Go live with 24/7 AI support'
   }];
 
   return <div className="min-h-screen bg-neutral-950 text-white">
