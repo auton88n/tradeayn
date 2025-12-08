@@ -87,6 +87,17 @@ export function UserTicketDetail({ ticketId, onBack }: UserTicketDetailProps) {
 
       setTicket(ticketRes.data);
       setMessages(messagesRes.data || []);
+
+      // Mark ticket as read when user opens it
+      if (ticketRes.data?.has_unread_reply) {
+        await supabase
+          .from('support_tickets')
+          .update({ has_unread_reply: false })
+          .eq('id', ticketId);
+        
+        // Show in-app notification that they have a new reply
+        toast.info('You have a new reply from the support team');
+      }
     } catch (error) {
       console.error('Error fetching ticket:', error);
       toast.error('Failed to load ticket');
