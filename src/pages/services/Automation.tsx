@@ -452,13 +452,13 @@ const Automation = () => {
             </div>
 
           {/* Desktop: Orbiting layout */}
-            <div className="hidden md:flex justify-center mt-8 mb-16">
-              <div className="relative">
-                <div className="w-16 h-16 bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/30">
+            <div className="hidden md:flex items-center justify-center mt-8 mb-16">
+              <div className="relative flex items-center justify-center" style={{ width: '200px', height: '200px' }}>
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/30">
                   <Brain className="w-8 h-8 text-white" />
                 </div>
                 {/* Orbiting connections */}
-                <div className="absolute w-[200px] h-[200px] -top-[68px] -left-[68px]">
+                <div className="absolute inset-0">
                   {integrations.map((integration, index) => {
                   const angle = index * 360 / integrations.length + 30;
                   const radius = 70;
