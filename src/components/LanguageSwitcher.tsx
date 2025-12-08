@@ -14,8 +14,8 @@ interface LanguageSwitcherProps {
 
 const languages: { code: Language; symbol: string }[] = [
   { code: 'en', symbol: 'EN' },
-  { code: 'ar', symbol: 'AR' },
   { code: 'fr', symbol: 'FR' },
+  { code: 'ar', symbol: 'AR' },
 ];
 
 export const LanguageSwitcher = ({ onOpenChange }: LanguageSwitcherProps) => {
