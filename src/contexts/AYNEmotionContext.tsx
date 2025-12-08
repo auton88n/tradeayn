@@ -207,6 +207,19 @@ export const AYNEmotionProvider = ({ children }: { children: ReactNode }) => {
     }, 400);
   }, []);
 
+  // Empathetic response triggers - AYN responds to USER emotions
+  const triggerEmpathyBlink = useCallback(() => {
+    // Slow, understanding double-blink for when user is sad/anxious
+    triggerBlink();
+    setTimeout(() => triggerBlink(), 400);
+  }, [triggerBlink]);
+
+  const triggerEmpathyPulse = useCallback(() => {
+    // Gentle pulse showing "I understand your feelings"
+    hapticFeedback('empathy');
+    triggerPulse();
+  }, [triggerPulse]);
+
   // Trigger wink (asymmetric blink)
   const triggerWink = useCallback(() => {
     if (winkTimeoutRef.current) {
