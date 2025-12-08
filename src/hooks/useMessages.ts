@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import { Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { 
   Message, 
@@ -93,20 +92,37 @@ export const useMessages = (
     }
   }, [userId, sessionId, session]);
 
-  // Send message with optional file attachment (keep using supabase client for writes)
+  // Send message with optional file attachment - using direct fetch() to avoid deadlocks
   const sendMessage = useCallback(async (
     content: string,
     attachment: FileAttachment | null = null
   ) => {
-    // Check usage limits
+    if (!session) {
+      toast({
+        title: "Session Error",
+        description: "Please sign in again to continue.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Check usage limits via direct REST API call
     try {
-      const { data: canUse, error: usageError } = await supabase.rpc('increment_usage', {
-        _user_id: userId,
-        _action_type: 'message',
-        _count: 1
+      const rpcResponse = await fetch(`${SUPABASE_URL}/rest/v1/rpc/increment_usage`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          _user_id: userId,
+          _action_type: 'message',
+          _count: 1
+        })
       });
 
-      if (usageError) {
+      if (!rpcResponse.ok) {
         toast({
           title: "Usage Error",
           description: "Unable to verify usage limits. Please try again.",
@@ -114,6 +130,8 @@ export const useMessages = (
         });
         return;
       }
+
+      const canUse = await rpcResponse.json();
 
       if (!canUse) {
         toast({
@@ -177,15 +195,21 @@ export const useMessages = (
         file_data: attachment || null
       };
 
-      // Call webhook via edge function
-      const { data: webhookResponse, error: webhookError } = await supabase.functions.invoke('ayn-webhook', {
-        body: payload
+      // Call webhook via direct fetch to avoid deadlocks
+      const webhookResponse = await fetch(`${SUPABASE_URL}/functions/v1/ayn-webhook`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
       });
 
       setIsTyping(false);
 
       // Handle 429 Rate Limit Response
-      if (webhookError && webhookError.message?.includes('429')) {
+      if (webhookResponse.status === 429) {
         const errorMessage: Message = {
           id: (Date.now() + 1).toString(),
           content: "You've reached the rate limit for messages. Please wait a moment before sending more messages.",
@@ -203,15 +227,17 @@ export const useMessages = (
         return;
       }
 
-      if (webhookError) {
-        throw new Error(webhookError.message || 'Webhook call failed');
+      if (!webhookResponse.ok) {
+        throw new Error(`Webhook call failed: ${webhookResponse.status}`);
       }
 
+      const webhookData = await webhookResponse.json();
+
       // Extract response (handle both string and nested object formats)
-      const response = typeof webhookResponse?.response === 'string'
-        ? webhookResponse.response
-        : webhookResponse?.response?.output || 
-          webhookResponse?.output ||
+      const response = typeof webhookData?.response === 'string'
+        ? webhookData.response
+        : webhookData?.response?.output || 
+          webhookData?.output ||
           'I received your message and I\'m processing it. Please try again if you don\'t see a proper response.';
 
       // Create AI response message
@@ -225,26 +251,35 @@ export const useMessages = (
 
       setMessages(prev => [...prev, aynMessage]);
 
-      // Save both messages to database (keep using supabase client for writes)
-      await supabase.from('messages').insert([
-        {
-          user_id: userId,
-          session_id: sessionId,
-          content: content,
-          sender: 'user',
-          mode_used: selectedMode,
-          attachment_url: attachment?.url,
-          attachment_name: attachment?.name,
-          attachment_type: attachment?.type
+      // Save both messages to database via direct REST API
+      await fetch(`${SUPABASE_URL}/rest/v1/messages`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal',
         },
-        {
-          user_id: userId,
-          session_id: sessionId,
-          content: response,
-          sender: 'ayn',
-          mode_used: selectedMode
-        }
-      ]);
+        body: JSON.stringify([
+          {
+            user_id: userId,
+            session_id: sessionId,
+            content: content,
+            sender: 'user',
+            mode_used: selectedMode,
+            attachment_url: attachment?.url,
+            attachment_name: attachment?.name,
+            attachment_type: attachment?.type
+          },
+          {
+            user_id: userId,
+            session_id: sessionId,
+            content: response,
+            sender: 'ayn',
+            mode_used: selectedMode
+          }
+        ])
+      });
 
     } catch (error) {
       setIsTyping(false);
@@ -274,7 +309,8 @@ export const useMessages = (
     userProfile, 
     allowPersonalization, 
     detectedLanguage, 
-    toast
+    toast,
+    session
   ]);
 
   return {
