@@ -1,4 +1,3 @@
-import { useLanguage } from '@/contexts/LanguageContext';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -23,8 +22,6 @@ export const SessionTimeoutModal = ({
   onStayLoggedIn,
   onLogoutNow,
 }: SessionTimeoutModalProps) => {
-  const { t } = useLanguage();
-
   return (
     <AlertDialog open={open}>
       <AlertDialogContent className="backdrop-blur-xl bg-background/95 border-border/50">
@@ -34,11 +31,11 @@ export const SessionTimeoutModal = ({
               <Clock className="w-6 h-6 text-orange-500" />
             </div>
             <AlertDialogTitle className="text-xl">
-              {t('timeout.title')}
+              Session Expiring
             </AlertDialogTitle>
           </div>
           <AlertDialogDescription className="text-base pt-2">
-            {t('timeout.description')}
+            Your session will expire soon due to inactivity. Would you like to stay logged in?
           </AlertDialogDescription>
           
           <div className="mt-4 p-4 rounded-lg bg-muted/50 border border-border/30">
@@ -47,7 +44,7 @@ export const SessionTimeoutModal = ({
                 {remainingSeconds}
               </div>
               <div className="text-sm text-muted-foreground">
-                {t('timeout.secondsRemaining')}
+                seconds remaining
               </div>
             </div>
           </div>
@@ -60,13 +57,13 @@ export const SessionTimeoutModal = ({
             className="w-full sm:w-auto"
           >
             <LogOut className="w-4 h-4 mr-2" />
-            {t('timeout.logoutNow')}
+            Log Out Now
           </Button>
           <Button
             onClick={onStayLoggedIn}
             className="w-full sm:w-auto"
           >
-            {t('timeout.stayLoggedIn')}
+            Stay Logged In
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

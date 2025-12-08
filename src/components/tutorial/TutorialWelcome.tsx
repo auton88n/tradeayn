@@ -1,7 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Brain, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 
 interface TutorialWelcomeProps {
@@ -11,9 +10,6 @@ interface TutorialWelcomeProps {
 }
 
 export const TutorialWelcome = ({ isOpen, onStart, onSkip }: TutorialWelcomeProps) => {
-  const { t, language } = useLanguage();
-  const isArabic = language === 'ar';
-
   return (
     <AnimatePresence>
       {isOpen && (
@@ -36,7 +32,7 @@ export const TutorialWelcome = ({ isOpen, onStart, onSkip }: TutorialWelcomeProp
             className="fixed inset-0 flex items-center justify-center z-[101] p-4"
           >
             <div 
-              dir={isArabic ? 'rtl' : 'ltr'}
+              dir="ltr"
               className={cn(
                 "relative w-full max-w-md p-8 rounded-3xl",
                 "bg-background/95 backdrop-blur-xl",
@@ -73,12 +69,12 @@ export const TutorialWelcome = ({ isOpen, onStart, onSkip }: TutorialWelcomeProp
 
                 {/* Title */}
                 <h2 className="text-2xl font-bold text-foreground mb-2">
-                  {t('tutorial.welcome.title')}
+                  Welcome to AYN
                 </h2>
                 
                 {/* Subtitle */}
                 <p className="text-muted-foreground mb-8 max-w-xs">
-                  {t('tutorial.welcome.subtitle')}
+                  Let me show you around! Take a quick tour to discover how I can help you.
                 </p>
 
                 {/* Buttons */}
@@ -92,7 +88,7 @@ export const TutorialWelcome = ({ isOpen, onStart, onSkip }: TutorialWelcomeProp
                       "transition-all duration-300"
                     )}
                   >
-                    {t('tutorial.welcome.startButton')}
+                    Start Tour
                   </Button>
                   
                   <Button
@@ -100,7 +96,7 @@ export const TutorialWelcome = ({ isOpen, onStart, onSkip }: TutorialWelcomeProp
                     variant="ghost"
                     className="w-full h-10 rounded-xl text-muted-foreground hover:text-foreground"
                   >
-                    {t('tutorial.welcome.skipButton')}
+                    Skip for now
                   </Button>
                 </div>
               </div>
