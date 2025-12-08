@@ -135,7 +135,7 @@ const InfluencerSites = () => {
                 <img 
                   src={influencerWomanBg} 
                   alt="Content creator" 
-                  className="absolute right-0 top-0 h-full w-1/2 object-cover opacity-40"
+                  className="absolute inset-0 w-full h-full object-cover object-center opacity-50"
                 />
                 {/* Background Gradient Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-r from-neutral-950 via-neutral-950/80 to-transparent z-10" />
@@ -163,7 +163,7 @@ const InfluencerSites = () => {
                       </div>
                     </div>
                     <Button className="mt-6 bg-rose-500 hover:bg-rose-600 text-white rounded-full px-6">
-                      Work With Me
+                      Collaborate
                     </Button>
                   </div>
                 </div>
@@ -444,85 +444,6 @@ const InfluencerSites = () => {
         </div>
       </section>
 
-      {/* Portfolio Gallery Showcase */}
-      <section className="py-16 md:py-24 px-4 md:px-6">
-        <div className="container mx-auto max-w-6xl">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-            >
-              <span className="text-sm font-mono text-rose-400 tracking-wider uppercase mb-4 block">
-                Content Gallery
-              </span>
-              <h2 className="text-3xl md:text-4xl font-serif font-bold mb-4">
-                Recent <span className="text-rose-400">Content</span>
-              </h2>
-              <p className="text-neutral-400 mb-6">
-                Display your best-performing content beautifully. Your portfolio gallery showcases your work with platform badges, view counts, and engagement metrics.
-              </p>
-              <ul className="space-y-3">
-                {['Interactive content grid', 'Platform-specific badges', 'Performance overlays', 'Filterable by content type'].map((item, i) => (
-                  <li key={i} className="flex items-center gap-3 text-neutral-300">
-                    <CheckCircle className="w-5 h-5 text-rose-400" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-            >
-              {/* Portfolio Preview */}
-              <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
-                <div className="text-sm font-mono text-neutral-500 uppercase tracking-wider mb-2">Portfolio</div>
-                <h3 className="text-2xl font-bold text-white mb-6">Recent Content</h3>
-                
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    { platform: 'tiktok', views: '2.1M', likes: '245K', color: 'cyan' },
-                    { platform: 'instagram', views: '1.8M', likes: '198K', color: 'pink' },
-                    { platform: 'instagram', views: '1.5M', likes: '167K', color: 'pink' },
-                    { platform: 'tiktok', views: '1.2M', likes: '134K', color: 'cyan' }
-                  ].map((item, i) => (
-                    <div key={i} className="relative aspect-[4/5] rounded-xl bg-neutral-800 overflow-hidden group cursor-pointer">
-                      {/* Placeholder gradient */}
-                      <div className={`absolute inset-0 bg-gradient-to-br ${item.color === 'cyan' ? 'from-cyan-900/50 to-neutral-900' : 'from-pink-900/50 to-neutral-900'}`} />
-                      
-                      {/* Platform badge */}
-                      <div className="absolute top-2 left-2 z-10">
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center ${item.color === 'cyan' ? 'bg-cyan-500' : 'bg-gradient-to-br from-purple-500 to-pink-500'}`}>
-                          {item.platform === 'tiktok' ? <Play className="w-3 h-3 text-white" /> : <Instagram className="w-3 h-3 text-white" />}
-                        </div>
-                      </div>
-                      
-                      {/* Stats overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-3">
-                        <div className="flex gap-3 text-white text-xs">
-                          <span className="flex items-center gap-1">
-                            <Eye className="w-3 h-3" /> {item.views}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Heart className="w-3 h-3" /> {item.likes}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <Button variant="outline" className="w-full mt-4 border-neutral-700 text-white hover:bg-neutral-800">
-                  View All Content
-                </Button>
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
 
       {/* Features Section */}
       <section className="py-16 md:py-24 px-4 md:px-6 bg-neutral-900/50">
