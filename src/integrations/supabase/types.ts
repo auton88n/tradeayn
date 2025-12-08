@@ -337,6 +337,45 @@ export type Database = {
         }
         Relationships: []
       }
+      faq_items: {
+        Row: {
+          answer: string
+          category: string
+          created_at: string
+          helpful_count: number
+          id: string
+          is_published: boolean
+          order_index: number
+          question: string
+          updated_at: string
+          view_count: number
+        }
+        Insert: {
+          answer: string
+          category?: string
+          created_at?: string
+          helpful_count?: number
+          id?: string
+          is_published?: boolean
+          order_index?: number
+          question: string
+          updated_at?: string
+          view_count?: number
+        }
+        Update: {
+          answer?: string
+          category?: string
+          created_at?: string
+          helpful_count?: number
+          id?: string
+          is_published?: boolean
+          order_index?: number
+          question?: string
+          updated_at?: string
+          view_count?: number
+        }
+        Relationships: []
+      }
       favorite_chats: {
         Row: {
           chat_data: Json
@@ -757,6 +796,48 @@ export type Database = {
         }
         Relationships: []
       }
+      support_tickets: {
+        Row: {
+          assigned_to: string | null
+          category: Database["public"]["Enums"]["support_ticket_category"]
+          created_at: string
+          guest_email: string | null
+          guest_name: string | null
+          id: string
+          priority: Database["public"]["Enums"]["support_ticket_priority"]
+          status: Database["public"]["Enums"]["support_ticket_status"]
+          subject: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          category?: Database["public"]["Enums"]["support_ticket_category"]
+          created_at?: string
+          guest_email?: string | null
+          guest_name?: string | null
+          id?: string
+          priority?: Database["public"]["Enums"]["support_ticket_priority"]
+          status?: Database["public"]["Enums"]["support_ticket_status"]
+          subject: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          category?: Database["public"]["Enums"]["support_ticket_category"]
+          created_at?: string
+          guest_email?: string | null
+          guest_name?: string | null
+          id?: string
+          priority?: Database["public"]["Enums"]["support_ticket_priority"]
+          status?: Database["public"]["Enums"]["support_ticket_status"]
+          subject?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       system_config: {
         Row: {
           created_at: string | null
@@ -909,6 +990,47 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      ticket_messages: {
+        Row: {
+          attachments: Json | null
+          created_at: string
+          id: string
+          is_internal_note: boolean
+          message: string
+          sender_id: string | null
+          sender_type: Database["public"]["Enums"]["ticket_sender_type"]
+          ticket_id: string
+        }
+        Insert: {
+          attachments?: Json | null
+          created_at?: string
+          id?: string
+          is_internal_note?: boolean
+          message: string
+          sender_id?: string | null
+          sender_type: Database["public"]["Enums"]["ticket_sender_type"]
+          ticket_id: string
+        }
+        Update: {
+          attachments?: Json | null
+          created_at?: string
+          id?: string
+          is_internal_note?: boolean
+          message?: string
+          sender_id?: string | null
+          sender_type?: Database["public"]["Enums"]["ticket_sender_type"]
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       usage_logs: {
         Row: {
@@ -1255,6 +1377,8 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_faq_helpful: { Args: { faq_id: string }; Returns: undefined }
+      increment_faq_view: { Args: { faq_id: string }; Returns: undefined }
       increment_template_usage: {
         Args: { template_id: string }
         Returns: undefined
@@ -1350,6 +1474,20 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      support_ticket_category:
+        | "general"
+        | "billing"
+        | "technical"
+        | "feature_request"
+        | "bug_report"
+      support_ticket_priority: "low" | "medium" | "high" | "urgent"
+      support_ticket_status:
+        | "open"
+        | "in_progress"
+        | "waiting_reply"
+        | "resolved"
+        | "closed"
+      ticket_sender_type: "user" | "admin" | "ai_bot"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1478,6 +1616,22 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      support_ticket_category: [
+        "general",
+        "billing",
+        "technical",
+        "feature_request",
+        "bug_report",
+      ],
+      support_ticket_priority: ["low", "medium", "high", "urgent"],
+      support_ticket_status: [
+        "open",
+        "in_progress",
+        "waiting_reply",
+        "resolved",
+        "closed",
+      ],
+      ticket_sender_type: ["user", "admin", "ai_bot"],
     },
   },
 } as const
