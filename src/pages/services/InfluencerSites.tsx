@@ -142,7 +142,7 @@ const InfluencerSites = () => {
               {/* Hero Content Preview */}
               <div className="relative aspect-[16/10] bg-gradient-to-br from-neutral-900 via-neutral-950 to-neutral-900 overflow-hidden">
                 {/* Woman Background Image */}
-                <img src={influencerWomanBg} alt="Content creator" className="absolute inset-0 w-full h-full object-cover object-center opacity-50" />
+                <img src={influencerWomanBg} alt="Content creator" className="absolute inset-0 w-full h-full object-cover object-[center_30%] opacity-50" />
                 {/* Background Gradient Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-r from-neutral-950 via-neutral-950/80 to-transparent z-10" />
                 
