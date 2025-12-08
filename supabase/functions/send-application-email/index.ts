@@ -87,7 +87,7 @@ const handler = async (req: Request): Promise<Response> => {
 <p style="font-size:14px;color:#999;margin:0 0 8px;text-transform:uppercase;font-weight:600;">SERVICE</p>
 <p style="font-size:18px;color:#333;margin:0;font-weight:600;">${serviceType}</p>
 </div>
-<p style="font-size:14px;color:#999;margin-top:40px;">If you have any questions, simply reply to this email.</p>
+
 <div style="margin-top:40px;padding-top:24px;border-top:1px solid #eee;text-align:center;">
 <p style="font-size:12px;color:#999;margin:0;">AYN AI - Your Intelligent Companion</p>
 </div>
