@@ -114,6 +114,9 @@ export const DashboardContainer = ({ user, session, auth, isAdmin, onAdminPanelC
     
     // Refresh chat history
     chatSession.loadRecentChats();
+    
+    // Return true to indicate message was sent successfully
+    return true;
   }, [
     auth.hasAccess,
     auth.hasAcceptedTerms,
@@ -233,7 +236,7 @@ const DashboardContent = ({
   handleLoadChat: (chat: ChatHistory) => void;
   handleCopyMessage: (content: string) => Promise<void>;
   handleReplyToMessage: (message: { content: string }) => void;
-  handleSendMessage: (content: string, fileToUpload?: File | null) => Promise<void>;
+  handleSendMessage: (content: string, fileToUpload?: File | null) => Promise<boolean | undefined>;
   handleLogout: () => Promise<void>;
   isAdmin?: boolean;
   onAdminPanelClick?: () => void;
@@ -465,7 +468,12 @@ const DashboardContent = ({
 
         <CenterStageLayout
           messages={messagesHook.messages}
-          onSendMessage={handleSendMessage}
+          onSendMessage={async (content, file) => {
+            const success = await handleSendMessage(content, file);
+            if (success) {
+              tutorial.triggerFirstMessageTutorial();
+            }
+          }}
           isTyping={messagesHook.isTyping}
           isDisabled={auth.isAuthLoading ? false : (!auth.hasAccess || !auth.hasAcceptedTerms)}
           selectedMode={selectedMode}

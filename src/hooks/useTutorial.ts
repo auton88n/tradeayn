@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { TUTORIAL_STEPS, TutorialState } from '@/types/tutorial.types';
 
@@ -11,13 +11,18 @@ export const useTutorial = (userId?: string) => {
     isCompleted: false,
     showWelcome: false,
   });
+  
+  // Track if this is a first-time user (hasn't completed tutorial)
+  const [isFirstTimeUser, setIsFirstTimeUser] = useState(false);
+  const hasTriggeredRef = useRef(false);
 
-  // Check if tutorial should be shown
+  // Check if tutorial should be shown - but DON'T auto-show welcome
   useEffect(() => {
     const checkTutorialStatus = async () => {
       const localCompleted = localStorage.getItem(STORAGE_KEY);
       if (localCompleted === 'true') {
         setState(prev => ({ ...prev, isCompleted: true }));
+        setIsFirstTimeUser(false);
         return;
       }
 
@@ -32,8 +37,10 @@ export const useTutorial = (userId?: string) => {
         if (settings?.has_completed_tutorial) {
           localStorage.setItem(STORAGE_KEY, 'true');
           setState(prev => ({ ...prev, isCompleted: true }));
+          setIsFirstTimeUser(false);
         } else {
-          setState(prev => ({ ...prev, showWelcome: true }));
+          // First time user - but don't show welcome automatically
+          setIsFirstTimeUser(true);
         }
       }
     };
@@ -49,6 +56,15 @@ export const useTutorial = (userId?: string) => {
       showWelcome: false,
     }));
   }, []);
+
+  // Trigger tutorial on first message send
+  const triggerFirstMessageTutorial = useCallback(() => {
+    if (isFirstTimeUser && !state.isCompleted && !hasTriggeredRef.current) {
+      hasTriggeredRef.current = true;
+      // Show welcome modal which leads to tutorial
+      setState(prev => ({ ...prev, showWelcome: true }));
+    }
+  }, [isFirstTimeUser, state.isCompleted]);
 
   const nextStep = useCallback(() => {
     setState(prev => {
@@ -69,6 +85,7 @@ export const useTutorial = (userId?: string) => {
   const completeTutorial = useCallback(async () => {
     localStorage.setItem(STORAGE_KEY, 'true');
     setState(prev => ({ ...prev, isActive: false, isCompleted: true }));
+    setIsFirstTimeUser(false);
 
     if (userId) {
       await supabase
@@ -95,12 +112,14 @@ export const useTutorial = (userId?: string) => {
 
   const resetTutorial = useCallback(() => {
     localStorage.removeItem(STORAGE_KEY);
+    hasTriggeredRef.current = false;
     setState({
       isActive: false,
       currentStep: 0,
       isCompleted: false,
       showWelcome: true,
     });
+    setIsFirstTimeUser(true);
   }, []);
 
   const dismissWelcome = useCallback(() => {
@@ -110,6 +129,7 @@ export const useTutorial = (userId?: string) => {
 
   return {
     ...state,
+    isFirstTimeUser,
     currentStepData: TUTORIAL_STEPS[state.currentStep],
     totalSteps: TUTORIAL_STEPS.length,
     startTutorial,
@@ -119,5 +139,6 @@ export const useTutorial = (userId?: string) => {
     completeTutorial,
     resetTutorial,
     dismissWelcome,
+    triggerFirstMessageTutorial,
   };
 };
