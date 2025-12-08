@@ -2,14 +2,20 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, Brain, MessageSquare, Zap, Globe, Users, BarChart3, Clock, Bot, Headphones, Languages, UserCheck, Shield, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-
 const AIAgents = () => {
   const fadeInUp = {
-    initial: { opacity: 0, y: 20 },
-    animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.6 }
+    initial: {
+      opacity: 0,
+      y: 20
+    },
+    animate: {
+      opacity: 1,
+      y: 0
+    },
+    transition: {
+      duration: 0.6
+    }
   };
-
   const staggerContainer = {
     animate: {
       transition: {
@@ -17,32 +23,66 @@ const AIAgents = () => {
       }
     }
   };
-
-  const features = [
-    { icon: Clock, title: '24/7 Availability', description: 'Never miss a customer inquiry, day or night' },
-    { icon: Brain, title: 'Custom Training', description: 'Trained specifically on your business data' },
-    { icon: Languages, title: 'Multi-language', description: 'Fluent in Arabic, English, and more' },
-    { icon: UserCheck, title: 'Human Handoff', description: 'Seamlessly escalates complex issues' },
-    { icon: BarChart3, title: 'Analytics Dashboard', description: 'Track performance and insights' },
-    { icon: Shield, title: 'Brand Voice', description: 'Matches your company tone perfectly' },
-  ];
-
-  const channels = [
-    { name: 'Website Widget', icon: Globe, color: 'bg-purple-500' },
-    { name: 'WhatsApp', icon: MessageSquare, color: 'bg-green-500' },
-    { name: 'Telegram', icon: Zap, color: 'bg-blue-500' },
-    { name: 'Facebook', icon: Users, color: 'bg-indigo-500' },
-  ];
-
-  const steps = [
-    { number: '01', title: 'Discovery', description: 'We learn your business inside and out' },
-    { number: '02', title: 'Training', description: 'AI learns from your documents and FAQs' },
-    { number: '03', title: 'Integration', description: 'Deploy across all your channels' },
-    { number: '04', title: 'Launch', description: 'Go live with 24/7 AI support' },
-  ];
-
-  return (
-    <div className="min-h-screen bg-neutral-950 text-white">
+  const features = [{
+    icon: Clock,
+    title: '24/7 Availability',
+    description: 'Never miss a customer inquiry, day or night'
+  }, {
+    icon: Brain,
+    title: 'Custom Training',
+    description: 'Trained specifically on your business data'
+  }, {
+    icon: Languages,
+    title: 'Multi-language',
+    description: 'Fluent in Arabic, English, and more'
+  }, {
+    icon: UserCheck,
+    title: 'Human Handoff',
+    description: 'Seamlessly escalates complex issues'
+  }, {
+    icon: BarChart3,
+    title: 'Analytics Dashboard',
+    description: 'Track performance and insights'
+  }, {
+    icon: Shield,
+    title: 'Brand Voice',
+    description: 'Matches your company tone perfectly'
+  }];
+  const channels = [{
+    name: 'Website Widget',
+    icon: Globe,
+    color: 'bg-purple-500'
+  }, {
+    name: 'WhatsApp',
+    icon: MessageSquare,
+    color: 'bg-green-500'
+  }, {
+    name: 'Telegram',
+    icon: Zap,
+    color: 'bg-blue-500'
+  }, {
+    name: 'Facebook',
+    icon: Users,
+    color: 'bg-indigo-500'
+  }];
+  const steps = [{
+    number: '01',
+    title: 'Discovery',
+    description: 'We learn your business inside and out'
+  }, {
+    number: '02',
+    title: 'Training',
+    description: 'AI learns from your documents and FAQs'
+  }, {
+    number: '03',
+    title: 'Integration',
+    description: 'Deploy across all your channels'
+  }, {
+    number: '04',
+    title: 'Launch',
+    description: 'Go live with 24/7 AI support'
+  }];
+  return <div className="min-h-screen bg-neutral-950 text-white">
       {/* Back Button */}
       <Link to="/" className="fixed top-4 md:top-6 left-4 md:left-6 z-50">
         <Button variant="ghost" className="text-white/70 hover:text-white hover:bg-white/10 gap-2 bg-neutral-900/80 backdrop-blur-xl border border-neutral-800 rounded-full px-4 py-2">
@@ -60,15 +100,16 @@ const AIAgents = () => {
         </div>
 
         <div className="container mx-auto max-w-6xl relative z-10">
-          <motion.div 
-            className="text-center"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-          >
-            <span className="text-sm font-mono text-purple-400 tracking-wider uppercase mb-4 block">
-              02 — Our Services
-            </span>
+          <motion.div className="text-center" initial={{
+          opacity: 0,
+          y: 30
+        }} animate={{
+          opacity: 1,
+          y: 0
+        }} transition={{
+          duration: 0.8
+        }}>
+            
             <h1 className="text-4xl md:text-6xl lg:text-8xl font-serif font-bold mb-6">
               Custom AI <span className="text-purple-400">Agents</span>
             </h1>
@@ -94,13 +135,9 @@ const AIAgents = () => {
       {/* Chat Interface Showcase */}
       <section className="py-16 md:py-24 px-4 md:px-6">
         <div className="container mx-auto max-w-6xl">
-          <motion.div 
-            className="text-center mb-16"
-            {...fadeInUp}
-            viewport={{ once: true }}
-            whileInView="animate"
-            initial="initial"
-          >
+          <motion.div className="text-center mb-16" {...fadeInUp} viewport={{
+          once: true
+        }} whileInView="animate" initial="initial">
             <span className="text-sm font-mono text-purple-400 tracking-wider uppercase mb-4 block">
               What You'll Get
             </span>
@@ -112,13 +149,17 @@ const AIAgents = () => {
             </p>
           </motion.div>
 
-          <motion.div 
-            className="relative"
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-          >
+          <motion.div className="relative" initial={{
+          opacity: 0,
+          y: 40
+        }} whileInView={{
+          opacity: 1,
+          y: 0
+        }} viewport={{
+          once: true
+        }} transition={{
+          duration: 0.8
+        }}>
             {/* Browser Mockup */}
             <div className="bg-neutral-900 rounded-2xl border border-neutral-800 overflow-hidden shadow-2xl">
               {/* Browser Header */}
@@ -178,13 +219,17 @@ const AIAgents = () => {
             </div>
 
             {/* Floating Stats Cards - Hidden on mobile */}
-            <motion.div 
-              className="absolute -right-4 lg:-right-16 top-1/4 bg-neutral-900/90 backdrop-blur-xl border border-purple-500/20 rounded-2xl p-3 md:p-4 shadow-xl hidden md:block"
-              initial={{ opacity: 0, x: 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.3 }}
-            >
+            <motion.div className="absolute -right-4 lg:-right-16 top-1/4 bg-neutral-900/90 backdrop-blur-xl border border-purple-500/20 rounded-2xl p-3 md:p-4 shadow-xl hidden md:block" initial={{
+            opacity: 0,
+            x: 20
+          }} whileInView={{
+            opacity: 1,
+            x: 0
+          }} viewport={{
+            once: true
+          }} transition={{
+            delay: 0.3
+          }}>
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
                   <Zap className="w-4 h-4 md:w-5 md:h-5 text-purple-400" />
@@ -196,13 +241,17 @@ const AIAgents = () => {
               </div>
             </motion.div>
 
-            <motion.div 
-              className="absolute -left-4 lg:-left-16 top-1/2 bg-neutral-900/90 backdrop-blur-xl border border-green-500/20 rounded-2xl p-3 md:p-4 shadow-xl hidden md:block"
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.4 }}
-            >
+            <motion.div className="absolute -left-4 lg:-left-16 top-1/2 bg-neutral-900/90 backdrop-blur-xl border border-green-500/20 rounded-2xl p-3 md:p-4 shadow-xl hidden md:block" initial={{
+            opacity: 0,
+            x: -20
+          }} whileInView={{
+            opacity: 1,
+            x: 0
+          }} viewport={{
+            once: true
+          }} transition={{
+            delay: 0.4
+          }}>
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-green-500/20 flex items-center justify-center">
                   <BarChart3 className="w-4 h-4 md:w-5 md:h-5 text-green-400" />
@@ -214,13 +263,17 @@ const AIAgents = () => {
               </div>
             </motion.div>
 
-            <motion.div 
-              className="absolute -right-4 lg:-right-16 bottom-1/4 bg-neutral-900/90 backdrop-blur-xl border border-blue-500/20 rounded-2xl p-3 md:p-4 shadow-xl hidden md:block"
-              initial={{ opacity: 0, x: 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.5 }}
-            >
+            <motion.div className="absolute -right-4 lg:-right-16 bottom-1/4 bg-neutral-900/90 backdrop-blur-xl border border-blue-500/20 rounded-2xl p-3 md:p-4 shadow-xl hidden md:block" initial={{
+            opacity: 0,
+            x: 20
+          }} whileInView={{
+            opacity: 1,
+            x: 0
+          }} viewport={{
+            once: true
+          }} transition={{
+            delay: 0.5
+          }}>
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
                   <Languages className="w-4 h-4 md:w-5 md:h-5 text-blue-400" />
@@ -238,13 +291,9 @@ const AIAgents = () => {
       {/* Multi-Channel Deployment */}
       <section className="py-16 md:py-24 px-4 md:px-6 bg-neutral-900/50">
         <div className="container mx-auto max-w-6xl">
-          <motion.div 
-            className="text-center mb-16"
-            {...fadeInUp}
-            viewport={{ once: true }}
-            whileInView="animate"
-            initial="initial"
-          >
+          <motion.div className="text-center mb-16" {...fadeInUp} viewport={{
+          once: true
+        }} whileInView="animate" initial="initial">
             <span className="text-sm font-mono text-purple-400 tracking-wider uppercase mb-4 block">
               Deployment
             </span>
@@ -256,26 +305,16 @@ const AIAgents = () => {
             </p>
           </motion.div>
 
-          <motion.div 
-            className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6"
-            variants={staggerContainer}
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-          >
-            {channels.map((channel, index) => (
-              <motion.div
-                key={channel.name}
-                className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 md:p-8 text-center hover:border-purple-500/30 transition-colors group"
-                variants={fadeInUp}
-              >
+          <motion.div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6" variants={staggerContainer} initial="initial" whileInView="animate" viewport={{
+          once: true
+        }}>
+            {channels.map((channel, index) => <motion.div key={channel.name} className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 md:p-8 text-center hover:border-purple-500/30 transition-colors group" variants={fadeInUp}>
                 <div className={`w-12 h-12 md:w-16 md:h-16 ${channel.color} rounded-xl md:rounded-2xl mx-auto mb-3 md:mb-4 flex items-center justify-center group-hover:scale-110 transition-transform`}>
                   <channel.icon className="w-6 h-6 md:w-8 md:h-8 text-white" />
                 </div>
                 <h3 className="font-semibold text-sm md:text-lg">{channel.name}</h3>
                 <p className="text-xs md:text-sm text-green-400 mt-1 md:mt-2">Connected</p>
-              </motion.div>
-            ))}
+              </motion.div>)}
           </motion.div>
         </div>
       </section>
@@ -284,12 +323,17 @@ const AIAgents = () => {
       <section className="py-16 md:py-24 px-4 md:px-6">
         <div className="container mx-auto max-w-6xl">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-            >
+            <motion.div initial={{
+            opacity: 0,
+            x: -30
+          }} whileInView={{
+            opacity: 1,
+            x: 0
+          }} viewport={{
+            once: true
+          }} transition={{
+            duration: 0.6
+          }}>
               <span className="text-sm font-mono text-purple-400 tracking-wider uppercase mb-4 block">
                 Insights
               </span>
@@ -300,24 +344,26 @@ const AIAgents = () => {
                 Track every conversation, measure performance, and continuously improve your AI agent with actionable insights.
               </p>
               <ul className="space-y-4">
-                {['Total conversations handled', 'Customer satisfaction scores', 'Response time metrics', 'Most common questions', 'Escalation patterns'].map((item, i) => (
-                  <li key={i} className="flex items-center gap-3 text-neutral-300">
+                {['Total conversations handled', 'Customer satisfaction scores', 'Response time metrics', 'Most common questions', 'Escalation patterns'].map((item, i) => <li key={i} className="flex items-center gap-3 text-neutral-300">
                     <div className="w-6 h-6 rounded-full bg-purple-500/20 flex items-center justify-center">
                       <Sparkles className="w-3 h-3 text-purple-400" />
                     </div>
                     {item}
-                  </li>
-                ))}
+                  </li>)}
               </ul>
             </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="bg-neutral-900 border border-neutral-800 rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6"
-            >
+            <motion.div initial={{
+            opacity: 0,
+            x: 30
+          }} whileInView={{
+            opacity: 1,
+            x: 0
+          }} viewport={{
+            once: true
+          }} transition={{
+            duration: 0.6
+          }} className="bg-neutral-900 border border-neutral-800 rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6">
               {/* Mini Dashboard */}
               <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-6">
                 <div className="bg-neutral-800/50 rounded-lg sm:rounded-xl p-2 sm:p-3 md:p-4">
@@ -346,11 +392,13 @@ const AIAgents = () => {
               <div className="bg-neutral-800/50 rounded-lg sm:rounded-xl p-2 sm:p-3 md:p-4">
                 <p className="text-[10px] sm:text-xs md:text-sm text-neutral-500 mb-2 sm:mb-4">Weekly Activity</p>
                 <div className="flex items-end gap-1 sm:gap-2 h-16 sm:h-20 md:h-24">
-                  {[40, 65, 45, 80, 55, 90, 70].map((height, i) => (
-                    <div key={i} className="flex-1 bg-purple-500/30 rounded-t" style={{ height: `${height}%` }}>
-                      <div className="w-full bg-purple-500 rounded-t" style={{ height: '60%' }} />
-                    </div>
-                  ))}
+                  {[40, 65, 45, 80, 55, 90, 70].map((height, i) => <div key={i} className="flex-1 bg-purple-500/30 rounded-t" style={{
+                  height: `${height}%`
+                }}>
+                      <div className="w-full bg-purple-500 rounded-t" style={{
+                    height: '60%'
+                  }} />
+                    </div>)}
                 </div>
                 <div className="flex justify-between mt-1 sm:mt-2 text-[8px] sm:text-[10px] md:text-xs text-neutral-500">
                   <span>Mon</span>
@@ -370,13 +418,9 @@ const AIAgents = () => {
       {/* Features Grid */}
       <section className="py-16 md:py-24 px-4 md:px-6 bg-neutral-900/50">
         <div className="container mx-auto max-w-6xl">
-          <motion.div 
-            className="text-center mb-16"
-            {...fadeInUp}
-            viewport={{ once: true }}
-            whileInView="animate"
-            initial="initial"
-          >
+          <motion.div className="text-center mb-16" {...fadeInUp} viewport={{
+          once: true
+        }} whileInView="animate" initial="initial">
             <span className="text-sm font-mono text-purple-400 tracking-wider uppercase mb-4 block">
               Features
             </span>
@@ -385,26 +429,16 @@ const AIAgents = () => {
             </h2>
           </motion.div>
 
-          <motion.div 
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6"
-            variants={staggerContainer}
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-          >
-            {features.map((feature, index) => (
-              <motion.div
-                key={feature.title}
-                className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 md:p-8 hover:border-purple-500/30 transition-colors"
-                variants={fadeInUp}
-              >
+          <motion.div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6" variants={staggerContainer} initial="initial" whileInView="animate" viewport={{
+          once: true
+        }}>
+            {features.map((feature, index) => <motion.div key={feature.title} className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 md:p-8 hover:border-purple-500/30 transition-colors" variants={fadeInUp}>
                 <div className="w-12 h-12 md:w-14 md:h-14 bg-purple-500/10 rounded-xl md:rounded-2xl flex items-center justify-center mb-4 md:mb-6">
                   <feature.icon className="w-6 h-6 md:w-7 md:h-7 text-purple-400" />
                 </div>
                 <h3 className="text-lg md:text-xl font-bold mb-2 md:mb-3">{feature.title}</h3>
                 <p className="text-sm md:text-base text-neutral-400">{feature.description}</p>
-              </motion.div>
-            ))}
+              </motion.div>)}
           </motion.div>
         </div>
       </section>
@@ -412,13 +446,9 @@ const AIAgents = () => {
       {/* How It Works */}
       <section className="py-16 md:py-24 px-4 md:px-6">
         <div className="container mx-auto max-w-6xl">
-          <motion.div 
-            className="text-center mb-16"
-            {...fadeInUp}
-            viewport={{ once: true }}
-            whileInView="animate"
-            initial="initial"
-          >
+          <motion.div className="text-center mb-16" {...fadeInUp} viewport={{
+          once: true
+        }} whileInView="animate" initial="initial">
             <span className="text-sm font-mono text-purple-400 tracking-wider uppercase mb-4 block">
               Process
             </span>
@@ -427,29 +457,17 @@ const AIAgents = () => {
             </h2>
           </motion.div>
 
-          <motion.div 
-            className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8"
-            variants={staggerContainer}
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-          >
-            {steps.map((step, index) => (
-              <motion.div
-                key={step.number}
-                className="text-center relative"
-                variants={fadeInUp}
-              >
-                {index < steps.length - 1 && (
-                  <div className="hidden md:block absolute top-6 md:top-8 left-1/2 w-full h-px bg-neutral-800" />
-                )}
+          <motion.div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8" variants={staggerContainer} initial="initial" whileInView="animate" viewport={{
+          once: true
+        }}>
+            {steps.map((step, index) => <motion.div key={step.number} className="text-center relative" variants={fadeInUp}>
+                {index < steps.length - 1 && <div className="hidden md:block absolute top-6 md:top-8 left-1/2 w-full h-px bg-neutral-800" />}
                 <div className="w-12 h-12 md:w-16 md:h-16 bg-purple-500/20 border border-purple-500/30 rounded-xl md:rounded-2xl mx-auto mb-4 md:mb-6 flex items-center justify-center relative z-10">
                   <span className="text-lg md:text-xl font-bold text-purple-400">{step.number}</span>
                 </div>
                 <h3 className="text-lg md:text-xl font-bold mb-1 md:mb-2">{step.title}</h3>
                 <p className="text-neutral-400 text-xs md:text-sm">{step.description}</p>
-              </motion.div>
-            ))}
+              </motion.div>)}
           </motion.div>
         </div>
       </section>
@@ -457,12 +475,17 @@ const AIAgents = () => {
       {/* CTA Section */}
       <section className="py-16 md:py-24 px-4 md:px-6 bg-gradient-to-b from-neutral-900 to-neutral-950">
         <div className="container mx-auto max-w-4xl text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
+          <motion.div initial={{
+          opacity: 0,
+          y: 30
+        }} whileInView={{
+          opacity: 1,
+          y: 0
+        }} viewport={{
+          once: true
+        }} transition={{
+          duration: 0.6
+        }}>
             <h2 className="text-3xl md:text-4xl lg:text-6xl font-serif font-bold mb-6">
               Ready to Automate <span className="text-purple-400">Customer Support?</span>
             </h2>
@@ -495,14 +518,10 @@ const AIAgents = () => {
               </div>
               <span className="text-xl font-bold">AYN</span>
             </div>
-            <p className="text-neutral-500 text-sm">
-              © 2024 AYN. All rights reserved.
-            </p>
+            
           </div>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default AIAgents;
