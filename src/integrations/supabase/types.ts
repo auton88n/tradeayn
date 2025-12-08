@@ -1054,6 +1054,10 @@ export type Database = {
           retry_after_seconds: number
         }[]
       }
+      check_application_rate_limit: {
+        Args: { _email: string }
+        Returns: boolean
+      }
       check_emergency_shutdown: { Args: never; Returns: boolean }
       check_rate_limit: {
         Args: {
