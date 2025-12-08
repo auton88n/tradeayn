@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import influencerWomanBg from '@/assets/influencer-woman-bg.jpg';
 import { Brain, ArrowLeft, Palette, Smartphone, Zap, Layout, TrendingUp, Globe, Instagram, Play, Heart, Eye, BarChart3, Users, Star, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
@@ -123,21 +124,26 @@ const InfluencerSites = () => {
                 </div>
                 <div className="flex-1 mx-4">
                   <div className="bg-neutral-800 rounded-full px-4 py-1.5 text-xs text-neutral-400 text-center">
-                    sarahjohnson.com
+                    sarahjohnason.aynn.io
                   </div>
                 </div>
               </div>
               
               {/* Hero Content Preview */}
               <div className="relative aspect-[16/10] bg-gradient-to-br from-neutral-900 via-neutral-950 to-neutral-900 overflow-hidden">
-                {/* Background Image Simulation */}
+                {/* Woman Background Image */}
+                <img 
+                  src={influencerWomanBg} 
+                  alt="Content creator" 
+                  className="absolute right-0 top-0 h-full w-1/2 object-cover opacity-40"
+                />
+                {/* Background Gradient Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-r from-neutral-950 via-neutral-950/80 to-transparent z-10" />
-                <div className="absolute right-0 top-0 bottom-0 w-1/2 bg-gradient-to-l from-rose-950/20 to-transparent" />
                 
                 {/* Content */}
                 <div className="relative z-20 flex items-center h-full p-8 md:p-12">
                   <div className="max-w-md">
-                    <p className="text-rose-400 text-sm font-medium mb-2">Fashion & Lifestyle Influencer</p>
+                    <p className="text-rose-400 text-sm font-medium mb-2">Fashion & Lifestyle Content Creator</p>
                     <h3 className="text-3xl md:text-5xl font-bold text-white mb-4">SARAH JOHNSON</h3>
                     <p className="text-neutral-400 text-sm mb-6">
                       Creating inspiring content that blends high fashion with everyday lifestyle. Join 3M+ followers on this journey of style and authenticity.
