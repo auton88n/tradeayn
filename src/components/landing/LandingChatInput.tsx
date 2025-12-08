@@ -58,6 +58,7 @@ export const LandingChatInput: React.FC<LandingChatInputProps> = ({ onSendAttemp
       className="w-full max-w-xl mx-auto mt-8 md:mt-12 px-4"
     >
       <div
+        dir="ltr"
         className={cn(
           "relative rounded-2xl overflow-hidden",
           "bg-background/95 backdrop-blur-xl",
