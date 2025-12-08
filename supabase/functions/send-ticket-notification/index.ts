@@ -1,0 +1,192 @@
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+interface TicketNotificationRequest {
+  ticketId: string;
+  subject: string;
+  message: string;
+  category: string;
+  priority: string;
+  userName?: string;
+  userEmail?: string;
+}
+
+// HTML entity escaping to prevent HTML injection
+const escapeHtml = (str: string): string => {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+};
+
+const getPriorityColor = (priority: string): string => {
+  switch (priority) {
+    case 'urgent': return '#ef4444';
+    case 'high': return '#f97316';
+    case 'medium': return '#eab308';
+    default: return '#22c55e';
+  }
+};
+
+const getCategoryLabel = (category: string): string => {
+  return category.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+};
+
+const handler = async (req: Request): Promise<Response> => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { 
+      ticketId, 
+      subject: rawSubject, 
+      message: rawMessage, 
+      category: rawCategory, 
+      priority: rawPriority, 
+      userName: rawUserName, 
+      userEmail: rawUserEmail 
+    }: TicketNotificationRequest = await req.json();
+
+    // Escape user inputs
+    const subject = escapeHtml(rawSubject);
+    const message = escapeHtml(rawMessage);
+    const category = escapeHtml(rawCategory);
+    const priority = escapeHtml(rawPriority);
+    const userName = rawUserName ? escapeHtml(rawUserName) : 'Anonymous';
+    const userEmail = rawUserEmail ? escapeHtml(rawUserEmail) : 'Not provided';
+
+    console.log(`Processing support ticket notification: ${ticketId}`);
+
+    const smtpHost = Deno.env.get("SMTP_HOST");
+    const smtpPort = parseInt(Deno.env.get("SMTP_PORT") || "465");
+    const smtpUser = Deno.env.get("SMTP_USER");
+    const smtpPass = Deno.env.get("SMTP_PASS");
+    const notificationEmail = Deno.env.get("NOTIFICATION_EMAIL") || "info@aynn.io";
+
+    if (!smtpHost || !smtpUser || !smtpPass) {
+      console.error("SMTP configuration missing");
+      throw new Error("SMTP configuration missing");
+    }
+
+    const client = new SMTPClient({
+      connection: {
+        hostname: smtpHost,
+        port: smtpPort,
+        tls: true,
+        auth: {
+          username: smtpUser,
+          password: smtpPass,
+        },
+      },
+    });
+
+    const priorityColor = getPriorityColor(priority);
+    const categoryLabel = getCategoryLabel(category);
+
+    // Notification email to admin
+    const notificationHtml = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<div style="max-width:600px;margin:0 auto;padding:40px 20px;">
+<div style="text-align:center;margin-bottom:32px;">
+<h1 style="font-size:56px;font-weight:900;letter-spacing:-2px;margin:0;">AYN</h1>
+<div style="width:40px;height:4px;background:#000;margin:16px auto;"></div>
+</div>
+
+<div style="background:#fef3c7;border-left:4px solid #f59e0b;padding:16px 20px;margin-bottom:32px;">
+<p style="font-size:16px;color:#92400e;margin:0;font-weight:600;">🎫 New Support Ticket</p>
+</div>
+
+<div style="display:flex;gap:12px;margin-bottom:24px;">
+<div style="background:${priorityColor}15;border:1px solid ${priorityColor}30;border-radius:8px;padding:8px 16px;">
+<span style="font-size:12px;color:${priorityColor};font-weight:700;text-transform:uppercase;">${priority} Priority</span>
+</div>
+<div style="background:#f3f4f6;border:1px solid #e5e7eb;border-radius:8px;padding:8px 16px;">
+<span style="font-size:12px;color:#6b7280;font-weight:600;">${categoryLabel}</span>
+</div>
+</div>
+
+<div style="background:#f9f9f9;border-radius:12px;padding:24px;margin-bottom:24px;">
+<p style="font-size:14px;color:#999;margin:0 0 8px;text-transform:uppercase;font-weight:600;">SUBJECT</p>
+<p style="font-size:18px;color:#333;margin:0;font-weight:700;">${subject}</p>
+</div>
+
+<table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
+<tr>
+<td style="padding:12px 16px;border-bottom:1px solid #eee;color:#666;font-weight:600;width:120px;">Ticket ID</td>
+<td style="padding:12px 16px;border-bottom:1px solid #eee;font-family:monospace;font-size:13px;">${escapeHtml(ticketId.slice(0, 8))}...</td>
+</tr>
+<tr>
+<td style="padding:12px 16px;border-bottom:1px solid #eee;color:#666;font-weight:600;">From</td>
+<td style="padding:12px 16px;border-bottom:1px solid #eee;">${userName}</td>
+</tr>
+<tr>
+<td style="padding:12px 16px;border-bottom:1px solid #eee;color:#666;font-weight:600;">Email</td>
+<td style="padding:12px 16px;border-bottom:1px solid #eee;">
+${rawUserEmail ? `<a href="mailto:${userEmail}" style="color:#0ea5e9;">${userEmail}</a>` : '<span style="color:#999;">Not provided</span>'}
+</td>
+</tr>
+</table>
+
+<div style="margin-bottom:24px;">
+<p style="font-size:14px;color:#999;margin:0 0 12px;text-transform:uppercase;font-weight:600;">MESSAGE</p>
+<div style="background:#f9f9f9;padding:20px;border-radius:8px;border-left:3px solid #e5e7eb;">
+<p style="font-size:14px;color:#333;line-height:1.7;margin:0;white-space:pre-wrap;">${message}</p>
+</div>
+</div>
+
+<div style="margin-top:32px;text-align:center;">
+<p style="font-size:13px;color:#666;margin-bottom:16px;">View and respond to this ticket in the admin panel</p>
+</div>
+
+<div style="margin-top:40px;padding-top:24px;border-top:1px solid #eee;text-align:center;">
+<p style="font-size:12px;color:#999;margin:0;">AYN AI - Support Notification</p>
+</div>
+</div>
+</body>
+</html>`;
+
+    // Send notification to admin
+    await client.send({
+      from: smtpUser,
+      to: notificationEmail,
+      replyTo: rawUserEmail || smtpUser,
+      subject: `[${priority.toUpperCase()}] New Support Ticket: ${rawSubject}`,
+      content: "auto",
+      html: notificationHtml,
+    });
+
+    console.log(`Support ticket notification sent to ${notificationEmail}`);
+
+    await client.close();
+
+    return new Response(
+      JSON.stringify({ success: true, message: "Notification sent successfully" }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      }
+    );
+  } catch (error) {
+    console.error("Error sending ticket notification:", error);
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      }
+    );
+  }
+};
+
+serve(handler);
