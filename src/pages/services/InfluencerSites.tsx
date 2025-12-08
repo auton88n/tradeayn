@@ -24,42 +24,42 @@ const InfluencerSites = () => {
     message: ''
   });
 
-  // Translations
+  // Translations - Improved Arabic with natural, commonly-used phrases
   const t = {
-    back: language === 'ar' ? 'رجوع' : language === 'fr' ? 'Retour' : 'Back',
-    heroTitle: language === 'ar' ? 'مواقع فاخرة لصنّاع المحتوى' : language === 'fr' ? 'Sites Premium pour Créateurs de Contenu' : 'Premium Content Creator Sites',
-    heroSubtitle: language === 'ar' ? 'مواقع فاخرة مصممة خصيصًا لصنّاع المحتوى. اجذب المزيد من الشراكات وارفع من مستوى علامتك التجارية.' : language === 'fr' ? 'Sites web de luxe conçus pour les créateurs de contenu. Attirez plus de partenariats et élevez votre marque personnelle.' : 'Luxury websites custom-built for content creators. Attract more partnerships and elevate your personal brand.',
-    startProject: language === 'ar' ? 'ابدأ مشروعك' : language === 'fr' ? 'Démarrer Votre Projet' : 'Start Your Project',
-    whatYoullGet: language === 'ar' ? 'ما ستحصل عليه' : language === 'fr' ? 'Ce Que Vous Obtiendrez' : "What You'll Get",
-    stunningHero: language === 'ar' ? 'قسم رئيسي مذهل' : language === 'fr' ? 'Section Hero Époustouflante' : 'Stunning Hero Section',
-    heroDesc: language === 'ar' ? 'اترك انطباعًا قويًا مع قسم رئيسي يعرض علامتك التجارية' : language === 'fr' ? 'Faites une première impression puissante avec un hero captivant' : 'Make a powerful first impression with a captivating hero that showcases your brand',
-    analytics: language === 'ar' ? 'لوحة التحليلات' : language === 'fr' ? 'Tableau de Bord Analytique' : 'Analytics Dashboard',
+    back: language === 'ar' ? 'عودة' : language === 'fr' ? 'Retour' : 'Back',
+    heroTitle: language === 'ar' ? 'مواقع احترافية لصناع المحتوى' : language === 'fr' ? 'Sites Premium pour Créateurs de Contenu' : 'Premium Content Creator Sites',
+    heroSubtitle: language === 'ar' ? 'مواقع احترافية مصممة خصيصاً لصناع المحتوى. احصل على شراكات أكثر وطوّر علامتك التجارية.' : language === 'fr' ? 'Sites web de luxe conçus pour les créateurs de contenu. Attirez plus de partenariats et élevez votre marque personnelle.' : 'Luxury websites custom-built for content creators. Attract more partnerships and elevate your personal brand.',
+    startProject: language === 'ar' ? 'ابدأ الآن' : language === 'fr' ? 'Démarrer Votre Projet' : 'Start Your Project',
+    whatYoullGet: language === 'ar' ? 'ماذا ستحصل' : language === 'fr' ? 'Ce Que Vous Obtiendrez' : "What You'll Get",
+    stunningHero: language === 'ar' ? 'واجهة رئيسية مميزة' : language === 'fr' ? 'Section Hero Époustouflante' : 'Stunning Hero Section',
+    heroDesc: language === 'ar' ? 'اترك انطباعاً أولياً قوياً بواجهة تعكس هويتك' : language === 'fr' ? 'Faites une première impression puissante avec un hero captivant' : 'Make a powerful first impression with a captivating hero that showcases your brand',
+    analytics: language === 'ar' ? 'لوحة الإحصائيات' : language === 'fr' ? 'Tableau de Bord Analytique' : 'Analytics Dashboard',
     platformStats: language === 'ar' ? 'إحصائيات المنصات' : language === 'fr' ? 'Statistiques Plateformes' : 'Platform Stats',
-    analyticsDesc: language === 'ar' ? 'أظهر للعلامات التجارية لماذا يجب أن تتعاون معك. لوحة التحليلات تعرض عدد المتابعين ومعدلات التفاعل والديموغرافيا في الوقت الفعلي.' : language === 'fr' ? 'Montrez aux marques pourquoi elles devraient travailler avec vous. Votre tableau de bord affiche les statistiques en temps réel.' : 'Show brands exactly why they should work with you. Your analytics dashboard displays real-time follower counts, engagement rates, and audience demographics across all platforms.',
+    analyticsDesc: language === 'ar' ? 'أظهر للعلامات التجارية لماذا يجب التعاون معك. لوحة الإحصائيات تعرض عدد المتابعين ونسب التفاعل مباشرة.' : language === 'fr' ? 'Montrez aux marques pourquoi elles devraient travailler avec vous. Votre tableau de bord affiche les statistiques en temps réel.' : 'Show brands exactly why they should work with you. Your analytics dashboard displays real-time follower counts, engagement rates, and audience demographics across all platforms.',
     features: language === 'ar' ? 'المميزات' : language === 'fr' ? 'Fonctionnalités' : 'Features',
-    premiumFeatures: language === 'ar' ? 'مميزات متميزة' : language === 'fr' ? 'Fonctionnalités Premium' : 'Premium Features',
-    everythingYouNeed: language === 'ar' ? 'كل ما تحتاجه للتميز في العالم الرقمي' : language === 'fr' ? 'Tout ce dont vous avez besoin pour briller dans le monde digital' : 'Everything you need to stand out in the digital world',
-    howItWorks: language === 'ar' ? 'كيف يعمل' : language === 'fr' ? 'Comment Ça Marche' : 'How It Works',
-    ourProcess: language === 'ar' ? 'عمليتنا' : language === 'fr' ? 'Notre Processus' : 'Our Process',
-    fromConceptToLaunch: language === 'ar' ? 'من الفكرة إلى الإطلاق في أربع خطوات بسيطة' : language === 'fr' ? 'Du concept au lancement en quatre étapes simples' : 'From concept to launch in four simple steps',
-    readyToStandOut: language === 'ar' ? 'مستعد للتميز؟' : language === 'fr' ? 'Prêt à Vous Démarquer?' : 'Ready to Stand Out?',
-    ctaDesc: language === 'ar' ? 'انضم إلى أفضل صنّاع المحتوى الذين يثقون بنا لتقديم مواقعهم الاحترافية' : language === 'fr' ? 'Rejoignez les créateurs de contenu d\'élite qui nous font confiance pour leur présence web premium' : 'Join elite content creators who trust us with their premium web presence',
+    premiumFeatures: language === 'ar' ? 'مميزات حصرية' : language === 'fr' ? 'Fonctionnalités Premium' : 'Premium Features',
+    everythingYouNeed: language === 'ar' ? 'كل ما تحتاجه للتميز على الإنترنت' : language === 'fr' ? 'Tout ce dont vous avez besoin pour briller dans le monde digital' : 'Everything you need to stand out in the digital world',
+    howItWorks: language === 'ar' ? 'طريقة العمل' : language === 'fr' ? 'Comment Ça Marche' : 'How It Works',
+    ourProcess: language === 'ar' ? 'خطوات العمل' : language === 'fr' ? 'Notre Processus' : 'Our Process',
+    fromConceptToLaunch: language === 'ar' ? 'من الفكرة إلى الإطلاق في أربع خطوات' : language === 'fr' ? 'Du concept au lancement en quatre étapes simples' : 'From concept to launch in four simple steps',
+    readyToStandOut: language === 'ar' ? 'جاهز للبداية؟' : language === 'fr' ? 'Prêt à Vous Démarquer?' : 'Ready to Stand Out?',
+    ctaDesc: language === 'ar' ? 'انضم لأفضل صناع المحتوى الذين يثقون بنا لبناء مواقعهم' : language === 'fr' ? 'Rejoignez les créateurs de contenu d\'élite qui nous font confiance pour leur présence web premium' : 'Join elite content creators who trust us with their premium web presence',
     startYourProject: language === 'ar' ? 'ابدأ مشروعك' : language === 'fr' ? 'Démarrer Votre Projet' : 'Start Your Project',
-    viewAllServices: language === 'ar' ? 'عرض جميع الخدمات' : language === 'fr' ? 'Voir Tous les Services' : 'View All Services',
+    viewAllServices: language === 'ar' ? 'عرض كل الخدمات' : language === 'fr' ? 'Voir Tous les Services' : 'View All Services',
     formTitle: language === 'ar' ? 'ابدأ مشروعك' : language === 'fr' ? 'Démarrer Votre Projet' : 'Start Your Project',
-    formDesc: language === 'ar' ? 'أخبرنا عن مشروعك وسنتواصل معك قريبًا.' : language === 'fr' ? 'Parlez-nous de votre projet et nous vous contacterons.' : 'Tell us about your project and we\'ll get back to you.',
+    formDesc: language === 'ar' ? 'أخبرنا عن مشروعك وسنتواصل معك قريباً.' : language === 'fr' ? 'Parlez-nous de votre projet et nous vous contacterons.' : 'Tell us about your project and we\'ll get back to you.',
     fullName: language === 'ar' ? 'الاسم الكامل' : language === 'fr' ? 'Nom Complet' : 'Full Name',
     email: language === 'ar' ? 'البريد الإلكتروني' : language === 'fr' ? 'Email' : 'Email',
-    phone: language === 'ar' ? 'رقم الهاتف' : language === 'fr' ? 'Téléphone' : 'Phone',
-    message: language === 'ar' ? 'الرسالة' : language === 'fr' ? 'Message' : 'Message',
+    phone: language === 'ar' ? 'رقم الجوال' : language === 'fr' ? 'Téléphone' : 'Phone',
+    message: language === 'ar' ? 'رسالتك' : language === 'fr' ? 'Message' : 'Message',
     optional: language === 'ar' ? 'اختياري' : language === 'fr' ? 'Optionnel' : 'Optional',
     submit: language === 'ar' ? 'إرسال الطلب' : language === 'fr' ? 'Soumettre la Demande' : 'Submit Application',
-    submitting: language === 'ar' ? 'جارٍ الإرسال...' : language === 'fr' ? 'Envoi...' : 'Submitting...',
-    successTitle: language === 'ar' ? 'تم الإرسال بنجاح!' : language === 'fr' ? 'Soumission Réussie!' : 'Application Submitted!',
-    successDesc: language === 'ar' ? 'شكرًا لاهتمامك! سنتواصل معك خلال 24-48 ساعة.' : language === 'fr' ? 'Merci pour votre intérêt! Nous vous contacterons dans 24-48 heures.' : 'Thank you for your interest! We\'ll be in touch within 24-48 hours.',
+    submitting: language === 'ar' ? 'جاري الإرسال...' : language === 'fr' ? 'Envoi...' : 'Submitting...',
+    successTitle: language === 'ar' ? 'تم الإرسال!' : language === 'fr' ? 'Soumission Réussie!' : 'Application Submitted!',
+    successDesc: language === 'ar' ? 'شكراً لك! سنتواصل معك خلال ٢٤-٤٨ ساعة.' : language === 'fr' ? 'Merci pour votre intérêt! Nous vous contacterons dans 24-48 heures.' : 'Thank you for your interest! We\'ll be in touch within 24-48 hours.',
     close: language === 'ar' ? 'إغلاق' : language === 'fr' ? 'Fermer' : 'Close',
-    needMoreOptions: language === 'ar' ? 'تحتاج خيارات أكثر؟' : language === 'fr' ? 'Besoin de plus d\'options?' : 'Need more options?',
-    detailedForm: language === 'ar' ? 'املأ النموذج التفصيلي' : language === 'fr' ? 'Remplir le formulaire détaillé' : 'Fill out the detailed form',
+    needMoreOptions: language === 'ar' ? 'تحتاج المزيد؟' : language === 'fr' ? 'Besoin de plus d\'options?' : 'Need more options?',
+    detailedForm: language === 'ar' ? 'املأ النموذج المفصل' : language === 'fr' ? 'Remplir le formulaire détaillé' : 'Fill out the detailed form',
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -111,42 +111,42 @@ const InfluencerSites = () => {
   
   const features = [{
     icon: Palette,
-    title: language === 'ar' ? 'تصميم فاخر مخصص' : language === 'fr' ? 'Design Luxueux Personnalisé' : 'Custom Luxury Design',
-    description: language === 'ar' ? 'تصميم فريد يعكس علامتك التجارية ويميزك عن المنافسين' : language === 'fr' ? 'Design unique qui reflète votre marque personnelle' : 'Unique design that reflects your personal brand and sets you apart from competitors'
+    title: language === 'ar' ? 'تصميم احترافي مخصص' : language === 'fr' ? 'Design Luxueux Personnalisé' : 'Custom Luxury Design',
+    description: language === 'ar' ? 'تصميم فريد يعكس هويتك ويميزك عن الآخرين' : language === 'fr' ? 'Design unique qui reflète votre marque personnelle' : 'Unique design that reflects your personal brand and sets you apart from competitors'
   }, {
     icon: Smartphone,
-    title: language === 'ar' ? 'متوافق مع الموبايل' : language === 'fr' ? 'Mobile First' : 'Mobile First',
+    title: language === 'ar' ? 'متوافق مع الجوال' : language === 'fr' ? 'Mobile First' : 'Mobile First',
     description: language === 'ar' ? 'تجربة مثالية على جميع الأجهزة' : language === 'fr' ? 'Expérience parfaite sur tous les appareils' : 'Perfect experience across all devices, from mobile to desktop'
   }, {
     icon: Zap,
-    title: language === 'ar' ? 'سرعة فائقة' : language === 'fr' ? 'Ultra Rapide' : 'Lightning Fast',
-    description: language === 'ar' ? 'تحميل سريع يبقي الزوار متفاعلين' : language === 'fr' ? 'Chargement rapide pour garder les visiteurs engagés' : 'Fast loading keeps visitors engaged and improves your search rankings'
+    title: language === 'ar' ? 'سرعة عالية' : language === 'fr' ? 'Ultra Rapide' : 'Lightning Fast',
+    description: language === 'ar' ? 'تحميل سريع يبقي الزوار على موقعك' : language === 'fr' ? 'Chargement rapide pour garder les visiteurs engagés' : 'Fast loading keeps visitors engaged and improves your search rankings'
   }, {
     icon: Layout,
-    title: language === 'ar' ? 'معرض أعمال تفاعلي' : language === 'fr' ? 'Portfolio Interactif' : 'Interactive Portfolio',
-    description: language === 'ar' ? 'اعرض أعمالك باحترافية لجذب الشراكات' : language === 'fr' ? 'Présentez votre travail professionnellement' : 'Showcase your work professionally to attract brand partnerships'
+    title: language === 'ar' ? 'معرض أعمال احترافي' : language === 'fr' ? 'Portfolio Interactif' : 'Interactive Portfolio',
+    description: language === 'ar' ? 'اعرض أعمالك بشكل احترافي لجذب الشراكات' : language === 'fr' ? 'Présentez votre travail professionnellement' : 'Showcase your work professionally to attract brand partnerships'
   }, {
     icon: TrendingUp,
-    title: language === 'ar' ? 'محسّن للتحويل' : language === 'fr' ? 'Optimisé Conversion' : 'Conversion Optimized',
+    title: language === 'ar' ? 'مُحسّن للنتائج' : language === 'fr' ? 'Optimisé Conversion' : 'Conversion Optimized',
     description: language === 'ar' ? 'صفحات مصممة لتحويل الزوار إلى عملاء' : language === 'fr' ? 'Pages conçues pour convertir les visiteurs' : 'Pages designed to convert visitors into clients and partnerships'
   }, {
     icon: Globe,
-    title: language === 'ar' ? 'دعم متعدد اللغات' : language === 'fr' ? 'Support Multilingue' : 'Multi-language Support',
-    description: language === 'ar' ? 'وصول عالمي مع دعم محتوى متعدد اللغات' : language === 'fr' ? 'Touchez une audience mondiale' : 'Reach a global audience with multi-language content support'
+    title: language === 'ar' ? 'دعم لغات متعددة' : language === 'fr' ? 'Support Multilingue' : 'Multi-language Support',
+    description: language === 'ar' ? 'وصول عالمي بدعم لغات متعددة' : language === 'fr' ? 'Touchez une audience mondiale' : 'Reach a global audience with multi-language content support'
   }];
   
   const process = [{
     step: '01',
-    title: language === 'ar' ? 'الاكتشاف' : language === 'fr' ? 'Découverte' : 'Discovery',
-    description: language === 'ar' ? 'نفهم علامتك التجارية وأهدافك' : language === 'fr' ? 'Nous comprenons votre marque et vos objectifs' : 'We understand your brand and goals'
+    title: language === 'ar' ? 'التعرف' : language === 'fr' ? 'Découverte' : 'Discovery',
+    description: language === 'ar' ? 'نتعرف على هويتك وأهدافك' : language === 'fr' ? 'Nous comprenons votre marque et vos objectifs' : 'We understand your brand and goals'
   }, {
     step: '02',
     title: language === 'ar' ? 'التصميم' : language === 'fr' ? 'Design' : 'Design',
     description: language === 'ar' ? 'نصمم تجربة فريدة لك' : language === 'fr' ? 'Nous créons une expérience unique pour vous' : 'We craft a unique experience for you'
   }, {
     step: '03',
-    title: language === 'ar' ? 'التطوير' : language === 'fr' ? 'Développement' : 'Development',
-    description: language === 'ar' ? 'نبني بأحدث التقنيات' : language === 'fr' ? 'Nous construisons avec les dernières technologies' : 'We build with cutting-edge tech'
+    title: language === 'ar' ? 'البرمجة' : language === 'fr' ? 'Développement' : 'Development',
+    description: language === 'ar' ? 'نبني موقعك بأحدث التقنيات' : language === 'fr' ? 'Nous construisons avec les dernières technologies' : 'We build with cutting-edge tech'
   }, {
     step: '04',
     title: language === 'ar' ? 'الإطلاق' : language === 'fr' ? 'Lancement' : 'Launch',
