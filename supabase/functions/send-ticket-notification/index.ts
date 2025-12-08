@@ -61,7 +61,8 @@ const handler = async (req: Request): Promise<Response> => {
     const category = escapeHtml(rawCategory);
     const priority = escapeHtml(rawPriority);
     const userName = rawUserName ? escapeHtml(rawUserName) : 'Anonymous';
-    const userEmail = rawUserEmail ? escapeHtml(rawUserEmail) : 'Not provided';
+    const userEmail = rawUserEmail ? escapeHtml(rawUserEmail) : null;
+    const ticketRef = ticketId.slice(0, 8).toUpperCase();
 
     console.log(`Processing support ticket notification: ${ticketId}`);
 
@@ -91,6 +92,74 @@ const handler = async (req: Request): Promise<Response> => {
     const priorityColor = getPriorityColor(priority);
     const categoryLabel = getCategoryLabel(category);
 
+    // Confirmation email to user (if email provided)
+    if (userEmail) {
+      const userConfirmationHtml = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<div style="max-width:600px;margin:0 auto;padding:40px 20px;">
+<div style="text-align:center;margin-bottom:32px;">
+<h1 style="font-size:56px;font-weight:900;letter-spacing:-2px;margin:0;">AYN</h1>
+<div style="width:40px;height:4px;background:#000;margin:16px auto;"></div>
+</div>
+
+<div style="background:#dcfce7;border-left:4px solid #22c55e;padding:16px 20px;margin-bottom:32px;">
+<p style="font-size:16px;color:#166534;margin:0;font-weight:600;">✓ Ticket Submitted Successfully</p>
+</div>
+
+<p style="font-size:18px;color:#333;margin-bottom:24px;">Hi ${userName},</p>
+
+<p style="font-size:16px;color:#666;line-height:1.6;margin-bottom:24px;">Thank you for contacting our support team. We've received your ticket and will get back to you as soon as possible.</p>
+
+<div style="background:#f9f9f9;border-radius:12px;padding:24px;margin-bottom:24px;">
+<p style="font-size:14px;color:#999;margin:0 0 8px;text-transform:uppercase;font-weight:600;">YOUR TICKET REFERENCE</p>
+<p style="font-size:28px;color:#333;margin:0;font-weight:900;letter-spacing:2px;font-family:monospace;">#${ticketRef}</p>
+</div>
+
+<table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
+<tr>
+<td style="padding:12px 16px;border-bottom:1px solid #eee;color:#666;font-weight:600;width:100px;">Subject</td>
+<td style="padding:12px 16px;border-bottom:1px solid #eee;">${subject}</td>
+</tr>
+<tr>
+<td style="padding:12px 16px;border-bottom:1px solid #eee;color:#666;font-weight:600;">Category</td>
+<td style="padding:12px 16px;border-bottom:1px solid #eee;">${categoryLabel}</td>
+</tr>
+<tr>
+<td style="padding:12px 16px;border-bottom:1px solid #eee;color:#666;font-weight:600;">Priority</td>
+<td style="padding:12px 16px;border-bottom:1px solid #eee;">
+<span style="background:${priorityColor}15;color:${priorityColor};padding:4px 12px;border-radius:4px;font-size:12px;font-weight:700;text-transform:uppercase;">${priority}</span>
+</td>
+</tr>
+</table>
+
+<div style="background:#f0f9ff;border-radius:8px;padding:16px;margin-bottom:24px;">
+<p style="font-size:14px;color:#0369a1;margin:0;">💡 <strong>Keep this reference number</strong> handy. You can use it to track your ticket status or when contacting us about this issue.</p>
+</div>
+
+<p style="font-size:14px;color:#666;line-height:1.6;">Our support team typically responds within 24-48 hours. We appreciate your patience.</p>
+
+<div style="margin-top:40px;padding-top:24px;border-top:1px solid #eee;text-align:center;">
+<p style="font-size:12px;color:#999;margin:0;">AYN AI - Support Team</p>
+</div>
+</div>
+</body>
+</html>`;
+
+      await client.send({
+        from: smtpUser,
+        to: rawUserEmail!,
+        replyTo: notificationEmail,
+        subject: `Ticket #${ticketRef} Received - ${rawSubject}`,
+        content: "auto",
+        html: userConfirmationHtml,
+      });
+
+      console.log(`Confirmation email sent to user: ${rawUserEmail}`);
+    }
+
     // Notification email to admin
     const notificationHtml = `
 <!DOCTYPE html>
@@ -104,7 +173,7 @@ const handler = async (req: Request): Promise<Response> => {
 </div>
 
 <div style="background:#fef3c7;border-left:4px solid #f59e0b;padding:16px 20px;margin-bottom:32px;">
-<p style="font-size:16px;color:#92400e;margin:0;font-weight:600;">🎫 New Support Ticket</p>
+<p style="font-size:16px;color:#92400e;margin:0;font-weight:600;">🎫 New Support Ticket #${ticketRef}</p>
 </div>
 
 <div style="display:flex;gap:12px;margin-bottom:24px;">
@@ -124,7 +193,7 @@ const handler = async (req: Request): Promise<Response> => {
 <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
 <tr>
 <td style="padding:12px 16px;border-bottom:1px solid #eee;color:#666;font-weight:600;width:120px;">Ticket ID</td>
-<td style="padding:12px 16px;border-bottom:1px solid #eee;font-family:monospace;font-size:13px;">${escapeHtml(ticketId.slice(0, 8))}...</td>
+<td style="padding:12px 16px;border-bottom:1px solid #eee;font-family:monospace;font-size:13px;">#${ticketRef}</td>
 </tr>
 <tr>
 <td style="padding:12px 16px;border-bottom:1px solid #eee;color:#666;font-weight:600;">From</td>
@@ -133,7 +202,7 @@ const handler = async (req: Request): Promise<Response> => {
 <tr>
 <td style="padding:12px 16px;border-bottom:1px solid #eee;color:#666;font-weight:600;">Email</td>
 <td style="padding:12px 16px;border-bottom:1px solid #eee;">
-${rawUserEmail ? `<a href="mailto:${userEmail}" style="color:#0ea5e9;">${userEmail}</a>` : '<span style="color:#999;">Not provided</span>'}
+${userEmail ? `<a href="mailto:${userEmail}" style="color:#0ea5e9;">${userEmail}</a>` : '<span style="color:#999;">Not provided</span>'}
 </td>
 </tr>
 </table>
@@ -161,7 +230,7 @@ ${rawUserEmail ? `<a href="mailto:${userEmail}" style="color:#0ea5e9;">${userEma
       from: smtpUser,
       to: notificationEmail,
       replyTo: rawUserEmail || smtpUser,
-      subject: `[${priority.toUpperCase()}] New Support Ticket: ${rawSubject}`,
+      subject: `[${priority.toUpperCase()}] New Support Ticket #${ticketRef}: ${rawSubject}`,
       content: "auto",
       html: notificationHtml,
     });
@@ -171,7 +240,7 @@ ${rawUserEmail ? `<a href="mailto:${userEmail}" style="color:#0ea5e9;">${userEma
     await client.close();
 
     return new Response(
-      JSON.stringify({ success: true, message: "Notification sent successfully" }),
+      JSON.stringify({ success: true, message: "Notifications sent successfully", ticketRef }),
       {
         status: 200,
         headers: { "Content-Type": "application/json", ...corsHeaders },
