@@ -186,6 +186,7 @@ export const DashboardContainer = ({ user, session, auth, isAdmin, onAdminPanelC
   return (
     <DashboardContent
       user={user}
+      session={session}
       auth={auth}
       chatSession={chatSession}
       fileUpload={fileUpload}
@@ -208,6 +209,7 @@ export const DashboardContainer = ({ user, session, auth, isAdmin, onAdminPanelC
 // Separate component that can use useSidebar hook
 const DashboardContent = ({
   user,
+  session,
   auth,
   chatSession,
   fileUpload,
@@ -225,6 +227,7 @@ const DashboardContent = ({
   onAdminPanelClick
 }: {
   user: User;
+  session: Session;
   auth: UseAuthReturn;
   chatSession: ReturnType<typeof useChatSession>;
   fileUpload: ReturnType<typeof useFileUpload>;
@@ -347,6 +350,8 @@ const DashboardContent = ({
           userName={auth.userProfile?.contact_person || user.user_metadata?.name || user.email?.split('@')[0]}
           userEmail={auth.userProfile?.company_name || 'No company'}
           userAvatar={auth.userProfile?.avatar_url}
+          userId={user.id}
+          accessToken={session.access_token}
           isTyping={messagesHook.isTyping}
           hasAccess={auth.hasAccess}
           isAuthLoading={auth.isAuthLoading}

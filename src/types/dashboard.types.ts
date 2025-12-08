@@ -251,6 +251,8 @@ export interface SidebarProps {
   userName?: string;
   userEmail?: string;
   userAvatar?: string;
+  userId?: string;
+  accessToken?: string;
   isTyping: boolean;
   hasAccess: boolean;
   isAuthLoading?: boolean;

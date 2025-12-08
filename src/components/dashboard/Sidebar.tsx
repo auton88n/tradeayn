@@ -31,6 +31,8 @@ export const Sidebar = ({
   userName,
   userEmail,
   userAvatar,
+  userId,
+  accessToken,
   isTyping,
   hasAccess,
   isAuthLoading,
@@ -414,7 +416,7 @@ export const Sidebar = ({
         </Popover>
 
         {/* Avatar Upload Dialog */}
-        <ProfileAvatarUpload open={showAvatarUpload} onOpenChange={setShowAvatarUpload} onAvatarUpdated={onAvatarUpdated ?? (() => {})} currentAvatarUrl={userAvatar} userName={userName} />
+        <ProfileAvatarUpload open={showAvatarUpload} onOpenChange={setShowAvatarUpload} onAvatarUpdated={onAvatarUpdated ?? (() => {})} currentAvatarUrl={userAvatar} userName={userName} userId={userId ?? ''} accessToken={accessToken ?? ''} />
       </SidebarFooter>
     </div>;
 };
