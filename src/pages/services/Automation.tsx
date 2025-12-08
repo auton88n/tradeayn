@@ -1,8 +1,26 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Brain, Zap, Clock, Settings, Link2, BarChart3, Shield, Bell, FileText, Mail, Calendar, Database, Share2, Workflow, Play, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Brain, Zap, Clock, Settings, Link2, BarChart3, Shield, Bell, FileText, Mail, Calendar, Database, Share2, Workflow, Play, CheckCircle, Loader2, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+
 const Automation = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    phone: '',
+    message: ''
+  });
+
   const fadeInUp = {
     initial: {
       opacity: 0,
@@ -23,6 +41,69 @@ const Automation = () => {
       }
     }
   };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      // Save to database
+      const { error: dbError } = await supabase
+        .from('service_applications')
+        .insert({
+          full_name: formData.fullName,
+          email: formData.email,
+          phone: formData.phone || null,
+          message: formData.message || null,
+          service_type: 'automation',
+          status: 'new'
+        });
+
+      if (dbError) throw dbError;
+
+      // Send email notification
+      const { error: emailError } = await supabase.functions.invoke('send-application-email', {
+        body: {
+          applicantName: formData.fullName,
+          applicantEmail: formData.email,
+          serviceType: 'Process Automation',
+          formData: {
+            'Full Name': formData.fullName,
+            'Email': formData.email,
+            'Phone': formData.phone || 'Not provided',
+            'Message': formData.message || 'No message provided'
+          }
+        }
+      });
+
+      if (emailError) {
+        console.error('Email error:', emailError);
+      }
+
+      setIsSuccess(true);
+      toast({
+        title: "Application submitted",
+        description: "We'll be in touch within 24-48 hours.",
+      });
+
+    } catch (error) {
+      console.error('Submission error:', error);
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setIsSuccess(false);
+    setFormData({ fullName: '', email: '', phone: '', message: '' });
+  };
+
   const automations = [{
     icon: Mail,
     title: 'Email to CRM Sync',
@@ -150,11 +231,13 @@ const Automation = () => {
               Save 15+ hours per week by automating repetitive tasks. Focus on what matters while we handle the rest.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/services/automation/apply">
-                <Button size="lg" className="bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-6 text-lg rounded-full">
-                  Start Automating
-                </Button>
-              </Link>
+              <Button 
+                size="lg" 
+                className="bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-6 text-lg rounded-full"
+                onClick={() => setIsModalOpen(true)}
+              >
+                Start Automating
+              </Button>
               <Link to="/#services">
                 <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10 px-8 py-6 text-lg rounded-full">
                   View All Services
@@ -476,11 +559,13 @@ const Automation = () => {
               Join thousands of businesses saving 15+ hours every week with intelligent automation.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center px-4">
-              <Link to="/services/automation/apply" className="w-full sm:w-auto">
-                <Button size="lg" className="bg-emerald-500 hover:bg-emerald-600 text-white px-8 md:px-10 py-5 md:py-6 text-base md:text-lg rounded-full w-full">
-                  Start Automating
-                </Button>
-              </Link>
+              <Button 
+                size="lg" 
+                className="bg-emerald-500 hover:bg-emerald-600 text-white px-8 md:px-10 py-5 md:py-6 text-base md:text-lg rounded-full w-full sm:w-auto"
+                onClick={() => setIsModalOpen(true)}
+              >
+                Start Automating
+              </Button>
               <Link to="/#services" className="w-full sm:w-auto">
                 <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10 px-8 md:px-10 py-5 md:py-6 text-base md:text-lg rounded-full w-full">
                   View All Services
@@ -505,6 +590,108 @@ const Automation = () => {
           </div>
         </div>
       </footer>
+
+      {/* Application Modal */}
+      <Dialog open={isModalOpen} onOpenChange={handleCloseModal}>
+        <DialogContent className="bg-neutral-900 border-neutral-800 text-white max-w-md">
+          {isSuccess ? (
+            <div className="text-center py-8">
+              <div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle2 className="w-8 h-8 text-emerald-400" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">Application Submitted!</h3>
+              <p className="text-neutral-400 mb-6">
+                We'll be in touch within 24-48 hours.
+              </p>
+              <Button onClick={handleCloseModal} className="bg-emerald-500 hover:bg-emerald-600">
+                Close
+              </Button>
+            </div>
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-xl font-serif">Get Started with Automation</DialogTitle>
+                <DialogDescription className="text-neutral-400">
+                  Tell us a bit about yourself and we'll reach out within 24-48 hours.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">Full Name *</Label>
+                  <Input
+                    id="fullName"
+                    required
+                    value={formData.fullName}
+                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                    className="bg-neutral-800 border-neutral-700 text-white"
+                    placeholder="Your name"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    required
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="bg-neutral-800 border-neutral-700 text-white"
+                    placeholder="your@email.com"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone (optional)</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="bg-neutral-800 border-neutral-700 text-white"
+                    placeholder="+1 (555) 000-0000"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="message">Brief Message (optional)</Label>
+                  <Textarea
+                    id="message"
+                    value={formData.message}
+                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                    className="bg-neutral-800 border-neutral-700 text-white resize-none"
+                    placeholder="Tell us briefly about your needs..."
+                    rows={3}
+                  />
+                </div>
+                
+                <Button 
+                  type="submit" 
+                  className="w-full bg-emerald-500 hover:bg-emerald-600"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    'Submit Application'
+                  )}
+                </Button>
+                
+                <p className="text-xs text-neutral-500 text-center">
+                  Need more options?{' '}
+                  <Link to="/services/automation/apply" className="text-emerald-400 hover:underline">
+                    Fill out the detailed form
+                  </Link>
+                </p>
+              </form>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>;
 };
 export default Automation;
