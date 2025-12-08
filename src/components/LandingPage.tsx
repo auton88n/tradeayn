@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Brain, ArrowRight, CheckCircle, Send, Loader2, Sparkles, Globe, Shield, Menu, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,35 @@ import { Link } from 'react-router-dom';
 import MobileMockup from './services/MobileMockup';
 import DeviceMockups from './services/DeviceMockups';
 import FloatingIcons from './services/FloatingIcons';
+
+// ScrollReveal component - defined outside to prevent recreation on re-renders
+const ScrollReveal = ({
+  children,
+  direction = 'up',
+  delay = 0
+}: {
+  children: React.ReactNode;
+  direction?: 'up' | 'left' | 'right' | 'scale';
+  delay?: number;
+}) => {
+  const [ref, isVisible] = useScrollAnimation();
+  return (
+    <div
+      ref={ref as React.RefObject<HTMLDivElement>}
+      className={cn(
+        'scroll-animate',
+        direction === 'left' && 'scroll-animate-left',
+        direction === 'right' && 'scroll-animate-right',
+        direction === 'scale' && 'scroll-animate-scale',
+        isVisible && 'visible'
+      )}
+      style={{ transitionDelay: `${delay}s` }}
+    >
+      {children}
+    </div>
+  );
+};
+
 const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [pendingMessage, setPendingMessage] = useState<string>('');
@@ -101,8 +130,8 @@ const LandingPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  // Contact form validation schema
-  const contactSchema = z.object({
+  // Contact form validation schema - memoized to prevent recreation on re-renders
+  const contactSchema = useMemo(() => z.object({
     name: z.string().trim().min(1, {
       message: language === 'ar' ? 'الاسم مطلوب' : 'Name is required'
     }).max(100, {
@@ -118,7 +147,7 @@ const LandingPage = () => {
     }).max(1000, {
       message: language === 'ar' ? 'الرسالة يجب أن تكون أقل من 1000 حرف' : 'Message must be less than 1000 characters'
     })
-  });
+  }), [language]);
 
   // Handle contact form submission
   const handleContactSubmit = async (e: React.FormEvent) => {
@@ -196,23 +225,6 @@ const LandingPage = () => {
     }
   };
 
-  // ScrollReveal component for smooth scroll animations
-  const ScrollReveal = ({
-    children,
-    direction = 'up',
-    delay = 0
-  }: {
-    children: React.ReactNode;
-    direction?: 'up' | 'left' | 'right' | 'scale';
-    delay?: number;
-  }) => {
-    const [ref, isVisible] = useScrollAnimation();
-    return <div ref={ref as React.RefObject<HTMLDivElement>} className={cn('scroll-animate', direction === 'left' && 'scroll-animate-left', direction === 'right' && 'scroll-animate-right', direction === 'scale' && 'scroll-animate-scale', isVisible && 'visible')} style={{
-      transitionDelay: `${delay}s`
-    }}>
-        {children}
-      </div>;
-  };
   const services = [{
     number: '01',
     slug: 'content-creator-sites',
