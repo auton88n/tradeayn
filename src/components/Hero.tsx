@@ -164,7 +164,7 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
               : 'text-5xl sm:text-6xl md:text-8xl lg:text-[10rem]'
           }`}
         >
-          {language === 'ar' ? 'تعرّف على AYN' : 'Meet AYN'}
+          {language === 'ar' ? 'تعرّف على AYN' : language === 'fr' ? 'Découvrez AYN' : 'Meet AYN'}
         </motion.h1>
         <motion.p 
           initial={{ opacity: 0, y: 15 }}
@@ -174,6 +174,8 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
         >
           {language === 'ar' 
             ? 'رفيقك الذكي الذي يساعدك على التنظيم والتخطيط والعيش بشكل أفضل.' 
+            : language === 'fr'
+            ? 'Le compagnon intelligent qui vous aide à organiser, planifier et mieux vivre.'
             : 'The intelligent companion that helps you organize, plan, and live better.'}
         </motion.p>
       </div>
