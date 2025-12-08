@@ -394,10 +394,10 @@ const Automation = () => {
                   <Brain className="w-8 h-8 text-white" />
                 </div>
                 {/* Orbiting connections */}
-                <div className="absolute w-[260px] h-[260px] -top-[70px] -left-[70px]">
+                <div className="absolute w-[200px] h-[200px] -top-[68px] -left-[68px]">
                   {integrations.map((integration, index) => {
                     const angle = (index * 360) / integrations.length + 30;
-                    const radius = 100;
+                    const radius = 70;
                     const x = Math.cos((angle * Math.PI) / 180) * radius;
                     const y = Math.sin((angle * Math.PI) / 180) * radius;
                     return (
