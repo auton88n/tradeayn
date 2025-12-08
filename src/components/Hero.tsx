@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowRight, Brain } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Brain } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from 'framer-motion';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { LandingChatInput } from '@/components/landing/LandingChatInput';
 
 interface HeroProps {
-  onGetStarted: () => void;
+  onGetStarted: (prefillMessage?: string) => void;
 }
 const CARDS_EN = ["Always watching over you.", "I understand context.", "Ready when you are.", "Let me handle that.", "Optimizing your workflow.", "Done. What's next?"];
 const CARDS_AR = ["معك في كل خطوة.", "أفهم ما تحتاجه.", "جاهز لخدمتك.", "اترك الأمر لي.", "أُنجز المهام بذكاء.", "تمّ. ماذا بعد؟"];
@@ -424,21 +424,7 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
         </motion.div>
       </div>
 
-      {/* Get Started CTA Button */}
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }} 
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 1.4, ease: [0.32, 0.72, 0, 1] }}
-        className="mt-8 md:mt-12"
-      >
-        <Button 
-          onClick={onGetStarted}
-          size="lg"
-          className="px-8 py-6 text-lg rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 group"
-        >
-          {language === 'ar' ? 'ابدأ الآن' : 'Get Started'}
-          <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-        </Button>
-      </motion.div>
+      {/* Interactive Chat Input */}
+      <LandingChatInput onSendAttempt={(message) => onGetStarted(message)} />
     </section>;
 };
