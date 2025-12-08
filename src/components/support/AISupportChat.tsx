@@ -130,10 +130,9 @@ const AISupportChat: React.FC<AISupportChatProps> = ({ onNeedTicket }) => {
                 }`}
               >
                 {message.role === 'assistant' ? (
-                  <MessageFormatter 
-                    content={message.content} 
-                    className="text-sm [&_p]:text-sm [&_li]:text-sm [&_h1]:text-base [&_h2]:text-sm [&_h3]:text-sm [&_pre]:text-xs [&_code]:text-xs"
-                  />
+                  <div className="support-chat-content [&_ul]:list-disc [&_ul]:pl-4 [&_ul]:my-1.5 [&_ul]:space-y-0.5 [&_ol]:list-decimal [&_ol]:pl-4 [&_ol]:my-1.5 [&_li]:text-sm [&_li]:leading-relaxed [&_p]:text-sm [&_p]:leading-relaxed [&_p]:mb-1.5 [&_p:last-child]:mb-0 [&_strong]:font-semibold [&_h1]:text-base [&_h1]:font-semibold [&_h1]:mb-1.5 [&_h2]:text-sm [&_h2]:font-semibold [&_h2]:mb-1 [&_h3]:text-sm [&_h3]:font-medium [&_pre]:text-xs [&_pre]:my-2 [&_pre]:rounded-lg [&_code]:text-xs">
+                    <MessageFormatter content={message.content} className="text-sm" />
+                  </div>
                 ) : (
                   <span>{message.content}</span>
                 )}
