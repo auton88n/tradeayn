@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
   Search, 
   Filter, 
@@ -320,20 +320,19 @@ const SupportManagement: React.FC = () => {
 
         {/* Tickets List */}
         <ScrollArea className="h-[550px] rounded-xl border border-border/50 bg-background/30">
-          <AnimatePresence mode="wait">
-            {paginatedTickets.length === 0 ? (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex flex-col items-center justify-center py-16 text-muted-foreground"
-              >
-                <div className="p-4 rounded-full bg-muted/50 mb-4">
-                  <Inbox className="h-12 w-12 opacity-50" />
-                </div>
-                <p className="text-lg font-medium">No tickets found</p>
-                <p className="text-sm">Try adjusting your filters or search query</p>
-              </motion.div>
-            ) : (
+          {isLoading ? (
+            <div className="flex items-center justify-center py-16">
+              <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : paginatedTickets.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+              <div className="p-4 rounded-full bg-muted/50 mb-4">
+                <Inbox className="h-12 w-12 opacity-50" />
+              </div>
+              <p className="text-lg font-medium">No tickets found</p>
+              <p className="text-sm">Try adjusting your filters or search query</p>
+            </div>
+          ) : (
               <motion.div
                 variants={containerVariants}
                 initial="hidden"
@@ -430,7 +429,6 @@ const SupportManagement: React.FC = () => {
                 })}
               </motion.div>
             )}
-          </AnimatePresence>
         </ScrollArea>
 
         {/* Pagination */}
