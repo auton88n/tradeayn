@@ -151,6 +151,7 @@ const SupportManagement: React.FC = () => {
     inProgress: tickets.filter(t => t.status === 'in_progress').length,
     waitingReply: tickets.filter(t => t.status === 'waiting_reply').length,
     resolved: tickets.filter(t => t.status === 'resolved').length,
+    closed: tickets.filter(t => t.status === 'closed').length,
   }), [tickets]);
 
   const exportToCSV = () => {
@@ -233,12 +234,13 @@ const SupportManagement: React.FC = () => {
 
       <CardContent className="space-y-6">
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {[
             { label: 'Open', value: stats.open, icon: Clock, color: 'text-blue-500', bg: 'bg-blue-500/10', filter: 'open' },
             { label: 'In Progress', value: stats.inProgress, icon: MessageSquare, color: 'text-yellow-500', bg: 'bg-yellow-500/10', filter: 'in_progress' },
             { label: 'Waiting Reply', value: stats.waitingReply, icon: AlertTriangle, color: 'text-orange-500', bg: 'bg-orange-500/10', filter: 'waiting_reply' },
             { label: 'Resolved', value: stats.resolved, icon: CheckCircle, color: 'text-green-500', bg: 'bg-green-500/10', filter: 'resolved' },
+            { label: 'Closed', value: stats.closed, icon: XCircle, color: 'text-muted-foreground', bg: 'bg-muted/50', filter: 'closed' },
           ].map((stat, index) => (
             <motion.div
               key={stat.label}
@@ -317,7 +319,7 @@ const SupportManagement: React.FC = () => {
         </div>
 
         {/* Tickets List */}
-        <ScrollArea className="h-[450px] rounded-xl border border-border/50 bg-background/30">
+        <ScrollArea className="h-[550px] rounded-xl border border-border/50 bg-background/30">
           <AnimatePresence mode="wait">
             {paginatedTickets.length === 0 ? (
               <motion.div
