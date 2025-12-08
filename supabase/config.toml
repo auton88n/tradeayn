@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.send-reply-email]
 verify_jwt = true
+
+[functions.support-bot]
+verify_jwt = false

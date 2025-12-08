@@ -17,7 +17,8 @@ import {
   Shield, 
   Settings,
   FileText,
-  Loader2
+  Loader2,
+  MessageSquare
 } from 'lucide-react';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
@@ -75,6 +76,7 @@ interface AdminPanelProps {
 const tabs = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
   { id: 'applications', label: 'Applications', icon: FileText },
+  { id: 'support', label: 'Support', icon: MessageSquare },
   { id: 'users', label: 'Users', icon: Users },
   { id: 'rate-limits', label: 'Rate Limits', icon: Shield },
   { id: 'settings', label: 'Settings', icon: Settings },
