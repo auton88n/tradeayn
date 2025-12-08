@@ -1,5 +1,5 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, User, Bell, Shield, Monitor, Search, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, User, Bell, Shield, Monitor, Search, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useNavigate } from 'react-router-dom';
@@ -15,10 +15,12 @@ interface SettingsLayoutProps {
     notifications: React.ReactNode;
     privacy: React.ReactNode;
     sessions: React.ReactNode;
+    security?: React.ReactNode;
   };
+  showSecurityTab?: boolean;
 }
 
-const SettingsLayoutContent = ({ children }: SettingsLayoutProps) => {
+const SettingsLayoutContent = ({ children, showSecurityTab }: SettingsLayoutProps) => {
   const navigate = useNavigate();
   const { t, language } = useLanguage();
   const { searchTerm, setSearchTerm, hasUnsavedChanges, setHasUnsavedChanges } = useSettingsContext();
@@ -54,6 +56,8 @@ const SettingsLayoutContent = ({ children }: SettingsLayoutProps) => {
     setShowWarning(false);
     setPendingNavigation(null);
   };
+
+  const tabCount = showSecurityTab ? 5 : 4;
 
   return (
     <>
@@ -93,7 +97,7 @@ const SettingsLayoutContent = ({ children }: SettingsLayoutProps) => {
           </div>
 
           <Tabs defaultValue="account" className="w-full" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-            <TabsList className="w-full grid grid-cols-4 mb-8 bg-muted">
+            <TabsList className={`w-full grid grid-cols-${tabCount} mb-8 bg-muted`} style={{ gridTemplateColumns: `repeat(${tabCount}, 1fr)` }}>
               <TabsTrigger value="account" className="gap-2">
                 <User className="h-4 w-4" />
                 <span className="hidden sm:inline">{t('settings.account')}</span>
@@ -110,12 +114,21 @@ const SettingsLayoutContent = ({ children }: SettingsLayoutProps) => {
                 <Monitor className="h-4 w-4" />
                 <span className="hidden sm:inline">{t('settings.sessions')}</span>
               </TabsTrigger>
+              {showSecurityTab && (
+                <TabsTrigger value="security" className="gap-2">
+                  <ShieldCheck className="h-4 w-4" />
+                  <span className="hidden sm:inline">Security</span>
+                </TabsTrigger>
+              )}
             </TabsList>
 
             <TabsContent value="account">{children.account}</TabsContent>
             <TabsContent value="notifications">{children.notifications}</TabsContent>
             <TabsContent value="privacy">{children.privacy}</TabsContent>
             <TabsContent value="sessions">{children.sessions}</TabsContent>
+            {showSecurityTab && children.security && (
+              <TabsContent value="security">{children.security}</TabsContent>
+            )}
           </Tabs>
         </div>
       </div>
@@ -146,10 +159,10 @@ const SettingsLayoutContent = ({ children }: SettingsLayoutProps) => {
   );
 };
 
-export const SettingsLayout = ({ children }: SettingsLayoutProps) => {
+export const SettingsLayout = ({ children, showSecurityTab }: SettingsLayoutProps) => {
   return (
     <SettingsProvider>
-      <SettingsLayoutContent>{children}</SettingsLayoutContent>
+      <SettingsLayoutContent showSecurityTab={showSecurityTab}>{children}</SettingsLayoutContent>
     </SettingsProvider>
   );
 };
