@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Brain, ArrowRight, CheckCircle, Send, Loader2, Sparkles, Globe, Shield, Menu, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -141,9 +142,35 @@ const LandingPage = () => {
     }
     setIsSubmitting(true);
 
-    // Simulate form submission (replace with actual API call)
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Save to database
+      const { error: dbError } = await supabase
+        .from('contact_messages')
+        .insert({
+          name: contactForm.name.trim(),
+          email: contactForm.email.trim(),
+          message: contactForm.message.trim()
+        });
+
+      if (dbError) {
+        console.error('Database error:', dbError);
+        throw new Error('Failed to save message');
+      }
+
+      // Send email notification
+      const { error: emailError } = await supabase.functions.invoke('send-contact-email', {
+        body: {
+          name: contactForm.name.trim(),
+          email: contactForm.email.trim(),
+          message: contactForm.message.trim()
+        }
+      });
+
+      if (emailError) {
+        console.error('Email error:', emailError);
+        // Don't throw - message was saved, just email failed
+      }
+
       setIsSubmitted(true);
       setContactForm({
         name: '',
@@ -158,6 +185,7 @@ const LandingPage = () => {
       // Reset submitted state after 3 seconds
       setTimeout(() => setIsSubmitted(false), 3000);
     } catch (error) {
+      console.error('Contact form error:', error);
       toast({
         title: language === 'ar' ? 'خطأ' : 'Error',
         description: language === 'ar' ? 'حدث خطأ. يرجى المحاولة مرة أخرى' : 'Something went wrong. Please try again',

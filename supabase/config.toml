@@ -17,3 +17,9 @@ verify_jwt = true
 
 [functions.generate-eye-behaviors]
 verify_jwt = true
+
+[functions.send-application-email]
+verify_jwt = false
+
+[functions.send-contact-email]
+verify_jwt = false
