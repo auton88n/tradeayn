@@ -1,25 +1,20 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowUp } from 'lucide-react';
+import { ArrowUp, Plus, ChevronDown, Brain } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface LandingChatInputProps {
   onSendAttempt: (message: string) => void;
 }
 
-const placeholdersEN = ["Ask AYN anything...", "What's on your mind?", "How can I help you today?"];
-const placeholdersAR = ["اسأل AYN أي شيء...", "ما الذي يشغل بالك؟", "كيف يمكنني مساعدتك؟"];
+const placeholders = ["What's on your mind?", "Ask AYN anything...", "How can I help you today?"];
 
 export const LandingChatInput: React.FC<LandingChatInputProps> = ({ onSendAttempt }) => {
-  const { language } = useLanguage();
   const [inputMessage, setInputMessage] = useState('');
   const [currentPlaceholder, setCurrentPlaceholder] = useState(0);
   const [showPlaceholder, setShowPlaceholder] = useState(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  const placeholders = language === 'ar' ? placeholdersAR : placeholdersEN;
 
   // Rotate placeholders
   useEffect(() => {
@@ -31,7 +26,7 @@ export const LandingChatInput: React.FC<LandingChatInputProps> = ({ onSendAttemp
       }, 200);
     }, 4000);
     return () => clearInterval(interval);
-  }, [placeholders.length]);
+  }, []);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -64,67 +59,96 @@ export const LandingChatInput: React.FC<LandingChatInputProps> = ({ onSendAttemp
     >
       <div
         className={cn(
-          "relative flex items-end gap-2 p-3 rounded-2xl",
-          "bg-background/80 backdrop-blur-xl",
+          "relative rounded-2xl overflow-hidden",
+          "bg-background/95 backdrop-blur-xl",
           "border border-border/50",
           "shadow-lg shadow-black/5",
           "transition-all duration-300",
           "hover:border-border hover:shadow-xl"
         )}
       >
-        {/* Textarea */}
-        <div className="flex-1 relative">
-          <Textarea
-            ref={textareaRef}
-            value={inputMessage}
-            onChange={(e) => setInputMessage(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder=""
-            className={cn(
-              "resize-none border-0 bg-transparent p-2 min-h-[44px] max-h-[120px]",
-              "focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0",
-              "text-base placeholder:text-muted-foreground/60",
-              language === 'ar' && "text-right"
-            )}
-            rows={1}
-          />
-          
-          {/* Animated placeholder */}
-          {!inputMessage && (
-            <div 
+        {/* Row 1: Input Area */}
+        <div className="flex items-end gap-2 px-4 pt-3 pb-2">
+          <div className="flex-1 relative">
+            <Textarea
+              ref={textareaRef}
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder=""
               className={cn(
-                "absolute top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground/60",
-                "transition-opacity duration-200",
-                showPlaceholder ? "opacity-100" : "opacity-0",
-                language === 'ar' ? "right-2" : "left-2"
+                "resize-none border-0 bg-transparent p-0 min-h-[44px] max-h-[120px]",
+                "focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0",
+                "text-base placeholder:text-muted-foreground/60"
               )}
-            >
-              {placeholders[currentPlaceholder]}
-            </div>
-          )}
+              rows={1}
+            />
+            
+            {/* Animated placeholder */}
+            {!inputMessage && (
+              <div 
+                className={cn(
+                  "absolute top-1/2 -translate-y-1/2 left-0 pointer-events-none text-muted-foreground/50",
+                  "transition-opacity duration-200",
+                  showPlaceholder ? "opacity-100" : "opacity-0"
+                )}
+              >
+                {placeholders[currentPlaceholder]}
+              </div>
+            )}
+          </div>
+
+          {/* Send Button - Only shows when there's text */}
+          <AnimatePresence>
+            {inputMessage.trim() && (
+              <motion.button
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.8, opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                onClick={handleSend}
+                className={cn(
+                  "flex-shrink-0 w-9 h-9 rounded-xl",
+                  "flex items-center justify-center",
+                  "bg-foreground text-background",
+                  "transition-all duration-200",
+                  "hover:scale-105 hover:shadow-lg",
+                  "active:scale-95"
+                )}
+              >
+                <ArrowUp className="w-5 h-5" strokeWidth={2.5} />
+              </motion.button>
+            )}
+          </AnimatePresence>
         </div>
 
-        {/* Send Button */}
-        <button
-          onClick={handleSend}
-          className={cn(
-            "flex-shrink-0 w-10 h-10 rounded-xl",
-            "flex items-center justify-center",
-            "bg-foreground text-background",
-            "transition-all duration-200",
-            "hover:scale-105 hover:shadow-lg",
-            "active:scale-95",
-            inputMessage.trim() ? "opacity-100" : "opacity-50"
-          )}
-        >
-          <ArrowUp className="w-5 h-5" strokeWidth={2.5} />
-        </button>
+        {/* Row 2: Toolbar */}
+        <div className="flex items-center justify-between px-3 py-2 border-t border-border/30 bg-muted/20">
+          {/* Plus Button (visual only) */}
+          <button
+            className={cn(
+              "w-8 h-8 rounded-lg flex items-center justify-center",
+              "text-muted-foreground/60 hover:text-muted-foreground",
+              "hover:bg-muted/50 transition-colors cursor-default"
+            )}
+          >
+            <Plus className="w-5 h-5" />
+          </button>
+
+          {/* Mode Selector (visual only) */}
+          <div
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-lg",
+              "text-sm text-muted-foreground",
+              "hover:bg-muted/50 transition-colors cursor-default"
+            )}
+          >
+            <Brain className="w-4 h-4" />
+            <span>General</span>
+            <ChevronDown className="w-3.5 h-3.5 opacity-60" />
+          </div>
+        </div>
       </div>
-      
-      {/* Hint text */}
-      <p className="text-center text-sm text-muted-foreground/60 mt-3">
-        {language === 'ar' ? 'اضغط Enter للبدء' : 'Press Enter to get started'}
-      </p>
     </motion.div>
   );
 };
