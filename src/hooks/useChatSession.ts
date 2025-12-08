@@ -243,6 +243,8 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
       // Skip if no user or already initialized for this user
       if (!userId || lastInitializedUserId.current === userId) return;
       
+      console.log('[useChatSession] Initializing for user:', userId);
+      
       try {
         // Check for most recent session with messages
         const { data, error } = await supabase
@@ -265,8 +267,10 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
         }
         
         if (data && data.length > 0 && data[0].session_id) {
+          console.log('[useChatSession] Found existing session:', data[0].session_id);
           setCurrentSessionId(data[0].session_id);
         } else {
+          console.log('[useChatSession] No existing session, creating new one');
           setCurrentSessionId(crypto.randomUUID());
         }
         
