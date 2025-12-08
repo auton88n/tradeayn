@@ -166,7 +166,7 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 1.2, ease: [0.32, 0.72, 0, 1] }}
-          className="text-lg md:text-xl lg:text-2xl text-muted-foreground font-light max-w-2xl mx-auto"
+          className="text-base md:text-lg lg:text-xl text-muted-foreground font-light max-w-2xl mx-auto"
         >
           {language === 'ar' 
             ? 'رفيقك الذكي الذي يساعدك على التنظيم والتخطيط والعيش بشكل أفضل.' 
