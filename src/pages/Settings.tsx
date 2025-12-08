@@ -16,13 +16,25 @@ const Settings = () => {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      try {
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Auth timeout')), 5000)
+        );
+        
+        const authPromise = supabase.auth.getUser();
+        const { data: { user } } = await Promise.race([authPromise, timeoutPromise]) as Awaited<ReturnType<typeof supabase.auth.getUser>>;
+        
+        if (!user) {
+          navigate('/');
+          return;
+        }
+        setUser(user);
+      } catch (error) {
+        console.error('Auth check failed:', error);
         navigate('/');
-        return;
+      } finally {
+        setLoading(false);
       }
-      setUser(user);
-      setLoading(false);
     };
     
     checkAuth();
