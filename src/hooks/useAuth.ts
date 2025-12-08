@@ -202,7 +202,7 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
     // Track device (non-blocking)
     if (!hasTrackedDevice.current) {
       hasTrackedDevice.current = true;
-      setTimeout(() => trackDeviceLogin(user.id), 0);
+      setTimeout(() => trackDeviceLogin(user.id, session.access_token), 0);
     }
 
     return () => {

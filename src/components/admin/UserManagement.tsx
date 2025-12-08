@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { supabase } from '@/integrations/supabase/client';
+import { Session } from '@supabase/supabase-js';
+import { supabaseApi } from '@/lib/supabaseApi';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -49,6 +50,7 @@ interface AccessGrantWithProfile {
 }
 
 interface UserManagementProps {
+  session: Session;
   allUsers: AccessGrantWithProfile[];
   onRefresh: () => void;
 }
@@ -70,7 +72,7 @@ const itemVariants = {
   }
 };
 
-export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => {
+export const UserManagement = ({ session, allUsers, onRefresh }: UserManagementProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'pending' | 'revoked'>('all');
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
@@ -106,30 +108,30 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
 
   const handleActivate = async (userId: string) => {
     try {
-      const { error } = await supabase
-        .from('access_grants')
-        .update({ is_active: true, granted_at: new Date().toISOString() })
-        .eq('user_id', userId);
-      
-      if (error) throw error;
+      await supabaseApi.patch(
+        `access_grants?user_id=eq.${userId}`,
+        session.access_token,
+        { is_active: true, granted_at: new Date().toISOString() }
+      );
       toast.success('User activated');
       onRefresh();
     } catch (error) {
+      console.error('Error activating user:', error);
       toast.error('Failed to activate user');
     }
   };
 
   const handleDeactivate = async (userId: string) => {
     try {
-      const { error } = await supabase
-        .from('access_grants')
-        .update({ is_active: false })
-        .eq('user_id', userId);
-      
-      if (error) throw error;
+      await supabaseApi.patch(
+        `access_grants?user_id=eq.${userId}`,
+        session.access_token,
+        { is_active: false }
+      );
       toast.success('User deactivated');
       onRefresh();
     } catch (error) {
+      console.error('Error deactivating user:', error);
       toast.error('Failed to deactivate user');
     }
   };
@@ -138,16 +140,16 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
     if (!editingUser) return;
     
     try {
-      const { error } = await supabase
-        .from('access_grants')
-        .update({ monthly_limit: newLimit })
-        .eq('user_id', editingUser.user_id);
-      
-      if (error) throw error;
+      await supabaseApi.patch(
+        `access_grants?user_id=eq.${editingUser.user_id}`,
+        session.access_token,
+        { monthly_limit: newLimit }
+      );
       toast.success('Limit updated');
       setEditingUser(null);
       onRefresh();
     } catch (error) {
+      console.error('Error updating limit:', error);
       toast.error('Failed to update limit');
     }
   };
@@ -156,18 +158,22 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
     if (bulkEditUsers.length === 0) return;
     
     try {
-      const userIds = bulkEditUsers.map(u => u.user_id);
-      const { error } = await supabase
-        .from('access_grants')
-        .update({ monthly_limit: newLimit })
-        .in('user_id', userIds);
-      
-      if (error) throw error;
+      // Update each user individually (REST API doesn't support IN clause easily)
+      await Promise.all(
+        bulkEditUsers.map(u => 
+          supabaseApi.patch(
+            `access_grants?user_id=eq.${u.user_id}`,
+            session.access_token,
+            { monthly_limit: newLimit }
+          )
+        )
+      );
       toast.success(`Updated ${bulkEditUsers.length} users`);
       setBulkEditUsers([]);
       setSelectedUsers(new Set());
       onRefresh();
     } catch (error) {
+      console.error('Error updating limits:', error);
       toast.error('Failed to update limits');
     }
   };
@@ -179,26 +185,41 @@ export const UserManagement = ({ allUsers, onRefresh }: UserManagementProps) => 
       const userIds = Array.from(selectedUsers);
       
       if (action === 'activate') {
-        await supabase
-          .from('access_grants')
-          .update({ is_active: true, granted_at: new Date().toISOString() })
-          .in('user_id', userIds);
+        await Promise.all(
+          userIds.map(userId =>
+            supabaseApi.patch(
+              `access_grants?user_id=eq.${userId}`,
+              session.access_token,
+              { is_active: true, granted_at: new Date().toISOString() }
+            )
+          )
+        );
       } else if (action === 'deactivate') {
-        await supabase
-          .from('access_grants')
-          .update({ is_active: false })
-          .in('user_id', userIds);
+        await Promise.all(
+          userIds.map(userId =>
+            supabaseApi.patch(
+              `access_grants?user_id=eq.${userId}`,
+              session.access_token,
+              { is_active: false }
+            )
+          )
+        );
       } else if (action === 'delete') {
-        await supabase
-          .from('access_grants')
-          .delete()
-          .in('user_id', userIds);
+        await Promise.all(
+          userIds.map(userId =>
+            supabaseApi.delete(
+              `access_grants?user_id=eq.${userId}`,
+              session.access_token
+            )
+          )
+        );
       }
       
       toast.success(`${action === 'delete' ? 'Deleted' : action === 'activate' ? 'Activated' : 'Deactivated'} ${selectedUsers.size} users`);
       setSelectedUsers(new Set());
       onRefresh();
     } catch (error) {
+      console.error('Bulk action error:', error);
       toast.error('Bulk action failed');
     }
   };

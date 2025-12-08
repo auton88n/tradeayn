@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseApi } from '@/lib/supabaseApi';
 
 /**
  * Generate a simple device fingerprint from browser data
@@ -90,28 +90,26 @@ const getDeviceInfo = () => {
 };
 
 /**
- * Track device login - optimized with parallel operations
- * Uses database RPC function for atomic upsert
+ * Track device login - uses REST API to avoid deadlocks
  */
-export const trackDeviceLogin = async (userId: string) => {
+export const trackDeviceLogin = async (userId: string, accessToken: string) => {
   try {
     const fingerprintHash = generateFingerprint();
     const deviceInfo = getDeviceInfo();
     const now = new Date().toISOString();
     
-    // Use database RPC for atomic device fingerprint recording (handles upsert + increment)
-    // and update profile in parallel
+    // Use REST API for both operations in parallel
     await Promise.all([
-      supabase.rpc('record_device_fingerprint', {
+      supabaseApi.rpc('record_device_fingerprint', accessToken, {
         _user_id: userId,
         _fingerprint_hash: fingerprintHash,
         _device_info: deviceInfo
       }),
-      
-      supabase
-        .from('profiles')
-        .update({ last_login: now })
-        .eq('user_id', userId)
+      supabaseApi.patch(
+        `profiles?user_id=eq.${userId}`,
+        accessToken,
+        { last_login: now }
+      )
     ]);
     
   } catch {
