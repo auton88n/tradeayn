@@ -55,7 +55,7 @@ const AIAgents = () => {
           email: formData.email,
           phone: formData.phone || null,
           message: formData.message || null,
-          service_type: 'ai-agents',
+          service_type: 'ai_agents',
           status: 'new'
         });
 
