@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState } from 'react';
+import React, { useEffect, useCallback, useState, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -22,6 +22,7 @@ import { useMessages } from '@/hooks/useMessages';
 import { useTutorial } from '@/hooks/useTutorial';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
 import { analyzeResponseEmotion } from '@/utils/emotionMapping';
+import { hapticFeedback } from '@/lib/haptics';
 
 // Import icons for modes
 import { MessageSquare, Menu, Brain } from 'lucide-react';
@@ -283,7 +284,10 @@ const DashboardContent = ({
     setReplyPrefill('');
   }, []);
 
-  // Update emotion when AYN responds - prioritize backend emotion detection
+  // Track last processed emotion to prevent duplicate haptics
+  const lastProcessedEmotionRef = useRef<string | null>(null);
+
+  // Update emotion when AYN responds - prioritize backend emotion detection + trigger haptic
   useEffect(() => {
     if (!messagesHook.isTyping && messagesHook.messages.length > 0) {
       const lastMessage = messagesHook.messages[messagesHook.messages.length - 1];
@@ -292,6 +296,14 @@ const DashboardContent = ({
         const emotion = messagesHook.lastSuggestedEmotion || analyzeResponseEmotion(lastMessage.content);
         setEmotion(emotion as 'calm' | 'happy' | 'excited' | 'thinking' | 'frustrated' | 'curious');
         setIsResponding(false);
+        
+        // Trigger haptic feedback for emotion (only if emotion changed)
+        if (emotion !== lastProcessedEmotionRef.current) {
+          lastProcessedEmotionRef.current = emotion;
+          // Map emotion to haptic pattern
+          const hapticType = emotion as 'calm' | 'happy' | 'excited' | 'thinking' | 'frustrated' | 'curious';
+          hapticFeedback(hapticType);
+        }
       }
     } else if (messagesHook.isTyping) {
       setEmotion('thinking');
