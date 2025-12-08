@@ -10,7 +10,9 @@ interface ApplicationEmailRequest {
   serviceType: string;
   applicantName: string;
   applicantEmail: string;
-  formData: Record<string, unknown>;
+  applicantPhone?: string;
+  message?: string;
+  formData?: Record<string, unknown>;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -19,7 +21,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { serviceType, applicantName, applicantEmail, formData }: ApplicationEmailRequest = await req.json();
+    const { serviceType, applicantName, applicantEmail, applicantPhone, message, formData }: ApplicationEmailRequest = await req.json();
 
     console.log(`Processing application email for ${serviceType} from ${applicantEmail}`);
 
@@ -45,8 +47,16 @@ const handler = async (req: Request): Promise<Response> => {
       },
     });
 
+    // Build complete form data from individual fields and any extra formData
+    const completeFormData: Record<string, unknown> = {
+      ...(applicantPhone ? { phone: applicantPhone } : {}),
+      ...(message ? { message } : {}),
+      ...(formData || {}),
+    };
+
     // Format form data for email
     const formatFormData = (data: Record<string, unknown>): string => {
+      if (!data || Object.keys(data).length === 0) return '';
       return Object.entries(data)
         .filter(([key]) => key !== 'message')
         .map(([key, value]) => {
@@ -106,12 +116,12 @@ const handler = async (req: Request): Promise<Response> => {
 <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
 <tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666;font-weight:600;">Name</td><td style="padding:8px 16px;border-bottom:1px solid #eee;">${applicantName}</td></tr>
 <tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666;font-weight:600;">Email</td><td style="padding:8px 16px;border-bottom:1px solid #eee;"><a href="mailto:${applicantEmail}" style="color:#0ea5e9;">${applicantEmail}</a></td></tr>
-${formatFormData(formData)}
+${formatFormData(completeFormData)}
 </table>
-${formData.message ? `
+${completeFormData.message ? `
 <div style="margin-top:24px;">
 <p style="font-size:14px;color:#999;margin:0 0 8px;text-transform:uppercase;font-weight:600;">MESSAGE</p>
-<p style="font-size:14px;color:#333;line-height:1.6;background:#f9f9f9;padding:16px;border-radius:8px;">${formData.message}</p>
+<p style="font-size:14px;color:#333;line-height:1.6;background:#f9f9f9;padding:16px;border-radius:8px;">${completeFormData.message}</p>
 </div>
 ` : ''}
 <div style="margin-top:32px;text-align:center;">
