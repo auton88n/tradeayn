@@ -57,7 +57,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ onSuccess }) => {
 
       const { data: ticket, error: ticketError } = await supabase
         .from('support_tickets')
-        .insert(ticketData)
+        .insert(ticketData as never)
         .select()
         .single();
 
