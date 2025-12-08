@@ -148,7 +148,7 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
     }
   };
 
-  const updateStatus = async (newStatus: string) => {
+  const updateStatus = async (newStatus: 'open' | 'in_progress' | 'waiting_reply' | 'resolved' | 'closed') => {
     try {
       const { error } = await supabase
         .from('support_tickets')
@@ -250,7 +250,7 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
         {/* Status Selector */}
         <div className="flex items-center gap-4 py-2 border-b border-border">
           <span className="text-sm font-medium">Status:</span>
-          <Select value={status} onValueChange={(val) => updateStatus(val)}>
+          <Select value={status} onValueChange={(val) => updateStatus(val as 'open' | 'in_progress' | 'waiting_reply' | 'resolved' | 'closed')}>
             <SelectTrigger className="w-[160px]">
               <SelectValue />
             </SelectTrigger>
