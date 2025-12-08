@@ -297,51 +297,11 @@ const InfluencerSites = () => {
             </div>
 
             {/* Floating Stats Cards - Only on larger screens */}
-            <motion.div dir="ltr" initial={{
-            opacity: 0,
-            x: 20
-          }} whileInView={{
-            opacity: 1,
-            x: 0
-          }} viewport={{
-            once: true
-          }} transition={{
-            delay: 0.4
-          }} className="absolute -right-4 lg:-right-20 top-1/4 bg-neutral-900/90 backdrop-blur-xl border border-rose-500/20 rounded-2xl p-4 shadow-xl hidden md:block">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center">
-                  <Instagram className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <p className="text-xs text-neutral-500">Instagram</p>
-                  <p className="text-lg font-bold text-rose-400">2.1M</p>
-                </div>
-              </div>
-            </motion.div>
+            
 
             
 
-            <motion.div dir="ltr" initial={{
-            opacity: 0,
-            y: 20
-          }} whileInView={{
-            opacity: 1,
-            y: 0
-          }} viewport={{
-            once: true
-          }} transition={{
-            delay: 0.6
-          }} className="absolute -right-4 lg:-right-16 bottom-1/4 bg-neutral-900/90 backdrop-blur-xl border border-emerald-500/20 rounded-2xl p-4 shadow-xl hidden md:block">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-emerald-400" />
-                </div>
-                <div>
-                  <p className="text-xs text-neutral-500">Engagement</p>
-                  <p className="text-lg font-bold text-emerald-400">8.5%</p>
-                </div>
-              </div>
-            </motion.div>
+            
           </motion.div>
         </div>
       </section>
