@@ -64,7 +64,7 @@ export const DashboardContainer = ({ user, session, auth, isAdmin, onAdminPanelC
   const [selectedMode, setSelectedMode] = React.useState<AIMode>('General');
   const [allowPersonalization, setAllowPersonalization] = React.useState(false);
 
-  // Messages hook - depends on other state
+  // Messages hook - depends on other state, pass session for direct REST API calls
   const messagesHook = useMessages(
     chatSession.currentSessionId,
     user.id,
@@ -72,7 +72,8 @@ export const DashboardContainer = ({ user, session, auth, isAdmin, onAdminPanelC
     selectedMode,
     auth.userProfile,
     allowPersonalization,
-    'en'
+    'en',
+    session
   );
 
   // Get modes (English only)

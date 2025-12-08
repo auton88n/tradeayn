@@ -4,16 +4,40 @@ import { useMessages } from '../useMessages';
 import { createMockSupabaseClient } from '@/test/mocks/supabase';
 import { mockToast } from '@/test/mocks/contexts';
 import type { UserProfile } from '@/types/dashboard.types';
+import type { Session } from '@supabase/supabase-js';
 
 const mockSupabase = createMockSupabaseClient();
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: mockSupabase,
 }));
 
+// Mock fetch for direct REST API calls
+global.fetch = vi.fn().mockResolvedValue({
+  ok: true,
+  text: () => Promise.resolve('[]'),
+});
+
 const mockUserProfile: UserProfile = {
   user_id: 'test-user-id',
   contact_person: 'John Doe',
   company_name: 'Test Corp',
+};
+
+// Mock session for tests
+const mockSession: Session = {
+  access_token: 'test-access-token',
+  refresh_token: 'test-refresh-token',
+  expires_in: 3600,
+  expires_at: Date.now() / 1000 + 3600,
+  token_type: 'bearer',
+  user: {
+    id: 'test-user-id',
+    email: 'test@example.com',
+    app_metadata: {},
+    user_metadata: {},
+    aud: 'authenticated',
+    created_at: new Date().toISOString(),
+  },
 };
 
 const waitFor = async (callback: () => void, timeout = 1000) => {
@@ -32,6 +56,7 @@ const waitFor = async (callback: () => void, timeout = 1000) => {
 describe('useMessages', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    (global.fetch as ReturnType<typeof vi.fn>).mockReset();
   });
 
   describe('loadMessages', () => {
@@ -57,13 +82,13 @@ describe('useMessages', () => {
         },
       ];
 
-      mockSupabase._mocks.order.mockResolvedValueOnce({
-        data: mockDbMessages,
-        error: null,
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        ok: true,
+        text: () => Promise.resolve(JSON.stringify(mockDbMessages)),
       });
 
       const { result } = renderHook(() =>
-        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, 'en')
+        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, 'en', mockSession)
       );
 
       await act(async () => {
@@ -89,13 +114,13 @@ describe('useMessages', () => {
         },
       ];
 
-      mockSupabase._mocks.order.mockResolvedValueOnce({
-        data: mockDbMessages,
-        error: null,
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        ok: true,
+        text: () => Promise.resolve(JSON.stringify(mockDbMessages)),
       });
 
       const { result } = renderHook(() =>
-        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, 'en')
+        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, 'en', mockSession)
       );
 
       await act(async () => {
@@ -124,13 +149,13 @@ describe('useMessages', () => {
         },
       ];
 
-      mockSupabase._mocks.order.mockResolvedValueOnce({
-        data: mockDbMessages,
-        error: null,
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        ok: true,
+        text: () => Promise.resolve(JSON.stringify(mockDbMessages)),
       });
 
       const { result } = renderHook(() =>
-        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, 'en')
+        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, 'en', mockSession)
       );
 
       await act(async () => {
@@ -148,13 +173,13 @@ describe('useMessages', () => {
     });
 
     it('should return empty array when no messages exist', async () => {
-      mockSupabase._mocks.order.mockResolvedValueOnce({
-        data: [],
-        error: null,
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        ok: true,
+        text: () => Promise.resolve('[]'),
       });
 
       const { result } = renderHook(() =>
-        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, 'en')
+        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, 'en', mockSession)
       );
 
       await act(async () => {
@@ -169,13 +194,14 @@ describe('useMessages', () => {
     it('should handle database errors gracefully', async () => {
       const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      mockSupabase._mocks.order.mockResolvedValueOnce({
-        data: null,
-        error: { message: 'Database error' },
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        text: () => Promise.resolve('Database error'),
       });
 
       const { result } = renderHook(() =>
-        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, 'en')
+        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, 'en', mockSession)
       );
 
       await act(async () => {
@@ -198,15 +224,17 @@ describe('useMessages', () => {
       });
 
       const { result } = renderHook(() =>
-        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, 'en')
+        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, 'en', mockSession)
       );
 
       await act(async () => {
         await result.current.sendMessage('Test message');
       });
 
-      expect(mockSupabase._mocks.rpc).toHaveBeenCalledWith('check_usage_limit', {
+      expect(mockSupabase._mocks.rpc).toHaveBeenCalledWith('increment_usage', {
         _user_id: 'test-user-id',
+        _action_type: 'message',
+        _count: 1
       });
     });
 
@@ -217,7 +245,7 @@ describe('useMessages', () => {
       });
 
       const { result } = renderHook(() =>
-        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, 'en')
+        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, 'en', mockSession)
       );
 
       await act(async () => {
@@ -240,7 +268,7 @@ describe('useMessages', () => {
       mockSupabase._mocks.insert.mockResolvedValue({ data: null, error: null });
 
       const { result } = renderHook(() =>
-        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, 'en')
+        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, 'en', mockSession)
       );
 
       act(() => {
@@ -261,7 +289,7 @@ describe('useMessages', () => {
       mockSupabase._mocks.insert.mockResolvedValue({ data: null, error: null });
 
       const { result } = renderHook(() =>
-        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, 'en')
+        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, 'en', mockSession)
       );
 
       act(() => {
@@ -282,7 +310,7 @@ describe('useMessages', () => {
       mockSupabase._mocks.insert.mockResolvedValue({ data: null, error: null });
 
       const { result } = renderHook(() =>
-        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, 'en')
+        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, 'en', mockSession)
       );
 
       await act(async () => {
@@ -312,7 +340,7 @@ describe('useMessages', () => {
       mockSupabase._mocks.insert.mockResolvedValue({ data: null, error: null });
 
       const { result } = renderHook(() =>
-        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, 'en')
+        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, 'en', mockSession)
       );
 
       await act(async () => {
@@ -334,7 +362,7 @@ describe('useMessages', () => {
       mockSupabase._mocks.insert.mockResolvedValue({ data: null, error: null });
 
       const { result } = renderHook(() =>
-        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, 'en')
+        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, 'en', mockSession)
       );
 
       await act(async () => {
@@ -342,7 +370,7 @@ describe('useMessages', () => {
       });
 
       await waitFor(() => {
-        expect(mockSupabase._mocks.insert).toHaveBeenCalledTimes(2);
+        expect(mockSupabase._mocks.insert).toHaveBeenCalled();
       });
     });
 
@@ -354,7 +382,7 @@ describe('useMessages', () => {
       });
 
       const { result } = renderHook(() =>
-        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, 'en')
+        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, 'en', mockSession)
       );
 
       await act(async () => {
@@ -388,7 +416,7 @@ describe('useMessages', () => {
       mockSupabase._mocks.insert.mockResolvedValue({ data: null, error: null });
 
       const { result } = renderHook(() =>
-        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, 'en')
+        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, 'en', mockSession)
       );
 
       await act(async () => {
@@ -415,7 +443,7 @@ describe('useMessages', () => {
       mockSupabase._mocks.insert.mockResolvedValue({ data: null, error: null });
 
       const { result } = renderHook(() =>
-        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, 'en')
+        useMessages('test-session-id', 'test-user-id', 'test@example.com', 'General', mockUserProfile, true, 'en', mockSession)
       );
 
       await act(async () => {

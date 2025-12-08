@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { 
@@ -10,6 +11,31 @@ import type {
   WebhookPayload 
 } from '@/types/dashboard.types';
 
+// Same constants from useAuth.ts - direct REST API bypasses deadlocking Supabase client
+const SUPABASE_URL = 'https://dfkoxuokfkttjhfjcecx.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRma294dW9rZmt0dGpoZmpjZWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYzNTg4NzMsImV4cCI6MjA3MTkzNDg3M30.Th_-ds6dHsxIhRpkzJLREwBIVdgkcdm2SmMNDmjNbxw';
+
+// Helper for direct REST API calls (bypasses deadlocking Supabase client)
+const fetchFromSupabase = async (
+  endpoint: string,
+  token: string
+): Promise<any> => {
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}`, {
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`API error: ${response.status}`);
+  }
+
+  const text = await response.text();
+  return text ? JSON.parse(text) : null;
+};
+
 export const useMessages = (
   sessionId: string,
   userId: string,
@@ -17,26 +43,36 @@ export const useMessages = (
   selectedMode: AIMode,
   userProfile: UserProfile | null,
   allowPersonalization: boolean,
-  detectedLanguage: 'ar' | 'en'
+  detectedLanguage: 'ar' | 'en',
+  session: Session | null
 ): UseMessagesReturn => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const { toast } = useToast();
 
-  // Load messages from database for current session
+  // Load messages from database for current session using direct REST API
   const loadMessages = useCallback(async () => {
+    if (!session || !sessionId) {
+      console.warn('[useMessages] No session or sessionId available');
+      return;
+    }
+    
     try {
-      const { data, error } = await supabase
-        .from('messages')
-        .select('id, content, created_at, sender, attachment_url, attachment_name, attachment_type')
-        .eq('user_id', userId)
-        .eq('session_id', sessionId)
-        .order('created_at', { ascending: true });
-
-      if (error) return;
+      const data = await fetchFromSupabase(
+        `messages?user_id=eq.${userId}&session_id=eq.${sessionId}&select=id,content,created_at,sender,attachment_url,attachment_name,attachment_type&order=created_at.asc`,
+        session.access_token
+      );
 
       if (data && data.length > 0) {
-        const chatMessages: Message[] = data.map(msg => ({
+        const chatMessages: Message[] = data.map((msg: {
+          id: string;
+          content: string;
+          created_at: string;
+          sender: string;
+          attachment_url: string | null;
+          attachment_name: string | null;
+          attachment_type: string | null;
+        }) => ({
           id: msg.id,
           content: msg.content,
           sender: msg.sender as 'user' | 'ayn',
@@ -52,11 +88,12 @@ export const useMessages = (
         setMessages(chatMessages);
       }
     } catch (error) {
+      console.error('[useMessages] Error loading messages:', error);
       // Silent fail - messages will be empty
     }
-  }, [userId, sessionId]);
+  }, [userId, sessionId, session]);
 
-  // Send message with optional file attachment
+  // Send message with optional file attachment (keep using supabase client for writes)
   const sendMessage = useCallback(async (
     content: string,
     attachment: FileAttachment | null = null
@@ -188,7 +225,7 @@ export const useMessages = (
 
       setMessages(prev => [...prev, aynMessage]);
 
-      // Save both messages to database
+      // Save both messages to database (keep using supabase client for writes)
       await supabase.from('messages').insert([
         {
           user_id: userId,
