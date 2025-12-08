@@ -390,25 +390,25 @@ const Automation = () => {
             </div>
 
             {/* Desktop: Orbiting layout */}
-            <div className="hidden md:flex justify-center mb-12">
+            <div className="hidden md:flex justify-center mb-20">
               <div className="relative">
                 <div className="w-24 h-24 md:w-32 md:h-32 bg-emerald-500 rounded-2xl md:rounded-3xl flex items-center justify-center shadow-lg shadow-emerald-500/30">
                   <Brain className="w-12 h-12 md:w-16 md:h-16 text-white" />
                 </div>
                 {/* Orbiting connections */}
-                <div className="absolute inset-0 w-[300px] md:w-[400px] h-[300px] md:h-[400px] -top-[100px] md:-top-[134px] -left-[100px] md:-left-[134px]">
+                <div className="absolute w-[380px] h-[380px] -top-[124px] -left-[124px]">
                   {integrations.map((integration, index) => {
                     const angle = (index * 360) / integrations.length;
-                    const radius = 120;
+                    const radius = 150;
                     const x = Math.cos((angle * Math.PI) / 180) * radius;
                     const y = Math.sin((angle * Math.PI) / 180) * radius;
                     return (
                       <motion.div
                         key={integration.name}
-                        className={`absolute w-12 h-12 md:w-14 md:h-14 ${integration.color} rounded-lg md:rounded-xl flex items-center justify-center shadow-lg`}
+                        className={`absolute w-14 h-14 ${integration.color} rounded-xl flex items-center justify-center shadow-lg`}
                         style={{
-                          left: `calc(50% + ${x}px - 24px)`,
-                          top: `calc(50% + ${y}px - 24px)`,
+                          left: `calc(50% + ${x}px - 28px)`,
+                          top: `calc(50% + ${y}px - 28px)`,
                         }}
                         initial={{ opacity: 0, scale: 0 }}
                         whileInView={{ opacity: 1, scale: 1 }}
@@ -423,7 +423,7 @@ const Automation = () => {
               </div>
             </div>
 
-            <p className="text-center text-neutral-400 mt-6 md:mt-8">
+            <p className="text-center text-neutral-400 mt-12">
               And <span className="text-emerald-400 font-bold">500+ more</span> integrations available
             </p>
           </motion.div>
