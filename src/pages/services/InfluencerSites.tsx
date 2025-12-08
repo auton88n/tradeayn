@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import influencerWomanBg from '@/assets/influencer-woman-bg.jpg';
-import { Brain, ArrowLeft, Palette, Smartphone, Zap, Layout, TrendingUp, Globe, Instagram, Play, Heart, Eye, BarChart3, Users, Star, CheckCircle } from 'lucide-react';
+import { Brain, ArrowLeft, ArrowRight, Palette, Smartphone, Zap, Layout, TrendingUp, Globe, Instagram, Play, Heart, Eye, BarChart3, Users, Star, CheckCircle, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 const InfluencerSites = () => {
@@ -445,6 +445,179 @@ const InfluencerSites = () => {
         </div>
       </section>
 
+      {/* Recent Content Section */}
+      <section className="py-24 md:py-32 px-4 md:px-6 bg-neutral-950">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <span className="text-sm font-mono tracking-wider text-neutral-500 uppercase mb-4 block">Portfolio</span>
+            <h2 className="text-4xl md:text-5xl font-serif font-bold text-white mb-6">Recent Content</h2>
+            <p className="text-neutral-400 max-w-2xl mx-auto">
+              A glimpse into the viral moments and engaging content that drives real results
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+            {/* TikTok Video 1 */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="group relative aspect-[4/5] rounded-3xl overflow-hidden cursor-pointer"
+            >
+              <img
+                src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=800&h=1000&fit=crop"
+                alt="Fashion styling content"
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+              
+              {/* TikTok Badge */}
+              <div className="absolute top-4 left-4 flex items-center gap-2 bg-black/60 backdrop-blur-sm px-3 py-1.5 rounded-full">
+                <div className="w-5 h-5 bg-[#00f2ea] rounded flex items-center justify-center">
+                  <Play className="w-3 h-3 text-black fill-black" />
+                </div>
+                <span className="text-white text-sm font-medium">TikTok</span>
+              </div>
+
+              {/* Stats */}
+              <div className="absolute bottom-4 left-4 right-4">
+                <p className="text-white font-medium mb-2">Summer outfit styling tips ✨</p>
+                <div className="flex items-center gap-4 text-white/80 text-sm">
+                  <span className="flex items-center gap-1">
+                    <Eye className="w-4 h-4" /> 2.1M views
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Heart className="w-4 h-4" /> 156K
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Instagram Reel */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="group relative aspect-[4/5] rounded-3xl overflow-hidden cursor-pointer"
+            >
+              <img
+                src="https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=800&h=1000&fit=crop"
+                alt="Beauty skincare routine"
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+              
+              {/* Instagram Badge */}
+              <div className="absolute top-4 left-4 flex items-center gap-2 bg-black/60 backdrop-blur-sm px-3 py-1.5 rounded-full">
+                <div className="w-5 h-5 bg-gradient-to-br from-[#833AB4] via-[#E1306C] to-[#F77737] rounded flex items-center justify-center">
+                  <Instagram className="w-3 h-3 text-white" />
+                </div>
+                <span className="text-white text-sm font-medium">Instagram</span>
+              </div>
+
+              {/* Stats */}
+              <div className="absolute bottom-4 left-4 right-4">
+                <p className="text-white font-medium mb-2">Morning skincare routine 💫</p>
+                <div className="flex items-center gap-4 text-white/80 text-sm">
+                  <span className="flex items-center gap-1">
+                    <Eye className="w-4 h-4" /> 1.8M views
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Heart className="w-4 h-4" /> 98K
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* TikTok Video 2 */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3 }}
+              className="group relative aspect-[4/5] rounded-3xl overflow-hidden cursor-pointer"
+            >
+              <img
+                src="https://images.unsplash.com/photo-1483985988355-763728e1935b?w=800&h=1000&fit=crop"
+                alt="Lifestyle vlog content"
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+              
+              {/* TikTok Badge */}
+              <div className="absolute top-4 left-4 flex items-center gap-2 bg-black/60 backdrop-blur-sm px-3 py-1.5 rounded-full">
+                <div className="w-5 h-5 bg-[#00f2ea] rounded flex items-center justify-center">
+                  <Play className="w-3 h-3 text-black fill-black" />
+                </div>
+                <span className="text-white text-sm font-medium">TikTok</span>
+              </div>
+
+              {/* Stats */}
+              <div className="absolute bottom-4 left-4 right-4">
+                <p className="text-white font-medium mb-2">Day in my life vlog 🎬</p>
+                <div className="flex items-center gap-4 text-white/80 text-sm">
+                  <span className="flex items-center gap-1">
+                    <Eye className="w-4 h-4" /> 1.2M views
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Heart className="w-4 h-4" /> 89K
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Instagram Post */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.4 }}
+              className="group relative aspect-[4/5] rounded-3xl overflow-hidden cursor-pointer"
+            >
+              <img
+                src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800&h=1000&fit=crop"
+                alt="New collection fashion"
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+              
+              {/* Instagram Badge */}
+              <div className="absolute top-4 left-4 flex items-center gap-2 bg-black/60 backdrop-blur-sm px-3 py-1.5 rounded-full">
+                <div className="w-5 h-5 bg-gradient-to-br from-[#833AB4] via-[#E1306C] to-[#F77737] rounded flex items-center justify-center">
+                  <Instagram className="w-3 h-3 text-white" />
+                </div>
+                <span className="text-white text-sm font-medium">Instagram</span>
+              </div>
+
+              {/* Stats */}
+              <div className="absolute bottom-4 left-4 right-4">
+                <p className="text-white font-medium mb-2">New collection drop! 🔥</p>
+                <div className="flex items-center gap-4 text-white/80 text-sm">
+                  <span className="flex items-center gap-1">
+                    <Heart className="w-4 h-4" /> 950K
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <MessageCircle className="w-4 h-4" /> 12K
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+
+          <div className="text-center">
+            <Button variant="outline" className="border-white/20 text-white hover:bg-white/10 rounded-full px-8">
+              View All Content <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
+        </div>
+      </section>
 
       {/* Features Section */}
       <section className="py-16 md:py-24 px-4 md:px-6 bg-neutral-900/50">
