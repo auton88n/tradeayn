@@ -38,12 +38,6 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     icon: 'Paperclip',
   },
   {
-    id: 'suggestions',
-    title: 'tutorial.steps.suggestions.title',
-    description: 'tutorial.steps.suggestions.description',
-    icon: 'Lightbulb',
-  },
-  {
     id: 'navigation',
     title: 'tutorial.steps.navigation.title',
     description: 'tutorial.steps.navigation.description',
