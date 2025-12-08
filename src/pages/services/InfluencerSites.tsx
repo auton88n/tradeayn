@@ -240,8 +240,8 @@ const InfluencerSites = () => {
           once: true
         }} transition={{
           delay: 0.2
-        }} className="relative max-w-4xl mx-auto">
-            <div className="rounded-2xl overflow-hidden border border-neutral-800 bg-neutral-900 shadow-2xl">
+        }} className="relative max-w-4xl mx-auto" dir="ltr">
+            <div className="rounded-2xl overflow-hidden border border-neutral-800 bg-neutral-900 shadow-2xl" dir="ltr">
               {/* Browser Chrome */}
               <div className="flex items-center gap-2 px-4 py-3 border-b border-neutral-800 bg-neutral-900">
                 <div className="flex gap-1.5">
@@ -368,8 +368,8 @@ const InfluencerSites = () => {
           </motion.div>
 
           {/* Dashboard Preview */}
-          <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }} className="relative max-w-4xl mx-auto">
-            <div className="rounded-2xl overflow-hidden border border-neutral-800 bg-neutral-900 shadow-2xl p-6 md:p-8">
+          <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }} className="relative max-w-4xl mx-auto" dir="ltr">
+            <div className="rounded-2xl overflow-hidden border border-neutral-800 bg-neutral-900 shadow-2xl p-6 md:p-8" dir="ltr">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <div className="bg-neutral-800/50 rounded-xl p-4">
                   <p className="text-xs text-neutral-500 mb-1">Total Followers</p>
