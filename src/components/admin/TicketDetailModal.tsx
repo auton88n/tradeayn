@@ -126,16 +126,18 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
       // Send email notification to user (if not internal note)
       if (!isInternalNote && ticket.guest_email) {
         try {
-          await supabase.functions.invoke('send-reply-email', {
+          await supabase.functions.invoke('send-ticket-reply', {
             body: {
-              to: ticket.guest_email,
-              subject: `Re: ${ticket.subject}`,
-              message: newMessage.trim(),
               ticketId: ticket.id,
+              userEmail: ticket.guest_email,
+              userName: ticket.guest_name || 'User',
+              subject: ticket.subject,
+              message: newMessage.trim(),
             },
           });
+          console.log('Reply notification sent to:', ticket.guest_email);
         } catch (emailError) {
-          console.error('Failed to send email:', emailError);
+          console.error('Failed to send email notification:', emailError);
         }
       }
 
