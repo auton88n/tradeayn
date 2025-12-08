@@ -83,13 +83,24 @@ const AIAgents = () => {
     description: 'Go live with 24/7 AI support'
   }];
   return <div className="min-h-screen bg-neutral-950 text-white">
-      {/* Back Button */}
-      <Link to="/" className="fixed top-4 md:top-6 left-4 md:left-6 z-50">
-        <Button variant="ghost" className="text-white/70 hover:text-white hover:bg-white/10 gap-2 bg-neutral-900/80 backdrop-blur-xl border border-neutral-800 rounded-full px-4 py-2">
-          <ArrowLeft className="w-4 h-4" />
-          <span className="hidden sm:inline">Back</span>
-        </Button>
-      </Link>
+      {/* Header */}
+      <div className="fixed top-4 md:top-6 left-0 right-0 z-50 flex items-center justify-center px-4">
+        {/* Back Button - Left */}
+        <Link to="/" className="absolute left-4 md:left-6">
+          <Button variant="ghost" className="text-white/70 hover:text-white hover:bg-white/10 gap-2 bg-neutral-900/80 backdrop-blur-xl border border-neutral-800 rounded-full px-4 py-2">
+            <ArrowLeft className="w-4 h-4" />
+            <span className="hidden sm:inline">Back</span>
+          </Button>
+        </Link>
+        
+        {/* Centered Logo */}
+        <Link to="/" className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-purple-500 rounded-xl flex items-center justify-center">
+            <Brain className="w-5 h-5 text-white" />
+          </div>
+          <span className="text-xl font-bold text-white">AYN</span>
+        </Link>
+      </div>
 
       {/* Hero Section */}
       <section className="min-h-screen flex items-center justify-center px-4 md:px-6 py-20 md:py-24 relative overflow-hidden">
