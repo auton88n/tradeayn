@@ -76,9 +76,11 @@ const AIAgents = () => {
               24/7 intelligent assistants trained on your business data to handle customer inquiries, qualify leads, and drive conversions.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="bg-purple-500 hover:bg-purple-600 text-white px-8 py-6 text-lg rounded-full">
-                Start Your Project
-              </Button>
+              <Link to="/services/ai-agents/apply">
+                <Button size="lg" className="bg-purple-500 hover:bg-purple-600 text-white px-8 py-6 text-lg rounded-full">
+                  Start Your Project
+                </Button>
+              </Link>
               <Link to="/#services">
                 <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10 px-8 py-6 text-lg rounded-full">
                   View All Services
@@ -468,9 +470,11 @@ const AIAgents = () => {
               Join businesses saving 40+ hours per week with AI-powered customer service that never sleeps.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center px-4">
-              <Button size="lg" className="bg-purple-500 hover:bg-purple-600 text-white px-8 md:px-10 py-5 md:py-6 text-base md:text-lg rounded-full w-full sm:w-auto">
-                Start Your Project
-              </Button>
+              <Link to="/services/ai-agents/apply" className="w-full sm:w-auto">
+                <Button size="lg" className="bg-purple-500 hover:bg-purple-600 text-white px-8 md:px-10 py-5 md:py-6 text-base md:text-lg rounded-full w-full">
+                  Start Your Project
+                </Button>
+              </Link>
               <Link to="/#services" className="w-full sm:w-auto">
                 <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10 px-8 md:px-10 py-5 md:py-6 text-base md:text-lg rounded-full w-full">
                   View All Services

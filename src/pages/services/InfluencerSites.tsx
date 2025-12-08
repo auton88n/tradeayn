@@ -76,7 +76,7 @@ const InfluencerSites = () => {
             <p className="text-lg md:text-xl text-neutral-400 max-w-2xl mx-auto mb-8">
               Luxury websites custom-built for influencers and content creators. Attract more partnerships and elevate your personal brand.
             </p>
-            <Link to="/#contact">
+            <Link to="/services/influencer-sites/apply">
               <Button size="lg" className="rounded-full px-8 bg-white text-neutral-950 hover:bg-neutral-200">
                 Start Your Project
               </Button>
@@ -607,7 +607,7 @@ const InfluencerSites = () => {
               Let's create a website that reflects your uniqueness and attracts the opportunities you deserve.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/#contact">
+              <Link to="/services/influencer-sites/apply">
                 <Button size="lg" className="rounded-full px-8 w-full sm:w-auto bg-rose-500 hover:bg-rose-600 text-white">
                   Start Your Project
                 </Button>

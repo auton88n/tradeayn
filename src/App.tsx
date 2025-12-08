@@ -18,8 +18,11 @@ const Settings = lazy(() => import("./pages/Settings"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const InfluencerSites = lazy(() => import("./pages/services/InfluencerSites"));
+const InfluencerSitesApply = lazy(() => import("./pages/services/InfluencerSitesApply"));
 const AIAgents = lazy(() => import("./pages/services/AIAgents"));
+const AIAgentsApply = lazy(() => import("./pages/services/AIAgentsApply"));
 const Automation = lazy(() => import("./pages/services/Automation"));
+const AutomationApply = lazy(() => import("./pages/services/AutomationApply"));
 
 const queryClient = new QueryClient();
 
@@ -41,8 +44,11 @@ const App = () => (
                       <Route path="/settings" element={<Settings />} />
                       <Route path="/reset-password" element={<ResetPassword />} />
                       <Route path="/services/influencer-sites" element={<InfluencerSites />} />
+                      <Route path="/services/influencer-sites/apply" element={<InfluencerSitesApply />} />
                       <Route path="/services/ai-agents" element={<AIAgents />} />
+                      <Route path="/services/ai-agents/apply" element={<AIAgentsApply />} />
                       <Route path="/services/automation" element={<Automation />} />
+                      <Route path="/services/automation/apply" element={<AutomationApply />} />
                       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                       <Route path="*" element={<NotFound />} />
                     </Routes>
