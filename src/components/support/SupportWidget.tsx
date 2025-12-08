@@ -117,8 +117,8 @@ const SupportWidget: React.FC = () => {
                       value="faq" 
                       className="flex items-center gap-1.5 text-xs rounded-lg data-[state=active]:bg-white data-[state=active]:dark:bg-gray-800 data-[state=active]:shadow-sm data-[state=active]:border-border/50 transition-all"
                     >
-                      <HelpCircle className="h-3.5 w-3.5" />
-                      FAQ
+                      <HelpCircle className="h-3.5 w-3.5 shrink-0" />
+                      <span>FAQ</span>
                     </TabsTrigger>
                   </TabsList>
                 </div>
