@@ -33,6 +33,126 @@ interface WebhookResponse {
     contentType: string;
   };
   error?: string;
+  userEmotion?: EmotionAnalysis;
+  suggestedAynEmotion?: string;
+}
+
+// Emotion detection types and logic (ported from frontend)
+type UserEmotion = 'happy' | 'sad' | 'frustrated' | 'excited' | 'anxious' | 'neutral' | 'confused';
+
+interface EmotionAnalysis {
+  emotion: UserEmotion;
+  intensity: number;
+  indicators: string[];
+}
+
+const EMOTION_PATTERNS: Record<UserEmotion, { keywords: string[]; patterns: RegExp[] }> = {
+  happy: {
+    keywords: ['happy', 'great', 'awesome', 'love', 'amazing', 'wonderful', 'fantastic', 'excited', 'joy', 'glad', 'thrilled', 'سعيد', 'رائع', 'ممتاز', 'مذهل', 'فرحان'],
+    patterns: [/😊|😄|😃|🎉|❤️|💕|🥰|😍/g, /!{2,}/g, /\byes+\b/gi]
+  },
+  sad: {
+    keywords: ['sad', 'disappointed', 'unhappy', 'depressed', 'down', 'upset', 'crying', 'tears', 'heartbroken', 'حزين', 'محبط', 'زعلان'],
+    patterns: [/😢|😭|💔|😞|😔/g, /\.{3,}/g]
+  },
+  frustrated: {
+    keywords: ['frustrated', 'annoyed', 'angry', 'irritated', 'fed up', 'hate', 'stupid', 'useless', 'broken', 'wrong', 'not working', 'محبط', 'غاضب', 'زهقان', 'مش شغال'],
+    patterns: [/😤|😠|😡|🤬/g, /!{3,}/g, /\?{2,}/g, /wtf|omg/gi]
+  },
+  excited: {
+    keywords: ['excited', 'cant wait', 'amazing', 'incredible', 'wow', 'omg', 'unbelievable', 'متحمس', 'واو', 'مش مصدق'],
+    patterns: [/🎉|🚀|✨|🔥|💫|⭐/g, /!{2,}/g, /\b(so+|very+|really+)\b/gi]
+  },
+  anxious: {
+    keywords: ['worried', 'anxious', 'nervous', 'scared', 'afraid', 'concern', 'stress', 'panic', 'fear', 'قلقان', 'خايف', 'متوتر'],
+    patterns: [/😰|😨|😱|🥺/g, /\?{2,}/g]
+  },
+  confused: {
+    keywords: ['confused', 'dont understand', 'what do you mean', 'unclear', 'lost', 'help', 'how do i', 'مش فاهم', 'ازاي', 'كيف'],
+    patterns: [/🤔|😕|❓|🤷/g, /\?{2,}/g, /huh|what\?/gi]
+  },
+  neutral: {
+    keywords: [],
+    patterns: []
+  }
+};
+
+function analyzeUserEmotion(message: string): EmotionAnalysis {
+  const lowerMessage = message.toLowerCase();
+  const emotionScores: Record<UserEmotion, number> = {
+    happy: 0, sad: 0, frustrated: 0, excited: 0, anxious: 0, confused: 0, neutral: 0
+  };
+  const indicators: string[] = [];
+
+  for (const [emotion, { keywords, patterns }] of Object.entries(EMOTION_PATTERNS) as [UserEmotion, { keywords: string[]; patterns: RegExp[] }][]) {
+    for (const keyword of keywords) {
+      if (lowerMessage.includes(keyword.toLowerCase())) {
+        emotionScores[emotion] += 1;
+        indicators.push(keyword);
+      }
+    }
+    for (const pattern of patterns) {
+      const matches = message.match(pattern);
+      if (matches) {
+        emotionScores[emotion] += matches.length * 0.5;
+        indicators.push(...matches);
+      }
+    }
+  }
+
+  // Intensity modifiers
+  const exclamationCount = (message.match(/!/g) || []).length;
+  const capsRatio = (message.match(/[A-Z]/g) || []).length / Math.max(message.length, 1);
+  const intensityBoost = exclamationCount * 0.1 + (capsRatio > 0.5 ? 0.3 : 0);
+
+  let maxEmotion: UserEmotion = 'neutral';
+  let maxScore = 0;
+  for (const [emotion, score] of Object.entries(emotionScores) as [UserEmotion, number][]) {
+    if (score > maxScore) {
+      maxScore = score;
+      maxEmotion = emotion;
+    }
+  }
+
+  const intensity = Math.min(1, (maxScore / 3) + intensityBoost);
+
+  return {
+    emotion: maxScore > 0.5 ? maxEmotion : 'neutral',
+    intensity,
+    indicators: [...new Set(indicators)].slice(0, 5)
+  };
+}
+
+function getEmotionContext(analysis: EmotionAnalysis): string {
+  switch (analysis.emotion) {
+    case 'frustrated':
+      return 'User seems frustrated. Be extra patient, acknowledge their frustration, offer clear solutions.';
+    case 'sad':
+      return 'User seems down. Be supportive, warm, and encouraging.';
+    case 'excited':
+      return 'User is excited! Match their energy, be enthusiastic.';
+    case 'anxious':
+      return 'User seems worried. Be calm, reassuring, and provide clear guidance.';
+    case 'confused':
+      return 'User seems confused. Explain clearly, offer to clarify.';
+    case 'happy':
+      return 'User is in a good mood. Be positive and engaging.';
+    default:
+      return '';
+  }
+}
+
+function getEmpathyResponse(emotion: UserEmotion): { aynEmotion: string } {
+  const mapping: Record<UserEmotion, string> = {
+    frustrated: 'calm',
+    sad: 'calm',
+    anxious: 'calm',
+    happy: 'happy',
+    excited: 'excited',
+    confused: 'thinking',
+    neutral: 'calm'
+  };
+  return { aynEmotion: mapping[emotion] || 'calm' };
 }
 
 // Enhanced text processing utilities
@@ -274,6 +394,11 @@ serve(async (req) => {
       );
     }
 
+    // Analyze user emotion from message
+    const userEmotionAnalysis = analyzeUserEmotion(sanitizedMessage);
+    const emotionContext = getEmotionContext(userEmotionAnalysis);
+    console.log(`[${requestId}] Detected user emotion:`, userEmotionAnalysis);
+
     console.log(`[${requestId}] Edge function started`);
     console.log(`[${requestId}] User ID:`, requestData.userId);
     console.log(`[${requestId}] Message length:`, requestData.message?.length || 0);
@@ -356,7 +481,9 @@ serve(async (req) => {
         has_attachment: requestData.has_attachment,
         file_data: requestData.file_data,
         sessionId: requestData.sessionId,
-        conversationHistory: requestData.conversationHistory
+        conversationHistory: requestData.conversationHistory,
+        userEmotion: userEmotionAnalysis,
+        emotionContext: emotionContext
       }),
     });
 
@@ -469,14 +596,16 @@ serve(async (req) => {
       personalizationEnabled: requestData.allowPersonalization
     });
 
-    // Prepare response
+    // Prepare response with emotion data
     const response: WebhookResponse = {
       response: finalText || 'I received your message but got an empty response. Please try again.',
       status: upstream.ok ? 'success' : 'upstream_error',
       upstream: {
         status: upstream.status,
         contentType
-      }
+      },
+      userEmotion: userEmotionAnalysis,
+      suggestedAynEmotion: getEmpathyResponse(userEmotionAnalysis.emotion).aynEmotion
     };
 
     if (!upstream.ok) {
