@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { trackDeviceLogin } from '@/hooks/useDeviceTracking';
 import type { UserProfile, UseAuthReturn } from '@/types/dashboard.types';
@@ -210,15 +211,60 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
     };
   }, [user?.id, session?.access_token]);
 
+  // MFA state
+  const [mfaRequired, setMfaRequired] = useState(false);
+  const [mfaVerified, setMfaVerified] = useState(false);
+
+  // Check MFA status for admin users
+  useEffect(() => {
+    const checkMfaStatus = async () => {
+      if (!isAdmin) {
+        setMfaRequired(false);
+        setMfaVerified(true);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase.auth.mfa.listFactors();
+        if (error) throw error;
+
+        const hasVerifiedFactor = data.totp.some(f => f.status === 'verified');
+        setMfaRequired(hasVerifiedFactor);
+        
+        // Check current AAL level
+        const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (aalData) {
+          // If current AAL matches next required AAL, MFA is verified
+          setMfaVerified(aalData.currentLevel === aalData.nextLevel);
+        }
+      } catch {
+        // Silent failure - assume no MFA required
+        setMfaRequired(false);
+        setMfaVerified(true);
+      }
+    };
+
+    if (!isAuthLoading && isAdmin) {
+      checkMfaStatus();
+    }
+  }, [isAdmin, isAuthLoading]);
+
+  const verifyMfa = useCallback(() => {
+    setMfaVerified(true);
+  }, []);
+
   return {
     hasAccess,
     hasAcceptedTerms,
     isAdmin,
     isAuthLoading,
     userProfile,
+    mfaRequired,
+    mfaVerified,
     checkAccess,
     checkAdminRole,
     loadUserProfile,
-    acceptTerms
+    acceptTerms,
+    verifyMfa
   };
 };

@@ -3,12 +3,14 @@ import { DashboardContainer } from './dashboard/DashboardContainer';
 import { TermsModal } from './TermsModal';
 import { MaintenanceBanner } from './MaintenanceBanner';
 import { SessionTimeoutModal } from './SessionTimeoutModal';
+import { MFAChallenge } from './auth/MFAChallenge';
 import { useAuth } from '@/hooks/useAuth';
 import { useSessionTimeout } from '@/hooks/useSessionTimeout';
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLoader } from '@/components/ui/page-loader';
+import { useNavigate } from 'react-router-dom';
 
 // Lazy load AdminPanel (only needed for admins)
 const AdminPanel = lazy(() => import('./AdminPanel').then(module => ({ default: module.AdminPanel })));
@@ -19,8 +21,10 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ user, session }: DashboardProps) {
+  const navigate = useNavigate();
   const auth = useAuth(user, session);
   const [activeView, setActiveView] = useState<'chat' | 'admin'>('chat');
+  const [showMfaChallenge, setShowMfaChallenge] = useState(false);
   const [maintenanceConfig, setMaintenanceConfig] = useState({
     enableMaintenance: false,
     maintenanceMessage: 'System is currently under maintenance.',
@@ -110,6 +114,28 @@ export default function Dashboard({ user, session }: DashboardProps) {
     };
   }, []);
 
+  // Handle admin panel click - check MFA first
+  const handleAdminPanelClick = () => {
+    if (auth.mfaRequired && !auth.mfaVerified) {
+      setShowMfaChallenge(true);
+    } else {
+      setActiveView('admin');
+    }
+  };
+
+  // Handle MFA verification success
+  const handleMfaVerified = () => {
+    auth.verifyMfa();
+    setShowMfaChallenge(false);
+    setActiveView('admin');
+  };
+
+  // Handle MFA logout
+  const handleMfaLogout = () => {
+    setShowMfaChallenge(false);
+    navigate('/');
+  };
+
   return (
     <div dir="ltr" className="relative min-h-screen">
       {/* Maintenance Banner - positioned at top */}
@@ -136,10 +162,17 @@ export default function Dashboard({ user, session }: DashboardProps) {
         onLogoutNow={sessionTimeout.handleLogoutNow}
       />
 
+      {/* MFA Challenge Modal - shows when admin needs to verify MFA */}
+      <MFAChallenge
+        open={showMfaChallenge}
+        onVerified={handleMfaVerified}
+        onLogout={handleMfaLogout}
+      />
+
       {/* Main Content - conditionally render based on active view */}
       {activeView === 'admin' && auth.isAdmin ? (
         <div className="min-h-screen p-6 pt-16 bg-background">
-        <Suspense fallback={<AdminLoader />}>
+          <Suspense fallback={<AdminLoader />}>
             <AdminPanel onBackClick={() => setActiveView('chat')} />
           </Suspense>
         </div>
@@ -150,7 +183,7 @@ export default function Dashboard({ user, session }: DashboardProps) {
             session={session}
             auth={auth}
             isAdmin={auth.isAdmin}
-            onAdminPanelClick={() => setActiveView('admin')}
+            onAdminPanelClick={handleAdminPanelClick}
           />
         </SidebarProvider>
       )}

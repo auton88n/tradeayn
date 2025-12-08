@@ -197,10 +197,13 @@ export interface UseAuthReturn {
   isAdmin: boolean;
   isAuthLoading: boolean;
   userProfile: UserProfile | null;
+  mfaRequired: boolean;
+  mfaVerified: boolean;
   checkAccess: () => Promise<void>;
   checkAdminRole: () => Promise<void>;
   loadUserProfile: () => Promise<void>;
   acceptTerms: () => Promise<void>;
+  verifyMfa: () => void;
 }
 
 // ============================================
