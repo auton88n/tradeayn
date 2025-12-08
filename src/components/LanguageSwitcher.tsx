@@ -6,16 +6,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Languages, Check } from 'lucide-react';
+import { Check } from 'lucide-react';
 
 interface LanguageSwitcherProps {
   onOpenChange?: (open: boolean) => void;
 }
 
-const languages: { code: Language; label: string; flag: string }[] = [
-  { code: 'en', label: 'English', flag: '🇺🇸' },
-  { code: 'ar', label: 'العربية', flag: '🇸🇦' },
-  { code: 'fr', label: 'Français', flag: '🇫🇷' },
+const languages: { code: Language; symbol: string }[] = [
+  { code: 'en', symbol: 'EN' },
+  { code: 'ar', symbol: 'AR' },
+  { code: 'fr', symbol: 'FR' },
 ];
 
 export const LanguageSwitcher = ({ onOpenChange }: LanguageSwitcherProps) => {
@@ -29,23 +29,19 @@ export const LanguageSwitcher = ({ onOpenChange }: LanguageSwitcherProps) => {
         <Button 
           variant="ghost" 
           size="sm" 
-          className="h-8 gap-2 px-2"
+          className="h-8 px-2 font-medium text-sm"
         >
-          <span className="text-base">{currentLang?.flag}</span>
-          <Languages className="h-4 w-4" />
+          {currentLang?.symbol}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="min-w-[140px] bg-popover">
+      <DropdownMenuContent align="start" className="min-w-[60px] bg-popover z-50">
         {languages.map((lang) => (
           <DropdownMenuItem
             key={lang.code}
             onClick={() => setLanguage(lang.code)}
             className="flex items-center justify-between gap-2 cursor-pointer"
           >
-            <div className="flex items-center gap-2">
-              <span className="text-base">{lang.flag}</span>
-              <span>{lang.label}</span>
-            </div>
+            <span className="font-medium">{lang.symbol}</span>
             {language === lang.code && (
               <Check className="h-4 w-4 text-primary" />
             )}
