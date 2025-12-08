@@ -2,20 +2,14 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, Brain, Zap, Clock, Settings, Link2, BarChart3, Shield, Bell, FileText, Mail, Calendar, Database, Share2, Workflow, Play, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
+
 const Automation = () => {
   const fadeInUp = {
-    initial: {
-      opacity: 0,
-      y: 20
-    },
-    animate: {
-      opacity: 1,
-      y: 0
-    },
-    transition: {
-      duration: 0.6
-    }
+    initial: { opacity: 0, y: 20 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.6 }
   };
+
   const staggerContainer = {
     animate: {
       transition: {
@@ -23,99 +17,43 @@ const Automation = () => {
       }
     }
   };
-  const automations = [{
-    icon: Mail,
-    title: 'Email to CRM Sync',
-    hours: '5',
-    description: 'Auto-log emails and create contacts'
-  }, {
-    icon: FileText,
-    title: 'Invoice Processing',
-    hours: '8',
-    description: 'Extract data and update accounting'
-  }, {
-    icon: Database,
-    title: 'Lead Qualification',
-    hours: '10',
-    description: 'Score and route leads automatically'
-  }, {
-    icon: BarChart3,
-    title: 'Report Generation',
-    hours: '6',
-    description: 'Automated weekly/monthly reports'
-  }, {
-    icon: Calendar,
-    title: 'Meeting Scheduler',
-    hours: '3',
-    description: 'Smart booking and reminders'
-  }, {
-    icon: Share2,
-    title: 'Social Publishing',
-    hours: '4',
-    description: 'Schedule and cross-post content'
-  }];
-  const integrations = [{
-    name: 'Slack',
-    color: 'bg-purple-500'
-  }, {
-    name: 'Salesforce',
-    color: 'bg-blue-500'
-  }, {
-    name: 'HubSpot',
-    color: 'bg-orange-500'
-  }, {
-    name: 'Notion',
-    color: 'bg-neutral-500'
-  }, {
-    name: 'Zapier',
-    color: 'bg-amber-500'
-  }, {
-    name: 'Stripe',
-    color: 'bg-indigo-500'
-  }];
-  const features = [{
-    icon: Settings,
-    title: 'No-Code Builder',
-    description: 'Build workflows without writing code'
-  }, {
-    icon: Link2,
-    title: '500+ Integrations',
-    description: 'Connect all your favorite tools'
-  }, {
-    icon: BarChart3,
-    title: 'Real-time Monitoring',
-    description: 'Track every automation in real-time'
-  }, {
-    icon: Shield,
-    title: 'Error Handling',
-    description: 'Smart retry and failure recovery'
-  }, {
-    icon: Clock,
-    title: 'Scheduled Triggers',
-    description: 'Run automations on your schedule'
-  }, {
-    icon: Zap,
-    title: 'Custom Webhooks',
-    description: 'Trigger from any external event'
-  }];
-  const steps = [{
-    number: '01',
-    title: 'Identify',
-    description: 'Map your repetitive tasks and bottlenecks'
-  }, {
-    number: '02',
-    title: 'Design',
-    description: 'Create optimized workflow blueprints'
-  }, {
-    number: '03',
-    title: 'Automate',
-    description: 'Build and test your automations'
-  }, {
-    number: '04',
-    title: 'Monitor',
-    description: 'Track performance and optimize'
-  }];
-  return <div className="min-h-screen bg-neutral-950 text-white">
+
+  const automations = [
+    { icon: Mail, title: 'Email to CRM Sync', hours: '5', description: 'Auto-log emails and create contacts' },
+    { icon: FileText, title: 'Invoice Processing', hours: '8', description: 'Extract data and update accounting' },
+    { icon: Database, title: 'Lead Qualification', hours: '10', description: 'Score and route leads automatically' },
+    { icon: BarChart3, title: 'Report Generation', hours: '6', description: 'Automated weekly/monthly reports' },
+    { icon: Calendar, title: 'Meeting Scheduler', hours: '3', description: 'Smart booking and reminders' },
+    { icon: Share2, title: 'Social Publishing', hours: '4', description: 'Schedule and cross-post content' },
+  ];
+
+  const integrations = [
+    { name: 'Slack', color: 'bg-purple-500' },
+    { name: 'Salesforce', color: 'bg-blue-500' },
+    { name: 'HubSpot', color: 'bg-orange-500' },
+    { name: 'Notion', color: 'bg-neutral-500' },
+    { name: 'Zapier', color: 'bg-amber-500' },
+    { name: 'Stripe', color: 'bg-indigo-500' },
+  ];
+
+  const features = [
+    { icon: Settings, title: 'No-Code Builder', description: 'Build workflows without writing code' },
+    { icon: Link2, title: '500+ Integrations', description: 'Connect all your favorite tools' },
+    { icon: BarChart3, title: 'Real-time Monitoring', description: 'Track every automation in real-time' },
+    { icon: Shield, title: 'Error Handling', description: 'Smart retry and failure recovery' },
+    { icon: Clock, title: 'Scheduled Triggers', description: 'Run automations on your schedule' },
+    { icon: Zap, title: 'Custom Webhooks', description: 'Trigger from any external event' },
+  ];
+
+  const steps = [
+    { number: '01', title: 'Identify', description: 'Map your repetitive tasks and bottlenecks' },
+    { number: '02', title: 'Design', description: 'Create optimized workflow blueprints' },
+    { number: '03', title: 'Automate', description: 'Build and test your automations' },
+    { number: '04', title: 'Monitor', description: 'Track performance and optimize' },
+  ];
+
+  return (
+    <div className="min-h-screen bg-neutral-950 text-white">
       {/* Back Button */}
       <Link to="/" className="fixed top-4 md:top-6 left-4 md:left-6 z-50">
         <Button variant="ghost" className="text-white/70 hover:text-white hover:bg-white/10 gap-2 bg-neutral-900/80 backdrop-blur-xl border border-neutral-800 rounded-full px-4 py-2">
@@ -133,15 +71,12 @@ const Automation = () => {
         </div>
 
         <div className="container mx-auto max-w-6xl relative z-10">
-          <motion.div className="text-center" initial={{
-          opacity: 0,
-          y: 30
-        }} animate={{
-          opacity: 1,
-          y: 0
-        }} transition={{
-          duration: 0.8
-        }}>
+          <motion.div 
+            className="text-center"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+          >
             <span className="text-sm font-mono text-emerald-400 tracking-wider uppercase mb-4 block">
               03 — Our Services
             </span>
@@ -170,9 +105,13 @@ const Automation = () => {
       {/* Workflow Dashboard Showcase */}
       <section className="py-16 md:py-24 px-4 md:px-6">
         <div className="container mx-auto max-w-6xl">
-          <motion.div className="text-center mb-16" {...fadeInUp} viewport={{
-          once: true
-        }} whileInView="animate" initial="initial">
+          <motion.div 
+            className="text-center mb-16"
+            {...fadeInUp}
+            viewport={{ once: true }}
+            whileInView="animate"
+            initial="initial"
+          >
             <span className="text-sm font-mono text-emerald-400 tracking-wider uppercase mb-4 block">
               What You'll Get
             </span>
@@ -184,17 +123,13 @@ const Automation = () => {
             </p>
           </motion.div>
 
-          <motion.div className="relative" initial={{
-          opacity: 0,
-          y: 40
-        }} whileInView={{
-          opacity: 1,
-          y: 0
-        }} viewport={{
-          once: true
-        }} transition={{
-          duration: 0.8
-        }}>
+          <motion.div 
+            className="relative"
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+          >
             {/* Browser Mockup */}
             <div className="bg-neutral-900 rounded-2xl border border-neutral-800 overflow-hidden shadow-2xl">
               {/* Browser Header */}
@@ -294,17 +229,13 @@ const Automation = () => {
             </div>
 
             {/* Floating Stats Cards - Hidden on mobile */}
-            <motion.div className="absolute -right-4 lg:-right-16 top-1/4 bg-neutral-900/90 backdrop-blur-xl border border-emerald-500/20 rounded-2xl p-3 md:p-4 shadow-xl hidden md:block" initial={{
-            opacity: 0,
-            x: 20
-          }} whileInView={{
-            opacity: 1,
-            x: 0
-          }} viewport={{
-            once: true
-          }} transition={{
-            delay: 0.3
-          }}>
+            <motion.div 
+              className="absolute -right-4 lg:-right-16 top-1/4 bg-neutral-900/90 backdrop-blur-xl border border-emerald-500/20 rounded-2xl p-3 md:p-4 shadow-xl hidden md:block"
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3 }}
+            >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
                   <Clock className="w-4 h-4 md:w-5 md:h-5 text-emerald-400" />
@@ -316,17 +247,13 @@ const Automation = () => {
               </div>
             </motion.div>
 
-            <motion.div className="absolute -left-4 lg:-left-16 top-1/2 bg-neutral-900/90 backdrop-blur-xl border border-blue-500/20 rounded-2xl p-3 md:p-4 shadow-xl hidden md:block" initial={{
-            opacity: 0,
-            x: -20
-          }} whileInView={{
-            opacity: 1,
-            x: 0
-          }} viewport={{
-            once: true
-          }} transition={{
-            delay: 0.4
-          }}>
+            <motion.div 
+              className="absolute -left-4 lg:-left-16 top-1/2 bg-neutral-900/90 backdrop-blur-xl border border-blue-500/20 rounded-2xl p-3 md:p-4 shadow-xl hidden md:block"
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.4 }}
+            >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
                   <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-blue-400" />
@@ -338,17 +265,13 @@ const Automation = () => {
               </div>
             </motion.div>
 
-            <motion.div className="absolute -right-4 lg:-right-16 bottom-1/4 bg-neutral-900/90 backdrop-blur-xl border border-amber-500/20 rounded-2xl p-3 md:p-4 shadow-xl hidden md:block" initial={{
-            opacity: 0,
-            x: 20
-          }} whileInView={{
-            opacity: 1,
-            x: 0
-          }} viewport={{
-            once: true
-          }} transition={{
-            delay: 0.5
-          }}>
+            <motion.div 
+              className="absolute -right-4 lg:-right-16 bottom-1/4 bg-neutral-900/90 backdrop-blur-xl border border-amber-500/20 rounded-2xl p-3 md:p-4 shadow-xl hidden md:block"
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.5 }}
+            >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
                   <BarChart3 className="w-4 h-4 md:w-5 md:h-5 text-amber-400" />
@@ -366,9 +289,13 @@ const Automation = () => {
       {/* Popular Automations */}
       <section className="py-16 md:py-24 px-4 md:px-6 bg-neutral-900/50">
         <div className="container mx-auto max-w-6xl">
-          <motion.div className="text-center mb-12 md:mb-16" {...fadeInUp} viewport={{
-          once: true
-        }} whileInView="animate" initial="initial">
+          <motion.div 
+            className="text-center mb-12 md:mb-16"
+            {...fadeInUp}
+            viewport={{ once: true }}
+            whileInView="animate"
+            initial="initial"
+          >
             <span className="text-sm font-mono text-emerald-400 tracking-wider uppercase mb-4 block">
               Templates
             </span>
@@ -380,10 +307,19 @@ const Automation = () => {
             </p>
           </motion.div>
 
-          <motion.div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6" variants={staggerContainer} initial="initial" whileInView="animate" viewport={{
-          once: true
-        }}>
-            {automations.map((automation, index) => <motion.div key={automation.title} className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 md:p-6 hover:border-emerald-500/30 transition-colors group cursor-pointer" variants={fadeInUp}>
+          <motion.div 
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6"
+            variants={staggerContainer}
+            initial="initial"
+            whileInView="animate"
+            viewport={{ once: true }}
+          >
+            {automations.map((automation, index) => (
+              <motion.div
+                key={automation.title}
+                className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 md:p-6 hover:border-emerald-500/30 transition-colors group cursor-pointer"
+                variants={fadeInUp}
+              >
                 <div className="flex items-start justify-between mb-3 md:mb-4">
                   <div className="w-10 h-10 md:w-12 md:h-12 bg-emerald-500/10 rounded-xl flex items-center justify-center group-hover:bg-emerald-500/20 transition-colors">
                     <automation.icon className="w-5 h-5 md:w-6 md:h-6 text-emerald-400" />
@@ -394,20 +330,114 @@ const Automation = () => {
                 </div>
                 <h3 className="text-base md:text-lg font-bold mb-1 md:mb-2">{automation.title}</h3>
                 <p className="text-neutral-400 text-sm">{automation.description}</p>
-              </motion.div>)}
+              </motion.div>
+            ))}
           </motion.div>
         </div>
       </section>
 
       {/* Integration Hub */}
-      
+      <section className="py-16 md:py-24 px-4 md:px-6">
+        <div className="container mx-auto max-w-6xl">
+          <motion.div 
+            className="text-center mb-12 md:mb-16"
+            {...fadeInUp}
+            viewport={{ once: true }}
+            whileInView="animate"
+            initial="initial"
+          >
+            <span className="text-sm font-mono text-emerald-400 tracking-wider uppercase mb-4 block">
+              Integrations
+            </span>
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif font-bold mb-4">
+              Connect <span className="text-emerald-400">Everything</span>
+            </h2>
+            <p className="text-base md:text-lg text-neutral-400 max-w-2xl mx-auto px-4">
+              500+ integrations to connect all your tools in one seamless workflow.
+            </p>
+          </motion.div>
+
+          <motion.div
+            className="relative"
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            {/* Mobile: Grid layout */}
+            <div className="md:hidden">
+              <div className="flex justify-center mb-6">
+                <div className="w-20 h-20 bg-emerald-500 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                  <Brain className="w-10 h-10 text-white" />
+                </div>
+              </div>
+              <div className="grid grid-cols-4 gap-3">
+                {integrations.map((integration, index) => (
+                  <motion.div
+                    key={integration.name}
+                    className={`w-12 h-12 ${integration.color} rounded-xl flex items-center justify-center shadow-lg mx-auto`}
+                    initial={{ opacity: 0, scale: 0 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: index * 0.05 }}
+                  >
+                    <span className="text-white text-xs font-bold">{integration.name.slice(0, 2)}</span>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+
+          {/* Desktop: Orbiting layout */}
+            <div className="hidden md:flex justify-center mt-8 mb-16">
+              <div className="relative">
+                <div className="w-16 h-16 bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                  <Brain className="w-8 h-8 text-white" />
+                </div>
+                {/* Orbiting connections */}
+                <div className="absolute w-[200px] h-[200px] -top-[68px] -left-[68px]">
+                  {integrations.map((integration, index) => {
+                    const angle = (index * 360) / integrations.length + 30;
+                    const radius = 70;
+                    const x = Math.cos((angle * Math.PI) / 180) * radius;
+                    const y = Math.sin((angle * Math.PI) / 180) * radius;
+                    return (
+                      <motion.div
+                        key={integration.name}
+                        className={`absolute w-10 h-10 ${integration.color} rounded-lg flex items-center justify-center shadow-lg`}
+                        style={{
+                          left: `calc(50% + ${x}px - 20px)`,
+                          top: `calc(50% + ${y}px - 20px)`,
+                        }}
+                        initial={{ opacity: 0, scale: 0 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: index * 0.1 }}
+                      >
+                        <span className="text-white text-[10px] font-bold">{integration.name.slice(0, 2)}</span>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <p className="text-center text-neutral-400 mt-8">
+              And <span className="text-emerald-400 font-bold">500+ more</span> integrations available
+            </p>
+          </motion.div>
+        </div>
+      </section>
 
       {/* Features Grid */}
       <section className="py-16 md:py-24 px-4 md:px-6 bg-neutral-900/50">
         <div className="container mx-auto max-w-6xl">
-          <motion.div className="text-center mb-12 md:mb-16" {...fadeInUp} viewport={{
-          once: true
-        }} whileInView="animate" initial="initial">
+          <motion.div 
+            className="text-center mb-12 md:mb-16"
+            {...fadeInUp}
+            viewport={{ once: true }}
+            whileInView="animate"
+            initial="initial"
+          >
             <span className="text-sm font-mono text-emerald-400 tracking-wider uppercase mb-4 block">
               Features
             </span>
@@ -416,16 +446,26 @@ const Automation = () => {
             </h2>
           </motion.div>
 
-          <motion.div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6" variants={staggerContainer} initial="initial" whileInView="animate" viewport={{
-          once: true
-        }}>
-            {features.map((feature, index) => <motion.div key={feature.title} className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 md:p-8 hover:border-emerald-500/30 transition-colors" variants={fadeInUp}>
+          <motion.div 
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6"
+            variants={staggerContainer}
+            initial="initial"
+            whileInView="animate"
+            viewport={{ once: true }}
+          >
+            {features.map((feature, index) => (
+              <motion.div
+                key={feature.title}
+                className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 md:p-8 hover:border-emerald-500/30 transition-colors"
+                variants={fadeInUp}
+              >
                 <div className="w-12 h-12 md:w-14 md:h-14 bg-emerald-500/10 rounded-xl md:rounded-2xl flex items-center justify-center mb-4 md:mb-6">
                   <feature.icon className="w-6 h-6 md:w-7 md:h-7 text-emerald-400" />
                 </div>
                 <h3 className="text-lg md:text-xl font-bold mb-2 md:mb-3">{feature.title}</h3>
                 <p className="text-sm md:text-base text-neutral-400">{feature.description}</p>
-              </motion.div>)}
+              </motion.div>
+            ))}
           </motion.div>
         </div>
       </section>
@@ -433,9 +473,13 @@ const Automation = () => {
       {/* How It Works */}
       <section className="py-16 md:py-24 px-4 md:px-6">
         <div className="container mx-auto max-w-6xl">
-          <motion.div className="text-center mb-12 md:mb-16" {...fadeInUp} viewport={{
-          once: true
-        }} whileInView="animate" initial="initial">
+          <motion.div 
+            className="text-center mb-12 md:mb-16"
+            {...fadeInUp}
+            viewport={{ once: true }}
+            whileInView="animate"
+            initial="initial"
+          >
             <span className="text-sm font-mono text-emerald-400 tracking-wider uppercase mb-4 block">
               Process
             </span>
@@ -444,17 +488,29 @@ const Automation = () => {
             </h2>
           </motion.div>
 
-          <motion.div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8" variants={staggerContainer} initial="initial" whileInView="animate" viewport={{
-          once: true
-        }}>
-            {steps.map((step, index) => <motion.div key={step.number} className="text-center relative" variants={fadeInUp}>
-                {index < steps.length - 1 && <div className="hidden md:block absolute top-6 md:top-8 left-1/2 w-full h-px bg-neutral-800" />}
+          <motion.div 
+            className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8"
+            variants={staggerContainer}
+            initial="initial"
+            whileInView="animate"
+            viewport={{ once: true }}
+          >
+            {steps.map((step, index) => (
+              <motion.div
+                key={step.number}
+                className="text-center relative"
+                variants={fadeInUp}
+              >
+                {index < steps.length - 1 && (
+                  <div className="hidden md:block absolute top-6 md:top-8 left-1/2 w-full h-px bg-neutral-800" />
+                )}
                 <div className="w-12 h-12 md:w-16 md:h-16 bg-emerald-500/20 border border-emerald-500/30 rounded-xl md:rounded-2xl mx-auto mb-4 md:mb-6 flex items-center justify-center relative z-10">
                   <span className="text-lg md:text-xl font-bold text-emerald-400">{step.number}</span>
                 </div>
                 <h3 className="text-lg md:text-xl font-bold mb-1 md:mb-2">{step.title}</h3>
                 <p className="text-neutral-400 text-xs md:text-sm">{step.description}</p>
-              </motion.div>)}
+              </motion.div>
+            ))}
           </motion.div>
         </div>
       </section>
@@ -462,17 +518,12 @@ const Automation = () => {
       {/* CTA Section */}
       <section className="py-16 md:py-24 px-4 md:px-6 bg-gradient-to-b from-neutral-900 to-neutral-950">
         <div className="container mx-auto max-w-4xl text-center">
-          <motion.div initial={{
-          opacity: 0,
-          y: 30
-        }} whileInView={{
-          opacity: 1,
-          y: 0
-        }} viewport={{
-          once: true
-        }} transition={{
-          duration: 0.6
-        }}>
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
             <h2 className="text-3xl md:text-4xl lg:text-6xl font-serif font-bold mb-6">
               Ready to Reclaim <span className="text-emerald-400">Your Time?</span>
             </h2>
@@ -505,10 +556,14 @@ const Automation = () => {
               </div>
               <span className="text-xl font-bold">AYN</span>
             </div>
-            
+            <p className="text-neutral-500 text-sm">
+              © 2024 AYN. All rights reserved.
+            </p>
           </div>
         </div>
       </footer>
-    </div>;
+    </div>
+  );
 };
+
 export default Automation;
