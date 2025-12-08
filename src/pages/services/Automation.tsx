@@ -28,14 +28,12 @@ const Automation = () => {
   ];
 
   const integrations = [
-    { name: 'Google', color: 'bg-red-500' },
     { name: 'Slack', color: 'bg-purple-500' },
     { name: 'Salesforce', color: 'bg-blue-500' },
     { name: 'HubSpot', color: 'bg-orange-500' },
-    { name: 'QuickBooks', color: 'bg-green-500' },
-    { name: 'Stripe', color: 'bg-indigo-500' },
     { name: 'Notion', color: 'bg-neutral-500' },
     { name: 'Zapier', color: 'bg-amber-500' },
+    { name: 'Stripe', color: 'bg-indigo-500' },
   ];
 
   const features = [
@@ -390,32 +388,32 @@ const Automation = () => {
             </div>
 
           {/* Desktop: Orbiting layout */}
-            <div className="hidden md:flex justify-center mt-20 mb-32">
+            <div className="hidden md:flex justify-center mt-8 mb-16">
               <div className="relative">
-                <div className="w-32 h-32 bg-emerald-500 rounded-3xl flex items-center justify-center shadow-lg shadow-emerald-500/30">
-                  <Brain className="w-16 h-16 text-white" />
+                <div className="w-24 h-24 bg-emerald-500 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                  <Brain className="w-12 h-12 text-white" />
                 </div>
                 {/* Orbiting connections */}
-                <div className="absolute w-[380px] h-[380px] -top-[124px] -left-[124px]">
+                <div className="absolute w-[260px] h-[260px] -top-[70px] -left-[70px]">
                   {integrations.map((integration, index) => {
-                    const angle = (index * 360) / integrations.length + 22.5;
-                    const radius = 150;
+                    const angle = (index * 360) / integrations.length + 30;
+                    const radius = 100;
                     const x = Math.cos((angle * Math.PI) / 180) * radius;
                     const y = Math.sin((angle * Math.PI) / 180) * radius;
                     return (
                       <motion.div
                         key={integration.name}
-                        className={`absolute w-14 h-14 ${integration.color} rounded-xl flex items-center justify-center shadow-lg`}
+                        className={`absolute w-10 h-10 ${integration.color} rounded-lg flex items-center justify-center shadow-lg`}
                         style={{
-                          left: `calc(50% + ${x}px - 28px)`,
-                          top: `calc(50% + ${y}px - 28px)`,
+                          left: `calc(50% + ${x}px - 20px)`,
+                          top: `calc(50% + ${y}px - 20px)`,
                         }}
                         initial={{ opacity: 0, scale: 0 }}
                         whileInView={{ opacity: 1, scale: 1 }}
                         viewport={{ once: true }}
                         transition={{ delay: index * 0.1 }}
                       >
-                        <span className="text-white text-xs font-bold">{integration.name.slice(0, 2)}</span>
+                        <span className="text-white text-[10px] font-bold">{integration.name.slice(0, 2)}</span>
                       </motion.div>
                     );
                   })}
