@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useLanguage } from '@/contexts/LanguageContext';
 import type { ChatHistory, Message, UseChatSessionReturn } from '@/types/dashboard.types';
 
 export const useChatSession = (userId: string): UseChatSessionReturn => {
@@ -11,7 +10,6 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
   const [showChatSelection, setShowChatSelection] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const { toast } = useToast();
-  const { t } = useLanguage();
 
   // Load recent chat history
   const loadRecentChats = useCallback(async () => {
@@ -112,22 +110,22 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
     setCurrentSessionId(newSessionId);
     
     toast({
-      title: t('common.newChat'),
-      description: t('dashboard.newChatDesc') || 'You can now start a fresh conversation with AYN.',
+      title: 'New Chat',
+      description: 'You can now start a fresh conversation with AYN.',
     });
-  }, [toast, t]);
+  }, [toast]);
 
   // Load an existing chat
   const loadChat = useCallback((chatHistory: ChatHistory): Message[] => {
     setCurrentSessionId(chatHistory.sessionId as `${string}-${string}-${string}-${string}-${string}`);
     
     toast({
-      title: t('dashboard.chatLoaded') || 'Chat Loaded',
-      description: `${t('dashboard.loadedConversation') || 'Loaded conversation'}: ${chatHistory.title}`,
+      title: 'Chat Loaded',
+      description: `Loaded conversation: ${chatHistory.title}`,
     });
 
     return chatHistory.messages;
-  }, [toast, t]);
+  }, [toast]);
 
   // Delete selected chats
   const deleteSelectedChats = useCallback(async () => {
@@ -154,8 +152,8 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
 
         if (error) {
           toast({
-            title: t('error.deleteError') || 'Error',
-            description: t('error.deleteChatsError') || 'Failed to delete some chat messages.',
+            title: 'Error',
+            description: 'Failed to delete some chat messages.',
             variant: "destructive"
           });
           return;
@@ -170,18 +168,18 @@ export const useChatSession = (userId: string): UseChatSessionReturn => {
       await loadRecentChats();
 
       toast({
-        title: t('dashboard.chatsDeleted') || 'Chats Deleted',
-        description: `${t('dashboard.successfullyDeleted') || 'Successfully deleted'} ${selectedChats.size} ${t('dashboard.conversations') || 'conversation(s)'}.`,
+        title: 'Chats Deleted',
+        description: `Successfully deleted ${selectedChats.size} conversation(s).`,
       });
     } catch (error) {
       console.error('Error deleting chats:', error);
       toast({
-        title: t('error.deleteError') || 'Error',
-        description: t('error.deleteChatsError') || 'Failed to delete selected chats.',
+        title: 'Error',
+        description: 'Failed to delete selected chats.',
         variant: "destructive"
       });
     }
-  }, [selectedChats, recentChats, toast, t]);
+  }, [selectedChats, recentChats, toast, loadRecentChats, userId]);
 
   // Toggle chat selection
   const toggleChatSelection = useCallback((index: number) => {

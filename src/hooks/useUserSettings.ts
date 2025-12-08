@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useLanguage } from '@/contexts/LanguageContext';
 
 export interface UserSettings {
   id: string;
@@ -29,7 +28,6 @@ export interface DeviceSession {
 
 export const useUserSettings = () => {
   const { toast } = useToast();
-  const { t } = useLanguage();
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [sessions, setSessions] = useState<DeviceSession[]>([]);
   const [loading, setLoading] = useState(true);
@@ -94,7 +92,7 @@ export const useUserSettings = () => {
     } catch (error) {
       console.error('Error fetching settings:', error);
       toast({
-        title: t('common.error'),
+        title: 'Error',
         description: 'Failed to load settings',
         variant: 'destructive',
       });
@@ -149,13 +147,13 @@ export const useUserSettings = () => {
 
       setSettings({ ...settings, ...updates });
       toast({
-        title: t('common.success'),
-        description: t('settings.settingsSaved'),
+        title: 'Success',
+        description: 'Settings saved successfully',
       });
     } catch (error) {
       console.error('Error updating settings:', error);
       toast({
-        title: t('common.error'),
+        title: 'Error',
         description: 'Failed to update settings',
         variant: 'destructive',
       });
@@ -175,13 +173,13 @@ export const useUserSettings = () => {
 
       setSessions(sessions.filter(s => s.id !== sessionId));
       toast({
-        title: t('common.success'),
-        description: t('settings.sessionRevoked'),
+        title: 'Success',
+        description: 'Session revoked successfully',
       });
     } catch (error) {
       console.error('Error revoking session:', error);
       toast({
-        title: t('common.error'),
+        title: 'Error',
         description: 'Failed to revoke session',
         variant: 'destructive',
       });
@@ -203,13 +201,13 @@ export const useUserSettings = () => {
       await supabase.auth.signOut();
       
       toast({
-        title: t('common.success'),
-        description: t('settings.allDevicesSignedOut'),
+        title: 'Success',
+        description: 'All devices signed out successfully',
       });
     } catch (error) {
       console.error('Error signing out all devices:', error);
       toast({
-        title: t('common.error'),
+        title: 'Error',
         description: 'Failed to sign out all devices',
         variant: 'destructive',
       });
