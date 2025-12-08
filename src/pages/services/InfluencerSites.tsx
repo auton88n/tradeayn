@@ -69,9 +69,7 @@ const InfluencerSites = () => {
         }} transition={{
           duration: 0.6
         }} className="text-center">
-            <span className="text-sm font-mono text-neutral-500 tracking-wider uppercase mb-4 block">
-              01 — Our Services
-            </span>
+            
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-serif font-bold mb-6 leading-tight">
               Premium Content Creator
               <br />
@@ -448,12 +446,15 @@ const InfluencerSites = () => {
       {/* Recent Content Section */}
       <section className="py-24 md:py-32 px-4 md:px-6 bg-neutral-950">
         <div className="max-w-7xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-16"
-          >
+          <motion.div initial={{
+          opacity: 0,
+          y: 20
+        }} whileInView={{
+          opacity: 1,
+          y: 0
+        }} viewport={{
+          once: true
+        }} className="text-center mb-16">
             <span className="text-sm font-mono tracking-wider text-neutral-500 uppercase mb-4 block">Portfolio</span>
             <h2 className="text-4xl md:text-5xl font-serif font-bold text-white mb-6">Recent Content</h2>
             <p className="text-neutral-400 max-w-2xl mx-auto">
@@ -463,18 +464,18 @@ const InfluencerSites = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
             {/* TikTok Video 1 */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1 }}
-              className="group relative aspect-[4/5] rounded-3xl overflow-hidden cursor-pointer"
-            >
-              <img
-                src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=800&h=1000&fit=crop"
-                alt="Fashion styling content"
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-              />
+            <motion.div initial={{
+            opacity: 0,
+            y: 20
+          }} whileInView={{
+            opacity: 1,
+            y: 0
+          }} viewport={{
+            once: true
+          }} transition={{
+            delay: 0.1
+          }} className="group relative aspect-[4/5] rounded-3xl overflow-hidden cursor-pointer">
+              <img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=800&h=1000&fit=crop" alt="Fashion styling content" className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
               
               {/* TikTok Badge */}
@@ -500,18 +501,18 @@ const InfluencerSites = () => {
             </motion.div>
 
             {/* Instagram Reel */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.2 }}
-              className="group relative aspect-[4/5] rounded-3xl overflow-hidden cursor-pointer"
-            >
-              <img
-                src="https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=800&h=1000&fit=crop"
-                alt="Beauty skincare routine"
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-              />
+            <motion.div initial={{
+            opacity: 0,
+            y: 20
+          }} whileInView={{
+            opacity: 1,
+            y: 0
+          }} viewport={{
+            once: true
+          }} transition={{
+            delay: 0.2
+          }} className="group relative aspect-[4/5] rounded-3xl overflow-hidden cursor-pointer">
+              <img src="https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=800&h=1000&fit=crop" alt="Beauty skincare routine" className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
               
               {/* Instagram Badge */}
@@ -537,18 +538,18 @@ const InfluencerSites = () => {
             </motion.div>
 
             {/* TikTok Video 2 */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.3 }}
-              className="group relative aspect-[4/5] rounded-3xl overflow-hidden cursor-pointer"
-            >
-              <img
-                src="https://images.unsplash.com/photo-1483985988355-763728e1935b?w=800&h=1000&fit=crop"
-                alt="Lifestyle vlog content"
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-              />
+            <motion.div initial={{
+            opacity: 0,
+            y: 20
+          }} whileInView={{
+            opacity: 1,
+            y: 0
+          }} viewport={{
+            once: true
+          }} transition={{
+            delay: 0.3
+          }} className="group relative aspect-[4/5] rounded-3xl overflow-hidden cursor-pointer">
+              <img src="https://images.unsplash.com/photo-1483985988355-763728e1935b?w=800&h=1000&fit=crop" alt="Lifestyle vlog content" className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
               
               {/* TikTok Badge */}
@@ -574,18 +575,18 @@ const InfluencerSites = () => {
             </motion.div>
 
             {/* Instagram Post */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.4 }}
-              className="group relative aspect-[4/5] rounded-3xl overflow-hidden cursor-pointer"
-            >
-              <img
-                src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800&h=1000&fit=crop"
-                alt="New collection fashion"
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-              />
+            <motion.div initial={{
+            opacity: 0,
+            y: 20
+          }} whileInView={{
+            opacity: 1,
+            y: 0
+          }} viewport={{
+            once: true
+          }} transition={{
+            delay: 0.4
+          }} className="group relative aspect-[4/5] rounded-3xl overflow-hidden cursor-pointer">
+              <img src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800&h=1000&fit=crop" alt="New collection fashion" className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
               
               {/* Instagram Badge */}
