@@ -175,7 +175,16 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
       </div>
 
       {/* Central area with eye and cards */}
-      <div className="relative w-full max-w-5xl flex-1 flex items-center justify-center">
+      <motion.div 
+        className="relative w-full max-w-5xl flex-1 flex items-center justify-center"
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ 
+          duration: 0.8, 
+          delay: 0.3,
+          ease: [0.32, 0.72, 0, 1] 
+        }}
+      >
         {/* ring / subtle light behind the eye */}
         <div className="absolute w-[200px] h-[200px] sm:w-[280px] sm:h-[280px] md:w-[360px] md:h-[360px] lg:w-[480px] lg:h-[480px] rounded-full -z-10 pointer-events-none
                         bg-gradient-to-b from-transparent via-muted/30 to-transparent" />
@@ -422,7 +431,7 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
             </motion.svg>
           </motion.div>
         </motion.div>
-      </div>
+      </motion.div>
 
       {/* Interactive Chat Input */}
       <LandingChatInput onSendAttempt={(message) => onGetStarted(message)} />
