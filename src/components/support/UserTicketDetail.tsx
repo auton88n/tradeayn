@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ArrowLeft, Send, Trash2, Brain, User } from 'lucide-react';
+import { ArrowLeft, Send, Trash2, Brain, User, Shield } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
@@ -42,7 +42,7 @@ const statusColors: Record<string, string> = {
 const statusLabels: Record<string, string> = {
   open: 'Open',
   in_progress: 'In Progress',
-  waiting_reply: 'Awaiting Reply',
+  waiting_reply: 'Response Received',
   resolved: 'Resolved',
   closed: 'Closed',
 };
@@ -209,35 +209,40 @@ export function UserTicketDetail({ ticketId, onBack }: UserTicketDetailProps) {
                 transition={{ delay: index * 0.05 }}
                 className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
               >
-                <div className={`flex gap-2 max-w-[85%] ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
-                  <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
-                    isUser 
-                      ? 'bg-primary text-primary-foreground' 
-                      : isAI 
-                        ? 'bg-purple-500/20 text-purple-500' 
-                        : 'bg-muted'
-                  }`}>
-                    {isUser ? (
-                      <User className="w-4 h-4" />
-                    ) : isAI ? (
-                      <Brain className="w-4 h-4" />
-                    ) : (
-                      <span className="text-xs font-medium">A</span>
-                    )}
-                  </div>
-                  <div className={`rounded-2xl px-4 py-2.5 ${
-                    isUser 
-                      ? 'bg-primary text-primary-foreground' 
-                      : 'bg-muted/50 border border-border/50'
-                  }`}>
-                    <div className="text-sm">
-                      <MessageFormatter content={msg.message} />
-                    </div>
-                    <p className={`text-[10px] mt-1.5 ${
-                      isUser ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
+                  <p className="text-xs text-muted-foreground mb-1.5 px-1">
+                    {isUser ? 'You' : isAI ? 'AYN AI' : 'AYN Support Team'}
+                  </p>
+                  <div className={`flex gap-2 max-w-full ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
+                      isUser 
+                        ? 'bg-primary text-primary-foreground' 
+                        : isAI 
+                          ? 'bg-purple-500/20 text-purple-500' 
+                          : 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
                     }`}>
-                      {format(new Date(msg.created_at), 'h:mm a')}
-                    </p>
+                      {isUser ? (
+                        <User className="w-4 h-4" />
+                      ) : isAI ? (
+                        <Brain className="w-4 h-4" />
+                      ) : (
+                        <Shield className="w-4 h-4" />
+                      )}
+                    </div>
+                    <div className={`rounded-2xl px-4 py-2.5 ${
+                      isUser 
+                        ? 'bg-primary text-primary-foreground' 
+                        : 'bg-muted/50 border border-border/50'
+                    }`}>
+                      <div className="text-sm">
+                        <MessageFormatter content={msg.message} />
+                      </div>
+                      <p className={`text-[10px] mt-1.5 ${
+                        isUser ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                      }`}>
+                        {format(new Date(msg.created_at), 'h:mm a')}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </motion.div>
