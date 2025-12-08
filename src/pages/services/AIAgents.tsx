@@ -303,7 +303,7 @@ const AIAgents = () => {
                     </div>
                   </div>
 
-                  <div className={`flex gap-3 justify-end ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+                  <div className="flex gap-3 justify-end">
                     <div className="bg-purple-500/20 rounded-2xl rounded-tr-md px-5 py-4 max-w-md">
                       <p className="text-neutral-200">{t.chatQuestion}</p>
                     </div>
