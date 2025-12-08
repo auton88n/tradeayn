@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
-import { useLanguage } from '@/contexts/LanguageContext';
 import { trackDeviceLogin } from '@/hooks/useDeviceTracking';
 import type { UserProfile, UseAuthReturn } from '@/types/dashboard.types';
 
@@ -50,7 +49,6 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const { toast } = useToast();
-  const { t } = useLanguage();
   
   const hasTrackedDevice = useRef(false);
 
@@ -126,8 +124,8 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
 
       setHasAcceptedTerms(true);
       toast({
-        title: t('auth.welcomeTitle'),
-        description: t('auth.welcomeDesc')
+        title: 'Welcome to AYN',
+        description: 'Your AI companion is ready to assist you.'
       });
     } catch {
       toast({
@@ -136,7 +134,7 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
         variant: 'destructive'
       });
     }
-  }, [user.id, session.access_token, toast, t]);
+  }, [user.id, session.access_token, toast]);
 
   // Load all auth data on mount - DIRECT FETCH, no Supabase client
   useEffect(() => {
