@@ -283,20 +283,21 @@ const DashboardContent = ({
     setReplyPrefill('');
   }, []);
 
-  // Update emotion when AYN responds
+  // Update emotion when AYN responds - prioritize backend emotion detection
   useEffect(() => {
     if (!messagesHook.isTyping && messagesHook.messages.length > 0) {
       const lastMessage = messagesHook.messages[messagesHook.messages.length - 1];
       if (lastMessage.sender === 'ayn') {
-        const emotion = analyzeResponseEmotion(lastMessage.content);
-        setEmotion(emotion);
+        // Use backend-detected emotion if available, otherwise fallback to frontend analysis
+        const emotion = messagesHook.lastSuggestedEmotion || analyzeResponseEmotion(lastMessage.content);
+        setEmotion(emotion as 'calm' | 'happy' | 'excited' | 'thinking' | 'frustrated' | 'curious');
         setIsResponding(false);
       }
     } else if (messagesHook.isTyping) {
       setEmotion('thinking');
       setIsResponding(true);
     }
-  }, [messagesHook.isTyping, messagesHook.messages, setEmotion, setIsResponding]);
+  }, [messagesHook.isTyping, messagesHook.messages, messagesHook.lastSuggestedEmotion, setEmotion, setIsResponding]);
 
   // Auto-open/close sidebars during tutorial steps
   useEffect(() => {

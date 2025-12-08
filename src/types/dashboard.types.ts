@@ -156,6 +156,7 @@ export interface MaintenanceConfig {
 export interface UseMessagesReturn {
   messages: Message[];
   isTyping: boolean;
+  lastSuggestedEmotion: string | null;
   loadMessages: () => Promise<void>;
   sendMessage: (content: string, attachment?: FileAttachment | null) => Promise<void>;
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
