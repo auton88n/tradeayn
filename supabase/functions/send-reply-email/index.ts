@@ -83,9 +83,9 @@ const handler = async (req: Request): Promise<Response> => {
 
     const smtpHost = Deno.env.get("SMTP_HOST");
     const smtpPort = parseInt(Deno.env.get("SMTP_PORT") || "465");
-    const smtpUser = Deno.env.get("SMTP_USER");
+    const smtpUser = Deno.env.get("SMTP_USER"); // noreply@ for SMTP auth
     const smtpPass = Deno.env.get("SMTP_PASS");
-    const replyToEmail = Deno.env.get("NOTIFICATION_EMAIL") || "info@aynn.io";
+    const infoEmail = Deno.env.get("SMTP_USER_") || "info@aynn.io"; // info@ for sending admin replies
 
     if (!smtpHost || !smtpUser || !smtpPass) {
       throw new Error("SMTP configuration missing");
@@ -141,9 +141,9 @@ If you have any questions, simply reply to this email and we'll get back to you.
       });
 
       await client.send({
-        from: smtpUser,
+        from: infoEmail,  // Admin replies come from info@aynn.io
         to: rawRecipientEmail,
-        replyTo: replyToEmail,
+        replyTo: infoEmail,  // Replies go back to info@aynn.io
         subject: rawSubject,
         content: "auto",
         html: replyHtml,
