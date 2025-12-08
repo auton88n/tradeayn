@@ -11,6 +11,8 @@ interface ProfileAvatarUploadProps {
   onAvatarUpdated: () => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  userId: string;
+  accessToken: string;
 }
 
 export const ProfileAvatarUpload = ({
@@ -19,11 +21,13 @@ export const ProfileAvatarUpload = ({
   onAvatarUpdated,
   open,
   onOpenChange,
+  userId,
+  accessToken,
 }: ProfileAvatarUploadProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const { uploadAvatar, removeAvatar, isUploading } = useAvatarUpload();
+  const { uploadAvatar, removeAvatar, isUploading } = useAvatarUpload({ userId, accessToken });
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

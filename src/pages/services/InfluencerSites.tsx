@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { supabaseApi, SUPABASE_ANON_KEY } from '@/lib/supabaseApi';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -73,20 +74,21 @@ const InfluencerSites = () => {
     }
     setIsSubmitting(true);
     try {
-      // Save to database
-      const {
-        error: dbError
-      } = await supabase.from('service_applications').insert({
-        full_name: formData.fullName,
-        email: formData.email,
-        phone: formData.phone || null,
-        message: formData.message || null,
-        service_type: 'content_creator',
-        status: 'new'
-      });
-      if (dbError) throw dbError;
+      // Save to database using REST API (public/anon access for service applications)
+      await supabaseApi.post(
+        'service_applications',
+        SUPABASE_ANON_KEY,
+        {
+          full_name: formData.fullName,
+          email: formData.email,
+          phone: formData.phone || null,
+          message: formData.message || null,
+          service_type: 'content_creator',
+          status: 'new'
+        }
+      );
 
-      // Send email notification
+      // Send email notification (keep using supabase.functions for edge function calls)
       await supabase.functions.invoke('send-application-email', {
         body: {
           applicantName: formData.fullName,

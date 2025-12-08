@@ -6,37 +6,36 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useUserSettings } from '@/hooks/useUserSettings';
 import { supabase } from '@/integrations/supabase/client';
+import { supabaseApi } from '@/lib/supabaseApi';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, Download, Trash2, AlertTriangle } from 'lucide-react';
+import { Session } from '@supabase/supabase-js';
 
 interface PrivacySettingsProps {
   userId: string;
+  session: Session;
 }
 
-export const PrivacySettings = ({ userId }: PrivacySettingsProps) => {
+export const PrivacySettings = ({ userId, session }: PrivacySettingsProps) => {
   const { t } = useLanguage();
   const { toast } = useToast();
   const navigate = useNavigate();
   const { settings, loading, updating, updateSettings } = useUserSettings(userId);
 
+  const token = session.access_token;
+
   const handleExportData = async () => {
     if (!userId) return;
 
     try {
-      const { data: messages } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('user_id', userId);
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
+      const [messages, profile] = await Promise.all([
+        supabaseApi.get<unknown[]>(`messages?user_id=eq.${userId}`, token),
+        supabaseApi.get<unknown[]>(`profiles?user_id=eq.${userId}`, token),
+      ]);
 
       const exportData = {
-        profile,
+        profile: profile?.[0] || null,
         messages,
         settings,
         exported_at: new Date().toISOString(),
@@ -70,12 +69,7 @@ export const PrivacySettings = ({ userId }: PrivacySettingsProps) => {
     if (!userId) return;
 
     try {
-      const { error } = await supabase
-        .from('messages')
-        .delete()
-        .eq('user_id', userId);
-
-      if (error) throw error;
+      await supabaseApi.delete(`messages?user_id=eq.${userId}`, token);
 
       toast({
         title: t('common.success'),
@@ -95,12 +89,14 @@ export const PrivacySettings = ({ userId }: PrivacySettingsProps) => {
     if (!userId) return;
 
     try {
-      // Delete user data
-      await supabase.from('messages').delete().eq('user_id', userId);
-      await supabase.from('profiles').delete().eq('user_id', userId);
-      await supabase.from('user_settings').delete().eq('user_id', userId);
+      // Delete user data using REST API
+      await Promise.all([
+        supabaseApi.delete(`messages?user_id=eq.${userId}`, token),
+        supabaseApi.delete(`profiles?user_id=eq.${userId}`, token),
+        supabaseApi.delete(`user_settings?user_id=eq.${userId}`, token),
+      ]);
 
-      // Sign out
+      // Sign out (keep using supabase.auth for auth operations)
       await supabase.auth.signOut();
       navigate('/');
 

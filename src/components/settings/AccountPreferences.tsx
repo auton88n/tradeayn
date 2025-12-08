@@ -16,9 +16,10 @@ import { useSettingsContext } from '@/contexts/SettingsContext';
 interface AccountPreferencesProps {
   userId: string;
   userEmail: string;
+  accessToken: string;
 }
 
-export const AccountPreferences = ({ userId, userEmail }: AccountPreferencesProps) => {
+export const AccountPreferences = ({ userId, userEmail, accessToken }: AccountPreferencesProps) => {
   const { t } = useLanguage();
   const { toast } = useToast();
   const { searchTerm, registerFormChange } = useSettingsContext();
@@ -255,6 +256,8 @@ export const AccountPreferences = ({ userId, userEmail }: AccountPreferencesProp
           loadProfile();
           setShowAvatarUpload(false);
         }}
+        userId={userId}
+        accessToken={accessToken}
       />
     </div>
   );
