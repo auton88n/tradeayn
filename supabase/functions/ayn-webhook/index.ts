@@ -311,6 +311,34 @@ const textProcessor = {
     return undefined;
   },
 
+  // Extract content AND emotion from n8n response
+  extractContentAndEmotion(obj: any): { content?: string; emotion?: string } {
+    if (!obj || typeof obj !== 'object') return {};
+    
+    let content: string | undefined;
+    let emotion: string | undefined;
+    
+    // Extract content
+    const contentFields = ['output', 'response', 'message', 'content', 'text', 'data'];
+    for (const field of contentFields) {
+      if (obj[field] && typeof obj[field] === 'string') {
+        content = obj[field];
+        break;
+      }
+    }
+    
+    // Extract emotion from n8n response
+    const emotionFields = ['suggestedEmotion', 'emotion', 'aynEmotion'];
+    for (const field of emotionFields) {
+      if (obj[field] && typeof obj[field] === 'string') {
+        emotion = obj[field];
+        break;
+      }
+    }
+    
+    return { content, emotion };
+  },
+
   // Parse NDJSON (newline-delimited JSON)
   parseNDJSON(text: string): any[] {
     const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
@@ -361,9 +389,16 @@ const textProcessor = {
       .trim();
   },
 
-  // Process raw response into clean text
+  // Process raw response into clean text (legacy - use processResponseWithEmotion for emotion extraction)
   processResponse(rawText: string, contentType: string): string {
+    const { text } = this.processResponseWithEmotion(rawText, contentType);
+    return text;
+  },
+
+  // Process raw response and extract both text AND emotion from n8n
+  processResponseWithEmotion(rawText: string, contentType: string): { text: string; emotion?: string } {
     let normalized = '';
+    let extractedEmotion: string | undefined;
     let isMarkdownContent = false;
 
     // Try JSON first (object OR array)
@@ -372,21 +407,23 @@ const textProcessor = {
       try {
         const parsed = JSON.parse(rawText);
         
-        // Handle ARRAY format: [{ output: "..." }]
+        // Handle ARRAY format: [{ output: "...", emotion: "..." }]
         if (Array.isArray(parsed)) {
-          const contents = parsed
-            .map(item => this.extractContent(item))
-            .filter(Boolean) as string[];
+          const results = parsed.map(item => this.extractContentAndEmotion(item));
+          const contents = results.map(r => r.content).filter(Boolean) as string[];
+          // Use first found emotion
+          extractedEmotion = results.find(r => r.emotion)?.emotion;
           
           if (contents.length > 0) {
             normalized = contents.join('\n\n');  // Preserve paragraphs!
             isMarkdownContent = true;
           }
         } else {
-          // Handle OBJECT format: { output: "..." }
-          const content = this.extractContent(parsed);
+          // Handle OBJECT format: { output: "...", emotion: "..." }
+          const { content, emotion } = this.extractContentAndEmotion(parsed);
           if (content) {
             normalized = content;
+            extractedEmotion = emotion;
             isMarkdownContent = true;
           }
         }
@@ -399,9 +436,12 @@ const textProcessor = {
     if (!normalized && rawText.includes('\n')) {
       const ndjsonItems = this.parseNDJSON(rawText);
       if (ndjsonItems.length > 0) {
-        const contents = ndjsonItems
-          .map(item => this.extractContent(item))
-          .filter(Boolean) as string[];
+        const results = ndjsonItems.map(item => this.extractContentAndEmotion(item));
+        const contents = results.map(r => r.content).filter(Boolean) as string[];
+        // Use first found emotion from NDJSON
+        if (!extractedEmotion) {
+          extractedEmotion = results.find(r => r.emotion)?.emotion;
+        }
         
         if (contents.length > 0) {
           normalized = contents.join('\n\n');
@@ -417,7 +457,8 @@ const textProcessor = {
 
     // Use preserveMarkdown for JSON content (keeps tables, lists intact)
     // Use normalizeText only for raw text fallback
-    return isMarkdownContent ? this.preserveMarkdown(normalized) : this.normalizeText(normalized);
+    const text = isMarkdownContent ? this.preserveMarkdown(normalized) : this.normalizeText(normalized);
+    return { text, emotion: extractedEmotion };
   }
 };
 
@@ -668,8 +709,8 @@ serve(async (req) => {
     });
   }
 
-    // Process the response
-    const processedText = textProcessor.processResponse(rawText, contentType);
+    // Process the response and extract emotion from n8n
+    const { text: processedText, emotion: n8nEmotion } = textProcessor.processResponseWithEmotion(rawText, contentType);
 
     // Enhanced sanitization when personalization is disabled
     const sanitizeNonPersonalized = (text: string) => {
@@ -745,6 +786,19 @@ serve(async (req) => {
       personalizationEnabled: requestData.allowPersonalization
     });
 
+    // Validate and determine final emotion - prefer n8n's emotion, fallback to user empathy mapping
+    const validEmotions = ['calm', 'happy', 'excited', 'thinking', 'frustrated', 'curious'];
+    const suggestedAynEmotion = (n8nEmotion && validEmotions.includes(n8nEmotion)) 
+      ? n8nEmotion 
+      : getEmpathyResponse(userEmotionAnalysis.emotion).aynEmotion;
+
+    console.log(`[${requestId}] Emotion source:`, {
+      n8nEmotion: n8nEmotion || 'none',
+      userEmotion: userEmotionAnalysis.emotion,
+      finalEmotion: suggestedAynEmotion,
+      source: (n8nEmotion && validEmotions.includes(n8nEmotion)) ? 'n8n' : 'user-empathy-mapping'
+    });
+
     // Prepare response with emotion data and mood pattern
     const response: WebhookResponse = {
       response: finalText || 'I received your message but got an empty response. Please try again.',
@@ -754,7 +808,7 @@ serve(async (req) => {
         contentType
       },
       userEmotion: userEmotionAnalysis,
-      suggestedAynEmotion: getEmpathyResponse(userEmotionAnalysis.emotion).aynEmotion,
+      suggestedAynEmotion: suggestedAynEmotion,
       moodPattern: moodPattern
     };
 
