@@ -33,7 +33,7 @@ const statusColors: Record<string, string> = {
 const statusLabels: Record<string, string> = {
   open: 'Open',
   in_progress: 'In Progress',
-  waiting_reply: 'Awaiting Reply',
+  waiting_reply: 'Response Received',
   resolved: 'Resolved',
   closed: 'Closed',
 };
