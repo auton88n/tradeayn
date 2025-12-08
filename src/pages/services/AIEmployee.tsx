@@ -142,27 +142,27 @@ const AIEmployee = () => {
   }];
   const comparisons = [{
     label: language === 'ar' ? 'الراتب السنوي' : language === 'fr' ? 'Salaire Annuel' : 'Annual Salary',
-    traditional: '$50,000+',
-    ai: '$5,988/year',
+    traditional: '$35,000 - $65,000',
+    ai: '$499/month',
     icon: DollarSign
   }, {
     label: language === 'ar' ? 'التأمين الصحي' : language === 'fr' ? 'Assurance Santé' : 'Health Insurance',
-    traditional: '$8,000+',
+    traditional: '$6,000 - $12,000/yr',
     ai: '$0',
     icon: Heart
   }, {
     label: language === 'ar' ? 'الإجازات المدفوعة' : language === 'fr' ? 'Congés Payés' : 'Paid Vacations',
-    traditional: '15-20 days',
+    traditional: '10-15 days/yr',
     ai: language === 'ar' ? 'يعمل ٢٤/٧/٣٦٥' : language === 'fr' ? 'Travaille 24/7/365' : 'Works 24/7/365',
     icon: Plane
   }, {
     label: language === 'ar' ? 'الأيام المرضية' : language === 'fr' ? 'Jours de Maladie' : 'Sick Days',
-    traditional: '5-10 days',
+    traditional: '5-8 days/yr',
     ai: language === 'ar' ? 'لا يمرض أبداً' : language === 'fr' ? 'Ne tombe jamais malade' : 'Never gets sick',
     icon: Heart
   }, {
     label: language === 'ar' ? 'وقت التدريب' : language === 'fr' ? 'Temps de Formation' : 'Training Time',
-    traditional: '2-4 weeks',
+    traditional: '1-3 months',
     ai: language === 'ar' ? 'نشر فوري' : language === 'fr' ? 'Déploiement instantané' : 'Instant deployment',
     icon: GraduationCap
   }, {
