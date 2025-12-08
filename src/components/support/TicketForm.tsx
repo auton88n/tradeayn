@@ -75,6 +75,24 @@ const TicketForm: React.FC<TicketFormProps> = ({ onSuccess }) => {
 
       if (messageError) throw messageError;
 
+      // Send email notification to admin (non-blocking)
+      try {
+        await supabase.functions.invoke('send-ticket-notification', {
+          body: {
+            ticketId: ticket.id,
+            subject: formData.subject,
+            message: formData.message,
+            category: formData.category,
+            priority: formData.priority,
+            userName: formData.name || user?.email?.split('@')[0] || undefined,
+            userEmail: formData.email || user?.email || undefined,
+          },
+        });
+      } catch (emailError) {
+        console.error('Failed to send notification email:', emailError);
+        // Don't fail the ticket creation if email fails
+      }
+
       setIsSuccess(true);
       toast.success('Support ticket created successfully!');
 
