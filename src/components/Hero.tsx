@@ -169,8 +169,8 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
           className="text-lg md:text-xl lg:text-2xl text-muted-foreground font-light max-w-2xl mx-auto"
         >
           {language === 'ar' 
-            ? 'الذكاء الاصطناعي الذي يرى، يستمع، ويفهم عالمك.' 
-            : 'The AI that sees, listens, and understands your world.'}
+            ? 'رفيقك الذكي الذي يساعدك على التنظيم والتخطيط والعيش بشكل أفضل.' 
+            : 'The intelligent companion that helps you organize, plan, and live better.'}
         </motion.p>
       </div>
 
