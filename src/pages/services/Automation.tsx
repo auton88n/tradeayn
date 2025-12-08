@@ -390,8 +390,8 @@ const Automation = () => {
           {/* Desktop: Orbiting layout */}
             <div className="hidden md:flex justify-center mt-8 mb-16">
               <div className="relative">
-                <div className="w-24 h-24 bg-emerald-500 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/30">
-                  <Brain className="w-12 h-12 text-white" />
+                <div className="w-16 h-16 bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                  <Brain className="w-8 h-8 text-white" />
                 </div>
                 {/* Orbiting connections */}
                 <div className="absolute w-[260px] h-[260px] -top-[70px] -left-[70px]">
