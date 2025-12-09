@@ -7,8 +7,11 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { FormError } from '@/components/ui/form-error';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useFormValidation, aiAgentsSchema } from '@/hooks/useFormValidation';
+import { cn } from '@/lib/utils';
 
 const AIAgentsApply = () => {
   const navigate = useNavigate();
@@ -28,8 +31,16 @@ const AIAgentsApply = () => {
     message: ''
   });
 
+  const { validateForm, handleBlur, getFieldError } = useFormValidation(aiAgentsSchema);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm(formData)) {
+      toast.error('Please fix the errors in the form');
+      return;
+    }
+    
     setIsSubmitting(true);
 
     try {
@@ -129,22 +140,26 @@ const AIAgentsApply = () => {
                 <Label htmlFor="fullName">Full Name *</Label>
                 <Input
                   id="fullName"
-                  required
                   value={formData.fullName}
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                  onBlur={() => handleBlur('fullName')}
                   placeholder="Your full name"
+                  className={cn(getFieldError('fullName') && 'border-destructive focus-visible:ring-destructive')}
                 />
+                <FormError message={getFieldError('fullName')} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email *</Label>
                 <Input
                   id="email"
                   type="email"
-                  required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onBlur={() => handleBlur('email')}
                   placeholder="your@email.com"
+                  className={cn(getFieldError('email') && 'border-destructive focus-visible:ring-destructive')}
                 />
+                <FormError message={getFieldError('email')} />
               </div>
             </div>
 
@@ -182,7 +197,10 @@ const AIAgentsApply = () => {
                   value={formData.industry}
                   onValueChange={(value) => setFormData({ ...formData, industry: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger 
+                    onBlur={() => handleBlur('industry')}
+                    className={cn(getFieldError('industry') && 'border-destructive focus:ring-destructive')}
+                  >
                     <SelectValue placeholder="Select industry" />
                   </SelectTrigger>
                   <SelectContent>
@@ -196,6 +214,7 @@ const AIAgentsApply = () => {
                     <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>
+                <FormError message={getFieldError('industry')} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="agentType">Agent Type *</Label>
@@ -203,7 +222,10 @@ const AIAgentsApply = () => {
                   value={formData.agentType}
                   onValueChange={(value) => setFormData({ ...formData, agentType: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger 
+                    onBlur={() => handleBlur('agentType')}
+                    className={cn(getFieldError('agentType') && 'border-destructive focus:ring-destructive')}
+                  >
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -215,6 +237,7 @@ const AIAgentsApply = () => {
                     <SelectItem value="custom">Custom Solution</SelectItem>
                   </SelectContent>
                 </Select>
+                <FormError message={getFieldError('agentType')} />
               </div>
             </div>
 
@@ -222,12 +245,14 @@ const AIAgentsApply = () => {
               <Label htmlFor="useCase">Describe Your Use Case *</Label>
               <Textarea
                 id="useCase"
-                required
                 value={formData.useCase}
                 onChange={(e) => setFormData({ ...formData, useCase: e.target.value })}
+                onBlur={() => handleBlur('useCase')}
                 placeholder="What problems do you want the AI agent to solve? What tasks should it handle?"
                 rows={4}
+                className={cn(getFieldError('useCase') && 'border-destructive focus-visible:ring-destructive')}
               />
+              <FormError message={getFieldError('useCase')} />
             </div>
 
             <div className="space-y-2">
@@ -253,7 +278,10 @@ const AIAgentsApply = () => {
                   value={formData.budget}
                   onValueChange={(value) => setFormData({ ...formData, budget: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger 
+                    onBlur={() => handleBlur('budget')}
+                    className={cn(getFieldError('budget') && 'border-destructive focus:ring-destructive')}
+                  >
                     <SelectValue placeholder="Select budget" />
                   </SelectTrigger>
                   <SelectContent>
@@ -264,6 +292,7 @@ const AIAgentsApply = () => {
                     <SelectItem value="over-50k">Over $50,000</SelectItem>
                   </SelectContent>
                 </Select>
+                <FormError message={getFieldError('budget')} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="timeline">Desired Timeline *</Label>
@@ -271,7 +300,10 @@ const AIAgentsApply = () => {
                   value={formData.timeline}
                   onValueChange={(value) => setFormData({ ...formData, timeline: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger 
+                    onBlur={() => handleBlur('timeline')}
+                    className={cn(getFieldError('timeline') && 'border-destructive focus:ring-destructive')}
+                  >
                     <SelectValue placeholder="Select timeline" />
                   </SelectTrigger>
                   <SelectContent>
@@ -282,6 +314,7 @@ const AIAgentsApply = () => {
                     <SelectItem value="flexible">Flexible</SelectItem>
                   </SelectContent>
                 </Select>
+                <FormError message={getFieldError('timeline')} />
               </div>
             </div>
 
@@ -301,7 +334,7 @@ const AIAgentsApply = () => {
             type="submit"
             size="lg"
             className="w-full"
-            disabled={isSubmitting || !formData.fullName || !formData.email || !formData.useCase}
+            disabled={isSubmitting}
           >
             {isSubmitting ? (
               <>

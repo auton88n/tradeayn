@@ -6,11 +6,14 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { FormError } from '@/components/ui/form-error';
 import { supabaseApi, SUPABASE_ANON_KEY } from '@/lib/supabaseApi';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useFormValidation, aiEmployeeSchema } from '@/hooks/useFormValidation';
 import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 const AIEmployeeApply = () => {
   const { language } = useLanguage();
@@ -29,6 +32,8 @@ const AIEmployeeApply = () => {
     budget: '',
     message: ''
   });
+
+  const { validateForm, handleBlur, getFieldError } = useFormValidation(aiEmployeeSchema);
 
   const t = {
     back: language === 'ar' ? 'عودة' : language === 'fr' ? 'Retour' : 'Back',
@@ -49,14 +54,17 @@ const AIEmployeeApply = () => {
     submitting: language === 'ar' ? 'جاري الإرسال...' : language === 'fr' ? 'Envoi...' : 'Submitting...',
     successTitle: language === 'ar' ? 'تم إرسال طلبك!' : language === 'fr' ? 'Demande Soumise!' : 'Application Submitted!',
     successDesc: language === 'ar' ? 'شكراً لاهتمامك! سنتواصل معك خلال ٢٤-٤٨ ساعة لمناقشة احتياجاتك.' : language === 'fr' ? 'Merci pour votre intérêt! Nous vous contacterons dans 24-48 heures pour discuter de vos besoins.' : 'Thank you for your interest! We\'ll be in touch within 24-48 hours to discuss your needs.',
-    backToService: language === 'ar' ? 'العودة للخدمة' : language === 'fr' ? 'Retour au Service' : 'Back to Service'
+    backToService: language === 'ar' ? 'العودة للخدمة' : language === 'fr' ? 'Retour au Service' : 'Back to Service',
+    fixErrors: language === 'ar' ? 'يرجى إصلاح الأخطاء في النموذج' : language === 'fr' ? 'Veuillez corriger les erreurs dans le formulaire' : 'Please fix the errors in the form',
+    somethingWrong: language === 'ar' ? 'حدث خطأ. يرجى المحاولة مرة أخرى.' : language === 'fr' ? 'Une erreur s\'est produite. Veuillez réessayer.' : 'Something went wrong. Please try again.'
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.fullName || !formData.email) {
+    
+    if (!validateForm(formData)) {
       toast({
-        title: language === 'ar' ? 'يرجى ملء الحقول المطلوبة' : language === 'fr' ? 'Veuillez remplir les champs requis' : 'Please fill in required fields',
+        title: t.fixErrors,
         variant: 'destructive'
       });
       return;
@@ -107,7 +115,7 @@ const AIEmployeeApply = () => {
     } catch (error) {
       console.error('Submission error:', error);
       toast({
-        title: language === 'ar' ? 'حدث خطأ. يرجى المحاولة مرة أخرى.' : language === 'fr' ? 'Une erreur s\'est produite. Veuillez réessayer.' : 'Something went wrong. Please try again.',
+        title: t.somethingWrong,
         variant: 'destructive'
       });
     } finally {
@@ -175,9 +183,13 @@ const AIEmployeeApply = () => {
                   id="fullName"
                   value={formData.fullName}
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                  className="bg-neutral-800 border-neutral-700"
-                  required
+                  onBlur={() => handleBlur('fullName')}
+                  className={cn(
+                    "bg-neutral-800 border-neutral-700",
+                    getFieldError('fullName') && 'border-red-500 focus-visible:ring-red-500'
+                  )}
                 />
+                <FormError message={getFieldError('fullName')} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">{t.email} *</Label>
@@ -186,9 +198,13 @@ const AIEmployeeApply = () => {
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="bg-neutral-800 border-neutral-700"
-                  required
+                  onBlur={() => handleBlur('email')}
+                  className={cn(
+                    "bg-neutral-800 border-neutral-700",
+                    getFieldError('email') && 'border-red-500 focus-visible:ring-red-500'
+                  )}
                 />
+                <FormError message={getFieldError('email')} />
               </div>
             </div>
 
