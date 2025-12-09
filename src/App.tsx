@@ -13,6 +13,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { AnimatePresence } from 'framer-motion';
 import PageTransition from "@/components/PageTransition";
+import { ScrollToTop } from "@/components/ScrollToTop";
 
 // Lazy load all route pages for code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -67,6 +68,7 @@ const App = () => (
               <Toaster />
               <Sonner />
               <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                <ScrollToTop />
                 <ErrorBoundary>
                   <Suspense fallback={<PageLoader />}>
                     <AnimatedRoutes />
