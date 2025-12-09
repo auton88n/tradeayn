@@ -4,27 +4,33 @@ const AIEmployeeMockup = () => {
   const roles = [{
     icon: Users,
     label: 'HR',
-    gradient: 'from-blue-400 to-blue-600'
+    gradient: 'from-blue-400 to-blue-600',
+    iconColor: 'text-blue-500'
   }, {
     icon: Headphones,
     label: 'Support',
-    gradient: 'from-emerald-400 to-emerald-600'
+    gradient: 'from-emerald-400 to-emerald-600',
+    iconColor: 'text-emerald-500'
   }, {
     icon: TrendingUp,
     label: 'Sales',
-    gradient: 'from-violet-400 to-violet-600'
+    gradient: 'from-violet-400 to-violet-600',
+    iconColor: 'text-violet-500'
   }, {
     icon: Calculator,
     label: 'Finance',
-    gradient: 'from-amber-400 to-amber-600'
+    gradient: 'from-amber-400 to-amber-600',
+    iconColor: 'text-amber-500'
   }, {
     icon: FileText,
     label: 'Admin',
-    gradient: 'from-orange-400 to-orange-600'
+    gradient: 'from-orange-400 to-orange-600',
+    iconColor: 'text-orange-500'
   }, {
     icon: MessageCircle,
     label: 'Social',
-    gradient: 'from-pink-400 to-pink-600'
+    gradient: 'from-pink-400 to-pink-600',
+    iconColor: 'text-pink-500'
   }];
   const orbitRadius = 120;
   return <div className="relative w-full h-full min-h-[320px] flex items-center justify-center" dir="ltr">
@@ -152,7 +158,7 @@ const AIEmployeeMockup = () => {
                 <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-gradient-to-r ${role.gradient} opacity-80`} />
                 
                 {/* Icon */}
-                <role.icon className="w-6 h-6 text-white/90" strokeWidth={1.5} />
+                <role.icon className={`w-6 h-6 ${role.iconColor}`} strokeWidth={1.5} />
 
                 {/* Hover glow */}
                 <div className={`absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br ${role.gradient}`} style={{
