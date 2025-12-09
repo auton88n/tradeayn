@@ -123,7 +123,8 @@ export const CenterStageLayout = ({
     messageCount: messages.length,
   });
   
-  const { behaviorConfig } = useEyeBehaviorMatcher({ context, enabled: !isMobile });
+  // Enable eye behavior on all devices - emotions work independently
+  const { behaviorConfig } = useEyeBehaviorMatcher({ context, enabled: true });
 
   // Suggestion card Y positions for gaze targeting (matches SuggestionsCard desktopPositions)
   const suggestionGazeTargets = [

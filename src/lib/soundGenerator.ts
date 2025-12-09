@@ -44,11 +44,68 @@ const SOUND_CONFIGS: Record<SoundType, SoundConfig> = {
   'blink': { type: 'sine', frequency: 200, duration: 0.05, gain: 0.02, attack: 0.01, decay: 0.04 },
 };
 
+// Global unlock state for iOS AudioContext
+let globalUnlockPromise: Promise<void> | null = null;
+let isUnlocked = false;
+
+// Unlock AudioContext on first user interaction (required for iOS/Safari)
+const unlockAudioContext = (audioContext: AudioContext): Promise<void> => {
+  if (isUnlocked || audioContext.state === 'running') {
+    isUnlocked = true;
+    return Promise.resolve();
+  }
+  
+  if (globalUnlockPromise) return globalUnlockPromise;
+  
+  globalUnlockPromise = new Promise((resolve) => {
+    const unlock = () => {
+      if (isUnlocked) {
+        resolve();
+        return;
+      }
+      
+      // Resume context
+      audioContext.resume().then(() => {
+        // Play silent buffer to fully unlock on iOS
+        const buffer = audioContext.createBuffer(1, 1, 22050);
+        const source = audioContext.createBufferSource();
+        source.buffer = buffer;
+        source.connect(audioContext.destination);
+        source.start(0);
+        
+        isUnlocked = true;
+        
+        // Remove listeners after unlock
+        document.removeEventListener('touchstart', unlock, true);
+        document.removeEventListener('touchend', unlock, true);
+        document.removeEventListener('mousedown', unlock, true);
+        document.removeEventListener('keydown', unlock, true);
+        
+        resolve();
+      }).catch(() => {
+        // Retry on next interaction
+      });
+    };
+    
+    // Listen for first user interaction
+    document.addEventListener('touchstart', unlock, true);
+    document.addEventListener('touchend', unlock, true);
+    document.addEventListener('mousedown', unlock, true);
+    document.addEventListener('keydown', unlock, true);
+    
+    // Try immediately in case already interacted
+    unlock();
+  });
+  
+  return globalUnlockPromise;
+};
+
 export class SoundGenerator {
   private audioContext: AudioContext | null = null;
   private masterGain: GainNode | null = null;
   private volume: number = 0.5;
   private enabled: boolean = true;
+  private unlockPromise: Promise<void> | null = null;
 
   constructor() {
     this.initAudioContext();
@@ -58,19 +115,39 @@ export class SoundGenerator {
     if (typeof window === 'undefined') return;
     
     try {
-      this.audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+      // Use webkitAudioContext for older Safari
+      const AudioContextClass = window.AudioContext || 
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      
+      this.audioContext = new AudioContextClass();
       this.masterGain = this.audioContext.createGain();
       this.masterGain.gain.value = this.volume;
       this.masterGain.connect(this.audioContext.destination);
-    } catch (e) {
-      console.warn('Web Audio API not supported:', e);
+      
+      // Start unlock process for iOS
+      this.unlockPromise = unlockAudioContext(this.audioContext);
+    } catch {
+      // Web Audio API not supported - fail silently
     }
   }
 
-  private ensureContext(): void {
-    if (this.audioContext?.state === 'suspended') {
-      this.audioContext.resume();
+  private async ensureContext(): Promise<boolean> {
+    if (!this.audioContext) return false;
+    
+    // Wait for unlock on iOS
+    if (this.unlockPromise) {
+      await this.unlockPromise;
     }
+    
+    if (this.audioContext.state === 'suspended') {
+      try {
+        await this.audioContext.resume();
+      } catch {
+        return false;
+      }
+    }
+    
+    return this.audioContext.state === 'running';
   }
 
   setVolume(volume: number): void {
@@ -84,13 +161,15 @@ export class SoundGenerator {
     this.enabled = enabled;
   }
 
-  play(soundType: SoundType): void {
+  async play(soundType: SoundType): Promise<void> {
     if (!this.enabled || !this.audioContext || !this.masterGain) return;
     
     // Respect reduced motion preference
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     
-    this.ensureContext();
+    // Ensure context is unlocked and running
+    const isReady = await this.ensureContext();
+    if (!isReady || !this.audioContext) return;
     
     const config = SOUND_CONFIGS[soundType];
     if (!config) return;
