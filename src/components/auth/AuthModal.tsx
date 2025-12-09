@@ -219,7 +219,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                     type="button"
                     onClick={handleForgotPassword}
                     disabled={isResettingPassword}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                    className="text-sm text-foreground hover:text-foreground/80 transition-colors disabled:opacity-50"
                   >
                     {isResettingPassword ? t('auth.forgotPasswordSending') : t('auth.forgotPassword')}
                   </button>
