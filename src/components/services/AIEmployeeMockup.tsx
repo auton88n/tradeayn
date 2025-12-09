@@ -98,7 +98,7 @@ const AIEmployeeMockup = memo(() => {
       })}
 
       {/* Premium Glass Pill Badge */}
-      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 z-30">
+      <div className="absolute -bottom-2 right-0 z-30">
         <div 
           className="flex items-center gap-2 px-4 py-2 rounded-full bg-card/80 border border-border/30 shadow-lg"
         >
