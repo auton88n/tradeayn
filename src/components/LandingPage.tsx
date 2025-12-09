@@ -17,6 +17,7 @@ import { z } from 'zod';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { LazyLoad } from './ui/lazy-load';
 import MobileMockup from './services/MobileMockup';
 import DeviceMockups from './services/DeviceMockups';
 import FloatingIcons from './services/FloatingIcons';
@@ -231,25 +232,25 @@ const LandingPage = () => {
     slug: 'content-creator-sites',
     title: language === 'ar' ? 'مواقع لصناع المحتوى' : language === 'fr' ? 'Sites Premium pour Créateurs' : 'Premium Content Creator Sites',
     description: language === 'ar' ? 'موقع احترافي يعكس هويتك ويجذب فرص التعاون.' : language === 'fr' ? 'Sites web de luxe conçus pour mettre en valeur votre marque personnelle.' : 'Luxury websites custom-built to showcase your personal brand.',
-    mockup: <MobileMockup />
+    mockup: <LazyLoad><MobileMockup /></LazyLoad>
   }, {
     number: '02',
     slug: 'ai-agents',
     title: language === 'ar' ? 'مساعد ذكي لعملك' : language === 'fr' ? 'Agents IA Personnalisés' : 'Custom AI Agents',
     description: language === 'ar' ? 'مساعد ذكي يعمل ٢٤ ساعة لخدمة عملائك.' : language === 'fr' ? 'Assistants intelligents 24/7 formés sur votre entreprise.' : '24/7 intelligent assistants trained on your business.',
-    mockup: <DeviceMockups />
+    mockup: <LazyLoad><DeviceMockups /></LazyLoad>
   }, {
     number: '03',
     slug: 'automation',
     title: language === 'ar' ? 'أتمتة العمليات' : language === 'fr' ? 'Automatisation des Processus' : 'Process Automation',
     description: language === 'ar' ? 'أتمتة المهام المتكررة لتوفير الوقت والجهد.' : language === 'fr' ? 'Automatisez les flux de travail pour gagner du temps.' : 'Automate workflows to save time and reduce errors in any business.',
-    mockup: <FloatingIcons />
+    mockup: <LazyLoad><FloatingIcons /></LazyLoad>
   }, {
     number: '04',
     slug: 'ai-employee',
     title: language === 'ar' ? 'موظفين بالذكاء الاصطناعي' : language === 'fr' ? 'Employés IA' : 'AI Employees',
     description: language === 'ar' ? 'موظفين يعملون ٢٤ ساعة بدون إجازات أو تأمين صحي.' : language === 'fr' ? 'Employés qui travaillent 24h/24 sans vacances ni assurance santé.' : 'Employees who work 24/7 with no vacations or healthcare costs.',
-    mockup: <AIEmployeeMockup />
+    mockup: <LazyLoad><AIEmployeeMockup /></LazyLoad>
   }];
   return <div className="min-h-screen bg-background scroll-smooth">
       {/* Vertical Dropdown Navigation */}
