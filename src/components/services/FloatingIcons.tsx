@@ -42,29 +42,6 @@ const FloatingIcons = memo(() => {
         );
       })}
       
-      {/* Connection lines from center to each icon */}
-      <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ overflow: 'visible' }}>
-        <g className="text-gray-300 dark:text-gray-600">
-          {icons.map((_, i) => {
-            const angle = (i * 60 - 90) * (Math.PI / 180);
-            const x = 50 + (Math.cos(angle) * radius * 100) / 200;
-            const y = 50 + (Math.sin(angle) * radius * 100) / 200;
-            
-            return (
-              <line
-                key={i}
-                x1="50%"
-                y1="50%"
-                x2={`${x}%`}
-                y2={`${y}%`}
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeDasharray="4 4"
-              />
-            );
-          })}
-        </g>
-      </svg>
     </div>
   );
 });
