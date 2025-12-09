@@ -34,23 +34,12 @@ const ScrollReveal = ({
   delay?: number;
 }) => {
   const [ref, isVisible] = useScrollAnimation();
-  return (
-    <div
-      ref={ref as React.RefObject<HTMLDivElement>}
-      className={cn(
-        'scroll-animate',
-        direction === 'left' && 'scroll-animate-left',
-        direction === 'right' && 'scroll-animate-right',
-        direction === 'scale' && 'scroll-animate-scale',
-        isVisible && 'visible'
-      )}
-      style={{ transitionDelay: `${delay}s` }}
-    >
+  return <div ref={ref as React.RefObject<HTMLDivElement>} className={cn('scroll-animate', direction === 'left' && 'scroll-animate-left', direction === 'right' && 'scroll-animate-right', direction === 'scale' && 'scroll-animate-scale', isVisible && 'visible')} style={{
+    transitionDelay: `${delay}s`
+  }}>
       {children}
-    </div>
-  );
+    </div>;
 };
-
 const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [pendingMessage, setPendingMessage] = useState<string>('');
@@ -172,36 +161,34 @@ const LandingPage = () => {
       }
     }
     setIsSubmitting(true);
-
     try {
       // Save to database
-      const { error: dbError } = await supabase
-        .from('contact_messages')
-        .insert({
-          name: contactForm.name.trim(),
-          email: contactForm.email.trim(),
-          message: contactForm.message.trim()
-        });
-
+      const {
+        error: dbError
+      } = await supabase.from('contact_messages').insert({
+        name: contactForm.name.trim(),
+        email: contactForm.email.trim(),
+        message: contactForm.message.trim()
+      });
       if (dbError) {
         console.error('Database error:', dbError);
         throw new Error('Failed to save message');
       }
 
       // Send email notification
-      const { error: emailError } = await supabase.functions.invoke('send-contact-email', {
+      const {
+        error: emailError
+      } = await supabase.functions.invoke('send-contact-email', {
         body: {
           name: contactForm.name.trim(),
           email: contactForm.email.trim(),
           message: contactForm.message.trim()
         }
       });
-
       if (emailError) {
         console.error('Email error:', emailError);
         // Don't throw - message was saved, just email failed
       }
-
       setIsSubmitted(true);
       setContactForm({
         name: '',
@@ -226,7 +213,6 @@ const LandingPage = () => {
       setIsSubmitting(false);
     }
   };
-
   const services = [{
     number: '01',
     slug: 'content-creator-sites',
@@ -435,13 +421,13 @@ const LandingPage = () => {
       </div>
 
       {/* Hero Section - Premium AI Eye Experience */}
-      <Hero onGetStarted={(prefillMessage) => {
-        if (prefillMessage) {
-          setPendingMessage(prefillMessage);
-          localStorage.setItem('ayn_pending_message', prefillMessage);
-        }
-        setShowAuthModal(true);
-      }} />
+      <Hero onGetStarted={prefillMessage => {
+      if (prefillMessage) {
+        setPendingMessage(prefillMessage);
+        localStorage.setItem('ayn_pending_message', prefillMessage);
+      }
+      setShowAuthModal(true);
+    }} />
 
       {/* About AYN - Value Proposition Section */}
       <section id="about" className="py-16 md:py-32 px-4 md:px-6">
@@ -517,13 +503,7 @@ const LandingPage = () => {
                 {language === 'ar' ? 'خدماتنا' : language === 'fr' ? 'Ce Que Nous Faisons' : 'What We Do'}
               </span>
               <h2 className="text-3xl md:text-5xl lg:text-6xl font-serif mb-4 md:mb-6">
-                {language === 'ar' ? (
-                  <>أربع طرق <span className="font-bold">لتبسيط حياتك</span></>
-                ) : language === 'fr' ? (
-                  <>Quatre Façons de <span className="font-bold">Simplifier Votre Vie</span></>
-                ) : (
-                  <>Four Ways We Help <span className="font-bold">Simplify Your Life</span></>
-                )}
+                {language === 'ar' ? <>أربع طرق <span className="font-bold">لتبسيط حياتك</span></> : language === 'fr' ? <>Quatre Façons de <span className="font-bold">Simplifier Votre Vie</span></> : <>Four Ways We Help <span className="font-bold">Simplify Your Life</span></>}
               </h2>
             </div>
           </ScrollReveal>
@@ -535,13 +515,14 @@ const LandingPage = () => {
               {/* Top Left - Content Creator Sites */}
               <ScrollReveal>
                 <Link to={`/services/${services[0].slug}`} className="block">
-                  <motion.div 
-                    className="bg-muted/50 rounded-3xl p-6 md:p-8 min-h-[320px] lg:min-h-[380px] flex flex-col group cursor-pointer overflow-visible"
-                    whileHover={{ y: -4 }}
-                    transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
-                  >
+                  <motion.div className="bg-muted/50 rounded-3xl p-6 md:p-8 min-h-[320px] lg:min-h-[380px] flex flex-col group cursor-pointer overflow-visible" whileHover={{
+                  y: -4
+                }} transition={{
+                  duration: 0.3,
+                  ease: [0.32, 0.72, 0, 1]
+                }}>
                     <div className="mb-4">
-                      <span className="text-xs font-mono text-muted-foreground">{services[0].number}</span>
+                      
                       <h3 className="text-xl md:text-2xl font-bold mt-2 group-hover:text-primary transition-colors">
                         {services[0].title}
                       </h3>
@@ -563,14 +544,15 @@ const LandingPage = () => {
               {/* Bottom Left - Automation */}
               <ScrollReveal delay={0.2}>
                 <Link to={`/services/${services[2].slug}`} className="block">
-                  <motion.div 
-                    className="bg-muted/50 rounded-3xl p-6 md:p-8 min-h-[280px] group cursor-pointer"
-                    whileHover={{ y: -4 }}
-                    transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
-                  >
+                  <motion.div className="bg-muted/50 rounded-3xl p-6 md:p-8 min-h-[280px] group cursor-pointer" whileHover={{
+                  y: -4
+                }} transition={{
+                  duration: 0.3,
+                  ease: [0.32, 0.72, 0, 1]
+                }}>
                     <div className="flex flex-col gap-4">
                       <div>
-                        <span className="text-xs font-mono text-muted-foreground">{services[2].number}</span>
+                        
                         <h3 className="text-xl md:text-2xl font-bold mt-2 group-hover:text-primary transition-colors">
                           {services[2].title}
                         </h3>
@@ -596,14 +578,15 @@ const LandingPage = () => {
               {/* Top Right - AI Agents */}
               <ScrollReveal delay={0.1}>
                 <Link to={`/services/${services[1].slug}`} className="block">
-                  <motion.div 
-                    className="bg-muted/50 rounded-3xl p-6 md:p-8 min-h-[280px] group cursor-pointer"
-                    whileHover={{ y: -4 }}
-                    transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
-                  >
+                  <motion.div className="bg-muted/50 rounded-3xl p-6 md:p-8 min-h-[280px] group cursor-pointer" whileHover={{
+                  y: -4
+                }} transition={{
+                  duration: 0.3,
+                  ease: [0.32, 0.72, 0, 1]
+                }}>
                     <div className="flex flex-col gap-4">
                       <div>
-                        <span className="text-xs font-mono text-muted-foreground">{services[1].number}</span>
+                        
                         <h3 className="text-xl md:text-2xl font-bold mt-2 group-hover:text-primary transition-colors">
                           {services[1].title}
                         </h3>
@@ -626,13 +609,14 @@ const LandingPage = () => {
               {/* Bottom Right - AI Employees */}
               <ScrollReveal delay={0.3}>
                 <Link to={`/services/${services[3].slug}`} className="block">
-                  <motion.div 
-                    className="bg-muted/50 rounded-3xl p-6 md:p-8 min-h-[320px] lg:min-h-[380px] flex flex-col group cursor-pointer overflow-visible"
-                    whileHover={{ y: -4 }}
-                    transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
-                  >
+                  <motion.div className="bg-muted/50 rounded-3xl p-6 md:p-8 min-h-[320px] lg:min-h-[380px] flex flex-col group cursor-pointer overflow-visible" whileHover={{
+                  y: -4
+                }} transition={{
+                  duration: 0.3,
+                  ease: [0.32, 0.72, 0, 1]
+                }}>
                     <div className="mb-4">
-                      <span className="text-xs font-mono text-muted-foreground">{services[3].number}</span>
+                      
                       <h3 className="text-xl md:text-2xl font-bold mt-2 group-hover:text-primary transition-colors">
                         {services[3].title}
                       </h3>
