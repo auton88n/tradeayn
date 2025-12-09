@@ -152,23 +152,50 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
       {/* Subtle vignette / soft gradient background */}
       <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-background via-background to-muted/10" />
 
-      {/* Headline - INSTANT render for LCP */}
+      {/* Headline - instant appearance */}
       <div className="w-full max-w-4xl text-center mb-4 md:mb-6">
-        <h1 className="font-display font-bold tracking-[-0.02em] text-foreground mb-2 md:mb-3 text-5xl sm:text-6xl md:text-7xl lg:text-8xl">
+        <motion.h1 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ 
+            duration: 0.5, 
+            delay: 0,
+            ease: [0.22, 1, 0.36, 1]
+          }}
+          className="font-display font-bold tracking-[-0.02em] text-foreground mb-2 md:mb-3 text-5xl sm:text-6xl md:text-7xl lg:text-8xl"
+        >
           {language === 'ar' ? 'تعرّف على AYN' : language === 'fr' ? 'Découvrez AYN' : 'Meet AYN'}
-        </h1>
-        {/* Subtitle - INSTANT render for LCP */}
-        <p className="text-base md:text-lg lg:text-xl text-muted-foreground font-light max-w-2xl mx-auto">
+        </motion.h1>
+        {/* Subtitle - quick follow */}
+        <motion.p 
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ 
+            duration: 0.4, 
+            delay: 0.15,
+            ease: [0.22, 1, 0.36, 1]
+          }}
+          className="text-base md:text-lg lg:text-xl text-muted-foreground font-light max-w-2xl mx-auto"
+        >
           {language === 'ar' 
             ? 'رفيقك الذكي الذي يساعدك على التنظيم والتخطيط والعيش بشكل أفضل.' 
             : language === 'fr'
             ? 'Le compagnon intelligent qui vous aide à organiser, planifier et mieux vivre.'
             : 'The intelligent companion that helps you organize, plan, and live better.'}
-        </p>
+        </motion.p>
       </div>
 
-      {/* Central area with eye and cards - deferred animation */}
-      <div className="relative w-full max-w-5xl flex-1 flex items-center justify-center">
+      {/* Central area with eye and cards - fast appearance */}
+      <motion.div 
+        className="relative w-full max-w-5xl flex-1 flex items-center justify-center"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ 
+          duration: 0.5, 
+          delay: 0.25,
+          ease: [0.22, 1, 0.36, 1]
+        }}
+      >
         {/* ring / subtle light behind the eye */}
         <div className="absolute w-[200px] h-[200px] sm:w-[280px] sm:h-[280px] md:w-[360px] md:h-[360px] lg:w-[480px] lg:h-[480px] rounded-full -z-10 pointer-events-none
                         bg-gradient-to-b from-transparent via-muted/30 to-transparent" />
@@ -415,7 +442,7 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
             </motion.svg>
           </motion.div>
         </motion.div>
-      </div>
+      </motion.div>
 
       {/* Interactive Chat Input */}
       <LandingChatInput onSendAttempt={(message) => onGetStarted(message)} />
