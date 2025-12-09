@@ -145,7 +145,6 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
               message: newMessage.trim(),
             },
           });
-          console.log('Reply notification sent to:', ticket.guest_email);
         } catch (emailError) {
           console.error('Failed to send email notification:', emailError);
         }
