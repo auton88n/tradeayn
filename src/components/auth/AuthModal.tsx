@@ -28,8 +28,8 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
   const handleForgotPassword = async () => {
     if (!email) {
       toast({
-        title: "Email Required",
-        description: "Please enter your email address first.",
+        title: t('auth.emailRequired'),
+        description: t('auth.emailRequiredDesc'),
         variant: "destructive"
       });
       return;
@@ -43,20 +43,20 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
 
       if (error) {
         toast({
-          title: "Error",
+          title: t('common.error'),
           description: error.message,
           variant: "destructive"
         });
       } else {
         toast({
-          title: "Check Your Email",
-          description: "We've sent you a password reset link.",
+          title: t('auth.checkEmail'),
+          description: t('auth.passwordResetSent'),
         });
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Something went wrong. Please try again.",
+        title: t('common.error'),
+        description: t('error.systemErrorDesc'),
         variant: "destructive"
       });
     } finally {
@@ -222,7 +222,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                     disabled={isResettingPassword}
                     className="text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
                   >
-                    {isResettingPassword ? "Sending..." : "Forgot password?"}
+                    {isResettingPassword ? t('auth.forgotPasswordSending') : t('auth.forgotPassword')}
                   </button>
                 </div>
                 <Input

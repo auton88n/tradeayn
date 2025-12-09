@@ -484,6 +484,12 @@ const translations = {
     'auth.registrationSuccessDesc': 'Please check your email to verify your account. Your access will be reviewed by our team.',
     'auth.registrationError': 'Registration Error',
     'auth.accessReviewDesc': 'Access will be reviewed and granted by the AYN team within 24 hours',
+    'auth.forgotPassword': 'Forgot password?',
+    'auth.forgotPasswordSending': 'Sending...',
+    'auth.emailRequired': 'Email Required',
+    'auth.emailRequiredDesc': 'Please enter your email address first.',
+    'auth.checkEmail': 'Check Your Email',
+    'auth.passwordResetSent': 'We\'ve sent you a password reset link.',
     
     // Terms Modal
     'terms.welcomeToAynAI': 'Welcome to AYN AI',
@@ -1065,6 +1071,12 @@ const translations = {
     'auth.registrationSuccessDesc': 'يرجى التحقق من بريدك الإلكتروني للتحقق من حسابك. سيتم مراجعة وصولك من قبل فريقنا.',
     'auth.registrationError': 'خطأ في التسجيل',
     'auth.accessReviewDesc': 'سيتم مراجعة الوصول ومنحه من قبل فريق AYN خلال 24 ساعة',
+    'auth.forgotPassword': 'نسيت كلمة المرور؟',
+    'auth.forgotPasswordSending': 'جاري الإرسال...',
+    'auth.emailRequired': 'البريد الإلكتروني مطلوب',
+    'auth.emailRequiredDesc': 'يرجى إدخال بريدك الإلكتروني أولاً.',
+    'auth.checkEmail': 'تحقق من بريدك الإلكتروني',
+    'auth.passwordResetSent': 'لقد أرسلنا لك رابط إعادة تعيين كلمة المرور.',
     
     // Terms Modal
     'terms.welcomeToAynAI': 'مرحباً بك في AYN AI',
@@ -1419,6 +1431,13 @@ const translations = {
     'auth.registrationSuccess': 'Inscription Réussie!',
     'auth.registrationSuccessDesc': 'Veuillez vérifier votre email. Votre accès sera examiné par notre équipe.',
     'auth.registrationError': 'Erreur d\'Inscription',
+    'auth.accessReviewDesc': 'L\'accès sera examiné par l\'équipe AYN sous 24 heures',
+    'auth.forgotPassword': 'Mot de passe oublié?',
+    'auth.forgotPasswordSending': 'Envoi...',
+    'auth.emailRequired': 'Email Requis',
+    'auth.emailRequiredDesc': 'Veuillez d\'abord entrer votre adresse email.',
+    'auth.checkEmail': 'Vérifiez votre Email',
+    'auth.passwordResetSent': 'Nous vous avons envoyé un lien de réinitialisation.',
     
     // Terms Modal
     'terms.welcomeToAynAI': 'Bienvenue sur AYN AI',
