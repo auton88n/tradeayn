@@ -1,56 +1,72 @@
 import { memo } from 'react';
+import { FolderOpen, Link, Mail, BarChart3, Zap, RefreshCw, Settings } from 'lucide-react';
 
 const icons = [
-  { emoji: '📊', color: 'bg-blue-500/20' },
-  { emoji: '⚡', color: 'bg-yellow-500/20' },
-  { emoji: '🔄', color: 'bg-green-500/20' },
-  { emoji: '📧', color: 'bg-red-500/20' },
-  { emoji: '📁', color: 'bg-purple-500/20' },
-  { emoji: '🔗', color: 'bg-cyan-500/20' },
+  { Icon: FolderOpen, bg: 'bg-violet-200', iconColor: 'text-violet-600' },
+  { Icon: Link, bg: 'bg-sky-200', iconColor: 'text-sky-600' },
+  { Icon: BarChart3, bg: 'bg-blue-200', iconColor: 'text-blue-600' },
+  { Icon: Zap, bg: 'bg-amber-200', iconColor: 'text-amber-500' },
+  { Icon: RefreshCw, bg: 'bg-emerald-200', iconColor: 'text-emerald-600' },
+  { Icon: Mail, bg: 'bg-rose-200', iconColor: 'text-rose-500' },
 ];
 
 const FloatingIcons = memo(() => {
-  const radius = 70;
+  const radius = 80;
 
   return (
-    <div className="relative h-[160px] flex items-center justify-center">
-      {/* Central Hub - CSS animation only */}
-      <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center shadow-lg z-10 animate-spin-slow">
-        <span className="text-2xl">⚙️</span>
+    <div className="relative h-[200px] flex items-center justify-center" dir="ltr">
+      {/* Central Hub - Premium gear icon */}
+      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 border border-gray-300/50 dark:border-gray-600/50 flex items-center justify-center shadow-lg z-10">
+        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-600 dark:to-gray-700 flex items-center justify-center shadow-inner">
+          <Settings className="w-7 h-7 text-gray-500 dark:text-gray-400" strokeWidth={1.5} />
+        </div>
       </div>
       
-      {/* Static positioned icons (no JS animation) */}
-      {icons.map((icon, i) => {
-        const angle = (i * 60) * (Math.PI / 180);
+      {/* Positioned icons with pastel backgrounds */}
+      {icons.map((item, i) => {
+        const angle = (i * 60 - 90) * (Math.PI / 180);
         const x = Math.cos(angle) * radius;
         const y = Math.sin(angle) * radius;
         
         return (
           <div
             key={i}
-            className={`absolute w-10 h-10 rounded-xl ${icon.color} flex items-center justify-center shadow-md border border-border/30`}
+            className={`absolute w-12 h-12 rounded-2xl ${item.bg} flex items-center justify-center shadow-md`}
             style={{ 
-              left: `calc(50% + ${x}px - 20px)`, 
-              top: `calc(50% + ${y}px - 20px)` 
+              left: `calc(50% + ${x}px - 24px)`, 
+              top: `calc(50% + ${y}px - 24px)` 
             }}
           >
-            <span className="text-lg">{icon.emoji}</span>
+            <item.Icon className={`w-6 h-6 ${item.iconColor}`} strokeWidth={1.5} />
           </div>
         );
       })}
       
-      {/* Dashed orbit ring */}
+      {/* Hexagonal connection lines */}
       <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ overflow: 'visible' }}>
-        <circle
-          cx="50%"
-          cy="50%"
-          r={radius}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1"
-          strokeDasharray="4 4"
-          className="text-border/50"
-        />
+        <g className="text-gray-300 dark:text-gray-600">
+          {icons.map((_, i) => {
+            const angle1 = (i * 60 - 90) * (Math.PI / 180);
+            const angle2 = ((i + 1) * 60 - 90) * (Math.PI / 180);
+            const x1 = 50 + (Math.cos(angle1) * radius * 100) / 200;
+            const y1 = 50 + (Math.sin(angle1) * radius * 100) / 200;
+            const x2 = 50 + (Math.cos(angle2) * radius * 100) / 200;
+            const y2 = 50 + (Math.sin(angle2) * radius * 100) / 200;
+            
+            return (
+              <line
+                key={i}
+                x1={`${x1}%`}
+                y1={`${y1}%`}
+                x2={`${x2}%`}
+                y2={`${y2}%`}
+                stroke="currentColor"
+                strokeWidth="1"
+                strokeDasharray="4 4"
+              />
+            );
+          })}
+        </g>
       </svg>
     </div>
   );
