@@ -148,9 +148,10 @@ const TicketForm: React.FC<TicketFormProps> = ({ onSuccess }) => {
     <ScrollArea className="h-full">
       <form onSubmit={handleSubmit} className="p-4 space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="name">Your Name</Label>
+          <Label htmlFor="ticket-name">Your Name</Label>
           <Input
-            id="name"
+            id="ticket-name"
+            name="ticket-name"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             placeholder="John Doe"
@@ -158,9 +159,10 @@ const TicketForm: React.FC<TicketFormProps> = ({ onSuccess }) => {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="email">Email Address</Label>
+          <Label htmlFor="ticket-email">Email Address</Label>
           <Input
-            id="email"
+            id="ticket-email"
+            name="ticket-email"
             type="email"
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -169,9 +171,10 @@ const TicketForm: React.FC<TicketFormProps> = ({ onSuccess }) => {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="subject">Subject *</Label>
+          <Label htmlFor="ticket-subject">Subject *</Label>
           <Input
-            id="subject"
+            id="ticket-subject"
+            name="ticket-subject"
             value={formData.subject}
             onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
             placeholder="Brief description of your issue"
@@ -219,9 +222,10 @@ const TicketForm: React.FC<TicketFormProps> = ({ onSuccess }) => {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="message">Message *</Label>
+          <Label htmlFor="ticket-message">Message *</Label>
           <Textarea
-            id="message"
+            id="ticket-message"
+            name="ticket-message"
             value={formData.message}
             onChange={(e) => setFormData({ ...formData, message: e.target.value })}
             placeholder="Describe your issue in detail..."

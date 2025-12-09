@@ -177,9 +177,10 @@ const AIEmployeeApply = () => {
           >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="fullName">{t.fullName} *</Label>
+                <Label htmlFor="ai-employee-fullName">{t.fullName} *</Label>
                 <Input
-                  id="fullName"
+                  id="ai-employee-fullName"
+                  name="ai-employee-fullName"
                   value={formData.fullName}
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                   onBlur={() => handleBlur('fullName')}
@@ -191,9 +192,10 @@ const AIEmployeeApply = () => {
                 <FormError message={getFieldError('fullName')} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">{t.email} *</Label>
+                <Label htmlFor="ai-employee-email">{t.email} *</Label>
                 <Input
-                  id="email"
+                  id="ai-employee-email"
+                  name="ai-employee-email"
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -209,9 +211,10 @@ const AIEmployeeApply = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="phone">{t.phone} <span className="text-neutral-500">({t.optional})</span></Label>
+                <Label htmlFor="ai-employee-phone">{t.phone} <span className="text-neutral-500">({t.optional})</span></Label>
                 <Input
-                  id="phone"
+                  id="ai-employee-phone"
+                  name="ai-employee-phone"
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
@@ -219,9 +222,10 @@ const AIEmployeeApply = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="companyName">{t.companyName}</Label>
+                <Label htmlFor="ai-employee-companyName">{t.companyName}</Label>
                 <Input
-                  id="companyName"
+                  id="ai-employee-companyName"
+                  name="ai-employee-companyName"
                   value={formData.companyName}
                   onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
                   className="bg-neutral-800 border-neutral-700"
@@ -265,9 +269,10 @@ const AIEmployeeApply = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="roles">{t.roles}</Label>
+              <Label htmlFor="ai-employee-roles">{t.roles}</Label>
               <Input
-                id="roles"
+                id="ai-employee-roles"
+                name="ai-employee-roles"
                 value={formData.roles}
                 onChange={(e) => setFormData({ ...formData, roles: e.target.value })}
                 className="bg-neutral-800 border-neutral-700"
@@ -306,9 +311,10 @@ const AIEmployeeApply = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="message">{t.message} <span className="text-neutral-500">({t.optional})</span></Label>
+              <Label htmlFor="ai-employee-message">{t.message} <span className="text-neutral-500">({t.optional})</span></Label>
               <Textarea
-                id="message"
+                id="ai-employee-message"
+                name="ai-employee-message"
                 value={formData.message}
                 onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                 className="bg-neutral-800 border-neutral-700 min-h-[120px]"
