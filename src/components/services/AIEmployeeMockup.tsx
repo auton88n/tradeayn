@@ -166,9 +166,9 @@ const AIEmployeeMockup = () => {
               zIndex: -1
             }} />
 
-                {/* Label tooltip on hover */}
-                <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  <span className="text-[10px] font-medium text-white/70 whitespace-nowrap">{role.label}</span>
+                {/* Label - always visible */}
+                <div className="absolute -bottom-6 left-1/2 -translate-x-1/2">
+                  <span className={`text-[11px] font-semibold whitespace-nowrap ${role.iconColor}`}>{role.label}</span>
                 </div>
               </motion.div>
             </motion.div>;
