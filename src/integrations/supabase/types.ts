@@ -614,6 +614,7 @@ export type Database = {
           account_status: string | null
           avatar_url: string | null
           business_context: string | null
+          business_context_encrypted: string | null
           business_type: string | null
           company_name: string | null
           contact_person: string | null
@@ -628,6 +629,7 @@ export type Database = {
           account_status?: string | null
           avatar_url?: string | null
           business_context?: string | null
+          business_context_encrypted?: string | null
           business_type?: string | null
           company_name?: string | null
           contact_person?: string | null
@@ -642,6 +644,7 @@ export type Database = {
           account_status?: string | null
           avatar_url?: string | null
           business_context?: string | null
+          business_context_encrypted?: string | null
           business_type?: string | null
           company_name?: string | null
           contact_person?: string | null
@@ -1341,6 +1344,10 @@ export type Database = {
         Args: { encrypted_email: string; encryption_key: string }
         Returns: string
       }
+      decrypt_text: {
+        Args: { encrypted_data: string; encryption_key: string }
+        Returns: string
+      }
       delete_user_chat_sessions: {
         Args: { _session_ids: string[]; _user_id: string }
         Returns: boolean
@@ -1356,6 +1363,10 @@ export type Database = {
       }
       encrypt_email: {
         Args: { email: string; encryption_key: string }
+        Returns: string
+      }
+      encrypt_text: {
+        Args: { encryption_key: string; plaintext: string }
         Returns: string
       }
       enhanced_rate_limit_check: {
@@ -1391,6 +1402,10 @@ export type Database = {
           schema_name: string
           security_risk: string
         }[]
+      }
+      get_profile_business_context: {
+        Args: { _user_id: string; p_encryption_key?: string }
+        Returns: string
       }
       get_rate_limit_stats: {
         Args: never
