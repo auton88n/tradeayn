@@ -139,15 +139,13 @@ const AIEmployeeMockup = () => {
           }
         }}>
               {/* Card with glassmorphism */}
-              <motion.div className="relative w-14 h-14 rounded-2xl flex items-center justify-center cursor-pointer group" animate={{
+              <motion.div className="relative w-14 h-14 rounded-2xl flex items-center justify-center" animate={{
             y: [0, -4, 0]
           }} transition={{
             duration: 2 + index * 0.3,
             repeat: Infinity,
             ease: "easeInOut",
             delay: index * 0.2
-          }} whileHover={{
-            scale: 1.15
           }} style={{
             background: 'rgba(255, 255, 255, 0.08)',
             backdropFilter: 'blur(12px)',
@@ -159,12 +157,6 @@ const AIEmployeeMockup = () => {
                 
                 {/* Icon */}
                 <role.icon className={`w-6 h-6 ${role.iconColor}`} strokeWidth={1.5} />
-
-                {/* Hover glow */}
-                <div className={`absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br ${role.gradient}`} style={{
-              filter: 'blur(12px)',
-              zIndex: -1
-            }} />
 
                 {/* Label - always visible */}
                 <div className="absolute -bottom-6 left-1/2 -translate-x-1/2">
