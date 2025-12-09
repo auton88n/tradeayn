@@ -134,13 +134,13 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
       }, 2700);
     };
 
-    // Initial delay of 3.5s before first card burst (after eye appears with spring animation)
+    // Initial delay of 1.5s before first card burst (after eye appears)
     const initialDelay = setTimeout(() => {
       runAnimationCycle();
-    }, 3500);
+    }, 1500);
 
     // Repeat every 8 seconds (slower for performance)
-    const interval = setInterval(runAnimationCycle, 11500); // 3500 + 8000
+    const interval = setInterval(runAnimationCycle, 9500); // 1500 + 8000
     return () => {
       clearTimeout(initialDelay);
       clearInterval(interval);
@@ -152,27 +152,27 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
       {/* Subtle vignette / soft gradient background */}
       <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-background via-background to-muted/10" />
 
-      {/* Headline - Phase 1: 0.3s delay */}
+      {/* Headline - instant appearance */}
       <div className="w-full max-w-4xl text-center mb-4 md:mb-6">
         <motion.h1 
-          initial={{ opacity: 0, y: 40, scale: 0.96 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ 
-            duration: 0.8, 
-            delay: 0.3,
+            duration: 0.5, 
+            delay: 0,
             ease: [0.22, 1, 0.36, 1]
           }}
           className="font-display font-bold tracking-[-0.02em] text-foreground mb-2 md:mb-3 text-5xl sm:text-6xl md:text-7xl lg:text-8xl"
         >
           {language === 'ar' ? 'تعرّف على AYN' : language === 'fr' ? 'Découvrez AYN' : 'Meet AYN'}
         </motion.h1>
-        {/* Subtitle - Phase 2: 0.8s delay */}
+        {/* Subtitle - quick follow */}
         <motion.p 
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ 
-            duration: 0.6, 
-            delay: 0.8,
+            duration: 0.4, 
+            delay: 0.15,
             ease: [0.22, 1, 0.36, 1]
           }}
           className="text-base md:text-lg lg:text-xl text-muted-foreground font-light max-w-2xl mx-auto"
@@ -185,17 +185,15 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
         </motion.p>
       </div>
 
-      {/* Central area with eye and cards - Phase 3: 1.2s delay with spring bounce */}
+      {/* Central area with eye and cards - fast appearance */}
       <motion.div 
         className="relative w-full max-w-5xl flex-1 flex items-center justify-center"
-        initial={{ opacity: 0, scale: 0.8, y: 30 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ 
-          duration: 0.9, 
-          delay: 1.2,
-          type: "spring",
-          stiffness: 100,
-          damping: 15
+          duration: 0.5, 
+          delay: 0.25,
+          ease: [0.22, 1, 0.36, 1]
         }}
       >
         {/* ring / subtle light behind the eye */}
