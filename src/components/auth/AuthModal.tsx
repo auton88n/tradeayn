@@ -16,6 +16,7 @@ interface AuthModalProps {
 
 export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -23,6 +24,45 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
   const [phone, setPhone] = useState('');
   const { toast } = useToast();
   const { t } = useLanguage();
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      toast({
+        title: "Email Required",
+        description: "Please enter your email address first.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsResettingPassword(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Check Your Email",
+          description: "We've sent you a password reset link.",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -174,7 +214,17 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="signin-password" className="auth-label">{t('auth.password')}</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="signin-password" className="auth-label">{t('auth.password')}</Label>
+                  <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    disabled={isResettingPassword}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                  >
+                    {isResettingPassword ? "Sending..." : "Forgot password?"}
+                  </button>
+                </div>
                 <Input
                   id="signin-password"
                   type="password"
