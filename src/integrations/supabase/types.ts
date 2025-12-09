@@ -1486,6 +1486,7 @@ export type Database = {
             Args: {
               _action: string
               _details?: Json
+              _ip_address?: unknown
               _severity?: string
               _user_agent?: string
             }
@@ -1495,7 +1496,6 @@ export type Database = {
             Args: {
               _action: string
               _details?: Json
-              _ip_address?: unknown
               _severity?: string
               _user_agent?: string
             }

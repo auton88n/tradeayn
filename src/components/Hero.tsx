@@ -139,8 +139,8 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
       runAnimationCycle();
     }, 2500);
 
-    // Repeat every 4 seconds (slower for performance)
-    const interval = setInterval(runAnimationCycle, 6500); // 2500 + 4000
+    // Repeat every 8 seconds (slower for performance)
+    const interval = setInterval(runAnimationCycle, 10500); // 2500 + 8000
     return () => {
       clearTimeout(initialDelay);
       clearInterval(interval);

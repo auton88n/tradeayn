@@ -30,6 +30,13 @@
     text-align: left;
     unicode-bidi: plaintext;
   }
+  /* Slow CSS animations for mockups (GPU-optimized) */
+  .animate-spin-slow {
+    animation: spin 30s linear infinite;
+  }
+  .animate-pulse-slow {
+    animation: pulse 3s ease-in-out infinite;
+  }
 }
 
 /* GPU acceleration for animations */
