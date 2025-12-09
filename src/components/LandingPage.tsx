@@ -20,7 +20,7 @@ import { Link } from 'react-router-dom';
 import { LazyLoad } from './ui/lazy-load';
 import MobileMockup from './services/MobileMockup';
 import DeviceMockups from './services/DeviceMockups';
-import FloatingIcons from './services/FloatingIcons';
+import AutomationFlowMockup from './services/AutomationFlowMockup';
 import AIEmployeeMockup from './services/AIEmployeeMockup';
 
 // ScrollReveal component - defined outside to prevent recreation on re-renders
@@ -230,7 +230,7 @@ const LandingPage = () => {
     slug: 'automation',
     title: language === 'ar' ? 'أتمتة العمليات' : language === 'fr' ? 'Automatisation des Processus' : 'Process Automation',
     description: language === 'ar' ? 'أتمتة المهام المتكررة لتوفير الوقت والجهد.' : language === 'fr' ? 'Automatisez les flux de travail pour gagner du temps.' : 'Automate workflows to save time and reduce errors in any business.',
-    mockup: <LazyLoad><FloatingIcons /></LazyLoad>
+    mockup: <LazyLoad><AutomationFlowMockup /></LazyLoad>
   }, {
     number: '04',
     slug: 'ai-employee',
