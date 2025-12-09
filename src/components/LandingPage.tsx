@@ -430,71 +430,74 @@ const LandingPage = () => {
     }} />
 
       {/* About AYN - Value Proposition Section */}
-      <section id="about" className="py-16 md:py-32 px-4 md:px-6">
-        <div className="container mx-auto max-w-6xl text-center">
-          <ScrollReveal>
-            <span className="text-sm font-mono text-muted-foreground tracking-wider uppercase mb-4 block">
-              {language === 'ar' ? 'من نحن' : language === 'fr' ? 'À Propos d\'AYN' : 'About AYN'}
-            </span>
+      <LazyLoad placeholder={<div className="h-[400px]" />} rootMargin="200px">
+        <section id="about" className="py-16 md:py-32 px-4 md:px-6">
+          <div className="container mx-auto max-w-6xl text-center">
+            <ScrollReveal>
+              <span className="text-sm font-mono text-muted-foreground tracking-wider uppercase mb-4 block">
+                {language === 'ar' ? 'من نحن' : language === 'fr' ? 'À Propos d\'AYN' : 'About AYN'}
+              </span>
 
-            <h2 className="text-3xl md:text-5xl lg:text-6xl font-serif font-bold mb-4 md:mb-6">
-              {language === 'ar' ? 'رفيقك الذكي' : language === 'fr' ? 'Votre Compagnon de Vie Intelligent' : 'Your Intelligent Life Companion'}
-            </h2>
+              <h2 className="text-3xl md:text-5xl lg:text-6xl font-serif font-bold mb-4 md:mb-6">
+                {language === 'ar' ? 'رفيقك الذكي' : language === 'fr' ? 'Votre Compagnon de Vie Intelligent' : 'Your Intelligent Life Companion'}
+              </h2>
 
-            <p className="text-base md:text-xl text-muted-foreground max-w-3xl mx-auto mb-10 md:mb-16">
-              {language === 'ar' ? 'AYN يتعرّف عليك ويتعلم عاداتك ويساعدك على البقاء منظماً كل يوم.' : language === 'fr' ? 'AYN apprend à vous connaître. Il comprend vos habitudes, vos objectifs, et vous aide à rester organisé et concentré chaque jour.' : 'AYN gets to know you. It learns your habits, understands your goals, and helps you stay organized and focused every day.'}
-            </p>
-          </ScrollReveal>
-
-          {/* 3 Value Props */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
-            <ScrollReveal delay={0.1}>
-              <div className="text-center space-y-3 md:space-y-4">
-                <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-muted/50 mx-auto flex items-center justify-center">
-                  <Brain className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
-                </div>
-                <h3 className="text-lg md:text-xl font-bold">
-                  {language === 'ar' ? 'يتكيّف معك' : language === 'fr' ? 'Compréhension Adaptative' : 'Adaptive Understanding'}
-                </h3>
-                <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-                  {language === 'ar' ? 'يتعلم تفضيلاتك ويقدم إرشادات تناسبك.' : language === 'fr' ? 'Apprend vos préférences et offre des conseils personnalisés adaptés à vous.' : 'Learns your preferences over time and offers personalized guidance tailored to you.'}
-                </p>
-              </div>
+              <p className="text-base md:text-xl text-muted-foreground max-w-3xl mx-auto mb-10 md:mb-16">
+                {language === 'ar' ? 'AYN يتعرّف عليك ويتعلم عاداتك ويساعدك على البقاء منظماً كل يوم.' : language === 'fr' ? 'AYN apprend à vous connaître. Il comprend vos habitudes, vos objectifs, et vous aide à rester organisé et concentré chaque jour.' : 'AYN gets to know you. It learns your habits, understands your goals, and helps you stay organized and focused every day.'}
+              </p>
             </ScrollReveal>
 
-            <ScrollReveal delay={0.2}>
-              <div className="text-center space-y-3 md:space-y-4">
-                <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-muted/50 mx-auto flex items-center justify-center">
-                  <Sparkles className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
+            {/* 3 Value Props */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
+              <ScrollReveal delay={0.1}>
+                <div className="text-center space-y-3 md:space-y-4">
+                  <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-muted/50 mx-auto flex items-center justify-center">
+                    <Brain className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
+                  </div>
+                  <h3 className="text-lg md:text-xl font-bold">
+                    {language === 'ar' ? 'يتكيّف معك' : language === 'fr' ? 'Compréhension Adaptative' : 'Adaptive Understanding'}
+                  </h3>
+                  <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+                    {language === 'ar' ? 'يتعلم تفضيلاتك ويقدم إرشادات تناسبك.' : language === 'fr' ? 'Apprend vos préférences et offre des conseils personnalisés adaptés à vous.' : 'Learns your preferences over time and offers personalized guidance tailored to you.'}
+                  </p>
                 </div>
-                <h3 className="text-lg md:text-xl font-bold">
-                  {language === 'ar' ? 'دائماً بجانبك' : language === 'fr' ? 'Toujours Disponible' : 'Always Available'}
-                </h3>
-                <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-                  {language === 'ar' ? 'رفيق متاح ٢٤ ساعة جاهز لمساعدتك.' : language === 'fr' ? 'Un compagnon attentionné disponible 24/7, prêt à vous aider quand vous en avez besoin.' : 'A thoughtful companion available 24/7, ready to help whenever you need support or clarity.'}
-                </p>
-              </div>
-            </ScrollReveal>
+              </ScrollReveal>
 
-            <ScrollReveal delay={0.3}>
-              <div className="text-center space-y-3 md:space-y-4">
-                <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-muted/50 mx-auto flex items-center justify-center">
-                  <Shield className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
+              <ScrollReveal delay={0.2}>
+                <div className="text-center space-y-3 md:space-y-4">
+                  <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-muted/50 mx-auto flex items-center justify-center">
+                    <Sparkles className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
+                  </div>
+                  <h3 className="text-lg md:text-xl font-bold">
+                    {language === 'ar' ? 'دائماً بجانبك' : language === 'fr' ? 'Toujours Disponible' : 'Always Available'}
+                  </h3>
+                  <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+                    {language === 'ar' ? 'رفيق متاح ٢٤ ساعة جاهز لمساعدتك.' : language === 'fr' ? 'Un compagnon attentionné disponible 24/7, prêt à vous aider quand vous en avez besoin.' : 'A thoughtful companion available 24/7, ready to help whenever you need support or clarity.'}
+                  </p>
                 </div>
-                <h3 className="text-lg md:text-xl font-bold">
-                  {language === 'ar' ? 'خصوصيتك محمية' : language === 'fr' ? 'Votre Vie Privée, Protégée' : 'Your Privacy, Protected'}
-                </h3>
-                <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-                  {language === 'ar' ? 'محادثاتك وبياناتك مشفرة بالكامل.' : language === 'fr' ? 'Vos conversations et données sont sécurisées avec un chiffrement de bout en bout.' : 'Your conversations and data are secured with end-to-end encryption.'}
-                </p>
-              </div>
-            </ScrollReveal>
+              </ScrollReveal>
+
+              <ScrollReveal delay={0.3}>
+                <div className="text-center space-y-3 md:space-y-4">
+                  <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-muted/50 mx-auto flex items-center justify-center">
+                    <Shield className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
+                  </div>
+                  <h3 className="text-lg md:text-xl font-bold">
+                    {language === 'ar' ? 'خصوصيتك محمية' : language === 'fr' ? 'Votre Vie Privée, Protégée' : 'Your Privacy, Protected'}
+                  </h3>
+                  <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+                    {language === 'ar' ? 'محادثاتك وبياناتك مشفرة بالكامل.' : language === 'fr' ? 'Vos conversations et données sont sécurisées avec un chiffrement de bout en bout.' : 'Your conversations and data are secured with end-to-end encryption.'}
+                  </p>
+                </div>
+              </ScrollReveal>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </LazyLoad>
 
       {/* Services Section - Bento Grid */}
-      <section id="services" className="py-16 md:py-32 px-4 md:px-6">
+      <LazyLoad placeholder={<div className="h-[600px]" />} rootMargin="200px">
+        <section id="services" className="py-16 md:py-32 px-4 md:px-6">
         <div className="container mx-auto max-w-6xl">
           {/* Section header */}
           <ScrollReveal>
@@ -638,9 +641,11 @@ const LandingPage = () => {
           </div>
         </div>
       </section>
+      </LazyLoad>
 
       {/* Premium Contact Section */}
-      <section id="contact" className="py-16 md:py-32 px-4 md:px-6">
+      <LazyLoad placeholder={<div className="h-[500px]" />} rootMargin="200px">
+        <section id="contact" className="py-16 md:py-32 px-4 md:px-6">
         <div className="container mx-auto max-w-3xl">
           <ScrollReveal>
             <div className="text-center mb-10 md:mb-16">
@@ -722,6 +727,7 @@ const LandingPage = () => {
           </ScrollReveal>
         </div>
       </section>
+      </LazyLoad>
 
       {/* Minimal Footer */}
       <footer className="py-6 border-t border-border">
