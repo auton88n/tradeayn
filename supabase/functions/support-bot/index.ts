@@ -55,14 +55,62 @@ serve(async (req) => {
   }
 
   try {
+    // Initialize Supabase client
+    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+
+    // Extract user ID from auth header if present, otherwise use guest identifier
+    let userId = 'guest';
+    const authHeader = req.headers.get('authorization');
+    if (authHeader?.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.replace('Bearer ', '');
+        const { data: { user } } = await supabase.auth.getUser(token);
+        if (user?.id) {
+          userId = user.id;
+        }
+      } catch {
+        // Continue with guest rate limiting if token is invalid
+        console.log('Invalid auth token, using guest rate limiting');
+      }
+    }
+
+    // Check rate limit (30 requests per hour for support bot)
+    const { data: rateCheck, error: rateError } = await supabase.rpc('check_api_rate_limit', {
+      p_user_id: userId,
+      p_endpoint: 'support-bot',
+      p_max_requests: 30,
+      p_window_minutes: 60
+    });
+
+    if (rateError) {
+      console.error('Rate limit check error:', rateError);
+    }
+
+    if (rateCheck && rateCheck.length > 0 && !rateCheck[0].allowed) {
+      console.log('Rate limit exceeded for:', userId);
+      return new Response(
+        JSON.stringify({
+          error: 'Rate limit exceeded',
+          answer: "You've sent too many messages. Please wait a moment before trying again.",
+          needsHumanSupport: false,
+          retryAfter: rateCheck[0].retry_after_seconds
+        }),
+        {
+          status: 429,
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+            'Retry-After': String(rateCheck[0].retry_after_seconds || 60)
+          }
+        }
+      );
+    }
+
     const { message, conversationHistory = [], ticketId } = await req.json();
 
     if (!OPENAI_API_KEY) {
       throw new Error('OpenAI API key not configured');
     }
-
-    // Initialize Supabase client to fetch FAQs
-    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
     // Fetch published FAQs for context
     const { data: faqs } = await supabase
