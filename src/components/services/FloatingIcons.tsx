@@ -42,26 +42,23 @@ const FloatingIcons = memo(() => {
         );
       })}
       
-      {/* Hexagonal connection lines */}
+      {/* Connection lines from center to each icon */}
       <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ overflow: 'visible' }}>
         <g className="text-gray-300 dark:text-gray-600">
           {icons.map((_, i) => {
-            const angle1 = (i * 60 - 90) * (Math.PI / 180);
-            const angle2 = ((i + 1) * 60 - 90) * (Math.PI / 180);
-            const x1 = 50 + (Math.cos(angle1) * radius * 100) / 200;
-            const y1 = 50 + (Math.sin(angle1) * radius * 100) / 200;
-            const x2 = 50 + (Math.cos(angle2) * radius * 100) / 200;
-            const y2 = 50 + (Math.sin(angle2) * radius * 100) / 200;
+            const angle = (i * 60 - 90) * (Math.PI / 180);
+            const x = 50 + (Math.cos(angle) * radius * 100) / 200;
+            const y = 50 + (Math.sin(angle) * radius * 100) / 200;
             
             return (
               <line
                 key={i}
-                x1={`${x1}%`}
-                y1={`${y1}%`}
-                x2={`${x2}%`}
-                y2={`${y2}%`}
+                x1="50%"
+                y1="50%"
+                x2={`${x}%`}
+                y2={`${y}%`}
                 stroke="currentColor"
-                strokeWidth="1"
+                strokeWidth="1.5"
                 strokeDasharray="4 4"
               />
             );
