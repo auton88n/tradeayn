@@ -38,7 +38,7 @@ const InfluencerSitesApply = () => {
       const { error: dbError } = await supabase
         .from('service_applications')
         .insert({
-          service_type: 'content-creator-sites',
+          service_type: 'content_creator',
           full_name: formData.fullName,
           email: formData.email,
           phone: formData.phone || null,

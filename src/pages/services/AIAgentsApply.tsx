@@ -36,7 +36,7 @@ const AIAgentsApply = () => {
       const { error: dbError } = await supabase
         .from('service_applications')
         .insert({
-          service_type: 'ai-agents',
+          service_type: 'ai_agents',
           full_name: formData.fullName,
           email: formData.email,
           phone: formData.phone || null,
