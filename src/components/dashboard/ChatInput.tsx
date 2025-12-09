@@ -379,26 +379,11 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
             </AnimatePresence>
           </div>
 
-          {/* Right: Mode selector */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button disabled={isDisabled || isUploading} className={cn("h-8 px-3 rounded-lg", "border border-border/50", "flex items-center gap-1.5", "hover:bg-muted/60", "transition-all duration-200", "disabled:opacity-50 disabled:cursor-not-allowed")}>
-                <span className="text-sm font-medium text-foreground">
-                  {modes.find(m => m.name === selectedMode)?.translatedName || selectedMode}
-                </span>
-                <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              {modes.map(mode => <DropdownMenuItem key={mode.name} onClick={() => {
-                playModeChange(mode.name);
-                onModeChange(mode.name as AIMode);
-              }} className="flex items-center gap-2 cursor-pointer">
-                  <span>{mode.icon}</span>
-                  <span>{mode.translatedName}</span>
-                </DropdownMenuItem>)}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* Mode indicator - General only */}
+          <div className="h-8 px-3 rounded-lg border border-border/50 flex items-center gap-1.5 bg-muted/30">
+            <span className="text-sm">🧠</span>
+            <span className="text-sm font-medium text-foreground">General</span>
+          </div>
         </div>
       </div>
 
