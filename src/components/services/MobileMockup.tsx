@@ -31,10 +31,13 @@ const MobileMockup = memo(() => {
               </div>
             </div>
             
-            {/* Background Image */}
-            <div 
-              className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40"
-              style={{ backgroundImage: `url(${influencerBg})` }}
+            {/* Background Image - Lazy loaded */}
+            <img 
+              src={influencerBg}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              className="absolute inset-0 w-full h-full object-cover object-center opacity-40"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/70 to-neutral-950/30" />
             
