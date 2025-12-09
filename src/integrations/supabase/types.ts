@@ -1559,7 +1559,7 @@ export type Database = {
       validate_system_security: { Args: never; Returns: Json }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "duty"
       support_ticket_category:
         | "general"
         | "billing"
@@ -1701,7 +1701,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "duty"],
       support_ticket_category: [
         "general",
         "billing",
