@@ -47,69 +47,6 @@ const AIEmployeeMockup = () => {
         <circle cx="50%" cy="50%" r={orbitRadius} fill="none" stroke="url(#orbitGradient)" strokeWidth="1" strokeDasharray="4 8" className="opacity-60" />
       </svg>
 
-      {/* Extended background lines - going beyond cards */}
-      <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible" style={{ zIndex: 0 }}>
-        <defs>
-          <linearGradient id="extendedBeamGradient1" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="rgb(34, 211, 238)" stopOpacity="0.5" />
-            <stop offset="100%" stopColor="rgb(139, 92, 246)" stopOpacity="0.15" />
-          </linearGradient>
-          <linearGradient id="extendedBeamGradient2" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="rgb(139, 92, 246)" stopOpacity="0.15" />
-            <stop offset="100%" stopColor="rgb(34, 211, 238)" stopOpacity="0.5" />
-          </linearGradient>
-        </defs>
-        {/* Extended diagonal lines going to corners */}
-        <motion.line 
-          x1="0%" y1="70%" x2="100%" y2="30%" 
-          stroke="url(#extendedBeamGradient1)" 
-          strokeWidth="1.5"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 0.8 }}
-          transition={{ delay: 0.8, duration: 1 }}
-        />
-        <motion.line 
-          x1="0%" y1="40%" x2="100%" y2="60%" 
-          stroke="url(#extendedBeamGradient2)" 
-          strokeWidth="1.5"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 0.8 }}
-          transition={{ delay: 1, duration: 1 }}
-        />
-      </svg>
-
-      {/* Gradient beam connections - from center to cards */}
-      <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 1 }}>
-        <defs>
-          <linearGradient id="beamGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="rgb(34, 211, 238)" stopOpacity="0.9" />
-            <stop offset="50%" stopColor="rgb(139, 92, 246)" stopOpacity="0.6" />
-            <stop offset="100%" stopColor="rgb(34, 211, 238)" stopOpacity="0.3" />
-          </linearGradient>
-        </defs>
-        {roles.map((_, index) => {
-          const angle = index * 60 - 90;
-          const centerX = 50;
-          const centerY = 50;
-          const endX = centerX + Math.cos(angle * Math.PI / 180) * 38;
-          const endY = centerY + Math.sin(angle * Math.PI / 180) * 38;
-          return (
-            <motion.line 
-              key={index} 
-              x1={`${centerX}%`} 
-              y1={`${centerY}%`} 
-              x2={`${endX}%`} 
-              y2={`${endY}%`} 
-              stroke="url(#beamGradient)" 
-              strokeWidth="2" 
-              strokeLinecap="round" 
-              initial={{ pathLength: 0, opacity: 0 }}
-              animate={{ pathLength: 1, opacity: 1 }}
-              transition={{ delay: index * 0.1 + 0.5, duration: 0.6, ease: "easeOut" }}
-            />
-          );
-        })}
-      </svg>
 
       {/* Central Brain Hub */}
       <div className="absolute z-20 flex items-center justify-center">
