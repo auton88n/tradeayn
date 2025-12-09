@@ -53,6 +53,7 @@ export const Sidebar = ({
   onLogout,
   onAvatarUpdated,
   isAdmin,
+  hasDutyAccess,
   onAdminPanelClick,
   onStartTutorial,
   isTutorialProfileStep
@@ -391,13 +392,13 @@ export const Sidebar = ({
                 </div>
               </Button>
               
-              {isAdmin && <Button onClick={onAdminPanelClick} variant="ghost" className="w-full justify-start h-11 px-3 gap-3 rounded-xl hover:bg-muted/60 transition-all duration-200 group">
+              {hasDutyAccess && <Button onClick={onAdminPanelClick} variant="ghost" className="w-full justify-start h-11 px-3 gap-3 rounded-xl hover:bg-muted/60 transition-all duration-200 group">
                   <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center group-hover:bg-muted group-hover:scale-105 transition-all duration-200">
                     <Shield className="w-4 h-4 text-muted-foreground" />
                   </div>
                   <div className="flex flex-col items-start">
-                    <span className="text-sm font-medium">Admin Panel</span>
-                    <span className="text-[10px] text-muted-foreground/70">Manage system</span>
+                    <span className="text-sm font-medium">{isAdmin ? 'Admin Panel' : 'Duty Panel'}</span>
+                    <span className="text-[10px] text-muted-foreground/70">{isAdmin ? 'Manage system' : 'Manage support'}</span>
                   </div>
                 </Button>}
             </div>

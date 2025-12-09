@@ -32,6 +32,7 @@ interface DashboardContainerProps {
   session: Session;
   auth: UseAuthReturn;
   isAdmin?: boolean;
+  hasDutyAccess?: boolean;
   onAdminPanelClick?: () => void;
 }
 
@@ -47,7 +48,7 @@ const getModes = (): AIModeConfig[] => [
   },
 ];
 
-export const DashboardContainer = ({ user, session, auth, isAdmin, onAdminPanelClick }: DashboardContainerProps) => {
+export const DashboardContainer = ({ user, session, auth, isAdmin, hasDutyAccess, onAdminPanelClick }: DashboardContainerProps) => {
   const { toast } = useToast();
   
   
@@ -199,6 +200,7 @@ export const DashboardContainer = ({ user, session, auth, isAdmin, onAdminPanelC
       handleSendMessage={handleSendMessage}
       handleLogout={handleLogout}
       isAdmin={isAdmin}
+      hasDutyAccess={hasDutyAccess}
       onAdminPanelClick={onAdminPanelClick}
     />
   );
@@ -222,6 +224,7 @@ const DashboardContent = ({
   handleSendMessage,
   handleLogout,
   isAdmin,
+  hasDutyAccess,
   onAdminPanelClick
 }: {
   user: User;
@@ -240,6 +243,7 @@ const DashboardContent = ({
   handleSendMessage: (content: string, fileToUpload?: File | null) => Promise<boolean | undefined>;
   handleLogout: () => Promise<void>;
   isAdmin?: boolean;
+  hasDutyAccess?: boolean;
   onAdminPanelClick?: () => void;
 }) => {
   const { open, setOpen, openMobile, setOpenMobile, isMobile, toggleSidebar } = useSidebar();
@@ -395,6 +399,7 @@ const DashboardContent = ({
           onLogout={handleLogout}
           onAvatarUpdated={auth.loadUserProfile}
           isAdmin={isAdmin}
+          hasDutyAccess={hasDutyAccess}
           onAdminPanelClick={onAdminPanelClick}
               onStartTutorial={tutorial.startTutorial}
               isTutorialProfileStep={tutorial.isActive && tutorial.currentStepData?.id === 'profile'}

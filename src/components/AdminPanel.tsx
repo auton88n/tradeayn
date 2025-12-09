@@ -72,22 +72,30 @@ interface SystemConfig {
 interface AdminPanelProps {
   session: Session;
   onBackClick?: () => void;
+  isAdmin?: boolean;
+  isDuty?: boolean;
 }
 
-const tabs = [
-  { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-  { id: 'applications', label: 'Applications', icon: FileText },
-  { id: 'support', label: 'Support', icon: MessageSquare },
-  { id: 'users', label: 'Users', icon: Users },
-  { id: 'rate-limits', label: 'Rate Limits', icon: Shield },
-  { id: 'settings', label: 'Settings', icon: Settings },
+// All tabs - filtered based on role
+const allTabs = [
+  { id: 'overview', label: 'Overview', icon: LayoutDashboard, adminOnly: true },
+  { id: 'applications', label: 'Applications', icon: FileText, adminOnly: false },
+  { id: 'support', label: 'Support', icon: MessageSquare, adminOnly: false },
+  { id: 'users', label: 'Users', icon: Users, adminOnly: true },
+  { id: 'rate-limits', label: 'Rate Limits', icon: Shield, adminOnly: true },
+  { id: 'settings', label: 'Settings', icon: Settings, adminOnly: true },
 ];
 
-export const AdminPanel = ({ session, onBackClick }: AdminPanelProps) => {
+export const AdminPanel = ({ session, onBackClick, isAdmin = false, isDuty = false }: AdminPanelProps) => {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   
-  const [activeTab, setActiveTab] = useState('overview');
+  // Filter tabs based on role - duty users only see Applications and Support
+  const tabs = allTabs.filter(tab => isAdmin || !tab.adminOnly);
+  
+  // Set default tab based on role
+  const defaultTab = isAdmin ? 'overview' : 'applications';
+  const [activeTab, setActiveTab] = useState(defaultTab);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [allUsers, setAllUsers] = useState<AccessGrantWithProfile[]>([]);
@@ -270,8 +278,15 @@ export const AdminPanel = ({ session, onBackClick }: AdminPanelProps) => {
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">Admin Panel</h1>
-            <p className="text-sm text-muted-foreground">Manage users, settings, and system</p>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold">{isAdmin ? 'Admin Panel' : 'Duty Panel'}</h1>
+              {isDuty && !isAdmin && (
+                <Badge variant="secondary">Duty</Badge>
+              )}
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {isAdmin ? 'Manage users, settings, and system' : 'Manage applications and support'}
+            </p>
           </div>
         </div>
         

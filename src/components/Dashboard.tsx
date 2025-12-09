@@ -137,10 +137,15 @@ export default function Dashboard({ user, session }: DashboardProps) {
       />
 
       {/* Main Content - conditionally render based on active view */}
-      {activeView === 'admin' && auth.isAdmin ? (
+      {activeView === 'admin' && auth.hasDutyAccess ? (
         <div className="min-h-screen p-6 pt-16 bg-background">
           <Suspense fallback={<AdminLoader />}>
-            <AdminPanel session={session} onBackClick={() => setActiveView('chat')} />
+            <AdminPanel 
+              session={session} 
+              onBackClick={() => setActiveView('chat')} 
+              isAdmin={auth.isAdmin}
+              isDuty={auth.isDuty}
+            />
           </Suspense>
         </div>
       ) : (
@@ -150,6 +155,7 @@ export default function Dashboard({ user, session }: DashboardProps) {
             session={session}
             auth={auth}
             isAdmin={auth.isAdmin}
+            hasDutyAccess={auth.hasDutyAccess}
             onAdminPanelClick={() => setActiveView('admin')}
           />
         </SidebarProvider>
