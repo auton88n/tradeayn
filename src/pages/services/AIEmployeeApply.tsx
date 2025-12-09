@@ -7,7 +7,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FormError } from '@/components/ui/form-error';
-import { supabaseApi, SUPABASE_ANON_KEY } from '@/lib/supabaseApi';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -72,10 +71,9 @@ const AIEmployeeApply = () => {
 
     setIsSubmitting(true);
     try {
-      await supabaseApi.post(
-        'service_applications',
-        SUPABASE_ANON_KEY,
-        {
+      const { error: dbError } = await supabase
+        .from('service_applications')
+        .insert({
           full_name: formData.fullName,
           email: formData.email,
           phone: formData.phone || null,
@@ -90,8 +88,9 @@ const AIEmployeeApply = () => {
             workload: formData.workload,
             budget: formData.budget
           }
-        }
-      );
+        });
+
+      if (dbError) throw dbError;
 
       await supabase.functions.invoke('send-application-email', {
         body: {
