@@ -215,7 +215,6 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="signin-password" className="auth-label">{t('auth.password')}</Label>
                   <button
                     type="button"
                     onClick={handleForgotPassword}
@@ -224,6 +223,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                   >
                     {isResettingPassword ? t('auth.forgotPasswordSending') : t('auth.forgotPassword')}
                   </button>
+                  <Label htmlFor="signin-password" className="auth-label">{t('auth.password')}</Label>
                 </div>
                 <Input
                   id="signin-password"
