@@ -46,6 +46,7 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
   const [hasAccess, setHasAccess] = useState(false);
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isDuty, setIsDuty] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const { toast } = useToast();
@@ -73,7 +74,7 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
     }
   }, [user.id, session.access_token]);
 
-  // Check if user is admin - uses direct fetch
+  // Check if user is admin or duty - uses direct fetch
   const checkAdminRole = useCallback(async () => {
     try {
       const data = await fetchFromSupabase(
@@ -81,7 +82,9 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
         session.access_token
       );
 
-      setIsAdmin(data?.[0]?.role === 'admin');
+      const role = data?.[0]?.role;
+      setIsAdmin(role === 'admin');
+      setIsDuty(role === 'duty');
     } catch {
       // Silent failure - non-admin by default
     }
@@ -176,8 +179,10 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
           setHasAccess(isActive);
         }
 
-        // Process admin role
-        setIsAdmin(roleData?.[0]?.role === 'admin');
+        // Process admin/duty role
+        const role = roleData?.[0]?.role;
+        setIsAdmin(role === 'admin');
+        setIsDuty(role === 'duty');
 
         // Process profile
         if (profileData && profileData.length > 0) {
@@ -214,6 +219,8 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
     hasAccess,
     hasAcceptedTerms,
     isAdmin,
+    isDuty,
+    hasDutyAccess: isAdmin || isDuty,
     isAuthLoading,
     userProfile,
     checkAccess,

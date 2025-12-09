@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Session } from '@supabase/supabase-js';
 import { supabaseApi } from '@/lib/supabaseApi';
@@ -14,6 +14,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { 
@@ -25,7 +27,10 @@ import {
   Edit,
   Trash2,
   Filter,
-  CheckSquare
+  CheckSquare,
+  ShieldCheck,
+  Shield,
+  User
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { EditLimitModal } from './EditLimitModal';
@@ -47,6 +52,7 @@ interface AccessGrantWithProfile {
   created_at: string;
   profiles: Profile | null;
   user_email?: string;
+  role?: 'admin' | 'duty' | 'user';
 }
 
 interface UserManagementProps {
@@ -78,6 +84,28 @@ export const UserManagement = ({ session, allUsers, onRefresh }: UserManagementP
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [editingUser, setEditingUser] = useState<AccessGrantWithProfile | null>(null);
   const [bulkEditUsers, setBulkEditUsers] = useState<AccessGrantWithProfile[]>([]);
+  const [userRoles, setUserRoles] = useState<Map<string, string>>(new Map());
+
+  // Fetch user roles on mount
+  const fetchUserRoles = async () => {
+    try {
+      const rolesData = await supabaseApi.get('user_roles?select=user_id,role', session.access_token) as { user_id: string; role: string }[];
+      const rolesMap = new Map<string, string>();
+      if (Array.isArray(rolesData)) {
+        rolesData.forEach((r) => {
+          rolesMap.set(r.user_id, r.role);
+        });
+      }
+      setUserRoles(rolesMap);
+    } catch (error) {
+      console.error('Error fetching roles:', error);
+    }
+  };
+
+  // Load roles when component mounts or users change
+  useEffect(() => {
+    fetchUserRoles();
+  }, [allUsers.length]);
 
   const filteredUsers = useMemo(() => {
     return allUsers.filter(user => {
@@ -175,6 +203,38 @@ export const UserManagement = ({ session, allUsers, onRefresh }: UserManagementP
     } catch (error) {
       console.error('Error updating limits:', error);
       toast.error('Failed to update limits');
+    }
+  };
+
+  // Handle role change
+  const handleRoleChange = async (userId: string, newRole: 'admin' | 'duty' | 'user') => {
+    try {
+      // Check if user already has a role entry
+      const existingRole = userRoles.get(userId);
+      
+      if (existingRole) {
+        // Update existing role
+        await supabaseApi.patch(
+          `user_roles?user_id=eq.${userId}`,
+          session.access_token,
+          { role: newRole }
+        );
+      } else {
+        // Insert new role (for users who don't have one)
+        await supabaseApi.post(
+          'user_roles',
+          session.access_token,
+          { user_id: userId, role: newRole }
+        );
+      }
+      
+      // Update local state
+      setUserRoles(prev => new Map(prev).set(userId, newRole));
+      toast.success(`Role changed to ${newRole}`);
+      onRefresh();
+    } catch (error) {
+      console.error('Error changing role:', error);
+      toast.error('Failed to change role');
     }
   };
 
@@ -389,8 +449,26 @@ export const UserManagement = ({ session, allUsers, onRefresh }: UserManagementP
                         />
                       </div>
 
+                      {/* Role Badge */}
+                      {(() => {
+                        const role = userRoles.get(user.user_id) || 'user';
+                        const roleConfig = {
+                          admin: { label: 'Admin', variant: 'destructive' as const, icon: ShieldCheck },
+                          duty: { label: 'Duty', variant: 'default' as const, icon: Shield },
+                          user: { label: 'User', variant: 'secondary' as const, icon: User },
+                        };
+                        const config = roleConfig[role as keyof typeof roleConfig] || roleConfig.user;
+                        const Icon = config.icon;
+                        return (
+                          <Badge variant={config.variant} className="gap-1">
+                            <Icon className="w-3 h-3" />
+                            {config.label}
+                          </Badge>
+                        );
+                      })()}
+
                       {/* Status */}
-                      <Badge variant={user.is_active ? 'default' : 'secondary'}>
+                      <Badge variant={user.is_active ? 'outline' : 'secondary'}>
                         {user.is_active ? 'Active' : 'Pending'}
                       </Badge>
 
@@ -417,6 +495,29 @@ export const UserManagement = ({ session, allUsers, onRefresh }: UserManagementP
                               Activate
                             </DropdownMenuItem>
                           )}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuLabel className="text-xs text-muted-foreground">Change Role</DropdownMenuLabel>
+                          <DropdownMenuItem 
+                            onClick={() => handleRoleChange(user.user_id, 'user')}
+                            disabled={userRoles.get(user.user_id) === 'user' || !userRoles.get(user.user_id)}
+                          >
+                            <User className="w-4 h-4 mr-2" />
+                            User
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleRoleChange(user.user_id, 'duty')}
+                            disabled={userRoles.get(user.user_id) === 'duty'}
+                          >
+                            <Shield className="w-4 h-4 mr-2" />
+                            Duty
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleRoleChange(user.user_id, 'admin')}
+                            disabled={userRoles.get(user.user_id) === 'admin'}
+                          >
+                            <ShieldCheck className="w-4 h-4 mr-2" />
+                            Admin
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>

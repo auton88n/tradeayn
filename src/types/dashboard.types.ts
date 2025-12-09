@@ -211,6 +211,8 @@ export interface UseAuthReturn {
   hasAccess: boolean;
   hasAcceptedTerms: boolean;
   isAdmin: boolean;
+  isDuty: boolean;
+  hasDutyAccess: boolean;
   isAuthLoading: boolean;
   userProfile: UserProfile | null;
   checkAccess: () => Promise<void>;
@@ -288,6 +290,7 @@ export interface SidebarProps {
   onLogout: () => Promise<void>;
   onAvatarUpdated?: () => void;
   isAdmin?: boolean;
+  hasDutyAccess?: boolean;
   onAdminPanelClick?: () => void;
   onStartTutorial?: () => void;
   isTutorialProfileStep?: boolean;
