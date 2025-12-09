@@ -7,8 +7,11 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { FormError } from '@/components/ui/form-error';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useFormValidation, contentCreatorSchema } from '@/hooks/useFormValidation';
+import { cn } from '@/lib/utils';
 
 const InfluencerSitesApply = () => {
   const navigate = useNavigate();
@@ -29,12 +32,19 @@ const InfluencerSitesApply = () => {
     message: ''
   });
 
+  const { validateForm, handleBlur, getFieldError } = useFormValidation(contentCreatorSchema);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm(formData)) {
+      toast.error('Please fix the errors in the form');
+      return;
+    }
+    
     setIsSubmitting(true);
 
     try {
-      // Store in database
       const { error: dbError } = await supabase
         .from('service_applications')
         .insert({
@@ -57,7 +67,6 @@ const InfluencerSitesApply = () => {
 
       if (dbError) throw dbError;
 
-      // Send email notifications
       await supabase.functions.invoke('send-application-email', {
         body: {
           serviceType: 'Premium Content Creator Sites',
@@ -135,22 +144,26 @@ const InfluencerSitesApply = () => {
                 <Label htmlFor="fullName">Full Name *</Label>
                 <Input
                   id="fullName"
-                  required
                   value={formData.fullName}
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                  onBlur={() => handleBlur('fullName')}
                   placeholder="Your full name"
+                  className={cn(getFieldError('fullName') && 'border-destructive focus-visible:ring-destructive')}
                 />
+                <FormError message={getFieldError('fullName')} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email *</Label>
                 <Input
                   id="email"
                   type="email"
-                  required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onBlur={() => handleBlur('email')}
                   placeholder="your@email.com"
+                  className={cn(getFieldError('email') && 'border-destructive focus-visible:ring-destructive')}
                 />
+                <FormError message={getFieldError('email')} />
               </div>
             </div>
 
@@ -207,7 +220,10 @@ const InfluencerSitesApply = () => {
                   value={formData.followerCount}
                   onValueChange={(value) => setFormData({ ...formData, followerCount: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger 
+                    onBlur={() => handleBlur('followerCount')}
+                    className={cn(getFieldError('followerCount') && 'border-destructive focus:ring-destructive')}
+                  >
                     <SelectValue placeholder="Select range" />
                   </SelectTrigger>
                   <SelectContent>
@@ -219,6 +235,7 @@ const InfluencerSitesApply = () => {
                     <SelectItem value="over-1m">Over 1M</SelectItem>
                   </SelectContent>
                 </Select>
+                <FormError message={getFieldError('followerCount')} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="contentNiche">Primary Content Niche *</Label>
@@ -226,7 +243,10 @@ const InfluencerSitesApply = () => {
                   value={formData.contentNiche}
                   onValueChange={(value) => setFormData({ ...formData, contentNiche: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger 
+                    onBlur={() => handleBlur('contentNiche')}
+                    className={cn(getFieldError('contentNiche') && 'border-destructive focus:ring-destructive')}
+                  >
                     <SelectValue placeholder="Select niche" />
                   </SelectTrigger>
                   <SelectContent>
@@ -240,6 +260,7 @@ const InfluencerSitesApply = () => {
                     <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>
+                <FormError message={getFieldError('contentNiche')} />
               </div>
             </div>
           </section>
@@ -266,7 +287,10 @@ const InfluencerSitesApply = () => {
                   value={formData.budget}
                   onValueChange={(value) => setFormData({ ...formData, budget: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger 
+                    onBlur={() => handleBlur('budget')}
+                    className={cn(getFieldError('budget') && 'border-destructive focus:ring-destructive')}
+                  >
                     <SelectValue placeholder="Select budget" />
                   </SelectTrigger>
                   <SelectContent>
@@ -277,6 +301,7 @@ const InfluencerSitesApply = () => {
                     <SelectItem value="over-20k">Over $20,000</SelectItem>
                   </SelectContent>
                 </Select>
+                <FormError message={getFieldError('budget')} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="timeline">Desired Timeline *</Label>
@@ -284,7 +309,10 @@ const InfluencerSitesApply = () => {
                   value={formData.timeline}
                   onValueChange={(value) => setFormData({ ...formData, timeline: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger 
+                    onBlur={() => handleBlur('timeline')}
+                    className={cn(getFieldError('timeline') && 'border-destructive focus:ring-destructive')}
+                  >
                     <SelectValue placeholder="Select timeline" />
                   </SelectTrigger>
                   <SelectContent>
@@ -295,6 +323,7 @@ const InfluencerSitesApply = () => {
                     <SelectItem value="flexible">Flexible</SelectItem>
                   </SelectContent>
                 </Select>
+                <FormError message={getFieldError('timeline')} />
               </div>
             </div>
 
@@ -315,7 +344,7 @@ const InfluencerSitesApply = () => {
             type="submit"
             size="lg"
             className="w-full"
-            disabled={isSubmitting || !formData.fullName || !formData.email}
+            disabled={isSubmitting}
           >
             {isSubmitting ? (
               <>

@@ -8,8 +8,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { FormError } from '@/components/ui/form-error';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useFormValidation, automationSchema } from '@/hooks/useFormValidation';
+import { cn } from '@/lib/utils';
 
 const AutomationApply = () => {
   const navigate = useNavigate();
@@ -28,6 +31,8 @@ const AutomationApply = () => {
     timeline: '',
     message: ''
   });
+
+  const { validateForm, handleBlur, getFieldError } = useFormValidation(automationSchema);
 
   const toolOptions = [
     { id: 'google-workspace', label: 'Google Workspace' },
@@ -52,6 +57,12 @@ const AutomationApply = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm(formData)) {
+      toast.error('Please fix the errors in the form');
+      return;
+    }
+    
     setIsSubmitting(true);
 
     try {
@@ -151,22 +162,26 @@ const AutomationApply = () => {
                 <Label htmlFor="fullName">Full Name *</Label>
                 <Input
                   id="fullName"
-                  required
                   value={formData.fullName}
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                  onBlur={() => handleBlur('fullName')}
                   placeholder="Your full name"
+                  className={cn(getFieldError('fullName') && 'border-destructive focus-visible:ring-destructive')}
                 />
+                <FormError message={getFieldError('fullName')} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email *</Label>
                 <Input
                   id="email"
                   type="email"
-                  required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onBlur={() => handleBlur('email')}
                   placeholder="your@email.com"
+                  className={cn(getFieldError('email') && 'border-destructive focus-visible:ring-destructive')}
                 />
+                <FormError message={getFieldError('email')} />
               </div>
             </div>
 
@@ -185,11 +200,13 @@ const AutomationApply = () => {
                 <Label htmlFor="companyName">Company Name *</Label>
                 <Input
                   id="companyName"
-                  required
                   value={formData.companyName}
                   onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                  onBlur={() => handleBlur('companyName')}
                   placeholder="Your company"
+                  className={cn(getFieldError('companyName') && 'border-destructive focus-visible:ring-destructive')}
                 />
+                <FormError message={getFieldError('companyName')} />
               </div>
             </div>
 
@@ -199,7 +216,10 @@ const AutomationApply = () => {
                 value={formData.industry}
                 onValueChange={(value) => setFormData({ ...formData, industry: value })}
               >
-                <SelectTrigger>
+                <SelectTrigger 
+                  onBlur={() => handleBlur('industry')}
+                  className={cn(getFieldError('industry') && 'border-destructive focus:ring-destructive')}
+                >
                   <SelectValue placeholder="Select industry" />
                 </SelectTrigger>
                 <SelectContent>
@@ -213,6 +233,7 @@ const AutomationApply = () => {
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
+              <FormError message={getFieldError('industry')} />
             </div>
           </section>
 
@@ -247,12 +268,14 @@ const AutomationApply = () => {
               <Label htmlFor="processesToAutomate">Processes to Automate *</Label>
               <Textarea
                 id="processesToAutomate"
-                required
                 value={formData.processesToAutomate}
                 onChange={(e) => setFormData({ ...formData, processesToAutomate: e.target.value })}
+                onBlur={() => handleBlur('processesToAutomate')}
                 placeholder="Describe the manual processes you want to automate. E.g., lead follow-ups, invoice generation, data entry..."
                 rows={4}
+                className={cn(getFieldError('processesToAutomate') && 'border-destructive focus-visible:ring-destructive')}
               />
+              <FormError message={getFieldError('processesToAutomate')} />
             </div>
 
             <div className="space-y-2">
@@ -278,7 +301,10 @@ const AutomationApply = () => {
                   value={formData.budget}
                   onValueChange={(value) => setFormData({ ...formData, budget: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger 
+                    onBlur={() => handleBlur('budget')}
+                    className={cn(getFieldError('budget') && 'border-destructive focus:ring-destructive')}
+                  >
                     <SelectValue placeholder="Select budget" />
                   </SelectTrigger>
                   <SelectContent>
@@ -289,6 +315,7 @@ const AutomationApply = () => {
                     <SelectItem value="over-25k">Over $25,000</SelectItem>
                   </SelectContent>
                 </Select>
+                <FormError message={getFieldError('budget')} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="timeline">Desired Timeline *</Label>
@@ -296,7 +323,10 @@ const AutomationApply = () => {
                   value={formData.timeline}
                   onValueChange={(value) => setFormData({ ...formData, timeline: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger 
+                    onBlur={() => handleBlur('timeline')}
+                    className={cn(getFieldError('timeline') && 'border-destructive focus:ring-destructive')}
+                  >
                     <SelectValue placeholder="Select timeline" />
                   </SelectTrigger>
                   <SelectContent>
@@ -307,6 +337,7 @@ const AutomationApply = () => {
                     <SelectItem value="flexible">Flexible</SelectItem>
                   </SelectContent>
                 </Select>
+                <FormError message={getFieldError('timeline')} />
               </div>
             </div>
 
@@ -326,7 +357,7 @@ const AutomationApply = () => {
             type="submit"
             size="lg"
             className="w-full"
-            disabled={isSubmitting || !formData.fullName || !formData.email || !formData.processesToAutomate}
+            disabled={isSubmitting}
           >
             {isSubmitting ? (
               <>
