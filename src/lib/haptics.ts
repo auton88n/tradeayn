@@ -1,6 +1,7 @@
 /**
  * Haptic feedback utility using the Web Vibration API
  * Provides tactile feedback on interactions for supported devices
+ * Note: iOS Safari does not support Web Vibration API - haptics silently fail there
  */
 
 type HapticType = 
@@ -32,24 +33,41 @@ const hapticPatterns: Record<HapticType, number | number[]> = {
   patience: [30, 200],              // Long gentle pulse - "take your time"
 };
 
-/**
- * Trigger haptic feedback vibration
- * @param type - Type/intensity of the haptic feedback
- */
-export const hapticFeedback = (type: HapticType = 'light'): void => {
-  // Check if the Vibration API is supported
-  if ('vibrate' in navigator) {
-    try {
-      navigator.vibrate(hapticPatterns[type]);
-    } catch {
-      // Silently fail on unsupported browsers
-    }
-  }
-};
+// Cache the support check
+let hapticsSupport: boolean | null = null;
 
 /**
  * Check if haptic feedback is supported on this device
+ * Note: Returns false on iOS (no Web Vibration API support)
  */
 export const isHapticsSupported = (): boolean => {
-  return 'vibrate' in navigator;
+  if (hapticsSupport === null) {
+    hapticsSupport = typeof navigator !== 'undefined' && 'vibrate' in navigator;
+  }
+  return hapticsSupport;
+};
+
+/**
+ * Check if device is iOS (no haptic support via web)
+ */
+export const isIOSDevice = (): boolean => {
+  if (typeof navigator === 'undefined') return false;
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+};
+
+/**
+ * Trigger haptic feedback vibration
+ * @param type - Type/intensity of the haptic feedback
+ * Silently fails on iOS and unsupported browsers
+ */
+export const hapticFeedback = (type: HapticType = 'light'): void => {
+  // Skip if haptics not supported (includes iOS)
+  if (!isHapticsSupported()) return;
+  
+  try {
+    navigator.vibrate(hapticPatterns[type]);
+  } catch {
+    // Silently fail on unsupported browsers
+  }
 };
