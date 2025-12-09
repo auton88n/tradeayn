@@ -256,7 +256,7 @@ const LandingPage = () => {
       <nav className="fixed top-4 md:top-6 left-4 md:left-6 z-50 animate-fade-in">
         <div className="relative">
           {/* Logo Pill - Always visible, acts as trigger */}
-          <motion.div ref={menuRef} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} className="flex items-center gap-2 px-3 py-2.5 bg-card/80 backdrop-blur-xl border border-border rounded-full shadow-2xl cursor-pointer">
+          <motion.div ref={menuRef} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} className="flex items-center gap-2 px-3 py-2.5 bg-card border border-border rounded-full shadow-2xl cursor-pointer">
             <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-foreground flex items-center justify-center">
               <Brain className="w-4 h-4 md:w-5 md:h-5 text-background" />
             </div>
@@ -307,7 +307,7 @@ const LandingPage = () => {
             type: "spring",
             stiffness: 400,
             damping: 25
-          }} className="absolute top-full left-0 mt-2 min-w-[200px] bg-card/95 backdrop-blur-xl border border-border rounded-2xl shadow-2xl overflow-hidden" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+          }} className="absolute top-full left-0 mt-2 min-w-[200px] bg-card border border-border rounded-2xl shadow-2xl overflow-hidden" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
                 {/* Navigation Links */}
                 <div className="p-2">
                   <motion.button initial={{
