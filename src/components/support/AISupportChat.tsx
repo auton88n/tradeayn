@@ -197,6 +197,8 @@ const AISupportChat: React.FC<AISupportChatProps> = ({ onNeedTicket }) => {
       <div className="p-3 border-t border-border/50 bg-gradient-to-t from-muted/30 to-transparent">
         <div className="flex gap-2">
           <Input
+            id="support-chat-input"
+            name="support-chat-input"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}

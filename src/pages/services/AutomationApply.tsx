@@ -159,9 +159,10 @@ const AutomationApply = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="fullName">Full Name *</Label>
+                <Label htmlFor="automation-fullName">Full Name *</Label>
                 <Input
-                  id="fullName"
+                  id="automation-fullName"
+                  name="automation-fullName"
                   value={formData.fullName}
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                   onBlur={() => handleBlur('fullName')}
@@ -171,9 +172,10 @@ const AutomationApply = () => {
                 <FormError message={getFieldError('fullName')} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email *</Label>
+                <Label htmlFor="automation-email">Email *</Label>
                 <Input
-                  id="email"
+                  id="automation-email"
+                  name="automation-email"
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -187,9 +189,10 @@ const AutomationApply = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="phone">Phone (Optional)</Label>
+                <Label htmlFor="automation-phone">Phone (Optional)</Label>
                 <Input
-                  id="phone"
+                  id="automation-phone"
+                  name="automation-phone"
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
@@ -197,9 +200,10 @@ const AutomationApply = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="companyName">Company Name *</Label>
+                <Label htmlFor="automation-companyName">Company Name *</Label>
                 <Input
-                  id="companyName"
+                  id="automation-companyName"
+                  name="automation-companyName"
                   value={formData.companyName}
                   onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
                   onBlur={() => handleBlur('companyName')}
@@ -265,9 +269,10 @@ const AutomationApply = () => {
             <h2 className="text-lg font-semibold border-b border-border pb-2">Automation Requirements</h2>
             
             <div className="space-y-2">
-              <Label htmlFor="processesToAutomate">Processes to Automate *</Label>
+              <Label htmlFor="automation-processesToAutomate">Processes to Automate *</Label>
               <Textarea
-                id="processesToAutomate"
+                id="automation-processesToAutomate"
+                name="automation-processesToAutomate"
                 value={formData.processesToAutomate}
                 onChange={(e) => setFormData({ ...formData, processesToAutomate: e.target.value })}
                 onBlur={() => handleBlur('processesToAutomate')}
@@ -279,9 +284,10 @@ const AutomationApply = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="painPoints">Current Pain Points</Label>
+              <Label htmlFor="automation-painPoints">Current Pain Points</Label>
               <Textarea
-                id="painPoints"
+                id="automation-painPoints"
+                name="automation-painPoints"
                 value={formData.painPoints}
                 onChange={(e) => setFormData({ ...formData, painPoints: e.target.value })}
                 placeholder="What challenges do you face with your current processes? How much time do they take?"
@@ -342,9 +348,10 @@ const AutomationApply = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="message">Additional Information</Label>
+              <Label htmlFor="automation-message">Additional Information</Label>
               <Textarea
-                id="message"
+                id="automation-message"
+                name="automation-message"
                 value={formData.message}
                 onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                 placeholder="Any other details about your automation needs..."

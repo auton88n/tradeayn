@@ -137,9 +137,10 @@ const AIAgentsApply = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="fullName">Full Name *</Label>
+                <Label htmlFor="ai-agents-fullName">Full Name *</Label>
                 <Input
-                  id="fullName"
+                  id="ai-agents-fullName"
+                  name="ai-agents-fullName"
                   value={formData.fullName}
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                   onBlur={() => handleBlur('fullName')}
@@ -149,9 +150,10 @@ const AIAgentsApply = () => {
                 <FormError message={getFieldError('fullName')} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email *</Label>
+                <Label htmlFor="ai-agents-email">Email *</Label>
                 <Input
-                  id="email"
+                  id="ai-agents-email"
+                  name="ai-agents-email"
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -165,9 +167,10 @@ const AIAgentsApply = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="phone">Phone (Optional)</Label>
+                <Label htmlFor="ai-agents-phone">Phone (Optional)</Label>
                 <Input
-                  id="phone"
+                  id="ai-agents-phone"
+                  name="ai-agents-phone"
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
@@ -175,9 +178,10 @@ const AIAgentsApply = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="companyName">Company Name</Label>
+                <Label htmlFor="ai-agents-companyName">Company Name</Label>
                 <Input
-                  id="companyName"
+                  id="ai-agents-companyName"
+                  name="ai-agents-companyName"
                   value={formData.companyName}
                   onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
                   placeholder="Your company"
@@ -242,9 +246,10 @@ const AIAgentsApply = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="useCase">Describe Your Use Case *</Label>
+              <Label htmlFor="ai-agents-useCase">Describe Your Use Case *</Label>
               <Textarea
-                id="useCase"
+                id="ai-agents-useCase"
+                name="ai-agents-useCase"
                 value={formData.useCase}
                 onChange={(e) => setFormData({ ...formData, useCase: e.target.value })}
                 onBlur={() => handleBlur('useCase')}
@@ -256,9 +261,10 @@ const AIAgentsApply = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="integrations">Required Integrations</Label>
+              <Label htmlFor="ai-agents-integrations">Required Integrations</Label>
               <Textarea
-                id="integrations"
+                id="ai-agents-integrations"
+                name="ai-agents-integrations"
                 value={formData.integrations}
                 onChange={(e) => setFormData({ ...formData, integrations: e.target.value })}
                 placeholder="E.g., Slack, Zendesk, Salesforce, custom CRM, website chat widget..."
@@ -319,9 +325,10 @@ const AIAgentsApply = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="message">Additional Information</Label>
+              <Label htmlFor="ai-agents-message">Additional Information</Label>
               <Textarea
-                id="message"
+                id="ai-agents-message"
+                name="ai-agents-message"
                 value={formData.message}
                 onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                 placeholder="Any other details about your project..."

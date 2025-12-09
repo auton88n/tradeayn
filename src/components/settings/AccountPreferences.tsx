@@ -162,9 +162,10 @@ export const AccountPreferences = ({ userId, userEmail, accessToken }: AccountPr
               <div className="grid gap-4 md:grid-cols-2">
                 {showContactPerson && (
                   <div className="space-y-2">
-                    <Label htmlFor="contact_person">{t('settings.contactPerson')}</Label>
+                    <Label htmlFor="account-contact_person">{t('settings.contactPerson')}</Label>
                     <Input
-                      id="contact_person"
+                      id="account-contact_person"
+                      name="account-contact_person"
                       value={profile.contact_person}
                       onChange={(e) => setProfile({ ...profile, contact_person: e.target.value })}
                       placeholder={t('settings.contactPersonPlaceholder')}
@@ -174,9 +175,10 @@ export const AccountPreferences = ({ userId, userEmail, accessToken }: AccountPr
 
                 {showCompanyName && (
                   <div className="space-y-2">
-                    <Label htmlFor="company_name">{t('settings.companyName')}</Label>
+                    <Label htmlFor="account-company_name">{t('settings.companyName')}</Label>
                     <Input
-                      id="company_name"
+                      id="account-company_name"
+                      name="account-company_name"
                       value={profile.company_name}
                       onChange={(e) => setProfile({ ...profile, company_name: e.target.value })}
                       placeholder={t('settings.companyNamePlaceholder')}
@@ -188,9 +190,10 @@ export const AccountPreferences = ({ userId, userEmail, accessToken }: AccountPr
 
             {showEmail && (
               <div className="space-y-2">
-                <Label htmlFor="email">{t('settings.email')}</Label>
+                <Label htmlFor="account-email">{t('settings.email')}</Label>
                 <Input
-                  id="email"
+                  id="account-email"
+                  name="account-email"
                   value={userEmail}
                   disabled
                   className="bg-muted cursor-not-allowed"
@@ -200,7 +203,7 @@ export const AccountPreferences = ({ userId, userEmail, accessToken }: AccountPr
 
             {showBusinessType && (
               <div className="space-y-2">
-                <Label htmlFor="business_type">{t('settings.businessType')}</Label>
+                <Label htmlFor="account-business_type">{t('settings.businessType')}</Label>
                 <Select
                   value={profile.business_type}
                   onValueChange={(value) => setProfile({ ...profile, business_type: value })}
@@ -221,9 +224,10 @@ export const AccountPreferences = ({ userId, userEmail, accessToken }: AccountPr
 
             {showBusinessContext && (
               <div className="space-y-2">
-                <Label htmlFor="business_context">{t('settings.businessContext')}</Label>
+                <Label htmlFor="account-business_context">{t('settings.businessContext')}</Label>
                 <Textarea
-                  id="business_context"
+                  id="account-business_context"
+                  name="account-business_context"
                   value={profile.business_context}
                   onChange={(e) => setProfile({ ...profile, business_context: e.target.value })}
                   placeholder={t('settings.businessContextPlaceholder')}

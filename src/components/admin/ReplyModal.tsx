@@ -100,9 +100,10 @@ export const ReplyModal = ({
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="subject">Subject</Label>
+            <Label htmlFor="reply-subject">Subject</Label>
             <Input
-              id="subject"
+              id="reply-subject"
+              name="reply-subject"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder="Email subject"
@@ -111,13 +112,13 @@ export const ReplyModal = ({
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="message">Message</Label>
+              <Label htmlFor="reply-message">Message</Label>
               <div className="flex items-center gap-2">
-                <Label htmlFor="preview" className="text-sm font-normal">
+                <Label htmlFor="reply-preview" className="text-sm font-normal">
                   Preview
                 </Label>
                 <Switch
-                  id="preview"
+                  id="reply-preview"
                   checked={isPreview}
                   onCheckedChange={setIsPreview}
                 />
@@ -132,7 +133,8 @@ export const ReplyModal = ({
               </div>
             ) : (
               <Textarea
-                id="message"
+                id="reply-message"
+                name="reply-message"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="Type your message here..."

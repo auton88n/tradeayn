@@ -605,9 +605,10 @@ const Automation = () => {
               
               <form onSubmit={handleSubmit} className="space-y-4 mt-4">
                 <div className="space-y-2">
-                  <Label htmlFor="fullName">{t.fullName} *</Label>
+                  <Label htmlFor="automation-modal-fullName">{t.fullName} *</Label>
                   <Input
-                    id="fullName"
+                    id="automation-modal-fullName"
+                    name="automation-modal-fullName"
                     required
                     value={formData.fullName}
                     onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
@@ -617,9 +618,10 @@ const Automation = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="email">{t.email} *</Label>
+                  <Label htmlFor="automation-modal-email">{t.email} *</Label>
                   <Input
-                    id="email"
+                    id="automation-modal-email"
+                    name="automation-modal-email"
                     type="email"
                     required
                     value={formData.email}
@@ -630,9 +632,10 @@ const Automation = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="phone">{t.phone} ({t.optional})</Label>
+                  <Label htmlFor="automation-modal-phone">{t.phone} ({t.optional})</Label>
                   <Input
-                    id="phone"
+                    id="automation-modal-phone"
+                    name="automation-modal-phone"
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
@@ -642,9 +645,10 @@ const Automation = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="message">{t.message} ({t.optional})</Label>
+                  <Label htmlFor="automation-modal-message">{t.message} ({t.optional})</Label>
                   <Textarea
-                    id="message"
+                    id="automation-modal-message"
+                    name="automation-modal-message"
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                     className="bg-neutral-800 border-neutral-700 text-white resize-none"

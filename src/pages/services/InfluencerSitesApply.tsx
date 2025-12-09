@@ -141,9 +141,10 @@ const InfluencerSitesApply = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="fullName">Full Name *</Label>
+                <Label htmlFor="influencer-fullName">Full Name *</Label>
                 <Input
-                  id="fullName"
+                  id="influencer-fullName"
+                  name="influencer-fullName"
                   value={formData.fullName}
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                   onBlur={() => handleBlur('fullName')}
@@ -153,9 +154,10 @@ const InfluencerSitesApply = () => {
                 <FormError message={getFieldError('fullName')} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email *</Label>
+                <Label htmlFor="influencer-email">Email *</Label>
                 <Input
-                  id="email"
+                  id="influencer-email"
+                  name="influencer-email"
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -168,9 +170,10 @@ const InfluencerSitesApply = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone (Optional)</Label>
+              <Label htmlFor="influencer-phone">Phone (Optional)</Label>
               <Input
-                id="phone"
+                id="influencer-phone"
+                name="influencer-phone"
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
@@ -185,27 +188,30 @@ const InfluencerSitesApply = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="instagram">Instagram Handle</Label>
+                <Label htmlFor="influencer-instagram">Instagram Handle</Label>
                 <Input
-                  id="instagram"
+                  id="influencer-instagram"
+                  name="influencer-instagram"
                   value={formData.instagram}
                   onChange={(e) => setFormData({ ...formData, instagram: e.target.value })}
                   placeholder="@username"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="tiktok">TikTok Handle</Label>
+                <Label htmlFor="influencer-tiktok">TikTok Handle</Label>
                 <Input
-                  id="tiktok"
+                  id="influencer-tiktok"
+                  name="influencer-tiktok"
                   value={formData.tiktok}
                   onChange={(e) => setFormData({ ...formData, tiktok: e.target.value })}
                   placeholder="@username"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="youtube">YouTube Channel</Label>
+                <Label htmlFor="influencer-youtube">YouTube Channel</Label>
                 <Input
-                  id="youtube"
+                  id="influencer-youtube"
+                  name="influencer-youtube"
                   value={formData.youtube}
                   onChange={(e) => setFormData({ ...formData, youtube: e.target.value })}
                   placeholder="Channel name or URL"
@@ -270,9 +276,10 @@ const InfluencerSitesApply = () => {
             <h2 className="text-lg font-semibold border-b border-border pb-2">Project Details</h2>
             
             <div className="space-y-2">
-              <Label htmlFor="desiredFeatures">Desired Website Features</Label>
+              <Label htmlFor="influencer-desiredFeatures">Desired Website Features</Label>
               <Textarea
-                id="desiredFeatures"
+                id="influencer-desiredFeatures"
+                name="influencer-desiredFeatures"
                 value={formData.desiredFeatures}
                 onChange={(e) => setFormData({ ...formData, desiredFeatures: e.target.value })}
                 placeholder="E.g., portfolio gallery, booking system, newsletter signup, merch store..."
@@ -328,9 +335,10 @@ const InfluencerSitesApply = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="message">Additional Information</Label>
+              <Label htmlFor="influencer-message">Additional Information</Label>
               <Textarea
-                id="message"
+                id="influencer-message"
+                name="influencer-message"
                 value={formData.message}
                 onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                 placeholder="Tell us more about your vision, inspiration, or any specific requirements..."

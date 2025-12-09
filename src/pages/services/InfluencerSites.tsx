@@ -540,32 +540,32 @@ const InfluencerSites = () => {
               
               <form onSubmit={handleSubmit} className="space-y-4 mt-4">
                 <div className="space-y-2">
-                  <Label htmlFor="fullName">{t.fullName} *</Label>
-                  <Input id="fullName" required value={formData.fullName} onChange={e => setFormData({
+                  <Label htmlFor="creator-modal-fullName">{t.fullName} *</Label>
+                  <Input id="creator-modal-fullName" name="creator-modal-fullName" required value={formData.fullName} onChange={e => setFormData({
                 ...formData,
                 fullName: e.target.value
               })} className="bg-neutral-800 border-neutral-700 text-white" placeholder={language === 'ar' ? 'اسمك' : language === 'fr' ? 'Votre nom' : 'Your name'} />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="email">{t.email} *</Label>
-                  <Input id="email" type="email" required value={formData.email} onChange={e => setFormData({
+                  <Label htmlFor="creator-modal-email">{t.email} *</Label>
+                  <Input id="creator-modal-email" name="creator-modal-email" type="email" required value={formData.email} onChange={e => setFormData({
                 ...formData,
                 email: e.target.value
               })} className="bg-neutral-800 border-neutral-700 text-white" placeholder={language === 'ar' ? 'بريدك@email.com' : 'your@email.com'} />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="phone">{t.phone} ({t.optional})</Label>
-                  <Input id="phone" type="tel" value={formData.phone} onChange={e => setFormData({
+                  <Label htmlFor="creator-modal-phone">{t.phone} ({t.optional})</Label>
+                  <Input id="creator-modal-phone" name="creator-modal-phone" type="tel" value={formData.phone} onChange={e => setFormData({
                 ...formData,
                 phone: e.target.value
               })} className="bg-neutral-800 border-neutral-700 text-white" placeholder="+1 (555) 000-0000" />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="message">{t.message} ({t.optional})</Label>
-                  <Textarea id="message" value={formData.message} onChange={e => setFormData({
+                  <Label htmlFor="creator-modal-message">{t.message} ({t.optional})</Label>
+                  <Textarea id="creator-modal-message" name="creator-modal-message" value={formData.message} onChange={e => setFormData({
                 ...formData,
                 message: e.target.value
               })} className="bg-neutral-800 border-neutral-700 text-white resize-none" placeholder={language === 'ar' ? 'أخبرنا عن احتياجاتك...' : language === 'fr' ? 'Parlez-nous de vos besoins...' : 'Tell us about your needs...'} rows={3} />
