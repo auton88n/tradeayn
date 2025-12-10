@@ -259,7 +259,7 @@ const InfluencerSites = () => {
                   <div className="max-w-md">
                     <p className="text-rose-400 text-[10px] sm:text-xs md:text-sm font-medium mb-1 md:mb-2">Fashion & Lifestyle Content Creator</p>
                     <h3 className="text-lg sm:text-2xl md:text-5xl font-bold text-white mb-2 md:mb-4">SARAH JOHNSON</h3>
-                    <p className="text-neutral-400 text-[10px] sm:text-xs md:text-sm mb-3 md:mb-6 line-clamp-2 md:line-clamp-none">
+                    <p className="text-neutral-400 text-[10px] sm:text-xs md:text-sm mb-3 md:mb-6">
                       Creating inspiring content that blends high fashion with everyday lifestyle. Join 3M+ followers on this journey.
                     </p>
                     <div className="flex gap-2 sm:gap-3 md:gap-4">
@@ -282,8 +282,8 @@ const InfluencerSites = () => {
                   </div>
                 </div>
 
-                {/* Floating Social Icons */}
-                <div className="absolute right-8 top-1/2 -translate-y-1/2 flex flex-col gap-4 z-20">
+                {/* Floating Social Icons - Hidden on mobile */}
+                <div className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 hidden sm:flex flex-col gap-4 z-20">
                   <div className="w-10 h-10 rounded-full bg-neutral-800/80 flex items-center justify-center">
                     <Instagram className="w-5 h-5 text-white" />
                   </div>
