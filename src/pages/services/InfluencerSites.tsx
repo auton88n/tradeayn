@@ -255,28 +255,28 @@ const InfluencerSites = () => {
                 <div className="absolute inset-0 bg-gradient-to-r from-neutral-950 via-neutral-950/80 to-transparent z-10" />
                 
                 {/* Content */}
-                <div className="relative z-20 flex items-center h-full p-8 md:p-12">
+                <div className="relative z-20 flex items-center h-full p-4 sm:p-6 md:p-12">
                   <div className="max-w-md">
-                    <p className="text-rose-400 text-sm font-medium mb-2">Fashion & Lifestyle Content Creator</p>
-                    <h3 className="text-3xl md:text-5xl font-bold text-white mb-4">SARAH JOHNSON</h3>
-                    <p className="text-neutral-400 text-sm mb-6">
-                      Creating inspiring content that blends high fashion with everyday lifestyle. Join 3M+ followers on this journey of style and authenticity.
+                    <p className="text-rose-400 text-[10px] sm:text-xs md:text-sm font-medium mb-1 md:mb-2">Fashion & Lifestyle Content Creator</p>
+                    <h3 className="text-lg sm:text-2xl md:text-5xl font-bold text-white mb-2 md:mb-4">SARAH JOHNSON</h3>
+                    <p className="text-neutral-400 text-[10px] sm:text-xs md:text-sm mb-3 md:mb-6 line-clamp-2 md:line-clamp-none">
+                      Creating inspiring content that blends high fashion with everyday lifestyle. Join 3M+ followers on this journey.
                     </p>
-                    <div className="flex gap-4">
+                    <div className="flex gap-2 sm:gap-3 md:gap-4">
                       <div className="text-center">
-                        <div className="text-xl font-bold text-white">3.2M</div>
-                        <div className="text-xs text-neutral-500">Followers</div>
+                        <div className="text-sm sm:text-base md:text-xl font-bold text-white">3.2M</div>
+                        <div className="text-[8px] sm:text-[10px] md:text-xs text-neutral-500">Followers</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-xl font-bold text-white">8.5%</div>
-                        <div className="text-xs text-neutral-500">Engagement</div>
+                        <div className="text-sm sm:text-base md:text-xl font-bold text-white">8.5%</div>
+                        <div className="text-[8px] sm:text-[10px] md:text-xs text-neutral-500">Engagement</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-xl font-bold text-white">50+</div>
-                        <div className="text-xs text-neutral-500">Brand Deals</div>
+                        <div className="text-sm sm:text-base md:text-xl font-bold text-white">50+</div>
+                        <div className="text-[8px] sm:text-[10px] md:text-xs text-neutral-500">Brand Deals</div>
                       </div>
                     </div>
-                    <Button className="mt-6 bg-rose-500 hover:bg-rose-600 text-white rounded-full px-6">
+                    <Button className="mt-3 md:mt-6 bg-rose-500 hover:bg-rose-600 text-white rounded-full px-3 sm:px-4 md:px-6 text-xs sm:text-sm h-7 sm:h-8 md:h-10">
                       Collaborate
                     </Button>
                   </div>
