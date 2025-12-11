@@ -81,7 +81,7 @@ export const DashboardContainer = ({ user, session, auth, isAdmin, hasDutyAccess
     if (chatSession.currentSessionId) {
       messagesHook.loadMessages();
     }
-  }, [chatSession.currentSessionId]);
+  }, [chatSession.currentSessionId, messagesHook.loadMessages]);
 
 
   // Handle send message with file upload
