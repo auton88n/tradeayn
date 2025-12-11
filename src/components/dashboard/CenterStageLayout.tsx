@@ -49,6 +49,7 @@ interface CenterStageLayoutProps {
   onModeChange: (mode: AIMode) => void;
   prefillValue?: string;
   onPrefillConsumed?: () => void;
+  onLanguageChange?: (language: { code: string; flag: string; name: string }) => void;
 }
 
 export const CenterStageLayout = ({
@@ -73,6 +74,7 @@ export const CenterStageLayout = ({
   onModeChange,
   prefillValue,
   onPrefillConsumed,
+  onLanguageChange,
 }: CenterStageLayoutProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const eyeStageRef = useRef<HTMLDivElement>(null);
@@ -556,6 +558,7 @@ animate={{
         onModeChange={onModeChange}
         prefillValue={prefillValue}
         onPrefillConsumed={onPrefillConsumed}
+        onLanguageChange={onLanguageChange}
       />
       </div>
     </div>
