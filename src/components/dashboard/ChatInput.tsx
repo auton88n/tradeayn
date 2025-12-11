@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
 import { useSoundContext } from '@/contexts/SoundContext';
 import { analyzeUserEmotion, UserEmotion } from '@/utils/userEmotionDetection';
-import { detectLanguage, getLanguageStyles, DetectedLanguage } from '@/utils/languageDetection';
+import { detectLanguage, DetectedLanguage } from '@/utils/languageDetection';
 import type { AIMode } from '@/types/dashboard.types';
 
 interface ChatInputProps {
