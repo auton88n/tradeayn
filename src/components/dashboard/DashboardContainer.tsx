@@ -168,15 +168,18 @@ export const DashboardContainer = ({ user, session, auth, isAdmin, hasDutyAccess
   const handleLogout = useCallback(async () => {
     try {
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Sign out timeout')), 5000);
+        setTimeout(() => reject(new Error('Sign out timeout')), 2000);
       });
       
+      // Use local scope to clear local session without requiring server validation
       await Promise.race([
-        supabase.auth.signOut(),
+        supabase.auth.signOut({ scope: 'local' }),
         timeoutPromise
       ]);
     } catch (error) {
-      // Force local logout by clearing storage
+      console.log('Logout timeout or error, forcing local cleanup');
+    } finally {
+      // Always force local logout by clearing storage
       localStorage.removeItem('sb-dfkoxuokfkttjhfjcecx-auth-token');
       sessionStorage.clear();
       window.location.href = '/';
