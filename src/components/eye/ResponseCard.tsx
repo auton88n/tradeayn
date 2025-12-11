@@ -163,21 +163,32 @@ const ResponseCardComponent = ({ responses, isMobile = false }: ResponseCardProp
           )}
           style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}
         >
-          {/* Streaming text effect for new responses */}
-          {isStreaming ? (
-            <StreamingMarkdown 
-              content={combinedContent}
-              speed={50}
-              onComplete={handleStreamComplete}
-              enableHaptics={isMobile}
-              className="max-w-full break-words [&_pre]:max-w-full [&_pre]:overflow-x-auto"
-            />
-          ) : (
-            <MessageFormatter 
-              content={combinedContent} 
-              className="text-sm text-gray-700 dark:text-gray-200 leading-relaxed max-w-full break-words [&_pre]:max-w-full [&_pre]:overflow-x-auto" 
-            />
-          )}
+          {/* Content with fade transition on change */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentResponseId || 'content'}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2, ease: 'easeInOut' }}
+            >
+              {/* Streaming text effect for new responses */}
+              {isStreaming ? (
+                <StreamingMarkdown 
+                  content={combinedContent}
+                  speed={50}
+                  onComplete={handleStreamComplete}
+                  enableHaptics={isMobile}
+                  className="max-w-full break-words [&_pre]:max-w-full [&_pre]:overflow-x-auto"
+                />
+              ) : (
+                <MessageFormatter 
+                  content={combinedContent} 
+                  className="text-sm text-gray-700 dark:text-gray-200 leading-relaxed max-w-full break-words [&_pre]:max-w-full [&_pre]:overflow-x-auto" 
+                />
+              )}
+            </motion.div>
+          </AnimatePresence>
         </div>
 
         {/* Fade gradient indicator when scrollable and not at bottom */}
