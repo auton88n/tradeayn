@@ -232,7 +232,8 @@ const DashboardContent = ({
   handleLogout,
   isAdmin,
   hasDutyAccess,
-  onAdminPanelClick
+  onAdminPanelClick,
+  onLanguageChange,
 }: {
   user: User;
   session: Session;
@@ -252,7 +253,7 @@ const DashboardContent = ({
   isAdmin?: boolean;
   hasDutyAccess?: boolean;
   onAdminPanelClick?: () => void;
-  onLanguageChange?: (language: { code: string }) => void;
+  onLanguageChange?: (language: { code: string; flag: string; name: string }) => void;
 }) => {
   const { open, setOpen, openMobile, setOpenMobile, isMobile, toggleSidebar } = useSidebar();
   const [transcriptOpen, setTranscriptOpen] = useState(false);
@@ -519,6 +520,7 @@ const DashboardContent = ({
           onModeChange={setSelectedMode}
           prefillValue={replyPrefill}
           onPrefillConsumed={handlePrefillConsumed}
+          onLanguageChange={onLanguageChange}
         />
       </main>
 
