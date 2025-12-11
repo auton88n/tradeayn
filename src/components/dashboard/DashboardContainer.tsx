@@ -59,6 +59,7 @@ export const DashboardContainer = ({ user, session, auth, isAdmin, hasDutyAccess
   // State
   const [selectedMode, setSelectedMode] = React.useState<AIMode>('General');
   const [allowPersonalization, setAllowPersonalization] = React.useState(false);
+  const [detectedLanguage, setDetectedLanguage] = React.useState<string>('en');
 
   // Messages hook - depends on other state, pass session for direct REST API calls
   const messagesHook = useMessages(
@@ -68,7 +69,7 @@ export const DashboardContainer = ({ user, session, auth, isAdmin, hasDutyAccess
     selectedMode,
     auth.userProfile,
     allowPersonalization,
-    'en',
+    detectedLanguage,
     session
   );
 
@@ -182,6 +183,11 @@ export const DashboardContainer = ({ user, session, auth, isAdmin, hasDutyAccess
     }
   }, []);
 
+  // Handle language change from ChatInput
+  const handleLanguageChange = useCallback((language: { code: string }) => {
+    setDetectedLanguage(language.code);
+  }, []);
+
   return (
     <DashboardContent
       user={user}
@@ -202,6 +208,7 @@ export const DashboardContainer = ({ user, session, auth, isAdmin, hasDutyAccess
       isAdmin={isAdmin}
       hasDutyAccess={hasDutyAccess}
       onAdminPanelClick={onAdminPanelClick}
+      onLanguageChange={handleLanguageChange}
     />
   );
 };
@@ -245,6 +252,7 @@ const DashboardContent = ({
   isAdmin?: boolean;
   hasDutyAccess?: boolean;
   onAdminPanelClick?: () => void;
+  onLanguageChange?: (language: { code: string }) => void;
 }) => {
   const { open, setOpen, openMobile, setOpenMobile, isMobile, toggleSidebar } = useSidebar();
   const [transcriptOpen, setTranscriptOpen] = useState(false);

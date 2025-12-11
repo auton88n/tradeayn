@@ -11,7 +11,7 @@ interface WebhookRequest {
   userId?: string;
   allowPersonalization?: boolean;
   contactPerson?: string;
-  detectedLanguage?: 'ar' | 'en';
+  detectedLanguage?: string;
   concise?: boolean;
   mode?: string;
   has_attachment?: boolean;

@@ -90,7 +90,7 @@ export interface WebhookPayload {
   conversationHistory: ConversationHistoryItem[];
   userProfile: Partial<UserProfile>;
   allowPersonalization: boolean;
-  detectedLanguage: 'ar' | 'en';
+  detectedLanguage: string;
   concise: boolean;
   timestamp: string;
   has_attachment: boolean;

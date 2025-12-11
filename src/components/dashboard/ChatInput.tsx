@@ -7,7 +7,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
 import { useSoundContext } from '@/contexts/SoundContext';
 import { analyzeUserEmotion, UserEmotion } from '@/utils/userEmotionDetection';
+import { detectLanguage, getLanguageStyles, DetectedLanguage } from '@/utils/languageDetection';
 import type { AIMode } from '@/types/dashboard.types';
+
 interface ChatInputProps {
   onSend: (message: string, file?: File | null) => void;
   isDisabled?: boolean;
@@ -35,6 +37,7 @@ interface ChatInputProps {
   }>;
   prefillValue?: string;
   onPrefillConsumed?: () => void;
+  onLanguageChange?: (language: DetectedLanguage) => void;
 }
 const modes = [{
   name: 'General',
@@ -92,16 +95,19 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
   onRemoveFile,
   fileInputRef,
   prefillValue = '',
-  onPrefillConsumed
+  onPrefillConsumed,
+  onLanguageChange
 }, ref) => {
   const [inputMessage, setInputMessage] = useState('');
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [currentPlaceholder, setCurrentPlaceholder] = useState(0);
   const [showPlaceholder, setShowPlaceholder] = useState(true);
   const [detectedEmotion, setDetectedEmotion] = useState<UserEmotion | null>(null);
+  const [detectedLang, setDetectedLang] = useState<DetectedLanguage | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const emotionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const languageTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const {
     setIsUserTyping,
     setIsAttentive,
@@ -138,7 +144,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
     return () => clearInterval(interval);
   }, []);
 
-  // Simplified typing detection with emotion analysis
+  // Simplified typing detection with emotion and language analysis
   useEffect(() => {
     if (inputMessage.trim()) {
       setIsUserTyping(true);
@@ -159,6 +165,20 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
           }
         }
       }, 300);
+
+      // Detect language after a brief pause
+      if (languageTimeoutRef.current) {
+        clearTimeout(languageTimeoutRef.current);
+      }
+      languageTimeoutRef.current = setTimeout(() => {
+        if (inputMessage.trim().length > 2) {
+          const langResult = detectLanguage(inputMessage);
+          setDetectedLang(langResult);
+          if (onLanguageChange) {
+            onLanguageChange(langResult);
+          }
+        }
+      }, 200);
       
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
@@ -169,6 +189,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
     } else {
       setIsUserTyping(false);
       setDetectedEmotion(null);
+      setDetectedLang(null);
     }
     return () => {
       if (typingTimeoutRef.current) {
@@ -177,8 +198,11 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
       if (emotionTimeoutRef.current) {
         clearTimeout(emotionTimeoutRef.current);
       }
+      if (languageTimeoutRef.current) {
+        clearTimeout(languageTimeoutRef.current);
+      }
     };
-  }, [inputMessage, setIsUserTyping, setIsAttentive, updateActivity]);
+  }, [inputMessage, setIsUserTyping, setIsAttentive, updateActivity, onLanguageChange]);
   // Emotion indicator config
   const emotionIndicators: Record<UserEmotion, { emoji: string; color: string; label: string }> = {
     happy: { emoji: '😊', color: 'bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30', label: 'Happy' },
@@ -198,6 +222,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
     setInputMessage('');
     setShowPlaceholder(true);
     setDetectedEmotion(null);
+    setDetectedLang(null);
     if (textareaRef.current) {
       textareaRef.current.style.height = '44px';
     }
@@ -374,6 +399,27 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
                 >
                   <span>{emotionIndicators[detectedEmotion].emoji}</span>
                   <span>AYN senses: {emotionIndicators[detectedEmotion].label}</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Language indicator */}
+            <AnimatePresence>
+              {detectedLang && detectedLang.confidence > 0.3 && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8, x: -10 }}
+                  animate={{ opacity: 1, scale: 1, x: 0 }}
+                  exit={{ opacity: 0, scale: 0.8, x: -10 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                  className={cn(
+                    "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border",
+                    getLanguageStyles(detectedLang.code).bg,
+                    getLanguageStyles(detectedLang.code).text,
+                    getLanguageStyles(detectedLang.code).border
+                  )}
+                >
+                  <span>{detectedLang.flag}</span>
+                  <span>{detectedLang.nativeName}</span>
                 </motion.div>
               )}
             </AnimatePresence>
