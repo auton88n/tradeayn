@@ -394,11 +394,8 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
             {/* Inner shadow for depth */}
             <div className="absolute inset-2 rounded-full shadow-[inset_0_4px_16px_rgba(0,0,0,0.06)] dark:shadow-[inset_0_4px_16px_rgba(0,0,0,0.25)]" />
 
-            {/* Gray ring - neutral color */}
-            <div className="absolute inset-[15%] rounded-full bg-neutral-200 dark:bg-neutral-800" />
-
-            {/* Blue iris layer */}
-            <div className="absolute inset-[20%] rounded-full bg-blue-300/80 dark:bg-blue-400/60" />
+            {/* Neutral ring - matches dashboard calm state */}
+            <div className="absolute inset-[15%] rounded-full bg-neutral-200 dark:bg-neutral-700" />
 
             {/* Iris container with SVG */}
             <motion.svg 
