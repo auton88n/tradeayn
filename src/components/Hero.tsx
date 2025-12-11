@@ -397,6 +397,9 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
             {/* Gray ring - neutral color */}
             <div className="absolute inset-[15%] rounded-full bg-neutral-200 dark:bg-neutral-800" />
 
+            {/* Blue iris layer */}
+            <div className="absolute inset-[20%] rounded-full bg-blue-300/80 dark:bg-blue-400/60" />
+
             {/* Iris container with SVG */}
             <motion.svg 
               viewBox="0 0 100 100" 
@@ -425,19 +428,24 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
                 }}
               />
               
-              {/* Brain icon - always white */}
-              <foreignObject 
-                x={absorptionPulse ? 36 : isHovered ? 30 : 32} 
-                y={absorptionPulse ? 36 : isHovered ? 30 : 32} 
-                width={absorptionPulse ? 28 : isHovered ? 40 : 36} 
-                height={absorptionPulse ? 28 : isHovered ? 40 : 36}
-                style={{
-                  transition: absorptionPulse 
-                    ? "all 0.15s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
-                    : "all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)"
-                }}
-              >
-                <Brain className="w-full h-full text-white/90" />
+              {/* Brain icon - centered with flexbox */}
+              <foreignObject x="0" y="0" width="100" height="100">
+                <div 
+                  className="w-full h-full flex items-center justify-center"
+                  style={{
+                    transition: absorptionPulse 
+                      ? "all 0.15s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
+                      : "all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)"
+                  }}
+                >
+                  <Brain 
+                    className="text-white/90" 
+                    style={{ 
+                      width: absorptionPulse ? '28%' : isHovered ? '40%' : '36%',
+                      height: absorptionPulse ? '28%' : isHovered ? '40%' : '36%'
+                    }}
+                  />
+                </div>
               </foreignObject>
             </motion.svg>
           </motion.div>
