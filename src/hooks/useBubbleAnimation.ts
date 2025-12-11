@@ -158,21 +158,8 @@ export const useBubbleAnimation = (): UseBubbleAnimationReturn => {
       position: { x: 0, y: 0 },
     };
 
-    // Keep previous bubbles visible, only hide oldest when exceeding max
-    setResponseBubbles((prev) => {
-      const visibleBubbles = prev.filter(b => b.isVisible);
-      
-      if (visibleBubbles.length >= MAX_VISIBLE_BUBBLES) {
-        // Hide the oldest bubble
-        const oldestId = visibleBubbles[0].id;
-        return [
-          ...prev.map(b => b.id === oldestId ? { ...b, isVisible: false } : b),
-          newBubble
-        ];
-      }
-      
-      return [...prev, newBubble];
-    });
+    // Replace all previous bubbles - each AYN response is complete, not a continuation
+    setResponseBubbles([newBubble]);
 
     // Auto-dismiss after 5 minutes
     setTimeout(() => {
