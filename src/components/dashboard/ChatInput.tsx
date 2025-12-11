@@ -403,26 +403,6 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
               )}
             </AnimatePresence>
 
-            {/* Language indicator */}
-            <AnimatePresence>
-              {detectedLang && detectedLang.confidence > 0.3 && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8, x: -10 }}
-                  animate={{ opacity: 1, scale: 1, x: 0 }}
-                  exit={{ opacity: 0, scale: 0.8, x: -10 }}
-                  transition={{ duration: 0.2, ease: "easeOut" }}
-                  className={cn(
-                    "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border",
-                    getLanguageStyles(detectedLang.code).bg,
-                    getLanguageStyles(detectedLang.code).text,
-                    getLanguageStyles(detectedLang.code).border
-                  )}
-                >
-                  <span>{detectedLang.flag}</span>
-                  <span>{detectedLang.nativeName}</span>
-                </motion.div>
-              )}
-            </AnimatePresence>
           </div>
 
           {/* Mode indicator - General only */}
