@@ -413,6 +413,11 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
         </div>
       </div>
 
+      {/* AI Disclaimer */}
+      <p className="text-xs text-muted-foreground/60 text-center mt-2">
+        AYN is AI and can make mistakes. Always verify critical details.
+      </p>
+
       {/* Hidden file input */}
       <input ref={fileInputRef} type="file" className="hidden" accept=".pdf,.doc,.docx,.txt,.json,.csv,.xlsx,.png,.jpg,.jpeg,.gif,.webp" onChange={handleFileInputChange} />
     </div>;
