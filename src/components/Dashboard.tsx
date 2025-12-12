@@ -2,9 +2,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { DashboardContainer } from './dashboard/DashboardContainer';
 import { TermsModal } from './TermsModal';
 import { MaintenanceBanner } from './MaintenanceBanner';
-import { SessionTimeoutModal } from './SessionTimeoutModal';
 import { useAuth } from '@/hooks/useAuth';
-import { useSessionTimeout } from '@/hooks/useSessionTimeout';
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,12 +24,6 @@ export default function Dashboard({ user, session }: DashboardProps) {
     maintenanceMessage: 'System is currently under maintenance.',
     maintenanceStartTime: '',
     maintenanceEndTime: '',
-  });
-
-  // Session timeout with 30-minute inactivity auto-logout
-  const sessionTimeout = useSessionTimeout({
-    timeoutMinutes: 30,
-    warningMinutes: 1,
   });
 
   // Load maintenance config from database
@@ -128,13 +120,6 @@ export default function Dashboard({ user, session }: DashboardProps) {
         onAccept={auth.acceptTerms}
       />
 
-      {/* Session Timeout Warning Modal */}
-      <SessionTimeoutModal
-        open={sessionTimeout.showWarning}
-        remainingSeconds={sessionTimeout.remainingSeconds}
-        onStayLoggedIn={sessionTimeout.handleStayLoggedIn}
-        onLogoutNow={sessionTimeout.handleLogoutNow}
-      />
 
       {/* Main Content - conditionally render based on active view */}
       {activeView === 'admin' && auth.hasDutyAccess ? (
