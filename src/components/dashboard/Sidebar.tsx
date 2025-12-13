@@ -28,6 +28,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { UsageCard } from './UsageCard';
+
 export const Sidebar = ({
   userName,
   userEmail,
@@ -43,6 +45,9 @@ export const Sidebar = ({
   recentChats,
   showChatSelection,
   selectedChats,
+  currentMonthUsage = 0,
+  monthlyLimit = null,
+  usageResetDate = null,
   onModeSelect,
   onNewChat,
   onLoadChat,
@@ -321,7 +326,18 @@ export const Sidebar = ({
         </div>
       </SidebarContent>
 
-      <SidebarFooter className="p-3">
+      <SidebarFooter className="p-3 space-y-3">
+        {/* Usage Card - Compact */}
+        {hasAccess && (
+          <UsageCard
+            currentUsage={currentMonthUsage}
+            monthlyLimit={monthlyLimit}
+            resetDate={usageResetDate}
+            compact
+          />
+        )}
+        
+        {/* User Profile - Premium Glassmorphism Card */}
         {/* User Profile - Premium Glassmorphism Card */}
         <Popover open={profilePopoverOpen} onOpenChange={setProfilePopoverOpen}>
           <PopoverTrigger asChild>
