@@ -32,14 +32,14 @@ export const TermsModal = ({ open, onAccept }: TermsModalProps) => {
 
         <ScrollArea className="max-h-96 pr-4">
           <div className="space-y-6 text-sm">
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <div className="glass rounded-lg p-4">
               <div className="flex items-start gap-3">
-                <Brain className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <Brain className="w-5 h-5 text-foreground flex-shrink-0 mt-0.5" />
                 <div>
-                  <h3 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">
+                  <h3 className="font-semibold text-foreground mb-2">
                     Your Intelligent Life Companion
                   </h3>
-                  <p className="text-blue-700 dark:text-blue-300">
+                  <p className="text-muted-foreground">
                     Please review these important terms before getting started with AYN.
                   </p>
                 </div>
@@ -103,8 +103,8 @@ export const TermsModal = ({ open, onAccept }: TermsModalProps) => {
                 </div>
               </div>
 
-              <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-4 border border-primary/20">
-                <p className="text-sm">
+              <div className="glass rounded-lg p-4">
+                <p className="text-sm text-foreground">
                   <strong>Important:</strong> AYN provides AI-generated assistance. Always verify critical information and use your own judgment for important decisions.
                 </p>
               </div>
