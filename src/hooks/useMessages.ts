@@ -305,6 +305,43 @@ export const useMessages = (
         ])
       });
 
+      // Check usage and show in-app warning if approaching limit
+      try {
+        const usageData = await fetchFromSupabase(
+          `access_grants?user_id=eq.${userId}&select=current_month_usage,monthly_limit`,
+          session.access_token
+        );
+
+        if (usageData?.[0]?.monthly_limit && usageData[0].monthly_limit > 0) {
+          const currentUsage = usageData[0].current_month_usage || 0;
+          const monthlyLimit = usageData[0].monthly_limit;
+          const percentageUsed = Math.round((currentUsage / monthlyLimit) * 100);
+          const remaining = monthlyLimit - currentUsage;
+
+          if (percentageUsed >= 100) {
+            toast({
+              title: "Monthly Limit Reached",
+              description: `You've used all ${monthlyLimit} messages. Your limit resets next month.`,
+              variant: "destructive"
+            });
+          } else if (percentageUsed >= 90) {
+            toast({
+              title: "Almost at Limit",
+              description: `You've used ${percentageUsed}% of your messages. Only ${remaining} remaining.`,
+              variant: "destructive"
+            });
+          } else if (percentageUsed >= 75) {
+            toast({
+              title: "Usage Update",
+              description: `You've used ${percentageUsed}% of your monthly messages. ${remaining} remaining.`,
+            });
+          }
+        }
+      } catch (usageError) {
+        // Silent fail - don't disrupt the chat experience
+        console.warn('[useMessages] Error checking usage:', usageError);
+      }
+
     } catch (error) {
       setIsTyping(false);
 

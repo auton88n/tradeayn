@@ -66,6 +66,20 @@ export const NotificationSettings = ({ userId, accessToken }: NotificationSettin
 
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
+              <Label>{t('settings.usageWarnings')}</Label>
+              <p className="text-sm text-muted-foreground">
+                {t('settings.usageWarningsEmailDesc') || 'Get notified by email when you reach 75% or 90% of your monthly message limit'}
+              </p>
+            </div>
+            <Switch
+              checked={settings.email_usage_warnings}
+              onCheckedChange={(checked) => updateSettings({ email_usage_warnings: checked })}
+              disabled={updating}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
               <Label>{t('settings.marketing')}</Label>
               <p className="text-sm text-muted-foreground">
                 {t('settings.marketingDesc')}
