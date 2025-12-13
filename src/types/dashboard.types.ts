@@ -215,6 +215,9 @@ export interface UseAuthReturn {
   hasDutyAccess: boolean;
   isAuthLoading: boolean;
   userProfile: UserProfile | null;
+  currentMonthUsage: number;
+  monthlyLimit: number | null;
+  usageResetDate: string | null;
   checkAccess: () => Promise<void>;
   checkAdminRole: () => Promise<void>;
   loadUserProfile: () => Promise<void>;
@@ -280,6 +283,9 @@ export interface SidebarProps {
   recentChats: ChatHistory[];
   showChatSelection: boolean;
   selectedChats: Set<number>;
+  currentMonthUsage?: number;
+  monthlyLimit?: number | null;
+  usageResetDate?: string | null;
   onModeSelect: (mode: AIMode) => void;
   onNewChat: () => void;
   onLoadChat: (chat: ChatHistory) => void;

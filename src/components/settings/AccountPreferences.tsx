@@ -9,6 +9,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ProfileAvatarUpload } from '@/components/dashboard/ProfileAvatarUpload';
+import { UsageCard } from '@/components/dashboard/UsageCard';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader2 } from 'lucide-react';
 import { useSettingsContext } from '@/contexts/SettingsContext';
@@ -17,6 +18,12 @@ interface AccountPreferencesProps {
   userId: string;
   userEmail: string;
   accessToken: string;
+}
+
+interface UsageData {
+  currentMonthUsage: number;
+  monthlyLimit: number | null;
+  usageResetDate: string | null;
 }
 
 export const AccountPreferences = ({ userId, userEmail, accessToken }: AccountPreferencesProps) => {
@@ -34,9 +41,15 @@ export const AccountPreferences = ({ userId, userEmail, accessToken }: AccountPr
     avatar_url: '',
   });
   const [originalProfile, setOriginalProfile] = useState(profile);
+  const [usageData, setUsageData] = useState<UsageData>({
+    currentMonthUsage: 0,
+    monthlyLimit: null,
+    usageResetDate: null,
+  });
 
   useEffect(() => {
     loadProfile();
+    loadUsageData();
   }, [userId]);
 
   // Track unsaved changes
@@ -77,6 +90,30 @@ export const AccountPreferences = ({ userId, userEmail, accessToken }: AccountPr
       console.error('Error loading profile:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadUsageData = async () => {
+    if (!userId) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('access_grants')
+        .select('current_month_usage, monthly_limit, usage_reset_date')
+        .eq('user_id', userId)
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        setUsageData({
+          currentMonthUsage: data.current_month_usage ?? 0,
+          monthlyLimit: data.monthly_limit ?? null,
+          usageResetDate: data.usage_reset_date ?? null,
+        });
+      }
+    } catch (error) {
+      console.error('Error loading usage data:', error);
     }
   };
 
@@ -146,10 +183,25 @@ export const AccountPreferences = ({ userId, userEmail, accessToken }: AccountPr
   const showBusinessContext = matchesSearch(t('settings.businessContext'));
   const showAvatar = matchesSearch(t('profile.changePhoto'));
 
-  const hasVisibleFields = showContactPerson || showCompanyName || showEmail || showBusinessType || showBusinessContext || showAvatar;
+  const showUsage = matchesSearch('Usage') || matchesSearch('Limit') || matchesSearch('Messages');
+
+  const hasVisibleFields = showContactPerson || showCompanyName || showEmail || showBusinessType || showBusinessContext || showAvatar || showUsage;
 
   return (
-    <div className="space-y-6">{!hasVisibleFields && searchTerm && (
+    <div className="space-y-6">
+      {/* Usage & Limits Card */}
+      {showUsage && (
+        <Card className="p-6 bg-card/50 backdrop-blur-xl border-border/50">
+          <h2 className="text-xl font-semibold mb-4">Usage & Limits</h2>
+          <UsageCard
+            currentUsage={usageData.currentMonthUsage}
+            monthlyLimit={usageData.monthlyLimit}
+            resetDate={usageData.usageResetDate}
+          />
+        </Card>
+      )}
+
+      {!hasVisibleFields && searchTerm && (
         <Card className="p-6 bg-card/50 backdrop-blur-xl border-border/50">
           <p className="text-center text-muted-foreground">{t('settings.noResultsFound')}</p>
         </Card>

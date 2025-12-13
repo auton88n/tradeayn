@@ -70,6 +70,9 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
   const [isDuty, setIsDuty] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [currentMonthUsage, setCurrentMonthUsage] = useState(0);
+  const [monthlyLimit, setMonthlyLimit] = useState<number | null>(null);
+  const [usageResetDate, setUsageResetDate] = useState<string | null>(null);
   const { toast } = useToast();
   
   const hasTrackedDevice = useRef(false);
@@ -78,7 +81,7 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
   const checkAccess = useCallback(async () => {
     try {
       const data = await fetchFromSupabase(
-        `access_grants?user_id=eq.${user.id}&select=is_active,expires_at`,
+        `access_grants?user_id=eq.${user.id}&select=is_active,expires_at,current_month_usage,monthly_limit,usage_reset_date`,
         session.access_token
       );
 
@@ -90,6 +93,9 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
       const record = data[0];
       const isActive = record.is_active && (!record.expires_at || new Date(record.expires_at) > new Date());
       setHasAccess(isActive);
+      setCurrentMonthUsage(record.current_month_usage ?? 0);
+      setMonthlyLimit(record.monthly_limit ?? null);
+      setUsageResetDate(record.usage_reset_date ?? null);
     } catch {
       // Silent failure - access denied by default
     }
@@ -183,7 +189,7 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
       try {
         // Use retry logic for all queries
         const results = await Promise.all([
-          fetchWithRetry(`access_grants?user_id=eq.${user.id}&select=is_active,expires_at`, session.access_token),
+          fetchWithRetry(`access_grants?user_id=eq.${user.id}&select=is_active,expires_at,current_month_usage,monthly_limit,usage_reset_date`, session.access_token),
           fetchWithRetry(`user_roles?user_id=eq.${user.id}&select=role`, session.access_token),
           fetchWithRetry(`profiles?user_id=eq.${user.id}&select=user_id,contact_person,company_name,business_type,avatar_url`, session.access_token),
           fetchWithRetry(`user_settings?user_id=eq.${user.id}&select=has_accepted_terms`, session.access_token)
@@ -199,6 +205,9 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
           const isActive = record.is_active && 
             (!record.expires_at || new Date(record.expires_at) > new Date());
           setHasAccess(isActive);
+          setCurrentMonthUsage(record.current_month_usage ?? 0);
+          setMonthlyLimit(record.monthly_limit ?? null);
+          setUsageResetDate(record.usage_reset_date ?? null);
         }
 
         // Process admin/duty role (with null check)
@@ -265,6 +274,9 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
     hasDutyAccess: isAdmin || isDuty,
     isAuthLoading,
     userProfile,
+    currentMonthUsage,
+    monthlyLimit,
+    usageResetDate,
     checkAccess,
     checkAdminRole,
     loadUserProfile,
