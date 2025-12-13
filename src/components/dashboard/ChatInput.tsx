@@ -38,6 +38,8 @@ interface ChatInputProps {
   prefillValue?: string;
   onPrefillConsumed?: () => void;
   onLanguageChange?: (language: DetectedLanguage) => void;
+  // Real-time emotion feedback callback
+  onEmotionDetected?: (emotion: UserEmotion | null, inputText: string) => void;
 }
 const modes = [{
   name: 'General',
@@ -96,7 +98,8 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
   fileInputRef,
   prefillValue = '',
   onPrefillConsumed,
-  onLanguageChange
+  onLanguageChange,
+  onEmotionDetected
 }, ref) => {
   const [inputMessage, setInputMessage] = useState('');
   const [isInputFocused, setIsInputFocused] = useState(false);
@@ -160,8 +163,15 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
           const result = analyzeUserEmotion(inputMessage);
           if (result.emotion !== 'neutral' && result.intensity > 0.3) {
             setDetectedEmotion(result.emotion);
+            // Notify parent for real-time eye feedback
+            if (onEmotionDetected) {
+              onEmotionDetected(result.emotion, inputMessage);
+            }
           } else {
             setDetectedEmotion(null);
+            if (onEmotionDetected) {
+              onEmotionDetected(null, inputMessage);
+            }
           }
         }
       }, 300);
@@ -190,6 +200,9 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
       setIsUserTyping(false);
       setDetectedEmotion(null);
       setDetectedLang(null);
+      if (onEmotionDetected) {
+        onEmotionDetected(null, '');
+      }
     }
     return () => {
       if (typingTimeoutRef.current) {
@@ -202,7 +215,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
         clearTimeout(languageTimeoutRef.current);
       }
     };
-  }, [inputMessage, setIsUserTyping, setIsAttentive, updateActivity, onLanguageChange]);
+  }, [inputMessage, setIsUserTyping, setIsAttentive, updateActivity, onLanguageChange, onEmotionDetected]);
   // Emotion indicator config
   const emotionIndicators: Record<UserEmotion, { emoji: string; color: string; label: string }> = {
     happy: { emoji: '😊', color: 'bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30', label: 'Happy' },
