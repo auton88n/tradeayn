@@ -7,7 +7,9 @@ export type SoundType =
   // Emotion sounds
   | 'emotion-happy' | 'emotion-thinking' | 'emotion-excited' | 'emotion-curious' | 'emotion-frustrated' | 'emotion-calm'
   // Interaction sounds
-  | 'message-send' | 'message-absorb' | 'response-received' | 'suggestion-click' | 'blink';
+  | 'message-send' | 'message-absorb' | 'response-received' | 'suggestion-click' | 'blink'
+  // Conversational sounds - real-time emotional connection
+  | 'understanding' | 'empathy' | 'anticipation' | 'recognition' | 'comfort';
 
 interface SoundConfig {
   type: OscillatorType;
@@ -42,6 +44,13 @@ const SOUND_CONFIGS: Record<SoundType, SoundConfig> = {
   'response-received': { type: 'sine', frequency: 659, duration: 0.12, gain: 0.07, attack: 0.01, decay: 0.11 },
   'suggestion-click': { type: 'sine', frequency: 740, duration: 0.06, gain: 0.05, attack: 0.005, decay: 0.055 },
   'blink': { type: 'sine', frequency: 200, duration: 0.05, gain: 0.02, attack: 0.01, decay: 0.04 },
+  
+  // Conversational sounds - very soft, emotionally resonant
+  'understanding': { type: 'sine', frequency: 392, duration: 0.25, gain: 0.025, attack: 0.05, decay: 0.2, detune: 3 },
+  'empathy': { type: 'sine', frequency: 294, duration: 0.35, gain: 0.02, attack: 0.08, decay: 0.27 },
+  'anticipation': { type: 'sine', frequency: 440, duration: 0.15, gain: 0.03, attack: 0.02, decay: 0.13, detune: 8 },
+  'recognition': { type: 'triangle', frequency: 523, duration: 0.1, gain: 0.025, attack: 0.01, decay: 0.09 },
+  'comfort': { type: 'sine', frequency: 262, duration: 0.4, gain: 0.02, attack: 0.1, decay: 0.3 },
 };
 
 // Global unlock state for iOS AudioContext

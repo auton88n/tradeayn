@@ -17,7 +17,9 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useEyeContext } from '@/hooks/useEyeContext';
 import { useEyeBehaviorMatcher } from '@/hooks/useEyeBehaviorMatcher';
 import { hapticFeedback } from '@/lib/haptics';
-import { analyzeUserEmotion, getEmpathyResponse } from '@/utils/userEmotionDetection';
+import { analyzeUserEmotion, getEmpathyResponse, UserEmotion } from '@/utils/userEmotionDetection';
+import { useRealtimeEmotionTracking } from '@/hooks/useRealtimeEmotionTracking';
+import { useConversationFlow } from '@/hooks/useConversationFlow';
 import type { Message, AIMode, AIModeConfig } from '@/types/dashboard.types';
 
 // Fallback suggestions when API fails
@@ -103,6 +105,9 @@ export const CenterStageLayout = ({
   const [burstPosition, setBurstPosition] = useState({ x: 0, y: 0 });
   const [lastUserMessage, setLastUserMessage] = useState<string>('');
   const [currentGazeIndex, setCurrentGazeIndex] = useState<number | null>(null);
+  const [realtimeInputText, setRealtimeInputText] = useState('');
+  const [realtimeUserEmotion, setRealtimeUserEmotion] = useState<UserEmotion | null>(null);
+  const lastEmotionSoundRef = useRef<string | null>(null);
 
   // Reset all visual state when messages are cleared (new chat started)
   useEffect(() => {
@@ -127,6 +132,65 @@ export const CenterStageLayout = ({
   
   // Enable eye behavior on all devices - emotions work independently
   const { behaviorConfig } = useEyeBehaviorMatcher({ context, enabled: true });
+
+  // Real-time emotion tracking for responsive eye behavior
+  const realtimeEmotion = useRealtimeEmotionTracking(realtimeInputText, contextIsTyping);
+  
+  // Conversation flow awareness for anticipation states
+  const conversationFlow = useConversationFlow(messages, contextIsTyping, realtimeInputText);
+
+  // Handle real-time emotion changes from typing
+  useEffect(() => {
+    if (realtimeEmotion.detectedEmotion && realtimeEmotion.intensity > 0.4) {
+      // Map detected emotion to AYN's empathetic response
+      const emotionToAynEmotion: Record<string, typeof setEmotion extends (e: infer E) => void ? E : never> = {
+        'thinking': 'thinking',
+        'curious': 'curious', 
+        'happy': 'happy',
+        'excited': 'excited',
+      };
+      
+      const aynEmotion = emotionToAynEmotion[realtimeEmotion.detectedEmotion] || 'curious';
+      setEmotion(aynEmotion);
+      
+      // Play understanding/recognition sound when detecting emotion (debounced)
+      if (lastEmotionSoundRef.current !== realtimeEmotion.detectedEmotion) {
+        lastEmotionSoundRef.current = realtimeEmotion.detectedEmotion;
+        
+        // Play contextual sound based on what was detected
+        if (realtimeEmotion.isTypingQuestion) {
+          playSound('recognition'); // Quick ping for questions
+        } else if (realtimeEmotion.sentiment === 'negative') {
+          playSound('empathy'); // Gentle tone for frustration/concern
+        } else if (realtimeEmotion.sentiment === 'positive') {
+          playSound('understanding'); // Warm chime for positive vibes
+        }
+        
+        // Subtle haptic for emotional recognition
+        hapticFeedback('light');
+      }
+    } else if (!contextIsTyping) {
+      // Reset when user stops typing
+      lastEmotionSoundRef.current = null;
+    }
+  }, [realtimeEmotion, contextIsTyping, setEmotion, playSound]);
+
+  // Use conversation flow to adjust anticipation
+  useEffect(() => {
+    if (conversationFlow.anticipationLevel > 0.6 && !isTyping) {
+      // AYN appears ready and attentive when user is typing a lot
+      if (conversationFlow.suggestedEyeBehavior.emotion !== 'calm') {
+        // Don't override realtime emotion, just add subtle anticipation
+        playSound('anticipation');
+      }
+    }
+  }, [conversationFlow.anticipationLevel, isTyping, playSound]);
+
+  // Handle emotion detected callback from ChatInput
+  const handleEmotionDetected = useCallback((emotion: UserEmotion | null, inputText: string) => {
+    setRealtimeInputText(inputText);
+    setRealtimeUserEmotion(emotion);
+  }, []);
 
   // Suggestion card Y positions for gaze targeting (matches SuggestionsCard desktopPositions)
   const suggestionGazeTargets = [
@@ -539,27 +603,28 @@ animate={{
         <ChatInput
           ref={inputRef}
           onSend={handleSendWithAnimation}
-        isDisabled={isDisabled}
-        selectedMode={selectedMode}
-        selectedFile={selectedFile}
-        isUploading={isUploading}
-        isDragOver={isDragOver}
-        onFileSelect={onFileSelect}
-        onRemoveFile={onRemoveFile}
-        onDragEnter={onDragEnter}
-        onDragLeave={onDragLeave}
-        onDragOver={onDragOver}
-        onDrop={onDrop}
-        fileInputRef={fileInputRef}
-        hasMessages={messages.length > 0}
-        sidebarOpen={sidebarOpen}
-        transcriptOpen={transcriptOpen}
-        modes={modes}
-        onModeChange={onModeChange}
-        prefillValue={prefillValue}
-        onPrefillConsumed={onPrefillConsumed}
-        onLanguageChange={onLanguageChange}
-      />
+          isDisabled={isDisabled}
+          selectedMode={selectedMode}
+          selectedFile={selectedFile}
+          isUploading={isUploading}
+          isDragOver={isDragOver}
+          onFileSelect={onFileSelect}
+          onRemoveFile={onRemoveFile}
+          onDragEnter={onDragEnter}
+          onDragLeave={onDragLeave}
+          onDragOver={onDragOver}
+          onDrop={onDrop}
+          fileInputRef={fileInputRef}
+          hasMessages={messages.length > 0}
+          sidebarOpen={sidebarOpen}
+          transcriptOpen={transcriptOpen}
+          modes={modes}
+          onModeChange={onModeChange}
+          prefillValue={prefillValue}
+          onPrefillConsumed={onPrefillConsumed}
+          onLanguageChange={onLanguageChange}
+          onEmotionDetected={handleEmotionDetected}
+        />
       </div>
     </div>
   );
