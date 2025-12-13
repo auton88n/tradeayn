@@ -487,15 +487,27 @@ const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorCon
                       : "all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)"
               }}
             >
-              <Brain 
-                className="w-full h-full" 
+              {/* Safari-compatible wrapper with XHTML namespace */}
+              <div 
                 style={{ 
-                  color: emotion === 'calm' ? '#FFFFFF' : emotionConfig.color,
-                  opacity: 0.92,
-                  transition: 'color 0.5s ease-out, filter 0.5s ease-out',
-                  filter: emotion !== 'calm' ? `drop-shadow(0 0 6px ${emotionConfig.color}30)` : 'none'
-                }} 
-              />
+                  width: '100%', 
+                  height: '100%', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center' 
+                }}
+                {...{ xmlns: "http://www.w3.org/1999/xhtml" } as any}
+              >
+                <Brain
+                  className="w-full h-full" 
+                  style={{ 
+                    color: emotion === 'calm' ? '#FFFFFF' : emotionConfig.color,
+                    opacity: 0.92,
+                    transition: 'color 0.5s ease-out, filter 0.5s ease-out',
+                    filter: emotion !== 'calm' ? `drop-shadow(0 0 6px ${emotionConfig.color}30)` : 'none'
+                  }} 
+                />
+              </div>
             </foreignObject>
           </motion.svg>
         </div>
