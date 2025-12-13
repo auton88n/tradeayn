@@ -506,12 +506,7 @@ animate={{
             className="relative overflow-visible"
             data-tutorial="eye"
           >
-            <EmotionalEye 
-              size={isMobile ? "md" : "lg"} 
-              gazeTarget={gazeTarget} 
-              behaviorConfig={behaviorConfig}
-              typingMessageLength={realtimeInputText.length}
-            />
+            <EmotionalEye size={isMobile ? "md" : "lg"} gazeTarget={gazeTarget} behaviorConfig={behaviorConfig} />
 
             {/* Thinking indicator when typing - simplified animation */}
             <AnimatePresence>

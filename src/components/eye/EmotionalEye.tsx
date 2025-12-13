@@ -8,7 +8,6 @@ import { useIdleDetection } from '@/hooks/useIdleDetection';
 import { useEyeGestures } from '@/hooks/useEyeGestures';
 import { EyeParticles } from './EyeParticles';
 import { ThinkingDots } from './ThinkingDots';
-import { ReadingIndicator } from './ReadingIndicator';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface EmotionalEyeProps {
@@ -16,10 +15,9 @@ interface EmotionalEyeProps {
   className?: string;
   gazeTarget?: { x: number; y: number } | null;
   behaviorConfig?: BehaviorConfig | null;
-  typingMessageLength?: number; // Length of message user is currently typing
 }
 
-const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorConfig, typingMessageLength = 0 }: EmotionalEyeProps) => {
+const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorConfig }: EmotionalEyeProps) => {
   const { 
     emotionConfig,
     emotion,
@@ -432,13 +430,7 @@ const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorCon
         size={eyeSize}
       />
       
-      {/* Reading indicator when user is typing */}
-      <ReadingIndicator 
-        isVisible={isUserTyping && !isResponding} 
-        messageLength={typingMessageLength}
-      />
-      
-      <motion.div 
+      <motion.div
         style={{ 
           x: combinedX, 
           y: combinedY, 
