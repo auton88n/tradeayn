@@ -171,6 +171,48 @@ const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorCon
     }
   }, [gazeTarget, isUserTyping, isResponding, aiGazeX, aiGazeY]);
 
+  // Track typing state for contextual blinks
+  const typingStartRef = useRef<number | null>(null);
+  const lastTypingPauseRef = useRef<number>(Date.now());
+  const pauseBlinkTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Track when user starts/stops typing for contextual blinks
+  useEffect(() => {
+    if (isUserTyping) {
+      if (!typingStartRef.current) {
+        typingStartRef.current = Date.now();
+      }
+      lastTypingPauseRef.current = Date.now();
+      
+      // Clear any pending pause blink
+      if (pauseBlinkTimeoutRef.current) {
+        clearTimeout(pauseBlinkTimeoutRef.current);
+        pauseBlinkTimeoutRef.current = null;
+      }
+    } else if (typingStartRef.current) {
+      // User stopped typing - trigger quick attentive blink after short pause
+      const typingDuration = Date.now() - typingStartRef.current;
+      typingStartRef.current = null;
+      
+      // Quick attentive blink when user pauses (300-500ms after pause)
+      pauseBlinkTimeoutRef.current = setTimeout(() => {
+        if (!isAbsorbing && !isResponding) {
+          triggerBlink();
+          // If they typed a lot, add a second "processing" blink
+          if (typingDuration > 3000) {
+            setTimeout(() => triggerBlink(), 250);
+          }
+        }
+      }, 300 + Math.random() * 200);
+    }
+    
+    return () => {
+      if (pauseBlinkTimeoutRef.current) {
+        clearTimeout(pauseBlinkTimeoutRef.current);
+      }
+    };
+  }, [isUserTyping, isAbsorbing, isResponding, triggerBlink]);
+
   // Get blink frequency from behavior or calculate based on state
   const getBlinkInterval = useCallback(() => {
     // Use behavior config if available
@@ -180,8 +222,18 @@ const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorCon
       return (60 / behaviorConfig.blinkFrequency) * 1000 + (Math.random() * 500);
     }
     
-    // Default behavior
-    if (isUserTyping) return null;
+    // During active typing - slow thoughtful blinks
+    if (isUserTyping) {
+      const typingDuration = typingStartRef.current ? Date.now() - typingStartRef.current : 0;
+      // Longer messages = slower, more thoughtful blinks (shows AYN is "reading along")
+      if (typingDuration > 5000) {
+        return 4000 + Math.random() * 1500; // Very slow, contemplative blinks for long messages
+      } else if (typingDuration > 2000) {
+        return 2500 + Math.random() * 1000; // Slow thoughtful blinks
+      }
+      return 1800 + Math.random() * 700; // Attentive but not too frequent
+    }
+    
     if (isResponding) return 800 + Math.random() * 400;
     return 3000 + Math.random() * 2000;
   }, [isUserTyping, isResponding, behaviorConfig?.blinkFrequency, behaviorConfig?.blinkPattern]);
