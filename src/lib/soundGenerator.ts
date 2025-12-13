@@ -9,7 +9,9 @@ export type SoundType =
   // Interaction sounds
   | 'message-send' | 'message-absorb' | 'response-received' | 'suggestion-click' | 'blink'
   // Conversational sounds - real-time emotional connection
-  | 'understanding' | 'empathy' | 'anticipation' | 'recognition' | 'comfort';
+  | 'understanding' | 'empathy' | 'anticipation' | 'recognition' | 'comfort'
+  // Typing context sounds
+  | 'listening' | 'attentive-blink' | 'thoughtful-blink' | 'processing';
 
 interface SoundConfig {
   type: OscillatorType;
@@ -51,6 +53,12 @@ const SOUND_CONFIGS: Record<SoundType, SoundConfig> = {
   'anticipation': { type: 'sine', frequency: 440, duration: 0.15, gain: 0.03, attack: 0.02, decay: 0.13, detune: 8 },
   'recognition': { type: 'triangle', frequency: 523, duration: 0.1, gain: 0.025, attack: 0.01, decay: 0.09 },
   'comfort': { type: 'sine', frequency: 262, duration: 0.4, gain: 0.02, attack: 0.1, decay: 0.3 },
+  
+  // Typing context sounds - ultra subtle
+  'listening': { type: 'sine', frequency: 330, duration: 0.12, gain: 0.015, attack: 0.03, decay: 0.09 },
+  'attentive-blink': { type: 'sine', frequency: 494, duration: 0.06, gain: 0.012, attack: 0.01, decay: 0.05 },
+  'thoughtful-blink': { type: 'sine', frequency: 262, duration: 0.15, gain: 0.01, attack: 0.04, decay: 0.11 },
+  'processing': { type: 'triangle', frequency: 370, duration: 0.2, gain: 0.018, attack: 0.05, decay: 0.15, detune: 5 },
 };
 
 // Global unlock state for iOS AudioContext
