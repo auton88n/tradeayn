@@ -33,3 +33,6 @@ verify_jwt = false
 
 [functions.send-ticket-reply]
 verify_jwt = true
+
+[functions.verify-admin-pin]
+verify_jwt = true
