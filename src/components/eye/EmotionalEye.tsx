@@ -179,12 +179,17 @@ const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorCon
   const typingStartRef = useRef<number | null>(null);
   const lastTypingPauseRef = useRef<number>(Date.now());
   const pauseBlinkTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hasPlayedListeningRef = useRef(false);
 
-  // Track when user starts/stops typing for contextual blinks
+  // Track when user starts/stops typing for contextual blinks with sounds
   useEffect(() => {
     if (isUserTyping) {
       if (!typingStartRef.current) {
         typingStartRef.current = Date.now();
+        hasPlayedListeningRef.current = false;
+        
+        // Play subtle "listening" sound when user starts typing
+        soundContext?.playSound('listening');
       }
       lastTypingPauseRef.current = Date.now();
       
@@ -202,9 +207,15 @@ const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorCon
       pauseBlinkTimeoutRef.current = setTimeout(() => {
         if (!isAbsorbing && !isResponding) {
           triggerBlink();
-          // If they typed a lot, add a second "processing" blink
+          // Play attentive blink sound
+          soundContext?.playSound('attentive-blink');
+          
+          // If they typed a lot, add a second "processing" blink with sound
           if (typingDuration > 3000) {
-            setTimeout(() => triggerBlink(), 250);
+            setTimeout(() => {
+              triggerBlink();
+              soundContext?.playSound('processing');
+            }, 250);
           }
         }
       }, 300 + Math.random() * 200);
@@ -215,7 +226,7 @@ const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorCon
         clearTimeout(pauseBlinkTimeoutRef.current);
       }
     };
-  }, [isUserTyping, isAbsorbing, isResponding, triggerBlink]);
+  }, [isUserTyping, isAbsorbing, isResponding, triggerBlink, soundContext]);
 
   // Get blink frequency from behavior or calculate based on state
   const getBlinkInterval = useCallback(() => {
@@ -242,7 +253,7 @@ const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorCon
     return 3000 + Math.random() * 2000;
   }, [isUserTyping, isResponding, behaviorConfig?.blinkFrequency, behaviorConfig?.blinkPattern]);
 
-  // Idle blinking effect
+  // Idle blinking effect with contextual sounds
   useEffect(() => {
     if (idleBlinkIntervalRef.current) {
       clearInterval(idleBlinkIntervalRef.current);
@@ -259,6 +270,11 @@ const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorCon
           if (now - lastBlinkRef.current > 500) {
             triggerBlink();
             lastBlinkRef.current = now;
+            
+            // Play thoughtful blink sound during typing (slow blinks while "reading")
+            if (isUserTyping && interval > 2000) {
+              soundContext?.playSound('thoughtful-blink');
+            }
             
             // Double blink for certain patterns
             if (behaviorConfig?.blinkPattern === 'double') {
@@ -277,7 +293,7 @@ const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorCon
         clearTimeout(idleBlinkIntervalRef.current);
       }
     };
-  }, [isAbsorbing, isAttentive, getBlinkInterval, triggerBlink, behaviorConfig?.blinkPattern]);
+  }, [isAbsorbing, isAttentive, getBlinkInterval, triggerBlink, behaviorConfig?.blinkPattern, isUserTyping, soundContext]);
 
   // "Check-in" blink after long user inactivity
   useEffect(() => {
