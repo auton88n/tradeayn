@@ -147,24 +147,54 @@ export const AdminPanel = ({
     }
     return response.json();
   }, [session.access_token]);
+
+  // Fetch with retry logic for transient failures
+  const fetchWithRetry = useCallback(async (endpoint: string, retries = 1): Promise<unknown[]> => {
+    try {
+      return await fetchWithAuth(endpoint);
+    } catch (error) {
+      if (retries > 0) {
+        await new Promise(r => setTimeout(r, 500));
+        return fetchWithRetry(endpoint, retries - 1);
+      }
+      console.error(`Failed to fetch ${endpoint}:`, error);
+      return [];
+    }
+  }, [fetchWithAuth]);
+
   const fetchData = useCallback(async () => {
     try {
-      // Fetch all data in parallel using direct REST API
-      const [usersData, profilesData, messagesData, configData, applicationsData] = await Promise.all([fetchWithAuth('access_grants?select=*&order=created_at.desc'), fetchWithAuth('profiles?select=user_id,company_name,contact_person,avatar_url'), fetchWithAuth(`messages?select=id&created_at=gte.${new Date().toISOString().split('T')[0]}`), fetchWithAuth('system_config?select=key,value'), fetchWithAuth('service_applications?select=*&order=created_at.desc')]);
+      // Fetch all data in parallel using Promise.allSettled for resilience
+      const results = await Promise.allSettled([
+        fetchWithRetry('access_grants?select=*&order=created_at.desc'),
+        fetchWithRetry('profiles?select=user_id,company_name,contact_person,avatar_url'),
+        fetchWithRetry(`messages?select=id&created_at=gte.${new Date().toISOString().split('T')[0]}`),
+        fetchWithRetry('system_config?select=key,value'),
+        fetchWithRetry('service_applications?select=*&order=created_at.desc')
+      ]);
+
+      // Log any failures for debugging
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          console.error(`Query ${index} failed:`, result.reason);
+        }
+      });
+
+      // Extract values, defaulting to empty arrays on failure
+      const usersData = results[0].status === 'fulfilled' ? results[0].value as AccessGrantWithProfile[] : [];
+      const profilesData = results[1].status === 'fulfilled' ? results[1].value as { user_id: string; company_name: string | null; contact_person: string | null; avatar_url: string | null; }[] : [];
+      const messagesData = results[2].status === 'fulfilled' ? results[2].value as { id: string }[] : [];
+      const configData = results[3].status === 'fulfilled' ? results[3].value as { key: string; value: unknown }[] : [];
+      const applicationsData = results[4].status === 'fulfilled' ? results[4].value as ServiceApplication[] : [];
 
       // Map profiles to users
-      const profilesMap = new Map((profilesData || []).map((p: {
-        user_id: string;
-        company_name: string | null;
-        contact_person: string | null;
-        avatar_url: string | null;
-      }) => [p.user_id, p]));
-      const usersWithProfiles: AccessGrantWithProfile[] = (usersData || []).map((user: AccessGrantWithProfile) => ({
+      const profilesMap = new Map(profilesData.map(p => [p.user_id, p]));
+      const usersWithProfiles: AccessGrantWithProfile[] = usersData.map((user: AccessGrantWithProfile) => ({
         ...user,
         profiles: profilesMap.get(user.user_id) || null
       }));
       setAllUsers(usersWithProfiles);
-      setApplications(applicationsData || []);
+      setApplications(applicationsData);
 
       // Calculate metrics
       const activeCount = usersWithProfiles.filter((u: AccessGrantWithProfile) => u.is_active).length;
@@ -173,19 +203,13 @@ export const AdminPanel = ({
         totalUsers: usersWithProfiles.length,
         activeUsers: activeCount,
         pendingUsers: pendingCount,
-        todayMessages: messagesData?.length || 0,
+        todayMessages: messagesData.length,
         weeklyGrowth: 0
       });
 
       // Parse system config
-      if (configData) {
-        const configMap = new Map((configData as {
-          key: string;
-          value: unknown;
-        }[]).map((c: {
-          key: string;
-          value: unknown;
-        }) => [c.key, c.value]));
+      if (configData.length > 0) {
+        const configMap = new Map(configData.map(c => [c.key, c.value]));
         setSystemConfig(prev => ({
           ...prev,
           maintenanceMode: configMap.get('maintenance_mode') as boolean || false,
@@ -203,16 +227,23 @@ export const AdminPanel = ({
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [fetchWithAuth]);
+  }, [fetchWithRetry]);
   useEffect(() => {
-    fetchData();
+    // Small delay to ensure token is fully propagated before admin queries
+    const initTimer = setTimeout(() => {
+      fetchData();
+    }, 100);
 
     // Safety timeout - if data doesn't load in 8 seconds, stop loading spinner
     const safetyTimeout = setTimeout(() => {
       setIsLoading(false);
       setIsRefreshing(false);
     }, 8000);
-    return () => clearTimeout(safetyTimeout);
+    
+    return () => {
+      clearTimeout(initTimer);
+      clearTimeout(safetyTimeout);
+    };
   }, [fetchData]);
   const handleRefresh = () => {
     setIsRefreshing(true);
