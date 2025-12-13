@@ -160,9 +160,13 @@ const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorCon
     };
   }, [mouseX, mouseY, behaviorConfig?.gazePattern]);
 
-  // AI gaze towards suggestions when visible
+  // AI gaze towards suggestions or input field
   useEffect(() => {
-    if (gazeTarget && !isUserTyping && !isResponding) {
+    if (isUserTyping) {
+      // Look slightly down toward input field when user is typing
+      aiGazeX.set(0);
+      aiGazeY.set(8); // Subtle downward gaze toward input
+    } else if (gazeTarget && !isResponding) {
       aiGazeX.set(gazeTarget.x * 0.8);
       aiGazeY.set(gazeTarget.y * 0.3);
     } else {
