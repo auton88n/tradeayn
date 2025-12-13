@@ -190,7 +190,6 @@ export const useMessages = (
           company_name: userProfile?.company_name || '',
           contact_person: userProfile?.contact_person || '',
           business_type: userProfile?.business_type || '',
-          business_context: userProfile?.business_context || ''
         },
         allowPersonalization,
         detectedLanguage,

@@ -173,7 +173,6 @@ describe('useAuth', () => {
         contact_person: 'John Doe',
         company_name: 'Test Corp',
         business_type: 'Technology',
-        business_context: 'Software development',
         avatar_url: 'https://example.com/avatar.jpg',
       };
 
@@ -204,11 +203,12 @@ describe('useAuth', () => {
   });
 
   describe('acceptTerms', () => {
-    it('should set localStorage and update state when terms accepted', async () => {
+    it('should update database and state when terms accepted', async () => {
       mockSupabase._mocks.maybeSingle
-        .mockResolvedValueOnce({ data: null, error: null })
-        .mockResolvedValueOnce({ data: null, error: null })
-        .mockResolvedValueOnce({ data: null, error: null });
+        .mockResolvedValueOnce({ data: null, error: null }) // access_grants
+        .mockResolvedValueOnce({ data: null, error: null }) // user_roles
+        .mockResolvedValueOnce({ data: null, error: null }) // profiles
+        .mockResolvedValueOnce({ data: { has_accepted_terms: false }, error: null }); // user_settings
 
       const { result } = renderHook(() => useAuth(mockUser, mockSession));
 
@@ -218,21 +218,16 @@ describe('useAuth', () => {
 
       result.current.acceptTerms();
 
-      expect(localStorage.setItem).toHaveBeenCalledWith(
-        `ayn_terms_accepted_${mockUser.id}`,
-        'true'
-      );
       expect(mockToast).toHaveBeenCalled();
       expect(result.current.hasAcceptedTerms).toBe(true);
     });
 
-    it('should check localStorage on mount for existing acceptance', async () => {
-      (localStorage.getItem as any).mockReturnValueOnce('true');
-
+    it('should load terms acceptance from database on mount', async () => {
       mockSupabase._mocks.maybeSingle
-        .mockResolvedValueOnce({ data: null, error: null })
-        .mockResolvedValueOnce({ data: null, error: null })
-        .mockResolvedValueOnce({ data: null, error: null });
+        .mockResolvedValueOnce({ data: null, error: null }) // access_grants
+        .mockResolvedValueOnce({ data: null, error: null }) // user_roles
+        .mockResolvedValueOnce({ data: null, error: null }) // profiles
+        .mockResolvedValueOnce({ data: { has_accepted_terms: true }, error: null }); // user_settings
 
       const { result } = renderHook(() => useAuth(mockUser, mockSession));
 
