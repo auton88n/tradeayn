@@ -62,9 +62,9 @@ export const TermsModal = ({ open, onAccept }: TermsModalProps) => {
             <span><span className="text-white/60">Last Updated:</span> December 13, 2024</span>
             <span><span className="text-white/60">Effective Date:</span> December 13, 2024</span>
           </div>
-        <p className="text-sm text-white/50 max-w-sm mx-auto">
-          By using AYN, you agree to how we handle your data.
-        </p>
+          <p className="text-sm text-white/50 max-w-sm mx-auto">
+            By using AYN, you agree to how we handle your data.
+          </p>
         </div>
 
         <div className="flex-1 min-h-0 overflow-y-auto px-6">
