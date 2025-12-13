@@ -193,6 +193,7 @@ export interface UseFileUploadReturn {
 export interface UseChatSessionReturn {
   currentSessionId: string;
   recentChats: ChatHistory[];
+  isLoadingChats: boolean;
   selectedChats: Set<number>;
   showChatSelection: boolean;
   setSelectedChats: (chats: Set<number>) => void;
@@ -273,6 +274,7 @@ export interface SidebarProps {
   isTyping: boolean;
   hasAccess: boolean;
   isAuthLoading?: boolean;
+  isLoadingChats?: boolean;
   selectedMode: AIMode;
   modes: AIModeConfig[];
   recentChats: ChatHistory[];
