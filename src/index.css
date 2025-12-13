@@ -191,6 +191,11 @@ button, a, input, textarea, select {
     /* Premium Animations */
     --transition-smooth: all 0.3s cubic-bezier(0.32, 0.72, 0, 1);
     --transition-spring: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    /* Glass morphism variables */
+    --glass-bg: hsla(217, 91%, 60%, 0.08);
+    --glass-border: hsla(217, 91%, 60%, 0.2);
+    --glass-shadow: 0 4px 24px hsla(217, 91%, 60%, 0.1);
   }
 
   .dark {
@@ -222,6 +227,11 @@ button, a, input, textarea, select {
     --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-border: 0 0% 15%;
     --sidebar-ring: 0 0% 98%;
+
+    /* Glass morphism variables */
+    --glass-bg: hsla(217, 91%, 60%, 0.15);
+    --glass-border: hsla(217, 91%, 60%, 0.25);
+    --glass-shadow: 0 4px 24px hsla(217, 91%, 60%, 0.15);
   }
 }
 
