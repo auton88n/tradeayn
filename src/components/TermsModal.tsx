@@ -70,9 +70,8 @@ export const TermsModal = ({ open, onAccept }: TermsModalProps) => {
           </p>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-hidden">
-          <ScrollArea className="h-full px-6">
-            <div className="space-y-8 py-6">
+        <div className="flex-1 min-h-0 overflow-y-auto px-6">
+          <div className="space-y-8 py-6">
             {/* Section 1 */}
             <PolicySection number="1" title="INFORMATION WE COLLECT">
               <p className="text-white/50 text-sm mb-4">We collect only what is necessary to operate and improve AYN.</p>
@@ -191,8 +190,7 @@ export const TermsModal = ({ open, onAccept }: TermsModalProps) => {
                 Continued use of AYN means you accept the updated policy.
               </p>
             </PolicySection>
-            </div>
-          </ScrollArea>
+          </div>
         </div>
 
         {/* Footer */}
