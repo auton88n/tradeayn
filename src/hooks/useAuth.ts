@@ -42,6 +42,27 @@ const fetchFromSupabase = async (
   return text ? JSON.parse(text) : null;
 };
 
+// Retry helper for transient failures
+const fetchWithRetry = async (
+  endpoint: string,
+  token: string,
+  retries = 2
+): Promise<any> => {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await fetchFromSupabase(endpoint, token);
+    } catch (error) {
+      if (attempt === retries) {
+        console.error(`Auth query failed after ${retries + 1} attempts:`, endpoint, error);
+        return null;
+      }
+      // Wait before retry
+      await new Promise(r => setTimeout(r, 300));
+    }
+  }
+  return null;
+};
+
 export const useAuth = (user: User, session: Session): UseAuthReturn => {
   const [hasAccess, setHasAccess] = useState(false);
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
@@ -154,24 +175,19 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
       hasRun = true;
 
       try {
-        // Race queries against timeout - direct fetch bypasses Supabase client
-        const results = await Promise.race([
-          Promise.all([
-            fetchFromSupabase(`access_grants?user_id=eq.${user.id}&select=is_active,expires_at`, session.access_token),
-            fetchFromSupabase(`user_roles?user_id=eq.${user.id}&select=role`, session.access_token),
-            fetchFromSupabase(`profiles?user_id=eq.${user.id}&select=user_id,contact_person,company_name,business_type,avatar_url`, session.access_token),
-            fetchFromSupabase(`user_settings?user_id=eq.${user.id}&select=has_accepted_terms`, session.access_token)
-          ]),
-          new Promise<never>((_, reject) => 
-            setTimeout(() => reject(new Error('Query timeout')), QUERY_TIMEOUT_MS)
-          )
+        // Use retry logic for all queries
+        const results = await Promise.all([
+          fetchWithRetry(`access_grants?user_id=eq.${user.id}&select=is_active,expires_at`, session.access_token),
+          fetchWithRetry(`user_roles?user_id=eq.${user.id}&select=role`, session.access_token),
+          fetchWithRetry(`profiles?user_id=eq.${user.id}&select=user_id,contact_person,company_name,business_type,avatar_url`, session.access_token),
+          fetchWithRetry(`user_settings?user_id=eq.${user.id}&select=has_accepted_terms`, session.access_token)
         ]);
 
         if (!isMounted) return;
 
         const [accessData, roleData, profileData, settingsData] = results;
 
-        // Process access
+        // Process access (with null check)
         if (accessData && accessData.length > 0) {
           const record = accessData[0];
           const isActive = record.is_active && 
@@ -179,21 +195,25 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
           setHasAccess(isActive);
         }
 
-        // Process admin/duty role
-        const role = roleData?.[0]?.role;
-        setIsAdmin(role === 'admin');
-        setIsDuty(role === 'duty');
+        // Process admin/duty role (with null check)
+        if (roleData) {
+          const role = roleData?.[0]?.role;
+          setIsAdmin(role === 'admin');
+          setIsDuty(role === 'duty');
+        }
 
-        // Process profile
+        // Process profile (with null check)
         if (profileData && profileData.length > 0) {
           setUserProfile(profileData[0] as UserProfile);
         }
 
-        // Process terms
-        setHasAcceptedTerms(settingsData?.[0]?.has_accepted_terms ?? false);
+        // Process terms (with null check)
+        if (settingsData) {
+          setHasAcceptedTerms(settingsData?.[0]?.has_accepted_terms ?? false);
+        }
 
-      } catch {
-        // Auth queries failed, but still allow loading to complete
+      } catch (error) {
+        console.error('Auth queries batch failed:', error);
       } finally {
         if (isMounted) {
           setIsAuthLoading(false);
@@ -201,8 +221,10 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
       }
     };
 
-    // Execute IMMEDIATELY - no delays
-    runQueries();
+    // Small delay to ensure token is propagated
+    const timer = setTimeout(() => {
+      runQueries();
+    }, 100);
 
     // Track device (non-blocking)
     if (!hasTrackedDevice.current) {
@@ -212,6 +234,7 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
 
     return () => {
       isMounted = false;
+      clearTimeout(timer);
     };
   }, [user?.id, session?.access_token]);
 
