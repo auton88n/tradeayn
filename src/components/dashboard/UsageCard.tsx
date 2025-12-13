@@ -1,7 +1,7 @@
 import { useMemo, useRef, useEffect, useState } from 'react';
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Calendar, Zap, Infinity } from 'lucide-react';
+import { Calendar, Zap, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, differenceInDays } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -60,78 +60,57 @@ export const UsageCard = ({ currentUsage, monthlyLimit, resetDate, compact = fal
     };
   }, [currentUsage, monthlyLimit, resetDate]);
 
+  const creditsLeft = monthlyLimit ? Math.max(0, monthlyLimit - currentUsage) : null;
+
   if (compact) {
     return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <motion.div 
-              className={cn(
-                "flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/40 cursor-default relative overflow-hidden",
-                showPulse && "ring-2 ring-primary/30"
-              )}
-              animate={showPulse ? { scale: [1, 1.02, 1] } : {}}
-              transition={{ duration: 0.3 }}
-            >
-              <AnimatePresence>
-                {showPulse && (
-                  <motion.div
-                    initial={{ opacity: 0.5, scale: 0.8 }}
-                    animate={{ opacity: 0, scale: 2 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.6 }}
-                    className="absolute inset-0 bg-primary/10 rounded-lg"
-                  />
-                )}
-              </AnimatePresence>
-              <Zap className={cn("w-3.5 h-3.5", colorClass)} />
-              <div className="flex items-center gap-1.5 text-xs">
-                <motion.span 
-                  key={currentUsage}
-                  initial={{ opacity: 0, y: -8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="font-medium text-foreground"
-                >
-                  {currentUsage}
-                </motion.span>
-                <span className="text-muted-foreground">/</span>
-                {monthlyLimit ? (
-                  <span className="text-muted-foreground">{monthlyLimit}</span>
-                ) : (
-                  <Infinity className="w-3.5 h-3.5 text-muted-foreground" />
-                )}
-              </div>
-              {monthlyLimit && (
-                <Progress 
-                  value={percentage} 
-                  className="w-12 h-1.5" 
-                  indicatorClassName={bgColorClass}
-                />
-              )}
-            </motion.div>
-          </TooltipTrigger>
-          <TooltipContent side="top" className="max-w-[200px]">
-            <div className="space-y-1.5 text-xs">
-              <p className="font-medium">
-                {monthlyLimit 
-                  ? `${currentUsage} of ${monthlyLimit} messages used`
-                  : `${currentUsage} messages used (Unlimited)`
-                }
-              </p>
-              {monthlyLimit && (
-                <p className={cn("font-medium", colorClass)}>
-                  {Math.round(percentage)}% of limit
-                </p>
-              )}
-              {resetDate && (
-                <p className="text-muted-foreground">
-                  Resets {formattedResetDate} ({daysUntilReset} days)
-                </p>
-              )}
-            </div>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <motion.div 
+        className={cn(
+          "w-full px-3 py-2.5 rounded-lg bg-muted/40 cursor-pointer relative overflow-hidden",
+          showPulse && "ring-2 ring-primary/30"
+        )}
+        animate={showPulse ? { scale: [1, 1.01, 1] } : {}}
+        transition={{ duration: 0.3 }}
+      >
+        <AnimatePresence>
+          {showPulse && (
+            <motion.div
+              initial={{ opacity: 0.5, scale: 0.8 }}
+              animate={{ opacity: 0, scale: 2 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.6 }}
+              className="absolute inset-0 bg-primary/10 rounded-lg"
+            />
+          )}
+        </AnimatePresence>
+        
+        {/* Header row */}
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-medium text-foreground">Credits</span>
+          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+            {monthlyLimit ? (
+              <motion.span 
+                key={creditsLeft}
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="font-medium"
+              >
+                {creditsLeft} left
+              </motion.span>
+            ) : (
+              <span className="font-medium">Unlimited</span>
+            )}
+            <ChevronRight className="w-4 h-4" />
+          </div>
+        </div>
+        
+        {/* Progress bar */}
+        <Progress 
+          value={monthlyLimit ? percentage : 100} 
+          className="h-2 w-full" 
+          indicatorClassName={monthlyLimit ? bgColorClass : "bg-primary"}
+        />
+      </motion.div>
     );
   }
 
