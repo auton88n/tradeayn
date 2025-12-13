@@ -1446,7 +1446,7 @@ export type Database = {
       get_user_profile_secure: {
         Args: { _user_id: string }
         Returns: {
-          business_context: string
+          avatar_url: string
           business_type: string
           company_name: string
           contact_person: string
