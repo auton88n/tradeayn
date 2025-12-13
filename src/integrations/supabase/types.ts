@@ -1282,6 +1282,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_can_view_message_with_logging: {
+        Args: { message_user_id: string }
+        Returns: boolean
+      }
       admin_unblock_user: {
         Args: { p_endpoint?: string; p_user_id: string }
         Returns: undefined
