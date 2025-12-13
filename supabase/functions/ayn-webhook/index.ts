@@ -527,10 +527,31 @@ serve(async (req) => {
       throw new Error('Message cannot be empty');
     }
 
-    if (sanitizedMessage.length > 10000) {
-      console.error(`[${requestId}] Message too long: ${sanitizedMessage.length}`);
-      throw new Error('Message is too long (max 10000 characters)');
+    // Truncate message if too long (keep first 10000 chars)
+    const maxMessageLength = 10000;
+    const truncatedMessage = sanitizedMessage.length > maxMessageLength 
+      ? sanitizedMessage.slice(0, maxMessageLength) + '...[truncated]'
+      : sanitizedMessage;
+    
+    if (sanitizedMessage.length > maxMessageLength) {
+      console.warn(`[${requestId}] Message truncated from ${sanitizedMessage.length} to ${maxMessageLength} characters`);
     }
+
+    // Limit conversation history to last 10 messages to prevent payload bloat
+    const maxHistoryItems = 10;
+    let conversationHistory = requestData.conversationHistory || [];
+    if (conversationHistory.length > maxHistoryItems) {
+      conversationHistory = conversationHistory.slice(-maxHistoryItems);
+      console.log(`[${requestId}] Conversation history truncated to last ${maxHistoryItems} messages`);
+    }
+    
+    // Also truncate individual history messages if they're too long
+    conversationHistory = conversationHistory.map((msg: any) => {
+      if (msg.content && typeof msg.content === 'string' && msg.content.length > 2000) {
+        return { ...msg, content: msg.content.slice(0, 2000) + '...[truncated]' };
+      }
+      return msg;
+    });
 
     if (!requestData.userId) {
       console.error(`[${requestId}] Missing user ID`);
@@ -656,7 +677,7 @@ serve(async (req) => {
         'X-Webhook-Secret': Deno.env.get('N8N_WEBHOOK_SECRET') || '',
       },
       body: JSON.stringify({
-        message: requestData.message,
+        message: truncatedMessage,
         userId: requestData.userId,
         contactPerson: requestData.contactPerson,
         conversationKey, // isolate memory per user and mode
@@ -669,7 +690,7 @@ serve(async (req) => {
         has_attachment: requestData.has_attachment,
         file_data: requestData.file_data,
         sessionId: requestData.sessionId,
-        conversationHistory: requestData.conversationHistory,
+        conversationHistory: conversationHistory,
         userEmotion: userEmotionAnalysis,
         emotionContext: emotionContext,
         moodPattern: moodPattern,
