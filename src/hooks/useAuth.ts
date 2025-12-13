@@ -94,7 +94,7 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
   const loadUserProfile = useCallback(async () => {
     try {
       const data = await fetchFromSupabase(
-        `profiles?user_id=eq.${user.id}&select=user_id,contact_person,company_name,business_type,business_context,avatar_url`,
+        `profiles?user_id=eq.${user.id}&select=user_id,contact_person,company_name,business_type,avatar_url`,
         session.access_token
       );
 
@@ -159,7 +159,7 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
           Promise.all([
             fetchFromSupabase(`access_grants?user_id=eq.${user.id}&select=is_active,expires_at`, session.access_token),
             fetchFromSupabase(`user_roles?user_id=eq.${user.id}&select=role`, session.access_token),
-            fetchFromSupabase(`profiles?user_id=eq.${user.id}&select=user_id,contact_person,company_name,business_type,business_context,avatar_url`, session.access_token),
+            fetchFromSupabase(`profiles?user_id=eq.${user.id}&select=user_id,contact_person,company_name,business_type,avatar_url`, session.access_token),
             fetchFromSupabase(`user_settings?user_id=eq.${user.id}&select=has_accepted_terms`, session.access_token)
           ]),
           new Promise<never>((_, reject) => 
