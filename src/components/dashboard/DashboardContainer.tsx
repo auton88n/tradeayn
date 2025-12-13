@@ -20,6 +20,7 @@ import { useChatSession } from '@/hooks/useChatSession';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { useMessages } from '@/hooks/useMessages';
 import { useTutorial } from '@/hooks/useTutorial';
+import { useUsageTracking } from '@/hooks/useUsageTracking';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
 import { analyzeResponseEmotion } from '@/utils/emotionMapping';
 import { hapticFeedback } from '@/lib/haptics';
@@ -51,6 +52,8 @@ const getModes = (): AIModeConfig[] => [
 export const DashboardContainer = ({ user, session, auth, isAdmin, hasDutyAccess, onAdminPanelClick }: DashboardContainerProps) => {
   const { toast } = useToast();
   
+  // Real-time usage tracking
+  const usageTracking = useUsageTracking(user.id);
   
   // Custom hooks - pass session to useChatSession for direct REST API calls
   const chatSession = useChatSession(user.id, session);
@@ -212,6 +215,7 @@ export const DashboardContainer = ({ user, session, auth, isAdmin, hasDutyAccess
       hasDutyAccess={hasDutyAccess}
       onAdminPanelClick={onAdminPanelClick}
       onLanguageChange={handleLanguageChange}
+      usageTracking={usageTracking}
     />
   );
 };
@@ -237,6 +241,7 @@ const DashboardContent = ({
   hasDutyAccess,
   onAdminPanelClick,
   onLanguageChange,
+  usageTracking,
 }: {
   user: User;
   session: Session;
@@ -257,6 +262,7 @@ const DashboardContent = ({
   hasDutyAccess?: boolean;
   onAdminPanelClick?: () => void;
   onLanguageChange?: (language: { code: string; flag: string; name: string }) => void;
+  usageTracking: ReturnType<typeof useUsageTracking>;
 }) => {
   const { open, setOpen, openMobile, setOpenMobile, isMobile, toggleSidebar } = useSidebar();
   const [transcriptOpen, setTranscriptOpen] = useState(false);
@@ -387,9 +393,9 @@ const DashboardContent = ({
           recentChats={chatSession.recentChats}
           showChatSelection={chatSession.showChatSelection}
           selectedChats={chatSession.selectedChats}
-          currentMonthUsage={auth.currentMonthUsage}
-          monthlyLimit={auth.monthlyLimit}
-          usageResetDate={auth.usageResetDate}
+          currentMonthUsage={usageTracking.currentMonthUsage}
+          monthlyLimit={usageTracking.monthlyLimit}
+          usageResetDate={usageTracking.usageResetDate}
           onModeSelect={setSelectedMode}
           onNewChat={handleNewChat}
           onLoadChat={handleLoadChat}

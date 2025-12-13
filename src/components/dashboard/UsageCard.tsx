@@ -1,9 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo, useRef, useEffect, useState } from 'react';
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Calendar, Zap, Infinity } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, differenceInDays } from 'date-fns';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface UsageCardProps {
   currentUsage: number;
@@ -13,6 +14,19 @@ interface UsageCardProps {
 }
 
 export const UsageCard = ({ currentUsage, monthlyLimit, resetDate, compact = false }: UsageCardProps) => {
+  const prevUsageRef = useRef(currentUsage);
+  const [showPulse, setShowPulse] = useState(false);
+
+  // Detect usage changes for pulse animation
+  useEffect(() => {
+    if (currentUsage !== prevUsageRef.current) {
+      setShowPulse(true);
+      const timeout = setTimeout(() => setShowPulse(false), 600);
+      prevUsageRef.current = currentUsage;
+      return () => clearTimeout(timeout);
+    }
+  }, [currentUsage]);
+
   const { percentage, daysUntilReset, formattedResetDate, colorClass, bgColorClass } = useMemo(() => {
     const pct = monthlyLimit ? Math.min((currentUsage / monthlyLimit) * 100, 100) : 0;
     
@@ -51,10 +65,35 @@ export const UsageCard = ({ currentUsage, monthlyLimit, resetDate, compact = fal
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/40 cursor-default">
+            <motion.div 
+              className={cn(
+                "flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/40 cursor-default relative overflow-hidden",
+                showPulse && "ring-2 ring-primary/30"
+              )}
+              animate={showPulse ? { scale: [1, 1.02, 1] } : {}}
+              transition={{ duration: 0.3 }}
+            >
+              <AnimatePresence>
+                {showPulse && (
+                  <motion.div
+                    initial={{ opacity: 0.5, scale: 0.8 }}
+                    animate={{ opacity: 0, scale: 2 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.6 }}
+                    className="absolute inset-0 bg-primary/10 rounded-lg"
+                  />
+                )}
+              </AnimatePresence>
               <Zap className={cn("w-3.5 h-3.5", colorClass)} />
               <div className="flex items-center gap-1.5 text-xs">
-                <span className="font-medium text-foreground">{currentUsage}</span>
+                <motion.span 
+                  key={currentUsage}
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="font-medium text-foreground"
+                >
+                  {currentUsage}
+                </motion.span>
                 <span className="text-muted-foreground">/</span>
                 {monthlyLimit ? (
                   <span className="text-muted-foreground">{monthlyLimit}</span>
@@ -69,7 +108,7 @@ export const UsageCard = ({ currentUsage, monthlyLimit, resetDate, compact = fal
                   indicatorClassName={bgColorClass}
                 />
               )}
-            </div>
+            </motion.div>
           </TooltipTrigger>
           <TooltipContent side="top" className="max-w-[200px]">
             <div className="space-y-1.5 text-xs">
