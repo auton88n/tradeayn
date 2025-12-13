@@ -28,7 +28,6 @@ export interface UserProfile {
   contact_person?: string;
   company_name?: string;
   business_type?: string;
-  business_context?: string;
   avatar_url?: string;
 }
 
