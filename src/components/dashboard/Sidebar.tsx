@@ -170,21 +170,11 @@ export const Sidebar = ({
       <SidebarContent className="flex flex-col overflow-hidden">
         {/* New Chat Button */}
         <SidebarGroup className="flex-shrink-0 p-4 pb-2">
-          <SidebarGroupContent className="space-y-2">
+          <SidebarGroupContent>
             <Button onClick={onNewChat} className={cn("w-full h-10 rounded-xl", "bg-foreground text-background", "hover:bg-foreground/90", "transition-all duration-300", "disabled:opacity-40")} disabled={!hasAccess}>
               <Plus className="w-4 h-4 mr-2" />
               New Chat
             </Button>
-            
-            {/* Usage Card - Under New Chat */}
-            {hasAccess && (
-              <UsageCard
-                currentUsage={currentMonthUsage}
-                monthlyLimit={monthlyLimit}
-                resetDate={usageResetDate}
-                compact
-              />
-            )}
           </SidebarGroupContent>
         </SidebarGroup>
 
@@ -336,7 +326,17 @@ export const Sidebar = ({
         </div>
       </SidebarContent>
 
-      <SidebarFooter className="p-3">
+      <SidebarFooter className="p-3 space-y-3">
+        {/* Usage Card - Compact */}
+        {hasAccess && (
+          <UsageCard
+            currentUsage={currentMonthUsage}
+            monthlyLimit={monthlyLimit}
+            resetDate={usageResetDate}
+            compact
+          />
+        )}
+        
         {/* User Profile - Premium Glassmorphism Card */}
         {/* User Profile - Premium Glassmorphism Card */}
         <Popover open={profilePopoverOpen} onOpenChange={setProfilePopoverOpen}>
