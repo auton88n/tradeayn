@@ -62,12 +62,9 @@ export const TermsModal = ({ open, onAccept }: TermsModalProps) => {
             <span><span className="text-white/60">Last Updated:</span> December 13, 2024</span>
             <span><span className="text-white/60">Effective Date:</span> December 13, 2024</span>
           </div>
-          <p className="text-sm text-white/60 max-w-md mx-auto">
-            AYN respects your privacy and is committed to protecting your information. This Privacy Policy explains how we collect, use, and safeguard your data when you use AYN.
-          </p>
-          <p className="text-xs text-white/40 mt-3">
-            By using AYN, you agree to the practices described below.
-          </p>
+        <p className="text-sm text-white/50 max-w-sm mx-auto">
+          By using AYN, you agree to how we handle your data.
+        </p>
         </div>
 
         <div className="flex-1 min-h-0 overflow-y-auto px-6">
