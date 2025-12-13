@@ -597,6 +597,84 @@ serve(async (req) => {
       );
     }
 
+    // Check usage thresholds and send alerts if needed (non-blocking)
+    EdgeRuntime.waitUntil((async () => {
+      try {
+        // Get user's access grant with usage info
+        const { data: accessGrant } = await supabase
+          .from('access_grants')
+          .select('current_month_usage, monthly_limit, usage_reset_date')
+          .eq('user_id', requestData.userId)
+          .maybeSingle();
+
+        if (accessGrant && accessGrant.monthly_limit && accessGrant.monthly_limit > 0) {
+          const currentUsage = accessGrant.current_month_usage || 0;
+          const monthlyLimit = accessGrant.monthly_limit;
+          const percentageUsed = Math.round((currentUsage / monthlyLimit) * 100);
+          const resetDate = accessGrant.usage_reset_date || new Date().toISOString();
+
+          // Check thresholds: 75%, 90%, 100%
+          let alertType: '75_percent' | '90_percent' | '100_percent' | null = null;
+          if (percentageUsed >= 100) {
+            alertType = '100_percent';
+          } else if (percentageUsed >= 90) {
+            alertType = '90_percent';
+          } else if (percentageUsed >= 75) {
+            alertType = '75_percent';
+          }
+
+          if (alertType) {
+            // Get user's email and name for notification
+            const { data: userData } = await supabase.auth.admin.getUserById(requestData.userId);
+            
+            if (userData?.user?.email) {
+              // Get user's notification preferences
+              const { data: userSettings } = await supabase
+                .from('user_settings')
+                .select('email_usage_warnings')
+                .eq('user_id', requestData.userId)
+                .maybeSingle();
+
+              // Only send if user has usage warnings enabled (default true)
+              if (userSettings?.email_usage_warnings !== false) {
+                // Get user's name from profile
+                const { data: profile } = await supabase
+                  .from('profiles')
+                  .select('contact_person')
+                  .eq('user_id', requestData.userId)
+                  .maybeSingle();
+
+                // Call send-usage-alert function
+                const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+                await fetch(`${supabaseUrl}/functions/v1/send-usage-alert`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
+                  },
+                  body: JSON.stringify({
+                    userId: requestData.userId,
+                    userEmail: userData.user.email,
+                    userName: profile?.contact_person || userData.user.user_metadata?.full_name,
+                    currentUsage,
+                    monthlyLimit,
+                    percentageUsed,
+                    alertType,
+                    resetDate
+                  })
+                });
+
+                console.log(`[${requestId}] Usage alert triggered: ${alertType} (${percentageUsed}%)`);
+              }
+            }
+          }
+        }
+      } catch (alertError) {
+        console.error(`[${requestId}] Error checking usage alerts:`, alertError);
+        // Don't fail the main request for alert errors
+      }
+    })());
+
     // Analyze user emotion from message
     const userEmotionAnalysis = analyzeUserEmotion(sanitizedMessage);
     const emotionContext = getEmotionContext(userEmotionAnalysis);
