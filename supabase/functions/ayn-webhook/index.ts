@@ -527,8 +527,8 @@ serve(async (req) => {
       throw new Error('Message cannot be empty');
     }
 
-    // Truncate message if too long (keep first 10000 chars)
-    const maxMessageLength = 10000;
+    // Truncate message if too long (keep first 100k chars - handles large PDFs/documents)
+    const maxMessageLength = 100000;
     const truncatedMessage = sanitizedMessage.length > maxMessageLength 
       ? sanitizedMessage.slice(0, maxMessageLength) + '...[truncated]'
       : sanitizedMessage;
@@ -547,8 +547,8 @@ serve(async (req) => {
     
     // Also truncate individual history messages if they're too long
     conversationHistory = conversationHistory.map((msg: any) => {
-      if (msg.content && typeof msg.content === 'string' && msg.content.length > 2000) {
-        return { ...msg, content: msg.content.slice(0, 2000) + '...[truncated]' };
+      if (msg.content && typeof msg.content === 'string' && msg.content.length > 10000) {
+        return { ...msg, content: msg.content.slice(0, 10000) + '...[truncated]' };
       }
       return msg;
     });
