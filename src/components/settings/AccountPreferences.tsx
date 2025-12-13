@@ -49,19 +49,25 @@ export const AccountPreferences = ({ userId, userEmail, accessToken }: AccountPr
     if (!userId) return;
 
     try {
+      // Fetch profile data (without plaintext business_context - it's encrypted)
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('contact_person, company_name, business_type, avatar_url')
         .eq('user_id', userId)
         .single();
 
       if (error) throw error;
+      
+      // Fetch decrypted business_context via secure RPC function
+      const { data: businessContext } = await supabase
+        .rpc('get_profile_business_context', { _user_id: userId });
+
       if (data) {
         const profileData = {
           contact_person: data.contact_person || '',
           company_name: data.company_name || '',
           business_type: data.business_type || '',
-          business_context: data.business_context || '',
+          business_context: businessContext || '',
           avatar_url: data.avatar_url || '',
         };
         setProfile(profileData);
@@ -79,17 +85,26 @@ export const AccountPreferences = ({ userId, userEmail, accessToken }: AccountPr
     
     setSaving(true);
     try {
+      // Update non-encrypted fields directly
       const { error } = await supabase
         .from('profiles')
         .update({
           contact_person: profile.contact_person,
           company_name: profile.company_name,
           business_type: profile.business_type,
-          business_context: profile.business_context,
         })
         .eq('user_id', userId);
 
       if (error) throw error;
+
+      // Update encrypted business_context via secure RPC function
+      const { error: contextError } = await supabase
+        .rpc('update_profile_business_context', {
+          _user_id: userId,
+          _business_context: profile.business_context,
+        });
+
+      if (contextError) throw contextError;
 
       setOriginalProfile(profile);
       registerFormChange('account', false);
