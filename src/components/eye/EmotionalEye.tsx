@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef, useCallback, memo } from 'react';
 import { motion, useMotionValue, useSpring, useTransform, useReducedMotion } from 'framer-motion';
-import { Brain } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
 import { useSoundContextOptional } from '@/contexts/SoundContext';
@@ -472,11 +471,9 @@ const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorCon
               }} 
             />
               
-            <foreignObject 
-              x={50 - irisRadius * 0.6} 
-              y={50 - irisRadius * 0.6} 
-              width={irisRadius * 1.2} 
-              height={irisRadius * 1.2} 
+            {/* Pure SVG Brain icon - Safari compatible (no foreignObject) */}
+            <g
+              transform={`translate(${50 - irisRadius * 0.6}, ${50 - irisRadius * 0.6}) scale(${(irisRadius * 1.2) / 24})`}
               style={{
                 transition: isAbsorbing 
                   ? "all 0.15s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
@@ -484,31 +481,94 @@ const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorCon
                     ? "all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)"
                     : isBlinking 
                       ? "all 0.08s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
-                      : "all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)"
+                      : "all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                opacity: 0.92,
+                filter: emotion !== 'calm' ? `drop-shadow(0 0 6px ${emotionConfig.color}30)` : 'none'
               }}
             >
-              {/* Safari-compatible wrapper with XHTML namespace */}
-              <div 
-                style={{ 
-                  width: '100%', 
-                  height: '100%', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center' 
-                }}
-                {...{ xmlns: "http://www.w3.org/1999/xhtml" } as any}
-              >
-                <Brain
-                  className="w-full h-full" 
-                  style={{ 
-                    color: emotion === 'calm' ? '#FFFFFF' : emotionConfig.color,
-                    opacity: 0.92,
-                    transition: 'color 0.5s ease-out, filter 0.5s ease-out',
-                    filter: emotion !== 'calm' ? `drop-shadow(0 0 6px ${emotionConfig.color}30)` : 'none'
-                  }} 
-                />
-              </div>
-            </foreignObject>
+              {/* Brain icon paths from Lucide */}
+              <path
+                d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"
+                stroke={emotion === 'calm' ? '#FFFFFF' : emotionConfig.color}
+                strokeWidth="2"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ transition: 'stroke 0.5s ease-out' }}
+              />
+              <path
+                d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"
+                stroke={emotion === 'calm' ? '#FFFFFF' : emotionConfig.color}
+                strokeWidth="2"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ transition: 'stroke 0.5s ease-out' }}
+              />
+              <path
+                d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"
+                stroke={emotion === 'calm' ? '#FFFFFF' : emotionConfig.color}
+                strokeWidth="2"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ transition: 'stroke 0.5s ease-out' }}
+              />
+              <path
+                d="M17.599 6.5a3 3 0 0 0 .399-1.375"
+                stroke={emotion === 'calm' ? '#FFFFFF' : emotionConfig.color}
+                strokeWidth="2"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ transition: 'stroke 0.5s ease-out' }}
+              />
+              <path
+                d="M6.003 5.125A3 3 0 0 0 6.401 6.5"
+                stroke={emotion === 'calm' ? '#FFFFFF' : emotionConfig.color}
+                strokeWidth="2"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ transition: 'stroke 0.5s ease-out' }}
+              />
+              <path
+                d="M3.477 10.896a4 4 0 0 1 .585-.396"
+                stroke={emotion === 'calm' ? '#FFFFFF' : emotionConfig.color}
+                strokeWidth="2"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ transition: 'stroke 0.5s ease-out' }}
+              />
+              <path
+                d="M19.938 10.5a4 4 0 0 1 .585.396"
+                stroke={emotion === 'calm' ? '#FFFFFF' : emotionConfig.color}
+                strokeWidth="2"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ transition: 'stroke 0.5s ease-out' }}
+              />
+              <path
+                d="M6 18a4 4 0 0 1-1.967-.516"
+                stroke={emotion === 'calm' ? '#FFFFFF' : emotionConfig.color}
+                strokeWidth="2"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ transition: 'stroke 0.5s ease-out' }}
+              />
+              <path
+                d="M19.967 17.484A4 4 0 0 1 18 18"
+                stroke={emotion === 'calm' ? '#FFFFFF' : emotionConfig.color}
+                strokeWidth="2"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ transition: 'stroke 0.5s ease-out' }}
+              />
+            </g>
           </motion.svg>
         </div>
       </motion.div>
