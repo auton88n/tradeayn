@@ -472,103 +472,37 @@ const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorCon
             />
               
             {/* Pure SVG Brain icon - Safari compatible (no foreignObject) */}
-            <g
-              transform={`translate(${50 - irisRadius * 0.6}, ${50 - irisRadius * 0.6}) scale(${(irisRadius * 1.2) / 24})`}
-              style={{
-                transition: isAbsorbing 
-                  ? "all 0.15s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
-                  : isAttentive
-                    ? "all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)"
-                    : isBlinking 
-                      ? "all 0.08s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
-                      : "all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)",
-                opacity: 0.92,
-                filter: emotion !== 'calm' ? `drop-shadow(0 0 6px ${emotionConfig.color}30)` : 'none'
-              }}
-            >
-              {/* Brain icon paths from Lucide */}
-              <path
-                d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"
-                stroke={emotion === 'calm' ? '#FFFFFF' : emotionConfig.color}
-                strokeWidth="2"
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                style={{ transition: 'stroke 0.5s ease-out' }}
-              />
-              <path
-                d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"
-                stroke={emotion === 'calm' ? '#FFFFFF' : emotionConfig.color}
-                strokeWidth="2"
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                style={{ transition: 'stroke 0.5s ease-out' }}
-              />
-              <path
-                d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"
-                stroke={emotion === 'calm' ? '#FFFFFF' : emotionConfig.color}
-                strokeWidth="2"
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                style={{ transition: 'stroke 0.5s ease-out' }}
-              />
-              <path
-                d="M17.599 6.5a3 3 0 0 0 .399-1.375"
-                stroke={emotion === 'calm' ? '#FFFFFF' : emotionConfig.color}
-                strokeWidth="2"
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                style={{ transition: 'stroke 0.5s ease-out' }}
-              />
-              <path
-                d="M6.003 5.125A3 3 0 0 0 6.401 6.5"
-                stroke={emotion === 'calm' ? '#FFFFFF' : emotionConfig.color}
-                strokeWidth="2"
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                style={{ transition: 'stroke 0.5s ease-out' }}
-              />
-              <path
-                d="M3.477 10.896a4 4 0 0 1 .585-.396"
-                stroke={emotion === 'calm' ? '#FFFFFF' : emotionConfig.color}
-                strokeWidth="2"
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                style={{ transition: 'stroke 0.5s ease-out' }}
-              />
-              <path
-                d="M19.938 10.5a4 4 0 0 1 .585.396"
-                stroke={emotion === 'calm' ? '#FFFFFF' : emotionConfig.color}
-                strokeWidth="2"
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                style={{ transition: 'stroke 0.5s ease-out' }}
-              />
-              <path
-                d="M6 18a4 4 0 0 1-1.967-.516"
-                stroke={emotion === 'calm' ? '#FFFFFF' : emotionConfig.color}
-                strokeWidth="2"
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                style={{ transition: 'stroke 0.5s ease-out' }}
-              />
-              <path
-                d="M19.967 17.484A4 4 0 0 1 18 18"
-                stroke={emotion === 'calm' ? '#FFFFFF' : emotionConfig.color}
-                strokeWidth="2"
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                style={{ transition: 'stroke 0.5s ease-out' }}
-              />
-            </g>
+            {(() => {
+              const brainScale = (irisRadius * 0.7) / 24;
+              const strokeColor = emotion === 'calm' ? '#FFFFFF' : emotionConfig.color;
+              const pathStyle = { transition: 'stroke 0.5s ease-out' };
+              return (
+                <g 
+                  transform={`translate(${50 - 12 * brainScale}, ${50 - 12 * brainScale}) scale(${brainScale})`}
+                  style={{
+                    transition: isAbsorbing 
+                      ? "all 0.15s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
+                      : isAttentive
+                        ? "all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)"
+                        : isBlinking 
+                          ? "all 0.08s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
+                          : "all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                    opacity: 0.92,
+                    filter: emotion !== 'calm' ? `drop-shadow(0 0 6px ${emotionConfig.color}30)` : 'none'
+                  }}
+                >
+                  <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z" stroke={strokeColor} strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" style={pathStyle} />
+                  <path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z" stroke={strokeColor} strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" style={pathStyle} />
+                  <path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4" stroke={strokeColor} strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" style={pathStyle} />
+                  <path d="M17.599 6.5a3 3 0 0 0 .399-1.375" stroke={strokeColor} strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" style={pathStyle} />
+                  <path d="M6.003 5.125A3 3 0 0 0 6.401 6.5" stroke={strokeColor} strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" style={pathStyle} />
+                  <path d="M3.477 10.896a4 4 0 0 1 .585-.396" stroke={strokeColor} strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" style={pathStyle} />
+                  <path d="M19.938 10.5a4 4 0 0 1 .585.396" stroke={strokeColor} strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" style={pathStyle} />
+                  <path d="M6 18a4 4 0 0 1-1.967-.516" stroke={strokeColor} strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" style={pathStyle} />
+                  <path d="M19.967 17.484A4 4 0 0 1 18 18" stroke={strokeColor} strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" style={pathStyle} />
+                </g>
+              );
+            })()}
           </motion.svg>
         </div>
       </motion.div>
