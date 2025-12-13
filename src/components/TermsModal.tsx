@@ -51,7 +51,7 @@ export const TermsModal = ({ open, onAccept }: TermsModalProps) => {
 
   return (
     <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent className="sm:max-w-2xl max-h-[85vh] z-[9999] bg-neutral-950 border border-white/20 backdrop-blur-xl p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-2xl max-h-[85vh] z-[9999] bg-neutral-950 border border-white/20 backdrop-blur-xl p-0 overflow-hidden flex flex-col">
         {/* Header */}
         <div className="text-center pt-8 pb-4 px-6 border-b border-white/10">
           <div className="flex items-center justify-center gap-2 mb-3">
@@ -70,7 +70,7 @@ export const TermsModal = ({ open, onAccept }: TermsModalProps) => {
           </p>
         </div>
 
-        <ScrollArea className="max-h-[45vh] px-6">
+        <ScrollArea className="flex-1 min-h-0 px-6">
           <div className="space-y-8 py-6">
             {/* Section 1 */}
             <PolicySection number="1" title="INFORMATION WE COLLECT">
@@ -194,7 +194,7 @@ export const TermsModal = ({ open, onAccept }: TermsModalProps) => {
         </ScrollArea>
 
         {/* Footer */}
-        <div className="px-6 pb-6 pt-4 border-t border-white/10 space-y-4">
+        <div className="flex-shrink-0 px-6 pb-6 pt-4 border-t border-white/10 space-y-4">
           <p className="text-center text-xs text-white/30">© 2024 AYN. All rights reserved.</p>
           
           <div className="flex items-start space-x-3">
