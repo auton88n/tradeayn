@@ -381,6 +381,7 @@ const DashboardContent = ({
           isTyping={messagesHook.isTyping}
           hasAccess={auth.hasAccess}
           isAuthLoading={auth.isAuthLoading}
+          isLoadingChats={chatSession.isLoadingChats}
           selectedMode={selectedMode}
           modes={modes}
           recentChats={chatSession.recentChats}

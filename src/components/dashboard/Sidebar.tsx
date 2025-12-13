@@ -37,6 +37,7 @@ export const Sidebar = ({
   isTyping,
   hasAccess,
   isAuthLoading,
+  isLoadingChats,
   selectedMode,
   modes,
   recentChats,
@@ -244,7 +245,20 @@ export const Sidebar = ({
         <div className="flex-1 overflow-hidden">
           <ScrollArea className="h-full px-3">
             <SidebarMenu className="space-y-0.5">
-              {filteredAndSortedChats.length === 0 ? <div className="flex flex-col items-center justify-center py-16 px-6">
+              {isLoadingChats ? (
+                // Skeleton UI - 5 placeholder items
+                <div className="space-y-2 px-1">
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-muted/30 animate-pulse">
+                      <div className="w-8 h-8 rounded-full bg-muted/60" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-3 bg-muted/60 rounded w-3/4" />
+                        <div className="h-2 bg-muted/40 rounded w-1/2" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : filteredAndSortedChats.length === 0 ? <div className="flex flex-col items-center justify-center py-16 px-6">
                   <div className="w-14 h-14 rounded-full bg-muted/40 flex items-center justify-center mb-4">
                     <MessageSquare className="w-6 h-6 text-muted-foreground/40" />
                   </div>

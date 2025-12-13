@@ -9,6 +9,7 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
   const [recentChats, setRecentChats] = useState<ChatHistory[]>([]);
   const [selectedChats, setSelectedChats] = useState<Set<number>>(new Set());
   const [showChatSelection, setShowChatSelection] = useState(false);
+  const [isLoadingChats, setIsLoadingChats] = useState(true);
   const lastInitializedUserId = useRef<string | null>(null);
   const { toast } = useToast();
 
@@ -215,8 +216,10 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
     }
   }, [userId, toast]);
 
-  // Load recent chats on mount and set initial session using REST API
+  // Load recent chats on mount and set initial session using REST API - PARALLELIZED
   useEffect(() => {
+    let cancelled = false;
+    
     const initializeSession = async () => {
       // Skip if no user or already initialized for this user
       if (!userId || lastInitializedUserId.current === userId) return;
@@ -225,36 +228,123 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
       if (!session) {
         setCurrentSessionId(crypto.randomUUID());
         lastInitializedUserId.current = userId;
+        setIsLoadingChats(false);
         return;
       }
       
+      setIsLoadingChats(true);
+      
       try {
-        // Check for most recent session with messages using REST API
-        const data = await supabaseApi.get<Array<{ session_id: string }>>(
-          `messages?user_id=eq.${userId}&select=session_id&order=created_at.desc&limit=1`,
-          session.access_token
-        );
+        // PARALLEL QUERIES - fetch both at once for speed
+        const [latestSessionData, recentMessagesData] = await Promise.all([
+          // Query 1: Get latest session_id
+          supabaseApi.get<Array<{ session_id: string }>>(
+            `messages?user_id=eq.${userId}&select=session_id&order=created_at.desc&limit=1`,
+            session.access_token
+          ),
+          // Query 2: Get recent messages (reduced from 100 to 50)
+          supabaseApi.get<Array<{
+            id: string;
+            content: string;
+            created_at: string;
+            sender: string;
+            session_id: string | null;
+          }>>(
+            `messages?user_id=eq.${userId}&select=id,content,created_at,sender,session_id&order=created_at.desc&limit=50`,
+            session.access_token
+          )
+        ]);
         
-        if (data && data.length > 0 && data[0].session_id) {
-          setCurrentSessionId(data[0].session_id);
+        if (cancelled) return;
+        
+        // Set current session ID
+        if (latestSessionData && latestSessionData.length > 0 && latestSessionData[0].session_id) {
+          setCurrentSessionId(latestSessionData[0].session_id);
         } else {
           setCurrentSessionId(crypto.randomUUID());
         }
         
+        // Process recent messages inline (same logic as loadRecentChats)
+        if (recentMessagesData && recentMessagesData.length > 0) {
+          interface ProcessedMessage {
+            id: string;
+            content: string;
+            sender: 'user' | 'ayn';
+            timestamp: Date;
+          }
+          
+          const sessionGroups: { [key: string]: ProcessedMessage[] } = {};
+
+          recentMessagesData.forEach((message) => {
+            const sessionId = message.session_id;
+            if (!sessionId) return;
+            
+            if (!sessionGroups[sessionId]) {
+              sessionGroups[sessionId] = [];
+            }
+            sessionGroups[sessionId].push({
+              id: message.id,
+              content: message.content,
+              sender: message.sender as 'user' | 'ayn',
+              timestamp: new Date(message.created_at)
+            });
+          });
+
+          const chatHistories: ChatHistory[] = Object.entries(sessionGroups)
+            .map(([sessionId, messages]) => {
+              const sortedMessages = messages.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+              const firstUserMessage = sortedMessages.find(msg => msg.sender === 'user');
+              const lastMessage = sortedMessages[sortedMessages.length - 1];
+
+              return {
+                title: firstUserMessage ? (
+                  firstUserMessage.content.length > 30 
+                    ? firstUserMessage.content.substring(0, 30) + '...'
+                    : firstUserMessage.content
+                ) : 'Chat Session',
+                lastMessage: lastMessage.content.length > 50
+                  ? lastMessage.content.substring(0, 50) + '...'
+                  : lastMessage.content,
+                timestamp: lastMessage.timestamp,
+                messages: sortedMessages,
+                sessionId: sessionId
+              };
+            })
+            .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+            .slice(0, 10);
+
+          if (!cancelled) {
+            setRecentChats(chatHistories);
+          }
+        } else {
+          if (!cancelled) {
+            setRecentChats([]);
+          }
+        }
+        
         lastInitializedUserId.current = userId;
-        await loadRecentChats();
       } catch {
-        setCurrentSessionId(crypto.randomUUID());
+        if (!cancelled) {
+          setCurrentSessionId(crypto.randomUUID());
+          setRecentChats([]);
+        }
         lastInitializedUserId.current = userId;
+      } finally {
+        if (!cancelled) {
+          setIsLoadingChats(false);
+        }
       }
     };
     
     initializeSession();
-  }, [userId, session, loadRecentChats]);
+    
+    return () => { cancelled = true; };
+  }, [userId, session]);
 
   return {
     currentSessionId,
     recentChats,
+    isLoadingChats,
     selectedChats,
     showChatSelection,
     setSelectedChats,
