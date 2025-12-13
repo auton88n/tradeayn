@@ -185,7 +185,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="glass sm:max-w-md">
+      <DialogContent className="bg-neutral-950 border border-white/20 backdrop-blur-xl shadow-2xl sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-center gradient-text-hero text-2xl">
             {t('auth.welcomeToAyn')}
@@ -193,7 +193,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
         </DialogHeader>
 
         <Tabs defaultValue="signin" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 glass">
+          <TabsList className="grid w-full grid-cols-2 bg-neutral-900/80 border border-white/10">
             <TabsTrigger value="signin">{t('auth.signIn')}</TabsTrigger>
             <TabsTrigger value="signup">{t('auth.requestAccess')}</TabsTrigger>
           </TabsList>
@@ -209,7 +209,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
-                  className="glass auth-input-text"
+                  className="bg-neutral-900/80 border-white/15 text-white placeholder:text-gray-400 auth-input-text"
                 />
               </div>
 
@@ -232,7 +232,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}
-                  className="glass auth-input-text"
+                  className="bg-neutral-900/80 border-white/15 text-white placeholder:text-gray-400 auth-input-text"
                 />
               </div>
 
@@ -266,7 +266,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       disabled={isLoading}
-                      className="glass pl-10 auth-input-text"
+                      className="bg-neutral-900/80 border-white/15 text-white placeholder:text-gray-400 pl-10 auth-input-text"
                     />
                   </div>
                 </div>
@@ -282,7 +282,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                       value={companyName}
                       onChange={(e) => setCompanyName(e.target.value)}
                       disabled={isLoading}
-                      className="glass pl-10 auth-input-text"
+                      className="bg-neutral-900/80 border-white/15 text-white placeholder:text-gray-400 pl-10 auth-input-text"
                     />
                   </div>
                 </div>
@@ -297,7 +297,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
-                  className="glass auth-input-text"
+                  className="bg-neutral-900/80 border-white/15 text-white placeholder:text-gray-400 auth-input-text"
                 />
               </div>
 
@@ -310,7 +310,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   disabled={isLoading}
-                  className="glass auth-input-text"
+                  className="bg-neutral-900/80 border-white/15 text-white placeholder:text-gray-400 auth-input-text"
                 />
               </div>
 
@@ -323,7 +323,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}
-                  className="glass auth-input-text"
+                  className="bg-neutral-900/80 border-white/15 text-white placeholder:text-gray-400 auth-input-text"
                 />
               </div>
 
