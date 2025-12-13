@@ -32,22 +32,62 @@ const unwrapCodeFences = (text: string): string => {
   return text;
 };
 
-// Decode HTML entities that may have been escaped during storage
+// Decode HTML entities safely without using innerHTML (prevents XSS)
 const decodeHtmlEntities = (text: string): string => {
-  if (typeof window === 'undefined') return text;
+  if (!text) return '';
   
-  const textarea = document.createElement('textarea');
-  textarea.innerHTML = text;
-  const decoded = textarea.value;
+  // Map of common HTML entities to their decoded values
+  const htmlEntities: Record<string, string> = {
+    '&quot;': '"',
+    '&#34;': '"',
+    '&#x22;': '"',
+    '&apos;': "'",
+    '&#39;': "'",
+    '&#x27;': "'",
+    '&lt;': '<',
+    '&#60;': '<',
+    '&#x3C;': '<',
+    '&gt;': '>',
+    '&#62;': '>',
+    '&#x3E;': '>',
+    '&amp;': '&',
+    '&#38;': '&',
+    '&#x26;': '&',
+    '&#x2F;': '/',
+    '&#47;': '/',
+    '&nbsp;': ' ',
+    '&#160;': ' ',
+    '&#xa0;': ' ',
+    '&ndash;': '–',
+    '&#8211;': '–',
+    '&mdash;': '—',
+    '&#8212;': '—',
+    '&lsquo;': '\u2018',
+    '&rsquo;': '\u2019',
+    '&ldquo;': '\u201C',
+    '&rdquo;': '\u201D',
+    '&hellip;': '…',
+    '&copy;': '©',
+    '&reg;': '®',
+    '&trade;': '™',
+  };
   
-  // Also handle common entities manually as fallback
-  return decoded
-    .replace(/&quot;/g, '"')
-    .replace(/&#x2F;/g, '/')
-    .replace(/&#39;/g, "'")
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&amp;/g, '&');
+  let decoded = text;
+  
+  // Replace all known named entities
+  for (const [entity, char] of Object.entries(htmlEntities)) {
+    decoded = decoded.split(entity).join(char);
+  }
+  
+  // Handle remaining numeric entities (decimal: &#123; or hex: &#x7B;)
+  decoded = decoded.replace(/&#(\d+);/g, (_, dec) => 
+    String.fromCharCode(parseInt(dec, 10))
+  );
+  decoded = decoded.replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => 
+    String.fromCharCode(parseInt(hex, 16))
+  );
+  
+  return decoded;
 };
 
 export function MessageFormatter({ content, className }: MessageFormatterProps) {
