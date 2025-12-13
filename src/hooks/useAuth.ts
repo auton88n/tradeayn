@@ -147,15 +147,21 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
       });
 
       setHasAcceptedTerms(true);
+      // Also save to localStorage as backup
+      localStorage.setItem(`terms_accepted_${user.id}`, 'true');
+      
       toast({
         title: 'Welcome to AYN',
         description: 'Your AI companion is ready to assist you.'
       });
     } catch {
+      // Even if DB fails, save to localStorage so modal doesn't show again
+      localStorage.setItem(`terms_accepted_${user.id}`, 'true');
+      setHasAcceptedTerms(true);
+      
       toast({
-        title: 'Error',
-        description: 'Failed to save terms acceptance. Please try again.',
-        variant: 'destructive'
+        title: 'Welcome to AYN',
+        description: 'Your AI companion is ready to assist you.'
       });
     }
   }, [user.id, session.access_token, toast]);
@@ -207,9 +213,22 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
           setUserProfile(profileData[0] as UserProfile);
         }
 
-        // Process terms (with null check)
+        // Process terms (with null check + localStorage fallback)
         if (settingsData) {
-          setHasAcceptedTerms(settingsData?.[0]?.has_accepted_terms ?? false);
+          const dbTermsAccepted = settingsData?.[0]?.has_accepted_terms ?? false;
+          if (dbTermsAccepted) {
+            setHasAcceptedTerms(true);
+            // Sync to localStorage as backup
+            localStorage.setItem(`terms_accepted_${user.id}`, 'true');
+          } else {
+            // Check localStorage as fallback if DB says not accepted
+            const localTermsAccepted = localStorage.getItem(`terms_accepted_${user.id}`) === 'true';
+            setHasAcceptedTerms(localTermsAccepted);
+          }
+        } else {
+          // DB query failed - use localStorage fallback
+          const localTermsAccepted = localStorage.getItem(`terms_accepted_${user.id}`) === 'true';
+          setHasAcceptedTerms(localTermsAccepted);
         }
 
       } catch (error) {

@@ -2,6 +2,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { DashboardContainer } from './dashboard/DashboardContainer';
 import { TermsModal } from './TermsModal';
 import { MaintenanceBanner } from './MaintenanceBanner';
+import { AdminPinGate } from './admin/AdminPinGate';
 import { useAuth } from '@/hooks/useAuth';
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
@@ -19,6 +20,8 @@ interface DashboardProps {
 export default function Dashboard({ user, session }: DashboardProps) {
   const auth = useAuth(user, session);
   const [activeView, setActiveView] = useState<'chat' | 'admin'>('chat');
+  const [showPinGate, setShowPinGate] = useState(false);
+  const [isAdminUnlocked, setIsAdminUnlocked] = useState(false);
   const [maintenanceConfig, setMaintenanceConfig] = useState({
     enableMaintenance: false,
     maintenanceMessage: 'System is currently under maintenance.',
@@ -102,6 +105,25 @@ export default function Dashboard({ user, session }: DashboardProps) {
     };
   }, []);
 
+  // Handle admin panel access with PIN
+  const handleAdminPanelClick = () => {
+    if (isAdminUnlocked) {
+      setActiveView('admin');
+    } else {
+      setShowPinGate(true);
+    }
+  };
+
+  const handlePinSuccess = () => {
+    setIsAdminUnlocked(true);
+    setShowPinGate(false);
+    setActiveView('admin');
+  };
+
+  const handlePinCancel = () => {
+    setShowPinGate(false);
+  };
+
   return (
     <div dir="ltr" className="relative min-h-screen">
       {/* Maintenance Banner - positioned at top */}
@@ -120,9 +142,15 @@ export default function Dashboard({ user, session }: DashboardProps) {
         onAccept={auth.acceptTerms}
       />
 
+      {/* Admin PIN Gate */}
+      <AdminPinGate
+        open={showPinGate}
+        onSuccess={handlePinSuccess}
+        onCancel={handlePinCancel}
+      />
 
       {/* Main Content - conditionally render based on active view */}
-      {activeView === 'admin' && auth.hasDutyAccess ? (
+      {activeView === 'admin' && auth.hasDutyAccess && isAdminUnlocked ? (
         <div className="min-h-screen p-6 pt-16 bg-background">
           <Suspense fallback={<AdminLoader />}>
             <AdminPanel 
@@ -141,7 +169,7 @@ export default function Dashboard({ user, session }: DashboardProps) {
             auth={auth}
             isAdmin={auth.isAdmin}
             hasDutyAccess={auth.hasDutyAccess}
-            onAdminPanelClick={() => setActiveView('admin')}
+            onAdminPanelClick={handleAdminPanelClick}
           />
         </SidebarProvider>
       )}
