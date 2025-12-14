@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-import { Plus, LogOut, Trash2, Camera, Settings, X, MessageSquare, Search, Star, Shield, Brain, ChevronDown, GraduationCap, Loader2, Volume2, VolumeX, Headphones, Sparkles } from 'lucide-react';
+import { Plus, LogOut, Trash2, Camera, Settings, X, MessageSquare, Search, Star, Shield, Brain, ChevronDown, GraduationCap, Loader2, Volume2, VolumeX, Headphones, Sparkles, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -366,36 +366,59 @@ export const Sidebar = ({
             <div className="h-px bg-gradient-to-r from-transparent via-border/60 to-transparent" />
             
             {/* Usage Info */}
-            {hasAccess && (
-              <div className="px-4 py-3 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center">
-                    <Sparkles className="w-4 h-4 text-muted-foreground" />
+            {hasAccess && (() => {
+              const usagePercent = monthlyLimit ? (currentMonthUsage / monthlyLimit) * 100 : 0;
+              const isNearLimit = monthlyLimit !== null && usagePercent >= 80;
+              const isAtLimit = monthlyLimit !== null && usagePercent >= 100;
+              
+              return (
+                <div className={cn(
+                  "px-4 py-3 flex items-center justify-between",
+                  isAtLimit && "bg-destructive/10",
+                  isNearLimit && !isAtLimit && "bg-amber-500/10"
+                )}>
+                  <div className="flex items-center gap-2">
+                    <div className={cn(
+                      "w-8 h-8 rounded-lg flex items-center justify-center",
+                      isAtLimit ? "bg-destructive/20" : isNearLimit ? "bg-amber-500/20" : "bg-muted/50"
+                    )}>
+                      {isNearLimit ? (
+                        <AlertTriangle className={cn("w-4 h-4", isAtLimit ? "text-destructive" : "text-amber-500")} />
+                      ) : (
+                        <Sparkles className="w-4 h-4 text-muted-foreground" />
+                      )}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium">Usage</span>
+                      {monthlyLimit === null ? (
+                        <span className="text-[10px] text-muted-foreground/70 flex items-center gap-1">
+                          <span className="text-xs">∞</span> Unlimited
+                        </span>
+                      ) : (
+                        <span className={cn(
+                          "text-[10px]",
+                          isAtLimit ? "text-destructive font-medium" : isNearLimit ? "text-amber-600 dark:text-amber-400 font-medium" : "text-muted-foreground/70"
+                        )}>
+                          {isAtLimit ? "Limit reached" : isNearLimit ? `${Math.round(usagePercent)}% used` : `${currentMonthUsage} / ${monthlyLimit}`}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex flex-col">
-                    <span className="text-sm font-medium">Usage</span>
-                    {monthlyLimit === null ? (
-                      <span className="text-[10px] text-muted-foreground/70 flex items-center gap-1">
-                        <span className="text-xs">∞</span> Unlimited
-                      </span>
-                    ) : (
-                      <span className="text-[10px] text-muted-foreground/70">
-                        {currentMonthUsage} / {monthlyLimit}
-                      </span>
+                  <div className="text-right">
+                    <span className={cn(
+                      "text-sm font-semibold",
+                      isAtLimit ? "text-destructive" : isNearLimit ? "text-amber-600 dark:text-amber-400" : "text-foreground"
+                    )}>{currentMonthUsage}</span>
+                    <span className="text-xs text-muted-foreground ml-1">msgs</span>
+                    {usageResetDate && (
+                      <p className="text-[10px] text-muted-foreground/60">
+                        Resets {format(new Date(usageResetDate), 'MMM d')}
+                      </p>
                     )}
                   </div>
                 </div>
-                <div className="text-right">
-                  <span className="text-sm font-semibold text-foreground">{currentMonthUsage}</span>
-                  <span className="text-xs text-muted-foreground ml-1">msgs</span>
-                  {usageResetDate && (
-                    <p className="text-[10px] text-muted-foreground/60">
-                      Resets {format(new Date(usageResetDate), 'MMM d')}
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
+              );
+            })()}
             
             {/* Gradient Divider */}
             {hasAccess && <div className="h-px bg-gradient-to-r from-transparent via-border/60 to-transparent" />}
