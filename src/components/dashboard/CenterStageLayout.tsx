@@ -139,7 +139,7 @@ export const CenterStageLayout = ({
   // Conversation flow awareness for anticipation states
   const conversationFlow = useConversationFlow(messages, contextIsTyping, realtimeInputText);
 
-  // Handle real-time emotion changes from typing
+  // Handle real-time emotion changes from typing with empathetic response
   useEffect(() => {
     if (realtimeEmotion.detectedEmotion && realtimeEmotion.intensity > 0.4) {
       // Map detected emotion to AYN's empathetic response
@@ -153,21 +153,27 @@ export const CenterStageLayout = ({
       const aynEmotion = emotionToAynEmotion[realtimeEmotion.detectedEmotion] || 'curious';
       setEmotion(aynEmotion);
       
-      // Play understanding/recognition sound when detecting emotion (debounced)
+      // Play emotion-specific empathy sounds and haptics (debounced)
       if (lastEmotionSoundRef.current !== realtimeEmotion.detectedEmotion) {
         lastEmotionSoundRef.current = realtimeEmotion.detectedEmotion;
         
-        // Play contextual sound based on what was detected
-        if (realtimeEmotion.isTypingQuestion) {
-          playSound('recognition'); // Quick ping for questions
-        } else if (realtimeEmotion.sentiment === 'negative') {
-          playSound('empathy'); // Gentle tone for frustration/concern
+        // Play specific empathy sound based on detected emotion
+        if (realtimeEmotion.sentiment === 'negative') {
+          // User is frustrated/anxious - play comforting "I'm here" tone
+          playSound('empathy-frustrated');
+          hapticFeedback('user-frustrated'); // Slow, patient pulse
         } else if (realtimeEmotion.sentiment === 'positive') {
-          playSound('understanding'); // Warm chime for positive vibes
+          if (realtimeEmotion.detectedEmotion === 'excited') {
+            playSound('empathy-excited');
+            hapticFeedback('user-excited'); // Quick energy burst
+          } else {
+            playSound('empathy-happy');
+            hapticFeedback('user-happy'); // Mirror joy
+          }
+        } else if (realtimeEmotion.isTypingQuestion) {
+          playSound('empathy-curious');
+          hapticFeedback('user-curious'); // Engaging pattern
         }
-        
-        // Subtle haptic for emotional recognition
-        hapticFeedback('light');
       }
     } else if (!contextIsTyping) {
       // Reset when user stops typing
@@ -506,7 +512,14 @@ animate={{
             className="relative overflow-visible"
             data-tutorial="eye"
           >
-            <EmotionalEye size={isMobile ? "md" : "lg"} gazeTarget={gazeTarget} behaviorConfig={behaviorConfig} />
+            <EmotionalEye 
+              size={isMobile ? "md" : "lg"} 
+              gazeTarget={gazeTarget} 
+              behaviorConfig={behaviorConfig}
+              userSentiment={realtimeEmotion.sentiment}
+              userEmotionIntensity={realtimeEmotion.intensity}
+              isUserEmotionActive={realtimeEmotion.isTypingEmotional && contextIsTyping}
+            />
 
             {/* Thinking indicator when typing - simplified animation */}
             <AnimatePresence>
