@@ -19,9 +19,9 @@ export const EMOTION_TRANSITION_TIMING: Record<AYNEmotion, number> = {
   supportive: 250,
 };
 
-// Sound delay after eye starts transitioning (creates "reaction" feel)
-const SOUND_DELAY = 80; // ms after eye starts changing
-const HAPTIC_DELAY = 120; // ms after eye starts changing
+// Precise timing for perfect synchronization
+const SOUND_DELAY = 50; // ms after eye starts changing - reduced for tighter sync
+const HAPTIC_DELAY = 80; // ms after eye starts changing
 
 export const useEmotionOrchestrator = () => {
   const { setEmotion, triggerPulse, emotion: currentEmotion } = useAYNEmotion();
@@ -41,11 +41,11 @@ export const useEmotionOrchestrator = () => {
     skipHaptic?: boolean;
     immediate?: boolean;
   }) => {
-    // Prevent rapid duplicate orchestrations (within 200ms)
+    // Prevent rapid duplicate orchestrations (within 150ms)
     const now = Date.now();
     if (
       lastOrchestrationRef.current?.emotion === newEmotion &&
-      now - lastOrchestrationRef.current.time < 200
+      now - lastOrchestrationRef.current.time < 150
     ) {
       return;
     }
@@ -90,7 +90,7 @@ export const useEmotionOrchestrator = () => {
     if (['excited', 'mad', 'happy'].includes(newEmotion)) {
       const pulseTimeout = setTimeout(() => {
         triggerPulse();
-      }, EMOTION_TRANSITION_TIMING[newEmotion] * 0.5);
+      }, EMOTION_TRANSITION_TIMING[newEmotion] * 0.4);
       orchestrationTimeoutsRef.current.push(pulseTimeout);
     }
   }, [setEmotion, soundContext, triggerPulse, clearPendingOrchestrations]);
@@ -106,11 +106,17 @@ export const useEmotionOrchestrator = () => {
     });
   }, [currentEmotion, orchestrateEmotionChange]);
 
-  // Reset to calm with graceful transition
+  // Reset to calm with graceful transition (no sound)
   const resetToCalm = useCallback(() => {
     clearPendingOrchestrations();
     setEmotion('calm');
-  }, [setEmotion, clearPendingOrchestrations]);
+    // Optional: play calm sound for smooth transition
+    if (soundContext?.enabled) {
+      setTimeout(() => {
+        soundContext.playEmotion('calm');
+      }, 100);
+    }
+  }, [setEmotion, clearPendingOrchestrations, soundContext]);
 
   return {
     orchestrateEmotionChange,
