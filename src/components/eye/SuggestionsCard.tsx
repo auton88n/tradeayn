@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { memo } from 'react';
 import { cn } from '@/lib/utils';
 import { hapticFeedback } from '@/lib/haptics';
-import { useSoundContext } from '@/contexts/SoundContext';
+import { useSoundContextOptional } from '@/contexts/SoundContext';
 
 interface Suggestion {
   id: string;
@@ -33,7 +33,8 @@ const SuggestionsCardComponent = ({
   isSmallScreen = false,
   eyeShiftX = 0 
 }: SuggestionsCardProps) => {
-  const { playSound } = useSoundContext();
+  const soundContext = useSoundContextOptional();
+  const playSound = soundContext?.playSound;
   
   // Don't render suggestions on mobile or tablet
   if (isSmallScreen || isMobile) return null;
@@ -47,7 +48,7 @@ const SuggestionsCardComponent = ({
 
   const handleClick = (suggestion: Suggestion, e: React.MouseEvent<HTMLButtonElement>) => {
     hapticFeedback('medium');
-    playSound('suggestion-click');
+    playSound?.('suggestion-click');
     const rect = e.currentTarget.getBoundingClientRect();
     onSuggestionClick(suggestion.content, suggestion.emoji, {
       x: rect.left + rect.width / 2,
