@@ -213,7 +213,8 @@ export const UsageCard = ({
     <motion.div 
       className={cn(
         "p-5 rounded-2xl space-y-4 relative overflow-hidden",
-        "bg-neutral-900 border border-white/10"
+        "bg-card dark:bg-neutral-900 border border-border/50 dark:border-white/10",
+        "shadow-sm dark:shadow-none"
       )}
       animate={showPulse ? { scale: [1, 1.01, 1] } : {}}
     >
@@ -231,13 +232,13 @@ export const UsageCard = ({
 
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-neutral-800 flex items-center justify-center">
-          <Zap className="w-5 h-5 text-white" />
+        <div className="w-10 h-10 rounded-full bg-muted dark:bg-neutral-800 flex items-center justify-center">
+          <Zap className="w-5 h-5 text-primary dark:text-white" />
         </div>
         <div>
-          <p className="text-base font-semibold text-white">Monthly Credits</p>
+          <p className="text-base font-semibold text-foreground">Monthly Credits</p>
           {resetDate && (
-            <p className="text-xs text-neutral-400">Resets {formattedResetDate}</p>
+            <p className="text-xs text-muted-foreground">Resets {formattedResetDate}</p>
           )}
         </div>
       </div>
@@ -245,16 +246,16 @@ export const UsageCard = ({
       {/* Usage Row */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-sm text-neutral-400">Used</span>
-          <span className="text-base font-semibold text-white tabular-nums">
+          <span className="text-sm text-muted-foreground">Used</span>
+          <span className="text-base font-semibold text-foreground tabular-nums">
             <motion.span key={displayCount}>{displayCount}</motion.span>
-            <span className="text-white/60 mx-1">/</span>
-            <span className="text-white">{isUnlimited ? '∞' : monthlyLimit}</span>
+            <span className="text-muted-foreground mx-1">/</span>
+            <span className="text-foreground">{isUnlimited ? '∞' : monthlyLimit}</span>
           </span>
         </div>
         
         {/* Progress Bar */}
-        <div className={`h-2 rounded-full bg-neutral-800 overflow-hidden ${isLow ? 'animate-pulse' : ''}`}>
+        <div className={`h-2 rounded-full bg-muted dark:bg-neutral-800 overflow-hidden ${isLow ? 'animate-pulse' : ''}`}>
           <motion.div 
             className={`h-full rounded-full ${isLow ? 'bg-gradient-to-r from-red-500 via-red-400 to-amber-500' : 'bg-gradient-to-r from-blue-500 via-purple-500 to-purple-600'}`}
             initial={{ width: 0 }}
@@ -266,17 +267,17 @@ export const UsageCard = ({
 
       {/* Stats Boxes */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="p-3 rounded-xl bg-neutral-800/80 text-center">
-          <p className="text-2xl font-bold text-white tabular-nums">
+        <div className="p-3 rounded-xl bg-muted/80 dark:bg-neutral-800/80 text-center">
+          <p className="text-2xl font-bold text-foreground tabular-nums">
             {isUnlimited ? '∞' : creditsLeft}
           </p>
-          <p className="text-xs text-neutral-400 mt-0.5">Remaining</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Remaining</p>
         </div>
-        <div className="p-3 rounded-xl bg-neutral-800/80 text-center">
+        <div className="p-3 rounded-xl bg-muted/80 dark:bg-neutral-800/80 text-center">
           <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto">
             <div className="w-3 h-3 rounded-full bg-emerald-500" />
           </div>
-          <p className="text-xs text-neutral-400 mt-1.5">Active</p>
+          <p className="text-xs text-muted-foreground mt-1.5">Active</p>
         </div>
       </div>
 
@@ -285,31 +286,31 @@ export const UsageCard = ({
         <div className="flex items-center gap-1.5">
           <div className={cn(
             "w-2 h-2 rounded-full",
-            statusLevel === 'normal' ? "bg-neutral-400 ring-2 ring-neutral-400/30" : "bg-neutral-600"
+            statusLevel === 'normal' ? "bg-muted-foreground ring-2 ring-muted-foreground/30" : "bg-muted-foreground/40"
           )} />
           <span className={cn(
             "text-xs",
-            statusLevel === 'normal' ? "text-neutral-300" : "text-neutral-500"
+            statusLevel === 'normal' ? "text-foreground" : "text-muted-foreground"
           )}>Normal</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className={cn(
             "w-2 h-2 rounded-full",
-            statusLevel === 'warning' ? "bg-amber-500 ring-2 ring-amber-500/30" : "bg-neutral-600"
+            statusLevel === 'warning' ? "bg-amber-500 ring-2 ring-amber-500/30" : "bg-muted-foreground/40"
           )} />
           <span className={cn(
             "text-xs",
-            statusLevel === 'warning' ? "text-amber-400" : "text-neutral-500"
+            statusLevel === 'warning' ? "text-amber-500" : "text-muted-foreground"
           )}>Warning</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className={cn(
             "w-2 h-2 rounded-full",
-            statusLevel === 'low' ? "bg-red-500 ring-2 ring-red-500/30" : "bg-neutral-600"
+            statusLevel === 'low' ? "bg-red-500 ring-2 ring-red-500/30" : "bg-muted-foreground/40"
           )} />
           <span className={cn(
             "text-xs",
-            statusLevel === 'low' ? "text-red-400" : "text-neutral-500"
+            statusLevel === 'low' ? "text-red-500" : "text-muted-foreground"
           )}>Low</span>
         </div>
       </div>
