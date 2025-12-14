@@ -83,7 +83,7 @@ export const CenterStageLayout = ({
   const eyeRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
-  const { setEmotion, triggerAbsorption, triggerBlink, setIsResponding, detectExcitement, isUserTyping: contextIsTyping, triggerPulse } = useAYNEmotion();
+  const { setEmotion, setEmotionWithSource, triggerAbsorption, triggerBlink, setIsResponding, detectExcitement, isUserTyping: contextIsTyping, triggerPulse } = useAYNEmotion();
   const { playSound, playEmotion } = useSoundContext();
   const {
     flyingBubble,
@@ -140,6 +140,7 @@ export const CenterStageLayout = ({
   const conversationFlow = useConversationFlow(messages, contextIsTyping, realtimeInputText);
 
   // Handle real-time emotion changes from typing - synchronized orchestration
+  // Content-based emotions have HIGHEST priority and override behavior library
   useEffect(() => {
     if (realtimeEmotion.detectedEmotion && realtimeEmotion.intensity > 0.4) {
       const detectedEmotion = realtimeEmotion.detectedEmotion;
@@ -149,8 +150,8 @@ export const CenterStageLayout = ({
         lastEmotionSoundRef.current = detectedEmotion;
         
         // Synchronized sequence: Eye changes → 80ms → sound plays → 40ms → haptic fires
-        // 1. Eye starts transitioning immediately
-        setEmotion(detectedEmotion);
+        // 1. Eye starts transitioning immediately with 'content' source (highest priority)
+        setEmotionWithSource(detectedEmotion, 'content');
         
         // 2. Delayed sound for sync with eye transition
         setTimeout(() => {
@@ -163,10 +164,14 @@ export const CenterStageLayout = ({
         }, 120);
       }
     } else if (!contextIsTyping) {
-      // Reset when user stops typing
+      // Reset to default when user stops typing - allows behavior library to take over again
       lastEmotionSoundRef.current = null;
+      // After a brief delay, reset source so behavior can take over
+      setTimeout(() => {
+        setEmotionWithSource('calm', 'default');
+      }, 2000); // 2 second grace period before behavior takes over
     }
-  }, [realtimeEmotion, contextIsTyping, setEmotion, playEmotion]);
+  }, [realtimeEmotion, contextIsTyping, setEmotionWithSource, playEmotion]);
 
   // Use conversation flow to adjust anticipation
   useEffect(() => {
