@@ -15,6 +15,8 @@ export const EMOTION_TRANSITION_TIMING: Record<AYNEmotion, number> = {
   sad: 400,
   mad: 150,
   bored: 350,
+  comfort: 300,
+  supportive: 250,
 };
 
 // Sound delay after eye starts transitioning (creates "reaction" feel)
