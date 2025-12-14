@@ -20,6 +20,7 @@ import { hapticFeedback } from '@/lib/haptics';
 import { analyzeUserEmotion, getEmpathyResponse, UserEmotion } from '@/utils/userEmotionDetection';
 import { useRealtimeEmotionTracking } from '@/hooks/useRealtimeEmotionTracking';
 import { useConversationFlow } from '@/hooks/useConversationFlow';
+import { useEmotionOrchestrator } from '@/hooks/useEmotionOrchestrator';
 import type { Message, AIMode, AIModeConfig } from '@/types/dashboard.types';
 
 // Fallback suggestions when API fails
@@ -84,7 +85,8 @@ export const CenterStageLayout = ({
   const inputRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const { setEmotion, setEmotionWithSource, triggerAbsorption, triggerBlink, setIsResponding, detectExcitement, isUserTyping: contextIsTyping, triggerPulse } = useAYNEmotion();
-  const { playSound, playEmotion } = useSoundContext();
+  const { playSound } = useSoundContext();
+  const { orchestrateEmotionChange, resetToCalm } = useEmotionOrchestrator();
   const {
     flyingBubble,
     flyingSuggestion,
@@ -148,7 +150,7 @@ export const CenterStageLayout = ({
   // Conversation flow awareness for anticipation states
   const conversationFlow = useConversationFlow(messages, contextIsTyping, realtimeInputText);
 
-  // Handle real-time emotion changes from typing - synchronized orchestration
+  // Handle real-time emotion changes from typing - synchronized via orchestrator
   // Content-based emotions have HIGHEST priority and override behavior library
   useEffect(() => {
     if (realtimeEmotion.detectedEmotion && realtimeEmotion.intensity > 0.4) {
@@ -158,29 +160,20 @@ export const CenterStageLayout = ({
       if (lastEmotionSoundRef.current !== detectedEmotion) {
         lastEmotionSoundRef.current = detectedEmotion;
         
-        // Synchronized sequence: Eye changes → 80ms → sound plays → 40ms → haptic fires
-        // 1. Eye starts transitioning immediately with 'content' source (highest priority)
+        // Use orchestrator for perfectly synchronized eye + sound + haptic
         setEmotionWithSource(detectedEmotion, 'content');
-        
-        // 2. Delayed sound for sync with eye transition
-        setTimeout(() => {
-          playEmotion(detectedEmotion);
-        }, 80);
-        
-        // 3. Delayed haptic for tactile confirmation
-        setTimeout(() => {
-          hapticFeedback(detectedEmotion);
-        }, 120);
+        orchestrateEmotionChange(detectedEmotion);
       }
     } else if (!contextIsTyping) {
       // Reset to default when user stops typing - allows behavior library to take over again
       lastEmotionSoundRef.current = null;
       // After a brief delay, reset source so behavior can take over
       setTimeout(() => {
+        resetToCalm();
         setEmotionWithSource('calm', 'default');
       }, 2000); // 2 second grace period before behavior takes over
     }
-  }, [realtimeEmotion, contextIsTyping, setEmotionWithSource, playEmotion]);
+  }, [realtimeEmotion, contextIsTyping, setEmotionWithSource, orchestrateEmotionChange, resetToCalm]);
 
   // Use conversation flow to adjust anticipation
   useEffect(() => {
@@ -393,7 +386,8 @@ export const CenterStageLayout = ({
         triggerBlink();
         triggerAbsorption();
         playSound('message-absorb');
-        setEmotion('thinking');
+        // Use orchestrator for synchronized thinking state
+        orchestrateEmotionChange('thinking');
         setIsResponding(true);
         
         // Trigger particle burst at fresh eye position
@@ -444,7 +438,8 @@ export const CenterStageLayout = ({
       triggerBlink();
       triggerAbsorption();
       playSound('message-absorb');
-      setEmotion('thinking');
+      // Use orchestrator for synchronized thinking state
+      orchestrateEmotionChange('thinking');
       setIsResponding(true);
       
       // Get fresh eye position for particle burst
@@ -490,13 +485,12 @@ export const CenterStageLayout = ({
       // After blink, analyze emotion and emit bubbles
       setTimeout(() => {
         const emotion = analyzeResponseEmotion(lastMessage.content);
-        setEmotion(emotion);
+        // Use orchestrator for synchronized response emotion
+        orchestrateEmotionChange(emotion);
         playSound('response-received');
-        playEmotion(emotion);
         setIsResponding(false);
         
-        // Haptic feedback when response arrives
-        hapticFeedback('notification');
+        // Haptic feedback handled by orchestrator
         
         // Detect exciting keywords and trigger surprise enlargement
         detectExcitement(lastMessage.content);
