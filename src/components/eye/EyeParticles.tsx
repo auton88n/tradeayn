@@ -25,8 +25,12 @@ const EyeParticlesComponent = ({ emotion, isActive, size = 260 }: EyeParticlesPr
   const particleType = config.particleType;
   const isMobile = useIsMobile();
 
-  // Disable particles on mobile for better performance
-  if (particleType === 'none' || !isActive || isMobile) return null;
+  // Allow warmth particles for comfort emotion
+  const showWarmth = emotion === 'comfort' || emotion === 'supportive';
+  
+  if (particleType === 'none' && !showWarmth) return null;
+  if (!isActive) return null;
+  if (isMobile && !showWarmth) return null;
 
   const radius = size * 0.6;
   // Reduce particle count from 8 to 5 for performance
@@ -39,17 +43,19 @@ const EyeParticlesComponent = ({ emotion, isActive, size = 260 }: EyeParticlesPr
     duration: 2.5 + Math.random() * 1,
     angle: (i / 5) * 360,
   }));
-
   return (
     <div className="absolute inset-0 pointer-events-none overflow-visible">
       <AnimatePresence>
-        {particleType === 'sparkle' && (
+        {showWarmth && (
+          <WarmthParticles radius={radius} />
+        )}
+        {particleType === 'sparkle' && !showWarmth && (
           <SparkleParticles particles={particles} color={config.glowColor} />
         )}
-        {particleType === 'orbit' && (
+        {particleType === 'orbit' && !showWarmth && (
           <OrbitParticles color={config.glowColor} radius={radius} />
         )}
-        {particleType === 'energy' && (
+        {particleType === 'energy' && !showWarmth && (
           <EnergyParticles particles={particles} color={config.glowColor} />
         )}
       </AnimatePresence>
@@ -161,3 +167,78 @@ const EnergyParticles = ({ particles, color }: { particles: Particle[]; color: s
     ))}
   </>
 );
+
+// Gentle floating warmth particles for comfort emotion - soft amber ember-like effects
+const WarmthParticles = ({ radius }: { radius: number }) => {
+  // Create 6 gentle floating ember particles
+  const embers = Array.from({ length: 6 }, (_, i) => ({
+    id: i,
+    startAngle: (i / 6) * Math.PI * 2,
+    size: 5 + Math.random() * 4,
+    delay: i * 0.4,
+    duration: 4 + Math.random() * 2,
+    floatDistance: 20 + Math.random() * 30,
+  }));
+
+  return (
+    <>
+      {embers.map((ember) => {
+        const startX = Math.cos(ember.startAngle) * radius * 0.7;
+        const startY = Math.sin(ember.startAngle) * radius * 0.7;
+        
+        return (
+          <motion.div
+            key={ember.id}
+            className="absolute left-1/2 top-1/2 rounded-full"
+            style={{
+              width: ember.size,
+              height: ember.size,
+              background: 'radial-gradient(circle, hsl(35, 95%, 70%) 0%, hsl(25, 90%, 55%) 50%, transparent 100%)',
+              boxShadow: `
+                0 0 ${ember.size * 2}px hsl(30, 90%, 60%),
+                0 0 ${ember.size * 4}px hsl(35, 85%, 50%, 0.5)
+              `,
+            }}
+            initial={{ 
+              x: startX, 
+              y: startY, 
+              opacity: 0, 
+              scale: 0.5 
+            }}
+            animate={{
+              x: [startX, startX + Math.random() * 20 - 10, startX],
+              y: [startY, startY - ember.floatDistance, startY - ember.floatDistance * 0.5],
+              opacity: [0, 0.8, 0.6, 0],
+              scale: [0.5, 1, 0.8, 0.3],
+            }}
+            transition={{
+              duration: ember.duration,
+              delay: ember.delay,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+          />
+        );
+      })}
+      
+      {/* Soft ambient glow ring */}
+      <motion.div
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+        style={{
+          width: radius * 1.8,
+          height: radius * 1.8,
+          background: 'radial-gradient(circle, hsl(30, 80%, 60%, 0.15) 0%, transparent 70%)',
+        }}
+        animate={{
+          scale: [1, 1.1, 1],
+          opacity: [0.4, 0.6, 0.4],
+        }}
+        transition={{
+          duration: 3,
+          repeat: Infinity,
+          ease: 'easeInOut',
+        }}
+      />
+    </>
+  );
+};
