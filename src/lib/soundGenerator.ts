@@ -183,14 +183,18 @@ export class SoundGenerator {
   }
 
   async play(soundType: SoundType): Promise<void> {
-    if (!this.enabled || !this.audioContext || !this.masterGain) return;
+    if (!this.enabled || !this.audioContext || !this.masterGain) {
+      return;
+    }
     
     // Respect reduced motion preference
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     
     // Ensure context is unlocked and running
     const isReady = await this.ensureContext();
-    if (!isReady || !this.audioContext) return;
+    if (!isReady || !this.audioContext) {
+      return;
+    }
     
     const config = SOUND_CONFIGS[soundType];
     if (!config) return;

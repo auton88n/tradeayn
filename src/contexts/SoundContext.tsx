@@ -135,17 +135,23 @@ export const SoundProvider = ({ children }: { children: ReactNode }) => {
   }, [enabled, setEnabled]);
 
   const playSound = useCallback((soundType: SoundType) => {
-    if (!enabled) return;
+    if (!enabled) {
+      return;
+    }
     soundGenerator.play(soundType);
   }, [soundGenerator, enabled]);
 
   const playModeChange = useCallback((mode: string) => {
-    if (!enabled) return;
+    if (!enabled) {
+      return;
+    }
     soundGenerator.playModeChange(mode);
   }, [soundGenerator, enabled]);
 
   const playEmotion = useCallback((emotion: string) => {
-    if (!enabled) return;
+    if (!enabled) {
+      return;
+    }
     soundGenerator.playEmotion(emotion);
   }, [soundGenerator, enabled]);
 

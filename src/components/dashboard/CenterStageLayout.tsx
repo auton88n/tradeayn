@@ -326,10 +326,9 @@ export const CenterStageLayout = ({
       // Start AI emotion analysis in background (non-blocking)
       analyzeEmotionWithAI(content, recentMessages).then(aiAnalysis => {
         if (aiAnalysis?.aynResponse) {
-          // Use AI-determined empathetic emotion
+          // Use AI-determined empathetic emotion via orchestrator
           const aynEmotion = aiAnalysis.aynResponse.emotion || 'calm';
-          setEmotion(aynEmotion);
-          hapticFeedback(aynEmotion);
+          orchestrateEmotionChange(aynEmotion);
           
           // Apply AI micro-behaviors to the eye
           if (aiAnalysis.aynResponse.pupilReaction) {
@@ -362,10 +361,9 @@ export const CenterStageLayout = ({
       const userEmotionAnalysis = analyzeUserEmotion(content);
       const empathyResponse = getEmpathyResponse(userEmotionAnalysis.emotion);
       
-      // AYN shows empathetic response immediately (before AI completes)
+      // AYN shows empathetic response immediately via orchestrator (before AI completes)
       if (userEmotionAnalysis.emotion !== 'neutral' && userEmotionAnalysis.intensity > 0.3) {
-        setEmotion(empathyResponse.aynEmotion);
-        hapticFeedback(empathyResponse.hapticType);
+        orchestrateEmotionChange(empathyResponse.aynEmotion);
         
         if (userEmotionAnalysis.intensity > 0.6) {
           triggerPulse();
