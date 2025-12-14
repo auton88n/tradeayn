@@ -225,6 +225,9 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
     anxious: { emoji: '😰', color: 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border-yellow-500/30', label: 'Anxious' },
     confused: { emoji: '🤔', color: 'bg-purple-500/20 text-purple-600 dark:text-purple-400 border-purple-500/30', label: 'Confused' },
     neutral: { emoji: '😐', color: 'bg-muted text-muted-foreground border-border', label: 'Neutral' },
+    angry: { emoji: '😡', color: 'bg-red-600/20 text-red-700 dark:text-red-400 border-red-600/30', label: 'Angry' },
+    grieving: { emoji: '💔', color: 'bg-slate-500/20 text-slate-600 dark:text-slate-400 border-slate-500/30', label: 'Grieving' },
+    overwhelmed: { emoji: '😫', color: 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30', label: 'Overwhelmed' },
   };
 
   const handleSend = useCallback(() => {
