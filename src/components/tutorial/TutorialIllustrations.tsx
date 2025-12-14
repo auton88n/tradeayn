@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Brain, Smile, CircleDot, Zap, AlertCircle, HelpCircle, MessageSquare, Plus, FileText, Image, Lightbulb, Search, X, User, Settings, LogOut, Copy, Trash2, ChevronDown, ArrowUp } from 'lucide-react';
+import { Brain, Smile, CircleDot, Zap, AlertCircle, HelpCircle, MessageSquare, Plus, FileText, Image, Search, X, User, Settings, LogOut, Copy, Trash2, ChevronDown, ArrowUp, Heart, Eye } from 'lucide-react';
 
 export const MeetAynIllustration = () => (
   <div className="relative w-full h-full flex items-center justify-center">
@@ -126,24 +126,6 @@ export const FilesIllustration = () => (
   </div>
 );
 
-export const SuggestionsIllustration = () => (
-  <div className="w-full h-full flex items-center justify-center">
-    <div className="flex flex-col gap-3">
-      {['Tell me more about...', 'How can I improve...', 'What are the next steps?'].map((text, i) => (
-        <motion.div
-          key={text}
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: i * 0.2 }}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-muted/50 border border-border/50 shadow-sm"
-        >
-          <Lightbulb className="w-4 h-4 text-yellow-500" />
-          <span className="text-sm text-foreground">{text}</span>
-        </motion.div>
-      ))}
-    </div>
-  </div>
-);
 
 export const NavigationIllustration = () => (
   <div className="w-full h-full flex items-center justify-center">
@@ -268,6 +250,204 @@ export const HistoryIllustration = () => (
           <Trash2 className="w-3 h-3" />
           Clear
         </button>
+      </div>
+    </div>
+  </div>
+);
+
+export const EmpathyIllustration = () => (
+  <div className="relative w-full h-full flex items-center justify-center">
+    {/* Warm ambient glow */}
+    <motion.div
+      className="absolute inset-0 flex items-center justify-center"
+      animate={{ opacity: [0.3, 0.5, 0.3] }}
+      transition={{ duration: 3, repeat: Infinity }}
+    >
+      <div className="w-48 h-48 rounded-full bg-gradient-to-r from-amber-500/20 to-rose-400/20 blur-3xl" />
+    </motion.div>
+    
+    {/* Eye with warm glow */}
+    <div className="relative">
+      <motion.div
+        className="relative w-28 h-28 rounded-full bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center shadow-2xl"
+        style={{
+          boxShadow: '0 0 60px rgba(245, 158, 11, 0.4), 0 0 100px rgba(244, 63, 94, 0.2)'
+        }}
+      >
+        {/* Iris with warm color */}
+        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-400/40 to-rose-400/30 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-full bg-foreground/90 flex items-center justify-center">
+            <Heart className="w-5 h-5 text-amber-400" />
+          </div>
+        </div>
+      </motion.div>
+      
+      {/* Floating ember particles */}
+      {[0, 1, 2, 3].map((i) => (
+        <motion.div
+          key={i}
+          className="absolute w-2 h-2 rounded-full"
+          style={{
+            background: 'radial-gradient(circle, hsl(35, 95%, 70%) 0%, transparent 100%)',
+            boxShadow: '0 0 8px hsl(30, 90%, 60%)',
+            left: '50%',
+            top: '50%',
+          }}
+          animate={{
+            x: [0, Math.cos((i / 4) * Math.PI * 2) * 50],
+            y: [0, Math.sin((i / 4) * Math.PI * 2) * 50 - 30],
+            opacity: [0, 0.8, 0],
+            scale: [0.5, 1, 0.3],
+          }}
+          transition={{
+            duration: 3,
+            delay: i * 0.5,
+            repeat: Infinity,
+          }}
+        />
+      ))}
+    </div>
+    
+    {/* Labels */}
+    <div className="absolute bottom-4 flex gap-4">
+      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/20 border border-amber-500/30">
+        <div className="w-2 h-2 rounded-full bg-amber-400" />
+        <span className="text-xs text-amber-600 dark:text-amber-400">Comfort</span>
+      </div>
+      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-500/20 border border-rose-500/30">
+        <div className="w-2 h-2 rounded-full bg-rose-400" />
+        <span className="text-xs text-rose-600 dark:text-rose-400">Support</span>
+      </div>
+    </div>
+  </div>
+);
+
+export const MicroBehaviorsIllustration = () => (
+  <div className="w-full h-full flex items-center justify-center">
+    <div className="flex flex-col items-center gap-6">
+      {/* Pupil dilation demo */}
+      <div className="flex items-center gap-8">
+        {/* Normal pupil */}
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center border border-border/50">
+            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+              <div className="w-4 h-4 rounded-full bg-foreground" />
+            </div>
+          </div>
+          <span className="text-[10px] text-muted-foreground">Normal</span>
+        </div>
+        
+        {/* Arrow */}
+        <motion.div
+          animate={{ x: [0, 5, 0] }}
+          transition={{ duration: 1.5, repeat: Infinity }}
+          className="text-muted-foreground"
+        >
+          →
+        </motion.div>
+        
+        {/* Dilated pupil */}
+        <div className="flex flex-col items-center gap-2">
+          <motion.div 
+            className="w-16 h-16 rounded-full bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center border border-border/50"
+            animate={{ scale: [1, 1.05, 1] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+              <motion.div 
+                className="rounded-full bg-foreground"
+                animate={{ width: [16, 24, 16], height: [16, 24, 16] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              />
+            </div>
+          </motion.div>
+          <span className="text-[10px] text-muted-foreground">Engaged</span>
+        </div>
+      </div>
+      
+      {/* Blink patterns */}
+      <div className="flex items-center gap-4">
+        {[
+          { label: 'Slow Blink', desc: 'Comfort', delay: 0 },
+          { label: 'Quick Blink', desc: 'Attention', delay: 0.3 },
+          { label: 'Double Blink', desc: 'Understanding', delay: 0.6 },
+        ].map((blink, i) => (
+          <motion.div
+            key={blink.label}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: blink.delay }}
+            className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg bg-muted/30 border border-border/30"
+          >
+            <Eye className="w-4 h-4 text-muted-foreground" />
+            <span className="text-[10px] font-medium">{blink.label}</span>
+            <span className="text-[8px] text-muted-foreground">{blink.desc}</span>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
+export const CreditsIllustration = () => (
+  <div className="w-full h-full flex items-center justify-center">
+    <div className="w-56 bg-background rounded-xl border border-border/50 shadow-lg overflow-hidden p-4">
+      {/* Header */}
+      <div className="flex items-center gap-2 mb-4">
+        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+          <Zap className="w-4 h-4 text-primary" />
+        </div>
+        <div>
+          <div className="font-semibold text-sm">Monthly Credits</div>
+          <div className="text-[10px] text-muted-foreground">Resets Jan 1</div>
+        </div>
+      </div>
+      
+      {/* Usage display */}
+      <div className="space-y-3">
+        {/* Progress bar */}
+        <div className="space-y-1.5">
+          <div className="flex justify-between text-xs">
+            <span className="text-muted-foreground">Used</span>
+            <span className="font-medium">24 / 100</span>
+          </div>
+          <div className="h-2 bg-muted rounded-full overflow-hidden">
+            <motion.div
+              className="h-full bg-gradient-to-r from-primary to-primary/80 rounded-full"
+              initial={{ width: 0 }}
+              animate={{ width: '24%' }}
+              transition={{ duration: 1, delay: 0.3 }}
+            />
+          </div>
+        </div>
+        
+        {/* Stats */}
+        <div className="grid grid-cols-2 gap-2">
+          <div className="bg-muted/30 rounded-lg p-2 text-center">
+            <div className="text-lg font-bold text-primary">76</div>
+            <div className="text-[9px] text-muted-foreground">Remaining</div>
+          </div>
+          <div className="bg-muted/30 rounded-lg p-2 text-center">
+            <div className="text-lg font-bold text-green-500">✓</div>
+            <div className="text-[9px] text-muted-foreground">Active</div>
+          </div>
+        </div>
+        
+        {/* Color states */}
+        <div className="flex justify-center gap-2 pt-1">
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded-full bg-primary" />
+            <span className="text-[8px] text-muted-foreground">Normal</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded-full bg-amber-500" />
+            <span className="text-[8px] text-muted-foreground">Warning</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded-full bg-red-500" />
+            <span className="text-[8px] text-muted-foreground">Low</span>
+          </div>
+        </div>
       </div>
     </div>
   </div>

@@ -7,11 +7,13 @@ import { cn } from '@/lib/utils';
 import {
   MeetAynIllustration,
   EmotionsIllustration,
+  EmpathyIllustration,
+  MicroBehaviorsIllustration,
   ChatIllustration,
   FilesIllustration,
-  SuggestionsIllustration,
   NavigationIllustration,
   HistoryIllustration,
+  CreditsIllustration,
   ProfileIllustration,
 } from './TutorialIllustrations';
 
@@ -29,11 +31,13 @@ interface TutorialPageProps {
 const illustrations: Record<string, React.FC> = {
   'meet-ayn': MeetAynIllustration,
   'emotions': EmotionsIllustration,
+  'empathy': EmpathyIllustration,
+  'micro-behaviors': MicroBehaviorsIllustration,
   'chat': ChatIllustration,
   'files': FilesIllustration,
-  'suggestions': SuggestionsIllustration,
   'navigation': NavigationIllustration,
   'history': HistoryIllustration,
+  'credits': CreditsIllustration,
   'profile': ProfileIllustration,
 };
 
@@ -108,10 +112,10 @@ export const TutorialPage = ({
                 transition={{ duration: 0.2 }}
               >
                 <h2 className="text-xl font-semibold text-foreground mb-2">
-                  {t(step.title)}
+                  {step.title}
                 </h2>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  {t(step.description)}
+                  {step.description}
                 </p>
               </motion.div>
             </AnimatePresence>
