@@ -237,20 +237,23 @@ const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorCon
       return (60 / behaviorConfig.blinkFrequency) * 1000 + (Math.random() * 500);
     }
     
-    // During active typing - slow thoughtful blinks
+    // During active typing - much slower blinks (AYN is focused on reading)
     if (isUserTyping) {
       const typingDuration = typingStartRef.current ? Date.now() - typingStartRef.current : 0;
-      // Longer messages = slower, more thoughtful blinks (shows AYN is "reading along")
+      // Longer messages = even slower blinks (deep concentration)
       if (typingDuration > 5000) {
-        return 4000 + Math.random() * 1500; // Very slow, contemplative blinks for long messages
+        return 6000 + Math.random() * 2000; // Very slow, deeply focused
       } else if (typingDuration > 2000) {
-        return 2500 + Math.random() * 1000; // Slow thoughtful blinks
+        return 4500 + Math.random() * 1500; // Slow, attentive blinks
       }
-      return 1800 + Math.random() * 700; // Attentive but not too frequent
+      return 3500 + Math.random() * 1000; // Attentive - less blinking than idle
     }
     
+    // While responding - quick blinks
     if (isResponding) return 800 + Math.random() * 400;
-    return 3000 + Math.random() * 2000;
+    
+    // Idle state - frequent natural blinks (more lifelike)
+    return 1800 + Math.random() * 1200; // 1.8-3 seconds between blinks
   }, [isUserTyping, isResponding, behaviorConfig?.blinkFrequency, behaviorConfig?.blinkPattern]);
 
   // Idle blinking effect with contextual sounds
