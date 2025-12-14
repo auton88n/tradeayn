@@ -10,7 +10,7 @@ import { ParticleBurst } from '@/components/eye/ParticleBurst';
 import { ChatInput } from './ChatInput';
 import { useBubbleAnimation } from '@/hooks/useBubbleAnimation';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
-import { useSoundContext } from '@/contexts/SoundContext';
+import { useSoundContextOptional } from '@/contexts/SoundContext';
 import { analyzeResponseEmotion, getBubbleType } from '@/utils/emotionMapping';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -85,7 +85,8 @@ export const CenterStageLayout = ({
   const inputRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const { setEmotion, setEmotionWithSource, triggerAbsorption, triggerBlink, setIsResponding, detectExcitement, isUserTyping: contextIsTyping, triggerPulse } = useAYNEmotion();
-  const { playSound } = useSoundContext();
+  const soundContext = useSoundContextOptional();
+  const playSound = soundContext?.playSound;
   const { orchestrateEmotionChange, resetToCalm } = useEmotionOrchestrator();
   const {
     flyingBubble,
@@ -181,7 +182,7 @@ export const CenterStageLayout = ({
       // AYN appears ready and attentive when user is typing a lot
       if (conversationFlow.suggestedEyeBehavior.emotion !== 'calm') {
         // Don't override realtime emotion, just add subtle anticipation
-        playSound('anticipation');
+        playSound?.('anticipation');
       }
     }
   }, [conversationFlow.anticipationLevel, isTyping, playSound]);
@@ -383,7 +384,7 @@ export const CenterStageLayout = ({
       setTimeout(() => {
         triggerBlink();
         triggerAbsorption();
-        playSound('message-absorb');
+        playSound?.('message-absorb');
         // Use orchestrator for synchronized thinking state
         orchestrateEmotionChange('thinking');
         setIsResponding(true);
@@ -435,7 +436,7 @@ export const CenterStageLayout = ({
     setTimeout(() => {
       triggerBlink();
       triggerAbsorption();
-      playSound('message-absorb');
+      playSound?.('message-absorb');
       // Use orchestrator for synchronized thinking state
       orchestrateEmotionChange('thinking');
       setIsResponding(true);
@@ -485,7 +486,7 @@ export const CenterStageLayout = ({
         const emotion = analyzeResponseEmotion(lastMessage.content);
         // Use orchestrator for synchronized response emotion
         orchestrateEmotionChange(emotion);
-        playSound('response-received');
+        playSound?.('response-received');
         setIsResponding(false);
         
         // Haptic feedback handled by orchestrator
