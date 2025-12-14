@@ -61,8 +61,8 @@ export const useEmotionOrchestrator = () => {
 
     if (options?.immediate) {
       // For immediate mode, play sound and haptic right away
-      if (!options?.skipSound) {
-        soundContext?.playEmotion(newEmotion);
+      if (!options?.skipSound && soundContext?.enabled) {
+        soundContext.playEmotion(newEmotion);
       }
       if (!options?.skipHaptic) {
         hapticFeedback(newEmotion);
@@ -71,9 +71,9 @@ export const useEmotionOrchestrator = () => {
     }
 
     // 2. DELAYED: Sound plays as eye is mid-transition (more impactful)
-    if (!options?.skipSound) {
+    if (!options?.skipSound && soundContext?.enabled) {
       const soundTimeout = setTimeout(() => {
-        soundContext?.playEmotion(newEmotion);
+        soundContext.playEmotion(newEmotion);
       }, SOUND_DELAY);
       orchestrationTimeoutsRef.current.push(soundTimeout);
     }
