@@ -355,7 +355,7 @@ export const Sidebar = ({
               </div>
             </button>
           </PopoverTrigger>
-          <PopoverContent className={cn("w-[20rem] p-0 rounded-2xl overflow-hidden", "bg-background/95 backdrop-blur-xl", "border border-border/60 shadow-2xl", "animate-in slide-in-from-bottom-2 fade-in-0 duration-200")} align="start" side="top" sideOffset={8}>
+          <PopoverContent className={cn("w-[calc(20rem+2px)] p-0 rounded-2xl overflow-hidden", "bg-background/95 backdrop-blur-xl", "border border-border/60 shadow-2xl", "animate-in slide-in-from-bottom-2 fade-in-0 duration-200")} align="start" side="top" sideOffset={8}>
             {/* User Info Header */}
             <div className="px-4 py-3 bg-muted/30">
               <p className="text-sm font-semibold text-foreground truncate">{userName || 'User'}</p>
