@@ -3,12 +3,26 @@
  * Enables AYN to respond empathetically to how the user is feeling
  */
 
-export type UserEmotion = 'happy' | 'sad' | 'frustrated' | 'excited' | 'anxious' | 'neutral' | 'confused';
+export type UserEmotion = 'happy' | 'sad' | 'frustrated' | 'excited' | 'anxious' | 'neutral' | 'confused' | 'angry' | 'grieving' | 'overwhelmed';
+
+export type AYNEmotion = 'calm' | 'happy' | 'excited' | 'thinking' | 'curious';
+export type AYNBehavior = 'supportive' | 'celebratory' | 'patient' | 'reassuring' | 'attentive' | 'playful';
+export type HapticPattern = 'empathy' | 'comfort' | 'mirror-joy' | 'patience' | 'calm' | 'curious' | 'celebration' | 'reassurance';
 
 interface EmotionAnalysis {
   emotion: UserEmotion;
   intensity: number; // 0-1
   indicators: string[];
+}
+
+export interface EmpathyResponse {
+  aynEmotion: AYNEmotion;
+  aynBehavior: AYNBehavior;
+  hapticType: HapticPattern;
+  pupilReaction: 'normal' | 'dilate-slightly' | 'dilate-more' | 'contract';
+  blinkPattern: 'normal' | 'slow-comfort' | 'quick-attentive' | 'double-understanding';
+  colorIntensity: number;
+  description: string;
 }
 
 // Emotion detection patterns
@@ -31,17 +45,24 @@ const EMOTION_PATTERNS: Record<UserEmotion, { keywords: string[]; patterns: RegE
   },
   frustrated: {
     keywords: [
-      'ugh', 'frustrated', 'annoying', 'annoyed', 'angry', 'hate', 'stupid',
+      'ugh', 'frustrated', 'annoying', 'annoyed', 'hate', 'stupid',
       'broken', 'useless', 'waste', 'terrible', 'worst', 'fail', 'failed',
       'doesn\'t work', 'not working', 'still not', 'again', 'why',
-      'مزعج', 'غاضب', 'لا يعمل', 'مكسور'
+      'مزعج', 'لا يعمل', 'مكسور'
     ],
     patterns: [
-      /!{2,}/g,           // Multiple exclamation marks
-      /\?{2,}/g,          // Multiple question marks
-      /[A-Z]{3,}/g,       // CAPS LOCK text
-      /😤|😠|😡|🤬|💢/g
+      /!{2,}/g,
+      /\?{2,}/g,
+      /[A-Z]{3,}/g,
+      /😤|😠|🤬|💢/g
     ]
+  },
+  angry: {
+    keywords: [
+      'angry', 'mad', 'furious', 'rage', 'pissed', 'hate', 'sick of',
+      'غاضب', 'زعلان'
+    ],
+    patterns: [/😡|🤬|💢|👊/g, /!{3,}/g]
   },
   excited: {
     keywords: [
@@ -67,6 +88,20 @@ const EMOTION_PATTERNS: Record<UserEmotion, { keywords: string[]; patterns: RegE
     ],
     patterns: [/\?{2,}/g, /🤔|😕|❓|❔|🧐/g, /^(what|how|huh|wait)\??$/i]
   },
+  grieving: {
+    keywords: [
+      'passed away', 'died', 'death', 'funeral', 'lost', 'grief', 'mourning',
+      'gone', 'miss', 'never again', 'وفاة', 'توفي', 'رحل'
+    ],
+    patterns: [/🕯️|🖤|💔|😢|😭/g]
+  },
+  overwhelmed: {
+    keywords: [
+      'overwhelmed', 'too much', 'can\'t handle', 'drowning', 'exhausted',
+      'burnt out', 'burnout', 'stressed', 'breaking down', 'منهك', 'تعبان'
+    ],
+    patterns: [/😫|😩|🥴|😵/g]
+  },
   neutral: {
     keywords: [],
     patterns: []
@@ -75,9 +110,9 @@ const EMOTION_PATTERNS: Record<UserEmotion, { keywords: string[]; patterns: RegE
 
 // Intensity modifiers
 const INTENSITY_BOOSTERS = [
-  /!{2,}/,        // Multiple exclamation marks boost intensity
-  /\?{2,}/,       // Multiple question marks
-  /[A-Z]{4,}/,    // CAPS LOCK words
+  /!{2,}/,
+  /\?{2,}/,
+  /[A-Z]{4,}/,
   /very|really|so|extremely|absolutely|totally|completely/i,
   /جدا|للغاية|كثير/
 ];
@@ -92,10 +127,13 @@ export const analyzeUserEmotion = (message: string): EmotionAnalysis => {
     happy: 0,
     sad: 0,
     frustrated: 0,
+    angry: 0,
     excited: 0,
     anxious: 0,
     confused: 0,
-    neutral: 0.1 // Base score so neutral wins if nothing else matches
+    grieving: 0,
+    overwhelmed: 0,
+    neutral: 0.1
   };
 
   // Check each emotion's patterns
@@ -132,7 +170,7 @@ export const analyzeUserEmotion = (message: string): EmotionAnalysis => {
   }
 
   // Calculate intensity (0-1)
-  let intensity = Math.min(maxScore / 3, 1); // Normalize to 0-1
+  let intensity = Math.min(maxScore / 3, 1);
 
   // Boost intensity for modifiers
   for (const booster of INTENSITY_BOOSTERS) {
@@ -144,31 +182,113 @@ export const analyzeUserEmotion = (message: string): EmotionAnalysis => {
   return {
     emotion: detectedEmotion,
     intensity,
-    indicators: [...new Set(indicators)] // Remove duplicates
+    indicators: [...new Set(indicators)]
   };
 };
 
 /**
- * Get the appropriate AYN emotion response for a user's emotion
+ * Get the appropriate empathetic AYN response for a user's emotion
+ * AYN responds WITH empathy, not BY mirroring
  */
-export const getEmpathyResponse = (userEmotion: UserEmotion): {
-  aynEmotion: 'calm' | 'happy' | 'excited' | 'thinking' | 'frustrated' | 'curious';
-  hapticType: 'empathy' | 'comfort' | 'mirror-joy' | 'patience' | 'calm' | 'curious';
-} => {
-  switch (userEmotion) {
-    case 'happy':
-      return { aynEmotion: 'happy', hapticType: 'mirror-joy' };
-    case 'excited':
-      return { aynEmotion: 'excited', hapticType: 'mirror-joy' };
-    case 'sad':
-      return { aynEmotion: 'calm', hapticType: 'comfort' };
-    case 'frustrated':
-      return { aynEmotion: 'curious', hapticType: 'patience' };
-    case 'anxious':
-      return { aynEmotion: 'calm', hapticType: 'comfort' };
-    case 'confused':
-      return { aynEmotion: 'curious', hapticType: 'curious' };
-    default:
-      return { aynEmotion: 'calm', hapticType: 'calm' };
-  }
+export const getEmpathyResponse = (userEmotion: UserEmotion): EmpathyResponse => {
+  // Comprehensive empathy mapping - AYN responds supportively, not by mirroring negative emotions
+  const empathyMap: Record<UserEmotion, EmpathyResponse> = {
+    // Positive emotions - AYN mirrors and celebrates
+    happy: {
+      aynEmotion: 'happy',
+      aynBehavior: 'celebratory',
+      hapticType: 'mirror-joy',
+      pupilReaction: 'dilate-slightly',
+      blinkPattern: 'quick-attentive',
+      colorIntensity: 0.8,
+      description: 'Sharing in your happiness'
+    },
+    excited: {
+      aynEmotion: 'excited',
+      aynBehavior: 'celebratory',
+      hapticType: 'celebration',
+      pupilReaction: 'dilate-more',
+      blinkPattern: 'quick-attentive',
+      colorIntensity: 0.9,
+      description: 'Matching your excitement'
+    },
+    
+    // Negative emotions - AYN provides supportive counter-response
+    sad: {
+      aynEmotion: 'calm',
+      aynBehavior: 'supportive',
+      hapticType: 'comfort',
+      pupilReaction: 'dilate-slightly',
+      blinkPattern: 'slow-comfort',
+      colorIntensity: 0.6,
+      description: 'Offering warm comfort'
+    },
+    grieving: {
+      aynEmotion: 'calm',
+      aynBehavior: 'supportive',
+      hapticType: 'comfort',
+      pupilReaction: 'dilate-more',
+      blinkPattern: 'slow-comfort',
+      colorIntensity: 0.5,
+      description: 'Deep empathy and gentle presence'
+    },
+    frustrated: {
+      aynEmotion: 'curious',
+      aynBehavior: 'patient',
+      hapticType: 'patience',
+      pupilReaction: 'normal',
+      blinkPattern: 'double-understanding',
+      colorIntensity: 0.7,
+      description: 'Patient understanding, ready to help'
+    },
+    angry: {
+      aynEmotion: 'calm',
+      aynBehavior: 'patient',
+      hapticType: 'calm',
+      pupilReaction: 'contract',
+      blinkPattern: 'slow-comfort',
+      colorIntensity: 0.5,
+      description: 'Calm, grounding presence'
+    },
+    anxious: {
+      aynEmotion: 'calm',
+      aynBehavior: 'reassuring',
+      hapticType: 'reassurance',
+      pupilReaction: 'dilate-slightly',
+      blinkPattern: 'slow-comfort',
+      colorIntensity: 0.6,
+      description: 'Steady, reassuring calm'
+    },
+    overwhelmed: {
+      aynEmotion: 'calm',
+      aynBehavior: 'supportive',
+      hapticType: 'comfort',
+      pupilReaction: 'dilate-slightly',
+      blinkPattern: 'slow-comfort',
+      colorIntensity: 0.5,
+      description: 'Gentle, organized support'
+    },
+    confused: {
+      aynEmotion: 'curious',
+      aynBehavior: 'attentive',
+      hapticType: 'curious',
+      pupilReaction: 'dilate-slightly',
+      blinkPattern: 'quick-attentive',
+      colorIntensity: 0.7,
+      description: 'Engaged and ready to clarify'
+    },
+    
+    // Neutral - AYN is attentive and ready
+    neutral: {
+      aynEmotion: 'calm',
+      aynBehavior: 'attentive',
+      hapticType: 'calm',
+      pupilReaction: 'normal',
+      blinkPattern: 'normal',
+      colorIntensity: 0.5,
+      description: 'Attentive and present'
+    }
+  };
+
+  return empathyMap[userEmotion] || empathyMap.neutral;
 };
