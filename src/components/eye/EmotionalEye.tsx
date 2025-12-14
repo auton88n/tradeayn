@@ -75,8 +75,11 @@ const EmotionalEyeComponent = ({
   const aiGazeX = useMotionValue(0);
   const aiGazeY = useMotionValue(0);
 
-  // Apply behavior config overrides - but respect emotion priority
+  // Apply behavior config overrides - but respect emotion priority and skip while typing
   useEffect(() => {
+    // SKIP behavior library updates while user is typing - prevents flickering
+    if (isUserTyping) return;
+    
     if (behaviorConfig) {
       // Only apply behavior emotion if current emotion is from behavior or default
       // Content-based and response emotions have higher priority
@@ -95,7 +98,7 @@ const EmotionalEyeComponent = ({
         triggerPulse();
       }
     }
-  }, [behaviorConfig, emotion, emotionSource, setEmotionWithSource, triggerSurprise, triggerPulse]);
+  }, [behaviorConfig, emotion, emotionSource, isUserTyping, setEmotionWithSource, triggerSurprise, triggerPulse]);
 
   // Safe sound player that respects enabled state
   const playSoundSafe = useCallback((type: 'blink' | 'listening' | 'attentive-blink' | 'processing' | 'thoughtful-blink') => {

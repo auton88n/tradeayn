@@ -194,13 +194,9 @@ export const AYNEmotionProvider = ({ children }: { children: ReactNode }) => {
   const winkTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const setEmotionWithSource = useCallback((newEmotion: AYNEmotion, source: EmotionSource) => {
-    setEmotionState(prevEmotion => {
-      // Trigger haptic feedback when emotion changes
-      if (newEmotion !== prevEmotion) {
-        hapticFeedback(newEmotion);
-      }
-      return newEmotion;
-    });
+    // ONLY set emotion state - haptic is handled EXCLUSIVELY by useEmotionOrchestrator
+    // This prevents duplicate haptic triggers
+    setEmotionState(newEmotion);
     setEmotionSource(source);
   }, []);
 

@@ -151,30 +151,15 @@ export const CenterStageLayout = ({
   // Conversation flow awareness for anticipation states
   const conversationFlow = useConversationFlow(messages, contextIsTyping, realtimeInputText);
 
-  // Handle real-time emotion changes from typing - synchronized via orchestrator
-  // Content-based emotions have HIGHEST priority and override behavior library
+  // DISABLED: Real-time emotion detection while typing causes color flickering
+  // Emotions should only change on meaningful events (message sent, response received)
+  // Just track activity when user types - no emotion changes
   useEffect(() => {
-    if (realtimeEmotion.detectedEmotion && realtimeEmotion.intensity > 0.4) {
-      const detectedEmotion = realtimeEmotion.detectedEmotion;
-      
-      // Only orchestrate if emotion actually changed
-      if (lastEmotionSoundRef.current !== detectedEmotion) {
-        lastEmotionSoundRef.current = detectedEmotion;
-        
-        // Use orchestrator for perfectly synchronized eye + sound + haptic
-        setEmotionWithSource(detectedEmotion, 'content');
-        orchestrateEmotionChange(detectedEmotion);
-      }
-    } else if (!contextIsTyping) {
-      // Reset to default when user stops typing - allows behavior library to take over again
+    if (contextIsTyping) {
+      // Simple activity tracking - no color/emotion changes while typing
       lastEmotionSoundRef.current = null;
-      // After a brief delay, reset source so behavior can take over
-      setTimeout(() => {
-        resetToCalm();
-        setEmotionWithSource('calm', 'default');
-      }, 2000); // 2 second grace period before behavior takes over
     }
-  }, [realtimeEmotion, contextIsTyping, setEmotionWithSource, orchestrateEmotionChange, resetToCalm]);
+  }, [contextIsTyping]);
 
   // Use conversation flow to adjust anticipation
   useEffect(() => {

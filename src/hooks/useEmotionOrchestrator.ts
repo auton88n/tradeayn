@@ -19,9 +19,8 @@ export const EMOTION_TRANSITION_TIMING: Record<AYNEmotion, number> = {
   supportive: 250,
 };
 
-// Precise timing for perfect synchronization
-const SOUND_DELAY = 50; // ms after eye starts changing - reduced for tighter sync
-const HAPTIC_DELAY = 80; // ms after eye starts changing
+// Precise timing for perfect synchronization - sound plays at 30% of transition
+const HAPTIC_DELAY = 40; // ms after eye starts changing - tight sync
 
 export const useEmotionOrchestrator = () => {
   const { setEmotion, triggerPulse, emotion: currentEmotion } = useAYNEmotion();
@@ -41,11 +40,11 @@ export const useEmotionOrchestrator = () => {
     skipHaptic?: boolean;
     immediate?: boolean;
   }) => {
-    // Prevent rapid duplicate orchestrations (within 150ms)
+    // Prevent rapid duplicate orchestrations (within 500ms for stability)
     const now = Date.now();
     if (
       lastOrchestrationRef.current?.emotion === newEmotion &&
-      now - lastOrchestrationRef.current.time < 150
+      now - lastOrchestrationRef.current.time < 500
     ) {
       return;
     }
@@ -70,11 +69,12 @@ export const useEmotionOrchestrator = () => {
       return;
     }
 
-    // 2. DELAYED: Sound plays as eye is mid-transition (more impactful)
+    // 2. DELAYED: Sound plays at 30% of transition (synchronized with eye movement)
     if (!options?.skipSound && soundContext?.enabled) {
+      const soundDelay = Math.round(EMOTION_TRANSITION_TIMING[newEmotion] * 0.3);
       const soundTimeout = setTimeout(() => {
         soundContext.playEmotion(newEmotion);
-      }, SOUND_DELAY);
+      }, soundDelay);
       orchestrationTimeoutsRef.current.push(soundTimeout);
     }
 
