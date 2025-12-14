@@ -4,19 +4,19 @@ import { AYNEmotion, useAYNEmotion, EMOTION_CONFIGS } from '@/contexts/AYNEmotio
 import { useSoundContextOptional } from '@/contexts/SoundContext';
 import { hapticFeedback } from '@/lib/haptics';
 
-// Transition timing per emotion (matches sound duration for sync)
+// Transition timing per emotion - longer for natural flowing colors
 export const EMOTION_TRANSITION_TIMING: Record<AYNEmotion, number> = {
-  calm: 200,
-  happy: 150,
-  excited: 120,
-  thinking: 250,
-  frustrated: 200,
-  curious: 180,
-  sad: 400,
-  mad: 150,
-  bored: 350,
-  comfort: 300,
-  supportive: 250,
+  calm: 600,
+  happy: 500,
+  excited: 400,
+  thinking: 600,
+  frustrated: 500,
+  curious: 500,
+  sad: 800,
+  mad: 400,
+  bored: 700,
+  comfort: 700,
+  supportive: 600,
 };
 
 // Precise timing for perfect synchronization - sound plays at 30% of transition

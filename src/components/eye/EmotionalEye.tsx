@@ -526,7 +526,7 @@ const EmotionalEyeComponent = ({
               ? 'radial-gradient(circle, rgba(229,229,229,0.25) 0%, transparent 80%)'
               : `radial-gradient(circle, ${emotionConfig.glowColor}30 0%, transparent 80%)`,
             filter: 'blur(24px)',
-            transition: 'background 0.5s ease-out',
+            transition: 'background 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
           }}
         />
         
@@ -560,7 +560,7 @@ const EmotionalEyeComponent = ({
               boxShadow: emotion !== 'calm' 
                 ? `0 0 16px ${emotionConfig.glowColor}80, inset 0 0 8px ${emotionConfig.glowColor}30`
                 : 'none',
-              transition: 'background-color 0.5s ease-out, box-shadow 0.5s ease-out',
+              transition: 'background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
             }}
           />
 
@@ -607,7 +607,7 @@ const EmotionalEyeComponent = ({
             {(() => {
               const brainScale = (irisRadius * 0.7) / 24;
               const strokeColor = emotion === 'calm' ? '#FFFFFF' : emotionConfig.color;
-              const pathStyle = { transition: 'stroke 0.5s ease-out' };
+              const pathStyle = { transition: 'stroke 0.8s cubic-bezier(0.4, 0, 0.2, 1)' };
               return (
                 <g 
                   transform={`translate(${50 - 12 * brainScale}, ${50 - 12 * brainScale}) scale(${brainScale})`}
