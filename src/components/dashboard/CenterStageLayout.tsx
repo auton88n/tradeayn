@@ -289,6 +289,25 @@ export const CenterStageLayout = ({
     };
   }, []);
 
+  // Call AI emotion analysis for empathetic response
+  const analyzeEmotionWithAI = useCallback(async (message: string, conversationContext?: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('analyze-emotion', {
+        body: { message, conversationContext }
+      });
+      
+      if (error) {
+        console.error('AI emotion analysis error:', error);
+        return null;
+      }
+      
+      return data;
+    } catch (err) {
+      console.error('Failed to analyze emotion:', err);
+      return null;
+    }
+  }, []);
+
   // Handle sending message with bubble animation
   const handleSendWithAnimation = useCallback(
     async (content: string, file?: File | null) => {
@@ -297,18 +316,39 @@ export const CenterStageLayout = ({
       // Track the user's message for suggestion context
       setLastUserMessage(content);
 
-      // Analyze user's emotional state and respond empathetically
+      // Get recent conversation context for AI analysis
+      const recentMessages = messages.slice(-5).map(m => 
+        `${m.sender}: ${m.content.slice(0, 100)}`
+      ).join('\n');
+
+      // Start AI emotion analysis in background (non-blocking)
+      analyzeEmotionWithAI(content, recentMessages).then(aiAnalysis => {
+        if (aiAnalysis?.aynResponse) {
+          // Use AI-determined empathetic emotion
+          const aynEmotion = aiAnalysis.aynResponse.emotion || 'calm';
+          setEmotion(aynEmotion);
+          hapticFeedback(aynEmotion);
+          
+          // Extra empathy for high-intensity user emotions
+          if (aiAnalysis.userEmotion?.intensity > 0.6) {
+            triggerPulse();
+          }
+          
+          console.log('AI Empathy:', aiAnalysis.empathyNote);
+        }
+      });
+
+      // Fallback: Use local emotion analysis immediately for responsive UI
       const userEmotionAnalysis = analyzeUserEmotion(content);
       const empathyResponse = getEmpathyResponse(userEmotionAnalysis.emotion);
       
-      // AYN shows empathetic response to user's emotion before processing
+      // AYN shows empathetic response immediately (before AI completes)
       if (userEmotionAnalysis.emotion !== 'neutral' && userEmotionAnalysis.intensity > 0.3) {
         setEmotion(empathyResponse.aynEmotion);
         hapticFeedback(empathyResponse.hapticType);
         
-        // Extra empathy for strong emotions
         if (userEmotionAnalysis.intensity > 0.6) {
-          triggerPulse(); // Gentle acknowledgment pulse
+          triggerPulse();
         }
       }
 
@@ -321,7 +361,7 @@ export const CenterStageLayout = ({
       const eyePos = getEyePosition();
       startMessageAnimation(content, inputPos, eyePos);
 
-      // After flight completes, trigger eye absorption and send message (reduced delays)
+      // After flight completes, trigger eye absorption and send message
       setTimeout(() => {
         triggerBlink();
         triggerAbsorption();
@@ -342,6 +382,8 @@ export const CenterStageLayout = ({
       }, 350);
     },
     [
+      messages,
+      analyzeEmotionWithAI,
       clearResponseBubbles,
       clearSuggestions,
       getInputPosition,
