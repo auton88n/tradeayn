@@ -45,6 +45,21 @@ const EMOTION_PATTERNS = {
     keywords: ['worried', 'nervous', 'anxious', 'scared', 'afraid', 'urgent', 'asap', 'deadline', 'important', 'critical', 'قلق', 'عاجل', 'مهم'],
     emotion: 'thinking' as AYNEmotion, // Show calm thinking to reassure
     intensity: 0.6
+  },
+  sad: {
+    keywords: ['sad', 'sorry', 'disappointed', 'miss', 'regret', 'apologize', 'heartbroken', 'upset', 'depressed', 'lonely', 'cry', 'crying', 'tears', 'حزين', 'آسف', 'أفتقدك', 'محبط'],
+    emotion: 'sad' as AYNEmotion,
+    intensity: 0.75
+  },
+  mad: {
+    keywords: ['angry', 'furious', 'unacceptable', 'hate this', 'outrageous', 'ridiculous', 'terrible', 'awful', 'worst', 'stupid', 'idiot', 'غاضب', 'مستفز', 'سيء جداً'],
+    emotion: 'mad' as AYNEmotion,
+    intensity: 0.8
+  },
+  bored: {
+    keywords: ['whatever', 'i guess', 'fine', 'if you say so', 'meh', 'boring', 'dull', 'same old', 'nothing new', 'yawn', 'ممل', 'عادي', 'كما تشاء'],
+    emotion: 'bored' as AYNEmotion,
+    intensity: 0.5
   }
 };
 

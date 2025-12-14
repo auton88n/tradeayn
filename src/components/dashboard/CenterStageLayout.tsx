@@ -148,14 +148,21 @@ export const CenterStageLayout = ({
         'curious': 'curious', 
         'happy': 'happy',
         'excited': 'excited',
+        'sad': 'sad',
+        'mad': 'mad',
+        'bored': 'bored',
+        'frustrated': 'frustrated',
       };
       
       const aynEmotion = emotionToAynEmotion[realtimeEmotion.detectedEmotion] || 'curious';
       setEmotion(aynEmotion);
       
-      // Play understanding/recognition sound when detecting emotion (debounced)
+      // Play emotion sound and understanding/recognition sound when detecting emotion (debounced)
       if (lastEmotionSoundRef.current !== realtimeEmotion.detectedEmotion) {
         lastEmotionSoundRef.current = realtimeEmotion.detectedEmotion;
+        
+        // Play the specific emotion sound
+        playEmotion(realtimeEmotion.detectedEmotion);
         
         // Play contextual sound based on what was detected
         if (realtimeEmotion.isTypingQuestion) {
@@ -173,7 +180,7 @@ export const CenterStageLayout = ({
       // Reset when user stops typing
       lastEmotionSoundRef.current = null;
     }
-  }, [realtimeEmotion, contextIsTyping, setEmotion, playSound]);
+  }, [realtimeEmotion, contextIsTyping, setEmotion, playSound, playEmotion]);
 
   // Use conversation flow to adjust anticipation
   useEffect(() => {
