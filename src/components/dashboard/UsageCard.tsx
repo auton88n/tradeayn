@@ -195,13 +195,20 @@ export const UsageCard = ({
     );
   }
 
+  // Determine status level for legend
+  const statusLevel = useMemo(() => {
+    if (!monthlyLimit) return 'normal';
+    if (percentage >= 90) return 'low';
+    if (percentage >= 75) return 'warning';
+    return 'normal';
+  }, [percentage, monthlyLimit]);
+
   // Full size card (non-compact)
   return (
     <motion.div 
       className={cn(
-        "p-4 rounded-xl space-y-3 relative overflow-hidden",
-        "bg-gradient-to-br from-muted/50 via-muted/30 to-transparent",
-        "border border-border/50 backdrop-blur-sm"
+        "p-5 rounded-2xl space-y-4 relative overflow-hidden",
+        "bg-neutral-900 border border-white/10"
       )}
       animate={showPulse ? { scale: [1, 1.01, 1] } : {}}
     >
@@ -217,60 +224,90 @@ export const UsageCard = ({
         )}
       </AnimatePresence>
 
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className={cn(
-            "w-10 h-10 rounded-xl flex items-center justify-center",
-            isUnlimited ? "bg-primary/10" : percentage >= 90 ? "bg-red-500/10" : percentage >= 75 ? "bg-amber-500/10" : "bg-emerald-500/10"
-          )}>
-            {isUnlimited ? (
-              <Sparkles className="w-5 h-5 text-primary" />
-            ) : (
-              <Zap className={cn("w-5 h-5", statusColor)} />
-            )}
-          </div>
-          <div>
-            <p className="text-sm font-medium text-foreground">Usage This Month</p>
-            <p className="text-xs text-muted-foreground">
-              <motion.span className="font-semibold text-foreground tabular-nums">
-                {displayCount}
-              </motion.span>
-              {' '}messages sent
-            </p>
-          </div>
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-neutral-800 flex items-center justify-center">
+          <Zap className="w-5 h-5 text-white" />
         </div>
-        
-        {isUnlimited ? (
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 border border-primary/20">
-            <Infinity className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium text-primary">Unlimited</span>
-          </div>
-        ) : (
-          <div className="text-right">
-            <span className={cn("text-xl font-bold tabular-nums", statusColor)}>
-              {Math.round(percentage)}%
-            </span>
-            <p className="text-xs text-muted-foreground">{creditsLeft} left</p>
-          </div>
-        )}
+        <div>
+          <p className="text-base font-semibold text-white">Monthly Credits</p>
+          {resetDate && (
+            <p className="text-xs text-neutral-400">Resets {formattedResetDate}</p>
+          )}
+        </div>
       </div>
 
-      {!isUnlimited && (
-        <Progress 
-          value={percentage} 
-          className="h-2 bg-muted/60" 
-          indicatorClassName={statusBg} 
-        />
-      )}
-
-      {resetDate && (
-        <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
-          <Calendar className="w-3.5 h-3.5" />
-          <span>Resets {formattedResetDate}</span>
-          <span className="text-muted-foreground/50">•</span>
-          <span>{daysUntilReset} days remaining</span>
+      {/* Usage Row */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-neutral-400">Used</span>
+          <span className="text-sm font-medium text-white tabular-nums">
+            <motion.span key={displayCount}>{displayCount}</motion.span>
+            {' / '}
+            {isUnlimited ? '∞' : monthlyLimit}
+          </span>
         </div>
-      )}
+        
+        {/* Progress Bar */}
+        <div className="h-2 rounded-full bg-neutral-800 overflow-hidden">
+          <motion.div 
+            className="h-full rounded-full bg-gradient-to-r from-blue-500 via-purple-500 to-purple-600"
+            initial={{ width: 0 }}
+            animate={{ width: isUnlimited ? '100%' : `${percentage}%` }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
+          />
+        </div>
+      </div>
+
+      {/* Stats Boxes */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="p-3 rounded-xl bg-neutral-800/80 text-center">
+          <p className="text-2xl font-bold text-white tabular-nums">
+            {isUnlimited ? '∞' : creditsLeft}
+          </p>
+          <p className="text-xs text-neutral-400 mt-0.5">Remaining</p>
+        </div>
+        <div className="p-3 rounded-xl bg-neutral-800/80 text-center">
+          <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto">
+            <div className="w-3 h-3 rounded-full bg-emerald-500" />
+          </div>
+          <p className="text-xs text-neutral-400 mt-1.5">Active</p>
+        </div>
+      </div>
+
+      {/* Status Legend */}
+      <div className="flex items-center justify-center gap-4 pt-1">
+        <div className="flex items-center gap-1.5">
+          <div className={cn(
+            "w-2 h-2 rounded-full",
+            statusLevel === 'normal' ? "bg-neutral-400 ring-2 ring-neutral-400/30" : "bg-neutral-600"
+          )} />
+          <span className={cn(
+            "text-xs",
+            statusLevel === 'normal' ? "text-neutral-300" : "text-neutral-500"
+          )}>Normal</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className={cn(
+            "w-2 h-2 rounded-full",
+            statusLevel === 'warning' ? "bg-amber-500 ring-2 ring-amber-500/30" : "bg-neutral-600"
+          )} />
+          <span className={cn(
+            "text-xs",
+            statusLevel === 'warning' ? "text-amber-400" : "text-neutral-500"
+          )}>Warning</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className={cn(
+            "w-2 h-2 rounded-full",
+            statusLevel === 'low' ? "bg-red-500 ring-2 ring-red-500/30" : "bg-neutral-600"
+          )} />
+          <span className={cn(
+            "text-xs",
+            statusLevel === 'low' ? "text-red-400" : "text-neutral-500"
+          )}>Low</span>
+        </div>
+      </div>
     </motion.div>
   );
 };
