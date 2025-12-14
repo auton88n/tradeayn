@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode, useRef, useMemo } from 'react';
 import { hapticFeedback } from '@/lib/haptics';
 
-export type AYNEmotion = 'calm' | 'happy' | 'excited' | 'thinking' | 'frustrated' | 'curious';
+export type AYNEmotion = 'calm' | 'happy' | 'excited' | 'thinking' | 'frustrated' | 'curious' | 'sad' | 'mad' | 'bored';
 
 export interface EmotionConfig {
   color: string;
@@ -67,6 +67,33 @@ export const EMOTION_CONFIGS: Record<AYNEmotion, EmotionConfig> = {
     irisScale: 1.1,
     breathingSpeed: 2.8,
     particleType: 'sparkle',
+  },
+  sad: {
+    color: 'hsl(210, 20%, 50%)',
+    glowColor: 'hsl(210, 20%, 65%)',
+    ringClass: 'ring-slate-400/30',
+    glowClass: 'shadow-[0_0_20px_hsl(210,20%,50%,0.2)]',
+    irisScale: 0.9,
+    breathingSpeed: 5,
+    particleType: 'none',
+  },
+  mad: {
+    color: 'hsl(0, 85%, 40%)',
+    glowColor: 'hsl(0, 85%, 55%)',
+    ringClass: 'ring-red-600/50',
+    glowClass: 'shadow-[0_0_35px_hsl(0,85%,40%,0.4)]',
+    irisScale: 0.8,
+    breathingSpeed: 1,
+    particleType: 'energy',
+  },
+  bored: {
+    color: 'hsl(0, 0%, 60%)',
+    glowColor: 'hsl(0, 0%, 70%)',
+    ringClass: 'ring-gray-400/20',
+    glowClass: 'shadow-[0_0_15px_hsl(0,0%,60%,0.15)]',
+    irisScale: 0.95,
+    breathingSpeed: 6,
+    particleType: 'none',
   },
 };
 

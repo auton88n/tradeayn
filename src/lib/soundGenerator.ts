@@ -6,6 +6,7 @@ export type SoundType =
   | 'mode-general' | 'mode-research' | 'mode-pdf' | 'mode-vision' | 'mode-civil'
   // Emotion sounds
   | 'emotion-happy' | 'emotion-thinking' | 'emotion-excited' | 'emotion-curious' | 'emotion-frustrated' | 'emotion-calm'
+  | 'emotion-sad' | 'emotion-mad' | 'emotion-bored'
   // Interaction sounds
   | 'message-send' | 'message-absorb' | 'response-received' | 'suggestion-click' | 'blink'
   // Conversational sounds - real-time emotional connection
@@ -39,6 +40,9 @@ const SOUND_CONFIGS: Record<SoundType, SoundConfig> = {
   'emotion-excited': { type: 'sawtooth', frequency: 622, duration: 0.12, gain: 0.05, attack: 0.01, decay: 0.11, filterFreq: 3000 },
   'emotion-curious': { type: 'sine', frequency: 466, duration: 0.18, gain: 0.05, attack: 0.02, decay: 0.16, detune: 10 },
   'emotion-frustrated': { type: 'triangle', frequency: 220, duration: 0.2, gain: 0.04, attack: 0.03, decay: 0.17 },
+  'emotion-sad': { type: 'sine', frequency: 196, duration: 0.4, gain: 0.05, attack: 0.1, decay: 0.3 },
+  'emotion-mad': { type: 'square', frequency: 165, duration: 0.15, gain: 0.06, attack: 0.01, decay: 0.14, filterFreq: 1200 },
+  'emotion-bored': { type: 'sine', frequency: 175, duration: 0.35, gain: 0.03, attack: 0.15, decay: 0.2 },
   
   // Interaction sounds - minimal
   'message-send': { type: 'sine', frequency: 880, duration: 0.1, gain: 0.06, attack: 0.01, decay: 0.09 },
@@ -253,6 +257,9 @@ export class SoundGenerator {
       'excited': 'emotion-excited',
       'curious': 'emotion-curious',
       'frustrated': 'emotion-frustrated',
+      'sad': 'emotion-sad',
+      'mad': 'emotion-mad',
+      'bored': 'emotion-bored',
     };
     
     const soundType = emotionMap[emotion] || 'emotion-calm';
