@@ -8,8 +8,6 @@ import { useIdleDetection } from '@/hooks/useIdleDetection';
 import { useEyeGestures } from '@/hooks/useEyeGestures';
 import { EyeParticles } from './EyeParticles';
 import { ThinkingDots } from './ThinkingDots';
-import { EmpathyRing } from './EmpathyRing';
-import { IrisHighlight } from './IrisHighlight';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface EmotionalEyeProps {
@@ -17,21 +15,9 @@ interface EmotionalEyeProps {
   className?: string;
   gazeTarget?: { x: number; y: number } | null;
   behaviorConfig?: BehaviorConfig | null;
-  // New props for user emotion empathy
-  userSentiment?: 'positive' | 'negative' | 'neutral';
-  userEmotionIntensity?: number;
-  isUserEmotionActive?: boolean;
 }
 
-const EmotionalEyeComponent = ({ 
-  size = 'lg', 
-  className, 
-  gazeTarget, 
-  behaviorConfig,
-  userSentiment = 'neutral',
-  userEmotionIntensity = 0,
-  isUserEmotionActive = false,
-}: EmotionalEyeProps) => {
+const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorConfig }: EmotionalEyeProps) => {
   const { 
     emotionConfig,
     emotion,
@@ -364,51 +350,14 @@ const EmotionalEyeComponent = ({
     }
   }, [emotion, behaviorConfig]);
 
-  // Calculate empathetic head tilt based on user emotion
-  const getEmpathyTilt = useCallback(() => {
-    if (!isUserEmotionActive || userEmotionIntensity < 0.4) return 0;
-    
-    // More dramatic tilt for strong emotions
-    const tiltMultiplier = userEmotionIntensity > 0.6 ? 1.5 : 1;
-    
-    switch (userSentiment) {
-      case 'negative':
-        // Concerned lean - empathetic tilt toward user
-        return 5 * tiltMultiplier;
-      case 'positive':
-        // Slight happy tilt
-        return 2 * tiltMultiplier;
-      default:
-        return 0;
-    }
-  }, [userSentiment, userEmotionIntensity, isUserEmotionActive]);
-
-  // Calculate empathetic breathing speed
-  const getEmpathyBreathingSpeed = useCallback(() => {
-    if (!isUserEmotionActive || userEmotionIntensity < 0.4) return emotionConfig.breathingSpeed;
-    
-    switch (userSentiment) {
-      case 'negative':
-        // Slower breathing for frustrated/anxious users (calming presence)
-        return emotionConfig.breathingSpeed * 1.5;
-      case 'positive':
-        // Slightly faster for excited users (matching energy)
-        return emotionConfig.breathingSpeed * 0.85;
-      default:
-        return emotionConfig.breathingSpeed;
-    }
-  }, [userSentiment, userEmotionIntensity, isUserEmotionActive, emotionConfig.breathingSpeed]);
-
-  // Head tilt based on behavior/emotion + empathy
+  // Head tilt based on behavior/emotion - smoother spring
   const tiltRotation = useMotionValue(0);
   const smoothTilt = useSpring(tiltRotation, { damping: 50, stiffness: 60, mass: 0.8 });
 
   useEffect(() => {
     const { tilt } = getMicroParams();
-    const empathyTilt = getEmpathyTilt();
-    // Combine base tilt with empathy tilt
-    tiltRotation.set(tilt + empathyTilt);
-  }, [emotion, getMicroParams, getEmpathyTilt, tiltRotation, behaviorConfig, userSentiment, userEmotionIntensity]);
+    tiltRotation.set(tilt);
+  }, [emotion, getMicroParams, tiltRotation, behaviorConfig]);
 
   // Micro-movements when idle - DISABLED on mobile for performance
   useEffect(() => {
@@ -439,22 +388,8 @@ const EmotionalEyeComponent = ({
     lg: 'w-[160px] h-[160px] md:w-[220px] md:h-[220px] lg:w-[260px] lg:h-[260px]',
   };
 
-  // Calculate iris radius based on behavior pupil state, user emotion, or current state
+  // Calculate iris radius based on behavior pupil state or current state
   const getIrisRadius = () => {
-    // User emotion-responsive pupil (empathetic response)
-    if (isUserEmotionActive && userEmotionIntensity > 0.4) {
-      switch (userSentiment) {
-        case 'negative':
-          // Pupil contracts slightly for frustrated/sad (focused, attentive)
-          return 24;
-        case 'positive':
-          // Pupil dilates for excited/happy (mirroring joy)
-          return 34;
-        default:
-          return 28;
-      }
-    }
-    
     // Use behavior pupil dilation if available
     if (behaviorConfig?.pupilDilation) {
       switch (behaviorConfig.pupilDilation) {
@@ -476,7 +411,7 @@ const EmotionalEyeComponent = ({
   };
 
   const irisRadius = getIrisRadius();
-  const breathingDuration = getEmpathyBreathingSpeed();
+  const breathingDuration = emotionConfig.breathingSpeed;
 
   // Calculate eye size for particles
   const eyeSizeMap = { sm: 120, md: 180, lg: 260 };
@@ -497,15 +432,6 @@ const EmotionalEyeComponent = ({
         color={emotionConfig.glowColor}
         size={eyeSize}
       />
-      
-      {/* Empathy Ring - pulses when user emotion is detected */}
-      {!prefersReducedMotion && (
-        <EmpathyRing
-          isActive={isUserEmotionActive}
-          userSentiment={userSentiment}
-          intensity={userEmotionIntensity}
-        />
-      )}
       
       <motion.div
         style={{ 
@@ -619,16 +545,6 @@ const EmotionalEyeComponent = ({
                       : "r 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)"
               }} 
             />
-            
-            {/* Dynamic iris highlight - brightens/dims based on user emotion */}
-            <foreignObject x="25" y="25" width="50" height="50" style={{ overflow: 'visible' }}>
-              <IrisHighlight
-                userSentiment={userSentiment}
-                emotionIntensity={userEmotionIntensity}
-                gazeX={0}
-                gazeY={0}
-              />
-            </foreignObject>
               
             {/* Pure SVG Brain icon - Safari compatible (no foreignObject) */}
             {(() => {

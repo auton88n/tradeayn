@@ -7,9 +7,7 @@
 type HapticType = 
   | 'light' | 'medium' | 'heavy' | 'success' | 'notification' | 'pulse'
   | 'happy' | 'excited' | 'frustrated' | 'thinking' | 'curious' | 'calm'
-  | 'empathy' | 'comfort' | 'mirror-joy' | 'patience'
-  // User emotion empathy patterns
-  | 'user-frustrated' | 'user-excited' | 'user-sad' | 'user-curious' | 'user-happy';
+  | 'empathy' | 'comfort' | 'mirror-joy' | 'patience';
 
 const hapticPatterns: Record<HapticType, number | number[]> = {
   // Base interaction patterns
@@ -33,13 +31,6 @@ const hapticPatterns: Record<HapticType, number | number[]> = {
   comfort: [5, 150, 5, 150, 5],     // Soft rhythm - calming presence
   'mirror-joy': [12, 40, 12, 40, 12], // Quick happy pattern - sharing joy
   patience: [30, 200],              // Long gentle pulse - "take your time"
-  
-  // Specific user emotion response haptics
-  'user-frustrated': [20, 180, 20],       // Slow, patient double pulse - "I hear you"
-  'user-excited': [8, 30, 8, 30, 8],      // Quick triple tap - sharing energy
-  'user-sad': [15, 250],                  // Single long gentle pulse - comfort
-  'user-curious': [10, 80, 15],           // Short-long pattern - engagement
-  'user-happy': [10, 40, 10, 40],         // Double quick tap - mirror joy
 };
 
 // Cache the support check
