@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useCallback, ReactNode, use
 import { hapticFeedback } from '@/lib/haptics';
 
 export type AYNEmotion = 'calm' | 'happy' | 'excited' | 'thinking' | 'frustrated' | 'curious' | 'sad' | 'mad' | 'bored';
+export type EmotionSource = 'content' | 'behavior' | 'response' | 'default';
 
 export interface EmotionConfig {
   color: string;
@@ -118,8 +119,10 @@ const EXCITING_KEYWORDS = [
 
 interface AYNEmotionContextType {
   emotion: AYNEmotion;
+  emotionSource: EmotionSource;
   emotionConfig: EmotionConfig;
   setEmotion: (emotion: AYNEmotion) => void;
+  setEmotionWithSource: (emotion: AYNEmotion, source: EmotionSource) => void;
   isAbsorbing: boolean;
   triggerAbsorption: () => void;
   isBlinking: boolean;
@@ -153,6 +156,7 @@ const AYNEmotionContext = createContext<AYNEmotionContextType | undefined>(undef
 
 export const AYNEmotionProvider = ({ children }: { children: ReactNode }) => {
   const [emotion, setEmotionState] = useState<AYNEmotion>('calm');
+  const [emotionSource, setEmotionSource] = useState<EmotionSource>('default');
   const [isAbsorbing, setIsAbsorbing] = useState(false);
   const [isBlinking, setIsBlinking] = useState(false);
   const [isResponding, setIsResponding] = useState(false);
@@ -167,7 +171,7 @@ export const AYNEmotionProvider = ({ children }: { children: ReactNode }) => {
   const pulseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const winkTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const setEmotion = useCallback((newEmotion: AYNEmotion) => {
+  const setEmotionWithSource = useCallback((newEmotion: AYNEmotion, source: EmotionSource) => {
     setEmotionState(prevEmotion => {
       // Trigger haptic feedback when emotion changes
       if (newEmotion !== prevEmotion) {
@@ -175,7 +179,13 @@ export const AYNEmotionProvider = ({ children }: { children: ReactNode }) => {
       }
       return newEmotion;
     });
+    setEmotionSource(source);
   }, []);
+
+  const setEmotion = useCallback((newEmotion: AYNEmotion) => {
+    // Default to 'response' source for backward compatibility
+    setEmotionWithSource(newEmotion, 'response');
+  }, [setEmotionWithSource]);
 
   const triggerAbsorption = useCallback(() => {
     setIsAbsorbing(true);
@@ -278,8 +288,10 @@ export const AYNEmotionProvider = ({ children }: { children: ReactNode }) => {
     <AYNEmotionContext.Provider
       value={{
         emotion,
+        emotionSource,
         emotionConfig,
         setEmotion,
+        setEmotionWithSource,
         isAbsorbing,
         triggerAbsorption,
         isBlinking,

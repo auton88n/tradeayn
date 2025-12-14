@@ -21,7 +21,8 @@ const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorCon
   const { 
     emotionConfig,
     emotion,
-    setEmotion,
+    emotionSource,
+    setEmotionWithSource,
     isAbsorbing, 
     isBlinking, 
     triggerBlink, 
@@ -58,12 +59,14 @@ const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorCon
   const aiGazeX = useMotionValue(0);
   const aiGazeY = useMotionValue(0);
 
-  // Apply behavior config overrides
+  // Apply behavior config overrides - but respect emotion priority
   useEffect(() => {
     if (behaviorConfig) {
-      // Apply emotion from behavior
-      if (behaviorConfig.emotion && behaviorConfig.emotion !== emotion) {
-        setEmotion(behaviorConfig.emotion);
+      // Only apply behavior emotion if current emotion is from behavior or default
+      // Content-based and response emotions have higher priority
+      if (behaviorConfig.emotion && behaviorConfig.emotion !== emotion && 
+          (emotionSource === 'behavior' || emotionSource === 'default')) {
+        setEmotionWithSource(behaviorConfig.emotion, 'behavior');
       }
       
       // Trigger surprise if behavior requests it
@@ -76,7 +79,7 @@ const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorCon
         triggerPulse();
       }
     }
-  }, [behaviorConfig, emotion, setEmotion, triggerSurprise, triggerPulse]);
+  }, [behaviorConfig, emotion, emotionSource, setEmotionWithSource, triggerSurprise, triggerPulse]);
 
   // Play blink sound when blinking starts
   useEffect(() => {
