@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-import { Plus, LogOut, Trash2, Camera, Settings, X, MessageSquare, Search, Star, Shield, Brain, ChevronDown, GraduationCap, Loader2, Volume2, VolumeX, Headphones } from 'lucide-react';
+import { Plus, LogOut, Trash2, Camera, Settings, X, MessageSquare, Search, Star, Shield, Brain, ChevronDown, GraduationCap, Loader2, Volume2, VolumeX, Headphones, Sparkles } from 'lucide-react';
 import { format } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -327,15 +327,6 @@ export const Sidebar = ({
       </SidebarContent>
 
       <SidebarFooter className="p-3 space-y-3">
-        {/* Usage Card - Compact */}
-        {hasAccess && (
-          <UsageCard
-            currentUsage={currentMonthUsage}
-            monthlyLimit={monthlyLimit}
-            resetDate={usageResetDate}
-            compact
-          />
-        )}
         
         {/* User Profile - Premium Glassmorphism Card */}
         {/* User Profile - Premium Glassmorphism Card */}
@@ -373,6 +364,41 @@ export const Sidebar = ({
             
             {/* Gradient Divider */}
             <div className="h-px bg-gradient-to-r from-transparent via-border/60 to-transparent" />
+            
+            {/* Usage Info */}
+            {hasAccess && (
+              <div className="px-4 py-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center">
+                    <Sparkles className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium">Usage</span>
+                    {monthlyLimit === null ? (
+                      <span className="text-[10px] text-muted-foreground/70 flex items-center gap-1">
+                        <span className="text-xs">∞</span> Unlimited
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-muted-foreground/70">
+                        {currentMonthUsage} / {monthlyLimit}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-sm font-semibold text-foreground">{currentMonthUsage}</span>
+                  <span className="text-xs text-muted-foreground ml-1">msgs</span>
+                  {usageResetDate && (
+                    <p className="text-[10px] text-muted-foreground/60">
+                      Resets {format(new Date(usageResetDate), 'MMM d')}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+            
+            {/* Gradient Divider */}
+            {hasAccess && <div className="h-px bg-gradient-to-r from-transparent via-border/60 to-transparent" />}
             
             {/* Menu Items */}
             <div className="p-2 space-y-0.5">
