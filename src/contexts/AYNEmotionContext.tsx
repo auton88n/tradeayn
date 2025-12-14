@@ -24,7 +24,7 @@ export const EMOTION_CONFIGS: Record<AYNEmotion, EmotionConfig> = {
     irisScale: 1,
     breathingSpeed: 4,
     particleType: 'none',
-    transitionMs: 200,
+    transitionMs: 600, // Slower for natural settling
   },
   // Warm amber/peach glow for comforting sad users - empathetic warmth
   comfort: {
@@ -35,7 +35,7 @@ export const EMOTION_CONFIGS: Record<AYNEmotion, EmotionConfig> = {
     irisScale: 1.02,
     breathingSpeed: 5, // Slower, more soothing
     particleType: 'none',
-    transitionMs: 300,
+    transitionMs: 700, // Gentle warm transition
   },
   // Soft rose/pink for supportive encouragement
   supportive: {
@@ -46,7 +46,7 @@ export const EMOTION_CONFIGS: Record<AYNEmotion, EmotionConfig> = {
     irisScale: 1.05,
     breathingSpeed: 4,
     particleType: 'sparkle',
-    transitionMs: 250,
+    transitionMs: 600,
   },
   happy: {
     color: 'hsl(142, 71%, 45%)',
@@ -56,7 +56,7 @@ export const EMOTION_CONFIGS: Record<AYNEmotion, EmotionConfig> = {
     irisScale: 1.05,
     breathingSpeed: 3,
     particleType: 'sparkle',
-    transitionMs: 150,
+    transitionMs: 500, // Natural happy bloom
   },
   excited: {
     color: 'hsl(25, 95%, 53%)',
@@ -66,7 +66,7 @@ export const EMOTION_CONFIGS: Record<AYNEmotion, EmotionConfig> = {
     irisScale: 1.15,
     breathingSpeed: 2,
     particleType: 'energy',
-    transitionMs: 120,
+    transitionMs: 400, // Quick but still flowing
   },
   thinking: {
     color: 'hsl(217, 91%, 60%)',
@@ -76,7 +76,7 @@ export const EMOTION_CONFIGS: Record<AYNEmotion, EmotionConfig> = {
     irisScale: 0.85,
     breathingSpeed: 2.5,
     particleType: 'orbit',
-    transitionMs: 250,
+    transitionMs: 600, // Thoughtful transition
   },
   frustrated: {
     color: 'hsl(0, 72%, 51%)',
@@ -86,7 +86,7 @@ export const EMOTION_CONFIGS: Record<AYNEmotion, EmotionConfig> = {
     irisScale: 0.9,
     breathingSpeed: 1.5,
     particleType: 'none',
-    transitionMs: 200,
+    transitionMs: 500,
   },
   curious: {
     color: 'hsl(270, 76%, 60%)',
@@ -96,7 +96,7 @@ export const EMOTION_CONFIGS: Record<AYNEmotion, EmotionConfig> = {
     irisScale: 1.1,
     breathingSpeed: 2.8,
     particleType: 'sparkle',
-    transitionMs: 180,
+    transitionMs: 500,
   },
   sad: {
     color: 'hsl(210, 20%, 50%)',
@@ -106,7 +106,7 @@ export const EMOTION_CONFIGS: Record<AYNEmotion, EmotionConfig> = {
     irisScale: 0.9,
     breathingSpeed: 5,
     particleType: 'none',
-    transitionMs: 400,
+    transitionMs: 800, // Slow, melancholic transition
   },
   mad: {
     color: 'hsl(0, 85%, 40%)',
@@ -116,7 +116,7 @@ export const EMOTION_CONFIGS: Record<AYNEmotion, EmotionConfig> = {
     irisScale: 0.8,
     breathingSpeed: 1,
     particleType: 'energy',
-    transitionMs: 150,
+    transitionMs: 400,
   },
   bored: {
     color: 'hsl(0, 0%, 60%)',
@@ -126,7 +126,7 @@ export const EMOTION_CONFIGS: Record<AYNEmotion, EmotionConfig> = {
     irisScale: 0.95,
     breathingSpeed: 6,
     particleType: 'none',
-    transitionMs: 350,
+    transitionMs: 700, // Slow, lazy transition
   },
 };
 

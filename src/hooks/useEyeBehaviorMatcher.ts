@@ -169,16 +169,25 @@ export const useEyeBehaviorMatcher = ({ context, enabled = true }: UseEyeBehavio
     return null;
   }, [context, enabled]);
 
+  // Minimum time to let an emotion settle naturally before allowing changes
+  const MINIMUM_SETTLE_TIME = 2000; // 2 seconds for natural feeling
+
   // Update behavior based on context changes
   useEffect(() => {
     if (!enabled) return;
     
     const now = Date.now();
+    const elapsed = now - behaviorStartRef.current;
+    
+    // Always let current emotion settle for minimum time - feels more natural
+    if (elapsed < MINIMUM_SETTLE_TIME) {
+      return;
+    }
+    
     const newMatch = findBestMatch();
     
     // Check if current behavior should continue
     if (currentBehavior) {
-      const elapsed = now - behaviorStartRef.current;
       const duration = currentBehavior.behavior.duration;
       
       // If behavior has a duration and it hasn't expired, keep it
