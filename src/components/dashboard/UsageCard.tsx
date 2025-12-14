@@ -57,7 +57,8 @@ export const UsageCard = ({
     daysUntilReset,
     formattedResetDate,
     statusColor,
-    statusBg
+    statusBg,
+    isLow
   } = useMemo(() => {
     const pct = monthlyLimit ? Math.min(currentUsage / monthlyLimit * 100, 100) : 0;
     let days = 0;
@@ -81,13 +82,17 @@ export const UsageCard = ({
         bg = 'bg-amber-500';
       }
     }
+
+    // Check if credits are running low (less than 20% remaining)
+    const remainingPct = monthlyLimit ? ((monthlyLimit - currentUsage) / monthlyLimit) * 100 : 100;
     
     return {
       percentage: pct,
       daysUntilReset: days,
       formattedResetDate: formattedDate,
       statusColor: color,
-      statusBg: bg
+      statusBg: bg,
+      isLow: monthlyLimit ? remainingPct < 20 : false
     };
   }, [currentUsage, monthlyLimit, resetDate]);
 
@@ -249,9 +254,9 @@ export const UsageCard = ({
         </div>
         
         {/* Progress Bar */}
-        <div className="h-2 rounded-full bg-neutral-800 overflow-hidden">
+        <div className={`h-2 rounded-full bg-neutral-800 overflow-hidden ${isLow ? 'animate-pulse' : ''}`}>
           <motion.div 
-            className="h-full rounded-full bg-gradient-to-r from-blue-500 via-purple-500 to-purple-600"
+            className={`h-full rounded-full ${isLow ? 'bg-gradient-to-r from-red-500 via-red-400 to-amber-500' : 'bg-gradient-to-r from-blue-500 via-purple-500 to-purple-600'}`}
             initial={{ width: 0 }}
             animate={{ width: isUnlimited ? '100%' : `${percentage}%` }}
             transition={{ duration: 0.5, ease: 'easeOut' }}
