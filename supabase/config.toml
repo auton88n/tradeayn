@@ -39,3 +39,6 @@ verify_jwt = true
 
 [functions.verify-admin-pin]
 verify_jwt = true
+
+[functions.generate-emotion-keywords]
+verify_jwt = false
