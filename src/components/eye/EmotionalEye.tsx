@@ -10,14 +10,30 @@ import { EyeParticles } from './EyeParticles';
 import { ThinkingDots } from './ThinkingDots';
 import { useIsMobile } from '@/hooks/use-mobile';
 
+// AI-powered empathy response types
+export type PupilReaction = 'normal' | 'dilate-slightly' | 'dilate-more' | 'contract';
+export type BlinkPattern = 'normal' | 'slow-comfort' | 'quick-attentive' | 'double-understanding';
+
 interface EmotionalEyeProps {
   size?: 'sm' | 'md' | 'lg';
   className?: string;
   gazeTarget?: { x: number; y: number } | null;
   behaviorConfig?: BehaviorConfig | null;
+  // AI empathy micro-behaviors
+  pupilReaction?: PupilReaction;
+  blinkPattern?: BlinkPattern;
+  colorIntensity?: number;
 }
 
-const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorConfig }: EmotionalEyeProps) => {
+const EmotionalEyeComponent = ({ 
+  size = 'lg', 
+  className, 
+  gazeTarget, 
+  behaviorConfig,
+  pupilReaction = 'normal',
+  blinkPattern = 'normal',
+  colorIntensity = 0.5
+}: EmotionalEyeProps) => {
   const { 
     emotionConfig,
     emotion,
@@ -231,33 +247,48 @@ const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorCon
     };
   }, [isUserTyping, isAbsorbing, isResponding, triggerBlink, soundContext]);
 
-  // Get blink frequency from behavior or calculate based on state
+  // Get blink frequency from behavior, AI empathy pattern, or calculate based on state
   const getBlinkInterval = useCallback(() => {
     // Use behavior config if available
     if (behaviorConfig?.blinkPattern === 'none') return null;
+    
+    // AI empathy blink patterns take priority
+    switch (blinkPattern) {
+      case 'slow-comfort':
+        // Slow, gentle blinks for comfort/empathy
+        return 4000 + Math.random() * 2000; // 4-6 seconds
+      case 'quick-attentive':
+        // Quick, alert blinks showing attention
+        return 1200 + Math.random() * 600; // 1.2-1.8 seconds
+      case 'double-understanding':
+        // Normal timing, double blink handled separately
+        return 2500 + Math.random() * 1000;
+      case 'normal':
+      default:
+        break; // Fall through to other logic
+    }
+    
     if (behaviorConfig?.blinkFrequency) {
-      // Convert blinks per minute to interval in ms
       return (60 / behaviorConfig.blinkFrequency) * 1000 + (Math.random() * 500);
     }
     
     // During active typing - much slower blinks (AYN is focused on reading)
     if (isUserTyping) {
       const typingDuration = typingStartRef.current ? Date.now() - typingStartRef.current : 0;
-      // Longer messages = even slower blinks (deep concentration)
       if (typingDuration > 5000) {
-        return 6000 + Math.random() * 2000; // Very slow, deeply focused
+        return 6000 + Math.random() * 2000;
       } else if (typingDuration > 2000) {
-        return 4500 + Math.random() * 1500; // Slow, attentive blinks
+        return 4500 + Math.random() * 1500;
       }
-      return 3500 + Math.random() * 1000; // Attentive - less blinking than idle
+      return 3500 + Math.random() * 1000;
     }
     
     // While responding - quick blinks
     if (isResponding) return 800 + Math.random() * 400;
     
-    // Idle state - frequent natural blinks (more lifelike)
-    return 1800 + Math.random() * 1200; // 1.8-3 seconds between blinks
-  }, [isUserTyping, isResponding, behaviorConfig?.blinkFrequency, behaviorConfig?.blinkPattern]);
+    // Idle state - frequent natural blinks
+    return 1800 + Math.random() * 1200;
+  }, [isUserTyping, isResponding, behaviorConfig?.blinkFrequency, behaviorConfig?.blinkPattern, blinkPattern]);
 
   // Idle blinking effect with contextual sounds
   useEffect(() => {
@@ -282,8 +313,8 @@ const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorCon
               soundContext?.playSound('thoughtful-blink');
             }
             
-            // Double blink for certain patterns
-            if (behaviorConfig?.blinkPattern === 'double') {
+            // Double blink for certain patterns (behavior or AI empathy)
+            if (behaviorConfig?.blinkPattern === 'double' || blinkPattern === 'double-understanding') {
               setTimeout(() => triggerBlink(), 200);
             }
           }
@@ -391,8 +422,21 @@ const EmotionalEyeComponent = ({ size = 'lg', className, gazeTarget, behaviorCon
     lg: 'w-[160px] h-[160px] md:w-[220px] md:h-[220px] lg:w-[260px] lg:h-[260px]',
   };
 
-  // Calculate iris radius based on behavior pupil state or current state
+  // Calculate iris radius based on AI pupil reaction, behavior state, or current state
   const getIrisRadius = () => {
+    // AI empathy pupil reactions take highest priority
+    switch (pupilReaction) {
+      case 'dilate-more':
+        return 36; // Very engaged/emotional
+      case 'dilate-slightly':
+        return 32; // Attentive/interested
+      case 'contract':
+        return 20; // Focused/analytical
+      case 'normal':
+      default:
+        break; // Fall through to other logic
+    }
+    
     // Use behavior pupil dilation if available
     if (behaviorConfig?.pupilDilation) {
       switch (behaviorConfig.pupilDilation) {

@@ -108,6 +108,11 @@ export const CenterStageLayout = ({
   const [realtimeInputText, setRealtimeInputText] = useState('');
   const [realtimeUserEmotion, setRealtimeUserEmotion] = useState<UserEmotion | null>(null);
   const lastEmotionSoundRef = useRef<string | null>(null);
+  
+  // AI empathy micro-behavior state
+  const [aiPupilReaction, setAiPupilReaction] = useState<'normal' | 'dilate-slightly' | 'dilate-more' | 'contract'>('normal');
+  const [aiBlinkPattern, setAiBlinkPattern] = useState<'normal' | 'slow-comfort' | 'quick-attentive' | 'double-understanding'>('normal');
+  const [aiColorIntensity, setAiColorIntensity] = useState(0.5);
 
   // Reset all visual state when messages are cleared (new chat started)
   useEffect(() => {
@@ -118,6 +123,10 @@ export const CenterStageLayout = ({
       setLastUserMessage('');
       setEmotion('calm');
       setIsResponding(false);
+      // Reset AI micro-behaviors
+      setAiPupilReaction('normal');
+      setAiBlinkPattern('normal');
+      setAiColorIntensity(0.5);
     }
   }, [messages.length, clearResponseBubbles, clearSuggestions, setEmotion, setIsResponding]);
 
@@ -329,12 +338,30 @@ export const CenterStageLayout = ({
           setEmotion(aynEmotion);
           hapticFeedback(aynEmotion);
           
+          // Apply AI micro-behaviors to the eye
+          if (aiAnalysis.aynResponse.pupilReaction) {
+            setAiPupilReaction(aiAnalysis.aynResponse.pupilReaction);
+          }
+          if (aiAnalysis.aynResponse.blinkPattern) {
+            setAiBlinkPattern(aiAnalysis.aynResponse.blinkPattern);
+          }
+          if (aiAnalysis.aynResponse.colorIntensity !== undefined) {
+            setAiColorIntensity(aiAnalysis.aynResponse.colorIntensity);
+          }
+          
           // Extra empathy for high-intensity user emotions
           if (aiAnalysis.userEmotion?.intensity > 0.6) {
             triggerPulse();
           }
           
           console.log('AI Empathy:', aiAnalysis.empathyNote);
+          
+          // Reset micro-behaviors after 5 seconds
+          setTimeout(() => {
+            setAiPupilReaction('normal');
+            setAiBlinkPattern('normal');
+            setAiColorIntensity(0.5);
+          }, 5000);
         }
       });
 
@@ -546,7 +573,14 @@ animate={{
             className="relative overflow-visible"
             data-tutorial="eye"
           >
-            <EmotionalEye size={isMobile ? "md" : "lg"} gazeTarget={gazeTarget} behaviorConfig={behaviorConfig} />
+            <EmotionalEye 
+              size={isMobile ? "md" : "lg"} 
+              gazeTarget={gazeTarget} 
+              behaviorConfig={behaviorConfig}
+              pupilReaction={aiPupilReaction}
+              blinkPattern={aiBlinkPattern}
+              colorIntensity={aiColorIntensity}
+            />
 
             {/* Thinking indicator when typing - simplified animation */}
             <AnimatePresence>
