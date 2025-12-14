@@ -17,10 +17,10 @@ export interface EmotionConfig {
 
 export const EMOTION_CONFIGS: Record<AYNEmotion, EmotionConfig> = {
   calm: {
-    color: 'hsl(0, 0%, 100%)',
-    glowColor: 'hsl(0, 0%, 100%)',
-    ringClass: 'ring-foreground/20',
-    glowClass: 'shadow-[0_0_30px_hsl(0,0%,50%,0.2)]',
+    color: 'hsl(200, 30%, 70%)', // Soft blue-white for calm warmth
+    glowColor: 'hsl(200, 40%, 80%)',
+    ringClass: 'ring-sky-200/30 dark:ring-sky-400/25',
+    glowClass: 'shadow-[0_0_40px_hsl(200,40%,70%,0.35)] dark:shadow-[0_0_50px_hsl(200,50%,60%,0.4)]',
     irisScale: 1,
     breathingSpeed: 4,
     particleType: 'none',
