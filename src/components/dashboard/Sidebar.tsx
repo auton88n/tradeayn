@@ -372,14 +372,14 @@ export const Sidebar = ({
                   currentUsage={currentMonthUsage}
                   monthlyLimit={monthlyLimit}
                   resetDate={usageResetDate}
-                  compact={false}
+                  compact={true}
                 />
               </div>
             )}
             
             {/* Menu Items */}
             <div className="p-2 space-y-0.5">
-              <Button onClick={() => setShowAvatarUpload(true)} variant="ghost" className="w-full justify-start h-11 px-3 gap-3 rounded-xl hover:bg-muted/60 transition-all duration-200 group">
+              <Button onClick={() => setShowAvatarUpload(true)} variant="ghost" className="w-full justify-start h-11 px-3 gap-3 rounded-xl hover:bg-muted/60 transition-all duration-200 group focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0">
                 <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center group-hover:bg-muted group-hover:scale-105 transition-all duration-200">
                   <Camera className="w-4 h-4 text-muted-foreground" />
                 </div>
@@ -389,7 +389,7 @@ export const Sidebar = ({
                 </div>
               </Button>
               
-              <Button onClick={() => navigate('/settings')} variant="ghost" className="w-full justify-start h-11 px-3 gap-3 rounded-xl hover:bg-muted/60 transition-all duration-200 group">
+              <Button onClick={() => navigate('/settings')} variant="ghost" className="w-full justify-start h-11 px-3 gap-3 rounded-xl hover:bg-muted/60 transition-all duration-200 group focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0">
                 <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center group-hover:bg-muted group-hover:scale-105 transition-all duration-200">
                   <Settings className="w-4 h-4 text-muted-foreground" />
                 </div>
@@ -402,7 +402,7 @@ export const Sidebar = ({
               <Button onClick={() => {
               setProfilePopoverOpen(false);
               onStartTutorial?.();
-            }} variant="ghost" className="w-full justify-start h-11 px-3 gap-3 rounded-xl hover:bg-muted/60 transition-all duration-200 group">
+            }} variant="ghost" className="w-full justify-start h-11 px-3 gap-3 rounded-xl hover:bg-muted/60 transition-all duration-200 group focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0">
                 <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center group-hover:bg-muted group-hover:scale-105 transition-all duration-200">
                   <GraduationCap className="w-4 h-4 text-muted-foreground" />
                 </div>
@@ -415,7 +415,7 @@ export const Sidebar = ({
               <Button onClick={() => {
                 setProfilePopoverOpen(false);
                 setShowSupportWidget(true);
-              }} variant="ghost" className="w-full justify-start h-11 px-3 gap-3 rounded-xl hover:bg-muted/60 transition-all duration-200 group">
+              }} variant="ghost" className="w-full justify-start h-11 px-3 gap-3 rounded-xl hover:bg-muted/60 transition-all duration-200 group focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0">
                 <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center group-hover:bg-muted group-hover:scale-105 transition-all duration-200">
                   <Headphones className="w-4 h-4 text-muted-foreground" />
                 </div>
@@ -425,7 +425,7 @@ export const Sidebar = ({
                 </div>
               </Button>
               
-              {hasDutyAccess && <Button onClick={onAdminPanelClick} variant="ghost" className="w-full justify-start h-11 px-3 gap-3 rounded-xl hover:bg-muted/60 transition-all duration-200 group">
+              {hasDutyAccess && <Button onClick={onAdminPanelClick} variant="ghost" className="w-full justify-start h-11 px-3 gap-3 rounded-xl hover:bg-muted/60 transition-all duration-200 group focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0">
                   <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center group-hover:bg-muted group-hover:scale-105 transition-all duration-200">
                     <Shield className="w-4 h-4 text-muted-foreground" />
                   </div>
