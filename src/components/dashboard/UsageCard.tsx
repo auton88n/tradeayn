@@ -241,10 +241,10 @@ export const UsageCard = ({
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <span className="text-sm text-neutral-400">Used</span>
-          <span className="text-sm font-medium text-white tabular-nums">
+          <span className="text-base font-semibold text-white tabular-nums">
             <motion.span key={displayCount}>{displayCount}</motion.span>
-            {' / '}
-            {isUnlimited ? '∞' : monthlyLimit}
+            <span className="text-white/60 mx-1">/</span>
+            <span className="text-white">{isUnlimited ? '∞' : monthlyLimit}</span>
           </span>
         </div>
         
