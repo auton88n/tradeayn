@@ -11,7 +11,9 @@ export type SoundType =
   // Conversational sounds - real-time emotional connection
   | 'understanding' | 'empathy' | 'anticipation' | 'recognition' | 'comfort'
   // Typing context sounds
-  | 'listening' | 'attentive-blink' | 'thoughtful-blink' | 'processing';
+  | 'listening' | 'attentive-blink' | 'thoughtful-blink' | 'processing'
+  // Empathy response sounds - when AYN detects user emotion
+  | 'empathy-frustrated' | 'empathy-excited' | 'empathy-curious' | 'empathy-sad' | 'empathy-happy';
 
 interface SoundConfig {
   type: OscillatorType;
@@ -59,6 +61,13 @@ const SOUND_CONFIGS: Record<SoundType, SoundConfig> = {
   'attentive-blink': { type: 'sine', frequency: 494, duration: 0.06, gain: 0.012, attack: 0.01, decay: 0.05 },
   'thoughtful-blink': { type: 'sine', frequency: 262, duration: 0.15, gain: 0.01, attack: 0.04, decay: 0.11 },
   'processing': { type: 'triangle', frequency: 370, duration: 0.2, gain: 0.018, attack: 0.05, decay: 0.15, detune: 5 },
+  
+  // Empathy response sounds - when detecting user emotion (very gentle, non-intrusive)
+  'empathy-frustrated': { type: 'sine', frequency: 262, duration: 0.4, gain: 0.018, attack: 0.1, decay: 0.3 },      // Low, soothing "I'm here" tone
+  'empathy-excited': { type: 'sine', frequency: 523, duration: 0.15, gain: 0.025, attack: 0.02, decay: 0.13 },     // Warm uplifting quick chime
+  'empathy-curious': { type: 'triangle', frequency: 440, duration: 0.2, gain: 0.02, attack: 0.03, decay: 0.17, detune: 5 }, // Gentle questioning tone
+  'empathy-sad': { type: 'sine', frequency: 220, duration: 0.5, gain: 0.015, attack: 0.12, decay: 0.38 },          // Very low, empathetic tone
+  'empathy-happy': { type: 'sine', frequency: 587, duration: 0.12, gain: 0.022, attack: 0.01, decay: 0.11 },       // Bright mirror-joy chime
 };
 
 // Global unlock state for iOS AudioContext
