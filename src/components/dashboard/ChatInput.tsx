@@ -5,7 +5,7 @@ import { Plus, ChevronDown, ArrowUp, FileText, X, Image } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
-import { useSoundContext } from '@/contexts/SoundContext';
+import { useSoundContextOptional } from '@/contexts/SoundContext';
 import { analyzeUserEmotion, UserEmotion } from '@/utils/userEmotionDetection';
 import { detectLanguage, DetectedLanguage } from '@/utils/languageDetection';
 import type { AIMode } from '@/types/dashboard.types';
@@ -117,7 +117,9 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
     updateActivity,
     triggerAttentionBlink
   } = useAYNEmotion();
-  const { playSound, playModeChange } = useSoundContext();
+  const soundContext = useSoundContextOptional();
+  const playSound = soundContext?.playSound;
+  const playModeChange = soundContext?.playModeChange;
 
   // Handle prefilled input
   useEffect(() => {
@@ -233,7 +235,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
   const handleSend = useCallback(() => {
     if (!inputMessage.trim() && !selectedFile) return;
     if (isDisabled || isUploading) return;
-    playSound('message-send');
+    playSound?.('message-send');
     onSend(inputMessage.trim(), selectedFile);
     setInputMessage('');
     setShowPlaceholder(true);
