@@ -152,10 +152,22 @@ export const useRealtimeEmotionTracking = (inputText: string, isTyping: boolean)
       clearTimeout(debounceRef.current);
     }
 
-    debounceRef.current = setTimeout(() => {
+    // Check for high-intensity keywords immediately (no debounce)
+    const lowerText = inputText.toLowerCase();
+    const highIntensityPatterns = ['angry', 'furious', 'amazing', 'awesome', 'sad', 'sorry', 'hate'];
+    const hasHighIntensity = highIntensityPatterns.some(p => lowerText.includes(p));
+    
+    if (hasHighIntensity) {
+      // Immediate analysis for strong emotions
       lastAnalyzedRef.current = inputText;
       analyzeText(inputText);
-    }, 300); // Analyze every 300ms while typing
+    } else {
+      // Reduced debounce for faster response (was 300ms)
+      debounceRef.current = setTimeout(() => {
+        lastAnalyzedRef.current = inputText;
+        analyzeText(inputText);
+      }, 150);
+    }
 
     return () => {
       if (debounceRef.current) {

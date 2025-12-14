@@ -11,6 +11,7 @@ export interface EmotionConfig {
   irisScale: number;
   breathingSpeed: number;
   particleType: 'sparkle' | 'orbit' | 'energy' | 'none';
+  transitionMs: number; // Sync with sound duration
 }
 
 export const EMOTION_CONFIGS: Record<AYNEmotion, EmotionConfig> = {
@@ -22,6 +23,7 @@ export const EMOTION_CONFIGS: Record<AYNEmotion, EmotionConfig> = {
     irisScale: 1,
     breathingSpeed: 4,
     particleType: 'none',
+    transitionMs: 200,
   },
   happy: {
     color: 'hsl(142, 71%, 45%)',
@@ -31,6 +33,7 @@ export const EMOTION_CONFIGS: Record<AYNEmotion, EmotionConfig> = {
     irisScale: 1.05,
     breathingSpeed: 3,
     particleType: 'sparkle',
+    transitionMs: 150,
   },
   excited: {
     color: 'hsl(25, 95%, 53%)',
@@ -40,6 +43,7 @@ export const EMOTION_CONFIGS: Record<AYNEmotion, EmotionConfig> = {
     irisScale: 1.15,
     breathingSpeed: 2,
     particleType: 'energy',
+    transitionMs: 120,
   },
   thinking: {
     color: 'hsl(217, 91%, 60%)',
@@ -49,6 +53,7 @@ export const EMOTION_CONFIGS: Record<AYNEmotion, EmotionConfig> = {
     irisScale: 0.85,
     breathingSpeed: 2.5,
     particleType: 'orbit',
+    transitionMs: 250,
   },
   frustrated: {
     color: 'hsl(0, 72%, 51%)',
@@ -58,6 +63,7 @@ export const EMOTION_CONFIGS: Record<AYNEmotion, EmotionConfig> = {
     irisScale: 0.9,
     breathingSpeed: 1.5,
     particleType: 'none',
+    transitionMs: 200,
   },
   curious: {
     color: 'hsl(270, 76%, 60%)',
@@ -67,6 +73,7 @@ export const EMOTION_CONFIGS: Record<AYNEmotion, EmotionConfig> = {
     irisScale: 1.1,
     breathingSpeed: 2.8,
     particleType: 'sparkle',
+    transitionMs: 180,
   },
   sad: {
     color: 'hsl(210, 20%, 50%)',
@@ -76,6 +83,7 @@ export const EMOTION_CONFIGS: Record<AYNEmotion, EmotionConfig> = {
     irisScale: 0.9,
     breathingSpeed: 5,
     particleType: 'none',
+    transitionMs: 400,
   },
   mad: {
     color: 'hsl(0, 85%, 40%)',
@@ -85,6 +93,7 @@ export const EMOTION_CONFIGS: Record<AYNEmotion, EmotionConfig> = {
     irisScale: 0.8,
     breathingSpeed: 1,
     particleType: 'energy',
+    transitionMs: 150,
   },
   bored: {
     color: 'hsl(0, 0%, 60%)',
@@ -94,6 +103,7 @@ export const EMOTION_CONFIGS: Record<AYNEmotion, EmotionConfig> = {
     irisScale: 0.95,
     breathingSpeed: 6,
     particleType: 'none',
+    transitionMs: 350,
   },
 };
 

@@ -139,48 +139,34 @@ export const CenterStageLayout = ({
   // Conversation flow awareness for anticipation states
   const conversationFlow = useConversationFlow(messages, contextIsTyping, realtimeInputText);
 
-  // Handle real-time emotion changes from typing
+  // Handle real-time emotion changes from typing - synchronized orchestration
   useEffect(() => {
     if (realtimeEmotion.detectedEmotion && realtimeEmotion.intensity > 0.4) {
-      // Map detected emotion to AYN's empathetic response
-      const emotionToAynEmotion: Record<string, typeof setEmotion extends (e: infer E) => void ? E : never> = {
-        'thinking': 'thinking',
-        'curious': 'curious', 
-        'happy': 'happy',
-        'excited': 'excited',
-        'sad': 'sad',
-        'mad': 'mad',
-        'bored': 'bored',
-        'frustrated': 'frustrated',
-      };
+      const detectedEmotion = realtimeEmotion.detectedEmotion;
       
-      const aynEmotion = emotionToAynEmotion[realtimeEmotion.detectedEmotion] || 'curious';
-      setEmotion(aynEmotion);
-      
-      // Play emotion sound and understanding/recognition sound when detecting emotion (debounced)
-      if (lastEmotionSoundRef.current !== realtimeEmotion.detectedEmotion) {
-        lastEmotionSoundRef.current = realtimeEmotion.detectedEmotion;
+      // Only orchestrate if emotion actually changed
+      if (lastEmotionSoundRef.current !== detectedEmotion) {
+        lastEmotionSoundRef.current = detectedEmotion;
         
-        // Play the specific emotion sound
-        playEmotion(realtimeEmotion.detectedEmotion);
+        // Synchronized sequence: Eye changes → 80ms → sound plays → 40ms → haptic fires
+        // 1. Eye starts transitioning immediately
+        setEmotion(detectedEmotion);
         
-        // Play contextual sound based on what was detected
-        if (realtimeEmotion.isTypingQuestion) {
-          playSound('recognition'); // Quick ping for questions
-        } else if (realtimeEmotion.sentiment === 'negative') {
-          playSound('empathy'); // Gentle tone for frustration/concern
-        } else if (realtimeEmotion.sentiment === 'positive') {
-          playSound('understanding'); // Warm chime for positive vibes
-        }
+        // 2. Delayed sound for sync with eye transition
+        setTimeout(() => {
+          playEmotion(detectedEmotion);
+        }, 80);
         
-        // Subtle haptic for emotional recognition
-        hapticFeedback('light');
+        // 3. Delayed haptic for tactile confirmation
+        setTimeout(() => {
+          hapticFeedback(detectedEmotion);
+        }, 120);
       }
     } else if (!contextIsTyping) {
       // Reset when user stops typing
       lastEmotionSoundRef.current = null;
     }
-  }, [realtimeEmotion, contextIsTyping, setEmotion, playSound, playEmotion]);
+  }, [realtimeEmotion, contextIsTyping, setEmotion, playEmotion]);
 
   // Use conversation flow to adjust anticipation
   useEffect(() => {
