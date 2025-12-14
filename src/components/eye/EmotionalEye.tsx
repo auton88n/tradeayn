@@ -3,7 +3,7 @@ import { motion, useMotionValue, useSpring, useTransform, useReducedMotion } fro
 import { cn } from '@/lib/utils';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
 import { useSoundContextOptional } from '@/contexts/SoundContext';
-import { BehaviorConfig } from '@/types/eyeBehavior.types';
+
 import { useIdleDetection } from '@/hooks/useIdleDetection';
 import { useEyeGestures } from '@/hooks/useEyeGestures';
 import { EyeParticles } from './EyeParticles';
@@ -18,7 +18,6 @@ interface EmotionalEyeProps {
   size?: 'sm' | 'md' | 'lg';
   className?: string;
   gazeTarget?: { x: number; y: number } | null;
-  behaviorConfig?: BehaviorConfig | null;
   // AI empathy micro-behaviors
   pupilReaction?: PupilReaction;
   blinkPattern?: BlinkPattern;
@@ -29,7 +28,6 @@ const EmotionalEyeComponent = ({
   size = 'lg', 
   className, 
   gazeTarget, 
-  behaviorConfig,
   pupilReaction = 'normal',
   blinkPattern = 'normal',
   colorIntensity = 0.5
@@ -75,30 +73,6 @@ const EmotionalEyeComponent = ({
   const aiGazeX = useMotionValue(0);
   const aiGazeY = useMotionValue(0);
 
-  // Apply behavior config overrides - but respect emotion priority and skip while typing
-  useEffect(() => {
-    // SKIP behavior library updates while user is typing - prevents flickering
-    if (isUserTyping) return;
-    
-    if (behaviorConfig) {
-      // Only apply behavior emotion if current emotion is from behavior or default
-      // Content-based and response emotions have higher priority
-      if (behaviorConfig.emotion && behaviorConfig.emotion !== emotion && 
-          (emotionSource === 'behavior' || emotionSource === 'default')) {
-        setEmotionWithSource(behaviorConfig.emotion, 'behavior');
-      }
-      
-      // Trigger surprise if behavior requests it
-      if (behaviorConfig.triggerSurprise) {
-        triggerSurprise();
-      }
-      
-      // Trigger pulse if behavior requests it
-      if (behaviorConfig.triggerPulse) {
-        triggerPulse();
-      }
-    }
-  }, [behaviorConfig, emotion, emotionSource, isUserTyping, setEmotionWithSource, triggerSurprise, triggerPulse]);
 
   // Safe sound player that respects enabled state
   const playSoundSafe = useCallback((type: 'blink' | 'listening' | 'attentive-blink' | 'processing' | 'thoughtful-blink') => {
@@ -115,9 +89,9 @@ const EmotionalEyeComponent = ({
     prevBlinkingRef.current = isBlinking;
   }, [isBlinking, playSoundSafe]);
 
-  // Get gaze intensity from behavior or default
-  const gazeIntensity = behaviorConfig?.gazeIntensity ?? 0.4;
-  const gazeSpeed = behaviorConfig?.gazeSpeed ?? 0.4;
+  // Gaze intensity defaults (AI-driven)
+  const gazeIntensity = 0.4;
+  const gazeSpeed = 0.4;
 
   // Optimized spring config - higher damping for faster, smoother settling
   const springConfig = { 
@@ -142,14 +116,6 @@ const EmotionalEyeComponent = ({
 
   // Mouse tracking effect - throttled for performance
   useEffect(() => {
-    const gazePattern = behaviorConfig?.gazePattern ?? 'follow_mouse';
-    
-    if (gazePattern !== 'follow_mouse' && gazePattern !== 'wander' && gazePattern !== 'scan_screen') {
-      mouseX.set(0);
-      mouseY.set(0);
-      return;
-    }
-
     let rafId: number | null = null;
     let lastX = 0;
     let lastY = 0;
@@ -187,7 +153,7 @@ const EmotionalEyeComponent = ({
       window.removeEventListener('mouseleave', onLeave);
       if (rafId !== null) cancelAnimationFrame(rafId);
     };
-  }, [mouseX, mouseY, behaviorConfig?.gazePattern]);
+  }, [mouseX, mouseY]);
 
   // AI gaze towards suggestions or input field
   useEffect(() => {
@@ -257,11 +223,8 @@ const EmotionalEyeComponent = ({
     };
   }, [isUserTyping, isAbsorbing, isResponding, triggerBlink, playSoundSafe]);
 
-  // Get blink frequency from behavior, AI empathy pattern, or calculate based on state
+  // Get blink frequency based on AI empathy pattern or state
   const getBlinkInterval = useCallback(() => {
-    // Use behavior config if available
-    if (behaviorConfig?.blinkPattern === 'none') return null;
-    
     // AI empathy blink patterns take priority
     switch (blinkPattern) {
       case 'slow-comfort':
@@ -276,10 +239,6 @@ const EmotionalEyeComponent = ({
       case 'normal':
       default:
         break; // Fall through to other logic
-    }
-    
-    if (behaviorConfig?.blinkFrequency) {
-      return (60 / behaviorConfig.blinkFrequency) * 1000 + (Math.random() * 500);
     }
     
     // During active typing - much slower blinks (AYN is focused on reading)
@@ -298,7 +257,7 @@ const EmotionalEyeComponent = ({
     
     // Idle state - frequent natural blinks
     return 1800 + Math.random() * 1200;
-  }, [isUserTyping, isResponding, behaviorConfig?.blinkFrequency, behaviorConfig?.blinkPattern, blinkPattern]);
+  }, [isUserTyping, isResponding, blinkPattern]);
 
   // Idle blinking effect with contextual sounds
   useEffect(() => {
@@ -323,8 +282,8 @@ const EmotionalEyeComponent = ({
               playSoundSafe('thoughtful-blink');
             }
             
-            // Double blink for certain patterns (behavior or AI empathy)
-            if (behaviorConfig?.blinkPattern === 'double' || blinkPattern === 'double-understanding') {
+            // Double blink for AI empathy patterns
+            if (blinkPattern === 'double-understanding') {
               setTimeout(() => triggerBlink(), 200);
             }
           }
@@ -340,7 +299,7 @@ const EmotionalEyeComponent = ({
         clearTimeout(idleBlinkIntervalRef.current);
       }
     };
-  }, [isAbsorbing, isAttentive, getBlinkInterval, triggerBlink, behaviorConfig?.blinkPattern, isUserTyping, playSoundSafe]);
+  }, [isAbsorbing, isAttentive, getBlinkInterval, triggerBlink, isUserTyping, playSoundSafe, blinkPattern]);
 
   // "Check-in" blink after long user inactivity
   useEffect(() => {
@@ -364,20 +323,9 @@ const EmotionalEyeComponent = ({
     };
   }, [lastActivityTime, isUserTyping, isResponding, isAbsorbing, triggerBlink]);
 
-  // Get micro-movement params from behavior or emotion
+  // Get micro-movement params based on emotion
   const getMicroParams = useCallback(() => {
-    // Use behavior config if available
-    if (behaviorConfig) {
-      const intensity = behaviorConfig.microMovementIntensity ?? 0.4;
-      const speed = behaviorConfig.microMovementSpeed ?? 0.3;
-      return {
-        range: intensity * 12,
-        interval: (1 - speed) * 8000 + 2000, // 2-10s based on speed
-        tilt: behaviorConfig.headTilt ?? 0,
-      };
-    }
-    
-    // Fall back to emotion-based params
+    // Emotion-based params
     switch (emotion) {
       case 'curious':
         return { range: 6, interval: 3000, tilt: 3 };
@@ -392,7 +340,7 @@ const EmotionalEyeComponent = ({
       default:
         return { range: 4, interval: 5000, tilt: 0 };
     }
-  }, [emotion, behaviorConfig]);
+  }, [emotion]);
 
   // Head tilt based on behavior/emotion - smoother spring
   const tiltRotation = useMotionValue(0);
@@ -401,7 +349,7 @@ const EmotionalEyeComponent = ({
   useEffect(() => {
     const { tilt } = getMicroParams();
     tiltRotation.set(tilt);
-  }, [emotion, getMicroParams, tiltRotation, behaviorConfig]);
+  }, [emotion, getMicroParams, tiltRotation]);
 
   // Micro-movements when idle - DISABLED on mobile for performance
   useEffect(() => {
@@ -445,16 +393,6 @@ const EmotionalEyeComponent = ({
       case 'normal':
       default:
         break; // Fall through to other logic
-    }
-    
-    // Use behavior pupil dilation if available
-    if (behaviorConfig?.pupilDilation) {
-      switch (behaviorConfig.pupilDilation) {
-        case 'contracted': return 18;
-        case 'normal': return 28;
-        case 'dilated': return 32;
-        case 'very_dilated': return 36;
-      }
     }
     
     // Default state-based calculation
