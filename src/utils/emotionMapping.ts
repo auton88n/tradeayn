@@ -119,6 +119,8 @@ export const getEmotionColor = (emotion: AYNEmotion): string => {
     sad: 'hsl(210, 20%, 50%)',
     mad: 'hsl(0, 85%, 40%)',
     bored: 'hsl(0, 0%, 60%)',
+    comfort: 'hsl(30, 85%, 65%)',
+    supportive: 'hsl(350, 60%, 70%)',
   };
   return colors[emotion];
 };

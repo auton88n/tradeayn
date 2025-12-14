@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode, useRef, useMemo } from 'react';
 import { hapticFeedback } from '@/lib/haptics';
 
-export type AYNEmotion = 'calm' | 'happy' | 'excited' | 'thinking' | 'frustrated' | 'curious' | 'sad' | 'mad' | 'bored';
+export type AYNEmotion = 'calm' | 'happy' | 'excited' | 'thinking' | 'frustrated' | 'curious' | 'sad' | 'mad' | 'bored' | 'comfort' | 'supportive';
 export type EmotionSource = 'content' | 'behavior' | 'response' | 'default';
 
 export interface EmotionConfig {
@@ -25,6 +25,28 @@ export const EMOTION_CONFIGS: Record<AYNEmotion, EmotionConfig> = {
     breathingSpeed: 4,
     particleType: 'none',
     transitionMs: 200,
+  },
+  // Warm amber/peach glow for comforting sad users - empathetic warmth
+  comfort: {
+    color: 'hsl(30, 85%, 65%)', // Warm amber-peach
+    glowColor: 'hsl(35, 90%, 75%)',
+    ringClass: 'ring-amber-300/40 dark:ring-amber-400/35',
+    glowClass: 'shadow-[0_0_50px_hsl(30,80%,60%,0.45)] dark:shadow-[0_0_60px_hsl(35,85%,55%,0.5)]',
+    irisScale: 1.02,
+    breathingSpeed: 5, // Slower, more soothing
+    particleType: 'none',
+    transitionMs: 300,
+  },
+  // Soft rose/pink for supportive encouragement
+  supportive: {
+    color: 'hsl(350, 60%, 70%)', // Soft rose-pink
+    glowColor: 'hsl(350, 65%, 80%)',
+    ringClass: 'ring-rose-300/35 dark:ring-rose-400/30',
+    glowClass: 'shadow-[0_0_45px_hsl(350,55%,65%,0.4)] dark:shadow-[0_0_55px_hsl(350,60%,60%,0.45)]',
+    irisScale: 1.05,
+    breathingSpeed: 4,
+    particleType: 'sparkle',
+    transitionMs: 250,
   },
   happy: {
     color: 'hsl(142, 71%, 45%)',
