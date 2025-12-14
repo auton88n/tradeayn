@@ -277,10 +277,7 @@ export const Sidebar = ({
                   {filteredAndSortedChats.map((chat, index) => {
                 const isPinned = pinnedChats.has(chat.sessionId);
                 const originalIndex = recentChats.findIndex(c => c.sessionId === chat.sessionId);
-                return <SidebarMenuItem key={chat.sessionId} className={cn("relative animate-in fade-in-0 slide-in-from-left-2 duration-300", index > 0 && "before:absolute before:top-0 before:left-4 before:right-4 before:h-px before:bg-border/30")} style={{
-                  animationDelay: `${index * 30}ms`,
-                  animationFillMode: 'backwards'
-                }}>
+return <SidebarMenuItem key={chat.sessionId} className={cn("relative", index > 0 && "before:absolute before:top-0 before:left-4 before:right-4 before:h-px before:bg-border/30")}>
                         <div className="flex items-center gap-2 w-full group">
                           {showChatSelection && <Checkbox checked={selectedChats.has(originalIndex)} onCheckedChange={() => onToggleChatSelection(originalIndex)} className="ml-2" />}
                           <div onClick={() => !showChatSelection && onLoadChat(chat)} role="button" tabIndex={0} onKeyDown={e => {
