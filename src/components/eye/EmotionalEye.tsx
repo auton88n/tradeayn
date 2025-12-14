@@ -97,13 +97,20 @@ const EmotionalEyeComponent = ({
     }
   }, [behaviorConfig, emotion, emotionSource, setEmotionWithSource, triggerSurprise, triggerPulse]);
 
+  // Safe sound player that respects enabled state
+  const playSoundSafe = useCallback((type: 'blink' | 'listening' | 'attentive-blink' | 'processing' | 'thoughtful-blink') => {
+    if (soundContext && soundContext.enabled) {
+      soundContext.playSound(type);
+    }
+  }, [soundContext]);
+
   // Play blink sound when blinking starts
   useEffect(() => {
     if (isBlinking && !prevBlinkingRef.current) {
-      soundContext?.playSound('blink');
+      playSoundSafe('blink');
     }
     prevBlinkingRef.current = isBlinking;
-  }, [isBlinking, soundContext]);
+  }, [isBlinking, playSoundSafe]);
 
   // Get gaze intensity from behavior or default
   const gazeIntensity = behaviorConfig?.gazeIntensity ?? 0.4;
@@ -208,7 +215,7 @@ const EmotionalEyeComponent = ({
         hasPlayedListeningRef.current = false;
         
         // Play subtle "listening" sound when user starts typing
-        soundContext?.playSound('listening');
+        playSoundSafe('listening');
       }
       lastTypingPauseRef.current = Date.now();
       
@@ -227,13 +234,13 @@ const EmotionalEyeComponent = ({
         if (!isAbsorbing && !isResponding) {
           triggerBlink();
           // Play attentive blink sound
-          soundContext?.playSound('attentive-blink');
+          playSoundSafe('attentive-blink');
           
           // If they typed a lot, add a second "processing" blink with sound
           if (typingDuration > 3000) {
             setTimeout(() => {
               triggerBlink();
-              soundContext?.playSound('processing');
+              playSoundSafe('processing');
             }, 250);
           }
         }
@@ -245,7 +252,7 @@ const EmotionalEyeComponent = ({
         clearTimeout(pauseBlinkTimeoutRef.current);
       }
     };
-  }, [isUserTyping, isAbsorbing, isResponding, triggerBlink, soundContext]);
+  }, [isUserTyping, isAbsorbing, isResponding, triggerBlink, playSoundSafe]);
 
   // Get blink frequency from behavior, AI empathy pattern, or calculate based on state
   const getBlinkInterval = useCallback(() => {
@@ -310,7 +317,7 @@ const EmotionalEyeComponent = ({
             
             // Play thoughtful blink sound during typing (slow blinks while "reading")
             if (isUserTyping && interval > 2000) {
-              soundContext?.playSound('thoughtful-blink');
+              playSoundSafe('thoughtful-blink');
             }
             
             // Double blink for certain patterns (behavior or AI empathy)
@@ -330,7 +337,7 @@ const EmotionalEyeComponent = ({
         clearTimeout(idleBlinkIntervalRef.current);
       }
     };
-  }, [isAbsorbing, isAttentive, getBlinkInterval, triggerBlink, behaviorConfig?.blinkPattern, isUserTyping, soundContext]);
+  }, [isAbsorbing, isAttentive, getBlinkInterval, triggerBlink, behaviorConfig?.blinkPattern, isUserTyping, playSoundSafe]);
 
   // "Check-in" blink after long user inactivity
   useEffect(() => {
