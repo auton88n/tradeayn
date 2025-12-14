@@ -14,8 +14,6 @@ import { useSoundContextOptional } from '@/contexts/SoundContext';
 import { analyzeResponseEmotion, getBubbleType } from '@/utils/emotionMapping';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useEyeContext } from '@/hooks/useEyeContext';
-import { useEyeBehaviorMatcher } from '@/hooks/useEyeBehaviorMatcher';
 import { hapticFeedback } from '@/lib/haptics';
 import { analyzeUserEmotion, getEmpathyResponse, UserEmotion } from '@/utils/userEmotionDetection';
 import { useRealtimeEmotionTracking } from '@/hooks/useRealtimeEmotionTracking';
@@ -133,17 +131,6 @@ export const CenterStageLayout = ({
     }
   }, [messages.length, clearResponseBubbles, clearSuggestions, setEmotion, setIsResponding]);
 
-  // AI Eye Behavior System
-  const { context, recordAction } = useEyeContext({
-    eyeRef: eyeRef as React.RefObject<HTMLDivElement>,
-    currentMode: selectedMode,
-    isResponding: isTyping,
-    isUserTyping: contextIsTyping,
-    messageCount: messages.length,
-  });
-  
-  // Enable eye behavior on all devices - emotions work independently
-  const { behaviorConfig } = useEyeBehaviorMatcher({ context, enabled: true });
 
   // Real-time emotion tracking for responsive eye behavior
   const realtimeEmotion = useRealtimeEmotionTracking(realtimeInputText, contextIsTyping);
@@ -554,7 +541,6 @@ animate={{
             <EmotionalEye 
               size={isMobile ? "md" : "lg"} 
               gazeTarget={gazeTarget} 
-              behaviorConfig={behaviorConfig}
               pupilReaction={aiPupilReaction}
               blinkPattern={aiBlinkPattern}
               colorIntensity={aiColorIntensity}
