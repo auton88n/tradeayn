@@ -39,7 +39,31 @@ export const analyzeResponseEmotion = (response: string): AYNEmotion => {
     'للأسف', 'لا أستطيع', 'مشكلة'
   ];
   
+  // Sad indicators
+  const sadPatterns = [
+    'sorry', 'sad', 'disappointed', 'miss you', 'regret', 'apologize',
+    'heartbroken', 'upset', 'depressed', 'lonely',
+    'آسف', 'حزين', 'أعتذر', 'أفتقدك'
+  ];
+  
+  // Mad/angry indicators
+  const madPatterns = [
+    'angry', 'furious', 'unacceptable', 'hate', 'outrageous',
+    'ridiculous', 'terrible', 'awful', 'worst',
+    'غاضب', 'مستفز', 'سيء جداً'
+  ];
+  
+  // Bored indicators
+  const boredPatterns = [
+    'whatever', 'i guess', 'fine', 'if you say so', 'meh',
+    'boring', 'dull', 'same old', 'nothing new',
+    'ممل', 'عادي', 'كما تشاء'
+  ];
+  
   // Check patterns in order of specificity
+  if (madPatterns.some(p => lowerResponse.includes(p))) return 'mad';
+  if (sadPatterns.some(p => lowerResponse.includes(p))) return 'sad';
+  if (boredPatterns.some(p => lowerResponse.includes(p))) return 'bored';
   if (frustratedPatterns.some(p => lowerResponse.includes(p))) return 'frustrated';
   if (excitedPatterns.some(p => lowerResponse.includes(p))) return 'excited';
   if (happyPatterns.some(p => lowerResponse.includes(p))) return 'happy';
@@ -92,6 +116,9 @@ export const getEmotionColor = (emotion: AYNEmotion): string => {
     thinking: 'hsl(217, 91%, 60%)',
     frustrated: 'hsl(0, 72%, 51%)',
     curious: 'hsl(270, 76%, 60%)',
+    sad: 'hsl(210, 20%, 50%)',
+    mad: 'hsl(0, 85%, 40%)',
+    bored: 'hsl(0, 0%, 60%)',
   };
   return colors[emotion];
 };

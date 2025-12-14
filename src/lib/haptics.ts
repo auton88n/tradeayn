@@ -7,6 +7,7 @@
 type HapticType = 
   | 'light' | 'medium' | 'heavy' | 'success' | 'notification' | 'pulse'
   | 'happy' | 'excited' | 'frustrated' | 'thinking' | 'curious' | 'calm'
+  | 'sad' | 'mad' | 'bored'
   | 'empathy' | 'comfort' | 'mirror-joy' | 'patience';
 
 const hapticPatterns: Record<HapticType, number | number[]> = {
@@ -25,6 +26,9 @@ const hapticPatterns: Record<HapticType, number | number[]> = {
   thinking: [20, 100, 20, 100, 20], // Rhythmic pattern - contemplative
   curious: [12, 60, 25],            // Short-long pattern - inquisitive
   calm: 5,                          // Very subtle - peaceful
+  sad: [40, 150, 40],               // Slow, heavy - melancholic
+  mad: [80, 30, 80, 30],            // Aggressive short bursts - intense
+  bored: [5, 300],                  // Long pause, subtle - disengaged
   
   // Empathetic response patterns (responding to USER emotions)
   empathy: [8, 100, 8],             // Gentle double pulse - "I understand"

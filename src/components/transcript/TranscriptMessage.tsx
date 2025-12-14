@@ -21,6 +21,9 @@ const emotionEmojis: Record<AYNEmotion, string> = {
   thinking: '🧠',
   frustrated: '😕',
   curious: '🤔',
+  sad: '😢',
+  mad: '😠',
+  bored: '😐',
 };
 
 export const TranscriptMessage = ({
