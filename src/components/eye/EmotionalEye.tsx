@@ -79,8 +79,19 @@ const EmotionalEyeComponent = ({
   const particleGazeY = useMotionValue(0);
   const smoothParticleGazeX = useSpring(particleGazeX, { damping: 80, stiffness: 300, mass: 0.4 });
   const smoothParticleGazeY = useSpring(particleGazeY, { damping: 80, stiffness: 300, mass: 0.4 });
-  const [glowIntensity, setGlowIntensity] = useState(0.4);
   const particleNearEyeRef = useRef(false);
+
+  // Activity-based glow intensity multipliers
+  const ACTIVITY_GLOW = {
+    idle: 0.3,
+    low: 0.45,
+    medium: 0.6,
+    high: 0.8,
+  };
+  
+  const baseGlowIntensity = ACTIVITY_GLOW[activityLevel];
+  const [particleBoost, setParticleBoost] = useState(0);
+  const glowIntensity = Math.min(baseGlowIntensity + particleBoost, 1);
 
   // Handle particle approaching eye - pupil micro-tracks toward particle
   const handleParticleNearEye = useCallback((angle: number) => {
@@ -94,14 +105,14 @@ const EmotionalEyeComponent = ({
       particleGazeY.set(Math.sin(angleRad) * gazeOffset);
       
       // Pulse glow intensity when particles are near
-      setGlowIntensity(0.7);
+      setParticleBoost(0.2);
       
       // Reset after particle passes
       setTimeout(() => {
         particleNearEyeRef.current = false;
         particleGazeX.set(0);
         particleGazeY.set(0);
-        setGlowIntensity(0.4);
+        setParticleBoost(0);
       }, 400);
     }
   }, [particleGazeX, particleGazeY]);
