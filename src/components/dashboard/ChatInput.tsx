@@ -315,8 +315,9 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
               exit={{ opacity: 0 }}
               className="absolute inset-0 bg-background/95 backdrop-blur-sm flex flex-col items-center justify-center gap-3 z-20 rounded-2xl"
             >
-              <AlertTriangle className="w-6 h-6 text-amber-500" />
-              <p className="text-sm text-muted-foreground">Limit reached. Start a new chat.</p>
+            <p className="text-sm text-muted-foreground">
+              you exceeded your limit open new chat
+            </p>
               {onStartNewChat && (
                 <Button onClick={onStartNewChat} size="sm" className="gap-2">
                   <MessageSquarePlus className="w-4 h-4" />
