@@ -73,6 +73,38 @@ const EmotionalEyeComponent = ({
   const aiGazeX = useMotionValue(0);
   const aiGazeY = useMotionValue(0);
 
+  // Particle tracking for smart eye response
+  const particleGazeX = useMotionValue(0);
+  const particleGazeY = useMotionValue(0);
+  const smoothParticleGazeX = useSpring(particleGazeX, { damping: 80, stiffness: 300, mass: 0.4 });
+  const smoothParticleGazeY = useSpring(particleGazeY, { damping: 80, stiffness: 300, mass: 0.4 });
+  const [glowIntensity, setGlowIntensity] = useState(0.4);
+  const particleNearEyeRef = useRef(false);
+
+  // Handle particle approaching eye - pupil micro-tracks toward particle
+  const handleParticleNearEye = useCallback((angle: number) => {
+    if (!particleNearEyeRef.current) {
+      particleNearEyeRef.current = true;
+      
+      // Convert angle to slight gaze offset (subtle tracking)
+      const angleRad = (angle * Math.PI) / 180;
+      const gazeOffset = 3; // Subtle offset
+      particleGazeX.set(Math.cos(angleRad) * gazeOffset);
+      particleGazeY.set(Math.sin(angleRad) * gazeOffset);
+      
+      // Pulse glow intensity when particles are near
+      setGlowIntensity(0.7);
+      
+      // Reset after particle passes
+      setTimeout(() => {
+        particleNearEyeRef.current = false;
+        particleGazeX.set(0);
+        particleGazeY.set(0);
+        setGlowIntensity(0.4);
+      }, 400);
+    }
+  }, [particleGazeX, particleGazeY]);
+
 
   // Safe sound player that respects enabled state
   const playSoundSafe = useCallback((type: 'blink' | 'listening' | 'attentive-blink' | 'processing' | 'thoughtful-blink') => {
@@ -110,9 +142,15 @@ const EmotionalEyeComponent = ({
   const smoothMicroX = useSpring(microX, { damping: 60, stiffness: 120, mass: 0.5 });
   const smoothMicroY = useSpring(microY, { damping: 60, stiffness: 120, mass: 0.5 });
 
-  // Combined eye movement (mouse + AI gaze + micro)
-  const combinedX = useTransform([eyeX, smoothMicroX, smoothAiGazeX], ([eye, micro, ai]) => (eye as number) + (micro as number) + (ai as number));
-  const combinedY = useTransform([eyeY, smoothMicroY, smoothAiGazeY], ([eye, micro, ai]) => (eye as number) + (micro as number) + (ai as number));
+  // Combined eye movement (mouse + AI gaze + micro + particle tracking)
+  const combinedX = useTransform(
+    [eyeX, smoothMicroX, smoothAiGazeX, smoothParticleGazeX], 
+    ([eye, micro, ai, particle]) => (eye as number) + (micro as number) + (ai as number) + (particle as number)
+  );
+  const combinedY = useTransform(
+    [eyeY, smoothMicroY, smoothAiGazeY, smoothParticleGazeY], 
+    ([eye, micro, ai, particle]) => (eye as number) + (micro as number) + (ai as number) + (particle as number)
+  );
 
   // Mouse tracking effect - throttled for performance
   useEffect(() => {
@@ -449,15 +487,15 @@ const EmotionalEyeComponent = ({
         onTouchStart={gestureHandlers.onTouchStart}
         onTouchEnd={gestureHandlers.onTouchEnd}
       >
-        {/* Soft outer glow halo - always visible with subtle pulsing for "alive" feel */}
+        {/* Soft outer glow halo - syncs with particle proximity */}
         <motion.div 
           className="absolute -inset-8 rounded-full pointer-events-none"
           animate={{
-            opacity: [0.7, 1, 0.7],
-            scale: [1, 1.02, 1],
+            opacity: [glowIntensity, glowIntensity + 0.3, glowIntensity],
+            scale: [1, 1.02 + (glowIntensity - 0.4) * 0.1, 1],
           }}
           transition={{
-            duration: 3,
+            duration: 2.5,
             repeat: Infinity,
             ease: "easeInOut",
           }}
@@ -573,12 +611,13 @@ const EmotionalEyeComponent = ({
             })()}
           </motion.svg>
           
-          {/* Particle effects - positioned inside eye container for centering */}
+          {/* Particle effects - positioned outside eye, centered */}
           <EyeParticles 
             emotion={emotion} 
             isActive={!prefersReducedMotion} 
             size={eyeSize}
             glowColor={emotionConfig.glowColor}
+            onParticleNearEye={handleParticleNearEye}
           />
         </div>
       </motion.div>
