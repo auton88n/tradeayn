@@ -456,7 +456,15 @@ const EmotionalEyeComponent = ({
   };
 
   const irisRadius = getIrisRadius();
-  const breathingDuration = emotionConfig.breathingSpeed;
+  
+  // Activity-based breathing speed multipliers (lower = faster)
+  const ACTIVITY_BREATHING_MULT = {
+    idle: 1.2,    // Slower, relaxed
+    low: 1.0,     // Normal
+    medium: 0.8,  // Slightly faster
+    high: 0.6,    // Quick, energetic
+  };
+  const breathingDuration = emotionConfig.breathingSpeed * ACTIVITY_BREATHING_MULT[activityLevel];
 
   // Calculate eye size for particles
   const eyeSizeMap = { sm: 120, md: 180, lg: 260 };
