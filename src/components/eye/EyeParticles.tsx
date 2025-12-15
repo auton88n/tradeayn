@@ -8,12 +8,12 @@ interface EyeParticlesProps {
   activityLevel?: 'idle' | 'low' | 'medium' | 'high';
 }
 
-// Activity-based particle count
+// Few small particles only
 const PARTICLE_COUNTS = {
   idle: 0,
-  low: 3,
-  medium: 5,
-  high: 7,
+  low: 2,
+  medium: 3,
+  high: 4,
 };
 
 const EyeParticlesComponent = ({ 
@@ -26,20 +26,13 @@ const EyeParticlesComponent = ({
   
   const particles = useMemo(() => {
     return Array.from({ length: particleCount }, (_, i) => {
-      // Random fixed position around the eye (not orbiting)
       const angle = Math.random() * Math.PI * 2;
-      const radius = size * (0.55 + Math.random() * 0.2); // 1.1x to 1.5x from center
-      const x = Math.cos(angle) * radius;
-      const y = Math.sin(angle) * radius;
-      
       return {
         id: i,
-        x, // Fixed x position
-        y, // Fixed y position
-        size: 3 + Math.random() * 3, // 3-6px
-        delay: Math.random() * 2,
-        duration: 3 + Math.random() * 2, // 3-5s for gentle float
-        floatRange: 8 + Math.random() * 12, // How much it floats up/down (8-20px)
+        angle,
+        size: 2 + Math.random() * 2, // Small: 2-4px
+        delay: Math.random() * 3,
+        duration: 4 + Math.random() * 3, // 4-7s to drift out
       };
     });
   }, [particleCount, size]);
@@ -53,51 +46,55 @@ const EyeParticlesComponent = ({
         top: '50%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
-        width: size * 1.5,
-        height: size * 1.5,
+        width: size * 2,
+        height: size * 2,
         pointerEvents: 'none',
         zIndex: 5,
       }}
     >
-      {particles.map((p) => (
-        <motion.div
-          key={p.id}
-          style={{
-            position: 'absolute',
-            left: '50%',
-            top: '50%',
-            width: p.size,
-            height: p.size,
-            borderRadius: '50%',
-            backgroundColor: glowColor,
-            boxShadow: `0 0 ${p.size * 3}px ${glowColor}, 0 0 ${p.size * 6}px ${glowColor}`,
-          }}
-          initial={{ 
-            x: p.x - p.size / 2, 
-            y: p.y - p.size / 2, 
-            opacity: 0, 
-            scale: 0.5 
-          }}
-          animate={{
-            // Stay at fixed x position
-            x: p.x - p.size / 2,
-            // Gentle up/down float at fixed position
-            y: [
-              p.y - p.size / 2, 
-              p.y - p.size / 2 - p.floatRange, 
-              p.y - p.size / 2,
-            ],
-            opacity: [0.3, 0.6, 0.3],
-            scale: [0.8, 1.1, 0.8],
-          }}
-          transition={{ 
-            duration: p.duration, 
-            delay: p.delay, 
-            repeat: Infinity, 
-            ease: 'easeInOut' 
-          }}
-        />
-      ))}
+      {particles.map((p) => {
+        // Start near eye center, drift outward
+        const startRadius = size * 0.3;
+        const endRadius = size * 0.9;
+        const startX = Math.cos(p.angle) * startRadius;
+        const startY = Math.sin(p.angle) * startRadius;
+        const endX = Math.cos(p.angle) * endRadius;
+        const endY = Math.sin(p.angle) * endRadius;
+
+        return (
+          <motion.div
+            key={p.id}
+            style={{
+              position: 'absolute',
+              left: '50%',
+              top: '50%',
+              width: p.size,
+              height: p.size,
+              borderRadius: '50%',
+              backgroundColor: glowColor,
+              boxShadow: `0 0 ${p.size * 2}px ${glowColor}`,
+            }}
+            initial={{ 
+              x: startX - p.size / 2, 
+              y: startY - p.size / 2, 
+              opacity: 0, 
+              scale: 0.3 
+            }}
+            animate={{
+              x: [startX - p.size / 2, endX - p.size / 2],
+              y: [startY - p.size / 2, endY - p.size / 2],
+              opacity: [0, 0.5, 0],
+              scale: [0.3, 0.8, 0.2],
+            }}
+            transition={{ 
+              duration: p.duration, 
+              delay: p.delay, 
+              repeat: Infinity, 
+              ease: 'easeOut' 
+            }}
+          />
+        );
+      })}
     </div>
   );
 };
