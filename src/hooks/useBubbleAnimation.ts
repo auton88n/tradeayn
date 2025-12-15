@@ -170,9 +170,8 @@ export const useBubbleAnimation = (): UseBubbleAnimationReturn => {
   }, []);
 
   const clearResponseBubbles = useCallback(() => {
-    setResponseBubbles((prev) =>
-      prev.map((b) => ({ ...b, isVisible: false }))
-    );
+    // Completely reset to prevent stale bubbles from reappearing
+    setResponseBubbles([]);
   }, []);
 
   const dismissBubble = useCallback((id: string) => {
