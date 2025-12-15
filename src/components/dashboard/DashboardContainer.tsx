@@ -538,6 +538,8 @@ const DashboardContent = ({
           maxMessages={messagesHook.maxMessages}
           onStartNewChat={handleNewChat}
           lastSuggestedEmotion={messagesHook.lastSuggestedEmotion}
+          uploadFailed={fileUpload.uploadFailed}
+          onRetryUpload={fileUpload.retryUpload}
         />
       </main>
 

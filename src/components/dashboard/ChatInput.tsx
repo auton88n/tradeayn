@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, forwardRef, useCallback } from 'rea
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Plus, ChevronDown, ArrowUp, FileText, X, Image as ImageIcon, AlertTriangle, MessageSquarePlus, Loader2, FileImage, FileCode, FileSpreadsheet, FileArchive, FileAudio, FileVideo, File } from 'lucide-react';
+import { Plus, ChevronDown, ArrowUp, FileText, X, Image as ImageIcon, AlertTriangle, MessageSquarePlus, Loader2, FileImage, FileCode, FileSpreadsheet, FileArchive, FileAudio, FileVideo, File, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
@@ -47,6 +47,9 @@ interface ChatInputProps {
   messageCount?: number;
   maxMessages?: number;
   onStartNewChat?: () => void;
+  // Upload retry props
+  uploadFailed?: boolean;
+  onRetryUpload?: () => void;
 }
 const modes = [{
   name: 'General',
@@ -165,6 +168,8 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
   messageCount = 0,
   maxMessages = 100,
   onStartNewChat,
+  uploadFailed = false,
+  onRetryUpload,
 }, ref) => {
   const [inputMessage, setInputMessage] = useState('');
   const [isInputFocused, setIsInputFocused] = useState(false);
@@ -492,27 +497,54 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
                   />
                 )}
                 
-                {/* File Icon based on file type */}
+                {/* Failed upload indicator */}
+                {uploadFailed && !isUploading && (
+                  <div className="absolute inset-0 bg-red-500/10 rounded-2xl" />
+                )}
+                
+                {/* File Icon based on file type or status */}
                 <div className={cn(
                   "relative shrink-0",
                   isUploading && "animate-pulse"
                 )}>
                   {isUploading ? (
                     <Loader2 className="w-4 h-4 text-primary animate-spin" />
+                  ) : uploadFailed ? (
+                    <AlertTriangle className="w-4 h-4 text-red-400" />
                   ) : (
                     <FileTypeIcon filename={selectedFile.name} className="w-4 h-4" />
                   )}
                 </div>
                 
                 {/* Filename - truncated */}
-                <span className="text-sm text-neutral-200 truncate max-w-[140px] font-medium relative z-10">
+                <span className={cn(
+                  "text-sm truncate max-w-[100px] font-medium relative z-10",
+                  uploadFailed ? "text-red-300" : "text-neutral-200"
+                )}>
                   {selectedFile.name}
                 </span>
                 
-                {/* File size or Upload progress */}
-                <span className="text-xs text-neutral-500 shrink-0 relative z-10 min-w-[48px] text-right">
-                  {isUploading ? `${uploadProgress}%` : formatFileSize(selectedFile.size)}
+                {/* File size, Upload progress, or Failed status */}
+                <span className={cn(
+                  "text-xs shrink-0 relative z-10 min-w-[48px] text-right",
+                  uploadFailed ? "text-red-400" : "text-neutral-500"
+                )}>
+                  {isUploading ? `${uploadProgress}%` : uploadFailed ? 'Failed' : formatFileSize(selectedFile.size)}
                 </span>
+                
+                {/* Retry button - shown when upload failed */}
+                {uploadFailed && !isUploading && onRetryUpload && (
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRetryUpload();
+                    }}
+                    className="p-1 rounded-full bg-amber-500/20 hover:bg-amber-500/40 transition-colors shrink-0 relative z-10"
+                    title="Retry upload"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5 text-amber-400 hover:text-amber-300 transition-colors" />
+                  </button>
+                )}
                 
                 {/* Remove button - hidden while uploading */}
                 {!isUploading && (

@@ -11,6 +11,8 @@ export const useFileUpload = (userId: string): UseFileUploadReturn => {
   const [isDragOver, setIsDragOver] = useState(false);
   // Pre-uploaded attachment - ready to send immediately
   const [uploadedAttachment, setUploadedAttachment] = useState<FileAttachment | null>(null);
+  // Track upload failure for retry functionality
+  const [uploadFailed, setUploadFailed] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -71,6 +73,7 @@ export const useFileUpload = (userId: string): UseFileUploadReturn => {
   const uploadFile = useCallback(async (file: File): Promise<FileAttachment | null> => {
     try {
       setIsUploading(true);
+      setUploadFailed(false);
       setUploadProgress(5);
 
       // CRITICAL: Refresh session if token is expiring soon
@@ -122,6 +125,7 @@ export const useFileUpload = (userId: string): UseFileUploadReturn => {
       if (error) throw error;
 
       setUploadProgress(100);
+      setUploadFailed(false);
 
       return {
         url: data.fileUrl,
@@ -132,15 +136,20 @@ export const useFileUpload = (userId: string): UseFileUploadReturn => {
     } catch (error) {
       toast({
         title: "Upload Failed",
-        description: "Failed to upload file. Please try again.",
+        description: "Failed to upload file. Click retry to try again.",
         variant: "destructive"
       });
       setUploadProgress(0);
+      setUploadFailed(true);
       return null;
     } finally {
       setIsUploading(false);
-      // Reset progress after a brief delay to show completion
-      setTimeout(() => setUploadProgress(0), 500);
+      // Reset progress after a brief delay to show completion (only if successful)
+      setTimeout(() => {
+        if (!uploadFailed) {
+          setUploadProgress(0);
+        }
+      }, 500);
     }
   }, [userId, toast, compressImage]);
 
@@ -150,8 +159,9 @@ export const useFileUpload = (userId: string): UseFileUploadReturn => {
     
     if (validateFile(file)) {
       setSelectedFile(file);
-      // Clear any previous uploaded attachment
+      // Clear any previous uploaded attachment and failure state
       setUploadedAttachment(null);
+      setUploadFailed(false);
       
       // Start upload immediately in background
       const attachment = await uploadFile(file);
@@ -166,6 +176,21 @@ export const useFileUpload = (userId: string): UseFileUploadReturn => {
     }
   }, [validateFile, uploadFile, toast]);
 
+  // Retry failed upload
+  const retryUpload = useCallback(async () => {
+    if (!selectedFile) return;
+    
+    setUploadFailed(false);
+    const attachment = await uploadFile(selectedFile);
+    if (attachment) {
+      setUploadedAttachment(attachment);
+      toast({
+        title: "File Ready",
+        description: `${selectedFile.name} uploaded and ready to send.`,
+      });
+    }
+  }, [selectedFile, uploadFile, toast]);
+
   // Clear uploaded attachment
   const clearUploadedAttachment = useCallback(() => {
     setUploadedAttachment(null);
@@ -175,6 +200,7 @@ export const useFileUpload = (userId: string): UseFileUploadReturn => {
   const removeFile = useCallback(() => {
     setSelectedFile(null);
     setUploadedAttachment(null);
+    setUploadFailed(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -254,5 +280,8 @@ export const useFileUpload = (userId: string): UseFileUploadReturn => {
     // Pre-upload state
     uploadedAttachment,
     clearUploadedAttachment,
+    // Retry functionality
+    uploadFailed,
+    retryUpload,
   };
 };
