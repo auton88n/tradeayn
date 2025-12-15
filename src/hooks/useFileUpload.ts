@@ -9,6 +9,8 @@ export const useFileUpload = (userId: string): UseFileUploadReturn => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isDragOver, setIsDragOver] = useState(false);
+  // Pre-uploaded attachment - ready to send immediately
+  const [uploadedAttachment, setUploadedAttachment] = useState<FileAttachment | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -142,22 +144,37 @@ export const useFileUpload = (userId: string): UseFileUploadReturn => {
     }
   }, [userId, toast, compressImage]);
 
-  // Handle file selection
-  const handleFileSelect = useCallback((file: File | null) => {
+  // Handle file selection - immediately start upload (ChatGPT-style pre-upload)
+  const handleFileSelect = useCallback(async (file: File | null) => {
     if (!file) return;
     
     if (validateFile(file)) {
       setSelectedFile(file);
-      toast({
-        title: "File Selected",
-        description: `${file.name} is ready to send.`,
-      });
+      // Clear any previous uploaded attachment
+      setUploadedAttachment(null);
+      
+      // Start upload immediately in background
+      const attachment = await uploadFile(file);
+      if (attachment) {
+        setUploadedAttachment(attachment);
+        toast({
+          title: "File Ready",
+          description: `${file.name} uploaded and ready to send.`,
+        });
+      }
+      // If upload fails, error toast is shown by uploadFile
     }
-  }, [validateFile, toast]);
+  }, [validateFile, uploadFile, toast]);
 
-  // Remove selected file
+  // Clear uploaded attachment
+  const clearUploadedAttachment = useCallback(() => {
+    setUploadedAttachment(null);
+  }, []);
+
+  // Remove selected file and clear uploaded attachment
   const removeFile = useCallback(() => {
     setSelectedFile(null);
+    setUploadedAttachment(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -233,6 +250,9 @@ export const useFileUpload = (userId: string): UseFileUploadReturn => {
     handleDragEnter,
     handleDragLeave,
     handleDragOver,
-    handleDrop
+    handleDrop,
+    // Pre-upload state
+    uploadedAttachment,
+    clearUploadedAttachment,
   };
 };

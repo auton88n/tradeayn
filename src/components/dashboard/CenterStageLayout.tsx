@@ -316,6 +316,9 @@ export const CenterStageLayout = ({
   // Handle sending message with bubble animation
   const handleSendWithAnimation = useCallback(
     async (content: string, file?: File | null) => {
+      // Block if file is still uploading
+      if (isUploading) return;
+      
       if (!content.trim() && !file) return;
 
       // Track the user's message for suggestion context
@@ -430,6 +433,7 @@ export const CenterStageLayout = ({
     },
     [
       messages,
+      isUploading,
       analyzeEmotionWithAI,
       clearResponseBubbles,
       clearSuggestions,
