@@ -56,6 +56,8 @@ interface CenterStageLayoutProps {
   messageCount?: number;
   maxMessages?: number;
   onStartNewChat?: () => void;
+  // Backend emotion from AI response
+  lastSuggestedEmotion?: string | null;
 }
 
 export const CenterStageLayout = ({
@@ -85,6 +87,7 @@ export const CenterStageLayout = ({
   messageCount,
   maxMessages,
   onStartNewChat,
+  lastSuggestedEmotion,
 }: CenterStageLayoutProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const eyeStageRef = useRef<HTMLDivElement>(null);
@@ -503,9 +506,14 @@ export const CenterStageLayout = ({
       // Blink before responding (like landing page)
       triggerBlink();
       
-      // After blink, analyze emotion and emit bubbles
+      // After blink, use backend emotion and emit bubbles
       setTimeout(() => {
-        const emotion = analyzeResponseEmotion(lastMessage.content);
+        // Prioritize backend-suggested emotion, fallback to local analysis
+        const validEmotions: AYNEmotion[] = ['calm', 'happy', 'excited', 'thinking', 'frustrated', 'curious', 'sad', 'mad', 'bored', 'comfort', 'supportive'];
+        const backendEmotion = lastSuggestedEmotion && validEmotions.includes(lastSuggestedEmotion as AYNEmotion) 
+          ? lastSuggestedEmotion as AYNEmotion 
+          : null;
+        const emotion = backendEmotion || analyzeResponseEmotion(lastMessage.content);
         // Use orchestrator for synchronized response emotion
         orchestrateEmotionChange(emotion);
         playSound?.('response-received');
@@ -536,7 +544,7 @@ export const CenterStageLayout = ({
         }, 600);
       }, 50); // Minimal delay for blink
     }
-  }, [messages, lastProcessedMessageId, setEmotion, setIsResponding, emitResponseBubble, emitSuggestions, triggerBlink, detectExcitement, fetchDynamicSuggestions, lastUserMessage, selectedMode]);
+  }, [messages, lastProcessedMessageId, lastSuggestedEmotion, setEmotion, setIsResponding, emitResponseBubble, emitSuggestions, triggerBlink, detectExcitement, fetchDynamicSuggestions, lastUserMessage, selectedMode]);
 
   // Update emotion when typing - only set thinking if not recently set from a response
   useEffect(() => {

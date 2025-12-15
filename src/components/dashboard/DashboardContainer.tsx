@@ -531,6 +531,7 @@ const DashboardContent = ({
           messageCount={messagesHook.messageCount}
           maxMessages={messagesHook.maxMessages}
           onStartNewChat={handleNewChat}
+          lastSuggestedEmotion={messagesHook.lastSuggestedEmotion}
         />
       </main>
 
