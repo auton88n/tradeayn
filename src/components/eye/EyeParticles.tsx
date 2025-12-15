@@ -1,214 +1,47 @@
 import { motion } from 'framer-motion';
 import { memo, useMemo } from 'react';
-import { AYNEmotion } from '@/contexts/AYNEmotionContext';
 
 interface EyeParticlesProps {
-  emotion: AYNEmotion;
   isActive: boolean;
   size?: number;
   glowColor?: string;
   activityLevel?: 'idle' | 'low' | 'medium' | 'high';
 }
 
-// Emotion-specific particle configurations
-const PARTICLE_CONFIGS: Record<AYNEmotion, {
-  count: number;
-  color: string;
-  shape: 'circle' | 'star' | 'diamond';
-  glowIntensity: number;
-  speed: number;
-}> = {
-  calm: {
-    count: 3,
-    color: 'hsl(210, 60%, 70%)',
-    shape: 'circle',
-    glowIntensity: 0.4,
-    speed: 1,
-  },
-  happy: {
-    count: 5,
-    color: 'hsl(45, 95%, 65%)',
-    shape: 'star',
-    glowIntensity: 0.8,
-    speed: 1.2,
-  },
-  excited: {
-    count: 6,
-    color: 'hsl(35, 100%, 60%)',
-    shape: 'star',
-    glowIntensity: 0.9,
-    speed: 1.5,
-  },
-  thinking: {
-    count: 4,
-    color: 'hsl(220, 70%, 65%)',
-    shape: 'diamond',
-    glowIntensity: 0.5,
-    speed: 0.8,
-  },
-  curious: {
-    count: 4,
-    color: 'hsl(280, 60%, 70%)',
-    shape: 'diamond',
-    glowIntensity: 0.6,
-    speed: 1,
-  },
-  frustrated: {
-    count: 3,
-    color: 'hsl(0, 70%, 60%)',
-    shape: 'diamond',
-    glowIntensity: 0.5,
-    speed: 0.7,
-  },
-  comfort: {
-    count: 4,
-    color: 'hsl(30, 80%, 70%)',
-    shape: 'circle',
-    glowIntensity: 0.7,
-    speed: 0.6,
-  },
-  supportive: {
-    count: 4,
-    color: 'hsl(340, 60%, 75%)',
-    shape: 'circle',
-    glowIntensity: 0.7,
-    speed: 0.6,
-  },
-  bored: {
-    count: 2,
-    color: 'hsl(200, 20%, 60%)',
-    shape: 'circle',
-    glowIntensity: 0.3,
-    speed: 0.5,
-  },
-  mad: {
-    count: 4,
-    color: 'hsl(0, 80%, 55%)',
-    shape: 'diamond',
-    glowIntensity: 0.7,
-    speed: 1.3,
-  },
-  sad: {
-    count: 3,
-    color: 'hsl(220, 40%, 60%)',
-    shape: 'circle',
-    glowIntensity: 0.4,
-    speed: 0.5,
-  },
+// Activity-based particle count
+const PARTICLE_COUNTS = {
+  idle: 0,
+  low: 3,
+  medium: 5,
+  high: 7,
 };
 
 const EyeParticlesComponent = ({ 
-  emotion, 
   isActive, 
   size = 260,
+  glowColor = 'hsl(210, 60%, 70%)',
+  activityLevel = 'idle',
 }: EyeParticlesProps) => {
-  const config = PARTICLE_CONFIGS[emotion];
+  const particleCount = PARTICLE_COUNTS[activityLevel];
   
   const particles = useMemo(() => {
-    return Array.from({ length: config.count }, (_, i) => {
-      const angle = (i / config.count) * Math.PI * 2;
-      const radius = size * 0.52;
+    return Array.from({ length: particleCount }, (_, i) => {
+      const angle = (i / particleCount) * Math.PI * 2 + Math.random() * 0.5;
+      const radius = size * (0.55 + Math.random() * 0.15); // 1.1x to 1.4x from center
       return {
         id: i,
         angle,
         radius,
-        size: config.shape === 'star' ? 6 : 4,
-        delay: i * 0.4,
-        duration: (4 + Math.random() * 2) / config.speed,
+        size: 3 + Math.random() * 3, // 3-6px
+        delay: Math.random() * 2,
+        duration: 6 + Math.random() * 4, // 6-10s for gentle movement
+        floatOffset: Math.random() * 20 - 10, // Random vertical float range
+        driftAmount: 0.2 + Math.random() * 0.3, // How much it drifts around orbit
       };
     });
-  }, [config.count, config.shape, config.speed, size]);
+  }, [particleCount, size]);
 
-  if (!isActive) return null;
-
-  // Render different shapes based on emotion
-  const renderParticle = (p: typeof particles[0]) => {
-    const drift = 0.3;
-    const x1 = Math.cos(p.angle) * p.radius;
-    const y1 = Math.sin(p.angle) * p.radius;
-    const x2 = Math.cos(p.angle + drift) * p.radius;
-    const y2 = Math.sin(p.angle + drift) * p.radius;
-
-    const baseStyle = {
-      position: 'absolute' as const,
-      left: '50%',
-      top: '50%',
-    };
-
-    if (config.shape === 'star') {
-      // Star/sparkle shape using CSS
-      return (
-        <motion.div
-          key={p.id}
-          style={{
-            ...baseStyle,
-            width: p.size,
-            height: p.size,
-          }}
-          initial={{ x: x1 - p.size / 2, y: y1 - p.size / 2, opacity: 0, scale: 0.3, rotate: 0 }}
-          animate={{
-            x: [x1 - p.size / 2, x2 - p.size / 2, x1 - p.size / 2],
-            y: [y1 - p.size / 2, y2 - p.size / 2, y1 - p.size / 2],
-            opacity: [0.2, config.glowIntensity, 0.2],
-            scale: [0.6, 1.2, 0.6],
-            rotate: [0, 180, 360],
-          }}
-          transition={{ duration: p.duration, delay: p.delay, repeat: Infinity, ease: 'easeInOut' }}
-        >
-          <svg viewBox="0 0 24 24" fill={config.color} style={{ filter: `drop-shadow(0 0 ${p.size}px ${config.color})` }}>
-            <path d="M12 0L14.5 9.5L24 12L14.5 14.5L12 24L9.5 14.5L0 12L9.5 9.5L12 0Z" />
-          </svg>
-        </motion.div>
-      );
-    }
-
-    if (config.shape === 'diamond') {
-      return (
-        <motion.div
-          key={p.id}
-          style={{
-            ...baseStyle,
-            width: p.size,
-            height: p.size,
-            backgroundColor: config.color,
-            transform: 'rotate(45deg)',
-            boxShadow: `0 0 ${p.size * 2}px ${config.color}`,
-          }}
-          initial={{ x: x1 - p.size / 2, y: y1 - p.size / 2, opacity: 0, scale: 0.5 }}
-          animate={{
-            x: [x1 - p.size / 2, x2 - p.size / 2, x1 - p.size / 2],
-            y: [y1 - p.size / 2, y2 - p.size / 2, y1 - p.size / 2],
-            opacity: [0.2, config.glowIntensity, 0.2],
-            scale: [0.7, 1, 0.7],
-          }}
-          transition={{ duration: p.duration, delay: p.delay, repeat: Infinity, ease: 'easeInOut' }}
-        />
-      );
-    }
-
-    // Default: soft circle/orb
-    return (
-      <motion.div
-        key={p.id}
-        style={{
-          ...baseStyle,
-          width: p.size,
-          height: p.size,
-          borderRadius: '50%',
-          backgroundColor: config.color,
-          boxShadow: `0 0 ${p.size * 3}px ${config.color}`,
-        }}
-        initial={{ x: x1 - p.size / 2, y: y1 - p.size / 2, opacity: 0, scale: 0.5 }}
-        animate={{
-          x: [x1 - p.size / 2, x2 - p.size / 2, x1 - p.size / 2],
-          y: [y1 - p.size / 2, y2 - p.size / 2, y1 - p.size / 2],
-          opacity: [0.3, config.glowIntensity, 0.3],
-          scale: [0.8, 1.1, 0.8],
-        }}
-        transition={{ duration: p.duration, delay: p.delay, repeat: Infinity, ease: 'easeInOut' }}
-      />
-    );
-  };
+  if (!isActive || particleCount === 0) return null;
 
   return (
     <div 
@@ -217,13 +50,65 @@ const EyeParticlesComponent = ({
         top: '50%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
-        width: size * 1.3,
-        height: size * 1.3,
+        width: size * 1.5,
+        height: size * 1.5,
         pointerEvents: 'none',
         zIndex: 5,
       }}
     >
-      {particles.map(renderParticle)}
+      {particles.map((p) => {
+        // Calculate positions for gentle orbital drift
+        const x1 = Math.cos(p.angle) * p.radius;
+        const y1 = Math.sin(p.angle) * p.radius;
+        const x2 = Math.cos(p.angle + p.driftAmount) * p.radius;
+        const y2 = Math.sin(p.angle + p.driftAmount) * p.radius;
+        const x3 = Math.cos(p.angle - p.driftAmount * 0.5) * p.radius;
+        const y3 = Math.sin(p.angle - p.driftAmount * 0.5) * p.radius;
+
+        return (
+          <motion.div
+            key={p.id}
+            style={{
+              position: 'absolute',
+              left: '50%',
+              top: '50%',
+              width: p.size,
+              height: p.size,
+              borderRadius: '50%',
+              backgroundColor: glowColor,
+              boxShadow: `0 0 ${p.size * 3}px ${glowColor}, 0 0 ${p.size * 6}px ${glowColor}`,
+            }}
+            initial={{ 
+              x: x1 - p.size / 2, 
+              y: y1 - p.size / 2, 
+              opacity: 0, 
+              scale: 0.5 
+            }}
+            animate={{
+              x: [
+                x1 - p.size / 2, 
+                x2 - p.size / 2, 
+                x3 - p.size / 2, 
+                x1 - p.size / 2
+              ],
+              y: [
+                y1 - p.size / 2 + p.floatOffset, 
+                y2 - p.size / 2 - p.floatOffset, 
+                y3 - p.size / 2 + p.floatOffset * 0.5, 
+                y1 - p.size / 2 + p.floatOffset
+              ],
+              opacity: [0.3, 0.6, 0.4, 0.3],
+              scale: [0.8, 1.1, 0.9, 0.8],
+            }}
+            transition={{ 
+              duration: p.duration, 
+              delay: p.delay, 
+              repeat: Infinity, 
+              ease: 'easeInOut' 
+            }}
+          />
+        );
+      })}
     </div>
   );
 };
