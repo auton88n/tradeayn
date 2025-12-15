@@ -166,8 +166,9 @@ export const CenterStageLayout = ({
       const aynEmotion = emotionMap[detectedEmotion] || 'curious';
       
       // Very low threshold (0.15) for maximum sensitivity - reacts to any emotional hint
+      // Enable haptic feedback for tactile engagement during typing
       if (realtimeEmotion.intensity > 0.15) {
-        orchestrateEmotionChange(aynEmotion as AYNEmotion, { skipSound: true });
+        orchestrateEmotionChange(aynEmotion as AYNEmotion, { skipSound: true, skipHaptic: false });
       }
     }
   }, [contextIsTyping, realtimeEmotion.detectedEmotion, realtimeEmotion.intensity, orchestrateEmotionChange]);

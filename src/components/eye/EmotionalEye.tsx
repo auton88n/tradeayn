@@ -414,13 +414,6 @@ const EmotionalEyeComponent = ({
 
   return (
     <div className={cn("relative flex items-center justify-center", className)}>
-      {/* Particle effects based on emotion - always show subtle particles for "aliveness" */}
-      <EyeParticles 
-        emotion={emotion} 
-        isActive={!prefersReducedMotion} 
-        size={eyeSize}
-      />
-      
       {/* Thinking dots when processing */}
       <ThinkingDots 
         isVisible={isResponding && !prefersReducedMotion} 
@@ -579,6 +572,14 @@ const EmotionalEyeComponent = ({
               );
             })()}
           </motion.svg>
+          
+          {/* Particle effects - positioned inside eye container for centering */}
+          <EyeParticles 
+            emotion={emotion} 
+            isActive={!prefersReducedMotion} 
+            size={eyeSize}
+            glowColor={emotionConfig.glowColor}
+          />
         </div>
       </motion.div>
     </div>

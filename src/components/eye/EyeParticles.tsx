@@ -8,6 +8,7 @@ interface EyeParticlesProps {
   emotion: AYNEmotion;
   isActive: boolean;
   size?: number;
+  glowColor?: string;
 }
 
 interface Particle {
@@ -20,10 +21,13 @@ interface Particle {
   angle: number;
 }
 
-const EyeParticlesComponent = ({ emotion, isActive, size = 260 }: EyeParticlesProps) => {
+const EyeParticlesComponent = ({ emotion, isActive, size = 260, glowColor }: EyeParticlesProps) => {
   const config = EMOTION_CONFIGS[emotion];
   const particleType = config.particleType;
   const isMobile = useIsMobile();
+  
+  // Use provided glowColor or fallback to config
+  const activeColor = glowColor || config.glowColor;
 
   // Allow warmth particles for comfort emotion
   const showWarmth = emotion === 'comfort' || emotion === 'supportive';
@@ -44,19 +48,19 @@ const EyeParticlesComponent = ({ emotion, isActive, size = 260 }: EyeParticlesPr
     angle: (i / 5) * 360,
   }));
   return (
-    <div className="absolute inset-0 pointer-events-none overflow-visible">
+    <div className="absolute inset-0 pointer-events-none overflow-visible flex items-center justify-center">
       <AnimatePresence>
         {showWarmth && (
-          <WarmthParticles radius={radius} />
+          <WarmthParticles radius={radius} color={activeColor} />
         )}
         {particleType === 'sparkle' && !showWarmth && (
-          <SparkleParticles particles={particles} color={config.glowColor} />
+          <SparkleParticles particles={particles} color={activeColor} />
         )}
         {particleType === 'orbit' && !showWarmth && (
-          <OrbitParticles color={config.glowColor} radius={radius} />
+          <OrbitParticles color={activeColor} radius={radius} />
         )}
         {particleType === 'energy' && !showWarmth && (
-          <EnergyParticles particles={particles} color={config.glowColor} />
+          <EnergyParticles particles={particles} color={activeColor} />
         )}
       </AnimatePresence>
     </div>
@@ -168,8 +172,8 @@ const EnergyParticles = ({ particles, color }: { particles: Particle[]; color: s
   </>
 );
 
-// Gentle floating warmth particles for comfort emotion - soft amber ember-like effects
-const WarmthParticles = ({ radius }: { radius: number }) => {
+// Gentle floating warmth particles - uses dynamic color matching eye emotion
+const WarmthParticles = ({ radius, color }: { radius: number; color: string }) => {
   // Create 6 gentle floating ember particles
   const embers = Array.from({ length: 6 }, (_, i) => ({
     id: i,
@@ -189,14 +193,14 @@ const WarmthParticles = ({ radius }: { radius: number }) => {
         return (
           <motion.div
             key={ember.id}
-            className="absolute left-1/2 top-1/2 rounded-full"
+            className="absolute rounded-full"
             style={{
               width: ember.size,
               height: ember.size,
-              background: 'radial-gradient(circle, hsl(35, 95%, 70%) 0%, hsl(25, 90%, 55%) 50%, transparent 100%)',
+              background: `radial-gradient(circle, ${color} 0%, ${color}80 50%, transparent 100%)`,
               boxShadow: `
-                0 0 ${ember.size * 2}px hsl(30, 90%, 60%),
-                0 0 ${ember.size * 4}px hsl(35, 85%, 50%, 0.5)
+                0 0 ${ember.size * 2}px ${color},
+                0 0 ${ember.size * 4}px ${color}50
               `,
             }}
             initial={{ 
@@ -223,11 +227,11 @@ const WarmthParticles = ({ radius }: { radius: number }) => {
       
       {/* Soft ambient glow ring */}
       <motion.div
-        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+        className="absolute rounded-full"
         style={{
           width: radius * 1.8,
           height: radius * 1.8,
-          background: 'radial-gradient(circle, hsl(30, 80%, 60%, 0.15) 0%, transparent 70%)',
+          background: `radial-gradient(circle, ${color}25 0%, transparent 70%)`,
         }}
         animate={{
           scale: [1, 1.1, 1],
