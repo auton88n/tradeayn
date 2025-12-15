@@ -50,7 +50,6 @@ const ACTIVITY_MODIFIERS: Record<ActivityLevel, { countMult: number; speedMult: 
 const EyeParticlesComponent = ({ emotion, isActive, size = 260, glowColor, onParticleNearEye, activityLevel = 'medium' }: EyeParticlesProps) => {
   const config = EMOTION_CONFIGS[emotion];
   const particleType = config.particleType;
-  const isMobile = useIsMobile();
   
   const activeColor = glowColor || config.glowColor;
   const baseConfig = EMOTION_PARTICLE_CONFIG[emotion];
@@ -65,17 +64,8 @@ const EyeParticlesComponent = ({ emotion, isActive, size = 260, glowColor, onPar
   
   const showWarmth = emotion === 'comfort' || emotion === 'supportive';
   
-  // Debug log
-  console.log('EyeParticles rendering:', { emotion, particleType, isActive, showWarmth, isMobile, size, activityLevel, count: particleConfig.count });
-  
-  if (particleType === 'none' && !showWarmth) {
-    console.log('EyeParticles: returning null - particleType is none and not warmth');
-    return null;
-  }
-  if (!isActive) {
-    console.log('EyeParticles: returning null - not active');
-    return null;
-  }
+  if (particleType === 'none' && !showWarmth) return null;
+  if (!isActive) return null;
 
   // Outer radius where particles START (1.3x to 1.6x eye size)
   const outerRadius = size * 0.8;
