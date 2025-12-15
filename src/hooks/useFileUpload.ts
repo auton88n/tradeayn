@@ -7,6 +7,7 @@ import type { FileAttachment, UseFileUploadReturn } from '@/types/dashboard.type
 export const useFileUpload = (userId: string): UseFileUploadReturn => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -68,9 +69,12 @@ export const useFileUpload = (userId: string): UseFileUploadReturn => {
   const uploadFile = useCallback(async (file: File): Promise<FileAttachment | null> => {
     try {
       setIsUploading(true);
+      setUploadProgress(5);
 
       // CRITICAL: Refresh session if token is expiring soon
       const { data: sessionData } = await supabase.auth.getSession();
+      setUploadProgress(10);
+      
       if (sessionData?.session) {
         const expiresAt = sessionData.session.expires_at;
         const fiveMinutesFromNow = Math.floor(Date.now() / 1000) + 300;
@@ -79,9 +83,11 @@ export const useFileUpload = (userId: string): UseFileUploadReturn => {
           await supabase.auth.refreshSession();
         }
       }
+      setUploadProgress(15);
 
       // Compress if image
       const processedFile = await compressImage(file);
+      setUploadProgress(30);
 
       // Convert to base64
       const base64 = await new Promise<string>((resolve) => {
@@ -92,6 +98,12 @@ export const useFileUpload = (userId: string): UseFileUploadReturn => {
         };
         reader.readAsDataURL(processedFile);
       });
+      setUploadProgress(50);
+
+      // Simulate progress during upload (since we can't get real progress from edge function)
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => Math.min(prev + 5, 90));
+      }, 200);
 
       // Upload via edge function
       const { data, error } = await supabase.functions.invoke('file-upload', {
@@ -103,7 +115,11 @@ export const useFileUpload = (userId: string): UseFileUploadReturn => {
         }
       });
 
+      clearInterval(progressInterval);
+
       if (error) throw error;
+
+      setUploadProgress(100);
 
       return {
         url: data.fileUrl,
@@ -117,9 +133,12 @@ export const useFileUpload = (userId: string): UseFileUploadReturn => {
         description: "Failed to upload file. Please try again.",
         variant: "destructive"
       });
+      setUploadProgress(0);
       return null;
     } finally {
       setIsUploading(false);
+      // Reset progress after a brief delay to show completion
+      setTimeout(() => setUploadProgress(0), 500);
     }
   }, [userId, toast, compressImage]);
 
@@ -205,6 +224,7 @@ export const useFileUpload = (userId: string): UseFileUploadReturn => {
   return {
     selectedFile,
     isUploading,
+    uploadProgress,
     isDragOver,
     fileInputRef,
     uploadFile,

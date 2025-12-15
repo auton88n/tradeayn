@@ -36,6 +36,7 @@ interface CenterStageLayoutProps {
   selectedMode: AIMode;
   selectedFile: File | null;
   isUploading: boolean;
+  uploadProgress?: number;
   isDragOver: boolean;
   onFileSelect: (file: File | null) => void;
   onRemoveFile: () => void;
@@ -68,6 +69,7 @@ export const CenterStageLayout = ({
   selectedMode,
   selectedFile,
   isUploading,
+  uploadProgress,
   isDragOver,
   onFileSelect,
   onRemoveFile,
@@ -704,6 +706,7 @@ animate={{
           selectedMode={selectedMode}
           selectedFile={selectedFile}
           isUploading={isUploading}
+          uploadProgress={uploadProgress}
           isDragOver={isDragOver}
           onFileSelect={onFileSelect}
           onRemoveFile={onRemoveFile}

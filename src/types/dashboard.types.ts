@@ -182,6 +182,7 @@ export interface UseMessagesReturn {
 export interface UseFileUploadReturn {
   selectedFile: File | null;
   isUploading: boolean;
+  uploadProgress: number;
   isDragOver: boolean;
   fileInputRef: React.RefObject<HTMLInputElement>;
   uploadFile: (file: File) => Promise<FileAttachment | null>;
