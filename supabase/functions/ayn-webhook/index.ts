@@ -886,7 +886,11 @@ serve(async (req) => {
     });
 
     // Validate and determine final emotion - prefer n8n's emotion, fallback to user empathy mapping
-    const validEmotions = ['calm', 'happy', 'excited', 'thinking', 'frustrated', 'curious'];
+    // Include ALL supported emotions to prevent fallback to calm for valid emotions
+    const validEmotions = [
+      'calm', 'happy', 'excited', 'thinking', 'frustrated', 'curious',
+      'comfort', 'supportive', 'sad', 'mad', 'bored'
+    ];
     const suggestedAynEmotion = (n8nEmotion && validEmotions.includes(n8nEmotion)) 
       ? n8nEmotion 
       : getEmpathyResponse(userEmotionAnalysis.emotion).aynEmotion;

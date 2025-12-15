@@ -414,10 +414,10 @@ const EmotionalEyeComponent = ({
 
   return (
     <div className={cn("relative flex items-center justify-center", className)}>
-      {/* Particle effects based on emotion */}
+      {/* Particle effects based on emotion - always show subtle particles for "aliveness" */}
       <EyeParticles 
         emotion={emotion} 
-        isActive={!prefersReducedMotion && (emotion !== 'calm' || isResponding)} 
+        isActive={!prefersReducedMotion} 
         size={eyeSize}
       />
       
@@ -456,14 +456,21 @@ const EmotionalEyeComponent = ({
         onTouchStart={gestureHandlers.onTouchStart}
         onTouchEnd={gestureHandlers.onTouchEnd}
       >
-        {/* Soft outer glow halo - simplified for performance */}
-        <div 
+        {/* Soft outer glow halo - always visible with subtle pulsing for "alive" feel */}
+        <motion.div 
           className="absolute -inset-8 rounded-full pointer-events-none"
+          animate={{
+            opacity: [0.7, 1, 0.7],
+            scale: [1, 1.02, 1],
+          }}
+          transition={{
+            duration: 3,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
           style={{
-            background: emotion === 'calm'
-              ? 'radial-gradient(circle, rgba(229,229,229,0.25) 0%, transparent 80%)'
-              : `radial-gradient(circle, ${emotionConfig.glowColor}30 0%, transparent 80%)`,
-            filter: 'blur(24px)',
+            background: `radial-gradient(circle, ${emotionConfig.glowColor}40 0%, transparent 75%)`,
+            filter: 'blur(20px)',
             transition: 'background 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
           }}
         />
@@ -482,22 +489,20 @@ const EmotionalEyeComponent = ({
           {/* Inner shadow ring - matching landing page dark mode */}
           <div className="absolute inset-2 rounded-full shadow-[inset_0_4px_16px_rgba(0,0,0,0.08)] dark:shadow-[inset_0_4px_16px_rgba(0,0,0,0.3)]" />
 
-          {/* Emotional color ring - changes color based on AYN's state */}
+          {/* Emotional color ring - always visible with emotion color for engagement */}
           <motion.div 
-            className="absolute inset-[15%] rounded-full bg-neutral-200 dark:bg-neutral-800"
+            className="absolute inset-[15%] rounded-full"
             animate={{ 
-              scale: isPulsing ? [1, 1.06, 1] : 1,
+              scale: isPulsing ? [1, 1.06, 1] : [1, 1.01, 1],
             }}
             transition={{ 
-              scale: { duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }
+              scale: isPulsing 
+                ? { duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }
+                : { duration: 2.5, repeat: Infinity, ease: "easeInOut" }
             }}
             style={{
-              backgroundColor: emotion === 'calm' 
-                ? undefined
-                : emotionConfig.glowColor,
-              boxShadow: emotion !== 'calm' 
-                ? `0 0 16px ${emotionConfig.glowColor}80, inset 0 0 8px ${emotionConfig.glowColor}30`
-                : 'none',
+              backgroundColor: emotionConfig.glowColor,
+              boxShadow: `0 0 20px ${emotionConfig.glowColor}70, inset 0 0 10px ${emotionConfig.glowColor}40`,
               transition: 'background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
             }}
           />

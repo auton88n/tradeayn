@@ -9,7 +9,7 @@ import { FlyingSuggestionBubble } from '@/components/eye/FlyingSuggestionBubble'
 import { ParticleBurst } from '@/components/eye/ParticleBurst';
 import { ChatInput } from './ChatInput';
 import { useBubbleAnimation } from '@/hooks/useBubbleAnimation';
-import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
+import { useAYNEmotion, AYNEmotion } from '@/contexts/AYNEmotionContext';
 import { useSoundContextOptional } from '@/contexts/SoundContext';
 import { analyzeResponseEmotion, getBubbleType } from '@/utils/emotionMapping';
 import { supabase } from '@/integrations/supabase/client';
@@ -147,15 +147,30 @@ export const CenterStageLayout = ({
   // Conversation flow awareness for anticipation states
   const conversationFlow = useConversationFlow(messages, contextIsTyping, realtimeInputText);
 
-  // DISABLED: Real-time emotion detection while typing causes color flickering
-  // Emotions should only change on meaningful events (message sent, response received)
-  // Just track activity when user types - no emotion changes
+  // Real-time emotion response when user is typing emotional content
+  // This makes AYN feel engaged and responsive to what the user is typing
   useEffect(() => {
-    if (contextIsTyping) {
-      // Simple activity tracking - no color/emotion changes while typing
-      lastEmotionSoundRef.current = null;
+    if (contextIsTyping && realtimeEmotion.detectedEmotion) {
+      const detectedEmotion = realtimeEmotion.detectedEmotion;
+      // Map detected user emotions to empathetic AYN responses
+      const emotionMap: Record<string, AYNEmotion> = {
+        'frustrated': 'supportive',
+        'excited': 'happy',
+        'curious': 'curious',
+        'happy': 'happy',
+        'confused': 'thinking',
+        'anxious': 'comfort',
+        'sad': 'comfort',
+      };
+      
+      const aynEmotion = emotionMap[detectedEmotion] || 'curious';
+      
+      // Only change emotion if intensity is high enough
+      if (realtimeEmotion.intensity > 0.4) {
+        orchestrateEmotionChange(aynEmotion as AYNEmotion, { skipSound: true });
+      }
     }
-  }, [contextIsTyping]);
+  }, [contextIsTyping, realtimeEmotion.detectedEmotion, realtimeEmotion.intensity, orchestrateEmotionChange]);
 
   // Use conversation flow to adjust anticipation
   useEffect(() => {

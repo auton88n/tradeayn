@@ -17,14 +17,14 @@ export interface EmotionConfig {
 
 export const EMOTION_CONFIGS: Record<AYNEmotion, EmotionConfig> = {
   calm: {
-    color: 'hsl(200, 30%, 70%)', // Soft blue-white for calm warmth
-    glowColor: 'hsl(200, 40%, 80%)',
-    ringClass: 'ring-sky-200/30 dark:ring-sky-400/25',
-    glowClass: 'shadow-[0_0_40px_hsl(200,40%,70%,0.35)] dark:shadow-[0_0_50px_hsl(200,50%,60%,0.4)]',
+    color: 'hsl(210, 55%, 72%)', // More visible soft blue - warmer and engaged
+    glowColor: 'hsl(210, 60%, 82%)',
+    ringClass: 'ring-sky-300/40 dark:ring-sky-400/35',
+    glowClass: 'shadow-[0_0_50px_hsl(210,55%,70%,0.45)] dark:shadow-[0_0_60px_hsl(210,60%,60%,0.5)]',
     irisScale: 1,
     breathingSpeed: 4,
-    particleType: 'none',
-    transitionMs: 600, // Slower for natural settling
+    particleType: 'sparkle', // Add subtle sparkles even when calm to show "aliveness"
+    transitionMs: 600,
   },
   // Warm amber/peach glow for comforting sad users - empathetic warmth
   comfort: {
