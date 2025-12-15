@@ -65,9 +65,17 @@ const EyeParticlesComponent = ({ emotion, isActive, size = 260, glowColor, onPar
   
   const showWarmth = emotion === 'comfort' || emotion === 'supportive';
   
-  if (particleType === 'none' && !showWarmth) return null;
-  if (!isActive) return null;
-  // Particles now show on all devices (removed mobile restriction)
+  // Debug log
+  console.log('EyeParticles rendering:', { emotion, particleType, isActive, showWarmth, isMobile, size, activityLevel, count: particleConfig.count });
+  
+  if (particleType === 'none' && !showWarmth) {
+    console.log('EyeParticles: returning null - particleType is none and not warmth');
+    return null;
+  }
+  if (!isActive) {
+    console.log('EyeParticles: returning null - not active');
+    return null;
+  }
 
   // Outer radius where particles START (1.3x to 1.6x eye size)
   const outerRadius = size * 0.8;
@@ -91,7 +99,7 @@ const EyeParticlesComponent = ({ emotion, isActive, size = 260, glowColor, onPar
     }), [particleConfig.count, particleConfig.speedMult, outerRadius, size]);
 
   return (
-    <div className="absolute inset-0 pointer-events-none overflow-visible flex items-center justify-center">
+    <div className="absolute inset-0 pointer-events-none overflow-visible flex items-center justify-center z-50">
       <AnimatePresence>
         {showWarmth && (
           <WarmthParticles 
