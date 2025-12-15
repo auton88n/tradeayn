@@ -26,17 +26,20 @@ const EyeParticlesComponent = ({
   
   const particles = useMemo(() => {
     return Array.from({ length: particleCount }, (_, i) => {
-      const angle = (i / particleCount) * Math.PI * 2 + Math.random() * 0.5;
-      const radius = size * (0.55 + Math.random() * 0.15); // 1.1x to 1.4x from center
+      // Random fixed position around the eye (not orbiting)
+      const angle = Math.random() * Math.PI * 2;
+      const radius = size * (0.55 + Math.random() * 0.2); // 1.1x to 1.5x from center
+      const x = Math.cos(angle) * radius;
+      const y = Math.sin(angle) * radius;
+      
       return {
         id: i,
-        angle,
-        radius,
+        x, // Fixed x position
+        y, // Fixed y position
         size: 3 + Math.random() * 3, // 3-6px
         delay: Math.random() * 2,
-        duration: 6 + Math.random() * 4, // 6-10s for gentle movement
-        floatOffset: Math.random() * 20 - 10, // Random vertical float range
-        driftAmount: 0.2 + Math.random() * 0.3, // How much it drifts around orbit
+        duration: 3 + Math.random() * 2, // 3-5s for gentle float
+        floatRange: 8 + Math.random() * 12, // How much it floats up/down (8-20px)
       };
     });
   }, [particleCount, size]);
@@ -56,59 +59,45 @@ const EyeParticlesComponent = ({
         zIndex: 5,
       }}
     >
-      {particles.map((p) => {
-        // Calculate positions for gentle orbital drift
-        const x1 = Math.cos(p.angle) * p.radius;
-        const y1 = Math.sin(p.angle) * p.radius;
-        const x2 = Math.cos(p.angle + p.driftAmount) * p.radius;
-        const y2 = Math.sin(p.angle + p.driftAmount) * p.radius;
-        const x3 = Math.cos(p.angle - p.driftAmount * 0.5) * p.radius;
-        const y3 = Math.sin(p.angle - p.driftAmount * 0.5) * p.radius;
-
-        return (
-          <motion.div
-            key={p.id}
-            style={{
-              position: 'absolute',
-              left: '50%',
-              top: '50%',
-              width: p.size,
-              height: p.size,
-              borderRadius: '50%',
-              backgroundColor: glowColor,
-              boxShadow: `0 0 ${p.size * 3}px ${glowColor}, 0 0 ${p.size * 6}px ${glowColor}`,
-            }}
-            initial={{ 
-              x: x1 - p.size / 2, 
-              y: y1 - p.size / 2, 
-              opacity: 0, 
-              scale: 0.5 
-            }}
-            animate={{
-              x: [
-                x1 - p.size / 2, 
-                x2 - p.size / 2, 
-                x3 - p.size / 2, 
-                x1 - p.size / 2
-              ],
-              y: [
-                y1 - p.size / 2 + p.floatOffset, 
-                y2 - p.size / 2 - p.floatOffset, 
-                y3 - p.size / 2 + p.floatOffset * 0.5, 
-                y1 - p.size / 2 + p.floatOffset
-              ],
-              opacity: [0.3, 0.6, 0.4, 0.3],
-              scale: [0.8, 1.1, 0.9, 0.8],
-            }}
-            transition={{ 
-              duration: p.duration, 
-              delay: p.delay, 
-              repeat: Infinity, 
-              ease: 'easeInOut' 
-            }}
-          />
-        );
-      })}
+      {particles.map((p) => (
+        <motion.div
+          key={p.id}
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            width: p.size,
+            height: p.size,
+            borderRadius: '50%',
+            backgroundColor: glowColor,
+            boxShadow: `0 0 ${p.size * 3}px ${glowColor}, 0 0 ${p.size * 6}px ${glowColor}`,
+          }}
+          initial={{ 
+            x: p.x - p.size / 2, 
+            y: p.y - p.size / 2, 
+            opacity: 0, 
+            scale: 0.5 
+          }}
+          animate={{
+            // Stay at fixed x position
+            x: p.x - p.size / 2,
+            // Gentle up/down float at fixed position
+            y: [
+              p.y - p.size / 2, 
+              p.y - p.size / 2 - p.floatRange, 
+              p.y - p.size / 2,
+            ],
+            opacity: [0.3, 0.6, 0.3],
+            scale: [0.8, 1.1, 0.8],
+          }}
+          transition={{ 
+            duration: p.duration, 
+            delay: p.delay, 
+            repeat: Infinity, 
+            ease: 'easeInOut' 
+          }}
+        />
+      ))}
     </div>
   );
 };
