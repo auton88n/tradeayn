@@ -65,6 +65,72 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_notification_config: {
+        Row: {
+          created_at: string
+          id: string
+          is_enabled: boolean
+          notification_type: string
+          recipient_email: string
+          settings: Json | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          notification_type: string
+          recipient_email?: string
+          settings?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          notification_type?: string
+          recipient_email?: string
+          settings?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      admin_notification_log: {
+        Row: {
+          content: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          notification_type: string
+          recipient_email: string
+          status: string
+          subject: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          notification_type: string
+          recipient_email: string
+          status?: string
+          subject: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          notification_type?: string
+          recipient_email?: string
+          status?: string
+          subject?: string
+        }
+        Relationships: []
+      }
       ai_mode_configs: {
         Row: {
           created_at: string
