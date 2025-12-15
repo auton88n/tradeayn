@@ -430,29 +430,39 @@ const EmotionalEyeComponent = ({
     lg: 'w-[160px] h-[160px] md:w-[220px] md:h-[220px] lg:w-[260px] lg:h-[260px]',
   };
 
+  // Activity-based pupil dilation bonus
+  const ACTIVITY_PUPIL_BONUS = {
+    idle: 0,
+    low: 1,
+    medium: 2,
+    high: 4,
+  };
+
   // Calculate iris radius based on AI pupil reaction, behavior state, or current state
   const getIrisRadius = () => {
+    const activityBonus = ACTIVITY_PUPIL_BONUS[activityLevel];
+    
     // AI empathy pupil reactions take highest priority
     switch (pupilReaction) {
       case 'dilate-more':
-        return 36; // Very engaged/emotional
+        return 36 + activityBonus; // Very engaged/emotional
       case 'dilate-slightly':
-        return 32; // Attentive/interested
+        return 32 + activityBonus; // Attentive/interested
       case 'contract':
-        return 20; // Focused/analytical
+        return 20; // Focused/analytical - no bonus
       case 'normal':
       default:
         break; // Fall through to other logic
     }
     
-    // Default state-based calculation
+    // Default state-based calculation with activity bonus
     if (isAbsorbing) return 16;
-    if (isAttentive) return 34;
-    if (isUserTyping) return 32;
-    if (isResponding) return 30;
+    if (isAttentive) return 34 + activityBonus;
+    if (isUserTyping) return 32 + activityBonus;
+    if (isResponding) return 30 + activityBonus;
     if (isBlinking) return 28;
-    if (isHovered) return 30;
-    return 28;
+    if (isHovered) return 30 + activityBonus;
+    return 28 + activityBonus;
   };
 
   const irisRadius = getIrisRadius();
@@ -465,6 +475,29 @@ const EmotionalEyeComponent = ({
     high: 0.6,    // Quick, energetic
   };
   const breathingDuration = emotionConfig.breathingSpeed * ACTIVITY_BREATHING_MULT[activityLevel];
+
+  // Activity-based saturation boost (percentage increase)
+  const ACTIVITY_SATURATION_BOOST = {
+    idle: 0,
+    low: 5,
+    medium: 12,
+    high: 20,
+  };
+  const saturationBoost = ACTIVITY_SATURATION_BOOST[activityLevel];
+
+  // Helper to boost HSL saturation
+  const boostSaturation = (hslColor: string, boostPercent: number): string => {
+    // Parse HSL color like "hsl(210, 60%, 50%)" or "210 60% 50%"
+    const match = hslColor.match(/(\d+)[,\s]+(\d+)%[,\s]+(\d+)%/);
+    if (!match) return hslColor;
+    const [, h, s, l] = match;
+    const newSat = Math.min(100, parseInt(s) + boostPercent);
+    return `hsl(${h}, ${newSat}%, ${l}%)`;
+  };
+
+  // Apply saturation boost to colors
+  const boostedGlowColor = boostSaturation(emotionConfig.glowColor, saturationBoost);
+  const boostedColor = boostSaturation(emotionConfig.color, saturationBoost);
 
   // Calculate eye size for particles
   const eyeSizeMap = { sm: 120, md: 180, lg: 260 };
@@ -520,7 +553,7 @@ const EmotionalEyeComponent = ({
             ease: "easeInOut",
           }}
           style={{
-            background: `radial-gradient(circle, ${emotionConfig.glowColor}40 0%, transparent 75%)`,
+            background: `radial-gradient(circle, ${boostedGlowColor}40 0%, transparent 75%)`,
             filter: 'blur(20px)',
             transition: 'background 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
           }}
@@ -552,8 +585,8 @@ const EmotionalEyeComponent = ({
                 : { duration: 2.5, repeat: Infinity, ease: "easeInOut" }
             }}
             style={{
-              backgroundColor: emotionConfig.glowColor,
-              boxShadow: `0 0 20px ${emotionConfig.glowColor}70, inset 0 0 10px ${emotionConfig.glowColor}40`,
+              backgroundColor: boostedGlowColor,
+              boxShadow: `0 0 20px ${boostedGlowColor}70, inset 0 0 10px ${boostedGlowColor}40`,
               transition: 'background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
             }}
           />
@@ -600,7 +633,7 @@ const EmotionalEyeComponent = ({
             {/* Pure SVG Brain icon - Safari compatible (no foreignObject) */}
             {(() => {
               const brainScale = (irisRadius * 0.7) / 24;
-              const strokeColor = emotion === 'calm' ? '#FFFFFF' : emotionConfig.color;
+              const strokeColor = emotion === 'calm' ? '#FFFFFF' : boostedColor;
               const pathStyle = { transition: 'stroke 0.8s cubic-bezier(0.4, 0, 0.2, 1)' };
               return (
                 <g 
@@ -614,7 +647,7 @@ const EmotionalEyeComponent = ({
                           ? "all 0.08s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
                           : "all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)",
                     opacity: 0.92,
-                    filter: emotion !== 'calm' ? `drop-shadow(0 0 6px ${emotionConfig.color}30)` : 'none'
+                    filter: emotion !== 'calm' ? `drop-shadow(0 0 6px ${boostedColor}30)` : 'none'
                   }}
                 >
                   <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z" stroke={strokeColor} strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" style={pathStyle} />
