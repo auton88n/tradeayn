@@ -59,6 +59,9 @@ interface CenterStageLayoutProps {
   onStartNewChat?: () => void;
   // Backend emotion from AI response
   lastSuggestedEmotion?: string | null;
+  // Upload retry props
+  uploadFailed?: boolean;
+  onRetryUpload?: () => void;
 }
 
 export const CenterStageLayout = ({
@@ -90,6 +93,8 @@ export const CenterStageLayout = ({
   maxMessages,
   onStartNewChat,
   lastSuggestedEmotion,
+  uploadFailed,
+  onRetryUpload,
 }: CenterStageLayoutProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const eyeStageRef = useRef<HTMLDivElement>(null);
@@ -732,6 +737,8 @@ animate={{
           messageCount={messageCount}
           maxMessages={maxMessages}
           onStartNewChat={onStartNewChat}
+          uploadFailed={uploadFailed}
+          onRetryUpload={onRetryUpload}
         />
       </div>
     </div>

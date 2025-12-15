@@ -195,6 +195,9 @@ export interface UseFileUploadReturn {
   // Pre-upload state
   uploadedAttachment: FileAttachment | null;
   clearUploadedAttachment: () => void;
+  // Retry functionality
+  uploadFailed: boolean;
+  retryUpload: () => Promise<void>;
 }
 
 export interface UseChatSessionReturn {
