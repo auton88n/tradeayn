@@ -45,7 +45,6 @@ export const useMessages = (
   selectedMode: AIMode,
   userProfile: UserProfile | null,
   allowPersonalization: boolean,
-  detectedLanguage: string,
   session: Session | null
 ): UseMessagesReturn => {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -370,7 +369,6 @@ export const useMessages = (
     messages, 
     userProfile, 
     allowPersonalization, 
-    detectedLanguage, 
     toast,
     session
   ]);
