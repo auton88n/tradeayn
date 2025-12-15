@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, forwardRef, useCallback } from 'rea
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Plus, ChevronDown, ArrowUp, FileText, X, Image, AlertTriangle, MessageSquarePlus, Loader2 } from 'lucide-react';
+import { Plus, ChevronDown, ArrowUp, FileText, X, Image as ImageIcon, AlertTriangle, MessageSquarePlus, Loader2, FileImage, FileCode, FileSpreadsheet, FileArchive, FileAudio, FileVideo, File } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
@@ -79,9 +79,62 @@ const getSendButtonClass = (mode: string) => {
   if (modeName.includes('civil')) return 'bg-teal-600 text-white';
   return 'bg-foreground text-background';
 };
+// Get file extension from filename
+const getFileExtension = (filename: string): string => {
+  return filename.split('.').pop()?.toLowerCase() || '';
+};
+
+// FileTypeIcon component - shows different icons based on file extension
+const FileTypeIcon = ({ filename, className }: { filename: string; className?: string }) => {
+  const ext = getFileExtension(filename);
+  
+  // PDF files
+  if (ext === 'pdf') {
+    return <FileText className={cn(className, "text-red-400")} />;
+  }
+  
+  // Image files
+  if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico', 'heic'].includes(ext)) {
+    return <FileImage className={cn(className, "text-emerald-400")} />;
+  }
+  
+  // Code files
+  if (['js', 'ts', 'jsx', 'tsx', 'html', 'css', 'json', 'xml', 'py', 'java', 'cpp', 'c', 'go', 'rs', 'php', 'rb', 'swift', 'kt'].includes(ext)) {
+    return <FileCode className={cn(className, "text-blue-400")} />;
+  }
+  
+  // Spreadsheet files
+  if (['xls', 'xlsx', 'csv', 'numbers'].includes(ext)) {
+    return <FileSpreadsheet className={cn(className, "text-green-400")} />;
+  }
+  
+  // Archive files
+  if (['zip', 'rar', '7z', 'tar', 'gz', 'bz2'].includes(ext)) {
+    return <FileArchive className={cn(className, "text-amber-400")} />;
+  }
+  
+  // Audio files
+  if (['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'wma'].includes(ext)) {
+    return <FileAudio className={cn(className, "text-purple-400")} />;
+  }
+  
+  // Video files
+  if (['mp4', 'avi', 'mov', 'wmv', 'mkv', 'webm', 'flv'].includes(ext)) {
+    return <FileVideo className={cn(className, "text-pink-400")} />;
+  }
+  
+  // Document files (Word, etc.)
+  if (['doc', 'docx', 'txt', 'rtf', 'odt', 'pages'].includes(ext)) {
+    return <FileText className={cn(className, "text-blue-400")} />;
+  }
+  
+  // Default file icon
+  return <File className={cn(className, "text-neutral-400")} />;
+};
+
 const getFileIcon = (file: File) => {
-  if (file.type.startsWith('image/')) return <Image className="w-4 h-4" />;
-  return <FileText className="w-4 h-4" />;
+  if (file.type.startsWith('image/')) return <FileImage className="w-4 h-4 text-emerald-400" />;
+  return <FileText className="w-4 h-4 text-neutral-400" />;
 };
 const formatFileSize = (bytes: number) => {
   if (bytes < 1024) return bytes + ' B';
@@ -439,7 +492,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
                   />
                 )}
                 
-                {/* File Icon with glow animation when uploading */}
+                {/* File Icon based on file type */}
                 <div className={cn(
                   "relative shrink-0",
                   isUploading && "animate-pulse"
@@ -447,7 +500,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
                   {isUploading ? (
                     <Loader2 className="w-4 h-4 text-primary animate-spin" />
                   ) : (
-                    <FileText className="w-4 h-4 text-neutral-400" />
+                    <FileTypeIcon filename={selectedFile.name} className="w-4 h-4" />
                   )}
                 </div>
                 
