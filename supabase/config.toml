@@ -9,7 +9,6 @@ verify_jwt = true
 [functions.file-upload]
 verify_jwt = true
 
-
 [functions.ai-email-assistant]
 verify_jwt = true
 
@@ -44,4 +43,7 @@ verify_jwt = true
 verify_jwt = false
 
 [functions.analyze-emotion]
+verify_jwt = true
+
+[functions.set-admin-pin]
 verify_jwt = true
