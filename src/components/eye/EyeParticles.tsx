@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { AYNEmotion, EMOTION_CONFIGS } from '@/contexts/AYNEmotionContext';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -21,6 +21,21 @@ interface Particle {
   angle: number;
 }
 
+// Emotion-based particle configuration: speed multiplier and particle count
+const EMOTION_PARTICLE_CONFIG: Record<AYNEmotion, { speedMult: number; count: number }> = {
+  calm: { speedMult: 1.0, count: 4 },
+  happy: { speedMult: 0.8, count: 6 },
+  excited: { speedMult: 0.5, count: 8 },  // Fast, many particles
+  thinking: { speedMult: 1.2, count: 3 },  // Slow, focused
+  frustrated: { speedMult: 0.6, count: 6 }, // Fast energy
+  curious: { speedMult: 0.9, count: 5 },
+  sad: { speedMult: 2.0, count: 3 },       // Very slow, sparse
+  mad: { speedMult: 0.4, count: 7 },       // Very fast, intense
+  bored: { speedMult: 2.5, count: 2 },     // Extremely slow, minimal
+  comfort: { speedMult: 1.5, count: 5 },   // Gentle, warm
+  supportive: { speedMult: 1.3, count: 5 },
+};
+
 const EyeParticlesComponent = ({ emotion, isActive, size = 260, glowColor }: EyeParticlesProps) => {
   const config = EMOTION_CONFIGS[emotion];
   const particleType = config.particleType;
@@ -28,6 +43,9 @@ const EyeParticlesComponent = ({ emotion, isActive, size = 260, glowColor }: Eye
   
   // Use provided glowColor or fallback to config
   const activeColor = glowColor || config.glowColor;
+  
+  // Get emotion-based particle settings
+  const particleConfig = EMOTION_PARTICLE_CONFIG[emotion];
 
   // Allow warmth particles for comfort emotion
   const showWarmth = emotion === 'comfort' || emotion === 'supportive';
@@ -37,30 +55,33 @@ const EyeParticlesComponent = ({ emotion, isActive, size = 260, glowColor }: Eye
   if (isMobile && !showWarmth) return null;
 
   const radius = size * 0.6;
-  // Reduce particle count from 8 to 5 for performance
-  const particles: Particle[] = Array.from({ length: 5 }, (_, i) => ({
-    id: i,
-    x: Math.cos((i / 5) * Math.PI * 2) * radius,
-    y: Math.sin((i / 5) * Math.PI * 2) * radius,
-    size: 4 + Math.random() * 4,
-    delay: i * 0.15,
-    duration: 2.5 + Math.random() * 1,
-    angle: (i / 5) * 360,
-  }));
+  
+  // Generate particles based on emotion count
+  const particles: Particle[] = useMemo(() => 
+    Array.from({ length: particleConfig.count }, (_, i) => ({
+      id: i,
+      x: Math.cos((i / particleConfig.count) * Math.PI * 2) * radius,
+      y: Math.sin((i / particleConfig.count) * Math.PI * 2) * radius,
+      size: 4 + Math.random() * 4,
+      delay: i * (0.15 * particleConfig.speedMult),
+      duration: (2.5 + Math.random() * 1) * particleConfig.speedMult,
+      angle: (i / particleConfig.count) * 360,
+    })), [particleConfig.count, particleConfig.speedMult, radius]);
+
   return (
     <div className="absolute inset-0 pointer-events-none overflow-visible flex items-center justify-center">
       <AnimatePresence>
         {showWarmth && (
-          <WarmthParticles radius={radius} color={activeColor} />
+          <WarmthParticles radius={radius} color={activeColor} speedMult={particleConfig.speedMult} count={particleConfig.count} />
         )}
         {particleType === 'sparkle' && !showWarmth && (
-          <SparkleParticles particles={particles} color={activeColor} />
+          <SparkleParticles particles={particles} color={activeColor} speedMult={particleConfig.speedMult} />
         )}
         {particleType === 'orbit' && !showWarmth && (
-          <OrbitParticles color={activeColor} radius={radius} />
+          <OrbitParticles color={activeColor} radius={radius} speedMult={particleConfig.speedMult} />
         )}
         {particleType === 'energy' && !showWarmth && (
-          <EnergyParticles particles={particles} color={activeColor} />
+          <EnergyParticles particles={particles} color={activeColor} speedMult={particleConfig.speedMult} />
         )}
       </AnimatePresence>
     </div>
@@ -69,7 +90,7 @@ const EyeParticlesComponent = ({ emotion, isActive, size = 260, glowColor }: Eye
 
 export const EyeParticles = memo(EyeParticlesComponent);
 
-const SparkleParticles = ({ particles, color }: { particles: Particle[]; color: string }) => (
+const SparkleParticles = ({ particles, color, speedMult }: { particles: Particle[]; color: string; speedMult: number }) => (
   <>
     {particles.map((p) => (
       <motion.div
@@ -99,14 +120,15 @@ const SparkleParticles = ({ particles, color }: { particles: Particle[]; color: 
   </>
 );
 
-const OrbitParticles = ({ color, radius }: { color: string; radius: number }) => {
+const OrbitParticles = ({ color, radius, speedMult }: { color: string; radius: number; speedMult: number }) => {
   const dots = [0, 1, 2];
+  const orbitDuration = 3 * speedMult; // Slower/faster based on emotion
   
   return (
     <motion.div
       className="absolute inset-0"
       animate={{ rotate: 360 }}
-      transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
+      transition={{ duration: orbitDuration, repeat: Infinity, ease: 'linear' }}
     >
       {dots.map((i) => (
         <motion.div
@@ -124,8 +146,8 @@ const OrbitParticles = ({ color, radius }: { color: string; radius: number }) =>
             opacity: [0.6, 1, 0.6],
           }}
           transition={{
-            duration: 1.5,
-            delay: i * 0.5,
+            duration: 1.5 * speedMult,
+            delay: i * 0.5 * speedMult,
             repeat: Infinity,
             ease: 'easeInOut',
           }}
@@ -135,7 +157,7 @@ const OrbitParticles = ({ color, radius }: { color: string; radius: number }) =>
   );
 };
 
-const EnergyParticles = ({ particles, color }: { particles: Particle[]; color: string }) => (
+const EnergyParticles = ({ particles, color, speedMult }: { particles: Particle[]; color: string; speedMult: number }) => (
   <>
     {particles.map((p) => (
       <motion.div
@@ -161,10 +183,10 @@ const EnergyParticles = ({ particles, color }: { particles: Particle[]; color: s
           y: [-6, -60 - Math.random() * 20, -80],
         }}
         transition={{
-          duration: 0.8 + Math.random() * 0.4,
+          duration: (0.8 + Math.random() * 0.4) * speedMult,
           delay: p.delay,
           repeat: Infinity,
-          repeatDelay: 0.5,
+          repeatDelay: 0.5 * speedMult,
           ease: 'easeOut',
         }}
       />
@@ -173,16 +195,17 @@ const EnergyParticles = ({ particles, color }: { particles: Particle[]; color: s
 );
 
 // Gentle floating warmth particles - uses dynamic color matching eye emotion
-const WarmthParticles = ({ radius, color }: { radius: number; color: string }) => {
-  // Create 6 gentle floating ember particles
-  const embers = Array.from({ length: 6 }, (_, i) => ({
-    id: i,
-    startAngle: (i / 6) * Math.PI * 2,
-    size: 5 + Math.random() * 4,
-    delay: i * 0.4,
-    duration: 4 + Math.random() * 2,
-    floatDistance: 20 + Math.random() * 30,
-  }));
+const WarmthParticles = ({ radius, color, speedMult, count }: { radius: number; color: string; speedMult: number; count: number }) => {
+  // Create gentle floating ember particles based on count
+  const embers = useMemo(() => 
+    Array.from({ length: count }, (_, i) => ({
+      id: i,
+      startAngle: (i / count) * Math.PI * 2,
+      size: 5 + Math.random() * 4,
+      delay: i * 0.4 * speedMult,
+      duration: (4 + Math.random() * 2) * speedMult,
+      floatDistance: 20 + Math.random() * 30,
+    })), [count, speedMult]);
 
   return (
     <>
@@ -238,7 +261,7 @@ const WarmthParticles = ({ radius, color }: { radius: number; color: string }) =
           opacity: [0.4, 0.6, 0.4],
         }}
         transition={{
-          duration: 3,
+          duration: 3 * speedMult,
           repeat: Infinity,
           ease: 'easeInOut',
         }}
