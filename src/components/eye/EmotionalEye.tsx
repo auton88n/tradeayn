@@ -504,7 +504,7 @@ const EmotionalEyeComponent = ({
   const eyeSize = eyeSizeMap[size];
 
   return (
-    <div className={cn("relative flex items-center justify-center", className)}>
+    <div className={cn("relative flex items-center justify-center overflow-visible", className)}>
       {/* Thinking dots when processing */}
       <ThinkingDots 
         isVisible={isResponding && !prefersReducedMotion} 
@@ -519,7 +519,7 @@ const EmotionalEyeComponent = ({
           rotate: smoothTilt,
           willChange: 'transform'
         }}
-        className="relative z-10 flex items-center justify-center group cursor-pointer"
+        className="relative z-10 flex items-center justify-center group cursor-pointer overflow-visible"
         initial={{ opacity: 0, y: 8 }}
         animate={{ 
           scale: isSurprised ? 1.1 : isSquished ? 0.92 : 1, 
@@ -667,9 +667,9 @@ const EmotionalEyeComponent = ({
           {/* Particle effects - positioned outside eye, centered */}
           <EyeParticles 
             emotion={emotion} 
-            isActive={!prefersReducedMotion} 
+            isActive={true}
             size={eyeSize}
-            glowColor={emotionConfig.glowColor}
+            glowColor={boostedGlowColor}
             onParticleNearEye={handleParticleNearEye}
             activityLevel={activityLevel}
           />
