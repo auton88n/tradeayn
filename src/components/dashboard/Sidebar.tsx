@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { Plus, LogOut, Trash2, Camera, Settings, X, MessageSquare, Search, Star, Shield, Brain, ChevronDown, GraduationCap, Loader2, Volume2, VolumeX, Headphones, Sparkles, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
@@ -17,6 +18,7 @@ import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import type { SidebarProps } from '@/types/dashboard.types';
 import { useSoundContextOptional } from '@/contexts/SoundContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -69,6 +71,7 @@ export const Sidebar = ({
   } = useSidebar();
   const navigate = useNavigate();
   const soundContext = useSoundContextOptional();
+  const isMobile = useIsMobile();
   const [showAvatarUpload, setShowAvatarUpload] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -80,6 +83,165 @@ export const Sidebar = ({
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isDeletingAll, setIsDeletingAll] = useState(false);
   const [showSupportWidget, setShowSupportWidget] = useState(false);
+
+  // Profile trigger button component
+  const ProfileTriggerButton = React.forwardRef<HTMLButtonElement, React.ComponentPropsWithoutRef<'button'>>((props, ref) => (
+    <button
+      ref={ref}
+      data-tutorial="profile"
+      className={cn(
+        "flex items-center gap-3 p-3 w-full",
+        "cursor-pointer rounded-xl",
+        "bg-muted/40 backdrop-blur-sm",
+        "border border-border/50",
+        "shadow-sm hover:shadow-md",
+        "hover:bg-muted/60 hover:border-border/70",
+        "hover:-translate-y-0.5",
+        "transition-all duration-200 ease-out",
+        "active:scale-[0.98]",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+      )}
+      {...props}
+    >
+      <div className="relative flex-shrink-0">
+        <Avatar className="w-10 h-10 ring-2 ring-background shadow-sm">
+          <AvatarImage src={userAvatar} alt={userName || 'User'} />
+          <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
+            {userName?.charAt(0) || userEmail?.charAt(0) || 'U'}
+          </AvatarFallback>
+        </Avatar>
+      </div>
+      <div className="flex-1 min-w-0 text-left">
+        <p className="text-sm font-semibold truncate text-foreground">
+          {userName || 'User'}
+        </p>
+        <p className="text-xs text-muted-foreground truncate">
+          {userEmail}
+        </p>
+      </div>
+      <div className="flex items-center justify-center w-6 h-6 rounded-full bg-background/80 shadow-sm">
+        <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+      </div>
+    </button>
+  ));
+  ProfileTriggerButton.displayName = 'ProfileTriggerButton';
+
+  // Profile menu content component
+  const ProfileMenuContent = () => (
+    <>
+      {/* User Info Header */}
+      <div className="px-4 py-3 bg-muted/30">
+        <p className="text-sm font-semibold text-foreground truncate">{userName || 'User'}</p>
+        <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
+      </div>
+      
+      {/* Gradient Divider */}
+      <div className="h-px bg-gradient-to-r from-transparent via-border/60 to-transparent" />
+      
+      {/* Premium Credits Card */}
+      {hasAccess && (
+        <div className="p-3">
+          <UsageCard 
+            currentUsage={currentMonthUsage}
+            monthlyLimit={monthlyLimit}
+            resetDate={usageResetDate}
+            compact={false}
+          />
+        </div>
+      )}
+      
+      {/* Menu Items */}
+      <div className="p-2 space-y-0.5">
+        <Button onClick={() => setShowAvatarUpload(true)} variant="ghost" className="w-full justify-start h-11 px-3 gap-3 rounded-xl hover:bg-muted/60 transition-all duration-200 group">
+          <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center group-hover:bg-muted group-hover:scale-105 transition-all duration-200">
+            <Camera className="w-4 h-4 text-muted-foreground" />
+          </div>
+          <div className="flex flex-col items-start">
+            <span className="text-sm font-medium">Change Photo</span>
+            <span className="text-[10px] text-muted-foreground/70">Update your avatar</span>
+          </div>
+        </Button>
+        
+        <Button onClick={() => navigate('/settings')} variant="ghost" className="w-full justify-start h-11 px-3 gap-3 rounded-xl hover:bg-muted/60 transition-all duration-200 group">
+          <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center group-hover:bg-muted group-hover:scale-105 transition-all duration-200">
+            <Settings className="w-4 h-4 text-muted-foreground" />
+          </div>
+          <div className="flex flex-col items-start">
+            <span className="text-sm font-medium">Settings</span>
+            <span className="text-[10px] text-muted-foreground/70">Preferences & account</span>
+          </div>
+        </Button>
+        
+        <Button onClick={() => {
+          setProfilePopoverOpen(false);
+          onStartTutorial?.();
+        }} variant="ghost" className="w-full justify-start h-11 px-3 gap-3 rounded-xl hover:bg-muted/60 transition-all duration-200 group">
+          <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center group-hover:bg-muted group-hover:scale-105 transition-all duration-200">
+            <GraduationCap className="w-4 h-4 text-muted-foreground" />
+          </div>
+          <div className="flex flex-col items-start">
+            <span className="text-sm font-medium">Tutorial</span>
+            <span className="text-[10px] text-muted-foreground/70">Learn how to use AYN</span>
+          </div>
+        </Button>
+        
+        <Button onClick={() => {
+          setProfilePopoverOpen(false);
+          setShowSupportWidget(true);
+        }} variant="ghost" className="w-full justify-start h-11 px-3 gap-3 rounded-xl hover:bg-muted/60 transition-all duration-200 group">
+          <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center group-hover:bg-muted group-hover:scale-105 transition-all duration-200">
+            <Headphones className="w-4 h-4 text-muted-foreground" />
+          </div>
+          <div className="flex flex-col items-start">
+            <span className="text-sm font-medium">Support</span>
+            <span className="text-[10px] text-muted-foreground/70">Get help from AYN</span>
+          </div>
+        </Button>
+        
+        {hasDutyAccess && (
+          <Button onClick={onAdminPanelClick} variant="ghost" className="w-full justify-start h-11 px-3 gap-3 rounded-xl hover:bg-muted/60 transition-all duration-200 group">
+            <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center group-hover:bg-muted group-hover:scale-105 transition-all duration-200">
+              <Shield className="w-4 h-4 text-muted-foreground" />
+            </div>
+            <div className="flex flex-col items-start">
+              <span className="text-sm font-medium">{isAdmin ? 'Admin Panel' : 'Duty Panel'}</span>
+              <span className="text-[10px] text-muted-foreground/70">{isAdmin ? 'Manage system' : 'Manage support'}</span>
+            </div>
+          </Button>
+        )}
+      </div>
+      
+      {/* Gradient Divider */}
+      <div className="h-px bg-gradient-to-r from-transparent via-border/60 to-transparent" />
+      
+      {/* Sign Out */}
+      <div className="p-2">
+        <Button
+          onClick={async () => {
+            setIsSigningOut(true);
+            setProfilePopoverOpen(false);
+            try {
+              await onLogout();
+            } catch (error) {
+              localStorage.clear();
+              sessionStorage.clear();
+              window.location.href = '/';
+            }
+          }}
+          disabled={isSigningOut}
+          variant="ghost"
+          className="w-full justify-start h-11 px-3 gap-3 rounded-xl text-destructive/80 hover:text-destructive hover:bg-destructive/8 transition-all duration-200 group"
+        >
+          <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center group-hover:bg-destructive/15 transition-all duration-200">
+            {isSigningOut ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
+          </div>
+          <span className="text-sm font-medium">
+            {isSigningOut ? 'Signing out...' : 'Sign Out'}
+          </span>
+        </Button>
+      </div>
+    </>
+  );
 
   // Control profile popover during tutorial
   useEffect(() => {
@@ -325,141 +487,43 @@ return <SidebarMenuItem key={chat.sessionId} className={cn("relative", index > 0
 
       <SidebarFooter className="p-3 space-y-3">
         
-        {/* User Profile - Premium Glassmorphism Card */}
-        {/* User Profile - Premium Glassmorphism Card */}
-        <Popover open={profilePopoverOpen} onOpenChange={setProfilePopoverOpen}>
-          <PopoverTrigger asChild>
-            <button data-tutorial="profile" className={cn("flex items-center gap-3 p-3 w-full", "cursor-pointer rounded-xl", "bg-muted/40 backdrop-blur-sm", "border border-border/50", "shadow-sm hover:shadow-md", "hover:bg-muted/60 hover:border-border/70", "hover:-translate-y-0.5", "transition-all duration-200 ease-out", "active:scale-[0.98]", "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20")}>
-              <div className="relative flex-shrink-0">
-                <Avatar className="w-10 h-10 ring-2 ring-background shadow-sm">
-                  <AvatarImage src={userAvatar} alt={userName || 'User'} />
-                  <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
-                    {userName?.charAt(0) || userEmail?.charAt(0) || 'U'}
-                  </AvatarFallback>
-                </Avatar>
-                
-              </div>
-              <div className="flex-1 min-w-0 text-left">
-                <p className="text-sm font-semibold truncate text-foreground">
-                  {userName || 'User'}
-                </p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {userEmail}
-                </p>
-              </div>
-              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-background/80 shadow-sm">
-                <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
-              </div>
-            </button>
-          </PopoverTrigger>
-          <PopoverContent className={cn("w-[19rem] p-0 rounded-2xl overflow-hidden", "bg-background/95 backdrop-blur-xl", "border border-border/60 shadow-2xl", "animate-in slide-in-from-bottom-2 fade-in-0 duration-200")} align="start" side="top" sideOffset={8}>
-            {/* User Info Header */}
-            <div className="px-4 py-3 bg-muted/30">
-              <p className="text-sm font-semibold text-foreground truncate">{userName || 'User'}</p>
-              <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
-            </div>
-            
-            {/* Gradient Divider */}
-            <div className="h-px bg-gradient-to-r from-transparent via-border/60 to-transparent" />
-            
-            {/* Premium Credits Card */}
-            {hasAccess && (
-              <div className="p-3">
-                <UsageCard 
-                  currentUsage={currentMonthUsage}
-                  monthlyLimit={monthlyLimit}
-                  resetDate={usageResetDate}
-                  compact={false}
-                />
-              </div>
-            )}
-            
-            {/* Menu Items */}
-            <div className="p-2 space-y-0.5">
-              <Button onClick={() => setShowAvatarUpload(true)} variant="ghost" className="w-full justify-start h-11 px-3 gap-3 rounded-xl hover:bg-muted/60 transition-all duration-200 group">
-                <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center group-hover:bg-muted group-hover:scale-105 transition-all duration-200">
-                  <Camera className="w-4 h-4 text-muted-foreground" />
-                </div>
-                <div className="flex flex-col items-start">
-                  <span className="text-sm font-medium">Change Photo</span>
-                  <span className="text-[10px] text-muted-foreground/70">Update your avatar</span>
-                </div>
-              </Button>
-              
-              <Button onClick={() => navigate('/settings')} variant="ghost" className="w-full justify-start h-11 px-3 gap-3 rounded-xl hover:bg-muted/60 transition-all duration-200 group">
-                <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center group-hover:bg-muted group-hover:scale-105 transition-all duration-200">
-                  <Settings className="w-4 h-4 text-muted-foreground" />
-                </div>
-                <div className="flex flex-col items-start">
-                  <span className="text-sm font-medium">Settings</span>
-                  <span className="text-[10px] text-muted-foreground/70">Preferences & account</span>
-                </div>
-              </Button>
-              
-              <Button onClick={() => {
-              setProfilePopoverOpen(false);
-              onStartTutorial?.();
-            }} variant="ghost" className="w-full justify-start h-11 px-3 gap-3 rounded-xl hover:bg-muted/60 transition-all duration-200 group">
-                <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center group-hover:bg-muted group-hover:scale-105 transition-all duration-200">
-                  <GraduationCap className="w-4 h-4 text-muted-foreground" />
-                </div>
-                <div className="flex flex-col items-start">
-                  <span className="text-sm font-medium">Tutorial</span>
-                  <span className="text-[10px] text-muted-foreground/70">Learn how to use AYN</span>
-                </div>
-              </Button>
-              
-              <Button onClick={() => {
-                setProfilePopoverOpen(false);
-                setShowSupportWidget(true);
-              }} variant="ghost" className="w-full justify-start h-11 px-3 gap-3 rounded-xl hover:bg-muted/60 transition-all duration-200 group">
-                <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center group-hover:bg-muted group-hover:scale-105 transition-all duration-200">
-                  <Headphones className="w-4 h-4 text-muted-foreground" />
-                </div>
-                <div className="flex flex-col items-start">
-                  <span className="text-sm font-medium">Support</span>
-                  <span className="text-[10px] text-muted-foreground/70">Get help from AYN</span>
-                </div>
-              </Button>
-              
-              {hasDutyAccess && <Button onClick={onAdminPanelClick} variant="ghost" className="w-full justify-start h-11 px-3 gap-3 rounded-xl hover:bg-muted/60 transition-all duration-200 group">
-                  <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center group-hover:bg-muted group-hover:scale-105 transition-all duration-200">
-                    <Shield className="w-4 h-4 text-muted-foreground" />
-                  </div>
-                  <div className="flex flex-col items-start">
-                    <span className="text-sm font-medium">{isAdmin ? 'Admin Panel' : 'Duty Panel'}</span>
-                    <span className="text-[10px] text-muted-foreground/70">{isAdmin ? 'Manage system' : 'Manage support'}</span>
-                  </div>
-                </Button>}
-            </div>
-            
-            {/* Gradient Divider */}
-            <div className="h-px bg-gradient-to-r from-transparent via-border/60 to-transparent" />
-            
-            {/* Sign Out */}
-            <div className="p-2">
-              <Button onClick={async () => {
-              setIsSigningOut(true);
-              setProfilePopoverOpen(false);
-              try {
-                await onLogout();
-              } catch (error) {
-                // Force logout on error
-                localStorage.clear();
-                sessionStorage.clear();
-                window.location.href = '/';
-              }
-            }} disabled={isSigningOut} variant="ghost" className="w-full justify-start h-11 px-3 gap-3 rounded-xl text-destructive/80 hover:text-destructive hover:bg-destructive/8 transition-all duration-200 group">
-                <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center group-hover:bg-destructive/15 transition-all duration-200">
-                  {isSigningOut ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
-                </div>
-                <span className="text-sm font-medium">
-                  {isSigningOut ? 'Signing out...' : 'Sign Out'}
-                </span>
-              </Button>
-            </div>
-          </PopoverContent>
-        </Popover>
+        {/* User Profile - Mobile: Sheet, Desktop: Popover */}
+        {isMobile ? (
+          <Sheet open={profilePopoverOpen} onOpenChange={setProfilePopoverOpen}>
+            <SheetTrigger asChild>
+              <ProfileTriggerButton />
+            </SheetTrigger>
+            <SheetContent 
+              side="bottom" 
+              className={cn(
+                "max-h-[85vh] overflow-y-auto rounded-t-2xl px-0",
+                "bg-background/95 backdrop-blur-xl",
+                "border-t border-border/60"
+              )}
+            >
+              <ProfileMenuContent />
+            </SheetContent>
+          </Sheet>
+        ) : (
+          <Popover open={profilePopoverOpen} onOpenChange={setProfilePopoverOpen}>
+            <PopoverTrigger asChild>
+              <ProfileTriggerButton />
+            </PopoverTrigger>
+            <PopoverContent 
+              className={cn(
+                "w-[19rem] p-0 rounded-2xl overflow-hidden",
+                "bg-background/95 backdrop-blur-xl",
+                "border border-border/60 shadow-2xl",
+                "animate-in slide-in-from-bottom-2 fade-in-0 duration-200"
+              )} 
+              align="start" 
+              side="top" 
+              sideOffset={8}
+            >
+              <ProfileMenuContent />
+            </PopoverContent>
+          </Popover>
+        )}
 
         {/* Avatar Upload Dialog */}
         <ProfileAvatarUpload open={showAvatarUpload} onOpenChange={setShowAvatarUpload} onAvatarUpdated={onAvatarUpdated ?? (() => {})} currentAvatarUrl={userAvatar} userName={userName} userId={userId ?? ''} accessToken={accessToken ?? ''} />
