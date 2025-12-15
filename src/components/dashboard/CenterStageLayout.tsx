@@ -165,8 +165,9 @@ export const CenterStageLayout = ({
       
       const aynEmotion = emotionMap[detectedEmotion] || 'curious';
       
-      // Only change emotion if intensity is high enough
-      if (realtimeEmotion.intensity > 0.4) {
+      // Lowered threshold (0.25) for more sensitive emotion detection during typing
+      // This makes AYN react to lighter emotional cues, feeling more engaged
+      if (realtimeEmotion.intensity > 0.25) {
         orchestrateEmotionChange(aynEmotion as AYNEmotion, { skipSound: true });
       }
     }
