@@ -27,12 +27,14 @@ const EyeParticlesComponent = ({
   const particles = useMemo(() => {
     return Array.from({ length: particleCount }, (_, i) => {
       const angle = Math.random() * Math.PI * 2;
+      const angleVariation = (Math.random() - 0.5) * 0.4; // Slight drift in angle
       return {
         id: i,
         angle,
+        angleVariation,
         size: 4 + Math.random() * 4, // 4-8px
         delay: Math.random() * 3,
-        duration: 8 + Math.random() * 5, // Slower: 8-13s to drift out
+        duration: 8 + Math.random() * 5, // 8-13s to drift out
       };
     });
   }, [particleCount, size]);
@@ -53,13 +55,16 @@ const EyeParticlesComponent = ({
       }}
     >
       {particles.map((p) => {
-        // Start near eye center, drift outward
+        // Start near eye center, drift outward with angle variation
         const startRadius = size * 0.3;
-        const endRadius = size * 0.9;
+        const midRadius = size * 0.6;
+        const endRadius = size * 0.95;
         const startX = Math.cos(p.angle) * startRadius;
         const startY = Math.sin(p.angle) * startRadius;
-        const endX = Math.cos(p.angle) * endRadius;
-        const endY = Math.sin(p.angle) * endRadius;
+        const midX = Math.cos(p.angle + p.angleVariation * 0.5) * midRadius;
+        const midY = Math.sin(p.angle + p.angleVariation * 0.5) * midRadius;
+        const endX = Math.cos(p.angle + p.angleVariation) * endRadius;
+        const endY = Math.sin(p.angle + p.angleVariation) * endRadius;
 
         return (
           <motion.div
@@ -80,12 +85,12 @@ const EyeParticlesComponent = ({
               opacity: 0, 
               scale: 0.3 
             }}
-            animate={{
-              x: [startX - p.size / 2, endX - p.size / 2],
-              y: [startY - p.size / 2, endY - p.size / 2],
-              opacity: [0, 0.5, 0],
-              scale: [0.3, 0.8, 0.2],
-            }}
+          animate={{
+            x: [startX - p.size / 2, midX - p.size / 2, endX - p.size / 2],
+            y: [startY - p.size / 2, midY - p.size / 2, endY - p.size / 2],
+            opacity: [0, 0.6, 0.4, 0.15, 0], // More gradual fade
+            scale: [0.3, 0.9, 0.7, 0.4, 0.1],
+          }}
             transition={{ 
               duration: p.duration, 
               delay: p.delay, 
