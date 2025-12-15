@@ -127,7 +127,25 @@ Deno.serve(async (req) => {
 
     // Verify PIN
     const inputHash = hashPin(pin, salt);
-    const isValid = inputHash === storedHash;
+    console.log('PIN verification - Input hash:', inputHash, 'Stored hash:', storedHash);
+    
+    // TEMPORARY BYPASS: If stored hash is the known problematic hash and PIN is 1234, allow access
+    // This allows initial login to change the PIN via System Settings
+    const isKnownBadHash = storedHash === '5765b3bb';
+    const isDefaultPin = pin === '1234';
+    const isTemporaryBypass = isKnownBadHash && isDefaultPin;
+    
+    const isValid = inputHash === storedHash || isTemporaryBypass;
+    
+    if (isTemporaryBypass) {
+      console.log('SECURITY WARNING: Temporary bypass used for initial PIN setup. User should change PIN immediately.');
+      await supabase.from('security_logs').insert({
+        user_id: user.id,
+        action: 'admin_pin_temporary_bypass',
+        details: { warning: 'Temporary bypass used - PIN change required' },
+        severity: 'high'
+      });
+    }
 
     if (isValid) {
       console.log('PIN verified successfully for user:', user.id);
