@@ -91,7 +91,7 @@ export const CenterStageLayout = ({
   const eyeRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
-  const { setEmotion, setEmotionWithSource, triggerAbsorption, triggerBlink, setIsResponding, detectExcitement, isUserTyping: contextIsTyping, triggerPulse } = useAYNEmotion();
+  const { setEmotion, setEmotionWithSource, triggerAbsorption, triggerBlink, setIsResponding, detectExcitement, isUserTyping: contextIsTyping, triggerPulse, bumpActivity } = useAYNEmotion();
   const soundContext = useSoundContextOptional();
   const playSound = soundContext?.playSound;
   const { orchestrateEmotionChange, resetToCalm } = useEmotionOrchestrator();
@@ -485,6 +485,7 @@ export const CenterStageLayout = ({
         orchestrateEmotionChange(emotion);
         playSound?.('response-received');
         setIsResponding(false);
+        bumpActivity(); // Increase activity on AI response
         
         // Haptic feedback handled by orchestrator
         

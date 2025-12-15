@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { memo, useMemo, useEffect, useCallback } from 'react';
 import { cn } from '@/lib/utils';
-import { AYNEmotion, EMOTION_CONFIGS } from '@/contexts/AYNEmotionContext';
+import { AYNEmotion, EMOTION_CONFIGS, ActivityLevel } from '@/contexts/AYNEmotionContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface EyeParticlesProps {
@@ -10,6 +10,7 @@ interface EyeParticlesProps {
   size?: number;
   glowColor?: string;
   onParticleNearEye?: (angle: number) => void;
+  activityLevel?: ActivityLevel;
 }
 
 interface Particle {
@@ -38,13 +39,29 @@ const EMOTION_PARTICLE_CONFIG: Record<AYNEmotion, { speedMult: number; count: nu
   supportive: { speedMult: 1.3, count: 5 },
 };
 
-const EyeParticlesComponent = ({ emotion, isActive, size = 260, glowColor, onParticleNearEye }: EyeParticlesProps) => {
+// Activity level modifiers for dynamic particle behavior
+const ACTIVITY_MODIFIERS: Record<ActivityLevel, { countMult: number; speedMult: number }> = {
+  idle: { countMult: 0.5, speedMult: 1.5 },    // Fewer, slower particles
+  low: { countMult: 0.75, speedMult: 1.2 },    // Slightly reduced
+  medium: { countMult: 1.0, speedMult: 1.0 },  // Normal
+  high: { countMult: 1.5, speedMult: 0.6 },    // More, faster particles
+};
+
+const EyeParticlesComponent = ({ emotion, isActive, size = 260, glowColor, onParticleNearEye, activityLevel = 'medium' }: EyeParticlesProps) => {
   const config = EMOTION_CONFIGS[emotion];
   const particleType = config.particleType;
   const isMobile = useIsMobile();
   
   const activeColor = glowColor || config.glowColor;
-  const particleConfig = EMOTION_PARTICLE_CONFIG[emotion];
+  const baseConfig = EMOTION_PARTICLE_CONFIG[emotion];
+  const activityMod = ACTIVITY_MODIFIERS[activityLevel];
+  
+  // Apply activity modifiers to particle config
+  const particleConfig = useMemo(() => ({
+    count: Math.max(2, Math.round(baseConfig.count * activityMod.countMult)),
+    speedMult: baseConfig.speedMult * activityMod.speedMult,
+  }), [baseConfig.count, baseConfig.speedMult, activityMod.countMult, activityMod.speedMult]);
+  
   const showWarmth = emotion === 'comfort' || emotion === 'supportive';
   
   if (particleType === 'none' && !showWarmth) return null;

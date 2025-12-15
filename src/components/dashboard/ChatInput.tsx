@@ -125,7 +125,8 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
     setIsUserTyping,
     setIsAttentive,
     updateActivity,
-    triggerAttentionBlink
+    triggerAttentionBlink,
+    bumpActivity,
   } = useAYNEmotion();
   const soundContext = useSoundContextOptional();
   const playSound = soundContext?.playSound;
@@ -246,6 +247,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
     if (!inputMessage.trim() && !selectedFile) return;
     if (isDisabled || isUploading) return;
     playSound?.('message-send');
+    bumpActivity(); // Increase activity level on message send
     onSend(inputMessage.trim(), selectedFile);
     setInputMessage('');
     setShowPlaceholder(true);
@@ -257,7 +259,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
     setTimeout(() => {
       triggerAttentionBlink();
     }, 100);
-  }, [inputMessage, selectedFile, isDisabled, isUploading, onSend, triggerAttentionBlink, playSound]);
+  }, [inputMessage, selectedFile, isDisabled, isUploading, onSend, triggerAttentionBlink, playSound, bumpActivity]);
   const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
