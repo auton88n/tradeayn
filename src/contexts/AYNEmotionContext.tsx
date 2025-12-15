@@ -34,7 +34,7 @@ export const EMOTION_CONFIGS: Record<AYNEmotion, EmotionConfig> = {
     glowClass: 'shadow-[0_0_50px_hsl(30,80%,60%,0.45)] dark:shadow-[0_0_60px_hsl(35,85%,55%,0.5)]',
     irisScale: 1.02,
     breathingSpeed: 5, // Slower, more soothing
-    particleType: 'none',
+    particleType: 'sparkle', // Warm sparkles for comfort
     transitionMs: 700, // Gentle warm transition
   },
   // Soft rose/pink for supportive encouragement
@@ -85,7 +85,7 @@ export const EMOTION_CONFIGS: Record<AYNEmotion, EmotionConfig> = {
     glowClass: 'shadow-[0_0_25px_hsl(0,72%,51%,0.25)]',
     irisScale: 0.9,
     breathingSpeed: 1.5,
-    particleType: 'none',
+    particleType: 'energy', // Tense energy particles
     transitionMs: 500,
   },
   curious: {
@@ -105,7 +105,7 @@ export const EMOTION_CONFIGS: Record<AYNEmotion, EmotionConfig> = {
     glowClass: 'shadow-[0_0_20px_hsl(210,20%,50%,0.2)]',
     irisScale: 0.9,
     breathingSpeed: 5,
-    particleType: 'none',
+    particleType: 'orbit', // Slow melancholic orbit
     transitionMs: 800, // Slow, melancholic transition
   },
   mad: {
@@ -125,7 +125,7 @@ export const EMOTION_CONFIGS: Record<AYNEmotion, EmotionConfig> = {
     glowClass: 'shadow-[0_0_15px_hsl(0,0%,60%,0.15)]',
     irisScale: 0.95,
     breathingSpeed: 6,
-    particleType: 'none',
+    particleType: 'orbit', // Lazy slow orbit
     transitionMs: 700, // Slow, lazy transition
   },
 };
