@@ -118,7 +118,7 @@ const EyeParticlesComponent = ({ emotion, isActive, size = 260, glowColor, onPar
 
 export const EyeParticles = memo(EyeParticlesComponent);
 
-// Sparkle particles: start from outside, spiral inward toward eye
+// Sparkle particles: float around the eye perimeter like fireflies
 const SparkleParticles = ({ 
   particles, 
   color, 
@@ -134,10 +134,17 @@ const SparkleParticles = ({
 }) => (
   <>
     {particles.map((p) => {
-      // Calculate end position near eye edge
       const angleRad = (p.angle * Math.PI) / 180;
-      const endX = Math.cos(angleRad) * innerRadius * 0.5;
-      const endY = Math.sin(angleRad) * innerRadius * 0.5;
+      // Stay at outer radius, gentle orbital drift
+      const orbitRadius = p.startRadius;
+      const driftAngle = 0.3; // How far to drift along orbit
+      
+      const pos1X = Math.cos(angleRad) * orbitRadius;
+      const pos1Y = Math.sin(angleRad) * orbitRadius;
+      const pos2X = Math.cos(angleRad + driftAngle) * (orbitRadius * 0.95);
+      const pos2Y = Math.sin(angleRad + driftAngle) * (orbitRadius * 0.95) - 12;
+      const pos3X = Math.cos(angleRad + driftAngle * 2) * orbitRadius;
+      const pos3Y = Math.sin(angleRad + driftAngle * 2) * orbitRadius + 8;
       
       return (
         <motion.div
@@ -149,26 +156,19 @@ const SparkleParticles = ({
             backgroundColor: color,
             boxShadow: `0 0 ${p.size * 2}px ${color}, 0 0 ${p.size * 4}px ${color}50`,
           }}
-          initial={{ x: p.x, y: p.y, opacity: 0, scale: 0.5 }}
+          initial={{ x: pos1X, y: pos1Y, opacity: 0, scale: 0.5 }}
           animate={{
-            // Spiral inward from outside to near eye center
-            x: [p.x, p.x * 0.6, endX],
-            y: [p.y, p.y * 0.6, endY],
-            opacity: [0, 1, 0.8, 0],
-            scale: [0.5, 1.2, 1, 0.3],
-            rotate: [0, 45, 90],
+            // Float around perimeter with gentle up/down drift
+            x: [pos1X, pos2X, pos3X, pos1X],
+            y: [pos1Y, pos2Y, pos3Y, pos1Y],
+            opacity: [0, 0.9, 0.8, 0.9, 0],
+            scale: [0.5, 1, 1.2, 1, 0.5],
           }}
           transition={{
-            duration: p.duration,
+            duration: p.duration * 1.5,
             delay: p.delay,
             repeat: Infinity,
             ease: 'easeInOut',
-          }}
-          onUpdate={(latest) => {
-            // Notify when particle reaches near eye
-            if (onParticleNearEye && latest.opacity && (latest.opacity as number) > 0.7) {
-              onParticleNearEye(p.angle);
-            }
           }}
         />
       );
@@ -226,7 +226,7 @@ const OrbitParticles = ({
         );
       })}
       
-      {/* Trailing glow effect */}
+      {/* Trailing glow ring */}
       <motion.div
         className="absolute rounded-full"
         style={{
@@ -249,7 +249,7 @@ const OrbitParticles = ({
   );
 };
 
-// Energy particles: burst outward from outside, then pulse
+// Energy particles: pulse around perimeter as ambient aura
 const EnergyParticles = ({ 
   particles, 
   color, 
@@ -266,11 +266,14 @@ const EnergyParticles = ({
   <>
     {particles.map((p) => {
       const angleRad = (p.angle * Math.PI) / 180;
-      // Start from outside, radiate further outward
-      const startX = Math.cos(angleRad) * p.startRadius;
-      const startY = Math.sin(angleRad) * p.startRadius;
-      const endX = Math.cos(angleRad) * (p.startRadius * 1.5);
-      const endY = Math.sin(angleRad) * (p.startRadius * 1.5);
+      const orbitRadius = p.startRadius;
+      // Slight orbital drift with pulsing
+      const driftAngle = 0.2;
+      
+      const posX = Math.cos(angleRad) * orbitRadius;
+      const posY = Math.sin(angleRad) * orbitRadius;
+      const driftX = Math.cos(angleRad + driftAngle) * (orbitRadius * 1.05);
+      const driftY = Math.sin(angleRad + driftAngle) * (orbitRadius * 1.05);
       
       return (
         <motion.div
@@ -278,31 +281,31 @@ const EnergyParticles = ({
           className="absolute left-1/2 top-1/2"
           style={{
             width: 3,
-            height: 16 + Math.random() * 8,
+            height: 14,
             backgroundColor: color,
             boxShadow: `0 0 8px ${color}, 0 0 16px ${color}60`,
             transformOrigin: 'center center',
             borderRadius: 2,
           }}
           initial={{ 
-            x: startX - 1.5, 
-            y: startY - 8, 
+            x: posX - 1.5, 
+            y: posY - 7, 
             opacity: 0, 
             scale: 0.5,
             rotate: p.angle + 90
           }}
           animate={{
-            x: [startX - 1.5, endX - 1.5],
-            y: [startY - 8, endY - 8],
-            opacity: [0, 1, 0.8, 0],
-            scale: [0.5, 1.2, 1, 0.5],
+            // Pulse in place with slight orbital drift
+            x: [posX - 1.5, driftX - 1.5, posX - 1.5],
+            y: [posY - 7, driftY - 7, posY - 7],
+            opacity: [0.3, 1, 0.3],
+            scale: [0.7, 1.3, 0.7],
           }}
           transition={{
-            duration: (1 + Math.random() * 0.5) * speedMult,
+            duration: (2 + Math.random() * 0.5) * speedMult,
             delay: p.delay,
             repeat: Infinity,
-            repeatDelay: 0.3 * speedMult,
-            ease: 'easeOut',
+            ease: 'easeInOut',
           }}
         />
       );
@@ -310,7 +313,7 @@ const EnergyParticles = ({
   </>
 );
 
-// Warmth particles: float around the perimeter, gently drifting
+// Warmth particles: float around the outer perimeter, never moving inward
 const WarmthParticles = ({ 
   radius, 
   innerRadius,
@@ -333,21 +336,20 @@ const WarmthParticles = ({
       size: 6 + Math.random() * 5,
       delay: i * 0.4 * speedMult,
       duration: (5 + Math.random() * 2) * speedMult,
-      floatDistance: 25 + Math.random() * 35,
-      driftAngle: (Math.random() - 0.5) * 0.5, // Slight angular drift
+      floatOffset: 10 + Math.random() * 20,
+      orbitDrift: 0.4 + Math.random() * 0.3, // How far to drift along orbit
     })), [count, speedMult]);
 
   return (
     <>
       {embers.map((ember) => {
-        // Start from OUTSIDE the eye
-        const startX = Math.cos(ember.startAngle) * radius;
-        const startY = Math.sin(ember.startAngle) * radius;
-        // Float toward eye then drift away
-        const midX = Math.cos(ember.startAngle + ember.driftAngle) * (radius * 0.7);
-        const midY = Math.sin(ember.startAngle + ember.driftAngle) * (radius * 0.7);
-        const endX = Math.cos(ember.startAngle + ember.driftAngle * 2) * (radius * 0.9);
-        const endY = Math.sin(ember.startAngle + ember.driftAngle * 2) * (radius * 0.9);
+        // All positions stay at outer radius - never move inward
+        const pos1X = Math.cos(ember.startAngle) * radius;
+        const pos1Y = Math.sin(ember.startAngle) * radius;
+        const pos2X = Math.cos(ember.startAngle + ember.orbitDrift) * (radius * 1.05);
+        const pos2Y = Math.sin(ember.startAngle + ember.orbitDrift) * (radius * 1.05) - ember.floatOffset;
+        const pos3X = Math.cos(ember.startAngle + ember.orbitDrift * 2) * radius;
+        const pos3Y = Math.sin(ember.startAngle + ember.orbitDrift * 2) * radius + ember.floatOffset * 0.5;
         
         return (
           <motion.div
@@ -363,16 +365,17 @@ const WarmthParticles = ({
               `,
             }}
             initial={{ 
-              x: startX, 
-              y: startY, 
+              x: pos1X, 
+              y: pos1Y, 
               opacity: 0, 
               scale: 0.4 
             }}
             animate={{
-              x: [startX, midX, endX, startX],
-              y: [startY, midY - ember.floatDistance * 0.3, endY, startY],
-              opacity: [0, 0.9, 0.7, 0],
-              scale: [0.4, 1.1, 0.9, 0.4],
+              // Orbit around perimeter with gentle float
+              x: [pos1X, pos2X, pos3X, pos1X],
+              y: [pos1Y, pos2Y, pos3Y, pos1Y],
+              opacity: [0, 0.9, 0.7, 0.9, 0],
+              scale: [0.4, 1.1, 0.9, 1, 0.4],
             }}
             transition={{
               duration: ember.duration,
