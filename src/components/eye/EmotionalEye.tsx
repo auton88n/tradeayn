@@ -663,17 +663,17 @@ const EmotionalEyeComponent = ({
               );
             })()}
           </motion.svg>
-          
-          {/* Particle effects - positioned outside eye, centered */}
-          <EyeParticles 
-            emotion={emotion} 
-            isActive={true}
-            size={eyeSize}
-            glowColor={boostedGlowColor}
-            onParticleNearEye={handleParticleNearEye}
-            activityLevel={activityLevel}
-          />
         </div>
+        
+        {/* Particle effects - OUTSIDE overflow-hidden container so particles are visible */}
+        <EyeParticles 
+          emotion={emotion} 
+          isActive={true}
+          size={eyeSize}
+          glowColor={boostedGlowColor}
+          onParticleNearEye={handleParticleNearEye}
+          activityLevel={activityLevel}
+        />
       </motion.div>
     </div>
   );
