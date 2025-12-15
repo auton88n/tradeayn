@@ -8,12 +8,12 @@ interface EyeParticlesProps {
   activityLevel?: 'idle' | 'low' | 'medium' | 'high';
 }
 
-// Few small particles only
+// Particle counts per activity level
 const PARTICLE_COUNTS = {
   idle: 0,
-  low: 2,
-  medium: 3,
-  high: 4,
+  low: 4,
+  medium: 6,
+  high: 8,
 };
 
 const EyeParticlesComponent = ({ 
@@ -30,9 +30,9 @@ const EyeParticlesComponent = ({
       return {
         id: i,
         angle,
-        size: 2 + Math.random() * 2, // Small: 2-4px
-        delay: Math.random() * 3,
-        duration: 4 + Math.random() * 3, // 4-7s to drift out
+        size: 4 + Math.random() * 4, // Bigger: 4-8px
+        delay: Math.random() * 2,
+        duration: 4 + Math.random() * 3,
       };
     });
   }, [particleCount, size]);
