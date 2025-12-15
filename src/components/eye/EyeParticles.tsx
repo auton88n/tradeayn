@@ -11,9 +11,9 @@ interface EyeParticlesProps {
 // Particle counts per activity level
 const PARTICLE_COUNTS = {
   idle: 0,
-  low: 4,
-  medium: 6,
-  high: 8,
+  low: 6,
+  medium: 9,
+  high: 12,
 };
 
 const EyeParticlesComponent = ({ 
