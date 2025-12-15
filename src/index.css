@@ -177,6 +177,11 @@ button, a, input, textarea, select {
     --emotion-thinking: 217 91% 60%;
     --emotion-frustrated: 0 72% 51%;
     --emotion-curious: 270 76% 60%;
+    --emotion-sad: 210 15% 55%;
+    --emotion-mad: 0 70% 45%;
+    --emotion-bored: 45 10% 50%;
+    --emotion-comfort: 35 80% 60%;
+    --emotion-supportive: 350 70% 70%;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 0 0% 8%;
