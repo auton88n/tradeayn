@@ -139,6 +139,9 @@ const EXCITING_KEYWORDS = [
   'رائع', 'ممتاز', 'مذهل', 'عظيم', 'مبروك', 'نجاح', 'إنجاز'
 ];
 
+// Activity level for dynamic particle behavior
+export type ActivityLevel = 'idle' | 'low' | 'medium' | 'high';
+
 interface AYNEmotionContextType {
   emotion: AYNEmotion;
   emotionSource: EmotionSource;
@@ -172,6 +175,9 @@ interface AYNEmotionContextType {
   // Empathy responses to user emotions
   triggerEmpathyBlink: () => void;
   triggerEmpathyPulse: () => void;
+  // Dynamic activity level for particles
+  activityLevel: ActivityLevel;
+  bumpActivity: () => void;
 }
 
 const AYNEmotionContext = createContext<AYNEmotionContextType | undefined>(undefined);
@@ -188,10 +194,51 @@ export const AYNEmotionProvider = ({ children }: { children: ReactNode }) => {
   const [isSurprised, setIsSurprised] = useState(false);
   const [isPulsing, setIsPulsing] = useState(false);
   const [isWinking, setIsWinking] = useState(false);
+  const [activityLevel, setActivityLevel] = useState<ActivityLevel>('idle');
+  const activityCountRef = useRef(0);
+  const activityDecayRef = useRef<NodeJS.Timeout | null>(null);
   const blinkTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const surpriseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pulseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const winkTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Bump activity when messages sent/received or typing
+  const bumpActivity = useCallback(() => {
+    activityCountRef.current = Math.min(activityCountRef.current + 1, 10);
+    
+    // Map activity count to level
+    if (activityCountRef.current >= 7) {
+      setActivityLevel('high');
+    } else if (activityCountRef.current >= 4) {
+      setActivityLevel('medium');
+    } else if (activityCountRef.current >= 1) {
+      setActivityLevel('low');
+    }
+    
+    // Clear existing decay timer
+    if (activityDecayRef.current) {
+      clearTimeout(activityDecayRef.current);
+    }
+    
+    // Start decay - activity decreases over time
+    activityDecayRef.current = setTimeout(function decayActivity() {
+      activityCountRef.current = Math.max(0, activityCountRef.current - 1);
+      
+      if (activityCountRef.current >= 7) {
+        setActivityLevel('high');
+      } else if (activityCountRef.current >= 4) {
+        setActivityLevel('medium');
+      } else if (activityCountRef.current >= 1) {
+        setActivityLevel('low');
+      } else {
+        setActivityLevel('idle');
+      }
+      
+      if (activityCountRef.current > 0) {
+        activityDecayRef.current = setTimeout(decayActivity, 3000);
+      }
+    }, 5000);
+  }, []);
 
   const setEmotionWithSource = useCallback((newEmotion: AYNEmotion, source: EmotionSource) => {
     // ONLY set emotion state - haptic is handled EXCLUSIVELY by useEmotionOrchestrator
@@ -332,6 +379,8 @@ export const AYNEmotionProvider = ({ children }: { children: ReactNode }) => {
         triggerWink,
         triggerEmpathyBlink,
         triggerEmpathyPulse,
+        activityLevel,
+        bumpActivity,
       }}
     >
       {children}

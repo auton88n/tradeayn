@@ -48,7 +48,8 @@ const EmotionalEyeComponent = ({
     triggerSurprise,
     isPulsing,
     triggerPulse,
-    isWinking
+    isWinking,
+    activityLevel,
   } = useAYNEmotion();
   const soundContext = useSoundContextOptional();
   const [isHovered, setIsHovered] = useState(false);
@@ -618,6 +619,7 @@ const EmotionalEyeComponent = ({
             size={eyeSize}
             glowColor={emotionConfig.glowColor}
             onParticleNearEye={handleParticleNearEye}
+            activityLevel={activityLevel}
           />
         </div>
       </motion.div>
