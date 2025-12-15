@@ -665,13 +665,12 @@ const EmotionalEyeComponent = ({
           </motion.svg>
         </div>
         
-        {/* Particle effects - OUTSIDE overflow-hidden container so particles are visible */}
+        {/* Particle effects - only show during activity */}
         <EyeParticles 
           emotion={emotion} 
-          isActive={true}
+          isActive={activityLevel !== 'idle'}
           size={eyeSize}
           glowColor={boostedGlowColor}
-          onParticleNearEye={handleParticleNearEye}
           activityLevel={activityLevel}
         />
       </motion.div>

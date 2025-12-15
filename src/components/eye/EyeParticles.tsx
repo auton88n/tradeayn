@@ -7,7 +7,6 @@ interface EyeParticlesProps {
   isActive: boolean;
   size?: number;
   glowColor?: string;
-  onParticleNearEye?: (angle: number) => void;
   activityLevel?: 'idle' | 'low' | 'medium' | 'high';
 }
 
@@ -20,28 +19,25 @@ const EyeParticlesComponent = ({
   const config = EMOTION_CONFIGS[emotion];
   const color = glowColor || config.glowColor;
   
-  // Simple particle count based on emotion
+  // Fewer particles - 3 to 5 based on emotion
   const particleCount = useMemo(() => {
-    if (emotion === 'excited' || emotion === 'happy') return 6;
-    if (emotion === 'comfort' || emotion === 'supportive') return 5;
-    if (emotion === 'calm' || emotion === 'thinking') return 4;
+    if (emotion === 'excited' || emotion === 'happy') return 5;
+    if (emotion === 'comfort' || emotion === 'supportive') return 4;
     return 3;
   }, [emotion]);
 
-  // Generate particles positioned around the eye
+  // Generate particles in tight orbit around eye edge
   const particles = useMemo(() => {
     return Array.from({ length: particleCount }, (_, i) => {
       const angle = (i / particleCount) * Math.PI * 2;
-      const radius = size * 0.7; // Position outside the eye
+      const radius = size * 0.52; // Tight orbit just outside eye
       return {
         id: i,
         angle,
         radius,
-        x: Math.cos(angle) * radius,
-        y: Math.sin(angle) * radius,
-        size: 6 + Math.random() * 4,
-        delay: i * 0.3,
-        duration: 3 + Math.random() * 2,
+        size: 3 + Math.random() * 3, // Small: 3-6px
+        delay: i * 0.5,
+        duration: 4 + Math.random() * 2,
       };
     });
   }, [particleCount, size]);
@@ -55,21 +51,19 @@ const EyeParticlesComponent = ({
         top: '50%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
-        width: size * 2,
-        height: size * 2,
+        width: size * 1.3,
+        height: size * 1.3,
         pointerEvents: 'none',
-        zIndex: 100,
+        zIndex: 5,
       }}
     >
       {particles.map((p) => {
-        // Calculate orbital positions
-        const driftAngle = 0.4;
+        // Simple orbital drift
+        const drift = 0.3;
         const x1 = Math.cos(p.angle) * p.radius;
         const y1 = Math.sin(p.angle) * p.radius;
-        const x2 = Math.cos(p.angle + driftAngle) * (p.radius * 1.1);
-        const y2 = Math.sin(p.angle + driftAngle) * (p.radius * 1.1) - 15;
-        const x3 = Math.cos(p.angle + driftAngle * 2) * p.radius;
-        const y3 = Math.sin(p.angle + driftAngle * 2) * p.radius + 10;
+        const x2 = Math.cos(p.angle + drift) * p.radius;
+        const y2 = Math.sin(p.angle + drift) * p.radius;
         
         return (
           <motion.div
@@ -82,7 +76,7 @@ const EyeParticlesComponent = ({
               height: p.size,
               borderRadius: '50%',
               backgroundColor: color,
-              boxShadow: `0 0 ${p.size * 2}px ${color}, 0 0 ${p.size * 4}px ${color}60`,
+              boxShadow: `0 0 ${p.size}px ${color}`,
             }}
             initial={{ 
               x: x1 - p.size / 2, 
@@ -91,10 +85,10 @@ const EyeParticlesComponent = ({
               scale: 0.5 
             }}
             animate={{
-              x: [x1 - p.size / 2, x2 - p.size / 2, x3 - p.size / 2, x1 - p.size / 2],
-              y: [y1 - p.size / 2, y2 - p.size / 2, y3 - p.size / 2, y1 - p.size / 2],
-              opacity: [0, 0.9, 0.7, 0.9, 0],
-              scale: [0.5, 1.2, 1, 1.1, 0.5],
+              x: [x1 - p.size / 2, x2 - p.size / 2, x1 - p.size / 2],
+              y: [y1 - p.size / 2, y2 - p.size / 2, y1 - p.size / 2],
+              opacity: [0.3, 0.6, 0.3],
+              scale: [0.8, 1, 0.8],
             }}
             transition={{
               duration: p.duration,
