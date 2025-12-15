@@ -288,37 +288,7 @@ export const useMessages = (
 
       setMessages(prev => [...prev, aynMessage]);
 
-      // Save both messages to database via direct REST API
-      await fetch(`${SUPABASE_URL}/rest/v1/messages`, {
-        method: 'POST',
-        headers: {
-          'apikey': SUPABASE_KEY,
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=minimal',
-        },
-        body: JSON.stringify([
-          {
-            user_id: userId,
-            session_id: sessionId,
-            content: content,
-            sender: 'user',
-            mode_used: selectedMode,
-            attachment_url: attachment?.url,
-            attachment_name: attachment?.name,
-            attachment_type: attachment?.type
-          },
-          {
-            user_id: userId,
-            session_id: sessionId,
-            content: response,
-            sender: 'ayn',
-            mode_used: selectedMode
-          }
-        ])
-      });
-
-      // Save chat session title on first message (only if no session record exists)
+      // FIRST: Save chat session title BEFORE messages (prevents race condition)
       try {
         const existingSession = await fetch(
           `${SUPABASE_URL}/rest/v1/chat_sessions?session_id=eq.${sessionId}&user_id=eq.${userId}&select=id`,
@@ -352,6 +322,36 @@ export const useMessages = (
       } catch {
         // Silent fail - title storage is non-critical
       }
+
+      // THEN: Save both messages to database via direct REST API
+      await fetch(`${SUPABASE_URL}/rest/v1/messages`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal',
+        },
+        body: JSON.stringify([
+          {
+            user_id: userId,
+            session_id: sessionId,
+            content: content,
+            sender: 'user',
+            mode_used: selectedMode,
+            attachment_url: attachment?.url,
+            attachment_name: attachment?.name,
+            attachment_type: attachment?.type
+          },
+          {
+            user_id: userId,
+            session_id: sessionId,
+            content: response,
+            sender: 'ayn',
+            mode_used: selectedMode
+          }
+        ])
+      });
 
       // Check usage and show in-app warning if approaching limit
       try {

@@ -115,10 +115,7 @@ export const DashboardContainer = ({ user, session, auth, isAdmin, hasDutyAccess
     // Send message with attachment
     await messagesHook.sendMessage(content, attachment);
     
-    // Small delay to ensure chat_sessions record is committed before refreshing
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    // Refresh chat history
+    // Refresh chat history - title is guaranteed to exist now (saved before messages)
     await chatSession.loadRecentChats();
     
     // Return true to indicate message was sent successfully
