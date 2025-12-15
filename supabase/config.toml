@@ -47,3 +47,6 @@ verify_jwt = true
 
 [functions.set-admin-pin]
 verify_jwt = true
+
+[functions.admin-notifications]
+verify_jwt = false
