@@ -291,22 +291,24 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
       onFileSelect(file);
     }
   }, [onFileSelect]);
-  return <div className={cn("relative w-full transition-all duration-300 px-3 pb-3", isDragOver && "bg-primary/5")} onDragEnter={onDragEnter} onDragLeave={onDragLeave} onDragOver={onDragOver} onDrop={onDrop}>
-      {/* Drag overlay */}
-      <AnimatePresence>
-        {isDragOver && <motion.div initial={{
-        opacity: 0
-      }} animate={{
-        opacity: 1
-      }} exit={{
-        opacity: 0
-      }} className="absolute inset-0 bg-primary/10 border-2 border-dashed border-primary rounded-2xl flex items-center justify-center z-10">
-            <p className="text-primary font-medium">Drop file here</p>
-          </motion.div>}
-      </AnimatePresence>
+  return <div className={cn("relative w-full transition-all duration-300 px-3 pb-3")} onDragEnter={onDragEnter} onDragLeave={onDragLeave} onDragOver={onDragOver} onDrop={onDrop}>
 
       {/* Main container */}
       <div className={cn("relative bg-background/95 backdrop-blur-xl border border-border rounded-2xl shadow-lg overflow-hidden transition-all duration-300", isDragOver && "border-primary shadow-xl", isInputFocused && "border-border/80 shadow-xl")}>
+        
+        {/* Drag overlay - INSIDE the card container for proper sizing */}
+        <AnimatePresence>
+          {isDragOver && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-primary/10 border-2 border-dashed border-primary rounded-2xl flex items-center justify-center z-30 pointer-events-none"
+            >
+              <p className="text-primary font-medium">Drop file here</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
         
         {/* Limit reached overlay */}
         <AnimatePresence>
