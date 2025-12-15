@@ -55,7 +55,6 @@ export const SystemSettings = ({ systemConfig, onUpdateConfig }: SystemSettingsP
   const [hasChanges, setHasChanges] = useState(false);
   
   // PIN change state
-  const [currentPin, setCurrentPin] = useState('');
   const [newPin, setNewPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [isChangingPin, setIsChangingPin] = useState(false);
@@ -94,40 +93,23 @@ export const SystemSettings = ({ systemConfig, onUpdateConfig }: SystemSettingsP
 
     setIsChangingPin(true);
     try {
-      // Verify current PIN first
-      const { data: verifyData, error: verifyError } = await supabase.functions.invoke('verify-admin-pin', {
-        body: { pin: currentPin }
+      // Use the set-admin-pin edge function which handles hashing server-side
+      const { data, error } = await supabase.functions.invoke('set-admin-pin', {
+        body: { newPin }
       });
 
-      if (verifyError || !verifyData?.success) {
-        toast.error('Current PIN is incorrect');
+      if (error) {
+        console.error('Error from edge function:', error);
+        toast.error('Failed to update PIN');
         return;
       }
 
-      // Hash the new PIN (same algorithm as edge function)
-      const salt = 'ayn_admin_salt_2024';
-      let hash = 0;
-      const str = newPin + salt;
-      for (let i = 0; i < str.length; i++) {
-        const char = str.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash;
+      if (!data?.success) {
+        toast.error(data?.error || 'Failed to update PIN');
+        return;
       }
-      const newHash = Math.abs(hash).toString(16);
-
-      // Update PIN in database
-      const { error: updateError } = await supabase
-        .from('system_config')
-        .upsert({ 
-          key: 'admin_pin', 
-          value: { hash: newHash, salt },
-          updated_at: new Date().toISOString()
-        });
-
-      if (updateError) throw updateError;
 
       toast.success('Admin PIN updated successfully');
-      setCurrentPin('');
       setNewPin('');
       setConfirmPin('');
     } catch (error) {
@@ -276,19 +258,7 @@ export const SystemSettings = ({ systemConfig, onUpdateConfig }: SystemSettingsP
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="current-pin">Current PIN</Label>
-                <Input
-                  id="current-pin"
-                  type="password"
-                  value={currentPin}
-                  onChange={(e) => setCurrentPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  placeholder="••••"
-                  maxLength={6}
-                />
-              </div>
-              
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="new-pin">New PIN (4-6 digits)</Label>
                 <Input
@@ -316,7 +286,7 @@ export const SystemSettings = ({ systemConfig, onUpdateConfig }: SystemSettingsP
             
             <Button 
               onClick={handleChangePin} 
-              disabled={isChangingPin || !currentPin || !newPin || !confirmPin}
+              disabled={isChangingPin || !newPin || !confirmPin}
               variant="outline"
             >
               {isChangingPin ? (
@@ -324,11 +294,11 @@ export const SystemSettings = ({ systemConfig, onUpdateConfig }: SystemSettingsP
               ) : (
                 <KeyRound className="w-4 h-4 mr-2" />
               )}
-              Change PIN
+              Set New PIN
             </Button>
             
             <p className="text-xs text-muted-foreground">
-              Default PIN is 1234. Please change it immediately for security.
+              Enter a new 4-6 digit PIN to secure the admin panel.
             </p>
           </CardContent>
         </Card>
