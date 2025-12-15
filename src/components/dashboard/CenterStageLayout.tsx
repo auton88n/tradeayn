@@ -363,7 +363,32 @@ export const CenterStageLayout = ({
       if (userEmotionAnalysis.emotion !== 'neutral' && userEmotionAnalysis.intensity > 0.3) {
         orchestrateEmotionChange(empathyResponse.aynEmotion);
         
-        if (userEmotionAnalysis.intensity > 0.6) {
+        // Immediate local micro-behavior triggers based on user emotion
+        const intensity = userEmotionAnalysis.intensity;
+        
+        // Pupil dilation based on emotional intensity
+        if (intensity > 0.7) {
+          setAiPupilReaction('dilate-more');
+        } else if (intensity > 0.4) {
+          setAiPupilReaction('dilate-slightly');
+        }
+        
+        // Blink pattern based on user emotion type
+        if (userEmotionAnalysis.emotion === 'sad' || userEmotionAnalysis.emotion === 'anxious') {
+          setAiBlinkPattern('slow-comfort');
+        } else if (userEmotionAnalysis.emotion === 'excited' || userEmotionAnalysis.emotion === 'happy') {
+          setAiBlinkPattern('quick-attentive');
+        } else if (userEmotionAnalysis.emotion === 'confused' || userEmotionAnalysis.emotion === 'frustrated') {
+          setAiBlinkPattern('double-understanding');
+        }
+        
+        // Reset after 5 seconds
+        setTimeout(() => {
+          setAiPupilReaction('normal');
+          setAiBlinkPattern('normal');
+        }, 5000);
+        
+        if (intensity > 0.6) {
           triggerPulse();
         }
       }
