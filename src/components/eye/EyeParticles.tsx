@@ -67,7 +67,7 @@ const EyeParticlesComponent = ({ emotion, isActive, size = 260, glowColor, onPar
   
   if (particleType === 'none' && !showWarmth) return null;
   if (!isActive) return null;
-  if (isMobile && !showWarmth) return null;
+  // Particles now show on all devices (removed mobile restriction)
 
   // Outer radius where particles START (1.3x to 1.6x eye size)
   const outerRadius = size * 0.8;
