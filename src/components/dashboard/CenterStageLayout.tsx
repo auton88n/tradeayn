@@ -120,7 +120,7 @@ export const CenterStageLayout = ({
     clearSuggestions,
   } = useBubbleAnimation();
 
-  const [lastProcessedMessageId, setLastProcessedMessageId] = useState<string | null>(null);
+  const [lastProcessedMessageContent, setLastProcessedMessageContent] = useState<string | null>(null);
   const [showParticleBurst, setShowParticleBurst] = useState(false);
   const [burstPosition, setBurstPosition] = useState({ x: 0, y: 0 });
   const [lastUserMessage, setLastUserMessage] = useState<string>('');
@@ -139,7 +139,7 @@ export const CenterStageLayout = ({
     if (messages.length === 0) {
       clearResponseBubbles();
       clearSuggestions();
-      setLastProcessedMessageId(null);
+      setLastProcessedMessageContent(null);
       setLastUserMessage('');
       setEmotion('calm');
       setIsResponding(false);
@@ -511,8 +511,8 @@ export const CenterStageLayout = ({
     const lastMessage = messages[messages.length - 1];
     
     // Only process new AYN messages
-    if (lastMessage.sender === 'ayn' && lastMessage.id !== lastProcessedMessageId) {
-      setLastProcessedMessageId(lastMessage.id);
+    if (lastMessage.sender === 'ayn' && lastMessage.content !== lastProcessedMessageContent) {
+      setLastProcessedMessageContent(lastMessage.content);
       
       // Blink before responding (like landing page)
       triggerBlink();
@@ -555,7 +555,7 @@ export const CenterStageLayout = ({
         }, 600);
       }, 50); // Minimal delay for blink
     }
-  }, [messages, lastProcessedMessageId, lastSuggestedEmotion, setEmotion, setIsResponding, emitResponseBubble, emitSuggestions, triggerBlink, detectExcitement, fetchDynamicSuggestions, lastUserMessage, selectedMode]);
+  }, [messages, lastProcessedMessageContent, lastSuggestedEmotion, setEmotion, setIsResponding, emitResponseBubble, emitSuggestions, triggerBlink, detectExcitement, fetchDynamicSuggestions, lastUserMessage, selectedMode]);
 
   // Update emotion when typing - only set thinking if not recently set from a response
   useEffect(() => {
