@@ -665,10 +665,9 @@ const EmotionalEyeComponent = ({
           </motion.svg>
         </div>
         
-        {/* Particle effects - temporarily forcing happy for preview */}
+        {/* Particle effects - only show during activity */}
         <EyeParticles 
-          emotion="happy"
-          isActive={true}
+          isActive={activityLevel !== 'idle'}
           size={eyeSize}
           glowColor={boostedGlowColor}
           activityLevel={activityLevel}
