@@ -512,6 +512,7 @@ const DashboardContent = ({
           selectedMode={selectedMode}
           selectedFile={fileUpload.selectedFile}
           isUploading={fileUpload.isUploading}
+          uploadProgress={fileUpload.uploadProgress}
           isDragOver={fileUpload.isDragOver}
           onFileSelect={fileUpload.handleFileSelect}
           onRemoveFile={fileUpload.removeFile}

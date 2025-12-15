@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, forwardRef, useCallback } from 'rea
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Plus, ChevronDown, ArrowUp, FileText, X, Image, AlertTriangle, MessageSquarePlus } from 'lucide-react';
+import { Plus, ChevronDown, ArrowUp, FileText, X, Image, AlertTriangle, MessageSquarePlus, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
@@ -18,6 +18,7 @@ interface ChatInputProps {
   onModeChange: (mode: AIMode) => void;
   selectedFile?: File | null;
   isUploading?: boolean;
+  uploadProgress?: number;
   isDragOver?: boolean;
   onDragEnter?: (e: React.DragEvent) => void;
   onDragLeave?: (e: React.DragEvent) => void;
@@ -94,6 +95,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
   onModeChange,
   selectedFile = null,
   isUploading = false,
+  uploadProgress = 0,
   isDragOver = false,
   onDragEnter,
   onDragLeave,
@@ -398,36 +400,74 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
           </AnimatePresence>
         </div>
 
-        {/* File chip */}
+        {/* Premium File Chip with Upload Progress */}
         <AnimatePresence>
-          {selectedFile && <motion.div initial={{
-          height: 0,
-          opacity: 0
-        }} animate={{
-          height: 'auto',
-          opacity: 1
-        }} exit={{
-          height: 0,
-          opacity: 0
-        }} className="px-5 pb-2 overflow-hidden">
-              <motion.div initial={{
-            scale: 0.9,
-            opacity: 0
-          }} animate={{
-            scale: 1,
-            opacity: 1
-          }} exit={{
-            scale: 0.9,
-            opacity: 0
-          }} className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg border border-border/50 w-fit max-w-[300px]">
-                {getFileIcon(selectedFile)}
-                <span className="text-sm truncate flex-1">{selectedFile.name}</span>
-                <span className="text-xs text-muted-foreground">{formatFileSize(selectedFile.size)}</span>
-                <button onClick={handleRemoveFile} className="p-0.5 hover:bg-muted rounded transition-colors">
-                  <X className="w-3.5 h-3.5 text-muted-foreground" />
-                </button>
+          {selectedFile && (
+            <motion.div 
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="px-4 pb-3 overflow-hidden"
+            >
+              <motion.div 
+                initial={{ scale: 0.95, opacity: 0, y: 5 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.95, opacity: 0, y: -5 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className={cn(
+                  "relative inline-flex items-center gap-2.5",
+                  "px-3.5 py-2.5 rounded-2xl",
+                  "bg-neutral-900 dark:bg-neutral-950",
+                  "border border-neutral-700/50",
+                  "shadow-lg shadow-black/20",
+                  "max-w-[320px]",
+                  "overflow-hidden"
+                )}
+              >
+                {/* Progress bar background */}
+                {isUploading && (
+                  <motion.div
+                    initial={{ width: '0%' }}
+                    animate={{ width: `${uploadProgress}%` }}
+                    className="absolute inset-0 bg-primary/20 rounded-2xl"
+                    transition={{ duration: 0.3, ease: "easeOut" }}
+                  />
+                )}
+                
+                {/* File Icon with glow animation when uploading */}
+                <div className={cn(
+                  "relative shrink-0",
+                  isUploading && "animate-pulse"
+                )}>
+                  {isUploading ? (
+                    <Loader2 className="w-4 h-4 text-primary animate-spin" />
+                  ) : (
+                    <FileText className="w-4 h-4 text-neutral-400" />
+                  )}
+                </div>
+                
+                {/* Filename - truncated */}
+                <span className="text-sm text-neutral-200 truncate max-w-[140px] font-medium relative z-10">
+                  {selectedFile.name}
+                </span>
+                
+                {/* File size or Upload progress */}
+                <span className="text-xs text-neutral-500 shrink-0 relative z-10 min-w-[48px] text-right">
+                  {isUploading ? `${uploadProgress}%` : formatFileSize(selectedFile.size)}
+                </span>
+                
+                {/* Remove button - hidden while uploading */}
+                {!isUploading && (
+                  <button 
+                    onClick={handleRemoveFile}
+                    className="p-1 rounded-full hover:bg-neutral-700/60 transition-colors shrink-0 relative z-10"
+                  >
+                    <X className="w-3.5 h-3.5 text-neutral-400 hover:text-neutral-200 transition-colors" />
+                  </button>
+                )}
               </motion.div>
-            </motion.div>}
+            </motion.div>
+          )}
         </AnimatePresence>
 
         {/* Row 2: Toolbar */}
