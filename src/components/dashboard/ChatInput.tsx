@@ -375,7 +375,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
 
           {/* Send button - flexbox aligned to bottom */}
           <AnimatePresence>
-            {inputMessage.trim() && !isDisabled && (
+            {(inputMessage.trim() || selectedFile) && !isDisabled && (
               <motion.button 
                 initial={{ scale: 0, opacity: 0 }} 
                 animate={{ scale: 1, opacity: 1 }} 
@@ -388,13 +388,18 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
                   "w-10 h-10 rounded-xl",
                   "flex items-center justify-center",
                   "transition-all duration-200",
-                  "hover:scale-105 active:scale-95",
                   "shadow-lg hover:shadow-xl",
-                  "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100",
-                  getSendButtonClass(selectedMode)
+                  "disabled:cursor-not-allowed disabled:hover:scale-100",
+                  isUploading 
+                    ? "bg-muted cursor-wait opacity-70" 
+                    : cn("hover:scale-105 active:scale-95", getSendButtonClass(selectedMode))
                 )}
               >
-                <ArrowUp className="w-5 h-5" strokeWidth={2.5} />
+                {isUploading ? (
+                  <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                ) : (
+                  <ArrowUp className="w-5 h-5" strokeWidth={2.5} />
+                )}
               </motion.button>
             )}
           </AnimatePresence>
