@@ -30,9 +30,9 @@ const EyeParticlesComponent = ({
       return {
         id: i,
         angle,
-        size: 4 + Math.random() * 4, // Bigger: 4-8px
-        delay: Math.random() * 2,
-        duration: 4 + Math.random() * 3,
+        size: 4 + Math.random() * 4, // 4-8px
+        delay: Math.random() * 3,
+        duration: 8 + Math.random() * 5, // Slower: 8-13s to drift out
       };
     });
   }, [particleCount, size]);
