@@ -13,7 +13,7 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
   const lastInitializedUserId = useRef<string | null>(null);
   const { toast } = useToast();
 
-  // Load recent chat history using direct REST API
+  // Load recent chat history using direct REST API with stored titles
   const loadRecentChats = useCallback(async () => {
     if (!userId || !session) {
       console.warn('[useChatSession] No userId or session available');
@@ -21,20 +21,33 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
     }
     
     try {
-      const data = await supabaseApi.get<Array<{
-        id: string;
-        content: string;
-        created_at: string;
-        sender: string;
-        session_id: string | null;
-      }>>(
-        `messages?user_id=eq.${userId}&select=id,content,created_at,sender,session_id&order=created_at.desc&limit=100`,
-        session.access_token
-      );
+      // Fetch both messages and stored session titles in parallel
+      const [messagesData, sessionsData] = await Promise.all([
+        supabaseApi.get<Array<{
+          id: string;
+          content: string;
+          created_at: string;
+          sender: string;
+          session_id: string | null;
+        }>>(
+          `messages?user_id=eq.${userId}&select=id,content,created_at,sender,session_id&order=created_at.desc&limit=100`,
+          session.access_token
+        ),
+        supabaseApi.get<Array<{ session_id: string; title: string }>>(
+          `chat_sessions?user_id=eq.${userId}&select=session_id,title`,
+          session.access_token
+        )
+      ]);
 
-      if (!data || data.length === 0) {
+      if (!messagesData || messagesData.length === 0) {
         setRecentChats([]);
         return;
+      }
+
+      // Create a map of session_id to stored title
+      const storedTitles = new Map<string, string>();
+      if (sessionsData) {
+        sessionsData.forEach(s => storedTitles.set(s.session_id, s.title));
       }
 
       // Group messages by session_id
@@ -47,9 +60,8 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
       
       const sessionGroups: { [key: string]: ProcessedMessage[] } = {};
 
-      data.forEach((message) => {
+      messagesData.forEach((message) => {
         const sessionId = message.session_id;
-        // Skip messages without a session_id
         if (!sessionId) return;
         
         if (!sessionGroups[sessionId]) {
@@ -63,22 +75,27 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
         });
       });
 
-      // Convert to ChatHistory format, sorted by most recent session
+      // Convert to ChatHistory format using stored titles
       const chatHistories: ChatHistory[] = Object.entries(sessionGroups)
         .map(([sessionId, messages]) => {
-          // Sort messages chronologically for proper conversation flow
           const sortedMessages = messages.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
-
-          // Find the first user message for the title
-          const firstUserMessage = sortedMessages.find(msg => msg.sender === 'user');
           const lastMessage = sortedMessages[sortedMessages.length - 1];
 
+          // Use stored title first, fallback to first user message
+          const storedTitle = storedTitles.get(sessionId);
+          let title = storedTitle;
+          
+          if (!title) {
+            const firstUserMessage = sortedMessages.find(msg => msg.sender === 'user');
+            title = firstUserMessage 
+              ? (firstUserMessage.content.length > 30 
+                  ? firstUserMessage.content.substring(0, 30) + '...'
+                  : firstUserMessage.content)
+              : 'Chat Session';
+          }
+
           return {
-            title: firstUserMessage ? (
-              firstUserMessage.content.length > 30 
-                ? firstUserMessage.content.substring(0, 30) + '...'
-                : firstUserMessage.content
-            ) : 'Chat Session',
+            title,
             lastMessage: lastMessage.content.length > 50
               ? lastMessage.content.substring(0, 50) + '...'
               : lastMessage.content,
@@ -87,8 +104,8 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
             sessionId: sessionId
           };
         })
-        .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()) // Sort by most recent
-        .slice(0, 10); // Limit to latest 10 sessions
+        .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+        .slice(0, 10);
 
       setRecentChats(chatHistories);
     } catch {
@@ -119,32 +136,43 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
     return chatHistory.messages;
   }, [toast]);
 
-  // Delete selected chats
+  // Delete selected chats (messages and session records)
   const deleteSelectedChats = useCallback(async () => {
     if (selectedChats.size === 0) return;
 
     try {
       const chatIndicesToDelete = Array.from(selectedChats);
       const messageIdsToDelete: string[] = [];
+      const sessionIdsToDelete: string[] = [];
 
-      // Collect message IDs from selected chats
+      // Collect message IDs and session IDs from selected chats
       chatIndicesToDelete.forEach(index => {
         if (recentChats[index]) {
           messageIdsToDelete.push(...recentChats[index].messages.map(m => m.id));
+          if (recentChats[index].sessionId) {
+            sessionIdsToDelete.push(recentChats[index].sessionId);
+          }
         }
       });
 
-      // Delete messages from database using REST API
-      if (messageIdsToDelete.length > 0 && session) {
-        // Delete each message individually (REST API limitation with IN clause)
-        await Promise.all(
-          messageIdsToDelete.map(id =>
+      if (session) {
+        // Delete messages and chat_sessions records in parallel
+        await Promise.all([
+          // Delete messages
+          ...messageIdsToDelete.map(id =>
             supabaseApi.delete(
               `messages?id=eq.${id}&user_id=eq.${userId}`,
               session.access_token
             )
+          ),
+          // Delete chat_sessions records
+          ...sessionIdsToDelete.map(sessionId =>
+            supabaseApi.delete(
+              `chat_sessions?session_id=eq.${sessionId}&user_id=eq.${userId}`,
+              session.access_token
+            )
           )
-        );
+        ]);
       }
 
       // Clear local state first
@@ -166,7 +194,7 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
         variant: "destructive"
       });
     }
-  }, [selectedChats, recentChats, toast, loadRecentChats, userId]);
+  }, [selectedChats, recentChats, toast, loadRecentChats, userId, session]);
 
   // Toggle chat selection
   const toggleChatSelection = useCallback((index: number) => {
@@ -188,15 +216,22 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
     }
   }, [selectedChats, recentChats]);
 
-  // Delete all chats for the user
+  // Delete all chats for the user (messages and session records)
   const deleteAllChats = useCallback(async () => {
     if (!session) return;
     
     try {
-      await supabaseApi.delete(
-        `messages?user_id=eq.${userId}`,
-        session.access_token
-      );
+      // Delete both messages and chat_sessions in parallel
+      await Promise.all([
+        supabaseApi.delete(
+          `messages?user_id=eq.${userId}`,
+          session.access_token
+        ),
+        supabaseApi.delete(
+          `chat_sessions?user_id=eq.${userId}`,
+          session.access_token
+        )
+      ]);
 
       // Clear local state
       setRecentChats([]);
@@ -214,7 +249,7 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
         variant: "destructive"
       });
     }
-  }, [userId, toast]);
+  }, [userId, toast, session]);
 
   // Load recent chats on mount and set initial session using REST API - PARALLELIZED
   useEffect(() => {
@@ -235,8 +270,8 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
       setIsLoadingChats(true);
       
       try {
-        // PARALLEL QUERIES - fetch both at once for speed
-        const [latestSessionData, recentMessagesData] = await Promise.all([
+        // PARALLEL QUERIES - fetch all at once for speed
+        const [latestSessionData, recentMessagesData, sessionsData] = await Promise.all([
           // Query 1: Get latest session_id
           supabaseApi.get<Array<{ session_id: string }>>(
             `messages?user_id=eq.${userId}&select=session_id&order=created_at.desc&limit=1`,
@@ -252,6 +287,11 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
           }>>(
             `messages?user_id=eq.${userId}&select=id,content,created_at,sender,session_id&order=created_at.desc&limit=50`,
             session.access_token
+          ),
+          // Query 3: Get stored session titles
+          supabaseApi.get<Array<{ session_id: string; title: string }>>(
+            `chat_sessions?user_id=eq.${userId}&select=session_id,title`,
+            session.access_token
           )
         ]);
         
@@ -262,6 +302,12 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
           setCurrentSessionId(latestSessionData[0].session_id);
         } else {
           setCurrentSessionId(crypto.randomUUID());
+        }
+        
+        // Create a map of session_id to stored title
+        const storedTitles = new Map<string, string>();
+        if (sessionsData) {
+          sessionsData.forEach(s => storedTitles.set(s.session_id, s.title));
         }
         
         // Process recent messages inline (same logic as loadRecentChats)
@@ -293,15 +339,23 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
           const chatHistories: ChatHistory[] = Object.entries(sessionGroups)
             .map(([sessionId, messages]) => {
               const sortedMessages = messages.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
-              const firstUserMessage = sortedMessages.find(msg => msg.sender === 'user');
               const lastMessage = sortedMessages[sortedMessages.length - 1];
 
+              // Use stored title first, fallback to first user message
+              const storedTitle = storedTitles.get(sessionId);
+              let title = storedTitle;
+              
+              if (!title) {
+                const firstUserMessage = sortedMessages.find(msg => msg.sender === 'user');
+                title = firstUserMessage 
+                  ? (firstUserMessage.content.length > 30 
+                      ? firstUserMessage.content.substring(0, 30) + '...'
+                      : firstUserMessage.content)
+                  : 'Chat Session';
+              }
+
               return {
-                title: firstUserMessage ? (
-                  firstUserMessage.content.length > 30 
-                    ? firstUserMessage.content.substring(0, 30) + '...'
-                    : firstUserMessage.content
-                ) : 'Chat Session',
+                title,
                 lastMessage: lastMessage.content.length > 50
                   ? lastMessage.content.substring(0, 50) + '...'
                   : lastMessage.content,

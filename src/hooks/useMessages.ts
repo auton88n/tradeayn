@@ -318,6 +318,41 @@ export const useMessages = (
         ])
       });
 
+      // Save chat session title on first message (only if no session record exists)
+      try {
+        const existingSession = await fetch(
+          `${SUPABASE_URL}/rest/v1/chat_sessions?session_id=eq.${sessionId}&user_id=eq.${userId}&select=id`,
+          {
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': `Bearer ${session.access_token}`,
+            }
+          }
+        );
+        const sessionData = await existingSession.json();
+        
+        // Create session record with title if it doesn't exist
+        if (!sessionData || sessionData.length === 0) {
+          const title = content.length > 30 ? content.substring(0, 30) + '...' : content;
+          await fetch(`${SUPABASE_URL}/rest/v1/chat_sessions`, {
+            method: 'POST',
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=minimal',
+            },
+            body: JSON.stringify({
+              session_id: sessionId,
+              user_id: userId,
+              title: title
+            })
+          });
+        }
+      } catch {
+        // Silent fail - title storage is non-critical
+      }
+
       // Check usage and show in-app warning if approaching limit
       try {
         const usageData = await fetchFromSupabase(
