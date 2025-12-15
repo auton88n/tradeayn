@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
+import { detectLanguage } from '@/utils/languageDetection';
 import type { 
   Message, 
   FileAttachment, 
@@ -192,7 +193,7 @@ export const useMessages = (
           business_type: userProfile?.business_type || '',
         },
         allowPersonalization,
-        detectedLanguage,
+        detectedLanguage: detectLanguage(content).code, // Fresh detection from actual message
         concise: false,
         timestamp: new Date().toISOString(),
         has_attachment: !!attachment,
