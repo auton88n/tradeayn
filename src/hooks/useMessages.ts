@@ -184,8 +184,11 @@ export const useMessages = (
 
     try {
       // CRITICAL FIX: Construct payload with has_attachment and file_data
+      // When content is empty but attachment exists, send a placeholder message
+      const messageContent = content.trim() || (attachment ? `📎 Attached file: ${attachment.name}` : '');
+      
       const payload: WebhookPayload = {
-        message: content,
+        message: messageContent,
         userId,
         userEmail,
         mode: selectedMode,
