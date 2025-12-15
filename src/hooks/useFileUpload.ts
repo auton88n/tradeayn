@@ -171,6 +171,20 @@ export const useFileUpload = (userId: string): UseFileUploadReturn => {
     e.stopPropagation();
     setIsDragOver(false);
 
+    // Check for folders using webkitGetAsEntry
+    const items = Array.from(e.dataTransfer.items);
+    for (const item of items) {
+      const entry = item.webkitGetAsEntry?.();
+      if (entry?.isDirectory) {
+        toast({
+          title: "Folders Not Supported",
+          description: "Please drag individual files, not folders.",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
     const files = Array.from(e.dataTransfer.files);
     
     if (files.length > 1) {
