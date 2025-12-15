@@ -40,11 +40,11 @@ const EMOTION_PARTICLE_CONFIG: Record<AYNEmotion, { speedMult: number; count: nu
 };
 
 // Activity level modifiers for dynamic particle behavior
-const ACTIVITY_MODIFIERS: Record<ActivityLevel, { countMult: number; speedMult: number }> = {
-  idle: { countMult: 0.5, speedMult: 1.5 },    // Fewer, slower particles
-  low: { countMult: 0.75, speedMult: 1.2 },    // Slightly reduced
-  medium: { countMult: 1.0, speedMult: 1.0 },  // Normal
-  high: { countMult: 1.5, speedMult: 0.6 },    // More, faster particles
+const ACTIVITY_MODIFIERS: Record<ActivityLevel, { countMult: number; speedMult: number; trailMult: number }> = {
+  idle: { countMult: 0.5, speedMult: 1.5, trailMult: 0.5 },    // Fewer, slower, shorter trails
+  low: { countMult: 0.75, speedMult: 1.2, trailMult: 0.75 },   // Slightly reduced
+  medium: { countMult: 1.0, speedMult: 1.0, trailMult: 1.0 },  // Normal
+  high: { countMult: 1.5, speedMult: 0.6, trailMult: 1.5 },    // More, faster, longer trails
 };
 
 const EyeParticlesComponent = ({ emotion, isActive, size = 260, glowColor, onParticleNearEye, activityLevel = 'medium' }: EyeParticlesProps) => {
@@ -60,7 +60,8 @@ const EyeParticlesComponent = ({ emotion, isActive, size = 260, glowColor, onPar
   const particleConfig = useMemo(() => ({
     count: Math.max(2, Math.round(baseConfig.count * activityMod.countMult)),
     speedMult: baseConfig.speedMult * activityMod.speedMult,
-  }), [baseConfig.count, baseConfig.speedMult, activityMod.countMult, activityMod.speedMult]);
+    trailMult: activityMod.trailMult,
+  }), [baseConfig.count, baseConfig.speedMult, activityMod.countMult, activityMod.speedMult, activityMod.trailMult]);
   
   const showWarmth = emotion === 'comfort' || emotion === 'supportive';
   
@@ -99,6 +100,7 @@ const EyeParticlesComponent = ({ emotion, isActive, size = 260, glowColor, onPar
             color={activeColor} 
             speedMult={particleConfig.speedMult} 
             count={particleConfig.count}
+            trailMult={particleConfig.trailMult}
             onParticleNearEye={onParticleNearEye}
           />
         )}
@@ -108,6 +110,7 @@ const EyeParticlesComponent = ({ emotion, isActive, size = 260, glowColor, onPar
             color={activeColor} 
             speedMult={particleConfig.speedMult}
             innerRadius={innerRadius}
+            trailMult={particleConfig.trailMult}
             onParticleNearEye={onParticleNearEye}
           />
         )}
@@ -116,6 +119,7 @@ const EyeParticlesComponent = ({ emotion, isActive, size = 260, glowColor, onPar
             color={activeColor} 
             radius={outerRadius * 1.1} 
             speedMult={particleConfig.speedMult}
+            trailMult={particleConfig.trailMult}
             onParticleNearEye={onParticleNearEye}
           />
         )}
@@ -125,6 +129,7 @@ const EyeParticlesComponent = ({ emotion, isActive, size = 260, glowColor, onPar
             color={activeColor} 
             speedMult={particleConfig.speedMult}
             innerRadius={innerRadius}
+            trailMult={particleConfig.trailMult}
             onParticleNearEye={onParticleNearEye}
           />
         )}
@@ -141,12 +146,14 @@ const SparkleParticles = ({
   color, 
   speedMult, 
   innerRadius,
+  trailMult = 1,
   onParticleNearEye 
 }: { 
   particles: Particle[]; 
   color: string; 
   speedMult: number;
   innerRadius: number;
+  trailMult?: number;
   onParticleNearEye?: (angle: number) => void;
 }) => (
   <>
@@ -163,6 +170,10 @@ const SparkleParticles = ({
       const pos3X = Math.cos(angleRad + driftAngle * 2) * orbitRadius;
       const pos3Y = Math.sin(angleRad + driftAngle * 2) * orbitRadius + 8;
       
+      // Trail size scales with trailMult
+      const trailSize1 = p.size * 2 * trailMult;
+      const trailSize2 = p.size * 4 * trailMult;
+      
       return (
         <motion.div
           key={p.id}
@@ -171,7 +182,7 @@ const SparkleParticles = ({
             width: p.size,
             height: p.size,
             backgroundColor: color,
-            boxShadow: `0 0 ${p.size * 2}px ${color}, 0 0 ${p.size * 4}px ${color}50`,
+            boxShadow: `0 0 ${trailSize1}px ${color}, 0 0 ${trailSize2}px ${color}50`,
           }}
           initial={{ x: pos1X, y: pos1Y, opacity: 0, scale: 0.5 }}
           animate={{
@@ -198,15 +209,22 @@ const OrbitParticles = ({
   color, 
   radius, 
   speedMult,
+  trailMult = 1,
   onParticleNearEye 
 }: { 
   color: string; 
   radius: number; 
   speedMult: number;
+  trailMult?: number;
   onParticleNearEye?: (angle: number) => void;
 }) => {
   const dots = [0, 1, 2, 3];
   const orbitDuration = 4 * speedMult;
+  
+  // Trail glow sizes scale with trailMult
+  const dotGlow1 = 12 * trailMult;
+  const dotGlow2 = 24 * trailMult;
+  const ringGlow = 20 * trailMult;
   
   return (
     <motion.div
@@ -224,7 +242,7 @@ const OrbitParticles = ({
               width: 8,
               height: 8,
               backgroundColor: color,
-              boxShadow: `0 0 12px ${color}, 0 0 24px ${color}60`,
+              boxShadow: `0 0 ${dotGlow1}px ${color}, 0 0 ${dotGlow2}px ${color}60`,
               left: '50%',
               top: '50%',
               transform: `translate(-50%, -50%) rotate(${angle}deg) translateX(${radius}px)`,
@@ -249,8 +267,8 @@ const OrbitParticles = ({
         style={{
           width: radius * 2,
           height: radius * 2,
-          border: `2px solid ${color}30`,
-          boxShadow: `0 0 20px ${color}20, inset 0 0 20px ${color}10`,
+          border: `${2 * trailMult}px solid ${color}30`,
+          boxShadow: `0 0 ${ringGlow}px ${color}20, inset 0 0 ${ringGlow}px ${color}10`,
         }}
         animate={{
           opacity: [0.3, 0.5, 0.3],
@@ -272,12 +290,14 @@ const EnergyParticles = ({
   color, 
   speedMult,
   innerRadius,
+  trailMult = 1,
   onParticleNearEye 
 }: { 
   particles: Particle[]; 
   color: string; 
   speedMult: number;
   innerRadius: number;
+  trailMult?: number;
   onParticleNearEye?: (angle: number) => void;
 }) => (
   <>
@@ -292,15 +312,19 @@ const EnergyParticles = ({
       const driftX = Math.cos(angleRad + driftAngle) * (orbitRadius * 1.05);
       const driftY = Math.sin(angleRad + driftAngle) * (orbitRadius * 1.05);
       
+      // Trail glow sizes scale with trailMult
+      const trailGlow1 = 8 * trailMult;
+      const trailGlow2 = 16 * trailMult;
+      
       return (
         <motion.div
           key={p.id}
           className="absolute left-1/2 top-1/2"
           style={{
             width: 3,
-            height: 14,
+            height: 14 * trailMult,
             backgroundColor: color,
-            boxShadow: `0 0 8px ${color}, 0 0 16px ${color}60`,
+            boxShadow: `0 0 ${trailGlow1}px ${color}, 0 0 ${trailGlow2}px ${color}60`,
             transformOrigin: 'center center',
             borderRadius: 2,
           }}
@@ -337,6 +361,7 @@ const WarmthParticles = ({
   color, 
   speedMult, 
   count,
+  trailMult = 1,
   onParticleNearEye 
 }: { 
   radius: number; 
@@ -344,6 +369,7 @@ const WarmthParticles = ({
   color: string; 
   speedMult: number; 
   count: number;
+  trailMult?: number;
   onParticleNearEye?: (angle: number) => void;
 }) => {
   const embers = useMemo(() => 
@@ -368,6 +394,10 @@ const WarmthParticles = ({
         const pos3X = Math.cos(ember.startAngle + ember.orbitDrift * 2) * radius;
         const pos3Y = Math.sin(ember.startAngle + ember.orbitDrift * 2) * radius + ember.floatOffset * 0.5;
         
+        // Trail glow sizes scale with trailMult
+        const trailGlow1 = ember.size * 2 * trailMult;
+        const trailGlow2 = ember.size * 4 * trailMult;
+        
         return (
           <motion.div
             key={ember.id}
@@ -377,8 +407,8 @@ const WarmthParticles = ({
               height: ember.size,
               background: `radial-gradient(circle, ${color} 0%, ${color}80 50%, transparent 100%)`,
               boxShadow: `
-                0 0 ${ember.size * 2}px ${color},
-                0 0 ${ember.size * 4}px ${color}50
+                0 0 ${trailGlow1}px ${color},
+                0 0 ${trailGlow2}px ${color}50
               `,
             }}
             initial={{ 
@@ -404,12 +434,12 @@ const WarmthParticles = ({
         );
       })}
       
-      {/* Outer ambient glow ring */}
+      {/* Outer ambient glow ring - scales with trailMult */}
       <motion.div
         className="absolute rounded-full"
         style={{
-          width: radius * 2.2,
-          height: radius * 2.2,
+          width: radius * (2.2 + (trailMult - 1) * 0.3),
+          height: radius * (2.2 + (trailMult - 1) * 0.3),
           background: `radial-gradient(circle, transparent 40%, ${color}15 60%, transparent 80%)`,
         }}
         animate={{
