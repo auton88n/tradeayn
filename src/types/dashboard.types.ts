@@ -192,6 +192,9 @@ export interface UseFileUploadReturn {
   handleDragLeave: (e: React.DragEvent) => void;
   handleDragOver: (e: React.DragEvent) => void;
   handleDrop: (e: React.DragEvent) => void;
+  // Pre-upload state
+  uploadedAttachment: FileAttachment | null;
+  clearUploadedAttachment: () => void;
 }
 
 export interface UseChatSessionReturn {

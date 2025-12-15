@@ -84,10 +84,10 @@ export const DashboardContainer = ({ user, session, auth, isAdmin, hasDutyAccess
   }, [chatSession.currentSessionId, messagesHook.loadMessages]);
 
 
-  // Handle send message with file upload
+  // Handle send message with pre-uploaded file attachment
   const handleSendMessage = useCallback(async (
     content: string,
-    fileToUpload?: File | null
+    _fileToUpload?: File | null  // Kept for interface compatibility, but we use pre-uploaded attachment
   ) => {
     // Don't block if auth is still loading - allow message to proceed
     if (!auth.isAuthLoading && (!auth.hasAccess || !auth.hasAcceptedTerms)) {
@@ -99,21 +99,26 @@ export const DashboardContainer = ({ user, session, auth, isAdmin, hasDutyAccess
       return;
     }
 
-
-    // Upload file if present
-    let attachment: FileAttachment | null = null;
-    if (fileToUpload) {
-      attachment = await fileUpload.uploadFile(fileToUpload);
-      if (!attachment) {
-        // Upload failed, error already shown by uploadFile
-        return;
-      }
-      // Clear the file after successful upload
-      fileUpload.removeFile();
+    // Block if file is still uploading
+    if (fileUpload.isUploading) {
+      toast({
+        title: 'Upload in Progress',
+        description: 'Please wait for the file to finish uploading.',
+        variant: "destructive"
+      });
+      return;
     }
 
+    // Use the pre-uploaded attachment (already uploaded when file was selected)
+    const attachment = fileUpload.uploadedAttachment;
+    
     // Send message with attachment
     await messagesHook.sendMessage(content, attachment);
+    
+    // Clear the file and uploaded attachment after sending
+    if (attachment) {
+      fileUpload.removeFile();
+    }
     
     // Refresh chat history - title is guaranteed to exist now (saved before messages)
     await chatSession.loadRecentChats();
