@@ -527,6 +527,10 @@ const DashboardContent = ({
           prefillValue={replyPrefill}
           onPrefillConsumed={handlePrefillConsumed}
           onLanguageChange={onLanguageChange}
+          hasReachedLimit={messagesHook.hasReachedLimit}
+          messageCount={messagesHook.messageCount}
+          maxMessages={messagesHook.maxMessages}
+          onStartNewChat={handleNewChat}
         />
       </main>
 

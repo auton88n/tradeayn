@@ -51,6 +51,11 @@ interface CenterStageLayoutProps {
   prefillValue?: string;
   onPrefillConsumed?: () => void;
   onLanguageChange?: (language: { code: string; flag: string; name: string }) => void;
+  // Message limit props
+  hasReachedLimit?: boolean;
+  messageCount?: number;
+  maxMessages?: number;
+  onStartNewChat?: () => void;
 }
 
 export const CenterStageLayout = ({
@@ -76,6 +81,10 @@ export const CenterStageLayout = ({
   prefillValue,
   onPrefillConsumed,
   onLanguageChange,
+  hasReachedLimit,
+  messageCount,
+  maxMessages,
+  onStartNewChat,
 }: CenterStageLayoutProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const eyeStageRef = useRef<HTMLDivElement>(null);
@@ -662,6 +671,10 @@ animate={{
           onPrefillConsumed={onPrefillConsumed}
           onLanguageChange={onLanguageChange}
           onEmotionDetected={handleEmotionDetected}
+          hasReachedLimit={hasReachedLimit}
+          messageCount={messageCount}
+          maxMessages={maxMessages}
+          onStartNewChat={onStartNewChat}
         />
       </div>
     </div>
