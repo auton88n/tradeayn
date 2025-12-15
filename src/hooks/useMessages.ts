@@ -17,6 +17,9 @@ import type {
 const SUPABASE_URL = 'https://dfkoxuokfkttjhfjcecx.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRma294dW9rZmt0dGpoZmpjZWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYzNTg4NzMsImV4cCI6MjA3MTkzNDg3M30.Th_-ds6dHsxIhRpkzJLREwBIVdgkcdm2SmMNDmjNbxw';
 
+// Maximum messages allowed per chat session
+const MAX_MESSAGES_PER_CHAT = 100;
+
 // Helper for direct REST API calls (bypasses deadlocking Supabase client)
 const fetchFromSupabase = async (
   endpoint: string,
@@ -106,6 +109,16 @@ export const useMessages = (
       toast({
         title: "Session Error",
         description: "Please sign in again to continue.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Check chat message limit
+    if (messages.length >= MAX_MESSAGES_PER_CHAT) {
+      toast({
+        title: "Limit reached",
+        description: "Start a new chat to continue.",
         variant: "destructive"
       });
       return;
@@ -373,11 +386,18 @@ export const useMessages = (
     session
   ]);
 
+  // Message limit tracking
+  const messageCount = messages.length;
+  const hasReachedLimit = messageCount >= MAX_MESSAGES_PER_CHAT;
+
   return {
     messages,
     isTyping,
     lastSuggestedEmotion,
     moodPattern,
+    messageCount,
+    hasReachedLimit,
+    maxMessages: MAX_MESSAGES_PER_CHAT,
     loadMessages,
     sendMessage,
     setMessages

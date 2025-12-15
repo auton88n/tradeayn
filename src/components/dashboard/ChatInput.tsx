@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect, forwardRef, useCallback } from 'react';
 import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Plus, ChevronDown, ArrowUp, FileText, X, Image } from 'lucide-react';
+import { Plus, ChevronDown, ArrowUp, FileText, X, Image, AlertTriangle, MessageSquarePlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
@@ -40,6 +41,11 @@ interface ChatInputProps {
   onLanguageChange?: (language: DetectedLanguage) => void;
   // Real-time emotion feedback callback
   onEmotionDetected?: (emotion: UserEmotion | null, inputText: string) => void;
+  // Message limit props
+  hasReachedLimit?: boolean;
+  messageCount?: number;
+  maxMessages?: number;
+  onStartNewChat?: () => void;
 }
 const modes = [{
   name: 'General',
@@ -99,7 +105,11 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
   prefillValue = '',
   onPrefillConsumed,
   onLanguageChange,
-  onEmotionDetected
+  onEmotionDetected,
+  hasReachedLimit = false,
+  messageCount = 0,
+  maxMessages = 100,
+  onStartNewChat,
 }, ref) => {
   const [inputMessage, setInputMessage] = useState('');
   const [isInputFocused, setIsInputFocused] = useState(false);
@@ -295,6 +305,27 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
 
       {/* Main container */}
       <div className={cn("relative bg-background/95 backdrop-blur-xl border border-border rounded-2xl shadow-lg overflow-hidden transition-all duration-300", isDragOver && "border-primary shadow-xl", isInputFocused && "border-border/80 shadow-xl")}>
+        
+        {/* Limit reached overlay */}
+        <AnimatePresence>
+          {hasReachedLimit && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-background/95 backdrop-blur-sm flex flex-col items-center justify-center gap-3 z-20 rounded-2xl"
+            >
+              <AlertTriangle className="w-6 h-6 text-amber-500" />
+              <p className="text-sm text-muted-foreground">Limit reached. Start a new chat.</p>
+              {onStartNewChat && (
+                <Button onClick={onStartNewChat} size="sm" className="gap-2">
+                  <MessageSquarePlus className="w-4 h-4" />
+                  New Chat
+                </Button>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
         {/* Row 1: Input area with flexbox layout */}
         <div className="flex items-end gap-3 px-4 pt-3 pb-2">
           <div className="relative flex-1 min-w-0">
@@ -422,6 +453,20 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
             </AnimatePresence>
 
           </div>
+
+          {/* Message counter */}
+          {messageCount > 0 && (
+            <div className={cn(
+              "text-xs px-2 py-1 rounded-md",
+              hasReachedLimit 
+                ? "bg-destructive/10 text-destructive" 
+                : messageCount >= maxMessages * 0.8 
+                  ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                  : "text-muted-foreground"
+            )}>
+              {messageCount}/{maxMessages}
+            </div>
+          )}
 
           {/* Mode indicator - General only */}
           <div className="h-8 px-3 rounded-lg border border-border/50 flex items-center gap-1.5 bg-muted/30">

@@ -171,6 +171,9 @@ export interface UseMessagesReturn {
   isTyping: boolean;
   lastSuggestedEmotion: string | null;
   moodPattern: MoodPattern | null;
+  messageCount: number;
+  hasReachedLimit: boolean;
+  maxMessages: number;
   loadMessages: () => Promise<void>;
   sendMessage: (content: string, attachment?: FileAttachment | null) => Promise<void>;
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
