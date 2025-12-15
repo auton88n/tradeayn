@@ -83,10 +83,10 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
 
           // Use stored title first, fallback to first user message
           const storedTitle = storedTitles.get(sessionId);
+          const firstUserMessage = sortedMessages.find(msg => msg.sender === 'user');
           let title = storedTitle;
           
           if (!title) {
-            const firstUserMessage = sortedMessages.find(msg => msg.sender === 'user');
             title = firstUserMessage 
               ? (firstUserMessage.content.length > 30 
                   ? firstUserMessage.content.substring(0, 30) + '...'
@@ -94,11 +94,14 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
               : 'Chat Session';
           }
 
+          // Use first user message for preview (ChatGPT-style - never changes)
+          const previewMessage = firstUserMessage || lastMessage;
+          
           return {
             title,
-            lastMessage: lastMessage.content.length > 50
-              ? lastMessage.content.substring(0, 50) + '...'
-              : lastMessage.content,
+            lastMessage: previewMessage.content.length > 50
+              ? previewMessage.content.substring(0, 50) + '...'
+              : previewMessage.content,
             timestamp: lastMessage.timestamp,
             messages: sortedMessages,
             sessionId: sessionId
