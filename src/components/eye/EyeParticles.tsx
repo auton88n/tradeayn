@@ -1,8 +1,6 @@
-import { motion, AnimatePresence } from 'framer-motion';
-import { memo, useMemo, useEffect, useCallback } from 'react';
-import { cn } from '@/lib/utils';
-import { AYNEmotion, EMOTION_CONFIGS, ActivityLevel } from '@/contexts/AYNEmotionContext';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { motion } from 'framer-motion';
+import { memo, useMemo } from 'react';
+import { AYNEmotion, EMOTION_CONFIGS } from '@/contexts/AYNEmotionContext';
 
 interface EyeParticlesProps {
   emotion: AYNEmotion;
@@ -10,447 +8,105 @@ interface EyeParticlesProps {
   size?: number;
   glowColor?: string;
   onParticleNearEye?: (angle: number) => void;
-  activityLevel?: ActivityLevel;
+  activityLevel?: 'idle' | 'low' | 'medium' | 'high';
 }
 
-interface Particle {
-  id: number;
-  x: number;
-  y: number;
-  size: number;
-  delay: number;
-  duration: number;
-  angle: number;
-  startRadius: number;
-}
-
-// Emotion-based particle configuration: speed multiplier and particle count
-const EMOTION_PARTICLE_CONFIG: Record<AYNEmotion, { speedMult: number; count: number }> = {
-  calm: { speedMult: 1.0, count: 4 },
-  happy: { speedMult: 0.8, count: 6 },
-  excited: { speedMult: 0.5, count: 8 },
-  thinking: { speedMult: 1.2, count: 3 },
-  frustrated: { speedMult: 0.6, count: 6 },
-  curious: { speedMult: 0.9, count: 5 },
-  sad: { speedMult: 2.0, count: 3 },
-  mad: { speedMult: 0.4, count: 7 },
-  bored: { speedMult: 2.5, count: 2 },
-  comfort: { speedMult: 1.5, count: 5 },
-  supportive: { speedMult: 1.3, count: 5 },
-};
-
-// Activity level modifiers for dynamic particle behavior
-const ACTIVITY_MODIFIERS: Record<ActivityLevel, { countMult: number; speedMult: number; trailMult: number }> = {
-  idle: { countMult: 0.5, speedMult: 1.5, trailMult: 0.5 },    // Fewer, slower, shorter trails
-  low: { countMult: 0.75, speedMult: 1.2, trailMult: 0.75 },   // Slightly reduced
-  medium: { countMult: 1.0, speedMult: 1.0, trailMult: 1.0 },  // Normal
-  high: { countMult: 1.5, speedMult: 0.6, trailMult: 1.5 },    // More, faster, longer trails
-};
-
-const EyeParticlesComponent = ({ emotion, isActive, size = 260, glowColor, onParticleNearEye, activityLevel = 'medium' }: EyeParticlesProps) => {
+const EyeParticlesComponent = ({ 
+  emotion, 
+  isActive, 
+  size = 260, 
+  glowColor 
+}: EyeParticlesProps) => {
   const config = EMOTION_CONFIGS[emotion];
-  const particleType = config.particleType;
+  const color = glowColor || config.glowColor;
   
-  const activeColor = glowColor || config.glowColor;
-  const baseConfig = EMOTION_PARTICLE_CONFIG[emotion];
-  const activityMod = ACTIVITY_MODIFIERS[activityLevel];
-  
-  // Apply activity modifiers to particle config
-  const particleConfig = useMemo(() => ({
-    count: Math.max(2, Math.round(baseConfig.count * activityMod.countMult)),
-    speedMult: baseConfig.speedMult * activityMod.speedMult,
-    trailMult: activityMod.trailMult,
-  }), [baseConfig.count, baseConfig.speedMult, activityMod.countMult, activityMod.speedMult, activityMod.trailMult]);
-  
-  const showWarmth = emotion === 'comfort' || emotion === 'supportive';
-  
-  if (particleType === 'none' && !showWarmth) return null;
-  if (!isActive) return null;
+  // Simple particle count based on emotion
+  const particleCount = useMemo(() => {
+    if (emotion === 'excited' || emotion === 'happy') return 6;
+    if (emotion === 'comfort' || emotion === 'supportive') return 5;
+    if (emotion === 'calm' || emotion === 'thinking') return 4;
+    return 3;
+  }, [emotion]);
 
-  // Outer radius where particles START (1.3x to 1.6x eye size)
-  const outerRadius = size * 0.8;
-  const innerRadius = size * 0.35; // Where particles end (near eye edge)
-  
-  // Generate particles starting from OUTSIDE the eye
-  const particles: Particle[] = useMemo(() => 
-    Array.from({ length: particleConfig.count }, (_, i) => {
-      const angle = (i / particleConfig.count) * Math.PI * 2;
-      const startRadius = outerRadius + Math.random() * (size * 0.2);
+  // Generate particles positioned around the eye
+  const particles = useMemo(() => {
+    return Array.from({ length: particleCount }, (_, i) => {
+      const angle = (i / particleCount) * Math.PI * 2;
+      const radius = size * 0.7; // Position outside the eye
       return {
         id: i,
-        x: Math.cos(angle) * startRadius,
-        y: Math.sin(angle) * startRadius,
-        size: 4 + Math.random() * 4,
-        delay: i * (0.15 * particleConfig.speedMult),
-        duration: (2.5 + Math.random() * 1) * particleConfig.speedMult,
-        angle: (i / particleConfig.count) * 360,
-        startRadius,
+        angle,
+        radius,
+        x: Math.cos(angle) * radius,
+        y: Math.sin(angle) * radius,
+        size: 6 + Math.random() * 4,
+        delay: i * 0.3,
+        duration: 3 + Math.random() * 2,
       };
-    }), [particleConfig.count, particleConfig.speedMult, outerRadius, size]);
+    });
+  }, [particleCount, size]);
+
+  if (!isActive) return null;
 
   return (
-    <div className="absolute inset-0 pointer-events-none overflow-visible flex items-center justify-center z-50">
-      <AnimatePresence>
-        {showWarmth && (
-          <WarmthParticles 
-            radius={outerRadius} 
-            innerRadius={innerRadius}
-            color={activeColor} 
-            speedMult={particleConfig.speedMult} 
-            count={particleConfig.count}
-            trailMult={particleConfig.trailMult}
-            onParticleNearEye={onParticleNearEye}
+    <div 
+      style={{
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: size * 2,
+        height: size * 2,
+        pointerEvents: 'none',
+        zIndex: 100,
+      }}
+    >
+      {particles.map((p) => {
+        // Calculate orbital positions
+        const driftAngle = 0.4;
+        const x1 = Math.cos(p.angle) * p.radius;
+        const y1 = Math.sin(p.angle) * p.radius;
+        const x2 = Math.cos(p.angle + driftAngle) * (p.radius * 1.1);
+        const y2 = Math.sin(p.angle + driftAngle) * (p.radius * 1.1) - 15;
+        const x3 = Math.cos(p.angle + driftAngle * 2) * p.radius;
+        const y3 = Math.sin(p.angle + driftAngle * 2) * p.radius + 10;
+        
+        return (
+          <motion.div
+            key={p.id}
+            style={{
+              position: 'absolute',
+              left: '50%',
+              top: '50%',
+              width: p.size,
+              height: p.size,
+              borderRadius: '50%',
+              backgroundColor: color,
+              boxShadow: `0 0 ${p.size * 2}px ${color}, 0 0 ${p.size * 4}px ${color}60`,
+            }}
+            initial={{ 
+              x: x1 - p.size / 2, 
+              y: y1 - p.size / 2, 
+              opacity: 0, 
+              scale: 0.5 
+            }}
+            animate={{
+              x: [x1 - p.size / 2, x2 - p.size / 2, x3 - p.size / 2, x1 - p.size / 2],
+              y: [y1 - p.size / 2, y2 - p.size / 2, y3 - p.size / 2, y1 - p.size / 2],
+              opacity: [0, 0.9, 0.7, 0.9, 0],
+              scale: [0.5, 1.2, 1, 1.1, 0.5],
+            }}
+            transition={{
+              duration: p.duration,
+              delay: p.delay,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
           />
-        )}
-        {particleType === 'sparkle' && !showWarmth && (
-          <SparkleParticles 
-            particles={particles} 
-            color={activeColor} 
-            speedMult={particleConfig.speedMult}
-            innerRadius={innerRadius}
-            trailMult={particleConfig.trailMult}
-            onParticleNearEye={onParticleNearEye}
-          />
-        )}
-        {particleType === 'orbit' && !showWarmth && (
-          <OrbitParticles 
-            color={activeColor} 
-            radius={outerRadius * 1.1} 
-            speedMult={particleConfig.speedMult}
-            trailMult={particleConfig.trailMult}
-            onParticleNearEye={onParticleNearEye}
-          />
-        )}
-        {particleType === 'energy' && !showWarmth && (
-          <EnergyParticles 
-            particles={particles} 
-            color={activeColor} 
-            speedMult={particleConfig.speedMult}
-            innerRadius={innerRadius}
-            trailMult={particleConfig.trailMult}
-            onParticleNearEye={onParticleNearEye}
-          />
-        )}
-      </AnimatePresence>
+        );
+      })}
     </div>
   );
 };
 
 export const EyeParticles = memo(EyeParticlesComponent);
-
-// Sparkle particles: float around the eye perimeter like fireflies
-const SparkleParticles = ({ 
-  particles, 
-  color, 
-  speedMult, 
-  innerRadius,
-  trailMult = 1,
-  onParticleNearEye 
-}: { 
-  particles: Particle[]; 
-  color: string; 
-  speedMult: number;
-  innerRadius: number;
-  trailMult?: number;
-  onParticleNearEye?: (angle: number) => void;
-}) => (
-  <>
-    {particles.map((p) => {
-      const angleRad = (p.angle * Math.PI) / 180;
-      // Stay at outer radius, gentle orbital drift
-      const orbitRadius = p.startRadius;
-      const driftAngle = 0.3; // How far to drift along orbit
-      
-      const pos1X = Math.cos(angleRad) * orbitRadius;
-      const pos1Y = Math.sin(angleRad) * orbitRadius;
-      const pos2X = Math.cos(angleRad + driftAngle) * (orbitRadius * 0.95);
-      const pos2Y = Math.sin(angleRad + driftAngle) * (orbitRadius * 0.95) - 12;
-      const pos3X = Math.cos(angleRad + driftAngle * 2) * orbitRadius;
-      const pos3Y = Math.sin(angleRad + driftAngle * 2) * orbitRadius + 8;
-      
-      // Trail size scales with trailMult
-      const trailSize1 = p.size * 2 * trailMult;
-      const trailSize2 = p.size * 4 * trailMult;
-      
-      return (
-        <motion.div
-          key={p.id}
-          className="absolute left-1/2 top-1/2 rounded-full"
-          style={{
-            width: p.size,
-            height: p.size,
-            backgroundColor: color,
-            boxShadow: `0 0 ${trailSize1}px ${color}, 0 0 ${trailSize2}px ${color}50`,
-          }}
-          initial={{ x: pos1X, y: pos1Y, opacity: 0, scale: 0.5 }}
-          animate={{
-            // Float around perimeter with gentle up/down drift
-            x: [pos1X, pos2X, pos3X, pos1X],
-            y: [pos1Y, pos2Y, pos3Y, pos1Y],
-            opacity: [0, 0.9, 0.8, 0.9, 0],
-            scale: [0.5, 1, 1.2, 1, 0.5],
-          }}
-          transition={{
-            duration: p.duration * 1.5,
-            delay: p.delay,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
-        />
-      );
-    })}
-  </>
-);
-
-// Orbit particles: orbit around the eye from OUTSIDE perimeter
-const OrbitParticles = ({ 
-  color, 
-  radius, 
-  speedMult,
-  trailMult = 1,
-  onParticleNearEye 
-}: { 
-  color: string; 
-  radius: number; 
-  speedMult: number;
-  trailMult?: number;
-  onParticleNearEye?: (angle: number) => void;
-}) => {
-  const dots = [0, 1, 2, 3];
-  const orbitDuration = 4 * speedMult;
-  
-  // Trail glow sizes scale with trailMult
-  const dotGlow1 = 12 * trailMult;
-  const dotGlow2 = 24 * trailMult;
-  const ringGlow = 20 * trailMult;
-  
-  return (
-    <motion.div
-      className="absolute inset-0 flex items-center justify-center"
-      animate={{ rotate: 360 }}
-      transition={{ duration: orbitDuration, repeat: Infinity, ease: 'linear' }}
-    >
-      {dots.map((i) => {
-        const angle = i * 90;
-        return (
-          <motion.div
-            key={i}
-            className="absolute rounded-full"
-            style={{
-              width: 8,
-              height: 8,
-              backgroundColor: color,
-              boxShadow: `0 0 ${dotGlow1}px ${color}, 0 0 ${dotGlow2}px ${color}60`,
-              left: '50%',
-              top: '50%',
-              transform: `translate(-50%, -50%) rotate(${angle}deg) translateX(${radius}px)`,
-            }}
-            animate={{
-              scale: [1, 1.4, 1],
-              opacity: [0.7, 1, 0.7],
-            }}
-            transition={{
-              duration: 1.5 * speedMult,
-              delay: i * 0.3 * speedMult,
-              repeat: Infinity,
-              ease: 'easeInOut',
-            }}
-          />
-        );
-      })}
-      
-      {/* Trailing glow ring */}
-      <motion.div
-        className="absolute rounded-full"
-        style={{
-          width: radius * 2,
-          height: radius * 2,
-          border: `${2 * trailMult}px solid ${color}30`,
-          boxShadow: `0 0 ${ringGlow}px ${color}20, inset 0 0 ${ringGlow}px ${color}10`,
-        }}
-        animate={{
-          opacity: [0.3, 0.5, 0.3],
-          scale: [0.98, 1.02, 0.98],
-        }}
-        transition={{
-          duration: 2 * speedMult,
-          repeat: Infinity,
-          ease: 'easeInOut',
-        }}
-      />
-    </motion.div>
-  );
-};
-
-// Energy particles: pulse around perimeter as ambient aura
-const EnergyParticles = ({ 
-  particles, 
-  color, 
-  speedMult,
-  innerRadius,
-  trailMult = 1,
-  onParticleNearEye 
-}: { 
-  particles: Particle[]; 
-  color: string; 
-  speedMult: number;
-  innerRadius: number;
-  trailMult?: number;
-  onParticleNearEye?: (angle: number) => void;
-}) => (
-  <>
-    {particles.map((p) => {
-      const angleRad = (p.angle * Math.PI) / 180;
-      const orbitRadius = p.startRadius;
-      // Slight orbital drift with pulsing
-      const driftAngle = 0.2;
-      
-      const posX = Math.cos(angleRad) * orbitRadius;
-      const posY = Math.sin(angleRad) * orbitRadius;
-      const driftX = Math.cos(angleRad + driftAngle) * (orbitRadius * 1.05);
-      const driftY = Math.sin(angleRad + driftAngle) * (orbitRadius * 1.05);
-      
-      // Trail glow sizes scale with trailMult
-      const trailGlow1 = 8 * trailMult;
-      const trailGlow2 = 16 * trailMult;
-      
-      return (
-        <motion.div
-          key={p.id}
-          className="absolute left-1/2 top-1/2"
-          style={{
-            width: 3,
-            height: 14 * trailMult,
-            backgroundColor: color,
-            boxShadow: `0 0 ${trailGlow1}px ${color}, 0 0 ${trailGlow2}px ${color}60`,
-            transformOrigin: 'center center',
-            borderRadius: 2,
-          }}
-          initial={{ 
-            x: posX - 1.5, 
-            y: posY - 7, 
-            opacity: 0, 
-            scale: 0.5,
-            rotate: p.angle + 90
-          }}
-          animate={{
-            // Pulse in place with slight orbital drift
-            x: [posX - 1.5, driftX - 1.5, posX - 1.5],
-            y: [posY - 7, driftY - 7, posY - 7],
-            opacity: [0.3, 1, 0.3],
-            scale: [0.7, 1.3, 0.7],
-          }}
-          transition={{
-            duration: (2 + Math.random() * 0.5) * speedMult,
-            delay: p.delay,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
-        />
-      );
-    })}
-  </>
-);
-
-// Warmth particles: float around the outer perimeter, never moving inward
-const WarmthParticles = ({ 
-  radius, 
-  innerRadius,
-  color, 
-  speedMult, 
-  count,
-  trailMult = 1,
-  onParticleNearEye 
-}: { 
-  radius: number; 
-  innerRadius: number;
-  color: string; 
-  speedMult: number; 
-  count: number;
-  trailMult?: number;
-  onParticleNearEye?: (angle: number) => void;
-}) => {
-  const embers = useMemo(() => 
-    Array.from({ length: count }, (_, i) => ({
-      id: i,
-      startAngle: (i / count) * Math.PI * 2,
-      size: 6 + Math.random() * 5,
-      delay: i * 0.4 * speedMult,
-      duration: (5 + Math.random() * 2) * speedMult,
-      floatOffset: 10 + Math.random() * 20,
-      orbitDrift: 0.4 + Math.random() * 0.3, // How far to drift along orbit
-    })), [count, speedMult]);
-
-  return (
-    <>
-      {embers.map((ember) => {
-        // All positions stay at outer radius - never move inward
-        const pos1X = Math.cos(ember.startAngle) * radius;
-        const pos1Y = Math.sin(ember.startAngle) * radius;
-        const pos2X = Math.cos(ember.startAngle + ember.orbitDrift) * (radius * 1.05);
-        const pos2Y = Math.sin(ember.startAngle + ember.orbitDrift) * (radius * 1.05) - ember.floatOffset;
-        const pos3X = Math.cos(ember.startAngle + ember.orbitDrift * 2) * radius;
-        const pos3Y = Math.sin(ember.startAngle + ember.orbitDrift * 2) * radius + ember.floatOffset * 0.5;
-        
-        // Trail glow sizes scale with trailMult
-        const trailGlow1 = ember.size * 2 * trailMult;
-        const trailGlow2 = ember.size * 4 * trailMult;
-        
-        return (
-          <motion.div
-            key={ember.id}
-            className="absolute rounded-full"
-            style={{
-              width: ember.size,
-              height: ember.size,
-              background: `radial-gradient(circle, ${color} 0%, ${color}80 50%, transparent 100%)`,
-              boxShadow: `
-                0 0 ${trailGlow1}px ${color},
-                0 0 ${trailGlow2}px ${color}50
-              `,
-            }}
-            initial={{ 
-              x: pos1X, 
-              y: pos1Y, 
-              opacity: 0, 
-              scale: 0.4 
-            }}
-            animate={{
-              // Orbit around perimeter with gentle float
-              x: [pos1X, pos2X, pos3X, pos1X],
-              y: [pos1Y, pos2Y, pos3Y, pos1Y],
-              opacity: [0, 0.9, 0.7, 0.9, 0],
-              scale: [0.4, 1.1, 0.9, 1, 0.4],
-            }}
-            transition={{
-              duration: ember.duration,
-              delay: ember.delay,
-              repeat: Infinity,
-              ease: 'easeInOut',
-            }}
-          />
-        );
-      })}
-      
-      {/* Outer ambient glow ring - scales with trailMult */}
-      <motion.div
-        className="absolute rounded-full"
-        style={{
-          width: radius * (2.2 + (trailMult - 1) * 0.3),
-          height: radius * (2.2 + (trailMult - 1) * 0.3),
-          background: `radial-gradient(circle, transparent 40%, ${color}15 60%, transparent 80%)`,
-        }}
-        animate={{
-          scale: [1, 1.08, 1],
-          opacity: [0.5, 0.7, 0.5],
-          rotate: [0, 15, 0],
-        }}
-        transition={{
-          duration: 4 * speedMult,
-          repeat: Infinity,
-          ease: 'easeInOut',
-        }}
-      />
-    </>
-  );
-};
