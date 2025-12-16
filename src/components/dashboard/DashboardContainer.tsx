@@ -115,10 +115,8 @@ export const DashboardContainer = ({ user, session, auth, isAdmin, hasDutyAccess
     // Send message with attachment
     await messagesHook.sendMessage(content, attachment);
     
-    // Clear the file and uploaded attachment after sending
-    if (attachment) {
-      fileUpload.removeFile();
-    }
+    // Always clear the file state after sending (safe even if no file was selected)
+    fileUpload.removeFile();
     
     // Refresh chat history - title is guaranteed to exist now (saved before messages)
     await chatSession.loadRecentChats();
