@@ -252,51 +252,51 @@ export class SoundGenerator {
       this.audioContext.resume();
     }
     
-    // Only play if context is running (skip if not ready yet)
-    if (this.audioContext.state !== 'running') {
-      return;
-    }
-    
+    // Don't check state - just try to play, Web Audio API handles gracefully
     const config = SOUND_CONFIGS[soundType];
     if (!config) return;
-
-    const now = this.audioContext.currentTime;
     
-    // Create oscillator
-    const oscillator = this.audioContext.createOscillator();
-    oscillator.type = config.type;
-    oscillator.frequency.value = config.frequency;
-    if (config.detune) {
-      oscillator.detune.value = config.detune;
+    try {
+      const now = this.audioContext.currentTime;
+      
+      // Create oscillator
+      const oscillator = this.audioContext.createOscillator();
+      oscillator.type = config.type;
+      oscillator.frequency.value = config.frequency;
+      if (config.detune) {
+        oscillator.detune.value = config.detune;
+      }
+      
+      // Create gain for envelope
+      const gainNode = this.audioContext.createGain();
+      gainNode.gain.setValueAtTime(0, now);
+      gainNode.gain.linearRampToValueAtTime(config.gain, now + config.attack);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, now + config.duration);
+      
+      // Optional filter for softer sounds
+      if (config.filterFreq) {
+        const filter = this.audioContext.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = config.filterFreq;
+        oscillator.connect(filter);
+        filter.connect(gainNode);
+      } else {
+        oscillator.connect(gainNode);
+      }
+      
+      gainNode.connect(this.masterGain);
+      
+      oscillator.start(now);
+      oscillator.stop(now + config.duration);
+    
+      // Cleanup
+      oscillator.onended = () => {
+        oscillator.disconnect();
+        gainNode.disconnect();
+      };
+    } catch {
+      // Silently fail if context not ready
     }
-    
-    // Create gain for envelope
-    const gainNode = this.audioContext.createGain();
-    gainNode.gain.setValueAtTime(0, now);
-    gainNode.gain.linearRampToValueAtTime(config.gain, now + config.attack);
-    gainNode.gain.exponentialRampToValueAtTime(0.001, now + config.duration);
-    
-    // Optional filter for softer sounds
-    if (config.filterFreq) {
-      const filter = this.audioContext.createBiquadFilter();
-      filter.type = 'lowpass';
-      filter.frequency.value = config.filterFreq;
-      oscillator.connect(filter);
-      filter.connect(gainNode);
-    } else {
-      oscillator.connect(gainNode);
-    }
-    
-    gainNode.connect(this.masterGain);
-    
-    oscillator.start(now);
-    oscillator.stop(now + config.duration);
-    
-    // Cleanup
-    oscillator.onended = () => {
-      oscillator.disconnect();
-      gainNode.disconnect();
-    };
   }
 
   // Play a quick double tone for mode changes
