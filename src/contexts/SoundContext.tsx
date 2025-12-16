@@ -149,32 +149,24 @@ export const SoundProvider = ({ children }: { children: ReactNode }) => {
   }, [soundGenerator, userId, accessToken]);
 
   const playSound = useCallback((soundType: SoundType) => {
-    if (!enabled) {
-      return;
-    }
+    // soundGenerator internally checks enabled state
     soundGenerator.play(soundType);
-  }, [soundGenerator, enabled]);
+  }, [soundGenerator]);
 
   const playInstant = useCallback((soundType: SoundType) => {
-    if (!enabled) {
-      return;
-    }
+    // soundGenerator internally checks enabled state
     soundGenerator.playInstant(soundType);
-  }, [soundGenerator, enabled]);
+  }, [soundGenerator]);
 
   const playModeChange = useCallback((mode: string) => {
-    if (!enabled) {
-      return;
-    }
+    // soundGenerator internally checks enabled state
     soundGenerator.playModeChange(mode);
-  }, [soundGenerator, enabled]);
+  }, [soundGenerator]);
 
   const playEmotion = useCallback((emotion: string) => {
-    if (!enabled) {
-      return;
-    }
+    // soundGenerator internally checks enabled state
     soundGenerator.playEmotion(emotion);
-  }, [soundGenerator, enabled]);
+  }, [soundGenerator]);
 
   return (
     <SoundContext.Provider value={{
