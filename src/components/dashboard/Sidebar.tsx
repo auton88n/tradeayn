@@ -33,6 +33,56 @@ import {
 import { UsageCard } from './UsageCard';
 import { useUsageTracking } from '@/hooks/useUsageTracking';
 
+// Moved outside to prevent recreation on each render
+interface ProfileTriggerButtonProps extends React.ComponentPropsWithoutRef<'button'> {
+  userName?: string;
+  userEmail?: string;
+  userAvatar?: string;
+}
+
+const ProfileTriggerButton = React.memo(React.forwardRef<HTMLButtonElement, ProfileTriggerButtonProps>(
+  ({ userName, userEmail, userAvatar, ...props }, ref) => (
+    <button
+      ref={ref}
+      data-tutorial="profile"
+      className={cn(
+        "flex items-center gap-3 p-3 w-full",
+        "cursor-pointer rounded-xl",
+        "bg-muted/40",
+        "border border-border/50",
+        "shadow-sm hover:shadow-md",
+        "hover:bg-muted/60 hover:border-border/70",
+        "hover:-translate-y-0.5",
+        "transition-all duration-200 ease-out",
+        "active:scale-[0.98]",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+      )}
+      {...props}
+    >
+      <div className="relative flex-shrink-0">
+        <Avatar className="w-10 h-10 ring-2 ring-background shadow-sm">
+          <AvatarImage src={userAvatar} alt={userName || 'User'} />
+          <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
+            {userName?.charAt(0) || userEmail?.charAt(0) || 'U'}
+          </AvatarFallback>
+        </Avatar>
+      </div>
+      <div className="flex-1 min-w-0 text-left">
+        <p className="text-sm font-semibold truncate text-foreground">
+          {userName || 'User'}
+        </p>
+        <p className="text-xs text-muted-foreground truncate">
+          {userEmail}
+        </p>
+      </div>
+      <div className="flex items-center justify-center w-6 h-6 rounded-full bg-background/80 shadow-sm">
+        <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+      </div>
+    </button>
+  )
+));
+ProfileTriggerButton.displayName = 'ProfileTriggerButton';
+
 export const Sidebar = ({
   userName,
   userEmail,
@@ -88,47 +138,6 @@ export const Sidebar = ({
   // Fetch credits data directly via hook
   const { currentMonthUsage: usageFromHook, monthlyLimit: limitFromHook, usageResetDate: resetFromHook, isLoading: isUsageLoading } = useUsageTracking(userId ?? null);
 
-  // Profile trigger button component
-  const ProfileTriggerButton = React.forwardRef<HTMLButtonElement, React.ComponentPropsWithoutRef<'button'>>((props, ref) => (
-    <button
-      ref={ref}
-      data-tutorial="profile"
-      className={cn(
-        "flex items-center gap-3 p-3 w-full",
-        "cursor-pointer rounded-xl",
-        "bg-muted/40 backdrop-blur-sm",
-        "border border-border/50",
-        "shadow-sm hover:shadow-md",
-        "hover:bg-muted/60 hover:border-border/70",
-        "hover:-translate-y-0.5",
-        "transition-all duration-200 ease-out",
-        "active:scale-[0.98]",
-        "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
-      )}
-      {...props}
-    >
-      <div className="relative flex-shrink-0">
-        <Avatar className="w-10 h-10 ring-2 ring-background shadow-sm">
-          <AvatarImage src={userAvatar} alt={userName || 'User'} />
-          <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
-            {userName?.charAt(0) || userEmail?.charAt(0) || 'U'}
-          </AvatarFallback>
-        </Avatar>
-      </div>
-      <div className="flex-1 min-w-0 text-left">
-        <p className="text-sm font-semibold truncate text-foreground">
-          {userName || 'User'}
-        </p>
-        <p className="text-xs text-muted-foreground truncate">
-          {userEmail}
-        </p>
-      </div>
-      <div className="flex items-center justify-center w-6 h-6 rounded-full bg-background/80 shadow-sm">
-        <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
-      </div>
-    </button>
-  ));
-  ProfileTriggerButton.displayName = 'ProfileTriggerButton';
 
   // Profile menu content - memoized to prevent flickering
   const ProfileMenuContent = React.useMemo(() => (
@@ -497,15 +506,11 @@ return <SidebarMenuItem key={chat.sessionId} className={cn("relative", index > 0
         {isMobile ? (
           <Sheet open={profilePopoverOpen} onOpenChange={setProfilePopoverOpen}>
             <SheetTrigger asChild>
-              <ProfileTriggerButton />
+              <ProfileTriggerButton userName={userName} userEmail={userEmail} userAvatar={userAvatar} />
             </SheetTrigger>
             <SheetContent 
               side="bottom" 
-              className={cn(
-                "max-h-[85vh] overflow-y-auto rounded-t-2xl px-0",
-                "bg-background/95 backdrop-blur-xl",
-                "border-t border-border/60"
-              )}
+              className="max-h-[85vh] overflow-y-auto rounded-t-2xl px-0 bg-background border-t border-border/60"
             >
               {ProfileMenuContent}
             </SheetContent>
@@ -513,15 +518,10 @@ return <SidebarMenuItem key={chat.sessionId} className={cn("relative", index > 0
         ) : (
           <Popover open={profilePopoverOpen} onOpenChange={setProfilePopoverOpen}>
             <PopoverTrigger asChild>
-              <ProfileTriggerButton />
+              <ProfileTriggerButton userName={userName} userEmail={userEmail} userAvatar={userAvatar} />
             </PopoverTrigger>
             <PopoverContent 
-              className={cn(
-                "w-[19rem] p-0 rounded-2xl overflow-hidden",
-                "bg-background/95 backdrop-blur-xl",
-                "border border-border/60 shadow-2xl",
-                "animate-in slide-in-from-bottom-2 fade-in-0 duration-200"
-              )} 
+              className="w-[19rem] p-0 rounded-2xl overflow-hidden bg-background border border-border/60 shadow-2xl"
               align="start" 
               side="top" 
               sideOffset={8}
