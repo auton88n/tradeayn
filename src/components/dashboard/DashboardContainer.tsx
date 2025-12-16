@@ -112,17 +112,18 @@ export const DashboardContainer = ({ user, session, auth, isAdmin, hasDutyAccess
     // Use the pre-uploaded attachment (already uploaded when file was selected)
     const attachment = fileUpload.uploadedAttachment;
     
-    // Send message with attachment
-    await messagesHook.sendMessage(content, attachment);
-    
-    // Always clear the file state after sending (safe even if no file was selected)
-    fileUpload.removeFile();
-    
-    // Refresh chat history - title is guaranteed to exist now (saved before messages)
-    await chatSession.loadRecentChats();
-    
-    // Return true to indicate message was sent successfully
-    return true;
+    try {
+      // Send message with attachment
+      await messagesHook.sendMessage(content, attachment);
+      
+      // Refresh chat history - title is guaranteed to exist now (saved before messages)
+      await chatSession.loadRecentChats();
+      
+      return true;
+    } finally {
+      // Always clear the file state, even if sending fails
+      fileUpload.removeFile();
+    }
   }, [
     auth.hasAccess,
     auth.hasAcceptedTerms,
