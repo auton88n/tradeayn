@@ -16,14 +16,28 @@ export const useFileUpload = (userId: string): UseFileUploadReturn => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  // Allowed file types - aligned with edge function support
+  // Allowed file types - exactly 16 extensions across 9 categories
   const ALLOWED_TYPES = [
-    'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
-    'application/pdf', 
-    'application/msword', 
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    // Documents
+    'application/pdf',
+    // Spreadsheets
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+    'application/vnd.ms-excel', // .xls
+    'text/csv',
+    // Text Files
     'text/plain',
-    'application/json'
+    // Structured Data
+    'application/json',
+    'application/xml',
+    'text/xml',
+    'text/html',
+    // Images (with AI vision analysis)
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/webp',
+    'image/bmp',
+    'image/svg+xml',
   ];
 
   const MAX_SIZE = 10 * 1024 * 1024; // 10MB
@@ -33,7 +47,7 @@ export const useFileUpload = (userId: string): UseFileUploadReturn => {
     if (!ALLOWED_TYPES.includes(file.type)) {
       toast({
         title: "Invalid File Type",
-        description: "Please select a PDF, Word document, image, text, or JSON file.",
+        description: "Supported: PDF, Excel, CSV, TXT, JSON, XML, HTML, and images (JPEG, PNG, GIF, WebP, BMP, SVG).",
         variant: "destructive"
       });
       return false;

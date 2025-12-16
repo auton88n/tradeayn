@@ -16,17 +16,28 @@ interface FileUploadRequest {
   userId: string;
 }
 
+// Allowed file types - exactly 16 extensions across 9 categories
 const ALLOWED_FILE_TYPES = [
+  // Documents
+  'application/pdf',
+  // Spreadsheets
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+  'application/vnd.ms-excel', // .xls
+  'text/csv',
+  // Text Files
+  'text/plain',
+  // Structured Data
+  'application/json',
+  'application/xml',
+  'text/xml',
+  'text/html',
+  // Images (with AI vision analysis)
   'image/jpeg',
-  'image/jpg', 
   'image/png',
   'image/gif',
   'image/webp',
-  'application/pdf',
-  'application/msword',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'text/plain',
-  'application/json'
+  'image/bmp',
+  'image/svg+xml',
 ];
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
