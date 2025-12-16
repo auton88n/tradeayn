@@ -130,8 +130,8 @@ export const Sidebar = ({
   ));
   ProfileTriggerButton.displayName = 'ProfileTriggerButton';
 
-  // Profile menu content component
-  const ProfileMenuContent = () => (
+  // Profile menu content - memoized to prevent flickering
+  const ProfileMenuContent = React.useMemo(() => (
     <>
       {/* User Info Header */}
       <div className="px-4 py-3 bg-muted/30">
@@ -141,18 +141,6 @@ export const Sidebar = ({
       
       {/* Gradient Divider */}
       <div className="h-px bg-gradient-to-r from-transparent via-border/60 to-transparent" />
-      
-      {/* Premium Credits Card */}
-      {hasAccess && !isUsageLoading && (
-        <div className="p-3">
-          <UsageCard 
-            currentUsage={usageFromHook}
-            monthlyLimit={limitFromHook}
-            resetDate={resetFromHook}
-            compact={false}
-          />
-        </div>
-      )}
       
       {/* Menu Items */}
       <div className="p-2 space-y-0.5">
@@ -245,7 +233,7 @@ export const Sidebar = ({
         </Button>
       </div>
     </>
-  );
+  ), [userName, userEmail, hasDutyAccess, isAdmin, isSigningOut, onAdminPanelClick, onLogout, onStartTutorial, navigate]);
 
   // Control profile popover during tutorial
   useEffect(() => {
@@ -519,7 +507,7 @@ return <SidebarMenuItem key={chat.sessionId} className={cn("relative", index > 0
                 "border-t border-border/60"
               )}
             >
-              <ProfileMenuContent />
+              {ProfileMenuContent}
             </SheetContent>
           </Sheet>
         ) : (
@@ -538,7 +526,7 @@ return <SidebarMenuItem key={chat.sessionId} className={cn("relative", index > 0
               side="top" 
               sideOffset={8}
             >
-              <ProfileMenuContent />
+              {ProfileMenuContent}
             </PopoverContent>
           </Popover>
         )}
