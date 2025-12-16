@@ -132,8 +132,21 @@ export const SoundProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const toggleEnabled = useCallback(() => {
-    setEnabled(!enabled);
-  }, [enabled, setEnabled]);
+    setEnabledState(prev => {
+      const newValue = !prev;
+      // Sync to sound generator immediately
+      soundGenerator.setEnabled(newValue);
+      // Sync to database if logged in
+      if (userId && accessToken) {
+        supabaseApi.patch(
+          `user_settings?user_id=eq.${userId}`,
+          accessToken,
+          { in_app_sounds: newValue, updated_at: new Date().toISOString() }
+        ).catch(() => {});
+      }
+      return newValue;
+    });
+  }, [soundGenerator, userId, accessToken]);
 
   const playSound = useCallback((soundType: SoundType) => {
     if (!enabled) {
