@@ -623,7 +623,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
       </p>
 
       {/* Hidden file input */}
-      <input ref={fileInputRef} type="file" className="hidden" accept=".pdf,.doc,.docx,.txt,.json,.csv,.xlsx,.png,.jpg,.jpeg,.gif,.webp" onChange={handleFileInputChange} />
+      <input ref={fileInputRef} type="file" className="hidden" accept=".pdf,.xlsx,.xls,.csv,.txt,.json,.xml,.html,.htm,.jpg,.jpeg,.png,.gif,.webp,.bmp,.svg" onChange={handleFileInputChange} />
     </div>;
 });
 ChatInput.displayName = 'ChatInput';
