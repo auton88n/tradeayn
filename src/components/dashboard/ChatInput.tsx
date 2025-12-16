@@ -313,13 +313,19 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
     setShowPlaceholder(true);
     setDetectedEmotion(null);
     setDetectedLang(null);
+    
+    // Clear file immediately after initiating send
+    if (onRemoveFile) {
+      onRemoveFile();
+    }
+    
     if (textareaRef.current) {
       textareaRef.current.style.height = '44px';
     }
     setTimeout(() => {
       triggerAttentionBlink();
     }, 100);
-  }, [inputMessage, selectedFile, isDisabled, isUploading, onSend, triggerAttentionBlink, playSound, bumpActivity]);
+  }, [inputMessage, selectedFile, isDisabled, isUploading, onSend, onRemoveFile, triggerAttentionBlink, playSound, bumpActivity]);
   const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
