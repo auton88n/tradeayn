@@ -31,6 +31,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { UsageCard } from './UsageCard';
+import { useUsageTracking } from '@/hooks/useUsageTracking';
 
 export const Sidebar = ({
   userName,
@@ -83,6 +84,9 @@ export const Sidebar = ({
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isDeletingAll, setIsDeletingAll] = useState(false);
   const [showSupportWidget, setShowSupportWidget] = useState(false);
+  
+  // Fetch credits data directly via hook
+  const { currentMonthUsage: usageFromHook, monthlyLimit: limitFromHook, usageResetDate: resetFromHook, isLoading: isUsageLoading } = useUsageTracking(userId ?? null);
 
   // Profile trigger button component
   const ProfileTriggerButton = React.forwardRef<HTMLButtonElement, React.ComponentPropsWithoutRef<'button'>>((props, ref) => (
@@ -330,8 +334,22 @@ export const Sidebar = ({
       </SidebarHeader>
 
       <SidebarContent className="flex flex-col overflow-hidden">
+        {/* Credits Card - Above New Chat */}
+        {hasAccess && !isUsageLoading && (
+          <SidebarGroup className="flex-shrink-0 px-4 pt-4 pb-2">
+            <SidebarGroupContent>
+              <UsageCard 
+                currentUsage={usageFromHook}
+                monthlyLimit={limitFromHook}
+                resetDate={resetFromHook}
+                compact={true}
+              />
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+        
         {/* New Chat Button */}
-        <SidebarGroup className="flex-shrink-0 p-4 pb-2">
+        <SidebarGroup className="flex-shrink-0 px-4 pb-2">
           <SidebarGroupContent>
             <Button onClick={onNewChat} className={cn("w-full h-10 rounded-xl", "bg-foreground text-background", "hover:bg-foreground/90", "transition-all duration-300", "disabled:opacity-40")} disabled={!hasAccess}>
               <Plus className="w-4 h-4 mr-2" />
