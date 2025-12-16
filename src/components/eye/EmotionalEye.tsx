@@ -125,13 +125,16 @@ const EmotionalEyeComponent = ({
     }
   }, [soundContext]);
 
-  // Play blink sound when blinking starts
+  // Play blink sound when blinking starts - use instant for perfect sync
   useEffect(() => {
     if (isBlinking && !prevBlinkingRef.current) {
-      playSoundSafe('blink');
+      // Use instant sound for perfect visual sync (no async delay)
+      if (soundContext?.playInstant) {
+        soundContext.playInstant('blink');
+      }
     }
     prevBlinkingRef.current = isBlinking;
-  }, [isBlinking, playSoundSafe]);
+  }, [isBlinking, soundContext]);
 
   // Gaze intensity defaults (AI-driven)
   const gazeIntensity = 0.4;

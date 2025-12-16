@@ -5,6 +5,7 @@ import { supabaseApi } from '@/lib/supabaseApi';
 
 interface SoundContextType {
   playSound: (soundType: SoundType) => void;
+  playInstant: (soundType: SoundType) => void;
   playModeChange: (mode: string) => void;
   playEmotion: (emotion: string) => void;
   enabled: boolean;
@@ -141,6 +142,13 @@ export const SoundProvider = ({ children }: { children: ReactNode }) => {
     soundGenerator.play(soundType);
   }, [soundGenerator, enabled]);
 
+  const playInstant = useCallback((soundType: SoundType) => {
+    if (!enabled) {
+      return;
+    }
+    soundGenerator.playInstant(soundType);
+  }, [soundGenerator, enabled]);
+
   const playModeChange = useCallback((mode: string) => {
     if (!enabled) {
       return;
@@ -158,6 +166,7 @@ export const SoundProvider = ({ children }: { children: ReactNode }) => {
   return (
     <SoundContext.Provider value={{
       playSound,
+      playInstant,
       playModeChange,
       playEmotion,
       enabled,
