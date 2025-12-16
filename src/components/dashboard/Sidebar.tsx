@@ -143,12 +143,12 @@ export const Sidebar = ({
       <div className="h-px bg-gradient-to-r from-transparent via-border/60 to-transparent" />
       
       {/* Premium Credits Card */}
-      {hasAccess && (
+      {hasAccess && !isUsageLoading && (
         <div className="p-3">
           <UsageCard 
-            currentUsage={currentMonthUsage}
-            monthlyLimit={monthlyLimit}
-            resetDate={usageResetDate}
+            currentUsage={usageFromHook}
+            monthlyLimit={limitFromHook}
+            resetDate={resetFromHook}
             compact={false}
           />
         </div>
