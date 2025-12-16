@@ -728,64 +728,10 @@ serve(async (req) => {
     ? requestData.userId
     : `${requestData.userId}:np`; // separate non-personalized memory to avoid name bleed
 
-  // Language instruction - support all detected languages naturally
-  const getLanguageInstruction = (langCode: string): string => {
-    const languageNames: Record<string, string> = {
-      ar: 'Arabic (العربية)',
-      fr: 'French (Français)',
-      es: 'Spanish (Español)',
-      de: 'German (Deutsch)',
-      it: 'Italian (Italiano)',
-      pt: 'Portuguese (Português)',
-      nl: 'Dutch (Nederlands)',
-      ru: 'Russian (Русский)',
-      zh: 'Chinese (中文)',
-      ja: 'Japanese (日本語)',
-      ko: 'Korean (한국어)',
-      tr: 'Turkish (Türkçe)',
-      pl: 'Polish (Polski)',
-      vi: 'Vietnamese (Tiếng Việt)',
-      th: 'Thai (ไทย)',
-      hi: 'Hindi (हिन्दी)',
-      cs: 'Czech (Čeština)',
-      sv: 'Swedish (Svenska)',
-      da: 'Danish (Dansk)',
-      no: 'Norwegian (Norsk)',
-      fi: 'Finnish (Suomi)',
-      el: 'Greek (Ελληνικά)',
-      he: 'Hebrew (עברית)',
-      uk: 'Ukrainian (Українська)',
-      ro: 'Romanian (Română)',
-      hu: 'Hungarian (Magyar)',
-      id: 'Indonesian (Bahasa Indonesia)',
-      ms: 'Malay (Bahasa Melayu)',
-      bn: 'Bengali (বাংলা)',
-      ta: 'Tamil (தமிழ்)',
-      te: 'Telugu (తెలుగు)'
-    };
-
-    if (langCode === 'en' || !langCode) {
-      return 'Respond in clear, professional English.';
-    }
-
-    const langName = languageNames[langCode];
-    if (langName) {
-      return `Respond in ${langName}. Use natural, fluent expressions in that language.`;
-    }
-
-    // Fallback for unknown language codes
-    return `Respond in the user's language naturally. Detected language code: ${langCode}.`;
-  };
-
-  const languageInstruction = getLanguageInstruction(requestData.detectedLanguage || 'en');
-
-  const conciseInstruction = requestData.concise
-    ? 'Be concise: 1-3 short sentences. Answer directly. No greetings, no coaching tone, no fluff, no bullet points unless explicitly requested.'
-    : '';
-
-  const systemMessage = requestData.allowPersonalization && requestData.contactPerson
-    ? `You may address the user as ${requestData.contactPerson}. ${languageInstruction} ${conciseInstruction} Scope all context strictly to conversationKey (${conversationKey}).`
-    : `Do not use or infer personal names. Ignore any prior memory of names. ${languageInstruction} ${conciseInstruction} Treat each request as stateless and scope strictly to conversationKey (${conversationKey}).`;
+  // Simplified system prompt - let n8n handle language and conciseness via payload fields
+  const systemPrompt = requestData.contactPerson
+    ? `You may address the user as ${requestData.contactPerson}. Respond in the user's language naturally.`
+    : `Do not use or infer personal names. Ignore any prior memory of names. Respond in the user's language naturally.`;
 
   // Call upstream webhook with authentication and error handling
   let upstream;
@@ -806,7 +752,7 @@ serve(async (req) => {
         userId: requestData.userId,
         contactPerson: requestData.contactPerson,
         conversationKey, // isolate memory per user and mode
-        system: systemMessage,
+        system: systemPrompt,
         detectedLanguage: requestData.detectedLanguage,
         concise: requestData.concise,
         mode: requestData.mode,
