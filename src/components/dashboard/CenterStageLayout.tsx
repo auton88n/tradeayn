@@ -434,6 +434,9 @@ export const CenterStageLayout = ({
 
         // Actually send the message immediately
         onSendMessage(content, file);
+        
+        // Clear file after send (belt and suspenders approach)
+        onRemoveFile();
       }, 350);
     },
     [
@@ -451,6 +454,7 @@ export const CenterStageLayout = ({
       setIsResponding,
       completeAbsorption,
       onSendMessage,
+      onRemoveFile,
       triggerPulse,
     ]
   );
