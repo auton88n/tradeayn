@@ -351,7 +351,10 @@ export const useMessages = (
             session_id: sessionId,
             content: response,
             sender: 'ayn',
-            mode_used: selectedMode
+            mode_used: selectedMode,
+            attachment_url: null,
+            attachment_name: null,
+            attachment_type: null
           }
         ])
       });
