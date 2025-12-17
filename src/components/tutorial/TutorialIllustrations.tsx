@@ -49,34 +49,34 @@ export const EmotionsIllustration = () => {
     { color: 'hsl(197, 9%, 58%)', label: 'Bored', emoji: '😑', meaning: 'Low Energy' },
   ];
 
-  const EmotionCircle = ({ emotion, index, baseDelay = 0 }: { emotion: typeof coreEmotions[0], index: number, baseDelay?: number }) => (
+  const EmotionCircle = ({ emotion, index, baseDelay = 0, small = false }: { emotion: typeof coreEmotions[0], index: number, baseDelay?: number, small?: boolean }) => (
     <motion.div
       initial={{ opacity: 0, scale: 0.8 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: baseDelay + index * 0.08, type: 'spring', stiffness: 200 }}
-      className="flex flex-col items-center gap-1"
+      transition={{ delay: baseDelay + index * 0.06, type: 'spring', stiffness: 200 }}
+      className="flex flex-col items-center gap-0.5"
     >
       <motion.div 
-        className="w-10 h-10 md:w-11 md:h-11 rounded-full flex items-center justify-center shadow-lg relative"
+        className={`${small ? 'w-8 h-8' : 'w-9 h-9'} rounded-full flex items-center justify-center shadow-md`}
         style={{ 
           backgroundColor: emotion.color,
-          boxShadow: `0 4px 20px ${emotion.color.replace(')', ', 0.4)')}` 
+          boxShadow: `0 2px 12px ${emotion.color.replace(')', ', 0.35)')}` 
         }}
-        animate={{ scale: [1, 1.05, 1] }}
-        transition={{ duration: 2, repeat: Infinity, delay: index * 0.3 }}
+        animate={{ scale: [1, 1.04, 1] }}
+        transition={{ duration: 2.5, repeat: Infinity, delay: index * 0.2 }}
       >
-        <span className="text-base md:text-lg">{emotion.emoji}</span>
+        <span className={small ? 'text-sm' : 'text-base'}>{emotion.emoji}</span>
       </motion.div>
-      <span className="text-[10px] font-medium text-foreground">{emotion.label}</span>
-      <span className="text-[8px] text-muted-foreground">{emotion.meaning}</span>
+      <span className="text-[9px] font-medium text-foreground leading-tight">{emotion.label}</span>
+      <span className="text-[7px] text-muted-foreground leading-tight">{emotion.meaning}</span>
     </motion.div>
   );
 
   return (
-    <div className="w-full h-full flex items-center justify-center py-2">
-      <div className="flex flex-col items-center gap-4">
+    <div className="w-full h-full flex items-center justify-center">
+      <div className="flex flex-col items-center gap-2">
         {/* Row 1: Core emotions */}
-        <div className="flex items-center gap-3 md:gap-4">
+        <div className="flex items-center gap-2">
           {coreEmotions.map((emotion, i) => (
             <EmotionCircle key={emotion.label} emotion={emotion} index={i} baseDelay={0} />
           ))}
@@ -84,21 +84,21 @@ export const EmotionsIllustration = () => {
         
         {/* Row 2: Empathy emotions with warm background */}
         <motion.div 
-          className="flex items-center gap-4 px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-500/10 to-rose-500/10 border border-amber-500/20"
-          initial={{ opacity: 0, y: 10 }}
+          className="flex items-center gap-3 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500/10 to-rose-500/10 border border-amber-500/20"
+          initial={{ opacity: 0, y: 5 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
+          transition={{ delay: 0.4 }}
         >
-          <span className="text-[9px] text-amber-600 dark:text-amber-400 font-medium uppercase tracking-wider">Empathy</span>
+          <span className="text-[8px] text-amber-600 dark:text-amber-400 font-medium uppercase tracking-wider">Empathy</span>
           {empathyEmotions.map((emotion, i) => (
-            <EmotionCircle key={emotion.label} emotion={emotion} index={i} baseDelay={0.6} />
+            <EmotionCircle key={emotion.label} emotion={emotion} index={i} baseDelay={0.5} />
           ))}
         </motion.div>
         
         {/* Row 3: Negative emotions */}
-        <div className="flex items-center gap-3 md:gap-4 opacity-80">
+        <div className="flex items-center gap-2 opacity-75">
           {negativeEmotions.map((emotion, i) => (
-            <EmotionCircle key={emotion.label} emotion={emotion} index={i} baseDelay={0.8} />
+            <EmotionCircle key={emotion.label} emotion={emotion} index={i} baseDelay={0.7} small />
           ))}
         </div>
       </div>
