@@ -94,8 +94,9 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
               : 'Chat Session';
           }
 
-          // Use first user message for preview (ChatGPT-style - never changes)
-          const previewMessage = firstUserMessage || lastMessage;
+          // Use first AYN message for preview (shows AYN's response to user's question)
+          const firstAynMessage = sortedMessages.find(msg => msg.sender === 'ayn');
+          const previewMessage = firstAynMessage || lastMessage;
           
           return {
             title,
