@@ -303,14 +303,21 @@ const DashboardContent = ({
     setReplyPrefill('');
   }, []);
 
-  // Track last processed emotion to prevent duplicate haptics
+  // Track last processed emotion and content to prevent duplicate processing
   const lastProcessedEmotionRef = useRef<string | null>(null);
+  const lastProcessedContentRef = useRef<string | null>(null);
 
   // Update emotion when AYN responds - prioritize backend emotion detection + trigger haptic
   useEffect(() => {
     if (!messagesHook.isTyping && messagesHook.messages.length > 0) {
       const lastMessage = messagesHook.messages[messagesHook.messages.length - 1];
       if (lastMessage.sender === 'ayn') {
+        // Guard: Skip if we already processed this exact content
+        if (lastMessage.content === lastProcessedContentRef.current) {
+          return;
+        }
+        lastProcessedContentRef.current = lastMessage.content;
+        
         // Use backend-detected emotion if available, otherwise fallback to frontend analysis
         const emotion = messagesHook.lastSuggestedEmotion || analyzeResponseEmotion(lastMessage.content);
         setEmotion(emotion as 'calm' | 'happy' | 'excited' | 'thinking' | 'frustrated' | 'curious');

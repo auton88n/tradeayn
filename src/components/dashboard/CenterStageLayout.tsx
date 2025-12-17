@@ -121,7 +121,9 @@ export const CenterStageLayout = ({
   const [showParticleBurst, setShowParticleBurst] = useState(false);
   const [burstPosition, setBurstPosition] = useState({ x: 0, y: 0 });
   const [lastUserMessage, setLastUserMessage] = useState<string>('');
-  const [currentGazeIndex, setCurrentGazeIndex] = useState<number | null>(null);
+  // Use ref for gaze index to prevent re-renders from gaze cycling
+  const gazeIndexRef = useRef<number | null>(null);
+  const [gazeForRender, setGazeForRender] = useState<number | null>(null);
   
   // AI empathy micro-behavior state (passed to EmotionalEye)
   const [aiPupilReaction] = useState<'normal' | 'dilate-slightly' | 'dilate-more' | 'contract'>('normal');
@@ -148,23 +150,29 @@ export const CenterStageLayout = ({
   ];
 
   // Cycle through suggestion cards with glances - only when suggestions visible
+  // Uses ref to track index internally, only updates render state occasionally
   useEffect(() => {
     const visibleSuggestions = suggestionBubbles.filter(s => s.isVisible);
     
     // Stop cycling when no suggestions, typing, or on mobile
     if (visibleSuggestions.length === 0 || isTyping || isMobile || contextIsTyping) {
-      setCurrentGazeIndex(null);
+      gazeIndexRef.current = null;
+      setGazeForRender(null);
       return;
     }
 
     // Longer intervals to reduce CPU usage
     const cycleInterval = setInterval(() => {
-      setCurrentGazeIndex(prev => {
-        if (prev === null) return 0;
-        const next = (prev + 1) % visibleSuggestions.length;
-        if (Math.random() < 0.3) return null; // More frequent returns to center
-        return next;
-      });
+      const prev = gazeIndexRef.current;
+      let next: number | null;
+      if (prev === null) {
+        next = 0;
+      } else {
+        next = (prev + 1) % visibleSuggestions.length;
+        if (Math.random() < 0.3) next = null; // More frequent returns to center
+      }
+      gazeIndexRef.current = next;
+      setGazeForRender(next); // Only update render state here
     }, 3500); // Slower cycling (was 2500)
 
     return () => clearInterval(cycleInterval);
@@ -199,8 +207,8 @@ export const CenterStageLayout = ({
 
   // AI gaze target - eye looks at individual suggestion cards
   const gazeTarget = hasVisibleSuggestions && !isTyping && !isMobile
-    ? currentGazeIndex !== null 
-      ? suggestionGazeTargets[currentGazeIndex] 
+    ? gazeForRender !== null 
+      ? suggestionGazeTargets[gazeForRender] 
       : { x: -12, y: 0 } // Default center-left when not looking at specific card
     : null;
 
