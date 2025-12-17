@@ -170,18 +170,18 @@ button, a, input, textarea, select {
     --eye-glow-light: 0 0 60px hsl(0 0% 0% / 0.15), 0 0 120px hsl(0 0% 0% / 0.08), inset 0 0 30px hsl(0 0% 100% / 0.1);
     --eye-glow-dark: 0 0 60px hsl(0 0% 100% / 0.2), 0 0 120px hsl(0 0% 100% / 0.1), inset 0 0 30px hsl(0 0% 100% / 0.05);
 
-    /* AYN Emotion Colors - matches EMOTION_CONFIGS in AYNEmotionContext.tsx */
-    --emotion-calm: 210 55% 72%;
-    --emotion-happy: 142 71% 45%;
-    --emotion-excited: 25 95% 53%;
-    --emotion-thinking: 217 91% 60%;
-    --emotion-frustrated: 0 72% 51%;
-    --emotion-curious: 270 76% 60%;
-    --emotion-sad: 210 20% 50%;
-    --emotion-mad: 0 85% 40%;
-    --emotion-bored: 0 0% 60%;
-    --emotion-comfort: 30 85% 65%;
-    --emotion-supportive: 350 60% 70%;
+    /* AYN Emotion Colors - Psychology-based palette */
+    --emotion-calm: 193 38% 47%;        /* Soft Ocean Blue #4A90A4 */
+    --emotion-happy: 36 100% 65%;       /* Warm Peach-Gold #FFB84D */
+    --emotion-excited: 0 100% 67%;      /* Electric Coral #FF5757 */
+    --emotion-thinking: 239 82% 61%;    /* Royal Indigo #4B4DED */
+    --emotion-frustrated: 6 78% 57%;    /* Hot Orange-Red #E74C3C */
+    --emotion-curious: 282 56% 62%;     /* Bright Magenta #B565D8 */
+    --emotion-sad: 271 11% 59%;         /* Muted Lavender #9B8FA6 */
+    --emotion-mad: 354 80% 42%;         /* Deep Crimson #C21626 */
+    --emotion-bored: 197 9% 58%;        /* Muted Slate-Blue #8A979C */
+    --emotion-comfort: 349 49% 69%;     /* Deep Warm Rose #D98695 */
+    --emotion-supportive: 10 61% 78%;   /* Soft Rose-Beige #E8A598 */
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 0 0% 8%;
@@ -469,16 +469,38 @@ button, a, input, textarea, select {
     to { transform: rotate(-360deg) translateX(var(--tx, 0)) translateY(var(--ty, 0)); }
   }
 
-  /* Eye breathing animation - GPU accelerated, pausable */
+  /* Eye breathing animation - Enhanced with visible 4.5% scale + brightness pulse */
   .animate-eye-breathe {
-    animation: eye-breathe 5s ease-in-out infinite;
+    animation: eye-breathe var(--breathing-duration, 5s) ease-in-out infinite;
     transform-style: preserve-3d;
     backface-visibility: hidden;
   }
 
   @keyframes eye-breathe {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.015); }
+    0%, 100% { 
+      transform: scale(1); 
+      filter: brightness(1);
+    }
+    50% { 
+      transform: scale(1.045);  /* 4.5% increase - visible breathing! */
+      filter: brightness(1.06); /* Subtle brightness pulse with breath */
+    }
+  }
+  
+  /* Glow breathing sync - expands with eye breath */
+  .animate-glow-breathe {
+    animation: glow-breathe var(--breathing-duration, 5s) ease-in-out infinite;
+  }
+  
+  @keyframes glow-breathe {
+    0%, 100% { 
+      opacity: 0.4;
+      transform: scale(1);
+    }
+    50% { 
+      opacity: 0.7;  /* More visible glow pulse */
+      transform: scale(1.08);
+    }
   }
 
   /* Eye glow breathing animation */
