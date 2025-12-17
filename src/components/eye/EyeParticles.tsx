@@ -10,6 +10,18 @@ interface EyeParticlesProps {
   emotion?: AYNEmotion;
 }
 
+// Helper to create subtle color variations from HSL
+const varyHslColor = (hslColor: string, lightnessShift: number, saturationShift: number): string => {
+  const match = hslColor.match(/hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)/);
+  if (!match) return hslColor;
+  
+  const h = parseInt(match[1]);
+  const s = Math.max(0, Math.min(100, parseInt(match[2]) + saturationShift));
+  const l = Math.max(0, Math.min(100, parseInt(match[3]) + lightnessShift));
+  
+  return `hsl(${h}, ${s}%, ${l}%)`;
+};
+
 // Emotion-based particle configurations
 const getParticleConfig = (emotion: AYNEmotion, activityLevel: ActivityLevel) => {
   // Base counts by activity level
@@ -69,6 +81,10 @@ const EyeParticlesComponent = ({
         ? 5 + Math.random() * 5  // Larger for intense emotions
         : 3 + Math.random() * 4; // Smaller for calm emotions
       
+      // Subtle color variation for each particle
+      const lightnessShift = (Math.random() - 0.5) * 20; // ±10% lightness
+      const saturationShift = (Math.random() - 0.5) * 14; // ±7% saturation
+      
       return {
         id: i,
         angle,
@@ -76,6 +92,8 @@ const EyeParticlesComponent = ({
         size: baseSize,
         delay: Math.random() * 4,
         baseDuration: 10 + Math.random() * 6,
+        lightnessShift,
+        saturationShift,
       };
     });
   }, [particleCount, emotion]);
@@ -149,6 +167,9 @@ const EyeParticlesComponent = ({
         // Opacity varies by emotion - more visible for intense emotions
         const maxOpacity = ['excited', 'mad', 'frustrated', 'happy'].includes(emotion) ? 0.8 : 0.6;
 
+        // Apply subtle color variation to this particle
+        const particleColor = varyHslColor(glowColor, p.lightnessShift, p.saturationShift);
+
         return (
           <motion.div
             key={p.id}
@@ -159,8 +180,8 @@ const EyeParticlesComponent = ({
               width: p.size,
               height: p.size,
               borderRadius: '50%',
-              backgroundColor: glowColor,
-              boxShadow: `0 0 ${p.size * 2.5}px ${glowColor}`,
+              backgroundColor: particleColor,
+              boxShadow: `0 0 ${p.size * 2.5}px ${particleColor}`,
             }}
             initial={{ 
               x: startX - p.size / 2, 
