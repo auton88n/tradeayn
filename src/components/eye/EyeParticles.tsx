@@ -130,10 +130,10 @@ const EyeParticlesComponent = ({
             break;
           case 'outward':
           default:
-            // Standard outward drift - start at perimeter
-            startRadius = size * 0.5;
-            midRadius = size * 0.7;
-            endRadius = size * 1.0;
+            // Standard outward drift
+            startRadius = size * 0.3;
+            midRadius = size * 0.6;
+            endRadius = size * 0.95;
             startAngle = p.angle;
             midAngle = p.angle + p.angleVariation * 0.5;
             endAngle = p.angle + p.angleVariation;
