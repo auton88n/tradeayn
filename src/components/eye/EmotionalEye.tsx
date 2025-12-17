@@ -660,13 +660,14 @@ const EmotionalEyeComponent = ({
           </motion.svg>
         </div>
         
-        {/* Particle effects - event-driven with emotion awareness */}
+        {/* Particle effects - emotion-specific type and behavior */}
         <EyeParticles 
           isActive={true}
           size={eyeSize}
           glowColor={boostedGlowColor}
           activityLevel={activityLevel}
           emotion={emotion}
+          particleType={emotionConfig.particleType === 'none' ? 'sparkle' : emotionConfig.particleType}
           isAbsorbing={isAbsorbing}
           isPulsing={isPulsing}
         />

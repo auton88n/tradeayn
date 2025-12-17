@@ -2,84 +2,114 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { memo, useMemo, useState, useEffect, useRef } from 'react';
 import type { AYNEmotion, ActivityLevel } from '@/contexts/AYNEmotionContext';
 
+type ParticleType = 'sparkle' | 'orbit' | 'energy';
+
 interface EyeParticlesProps {
   isActive: boolean;
   size?: number;
   glowColor?: string;
   activityLevel?: ActivityLevel;
   emotion?: AYNEmotion;
+  particleType?: ParticleType;
   isAbsorbing?: boolean;
   isPulsing?: boolean;
 }
 
+// Emotion-specific particle counts
+const getEmotionParticleCount = (emotion: AYNEmotion, activityLevel: ActivityLevel): number => {
+  const emotionCounts: Record<AYNEmotion, number> = {
+    calm: 2,
+    comfort: 4,
+    supportive: 4,
+    happy: 6,
+    excited: 10,
+    thinking: 5,
+    frustrated: 8,
+    curious: 6,
+    sad: 2,
+    mad: 10,
+    bored: 1,
+  };
+  
+  const activityMultiplier: Record<ActivityLevel, number> = { 
+    idle: 0.5, 
+    low: 1, 
+    medium: 1.3, 
+    high: 1.6 
+  };
+  
+  return Math.max(1, Math.round(emotionCounts[emotion] * activityMultiplier[activityLevel]));
+};
+
+// Emotion-specific colors (HSL format)
+const getEmotionParticleColor = (emotion: AYNEmotion, glowColor: string): string => {
+  const emotionColors: Record<AYNEmotion, string> = {
+    calm: 'hsl(195, 35%, 55%)',      // Soft ocean blue
+    comfort: 'hsl(350, 55%, 65%)',   // Warm rose
+    supportive: 'hsl(15, 60%, 65%)', // Soft peach
+    happy: 'hsl(38, 90%, 60%)',      // Golden yellow
+    excited: 'hsl(4, 90%, 65%)',     // Bright coral
+    thinking: 'hsl(239, 70%, 60%)',  // Royal indigo
+    frustrated: 'hsl(16, 80%, 55%)', // Hot orange
+    curious: 'hsl(285, 50%, 60%)',   // Bright magenta
+    sad: 'hsl(260, 20%, 60%)',       // Muted lavender
+    mad: 'hsl(350, 70%, 50%)',       // Deep crimson
+    bored: 'hsl(210, 15%, 55%)',     // Slate blue
+  };
+  return emotionColors[emotion] || glowColor;
+};
+
+// Speed multipliers per emotion
+const getSpeedMultiplier = (emotion: AYNEmotion): number => {
+  const speeds: Record<AYNEmotion, number> = {
+    calm: 0.7,
+    comfort: 0.6,
+    supportive: 0.7,
+    happy: 1.0,
+    excited: 1.8,
+    thinking: 0.5,
+    frustrated: 1.5,
+    curious: 1.1,
+    sad: 0.4,
+    mad: 2.0,
+    bored: 0.3,
+  };
+  return speeds[emotion] || 1;
+};
+
+// Particle size ranges per type
+const getParticleSizeRange = (particleType: ParticleType): { min: number; max: number } => {
+  switch (particleType) {
+    case 'sparkle':
+      return { min: 3, max: 6 };
+    case 'energy':
+      return { min: 5, max: 9 };
+    case 'orbit':
+      return { min: 4, max: 7 };
+    default:
+      return { min: 4, max: 7 };
+  }
+};
+
 // Helper to create subtle color variations from HSL
-const varyHslColor = (hslColor: string, lightnessShift: number, saturationShift: number): string => {
+const varyHslColor = (hslColor: string, lightnessShift: number): string => {
   const match = hslColor.match(/hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)/);
   if (!match) return hslColor;
   
   const h = parseInt(match[1]);
-  const s = Math.max(0, Math.min(100, parseInt(match[2]) + saturationShift));
-  const l = Math.max(0, Math.min(100, parseInt(match[3]) + lightnessShift));
+  const s = parseInt(match[2]);
+  const l = Math.max(20, Math.min(80, parseInt(match[3]) + lightnessShift));
   
   return `hsl(${h}, ${s}%, ${l}%)`;
 };
 
-// Reduced ambient counts - particles are now event-driven
-const getAmbientCount = (activityLevel: ActivityLevel): number => {
-  const counts: Record<ActivityLevel, number> = {
-    idle: 0,      // No ambient particles when idle
-    low: 2,       // Minimal
-    medium: 4,    // Some activity
-    high: 6,      // Active conversation
-  };
-  return counts[activityLevel];
-};
-
-// Emotion-based drift direction for meaningful movement
-const getEmotionDrift = (emotion: AYNEmotion): 'upward' | 'downward' | 'orbit' | 'outward' => {
-  switch (emotion) {
-    case 'happy':
-    case 'excited':
-    case 'supportive':
-    case 'comfort':
-      return 'upward';     // Positive energy rises
-    case 'sad':
-    case 'bored':
-      return 'downward';   // Energy draining
-    case 'thinking':
-    case 'curious':
-      return 'orbit';      // Thoughts circling
-    case 'frustrated':
-    case 'mad':
-    case 'calm':
-    default:
-      return 'outward';    // Standard radial
-  }
-};
-
-// Speed multiplier based on emotion intensity
-const getSpeedMultiplier = (emotion: AYNEmotion): number => {
-  switch (emotion) {
-    case 'excited':
-    case 'mad':
-      return 0.5;  // Fast, intense
-    case 'happy':
-    case 'frustrated':
-      return 0.7;
-    case 'thinking':
-    case 'curious':
-      return 1.0;  // Medium, contemplative
-    case 'calm':
-    case 'supportive':
-    case 'comfort':
-      return 1.2;  // Slow, gentle
-    case 'sad':
-    case 'bored':
-      return 1.5;  // Very slow, melancholic
-    default:
-      return 1.0;
-  }
-};
+interface Particle {
+  id: number;
+  size: number;
+  angle: number;
+  delay: number;
+  lightnessShift: number;
+}
 
 const EyeParticlesComponent = ({ 
   isActive, 
@@ -87,122 +117,248 @@ const EyeParticlesComponent = ({
   glowColor = 'hsl(193, 38%, 47%)',
   activityLevel = 'idle',
   emotion = 'calm',
+  particleType = 'sparkle',
   isAbsorbing = false,
   isPulsing = false,
 }: EyeParticlesProps) => {
   const [burstParticles, setBurstParticles] = useState<number[]>([]);
   const burstIdCounter = useRef(0);
   const prevAbsorbing = useRef(false);
-  const prevPulsing = useRef(false);
   
   // Trigger burst on absorption
   useEffect(() => {
     if (isAbsorbing && !prevAbsorbing.current) {
-      // Create burst particles
       const burstCount = 12;
       const newBurst = Array.from({ length: burstCount }, () => burstIdCounter.current++);
       setBurstParticles(newBurst);
       
-      // Clear burst after animation
       setTimeout(() => {
         setBurstParticles([]);
-      }, 600);
+      }, 700);
     }
     prevAbsorbing.current = isAbsorbing;
   }, [isAbsorbing]);
 
-  // Pulse boost particles
-  useEffect(() => {
-    if (isPulsing && !prevPulsing.current) {
-      // Could add pulse-specific effects here
-    }
-    prevPulsing.current = isPulsing;
-  }, [isPulsing]);
-
-  const ambientCount = getAmbientCount(activityLevel);
-  const driftDirection = getEmotionDrift(emotion);
+  const particleCount = getEmotionParticleCount(emotion, activityLevel);
   const speedMultiplier = getSpeedMultiplier(emotion);
+  const particleColor = getEmotionParticleColor(emotion, glowColor);
+  const sizeRange = getParticleSizeRange(particleType);
   
-  // Boost particle count during pulse
-  const effectiveCount = isPulsing ? Math.max(ambientCount * 2, 6) : ambientCount;
+  // Boost during pulse
+  const effectiveCount = isPulsing ? Math.max(particleCount * 1.5, 6) : particleCount;
 
   // Generate ambient particles
-  const ambientParticles = useMemo(() => {
-    return Array.from({ length: effectiveCount }, (_, i) => {
-      const angle = (i / effectiveCount) * Math.PI * 2 + Math.random() * 0.5;
-      const angleVariation = (Math.random() - 0.5) * 0.6;
-      
-      // Size based on emotion intensity
-      const baseSize = ['excited', 'mad', 'frustrated'].includes(emotion)
-        ? 5 + Math.random() * 5
-        : 3 + Math.random() * 4;
-      
-      // Subtle color variation
-      const lightnessShift = (Math.random() - 0.5) * 20;
-      const saturationShift = (Math.random() - 0.5) * 14;
+  const ambientParticles = useMemo((): Particle[] => {
+    return Array.from({ length: Math.round(effectiveCount) }, (_, i) => {
+      const particleSize = sizeRange.min + Math.random() * (sizeRange.max - sizeRange.min);
+      const baseAngle = (i / effectiveCount) * Math.PI * 2;
+      const angleVariation = (Math.random() - 0.5) * 0.8;
       
       return {
         id: i,
-        angle,
-        angleVariation,
-        size: baseSize,
-        delay: Math.random() * 4,
-        baseDuration: 10 + Math.random() * 6,
-        lightnessShift,
-        saturationShift,
+        size: particleSize,
+        angle: baseAngle + angleVariation,
+        delay: Math.random() * 3,
+        lightnessShift: (Math.random() - 0.5) * 20,
       };
     });
-  }, [effectiveCount, emotion]);
+  }, [effectiveCount, sizeRange.min, sizeRange.max]);
 
-  // Calculate ambient particle positions based on drift direction
-  const calculateAmbientPath = (p: typeof ambientParticles[0]) => {
-    let startRadius: number, midRadius: number, endRadius: number;
-    let startAngle: number, midAngle: number, endAngle: number;
+  // SPARKLE: Gentle floating upward with twinkling
+  const renderSparkle = (particle: Particle) => {
+    const distance = size * (0.5 + Math.random() * 0.2);
+    const startX = Math.cos(particle.angle) * distance;
+    const startY = Math.sin(particle.angle) * distance;
+    const driftY = -size * 0.35;
+    const driftX = (Math.random() - 0.5) * size * 0.2;
+    const color = varyHslColor(particleColor, particle.lightnessShift);
     
-    switch (driftDirection) {
-      case 'upward':
-        startRadius = size * 0.35;
-        midRadius = size * 0.6;
-        endRadius = size * 1.0;
-        startAngle = p.angle;
-        midAngle = p.angle - 0.3;
-        endAngle = p.angle - 0.5;
-        break;
-      case 'downward':
-        startRadius = size * 0.35;
-        midRadius = size * 0.55;
-        endRadius = size * 0.9;
-        startAngle = p.angle;
-        midAngle = p.angle + 0.2;
-        endAngle = p.angle + 0.4;
-        break;
-      case 'orbit':
-        startRadius = size * 0.7;
-        midRadius = size * 0.75;
-        endRadius = size * 0.7;
-        startAngle = p.angle;
-        midAngle = p.angle + Math.PI;
-        endAngle = p.angle + Math.PI * 2;
-        break;
-      case 'outward':
-      default:
-        startRadius = size * 0.3;
-        midRadius = size * 0.6;
-        endRadius = size * 0.95;
-        startAngle = p.angle;
-        midAngle = p.angle + p.angleVariation * 0.5;
-        endAngle = p.angle + p.angleVariation;
-    }
-    
-    return {
-      startX: Math.cos(startAngle) * startRadius,
-      startY: Math.sin(startAngle) * startRadius,
-      midX: Math.cos(midAngle) * midRadius,
-      midY: Math.sin(midAngle) * midRadius,
-      endX: Math.cos(endAngle) * endRadius,
-      endY: Math.sin(endAngle) * endRadius,
-    };
+    return (
+      <motion.div
+        key={`sparkle-${particle.id}`}
+        style={{
+          position: 'absolute',
+          left: '50%',
+          top: '50%',
+          width: particle.size,
+          height: particle.size,
+          borderRadius: '50%',
+          backgroundColor: color,
+          boxShadow: `0 0 ${particle.size * 2}px ${color}`,
+        }}
+        initial={{
+          x: startX - particle.size / 2,
+          y: startY - particle.size / 2,
+          opacity: 0,
+          scale: 0.3,
+        }}
+        animate={{
+          x: [startX - particle.size / 2, startX + driftX - particle.size / 2],
+          y: [startY - particle.size / 2, startY + driftY - particle.size / 2],
+          opacity: [0, 0.7, 0.5, 0],
+          scale: [0.3, 1, 0.7, 0.2],
+        }}
+        transition={{
+          duration: (5 + Math.random() * 3) / speedMultiplier,
+          delay: particle.delay,
+          repeat: Infinity,
+          ease: 'easeOut',
+        }}
+      />
+    );
   };
+
+  // ENERGY: Fast, erratic bursts radiating outward
+  const renderEnergy = (particle: Particle) => {
+    const startRadius = size * 0.35;
+    const endRadius = size * 0.9;
+    const startX = Math.cos(particle.angle) * startRadius;
+    const startY = Math.sin(particle.angle) * startRadius;
+    const endX = Math.cos(particle.angle) * endRadius;
+    const endY = Math.sin(particle.angle) * endRadius;
+    const color = varyHslColor(particleColor, particle.lightnessShift);
+    
+    return (
+      <motion.div
+        key={`energy-${particle.id}`}
+        style={{
+          position: 'absolute',
+          left: '50%',
+          top: '50%',
+          width: particle.size,
+          height: particle.size,
+          borderRadius: '50%',
+          backgroundColor: color,
+          boxShadow: `0 0 ${particle.size * 3}px ${color}, 0 0 ${particle.size * 6}px ${color}40`,
+        }}
+        initial={{
+          x: startX - particle.size / 2,
+          y: startY - particle.size / 2,
+          opacity: 0,
+          scale: 0.5,
+        }}
+        animate={{
+          x: [startX - particle.size / 2, endX - particle.size / 2],
+          y: [startY - particle.size / 2, endY - particle.size / 2],
+          opacity: [0.9, 0.6, 0],
+          scale: [0.5, 1.4, 0.2],
+        }}
+        transition={{
+          duration: (1.2 + Math.random() * 0.6) / speedMultiplier,
+          delay: particle.delay * 0.4,
+          repeat: Infinity,
+          ease: 'easeOut',
+        }}
+      />
+    );
+  };
+
+  // ORBIT: Circular path around eye - contemplative
+  const renderOrbit = (particle: Particle) => {
+    const orbitRadius = size * (0.55 + Math.random() * 0.15);
+    const color = varyHslColor(particleColor, particle.lightnessShift);
+    
+    return (
+      <motion.div
+        key={`orbit-${particle.id}`}
+        style={{
+          position: 'absolute',
+          left: '50%',
+          top: '50%',
+          width: particle.size,
+          height: particle.size,
+          marginLeft: -particle.size / 2,
+          marginTop: -particle.size / 2,
+        }}
+        initial={{ rotate: particle.angle * (180 / Math.PI) }}
+        animate={{ rotate: particle.angle * (180 / Math.PI) + 360 }}
+        transition={{
+          duration: (12 + Math.random() * 6) / speedMultiplier,
+          delay: particle.delay,
+          repeat: Infinity,
+          ease: 'linear',
+        }}
+      >
+        <motion.div
+          style={{
+            position: 'absolute',
+            width: particle.size,
+            height: particle.size,
+            borderRadius: '50%',
+            backgroundColor: color,
+            boxShadow: `0 0 ${particle.size * 2}px ${color}`,
+            transform: `translateX(${orbitRadius}px)`,
+          }}
+          animate={{
+            opacity: [0.4, 0.7, 0.4],
+            scale: [0.8, 1.1, 0.8],
+          }}
+          transition={{
+            duration: 4 / speedMultiplier,
+            repeat: Infinity,
+            ease: 'easeInOut',
+          }}
+        />
+      </motion.div>
+    );
+  };
+
+  // Render particle based on type
+  const renderParticle = (particle: Particle) => {
+    switch (particleType) {
+      case 'sparkle':
+        return renderSparkle(particle);
+      case 'energy':
+        return renderEnergy(particle);
+      case 'orbit':
+        return renderOrbit(particle);
+      default:
+        return renderSparkle(particle);
+    }
+  };
+
+  // Burst particles (always energy-like explosion)
+  const renderBurstParticle = (id: number, index: number) => {
+    const angle = (index / burstParticles.length) * Math.PI * 2;
+    const burstSize = 4 + Math.random() * 4;
+    const burstRadius = size * 1.1;
+    const color = varyHslColor(particleColor, (Math.random() - 0.5) * 20);
+    
+    return (
+      <motion.div
+        key={`burst-${id}`}
+        style={{
+          position: 'absolute',
+          left: '50%',
+          top: '50%',
+          width: burstSize,
+          height: burstSize,
+          borderRadius: '50%',
+          backgroundColor: color,
+          boxShadow: `0 0 ${burstSize * 3}px ${color}`,
+        }}
+        initial={{ 
+          x: -burstSize / 2, 
+          y: -burstSize / 2, 
+          opacity: 1, 
+          scale: 0.3 
+        }}
+        animate={{
+          x: Math.cos(angle) * burstRadius - burstSize / 2,
+          y: Math.sin(angle) * burstRadius - burstSize / 2,
+          opacity: 0,
+          scale: 1.6,
+        }}
+        exit={{ opacity: 0 }}
+        transition={{ 
+          duration: 0.6,
+          ease: [0.25, 0.46, 0.45, 0.94],
+        }}
+      />
+    );
+  };
+
+  if (!isActive) return null;
 
   return (
     <div 
@@ -217,90 +373,35 @@ const EyeParticlesComponent = ({
         zIndex: 5,
       }}
     >
-      {/* Ambient particles - only when activity > idle */}
-      {ambientParticles.map((p) => {
-        const duration = p.baseDuration * speedMultiplier;
-        const path = calculateAmbientPath(p);
-        const maxOpacity = ['excited', 'mad', 'frustrated', 'happy'].includes(emotion) ? 0.8 : 0.6;
-        const particleColor = varyHslColor(glowColor, p.lightnessShift, p.saturationShift);
+      {/* Ambient particles - type-specific rendering */}
+      {ambientParticles.map(renderParticle)}
 
-        return (
-          <motion.div
-            key={`ambient-${p.id}`}
-            style={{
-              position: 'absolute',
-              left: '50%',
-              top: '50%',
-              width: p.size,
-              height: p.size,
-              borderRadius: '50%',
-              backgroundColor: particleColor,
-              boxShadow: `0 0 ${p.size * 2.5}px ${particleColor}`,
-            }}
-            initial={{ 
-              x: path.startX - p.size / 2, 
-              y: path.startY - p.size / 2, 
-              opacity: 0, 
-              scale: 0.2 
-            }}
-            animate={{
-              x: [path.startX - p.size / 2, path.midX - p.size / 2, path.endX - p.size / 2],
-              y: [path.startY - p.size / 2, path.midY - p.size / 2, path.endY - p.size / 2],
-              opacity: [0, maxOpacity * 0.8, maxOpacity, maxOpacity * 0.5, 0],
-              scale: [0.2, 0.9, 0.8, 0.5, 0.1],
-            }}
-            transition={{ 
-              duration, 
-              delay: p.delay, 
-              repeat: Infinity, 
-              ease: 'easeInOut' 
-            }}
-          />
-        );
-      })}
-
-      {/* Burst particles - triggered on absorption */}
+      {/* Burst particles on absorption */}
       <AnimatePresence>
-        {burstParticles.map((id, i) => {
-          const angle = (i / burstParticles.length) * Math.PI * 2;
-          const burstSize = 4 + Math.random() * 4;
-          const burstRadius = size * 1.2;
-          const particleColor = varyHslColor(glowColor, (Math.random() - 0.5) * 20, (Math.random() - 0.5) * 14);
-          
-          return (
-            <motion.div
-              key={`burst-${id}`}
-              style={{
-                position: 'absolute',
-                left: '50%',
-                top: '50%',
-                width: burstSize,
-                height: burstSize,
-                borderRadius: '50%',
-                backgroundColor: particleColor,
-                boxShadow: `0 0 ${burstSize * 3}px ${particleColor}`,
-              }}
-              initial={{ 
-                x: -burstSize / 2, 
-                y: -burstSize / 2, 
-                opacity: 1, 
-                scale: 0.3 
-              }}
-              animate={{
-                x: Math.cos(angle) * burstRadius - burstSize / 2,
-                y: Math.sin(angle) * burstRadius - burstSize / 2,
-                opacity: 0,
-                scale: 1.5,
-              }}
-              exit={{ opacity: 0 }}
-              transition={{ 
-                duration: 0.5,
-                ease: [0.25, 0.46, 0.45, 0.94], // easeOutQuad
-              }}
-            />
-          );
-        })}
+        {burstParticles.map((id, i) => renderBurstParticle(id, i))}
       </AnimatePresence>
+      
+      {/* Pulse ring effect */}
+      {isPulsing && (
+        <motion.div
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            width: size * 0.3,
+            height: size * 0.3,
+            marginLeft: -size * 0.15,
+            marginTop: -size * 0.15,
+            borderRadius: '50%',
+            backgroundColor: 'transparent',
+            border: `2px solid ${particleColor}`,
+            boxShadow: `0 0 20px ${particleColor}`,
+          }}
+          initial={{ scale: 0, opacity: 0.8 }}
+          animate={{ scale: 3.5, opacity: 0 }}
+          transition={{ duration: 0.8, ease: 'easeOut' }}
+        />
+      )}
     </div>
   );
 };
