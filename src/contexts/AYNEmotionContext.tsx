@@ -269,7 +269,7 @@ export const AYNEmotionProvider = ({ children }: { children: ReactNode }) => {
 
   const triggerBlink = useCallback(() => {
     setIsBlinking(true);
-    setTimeout(() => setIsBlinking(false), 150);
+    setTimeout(() => setIsBlinking(false), 220);
   }, []);
 
   // Double-blink for attention (when user starts typing)
