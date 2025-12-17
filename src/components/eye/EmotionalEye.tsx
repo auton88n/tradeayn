@@ -125,12 +125,17 @@ const EmotionalEyeComponent = ({
     }
   }, [soundContext]);
 
-  // Play blink sound when blinking starts - use instant for perfect sync
+  // Play blink sounds synced with animation - close and open sounds
   useEffect(() => {
     if (isBlinking && !prevBlinkingRef.current) {
-      // Use instant sound for perfect visual sync (no async delay)
+      // Sound for eye closing - instant for perfect visual sync
       if (soundContext?.playInstant) {
         soundContext.playInstant('blink');
+      }
+    } else if (!isBlinking && prevBlinkingRef.current) {
+      // Sound for eye opening - subtle higher pitch
+      if (soundContext?.playInstant) {
+        soundContext.playInstant('blink-open');
       }
     }
     prevBlinkingRef.current = isBlinking;

@@ -269,7 +269,8 @@ export const AYNEmotionProvider = ({ children }: { children: ReactNode }) => {
 
   const triggerBlink = useCallback(() => {
     setIsBlinking(true);
-    setTimeout(() => setIsBlinking(false), 220);
+    // 120ms matches the visual animation duration for perfect sync
+    setTimeout(() => setIsBlinking(false), 120);
   }, []);
 
   // Double-blink for attention (when user starts typing)
