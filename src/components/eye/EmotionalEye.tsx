@@ -674,13 +674,15 @@ const EmotionalEyeComponent = ({
           </motion.svg>
         </div>
         
-        {/* Particle effects - emotion-aware with activity scaling */}
+        {/* Particle effects - event-driven with emotion awareness */}
         <EyeParticles 
-          isActive={true}  /* Always active to feel alive */
+          isActive={true}
           size={eyeSize}
           glowColor={boostedGlowColor}
           activityLevel={activityLevel}
           emotion={emotion}
+          isAbsorbing={isAbsorbing}
+          isPulsing={isPulsing}
         />
       </motion.div>
     </div>

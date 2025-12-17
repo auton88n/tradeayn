@@ -1,5 +1,5 @@
-import { motion } from 'framer-motion';
-import { memo, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { memo, useMemo, useState, useEffect, useRef } from 'react';
 import type { AYNEmotion, ActivityLevel } from '@/contexts/AYNEmotionContext';
 
 interface EyeParticlesProps {
@@ -8,6 +8,8 @@ interface EyeParticlesProps {
   glowColor?: string;
   activityLevel?: ActivityLevel;
   emotion?: AYNEmotion;
+  isAbsorbing?: boolean;
+  isPulsing?: boolean;
 }
 
 // Helper to create subtle color variations from HSL
@@ -22,44 +24,61 @@ const varyHslColor = (hslColor: string, lightnessShift: number, saturationShift:
   return `hsl(${h}, ${s}%, ${l}%)`;
 };
 
-// Emotion-based particle configurations
-const getParticleConfig = (emotion: AYNEmotion, activityLevel: ActivityLevel) => {
-  // Base counts by activity level
-  const activityCounts: Record<ActivityLevel, number> = {
-    idle: 2,      // Always show some to feel "alive"
-    low: 5,
-    medium: 8,
-    high: 12,
+// Reduced ambient counts - particles are now event-driven
+const getAmbientCount = (activityLevel: ActivityLevel): number => {
+  const counts: Record<ActivityLevel, number> = {
+    idle: 0,      // No ambient particles when idle
+    low: 2,       // Minimal
+    medium: 4,    // Some activity
+    high: 6,      // Active conversation
   };
-  
-  // Emotion modifiers
-  const emotionConfig: Record<AYNEmotion, { 
-    countMultiplier: number; 
-    speedMultiplier: number;
-    driftDirection: 'outward' | 'upward' | 'downward' | 'orbit';
-  }> = {
-    calm: { countMultiplier: 0.5, speedMultiplier: 1.2, driftDirection: 'outward' },
-    happy: { countMultiplier: 1.2, speedMultiplier: 0.9, driftDirection: 'upward' },
-    excited: { countMultiplier: 1.5, speedMultiplier: 0.6, driftDirection: 'outward' },
-    thinking: { countMultiplier: 0.8, speedMultiplier: 1.3, driftDirection: 'orbit' },
-    curious: { countMultiplier: 1.0, speedMultiplier: 0.8, driftDirection: 'orbit' },
-    frustrated: { countMultiplier: 1.3, speedMultiplier: 0.5, driftDirection: 'outward' },
-    sad: { countMultiplier: 0.4, speedMultiplier: 1.5, driftDirection: 'downward' },
-    mad: { countMultiplier: 1.4, speedMultiplier: 0.4, driftDirection: 'outward' },
-    bored: { countMultiplier: 0.3, speedMultiplier: 2.0, driftDirection: 'downward' },
-    comfort: { countMultiplier: 0.8, speedMultiplier: 1.1, driftDirection: 'upward' },
-    supportive: { countMultiplier: 1.0, speedMultiplier: 1.0, driftDirection: 'upward' },
-  };
-  
-  const config = emotionConfig[emotion];
-  const baseCount = activityCounts[activityLevel];
-  const count = Math.round(baseCount * config.countMultiplier);
-  
-  return {
-    count: Math.max(1, count), // Always at least 1 particle
-    speedMultiplier: config.speedMultiplier,
-    driftDirection: config.driftDirection,
-  };
+  return counts[activityLevel];
+};
+
+// Emotion-based drift direction for meaningful movement
+const getEmotionDrift = (emotion: AYNEmotion): 'upward' | 'downward' | 'orbit' | 'outward' => {
+  switch (emotion) {
+    case 'happy':
+    case 'excited':
+    case 'supportive':
+    case 'comfort':
+      return 'upward';     // Positive energy rises
+    case 'sad':
+    case 'bored':
+      return 'downward';   // Energy draining
+    case 'thinking':
+    case 'curious':
+      return 'orbit';      // Thoughts circling
+    case 'frustrated':
+    case 'mad':
+    case 'calm':
+    default:
+      return 'outward';    // Standard radial
+  }
+};
+
+// Speed multiplier based on emotion intensity
+const getSpeedMultiplier = (emotion: AYNEmotion): number => {
+  switch (emotion) {
+    case 'excited':
+    case 'mad':
+      return 0.5;  // Fast, intense
+    case 'happy':
+    case 'frustrated':
+      return 0.7;
+    case 'thinking':
+    case 'curious':
+      return 1.0;  // Medium, contemplative
+    case 'calm':
+    case 'supportive':
+    case 'comfort':
+      return 1.2;  // Slow, gentle
+    case 'sad':
+    case 'bored':
+      return 1.5;  // Very slow, melancholic
+    default:
+      return 1.0;
+  }
 };
 
 const EyeParticlesComponent = ({ 
@@ -68,22 +87,59 @@ const EyeParticlesComponent = ({
   glowColor = 'hsl(193, 38%, 47%)',
   activityLevel = 'idle',
   emotion = 'calm',
+  isAbsorbing = false,
+  isPulsing = false,
 }: EyeParticlesProps) => {
-  const { count: particleCount, speedMultiplier, driftDirection } = getParticleConfig(emotion, activityLevel);
+  const [burstParticles, setBurstParticles] = useState<number[]>([]);
+  const burstIdCounter = useRef(0);
+  const prevAbsorbing = useRef(false);
+  const prevPulsing = useRef(false);
   
-  const particles = useMemo(() => {
-    return Array.from({ length: particleCount }, (_, i) => {
-      const angle = (i / particleCount) * Math.PI * 2 + Math.random() * 0.5;
+  // Trigger burst on absorption
+  useEffect(() => {
+    if (isAbsorbing && !prevAbsorbing.current) {
+      // Create burst particles
+      const burstCount = 12;
+      const newBurst = Array.from({ length: burstCount }, () => burstIdCounter.current++);
+      setBurstParticles(newBurst);
+      
+      // Clear burst after animation
+      setTimeout(() => {
+        setBurstParticles([]);
+      }, 600);
+    }
+    prevAbsorbing.current = isAbsorbing;
+  }, [isAbsorbing]);
+
+  // Pulse boost particles
+  useEffect(() => {
+    if (isPulsing && !prevPulsing.current) {
+      // Could add pulse-specific effects here
+    }
+    prevPulsing.current = isPulsing;
+  }, [isPulsing]);
+
+  const ambientCount = getAmbientCount(activityLevel);
+  const driftDirection = getEmotionDrift(emotion);
+  const speedMultiplier = getSpeedMultiplier(emotion);
+  
+  // Boost particle count during pulse
+  const effectiveCount = isPulsing ? Math.max(ambientCount * 2, 6) : ambientCount;
+
+  // Generate ambient particles
+  const ambientParticles = useMemo(() => {
+    return Array.from({ length: effectiveCount }, (_, i) => {
+      const angle = (i / effectiveCount) * Math.PI * 2 + Math.random() * 0.5;
       const angleVariation = (Math.random() - 0.5) * 0.6;
       
-      // Vary particle size based on emotion energy
-      const baseSize = emotion === 'excited' || emotion === 'mad' || emotion === 'frustrated' 
-        ? 5 + Math.random() * 5  // Larger for intense emotions
-        : 3 + Math.random() * 4; // Smaller for calm emotions
+      // Size based on emotion intensity
+      const baseSize = ['excited', 'mad', 'frustrated'].includes(emotion)
+        ? 5 + Math.random() * 5
+        : 3 + Math.random() * 4;
       
-      // Subtle color variation for each particle
-      const lightnessShift = (Math.random() - 0.5) * 20; // ±10% lightness
-      const saturationShift = (Math.random() - 0.5) * 14; // ±7% saturation
+      // Subtle color variation
+      const lightnessShift = (Math.random() - 0.5) * 20;
+      const saturationShift = (Math.random() - 0.5) * 14;
       
       return {
         id: i,
@@ -96,7 +152,57 @@ const EyeParticlesComponent = ({
         saturationShift,
       };
     });
-  }, [particleCount, emotion]);
+  }, [effectiveCount, emotion]);
+
+  // Calculate ambient particle positions based on drift direction
+  const calculateAmbientPath = (p: typeof ambientParticles[0]) => {
+    let startRadius: number, midRadius: number, endRadius: number;
+    let startAngle: number, midAngle: number, endAngle: number;
+    
+    switch (driftDirection) {
+      case 'upward':
+        startRadius = size * 0.35;
+        midRadius = size * 0.6;
+        endRadius = size * 1.0;
+        startAngle = p.angle;
+        midAngle = p.angle - 0.3;
+        endAngle = p.angle - 0.5;
+        break;
+      case 'downward':
+        startRadius = size * 0.35;
+        midRadius = size * 0.55;
+        endRadius = size * 0.9;
+        startAngle = p.angle;
+        midAngle = p.angle + 0.2;
+        endAngle = p.angle + 0.4;
+        break;
+      case 'orbit':
+        startRadius = size * 0.7;
+        midRadius = size * 0.75;
+        endRadius = size * 0.7;
+        startAngle = p.angle;
+        midAngle = p.angle + Math.PI;
+        endAngle = p.angle + Math.PI * 2;
+        break;
+      case 'outward':
+      default:
+        startRadius = size * 0.3;
+        midRadius = size * 0.6;
+        endRadius = size * 0.95;
+        startAngle = p.angle;
+        midAngle = p.angle + p.angleVariation * 0.5;
+        endAngle = p.angle + p.angleVariation;
+    }
+    
+    return {
+      startX: Math.cos(startAngle) * startRadius,
+      startY: Math.sin(startAngle) * startRadius,
+      midX: Math.cos(midAngle) * midRadius,
+      midY: Math.sin(midAngle) * midRadius,
+      endX: Math.cos(endAngle) * endRadius,
+      endY: Math.sin(endAngle) * endRadius,
+    };
+  };
 
   return (
     <div 
@@ -111,68 +217,16 @@ const EyeParticlesComponent = ({
         zIndex: 5,
       }}
     >
-      {particles.map((p) => {
+      {/* Ambient particles - only when activity > idle */}
+      {ambientParticles.map((p) => {
         const duration = p.baseDuration * speedMultiplier;
-        
-        // Calculate positions based on drift direction
-        let startRadius: number, midRadius: number, endRadius: number;
-        let startAngle: number, midAngle: number, endAngle: number;
-        
-        switch (driftDirection) {
-          case 'upward':
-            // Start at sides, drift upward and outward
-            startRadius = size * 0.35;
-            midRadius = size * 0.6;
-            endRadius = size * 1.0;
-            startAngle = p.angle;
-            midAngle = p.angle - 0.3; // Drift upward
-            endAngle = p.angle - 0.5;
-            break;
-          case 'downward':
-            // Slow melancholic drift downward
-            startRadius = size * 0.35;
-            midRadius = size * 0.55;
-            endRadius = size * 0.9;
-            startAngle = p.angle;
-            midAngle = p.angle + 0.2;
-            endAngle = p.angle + 0.4;
-            break;
-          case 'orbit':
-            // Circular orbit around eye
-            startRadius = size * 0.7;
-            midRadius = size * 0.75;
-            endRadius = size * 0.7;
-            startAngle = p.angle;
-            midAngle = p.angle + Math.PI;
-            endAngle = p.angle + Math.PI * 2;
-            break;
-          case 'outward':
-          default:
-            // Standard outward drift
-            startRadius = size * 0.3;
-            midRadius = size * 0.6;
-            endRadius = size * 0.95;
-            startAngle = p.angle;
-            midAngle = p.angle + p.angleVariation * 0.5;
-            endAngle = p.angle + p.angleVariation;
-        }
-        
-        const startX = Math.cos(startAngle) * startRadius;
-        const startY = Math.sin(startAngle) * startRadius;
-        const midX = Math.cos(midAngle) * midRadius;
-        const midY = Math.sin(midAngle) * midRadius;
-        const endX = Math.cos(endAngle) * endRadius;
-        const endY = Math.sin(endAngle) * endRadius;
-
-        // Opacity varies by emotion - more visible for intense emotions
+        const path = calculateAmbientPath(p);
         const maxOpacity = ['excited', 'mad', 'frustrated', 'happy'].includes(emotion) ? 0.8 : 0.6;
-
-        // Apply subtle color variation to this particle
         const particleColor = varyHslColor(glowColor, p.lightnessShift, p.saturationShift);
 
         return (
           <motion.div
-            key={p.id}
+            key={`ambient-${p.id}`}
             style={{
               position: 'absolute',
               left: '50%',
@@ -184,14 +238,14 @@ const EyeParticlesComponent = ({
               boxShadow: `0 0 ${p.size * 2.5}px ${particleColor}`,
             }}
             initial={{ 
-              x: startX - p.size / 2, 
-              y: startY - p.size / 2, 
+              x: path.startX - p.size / 2, 
+              y: path.startY - p.size / 2, 
               opacity: 0, 
               scale: 0.2 
             }}
             animate={{
-              x: [startX - p.size / 2, midX - p.size / 2, endX - p.size / 2],
-              y: [startY - p.size / 2, midY - p.size / 2, endY - p.size / 2],
+              x: [path.startX - p.size / 2, path.midX - p.size / 2, path.endX - p.size / 2],
+              y: [path.startY - p.size / 2, path.midY - p.size / 2, path.endY - p.size / 2],
               opacity: [0, maxOpacity * 0.8, maxOpacity, maxOpacity * 0.5, 0],
               scale: [0.2, 0.9, 0.8, 0.5, 0.1],
             }}
@@ -204,6 +258,49 @@ const EyeParticlesComponent = ({
           />
         );
       })}
+
+      {/* Burst particles - triggered on absorption */}
+      <AnimatePresence>
+        {burstParticles.map((id, i) => {
+          const angle = (i / burstParticles.length) * Math.PI * 2;
+          const burstSize = 4 + Math.random() * 4;
+          const burstRadius = size * 1.2;
+          const particleColor = varyHslColor(glowColor, (Math.random() - 0.5) * 20, (Math.random() - 0.5) * 14);
+          
+          return (
+            <motion.div
+              key={`burst-${id}`}
+              style={{
+                position: 'absolute',
+                left: '50%',
+                top: '50%',
+                width: burstSize,
+                height: burstSize,
+                borderRadius: '50%',
+                backgroundColor: particleColor,
+                boxShadow: `0 0 ${burstSize * 3}px ${particleColor}`,
+              }}
+              initial={{ 
+                x: -burstSize / 2, 
+                y: -burstSize / 2, 
+                opacity: 1, 
+                scale: 0.3 
+              }}
+              animate={{
+                x: Math.cos(angle) * burstRadius - burstSize / 2,
+                y: Math.sin(angle) * burstRadius - burstSize / 2,
+                opacity: 0,
+                scale: 1.5,
+              }}
+              exit={{ opacity: 0 }}
+              transition={{ 
+                duration: 0.5,
+                ease: [0.25, 0.46, 0.45, 0.94], // easeOutQuad
+              }}
+            />
+          );
+        })}
+      </AnimatePresence>
     </div>
   );
 };
