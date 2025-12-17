@@ -543,35 +543,29 @@ const EmotionalEyeComponent = ({
         onTouchStart={gestureHandlers.onTouchStart}
         onTouchEnd={gestureHandlers.onTouchEnd}
       >
-        {/* Soft outer glow halo - syncs with particle proximity */}
+        {/* Soft outer glow halo - syncs with breathing */}
         <motion.div 
-          className="absolute -inset-8 rounded-full pointer-events-none"
-          animate={{
-            opacity: [glowIntensity, glowIntensity + 0.3, glowIntensity],
-            scale: [1, 1.02 + (glowIntensity - 0.4) * 0.1, 1],
-          }}
-          transition={{
-            duration: 2.5,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
+          className="absolute -inset-8 rounded-full pointer-events-none animate-glow-breathe"
           style={{
-            background: `radial-gradient(circle, ${boostedGlowColor}40 0%, transparent 75%)`,
-            filter: 'blur(20px)',
+            background: `radial-gradient(circle, ${boostedGlowColor}50 0%, transparent 70%)`,
+            filter: 'blur(24px)',
             transition: 'background 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
-          }}
+            '--breathing-duration': `${breathingDuration}s`,
+          } as React.CSSProperties}
         />
         
         <div 
           className={cn(
             "relative rounded-full bg-gradient-to-b from-white to-neutral-100 dark:from-neutral-900 dark:to-neutral-950 flex items-center justify-center overflow-hidden will-change-transform",
             sizeClasses[size],
-            // Only animate breathing when not deep idle and no reduced motion preference
-            !isDeepIdle && !prefersReducedMotion && "animate-eye-breathe"
+            // Always animate breathing unless reduced motion preference
+            !prefersReducedMotion && "animate-eye-breathe"
           )}
           style={{
+            // CSS custom property for dynamic breathing speed based on emotion
+            '--breathing-duration': `${breathingDuration}s`,
             animationDuration: `${breathingDuration}s`
-          }}
+          } as React.CSSProperties}
         >
           {/* Inner shadow ring - matching landing page dark mode */}
           <div className="absolute inset-2 rounded-full shadow-[inset_0_4px_16px_rgba(0,0,0,0.08)] dark:shadow-[inset_0_4px_16px_rgba(0,0,0,0.3)]" />
@@ -668,12 +662,13 @@ const EmotionalEyeComponent = ({
           </motion.svg>
         </div>
         
-        {/* Particle effects - only show during activity */}
+        {/* Particle effects - emotion-aware with activity scaling */}
         <EyeParticles 
-          isActive={activityLevel !== 'idle'}
+          isActive={true}  /* Always active to feel alive */
           size={eyeSize}
           glowColor={boostedGlowColor}
           activityLevel={activityLevel}
+          emotion={emotion}
         />
       </motion.div>
     </div>

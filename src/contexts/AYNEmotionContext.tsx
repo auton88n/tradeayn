@@ -16,117 +16,126 @@ export interface EmotionConfig {
 }
 
 export const EMOTION_CONFIGS: Record<AYNEmotion, EmotionConfig> = {
+  // 😌 Soft Ocean Blue - peaceful, balanced like still water
   calm: {
-    color: 'hsl(210, 55%, 72%)', // More visible soft blue - warmer and engaged
-    glowColor: 'hsl(210, 60%, 82%)',
-    ringClass: 'ring-sky-300/40 dark:ring-sky-400/35',
-    glowClass: 'shadow-[0_0_50px_hsl(210,55%,70%,0.45)] dark:shadow-[0_0_60px_hsl(210,60%,60%,0.5)]',
+    color: 'hsl(193, 38%, 47%)',      // #4A90A4
+    glowColor: 'hsl(193, 45%, 60%)',
+    ringClass: 'ring-cyan-400/40 dark:ring-cyan-400/35',
+    glowClass: 'shadow-[0_0_50px_hsl(193,38%,47%,0.45)] dark:shadow-[0_0_60px_hsl(193,45%,50%,0.5)]',
     irisScale: 1,
-    breathingSpeed: 4,
-    particleType: 'sparkle', // Add subtle sparkles even when calm to show "aliveness"
+    breathingSpeed: 5.5,  // Slow, peaceful breathing
+    particleType: 'sparkle',
     transitionMs: 600,
   },
-  // Warm amber/peach glow for comforting sad users - empathetic warmth
+  // 🤗 Deep Warm Rose - nurturing warmth for empathy
   comfort: {
-    color: 'hsl(30, 85%, 65%)', // Warm amber-peach
-    glowColor: 'hsl(35, 90%, 75%)',
-    ringClass: 'ring-amber-300/40 dark:ring-amber-400/35',
-    glowClass: 'shadow-[0_0_50px_hsl(30,80%,60%,0.45)] dark:shadow-[0_0_60px_hsl(35,85%,55%,0.5)]',
+    color: 'hsl(349, 49%, 69%)',      // #D98695
+    glowColor: 'hsl(349, 55%, 78%)',
+    ringClass: 'ring-rose-300/40 dark:ring-rose-400/35',
+    glowClass: 'shadow-[0_0_50px_hsl(349,49%,69%,0.45)] dark:shadow-[0_0_60px_hsl(349,55%,65%,0.5)]',
     irisScale: 1.02,
-    breathingSpeed: 5, // Slower, more soothing
-    particleType: 'sparkle', // Warm sparkles for comfort
-    transitionMs: 700, // Gentle warm transition
+    breathingSpeed: 4.5,  // Warm, soothing breathing
+    particleType: 'sparkle',
+    transitionMs: 700,
   },
-  // Soft rose/pink for supportive encouragement
+  // 💪 Soft Rose-Beige - supportive encouragement
   supportive: {
-    color: 'hsl(350, 60%, 70%)', // Soft rose-pink
-    glowColor: 'hsl(350, 65%, 80%)',
-    ringClass: 'ring-rose-300/35 dark:ring-rose-400/30',
-    glowClass: 'shadow-[0_0_45px_hsl(350,55%,65%,0.4)] dark:shadow-[0_0_55px_hsl(350,60%,60%,0.45)]',
+    color: 'hsl(10, 61%, 78%)',       // #E8A598
+    glowColor: 'hsl(10, 65%, 85%)',
+    ringClass: 'ring-orange-200/40 dark:ring-orange-300/35',
+    glowClass: 'shadow-[0_0_45px_hsl(10,61%,78%,0.4)] dark:shadow-[0_0_55px_hsl(10,65%,75%,0.45)]',
     irisScale: 1.05,
     breathingSpeed: 4,
     particleType: 'sparkle',
     transitionMs: 600,
   },
+  // 😊 Warm Peach-Gold - sunshine, joy, warmth
   happy: {
-    color: 'hsl(142, 71%, 45%)',
-    glowColor: 'hsl(142, 71%, 65%)',
-    ringClass: 'ring-green-400/50',
-    glowClass: 'shadow-[0_0_40px_hsl(142,71%,45%,0.4)]',
+    color: 'hsl(36, 100%, 65%)',      // #FFB84D
+    glowColor: 'hsl(36, 100%, 75%)',
+    ringClass: 'ring-amber-400/50 dark:ring-amber-400/45',
+    glowClass: 'shadow-[0_0_50px_hsl(36,100%,65%,0.5)] dark:shadow-[0_0_60px_hsl(36,100%,60%,0.5)]',
     irisScale: 1.05,
-    breathingSpeed: 3,
+    breathingSpeed: 3.5,  // Content, relaxed
     particleType: 'sparkle',
-    transitionMs: 500, // Natural happy bloom
+    transitionMs: 500,
   },
+  // 🤩 Electric Coral - energy, enthusiasm
   excited: {
-    color: 'hsl(25, 95%, 53%)',
-    glowColor: 'hsl(25, 95%, 70%)',
-    ringClass: 'ring-orange-400/50',
-    glowClass: 'shadow-[0_0_50px_hsl(25,95%,53%,0.5)]',
+    color: 'hsl(0, 100%, 67%)',       // #FF5757
+    glowColor: 'hsl(0, 100%, 80%)',
+    ringClass: 'ring-red-400/50 dark:ring-red-400/45',
+    glowClass: 'shadow-[0_0_60px_hsl(0,100%,67%,0.55)] dark:shadow-[0_0_70px_hsl(0,100%,60%,0.55)]',
     irisScale: 1.15,
-    breathingSpeed: 2,
-    particleType: 'energy',
-    transitionMs: 400, // Quick but still flowing
-  },
-  thinking: {
-    color: 'hsl(217, 91%, 60%)',
-    glowColor: 'hsl(217, 91%, 75%)',
-    ringClass: 'ring-blue-400/50',
-    glowClass: 'shadow-[0_0_45px_hsl(217,91%,60%,0.45)]',
-    irisScale: 0.85,
-    breathingSpeed: 2.5,
-    particleType: 'orbit',
-    transitionMs: 600, // Thoughtful transition
-  },
-  frustrated: {
-    color: 'hsl(0, 72%, 51%)',
-    glowColor: 'hsl(0, 72%, 70%)',
-    ringClass: 'ring-red-400/30',
-    glowClass: 'shadow-[0_0_25px_hsl(0,72%,51%,0.25)]',
-    irisScale: 0.9,
-    breathingSpeed: 1.5,
-    particleType: 'energy', // Tense energy particles
-    transitionMs: 500,
-  },
-  curious: {
-    color: 'hsl(270, 76%, 60%)',
-    glowColor: 'hsl(270, 76%, 75%)',
-    ringClass: 'ring-purple-400/40',
-    glowClass: 'shadow-[0_0_35px_hsl(270,76%,60%,0.35)]',
-    irisScale: 1.1,
-    breathingSpeed: 2.8,
-    particleType: 'sparkle',
-    transitionMs: 500,
-  },
-  sad: {
-    color: 'hsl(210, 20%, 50%)',
-    glowColor: 'hsl(210, 20%, 65%)',
-    ringClass: 'ring-slate-400/30',
-    glowClass: 'shadow-[0_0_20px_hsl(210,20%,50%,0.2)]',
-    irisScale: 0.9,
-    breathingSpeed: 5,
-    particleType: 'orbit', // Slow melancholic orbit
-    transitionMs: 800, // Slow, melancholic transition
-  },
-  mad: {
-    color: 'hsl(0, 85%, 40%)',
-    glowColor: 'hsl(0, 85%, 55%)',
-    ringClass: 'ring-red-600/50',
-    glowClass: 'shadow-[0_0_35px_hsl(0,85%,40%,0.4)]',
-    irisScale: 0.8,
-    breathingSpeed: 1,
+    breathingSpeed: 2,    // Fast, energetic
     particleType: 'energy',
     transitionMs: 400,
   },
+  // 🤔 Royal Indigo - deep contemplation
+  thinking: {
+    color: 'hsl(239, 82%, 61%)',      // #4B4DED
+    glowColor: 'hsl(239, 85%, 75%)',
+    ringClass: 'ring-indigo-500/50 dark:ring-indigo-400/45',
+    glowClass: 'shadow-[0_0_50px_hsl(239,82%,61%,0.5)] dark:shadow-[0_0_60px_hsl(239,85%,55%,0.5)]',
+    irisScale: 0.85,
+    breathingSpeed: 3,    // Alert, engaged
+    particleType: 'orbit',
+    transitionMs: 600,
+  },
+  // 😤 Hot Orange-Red - tension without aggression
+  frustrated: {
+    color: 'hsl(6, 78%, 57%)',        // #E74C3C
+    glowColor: 'hsl(6, 80%, 70%)',
+    ringClass: 'ring-red-500/40 dark:ring-red-500/35',
+    glowClass: 'shadow-[0_0_45px_hsl(6,78%,57%,0.4)] dark:shadow-[0_0_55px_hsl(6,80%,50%,0.45)]',
+    irisScale: 0.9,
+    breathingSpeed: 1.8,  // Quick, tense
+    particleType: 'energy',
+    transitionMs: 500,
+  },
+  // 🧐 Bright Magenta - wonder, exploration
+  curious: {
+    color: 'hsl(282, 56%, 62%)',      // #B565D8
+    glowColor: 'hsl(282, 60%, 75%)',
+    ringClass: 'ring-purple-400/45 dark:ring-purple-400/40',
+    glowClass: 'shadow-[0_0_50px_hsl(282,56%,62%,0.45)] dark:shadow-[0_0_60px_hsl(282,60%,55%,0.5)]',
+    irisScale: 1.1,
+    breathingSpeed: 2.8,  // Alert, exploratory
+    particleType: 'sparkle',
+    transitionMs: 500,
+  },
+  // 😢 Muted Lavender - melancholy, understanding
+  sad: {
+    color: 'hsl(271, 11%, 59%)',      // #9B8FA6
+    glowColor: 'hsl(271, 15%, 70%)',
+    ringClass: 'ring-purple-300/30 dark:ring-purple-300/25',
+    glowClass: 'shadow-[0_0_35px_hsl(271,11%,59%,0.3)] dark:shadow-[0_0_45px_hsl(271,15%,55%,0.35)]',
+    irisScale: 0.9,
+    breathingSpeed: 6,    // Slow, subdued
+    particleType: 'orbit',
+    transitionMs: 800,
+  },
+  // 😠 Deep Crimson - intensity, distinct from frustrated
+  mad: {
+    color: 'hsl(354, 80%, 42%)',      // #C21626
+    glowColor: 'hsl(354, 85%, 55%)',
+    ringClass: 'ring-red-700/50 dark:ring-red-600/45',
+    glowClass: 'shadow-[0_0_50px_hsl(354,80%,42%,0.5)] dark:shadow-[0_0_60px_hsl(354,85%,40%,0.5)]',
+    irisScale: 0.8,
+    breathingSpeed: 1.5,  // Rapid, intense
+    particleType: 'energy',
+    transitionMs: 400,
+  },
+  // 😑 Muted Slate-Blue - low energy but present
   bored: {
-    color: 'hsl(0, 0%, 60%)',
-    glowColor: 'hsl(0, 0%, 70%)',
-    ringClass: 'ring-gray-400/20',
-    glowClass: 'shadow-[0_0_15px_hsl(0,0%,60%,0.15)]',
+    color: 'hsl(197, 9%, 58%)',       // #8A979C
+    glowColor: 'hsl(197, 12%, 68%)',
+    ringClass: 'ring-slate-400/25 dark:ring-slate-400/20',
+    glowClass: 'shadow-[0_0_25px_hsl(197,9%,58%,0.2)] dark:shadow-[0_0_35px_hsl(197,12%,55%,0.25)]',
     irisScale: 0.95,
-    breathingSpeed: 6,
-    particleType: 'orbit', // Lazy slow orbit
-    transitionMs: 700, // Slow, lazy transition
+    breathingSpeed: 7,    // Very slow, lethargic
+    particleType: 'orbit',
+    transitionMs: 700,
   },
 };
 
