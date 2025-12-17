@@ -389,6 +389,20 @@ const textProcessor = {
       .trim();
   },
 
+  // Strip embedded EMOTION: markers from AI response text
+  stripEmotionMarker(text: string): string {
+    if (!text) return '';
+    
+    return text
+      // Remove emotion markers at end of text (most common pattern)
+      .replace(/\n*\s*EMOTION:\s*\w+\s*$/gi, '')
+      // Remove emotion markers anywhere with surrounding newlines
+      .replace(/\n+EMOTION:\s*\w+\s*\n*/gi, '\n')
+      // Remove inline emotion markers
+      .replace(/\s+EMOTION:\s*\w+/gi, '')
+      .trim();
+  },
+
   // Process raw response into clean text (legacy - use processResponseWithEmotion for emotion extraction)
   processResponse(rawText: string, contentType: string): string {
     const { text } = this.processResponseWithEmotion(rawText, contentType);
@@ -457,7 +471,9 @@ const textProcessor = {
 
     // Use preserveMarkdown for JSON content (keeps tables, lists intact)
     // Use normalizeText only for raw text fallback
-    const text = isMarkdownContent ? this.preserveMarkdown(normalized) : this.normalizeText(normalized);
+    // Then strip any embedded EMOTION: markers from the text
+    const processedText = isMarkdownContent ? this.preserveMarkdown(normalized) : this.normalizeText(normalized);
+    const text = this.stripEmotionMarker(processedText);
     return { text, emotion: extractedEmotion };
   }
 };
