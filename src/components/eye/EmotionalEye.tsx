@@ -605,7 +605,7 @@ const EmotionalEyeComponent = ({
               skewX: isWinking ? 4 : 0,
             }} 
             transition={{
-              duration: isBlinking ? 0.12 : isWinking ? 0.1 : 0.15,
+              duration: isBlinking ? 0.15 : isWinking ? 0.1 : 0.12,
               ease: [0.4, 0, 0.2, 1]
             }}
             style={{

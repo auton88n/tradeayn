@@ -49,9 +49,9 @@ const SOUND_CONFIGS: Record<SoundType, SoundConfig> = {
   'message-absorb': { type: 'sine', frequency: 330, duration: 0.15, gain: 0.05, attack: 0.01, decay: 0.14 },
   'response-received': { type: 'sine', frequency: 659, duration: 0.12, gain: 0.07, attack: 0.01, decay: 0.11 },
   'suggestion-click': { type: 'sine', frequency: 740, duration: 0.06, gain: 0.05, attack: 0.005, decay: 0.055 },
-  // Blink sounds - synced to 120ms animation, peak at eye-closed moment (40ms)
-  'blink': { type: 'sine', frequency: 180, duration: 0.12, gain: 0.025, attack: 0.04, decay: 0.08 },
-  'blink-open': { type: 'sine', frequency: 220, duration: 0.08, gain: 0.015, attack: 0.01, decay: 0.07 },
+  // Blink sounds - synced to 180ms animation, peak at eye-closed moment (80ms)
+  'blink': { type: 'sine', frequency: 200, duration: 0.18, gain: 0.018, attack: 0.08, decay: 0.10 },
+  'blink-open': { type: 'sine', frequency: 240, duration: 0.06, gain: 0.012, attack: 0.01, decay: 0.05 },
   
   // Conversational sounds - soft but audible
   'understanding': { type: 'sine', frequency: 392, duration: 0.25, gain: 0.06, attack: 0.05, decay: 0.2, detune: 3 },
