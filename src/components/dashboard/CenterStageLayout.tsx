@@ -15,9 +15,8 @@ import { analyzeResponseEmotion, getBubbleType } from '@/utils/emotionMapping';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { hapticFeedback } from '@/lib/haptics';
-import { analyzeUserEmotion, getEmpathyResponse, UserEmotion } from '@/utils/userEmotionDetection';
+import { UserEmotion } from '@/utils/userEmotionDetection';
 import { useRealtimeEmotionTracking } from '@/hooks/useRealtimeEmotionTracking';
-import { useConversationFlow } from '@/hooks/useConversationFlow';
 import { useEmotionOrchestrator } from '@/hooks/useEmotionOrchestrator';
 import type { Message, AIMode, AIModeConfig } from '@/types/dashboard.types';
 
@@ -126,13 +125,11 @@ export const CenterStageLayout = ({
   const [lastUserMessage, setLastUserMessage] = useState<string>('');
   const [currentGazeIndex, setCurrentGazeIndex] = useState<number | null>(null);
   const [realtimeInputText, setRealtimeInputText] = useState('');
-  const [realtimeUserEmotion, setRealtimeUserEmotion] = useState<UserEmotion | null>(null);
-  const lastEmotionSoundRef = useRef<string | null>(null);
   
-  // AI empathy micro-behavior state
-  const [aiPupilReaction, setAiPupilReaction] = useState<'normal' | 'dilate-slightly' | 'dilate-more' | 'contract'>('normal');
-  const [aiBlinkPattern, setAiBlinkPattern] = useState<'normal' | 'slow-comfort' | 'quick-attentive' | 'double-understanding'>('normal');
-  const [aiColorIntensity, setAiColorIntensity] = useState(0.5);
+  // AI empathy micro-behavior state (passed to EmotionalEye)
+  const [aiPupilReaction] = useState<'normal' | 'dilate-slightly' | 'dilate-more' | 'contract'>('normal');
+  const [aiBlinkPattern] = useState<'normal' | 'slow-comfort' | 'quick-attentive' | 'double-understanding'>('normal');
+  const [aiColorIntensity] = useState(0.5);
 
   // Reset all visual state when messages are cleared (new chat started)
   useEffect(() => {
@@ -143,61 +140,44 @@ export const CenterStageLayout = ({
       setLastUserMessage('');
       setEmotion('calm');
       setIsResponding(false);
-      // Reset AI micro-behaviors
-      setAiPupilReaction('normal');
-      setAiBlinkPattern('normal');
-      setAiColorIntensity(0.5);
     }
   }, [messages.length, clearResponseBubbles, clearSuggestions, setEmotion, setIsResponding]);
 
 
-  // Real-time emotion tracking for responsive eye behavior
+  // Real-time emotion tracking for responsive eye behavior (subtle while typing)
   const realtimeEmotion = useRealtimeEmotionTracking(realtimeInputText, contextIsTyping);
-  
-  // Conversation flow awareness for anticipation states
-  const conversationFlow = useConversationFlow(messages, contextIsTyping, realtimeInputText);
 
-  // Real-time emotion response when user is typing emotional content
-  // This makes AYN feel engaged and responsive to what the user is typing
+  // SIMPLIFIED HYBRID: Real-time emotion while typing (subtle), backend priority on response
   useEffect(() => {
+    // Only react while user is actively typing
     if (contextIsTyping && realtimeEmotion.detectedEmotion) {
       const detectedEmotion = realtimeEmotion.detectedEmotion;
+      
       // Map detected user emotions to empathetic AYN responses
       const emotionMap: Record<string, AYNEmotion> = {
         'frustrated': 'supportive',
         'excited': 'happy',
         'curious': 'curious',
         'happy': 'happy',
-        'confused': 'thinking',
-        'anxious': 'comfort',
+        'thinking': 'thinking',
         'sad': 'comfort',
+        'mad': 'supportive',
+        'bored': 'curious',
       };
       
-      const aynEmotion = emotionMap[detectedEmotion] || 'curious';
+      const aynEmotion = emotionMap[detectedEmotion] || 'calm';
       
-      // Very low threshold (0.15) for maximum sensitivity - reacts to any emotional hint
-      // Enable both sound and haptic feedback for full sensory engagement during typing
-      if (realtimeEmotion.intensity > 0.15) {
-        orchestrateEmotionChange(aynEmotion as AYNEmotion, { skipSound: false, skipHaptic: false });
+      // Higher threshold (0.4) for more subtle detection - only strong emotions trigger change
+      // Skip sound during typing to avoid noise, but keep haptic for subtle feedback
+      if (realtimeEmotion.intensity > 0.4) {
+        orchestrateEmotionChange(aynEmotion as AYNEmotion, { skipSound: true, skipHaptic: false });
       }
     }
   }, [contextIsTyping, realtimeEmotion.detectedEmotion, realtimeEmotion.intensity, orchestrateEmotionChange]);
 
-  // Use conversation flow to adjust anticipation
-  useEffect(() => {
-    if (conversationFlow.anticipationLevel > 0.6 && !isTyping) {
-      // AYN appears ready and attentive when user is typing a lot
-      if (conversationFlow.suggestedEyeBehavior.emotion !== 'calm') {
-        // Don't override realtime emotion, just add subtle anticipation
-        playSound?.('anticipation');
-      }
-    }
-  }, [conversationFlow.anticipationLevel, isTyping, playSound]);
-
-  // Handle emotion detected callback from ChatInput
-  const handleEmotionDetected = useCallback((emotion: UserEmotion | null, inputText: string) => {
+  // Handle emotion detected callback from ChatInput - only tracks input text now
+  const handleEmotionDetected = useCallback((_emotion: UserEmotion | null, inputText: string) => {
     setRealtimeInputText(inputText);
-    setRealtimeUserEmotion(emotion);
   }, []);
 
   // Suggestion card Y positions for gaze targeting (matches SuggestionsCard desktopPositions)
@@ -299,26 +279,10 @@ export const CenterStageLayout = ({
     };
   }, []);
 
-  // Call AI emotion analysis for empathetic response
-  const analyzeEmotionWithAI = useCallback(async (message: string, conversationContext?: string) => {
-    try {
-      const { data, error } = await supabase.functions.invoke('analyze-emotion', {
-        body: { message, conversationContext }
-      });
-      
-      if (error) {
-        console.error('AI emotion analysis error:', error);
-        return null;
-      }
-      
-      return data;
-    } catch (err) {
-      console.error('Failed to analyze emotion:', err);
-      return null;
-    }
-  }, []);
+  // NOTE: analyzeEmotionWithAI removed - now using simpler hybrid approach:
+  // Real-time detection while typing + backend emotion on response
 
-  // Handle sending message with bubble animation
+  // Handle sending message with bubble animation - SIMPLIFIED
   const handleSendWithAnimation = useCallback(
     async (content: string, file?: File | null) => {
       // Block if file is still uploading
@@ -328,83 +292,6 @@ export const CenterStageLayout = ({
 
       // Track the user's message for suggestion context
       setLastUserMessage(content);
-
-      // Get recent conversation context for AI analysis
-      const recentMessages = messages.slice(-5).map(m => 
-        `${m.sender}: ${m.content.slice(0, 100)}`
-      ).join('\n');
-
-      // Start AI emotion analysis in background (non-blocking)
-      analyzeEmotionWithAI(content, recentMessages).then(aiAnalysis => {
-        if (aiAnalysis?.aynResponse) {
-          // Use AI-determined empathetic emotion via orchestrator
-          const aynEmotion = aiAnalysis.aynResponse.emotion || 'calm';
-          orchestrateEmotionChange(aynEmotion);
-          
-          // Apply AI micro-behaviors to the eye
-          if (aiAnalysis.aynResponse.pupilReaction) {
-            setAiPupilReaction(aiAnalysis.aynResponse.pupilReaction);
-          }
-          if (aiAnalysis.aynResponse.blinkPattern) {
-            setAiBlinkPattern(aiAnalysis.aynResponse.blinkPattern);
-          }
-          if (aiAnalysis.aynResponse.colorIntensity !== undefined) {
-            setAiColorIntensity(aiAnalysis.aynResponse.colorIntensity);
-          }
-          
-          // Extra empathy for high-intensity user emotions
-          if (aiAnalysis.userEmotion?.intensity > 0.6) {
-            triggerPulse();
-          }
-          
-          console.log('AI Empathy:', aiAnalysis.empathyNote);
-          
-          // Reset micro-behaviors after 5 seconds
-          setTimeout(() => {
-            setAiPupilReaction('normal');
-            setAiBlinkPattern('normal');
-            setAiColorIntensity(0.5);
-          }, 5000);
-        }
-      });
-
-      // Fallback: Use local emotion analysis immediately for responsive UI
-      const userEmotionAnalysis = analyzeUserEmotion(content);
-      const empathyResponse = getEmpathyResponse(userEmotionAnalysis.emotion);
-      
-      // AYN shows empathetic response immediately via orchestrator (before AI completes)
-      if (userEmotionAnalysis.emotion !== 'neutral' && userEmotionAnalysis.intensity > 0.3) {
-        orchestrateEmotionChange(empathyResponse.aynEmotion);
-        
-        // Immediate local micro-behavior triggers based on user emotion
-        const intensity = userEmotionAnalysis.intensity;
-        
-        // Pupil dilation based on emotional intensity
-        if (intensity > 0.7) {
-          setAiPupilReaction('dilate-more');
-        } else if (intensity > 0.4) {
-          setAiPupilReaction('dilate-slightly');
-        }
-        
-        // Blink pattern based on user emotion type
-        if (userEmotionAnalysis.emotion === 'sad' || userEmotionAnalysis.emotion === 'anxious') {
-          setAiBlinkPattern('slow-comfort');
-        } else if (userEmotionAnalysis.emotion === 'excited' || userEmotionAnalysis.emotion === 'happy') {
-          setAiBlinkPattern('quick-attentive');
-        } else if (userEmotionAnalysis.emotion === 'confused' || userEmotionAnalysis.emotion === 'frustrated') {
-          setAiBlinkPattern('double-understanding');
-        }
-        
-        // Reset after 5 seconds
-        setTimeout(() => {
-          setAiPupilReaction('normal');
-          setAiBlinkPattern('normal');
-        }, 5000);
-        
-        if (intensity > 0.6) {
-          triggerPulse();
-        }
-      }
 
       // Clear previous response bubbles and suggestions
       clearResponseBubbles();
@@ -420,7 +307,9 @@ export const CenterStageLayout = ({
         triggerBlink();
         triggerAbsorption();
         playSound?.('message-absorb');
-        // Use orchestrator for synchronized thinking state
+        
+        // SIMPLIFIED: Just show 'thinking' while waiting for backend response
+        // Backend emotion (lastSuggestedEmotion) will take priority when response arrives
         orchestrateEmotionChange('thinking');
         setIsResponding(true);
         
@@ -435,14 +324,12 @@ export const CenterStageLayout = ({
         // Actually send the message immediately
         onSendMessage(content, file);
         
-        // Clear file after send (belt and suspenders approach)
+        // Clear file after send
         onRemoveFile();
       }, 350);
     },
     [
-      messages,
       isUploading,
-      analyzeEmotionWithAI,
       clearResponseBubbles,
       clearSuggestions,
       getInputPosition,
@@ -450,7 +337,8 @@ export const CenterStageLayout = ({
       startMessageAnimation,
       triggerBlink,
       triggerAbsorption,
-      setEmotion,
+      playSound,
+      orchestrateEmotionChange,
       setIsResponding,
       completeAbsorption,
       onSendMessage,
