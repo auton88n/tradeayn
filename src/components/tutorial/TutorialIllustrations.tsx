@@ -26,34 +26,81 @@ export const MeetAynIllustration = () => (
 );
 
 export const EmotionsIllustration = () => {
-  const emotions = [
-    { color: 'rgb(34, 197, 94)', label: 'Happy', icon: Smile },
-    { color: 'rgb(59, 130, 246)', label: 'Thinking', icon: CircleDot },
-    { color: 'rgb(249, 115, 22)', label: 'Excited', icon: Zap },
-    { color: 'rgb(239, 68, 68)', label: 'Frustrated', icon: AlertCircle },
-    { color: 'rgb(168, 85, 247)', label: 'Curious', icon: HelpCircle },
+  // Core emotions (Row 1)
+  const coreEmotions = [
+    { color: 'hsl(193, 38%, 47%)', label: 'Calm', emoji: '😌', meaning: 'Peaceful' },
+    { color: 'hsl(36, 100%, 65%)', label: 'Happy', emoji: '😊', meaning: 'Joyful' },
+    { color: 'hsl(0, 100%, 67%)', label: 'Excited', emoji: '🤩', meaning: 'Energetic' },
+    { color: 'hsl(239, 82%, 61%)', label: 'Thinking', emoji: '🤔', meaning: 'Processing' },
+    { color: 'hsl(282, 56%, 62%)', label: 'Curious', emoji: '🧐', meaning: 'Exploring' },
+  ];
+  
+  // Empathy emotions (Row 2)
+  const empathyEmotions = [
+    { color: 'hsl(349, 49%, 69%)', label: 'Comfort', emoji: '🤗', meaning: 'Nurturing' },
+    { color: 'hsl(10, 61%, 78%)', label: 'Supportive', emoji: '💪', meaning: 'Encouraging' },
+  ];
+  
+  // Negative/low energy emotions (Row 3)
+  const negativeEmotions = [
+    { color: 'hsl(6, 78%, 57%)', label: 'Frustrated', emoji: '😤', meaning: 'Tense' },
+    { color: 'hsl(354, 80%, 42%)', label: 'Mad', emoji: '😠', meaning: 'Intense' },
+    { color: 'hsl(271, 11%, 59%)', label: 'Sad', emoji: '😢', meaning: 'Melancholy' },
+    { color: 'hsl(197, 9%, 58%)', label: 'Bored', emoji: '😑', meaning: 'Low Energy' },
   ];
 
+  const EmotionCircle = ({ emotion, index, baseDelay = 0 }: { emotion: typeof coreEmotions[0], index: number, baseDelay?: number }) => (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay: baseDelay + index * 0.08, type: 'spring', stiffness: 200 }}
+      className="flex flex-col items-center gap-1"
+    >
+      <motion.div 
+        className="w-10 h-10 md:w-11 md:h-11 rounded-full flex items-center justify-center shadow-lg relative"
+        style={{ 
+          backgroundColor: emotion.color,
+          boxShadow: `0 4px 20px ${emotion.color.replace(')', ', 0.4)')}` 
+        }}
+        animate={{ scale: [1, 1.05, 1] }}
+        transition={{ duration: 2, repeat: Infinity, delay: index * 0.3 }}
+      >
+        <span className="text-base md:text-lg">{emotion.emoji}</span>
+      </motion.div>
+      <span className="text-[10px] font-medium text-foreground">{emotion.label}</span>
+      <span className="text-[8px] text-muted-foreground">{emotion.meaning}</span>
+    </motion.div>
+  );
+
   return (
-    <div className="w-full h-full flex items-center justify-center">
-      <div className="grid grid-cols-5 gap-4">
-        {emotions.map((emotion, i) => (
-          <motion.div
-            key={emotion.label}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1 }}
-            className="flex flex-col items-center gap-2"
-          >
-            <div 
-              className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg"
-              style={{ backgroundColor: emotion.color }}
-            >
-              <emotion.icon className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-xs text-muted-foreground">{emotion.label}</span>
-          </motion.div>
-        ))}
+    <div className="w-full h-full flex items-center justify-center py-2">
+      <div className="flex flex-col items-center gap-4">
+        {/* Row 1: Core emotions */}
+        <div className="flex items-center gap-3 md:gap-4">
+          {coreEmotions.map((emotion, i) => (
+            <EmotionCircle key={emotion.label} emotion={emotion} index={i} baseDelay={0} />
+          ))}
+        </div>
+        
+        {/* Row 2: Empathy emotions with warm background */}
+        <motion.div 
+          className="flex items-center gap-4 px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-500/10 to-rose-500/10 border border-amber-500/20"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+        >
+          <span className="text-[9px] text-amber-600 dark:text-amber-400 font-medium uppercase tracking-wider">Empathy</span>
+          {empathyEmotions.map((emotion, i) => (
+            <EmotionCircle key={emotion.label} emotion={emotion} index={i} baseDelay={0.6} />
+          ))}
+        </motion.div>
+        
+        {/* Row 3: Negative emotions */}
+        <div className="flex items-center gap-3 md:gap-4 opacity-80">
+          {negativeEmotions.map((emotion, i) => (
+            <EmotionCircle key={emotion.label} emotion={emotion} index={i} baseDelay={0.8} />
+          ))}
+        </div>
       </div>
     </div>
   );
