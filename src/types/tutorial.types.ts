@@ -22,7 +22,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
   {
     id: 'emotions',
     title: 'Emotional Intelligence',
-    description: 'AYN\'s eye color reflects its mood: Green when happy, Blue when thinking, Orange when excited, Red when frustrated, Purple when curious, and warm Amber when offering comfort.',
+    description: 'AYN expresses 11 distinct emotions through eye color. Each color represents a genuine feeling — from calm ocean blue when at peace, warm peach-gold when happy, royal indigo while thinking, and soft rose tones when offering comfort and support.',
     icon: 'Palette',
   },
   {
