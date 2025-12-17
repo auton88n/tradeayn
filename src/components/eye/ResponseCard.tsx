@@ -102,7 +102,7 @@ const ResponseCardComponent = ({ responses, isMobile = false }: ResponseCardProp
   return (
     <AnimatePresence mode="wait">
       <motion.div
-        key={`${visibleResponses[0]?.id}-${combinedContent.slice(0, 50)}`}
+        key={visibleResponses[0]?.id || 'empty'}
         layout={false}
         className={cn(
           "relative group flex flex-col",

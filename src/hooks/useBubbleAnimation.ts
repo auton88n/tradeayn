@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import type { BubbleType } from '@/utils/emotionMapping';
 
 export interface FlyingBubble {
@@ -213,11 +213,21 @@ export const useBubbleAnimation = (): UseBubbleAnimationReturn => {
     );
   }, []);
 
+  // Memoize responseBubbles to prevent unnecessary re-renders
+  const stableResponseBubbles = useMemo(() => responseBubbles, [
+    responseBubbles.map(b => `${b.id}-${b.isVisible}`).join(',')
+  ]);
+
+  // Memoize suggestionBubbles similarly
+  const stableSuggestionBubbles = useMemo(() => suggestionBubbles, [
+    suggestionBubbles.map(s => `${s.id}-${s.isVisible}`).join(',')
+  ]);
+
   return {
     flyingBubble,
     flyingSuggestion,
-    responseBubbles,
-    suggestionBubbles,
+    responseBubbles: stableResponseBubbles,
+    suggestionBubbles: stableSuggestionBubbles,
     startMessageAnimation,
     completeAbsorption,
     startSuggestionFlight,
