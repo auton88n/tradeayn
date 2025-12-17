@@ -7,7 +7,6 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
 import { useSoundContextOptional } from '@/contexts/SoundContext';
-import { analyzeUserEmotion, UserEmotion } from '@/utils/userEmotionDetection';
 import { detectLanguage, DetectedLanguage } from '@/utils/languageDetection';
 import type { AIMode } from '@/types/dashboard.types';
 
@@ -40,8 +39,6 @@ interface ChatInputProps {
   prefillValue?: string;
   onPrefillConsumed?: () => void;
   onLanguageChange?: (language: DetectedLanguage) => void;
-  // Real-time emotion feedback callback
-  onEmotionDetected?: (emotion: UserEmotion | null, inputText: string) => void;
   // Message limit props
   hasReachedLimit?: boolean;
   messageCount?: number;
@@ -163,7 +160,6 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
   prefillValue = '',
   onPrefillConsumed,
   onLanguageChange,
-  onEmotionDetected,
   hasReachedLimit = false,
   messageCount = 0,
   maxMessages = 100,
@@ -175,11 +171,9 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [currentPlaceholder, setCurrentPlaceholder] = useState(0);
   const [showPlaceholder, setShowPlaceholder] = useState(true);
-  const [detectedEmotion, setDetectedEmotion] = useState<UserEmotion | null>(null);
   const [detectedLang, setDetectedLang] = useState<DetectedLanguage | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const emotionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const languageTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const {
     setIsUserTyping,
@@ -220,34 +214,12 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
     return () => clearInterval(interval);
   }, []);
 
-  // Simplified typing detection with emotion and language analysis
+  // Simplified typing detection with language analysis
   useEffect(() => {
     if (inputMessage.trim()) {
       setIsUserTyping(true);
       setIsAttentive(true);
       updateActivity();
-      
-      // Analyze emotion after a brief pause
-      if (emotionTimeoutRef.current) {
-        clearTimeout(emotionTimeoutRef.current);
-      }
-      emotionTimeoutRef.current = setTimeout(() => {
-        if (inputMessage.trim().length > 3) {
-          const result = analyzeUserEmotion(inputMessage);
-          if (result.emotion !== 'neutral' && result.intensity > 0.3) {
-            setDetectedEmotion(result.emotion);
-            // Notify parent for real-time eye feedback
-            if (onEmotionDetected) {
-              onEmotionDetected(result.emotion, inputMessage);
-            }
-          } else {
-            setDetectedEmotion(null);
-            if (onEmotionDetected) {
-              onEmotionDetected(null, inputMessage);
-            }
-          }
-        }
-      }, 300);
 
       // Detect language after a brief pause
       if (languageTimeoutRef.current) {
@@ -271,37 +243,17 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
       }, 1000);
     } else {
       setIsUserTyping(false);
-      setDetectedEmotion(null);
       setDetectedLang(null);
-      if (onEmotionDetected) {
-        onEmotionDetected(null, '');
-      }
     }
     return () => {
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
-      if (emotionTimeoutRef.current) {
-        clearTimeout(emotionTimeoutRef.current);
-      }
       if (languageTimeoutRef.current) {
         clearTimeout(languageTimeoutRef.current);
       }
     };
-  }, [inputMessage, setIsUserTyping, setIsAttentive, updateActivity, onLanguageChange, onEmotionDetected]);
-  // Emotion indicator config
-  const emotionIndicators: Record<UserEmotion, { emoji: string; color: string; label: string }> = {
-    happy: { emoji: '😊', color: 'bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30', label: 'Happy' },
-    sad: { emoji: '😔', color: 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30', label: 'Sad' },
-    frustrated: { emoji: '😤', color: 'bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30', label: 'Frustrated' },
-    excited: { emoji: '🎉', color: 'bg-orange-500/20 text-orange-600 dark:text-orange-400 border-orange-500/30', label: 'Excited' },
-    anxious: { emoji: '😰', color: 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border-yellow-500/30', label: 'Anxious' },
-    confused: { emoji: '🤔', color: 'bg-purple-500/20 text-purple-600 dark:text-purple-400 border-purple-500/30', label: 'Confused' },
-    neutral: { emoji: '😐', color: 'bg-muted text-muted-foreground border-border', label: 'Neutral' },
-    angry: { emoji: '😡', color: 'bg-red-600/20 text-red-700 dark:text-red-400 border-red-600/30', label: 'Angry' },
-    grieving: { emoji: '💔', color: 'bg-slate-500/20 text-slate-600 dark:text-slate-400 border-slate-500/30', label: 'Grieving' },
-    overwhelmed: { emoji: '😫', color: 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30', label: 'Overwhelmed' },
-  };
+  }, [inputMessage, setIsUserTyping, setIsAttentive, updateActivity, onLanguageChange]);
 
   const handleSend = useCallback(() => {
     if (!inputMessage.trim() && !selectedFile) return;
@@ -311,7 +263,6 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
     onSend(inputMessage.trim(), selectedFile);
     setInputMessage('');
     setShowPlaceholder(true);
-    setDetectedEmotion(null);
     setDetectedLang(null);
     
     // Clear file immediately after initiating send
@@ -568,31 +519,11 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
 
         {/* Row 2: Toolbar */}
         <div className="flex items-center justify-between px-3 py-2 border-t border-border/30 bg-muted/20">
-          {/* Left: Action buttons + Emotion indicator */}
+          {/* Left: Action buttons */}
           <div className="flex items-center gap-2">
             <button onClick={handleFileClick} disabled={isDisabled || isUploading} className={cn("p-2 rounded-lg", "hover:bg-muted/60", "transition-all duration-200", "disabled:opacity-50 disabled:cursor-not-allowed")}>
               <Plus className="w-5 h-5 text-muted-foreground" />
             </button>
-            
-            {/* Emotion indicator */}
-            <AnimatePresence>
-              {detectedEmotion && detectedEmotion !== 'neutral' && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8, x: -10 }}
-                  animate={{ opacity: 1, scale: 1, x: 0 }}
-                  exit={{ opacity: 0, scale: 0.8, x: -10 }}
-                  transition={{ duration: 0.2, ease: "easeOut" }}
-                  className={cn(
-                    "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border",
-                    emotionIndicators[detectedEmotion].color
-                  )}
-                >
-                  <span>{emotionIndicators[detectedEmotion].emoji}</span>
-                  <span>AYN senses: {emotionIndicators[detectedEmotion].label}</span>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
           </div>
 
           {/* Message counter */}
