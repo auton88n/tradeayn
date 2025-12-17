@@ -11,12 +11,10 @@ import { ChatInput } from './ChatInput';
 import { useBubbleAnimation } from '@/hooks/useBubbleAnimation';
 import { useAYNEmotion, AYNEmotion } from '@/contexts/AYNEmotionContext';
 import { useSoundContextOptional } from '@/contexts/SoundContext';
-import { analyzeResponseEmotion, getBubbleType } from '@/utils/emotionMapping';
+import { getBubbleType } from '@/utils/emotionMapping';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { hapticFeedback } from '@/lib/haptics';
-import { UserEmotion } from '@/utils/userEmotionDetection';
-import { useRealtimeEmotionTracking } from '@/hooks/useRealtimeEmotionTracking';
 import { useEmotionOrchestrator } from '@/hooks/useEmotionOrchestrator';
 import type { Message, AIMode, AIModeConfig } from '@/types/dashboard.types';
 
@@ -124,7 +122,6 @@ export const CenterStageLayout = ({
   const [burstPosition, setBurstPosition] = useState({ x: 0, y: 0 });
   const [lastUserMessage, setLastUserMessage] = useState<string>('');
   const [currentGazeIndex, setCurrentGazeIndex] = useState<number | null>(null);
-  const [realtimeInputText, setRealtimeInputText] = useState('');
   
   // AI empathy micro-behavior state (passed to EmotionalEye)
   const [aiPupilReaction] = useState<'normal' | 'dilate-slightly' | 'dilate-more' | 'contract'>('normal');
@@ -142,43 +139,6 @@ export const CenterStageLayout = ({
       setIsResponding(false);
     }
   }, [messages.length, clearResponseBubbles, clearSuggestions, setEmotion, setIsResponding]);
-
-
-  // Real-time emotion tracking for responsive eye behavior (subtle while typing)
-  const realtimeEmotion = useRealtimeEmotionTracking(realtimeInputText, contextIsTyping);
-
-  // SIMPLIFIED HYBRID: Real-time emotion while typing (subtle), backend priority on response
-  useEffect(() => {
-    // Only react while user is actively typing
-    if (contextIsTyping && realtimeEmotion.detectedEmotion) {
-      const detectedEmotion = realtimeEmotion.detectedEmotion;
-      
-      // Map detected user emotions to empathetic AYN responses
-      const emotionMap: Record<string, AYNEmotion> = {
-        'frustrated': 'supportive',
-        'excited': 'happy',
-        'curious': 'curious',
-        'happy': 'happy',
-        'thinking': 'thinking',
-        'sad': 'comfort',
-        'mad': 'supportive',
-        'bored': 'curious',
-      };
-      
-      const aynEmotion = emotionMap[detectedEmotion] || 'calm';
-      
-      // Higher threshold (0.4) for more subtle detection - only strong emotions trigger change
-      // Skip sound during typing to avoid noise, but keep haptic for subtle feedback
-      if (realtimeEmotion.intensity > 0.4) {
-        orchestrateEmotionChange(aynEmotion as AYNEmotion, { skipSound: true, skipHaptic: false });
-      }
-    }
-  }, [contextIsTyping, realtimeEmotion.detectedEmotion, realtimeEmotion.intensity, orchestrateEmotionChange]);
-
-  // Handle emotion detected callback from ChatInput - only tracks input text now
-  const handleEmotionDetected = useCallback((_emotion: UserEmotion | null, inputText: string) => {
-    setRealtimeInputText(inputText);
-  }, []);
 
   // Suggestion card Y positions for gaze targeting (matches SuggestionsCard desktopPositions)
   const suggestionGazeTargets = [
@@ -411,12 +371,11 @@ export const CenterStageLayout = ({
       
       // After blink, use backend emotion and emit bubbles
       setTimeout(() => {
-        // Prioritize backend-suggested emotion, fallback to local analysis
+        // BACKEND-ONLY: Use backend-suggested emotion, fallback to 'calm'
         const validEmotions: AYNEmotion[] = ['calm', 'happy', 'excited', 'thinking', 'frustrated', 'curious', 'sad', 'mad', 'bored', 'comfort', 'supportive'];
-        const backendEmotion = lastSuggestedEmotion && validEmotions.includes(lastSuggestedEmotion as AYNEmotion) 
+        const emotion = lastSuggestedEmotion && validEmotions.includes(lastSuggestedEmotion as AYNEmotion) 
           ? lastSuggestedEmotion as AYNEmotion 
-          : null;
-        const emotion = backendEmotion || analyzeResponseEmotion(lastMessage.content);
+          : 'calm';
         // Use orchestrator for synchronized response emotion
         orchestrateEmotionChange(emotion);
         playSound?.('response-received');
@@ -624,7 +583,6 @@ animate={{
           prefillValue={prefillValue}
           onPrefillConsumed={onPrefillConsumed}
           onLanguageChange={onLanguageChange}
-          onEmotionDetected={handleEmotionDetected}
           hasReachedLimit={hasReachedLimit}
           messageCount={messageCount}
           maxMessages={maxMessages}
