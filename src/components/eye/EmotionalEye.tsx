@@ -610,20 +610,32 @@ const EmotionalEyeComponent = ({
           >
             {/* Sclera gradient removed to eliminate border lines */}
 
-            {/* Solid black pupil - always black regardless of theme */}
-            <circle 
+            {/* Solid black pupil with breathing dilation sync */}
+            <motion.circle 
               cx="50" 
               cy="50" 
-              r={irisRadius}
               fill="#000000"
+              animate={{
+                r: prefersReducedMotion 
+                  ? irisRadius 
+                  : [irisRadius, irisRadius * 1.06, irisRadius], // 6% dilation with breath
+              }}
+              transition={{
+                r: {
+                  duration: breathingDuration,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                },
+              }}
               style={{
+                // Faster transitions for state changes override breathing
                 transition: isAbsorbing 
                   ? "r 0.15s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
                   : isAttentive
                     ? "r 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)"
                     : isBlinking 
                       ? "r 0.08s cubic-bezier(0.55, 0.055, 0.675, 0.19)" 
-                      : "r 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)"
+                      : undefined // Let framer-motion handle breathing
               }} 
             />
               
