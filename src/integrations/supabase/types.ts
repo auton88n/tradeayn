@@ -654,6 +654,39 @@ export type Database = {
         }
         Relationships: []
       }
+      pending_pin_changes: {
+        Row: {
+          approval_token: string
+          created_at: string
+          expires_at: string
+          id: string
+          new_pin_hash: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          approval_token: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          new_pin_hash: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          approval_token?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          new_pin_hash?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       performance_metrics: {
         Row: {
           created_at: string

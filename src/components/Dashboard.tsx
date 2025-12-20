@@ -8,6 +8,7 @@ import { useState, useEffect, lazy, Suspense } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLoader } from '@/components/ui/page-loader';
+import { AlertTriangle, Clock } from 'lucide-react';
 
 // Lazy load AdminPanel (only needed for admins)
 const AdminPanel = lazy(() => import('./AdminPanel').then(module => ({ default: module.AdminPanel })));
@@ -17,16 +18,27 @@ interface DashboardProps {
   session: Session;
 }
 
+interface MaintenanceConfig {
+  enabled?: boolean;
+  message?: string;
+  startTime?: string;
+  endTime?: string;
+  preMaintenanceNotice?: boolean;
+  preMaintenanceMessage?: string;
+}
+
 export default function Dashboard({ user, session }: DashboardProps) {
   const auth = useAuth(user, session);
   const [activeView, setActiveView] = useState<'chat' | 'admin'>('chat');
   const [showPinGate, setShowPinGate] = useState(false);
   const [isAdminUnlocked, setIsAdminUnlocked] = useState(false);
-  const [maintenanceConfig, setMaintenanceConfig] = useState({
-    enableMaintenance: false,
-    maintenanceMessage: 'System is currently under maintenance.',
-    maintenanceStartTime: '',
-    maintenanceEndTime: '',
+  const [maintenanceConfig, setMaintenanceConfig] = useState<MaintenanceConfig>({
+    enabled: false,
+    message: 'System is currently under maintenance.',
+    startTime: '',
+    endTime: '',
+    preMaintenanceNotice: false,
+    preMaintenanceMessage: ''
   });
 
   // Load maintenance config from database
@@ -45,18 +57,14 @@ export default function Dashboard({ user, session }: DashboardProps) {
         }
 
         if (data?.value && typeof data.value === 'object' && !Array.isArray(data.value)) {
-          interface MaintenanceConfig {
-            enabled?: boolean;
-            message?: string;
-            startTime?: string;
-            endTime?: string;
-          }
           const config = data.value as MaintenanceConfig;
           setMaintenanceConfig({
-            enableMaintenance: config.enabled || false,
-            maintenanceMessage: config.message || 'System is currently under maintenance.',
-            maintenanceStartTime: config.startTime || '',
-            maintenanceEndTime: config.endTime || '',
+            enabled: config.enabled || false,
+            message: config.message || 'System is currently under maintenance.',
+            startTime: config.startTime || '',
+            endTime: config.endTime || '',
+            preMaintenanceNotice: config.preMaintenanceNotice || false,
+            preMaintenanceMessage: config.preMaintenanceMessage || ''
           });
         }
       } catch (error) {
@@ -81,18 +89,14 @@ export default function Dashboard({ user, session }: DashboardProps) {
           if (payload.new && typeof payload.new === 'object' && 'value' in payload.new) {
             const value = payload.new.value;
             if (value && typeof value === 'object' && !Array.isArray(value)) {
-              interface MaintenanceConfig {
-                enabled?: boolean;
-                message?: string;
-                startTime?: string;
-                endTime?: string;
-              }
               const config = value as MaintenanceConfig;
               setMaintenanceConfig({
-                enableMaintenance: config.enabled || false,
-                maintenanceMessage: config.message || 'System is currently under maintenance.',
-                maintenanceStartTime: config.startTime || '',
-                maintenanceEndTime: config.endTime || '',
+                enabled: config.enabled || false,
+                message: config.message || 'System is currently under maintenance.',
+                startTime: config.startTime || '',
+                endTime: config.endTime || '',
+                preMaintenanceNotice: config.preMaintenanceNotice || false,
+                preMaintenanceMessage: config.preMaintenanceMessage || ''
               });
             }
           }
@@ -124,15 +128,73 @@ export default function Dashboard({ user, session }: DashboardProps) {
     setShowPinGate(false);
   };
 
+  // Check if user is blocked by maintenance mode
+  const isBlockedByMaintenance = maintenanceConfig.enabled && !auth.hasDutyAccess;
+
+  // Full-screen maintenance block for regular users
+  if (isBlockedByMaintenance) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-yellow-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-6">
+        <div className="max-w-md w-full text-center">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-orange-200 dark:border-orange-800">
+            <div className="w-16 h-16 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+              <AlertTriangle className="w-8 h-8 text-orange-600" />
+            </div>
+            
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
+              🚧 System Maintenance
+            </h1>
+            
+            <p className="text-gray-600 dark:text-gray-300 mb-6">
+              {maintenanceConfig.message || 'System is currently under maintenance. We apologize for any inconvenience.'}
+            </p>
+            
+            {(maintenanceConfig.startTime || maintenanceConfig.endTime) && (
+              <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4 mb-6">
+                <div className="flex items-center justify-center gap-2 text-orange-700 dark:text-orange-400">
+                  <Clock className="w-4 h-4" />
+                  {maintenanceConfig.startTime && maintenanceConfig.endTime ? (
+                    <span className="text-sm">
+                      {new Date(maintenanceConfig.startTime).toLocaleString()} - {new Date(maintenanceConfig.endTime).toLocaleString()}
+                    </span>
+                  ) : maintenanceConfig.endTime ? (
+                    <span className="text-sm">
+                      Expected completion: {new Date(maintenanceConfig.endTime).toLocaleString()}
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+            )}
+            
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Please check back later. We're working to get things back to normal.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div dir="ltr" className="relative min-h-screen">
-      {/* Maintenance Banner - positioned at top */}
-      {maintenanceConfig.enableMaintenance && (
+      {/* Pre-Maintenance Notice Banner (warning, not blocking) */}
+      {maintenanceConfig.preMaintenanceNotice && !maintenanceConfig.enabled && (
         <MaintenanceBanner
-          isEnabled={maintenanceConfig.enableMaintenance}
-          message={maintenanceConfig.maintenanceMessage}
-          startTime={maintenanceConfig.maintenanceStartTime}
-          endTime={maintenanceConfig.maintenanceEndTime}
+          isEnabled={true}
+          message={maintenanceConfig.preMaintenanceMessage || 'Scheduled maintenance coming soon'}
+          startTime={maintenanceConfig.startTime}
+          endTime={maintenanceConfig.endTime}
+          isPreNotice={true}
+        />
+      )}
+
+      {/* Active Maintenance Banner for admins */}
+      {maintenanceConfig.enabled && auth.hasDutyAccess && (
+        <MaintenanceBanner
+          isEnabled={true}
+          message={`[Admin View] ${maintenanceConfig.message}`}
+          startTime={maintenanceConfig.startTime}
+          endTime={maintenanceConfig.endTime}
         />
       )}
 
