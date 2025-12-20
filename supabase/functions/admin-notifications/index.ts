@@ -43,7 +43,7 @@ async function generateApprovalToken(
   adminEmail: string, 
   secret: string
 ): Promise<string> {
-  const expiresAt = Date.now() + (24 * 60 * 60 * 1000); // 24 hours from now
+  const expiresAt = Date.now() + (24 * 60 * 60 * 1000);
   const dataToSign = `${userId}:${userEmail}:${adminEmail}:${expiresAt}`;
   const signature = await createSignature(dataToSign, secret);
   
@@ -58,223 +58,235 @@ async function generateApprovalToken(
   return btoa(JSON.stringify(tokenData));
 }
 
-// Premium email template
+// Clean email template with dark mode support
 function generateEmailTemplate(title: string, content: string): string {
   return `<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
+<title>${title}</title>
+<style>
+:root{color-scheme:light dark}
+@media(prefers-color-scheme:dark){
+.email-bg{background-color:#1a1a1a!important}
+.email-card{background-color:#2a2a2a!important;border-color:#3a3a3a!important}
+.email-header{border-color:#3a3a3a!important}
+.email-title{color:#ffffff!important}
+.email-logo{color:#ffffff!important}
+.email-text{color:#e0e0e0!important}
+.email-muted{color:#a0a0a0!important}
+.email-box{background-color:#333333!important}
+.email-footer{background-color:#222222!important;border-color:#3a3a3a!important}
+}
+</style>
 </head>
-<body style="margin: 0; padding: 0; background-color: #f5f5f5; font-family: 'Helvetica Neue', Arial, sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 40px 20px;">
-    <tr>
-      <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-          <!-- Header -->
-          <tr>
-            <td style="padding: 40px 40px 20px 40px; text-align: center; border-bottom: 1px solid #eee;">
-              <h1 style="margin: 0; font-size: 42px; font-weight: 900; letter-spacing: -2px; color: #0a0a0a;">AYN</h1>
-              <div style="width: 40px; height: 3px; background-color: #0a0a0a; margin: 15px auto 0;"></div>
-            </td>
-          </tr>
-          <!-- Title -->
-          <tr>
-            <td style="padding: 30px 40px 10px 40px;">
-              <h2 style="margin: 0; font-size: 24px; font-weight: 600; color: #0a0a0a;">${title}</h2>
-            </td>
-          </tr>
-          <!-- Content -->
-          <tr>
-            <td style="padding: 20px 40px 40px 40px;">
-              ${content}
-            </td>
-          </tr>
-          <!-- Footer -->
-          <tr>
-            <td style="padding: 30px 40px; background-color: #fafafa; border-top: 1px solid #eee;">
-              <p style="margin: 0; font-size: 12px; color: #999; text-align: center;">
-                This is an automated notification from AYN Admin System<br>
-                © ${new Date().getFullYear()} AYN. All rights reserved.
-              </p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+<div class="email-bg" style="background-color:#f5f5f5;padding:40px 20px">
+<table width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" border="0" class="email-card" style="background-color:#ffffff;border-radius:12px;border:1px solid #e5e5e5">
+<tr><td class="email-header" style="padding:32px 32px 24px;text-align:center;border-bottom:1px solid #e5e5e5">
+<h1 class="email-logo" style="margin:0;font-size:36px;font-weight:800;letter-spacing:-1px;color:#0a0a0a">AYN</h1>
+<div style="width:40px;height:3px;background:#6366f1;margin:12px auto 0;border-radius:2px"></div>
+</td></tr>
+<tr><td style="padding:28px 32px 12px">
+<h2 class="email-title" style="margin:0;font-size:22px;font-weight:600;color:#0a0a0a">${title}</h2>
+</td></tr>
+<tr><td style="padding:16px 32px 32px">
+${content}
+</td></tr>
+<tr><td class="email-footer" style="padding:24px 32px;background-color:#fafafa;border-top:1px solid #e5e5e5;border-radius:0 0 12px 12px">
+<p class="email-muted" style="margin:0;font-size:12px;color:#888;text-align:center">
+This is an automated notification from AYN<br>
+&copy; ${new Date().getFullYear()} AYN. All rights reserved.
+</p>
+</td></tr>
+</table>
+</td></tr>
+</table>
+</div>
 </body>
 </html>`;
 }
 
-// Access request email content with approve button
+// Access request email content
 function generateAccessRequestContent(data: NotificationRequest, approveUrl?: string): string {
-  const timestamp = data.created_at ? new Date(data.created_at).toLocaleString('en-US', { 
-    dateStyle: 'full', 
-    timeStyle: 'short' 
-  }) : new Date().toLocaleString('en-US');
-  
-  const approveButton = approveUrl ? `
-    <a href="${approveUrl}" style="display: inline-block; padding: 14px 32px; background-color: #22c55e; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 14px; font-weight: 500; margin-right: 12px;">✓ Approve Now</a>
-  ` : '';
+  const timestamp = data.created_at 
+    ? new Date(data.created_at).toLocaleString('en-US', { dateStyle: 'full', timeStyle: 'short' }) 
+    : new Date().toLocaleString('en-US');
   
   return `
-    <div style="background-color: #f8f9fa; border-radius: 8px; padding: 24px; margin-bottom: 20px;">
-      <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 1px;">New User</p>
-      <p style="margin: 0; font-size: 18px; font-weight: 500; color: #0a0a0a;">${data.user_email || 'Unknown'}</p>
-    </div>
-    <div style="background-color: #f8f9fa; border-radius: 8px; padding: 24px; margin-bottom: 20px;">
-      <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 1px;">User ID</p>
-      <p style="margin: 0; font-size: 14px; font-family: monospace; color: #0a0a0a;">${data.user_id || 'Unknown'}</p>
-    </div>
-    <div style="background-color: #f8f9fa; border-radius: 8px; padding: 24px; margin-bottom: 20px;">
-      <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 1px;">Requested At</p>
-      <p style="margin: 0; font-size: 14px; color: #0a0a0a;">${timestamp}</p>
-    </div>
-    <p style="margin: 20px 0 0 0; font-size: 14px; color: #666;">
-      A new user has registered and is awaiting access approval. Click "Approve Now" for instant approval, or use the Admin Panel for more options.
-    </p>
-    <div style="margin-top: 30px; text-align: center;">
-      ${approveButton}
-      <a href="https://aynn.io/admin" style="display: inline-block; padding: 14px 32px; background-color: #0a0a0a; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 14px; font-weight: 500;">Open Admin Panel</a>
-    </div>
-    <p style="margin: 24px 0 0 0; font-size: 12px; color: #999; text-align: center;">
-      The approval link expires in 24 hours for security.
-    </p>
-  `;
+<div class="email-box" style="background-color:#f8f9fa;border-radius:8px;padding:20px;margin-bottom:16px">
+<p class="email-muted" style="margin:0 0 6px;font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px">New User</p>
+<p class="email-text" style="margin:0;font-size:16px;font-weight:500;color:#0a0a0a">${data.user_email || 'Unknown'}</p>
+</div>
+<div class="email-box" style="background-color:#f8f9fa;border-radius:8px;padding:20px;margin-bottom:16px">
+<p class="email-muted" style="margin:0 0 6px;font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px">User ID</p>
+<p class="email-text" style="margin:0;font-size:13px;font-family:monospace;color:#0a0a0a">${data.user_id || 'Unknown'}</p>
+</div>
+<div class="email-box" style="background-color:#f8f9fa;border-radius:8px;padding:20px;margin-bottom:16px">
+<p class="email-muted" style="margin:0 0 6px;font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px">Requested At</p>
+<p class="email-text" style="margin:0;font-size:13px;color:#0a0a0a">${timestamp}</p>
+</div>
+<p class="email-muted" style="margin:16px 0 0;font-size:13px;color:#666">
+A new user has registered and is awaiting access approval.
+</p>
+<div style="margin-top:24px;text-align:center">
+${approveUrl ? `
+<!--[if mso]>
+<v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${approveUrl}" style="height:44px;v-text-anchor:middle;width:140px" arcsize="14%" strokecolor="#22c55e" fillcolor="#22c55e">
+<w:anchorlock/>
+<center style="color:#ffffff;font-family:sans-serif;font-size:14px;font-weight:500">Approve Now</center>
+</v:roundrect>
+<![endif]-->
+<!--[if !mso]><!-->
+<a href="${approveUrl}" style="display:inline-block;padding:12px 28px;background-color:#22c55e;color:#ffffff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:500;margin-right:12px">Approve Now</a>
+<!--<![endif]-->
+` : ''}
+<!--[if mso]>
+<v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="https://aynn.io/admin" style="height:44px;v-text-anchor:middle;width:160px" arcsize="14%" strokecolor="#0a0a0a" fillcolor="#0a0a0a">
+<w:anchorlock/>
+<center style="color:#ffffff;font-family:sans-serif;font-size:14px;font-weight:500">Open Admin Panel</center>
+</v:roundrect>
+<![endif]-->
+<!--[if !mso]><!-->
+<a href="https://aynn.io/admin" style="display:inline-block;padding:12px 28px;background-color:#0a0a0a;color:#ffffff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:500">Open Admin Panel</a>
+<!--<![endif]-->
+</div>
+<p class="email-muted" style="margin:20px 0 0;font-size:11px;color:#999;text-align:center">
+The approval link expires in 24 hours for security.
+</p>`;
 }
 
 // Security alert email content
 function generateSecurityAlertContent(data: NotificationRequest): string {
-  const timestamp = data.created_at ? new Date(data.created_at).toLocaleString('en-US', { 
-    dateStyle: 'full', 
-    timeStyle: 'short' 
-  }) : new Date().toLocaleString('en-US');
+  const timestamp = data.created_at 
+    ? new Date(data.created_at).toLocaleString('en-US', { dateStyle: 'full', timeStyle: 'short' }) 
+    : new Date().toLocaleString('en-US');
   
-  const severityColor = data.severity === 'critical' ? '#dc2626' : '#f59e0b';
-  const severityLabel = data.severity?.toUpperCase() || 'HIGH';
+  const isCritical = data.severity === 'critical';
+  const alertColor = isCritical ? '#dc2626' : '#f59e0b';
+  const alertLabel = data.severity?.toUpperCase() || 'HIGH';
   
   return `
-    <div style="background-color: ${severityColor}15; border-left: 4px solid ${severityColor}; border-radius: 4px; padding: 16px; margin-bottom: 20px;">
-      <p style="margin: 0; font-size: 14px; font-weight: 600; color: ${severityColor};">⚠️ ${severityLabel} SEVERITY ALERT</p>
-    </div>
-    <div style="background-color: #f8f9fa; border-radius: 8px; padding: 24px; margin-bottom: 20px;">
-      <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 1px;">Action</p>
-      <p style="margin: 0; font-size: 16px; font-weight: 500; color: #0a0a0a;">${data.action || 'Unknown action'}</p>
-    </div>
-    ${data.ip_address ? `
-    <div style="background-color: #f8f9fa; border-radius: 8px; padding: 24px; margin-bottom: 20px;">
-      <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 1px;">IP Address</p>
-      <p style="margin: 0; font-size: 14px; font-family: monospace; color: #0a0a0a;">${data.ip_address}</p>
-    </div>
-    ` : ''}
-    <div style="background-color: #f8f9fa; border-radius: 8px; padding: 24px; margin-bottom: 20px;">
-      <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 1px;">Detected At</p>
-      <p style="margin: 0; font-size: 14px; color: #0a0a0a;">${timestamp}</p>
-    </div>
-    ${data.details ? `
-    <div style="background-color: #f8f9fa; border-radius: 8px; padding: 24px; margin-bottom: 20px;">
-      <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 1px;">Details</p>
-      <pre style="margin: 0; font-size: 12px; font-family: monospace; color: #0a0a0a; white-space: pre-wrap; word-break: break-all;">${JSON.stringify(data.details, null, 2)}</pre>
-    </div>
-    ` : ''}
-    <p style="margin: 20px 0 0 0; font-size: 14px; color: #666;">
-      Please investigate this security event immediately and take appropriate action.
-    </p>
-    <div style="margin-top: 30px; text-align: center;">
-      <a href="https://aynn.io/admin" style="display: inline-block; padding: 14px 32px; background-color: #dc2626; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 14px; font-weight: 500;">View Security Logs</a>
-    </div>
-  `;
+<div style="background-color:${isCritical ? '#fef2f2' : '#fffbeb'};border-left:4px solid ${alertColor};border-radius:4px;padding:14px;margin-bottom:16px">
+<p style="margin:0;font-size:13px;font-weight:600;color:${alertColor}">${alertLabel} SEVERITY ALERT</p>
+</div>
+<div class="email-box" style="background-color:#f8f9fa;border-radius:8px;padding:20px;margin-bottom:16px">
+<p class="email-muted" style="margin:0 0 6px;font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px">Action</p>
+<p class="email-text" style="margin:0;font-size:14px;font-weight:500;color:#0a0a0a">${data.action || 'Unknown action'}</p>
+</div>
+${data.ip_address ? `
+<div class="email-box" style="background-color:#f8f9fa;border-radius:8px;padding:20px;margin-bottom:16px">
+<p class="email-muted" style="margin:0 0 6px;font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px">IP Address</p>
+<p class="email-text" style="margin:0;font-size:13px;font-family:monospace;color:#0a0a0a">${data.ip_address}</p>
+</div>
+` : ''}
+<div class="email-box" style="background-color:#f8f9fa;border-radius:8px;padding:20px;margin-bottom:16px">
+<p class="email-muted" style="margin:0 0 6px;font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px">Detected At</p>
+<p class="email-text" style="margin:0;font-size:13px;color:#0a0a0a">${timestamp}</p>
+</div>
+${data.details ? `
+<div class="email-box" style="background-color:#f8f9fa;border-radius:8px;padding:20px;margin-bottom:16px">
+<p class="email-muted" style="margin:0 0 6px;font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px">Details</p>
+<pre class="email-text" style="margin:0;font-size:11px;font-family:monospace;color:#0a0a0a;white-space:pre-wrap;word-break:break-all">${JSON.stringify(data.details, null, 2)}</pre>
+</div>
+` : ''}
+<p class="email-muted" style="margin:16px 0 0;font-size:13px;color:#666">
+Please investigate this security event immediately.
+</p>
+<div style="margin-top:24px;text-align:center">
+<a href="https://aynn.io/admin" style="display:inline-block;padding:12px 28px;background-color:#dc2626;color:#ffffff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:500">View Security Logs</a>
+</div>`;
 }
 
 // Daily report email content
 function generateDailyReportContent(metrics: Record<string, unknown>): string {
   const today = new Date().toLocaleDateString('en-US', { 
-    weekday: 'long', 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
   });
   
   return `
-    <p style="margin: 0 0 20px 0; font-size: 14px; color: #666;">${today}</p>
-    
-    <h3 style="margin: 30px 0 15px 0; font-size: 16px; font-weight: 600; color: #0a0a0a; border-bottom: 1px solid #eee; padding-bottom: 10px;">📊 User Metrics</h3>
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 20px;">
-      <tr>
-        <td style="padding: 12px; background-color: #f8f9fa; border-radius: 6px 0 0 6px;">
-          <p style="margin: 0; font-size: 12px; color: #999;">Total Users</p>
-          <p style="margin: 4px 0 0 0; font-size: 24px; font-weight: 600; color: #0a0a0a;">${metrics.totalUsers || 0}</p>
-        </td>
-        <td style="padding: 12px; background-color: #f8f9fa;">
-          <p style="margin: 0; font-size: 12px; color: #999;">Active Users</p>
-          <p style="margin: 4px 0 0 0; font-size: 24px; font-weight: 600; color: #0a0a0a;">${metrics.activeUsers || 0}</p>
-        </td>
-        <td style="padding: 12px; background-color: #f8f9fa; border-radius: 0 6px 6px 0;">
-          <p style="margin: 0; font-size: 12px; color: #999;">New Today</p>
-          <p style="margin: 4px 0 0 0; font-size: 24px; font-weight: 600; color: #22c55e;">${metrics.newUsersToday || 0}</p>
-        </td>
-      </tr>
-    </table>
+<p class="email-muted" style="margin:0 0 20px;font-size:13px;color:#666">${today}</p>
 
-    <h3 style="margin: 30px 0 15px 0; font-size: 16px; font-weight: 600; color: #0a0a0a; border-bottom: 1px solid #eee; padding-bottom: 10px;">💬 Activity</h3>
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 20px;">
-      <tr>
-        <td style="padding: 12px; background-color: #f8f9fa; border-radius: 6px 0 0 6px;">
-          <p style="margin: 0; font-size: 12px; color: #999;">Messages Today</p>
-          <p style="margin: 4px 0 0 0; font-size: 24px; font-weight: 600; color: #0a0a0a;">${metrics.messagesToday || 0}</p>
-        </td>
-        <td style="padding: 12px; background-color: #f8f9fa;">
-          <p style="margin: 0; font-size: 12px; color: #999;">Total Messages</p>
-          <p style="margin: 4px 0 0 0; font-size: 24px; font-weight: 600; color: #0a0a0a;">${metrics.totalMessages || 0}</p>
-        </td>
-        <td style="padding: 12px; background-color: #f8f9fa; border-radius: 0 6px 6px 0;">
-          <p style="margin: 0; font-size: 12px; color: #999;">Sessions Today</p>
-          <p style="margin: 4px 0 0 0; font-size: 24px; font-weight: 600; color: #0a0a0a;">${metrics.sessionsToday || 0}</p>
-        </td>
-      </tr>
-    </table>
+<h3 class="email-title" style="margin:24px 0 12px;font-size:14px;font-weight:600;color:#0a0a0a;border-bottom:1px solid #e5e5e5;padding-bottom:8px">User Metrics</h3>
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:16px">
+<tr>
+<td width="33%" class="email-box" style="padding:12px;background-color:#f8f9fa;border-radius:6px 0 0 6px">
+<p class="email-muted" style="margin:0;font-size:11px;color:#888">Total Users</p>
+<p class="email-text" style="margin:4px 0 0;font-size:22px;font-weight:600;color:#0a0a0a">${metrics.totalUsers || 0}</p>
+</td>
+<td width="33%" class="email-box" style="padding:12px;background-color:#f8f9fa">
+<p class="email-muted" style="margin:0;font-size:11px;color:#888">Active Users</p>
+<p class="email-text" style="margin:4px 0 0;font-size:22px;font-weight:600;color:#0a0a0a">${metrics.activeUsers || 0}</p>
+</td>
+<td width="34%" class="email-box" style="padding:12px;background-color:#f8f9fa;border-radius:0 6px 6px 0">
+<p class="email-muted" style="margin:0;font-size:11px;color:#888">New Today</p>
+<p style="margin:4px 0 0;font-size:22px;font-weight:600;color:#22c55e">${metrics.newUsersToday || 0}</p>
+</td>
+</tr>
+</table>
 
-    <h3 style="margin: 30px 0 15px 0; font-size: 16px; font-weight: 600; color: #0a0a0a; border-bottom: 1px solid #eee; padding-bottom: 10px;">🎫 Support & Applications</h3>
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 20px;">
-      <tr>
-        <td style="padding: 12px; background-color: #f8f9fa; border-radius: 6px 0 0 6px;">
-          <p style="margin: 0; font-size: 12px; color: #999;">Open Tickets</p>
-          <p style="margin: 4px 0 0 0; font-size: 24px; font-weight: 600; color: ${Number(metrics.openTickets) > 0 ? '#f59e0b' : '#0a0a0a'};">${metrics.openTickets || 0}</p>
-        </td>
-        <td style="padding: 12px; background-color: #f8f9fa;">
-          <p style="margin: 0; font-size: 12px; color: #999;">Pending Access</p>
-          <p style="margin: 4px 0 0 0; font-size: 24px; font-weight: 600; color: ${Number(metrics.pendingAccess) > 0 ? '#f59e0b' : '#0a0a0a'};">${metrics.pendingAccess || 0}</p>
-        </td>
-        <td style="padding: 12px; background-color: #f8f9fa; border-radius: 0 6px 6px 0;">
-          <p style="margin: 0; font-size: 12px; color: #999;">New Applications</p>
-          <p style="margin: 4px 0 0 0; font-size: 24px; font-weight: 600; color: #0a0a0a;">${metrics.newApplications || 0}</p>
-        </td>
-      </tr>
-    </table>
+<h3 class="email-title" style="margin:24px 0 12px;font-size:14px;font-weight:600;color:#0a0a0a;border-bottom:1px solid #e5e5e5;padding-bottom:8px">Activity</h3>
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:16px">
+<tr>
+<td width="33%" class="email-box" style="padding:12px;background-color:#f8f9fa;border-radius:6px 0 0 6px">
+<p class="email-muted" style="margin:0;font-size:11px;color:#888">Messages Today</p>
+<p class="email-text" style="margin:4px 0 0;font-size:22px;font-weight:600;color:#0a0a0a">${metrics.messagesToday || 0}</p>
+</td>
+<td width="33%" class="email-box" style="padding:12px;background-color:#f8f9fa">
+<p class="email-muted" style="margin:0;font-size:11px;color:#888">Total Messages</p>
+<p class="email-text" style="margin:4px 0 0;font-size:22px;font-weight:600;color:#0a0a0a">${metrics.totalMessages || 0}</p>
+</td>
+<td width="34%" class="email-box" style="padding:12px;background-color:#f8f9fa;border-radius:0 6px 6px 0">
+<p class="email-muted" style="margin:0;font-size:11px;color:#888">Sessions Today</p>
+<p class="email-text" style="margin:4px 0 0;font-size:22px;font-weight:600;color:#0a0a0a">${metrics.sessionsToday || 0}</p>
+</td>
+</tr>
+</table>
 
-    <h3 style="margin: 30px 0 15px 0; font-size: 16px; font-weight: 600; color: #0a0a0a; border-bottom: 1px solid #eee; padding-bottom: 10px;">🔒 Security</h3>
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 20px;">
-      <tr>
-        <td style="padding: 12px; background-color: #f8f9fa; border-radius: 6px 0 0 6px;">
-          <p style="margin: 0; font-size: 12px; color: #999;">Security Events (24h)</p>
-          <p style="margin: 4px 0 0 0; font-size: 24px; font-weight: 600; color: ${Number(metrics.securityEvents) > 0 ? '#dc2626' : '#22c55e'};">${metrics.securityEvents || 0}</p>
-        </td>
-        <td style="padding: 12px; background-color: #f8f9fa;">
-          <p style="margin: 0; font-size: 12px; color: #999;">Rate Limit Violations</p>
-          <p style="margin: 4px 0 0 0; font-size: 24px; font-weight: 600; color: ${Number(metrics.rateLimitViolations) > 0 ? '#f59e0b' : '#0a0a0a'};">${metrics.rateLimitViolations || 0}</p>
-        </td>
-        <td style="padding: 12px; background-color: #f8f9fa; border-radius: 0 6px 6px 0;">
-          <p style="margin: 0; font-size: 12px; color: #999;">Blocked IPs</p>
-          <p style="margin: 4px 0 0 0; font-size: 24px; font-weight: 600; color: #0a0a0a;">${metrics.blockedIPs || 0}</p>
-        </td>
-      </tr>
-    </table>
+<h3 class="email-title" style="margin:24px 0 12px;font-size:14px;font-weight:600;color:#0a0a0a;border-bottom:1px solid #e5e5e5;padding-bottom:8px">Support & Applications</h3>
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:16px">
+<tr>
+<td width="33%" class="email-box" style="padding:12px;background-color:#f8f9fa;border-radius:6px 0 0 6px">
+<p class="email-muted" style="margin:0;font-size:11px;color:#888">Open Tickets</p>
+<p style="margin:4px 0 0;font-size:22px;font-weight:600;color:${Number(metrics.openTickets) > 0 ? '#f59e0b' : '#0a0a0a'}">${metrics.openTickets || 0}</p>
+</td>
+<td width="33%" class="email-box" style="padding:12px;background-color:#f8f9fa">
+<p class="email-muted" style="margin:0;font-size:11px;color:#888">Pending Access</p>
+<p style="margin:4px 0 0;font-size:22px;font-weight:600;color:${Number(metrics.pendingAccess) > 0 ? '#f59e0b' : '#0a0a0a'}">${metrics.pendingAccess || 0}</p>
+</td>
+<td width="34%" class="email-box" style="padding:12px;background-color:#f8f9fa;border-radius:0 6px 6px 0">
+<p class="email-muted" style="margin:0;font-size:11px;color:#888">New Applications</p>
+<p class="email-text" style="margin:4px 0 0;font-size:22px;font-weight:600;color:#0a0a0a">${metrics.newApplications || 0}</p>
+</td>
+</tr>
+</table>
 
-    <div style="margin-top: 30px; text-align: center;">
-      <a href="https://aynn.io/admin" style="display: inline-block; padding: 14px 32px; background-color: #0a0a0a; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 14px; font-weight: 500;">View Full Dashboard</a>
-    </div>
-  `;
+<h3 class="email-title" style="margin:24px 0 12px;font-size:14px;font-weight:600;color:#0a0a0a;border-bottom:1px solid #e5e5e5;padding-bottom:8px">Security</h3>
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:16px">
+<tr>
+<td width="33%" class="email-box" style="padding:12px;background-color:#f8f9fa;border-radius:6px 0 0 6px">
+<p class="email-muted" style="margin:0;font-size:11px;color:#888">Security Events (24h)</p>
+<p style="margin:4px 0 0;font-size:22px;font-weight:600;color:${Number(metrics.securityEvents) > 0 ? '#dc2626' : '#22c55e'}">${metrics.securityEvents || 0}</p>
+</td>
+<td width="33%" class="email-box" style="padding:12px;background-color:#f8f9fa">
+<p class="email-muted" style="margin:0;font-size:11px;color:#888">Rate Limit Violations</p>
+<p style="margin:4px 0 0;font-size:22px;font-weight:600;color:${Number(metrics.rateLimitViolations) > 0 ? '#f59e0b' : '#0a0a0a'}">${metrics.rateLimitViolations || 0}</p>
+</td>
+<td width="34%" class="email-box" style="padding:12px;background-color:#f8f9fa;border-radius:0 6px 6px 0">
+<p class="email-muted" style="margin:0;font-size:11px;color:#888">Blocked IPs</p>
+<p class="email-text" style="margin:4px 0 0;font-size:22px;font-weight:600;color:#0a0a0a">${metrics.blockedIPs || 0}</p>
+</td>
+</tr>
+</table>
+
+<div style="margin-top:24px;text-align:center">
+<a href="https://aynn.io/admin" style="display:inline-block;padding:12px 28px;background-color:#0a0a0a;color:#ffffff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:500">View Full Dashboard</a>
+</div>`;
 }
 
 // Fetch daily metrics from database
@@ -283,7 +295,6 @@ async function fetchDailyMetrics(supabase: ReturnType<typeof createClient>): Pro
   today.setHours(0, 0, 0, 0);
   const todayISO = today.toISOString();
 
-  // Parallel queries for efficiency
   const [
     totalUsersResult,
     activeUsersResult,
@@ -331,7 +342,6 @@ async function fetchDailyMetrics(supabase: ReturnType<typeof createClient>): Pro
 const handler = async (req: Request): Promise<Response> => {
   console.log("Admin notifications function called");
   
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -345,7 +355,6 @@ const handler = async (req: Request): Promise<Response> => {
     const data: NotificationRequest = await req.json();
     console.log("Notification type:", data.type);
 
-    // Get notification config
     const { data: config, error: configError } = await supabase
       .from('admin_notification_config')
       .select('*')
@@ -356,7 +365,7 @@ const handler = async (req: Request): Promise<Response> => {
       console.log("Config not found or error:", configError);
       return new Response(
         JSON.stringify({ error: "Notification type not configured" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
@@ -364,80 +373,65 @@ const handler = async (req: Request): Promise<Response> => {
       console.log("Notifications disabled for type:", data.type);
       return new Response(
         JSON.stringify({ message: "Notifications disabled for this type" }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    const recipientEmail = config.recipient_email;
-    let subject = "";
-    let content = "";
-    let htmlBody = "";
+    let subject: string;
+    let content: string;
 
-    // Generate email based on type
     switch (data.type) {
-      case "access_request":
-        subject = "🔔 New Access Request - AYN";
-        
-        // Generate approval URL if secret is configured
+      case "access_request": {
+        subject = "New Access Request - AYN";
         let approveUrl: string | undefined;
         if (approvalSecret && data.user_id && data.user_email) {
           const token = await generateApprovalToken(
             data.user_id,
             data.user_email,
-            recipientEmail,
+            config.recipient_email,
             approvalSecret
           );
           approveUrl = `https://dfkoxuokfkttjhfjcecx.supabase.co/functions/v1/approve-access?token=${encodeURIComponent(token)}`;
-          console.log("Generated approval URL for user:", data.user_email);
-        } else {
-          console.log("Approval token not generated - missing secret or user data");
         }
-        
-        content = generateAccessRequestContent(data, approveUrl);
-        htmlBody = generateEmailTemplate("New Access Request", content);
+        content = generateEmailTemplate("New Access Request", generateAccessRequestContent(data, approveUrl));
         break;
-
+      }
       case "security_alert":
-        subject = `⚠️ Security Alert: ${data.action} - AYN`;
-        content = generateSecurityAlertContent(data);
-        htmlBody = generateEmailTemplate("Security Alert", content);
+        subject = `Security Alert: ${data.severity?.toUpperCase() || 'HIGH'} - AYN`;
+        content = generateEmailTemplate("Security Alert", generateSecurityAlertContent(data));
         break;
-
-      case "daily_report":
+      case "daily_report": {
         const metrics = await fetchDailyMetrics(supabase);
-        subject = "📊 Daily System Report - AYN";
-        content = generateDailyReportContent(metrics);
-        htmlBody = generateEmailTemplate("Daily System Report", content);
+        subject = "Daily System Report - AYN";
+        content = generateEmailTemplate("Daily System Report", generateDailyReportContent(metrics));
         break;
-
+      }
       default:
         return new Response(
           JSON.stringify({ error: "Unknown notification type" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
         );
     }
 
     // Send email via SMTP
-    const smtpHost = Deno.env.get("SMTP_HOST") || "smtp.hostinger.com";
-    const smtpPort = parseInt(Deno.env.get("SMTP_PORT") || "465");
+    const smtpHost = Deno.env.get("SMTP_HOST");
+    const smtpPort = Deno.env.get("SMTP_PORT");
     const smtpUser = Deno.env.get("SMTP_USER");
     const smtpPass = Deno.env.get("SMTP_PASS");
-    const senderEmail = Deno.env.get("SENDER_EMAIL") || smtpUser;
+    const smtpFrom = Deno.env.get("SMTP_FROM") || "noreply@aynn.io";
 
-    if (!smtpUser || !smtpPass) {
-      console.error("SMTP credentials not configured");
+    if (!smtpHost || !smtpPort || !smtpUser || !smtpPass) {
+      console.error("SMTP configuration incomplete");
       return new Response(
-        JSON.stringify({ error: "Email configuration missing" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "SMTP not configured" }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    console.log("Connecting to SMTP:", smtpHost, smtpPort);
-    
     const client = new SMTPClient({
       connection: {
         hostname: smtpHost,
-        port: smtpPort,
+        port: parseInt(smtpPort),
         tls: true,
         auth: {
           username: smtpUser,
@@ -448,58 +442,52 @@ const handler = async (req: Request): Promise<Response> => {
 
     try {
       await client.send({
-        from: senderEmail!,
-        to: recipientEmail,
+        from: smtpFrom,
+        to: config.recipient_email,
         subject: subject,
-        html: htmlBody,
+        content: "Please view this email in an HTML-capable email client.",
+        html: content,
       });
-      
-      console.log("Email sent successfully to:", recipientEmail);
+      console.log("Email sent successfully to:", config.recipient_email);
 
-      // Log the notification
       await supabase.from('admin_notification_log').insert({
         notification_type: data.type,
-        recipient_email: recipientEmail,
+        recipient_email: config.recipient_email,
         subject: subject,
+        content: content.substring(0, 1000),
         status: 'sent',
-        metadata: {
-          user_id: data.user_id,
-          user_email: data.user_email,
-          has_approval_link: data.type === 'access_request' && approvalSecret ? true : false
-        }
+        metadata: { user_id: data.user_id, user_email: data.user_email }
       });
 
       await client.close();
-      
+
       return new Response(
         JSON.stringify({ success: true, message: "Notification sent" }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
-    } catch (smtpError) {
-      console.error("SMTP error:", smtpError);
+    } catch (emailError) {
+      console.error("Email send error:", emailError);
       
-      // Log the failure
       await supabase.from('admin_notification_log').insert({
         notification_type: data.type,
-        recipient_email: recipientEmail,
+        recipient_email: config.recipient_email,
         subject: subject,
         status: 'failed',
-        error_message: smtpError instanceof Error ? smtpError.message : 'Unknown SMTP error'
+        error_message: emailError instanceof Error ? emailError.message : 'Unknown error'
       });
-      
+
       await client.close();
-      
+
       return new Response(
-        JSON.stringify({ error: "Failed to send email", details: smtpError instanceof Error ? smtpError.message : 'Unknown error' }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Failed to send email", details: emailError instanceof Error ? emailError.message : 'Unknown error' }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
-
   } catch (error) {
-    console.error("Error in admin-notifications:", error);
+    console.error("Handler error:", error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }
 };
