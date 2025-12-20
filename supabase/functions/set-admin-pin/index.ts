@@ -17,6 +17,13 @@ function hashPin(pin: string, salt: string): string {
   return Math.abs(hash).toString(16);
 }
 
+// Generate random token for approval
+function generateApprovalToken(): string {
+  const array = new Uint8Array(32);
+  crypto.getRandomValues(array);
+  return Array.from(array, b => b.toString(16).padStart(2, '0')).join('');
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -71,45 +78,90 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Generate new hash
+    // Check for existing pending PIN change
+    const { data: existingPending } = await supabase
+      .from('pending_pin_changes')
+      .select('id')
+      .eq('status', 'pending')
+      .gt('expires_at', new Date().toISOString())
+      .limit(1)
+      .maybeSingle();
+
+    if (existingPending) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'A PIN change is already pending approval' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Generate hash and approval token
     const salt = 'ayn_admin_salt_2024';
     const newHash = hashPin(newPin, salt);
+    const approvalToken = generateApprovalToken();
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
     
-    console.log(`Setting new PIN for admin ${user.id}, hash: ${newHash}`);
+    console.log(`Creating pending PIN change for admin ${user.id}`);
 
-    // Update PIN in database
-    const { error: updateError } = await supabase
-      .from('system_config')
-      .upsert({ 
-        key: 'admin_pin', 
-        value: { hash: newHash, salt },
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'key' });
+    // Create pending PIN change record
+    const { data: pendingChange, error: insertError } = await supabase
+      .from('pending_pin_changes')
+      .insert({
+        user_id: user.id,
+        new_pin_hash: newHash,
+        approval_token: approvalToken,
+        expires_at: expiresAt.toISOString(),
+        status: 'pending'
+      })
+      .select('id')
+      .single();
 
-    if (updateError) {
-      console.error('Error updating PIN:', updateError);
+    if (insertError) {
+      console.error('Error creating pending PIN change:', insertError);
       return new Response(
-        JSON.stringify({ success: false, error: 'Failed to update PIN' }),
+        JSON.stringify({ success: false, error: 'Failed to create PIN change request' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Clear any lockout
-    await supabase
-      .from('system_config')
-      .delete()
-      .eq('key', 'admin_pin_lockout');
+    // Send approval email via admin-notifications
+    const approveUrl = `${supabaseUrl}/functions/v1/approve-pin-change?token=${approvalToken}&action=approve`;
+    const rejectUrl = `${supabaseUrl}/functions/v1/approve-pin-change?token=${approvalToken}&action=reject`;
 
-    // Log the change
+    const { error: notifyError } = await supabase.functions.invoke('admin-notifications', {
+      body: {
+        type: 'pin_change_approval',
+        user_id: user.id,
+        user_email: user.email,
+        approve_url: approveUrl,
+        reject_url: rejectUrl,
+        expires_at: expiresAt.toISOString()
+      }
+    });
+
+    if (notifyError) {
+      console.error('Failed to send approval email:', notifyError);
+      // Delete the pending change since we couldn't send email
+      await supabase.from('pending_pin_changes').delete().eq('id', pendingChange.id);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Failed to send approval email' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Log the request
     await supabase.from('security_logs').insert({
       user_id: user.id,
-      action: 'admin_pin_changed',
-      details: { success: true },
+      action: 'admin_pin_change_requested',
+      details: { pending_id: pendingChange.id, expires_at: expiresAt.toISOString() },
       severity: 'high'
     });
 
     return new Response(
-      JSON.stringify({ success: true, message: 'PIN updated successfully' }),
+      JSON.stringify({ 
+        success: true, 
+        message: 'PIN change request sent. Check your email to approve.',
+        pending_id: pendingChange.id
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

@@ -8,7 +8,7 @@ const corsHeaders = {
 };
 
 interface NotificationRequest {
-  type: "access_request" | "daily_report" | "security_alert";
+  type: "access_request" | "daily_report" | "security_alert" | "pin_change_approval" | "maintenance_announcement";
   user_id?: string;
   user_email?: string;
   action?: string;
@@ -16,6 +16,12 @@ interface NotificationRequest {
   details?: Record<string, unknown>;
   ip_address?: string;
   created_at?: string;
+  approve_url?: string;
+  reject_url?: string;
+  expires_at?: string;
+  message?: string;
+  startTime?: string;
+  endTime?: string;
 }
 
 // Simple HMAC-like signature using Web Crypto API
@@ -136,25 +142,9 @@ A new user has registered and is awaiting access approval.
 </p>
 <div style="margin-top:24px;text-align:center">
 ${approveUrl ? `
-<!--[if mso]>
-<v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${approveUrl}" style="height:44px;v-text-anchor:middle;width:140px" arcsize="14%" strokecolor="#22c55e" fillcolor="#22c55e">
-<w:anchorlock/>
-<center style="color:#ffffff;font-family:sans-serif;font-size:14px;font-weight:500">Approve Now</center>
-</v:roundrect>
-<![endif]-->
-<!--[if !mso]><!-->
 <a href="${approveUrl}" style="display:inline-block;padding:12px 28px;background-color:#22c55e;color:#ffffff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:500;margin-right:12px">Approve Now</a>
-<!--<![endif]-->
 ` : ''}
-<!--[if mso]>
-<v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="https://aynn.io/admin" style="height:44px;v-text-anchor:middle;width:160px" arcsize="14%" strokecolor="#0a0a0a" fillcolor="#0a0a0a">
-<w:anchorlock/>
-<center style="color:#ffffff;font-family:sans-serif;font-size:14px;font-weight:500">Open Admin Panel</center>
-</v:roundrect>
-<![endif]-->
-<!--[if !mso]><!-->
 <a href="https://aynn.io/admin" style="display:inline-block;padding:12px 28px;background-color:#0a0a0a;color:#ffffff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:500">Open Admin Panel</a>
-<!--<![endif]-->
 </div>
 <p class="email-muted" style="margin:20px 0 0;font-size:11px;color:#999;text-align:center">
 The approval link expires in 24 hours for security.
@@ -203,6 +193,73 @@ Please investigate this security event immediately.
 </div>`;
 }
 
+// PIN change approval email content
+function generatePinChangeApprovalContent(data: NotificationRequest): string {
+  const timestamp = new Date().toLocaleString('en-US', { dateStyle: 'full', timeStyle: 'short' });
+  const expiresAt = data.expires_at 
+    ? new Date(data.expires_at).toLocaleString('en-US', { dateStyle: 'short', timeStyle: 'short' })
+    : 'in 1 hour';
+  
+  return `
+<div style="background-color:#fef3c7;border-left:4px solid #f59e0b;border-radius:4px;padding:14px;margin-bottom:16px">
+<p style="margin:0;font-size:13px;font-weight:600;color:#92400e">🔐 PIN Change Request</p>
+</div>
+<div class="email-box" style="background-color:#f8f9fa;border-radius:8px;padding:20px;margin-bottom:16px">
+<p class="email-muted" style="margin:0 0 6px;font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px">Requested By</p>
+<p class="email-text" style="margin:0;font-size:16px;font-weight:500;color:#0a0a0a">${data.user_email || 'Admin'}</p>
+</div>
+<div class="email-box" style="background-color:#f8f9fa;border-radius:8px;padding:20px;margin-bottom:16px">
+<p class="email-muted" style="margin:0 0 6px;font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px">Requested At</p>
+<p class="email-text" style="margin:0;font-size:13px;color:#0a0a0a">${timestamp}</p>
+</div>
+<div class="email-box" style="background-color:#f8f9fa;border-radius:8px;padding:20px;margin-bottom:16px">
+<p class="email-muted" style="margin:0 0 6px;font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px">Expires</p>
+<p class="email-text" style="margin:0;font-size:13px;color:#0a0a0a">${expiresAt}</p>
+</div>
+<p class="email-muted" style="margin:16px 0 0;font-size:13px;color:#666">
+Someone has requested to change the admin panel PIN. Click below to approve or reject this request.
+</p>
+<div style="margin-top:24px;text-align:center">
+<a href="${data.approve_url}" style="display:inline-block;padding:14px 32px;background-color:#22c55e;color:#ffffff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:600;margin-right:12px">✓ Approve PIN Change</a>
+<a href="${data.reject_url}" style="display:inline-block;padding:14px 32px;background-color:#ef4444;color:#ffffff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:600">✕ Reject</a>
+</div>
+<p class="email-muted" style="margin:24px 0 0;font-size:11px;color:#999;text-align:center">
+If you did not request this change, click Reject immediately and review your account security.
+</p>`;
+}
+
+// Maintenance announcement email content
+function generateMaintenanceAnnouncementContent(data: NotificationRequest): string {
+  const startTime = data.startTime 
+    ? new Date(data.startTime).toLocaleString('en-US', { dateStyle: 'full', timeStyle: 'short' })
+    : 'Soon';
+  const endTime = data.endTime 
+    ? new Date(data.endTime).toLocaleString('en-US', { dateStyle: 'full', timeStyle: 'short' })
+    : 'To be announced';
+  
+  return `
+<div style="background-color:#fef3c7;border-left:4px solid #f59e0b;border-radius:4px;padding:14px;margin-bottom:16px">
+<p style="margin:0;font-size:13px;font-weight:600;color:#92400e">🚧 Scheduled Maintenance</p>
+</div>
+<p class="email-text" style="margin:0 0 20px;font-size:15px;line-height:1.6;color:#333">
+${data.message || 'We will be performing scheduled maintenance on the AYN system.'}
+</p>
+<div class="email-box" style="background-color:#f8f9fa;border-radius:8px;padding:20px;margin-bottom:16px">
+<p class="email-muted" style="margin:0 0 6px;font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px">Start Time</p>
+<p class="email-text" style="margin:0;font-size:14px;font-weight:500;color:#0a0a0a">${startTime}</p>
+</div>
+<div class="email-box" style="background-color:#f8f9fa;border-radius:8px;padding:20px;margin-bottom:16px">
+<p class="email-muted" style="margin:0 0 6px;font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px">Expected Completion</p>
+<p class="email-text" style="margin:0;font-size:14px;font-weight:500;color:#0a0a0a">${endTime}</p>
+</div>
+<p class="email-muted" style="margin:16px 0 0;font-size:13px;color:#666">
+During this time, you may experience temporary service interruptions. We apologize for any inconvenience and thank you for your patience.
+</p>
+<div style="margin-top:24px;text-align:center">
+<a href="https://aynn.io" style="display:inline-block;padding:12px 28px;background-color:#0a0a0a;color:#ffffff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:500">Visit AYN</a>
+</div>`;
+}
+
 // Daily report email content
 function generateDailyReportContent(metrics: Record<string, unknown>): string {
   const today = new Date().toLocaleDateString('en-US', { 
@@ -248,42 +305,6 @@ function generateDailyReportContent(metrics: Record<string, unknown>): string {
 </tr>
 </table>
 
-<h3 class="email-title" style="margin:24px 0 12px;font-size:14px;font-weight:600;color:#0a0a0a;border-bottom:1px solid #e5e5e5;padding-bottom:8px">Support & Applications</h3>
-<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:16px">
-<tr>
-<td width="33%" class="email-box" style="padding:12px;background-color:#f8f9fa;border-radius:6px 0 0 6px">
-<p class="email-muted" style="margin:0;font-size:11px;color:#888">Open Tickets</p>
-<p style="margin:4px 0 0;font-size:22px;font-weight:600;color:${Number(metrics.openTickets) > 0 ? '#f59e0b' : '#0a0a0a'}">${metrics.openTickets || 0}</p>
-</td>
-<td width="33%" class="email-box" style="padding:12px;background-color:#f8f9fa">
-<p class="email-muted" style="margin:0;font-size:11px;color:#888">Pending Access</p>
-<p style="margin:4px 0 0;font-size:22px;font-weight:600;color:${Number(metrics.pendingAccess) > 0 ? '#f59e0b' : '#0a0a0a'}">${metrics.pendingAccess || 0}</p>
-</td>
-<td width="34%" class="email-box" style="padding:12px;background-color:#f8f9fa;border-radius:0 6px 6px 0">
-<p class="email-muted" style="margin:0;font-size:11px;color:#888">New Applications</p>
-<p class="email-text" style="margin:4px 0 0;font-size:22px;font-weight:600;color:#0a0a0a">${metrics.newApplications || 0}</p>
-</td>
-</tr>
-</table>
-
-<h3 class="email-title" style="margin:24px 0 12px;font-size:14px;font-weight:600;color:#0a0a0a;border-bottom:1px solid #e5e5e5;padding-bottom:8px">Security</h3>
-<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:16px">
-<tr>
-<td width="33%" class="email-box" style="padding:12px;background-color:#f8f9fa;border-radius:6px 0 0 6px">
-<p class="email-muted" style="margin:0;font-size:11px;color:#888">Security Events (24h)</p>
-<p style="margin:4px 0 0;font-size:22px;font-weight:600;color:${Number(metrics.securityEvents) > 0 ? '#dc2626' : '#22c55e'}">${metrics.securityEvents || 0}</p>
-</td>
-<td width="33%" class="email-box" style="padding:12px;background-color:#f8f9fa">
-<p class="email-muted" style="margin:0;font-size:11px;color:#888">Rate Limit Violations</p>
-<p style="margin:4px 0 0;font-size:22px;font-weight:600;color:${Number(metrics.rateLimitViolations) > 0 ? '#f59e0b' : '#0a0a0a'}">${metrics.rateLimitViolations || 0}</p>
-</td>
-<td width="34%" class="email-box" style="padding:12px;background-color:#f8f9fa;border-radius:0 6px 6px 0">
-<p class="email-muted" style="margin:0;font-size:11px;color:#888">Blocked IPs</p>
-<p class="email-text" style="margin:4px 0 0;font-size:22px;font-weight:600;color:#0a0a0a">${metrics.blockedIPs || 0}</p>
-</td>
-</tr>
-</table>
-
 <div style="margin-top:24px;text-align:center">
 <a href="https://aynn.io/admin" style="display:inline-block;padding:12px 28px;background-color:#0a0a0a;color:#ffffff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:500">View Full Dashboard</a>
 </div>`;
@@ -301,26 +322,14 @@ async function fetchDailyMetrics(supabase: ReturnType<typeof createClient>): Pro
     newUsersTodayResult,
     messagesTodayResult,
     totalMessagesResult,
-    sessionsTodayResult,
-    openTicketsResult,
-    pendingAccessResult,
-    newApplicationsResult,
-    securityEventsResult,
-    rateLimitViolationsResult,
-    blockedIPsResult
+    sessionsTodayResult
   ] = await Promise.all([
     supabase.from('profiles').select('id', { count: 'exact', head: true }),
     supabase.from('access_grants').select('id', { count: 'exact', head: true }).eq('is_active', true),
     supabase.from('profiles').select('id', { count: 'exact', head: true }).gte('created_at', todayISO),
     supabase.from('messages').select('id', { count: 'exact', head: true }).gte('created_at', todayISO),
     supabase.from('messages').select('id', { count: 'exact', head: true }),
-    supabase.from('chat_sessions').select('id', { count: 'exact', head: true }).gte('created_at', todayISO),
-    supabase.from('support_tickets').select('id', { count: 'exact', head: true }).in('status', ['open', 'in_progress']),
-    supabase.from('access_grants').select('id', { count: 'exact', head: true }).eq('is_active', false).eq('requires_approval', true),
-    supabase.from('service_applications').select('id', { count: 'exact', head: true }).gte('created_at', todayISO),
-    supabase.from('security_logs').select('id', { count: 'exact', head: true }).gte('created_at', todayISO).in('severity', ['high', 'critical']),
-    supabase.from('api_rate_limits').select('id', { count: 'exact', head: true }).gt('violation_count', 0),
-    supabase.from('ip_blocks').select('id', { count: 'exact', head: true }).eq('is_active', true)
+    supabase.from('chat_sessions').select('id', { count: 'exact', head: true }).gte('created_at', todayISO)
   ]);
 
   return {
@@ -329,14 +338,35 @@ async function fetchDailyMetrics(supabase: ReturnType<typeof createClient>): Pro
     newUsersToday: newUsersTodayResult.count || 0,
     messagesToday: messagesTodayResult.count || 0,
     totalMessages: totalMessagesResult.count || 0,
-    sessionsToday: sessionsTodayResult.count || 0,
-    openTickets: openTicketsResult.count || 0,
-    pendingAccess: pendingAccessResult.count || 0,
-    newApplications: newApplicationsResult.count || 0,
-    securityEvents: securityEventsResult.count || 0,
-    rateLimitViolations: rateLimitViolationsResult.count || 0,
-    blockedIPs: blockedIPsResult.count || 0
+    sessionsToday: sessionsTodayResult.count || 0
   };
+}
+
+// Fetch all active user emails for maintenance notification
+async function fetchAllUserEmails(supabase: ReturnType<typeof createClient>): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('access_grants')
+    .select('user_id')
+    .eq('is_active', true);
+
+  if (error || !data) {
+    console.error('Error fetching users:', error);
+    return [];
+  }
+
+  const userIds = data.map(d => d.user_id);
+  if (userIds.length === 0) return [];
+
+  // Get emails from auth.users via service role
+  const emails: string[] = [];
+  for (const userId of userIds) {
+    const { data: userData } = await supabase.auth.admin.getUserById(userId);
+    if (userData?.user?.email) {
+      emails.push(userData.user.email);
+    }
+  }
+
+  return emails;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -355,6 +385,146 @@ const handler = async (req: Request): Promise<Response> => {
     const data: NotificationRequest = await req.json();
     console.log("Notification type:", data.type);
 
+    // Special handling for maintenance announcements - send to all users
+    if (data.type === 'maintenance_announcement') {
+      const smtpHost = Deno.env.get("SMTP_HOST");
+      const smtpPort = Deno.env.get("SMTP_PORT");
+      const smtpUser = Deno.env.get("SMTP_USER");
+      const smtpPass = Deno.env.get("SMTP_PASS");
+      const smtpFrom = Deno.env.get("SMTP_FROM") || "noreply@aynn.io";
+
+      if (!smtpHost || !smtpPort || !smtpUser || !smtpPass) {
+        console.error("SMTP configuration incomplete");
+        return new Response(
+          JSON.stringify({ error: "SMTP not configured" }),
+          { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      const userEmails = await fetchAllUserEmails(supabase);
+      console.log(`Sending maintenance notification to ${userEmails.length} users`);
+
+      const subject = "🚧 Scheduled Maintenance - AYN";
+      const content = generateEmailTemplate("Scheduled Maintenance", generateMaintenanceAnnouncementContent(data));
+
+      const client = new SMTPClient({
+        connection: {
+          hostname: smtpHost,
+          port: parseInt(smtpPort),
+          tls: true,
+          auth: { username: smtpUser, password: smtpPass },
+        },
+      });
+
+      let successCount = 0;
+      let failCount = 0;
+
+      for (const email of userEmails) {
+        try {
+          await client.send({
+            from: smtpFrom,
+            to: email,
+            subject: subject,
+            content: "Please view this email in an HTML-capable email client.",
+            html: content,
+          });
+          successCount++;
+        } catch (err) {
+          console.error(`Failed to send to ${email}:`, err);
+          failCount++;
+        }
+      }
+
+      await client.close();
+
+      // Log the batch send
+      await supabase.from('admin_notification_log').insert({
+        notification_type: 'maintenance_announcement',
+        recipient_email: `batch:${userEmails.length} users`,
+        subject: subject,
+        status: failCount === 0 ? 'sent' : 'partial',
+        metadata: { success_count: successCount, fail_count: failCount }
+      });
+
+      return new Response(
+        JSON.stringify({ success: true, sent: successCount, failed: failCount }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Special handling for PIN change approval - use admin config email
+    if (data.type === 'pin_change_approval') {
+      const { data: config } = await supabase
+        .from('admin_notification_config')
+        .select('recipient_email, is_enabled')
+        .eq('notification_type', 'security_alert')
+        .single();
+
+      if (!config?.is_enabled) {
+        return new Response(
+          JSON.stringify({ error: "Security notifications disabled" }),
+          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      const smtpHost = Deno.env.get("SMTP_HOST");
+      const smtpPort = Deno.env.get("SMTP_PORT");
+      const smtpUser = Deno.env.get("SMTP_USER");
+      const smtpPass = Deno.env.get("SMTP_PASS");
+      const smtpFrom = Deno.env.get("SMTP_FROM") || "noreply@aynn.io";
+
+      if (!smtpHost || !smtpPort || !smtpUser || !smtpPass) {
+        return new Response(
+          JSON.stringify({ error: "SMTP not configured" }),
+          { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      const subject = "🔐 Admin PIN Change Request - AYN";
+      const content = generateEmailTemplate("Admin PIN Change Request", generatePinChangeApprovalContent(data));
+
+      const client = new SMTPClient({
+        connection: {
+          hostname: smtpHost,
+          port: parseInt(smtpPort),
+          tls: true,
+          auth: { username: smtpUser, password: smtpPass },
+        },
+      });
+
+      try {
+        await client.send({
+          from: smtpFrom,
+          to: config.recipient_email,
+          subject: subject,
+          content: "Please view this email in an HTML-capable email client.",
+          html: content,
+        });
+
+        await supabase.from('admin_notification_log').insert({
+          notification_type: 'pin_change_approval',
+          recipient_email: config.recipient_email,
+          subject: subject,
+          status: 'sent'
+        });
+
+        await client.close();
+
+        return new Response(
+          JSON.stringify({ success: true }),
+          { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      } catch (emailError) {
+        await client.close();
+        console.error("Email send error:", emailError);
+        return new Response(
+          JSON.stringify({ error: "Failed to send email" }),
+          { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+    }
+
+    // Standard notification handling
     const { data: config, error: configError } = await supabase
       .from('admin_notification_config')
       .select('*')

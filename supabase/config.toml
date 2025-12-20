@@ -56,3 +56,6 @@ verify_jwt = false
 
 [functions.track-visit]
 verify_jwt = false
+
+[functions.approve-pin-change]
+verify_jwt = false
