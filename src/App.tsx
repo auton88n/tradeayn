@@ -14,6 +14,7 @@ import { OfflineBanner } from "@/components/OfflineBanner";
 import { AnimatePresence } from 'framer-motion';
 import PageTransition from "@/components/PageTransition";
 import { ScrollToTop } from "@/components/ScrollToTop";
+import { useVisitorTracking } from "@/hooks/useVisitorTracking";
 
 // Lazy load all route pages for code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -35,6 +36,9 @@ const queryClient = new QueryClient();
 
 const AnimatedRoutes = () => {
   const location = useLocation();
+  
+  // Track page visits for analytics
+  useVisitorTracking();
   
   return (
     <AnimatePresence mode="wait">

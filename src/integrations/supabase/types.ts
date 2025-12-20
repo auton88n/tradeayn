@@ -1298,6 +1298,63 @@ export type Database = {
         }
         Relationships: []
       }
+      visitor_analytics: {
+        Row: {
+          browser: string | null
+          city: string | null
+          country: string | null
+          country_code: string | null
+          created_at: string
+          device_type: string | null
+          id: string
+          os: string | null
+          page_path: string
+          referrer: string | null
+          region: string | null
+          session_id: string | null
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          visitor_id: string
+        }
+        Insert: {
+          browser?: string | null
+          city?: string | null
+          country?: string | null
+          country_code?: string | null
+          created_at?: string
+          device_type?: string | null
+          id?: string
+          os?: string | null
+          page_path: string
+          referrer?: string | null
+          region?: string | null
+          session_id?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          visitor_id: string
+        }
+        Update: {
+          browser?: string | null
+          city?: string | null
+          country?: string | null
+          country_code?: string | null
+          created_at?: string
+          device_type?: string | null
+          id?: string
+          os?: string | null
+          page_path?: string
+          referrer?: string | null
+          region?: string | null
+          session_id?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       webhook_health_metrics: {
         Row: {
           created_at: string

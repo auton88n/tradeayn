@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { ArrowLeft, Sun, Moon, RefreshCw, LayoutDashboard, Users, Shield, Settings, FileText, Loader2, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Sun, Moon, RefreshCw, LayoutDashboard, Users, Shield, Settings, FileText, Loader2, MessageSquare, BarChart3 } from 'lucide-react';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { UserManagement } from '@/components/admin/UserManagement';
@@ -15,6 +15,7 @@ import { RateLimitMonitoring } from '@/components/admin/RateLimitMonitoring';
 import { SystemSettings } from '@/components/admin/SystemSettings';
 import { ApplicationManagement, ServiceApplication } from '@/components/admin/ApplicationManagement';
 import SupportManagement from '@/components/admin/SupportManagement';
+import { VisitorAnalytics } from '@/components/admin/VisitorAnalytics';
 
 // Supabase config - use direct values to avoid any import issues
 const SUPABASE_URL = 'https://dfkoxuokfkttjhfjcecx.supabase.co';
@@ -65,6 +66,11 @@ const allTabs = [{
   id: 'overview',
   label: 'Overview',
   icon: LayoutDashboard,
+  adminOnly: true
+}, {
+  id: 'analytics',
+  label: 'Analytics',
+  icon: BarChart3,
   adminOnly: true
 }, {
   id: 'applications',
@@ -363,6 +369,7 @@ export const AdminPanel = ({
         }}>
             <ErrorBoundary>
               {activeTab === 'overview' && <AdminDashboard systemMetrics={systemMetrics} allUsers={allUsers} />}
+              {activeTab === 'analytics' && <VisitorAnalytics />}
               {activeTab === 'applications' && <ApplicationManagement session={session} applications={applications} onRefresh={fetchData} />}
               {activeTab === 'support' && <SupportManagement />}
               {activeTab === 'users' && <UserManagement session={session} allUsers={allUsers} onRefresh={fetchData} />}
