@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { MaintenanceBanner } from '@/components/MaintenanceBanner';
 import { 
   AlertTriangle, 
   Users, 
@@ -20,7 +21,8 @@ import {
   ChevronRight,
   Clock,
   Mail,
-  Bell
+  Bell,
+  Eye
 } from 'lucide-react';
 
 interface SystemConfig {
@@ -253,6 +255,22 @@ export const SystemSettings = ({ systemConfig, onUpdateConfig }: SystemSettingsP
             
             {localConfig.maintenanceMode && (
               <>
+                {/* Live Preview Banner */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2 text-sm font-medium">
+                    <Eye className="w-4 h-4" /> Live Preview
+                  </Label>
+                  <div className="p-3 bg-muted/30 rounded-lg border border-dashed">
+                    <MaintenanceBanner
+                      isEnabled={true}
+                      message={localConfig.maintenanceMessage || "System is currently under maintenance."}
+                      startTime={localConfig.maintenanceStartTime}
+                      endTime={localConfig.maintenanceEndTime}
+                      isPreNotice={false}
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="maintenance-message">Maintenance Message</Label>
                   <Textarea
@@ -309,15 +327,33 @@ export const SystemSettings = ({ systemConfig, onUpdateConfig }: SystemSettingsP
               </div>
               
               {localConfig.preMaintenanceNotice && (
-                <div className="space-y-2">
-                  <Label htmlFor="pre-message">Pre-Maintenance Message</Label>
-                  <Textarea
-                    id="pre-message"
-                    value={localConfig.preMaintenanceMessage || ''}
-                    onChange={(e) => handleChange('preMaintenanceMessage', e.target.value)}
-                    placeholder="e.g., Scheduled maintenance in 2 hours..."
-                    rows={2}
-                  />
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="pre-message">Pre-Maintenance Message</Label>
+                    <Textarea
+                      id="pre-message"
+                      value={localConfig.preMaintenanceMessage || ''}
+                      onChange={(e) => handleChange('preMaintenanceMessage', e.target.value)}
+                      placeholder="e.g., Scheduled maintenance in 2 hours..."
+                      rows={2}
+                    />
+                  </div>
+                  
+                  {/* Pre-Notice Preview */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2 text-sm font-medium">
+                      <Eye className="w-4 h-4" /> Preview
+                    </Label>
+                    <div className="p-3 bg-muted/30 rounded-lg border border-dashed">
+                      <MaintenanceBanner
+                        isEnabled={true}
+                        message={localConfig.preMaintenanceMessage || "Scheduled maintenance coming soon..."}
+                        startTime={localConfig.maintenanceStartTime}
+                        endTime={localConfig.maintenanceEndTime}
+                        isPreNotice={true}
+                      />
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
