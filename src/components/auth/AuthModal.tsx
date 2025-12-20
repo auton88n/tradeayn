@@ -209,7 +209,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
-                  className="bg-neutral-900/80 border-white/15 text-white placeholder:text-gray-400 auth-input-text"
+                  className="bg-neutral-900/80 border-white/15 placeholder:text-gray-400 auth-input-text"
                 />
               </div>
 
@@ -232,7 +232,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}
-                  className="bg-neutral-900/80 border-white/15 text-white placeholder:text-gray-400 auth-input-text"
+                  className="bg-neutral-900/80 border-white/15 placeholder:text-gray-400 auth-input-text"
                 />
               </div>
 
@@ -266,7 +266,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       disabled={isLoading}
-                      className="bg-neutral-900/80 border-white/15 text-white placeholder:text-gray-400 pl-10 auth-input-text"
+                      className="bg-neutral-900/80 border-white/15 placeholder:text-gray-400 pl-10 auth-input-text"
                     />
                   </div>
                 </div>
@@ -282,7 +282,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                       value={companyName}
                       onChange={(e) => setCompanyName(e.target.value)}
                       disabled={isLoading}
-                      className="bg-neutral-900/80 border-white/15 text-white placeholder:text-gray-400 pl-10 auth-input-text"
+                      className="bg-neutral-900/80 border-white/15 placeholder:text-gray-400 pl-10 auth-input-text"
                     />
                   </div>
                 </div>
@@ -297,7 +297,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
-                  className="bg-neutral-900/80 border-white/15 text-white placeholder:text-gray-400 auth-input-text"
+                  className="bg-neutral-900/80 border-white/15 placeholder:text-gray-400 auth-input-text"
                 />
               </div>
 
@@ -310,7 +310,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   disabled={isLoading}
-                  className="bg-neutral-900/80 border-white/15 text-white placeholder:text-gray-400 auth-input-text"
+                  className="bg-neutral-900/80 border-white/15 placeholder:text-gray-400 auth-input-text"
                 />
               </div>
 
@@ -323,7 +323,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}
-                  className="bg-neutral-900/80 border-white/15 text-white placeholder:text-gray-400 auth-input-text"
+                  className="bg-neutral-900/80 border-white/15 placeholder:text-gray-400 auth-input-text"
                 />
               </div>
 
