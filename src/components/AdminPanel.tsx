@@ -159,7 +159,12 @@ export const AdminPanel = ({
     if (!response.ok) {
       throw new Error(`API error: ${response.status}`);
     }
-    return response.json();
+    // Handle empty responses (e.g., from POST/PATCH/DELETE operations)
+    const text = await response.text();
+    if (!text) {
+      return null;
+    }
+    return JSON.parse(text);
   }, [session.access_token]);
 
   // Fetch with retry logic for transient failures
