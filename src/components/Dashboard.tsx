@@ -41,30 +41,36 @@ export default function Dashboard({ user, session }: DashboardProps) {
     preMaintenanceMessage: ''
   });
 
-  // Load maintenance config from database
+  // Load maintenance config from database (reading separate keys)
   useEffect(() => {
     const loadMaintenanceConfig = async () => {
       try {
         const { data, error } = await supabase
           .from('system_config')
-          .select('value')
-          .eq('key', 'maintenance_mode')
-          .maybeSingle();
+          .select('key, value')
+          .in('key', [
+            'maintenance_mode',
+            'maintenance_message',
+            'maintenance_start_time',
+            'maintenance_end_time',
+            'pre_maintenance_notice',
+            'pre_maintenance_message'
+          ]);
 
         if (error) {
           console.error('Error loading maintenance config:', error);
           return;
         }
 
-        if (data?.value && typeof data.value === 'object' && !Array.isArray(data.value)) {
-          const config = data.value as MaintenanceConfig;
+        if (data && data.length > 0) {
+          const configMap = new Map(data.map(c => [c.key, c.value]));
           setMaintenanceConfig({
-            enabled: config.enabled || false,
-            message: config.message || 'System is currently under maintenance.',
-            startTime: config.startTime || '',
-            endTime: config.endTime || '',
-            preMaintenanceNotice: config.preMaintenanceNotice || false,
-            preMaintenanceMessage: config.preMaintenanceMessage || ''
+            enabled: configMap.get('maintenance_mode') === true || configMap.get('maintenance_mode') === 'true',
+            message: (configMap.get('maintenance_message') as string) || 'System is currently under maintenance.',
+            startTime: (configMap.get('maintenance_start_time') as string) || '',
+            endTime: (configMap.get('maintenance_end_time') as string) || '',
+            preMaintenanceNotice: configMap.get('pre_maintenance_notice') === true || configMap.get('pre_maintenance_notice') === 'true',
+            preMaintenanceMessage: (configMap.get('pre_maintenance_message') as string) || ''
           });
         }
       } catch (error) {
@@ -74,30 +80,23 @@ export default function Dashboard({ user, session }: DashboardProps) {
 
     loadMaintenanceConfig();
 
-    // Set up realtime subscription to listen for config changes
+    // Set up realtime subscription to listen for any maintenance config changes
     const channel = supabase
-      .channel('system_config_changes')
+      .channel('maintenance_config_changes')
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'system_config',
-          filter: 'key=eq.maintenance_mode'
+          table: 'system_config'
         },
         (payload) => {
-          if (payload.new && typeof payload.new === 'object' && 'value' in payload.new) {
-            const value = payload.new.value;
-            if (value && typeof value === 'object' && !Array.isArray(value)) {
-              const config = value as MaintenanceConfig;
-              setMaintenanceConfig({
-                enabled: config.enabled || false,
-                message: config.message || 'System is currently under maintenance.',
-                startTime: config.startTime || '',
-                endTime: config.endTime || '',
-                preMaintenanceNotice: config.preMaintenanceNotice || false,
-                preMaintenanceMessage: config.preMaintenanceMessage || ''
-              });
+          // Check if the changed key is maintenance-related
+          if (payload.new && typeof payload.new === 'object' && 'key' in payload.new) {
+            const key = payload.new.key as string;
+            if (key.startsWith('maintenance_') || key.startsWith('pre_maintenance_')) {
+              // Re-fetch all maintenance config on any maintenance key change
+              loadMaintenanceConfig();
             }
           }
         }
