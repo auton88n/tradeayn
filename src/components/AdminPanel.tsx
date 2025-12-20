@@ -49,6 +49,10 @@ interface SystemMetrics {
 interface SystemConfig {
   maintenanceMode: boolean;
   maintenanceMessage: string;
+  maintenanceStartTime: string;
+  maintenanceEndTime: string;
+  preMaintenanceNotice: boolean;
+  preMaintenanceMessage: string;
   defaultMonthlyLimit: number;
   requireApproval: boolean;
   maxLoginAttempts: number;
@@ -130,6 +134,10 @@ export const AdminPanel = ({
   const [systemConfig, setSystemConfig] = useState<SystemConfig>({
     maintenanceMode: false,
     maintenanceMessage: '',
+    maintenanceStartTime: '',
+    maintenanceEndTime: '',
+    preMaintenanceNotice: false,
+    preMaintenanceMessage: '',
     defaultMonthlyLimit: 100,
     requireApproval: true,
     maxLoginAttempts: 5,
@@ -223,6 +231,10 @@ export const AdminPanel = ({
           ...prev,
           maintenanceMode: configMap.get('maintenance_mode') as boolean || false,
           maintenanceMessage: configMap.get('maintenance_message') as string || '',
+          maintenanceStartTime: configMap.get('maintenance_start_time') as string || '',
+          maintenanceEndTime: configMap.get('maintenance_end_time') as string || '',
+          preMaintenanceNotice: configMap.get('pre_maintenance_notice') as boolean || false,
+          preMaintenanceMessage: configMap.get('pre_maintenance_message') as string || '',
           defaultMonthlyLimit: configMap.get('default_monthly_limit') as number || 100,
           requireApproval: configMap.get('require_approval') as boolean ?? true,
           maxLoginAttempts: configMap.get('max_login_attempts') as number || 5,
@@ -269,6 +281,10 @@ export const AdminPanel = ({
       const keyMap: Record<string, string> = {
         maintenanceMode: 'maintenance_mode',
         maintenanceMessage: 'maintenance_message',
+        maintenanceStartTime: 'maintenance_start_time',
+        maintenanceEndTime: 'maintenance_end_time',
+        preMaintenanceNotice: 'pre_maintenance_notice',
+        preMaintenanceMessage: 'pre_maintenance_message',
         defaultMonthlyLimit: 'default_monthly_limit',
         requireApproval: 'require_approval',
         maxLoginAttempts: 'max_login_attempts',
@@ -277,7 +293,7 @@ export const AdminPanel = ({
       for (const [key, value] of Object.entries(updates)) {
         const dbKey = keyMap[key];
         if (dbKey) {
-          await fetchWithAuth(`system_config?key=eq.${dbKey}`, {
+          await fetchWithAuth(`system_config?on_conflict=key`, {
             method: 'POST',
             headers: {
               'Prefer': 'resolution=merge-duplicates'
