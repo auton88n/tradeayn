@@ -167,17 +167,10 @@ export const AdminPanel = ({
       return [];
     }
   }, [fetchWithAuth]);
-
   const fetchData = useCallback(async () => {
     try {
       // Fetch all data in parallel using Promise.allSettled for resilience
-      const results = await Promise.allSettled([
-        fetchWithRetry('access_grants?select=*&order=created_at.desc'),
-        fetchWithRetry('profiles?select=user_id,company_name,contact_person,avatar_url'),
-        fetchWithRetry(`messages?select=id&created_at=gte.${new Date().toISOString().split('T')[0]}`),
-        fetchWithRetry('system_config?select=key,value'),
-        fetchWithRetry('service_applications?select=*&order=created_at.desc')
-      ]);
+      const results = await Promise.allSettled([fetchWithRetry('access_grants?select=*&order=created_at.desc'), fetchWithRetry('profiles?select=user_id,company_name,contact_person,avatar_url'), fetchWithRetry(`messages?select=id&created_at=gte.${new Date().toISOString().split('T')[0]}`), fetchWithRetry('system_config?select=key,value'), fetchWithRetry('service_applications?select=*&order=created_at.desc')]);
 
       // Log any failures for debugging
       results.forEach((result, index) => {
@@ -188,9 +181,19 @@ export const AdminPanel = ({
 
       // Extract values, defaulting to empty arrays on failure
       const usersData = results[0].status === 'fulfilled' ? results[0].value as AccessGrantWithProfile[] : [];
-      const profilesData = results[1].status === 'fulfilled' ? results[1].value as { user_id: string; company_name: string | null; contact_person: string | null; avatar_url: string | null; }[] : [];
-      const messagesData = results[2].status === 'fulfilled' ? results[2].value as { id: string }[] : [];
-      const configData = results[3].status === 'fulfilled' ? results[3].value as { key: string; value: unknown }[] : [];
+      const profilesData = results[1].status === 'fulfilled' ? results[1].value as {
+        user_id: string;
+        company_name: string | null;
+        contact_person: string | null;
+        avatar_url: string | null;
+      }[] : [];
+      const messagesData = results[2].status === 'fulfilled' ? results[2].value as {
+        id: string;
+      }[] : [];
+      const configData = results[3].status === 'fulfilled' ? results[3].value as {
+        key: string;
+        value: unknown;
+      }[] : [];
       const applicationsData = results[4].status === 'fulfilled' ? results[4].value as ServiceApplication[] : [];
 
       // Map profiles to users
@@ -245,7 +248,6 @@ export const AdminPanel = ({
       setIsLoading(false);
       setIsRefreshing(false);
     }, 8000);
-    
     return () => {
       clearTimeout(initTimer);
       clearTimeout(safetyTimeout);
@@ -331,9 +333,7 @@ export const AdminPanel = ({
         
         <div className="flex items-center gap-2">
           
-          <Button variant="ghost" size="icon" onClick={handleRefresh} disabled={isRefreshing} className="w-10 h-10 rounded-xl">
-            <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
-          </Button>
+          
         </div>
       </div>
 
