@@ -20,6 +20,7 @@ const Index = lazy(() => import("./pages/Index"));
 const Settings = lazy(() => import("./pages/Settings"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const ApprovalResult = lazy(() => import("./pages/ApprovalResult"));
 const AIEmployee = lazy(() => import("./pages/services/AIEmployee"));
 const AIEmployeeApply = lazy(() => import("./pages/services/AIEmployeeApply"));
 const InfluencerSites = lazy(() => import("./pages/services/InfluencerSites"));
@@ -50,6 +51,7 @@ const AnimatedRoutes = () => {
         <Route path="/services/automation" element={<PageTransition><Automation /></PageTransition>} />
         <Route path="/services/automation/apply" element={<PageTransition><AutomationApply /></PageTransition>} />
         <Route path="/support" element={<PageTransition><Support /></PageTransition>} />
+        <Route path="/approval-result" element={<PageTransition><ApprovalResult /></PageTransition>} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>

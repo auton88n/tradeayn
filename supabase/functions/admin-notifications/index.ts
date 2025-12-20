@@ -18,6 +18,46 @@ interface NotificationRequest {
   created_at?: string;
 }
 
+// Simple HMAC-like signature using Web Crypto API
+async function createSignature(data: string, secret: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const keyData = encoder.encode(secret);
+  const dataToSign = encoder.encode(data);
+  
+  const key = await crypto.subtle.importKey(
+    "raw",
+    keyData,
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  
+  const signature = await crypto.subtle.sign("HMAC", key, dataToSign);
+  return btoa(String.fromCharCode(...new Uint8Array(signature)));
+}
+
+// Generate approval token
+async function generateApprovalToken(
+  userId: string, 
+  userEmail: string, 
+  adminEmail: string, 
+  secret: string
+): Promise<string> {
+  const expiresAt = Date.now() + (24 * 60 * 60 * 1000); // 24 hours from now
+  const dataToSign = `${userId}:${userEmail}:${adminEmail}:${expiresAt}`;
+  const signature = await createSignature(dataToSign, secret);
+  
+  const tokenData = {
+    user_id: userId,
+    user_email: userEmail,
+    admin_email: adminEmail,
+    expires_at: expiresAt,
+    signature
+  };
+  
+  return btoa(JSON.stringify(tokenData));
+}
+
 // Premium email template
 function generateEmailTemplate(title: string, content: string): string {
   return `<!DOCTYPE html>
@@ -67,12 +107,16 @@ function generateEmailTemplate(title: string, content: string): string {
 </html>`;
 }
 
-// Access request email content
-function generateAccessRequestContent(data: NotificationRequest): string {
+// Access request email content with approve button
+function generateAccessRequestContent(data: NotificationRequest, approveUrl?: string): string {
   const timestamp = data.created_at ? new Date(data.created_at).toLocaleString('en-US', { 
     dateStyle: 'full', 
     timeStyle: 'short' 
   }) : new Date().toLocaleString('en-US');
+  
+  const approveButton = approveUrl ? `
+    <a href="${approveUrl}" style="display: inline-block; padding: 14px 32px; background-color: #22c55e; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 14px; font-weight: 500; margin-right: 12px;">✓ Approve Now</a>
+  ` : '';
   
   return `
     <div style="background-color: #f8f9fa; border-radius: 8px; padding: 24px; margin-bottom: 20px;">
@@ -88,11 +132,15 @@ function generateAccessRequestContent(data: NotificationRequest): string {
       <p style="margin: 0; font-size: 14px; color: #0a0a0a;">${timestamp}</p>
     </div>
     <p style="margin: 20px 0 0 0; font-size: 14px; color: #666;">
-      A new user has registered and is awaiting access approval. Please review their request in the Admin Panel.
+      A new user has registered and is awaiting access approval. Click "Approve Now" for instant approval, or use the Admin Panel for more options.
     </p>
     <div style="margin-top: 30px; text-align: center;">
+      ${approveButton}
       <a href="https://aynn.io/admin" style="display: inline-block; padding: 14px 32px; background-color: #0a0a0a; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 14px; font-weight: 500;">Open Admin Panel</a>
     </div>
+    <p style="margin: 24px 0 0 0; font-size: 12px; color: #999; text-align: center;">
+      The approval link expires in 24 hours for security.
+    </p>
   `;
 }
 
@@ -291,6 +339,7 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const approvalSecret = Deno.env.get("APPROVAL_TOKEN_SECRET");
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const data: NotificationRequest = await req.json();
@@ -328,7 +377,23 @@ const handler = async (req: Request): Promise<Response> => {
     switch (data.type) {
       case "access_request":
         subject = "🔔 New Access Request - AYN";
-        content = generateAccessRequestContent(data);
+        
+        // Generate approval URL if secret is configured
+        let approveUrl: string | undefined;
+        if (approvalSecret && data.user_id && data.user_email) {
+          const token = await generateApprovalToken(
+            data.user_id,
+            data.user_email,
+            recipientEmail,
+            approvalSecret
+          );
+          approveUrl = `https://dfkoxuokfkttjhfjcecx.supabase.co/functions/v1/approve-access?token=${encodeURIComponent(token)}`;
+          console.log("Generated approval URL for user:", data.user_email);
+        } else {
+          console.log("Approval token not generated - missing secret or user data");
+        }
+        
+        content = generateAccessRequestContent(data, approveUrl);
         htmlBody = generateEmailTemplate("New Access Request", content);
         break;
 
@@ -355,11 +420,20 @@ const handler = async (req: Request): Promise<Response> => {
     // Send email via SMTP
     const smtpHost = Deno.env.get("SMTP_HOST") || "smtp.hostinger.com";
     const smtpPort = parseInt(Deno.env.get("SMTP_PORT") || "465");
-    const smtpUser = Deno.env.get("SMTP_USER")!;
-    const smtpPass = Deno.env.get("SMTP_PASS")!;
+    const smtpUser = Deno.env.get("SMTP_USER");
+    const smtpPass = Deno.env.get("SMTP_PASS");
+    const senderEmail = Deno.env.get("SENDER_EMAIL") || smtpUser;
 
-    console.log("Sending email to:", recipientEmail);
+    if (!smtpUser || !smtpPass) {
+      console.error("SMTP credentials not configured");
+      return new Response(
+        JSON.stringify({ error: "Email configuration missing" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
+    console.log("Connecting to SMTP:", smtpHost, smtpPort);
+    
     const client = new SMTPClient({
       connection: {
         hostname: smtpHost,
@@ -372,50 +446,59 @@ const handler = async (req: Request): Promise<Response> => {
       },
     });
 
-    let emailStatus = "sent";
-    let errorMessage = null;
-
     try {
       await client.send({
-        from: smtpUser,
+        from: senderEmail!,
         to: recipientEmail,
         subject: subject,
-        content: "Please view this email in an HTML-compatible email client.",
         html: htmlBody,
       });
-      console.log("Email sent successfully");
+      
+      console.log("Email sent successfully to:", recipientEmail);
+
+      // Log the notification
+      await supabase.from('admin_notification_log').insert({
+        notification_type: data.type,
+        recipient_email: recipientEmail,
+        subject: subject,
+        status: 'sent',
+        metadata: {
+          user_id: data.user_id,
+          user_email: data.user_email,
+          has_approval_link: data.type === 'access_request' && approvalSecret ? true : false
+        }
+      });
+
       await client.close();
-    } catch (emailError) {
-      console.error("Email send error:", emailError);
-      emailStatus = "failed";
-      errorMessage = String(emailError);
-      try { await client.close(); } catch {}
+      
+      return new Response(
+        JSON.stringify({ success: true, message: "Notification sent" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    } catch (smtpError) {
+      console.error("SMTP error:", smtpError);
+      
+      // Log the failure
+      await supabase.from('admin_notification_log').insert({
+        notification_type: data.type,
+        recipient_email: recipientEmail,
+        subject: subject,
+        status: 'failed',
+        error_message: smtpError instanceof Error ? smtpError.message : 'Unknown SMTP error'
+      });
+      
+      await client.close();
+      
+      return new Response(
+        JSON.stringify({ error: "Failed to send email", details: smtpError instanceof Error ? smtpError.message : 'Unknown error' }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
-
-    // Log the notification
-    await supabase.from('admin_notification_log').insert({
-      notification_type: data.type,
-      recipient_email: recipientEmail,
-      subject: subject,
-      content: content.substring(0, 1000), // Truncate for storage
-      status: emailStatus,
-      error_message: errorMessage,
-      metadata: data
-    });
-
-    return new Response(
-      JSON.stringify({ 
-        success: emailStatus === "sent",
-        message: emailStatus === "sent" ? "Notification sent" : "Failed to send notification",
-        error: errorMessage
-      }),
-      { status: emailStatus === "sent" ? 200 : 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
 
   } catch (error) {
     console.error("Error in admin-notifications:", error);
     return new Response(
-      JSON.stringify({ error: String(error) }),
+      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
