@@ -908,14 +908,17 @@ button, a, input, textarea, select {
   /* Auth input text - proper contrast for light and dark modes */
   .auth-input-text {
     color: black !important;
+    -webkit-text-fill-color: black !important;
   }
 
   .dark .auth-input-text {
     color: white !important;
+    -webkit-text-fill-color: white !important;
   }
 
   .dark .auth-input-text::placeholder {
     color: rgba(255, 255, 255, 0.5) !important;
+    -webkit-text-fill-color: rgba(255, 255, 255, 0.5) !important;
   }
 
   /* Auth label text */
