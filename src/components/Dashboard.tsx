@@ -175,26 +175,30 @@ export default function Dashboard({ user, session }: DashboardProps) {
   }
 
   return (
-    <div dir="ltr" className="relative min-h-screen">
+    <div dir="ltr" className="relative min-h-screen flex flex-col">
       {/* Pre-Maintenance Notice Banner (warning, not blocking) */}
       {maintenanceConfig.preMaintenanceNotice && !maintenanceConfig.enabled && (
-        <MaintenanceBanner
-          isEnabled={true}
-          message={maintenanceConfig.preMaintenanceMessage || 'Scheduled maintenance coming soon'}
-          startTime={maintenanceConfig.startTime}
-          endTime={maintenanceConfig.endTime}
-          isPreNotice={true}
-        />
+        <div className="w-full flex-shrink-0">
+          <MaintenanceBanner
+            isEnabled={true}
+            message={maintenanceConfig.preMaintenanceMessage || 'Scheduled maintenance coming soon'}
+            startTime={maintenanceConfig.startTime}
+            endTime={maintenanceConfig.endTime}
+            isPreNotice={true}
+          />
+        </div>
       )}
 
       {/* Active Maintenance Banner for admins */}
       {maintenanceConfig.enabled && auth.hasDutyAccess && (
-        <MaintenanceBanner
-          isEnabled={true}
-          message={`[Admin View] ${maintenanceConfig.message}`}
-          startTime={maintenanceConfig.startTime}
-          endTime={maintenanceConfig.endTime}
-        />
+        <div className="w-full flex-shrink-0">
+          <MaintenanceBanner
+            isEnabled={true}
+            message={`[Admin View] ${maintenanceConfig.message}`}
+            startTime={maintenanceConfig.startTime}
+            endTime={maintenanceConfig.endTime}
+          />
+        </div>
       )}
 
       {/* Terms Modal - shows when terms not accepted (only after auth loading completes) */}

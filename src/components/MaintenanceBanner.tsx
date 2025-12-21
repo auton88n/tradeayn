@@ -30,7 +30,7 @@ export const MaintenanceBanner = ({
   // Pre-notice style (yellow/warning)
   if (isPreNotice) {
     return (
-      <Alert className="border-yellow-300 bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 dark:border-yellow-700 mb-4 relative">
+      <Alert className="w-full rounded-none border-x-0 border-t-0 border-yellow-300 bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 dark:border-yellow-700 mb-0 relative">
         <Bell className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
         <AlertDescription className="text-yellow-800 dark:text-yellow-200 font-medium pr-8">
           <div className="flex items-start gap-3">
@@ -72,7 +72,7 @@ export const MaintenanceBanner = ({
 
   // Active maintenance style (orange)
   return (
-    <Alert className="border-orange-200 bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-900/20 dark:to-yellow-900/20 dark:border-orange-700 mb-4 relative">
+    <Alert className="w-full rounded-none border-x-0 border-t-0 border-orange-200 bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-900/20 dark:to-yellow-900/20 dark:border-orange-700 mb-0 relative">
       <AlertTriangle className="h-5 w-5 text-orange-600 dark:text-orange-400" />
       <AlertDescription className="text-orange-800 dark:text-orange-200 font-medium pr-8">
         <div className="flex items-start gap-3">
