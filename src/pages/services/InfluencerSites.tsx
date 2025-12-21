@@ -12,6 +12,8 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { SEO, createServiceSchema } from '@/components/SEO';
+
 const InfluencerSites = () => {
   const {
     language
@@ -160,7 +162,15 @@ const InfluencerSites = () => {
     title: language === 'ar' ? 'الإطلاق' : language === 'fr' ? 'Lancement' : 'Launch',
     description: language === 'ar' ? 'نطلق موقعك للعالم' : language === 'fr' ? 'Nous lançons votre site au monde' : 'We launch your site to the world'
   }];
-  return <div className="min-h-screen bg-neutral-950 text-white">
+  return <>
+    <SEO
+      title="Premium Websites for Content Creators"
+      description="Luxury websites custom-built for content creators and influencers. Attract more partnerships and elevate your personal brand."
+      canonical="/services/content-creator-sites"
+      keywords="content creator websites, influencer sites, portfolio websites, personal brand, creator economy"
+      jsonLd={createServiceSchema({ name: 'Content Creator Sites', description: 'Premium websites designed for influencers and content creators.', url: 'https://aynn.io/services/content-creator-sites' })}
+    />
+    <div className="min-h-screen bg-neutral-950 text-white">
       {/* Navigation */}
       <nav className="fixed top-4 md:top-6 left-4 md:left-6 z-50">
         <Link to="/">
@@ -588,6 +598,7 @@ const InfluencerSites = () => {
             </>}
         </DialogContent>
       </Dialog>
-    </div>;
+    </div>
+  </>;
 };
 export default InfluencerSites;

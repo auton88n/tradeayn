@@ -22,6 +22,7 @@ import MobileMockup from './services/MobileMockup';
 import DeviceMockups from './services/DeviceMockups';
 import AutomationFlowMockup from './services/AutomationFlowMockup';
 import AIEmployeeMockup from './services/AIEmployeeMockup';
+import { SEO, organizationSchema, websiteSchema } from './SEO';
 
 // ScrollReveal component - defined outside to prevent recreation on re-renders
 const ScrollReveal = ({
@@ -238,7 +239,15 @@ const LandingPage = () => {
     description: language === 'ar' ? 'موظفين يعملون ٢٤ ساعة بدون إجازات أو تأمين صحي.' : language === 'fr' ? 'Employés qui travaillent 24h/24 sans vacances ni assurance santé.' : 'Employees who work 24/7 with no vacations or healthcare costs.',
     mockup: <LazyLoad><AIEmployeeMockup /></LazyLoad>
   }];
-  return <div className="min-h-screen bg-background scroll-smooth">
+  return <>
+    <SEO
+      title="AYN - AI That Knows You"
+      description="AYN is an AI assistant that learns your habits, understands your goals, and helps you stay organized and focused every day. Discover AI employees, custom AI agents, and business automation."
+      canonical="/"
+      keywords="AI assistant, AI employees, AI agents, business automation, content creator sites, productivity, artificial intelligence"
+      jsonLd={{ '@graph': [organizationSchema, websiteSchema] }}
+    />
+    <div className="min-h-screen bg-background scroll-smooth">
       {/* Vertical Dropdown Navigation */}
       <nav className="fixed top-4 md:top-6 left-4 md:left-6 z-50 animate-fade-in">
         <div className="relative">
@@ -737,6 +746,7 @@ const LandingPage = () => {
 
       {/* Auth Modal */}
       <AuthModal open={showAuthModal} onOpenChange={setShowAuthModal} />
-    </div>;
+    </div>
+  </>;
 };
 export default LandingPage;

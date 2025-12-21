@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { SEO, createServiceSchema } from '@/components/SEO';
 
 const Automation = () => {
   const { language } = useLanguage();
@@ -228,7 +229,15 @@ const Automation = () => {
     description: language === 'ar' ? 'نتابع الأداء ونحسّنه' : language === 'fr' ? 'Suivez les performances et optimisez' : 'Track performance and optimize'
   }];
 
-  return <div className="min-h-screen bg-neutral-950 text-white">
+  return <>
+    <SEO
+      title="Business Process Automation Solutions"
+      description="Save 15+ hours per week by automating repetitive tasks. Email sync, invoice processing, lead qualification, and more."
+      canonical="/services/automation"
+      keywords="business automation, workflow automation, process automation, productivity, efficiency"
+      jsonLd={createServiceSchema({ name: 'Process Automation', description: 'Automate repetitive tasks and streamline your workflows with AI.', url: 'https://aynn.io/services/automation' })}
+    />
+    <div className="min-h-screen bg-neutral-950 text-white">
       {/* Back Button */}
       <Link to="/" className="fixed top-4 md:top-6 left-4 md:left-6 z-50">
         <Button variant="ghost" className="text-white/70 hover:text-white hover:bg-white/10 gap-2 bg-neutral-900/80 backdrop-blur-xl border border-neutral-800 rounded-full px-4 py-2">
@@ -683,7 +692,8 @@ const Automation = () => {
           )}
         </DialogContent>
       </Dialog>
-    </div>;
+    </div>
+  </>;
 };
 
 export default Automation;
