@@ -14,6 +14,7 @@ import FAQBrowser from '@/components/support/FAQBrowser';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
+import { SEO } from '@/components/SEO';
 
 interface SupportTicket {
   id: string;
@@ -112,7 +113,14 @@ const Support = () => {
   const t = translations[language as keyof typeof translations] || translations.en;
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
+      <SEO
+        title="Help & Support"
+        description="Get help with AYN. Chat with our AI assistant, browse FAQs, or submit a support ticket."
+        canonical="/support"
+        keywords="AYN support, help center, FAQ, customer support, AI assistant help"
+      />
+      <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
         <div className="container mx-auto max-w-5xl px-4 py-4 flex items-center justify-between">
@@ -238,6 +246,7 @@ const Support = () => {
         </motion.div>
       </main>
     </div>
+    </>
   );
 };
 

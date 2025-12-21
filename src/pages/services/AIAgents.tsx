@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { SEO, createServiceSchema } from '@/components/SEO';
 
 const AIAgents = () => {
   const { language } = useLanguage();
@@ -207,7 +208,15 @@ const AIAgents = () => {
     description: language === 'ar' ? 'ابدأ مع دعم ذكي ٢٤ ساعة' : language === 'fr' ? 'Lancez avec un support IA 24/7' : 'Go live with 24/7 AI support'
   }];
 
-  return <div className="min-h-screen bg-neutral-950 text-white">
+  return <>
+    <SEO
+      title="Custom AI Agents for Your Business"
+      description="Build intelligent AI agents trained on your business data. 24/7 customer support, lead qualification, and conversions."
+      canonical="/services/ai-agents"
+      keywords="AI agents, chatbots, customer support AI, lead qualification, business AI"
+      jsonLd={createServiceSchema({ name: 'Custom AI Agents', description: 'Build intelligent AI agents trained on your business data for 24/7 support.', url: 'https://aynn.io/services/ai-agents' })}
+    />
+    <div className="min-h-screen bg-neutral-950 text-white">
       {/* Back Button */}
       <Link to="/" className="fixed top-4 md:top-6 left-4 md:left-6 z-50">
         <Button variant="ghost" className="text-white/70 hover:text-white hover:bg-white/10 gap-2 bg-neutral-900/80 backdrop-blur-xl border border-neutral-800 rounded-full px-4 py-2">
@@ -701,7 +710,8 @@ const AIAgents = () => {
           )}
         </DialogContent>
       </Dialog>
-    </div>;
+    </div>
+  </>;
 };
 
 export default AIAgents;

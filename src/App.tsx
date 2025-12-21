@@ -15,6 +15,7 @@ import { AnimatePresence } from 'framer-motion';
 import PageTransition from "@/components/PageTransition";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { useVisitorTracking } from "@/hooks/useVisitorTracking";
+import { HelmetProvider } from 'react-helmet-async';
 
 // Lazy load all route pages for code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -64,29 +65,31 @@ const AnimatedRoutes = () => {
 };
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <LanguageProvider>
-      <ThemeProvider defaultTheme="light" storageKey="ayn-theme">
-        <AYNEmotionProvider>
-          <SoundProvider>
-            <TooltipProvider>
-              <OfflineBanner />
-              <Toaster />
-              <Sonner />
-              <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-                <ScrollToTop />
-                <ErrorBoundary>
-                  <Suspense fallback={<PageLoader />}>
-                    <AnimatedRoutes />
-                  </Suspense>
-                </ErrorBoundary>
-              </BrowserRouter>
-            </TooltipProvider>
-          </SoundProvider>
-        </AYNEmotionProvider>
-      </ThemeProvider>
-    </LanguageProvider>
-  </QueryClientProvider>
+  <HelmetProvider>
+    <QueryClientProvider client={queryClient}>
+      <LanguageProvider>
+        <ThemeProvider defaultTheme="light" storageKey="ayn-theme">
+          <AYNEmotionProvider>
+            <SoundProvider>
+              <TooltipProvider>
+                <OfflineBanner />
+                <Toaster />
+                <Sonner />
+                <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                  <ScrollToTop />
+                  <ErrorBoundary>
+                    <Suspense fallback={<PageLoader />}>
+                      <AnimatedRoutes />
+                    </Suspense>
+                  </ErrorBoundary>
+                </BrowserRouter>
+              </TooltipProvider>
+            </SoundProvider>
+          </AYNEmotionProvider>
+        </ThemeProvider>
+      </LanguageProvider>
+    </QueryClientProvider>
+  </HelmetProvider>
 );
 
 export default App;
