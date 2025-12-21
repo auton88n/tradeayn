@@ -295,22 +295,31 @@ export const AdminPanel = ({
         maxLoginAttempts: 'max_login_attempts',
         sessionTimeout: 'session_timeout'
       };
+      
       for (const [key, value] of Object.entries(updates)) {
         const dbKey = keyMap[key];
         if (dbKey) {
-          await fetchWithAuth(`system_config?on_conflict=key`, {
-            method: 'POST',
+          // Use PATCH to update existing records
+          const response = await fetch(`${SUPABASE_URL}/rest/v1/system_config?key=eq.${dbKey}`, {
+            method: 'PATCH',
             headers: {
-              'Prefer': 'resolution=merge-duplicates'
+              'Authorization': `Bearer ${session.access_token}`,
+              'apikey': SUPABASE_ANON_KEY,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=minimal'
             },
             body: JSON.stringify({
-              key: dbKey,
               value,
               updated_at: new Date().toISOString()
             })
           });
+          
+          if (!response.ok) {
+            throw new Error(`Failed to update ${dbKey}: ${response.status}`);
+          }
         }
       }
+      
       setSystemConfig(prev => ({
         ...prev,
         ...updates
