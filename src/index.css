@@ -903,36 +903,34 @@ button, a, input, textarea, select {
 
   /* Input container flex rules now in dedicated section at end of file */
 
-  /* Remove old RTL input container rules - now handled above */
+/* Auth input text - always white since auth modal inputs always have dark backgrounds */
+.auth-input-text {
+  color: white !important;
+  -webkit-text-fill-color: white !important;
+}
 
-  /* Auth input text - always white since auth modal inputs always have dark backgrounds */
-  .auth-input-text {
-    color: white !important;
-    -webkit-text-fill-color: white !important;
-  }
+.auth-input-text::placeholder {
+  color: rgba(255, 255, 255, 0.5) !important;
+  -webkit-text-fill-color: rgba(255, 255, 255, 0.5) !important;
+}
 
-  .auth-input-text::placeholder {
-    color: rgba(255, 255, 255, 0.5) !important;
-    -webkit-text-fill-color: rgba(255, 255, 255, 0.5) !important;
-  }
+/* Override browser autofill styles for auth inputs */
+.auth-input-text:-webkit-autofill,
+.auth-input-text:-webkit-autofill:hover,
+.auth-input-text:-webkit-autofill:focus,
+.auth-input-text:-webkit-autofill:active {
+  -webkit-text-fill-color: white !important;
+  -webkit-box-shadow: 0 0 0 30px rgba(23, 23, 23, 0.8) inset !important;
+  caret-color: white !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
 
-  /* Override browser autofill styles for auth inputs */
-  .auth-input-text:-webkit-autofill,
-  .auth-input-text:-webkit-autofill:hover,
-  .auth-input-text:-webkit-autofill:focus,
-  .auth-input-text:-webkit-autofill:active {
-    -webkit-text-fill-color: white !important;
-    -webkit-box-shadow: 0 0 0 30px rgba(23, 23, 23, 0.8) inset !important;
-    caret-color: white !important;
-    transition: background-color 5000s ease-in-out 0s;
-  }
+/* Auth label text */
+.auth-label {
+  color: white !important;
+}
 
-  /* Auth label text */
-  .auth-label {
-    color: white !important;
-  }
-
-  /* RTL margin/padding swap rules removed - using dir="ltr" on layout containers instead */
+/* RTL margin/padding swap rules removed - using dir="ltr" on layout containers instead */
 
   /* RTL Icon flipping */
   [dir="rtl"] .lucide-arrow-right {
