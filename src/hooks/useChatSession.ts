@@ -94,9 +94,8 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
               : 'Chat Session';
           }
 
-          // Use first AYN message for preview (shows AYN's response to user's question)
-          const firstAynMessage = sortedMessages.find(msg => msg.sender === 'ayn');
-          const previewMessage = firstAynMessage || lastMessage;
+          // Use first user message for preview (shows what the user asked)
+          const previewMessage = firstUserMessage || sortedMessages[0];
           
           return {
             title,
@@ -358,11 +357,15 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
                   : 'Chat Session';
               }
 
+              // Use first user message for preview (shows what the user asked)
+              const firstUserMessage = sortedMessages.find(msg => msg.sender === 'user');
+              const previewMessage = firstUserMessage || sortedMessages[0];
+              
               return {
                 title,
-                lastMessage: lastMessage.content.length > 50
-                  ? lastMessage.content.substring(0, 50) + '...'
-                  : lastMessage.content,
+                lastMessage: previewMessage.content.length > 50
+                  ? previewMessage.content.substring(0, 50) + '...'
+                  : previewMessage.content,
                 timestamp: lastMessage.timestamp,
                 messages: sortedMessages,
                 sessionId: sessionId
