@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-// MaintenanceBanner removed - now using SystemNotificationBanner in chat input area
+import { NotificationLogViewer } from './NotificationLogViewer';
 import { 
   AlertTriangle, 
   Users, 
@@ -500,6 +500,11 @@ export const SystemSettings = ({ systemConfig, onUpdateConfig }: SystemSettingsP
             </p>
           </div>
         </CollapsibleSection>
+      </motion.div>
+
+      {/* Notification Log Viewer */}
+      <motion.div variants={itemVariants}>
+        <NotificationLogViewer />
       </motion.div>
 
       {/* Save Button */}
