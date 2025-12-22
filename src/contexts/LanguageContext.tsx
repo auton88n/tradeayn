@@ -1047,7 +1047,7 @@ const translations = {
     // Auth Modal
     'auth.welcomeToAyn': 'مرحباً بك في AYN',
     'auth.signIn': 'تسجيل الدخول',
-    'auth.requestAccess': 'طلب الوصول',
+    'auth.requestAccess': 'إنشاء حساب',
     'auth.email': 'البريد الإلكتروني',
     'auth.password': 'كلمة المرور',
     'auth.enterEmail': 'أدخل بريدك الإلكتروني',
@@ -1061,7 +1061,7 @@ const translations = {
     'auth.authError': 'خطأ في المصادقة',
     'auth.welcomeBack': 'مرحباً بعودتك!',
     'auth.welcomeBackDesc': 'تم تسجيل دخولك بنجاح.',
-    'auth.requestAccessDesc': 'طلب الوصول إلى منصة الاستشارات التجارية AYN AI',
+    'auth.requestAccessDesc': 'أنشئ حسابك في منصة الاستشارات التجارية AYN AI',
     'auth.fullName': 'الاسم الكامل',
     'auth.company': 'الشركة',
     'auth.businessEmail': 'البريد الإلكتروني للعمل',
