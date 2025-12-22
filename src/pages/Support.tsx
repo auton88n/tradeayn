@@ -14,7 +14,7 @@ import FAQBrowser from '@/components/support/FAQBrowser';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
-import { SEO } from '@/components/SEO';
+import { SEO, createBreadcrumbSchema, createFAQSchema } from '@/components/SEO';
 
 interface SupportTicket {
   id: string;
@@ -30,6 +30,24 @@ const Support = () => {
   const [activeTab, setActiveTab] = useState('chat');
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [isLoadingTickets, setIsLoadingTickets] = useState(false);
+  const [faqs, setFaqs] = useState<Array<{ question: string; answer: string }>>([]);
+
+  // Fetch FAQs for structured data
+  useEffect(() => {
+    const fetchFAQs = async () => {
+      const { data } = await supabase
+        .from('faq_items')
+        .select('question, answer')
+        .eq('is_published', true)
+        .order('order_index', { ascending: true })
+        .limit(10);
+      
+      if (data) {
+        setFaqs(data);
+      }
+    };
+    fetchFAQs();
+  }, []);
 
   useEffect(() => {
     if (activeTab === 'tickets') {
@@ -112,6 +130,18 @@ const Support = () => {
 
   const t = translations[language as keyof typeof translations] || translations.en;
 
+  // Build combined structured data
+  const breadcrumbSchema = createBreadcrumbSchema([
+    { name: 'Home', url: 'https://aynn.io/' },
+    { name: 'Support', url: 'https://aynn.io/support' }
+  ]);
+
+  const faqSchema = faqs.length > 0 ? createFAQSchema(faqs) : null;
+
+  const jsonLdData = faqSchema 
+    ? { '@graph': [breadcrumbSchema, faqSchema] }
+    : breadcrumbSchema;
+
   return (
     <>
       <SEO
@@ -119,6 +149,7 @@ const Support = () => {
         description="Get help with AYN. Chat with our AI assistant, browse FAQs, or submit a support ticket."
         canonical="/support"
         keywords="AYN support, help center, FAQ, customer support, AI assistant help"
+        jsonLd={jsonLdData}
       />
       <div className="min-h-screen bg-background">
       {/* Header */}

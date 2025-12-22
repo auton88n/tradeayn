@@ -8,6 +8,7 @@ import { NotificationSettings } from '@/components/settings/NotificationSettings
 import { PrivacySettings } from '@/components/settings/PrivacySettings';
 import { SessionManagement } from '@/components/settings/SessionManagement';
 import { PageLoader } from '@/components/ui/page-loader';
+import { SEO, createBreadcrumbSchema } from '@/components/SEO';
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -51,15 +52,29 @@ const Settings = () => {
     return null;
   }
 
+  const breadcrumbSchema = createBreadcrumbSchema([
+    { name: 'Home', url: 'https://aynn.io/' },
+    { name: 'Settings', url: 'https://aynn.io/settings' }
+  ]);
+
   return (
-    <SettingsLayout>
-      {{
-        account: <AccountPreferences userId={user.id} userEmail={user.email || ''} accessToken={session.access_token} />,
-        notifications: <NotificationSettings userId={user.id} accessToken={session.access_token} />,
-        privacy: <PrivacySettings userId={user.id} session={session} />,
-        sessions: <SessionManagement userId={user.id} userEmail={user.email || ''} accessToken={session.access_token} />,
-      }}
-    </SettingsLayout>
+    <>
+      <SEO
+        title="Account Settings"
+        description="Manage your AYN account settings, notifications, privacy preferences, and active sessions."
+        canonical="/settings"
+        noIndex={true}
+        jsonLd={breadcrumbSchema}
+      />
+      <SettingsLayout>
+        {{
+          account: <AccountPreferences userId={user.id} userEmail={user.email || ''} accessToken={session.access_token} />,
+          notifications: <NotificationSettings userId={user.id} accessToken={session.access_token} />,
+          privacy: <PrivacySettings userId={user.id} session={session} />,
+          sessions: <SessionManagement userId={user.id} userEmail={user.email || ''} accessToken={session.access_token} />,
+        }}
+      </SettingsLayout>
+    </>
   );
 };
 

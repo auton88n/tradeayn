@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { SEO, createServiceSchema } from '@/components/SEO';
+import { SEO, createServiceSchema, createBreadcrumbSchema } from '@/components/SEO';
 
 const Automation = () => {
   const { language } = useLanguage();
@@ -229,13 +229,25 @@ const Automation = () => {
     description: language === 'ar' ? 'نتابع الأداء ونحسّنه' : language === 'fr' ? 'Suivez les performances et optimisez' : 'Track performance and optimize'
   }];
 
+  const breadcrumbSchema = createBreadcrumbSchema([
+    { name: 'Home', url: 'https://aynn.io/' },
+    { name: 'Services', url: 'https://aynn.io/#services' },
+    { name: 'Process Automation', url: 'https://aynn.io/services/automation' }
+  ]);
+
+  const serviceSchema = createServiceSchema({ 
+    name: 'Process Automation', 
+    description: 'Automate repetitive tasks and streamline your workflows with AI.', 
+    url: 'https://aynn.io/services/automation' 
+  });
+
   return <>
     <SEO
       title="Business Process Automation Solutions"
       description="Save 15+ hours per week by automating repetitive tasks. Email sync, invoice processing, lead qualification, and more."
       canonical="/services/automation"
       keywords="business automation, workflow automation, process automation, productivity, efficiency"
-      jsonLd={createServiceSchema({ name: 'Process Automation', description: 'Automate repetitive tasks and streamline your workflows with AI.', url: 'https://aynn.io/services/automation' })}
+      jsonLd={{ '@graph': [breadcrumbSchema, serviceSchema] }}
     />
     <div className="min-h-screen bg-neutral-950 text-white">
       {/* Back Button */}
