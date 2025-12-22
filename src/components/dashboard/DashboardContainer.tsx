@@ -546,6 +546,9 @@ const DashboardContent = ({
           lastSuggestedEmotion={messagesHook.lastSuggestedEmotion}
           uploadFailed={fileUpload.uploadFailed}
           onRetryUpload={fileUpload.retryUpload}
+          currentMonthUsage={usageTracking.currentMonthUsage}
+          monthlyLimit={usageTracking.monthlyLimit}
+          usageResetDate={usageTracking.usageResetDate}
         />
       </main>
 

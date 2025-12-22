@@ -8,6 +8,7 @@ import { ResponseCard } from '@/components/eye/ResponseCard';
 import { FlyingSuggestionBubble } from '@/components/eye/FlyingSuggestionBubble';
 import { ParticleBurst } from '@/components/eye/ParticleBurst';
 import { ChatInput } from './ChatInput';
+import { UsageWarningBanner } from './UsageWarningBanner';
 import { useBubbleAnimation } from '@/hooks/useBubbleAnimation';
 import { useAYNEmotion, AYNEmotion } from '@/contexts/AYNEmotionContext';
 import { useSoundContextOptional } from '@/contexts/SoundContext';
@@ -59,6 +60,10 @@ interface CenterStageLayoutProps {
   // Upload retry props
   uploadFailed?: boolean;
   onRetryUpload?: () => void;
+  // Usage tracking props
+  currentMonthUsage?: number;
+  monthlyLimit?: number | null;
+  usageResetDate?: string | null;
 }
 
 export const CenterStageLayout = ({
@@ -92,6 +97,9 @@ export const CenterStageLayout = ({
   lastSuggestedEmotion,
   uploadFailed,
   onRetryUpload,
+  currentMonthUsage,
+  monthlyLimit,
+  usageResetDate,
 }: CenterStageLayoutProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const eyeStageRef = useRef<HTMLDivElement>(null);
@@ -567,6 +575,13 @@ animate={{
           transcriptOpen && "md:right-[20rem]"
         )}
       >
+        {/* Usage warning banner - above chat input */}
+        <UsageWarningBanner
+          currentUsage={currentMonthUsage ?? 0}
+          monthlyLimit={monthlyLimit ?? null}
+          resetDate={usageResetDate ?? null}
+        />
+        
         <ChatInput
           ref={inputRef}
           onSend={handleSendWithAnimation}
