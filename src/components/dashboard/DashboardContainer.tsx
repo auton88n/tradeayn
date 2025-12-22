@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { AIMode, FileAttachment, AIModeConfig, ChatHistory } from '@/types/dashboard.types';
+import type { MaintenanceConfig } from '@/components/Dashboard';
 
 // Import custom hooks
 import type { UseAuthReturn } from '@/types/dashboard.types';
@@ -35,6 +36,7 @@ interface DashboardContainerProps {
   isAdmin?: boolean;
   hasDutyAccess?: boolean;
   onAdminPanelClick?: () => void;
+  maintenanceConfig?: MaintenanceConfig;
 }
 
 // Get modes - English only
@@ -49,7 +51,7 @@ const getModes = (): AIModeConfig[] => [
   },
 ];
 
-export const DashboardContainer = ({ user, session, auth, isAdmin, hasDutyAccess, onAdminPanelClick }: DashboardContainerProps) => {
+export const DashboardContainer = ({ user, session, auth, isAdmin, hasDutyAccess, onAdminPanelClick, maintenanceConfig }: DashboardContainerProps) => {
   const { toast } = useToast();
   
   // Real-time usage tracking
@@ -211,8 +213,8 @@ export const DashboardContainer = ({ user, session, auth, isAdmin, hasDutyAccess
       isAdmin={isAdmin}
       hasDutyAccess={hasDutyAccess}
       onAdminPanelClick={onAdminPanelClick}
-      
       usageTracking={usageTracking}
+      maintenanceConfig={maintenanceConfig}
     />
   );
 };
@@ -239,6 +241,7 @@ const DashboardContent = ({
   onAdminPanelClick,
   onLanguageChange,
   usageTracking,
+  maintenanceConfig,
 }: {
   user: User;
   session: Session;
@@ -260,6 +263,7 @@ const DashboardContent = ({
   onAdminPanelClick?: () => void;
   onLanguageChange?: (language: { code: string; flag: string; name: string }) => void;
   usageTracking: ReturnType<typeof useUsageTracking>;
+  maintenanceConfig?: MaintenanceConfig;
 }) => {
   const { open, setOpen, openMobile, setOpenMobile, isMobile, toggleSidebar } = useSidebar();
   const [transcriptOpen, setTranscriptOpen] = useState(false);
@@ -549,6 +553,7 @@ const DashboardContent = ({
           currentMonthUsage={usageTracking.currentMonthUsage}
           monthlyLimit={usageTracking.monthlyLimit}
           usageResetDate={usageTracking.usageResetDate}
+          maintenanceConfig={maintenanceConfig}
         />
       </main>
 

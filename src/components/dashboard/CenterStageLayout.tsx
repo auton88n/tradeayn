@@ -8,7 +8,7 @@ import { ResponseCard } from '@/components/eye/ResponseCard';
 import { FlyingSuggestionBubble } from '@/components/eye/FlyingSuggestionBubble';
 import { ParticleBurst } from '@/components/eye/ParticleBurst';
 import { ChatInput } from './ChatInput';
-import { UsageWarningBanner } from './UsageWarningBanner';
+import { SystemNotificationBanner } from './SystemNotificationBanner';
 import { useBubbleAnimation } from '@/hooks/useBubbleAnimation';
 import { useAYNEmotion, AYNEmotion } from '@/contexts/AYNEmotionContext';
 import { useSoundContextOptional } from '@/contexts/SoundContext';
@@ -64,6 +64,15 @@ interface CenterStageLayoutProps {
   currentMonthUsage?: number;
   monthlyLimit?: number | null;
   usageResetDate?: string | null;
+  // Maintenance config
+  maintenanceConfig?: {
+    enabled?: boolean;
+    message?: string;
+    startTime?: string;
+    endTime?: string;
+    preMaintenanceNotice?: boolean;
+    preMaintenanceMessage?: string;
+  };
 }
 
 export const CenterStageLayout = ({
@@ -100,6 +109,7 @@ export const CenterStageLayout = ({
   currentMonthUsage,
   monthlyLimit,
   usageResetDate,
+  maintenanceConfig,
 }: CenterStageLayoutProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const eyeStageRef = useRef<HTMLDivElement>(null);
@@ -575,17 +585,18 @@ animate={{
           transcriptOpen && "md:right-[20rem]"
         )}
       >
-        {/* Usage warning banner - above chat input */}
-        <UsageWarningBanner
+        {/* System notification banner - above chat input (maintenance OR usage warning) */}
+        <SystemNotificationBanner
+          maintenanceConfig={maintenanceConfig}
           currentUsage={currentMonthUsage ?? 0}
           monthlyLimit={monthlyLimit ?? null}
-          resetDate={usageResetDate ?? null}
+          usageResetDate={usageResetDate ?? null}
         />
         
         <ChatInput
           ref={inputRef}
           onSend={handleSendWithAnimation}
-          isDisabled={isDisabled}
+          isDisabled={isDisabled || maintenanceConfig?.enabled}
           selectedMode={selectedMode}
           selectedFile={selectedFile}
           isUploading={isUploading}
@@ -612,6 +623,7 @@ animate={{
           onStartNewChat={onStartNewChat}
           uploadFailed={uploadFailed}
           onRetryUpload={onRetryUpload}
+          maintenanceActive={maintenanceConfig?.enabled}
         />
       </div>
     </div>

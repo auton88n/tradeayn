@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { MaintenanceBanner } from '@/components/MaintenanceBanner';
+// MaintenanceBanner removed - now using SystemNotificationBanner in chat input area
 import { 
   AlertTriangle, 
   Users, 
@@ -261,13 +261,12 @@ export const SystemSettings = ({ systemConfig, onUpdateConfig }: SystemSettingsP
                     <Eye className="w-4 h-4" /> Live Preview
                   </Label>
                   <div className="p-3 bg-muted/30 rounded-lg border border-dashed">
-                    <MaintenanceBanner
-                      isEnabled={true}
-                      message={localConfig.maintenanceMessage || "System is currently under maintenance."}
-                      startTime={localConfig.maintenanceStartTime}
-                      endTime={localConfig.maintenanceEndTime}
-                      isPreNotice={false}
-                    />
+                    <div className="flex items-center justify-center gap-3 px-4 py-3 rounded-xl border bg-orange-500/15 border-orange-500/40 text-orange-600 dark:text-orange-400 text-sm font-medium">
+                      <AlertTriangle className="w-4 h-4 shrink-0 animate-pulse" />
+                      <span className="flex-1 text-center">
+                        {localConfig.maintenanceMessage || "System under maintenance. Back soon!"}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -345,13 +344,12 @@ export const SystemSettings = ({ systemConfig, onUpdateConfig }: SystemSettingsP
                       <Eye className="w-4 h-4" /> Preview
                     </Label>
                     <div className="p-3 bg-muted/30 rounded-lg border border-dashed">
-                      <MaintenanceBanner
-                        isEnabled={true}
-                        message={localConfig.preMaintenanceMessage || "Scheduled maintenance coming soon..."}
-                        startTime={localConfig.maintenanceStartTime}
-                        endTime={localConfig.maintenanceEndTime}
-                        isPreNotice={true}
-                      />
+                      <div className="flex items-center justify-center gap-3 px-4 py-2.5 rounded-xl border bg-yellow-500/10 border-yellow-500/30 text-yellow-600 dark:text-yellow-400 text-sm font-medium">
+                        <Clock className="w-4 h-4 shrink-0" />
+                        <span className="flex-1 text-center">
+                          {localConfig.preMaintenanceMessage || "Scheduled maintenance coming soon..."}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
