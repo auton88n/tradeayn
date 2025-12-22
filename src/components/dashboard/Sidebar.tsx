@@ -425,8 +425,9 @@ export const Sidebar = ({
 
         {/* Scrollable Chat List */}
         <div className="flex-1 overflow-hidden">
-          <ScrollArea className="h-full pl-3 pr-5">
-            <SidebarMenu className="space-y-0.5 py-1">
+          <ScrollArea className="h-full">
+            <div className="py-1 px-3 pr-4">
+              <SidebarMenu className="space-y-0.5">
               {isLoadingChats ? (
                 // Skeleton UI - 5 placeholder items
                 <div className="space-y-2 px-1">
@@ -454,7 +455,7 @@ export const Sidebar = ({
                   {filteredAndSortedChats.map((chat, index) => {
                 const isPinned = pinnedChats.has(chat.sessionId);
                 const originalIndex = recentChats.findIndex(c => c.sessionId === chat.sessionId);
-return <SidebarMenuItem key={chat.sessionId} className={cn("relative mr-1", index > 0 && "before:absolute before:top-0 before:left-4 before:right-4 before:h-px before:bg-border/30")}>
+return <SidebarMenuItem key={chat.sessionId} className={cn("relative", index > 0 && "before:absolute before:top-0 before:left-4 before:right-4 before:h-px before:bg-border/30")}>
                         <div className="flex items-center gap-2 w-full group">
                           {showChatSelection && <Checkbox checked={selectedChats.has(originalIndex)} onCheckedChange={() => onToggleChatSelection(originalIndex)} className="ml-2" />}
                           <div onClick={() => !showChatSelection && onLoadChat(chat)} role="button" tabIndex={0} onKeyDown={e => {
@@ -490,6 +491,7 @@ return <SidebarMenuItem key={chat.sessionId} className={cn("relative mr-1", inde
               })}
                 </>}
             </SidebarMenu>
+            </div>
           </ScrollArea>
         </div>
       </SidebarContent>
