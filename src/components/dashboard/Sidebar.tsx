@@ -483,12 +483,6 @@ return <SidebarMenuItem key={chat.sessionId} className={cn("relative", index > 0
                                   </button>
                                 </div>
                               </div>
-                              {/* Row 2: Preview only */}
-                              <div className="pl-[42px]">
-                                <p className="text-xs text-muted-foreground line-clamp-2 text-left leading-relaxed">
-                                  {chat.lastMessage}
-                                </p>
-                              </div>
                             </div>
                           </div>
                         </div>
