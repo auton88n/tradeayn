@@ -344,10 +344,11 @@ async function fetchDailyMetrics(supabase: ReturnType<typeof createClient>): Pro
 
 // Fetch all active user emails for maintenance notification
 async function fetchAllUserEmails(supabase: ReturnType<typeof createClient>): Promise<string[]> {
+  // Fetch ALL users from access_grants regardless of active status
+  // This ensures maintenance notifications reach everyone
   const { data, error } = await supabase
     .from('access_grants')
-    .select('user_id')
-    .eq('is_active', true);
+    .select('user_id');
 
   if (error || !data) {
     console.error('Error fetching users:', error);
