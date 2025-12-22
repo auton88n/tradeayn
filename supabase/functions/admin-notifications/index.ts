@@ -64,6 +64,16 @@ async function generateApprovalToken(
   return btoa(JSON.stringify(tokenData));
 }
 
+// Mask email for logging (j***@example.com)
+function maskEmail(email: string): string {
+  const [local, domain] = email.split('@');
+  if (!local || !domain) return '***@***';
+  const maskedLocal = local.length <= 2 
+    ? local[0] + '***' 
+    : local[0] + '***' + local[local.length - 1];
+  return `${maskedLocal}@${domain}`;
+}
+
 // Clean email template with dark mode support
 function generateEmailTemplate(title: string, content: string): string {
   return `<!DOCTYPE html>
@@ -419,8 +429,12 @@ const handler = async (req: Request): Promise<Response> => {
 
       let successCount = 0;
       let failCount = 0;
+      const recipientResults: { masked: string; status: string; error?: string }[] = [];
 
+      console.log(`--- Maintenance batch send starting for ${userEmails.length} recipients ---`);
+      
       for (const email of userEmails) {
+        const masked = maskEmail(email);
         try {
           await client.send({
             from: smtpFrom,
@@ -430,21 +444,31 @@ const handler = async (req: Request): Promise<Response> => {
             html: content,
           });
           successCount++;
+          recipientResults.push({ masked, status: 'sent' });
+          console.log(`✓ Sent to: ${masked}`);
         } catch (err) {
-          console.error(`Failed to send to ${email}:`, err);
+          const errorMsg = err instanceof Error ? err.message : String(err);
+          console.error(`✗ Failed to send to ${masked}: ${errorMsg}`);
           failCount++;
+          recipientResults.push({ masked, status: 'failed', error: errorMsg });
         }
       }
 
+      console.log(`--- Maintenance batch complete: ${successCount} sent, ${failCount} failed ---`);
+
       await client.close();
 
-      // Log the batch send
+      // Log the batch send with per-recipient details (masked)
       await supabase.from('admin_notification_log').insert({
         notification_type: 'maintenance_announcement',
         recipient_email: `batch:${userEmails.length} users`,
         subject: subject,
         status: failCount === 0 ? 'sent' : 'partial',
-        metadata: { success_count: successCount, fail_count: failCount }
+        metadata: { 
+          success_count: successCount, 
+          fail_count: failCount,
+          recipients: recipientResults 
+        }
       });
 
       return new Response(
