@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface UsageWarningBannerProps {
@@ -16,8 +17,10 @@ export const UsageWarningBanner = ({
   resetDate,
   className,
 }: UsageWarningBannerProps) => {
-  // Don't show if no limit set (unlimited)
-  if (monthlyLimit === null) return null;
+  const [isDismissed, setIsDismissed] = useState(false);
+  
+  // Don't show if dismissed or no limit set (unlimited)
+  if (isDismissed || monthlyLimit === null) return null;
   
   const remaining = monthlyLimit - currentUsage;
   const usagePercentage = (currentUsage / monthlyLimit) * 100;
@@ -58,9 +61,16 @@ export const UsageWarningBanner = ({
           "w-4 h-4 shrink-0",
           isUrgent && "animate-pulse"
         )} />
-        <span>
+        <span className="flex-1 text-center">
           {remaining} message{remaining !== 1 ? 's' : ''} remaining until {formattedResetDate}
         </span>
+        <button
+          onClick={() => setIsDismissed(true)}
+          className="p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors shrink-0"
+          aria-label="Dismiss warning"
+        >
+          <X className="w-3.5 h-3.5" />
+        </button>
       </motion.div>
     </AnimatePresence>
   );
