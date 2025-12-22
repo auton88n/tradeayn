@@ -214,7 +214,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between rtl:flex-row-reverse">
                   <Label htmlFor="signin-password" className="auth-label">{t('auth.password')}</Label>
                   <button
                     type="button"
