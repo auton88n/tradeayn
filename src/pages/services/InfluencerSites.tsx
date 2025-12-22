@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { SEO, createServiceSchema } from '@/components/SEO';
+import { SEO, createServiceSchema, createBreadcrumbSchema } from '@/components/SEO';
 
 const InfluencerSites = () => {
   const {
@@ -162,13 +162,25 @@ const InfluencerSites = () => {
     title: language === 'ar' ? 'الإطلاق' : language === 'fr' ? 'Lancement' : 'Launch',
     description: language === 'ar' ? 'نطلق موقعك للعالم' : language === 'fr' ? 'Nous lançons votre site au monde' : 'We launch your site to the world'
   }];
+  const breadcrumbSchema = createBreadcrumbSchema([
+    { name: 'Home', url: 'https://aynn.io/' },
+    { name: 'Services', url: 'https://aynn.io/#services' },
+    { name: 'Content Creator Sites', url: 'https://aynn.io/services/content-creator-sites' }
+  ]);
+
+  const serviceSchema = createServiceSchema({ 
+    name: 'Content Creator Sites', 
+    description: 'Premium websites designed for influencers and content creators.', 
+    url: 'https://aynn.io/services/content-creator-sites' 
+  });
+
   return <>
     <SEO
       title="Premium Websites for Content Creators"
       description="Luxury websites custom-built for content creators and influencers. Attract more partnerships and elevate your personal brand."
       canonical="/services/content-creator-sites"
       keywords="content creator websites, influencer sites, portfolio websites, personal brand, creator economy"
-      jsonLd={createServiceSchema({ name: 'Content Creator Sites', description: 'Premium websites designed for influencers and content creators.', url: 'https://aynn.io/services/content-creator-sites' })}
+      jsonLd={{ '@graph': [breadcrumbSchema, serviceSchema] }}
     />
     <div className="min-h-screen bg-neutral-950 text-white">
       {/* Navigation */}

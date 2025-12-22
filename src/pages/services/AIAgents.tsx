@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { SEO, createServiceSchema } from '@/components/SEO';
+import { SEO, createServiceSchema, createBreadcrumbSchema } from '@/components/SEO';
 
 const AIAgents = () => {
   const { language } = useLanguage();
@@ -208,13 +208,25 @@ const AIAgents = () => {
     description: language === 'ar' ? 'ابدأ مع دعم ذكي ٢٤ ساعة' : language === 'fr' ? 'Lancez avec un support IA 24/7' : 'Go live with 24/7 AI support'
   }];
 
+  const breadcrumbSchema = createBreadcrumbSchema([
+    { name: 'Home', url: 'https://aynn.io/' },
+    { name: 'Services', url: 'https://aynn.io/#services' },
+    { name: 'AI Agents', url: 'https://aynn.io/services/ai-agents' }
+  ]);
+
+  const serviceSchema = createServiceSchema({ 
+    name: 'Custom AI Agents', 
+    description: 'Build intelligent AI agents trained on your business data for 24/7 support.', 
+    url: 'https://aynn.io/services/ai-agents' 
+  });
+
   return <>
     <SEO
       title="Custom AI Agents for Your Business"
       description="Build intelligent AI agents trained on your business data. 24/7 customer support, lead qualification, and conversions."
       canonical="/services/ai-agents"
       keywords="AI agents, chatbots, customer support AI, lead qualification, business AI"
-      jsonLd={createServiceSchema({ name: 'Custom AI Agents', description: 'Build intelligent AI agents trained on your business data for 24/7 support.', url: 'https://aynn.io/services/ai-agents' })}
+      jsonLd={{ '@graph': [breadcrumbSchema, serviceSchema] }}
     />
     <div className="min-h-screen bg-neutral-950 text-white">
       {/* Back Button */}

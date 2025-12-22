@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { SEO, createServiceSchema } from '@/components/SEO';
+import { SEO, createServiceSchema, createBreadcrumbSchema } from '@/components/SEO';
 
 const AIEmployee = () => {
   const {
@@ -176,13 +176,25 @@ const AIEmployee = () => {
     ai: language === 'ar' ? 'غير محدود' : language === 'fr' ? 'Illimité' : 'Unlimited',
     icon: Clock
   }];
+  const breadcrumbSchema = createBreadcrumbSchema([
+    { name: 'Home', url: 'https://aynn.io/' },
+    { name: 'Services', url: 'https://aynn.io/#services' },
+    { name: 'AI Employees', url: 'https://aynn.io/services/ai-employee' }
+  ]);
+
+  const serviceSchema = createServiceSchema({ 
+    name: 'AI Employees', 
+    description: 'Hire AI employees that work 24/7, never take vacations, and cost a fraction of traditional staff.', 
+    url: 'https://aynn.io/services/ai-employee' 
+  });
+
   return <>
     <SEO
       title="AI Employees - Hire 24/7 AI Team Members"
       description="Hire AI employees that work 24/7, never take vacations, and cost a fraction of traditional staff. HR, support, sales, and more."
       canonical="/services/ai-employee"
       keywords="AI employees, virtual employees, AI workers, 24/7 support, business automation"
-      jsonLd={createServiceSchema({ name: 'AI Employees', description: 'Hire AI employees that work 24/7, never take vacations, and cost a fraction of traditional staff.', url: 'https://aynn.io/services/ai-employee' })}
+      jsonLd={{ '@graph': [breadcrumbSchema, serviceSchema] }}
     />
     <div className="min-h-screen bg-neutral-950 text-white">
       {/* Navigation */}

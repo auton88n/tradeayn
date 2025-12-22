@@ -110,4 +110,30 @@ export const createServiceSchema = (service: {
   }
 });
 
+// BreadcrumbList schema for navigation hierarchy
+export const createBreadcrumbSchema = (breadcrumbs: Array<{ name: string; url: string }>) => ({
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: breadcrumbs.map((item, index) => ({
+    '@type': 'ListItem',
+    position: index + 1,
+    name: item.name,
+    item: item.url
+  }))
+});
+
+// FAQPage schema for FAQ sections
+export const createFAQSchema = (faqs: Array<{ question: string; answer: string }>) => ({
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map(faq => ({
+    '@type': 'Question',
+    name: faq.question,
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: faq.answer
+    }
+  }))
+});
+
 export default SEO;
