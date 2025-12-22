@@ -47,6 +47,8 @@ interface ChatInputProps {
   // Upload retry props
   uploadFailed?: boolean;
   onRetryUpload?: () => void;
+  // Maintenance mode
+  maintenanceActive?: boolean;
 }
 const modes = [{
   name: 'General',
@@ -166,6 +168,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
   onStartNewChat,
   uploadFailed = false,
   onRetryUpload,
+  maintenanceActive = false,
 }, ref) => {
   const [inputMessage, setInputMessage] = useState('');
   const [isInputFocused, setIsInputFocused] = useState(false);
@@ -327,9 +330,26 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
           )}
         </AnimatePresence>
         
+        {/* Maintenance mode overlay */}
+        <AnimatePresence>
+          {maintenanceActive && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-background/95 backdrop-blur-sm flex flex-col items-center justify-center gap-2 z-20 rounded-2xl"
+            >
+              <AlertTriangle className="w-5 h-5 text-orange-500" />
+              <p className="text-sm text-muted-foreground text-center px-4">
+                AYN is under maintenance. Please wait...
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Limit reached overlay */}
         <AnimatePresence>
-          {hasReachedLimit && (
+          {hasReachedLimit && !maintenanceActive && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
