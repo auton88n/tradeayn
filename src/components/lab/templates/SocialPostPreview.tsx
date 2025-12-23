@@ -13,8 +13,11 @@ import {
   Play,
   Sparkles,
   Download,
-  Loader2
+  Loader2,
+  Copy,
+  Check
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { hapticFeedback } from '@/lib/haptics';
 
 export interface SocialPostData {
@@ -142,6 +145,8 @@ const SocialPostPreviewComponent = ({ data, className }: SocialPostPreviewProps)
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isCopying, setIsCopying] = useState(false);
+  const [copied, setCopied] = useState(false);
   
   const platform = platformConfig[data.platform] || platformConfig.instagram;
   const PlatformIcon = platform.icon;
@@ -171,6 +176,44 @@ const SocialPostPreviewComponent = ({ data, className }: SocialPostPreviewProps)
       console.error('Failed to download PNG:', error);
     } finally {
       setIsDownloading(false);
+    }
+  };
+
+  const copyToClipboard = async () => {
+    if (!postRef.current || isCopying) return;
+    
+    setIsCopying(true);
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      
+      const canvas = await html2canvas(postRef.current, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff'
+      });
+      
+      canvas.toBlob(async (blob) => {
+        if (blob) {
+          try {
+            await navigator.clipboard.write([
+              new ClipboardItem({ 'image/png': blob })
+            ]);
+            setCopied(true);
+            hapticFeedback('success');
+            toast.success('Image copied to clipboard!');
+            setTimeout(() => setCopied(false), 2000);
+          } catch (err) {
+            console.error('Clipboard write failed:', err);
+            toast.error('Failed to copy - try downloading instead');
+          }
+        }
+      }, 'image/png');
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error);
+      toast.error('Failed to copy image');
+    } finally {
+      setIsCopying(false);
     }
   };
 
@@ -259,6 +302,27 @@ const SocialPostPreviewComponent = ({ data, className }: SocialPostPreviewProps)
             <PlatformIcon className="w-4 h-4 text-white" />
           </div>
           
+          {/* Copy to Clipboard Button */}
+          <button
+            onClick={copyToClipboard}
+            disabled={isCopying}
+            className={cn(
+              "p-1.5 rounded-lg transition-all duration-200 active:scale-95",
+              "bg-blue-100 dark:bg-blue-900/40",
+              "hover:bg-blue-200 dark:hover:bg-blue-800/50",
+              "disabled:opacity-50 disabled:cursor-not-allowed"
+            )}
+            title="Copy to clipboard"
+          >
+            {isCopying ? (
+              <Loader2 className="w-4 h-4 animate-spin text-blue-600 dark:text-blue-400" />
+            ) : copied ? (
+              <Check className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            ) : (
+              <Copy className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            )}
+          </button>
+
           {/* PNG Download Button */}
           <button
             onClick={downloadAsPNG}
