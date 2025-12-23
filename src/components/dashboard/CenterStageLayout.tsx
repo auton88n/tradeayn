@@ -18,6 +18,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { hapticFeedback } from '@/lib/haptics';
 import { useEmotionOrchestrator } from '@/hooks/useEmotionOrchestrator';
 import type { Message, AIMode, AIModeConfig } from '@/types/dashboard.types';
+import { LABDataViewer } from '@/components/lab/LABDataViewer';
 
 // Fallback suggestions when API fails
 const DEFAULT_SUGGESTIONS = [
@@ -518,11 +519,27 @@ animate={{
           </motion.div>
           
           {/* Response card directly below eye - constrained height prevents pushing input */}
-          <div className="px-4 py-2 w-full flex justify-center max-h-[35vh] overflow-hidden">
+          <div className="px-4 py-2 w-full flex flex-col items-center max-h-[50vh] overflow-hidden">
             <ResponseCard 
               responses={responseBubbles} 
               isMobile={isMobile}
             />
+            
+            {/* LAB Data Viewer - Render marketing templates when structured data exists */}
+            {selectedMode === 'LAB' && (() => {
+              const latestAynMessage = [...messages].reverse().find(m => m.sender === 'ayn');
+              const labData = latestAynMessage?.labData;
+              const hasLABData = labData?.hasStructuredData && labData?.json;
+              
+              if (!hasLABData || !labData?.json) return null;
+              
+              return (
+                <LABDataViewer 
+                  data={labData.json} 
+                  className="mt-4 w-full max-w-[560px]" 
+                />
+              );
+            })()}
           </div>
         </motion.div>
       </div>
