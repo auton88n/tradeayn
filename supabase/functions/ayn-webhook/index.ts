@@ -545,10 +545,43 @@ const textProcessor = {
             }
           }
           
-          if (text) {
+          // Generate fallback text when output is empty but structured data exists
+          const generateFallbackText = (labData: Record<string, unknown> | null): string => {
+            if (!labData) return "Here's what I created for you.";
+            
+            const data = labData.data as Record<string, unknown> | undefined;
+            const contentType = labData.contentType as string | undefined;
+            
+            // Try to get a headline/title from the data
+            const headline = data?.headline || data?.title || data?.name;
+            if (headline) {
+              const typeLabel = contentType === 'social' ? 'social post' : (contentType || 'content');
+              return `Here's your ${typeLabel}: "${headline}"`;
+            }
+            
+            // Generic fallback based on content type
+            switch (contentType) {
+              case 'social':
+              case 'social_post':
+                return "Here's your social media post!";
+              case 'report':
+                return "Here's your marketing report.";
+              case 'campaign_analysis':
+                return "Here's your campaign analysis.";
+              case 'brand_kit':
+                return "Here's your brand kit.";
+              case 'content_calendar':
+                return "Here's your content calendar.";
+              default:
+                return "Here's what I created for you.";
+            }
+          };
+          
+          // Return if we have text OR structured data (generate fallback if text is empty)
+          if (text || labJson) {
             return {
               json: labJson,
-              text: text,
+              text: text || generateFallbackText(labJson),
               emotion: emotion,
               raw: response,
               hasStructuredData: !!labJson
