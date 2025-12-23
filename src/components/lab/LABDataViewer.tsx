@@ -12,7 +12,13 @@ import {
   Table2,
   Sparkles,
   LayoutGrid,
-  Eye
+  Eye,
+  Info,
+  Hash,
+  Type,
+  List,
+  ToggleLeft,
+  Calendar
 } from 'lucide-react';
 import { hapticFeedback } from '@/lib/haptics';
 import {
@@ -132,7 +138,7 @@ const LABDataViewerComponent = ({ data, className }: LABDataViewerProps) => {
       case 'marketing_report':
         return <MarketingReportCard data={templateData as unknown as MarketingReportData} />;
       default:
-        return null;
+        return <GenericDataCard data={templateData} />;
     }
   };
 
@@ -219,34 +225,32 @@ const LABDataViewerComponent = ({ data, className }: LABDataViewerProps) => {
             <div className="px-4 pb-4 space-y-3">
               {/* Action Buttons */}
               <div className="flex gap-2 flex-wrap">
-                {templateType && (
-                  <div className="flex rounded-lg border border-purple-200 dark:border-purple-700 overflow-hidden">
-                    <button
-                      onClick={() => { hapticFeedback('light'); setViewMode('design'); }}
-                      className={cn(
-                        "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-all",
-                        viewMode === 'design'
-                          ? "bg-purple-500 text-white"
-                          : "bg-white dark:bg-gray-800 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30"
-                      )}
-                    >
-                      <Eye size={12} />
-                      Design
-                    </button>
-                    <button
-                      onClick={() => { hapticFeedback('light'); setViewMode('data'); }}
-                      className={cn(
-                        "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-all",
-                        viewMode === 'data'
-                          ? "bg-purple-500 text-white"
-                          : "bg-white dark:bg-gray-800 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30"
-                      )}
-                    >
-                      <LayoutGrid size={12} />
-                      Data
-                    </button>
-                  </div>
-                )}
+                <div className="flex rounded-lg border border-purple-200 dark:border-purple-700 overflow-hidden">
+                  <button
+                    onClick={() => { hapticFeedback('light'); setViewMode('design'); }}
+                    className={cn(
+                      "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-all",
+                      viewMode === 'design'
+                        ? "bg-purple-500 text-white"
+                        : "bg-white dark:bg-gray-800 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30"
+                    )}
+                  >
+                    <Eye size={12} />
+                    Design
+                  </button>
+                  <button
+                    onClick={() => { hapticFeedback('light'); setViewMode('data'); }}
+                    className={cn(
+                      "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-all",
+                      viewMode === 'data'
+                        ? "bg-purple-500 text-white"
+                        : "bg-white dark:bg-gray-800 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30"
+                    )}
+                  >
+                    <LayoutGrid size={12} />
+                    Data
+                  </button>
+                </div>
                 <button
                   onClick={copyData}
                   className={cn(
@@ -287,7 +291,7 @@ const LABDataViewerComponent = ({ data, className }: LABDataViewerProps) => {
               </div>
 
               {/* Template or Data View */}
-              {templateType && viewMode === 'design' ? (
+              {viewMode === 'design' ? (
                 <div className="rounded-lg overflow-visible">
                   {renderTemplate()}
                 </div>
@@ -400,6 +404,105 @@ const RenderJSON = ({ data, level = 0 }: { data: unknown; level?: number }) => {
   }
 
   return <span>{String(data)}</span>;
+};
+
+// Generic Data Card for unknown template types
+const GenericDataCard = ({ data }: { data: Record<string, unknown> }) => {
+  const getValueIcon = (value: unknown) => {
+    if (typeof value === 'string') return <Type className="w-3.5 h-3.5" />;
+    if (typeof value === 'number') return <Hash className="w-3.5 h-3.5" />;
+    if (typeof value === 'boolean') return <ToggleLeft className="w-3.5 h-3.5" />;
+    if (Array.isArray(value)) return <List className="w-3.5 h-3.5" />;
+    if (value instanceof Date || (typeof value === 'string' && !isNaN(Date.parse(value)))) {
+      return <Calendar className="w-3.5 h-3.5" />;
+    }
+    return <FileJson className="w-3.5 h-3.5" />;
+  };
+
+  const formatValue = (value: unknown): string => {
+    if (value === null || value === undefined) return '—';
+    if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+    if (typeof value === 'number') return value.toLocaleString();
+    if (Array.isArray(value)) {
+      if (value.length === 0) return 'Empty list';
+      if (value.every(v => typeof v === 'string')) return value.join(', ');
+      return `${value.length} items`;
+    }
+    if (typeof value === 'object') return JSON.stringify(value);
+    return String(value);
+  };
+
+  const formatKey = (key: string): string => {
+    return key
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/_/g, ' ')
+      .replace(/^\w/, c => c.toUpperCase())
+      .trim();
+  };
+
+  // Filter out metadata fields and get displayable entries
+  const entries = Object.entries(data).filter(([key]) => 
+    !['templateId', 'contentType', 'type'].includes(key)
+  );
+
+  return (
+    <div className={cn(
+      "rounded-xl border border-border/50",
+      "bg-gradient-to-br from-background to-muted/30",
+      "overflow-hidden"
+    )}>
+      {/* Header with info message */}
+      <div className={cn(
+        "px-4 py-3 border-b border-border/50",
+        "bg-muted/30"
+      )}>
+        <div className="flex items-start gap-2.5">
+          <div className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 mt-0.5">
+            <Info className="w-3.5 h-3.5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-foreground">
+              Data Preview
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Ask for an "Instagram post" or "marketing report" to see visual templates
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Data Fields */}
+      <div className="p-4 space-y-2">
+        {entries.map(([key, value]) => (
+          <div
+            key={key}
+            className={cn(
+              "flex items-start gap-3 p-2.5 rounded-lg",
+              "bg-muted/40 hover:bg-muted/60 transition-colors"
+            )}
+          >
+            <div className="p-1.5 rounded-md bg-background text-muted-foreground shrink-0">
+              {getValueIcon(value)}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                {formatKey(key)}
+              </p>
+              <p className="text-sm text-foreground mt-0.5 break-words">
+                {formatValue(value)}
+              </p>
+            </div>
+          </div>
+        ))}
+        
+        {entries.length === 0 && (
+          <div className="text-center py-6 text-muted-foreground text-sm">
+            No data to display
+          </div>
+        )}
+      </div>
+    </div>
+  );
 };
 
 export const LABDataViewer = memo(LABDataViewerComponent);
