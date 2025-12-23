@@ -1,4 +1,4 @@
-import { memo, useState } from 'react';
+import { memo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { 
@@ -11,7 +11,9 @@ import {
   Twitter,
   Linkedin,
   Play,
-  Sparkles
+  Sparkles,
+  Download,
+  Loader2
 } from 'lucide-react';
 import { hapticFeedback } from '@/lib/haptics';
 
@@ -136,11 +138,41 @@ const extractHeadline = (caption: string): string => {
 };
 
 const SocialPostPreviewComponent = ({ data, className }: SocialPostPreviewProps) => {
+  const postRef = useRef<HTMLDivElement>(null);
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   
   const platform = platformConfig[data.platform] || platformConfig.instagram;
   const PlatformIcon = platform.icon;
+
+  const downloadAsPNG = async () => {
+    if (!postRef.current || isDownloading) return;
+    
+    setIsDownloading(true);
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      
+      const canvas = await html2canvas(postRef.current, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff'
+      });
+      
+      const link = document.createElement('a');
+      const filename = `${data.platform}_post_${Date.now()}.png`;
+      link.download = filename;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      
+      hapticFeedback('success');
+    } catch (error) {
+      console.error('Failed to download PNG:', error);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   const handleLike = () => {
     hapticFeedback('light');
@@ -169,6 +201,7 @@ const SocialPostPreviewComponent = ({ data, className }: SocialPostPreviewProps)
 
   return (
     <motion.div
+      ref={postRef}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
@@ -225,6 +258,26 @@ const SocialPostPreviewComponent = ({ data, className }: SocialPostPreviewProps)
           )}>
             <PlatformIcon className="w-4 h-4 text-white" />
           </div>
+          
+          {/* PNG Download Button */}
+          <button
+            onClick={downloadAsPNG}
+            disabled={isDownloading}
+            className={cn(
+              "p-1.5 rounded-lg transition-all duration-200 active:scale-95",
+              "bg-green-100 dark:bg-green-900/40",
+              "hover:bg-green-200 dark:hover:bg-green-800/50",
+              "disabled:opacity-50 disabled:cursor-not-allowed"
+            )}
+            title="Download as PNG"
+          >
+            {isDownloading ? (
+              <Loader2 className="w-4 h-4 animate-spin text-green-600 dark:text-green-400" />
+            ) : (
+              <Download className="w-4 h-4 text-green-600 dark:text-green-400" />
+            )}
+          </button>
+          
           <button className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors">
             <MoreHorizontal className="w-5 h-5 text-muted-foreground" />
           </button>
