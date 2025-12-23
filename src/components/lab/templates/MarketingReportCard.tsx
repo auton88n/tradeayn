@@ -210,7 +210,14 @@ const MarketingReportCardComponent = ({ data, className }: MarketingReportCardPr
         </div>
       </div>
 
-      <div className="p-6 space-y-6 max-h-[400px] overflow-y-auto">
+      <div className={cn(
+        "p-6 space-y-6 max-h-[400px] overflow-y-auto",
+        "[&::-webkit-scrollbar]:w-1.5",
+        "[&::-webkit-scrollbar-track]:bg-transparent",
+        "[&::-webkit-scrollbar-thumb]:bg-indigo-300/50 dark:[&::-webkit-scrollbar-thumb]:bg-indigo-600/50",
+        "[&::-webkit-scrollbar-thumb]:rounded-full",
+        "[&::-webkit-scrollbar-thumb]:hover:bg-indigo-400/70 dark:[&::-webkit-scrollbar-thumb]:hover:bg-indigo-500/70"
+      )}>
         {/* Summary */}
         {data.summary && (
           <div className="p-4 rounded-xl bg-indigo-50/50 dark:bg-indigo-900/20 border border-indigo-200/30 dark:border-indigo-800/20">
