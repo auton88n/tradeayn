@@ -65,7 +65,8 @@ export type AIMode =
   | 'Research Pro' 
   | 'PDF Analyst' 
   | 'Vision Lab'
-  | 'Civil Engineering';
+  | 'Civil Engineering'
+  | 'LAB';
 
 export interface AIModeConfig {
   name: AIMode;

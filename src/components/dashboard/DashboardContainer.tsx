@@ -27,7 +27,7 @@ import { analyzeResponseEmotion } from '@/utils/emotionMapping';
 import { hapticFeedback } from '@/lib/haptics';
 
 // Import icons for modes
-import { MessageSquare, Menu, Brain } from 'lucide-react';
+import { MessageSquare, Menu, Brain, FlaskConical } from 'lucide-react';
 
 interface DashboardContainerProps {
   user: User;
@@ -47,6 +47,14 @@ const getModes = (): AIModeConfig[] => [
     description: 'General AI assistant for all your needs',
     icon: MessageSquare,
     color: 'text-slate-500',
+    webhookUrl: ''
+  },
+  { 
+    name: 'LAB', 
+    translatedName: 'LAB',
+    description: 'Marketing tools, reports, social posts & creative content',
+    icon: FlaskConical,
+    color: 'text-purple-500',
     webhookUrl: ''
   },
 ];
