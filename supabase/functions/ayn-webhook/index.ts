@@ -487,14 +487,73 @@ const textProcessor = {
   },
 
   // Parse LAB mode structured response format
+  // Handles both structured format AND standard JSON format from n8n
   parseLABResponse(response: string): LABResponse {
-    // Extract JSON block from markdown code fence
+    const trimmed = response.trim();
+    
+    // FIRST: Try to parse as standard JSON ({"output": "...", "suggestedEmotion": "..."})
+    // This is what n8n typically returns
+    if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        
+        // Handle array format [{"output": "..."}]
+        const obj = Array.isArray(parsed) ? parsed[0] : parsed;
+        
+        if (obj && typeof obj === 'object') {
+          // Extract text from standard fields
+          const textFields = ['output', 'response', 'message', 'content', 'text'];
+          let text = '';
+          for (const field of textFields) {
+            if (obj[field] && typeof obj[field] === 'string') {
+              text = obj[field];
+              break;
+            }
+          }
+          
+          // Strip EMOTION marker from extracted text
+          text = this.stripEmotionMarker(text);
+          
+          // Extract emotion
+          const emotionFields = ['suggestedEmotion', 'emotion', 'aynEmotion'];
+          let emotion = 'calm';
+          for (const field of emotionFields) {
+            if (obj[field] && typeof obj[field] === 'string') {
+              emotion = obj[field].toLowerCase();
+              break;
+            }
+          }
+          
+          // Check if response contains structured LAB data (beyond just output/emotion)
+          const labDataFields = ['analysis', 'data', 'report', 'campaign', 'metrics', 'json'];
+          let labJson: Record<string, unknown> | null = null;
+          for (const field of labDataFields) {
+            if (obj[field] && typeof obj[field] === 'object') {
+              labJson = obj[field] as Record<string, unknown>;
+              break;
+            }
+          }
+          
+          if (text) {
+            return {
+              json: labJson,
+              text: text,
+              emotion: emotion,
+              raw: response,
+              hasStructuredData: !!labJson
+            };
+          }
+        }
+      } catch (e) {
+        // Not valid JSON, continue to structured format parsing
+        console.log('LAB standard JSON parse failed, trying structured format');
+      }
+    }
+    
+    // SECOND: Try structured format with markdown code blocks and markers
+    // ```json\n{...}\n```\nCONVERSATIONAL RESPONSE:\n...\n\nEMOTION: happy
     const jsonMatch = response.match(/```json\n([\s\S]*?)\n```/);
-    
-    // Extract conversational text
     const conversationalMatch = response.match(/CONVERSATIONAL RESPONSE:\n([\s\S]*?)\n\nEMOTION:/);
-    
-    // Extract emotion
     const emotionMatch = response.match(/EMOTION:\s*(\w+)/i);
     
     let jsonData: Record<string, unknown> | null = null;
@@ -502,16 +561,16 @@ const textProcessor = {
       try {
         jsonData = JSON.parse(jsonMatch[1]);
       } catch (e) {
-        console.log('LAB JSON parse error:', e);
+        console.log('LAB markdown JSON parse error:', e);
       }
     }
     
-    // Get text content - prefer conversational section, fallback to stripping markers
+    // Get text content - prefer conversational section
     let text = response;
     if (conversationalMatch) {
       text = conversationalMatch[1].trim();
-    } else {
-      // Fallback: strip JSON block and emotion marker to get clean text
+    } else if (jsonMatch || emotionMatch) {
+      // Strip markers to get clean text
       text = response
         .replace(/```json\n[\s\S]*?\n```/g, '')
         .replace(/EMOTION:\s*\w+/gi, '')
