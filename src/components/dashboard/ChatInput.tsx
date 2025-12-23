@@ -35,6 +35,7 @@ interface ChatInputProps {
     icon: React.ComponentType<{
       className?: string;
     }>;
+    color?: string;
   }>;
   prefillValue?: string;
   onPrefillConsumed?: () => void;
@@ -159,6 +160,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
   onFileSelect,
   onRemoveFile,
   fileInputRef,
+  modes,
   prefillValue = '',
   onPrefillConsumed,
   onLanguageChange,
@@ -560,11 +562,38 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
             </div>
           )}
 
-          {/* Mode indicator - General only */}
-          <div className="h-8 px-3 rounded-lg border border-border/50 flex items-center gap-1.5 bg-muted/30">
-            <span className="text-sm">🧠</span>
-            <span className="text-sm font-medium text-foreground">General</span>
-          </div>
+          {/* Mode Selector Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="h-8 px-3 rounded-lg border border-border/50 flex items-center gap-1.5 bg-muted/30 hover:bg-muted/50 transition-colors">
+                {modes?.find(m => m.name === selectedMode)?.icon ? (
+                  React.createElement(modes.find(m => m.name === selectedMode)!.icon, { className: cn("w-4 h-4", modes.find(m => m.name === selectedMode)?.color) })
+                ) : (
+                  <span className="text-sm">🧠</span>
+                )}
+                <span className="text-sm font-medium text-foreground">{selectedMode}</span>
+                <ChevronDown className="w-3 h-3 text-muted-foreground" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-[160px] bg-background border border-border">
+              {modes?.map((mode) => (
+                <DropdownMenuItem
+                  key={mode.name}
+                  onClick={() => {
+                    onModeChange(mode.name as AIMode);
+                    playModeChange?.(mode.name);
+                  }}
+                  className={cn(
+                    "flex items-center gap-2 cursor-pointer",
+                    selectedMode === mode.name && "bg-muted"
+                  )}
+                >
+                  {React.createElement(mode.icon, { className: cn("w-4 h-4", mode.color) })}
+                  <span>{mode.translatedName}</span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
