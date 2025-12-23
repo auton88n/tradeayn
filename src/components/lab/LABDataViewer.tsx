@@ -1,4 +1,5 @@
 import { memo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { 
@@ -18,8 +19,10 @@ import {
   Type,
   List,
   ToggleLeft,
-  Calendar
+  Calendar,
+  Maximize2
 } from 'lucide-react';
+import { useMarketingContent } from '@/contexts/MarketingContentContext';
 import { hapticFeedback } from '@/lib/haptics';
 import {
   detectTemplateType,
@@ -41,11 +44,19 @@ interface LABDataViewerProps {
 }
 
 const LABDataViewerComponent = ({ data, className }: LABDataViewerProps) => {
+  const navigate = useNavigate();
+  const { setMarketingData } = useMarketingContent();
   const [isExpanded, setIsExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
   const [viewMode, setViewMode] = useState<'design' | 'data'>('design');
 
   if (!data) return null;
+
+  const openInStudio = () => {
+    hapticFeedback('light');
+    setMarketingData(data);
+    navigate('/marketing-studio');
+  };
 
   const templateType = detectTemplateType(data);
 
@@ -287,6 +298,18 @@ const LABDataViewerComponent = ({ data, className }: LABDataViewerProps) => {
                 >
                   <Download size={12} />
                   <span>Download</span>
+                </button>
+                <button
+                  onClick={openInStudio}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium",
+                    "bg-purple-500 text-white",
+                    "hover:bg-purple-600",
+                    "transition-all duration-200 active:scale-95"
+                  )}
+                >
+                  <Maximize2 size={12} />
+                  <span>Open in Studio</span>
                 </button>
               </div>
 
