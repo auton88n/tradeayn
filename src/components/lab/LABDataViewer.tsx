@@ -67,22 +67,41 @@ const LABDataViewerComponent = ({ data, className }: LABDataViewerProps) => {
     URL.revokeObjectURL(url);
   };
 
+  // Unwrap nested data for n8n format (contentType + data wrapper)
+  const getTemplateData = () => {
+    // If data has a nested 'data' field (n8n format), unwrap it
+    if (data.data && typeof data.data === 'object' && !Array.isArray(data.data)) {
+      const nestedData = data.data as Record<string, unknown>;
+      return {
+        ...nestedData,
+        // Preserve top-level metadata
+        templateId: data.templateId,
+        contentType: data.contentType,
+        // Ensure platform is set from nested or derive from contentType
+        platform: nestedData.platform || (data.contentType === 'social' ? 'instagram' : undefined),
+      };
+    }
+    return data;
+  };
+
+  const templateData = getTemplateData();
+
   // Render the appropriate marketing template
   const renderTemplate = () => {
     switch (templateType) {
       case 'social_post':
-        return <SocialPostPreview data={data as unknown as SocialPostData} />;
+        return <SocialPostPreview data={templateData as unknown as SocialPostData} />;
       case 'campaign':
-        return <CampaignAnalytics data={data as unknown as CampaignData} />;
+        return <CampaignAnalytics data={templateData as unknown as CampaignData} />;
       case 'calendar':
       case 'content_calendar':
-        return <ContentCalendar data={data as unknown as ContentCalendarData} />;
+        return <ContentCalendar data={templateData as unknown as ContentCalendarData} />;
       case 'brand_kit':
       case 'brand':
-        return <BrandKitDisplay data={data as unknown as BrandKitData} />;
+        return <BrandKitDisplay data={templateData as unknown as BrandKitData} />;
       case 'report':
       case 'marketing_report':
-        return <MarketingReportCard data={data as unknown as MarketingReportData} />;
+        return <MarketingReportCard data={templateData as unknown as MarketingReportData} />;
       default:
         return null;
     }

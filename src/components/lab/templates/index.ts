@@ -30,6 +30,16 @@ export const detectTemplateType = (data: Record<string, unknown>): MarketingTemp
     }
   }
 
+  // Check for contentType (n8n format)
+  if (data.contentType && typeof data.contentType === 'string') {
+    const contentType = data.contentType.toLowerCase();
+    if (contentType === 'social') return 'social_post';
+    if (contentType === 'campaign') return 'campaign';
+    if (contentType === 'calendar' || contentType === 'content_calendar') return 'calendar';
+    if (contentType === 'brand' || contentType === 'brand_kit') return 'brand_kit';
+    if (contentType === 'report' || contentType === 'marketing_report') return 'report';
+  }
+
   // Detect based on structure
   const keys = Object.keys(data);
   const lowerKeys = keys.map(k => k.toLowerCase());
