@@ -10,9 +10,24 @@ import {
   BarChart3,
   FileJson,
   Table2,
-  Sparkles
+  Sparkles,
+  LayoutGrid,
+  Eye
 } from 'lucide-react';
 import { hapticFeedback } from '@/lib/haptics';
+import {
+  detectTemplateType,
+  SocialPostPreview,
+  CampaignAnalytics,
+  ContentCalendar,
+  BrandKitDisplay,
+  MarketingReportCard,
+  type SocialPostData,
+  type CampaignData,
+  type ContentCalendarData,
+  type BrandKitData,
+  type MarketingReportData,
+} from './templates';
 
 interface LABDataViewerProps {
   data: Record<string, unknown> | null;
@@ -22,8 +37,11 @@ interface LABDataViewerProps {
 const LABDataViewerComponent = ({ data, className }: LABDataViewerProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [viewMode, setViewMode] = useState<'design' | 'data'>('design');
 
   if (!data) return null;
+
+  const templateType = detectTemplateType(data);
 
   const copyData = async () => {
     try {
@@ -49,8 +67,30 @@ const LABDataViewerComponent = ({ data, className }: LABDataViewerProps) => {
     URL.revokeObjectURL(url);
   };
 
+  // Render the appropriate marketing template
+  const renderTemplate = () => {
+    switch (templateType) {
+      case 'social_post':
+        return <SocialPostPreview data={data as unknown as SocialPostData} />;
+      case 'campaign':
+        return <CampaignAnalytics data={data as unknown as CampaignData} />;
+      case 'calendar':
+      case 'content_calendar':
+        return <ContentCalendar data={data as unknown as ContentCalendarData} />;
+      case 'brand_kit':
+      case 'brand':
+        return <BrandKitDisplay data={data as unknown as BrandKitData} />;
+      case 'report':
+      case 'marketing_report':
+        return <MarketingReportCard data={data as unknown as MarketingReportData} />;
+      default:
+        return null;
+    }
+  };
+
   // Detect data type for appropriate visualization
   const getDataType = (): 'marketing' | 'analysis' | 'report' | 'generic' => {
+    if (templateType) return 'marketing';
     const keys = Object.keys(data);
     if (keys.some(k => ['campaign', 'content', 'hashtags', 'caption', 'post'].includes(k.toLowerCase()))) {
       return 'marketing';
@@ -130,7 +170,35 @@ const LABDataViewerComponent = ({ data, className }: LABDataViewerProps) => {
           >
             <div className="px-4 pb-4 space-y-3">
               {/* Action Buttons */}
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
+                {templateType && (
+                  <div className="flex rounded-lg border border-purple-200 dark:border-purple-700 overflow-hidden">
+                    <button
+                      onClick={() => { hapticFeedback('light'); setViewMode('design'); }}
+                      className={cn(
+                        "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-all",
+                        viewMode === 'design'
+                          ? "bg-purple-500 text-white"
+                          : "bg-white dark:bg-gray-800 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30"
+                      )}
+                    >
+                      <Eye size={12} />
+                      Design
+                    </button>
+                    <button
+                      onClick={() => { hapticFeedback('light'); setViewMode('data'); }}
+                      className={cn(
+                        "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-all",
+                        viewMode === 'data'
+                          ? "bg-purple-500 text-white"
+                          : "bg-white dark:bg-gray-800 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30"
+                      )}
+                    >
+                      <LayoutGrid size={12} />
+                      Data
+                    </button>
+                  </div>
+                )}
                 <button
                   onClick={copyData}
                   className={cn(
@@ -170,19 +238,25 @@ const LABDataViewerComponent = ({ data, className }: LABDataViewerProps) => {
                 </button>
               </div>
 
-              {/* Data Preview */}
-              <div className={cn(
-                "rounded-lg p-3 text-xs font-mono",
-                "bg-white/80 dark:bg-gray-900/80",
-                "border border-purple-100 dark:border-purple-800/50",
-                "max-h-64 overflow-auto",
-                "[&::-webkit-scrollbar]:w-1.5",
-                "[&::-webkit-scrollbar-track]:bg-transparent",
-                "[&::-webkit-scrollbar-thumb]:bg-purple-300/50 dark:[&::-webkit-scrollbar-thumb]:bg-purple-600/50",
-                "[&::-webkit-scrollbar-thumb]:rounded-full"
-              )}>
-                <RenderJSON data={data} />
-              </div>
+              {/* Template or Data View */}
+              {templateType && viewMode === 'design' ? (
+                <div className="max-h-[500px] overflow-auto rounded-lg">
+                  {renderTemplate()}
+                </div>
+              ) : (
+                <div className={cn(
+                  "rounded-lg p-3 text-xs font-mono",
+                  "bg-white/80 dark:bg-gray-900/80",
+                  "border border-purple-100 dark:border-purple-800/50",
+                  "max-h-64 overflow-auto",
+                  "[&::-webkit-scrollbar]:w-1.5",
+                  "[&::-webkit-scrollbar-track]:bg-transparent",
+                  "[&::-webkit-scrollbar-thumb]:bg-purple-300/50 dark:[&::-webkit-scrollbar-thumb]:bg-purple-600/50",
+                  "[&::-webkit-scrollbar-thumb]:rounded-full"
+                )}>
+                  <RenderJSON data={data} />
+                </div>
+              )}
             </div>
           </motion.div>
         )}
