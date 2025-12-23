@@ -40,6 +40,14 @@ interface MoodPattern {
   adaptiveContext: string;
 }
 
+interface LABResponse {
+  json: Record<string, unknown> | null;
+  text: string;
+  emotion: string;
+  raw: string;
+  hasStructuredData: boolean;
+}
+
 interface WebhookResponse {
   response: string;
   status: 'success' | 'error' | 'upstream_error';
@@ -51,6 +59,7 @@ interface WebhookResponse {
   userEmotion?: EmotionAnalysis;
   suggestedAynEmotion?: string;
   moodPattern?: MoodPattern;
+  labData?: LABResponse;
 }
 
 // Emotion detection types and logic (ported from frontend)
@@ -475,6 +484,48 @@ const textProcessor = {
     const processedText = isMarkdownContent ? this.preserveMarkdown(normalized) : this.normalizeText(normalized);
     const text = this.stripEmotionMarker(processedText);
     return { text, emotion: extractedEmotion };
+  },
+
+  // Parse LAB mode structured response format
+  parseLABResponse(response: string): LABResponse {
+    // Extract JSON block from markdown code fence
+    const jsonMatch = response.match(/```json\n([\s\S]*?)\n```/);
+    
+    // Extract conversational text
+    const conversationalMatch = response.match(/CONVERSATIONAL RESPONSE:\n([\s\S]*?)\n\nEMOTION:/);
+    
+    // Extract emotion
+    const emotionMatch = response.match(/EMOTION:\s*(\w+)/i);
+    
+    let jsonData: Record<string, unknown> | null = null;
+    if (jsonMatch) {
+      try {
+        jsonData = JSON.parse(jsonMatch[1]);
+      } catch (e) {
+        console.log('LAB JSON parse error:', e);
+      }
+    }
+    
+    // Get text content - prefer conversational section, fallback to stripping markers
+    let text = response;
+    if (conversationalMatch) {
+      text = conversationalMatch[1].trim();
+    } else {
+      // Fallback: strip JSON block and emotion marker to get clean text
+      text = response
+        .replace(/```json\n[\s\S]*?\n```/g, '')
+        .replace(/EMOTION:\s*\w+/gi, '')
+        .replace(/CONVERSATIONAL RESPONSE:/gi, '')
+        .trim();
+    }
+    
+    return {
+      json: jsonData,
+      text: text || response,
+      emotion: emotionMatch ? emotionMatch[1].toLowerCase() : 'calm',
+      raw: response,
+      hasStructuredData: !!jsonData
+    };
   }
 };
 
@@ -817,8 +868,30 @@ serve(async (req) => {
     });
   }
 
-    // Process the response and extract emotion from n8n
-    const { text: processedText, emotion: n8nEmotion } = textProcessor.processResponseWithEmotion(rawText, contentType);
+    // Check if this is LAB mode - use special parsing
+    const isLABMode = requestData.mode === 'LAB';
+    let labData: LABResponse | undefined;
+    let processedText: string;
+    let n8nEmotion: string | undefined;
+
+    if (isLABMode) {
+      // Parse LAB structured response
+      labData = textProcessor.parseLABResponse(rawText);
+      processedText = labData.text;
+      n8nEmotion = labData.emotion;
+      
+      console.log(`[${requestId}] LAB mode parsing:`, {
+        hasStructuredData: labData.hasStructuredData,
+        jsonFields: labData.json ? Object.keys(labData.json) : [],
+        emotion: labData.emotion,
+        textPreview: processedText.slice(0, 100)
+      });
+    } else {
+      // Standard processing for other modes
+      const result = textProcessor.processResponseWithEmotion(rawText, contentType);
+      processedText = result.text;
+      n8nEmotion = result.emotion;
+    }
 
     // Enhanced sanitization when personalization is disabled
     const sanitizeNonPersonalized = (text: string) => {
@@ -885,13 +958,15 @@ serve(async (req) => {
       });
     }
 
-    const finalText = requestData.concise ? enforceConciseness(sanitizedText) : sanitizedText;
+    // For LAB mode, don't enforce conciseness - we want full structured responses
+    const finalText = (requestData.concise && !isLABMode) ? enforceConciseness(sanitizedText) : sanitizedText;
 
     console.log(`[${requestId}] Text processing:`, {
       original: rawText.slice(0, 100),
       processed: finalText.slice(0, 100),
       lengthChange: `${rawText.length} -> ${finalText.length}`,
-      personalizationEnabled: requestData.allowPersonalization
+      personalizationEnabled: requestData.allowPersonalization,
+      isLABMode
     });
 
     // Validate and determine final emotion - prefer n8n's emotion, fallback to user empathy mapping
@@ -911,7 +986,7 @@ serve(async (req) => {
       source: (n8nEmotion && validEmotions.includes(n8nEmotion)) ? 'n8n' : 'user-empathy-mapping'
     });
 
-    // Prepare response with emotion data and mood pattern
+    // Prepare response with emotion data, mood pattern, and LAB data if applicable
     const response: WebhookResponse = {
       response: finalText || 'I received your message but got an empty response. Please try again.',
       status: upstream.ok ? 'success' : 'upstream_error',
@@ -921,7 +996,8 @@ serve(async (req) => {
       },
       userEmotion: userEmotionAnalysis,
       suggestedAynEmotion: suggestedAynEmotion,
-      moodPattern: moodPattern
+      moodPattern: moodPattern,
+      ...(isLABMode && labData ? { labData } : {})
     };
 
     if (!upstream.ok) {

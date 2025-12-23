@@ -10,7 +10,8 @@ import type {
   UseMessagesReturn,
   WebhookPayload,
   EmotionHistoryEntry,
-  MoodPattern
+  MoodPattern,
+  LABResponse
 } from '@/types/dashboard.types';
 
 // Same constants from useAuth.ts - direct REST API bypasses deadlocking Supabase client
@@ -280,6 +281,9 @@ export const useMessages = (
           webhookData?.output ||
           'I received your message and I\'m processing it. Please try again if you don\'t see a proper response.';
 
+      // Extract LAB data if present (for LAB mode)
+      const labData: LABResponse | undefined = webhookData?.labData;
+
       // Create AI response message
       const aynMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -287,6 +291,7 @@ export const useMessages = (
         sender: 'ayn',
         timestamp: new Date(),
         isTyping: true,
+        ...(selectedMode === 'LAB' && labData ? { labData } : {})
       };
 
       setMessages(prev => [...prev, aynMessage]);
