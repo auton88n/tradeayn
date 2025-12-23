@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, forwardRef, useCallback } from 'rea
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Plus, ChevronDown, ArrowUp, FileText, X, Image as ImageIcon, AlertTriangle, MessageSquarePlus, Loader2, FileImage, FileCode, FileSpreadsheet, FileArchive, FileAudio, FileVideo, File, RefreshCw } from 'lucide-react';
+import { Plus, ChevronDown, ArrowUp, FileText, X, Image as ImageIcon, AlertTriangle, MessageSquarePlus, Loader2, FileImage, FileCode, FileSpreadsheet, FileArchive, FileAudio, FileVideo, File, RefreshCw, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
@@ -32,6 +32,7 @@ interface ChatInputProps {
   modes?: Array<{
     name: string;
     translatedName: string;
+    description?: string;
     icon: React.ComponentType<{
       className?: string;
     }>;
@@ -565,17 +566,27 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
           {/* Mode Selector Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="h-8 px-3 rounded-lg border border-border/50 flex items-center gap-1.5 bg-muted/30 hover:bg-muted/50 transition-colors">
+              <button className="h-9 px-3 rounded-xl border border-border/40 flex items-center gap-2 bg-background/80 backdrop-blur-sm hover:bg-muted/50 hover:border-border/60 transition-all duration-200 shadow-sm">
                 {modes?.find(m => m.name === selectedMode)?.icon ? (
-                  React.createElement(modes.find(m => m.name === selectedMode)!.icon, { className: cn("w-4 h-4", modes.find(m => m.name === selectedMode)?.color) })
+                  <div className={cn(
+                    "p-1 rounded-lg",
+                    selectedMode === 'LAB' ? "bg-purple-500/10" : "bg-slate-500/10"
+                  )}>
+                    {React.createElement(modes.find(m => m.name === selectedMode)!.icon, { 
+                      className: cn("w-4 h-4", modes.find(m => m.name === selectedMode)?.color) 
+                    })}
+                  </div>
                 ) : (
                   <span className="text-sm">🧠</span>
                 )}
                 <span className="text-sm font-medium text-foreground">{selectedMode}</span>
-                <ChevronDown className="w-3 h-3 text-muted-foreground" />
+                <ChevronDown className="w-3.5 h-3.5 text-muted-foreground ml-0.5" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-[160px] bg-background border border-border">
+            <DropdownMenuContent 
+              align="end" 
+              className="min-w-[240px] p-2 bg-background/95 backdrop-blur-xl border border-border/50 rounded-xl shadow-xl"
+            >
               {modes?.map((mode) => (
                 <DropdownMenuItem
                   key={mode.name}
@@ -584,12 +595,27 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
                     playModeChange?.(mode.name);
                   }}
                   className={cn(
-                    "flex items-center gap-2 cursor-pointer",
-                    selectedMode === mode.name && "bg-muted"
+                    "flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-colors focus:bg-muted/50",
+                    selectedMode === mode.name ? "bg-muted/70" : "hover:bg-muted/40"
                   )}
                 >
-                  {React.createElement(mode.icon, { className: cn("w-4 h-4", mode.color) })}
-                  <span>{mode.translatedName}</span>
+                  <div className={cn(
+                    "p-2 rounded-lg shrink-0",
+                    mode.name === 'LAB' 
+                      ? "bg-gradient-to-br from-purple-500/20 to-purple-600/10" 
+                      : "bg-gradient-to-br from-slate-500/20 to-slate-600/10"
+                  )}>
+                    {React.createElement(mode.icon, { className: cn("w-5 h-5", mode.color) })}
+                  </div>
+                  <div className="flex flex-col flex-1 min-w-0">
+                    <span className="font-semibold text-foreground">{mode.translatedName}</span>
+                    {mode.description && (
+                      <span className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{mode.description}</span>
+                    )}
+                  </div>
+                  {selectedMode === mode.name && (
+                    <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                  )}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
