@@ -525,12 +525,23 @@ const textProcessor = {
           }
           
           // Check if response contains structured LAB data (beyond just output/emotion)
-          const labDataFields = ['analysis', 'data', 'report', 'campaign', 'metrics', 'json'];
           let labJson: Record<string, unknown> | null = null;
-          for (const field of labDataFields) {
-            if (obj[field] && typeof obj[field] === 'object') {
-              labJson = obj[field] as Record<string, unknown>;
-              break;
+          
+          // FIRST: Check for top-level n8n marketing format with contentType + data
+          if (obj.contentType && obj.data && typeof obj.data === 'object') {
+            labJson = {
+              contentType: obj.contentType,
+              templateId: obj.templateId || null,
+              data: obj.data
+            };
+          } else {
+            // FALLBACK: Check for nested data fields
+            const labDataFields = ['analysis', 'data', 'report', 'campaign', 'metrics', 'json'];
+            for (const field of labDataFields) {
+              if (obj[field] && typeof obj[field] === 'object') {
+                labJson = obj[field] as Record<string, unknown>;
+                break;
+              }
             }
           }
           
