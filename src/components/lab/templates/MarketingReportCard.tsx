@@ -210,7 +210,7 @@ const MarketingReportCardComponent = ({ data, className }: MarketingReportCardPr
         </div>
       </div>
 
-      <div className="p-6 space-y-6">
+      <div className="p-6 space-y-6 max-h-[400px] overflow-y-auto">
         {/* Summary */}
         {data.summary && (
           <div className="p-4 rounded-xl bg-indigo-50/50 dark:bg-indigo-900/20 border border-indigo-200/30 dark:border-indigo-800/20">
