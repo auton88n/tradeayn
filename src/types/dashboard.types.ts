@@ -10,6 +10,7 @@ export interface Message {
   status?: 'sending' | 'sent' | 'error';
   isTyping?: boolean;
   attachment?: FileAttachment;
+  labData?: LABResponse;
 }
 
 export interface FileAttachment {
@@ -17,6 +18,18 @@ export interface FileAttachment {
   name: string;
   type: string;
   size?: number;
+}
+
+// ============================================
+// LAB MODE TYPES
+// ============================================
+
+export interface LABResponse {
+  json: Record<string, unknown> | null;
+  text: string;
+  emotion: string;
+  raw: string;
+  hasStructuredData: boolean;
 }
 
 // ============================================
