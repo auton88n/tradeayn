@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { 
@@ -10,7 +10,9 @@ import {
   Target,
   CheckCircle2,
   AlertCircle,
-  ArrowRight
+  ArrowRight,
+  Download,
+  Loader2
 } from 'lucide-react';
 
 export interface MarketingReportData {
@@ -183,8 +185,47 @@ const GoalProgress = ({
 };
 
 const MarketingReportCardComponent = ({ data, className }: MarketingReportCardProps) => {
+  const reportRef = useRef<HTMLDivElement>(null);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const exportToPDF = async () => {
+    if (!reportRef.current || isExporting) return;
+    
+    setIsExporting(true);
+    try {
+      // Dynamically import html2pdf to reduce initial bundle size
+      const html2pdf = (await import('html2pdf.js')).default;
+      
+      const element = reportRef.current;
+      const filename = `${data.title.replace(/[^a-zA-Z0-9]/g, '_')}_Report.pdf`;
+      
+      const opt = {
+        margin: [10, 10, 10, 10] as [number, number, number, number],
+        filename,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+          scale: 2,
+          useCORS: true,
+          logging: false
+        },
+        jsPDF: { 
+          unit: 'mm', 
+          format: 'a4', 
+          orientation: 'portrait' as const 
+        }
+      };
+      
+      await html2pdf().set(opt).from(element).save();
+    } catch (error) {
+      console.error('Failed to export PDF:', error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <motion.div
+      ref={reportRef}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
@@ -197,16 +238,44 @@ const MarketingReportCardComponent = ({ data, className }: MarketingReportCardPr
     >
       {/* Header */}
       <div className="px-6 py-4 border-b border-gray-200/50 dark:border-gray-700/50">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400">
-            <FileText className="w-5 h-5" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400">
+              <FileText className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-foreground">{data.title}</h3>
+              {data.period && (
+                <p className="text-sm text-muted-foreground">{data.period}</p>
+              )}
+            </div>
           </div>
-          <div>
-            <h3 className="text-lg font-bold text-foreground">{data.title}</h3>
-            {data.period && (
-              <p className="text-sm text-muted-foreground">{data.period}</p>
+          
+          {/* PDF Export Button */}
+          <button
+            onClick={exportToPDF}
+            disabled={isExporting}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium",
+              "bg-indigo-100 dark:bg-indigo-900/40",
+              "hover:bg-indigo-200 dark:hover:bg-indigo-800/50",
+              "text-indigo-700 dark:text-indigo-300",
+              "transition-all duration-200 active:scale-95",
+              "disabled:opacity-50 disabled:cursor-not-allowed"
             )}
-          </div>
+          >
+            {isExporting ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Exporting...</span>
+              </>
+            ) : (
+              <>
+                <Download className="w-3.5 h-3.5" />
+                <span>PDF</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
 
