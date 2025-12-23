@@ -75,14 +75,18 @@ const LABDataViewerComponent = ({ data, className }: LABDataViewerProps) => {
       const contentType = data.contentType as string || '';
       
       // For social posts, normalize by wrapping fields in 'content' if missing
-      // n8n sends: { caption, hashtags, imageUrl, ... } 
-      // SocialPostPreview expects: { content: { caption, hashtags, imageUrl, ... } }
+      // n8n sends: { headline, body, cta, caption, hashtags, imageUrl, ... } 
+      // SocialPostPreview expects: { headline, body, cta, content: { caption, hashtags, imageUrl, ... } }
       if ((contentType === 'social' || contentType === 'social_post') && !nestedData.content) {
         return {
           type: 'social_post',
           platform: nestedData.platform || 'instagram',
+          // Pass headline, body, cta for premium visual overlay
+          headline: nestedData.headline as string | undefined,
+          body: nestedData.body as string | undefined,
+          cta: nestedData.cta as string | undefined,
           content: {
-            caption: nestedData.caption,
+            caption: nestedData.caption || nestedData.body,
             hashtags: nestedData.hashtags,
             imageUrl: nestedData.imageUrl,
             imagePrompt: nestedData.imagePrompt,

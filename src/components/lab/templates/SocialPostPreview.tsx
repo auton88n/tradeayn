@@ -11,13 +11,16 @@ import {
   Twitter,
   Linkedin,
   Play,
-  Image as ImageIcon
+  Sparkles
 } from 'lucide-react';
 import { hapticFeedback } from '@/lib/haptics';
 
 export interface SocialPostData {
   type: 'social_post';
   platform: 'instagram' | 'twitter' | 'linkedin' | 'tiktok';
+  headline?: string;
+  body?: string;
+  cta?: string;
   content: {
     caption: string;
     hashtags?: string[];
@@ -73,6 +76,65 @@ const platformConfig = {
   },
 };
 
+// Smart theme detection based on content keywords
+const getThemeGradient = (text: string): string => {
+  const lowerText = text.toLowerCase();
+  
+  // Nature themes
+  if (lowerText.includes('forest') || lowerText.includes('tree') || lowerText.includes('leaf') || lowerText.includes('green') || lowerText.includes('nature') || lowerText.includes('plant')) {
+    return 'from-emerald-600 via-green-700 to-teal-800';
+  }
+  if (lowerText.includes('ocean') || lowerText.includes('sea') || lowerText.includes('water') || lowerText.includes('wave') || lowerText.includes('beach')) {
+    return 'from-blue-500 via-cyan-600 to-teal-700';
+  }
+  if (lowerText.includes('sunset') || lowerText.includes('sunrise') || lowerText.includes('warm') || lowerText.includes('fire') || lowerText.includes('summer')) {
+    return 'from-orange-500 via-red-500 to-pink-600';
+  }
+  if (lowerText.includes('night') || lowerText.includes('dark') || lowerText.includes('space') || lowerText.includes('star') || lowerText.includes('galaxy')) {
+    return 'from-indigo-900 via-purple-900 to-slate-900';
+  }
+  if (lowerText.includes('winter') || lowerText.includes('snow') || lowerText.includes('ice') || lowerText.includes('cold') || lowerText.includes('frost')) {
+    return 'from-slate-400 via-blue-300 to-cyan-200';
+  }
+  if (lowerText.includes('flower') || lowerText.includes('bloom') || lowerText.includes('spring') || lowerText.includes('garden') || lowerText.includes('rose')) {
+    return 'from-pink-500 via-rose-500 to-fuchsia-600';
+  }
+  if (lowerText.includes('mountain') || lowerText.includes('rock') || lowerText.includes('earth') || lowerText.includes('desert')) {
+    return 'from-amber-700 via-stone-600 to-slate-700';
+  }
+  
+  // Mood themes
+  if (lowerText.includes('love') || lowerText.includes('heart') || lowerText.includes('romantic')) {
+    return 'from-rose-500 via-pink-500 to-red-500';
+  }
+  if (lowerText.includes('energy') || lowerText.includes('power') || lowerText.includes('strong') || lowerText.includes('motivation')) {
+    return 'from-yellow-500 via-orange-500 to-red-600';
+  }
+  if (lowerText.includes('calm') || lowerText.includes('peace') || lowerText.includes('zen') || lowerText.includes('relax')) {
+    return 'from-teal-500 via-cyan-500 to-blue-500';
+  }
+  if (lowerText.includes('luxury') || lowerText.includes('premium') || lowerText.includes('gold') || lowerText.includes('elegant')) {
+    return 'from-amber-500 via-yellow-600 to-orange-600';
+  }
+  
+  // Default beautiful gradient
+  return 'from-purple-600 via-pink-500 to-orange-400';
+};
+
+// Extract headline from caption if not provided
+const extractHeadline = (caption: string): string => {
+  // Look for emoji-bordered headlines
+  const emojiMatch = caption.match(/^[^\n]*?[\p{Emoji}].*?[\p{Emoji}][^\n]*/u);
+  if (emojiMatch) return emojiMatch[0];
+  
+  // First sentence
+  const firstSentence = caption.split(/[.!?]\s/)[0];
+  if (firstSentence.length < 80) return firstSentence;
+  
+  // First 60 chars
+  return caption.slice(0, 60) + '...';
+};
+
 const SocialPostPreviewComponent = ({ data, className }: SocialPostPreviewProps) => {
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -97,6 +159,13 @@ const SocialPostPreviewComponent = ({ data, className }: SocialPostPreviewProps)
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
     return num.toString();
   };
+
+  // Get the content for the visual
+  const headline = data.headline || extractHeadline(data.content.caption);
+  const body = data.body || data.content.caption;
+  const cta = data.cta || data.content.callToAction;
+  const fullText = `${headline} ${body} ${data.content.hashtags?.join(' ') || ''}`;
+  const themeGradient = getThemeGradient(fullText);
 
   return (
     <motion.div
@@ -162,23 +231,113 @@ const SocialPostPreviewComponent = ({ data, className }: SocialPostPreviewProps)
         </div>
       </div>
 
-      {/* Image/Media Area */}
-      <div className="relative aspect-square bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
+      {/* Premium Visual Area with Text Overlay */}
+      <div className="relative aspect-square overflow-hidden">
         {data.content.imageUrl ? (
+          // If we have an actual image, show it
           <img 
             src={data.content.imageUrl} 
             alt="Post media"
             className="w-full h-full object-cover"
           />
         ) : (
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground">
-            <ImageIcon className="w-16 h-16 mb-3 opacity-30" />
-            {data.content.imagePrompt && (
-              <p className="text-sm text-center px-6 opacity-60 italic">
-                "{data.content.imagePrompt}"
-              </p>
-            )}
-          </div>
+          // Premium gradient background with decorative elements
+          <>
+            {/* Dynamic gradient background */}
+            <div className={cn(
+              "absolute inset-0 bg-gradient-to-br",
+              themeGradient
+            )} />
+            
+            {/* Decorative floating shapes */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              <motion.div 
+                className="absolute top-[10%] right-[10%] w-32 h-32 rounded-full bg-white/10 blur-2xl"
+                animate={{ 
+                  scale: [1, 1.2, 1],
+                  opacity: [0.1, 0.2, 0.1]
+                }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+              />
+              <motion.div 
+                className="absolute bottom-[20%] left-[5%] w-48 h-48 rounded-full bg-white/5 blur-3xl"
+                animate={{ 
+                  scale: [1.2, 1, 1.2],
+                  opacity: [0.05, 0.15, 0.05]
+                }}
+                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+              />
+              <motion.div 
+                className="absolute top-[40%] left-[60%] w-24 h-24 rounded-full bg-black/10 blur-2xl"
+                animate={{ 
+                  y: [0, -20, 0],
+                }}
+                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+              />
+            </div>
+
+            {/* Sparkle accents */}
+            <div className="absolute top-4 right-4">
+              <Sparkles className="w-6 h-6 text-white/40" />
+            </div>
+            
+            {/* Text Overlay Container */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-6 md:p-8 text-center">
+              {/* Headline with premium typography */}
+              <motion.h2 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="text-xl sm:text-2xl md:text-3xl font-bold text-white leading-tight mb-4"
+                style={{ 
+                  textShadow: '0 2px 10px rgba(0,0,0,0.3), 0 4px 20px rgba(0,0,0,0.2)'
+                }}
+              >
+                {headline}
+              </motion.h2>
+              
+              {/* Body text - truncated for visual */}
+              {body !== headline && (
+                <motion.p 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-sm md:text-base text-white/90 max-w-xs leading-relaxed mb-4"
+                  style={{ 
+                    textShadow: '0 1px 8px rgba(0,0,0,0.3)'
+                  }}
+                >
+                  {body.length > 120 ? body.slice(0, 120) + '...' : body}
+                </motion.p>
+              )}
+              
+              {/* Frosted glass CTA button */}
+              {cta && (
+                <motion.button 
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className={cn(
+                    "mt-2 px-6 py-2.5 rounded-full",
+                    "bg-white/20 backdrop-blur-md",
+                    "border border-white/30",
+                    "text-white font-medium text-sm",
+                    "hover:bg-white/30 transition-all duration-300",
+                    "shadow-lg"
+                  )}
+                  style={{
+                    textShadow: '0 1px 4px rgba(0,0,0,0.2)'
+                  }}
+                >
+                  {cta}
+                </motion.button>
+              )}
+            </div>
+            
+            {/* Subtle gradient overlays for depth and text readability */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/10 pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/20 pointer-events-none" />
+          </>
         )}
       </div>
 
@@ -226,19 +385,22 @@ const SocialPostPreviewComponent = ({ data, className }: SocialPostPreviewProps)
         </div>
       )}
 
-      {/* Caption */}
+      {/* Caption - Condensed version */}
       <div className="px-4 pb-3">
-        <p className="text-sm">
+        <p className="text-sm line-clamp-2">
           <span className="font-semibold mr-1">
             {data.profile?.username || 'yourbrand'}
           </span>
-          {data.content.caption}
+          {data.content.caption.length > 100 
+            ? data.content.caption.slice(0, 100) + '...' 
+            : data.content.caption
+          }
         </p>
         
         {/* Hashtags */}
         {data.content.hashtags && data.content.hashtags.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1">
-            {data.content.hashtags.map((tag, i) => (
+            {data.content.hashtags.slice(0, 5).map((tag, i) => (
               <span 
                 key={i} 
                 className={cn(
@@ -249,14 +411,12 @@ const SocialPostPreviewComponent = ({ data, className }: SocialPostPreviewProps)
                 {tag.startsWith('#') ? tag : `#${tag}`}
               </span>
             ))}
+            {data.content.hashtags.length > 5 && (
+              <span className="text-sm text-muted-foreground">
+                +{data.content.hashtags.length - 5} more
+              </span>
+            )}
           </div>
-        )}
-
-        {/* Call to Action */}
-        {data.content.callToAction && (
-          <p className="mt-2 text-sm text-muted-foreground">
-            {data.content.callToAction}
-          </p>
         )}
       </div>
 
