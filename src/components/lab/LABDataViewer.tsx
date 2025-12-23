@@ -72,13 +72,38 @@ const LABDataViewerComponent = ({ data, className }: LABDataViewerProps) => {
     // If data has a nested 'data' field (n8n format), unwrap it
     if (data.data && typeof data.data === 'object' && !Array.isArray(data.data)) {
       const nestedData = data.data as Record<string, unknown>;
+      const contentType = data.contentType as string || '';
+      
+      // For social posts, normalize by wrapping fields in 'content' if missing
+      // n8n sends: { caption, hashtags, imageUrl, ... } 
+      // SocialPostPreview expects: { content: { caption, hashtags, imageUrl, ... } }
+      if ((contentType === 'social' || contentType === 'social_post') && !nestedData.content) {
+        return {
+          type: 'social_post',
+          platform: nestedData.platform || 'instagram',
+          content: {
+            caption: nestedData.caption,
+            hashtags: nestedData.hashtags,
+            imageUrl: nestedData.imageUrl,
+            imagePrompt: nestedData.imagePrompt,
+            callToAction: nestedData.callToAction || nestedData.cta,
+            mentions: nestedData.mentions,
+          },
+          profile: nestedData.profile,
+          engagement: nestedData.engagement,
+          bestTimeToPost: nestedData.bestTimeToPost,
+          templateId: data.templateId,
+          contentType: data.contentType,
+        };
+      }
+      
       return {
         ...nestedData,
         // Preserve top-level metadata
         templateId: data.templateId,
         contentType: data.contentType,
         // Ensure platform is set from nested or derive from contentType
-        platform: nestedData.platform || (data.contentType === 'social' ? 'instagram' : undefined),
+        platform: nestedData.platform || (contentType === 'social' ? 'instagram' : undefined),
       };
     }
     return data;
