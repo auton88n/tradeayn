@@ -115,16 +115,18 @@ const InsightCard = ({
     },
   };
 
-  const Icon = config[type].icon;
+  // Defensive: fallback to 'info' if type is invalid
+  const validType = (type && config[type]) ? type : 'info';
+  const Icon = config[validType].icon;
 
   return (
     <div className={cn(
       "p-4 rounded-xl border",
-      config[type].bg,
-      config[type].border
+      config[validType].bg,
+      config[validType].border
     )}>
       <div className="flex items-start gap-3">
-        <Icon className={cn("w-5 h-5 mt-0.5 flex-shrink-0", config[type].iconColor)} />
+        <Icon className={cn("w-5 h-5 mt-0.5 flex-shrink-0", config[validType].iconColor)} />
         <div>
           <p className="font-medium text-foreground text-sm">{title}</p>
           <p className="text-xs text-muted-foreground mt-1">{description}</p>

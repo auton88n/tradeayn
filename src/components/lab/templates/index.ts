@@ -77,10 +77,15 @@ export const detectTemplateType = (data: Record<string, unknown>): MarketingTemp
     return 'brand_kit';
   }
 
-  // Marketing Report Detection
+  // Marketing Report Detection - exclude social post indicators
   if (
     (lowerKeys.includes('highlights') || lowerKeys.includes('insights') || lowerKeys.includes('recommendations')) &&
-    (lowerKeys.includes('title') || lowerKeys.includes('summary'))
+    (lowerKeys.includes('title') || lowerKeys.includes('summary')) &&
+    // Exclude social post indicators to avoid misidentification
+    !lowerKeys.includes('platform') &&
+    !lowerKeys.includes('hashtags') &&
+    !lowerKeys.includes('caption') &&
+    !lowerKeys.includes('cta')
   ) {
     return 'report';
   }
