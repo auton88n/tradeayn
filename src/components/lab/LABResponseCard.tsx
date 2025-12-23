@@ -82,7 +82,7 @@ const LABResponseCardComponent = ({ content, labData, isMobile = false }: LABRes
         className={cn(
           "relative group flex flex-col",
           "w-fit min-w-[280px] max-w-[calc(100vw-2rem)] sm:max-w-[560px] lg:max-w-[640px]",
-          "max-h-[min(400px,50vh)] mb-4",
+          "max-h-[min(600px,70vh)] mb-4",
           // LAB-specific gradient background
           "bg-gradient-to-br from-purple-50/90 to-indigo-50/90",
           "dark:from-purple-950/40 dark:to-indigo-950/40",
