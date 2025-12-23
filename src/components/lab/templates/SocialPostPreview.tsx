@@ -232,7 +232,7 @@ const SocialPostPreviewComponent = ({ data, className }: SocialPostPreviewProps)
       </div>
 
       {/* Premium Visual Area with Text Overlay */}
-      <div className="relative aspect-square overflow-hidden">
+      <div className="relative min-h-[280px] overflow-hidden">
         {data.content.imageUrl ? (
           // If we have an actual image, show it
           <img 
