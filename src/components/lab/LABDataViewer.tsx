@@ -288,7 +288,7 @@ const LABDataViewerComponent = ({ data, className }: LABDataViewerProps) => {
 
               {/* Template or Data View */}
               {templateType && viewMode === 'design' ? (
-                <div className="max-h-[500px] overflow-auto rounded-lg">
+                <div className="rounded-lg overflow-visible">
                   {renderTemplate()}
                 </div>
               ) : (

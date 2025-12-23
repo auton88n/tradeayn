@@ -107,8 +107,8 @@ const ResponseCardComponent = ({ responses, isMobile = false }: ResponseCardProp
         className={cn(
           "relative group flex flex-col",
           // Responsive width and height constraints
-          "w-fit min-w-[280px] max-w-[calc(100vw-2rem)] sm:max-w-[560px] lg:max-w-[640px]",
-          "max-h-[min(280px,40vh)] mb-4",
+        "w-fit min-w-[280px] max-w-[calc(100vw-2rem)] sm:max-w-[560px] lg:max-w-[640px]",
+          "mb-4",
           // Solid background for performance (no backdrop-blur)
           "bg-background dark:bg-gray-900",
           // Subtle shadow
