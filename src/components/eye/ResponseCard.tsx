@@ -157,103 +157,61 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss }: Respo
           key={visibleResponses[0]?.id || 'empty'}
           layout={false}
           className={cn(
-            "relative group flex flex-col",
-            // Responsive width and height constraints
-            "w-fit min-w-[280px] max-w-[calc(100vw-2rem)] sm:max-w-[560px] lg:max-w-[640px]",
-            "mb-4",
-            // Solid background for performance (no backdrop-blur)
-            "bg-background dark:bg-gray-900",
-            // Subtle shadow
-            "shadow-lg",
-            // Border
-            "border border-border/40",
-            // Padding and rounding
-            "px-5 py-4 rounded-2xl",
+            "relative flex flex-col",
+            // Full width on mobile, contained on desktop
+            "w-full sm:w-[90%] md:max-w-[600px] lg:max-w-[680px]",
+            "mx-2 sm:mx-auto",
+            // Glass morphism background
+            "bg-background/95 dark:bg-gray-900/95 backdrop-blur-xl",
+            // Glow border effect
+            "ring-1 ring-primary/20",
+            "shadow-xl shadow-primary/10",
+            // Rounding
+            "rounded-2xl overflow-hidden",
             // CSS containment for performance isolation
             "contain-layout contain-paint"
           )}
           style={{
             willChange: 'transform, opacity',
-            transform: 'translateZ(0)', // Force GPU layer
+            transform: 'translateZ(0)',
           }}
-          initial={{ opacity: 0, y: 8, scale: 0.98 }}
+          initial={{ opacity: 0, y: 20, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -4, scale: 0.98 }}
+          exit={{ opacity: 0, y: 10, scale: 0.98 }}
           transition={{
-            duration: 0.3,
+            duration: 0.35,
             ease: [0.25, 0.1, 0.25, 1],
+            delay: 0.1,
           }}
         >
-          {/* Animated accent line at top - simplified */}
-          <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-primary/30 to-transparent rounded-t-2xl" />
+          {/* Speech bubble pointer toward eye */}
+          <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 rotate-45 bg-background/95 dark:bg-gray-900/95 ring-1 ring-primary/20 ring-b-0 ring-r-0" />
           
-          {/* Inner highlight shine - removed animation */}
-          <div className="absolute inset-x-4 top-0 h-[30%] bg-gradient-to-b from-white/20 to-transparent dark:from-white/5 rounded-t-xl pointer-events-none" />
+          {/* Subtle top glow line */}
+          <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
 
-          {/* Removed Brain Logo for cleaner look */}
-
-          {/* Top-right action cluster: Expand + Dismiss */}
-          <div className="absolute top-2 right-2 flex items-center gap-1 z-10">
-            {/* Expand Button */}
-            <button
-              onClick={handleExpand}
-              className={cn(
-                "p-1.5 rounded-lg transition-all duration-200",
-                "bg-background/80 dark:bg-gray-800/80 backdrop-blur-sm",
-                "hover:bg-primary/10 hover:scale-105",
-                "text-muted-foreground hover:text-primary",
-                "border border-border/30",
-                "active:scale-95"
-              )}
-              title="Expand to full view"
-            >
-              <Maximize2 size={14} />
-            </button>
-            
-            {/* Dismiss Button */}
-            {onDismiss && (
-              <button
-                onClick={handleDismiss}
-                className={cn(
-                  "p-1.5 rounded-lg transition-all duration-200",
-                  "bg-background/80 dark:bg-gray-800/80 backdrop-blur-sm",
-                  "hover:bg-red-500/10 hover:scale-105",
-                  "text-muted-foreground hover:text-red-500",
-                  "border border-border/30",
-                  "active:scale-95"
-                )}
-                title="Dismiss"
-              >
-                <X size={14} />
-              </button>
-            )}
-          </div>
-
-          {/* Content area with proper scrolling - improved height */}
+          {/* Content area - images full width */}
           <div 
             ref={contentRef}
             className={cn(
-              "speech-bubble-content",
-              "flex-1 min-h-0 overflow-y-auto overflow-x-auto",
-              // Responsive max-height: slightly taller to fit bigger images
-              "max-h-[35vh] sm:max-h-[min(380px,40vh)]",
-              "break-words max-w-full",
-              // Larger images (300px max) for better visibility
-              "[&_img]:max-h-[300px] [&_img]:w-auto [&_img]:object-contain [&_img]:rounded-lg",
+              "flex-1 min-h-0 overflow-y-auto overflow-x-hidden",
+              // Height constraints
+              "max-h-[45vh] sm:max-h-[50vh]",
+              // Full-width images with proper styling
+              "[&_img]:w-full [&_img]:max-h-[280px] [&_img]:object-cover [&_img]:rounded-none",
+              "[&_img]:border-b [&_img]:border-border/20",
+              // Text padding (images go edge to edge)
+              "[&>div]:px-5 [&>div]:py-4",
               // Premium thin scrollbar
               "[&::-webkit-scrollbar]:w-1.5",
               "[&::-webkit-scrollbar-track]:bg-transparent",
-              "[&::-webkit-scrollbar-thumb]:bg-gray-300/50 dark:[&::-webkit-scrollbar-thumb]:bg-gray-600/50",
+              "[&::-webkit-scrollbar-thumb]:bg-muted-foreground/20",
               "[&::-webkit-scrollbar-thumb]:rounded-full",
-              "[&::-webkit-scrollbar-thumb]:hover:bg-gray-400/60 dark:[&::-webkit-scrollbar-thumb]:hover:bg-gray-500/60",
+              "[&::-webkit-scrollbar-thumb]:hover:bg-muted-foreground/30",
               // iOS touch scrolling
-              "[-webkit-overflow-scrolling:touch]",
-              // Padding for action buttons on right
-              "pr-6 pt-1"
+              "[-webkit-overflow-scrolling:touch]"
             )}
-            style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}
           >
-            {/* Content with fade transition on change */}
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentResponseId || 'content'}
@@ -262,88 +220,113 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss }: Respo
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2, ease: 'easeInOut' }}
               >
-                {/* Streaming text effect for new responses */}
                 {isStreaming ? (
                   <StreamingMarkdown 
                     content={combinedContent}
                     speed={50}
                     onComplete={handleStreamComplete}
                     enableHaptics={isMobile}
-                    className="max-w-full break-words [&_pre]:max-w-full [&_pre]:overflow-x-auto"
+                    className="text-sm text-foreground leading-relaxed [&_pre]:max-w-full [&_pre]:overflow-x-auto"
                   />
                 ) : (
                   <MessageFormatter 
                     content={combinedContent} 
-                    className="text-sm text-gray-700 dark:text-gray-200 leading-relaxed max-w-full break-words [&_pre]:max-w-full [&_pre]:overflow-x-auto" 
+                    className="text-sm text-foreground leading-relaxed [&_pre]:max-w-full [&_pre]:overflow-x-auto" 
                   />
                 )}
               </motion.div>
             </AnimatePresence>
           </div>
 
-          {/* Fade gradient indicator when scrollable and not at bottom */}
+          {/* Fade gradient when scrollable */}
           {isScrollable && !isAtBottom && (
             <div 
-              className="absolute bottom-14 left-0 right-0 h-6 bg-gradient-to-t from-background/80 dark:from-gray-900/80 to-transparent pointer-events-none"
+              className="absolute bottom-14 left-0 right-0 h-8 bg-gradient-to-t from-background dark:from-gray-900 to-transparent pointer-events-none"
               aria-hidden="true"
             />
           )}
 
-          {/* Action Footer */}
-          <div className="flex-shrink-0 flex items-center justify-between mt-3 pt-3 border-t border-gray-200/40 dark:border-gray-700/40">
-            {/* Left: Copy + Expand on mobile */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={copyContent}
-                className={cn(
-                  "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium",
-                  "bg-gray-100/60 dark:bg-gray-800/60",
-                  "hover:bg-gray-200/70 dark:hover:bg-gray-700/70",
-                  "text-muted-foreground hover:text-foreground",
-                  "transition-all duration-200",
-                  "active:scale-95"
-                )}
-              >
-                {copied ? (
-                  <>
-                    <Check size={12} className="text-green-500" />
-                    <span className="text-green-600 dark:text-green-400">Copied!</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy size={12} />
-                    <span>Copy</span>
-                  </>
-                )}
-              </button>
-              
-              {/* Removed duplicate Expand button - now only in top-right */}
-            </div>
+          {/* Clean single-row action bar */}
+          <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-t border-border/30 bg-muted/30">
+            {/* Left: Copy button */}
+            <button
+              onClick={copyContent}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium",
+                "bg-background/80 dark:bg-gray-800/80",
+                "hover:bg-primary/10",
+                "text-muted-foreground hover:text-primary",
+                "transition-all duration-200",
+                "active:scale-95"
+              )}
+            >
+              {copied ? (
+                <>
+                  <Check size={14} className="text-green-500" />
+                  <span className="text-green-600 dark:text-green-400">Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Copy size={14} />
+                  <span>Copy</span>
+                </>
+              )}
+            </button>
             
-            {/* Right: Feedback Buttons */}
-            <div className="flex gap-1">
+            {/* Center: Feedback Buttons */}
+            <div className="flex items-center gap-1">
               <button 
                 onClick={() => handleFeedback('up')}
                 className={cn(
-                  "p-1.5 rounded-lg transition-all duration-200 active:scale-90",
+                  "p-2 rounded-full transition-all duration-200 active:scale-90",
                   feedback === 'up' 
-                    ? "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400" 
-                    : "hover:bg-gray-100/60 dark:hover:bg-gray-800/60 text-muted-foreground hover:text-green-500"
+                    ? "bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400" 
+                    : "hover:bg-muted text-muted-foreground hover:text-green-500"
                 )}
               >
-                <ThumbsUp size={14} />
+                <ThumbsUp size={16} />
               </button>
               <button 
                 onClick={() => handleFeedback('down')}
                 className={cn(
-                  "p-1.5 rounded-lg transition-all duration-200 active:scale-90",
+                  "p-2 rounded-full transition-all duration-200 active:scale-90",
                   feedback === 'down' 
-                    ? "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400" 
-                    : "hover:bg-gray-100/60 dark:hover:bg-gray-800/60 text-muted-foreground hover:text-red-500"
+                    ? "bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400" 
+                    : "hover:bg-muted text-muted-foreground hover:text-red-500"
                 )}
               >
-                <ThumbsDown size={14} />
+                <ThumbsDown size={16} />
               </button>
+            </div>
+            
+            {/* Right: Expand + Dismiss */}
+            <div className="flex items-center gap-1">
+              <button
+                onClick={handleExpand}
+                className={cn(
+                  "p-2 rounded-full transition-all duration-200",
+                  "hover:bg-muted",
+                  "text-muted-foreground hover:text-primary",
+                  "active:scale-95"
+                )}
+                title="Expand"
+              >
+                <Maximize2 size={16} />
+              </button>
+              {onDismiss && (
+                <button
+                  onClick={handleDismiss}
+                  className={cn(
+                    "p-2 rounded-full transition-all duration-200",
+                    "hover:bg-destructive/10",
+                    "text-muted-foreground hover:text-destructive",
+                    "active:scale-95"
+                  )}
+                  title="Dismiss"
+                >
+                  <X size={16} />
+                </button>
+              )}
             </div>
           </div>
         </motion.div>

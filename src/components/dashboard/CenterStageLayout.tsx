@@ -567,6 +567,15 @@ animate={{
             ref={eyeRef} 
             className="relative overflow-visible"
             data-tutorial="eye"
+            animate={{
+              scale: hasVisibleResponses ? (isMobile ? 0.6 : 0.55) : 1,
+              y: hasVisibleResponses ? -10 : 0,
+            }}
+            transition={{
+              type: 'spring',
+              stiffness: 200,
+              damping: 25,
+            }}
           >
             <EmotionalEye 
               size={isMobile ? "md" : "lg"} 
