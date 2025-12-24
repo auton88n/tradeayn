@@ -441,6 +441,17 @@ export const useMessages = (
     session
   ]);
 
+  // Wrapper to set messages from history with proper flag management
+  // This prevents auto-showing ResponseCard when loading from sidebar
+  const setMessagesFromHistory = useCallback((newMessages: Message[]) => {
+    setIsLoadingFromHistory(true);
+    setMessages(newMessages);
+    // Reset flag after effects have checked it
+    setTimeout(() => {
+      setIsLoadingFromHistory(false);
+    }, 200);
+  }, []);
+
   // Message limit tracking
   const messageCount = messages.length;
   const hasReachedLimit = messageCount >= MAX_MESSAGES_PER_CHAT;
@@ -456,6 +467,7 @@ export const useMessages = (
     isLoadingFromHistory,
     loadMessages,
     sendMessage,
-    setMessages
+    setMessages,
+    setMessagesFromHistory
   };
 };
