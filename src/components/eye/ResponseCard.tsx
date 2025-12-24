@@ -238,9 +238,11 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss }: Respo
             className={cn(
               "speech-bubble-content",
               "flex-1 min-h-0 overflow-y-auto overflow-x-auto",
-              // Responsive max-height: constrained to stay above input
-              "max-h-[28vh] sm:max-h-[min(280px,35vh)]",
+              // Responsive max-height: balanced for content visibility
+              "max-h-[35vh] sm:max-h-[min(400px,40vh)]",
               "break-words max-w-full",
+              // Cap image sizes so captions stay visible
+              "[&_img]:max-h-[200px] [&_img]:w-auto [&_img]:object-contain",
               // Premium thin scrollbar
               "[&::-webkit-scrollbar]:w-1.5",
               "[&::-webkit-scrollbar-track]:bg-transparent",
