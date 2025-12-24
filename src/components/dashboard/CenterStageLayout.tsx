@@ -673,7 +673,7 @@ animate={{
               transcriptOpen && "md:right-[20rem]"
             )}
             style={{ 
-              top: isMobile ? 180 : 200,
+              top: isMobile ? 100 : 120,
               bottom: footerHeight + 8 
             }}
             initial={{ opacity: 0, y: 20 }}
