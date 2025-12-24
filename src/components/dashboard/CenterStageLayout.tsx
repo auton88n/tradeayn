@@ -122,6 +122,10 @@ export const CenterStageLayout = ({
   const eyeStageRef = useRef<HTMLDivElement>(null);
   const eyeRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLDivElement>(null);
+  const footerRef = useRef<HTMLDivElement>(null);
+  
+  // Dynamic footer height for bottom padding
+  const [footerHeight, setFooterHeight] = useState(112); // Default ~28*4 = 112px
   
   // Gate to only show ResponseCard for actively-sent messages
   // We store the last message id at the moment of sending, to avoid re-processing the previous
@@ -162,6 +166,20 @@ export const CenterStageLayout = ({
   const [aiPupilReaction] = useState<'normal' | 'dilate-slightly' | 'dilate-more' | 'contract'>('normal');
   const [aiBlinkPattern] = useState<'normal' | 'slow-comfort' | 'quick-attentive' | 'double-understanding'>('normal');
   const [aiColorIntensity] = useState(0.5);
+
+  // Measure footer height dynamically for bottom padding
+  useEffect(() => {
+    if (!footerRef.current) return;
+    
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setFooterHeight(entry.contentRect.height + 24); // Add 24px gap
+      }
+    });
+    
+    observer.observe(footerRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   // Reset all visual state when messages are cleared (new chat started)
   useEffect(() => {
@@ -514,9 +532,9 @@ export const CenterStageLayout = ({
         className={cn(
           "flex-1 flex relative",
           "items-center justify-center",
-          "pb-28 md:pb-24", // Space for compact input
           "transition-all duration-300 ease-out"
         )}
+        style={{ paddingBottom: footerHeight }}
       >
         {/* Unified layout for all screen sizes */}
         <motion.div 
@@ -653,6 +671,7 @@ animate={{
 
       {/* Input area - Fixed at bottom */}
       <div 
+        ref={footerRef}
         className={cn(
           "fixed bottom-0 left-0 right-0 z-30",
           "transition-all duration-300",
