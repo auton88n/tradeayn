@@ -36,6 +36,9 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss }: Respo
   const [isExpanded, setIsExpanded] = useState(false);
   const [dialogScrollable, setDialogScrollable] = useState(false);
   const [dialogAtBottom, setDialogAtBottom] = useState(true);
+  
+  // Image lightbox state
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
   const visibleResponses = responses.filter(r => r.isVisible);
   const currentResponseId = visibleResponses[0]?.id;
@@ -44,6 +47,20 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss }: Respo
   const combinedContent = visibleResponses
     .map(r => r.content.replace(/^[!?\s]+/, '').trim())
     .join('\n\n');
+  
+  // Handle image clicks for lightbox
+  const handleImageClick = useCallback((e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'IMG') {
+      const imgSrc = (target as HTMLImageElement).src;
+      if (imgSrc) {
+        e.preventDefault();
+        e.stopPropagation();
+        hapticFeedback('light');
+        setLightboxImage(imgSrc);
+      }
+    }
+  }, []);
 
   // Reset streaming state when new response arrives
   useEffect(() => {
@@ -232,14 +249,15 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss }: Respo
           {/* Content area with proper scrolling - improved height */}
           <div 
             ref={contentRef}
+            onClick={handleImageClick}
             className={cn(
               "speech-bubble-content",
               "flex-1 min-h-0 overflow-y-auto overflow-x-auto",
               // Responsive max-height: slightly taller to fit bigger images
               "max-h-[35vh] sm:max-h-[min(380px,40vh)]",
               "break-words max-w-full",
-              // Larger images (300px max) for better visibility
-              "[&_img]:max-h-[300px] [&_img]:w-auto [&_img]:object-contain [&_img]:rounded-lg",
+              // Larger images (300px max) for better visibility, clickable cursor
+              "[&_img]:max-h-[300px] [&_img]:w-auto [&_img]:object-contain [&_img]:rounded-lg [&_img]:cursor-zoom-in [&_img]:transition-transform [&_img]:hover:scale-[1.02]",
               // Premium thin scrollbar
               "[&::-webkit-scrollbar]:w-1.5",
               "[&::-webkit-scrollbar-track]:bg-transparent",
@@ -430,9 +448,12 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss }: Respo
           {/* Scrollable Content */}
           <div 
             ref={dialogContentRef}
+            onClick={handleImageClick}
             className={cn(
               "flex-1 overflow-y-auto overflow-x-hidden",
               "px-4 sm:px-8 py-6",
+              // Clickable images in dialog too
+              "[&_img]:cursor-zoom-in [&_img]:transition-transform [&_img]:hover:scale-[1.01]",
               // Premium scrollbar
               "[&::-webkit-scrollbar]:w-2",
               "[&::-webkit-scrollbar-track]:bg-transparent",
@@ -493,6 +514,50 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss }: Respo
                 <span>Scroll down</span>
               </button>
             </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Image Lightbox Dialog */}
+      <Dialog open={!!lightboxImage} onOpenChange={(open) => !open && setLightboxImage(null)}>
+        <DialogContent 
+          className={cn(
+            "flex items-center justify-center p-0",
+            "w-screen h-[100dvh] max-w-none rounded-none",
+            "bg-black/95 backdrop-blur-xl",
+            "border-0",
+            "overflow-hidden"
+          )}
+          onClick={() => setLightboxImage(null)}
+        >
+          {/* Close hint */}
+          <div className="absolute top-4 right-4 z-10 flex items-center gap-2 text-white/60 text-sm">
+            <span className="hidden sm:inline">Click anywhere or press ESC to close</span>
+            <button
+              onClick={() => setLightboxImage(null)}
+              className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+            >
+              <X size={20} className="text-white" />
+            </button>
+          </div>
+          
+          {/* Full-size image */}
+          {lightboxImage && (
+            <motion.img
+              src={lightboxImage}
+              alt="Full size preview"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className={cn(
+                "max-w-[95vw] max-h-[90vh]",
+                "object-contain",
+                "rounded-lg",
+                "shadow-2xl"
+              )}
+              onClick={(e) => e.stopPropagation()}
+            />
           )}
         </DialogContent>
       </Dialog>
