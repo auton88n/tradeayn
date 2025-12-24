@@ -67,6 +67,8 @@ interface CenterStageLayoutProps {
   usageResetDate?: string | null;
   // Flag to prevent auto-showing historical messages
   isLoadingFromHistory?: boolean;
+  // Current session ID for clearing visual state on chat switch
+  currentSessionId?: string;
   // Maintenance config
   maintenanceConfig?: {
     enabled?: boolean;
@@ -113,12 +115,16 @@ export const CenterStageLayout = ({
   monthlyLimit,
   usageResetDate,
   isLoadingFromHistory,
+  currentSessionId,
   maintenanceConfig,
 }: CenterStageLayoutProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const eyeStageRef = useRef<HTMLDivElement>(null);
   const eyeRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLDivElement>(null);
+  
+  // Gate to only show ResponseCard for actively-sent messages
+  const awaitingLiveResponseRef = useRef(false);
   const isMobile = useIsMobile();
   const { setEmotion, setEmotionWithSource, triggerAbsorption, triggerBlink, setIsResponding, detectExcitement, isUserTyping: contextIsTyping, triggerPulse, bumpActivity } = useAYNEmotion();
   const soundContext = useSoundContextOptional();
@@ -161,8 +167,19 @@ export const CenterStageLayout = ({
       setLastUserMessage('');
       setEmotion('calm');
       setIsResponding(false);
+      awaitingLiveResponseRef.current = false;
     }
   }, [messages.length, clearResponseBubbles, clearSuggestions, setEmotion, setIsResponding]);
+
+  // Clear visual state when switching chat sessions
+  useEffect(() => {
+    if (currentSessionId) {
+      clearResponseBubbles();
+      clearSuggestions();
+      setLastProcessedMessageContent(null);
+      awaitingLiveResponseRef.current = false;
+    }
+  }, [currentSessionId, clearResponseBubbles, clearSuggestions]);
 
   // Suggestion card Y positions for gaze targeting (matches SuggestionsCard desktopPositions)
   const suggestionGazeTargets = [
@@ -282,6 +299,9 @@ export const CenterStageLayout = ({
 
       // Track the user's message for suggestion context
       setLastUserMessage(content);
+      
+      // Mark that we're awaiting a live response (enables ResponseCard display)
+      awaitingLiveResponseRef.current = true;
 
       // Clear previous response bubbles and suggestions
       clearResponseBubbles();
@@ -342,6 +362,9 @@ export const CenterStageLayout = ({
     // Track the user's message for suggestion context
     setLastUserMessage(content);
     
+    // Mark that we're awaiting a live response (enables ResponseCard display)
+    awaitingLiveResponseRef.current = true;
+    
     // Clear suggestions
     clearSuggestions();
     
@@ -387,17 +410,22 @@ export const CenterStageLayout = ({
   ]);
 
   // Process AYN responses and emit speech bubbles + suggestions
-  // Skip if loading from history to prevent auto-showing old messages
+  // Skip if loading from history OR not awaiting a live response
   useEffect(() => {
     if (messages.length === 0) return;
     
     // Skip processing historical messages - only process new responses
     if (isLoadingFromHistory) return;
+    
+    // Skip if not awaiting a live response (prevents auto-show on chat switch)
+    if (!awaitingLiveResponseRef.current) return;
 
     const lastMessage = messages[messages.length - 1];
     
     // Only process new AYN messages
     if (lastMessage.sender === 'ayn' && lastMessage.content !== lastProcessedMessageContent) {
+      // Reset the gate after processing
+      awaitingLiveResponseRef.current = false;
       setLastProcessedMessageContent(lastMessage.content);
       
       // Blink before responding (like landing page)

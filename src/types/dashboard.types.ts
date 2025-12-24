@@ -192,6 +192,7 @@ export interface UseMessagesReturn {
   loadMessages: () => Promise<void>;
   sendMessage: (content: string, attachment?: FileAttachment | null) => Promise<void>;
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
+  setMessagesFromHistory: (messages: Message[]) => void;
 }
 
 export interface UseFileUploadReturn {

@@ -166,10 +166,10 @@ export const DashboardContainer = ({ user, session, auth, isAdmin, hasDutyAccess
     handleCopyMessage(message.content);
   }, [handleCopyMessage]);
 
-  // Handle load chat
+  // Handle load chat - use setMessagesFromHistory to prevent auto-showing ResponseCard
   const handleLoadChat = useCallback((chat: ChatHistory) => {
     const loadedMessages = chatSession.loadChat(chat);
-    messagesHook.setMessages(loadedMessages);
+    messagesHook.setMessagesFromHistory(loadedMessages);
   }, [chatSession, messagesHook]);
 
   // Handle new chat
@@ -562,6 +562,7 @@ const DashboardContent = ({
           monthlyLimit={usageTracking.monthlyLimit}
           usageResetDate={usageTracking.usageResetDate}
           isLoadingFromHistory={messagesHook.isLoadingFromHistory}
+          currentSessionId={chatSession.currentSessionId}
           maintenanceConfig={maintenanceConfig}
         />
       </main>
