@@ -667,7 +667,7 @@ animate={{
               "fixed z-40",
               "left-0 right-0",
               "px-2 sm:px-4",
-              "flex justify-center items-end",
+              "flex justify-center items-start pt-6",
               "transition-[left,right] duration-300",
               sidebarOpen && "md:left-[20rem]",
               transcriptOpen && "md:right-[20rem]"
@@ -685,7 +685,8 @@ animate={{
               responses={responseBubbles} 
               isMobile={isMobile}
               onDismiss={clearResponseBubbles}
-              variant="sheet"
+              variant="inline"
+              showPointer={false}
             />
           </motion.div>
         )}

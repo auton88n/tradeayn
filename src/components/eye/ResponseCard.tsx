@@ -23,9 +23,10 @@ interface ResponseCardProps {
   isMobile?: boolean;
   onDismiss?: () => void;
   variant?: 'inline' | 'sheet';
+  showPointer?: boolean;
 }
 
-const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant = 'inline' }: ResponseCardProps) => {
+const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant = 'inline', showPointer = true }: ResponseCardProps) => {
   const contentRef = useRef<HTMLDivElement>(null);
   const dialogContentRef = useRef<HTMLDivElement>(null);
   const [isScrollable, setIsScrollable] = useState(false);
@@ -187,8 +188,8 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
             delay: 0.1,
           }}
         >
-          {/* Speech bubble pointer toward eye - hidden in sheet mode */}
-          {variant !== 'sheet' && (
+          {/* Speech bubble pointer toward eye - controlled by showPointer prop */}
+          {showPointer && variant !== 'sheet' && (
             <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 rotate-45 bg-background/95 dark:bg-gray-900/95 ring-1 ring-primary/20 ring-b-0 ring-r-0" />
           )}
           
