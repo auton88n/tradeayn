@@ -667,12 +667,15 @@ animate={{
               "fixed z-40",
               "left-0 right-0",
               "px-2 sm:px-4",
-              "flex justify-center",
+              "flex justify-center items-end",
               "transition-[left,right] duration-300",
               sidebarOpen && "md:left-[20rem]",
               transcriptOpen && "md:right-[20rem]"
             )}
-            style={{ bottom: footerHeight + 8 }}
+            style={{ 
+              top: isMobile ? 180 : 200,
+              bottom: footerHeight + 8 
+            }}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
