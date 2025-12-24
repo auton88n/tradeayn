@@ -196,6 +196,30 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
           {/* Subtle top glow line */}
           <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
 
+          {/* Header with Brain icon and dismiss button */}
+          <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-border/30">
+            <div className="flex items-center gap-2.5">
+              <div className="p-1.5 rounded-lg bg-primary/10">
+                <Brain className="w-4 h-4 text-primary" />
+              </div>
+              <span className="text-sm font-medium text-foreground">AYN</span>
+            </div>
+            {onDismiss && (
+              <button
+                onClick={handleDismiss}
+                className={cn(
+                  "p-1.5 rounded-full transition-all duration-200",
+                  "hover:bg-destructive/10",
+                  "text-muted-foreground hover:text-destructive",
+                  "active:scale-95"
+                )}
+                title="Dismiss"
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
+
           {/* Content area - images full width */}
           <div 
             ref={contentRef}
@@ -305,35 +329,19 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
               </button>
             </div>
             
-            {/* Right: Expand + Dismiss */}
-            <div className="flex items-center gap-1">
-              <button
-                onClick={handleExpand}
-                className={cn(
-                  "p-2 rounded-full transition-all duration-200",
-                  "hover:bg-muted",
-                  "text-muted-foreground hover:text-primary",
-                  "active:scale-95"
-                )}
-                title="Expand"
-              >
-                <Maximize2 size={16} />
-              </button>
-              {onDismiss && (
-                <button
-                  onClick={handleDismiss}
-                  className={cn(
-                    "p-2 rounded-full transition-all duration-200",
-                    "hover:bg-destructive/10",
-                    "text-muted-foreground hover:text-destructive",
-                    "active:scale-95"
-                  )}
-                  title="Dismiss"
-                >
-                  <X size={16} />
-                </button>
+            {/* Right: Expand */}
+            <button
+              onClick={handleExpand}
+              className={cn(
+                "p-2 rounded-full transition-all duration-200",
+                "hover:bg-muted",
+                "text-muted-foreground hover:text-primary",
+                "active:scale-95"
               )}
-            </div>
+              title="Expand"
+            >
+              <Maximize2 size={16} />
+            </button>
           </div>
         </motion.div>
       </AnimatePresence>
