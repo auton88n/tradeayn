@@ -536,44 +536,38 @@ export const CenterStageLayout = ({
       {/* Background gradient */}
       <div className="absolute inset-0 bg-gradient-to-b from-background via-background to-muted/10 pointer-events-none" />
 
-      {/* Central Eye Stage - align to start when responses visible, center otherwise */}
+      {/* Central Eye Stage - unified column layout for Eye + ResponseCard */}
       <div 
         ref={eyeStageRef} 
         className={cn(
-          "flex-1 flex relative w-full",
-          hasVisibleResponses ? "items-start justify-center pt-6" : "items-center justify-center",
+          "flex-1 flex flex-col relative w-full",
+          "items-center",
+          hasVisibleResponses ? "justify-start pt-4" : "justify-center",
           "transition-all duration-300 ease-out"
         )}
       >
-        {/* Unified layout for all screen sizes */}
+        {/* Unified layout - Eye and ResponseCard in same flex column */}
         <motion.div 
           className={cn(
-            "flex flex-col items-center gap-4 w-full px-4",
+            "flex flex-col items-center w-full px-4",
             // Dynamic max-width based on sidebar states
             sidebarOpen && transcriptOpen && "lg:max-w-[calc(100vw-42rem)]",
             sidebarOpen && !transcriptOpen && "lg:max-w-[calc(100vw-22rem)]",
             !sidebarOpen && transcriptOpen && "lg:max-w-[calc(100vw-22rem)]"
           )}
-animate={{
-            paddingTop: hasVisibleResponses ? '0' : isMobile ? '10vh' : '2vh',
-          }}
-          transition={{
-            type: 'spring',
-            stiffness: 200,
-            damping: 25,
-          }}
         >
+          {/* Eye container - shrinks when response visible */}
           <motion.div 
             ref={eyeRef} 
             className="relative overflow-visible"
             data-tutorial="eye"
             animate={{
-              scale: hasVisibleResponses ? (isMobile ? 0.6 : 0.55) : 1,
-              y: hasVisibleResponses ? -10 : 0,
+              scale: hasVisibleResponses ? (isMobile ? 0.55 : 0.5) : 1,
+              marginBottom: hasVisibleResponses ? -20 : 0,
             }}
             transition={{
               type: 'spring',
-              duration: 0.6,
+              duration: 0.5,
               bounce: 0.1,
             }}
           >
@@ -608,6 +602,30 @@ animate={{
               )}
             </AnimatePresence>
           </motion.div>
+
+          {/* ResponseCard - flows directly below Eye in same column */}
+          <AnimatePresence>
+            {responseBubbles.length > 0 && (
+              <motion.div
+                className="w-full flex justify-center mt-2"
+                style={{ 
+                  maxHeight: `calc(100vh - ${footerHeight + 180}px)`,
+                }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+              >
+                <ResponseCard 
+                  responses={responseBubbles} 
+                  isMobile={isMobile}
+                  onDismiss={clearResponseBubbles}
+                  variant="inline"
+                  showPointer={false}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
           
           {/* LAB Data Viewer - Render marketing templates when structured data exists */}
           {selectedMode === 'LAB' && (() => {
@@ -658,39 +676,6 @@ animate={{
         position={burstPosition}
         particleCount={16}
       />
-
-      {/* Response Card - Fixed position above ChatInput */}
-      <AnimatePresence>
-        {responseBubbles.length > 0 && (
-          <motion.div
-            className={cn(
-              "fixed z-40",
-              "left-0 right-0",
-              "px-2 sm:px-4",
-              "flex justify-center items-start pt-6",
-              "transition-[left,right] duration-300",
-              sidebarOpen && "md:left-[20rem]",
-              transcriptOpen && "md:right-[20rem]"
-            )}
-            style={{ 
-              top: isMobile ? 100 : 120,
-              bottom: footerHeight + 8 
-            }}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
-          >
-            <ResponseCard 
-              responses={responseBubbles} 
-              isMobile={isMobile}
-              onDismiss={clearResponseBubbles}
-              variant="inline"
-              showPointer={false}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Suggestion chips temporarily disabled
       <div className={cn(
