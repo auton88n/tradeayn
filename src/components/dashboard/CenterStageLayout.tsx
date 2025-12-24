@@ -521,20 +521,29 @@ export const CenterStageLayout = ({
     <div
       ref={containerRef}
       dir="ltr"
-      className="relative flex-1 flex flex-col items-center"
+      className={cn(
+        "relative flex-1 flex flex-col items-center",
+        "min-h-0 overflow-y-auto overscroll-contain",
+        // Premium thin scrollbar
+        "[&::-webkit-scrollbar]:w-1.5",
+        "[&::-webkit-scrollbar-track]:bg-transparent",
+        "[&::-webkit-scrollbar-thumb]:bg-gray-300/50 dark:[&::-webkit-scrollbar-thumb]:bg-gray-600/50",
+        "[&::-webkit-scrollbar-thumb]:rounded-full",
+        "[-webkit-overflow-scrolling:touch]"
+      )}
+      style={{ paddingBottom: footerHeight }}
     >
       {/* Background gradient */}
       <div className="absolute inset-0 bg-gradient-to-b from-background via-background to-muted/10 pointer-events-none" />
 
-      {/* Central Eye Stage - centered in available space above input */}
+      {/* Central Eye Stage - align to start when responses visible, center otherwise */}
       <div 
         ref={eyeStageRef} 
         className={cn(
-          "flex-1 flex relative",
-          "items-center justify-center",
+          "flex-1 flex relative w-full",
+          hasVisibleResponses ? "items-start justify-center pt-6" : "items-center justify-center",
           "transition-all duration-300 ease-out"
         )}
-        style={{ paddingBottom: footerHeight }}
       >
         {/* Unified layout for all screen sizes */}
         <motion.div 
