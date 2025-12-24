@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { EmotionalEye } from '@/components/eye/EmotionalEye';
 import { UserMessageBubble } from '@/components/eye/UserMessageBubble';
 import { MobileSuggestionChips } from '@/components/eye/MobileSuggestionChips';
-import { AYNResponseCard } from '@/components/eye/AYNResponseCard';
+import { ResponseCard } from '@/components/eye/ResponseCard';
 import { FlyingSuggestionBubble } from '@/components/eye/FlyingSuggestionBubble';
 import { ParticleBurst } from '@/components/eye/ParticleBurst';
 import { ChatInput } from './ChatInput';
@@ -536,16 +536,17 @@ export const CenterStageLayout = ({
       {/* Background gradient */}
       <div className="absolute inset-0 bg-gradient-to-b from-background via-background to-muted/10 pointer-events-none" />
 
-      {/* Central Eye Stage - shows Eye when idle, AYNResponseCard when has responses */}
+      {/* Central Eye Stage - unified column layout for Eye + ResponseCard */}
       <div 
         ref={eyeStageRef} 
         className={cn(
           "flex-1 flex flex-col relative w-full",
-          "items-center justify-center",
+          "items-center",
+          hasVisibleResponses ? "justify-start pt-4" : "justify-center",
           "transition-all duration-300 ease-out"
         )}
       >
-        {/* Layout container */}
+        {/* Unified layout - Eye and ResponseCard in same flex column */}
         <motion.div 
           className={cn(
             "flex flex-col items-center w-full px-4",
@@ -555,77 +556,72 @@ export const CenterStageLayout = ({
             !sidebarOpen && transcriptOpen && "lg:max-w-[calc(100vw-22rem)]"
           )}
         >
-          {/* Show standalone Eye when NO responses visible */}
-          <AnimatePresence mode="wait">
-            {!hasVisibleResponses && (
-              <motion.div 
-                ref={eyeRef} 
-                className="relative overflow-visible"
-                data-tutorial="eye"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{
-                  type: 'spring',
-                  duration: 0.4,
-                  bounce: 0.1,
-                }}
-              >
-                <EmotionalEye 
-                  size={isMobile ? "md" : "lg"} 
-                  gazeTarget={gazeTarget} 
-                  pupilReaction={aiPupilReaction}
-                  blinkPattern={aiBlinkPattern}
-                  colorIntensity={aiColorIntensity}
-                />
+          {/* Eye container - shrinks when response visible */}
+          <motion.div 
+            ref={eyeRef} 
+            className="relative overflow-visible"
+            data-tutorial="eye"
+            animate={{
+              scale: hasVisibleResponses ? (isMobile ? 0.55 : 0.5) : 1,
+              marginBottom: hasVisibleResponses ? -20 : 0,
+            }}
+            transition={{
+              type: 'spring',
+              duration: 0.5,
+              bounce: 0.1,
+            }}
+          >
+            <EmotionalEye 
+              size={isMobile ? "md" : "lg"} 
+              gazeTarget={gazeTarget} 
+              pupilReaction={aiPupilReaction}
+              blinkPattern={aiBlinkPattern}
+              colorIntensity={aiColorIntensity}
+            />
 
-                {/* Thinking indicator when typing - simplified animation */}
-                <AnimatePresence>
-                  {isTyping && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.15 }}
-                      className="absolute -bottom-12 left-1/2 -translate-x-1/2 overflow-visible"
-                    >
-                      <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-ayn-thinking/20 backdrop-blur-sm border border-ayn-thinking/30">
-                        <div className="flex gap-1">
-                          <div className="w-1.5 h-1.5 rounded-full bg-ayn-thinking animate-bounce-dot" style={{ animationDelay: '0ms' }} />
-                          <div className="w-1.5 h-1.5 rounded-full bg-ayn-thinking animate-bounce-dot" style={{ animationDelay: '150ms' }} />
-                          <div className="w-1.5 h-1.5 rounded-full bg-ayn-thinking animate-bounce-dot" style={{ animationDelay: '300ms' }} />
-                        </div>
-                        <span className="text-xs text-ayn-thinking whitespace-nowrap">Thinking...</span>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            )}
-          </AnimatePresence>
+            {/* Thinking indicator when typing - simplified animation */}
+            <AnimatePresence>
+              {isTyping && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute -bottom-12 left-1/2 -translate-x-1/2 overflow-visible"
+                >
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-ayn-thinking/20 backdrop-blur-sm border border-ayn-thinking/30">
+                    <div className="flex gap-1">
+                      {/* CSS-based animation instead of framer-motion */}
+                      <div className="w-1.5 h-1.5 rounded-full bg-ayn-thinking animate-bounce-dot" style={{ animationDelay: '0ms' }} />
+                      <div className="w-1.5 h-1.5 rounded-full bg-ayn-thinking animate-bounce-dot" style={{ animationDelay: '150ms' }} />
+                      <div className="w-1.5 h-1.5 rounded-full bg-ayn-thinking animate-bounce-dot" style={{ animationDelay: '300ms' }} />
+                    </div>
+                    <span className="text-xs text-ayn-thinking whitespace-nowrap">Thinking...</span>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
 
-          {/* Show unified AYNResponseCard (with embedded Eye avatar) when responses visible */}
+          {/* ResponseCard - flows directly below Eye in same column */}
           <AnimatePresence>
             {responseBubbles.length > 0 && (
               <motion.div
-                className="w-full flex justify-center"
+                className="w-full flex justify-center mt-2"
                 style={{ 
-                  maxHeight: `calc(100vh - ${footerHeight + 120}px)`,
+                  maxHeight: `calc(100vh - ${footerHeight + 180}px)`,
                 }}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
                 transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
               >
-                <AYNResponseCard 
+                <ResponseCard 
                   responses={responseBubbles} 
                   isMobile={isMobile}
                   onDismiss={clearResponseBubbles}
-                  isTyping={isTyping}
-                  gazeTarget={gazeTarget}
-                  pupilReaction={aiPupilReaction}
-                  blinkPattern={aiBlinkPattern}
-                  colorIntensity={aiColorIntensity}
+                  variant="inline"
+                  showPointer={false}
                 />
               </motion.div>
             )}
