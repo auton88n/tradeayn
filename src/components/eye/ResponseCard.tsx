@@ -22,9 +22,10 @@ interface ResponseCardProps {
   responses: ResponseBubble[];
   isMobile?: boolean;
   onDismiss?: () => void;
+  variant?: 'inline' | 'sheet';
 }
 
-const ResponseCardComponent = ({ responses, isMobile = false, onDismiss }: ResponseCardProps) => {
+const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant = 'inline' }: ResponseCardProps) => {
   const contentRef = useRef<HTMLDivElement>(null);
   const dialogContentRef = useRef<HTMLDivElement>(null);
   const [isScrollable, setIsScrollable] = useState(false);
@@ -166,8 +167,9 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss }: Respo
             // Glow border effect
             "ring-1 ring-primary/20",
             "shadow-xl shadow-primary/10",
-            // Rounding
-            "rounded-2xl overflow-hidden",
+            // Rounding - sheet has rounded top, inline has full rounding
+            variant === 'sheet' ? "rounded-t-3xl rounded-b-xl" : "rounded-2xl",
+            "overflow-hidden",
             // CSS containment for performance isolation
             "contain-layout contain-paint"
           )}
