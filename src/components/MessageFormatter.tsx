@@ -32,6 +32,44 @@ const unwrapCodeFences = (text: string): string => {
   return text;
 };
 
+// Detect JSON responses with image URLs and convert to markdown image syntax
+const detectImageJsonResponse = (text: string): string => {
+  if (!text) return text;
+  
+  const trimmed = text.trim();
+  
+  // Check if content looks like JSON with image URL
+  if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      
+      // Check for common image response patterns (from n8n, DALL-E, etc.)
+      if (parsed.url && typeof parsed.url === 'string') {
+        const url = parsed.url;
+        // Check if it's likely an image URL
+        const isImageUrl = url.includes('.png') || 
+                          url.includes('.jpg') || 
+                          url.includes('.jpeg') || 
+                          url.includes('.gif') || 
+                          url.includes('.webp') ||
+                          url.includes('image') || 
+                          url.includes('blob.core.windows.net') ||
+                          url.includes('oaidalleapiprodscus');
+        
+        if (isImageUrl) {
+          // Convert to markdown image with caption
+          const caption = parsed.revised_prompt || parsed.description || parsed.prompt || 'Generated Image';
+          return `![${caption}](${url})\n\n**${caption}**`;
+        }
+      }
+    } catch {
+      // Not valid JSON, return original
+    }
+  }
+  
+  return text;
+};
+
 // Decode HTML entities safely without using innerHTML (prevents XSS)
 const decodeHtmlEntities = (text: string): string => {
   if (!text) return '';
@@ -94,13 +132,16 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
   const [lightboxImage, setLightboxImage] = useState<{ src: string; alt: string } | null>(null);
   const [copiedCodeId, setCopiedCodeId] = useState<string | null>(null);
 
-  // Step 1: Unwrap outer code fences (if entire content is wrapped)
-  const unwrappedContent = unwrapCodeFences(content);
+  // Step 1: Detect and convert JSON image responses to markdown
+  const imageProcessedContent = detectImageJsonResponse(content);
   
-  // Step 2: Decode HTML entities
+  // Step 2: Unwrap outer code fences (if entire content is wrapped)
+  const unwrappedContent = unwrapCodeFences(imageProcessedContent);
+  
+  // Step 3: Decode HTML entities
   const decodedContent = decodeHtmlEntities(unwrappedContent);
   
-  // Step 3: Sanitize content to prevent XSS attacks
+  // Step 4: Sanitize content to prevent XSS attacks
   const sanitizedContent = isValidUserInput(decodedContent) ? decodedContent : sanitizeUserInput(decodedContent);
 
   const copyCodeToClipboard = async (code: string, id: string) => {
