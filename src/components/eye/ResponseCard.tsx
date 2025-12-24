@@ -149,6 +149,7 @@ const ResponseCardComponent = ({ responses, isMobile = false }: ResponseCardProp
           className={cn(
             "speech-bubble-content",
             "flex-1 min-h-0 overflow-y-auto overflow-x-auto",
+            "max-h-[300px]", // Enable scrolling when content exceeds 300px
             "break-words max-w-full",
             // Premium thin scrollbar
             "[&::-webkit-scrollbar]:w-1.5",
