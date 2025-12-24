@@ -190,10 +190,7 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss }: Respo
           {/* Inner highlight shine - removed animation */}
           <div className="absolute inset-x-4 top-0 h-[30%] bg-gradient-to-b from-white/20 to-transparent dark:from-white/5 rounded-t-xl pointer-events-none" />
 
-          {/* Brain Logo - Top Left (static for performance) */}
-          <div className="absolute top-3 left-3 opacity-20">
-            <Brain className="w-5 h-5 text-primary" />
-          </div>
+          {/* Removed Brain Logo for cleaner look */}
 
           {/* Top-right action cluster: Expand + Dismiss */}
           <div className="absolute top-2 right-2 flex items-center gap-1 z-10">
@@ -238,11 +235,11 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss }: Respo
             className={cn(
               "speech-bubble-content",
               "flex-1 min-h-0 overflow-y-auto overflow-x-auto",
-              // Responsive max-height: compact to stay above input
-              "max-h-[30vh] sm:max-h-[min(320px,35vh)]",
+              // Responsive max-height: slightly taller to fit bigger images
+              "max-h-[35vh] sm:max-h-[min(380px,40vh)]",
               "break-words max-w-full",
-              // Cap image sizes so captions stay visible
-              "[&_img]:max-h-[200px] [&_img]:w-auto [&_img]:object-contain",
+              // Larger images (300px max) for better visibility
+              "[&_img]:max-h-[300px] [&_img]:w-auto [&_img]:object-contain [&_img]:rounded-lg",
               // Premium thin scrollbar
               "[&::-webkit-scrollbar]:w-1.5",
               "[&::-webkit-scrollbar-track]:bg-transparent",
@@ -251,8 +248,8 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss }: Respo
               "[&::-webkit-scrollbar-thumb]:hover:bg-gray-400/60 dark:[&::-webkit-scrollbar-thumb]:hover:bg-gray-500/60",
               // iOS touch scrolling
               "[-webkit-overflow-scrolling:touch]",
-              // Padding for brain logo on left and action buttons on right
-              "pl-8 pr-6 pt-1"
+              // Padding for action buttons on right
+              "pr-6 pt-1"
             )}
             style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}
           >
@@ -320,21 +317,7 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss }: Respo
                 )}
               </button>
               
-              {/* Expand button in footer for mobile discoverability */}
-              <button
-                onClick={handleExpand}
-                className={cn(
-                  "sm:hidden flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium",
-                  "bg-primary/10 dark:bg-primary/20",
-                  "hover:bg-primary/20 dark:hover:bg-primary/30",
-                  "text-primary",
-                  "transition-all duration-200",
-                  "active:scale-95"
-                )}
-              >
-                <Maximize2 size={12} />
-                <span>Expand</span>
-              </button>
+              {/* Removed duplicate Expand button - now only in top-right */}
             </div>
             
             {/* Right: Feedback Buttons */}
