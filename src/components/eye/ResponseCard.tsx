@@ -176,6 +176,9 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
           style={{
             willChange: 'transform, opacity',
             transform: 'translateZ(0)',
+            ...(variant === 'sheet'
+              ? { height: 'min(50vh, 100%)', maxHeight: '100%' }
+              : {}),
           }}
           initial={{ opacity: 0, y: 20, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -187,7 +190,12 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
           }}
         >
           {/* Speech bubble pointer toward eye */}
-          <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 rotate-45 bg-background/95 dark:bg-gray-900/95 ring-1 ring-primary/20 ring-b-0 ring-r-0" />
+          <div
+            className={cn(
+              "absolute left-1/2 -translate-x-1/2 w-4 h-4 rotate-45 bg-background/95 dark:bg-gray-900/95 ring-1 ring-primary/20 ring-b-0 ring-r-0",
+              variant === 'sheet' ? "top-0" : "-top-2"
+            )}
+          />
           
           {/* Subtle top glow line */}
           <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
@@ -197,8 +205,8 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
             ref={contentRef}
             className={cn(
               "flex-1 min-h-0 overflow-y-auto overflow-x-hidden",
-              // Height constraints
-              "max-h-[45vh] sm:max-h-[50vh]",
+              // Height constraints (inline only)
+              variant === 'inline' && "max-h-[45vh] sm:max-h-[50vh]",
               // Full-width images with proper styling
               "[&_img]:w-full [&_img]:max-h-[280px] [&_img]:object-cover [&_img]:rounded-none",
               "[&_img]:border-b [&_img]:border-border/20",
