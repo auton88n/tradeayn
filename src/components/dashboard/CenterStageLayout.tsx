@@ -573,12 +573,15 @@ animate={{
             </AnimatePresence>
           </motion.div>
           
-          {/* Response card directly below eye - constrained height prevents pushing input */}
-          <div className="px-4 py-2 w-full flex flex-col items-center max-h-[50vh] overflow-hidden">
-            <ResponseCard 
-              responses={responseBubbles} 
-              isMobile={isMobile}
-            />
+          {/* Response card directly below eye */}
+          <div className="px-4 py-2 w-full flex flex-col items-center overflow-visible">
+            {responseBubbles.length > 0 && (
+              <ResponseCard 
+                responses={responseBubbles} 
+                isMobile={isMobile}
+                onDismiss={clearResponseBubbles}
+              />
+            )}
             
             {/* LAB Data Viewer - Render marketing templates when structured data exists */}
             {selectedMode === 'LAB' && (() => {
