@@ -124,7 +124,12 @@ export const CenterStageLayout = ({
   const inputRef = useRef<HTMLDivElement>(null);
   
   // Gate to only show ResponseCard for actively-sent messages
-  const awaitingLiveResponseRef = useRef(false);
+  // We store the last message id at the moment of sending, to avoid re-processing the previous
+  // historical AYN response during the send animation re-renders.
+  const awaitingLiveResponseRef = useRef<{ active: boolean; baselineLastMessageId: string | null }>({
+    active: false,
+    baselineLastMessageId: null,
+  });
   const isMobile = useIsMobile();
   const { setEmotion, setEmotionWithSource, triggerAbsorption, triggerBlink, setIsResponding, detectExcitement, isUserTyping: contextIsTyping, triggerPulse, bumpActivity } = useAYNEmotion();
   const soundContext = useSoundContextOptional();
@@ -167,7 +172,7 @@ export const CenterStageLayout = ({
       setLastUserMessage('');
       setEmotion('calm');
       setIsResponding(false);
-      awaitingLiveResponseRef.current = false;
+      awaitingLiveResponseRef.current = { active: false, baselineLastMessageId: null };
     }
   }, [messages.length, clearResponseBubbles, clearSuggestions, setEmotion, setIsResponding]);
 
@@ -177,7 +182,7 @@ export const CenterStageLayout = ({
       clearResponseBubbles();
       clearSuggestions();
       setLastProcessedMessageContent(null);
-      awaitingLiveResponseRef.current = false;
+      awaitingLiveResponseRef.current = { active: false, baselineLastMessageId: null };
     }
   }, [currentSessionId, clearResponseBubbles, clearSuggestions]);
 
@@ -299,9 +304,13 @@ export const CenterStageLayout = ({
 
       // Track the user's message for suggestion context
       setLastUserMessage(content);
-      
+
       // Mark that we're awaiting a live response (enables ResponseCard display)
-      awaitingLiveResponseRef.current = true;
+      // Capture current last message id to prevent immediately showing the previous AYN response.
+      awaitingLiveResponseRef.current = {
+        active: true,
+        baselineLastMessageId: messages[messages.length - 1]?.id ?? null,
+      };
 
       // Clear previous response bubbles and suggestions
       clearResponseBubbles();
@@ -340,6 +349,7 @@ export const CenterStageLayout = ({
     },
     [
       isUploading,
+      messages,
       clearResponseBubbles,
       clearSuggestions,
       getInputPosition,
@@ -363,7 +373,11 @@ export const CenterStageLayout = ({
     setLastUserMessage(content);
     
     // Mark that we're awaiting a live response (enables ResponseCard display)
-    awaitingLiveResponseRef.current = true;
+    // Capture current last message id to prevent immediately showing the previous AYN response.
+    awaitingLiveResponseRef.current = {
+      active: true,
+      baselineLastMessageId: messages[messages.length - 1]?.id ?? null,
+    };
     
     // Clear suggestions
     clearSuggestions();
@@ -397,6 +411,7 @@ export const CenterStageLayout = ({
       onSendMessage(content, null);
     }, 300);
   }, [
+    messages,
     clearSuggestions,
     clearResponseBubbles,
     getEyePosition,
@@ -413,19 +428,24 @@ export const CenterStageLayout = ({
   // Skip if loading from history OR not awaiting a live response
   useEffect(() => {
     if (messages.length === 0) return;
-    
+
     // Skip processing historical messages - only process new responses
     if (isLoadingFromHistory) return;
-    
-    // Skip if not awaiting a live response (prevents auto-show on chat switch)
-    if (!awaitingLiveResponseRef.current) return;
+
+    const gate = awaitingLiveResponseRef.current;
+
+    // Skip if not awaiting a live response (prevents auto-show on chat switch / during send animation)
+    if (!gate.active) return;
 
     const lastMessage = messages[messages.length - 1];
-    
+
+    // If the last message hasn't changed since we started the send, it's the old response — ignore it.
+    if (gate.baselineLastMessageId && lastMessage.id === gate.baselineLastMessageId) return;
+
     // Only process new AYN messages
     if (lastMessage.sender === 'ayn' && lastMessage.content !== lastProcessedMessageContent) {
       // Reset the gate after processing
-      awaitingLiveResponseRef.current = false;
+      awaitingLiveResponseRef.current = { active: false, baselineLastMessageId: null };
       setLastProcessedMessageContent(lastMessage.content);
       
       // Blink before responding (like landing page)
