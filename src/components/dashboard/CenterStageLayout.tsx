@@ -573,8 +573,8 @@ animate={{
             }}
             transition={{
               type: 'spring',
-              stiffness: 200,
-              damping: 25,
+              duration: 0.6,
+              bounce: 0.1,
             }}
           >
             <EmotionalEye 
@@ -609,32 +609,23 @@ animate={{
             </AnimatePresence>
           </motion.div>
           
-          {/* Response card directly below eye */}
-          <div className="px-4 py-2 w-full flex flex-col items-center overflow-visible">
-            {responseBubbles.length > 0 && (
-              <ResponseCard 
-                responses={responseBubbles} 
-                isMobile={isMobile}
-                onDismiss={clearResponseBubbles}
-              />
-            )}
+          {/* LAB Data Viewer - Render marketing templates when structured data exists */}
+          {selectedMode === 'LAB' && (() => {
+            const latestAynMessage = [...messages].reverse().find(m => m.sender === 'ayn');
+            const labData = latestAynMessage?.labData;
+            const hasLABData = labData?.hasStructuredData && labData?.json;
             
-            {/* LAB Data Viewer - Render marketing templates when structured data exists */}
-            {selectedMode === 'LAB' && (() => {
-              const latestAynMessage = [...messages].reverse().find(m => m.sender === 'ayn');
-              const labData = latestAynMessage?.labData;
-              const hasLABData = labData?.hasStructuredData && labData?.json;
-              
-              if (!hasLABData || !labData?.json) return null;
-              
-              return (
+            if (!hasLABData || !labData?.json) return null;
+            
+            return (
+              <div className="px-4 py-2 w-full flex flex-col items-center">
                 <LABDataViewer 
                   data={labData.json} 
                   className="mt-4 w-full max-w-[560px]" 
                 />
-              );
-            })()}
-          </div>
+              </div>
+            );
+          })()}
         </motion.div>
       </div>
 
@@ -667,6 +658,35 @@ animate={{
         position={burstPosition}
         particleCount={16}
       />
+
+      {/* Response Card - Fixed position above ChatInput */}
+      <AnimatePresence>
+        {responseBubbles.length > 0 && (
+          <motion.div
+            className={cn(
+              "fixed z-40",
+              "left-0 right-0",
+              "px-2 sm:px-4",
+              "flex justify-center",
+              "transition-[left,right] duration-300",
+              sidebarOpen && "md:left-[20rem]",
+              transcriptOpen && "md:right-[20rem]"
+            )}
+            style={{ bottom: footerHeight + 8 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+          >
+            <ResponseCard 
+              responses={responseBubbles} 
+              isMobile={isMobile}
+              onDismiss={clearResponseBubbles}
+              variant="sheet"
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Suggestion chips temporarily disabled
       <div className={cn(
