@@ -65,6 +65,8 @@ interface CenterStageLayoutProps {
   currentMonthUsage?: number;
   monthlyLimit?: number | null;
   usageResetDate?: string | null;
+  // Flag to prevent auto-showing historical messages
+  isLoadingFromHistory?: boolean;
   // Maintenance config
   maintenanceConfig?: {
     enabled?: boolean;
@@ -110,6 +112,7 @@ export const CenterStageLayout = ({
   currentMonthUsage,
   monthlyLimit,
   usageResetDate,
+  isLoadingFromHistory,
   maintenanceConfig,
 }: CenterStageLayoutProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -384,8 +387,12 @@ export const CenterStageLayout = ({
   ]);
 
   // Process AYN responses and emit speech bubbles + suggestions
+  // Skip if loading from history to prevent auto-showing old messages
   useEffect(() => {
     if (messages.length === 0) return;
+    
+    // Skip processing historical messages - only process new responses
+    if (isLoadingFromHistory) return;
 
     const lastMessage = messages[messages.length - 1];
     
