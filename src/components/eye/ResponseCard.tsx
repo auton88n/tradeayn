@@ -176,9 +176,7 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
           style={{
             willChange: 'transform, opacity',
             transform: 'translateZ(0)',
-            ...(variant === 'sheet'
-              ? { height: 'min(50vh, 100%)', maxHeight: '100%' }
-              : {}),
+            ...(variant === 'sheet' ? { maxHeight: 'min(50vh, 100%)' } : {}),
           }}
           initial={{ opacity: 0, y: 20, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -189,13 +187,10 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
             delay: 0.1,
           }}
         >
-          {/* Speech bubble pointer toward eye */}
-          <div
-            className={cn(
-              "absolute left-1/2 -translate-x-1/2 w-4 h-4 rotate-45 bg-background/95 dark:bg-gray-900/95 ring-1 ring-primary/20 ring-b-0 ring-r-0",
-              variant === 'sheet' ? "top-0" : "-top-2"
-            )}
-          />
+          {/* Speech bubble pointer toward eye - hidden in sheet mode */}
+          {variant !== 'sheet' && (
+            <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 rotate-45 bg-background/95 dark:bg-gray-900/95 ring-1 ring-primary/20 ring-b-0 ring-r-0" />
+          )}
           
           {/* Subtle top glow line */}
           <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
