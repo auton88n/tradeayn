@@ -561,6 +561,7 @@ const DashboardContent = ({
           currentMonthUsage={usageTracking.currentMonthUsage}
           monthlyLimit={usageTracking.monthlyLimit}
           usageResetDate={usageTracking.usageResetDate}
+          isLoadingFromHistory={messagesHook.isLoadingFromHistory}
           maintenanceConfig={maintenanceConfig}
         />
       </main>

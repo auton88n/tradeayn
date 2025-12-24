@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
 import { detectLanguage } from '@/utils/languageDetection';
@@ -56,6 +56,7 @@ export const useMessages = (
   const [lastSuggestedEmotion, setLastSuggestedEmotion] = useState<string | null>(null);
   const [moodPattern, setMoodPattern] = useState<MoodPattern | null>(null);
   const [emotionHistory, setEmotionHistory] = useState<EmotionHistoryEntry[]>([]);
+  const [isLoadingFromHistory, setIsLoadingFromHistory] = useState(false);
   const { toast } = useToast();
 
   // Load messages from database for current session using direct REST API
@@ -64,6 +65,9 @@ export const useMessages = (
       console.warn('[useMessages] No session or sessionId available');
       return;
     }
+    
+    // Mark as loading from history to prevent auto-showing response bubbles
+    setIsLoadingFromHistory(true);
     
     try {
       const data = await fetchFromSupabase(
@@ -98,6 +102,11 @@ export const useMessages = (
     } catch (error) {
       console.error('[useMessages] Error loading messages:', error);
       // Silent fail - messages will be empty
+    } finally {
+      // Reset after a short delay to allow effects to check the flag
+      setTimeout(() => {
+        setIsLoadingFromHistory(false);
+      }, 100);
     }
   }, [userId, sessionId, session]);
 
@@ -444,6 +453,7 @@ export const useMessages = (
     messageCount,
     hasReachedLimit,
     maxMessages: MAX_MESSAGES_PER_CHAT,
+    isLoadingFromHistory,
     loadMessages,
     sendMessage,
     setMessages
