@@ -238,8 +238,8 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss }: Respo
             className={cn(
               "speech-bubble-content",
               "flex-1 min-h-0 overflow-y-auto overflow-x-auto",
-              // Responsive max-height: more generous but still constrained
-              "max-h-[40vh] sm:max-h-[min(420px,50vh)]",
+              // Responsive max-height: constrained to stay above input
+              "max-h-[28vh] sm:max-h-[min(280px,35vh)]",
               "break-words max-w-full",
               // Premium thin scrollbar
               "[&::-webkit-scrollbar]:w-1.5",
