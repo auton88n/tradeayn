@@ -15,6 +15,7 @@ import {
   HistoryIllustration,
   CreditsIllustration,
   ProfileIllustration,
+  EngineeringIllustration,
 } from './TutorialIllustrations';
 
 interface TutorialPageProps {
@@ -39,6 +40,7 @@ const illustrations: Record<string, React.FC> = {
   'history': HistoryIllustration,
   'credits': CreditsIllustration,
   'profile': ProfileIllustration,
+  'engineering': EngineeringIllustration,
 };
 
 export const TutorialPage = ({

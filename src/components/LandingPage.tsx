@@ -22,6 +22,7 @@ import MobileMockup from './services/MobileMockup';
 import DeviceMockups from './services/DeviceMockups';
 import AutomationFlowMockup from './services/AutomationFlowMockup';
 import AIEmployeeMockup from './services/AIEmployeeMockup';
+import EngineeringMockup from './services/EngineeringMockup';
 import { SEO, organizationSchema, websiteSchema } from './SEO';
 
 // ScrollReveal component - defined outside to prevent recreation on re-renders
@@ -238,6 +239,13 @@ const LandingPage = () => {
     title: language === 'ar' ? 'موظفين بالذكاء الاصطناعي' : language === 'fr' ? 'Employés IA' : 'AI Employees',
     description: language === 'ar' ? 'موظفين يعملون ٢٤ ساعة بدون إجازات أو تأمين صحي.' : language === 'fr' ? 'Employés qui travaillent 24h/24 sans vacances ni assurance santé.' : 'Employees who work 24/7 with no vacations or healthcare costs.',
     mockup: <LazyLoad><AIEmployeeMockup /></LazyLoad>
+  }, {
+    number: '05',
+    slug: 'engineering',
+    isInternal: true,
+    title: language === 'ar' ? 'حاسبات الهندسة المدنية' : language === 'fr' ? 'Calculateurs de Génie Civil' : 'Civil Engineering Calculators',
+    description: language === 'ar' ? 'تصميم العناصر الإنشائية مع التصور ثلاثي الأبعاد والتحليل بالذكاء الاصطناعي.' : language === 'fr' ? 'Concevez des éléments structurels avec visualisation 3D et analyse IA.' : 'Design structural elements with 3D visualization and AI-powered analysis.',
+    mockup: <LazyLoad><EngineeringMockup /></LazyLoad>
   }];
   return <>
     <SEO
@@ -508,11 +516,11 @@ const LandingPage = () => {
           {/* Section header */}
           <ScrollReveal>
             <div className="text-center mb-12 md:mb-16">
-              <span className="text-sm font-mono text-muted-foreground tracking-wider uppercase mb-4 block">
+            <span className="text-sm font-mono text-muted-foreground tracking-wider uppercase mb-4 block">
                 {language === 'ar' ? 'خدماتنا' : language === 'fr' ? 'Ce Que Nous Faisons' : 'What We Do'}
               </span>
               <h2 className="text-3xl md:text-5xl lg:text-6xl font-serif mb-4 md:mb-6">
-                {language === 'ar' ? <>أربع طرق <span className="font-bold">لتبسيط حياتك</span></> : language === 'fr' ? <>Quatre Façons de <span className="font-bold">Simplifier Votre Vie</span></> : <>Four Ways We Help <span className="font-bold">Simplify Your Life</span></>}
+                {language === 'ar' ? <>خمس طرق <span className="font-bold">لتبسيط حياتك</span></> : language === 'fr' ? <>Cinq Façons de <span className="font-bold">Simplifier Votre Vie</span></> : <>Five Ways We Help <span className="font-bold">Simplify Your Life</span></>}
               </h2>
             </div>
           </ScrollReveal>
@@ -618,26 +626,56 @@ const LandingPage = () => {
               {/* Bottom Right - AI Employees */}
               <ScrollReveal delay={0.3}>
                 <Link to={`/services/${services[3].slug}`} className="block">
-                  <motion.div className="bg-muted/50 rounded-3xl p-6 md:p-8 min-h-[320px] lg:min-h-[380px] flex flex-col group cursor-pointer overflow-visible" whileHover={{
+                  <motion.div className="bg-muted/50 rounded-3xl p-6 md:p-8 min-h-[280px] group cursor-pointer overflow-visible" whileHover={{
+                  y: -4
+                }} transition={{
+                  duration: 0.3,
+                  ease: [0.32, 0.72, 0, 1]
+                }}>
+                    <div className="flex flex-col gap-4">
+                      <div>
+                        <h3 className="text-xl md:text-2xl font-bold mt-2 group-hover:text-primary transition-colors">
+                          {services[3].title}
+                        </h3>
+                        <p className="text-sm text-muted-foreground mt-2">
+                          {services[3].description}
+                        </p>
+                      </div>
+                      <div className="flex-1 flex items-center justify-center h-[120px] overflow-visible">
+                        {services[3].mockup}
+                      </div>
+                      <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                        {language === 'ar' ? 'اكتشف المزيد' : language === 'fr' ? 'En Savoir Plus' : 'Learn More'}
+                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+                  </motion.div>
+                </Link>
+              </ScrollReveal>
+              
+              {/* Engineering Tools - Featured Card */}
+              <ScrollReveal delay={0.4}>
+                <Link to="/engineering" className="block">
+                  <motion.div className="bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/20 rounded-3xl p-6 md:p-8 min-h-[320px] lg:min-h-[380px] flex flex-col group cursor-pointer overflow-visible" whileHover={{
                   y: -4
                 }} transition={{
                   duration: 0.3,
                   ease: [0.32, 0.72, 0, 1]
                 }}>
                     <div className="mb-4">
-                      
-                      <h3 className="text-xl md:text-2xl font-bold mt-2 group-hover:text-primary transition-colors">
-                        {services[3].title}
+                      <span className="text-xs font-mono text-cyan-500 tracking-wider">NEW</span>
+                      <h3 className="text-xl md:text-2xl font-bold mt-2 group-hover:text-cyan-500 transition-colors">
+                        {services[4].title}
                       </h3>
                       <p className="text-sm text-muted-foreground mt-2">
-                        {services[3].description}
+                        {services[4].description}
                       </p>
                     </div>
                     <div className="flex-1 flex items-center justify-center overflow-visible">
-                      {services[3].mockup}
+                      {services[4].mockup}
                     </div>
                     <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors mt-4">
-                      {language === 'ar' ? 'اكتشف المزيد' : language === 'fr' ? 'En Savoir Plus' : 'Learn More'}
+                      {language === 'ar' ? 'ابدأ التصميم' : language === 'fr' ? 'Commencer la Conception' : 'Start Designing'}
                       <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     </div>
                   </motion.div>
