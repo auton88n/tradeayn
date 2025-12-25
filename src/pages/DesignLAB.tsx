@@ -347,103 +347,104 @@ const DesignLAB: React.FC = () => {
       <div className="h-screen flex flex-col bg-background">
         {/* Header */}
         <motion.header
-          className="flex-shrink-0 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+          className="flex-shrink-0 border-b border-border bg-background"
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
         >
           <div className="flex items-center justify-between px-4 h-14">
+            {/* Left - Logo & Title */}
             <div className="flex items-center gap-3">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => navigate(-1)}
-                className="rounded-full"
+                className="h-8 w-8 rounded-lg hover:bg-muted"
               >
-                <ArrowLeft className="w-5 h-5" />
+                <ArrowLeft className="w-4 h-4" />
               </Button>
+              <div className="h-6 w-px bg-border" />
               <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-primary/10">
+                <div className="p-1.5 rounded-lg bg-gradient-to-br from-primary/20 to-purple-500/20 border border-primary/20">
                   <Palette className="w-4 h-4 text-primary" />
                 </div>
-                <div>
-                  <h1 className="text-sm font-semibold">Design LAB</h1>
-                  <p className="text-xs text-muted-foreground">Create social media posts</p>
-                </div>
+                <span className="text-sm font-semibold hidden sm:inline">Design LAB</span>
               </div>
             </div>
             
-            {/* AI Design Controls */}
-            <div className="flex items-center gap-2 flex-1 max-w-xl mx-4">
+            {/* Center - AI Design Controls */}
+            <div className="flex items-center gap-1.5 bg-muted/50 rounded-full px-2 py-1 border border-border/50 max-w-lg flex-1 mx-4">
+              <Sparkles className="w-3.5 h-3.5 text-primary shrink-0 ml-1" />
               <Input
-                placeholder="What's this post about? (e.g., Winter sale 50% off)"
+                placeholder="Describe your post..."
                 value={designContext}
                 onChange={(e) => setDesignContext(e.target.value)}
-                className="h-8 text-sm"
+                className="h-7 text-sm bg-transparent border-0 shadow-none focus-visible:ring-0 placeholder:text-muted-foreground/60"
               />
+              <div className="h-4 w-px bg-border/50" />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-1 shrink-0">
+                  <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs font-medium shrink-0 hover:bg-background/80">
                     {styleOptions.find(s => s.value === designStyle)?.label}
-                    <ChevronDown className="w-3 h-3" />
+                    <ChevronDown className="w-3 h-3 opacity-50" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="center" className="w-48">
                   {styleOptions.map((style) => (
                     <DropdownMenuItem
                       key={style.value}
                       onClick={() => setDesignStyle(style.value)}
-                      className="flex flex-col items-start"
+                      className="flex flex-col items-start gap-0.5 py-2"
                     >
-                      <span className="font-medium">{style.label}</span>
+                      <span className="font-medium text-sm">{style.label}</span>
                       <span className="text-xs text-muted-foreground">{style.description}</span>
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
-            </div>
-            
-            <div className="flex items-center gap-2">
               <Button
-                variant="secondary"
                 size="sm"
                 onClick={handleAutoDesign}
                 disabled={isGeneratingDesign || !canvasState.backgroundImage}
-                className="gap-2 bg-gradient-to-r from-primary/20 to-purple-500/20 hover:from-primary/30 hover:to-purple-500/30 border border-primary/30"
+                className="h-7 gap-1.5 px-3 text-xs font-medium rounded-full bg-primary hover:bg-primary/90 shrink-0"
               >
                 {isGeneratingDesign ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Designing...
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    <span className="hidden sm:inline">Generating...</span>
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-4 h-4" />
-                    Auto-Design
+                    <Sparkles className="w-3 h-3" />
+                    <span className="hidden sm:inline">Generate</span>
                   </>
                 )}
               </Button>
+            </div>
+            
+            {/* Right - Actions */}
+            <div className="flex items-center gap-1.5">
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={handleCopyToClipboard}
-                className="gap-2"
+                className="h-8 gap-1.5 text-xs font-medium hover:bg-muted"
               >
-                <Share2 className="w-4 h-4" />
-                Copy
+                <Share2 className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Copy</span>
               </Button>
               <Button
                 size="sm"
                 onClick={handleExport}
-                className="gap-2"
+                className="h-8 gap-1.5 text-xs font-medium bg-foreground text-background hover:bg-foreground/90"
               >
-                <Download className="w-4 h-4" />
-                Export
+                <Download className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Export</span>
               </Button>
             </div>
           </div>
         </motion.header>
 
-        {/* Main Content */}
+        {/* Main Content - Toolbar on LEFT, Canvas in center */}
         <div className="flex-1 flex overflow-hidden">
           {/* Hidden input for manual upload */}
           <input
@@ -454,47 +455,7 @@ const DesignLAB: React.FC = () => {
             onChange={handleManualUploadChange}
           />
           
-          {/* Canvas Area */}
-          {isLoadingExternalImage ? (
-            <div className="flex-1 flex items-center justify-center bg-muted/30">
-              <div className="text-center">
-                <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-primary" />
-                <p className="text-sm text-muted-foreground">Loading image...</p>
-              </div>
-            </div>
-          ) : externalImageError && !canvasState.backgroundImage ? (
-            <div className="flex-1 flex items-center justify-center bg-muted/30">
-              <div className="text-center p-6">
-                <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
-                  <ImageOff className="w-8 h-8 text-destructive" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">Image Failed to Load</h3>
-                <p className="text-sm text-muted-foreground mb-4 max-w-xs">
-                  The image may have expired or is blocked by CORS restrictions.
-                </p>
-                <div className="flex flex-col gap-2">
-                  <Button onClick={fetchExternalImage} variant="outline" className="gap-2">
-                    <RefreshCw className="w-4 h-4" />
-                    Retry
-                  </Button>
-                  <Button onClick={handleManualUpload} className="gap-2">
-                    <Upload className="w-4 h-4" />
-                    Upload Manually
-                  </Button>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <DesignCanvas
-              canvasState={canvasState}
-              canvasRef={canvasRef}
-              onSelectElement={selectElement}
-              onUpdateElement={updateElement}
-              onDeleteElement={deleteElement}
-            />
-          )}
-          
-          {/* Toolbar */}
+          {/* Left Toolbar */}
           <DesignToolbar
             selectedElement={selectedElement}
             aspectRatio={canvasState.aspectRatio}
@@ -529,6 +490,46 @@ const DesignLAB: React.FC = () => {
             onSetAspectRatio={setAspectRatio}
             onClearCanvas={clearCanvas}
           />
+          
+          {/* Canvas Area */}
+          {isLoadingExternalImage ? (
+            <div className="flex-1 flex items-center justify-center bg-muted/20">
+              <div className="text-center">
+                <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-primary" />
+                <p className="text-xs text-muted-foreground">Loading image...</p>
+              </div>
+            </div>
+          ) : externalImageError && !canvasState.backgroundImage ? (
+            <div className="flex-1 flex items-center justify-center bg-muted/20">
+              <div className="text-center p-6">
+                <div className="w-14 h-14 rounded-xl bg-destructive/10 flex items-center justify-center mx-auto mb-3">
+                  <ImageOff className="w-6 h-6 text-destructive" />
+                </div>
+                <h3 className="text-sm font-medium mb-1">Image Failed to Load</h3>
+                <p className="text-xs text-muted-foreground mb-4 max-w-xs">
+                  The image may have expired or is blocked.
+                </p>
+                <div className="flex flex-col gap-2">
+                  <Button onClick={fetchExternalImage} variant="outline" size="sm" className="gap-1.5 text-xs">
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    Retry
+                  </Button>
+                  <Button onClick={handleManualUpload} size="sm" className="gap-1.5 text-xs">
+                    <Upload className="w-3.5 h-3.5" />
+                    Upload Manually
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <DesignCanvas
+              canvasState={canvasState}
+              canvasRef={canvasRef}
+              onSelectElement={selectElement}
+              onUpdateElement={updateElement}
+              onDeleteElement={deleteElement}
+            />
+          )}
         </div>
       </div>
     </>

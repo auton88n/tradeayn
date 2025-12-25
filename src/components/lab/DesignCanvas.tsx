@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { TextOverlay } from './overlays/TextOverlay';
 import { ImageOverlay } from './overlays/ImageOverlay';
-import { Loader2, ImageOff } from 'lucide-react';
+import { Loader2, ImageOff, ImagePlus } from 'lucide-react';
 import type { CanvasState, CanvasElement, TextElement, ImageElement } from '@/hooks/useDesignCanvas';
 
 interface DesignCanvasProps {
@@ -48,29 +48,42 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
   };
 
   return (
-    <div className="flex-1 flex items-center justify-center p-4 md:p-8 bg-muted/30 overflow-auto">
+    <div className="flex-1 flex items-center justify-center p-6 md:p-10 bg-muted/20 overflow-auto relative">
+      {/* Subtle grid pattern background */}
+      <div 
+        className="absolute inset-0 opacity-[0.02]"
+        style={{
+          backgroundImage: `
+            linear-gradient(to right, hsl(var(--foreground)) 1px, transparent 1px),
+            linear-gradient(to bottom, hsl(var(--foreground)) 1px, transparent 1px)
+          `,
+          backgroundSize: '20px 20px',
+        }}
+      />
+      
       <motion.div
         ref={canvasRef}
         id="design-canvas"
         className={cn(
-          "relative bg-background shadow-2xl rounded-lg overflow-hidden",
+          "relative bg-background rounded-lg overflow-hidden",
+          "ring-1 ring-border/50 shadow-xl",
           "max-w-full max-h-[80vh]",
           aspectRatioStyles[canvasState.aspectRatio]
         )}
         style={{
           width: canvasState.aspectRatio === '9:16' ? '360px' : 
-                 canvasState.aspectRatio === '16:9' ? '640px' : '400px',
+                 canvasState.aspectRatio === '16:9' ? '640px' : '420px',
           backgroundColor: canvasState.backgroundColor,
         }}
         onClick={handleCanvasClick}
-        initial={{ scale: 0.9, opacity: 0 }}
+        initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.3 }}
+        transition={{ duration: 0.2, ease: 'easeOut' }}
       >
         {/* Background Image Loading State */}
         {canvasState.backgroundImage && imageLoading && !imageError && (
           <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
-            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            <Loader2 className="w-5 h-5 animate-spin text-primary" />
           </div>
         )}
 
@@ -78,9 +91,8 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
         {canvasState.backgroundImage && imageError && (
           <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
             <div className="text-center text-muted-foreground">
-              <ImageOff className="w-8 h-8 mx-auto mb-2" />
-              <p className="text-sm">Image failed to load</p>
-              <p className="text-xs mt-1">It may have expired</p>
+              <ImageOff className="w-6 h-6 mx-auto mb-2 opacity-50" />
+              <p className="text-xs">Failed to load</p>
             </div>
           </div>
         )}
@@ -105,7 +117,7 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
         {canvasState.backgroundImage && !imageError && !imageLoading && (
           <div 
             id="canvas-background"
-            className="absolute inset-0 bg-black/20 pointer-events-none" 
+            className="absolute inset-0 bg-black/15 pointer-events-none" 
           />
         )}
         
@@ -145,9 +157,12 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
         {/* Empty state */}
         {!canvasState.backgroundImage && canvasState.elements.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center text-muted-foreground/50">
-              <p className="text-lg font-medium">Upload an image to start</p>
-              <p className="text-sm mt-1">or add text elements</p>
+            <div className="text-center">
+              <div className="w-12 h-12 rounded-xl bg-muted/50 flex items-center justify-center mx-auto mb-3">
+                <ImagePlus className="w-5 h-5 text-muted-foreground/50" />
+              </div>
+              <p className="text-sm font-medium text-muted-foreground/70">Upload an image</p>
+              <p className="text-xs text-muted-foreground/50 mt-1">or add text elements</p>
             </div>
           </div>
         )}
