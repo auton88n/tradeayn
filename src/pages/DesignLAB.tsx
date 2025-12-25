@@ -2,20 +2,40 @@ import React, { useEffect, useCallback, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Download, Share2, Palette, Loader2, ImageOff, RefreshCw, Upload } from 'lucide-react';
+import { ArrowLeft, Download, Share2, Palette, Loader2, ImageOff, RefreshCw, Upload, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDesignCanvas } from '@/hooks/useDesignCanvas';
 import { DesignCanvas } from '@/components/lab/DesignCanvas';
 import { DesignToolbar } from '@/components/lab/DesignToolbar';
 import { SEO } from '@/components/SEO';
 import html2canvas from 'html2canvas';
+import { supabase } from '@/integrations/supabase/client';
+
+interface DesignElement {
+  text: string;
+  fontSize: number;
+  fontWeight: 'normal' | 'bold';
+  color: string;
+  x: number;
+  y: number;
+  shadow?: boolean;
+}
+
+interface AIDesignResult {
+  headline?: DesignElement;
+  subtitle?: DesignElement;
+  hashtags?: DesignElement;
+  cta?: DesignElement;
+}
 
 const DesignLAB: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const externalImageUrl = searchParams.get('image') || undefined;
+  const contextParam = searchParams.get('context') || undefined;
   const [isLoadingExternalImage, setIsLoadingExternalImage] = useState(!!externalImageUrl);
   const [externalImageError, setExternalImageError] = useState(false);
+  const [isGeneratingDesign, setIsGeneratingDesign] = useState(false);
   const backgroundUploadRef = React.useRef<HTMLInputElement>(null);
   
   const {
@@ -24,6 +44,7 @@ const DesignLAB: React.FC = () => {
     setBackgroundImage,
     setAspectRatio,
     addTextElement,
+    addTextElementWithPosition,
     addImageElement,
     updateElement,
     deleteElement,
@@ -32,6 +53,7 @@ const DesignLAB: React.FC = () => {
     sendToBack,
     duplicateElement,
     clearCanvas,
+    clearElements,
     getSelectedElement,
   } = useDesignCanvas();
 
@@ -74,6 +96,98 @@ const DesignLAB: React.FC = () => {
   useEffect(() => {
     fetchExternalImage();
   }, [fetchExternalImage]);
+
+  // Auto-trigger AI design generation when image loads from external URL with context
+  useEffect(() => {
+    if (canvasState.backgroundImage && contextParam && !isGeneratingDesign && canvasState.elements.length === 0) {
+      handleAutoDesign();
+    }
+  }, [canvasState.backgroundImage, contextParam]);
+
+  // Generate AI design
+  const handleAutoDesign = useCallback(async () => {
+    if (!canvasState.backgroundImage) {
+      toast.error('Please add a background image first');
+      return;
+    }
+
+    setIsGeneratingDesign(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-design', {
+        body: { 
+          imageUrl: canvasState.backgroundImage,
+          context: contextParam || 'Create an engaging social media post',
+          style: 'engaging'
+        }
+      });
+
+      if (error) throw error;
+
+      const design: AIDesignResult = data.design;
+      
+      // Clear existing elements before adding new ones
+      clearElements();
+
+      // Add design elements to canvas
+      if (design.headline) {
+        addTextElementWithPosition(
+          design.headline.text,
+          design.headline.x,
+          design.headline.y,
+          design.headline.fontSize,
+          design.headline.fontWeight,
+          design.headline.color,
+          design.headline.shadow ?? true
+        );
+      }
+
+      if (design.subtitle) {
+        addTextElementWithPosition(
+          design.subtitle.text,
+          design.subtitle.x,
+          design.subtitle.y,
+          design.subtitle.fontSize,
+          design.subtitle.fontWeight,
+          design.subtitle.color,
+          design.subtitle.shadow ?? true
+        );
+      }
+
+      if (design.cta) {
+        addTextElementWithPosition(
+          design.cta.text,
+          design.cta.x,
+          design.cta.y,
+          design.cta.fontSize,
+          design.cta.fontWeight,
+          design.cta.color,
+          design.cta.shadow ?? true
+        );
+      }
+
+      if (design.hashtags) {
+        addTextElementWithPosition(
+          design.hashtags.text,
+          design.hashtags.x,
+          design.hashtags.y,
+          design.hashtags.fontSize,
+          design.hashtags.fontWeight,
+          design.hashtags.color,
+          design.hashtags.shadow ?? true
+        );
+      }
+
+      toast.success('✨ AI design generated!');
+      selectElement(null);
+
+    } catch (error) {
+      console.error('AI design generation failed:', error);
+      toast.error('Failed to generate design. Please try again.');
+    } finally {
+      setIsGeneratingDesign(false);
+    }
+  }, [canvasState.backgroundImage, contextParam, clearElements, addTextElementWithPosition, selectElement]);
 
   // Handle manual background upload from error state
   const handleManualUpload = useCallback(() => {
@@ -241,6 +355,25 @@ const DesignLAB: React.FC = () => {
             </div>
             
             <div className="flex items-center gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleAutoDesign}
+                disabled={isGeneratingDesign || !canvasState.backgroundImage}
+                className="gap-2 bg-gradient-to-r from-primary/20 to-purple-500/20 hover:from-primary/30 hover:to-purple-500/30 border border-primary/30"
+              >
+                {isGeneratingDesign ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Designing...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    Auto-Design
+                  </>
+                )}
+              </Button>
               <Button
                 variant="outline"
                 size="sm"
