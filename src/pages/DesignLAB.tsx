@@ -7,40 +7,14 @@ import { toast } from 'sonner';
 import { useDesignCanvas, TextEffect } from '@/hooks/useDesignCanvas';
 import { DesignCanvas } from '@/components/lab/DesignCanvas';
 import { DesignToolbar } from '@/components/lab/DesignToolbar';
-import { AIDesignVariations } from '@/components/lab/AIDesignVariations';
+import { AIDesignVariations, DesignVariation, DesignElement } from '@/components/lab/AIDesignVariations';
 import { SEO } from '@/components/SEO';
 import html2canvas from 'html2canvas';
 import { supabase } from '@/integrations/supabase/client';
 
-interface DesignElement {
-  text: string;
-  fontSize: number;
-  fontWeight: 'normal' | 'bold';
-  fontFamily?: string;
-  color: string;
-  x: number;
-  y: number;
-  shadow?: boolean;
-  letterSpacing?: number;
-  lineHeight?: number;
-  textStroke?: { width: number; color: string } | null;
-  gradient?: { from: string; to: string; angle: number } | null;
-  opacity?: number;
-  effect?: TextEffect;
-}
-
-interface AIDesignVariation {
-  headline?: DesignElement;
-  subtitle?: DesignElement;
-  hashtags?: DesignElement;
-  cta?: DesignElement;
-  mood: string;
-  colorPalette: string[];
-}
-
 interface AIDesignResult {
-  design?: AIDesignVariation;
-  variations?: AIDesignVariation[];
+  design?: DesignVariation;
+  variations?: DesignVariation[];
   imageAnalysis?: {
     dominantColors: string[];
     mood: string;
@@ -61,7 +35,7 @@ const DesignLAB: React.FC = () => {
   const [isGeneratingDesign, setIsGeneratingDesign] = useState(false);
   const [designContext, setDesignContext] = useState(contextParam || '');
   const [designStyle, setDesignStyle] = useState<DesignStyle>('engaging');
-  const [designVariations, setDesignVariations] = useState<AIDesignVariation[]>([]);
+  const [designVariations, setDesignVariations] = useState<DesignVariation[]>([]);
   const [showVariations, setShowVariations] = useState(false);
   const backgroundUploadRef = React.useRef<HTMLInputElement>(null);
   
@@ -176,7 +150,7 @@ const DesignLAB: React.FC = () => {
   }, [canvasState.backgroundImage, designContext, contextParam, designStyle]);
 
   // Apply a design variation to the canvas
-  const applyDesignVariation = useCallback((design: AIDesignVariation) => {
+  const applyDesignVariation = useCallback((design: DesignVariation) => {
     clearElements();
 
     const addElement = (el: DesignElement | undefined) => {
@@ -490,6 +464,17 @@ const DesignLAB: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* AI Design Variations Modal */}
+      {showVariations && (
+        <AIDesignVariations
+          variations={designVariations}
+          backgroundImage={canvasState.backgroundImage}
+          isLoading={isGeneratingDesign && designVariations.length === 0}
+          onSelectVariation={applyDesignVariation}
+          onClose={() => setShowVariations(false)}
+        />
+      )}
     </>
   );
 };

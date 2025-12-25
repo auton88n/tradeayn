@@ -2,13 +2,13 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Check, X, Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { TextEffect } from '@/hooks/useDesignCanvas';
 
-interface DesignElement {
+export interface DesignElement {
   text: string;
   fontSize: number;
   fontWeight: 'normal' | 'bold';
-  fontFamily: string;
+  fontFamily?: string;
   color: string;
   x: number;
   y: number;
@@ -18,10 +18,10 @@ interface DesignElement {
   textStroke?: { width: number; color: string } | null;
   gradient?: { from: string; to: string; angle: number } | null;
   opacity?: number;
-  effect?: string;
+  effect?: TextEffect;
 }
 
-interface DesignVariation {
+export interface DesignVariation {
   headline?: DesignElement;
   subtitle?: DesignElement;
   hashtags?: DesignElement;
