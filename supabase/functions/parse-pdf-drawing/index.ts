@@ -1,3 +1,4 @@
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -43,12 +44,12 @@ serve(async (req) => {
     
     console.log(`Processing PDF: ${fileName}, base64 length: ${pdfBase64.length}`);
     
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY is not configured');
+    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openAIApiKey) {
+      throw new Error('OPENAI_API_KEY is not configured');
     }
 
-    // Use Lovable AI with vision capabilities to analyze the PDF drawing
+    // Use OpenAI with vision capabilities to analyze the PDF drawing
     const systemPrompt = `You are an expert civil engineering drawing analyzer. Your task is to extract survey points, elevation levels, and grading information from scanned engineering drawings and PDFs.
 
 When analyzing a drawing, look for:
@@ -82,14 +83,14 @@ IMPORTANT:
 - If a point has both NGL and FGL, create two separate entries
 - Be thorough - every elevation number matters for volume calculations`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${openAIApiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "gpt-4o-mini",
         messages: [
           { 
             role: "system", 
@@ -111,6 +112,7 @@ IMPORTANT:
             ]
           }
         ],
+        max_tokens: 4096,
       }),
     });
 
