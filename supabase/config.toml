@@ -71,3 +71,15 @@ verify_jwt = false
 
 [functions.ai-caption-generator]
 verify_jwt = false
+
+[functions.calculate-beam]
+verify_jwt = false
+
+[functions.calculate-foundation]
+verify_jwt = false
+
+[functions.generate-dxf]
+verify_jwt = false
+
+[functions.engineering-ai-analysis]
+verify_jwt = false

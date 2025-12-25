@@ -34,7 +34,7 @@ const AIAgentsApply = lazy(() => import("./pages/services/AIAgentsApply"));
 const Automation = lazy(() => import("./pages/services/Automation"));
 const AutomationApply = lazy(() => import("./pages/services/AutomationApply"));
 const Support = lazy(() => import("./pages/Support"));
-const DesignLAB = lazy(() => import("./pages/DesignLAB"));
+const Engineering = lazy(() => import("./pages/Engineering"));
 
 const queryClient = new QueryClient();
 
@@ -60,7 +60,7 @@ const AnimatedRoutes = () => {
         <Route path="/services/automation" element={<PageTransition><Automation /></PageTransition>} />
         <Route path="/services/automation/apply" element={<PageTransition><AutomationApply /></PageTransition>} />
         <Route path="/support" element={<PageTransition><Support /></PageTransition>} />
-        <Route path="/design-lab" element={<PageTransition><DesignLAB /></PageTransition>} />
+        <Route path="/engineering" element={<PageTransition><Engineering /></PageTransition>} />
         <Route path="/approval-result" element={<PageTransition><ApprovalResult /></PageTransition>} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />

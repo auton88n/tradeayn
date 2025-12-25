@@ -283,6 +283,47 @@ export type Database = {
           },
         ]
       }
+      calculation_history: {
+        Row: {
+          ai_analysis: Json | null
+          calculation_type: string
+          created_at: string
+          id: string
+          inputs: Json
+          outputs: Json
+          project_id: string | null
+          user_id: string
+        }
+        Insert: {
+          ai_analysis?: Json | null
+          calculation_type: string
+          created_at?: string
+          id?: string
+          inputs?: Json
+          outputs?: Json
+          project_id?: string | null
+          user_id: string
+        }
+        Update: {
+          ai_analysis?: Json | null
+          calculation_type?: string
+          created_at?: string
+          id?: string
+          inputs?: Json
+          outputs?: Json
+          project_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calculation_history_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "engineering_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_sessions: {
         Row: {
           created_at: string | null
@@ -498,6 +539,42 @@ export type Database = {
         }
         Relationships: []
       }
+      engineering_projects: {
+        Row: {
+          created_at: string
+          id: string
+          inputs: Json
+          project_name: string
+          project_type: string
+          results: Json | null
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          inputs?: Json
+          project_name: string
+          project_type: string
+          results?: Json | null
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          inputs?: Json
+          project_name?: string
+          project_type?: string
+          results?: Json | null
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       faq_items: {
         Row: {
           answer: string
@@ -608,6 +685,45 @@ export type Database = {
           is_active?: boolean | null
           metadata?: Json | null
           threat_level?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      material_prices: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean | null
+          material_category: string
+          material_name: string
+          price_sar: number
+          region: string | null
+          supplier: string | null
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          material_category: string
+          material_name: string
+          price_sar: number
+          region?: string | null
+          supplier?: string | null
+          unit: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          material_category?: string
+          material_name?: string
+          price_sar?: number
+          region?: string | null
+          supplier?: string | null
+          unit?: string
           updated_at?: string
         }
         Relationships: []
