@@ -192,6 +192,44 @@ export const useDesignCanvas = () => {
     });
   }, []);
 
+  const clearElements = useCallback(() => {
+    setCanvasState(prev => ({
+      ...prev,
+      elements: [],
+      selectedElementId: null,
+    }));
+  }, []);
+
+  const addTextElementWithPosition = useCallback((
+    text: string,
+    x: number,
+    y: number,
+    fontSize: number = 48,
+    fontWeight: 'normal' | 'bold' = 'bold',
+    color: string = '#ffffff',
+    shadow: boolean = true
+  ) => {
+    const newElement: TextElement = {
+      id: `text-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      type: 'text',
+      content: text,
+      x,
+      y,
+      fontSize,
+      fontFamily: 'Inter',
+      color,
+      fontWeight,
+      textAlign: 'center',
+      shadow,
+      rotation: 0,
+    };
+    setCanvasState(prev => ({
+      ...prev,
+      elements: [...prev.elements, newElement],
+    }));
+    return newElement.id;
+  }, []);
+
   const getSelectedElement = useCallback(() => {
     return canvasState.elements.find(el => el.id === canvasState.selectedElementId) || null;
   }, [canvasState.elements, canvasState.selectedElementId]);
@@ -207,6 +245,7 @@ export const useDesignCanvas = () => {
     setBackgroundColor,
     setAspectRatio,
     addTextElement,
+    addTextElementWithPosition,
     addImageElement,
     updateElement,
     deleteElement,
@@ -216,6 +255,7 @@ export const useDesignCanvas = () => {
     sendToBack,
     duplicateElement,
     clearCanvas,
+    clearElements,
     getSelectedElement,
     getDimensions,
   };
