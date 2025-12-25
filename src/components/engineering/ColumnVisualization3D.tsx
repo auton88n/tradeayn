@@ -13,6 +13,45 @@ interface ColumnVisualization3DProps {
   columnType: string;
 }
 
+// Animated Axial Load Arrow
+const AnimatedAxialLoad: React.FC<{
+  position: [number, number, number];
+  scale?: number;
+}> = ({ position, scale = 1 }) => {
+  const arrowRef = useRef<THREE.Group>(null);
+  
+  useFrame((state) => {
+    if (arrowRef.current) {
+      const pulse = Math.sin(state.clock.elapsedTime * 3) * 0.15 + 1;
+      arrowRef.current.scale.setScalar(pulse * scale);
+      arrowRef.current.position.y = position[1] + Math.sin(state.clock.elapsedTime * 2) * 0.04;
+    }
+  });
+
+  return (
+    <group ref={arrowRef} position={position}>
+      <mesh position={[0, 0.25, 0]}>
+        <cylinderGeometry args={[0.04, 0.04, 0.5, 8]} />
+        <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={0.3} />
+      </mesh>
+      <mesh position={[0, 0, 0]} rotation={[Math.PI, 0, 0]}>
+        <coneGeometry args={[0.08, 0.18, 8]} />
+        <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={0.5} />
+      </mesh>
+      {/* Load label */}
+      <Text
+        position={[0.2, 0.3, 0]}
+        fontSize={0.08}
+        color="#ef4444"
+        anchorX="left"
+        anchorY="middle"
+      >
+        P
+      </Text>
+    </group>
+  );
+};
+
 // Dimension Label Component
 const DimensionLabel: React.FC<{
   position: [number, number, number];
@@ -211,6 +250,9 @@ const ColumnMesh: React.FC<{
           </mesh>
         ))
       )}
+
+      {/* Animated Axial Load */}
+      <AnimatedAxialLoad position={[0, h + 0.3, 0]} scale={1.2} />
 
       {/* Dimension Labels */}
       {showLabels && (

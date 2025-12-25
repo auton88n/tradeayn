@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Text } from '@react-three/drei';
 import * as THREE from 'three';
@@ -9,6 +9,69 @@ interface BeamVisualization3DProps {
   outputs: Record<string, unknown>;
   className?: string;
 }
+
+// Animated Load Arrow Component
+const AnimatedLoadArrow: React.FC<{
+  position: [number, number, number];
+  scale?: number;
+  color?: string;
+}> = ({ position, scale = 1, color = '#ef4444' }) => {
+  const arrowRef = useRef<THREE.Group>(null);
+  
+  useFrame((state) => {
+    if (arrowRef.current) {
+      // Pulsing animation
+      const pulse = Math.sin(state.clock.elapsedTime * 3) * 0.1 + 1;
+      arrowRef.current.scale.setScalar(pulse * scale);
+      // Slight vertical oscillation
+      arrowRef.current.position.y = position[1] + Math.sin(state.clock.elapsedTime * 2) * 0.02;
+    }
+  });
+
+  return (
+    <group ref={arrowRef} position={position}>
+      {/* Arrow shaft */}
+      <mesh position={[0, 0.15, 0]}>
+        <cylinderGeometry args={[0.02, 0.02, 0.3, 8]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.3} />
+      </mesh>
+      {/* Arrow head */}
+      <mesh position={[0, 0, 0]} rotation={[Math.PI, 0, 0]}>
+        <coneGeometry args={[0.05, 0.1, 8]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.5} />
+      </mesh>
+    </group>
+  );
+};
+
+// Distributed Load Visualization
+const DistributedLoad: React.FC<{
+  length: number;
+  yPosition: number;
+  arrowCount?: number;
+}> = ({ length, yPosition, arrowCount = 5 }) => {
+  const arrows = useMemo(() => {
+    const positions: [number, number, number][] = [];
+    const spacing = length / (arrowCount - 1);
+    for (let i = 0; i < arrowCount; i++) {
+      positions.push([-length / 2 + i * spacing, yPosition, 0]);
+    }
+    return positions;
+  }, [length, arrowCount, yPosition]);
+
+  return (
+    <group>
+      {arrows.map((pos, i) => (
+        <AnimatedLoadArrow key={i} position={pos} scale={0.8} />
+      ))}
+      {/* Connecting line */}
+      <mesh position={[0, yPosition + 0.35, 0]} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.015, 0.015, length, 8]} />
+        <meshStandardMaterial color="#ef4444" />
+      </mesh>
+    </group>
+  );
+};
 
 // Dimension Label Component
 const DimensionLabel: React.FC<{
@@ -203,6 +266,9 @@ const BeamMesh: React.FC<{
           </group>
         );
       })}
+
+      {/* Animated Distributed Load */}
+      <DistributedLoad length={beamLength * 0.8} yPosition={d/2 + 0.1} arrowCount={7} />
 
       {/* Dimension Labels */}
       {showLabels && (
