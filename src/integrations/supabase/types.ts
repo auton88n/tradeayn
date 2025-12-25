@@ -644,6 +644,60 @@ export type Database = {
         }
         Relationships: []
       }
+      grading_projects: {
+        Row: {
+          created_at: string
+          cut_volume: number | null
+          description: string | null
+          design_result: Json | null
+          fill_volume: number | null
+          id: string
+          net_volume: number | null
+          project_name: string
+          requirements: string | null
+          status: string | null
+          survey_points: Json
+          terrain_analysis: Json | null
+          total_cost: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          cut_volume?: number | null
+          description?: string | null
+          design_result?: Json | null
+          fill_volume?: number | null
+          id?: string
+          net_volume?: number | null
+          project_name: string
+          requirements?: string | null
+          status?: string | null
+          survey_points?: Json
+          terrain_analysis?: Json | null
+          total_cost?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          cut_volume?: number | null
+          description?: string | null
+          design_result?: Json | null
+          fill_volume?: number | null
+          id?: string
+          net_volume?: number | null
+          project_name?: string
+          requirements?: string | null
+          status?: string | null
+          survey_points?: Json
+          terrain_analysis?: Json | null
+          total_cost?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ip_blocks: {
         Row: {
           block_reason: string

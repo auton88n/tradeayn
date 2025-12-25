@@ -86,3 +86,12 @@ verify_jwt = false
 
 [functions.calculate-column]
 verify_jwt = false
+
+[functions.parse-survey-file]
+verify_jwt = false
+
+[functions.generate-grading-design]
+verify_jwt = false
+
+[functions.generate-grading-dxf]
+verify_jwt = false

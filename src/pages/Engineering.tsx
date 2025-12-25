@@ -4,13 +4,13 @@ import {
   Calculator, 
   Building2, 
   Columns3, 
-  LayoutGrid,
   ArrowLeft,
   Sparkles,
   FileDown,
   History,
   HardHat,
-  Box
+  Box,
+  Mountain
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -31,6 +31,16 @@ interface CalculationResult {
 }
 
 const calculatorOptions = [
+  {
+    id: 'grading' as const,
+    title: 'AI Grading Designer',
+    description: 'Upload survey data, AI generates cut/fill design with DXF export',
+    icon: Mountain,
+    gradient: 'from-emerald-500 to-teal-500',
+    available: true,
+    isPage: true,
+    path: '/engineering/grading',
+  },
   {
     id: 'beam' as const,
     title: 'Beam Design',
@@ -181,7 +191,15 @@ const Engineering = () => {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.1 + 0.2 }}
-                      onClick={() => calc.available && setSelectedCalculator(calc.id)}
+                      onClick={() => {
+                        if (calc.available) {
+                          if ((calc as any).isPage) {
+                            navigate((calc as any).path);
+                          } else {
+                            setSelectedCalculator(calc.id as CalculatorType);
+                          }
+                        }
+                      }}
                       disabled={!calc.available}
                       className={cn(
                         "group relative p-6 rounded-2xl border text-left transition-all duration-300",
