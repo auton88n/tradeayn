@@ -104,3 +104,6 @@ verify_jwt = false
 
 [functions.apply-design-optimizations]
 verify_jwt = false
+
+[functions.parse-pdf-drawing]
+verify_jwt = false
