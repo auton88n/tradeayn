@@ -15,6 +15,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import { ProblemLocationDiagram } from './ProblemLocationDiagram';
 
 interface Problem {
   severity: 'critical' | 'warning' | 'info';
@@ -200,6 +201,9 @@ export const ProblemsSection: React.FC<ProblemsSectionProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
+          {/* Visual Problem Location Diagram */}
+          <ProblemLocationDiagram problems={problems} />
+          
           {groupedProblems.map((group) => {
             const styles = getSeverityStyles(group.severity);
             const isExpanded = expandedGroups.has(group.type) || group.severity === 'critical';
