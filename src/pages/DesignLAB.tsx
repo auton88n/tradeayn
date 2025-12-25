@@ -2,7 +2,7 @@ import React, { useEffect, useCallback, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Download, Share2, Palette, Loader2 } from 'lucide-react';
+import { ArrowLeft, Download, Share2, Palette, Loader2, ImageOff, RefreshCw, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDesignCanvas } from '@/hooks/useDesignCanvas';
 import { DesignCanvas } from '@/components/lab/DesignCanvas';
@@ -15,6 +15,8 @@ const DesignLAB: React.FC = () => {
   const [searchParams] = useSearchParams();
   const externalImageUrl = searchParams.get('image') || undefined;
   const [isLoadingExternalImage, setIsLoadingExternalImage] = useState(!!externalImageUrl);
+  const [externalImageError, setExternalImageError] = useState(false);
+  const backgroundUploadRef = React.useRef<HTMLInputElement>(null);
   
   const {
     canvasState,
@@ -31,43 +33,66 @@ const DesignLAB: React.FC = () => {
     duplicateElement,
     clearCanvas,
     getSelectedElement,
-  } = useDesignCanvas(); // Don't pass initialImage directly
+  } = useDesignCanvas();
 
   // Fetch and convert external image to base64 to bypass CORS
-  useEffect(() => {
+  const fetchExternalImage = useCallback(async () => {
     if (!externalImageUrl) return;
     
-    const fetchAndConvertImage = async () => {
-      setIsLoadingExternalImage(true);
-      try {
-        // Try fetching directly first
-        const response = await fetch(externalImageUrl);
-        if (!response.ok) throw new Error('Failed to fetch image');
-        
-        const blob = await response.blob();
-        const reader = new FileReader();
-        
-        reader.onload = () => {
-          setBackgroundImage(reader.result as string);
-          setIsLoadingExternalImage(false);
-          toast.success('Image loaded successfully');
-        };
-        
-        reader.onerror = () => {
-          setIsLoadingExternalImage(false);
-          toast.error('Failed to process image');
-        };
-        
-        reader.readAsDataURL(blob);
-      } catch (error) {
-        console.error('Failed to load external image:', error);
-        setIsLoadingExternalImage(false);
-        toast.error('Image could not be loaded. It may have expired or is blocked by CORS.');
-      }
-    };
+    setIsLoadingExternalImage(true);
+    setExternalImageError(false);
     
-    fetchAndConvertImage();
+    try {
+      const response = await fetch(externalImageUrl);
+      if (!response.ok) throw new Error('Failed to fetch image');
+      
+      const blob = await response.blob();
+      const reader = new FileReader();
+      
+      reader.onload = () => {
+        setBackgroundImage(reader.result as string);
+        setIsLoadingExternalImage(false);
+        setExternalImageError(false);
+        toast.success('Image loaded successfully');
+      };
+      
+      reader.onerror = () => {
+        setIsLoadingExternalImage(false);
+        setExternalImageError(true);
+        toast.error('Failed to process image');
+      };
+      
+      reader.readAsDataURL(blob);
+    } catch (error) {
+      console.error('Failed to load external image:', error);
+      setIsLoadingExternalImage(false);
+      setExternalImageError(true);
+      toast.error('Image could not be loaded. It may have expired or is blocked by CORS.');
+    }
   }, [externalImageUrl, setBackgroundImage]);
+
+  useEffect(() => {
+    fetchExternalImage();
+  }, [fetchExternalImage]);
+
+  // Handle manual background upload from error state
+  const handleManualUpload = useCallback(() => {
+    backgroundUploadRef.current?.click();
+  }, []);
+
+  const handleManualUploadChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const result = ev.target?.result as string;
+      setBackgroundImage(result);
+      setExternalImageError(false);
+      toast.success('Background image added');
+    };
+    reader.readAsDataURL(file);
+  }, [setBackgroundImage]);
 
   const selectedElement = getSelectedElement();
 
@@ -239,12 +264,43 @@ const DesignLAB: React.FC = () => {
 
         {/* Main Content */}
         <div className="flex-1 flex overflow-hidden">
+          {/* Hidden input for manual upload */}
+          <input
+            ref={backgroundUploadRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleManualUploadChange}
+          />
+          
           {/* Canvas Area */}
           {isLoadingExternalImage ? (
             <div className="flex-1 flex items-center justify-center bg-muted/30">
               <div className="text-center">
                 <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-primary" />
                 <p className="text-sm text-muted-foreground">Loading image...</p>
+              </div>
+            </div>
+          ) : externalImageError && !canvasState.backgroundImage ? (
+            <div className="flex-1 flex items-center justify-center bg-muted/30">
+              <div className="text-center p-6">
+                <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
+                  <ImageOff className="w-8 h-8 text-destructive" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Image Failed to Load</h3>
+                <p className="text-sm text-muted-foreground mb-4 max-w-xs">
+                  The image may have expired or is blocked by CORS restrictions.
+                </p>
+                <div className="flex flex-col gap-2">
+                  <Button onClick={fetchExternalImage} variant="outline" className="gap-2">
+                    <RefreshCw className="w-4 h-4" />
+                    Retry
+                  </Button>
+                  <Button onClick={handleManualUpload} className="gap-2">
+                    <Upload className="w-4 h-4" />
+                    Upload Manually
+                  </Button>
+                </div>
               </div>
             </div>
           ) : (
