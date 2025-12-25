@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Upload, 
@@ -38,6 +38,7 @@ export const DesignReviewMode: React.FC<DesignReviewModeProps> = ({
   isAnalyzing,
   setIsAnalyzing
 }) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [fileContent, setFileContent] = useState<string | null>(null);
   const [parsedData, setParsedData] = useState<any>(null);
@@ -187,6 +188,11 @@ export const DesignReviewMode: React.FC<DesignReviewModeProps> = ({
     }));
   };
 
+  const triggerFileInput = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    fileInputRef.current?.click();
+  };
+
   return (
     <div className="space-y-6">
       {/* File Upload */}
@@ -203,10 +209,10 @@ export const DesignReviewMode: React.FC<DesignReviewModeProps> = ({
               className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer"
               onDrop={handleDrop}
               onDragOver={(e) => e.preventDefault()}
-              onClick={() => document.getElementById('file-input')?.click()}
+              onClick={() => fileInputRef.current?.click()}
             >
               <input
-                id="file-input"
+                ref={fileInputRef}
                 type="file"
                 accept=".dxf,.dwg,.pdf"
                 onChange={handleFileSelect}
@@ -217,7 +223,11 @@ export const DesignReviewMode: React.FC<DesignReviewModeProps> = ({
               <p className="text-sm text-muted-foreground mb-4">
                 Supports .dxf, .dwg, and .pdf files
               </p>
-              <Button variant="outline" type="button">
+              <Button 
+                variant="outline" 
+                type="button"
+                onClick={triggerFileInput}
+              >
                 Browse Files
               </Button>
             </div>
