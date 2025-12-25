@@ -1,9 +1,13 @@
 import React from 'react';
-import { Download, TrendingUp, TrendingDown, DollarSign, FileText, AlertTriangle } from 'lucide-react';
+import { Download, TrendingUp, TrendingDown, DollarSign, FileText, AlertTriangle, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { ReportHeader } from './ReportHeader';
+import { StationDataTable } from './StationDataTable';
+import { ElevationProfile } from './ElevationProfile';
 
 interface Point {
   id: string;
@@ -48,6 +52,9 @@ interface GradingResultsProps {
   totalCost: number;
   fglPoints: Point[];
   projectName: string;
+  clientName?: string;
+  consultantName?: string;
+  location?: string;
 }
 
 export const GradingResults: React.FC<GradingResultsProps> = ({
@@ -56,8 +63,12 @@ export const GradingResults: React.FC<GradingResultsProps> = ({
   totalCost,
   fglPoints,
   projectName,
+  clientName,
+  consultantName,
+  location,
 }) => {
   const [exporting, setExporting] = React.useState(false);
+  const [activeView, setActiveView] = React.useState('summary');
 
   const handleExportDXF = async () => {
     setExporting(true);
@@ -69,7 +80,6 @@ export const GradingResults: React.FC<GradingResultsProps> = ({
       if (error) throw error;
       if (!data.success) throw new Error(data.error);
 
-      // Download the DXF file
       const blob = new Blob([data.dxfContent], { type: 'application/dxf' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -96,6 +106,10 @@ export const GradingResults: React.FC<GradingResultsProps> = ({
     }
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   if (!design) {
     return (
       <Card className="p-6">
@@ -111,130 +125,213 @@ export const GradingResults: React.FC<GradingResultsProps> = ({
   const netVolumeColor = design.netVolume > 0 ? 'text-amber-500' : 'text-blue-500';
 
   return (
-    <div className="space-y-4">
-      {/* Volume Summary */}
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4">Earthwork Volumes</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="w-5 h-5 text-red-500" />
-              <span className="text-sm font-medium text-red-500">Total Cut</span>
-            </div>
-            <p className="text-2xl font-bold">{design.totalCutVolume?.toLocaleString()} m³</p>
-          </div>
-          
-          <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingDown className="w-5 h-5 text-blue-500" />
-              <span className="text-sm font-medium text-blue-500">Total Fill</span>
-            </div>
-            <p className="text-2xl font-bold">{design.totalFillVolume?.toLocaleString()} m³</p>
-          </div>
-          
-          <div className={`bg-muted/50 border rounded-lg p-4`}>
-            <div className="flex items-center gap-2 mb-2">
-              <AlertTriangle className={`w-5 h-5 ${netVolumeColor}`} />
-              <span className={`text-sm font-medium ${netVolumeColor}`}>{netVolumeLabel}</span>
-            </div>
-            <p className="text-2xl font-bold">{Math.abs(design.netVolume)?.toLocaleString()} m³</p>
-          </div>
-        </div>
-      </Card>
+    <div className="space-y-6 print:space-y-4">
+      {/* Professional Report Header */}
+      <ReportHeader
+        projectName={projectName}
+        clientName={clientName}
+        consultantName={consultantName}
+        location={location}
+      />
 
-      {/* Design Parameters */}
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4">Design Parameters</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div>
-            <p className="text-sm text-muted-foreground">Design Elevation</p>
-            <p className="text-lg font-semibold">{design.designElevation?.toFixed(2)}m</p>
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground">Slope Direction</p>
-            <p className="text-lg font-semibold">{design.slopeDirection}</p>
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground">Slope Percentage</p>
-            <p className="text-lg font-semibold">{design.slopePercentage}%</p>
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground">Points Processed</p>
-            <p className="text-lg font-semibold">{fglPoints.length}</p>
-          </div>
-        </div>
-      </Card>
+      {/* Navigation Tabs */}
+      <Tabs value={activeView} onValueChange={setActiveView} className="print:hidden">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="summary">Summary</TabsTrigger>
+          <TabsTrigger value="profile">Elevation Profile</TabsTrigger>
+          <TabsTrigger value="stations">Station Data</TabsTrigger>
+          <TabsTrigger value="details">Details</TabsTrigger>
+        </TabsList>
 
-      {/* Cost Breakdown */}
-      {costBreakdown && (
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <DollarSign className="w-5 h-5 text-green-500" />
-            Cost Estimate (SAR)
-          </h3>
-          <div className="space-y-3">
-            {Object.entries(costBreakdown).map(([key, value]) => (
-              <div key={key} className="flex justify-between items-center py-2 border-b border-border/50 last:border-0">
-                <span className="capitalize">{key.replace(/_/g, ' ')}</span>
-                <span className="font-medium">{value.toLocaleString()} SAR</span>
+        {/* Summary Tab */}
+        <TabsContent value="summary" className="space-y-4 mt-4">
+          {/* Volume Summary */}
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold mb-4">Earthwork Volumes</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <TrendingUp className="w-5 h-5 text-red-500" />
+                  <span className="text-sm font-medium text-red-500">Total Cut</span>
+                </div>
+                <p className="text-2xl font-bold">{design.totalCutVolume?.toLocaleString()} m³</p>
               </div>
-            ))}
-            <div className="flex justify-between items-center pt-3 border-t-2 border-primary">
-              <span className="font-semibold text-lg">Total Estimated Cost</span>
-              <span className="font-bold text-xl text-primary">{totalCost.toLocaleString()} SAR</span>
+              
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <TrendingDown className="w-5 h-5 text-blue-500" />
+                  <span className="text-sm font-medium text-blue-500">Total Fill</span>
+                </div>
+                <p className="text-2xl font-bold">{design.totalFillVolume?.toLocaleString()} m³</p>
+              </div>
+              
+              <div className="bg-muted/50 border rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <AlertTriangle className={`w-5 h-5 ${netVolumeColor}`} />
+                  <span className={`text-sm font-medium ${netVolumeColor}`}>{netVolumeLabel}</span>
+                </div>
+                <p className="text-2xl font-bold">{Math.abs(design.netVolume)?.toLocaleString()} m³</p>
+              </div>
             </div>
-          </div>
-        </Card>
-      )}
+          </Card>
 
-      {/* Design Notes */}
-      {design.designNotes && design.designNotes.length > 0 && (
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold mb-4">AI Design Notes</h3>
-          <ul className="space-y-2">
-            {design.designNotes.map((note, i) => (
-              <li key={i} className="flex items-start gap-2">
-                <span className="text-primary font-bold">•</span>
-                <span className="text-muted-foreground">{note}</span>
-              </li>
-            ))}
-          </ul>
-          
-          {design.drainageRecommendations && (
-            <div className="mt-4 pt-4 border-t">
-              <p className="font-medium mb-1">Drainage Recommendations:</p>
-              <p className="text-sm text-muted-foreground">{design.drainageRecommendations}</p>
+          {/* Design Parameters */}
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold mb-4">Design Parameters</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Design Elevation</p>
+                <p className="text-lg font-semibold">{design.designElevation?.toFixed(2)}m</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Slope Direction</p>
+                <p className="text-lg font-semibold">{design.slopeDirection}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Slope Percentage</p>
+                <p className="text-lg font-semibold">{design.slopePercentage}%</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Points Processed</p>
+                <p className="text-lg font-semibold">{fglPoints.length}</p>
+              </div>
             </div>
-          )}
-          
-          {design.compactionRequirements && (
-            <div className="mt-3">
-              <p className="font-medium mb-1">Compaction Requirements:</p>
-              <p className="text-sm text-muted-foreground">{design.compactionRequirements}</p>
-            </div>
-          )}
-        </Card>
-      )}
+          </Card>
 
-      {/* Export Button */}
-      <Button
-        onClick={handleExportDXF}
-        disabled={exporting}
-        className="w-full"
-        size="lg"
-      >
-        {exporting ? (
-          <>
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-            Generating DXF...
-          </>
-        ) : (
-          <>
-            <Download className="w-5 h-5 mr-2" />
-            Export to DXF (AutoCAD)
-          </>
-        )}
-      </Button>
+          {/* Cost Breakdown */}
+          {costBreakdown && (
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <DollarSign className="w-5 h-5 text-green-500" />
+                Cost Estimate (SAR)
+              </h3>
+              <div className="space-y-3">
+                {Object.entries(costBreakdown).map(([key, value]) => (
+                  <div key={key} className="flex justify-between items-center py-2 border-b border-border/50 last:border-0">
+                    <span className="capitalize">{key.replace(/_/g, ' ')}</span>
+                    <span className="font-medium">{value.toLocaleString()} SAR</span>
+                  </div>
+                ))}
+                <div className="flex justify-between items-center pt-3 border-t-2 border-primary">
+                  <span className="font-semibold text-lg">Total Estimated Cost</span>
+                  <span className="font-bold text-xl text-primary">{totalCost.toLocaleString()} SAR</span>
+                </div>
+              </div>
+            </Card>
+          )}
+        </TabsContent>
+
+        {/* Elevation Profile Tab */}
+        <TabsContent value="profile" className="mt-4">
+          <ElevationProfile points={fglPoints} height={400} />
+        </TabsContent>
+
+        {/* Station Data Tab */}
+        <TabsContent value="stations" className="mt-4">
+          <StationDataTable points={fglPoints} interval={5} />
+        </TabsContent>
+
+        {/* Details Tab */}
+        <TabsContent value="details" className="space-y-4 mt-4">
+          {/* Design Notes */}
+          {design.designNotes && design.designNotes.length > 0 && (
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold mb-4">AI Design Notes</h3>
+              <ul className="space-y-2">
+                {design.designNotes.map((note, i) => (
+                  <li key={i} className="flex items-start gap-2">
+                    <span className="text-primary font-bold">•</span>
+                    <span className="text-muted-foreground">{note}</span>
+                  </li>
+                ))}
+              </ul>
+              
+              {design.drainageRecommendations && (
+                <div className="mt-4 pt-4 border-t">
+                  <p className="font-medium mb-1">Drainage Recommendations:</p>
+                  <p className="text-sm text-muted-foreground">{design.drainageRecommendations}</p>
+                </div>
+              )}
+              
+              {design.compactionRequirements && (
+                <div className="mt-3">
+                  <p className="font-medium mb-1">Compaction Requirements:</p>
+                  <p className="text-sm text-muted-foreground">{design.compactionRequirements}</p>
+                </div>
+              )}
+            </Card>
+          )}
+
+          {/* Grading Zones if available */}
+          {design.gradingZones && design.gradingZones.length > 0 && (
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold mb-4">Grading Zones</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="px-3 py-2 text-left font-semibold">Zone</th>
+                      <th className="px-3 py-2 text-right font-semibold">Area (m²)</th>
+                      <th className="px-3 py-2 text-right font-semibold">NGL Avg (m)</th>
+                      <th className="px-3 py-2 text-right font-semibold">FGL Target (m)</th>
+                      <th className="px-3 py-2 text-right font-semibold text-red-500">Cut (m³)</th>
+                      <th className="px-3 py-2 text-right font-semibold text-blue-500">Fill (m³)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {design.gradingZones.map((zone, i) => (
+                      <tr key={i} className="border-b hover:bg-muted/30">
+                        <td className="px-3 py-2 font-medium">{zone.name}</td>
+                        <td className="px-3 py-2 text-right">{zone.area?.toLocaleString()}</td>
+                        <td className="px-3 py-2 text-right">{zone.nglAvg?.toFixed(2)}</td>
+                        <td className="px-3 py-2 text-right">{zone.fglTarget?.toFixed(2)}</td>
+                        <td className="px-3 py-2 text-right text-red-500">{zone.cutVolume?.toLocaleString()}</td>
+                        <td className="px-3 py-2 text-right text-blue-500">{zone.fillVolume?.toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
+
+      {/* Print View - shows everything */}
+      <div className="hidden print:block space-y-4">
+        <ElevationProfile points={fglPoints} height={300} />
+        <StationDataTable points={fglPoints} interval={10} />
+      </div>
+
+      {/* Export Buttons */}
+      <div className="flex gap-3 print:hidden">
+        <Button
+          onClick={handleExportDXF}
+          disabled={exporting}
+          className="flex-1"
+          size="lg"
+        >
+          {exporting ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+              Generating DXF...
+            </>
+          ) : (
+            <>
+              <Download className="w-5 h-5 mr-2" />
+              Export to DXF (AutoCAD)
+            </>
+          )}
+        </Button>
+        <Button
+          onClick={handlePrint}
+          variant="outline"
+          size="lg"
+        >
+          <Printer className="w-5 h-5 mr-2" />
+          Print Report
+        </Button>
+      </div>
     </div>
   );
 };
