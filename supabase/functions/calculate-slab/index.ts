@@ -215,6 +215,89 @@ serve(async (req) => {
       };
     }
 
+    // ============ SERVICEABILITY CHECKS ============
+    
+    // Elastic modulus of concrete (MPa)
+    const Ec = 4700 * Math.sqrt(fck);
+    // Elastic modulus of steel (MPa)
+    const Es = 200000;
+    // Modular ratio
+    const n = Es / Ec;
+    
+    // Service load (unfactored)
+    const Ws = deadLoad + liveLoad; // kN/m²
+    
+    // === DEFLECTION CHECK (Eurocode 2 / ACI 318 simplified) ===
+    // Immediate deflection using Branson's equation (simplified)
+    const L = Lx; // Governing span in mm
+    const Ig = (1000 * Math.pow(thickness, 3)) / 12; // Gross moment of inertia per meter width
+    
+    // Cracking moment
+    const fr = 0.62 * Math.sqrt(fck); // Modulus of rupture (MPa)
+    const Mcr = (fr * Ig) / (thickness / 2) / 1e6; // kN·m/m
+    
+    // Service moment
+    const Ma = (Ws * L * L) / (8 * 1000 * 1000); // kN·m/m
+    
+    // Effective moment of inertia (Branson)
+    const Ie = Ma <= Mcr 
+      ? Ig 
+      : Math.min(Ig, Math.pow(Mcr / Ma, 3) * Ig + (1 - Math.pow(Mcr / Ma, 3)) * 0.35 * Ig);
+    
+    // Immediate deflection
+    const kDefl = supportCondition === 'simply_supported' ? 5/384 : 
+                  supportCondition === 'cantilever' ? 1/8 : 1/384;
+    const deltaImmediate = (kDefl * Ws * Math.pow(L, 4)) / (Ec * Ie) * 1e6; // mm
+    
+    // Long-term deflection (considering creep and shrinkage)
+    const xi = 2.0; // Time-dependent factor for 5+ years
+    const rhoComp = 0; // Compression reinforcement ratio (assumed 0 for slabs)
+    const lambda = xi / (1 + 50 * rhoComp);
+    const deltaLongTerm = deltaImmediate * (1 + lambda);
+    const deltaTotalLT = deltaImmediate + deltaLongTerm;
+    
+    // Allowable deflection (L/250 for total, L/500 for live load)
+    const deltaAllowable = L / 250;
+    const deltaLiveAllowable = L / 500;
+    const deflectionRatio = deltaTotalLT / deltaAllowable;
+    const deflectionStatus = deltaTotalLT <= deltaAllowable ? 'OK' : 'EXCEEDS LIMIT';
+    
+    // === CRACK WIDTH CHECK (Eurocode 2 approach) ===
+    // Steel stress under service load
+    const As = (results as any).mainReinforcement?.area || 
+               (results as any).xDirection?.bottomReinforcement?.area || 300; // mm²/m
+    const sigma_s = (Ma * 1e6) / (0.9 * d * As); // MPa (approximate)
+    
+    // Maximum bar spacing for crack control
+    const k1 = 0.8; // High bond bars
+    const k2 = 0.5; // Bending
+    const k3 = 3.4;
+    const k4 = 0.425;
+    const c = cover;
+    
+    // Effective tension area
+    const hceff = Math.min(2.5 * (thickness - d), (thickness - d) / 3, thickness / 2);
+    const Aceff = 1000 * hceff;
+    const rhoEff = As / Aceff;
+    
+    // Crack spacing
+    const srMax = k3 * c + k1 * k2 * k4 * barDia / rhoEff;
+    
+    // Mean strain difference
+    const kt = 0.4; // Long-term loading
+    const fctEff = 0.3 * Math.pow(fck, 2/3); // Mean tensile strength
+    const esmEcm = Math.max(
+      (sigma_s - kt * (fctEff / rhoEff) * (1 + n * rhoEff)) / Es,
+      0.6 * sigma_s / Es
+    );
+    
+    // Crack width
+    const wk = srMax * esmEcm;
+    
+    // Allowable crack width based on exposure
+    const wkAllowable = 0.3; // mm (normal exposure)
+    const crackWidthStatus = wk <= wkAllowable ? 'OK' : 'EXCEEDS LIMIT';
+    
     // Common outputs
     const concreteVolume = (Lx / 1000) * (Ly / 1000) * (thickness / 1000);
     const steelWeight = concreteVolume * 100; // Approximate 100 kg/m³
@@ -230,6 +313,26 @@ serve(async (req) => {
         concreteVolume,
         steelWeight,
         formworkArea: (Lx / 1000) * (Ly / 1000),
+        // Serviceability checks
+        serviceabilityChecks: {
+          deflection: {
+            immediate: parseFloat(deltaImmediate.toFixed(2)),
+            longTerm: parseFloat(deltaLongTerm.toFixed(2)),
+            total: parseFloat(deltaTotalLT.toFixed(2)),
+            allowable: parseFloat(deltaAllowable.toFixed(2)),
+            ratio: parseFloat(deflectionRatio.toFixed(3)),
+            status: deflectionStatus,
+            spanToDeflection: parseFloat((L / deltaTotalLT).toFixed(0)),
+          },
+          crackWidth: {
+            calculated: parseFloat(wk.toFixed(3)),
+            allowable: wkAllowable,
+            crackSpacing: parseFloat(srMax.toFixed(1)),
+            steelStress: parseFloat(sigma_s.toFixed(1)),
+            status: crackWidthStatus,
+          },
+          overallStatus: deflectionStatus === 'OK' && crackWidthStatus === 'OK' ? 'PASS' : 'REVIEW REQUIRED',
+        },
         status: 'OK',
         designCode: 'ACI 318 / Eurocode 2',
       }),
