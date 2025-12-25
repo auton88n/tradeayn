@@ -237,7 +237,8 @@ const ElevationProfileSVG: React.FC<{ points: Point[] }> = ({ points }) => {
   );
 };
 
-// Full-page Site Plan / Road Alignment Visualization - Clean, professional design
+// Full-page Site Plan / Road Alignment Visualization - Professional Engineering Standard
+// Shows ALL survey points with NGL (green) and DL (red) labels
 const SitePlanFullPageSVG: React.FC<{ points: Point[]; projectName: string }> = ({ points, projectName }) => {
   const sortedPoints = useMemo(() => [...points].sort((a, b) => a.x - b.x), [points]);
 
@@ -249,9 +250,9 @@ const SitePlanFullPageSVG: React.FC<{ points: Point[]; projectName: string }> = 
     );
   }
 
-  const width = 700;
-  const height = 450;
-  const padding = { top: 40, right: 50, bottom: 60, left: 60 };
+  const width = 720;
+  const height = 480;
+  const padding = { top: 50, right: 50, bottom: 50, left: 60 };
   const chartWidth = width - padding.left - padding.right;
   const chartHeight = height - padding.top - padding.bottom;
 
@@ -266,10 +267,10 @@ const SitePlanFullPageSVG: React.FC<{ points: Point[]; projectName: string }> = 
   const xRange = maxX - minX || 1;
   const yRange = maxY - minY || 1;
   
-  const paddedMinX = minX - xRange * 0.05;
-  const paddedMaxX = maxX + xRange * 0.05;
-  const paddedMinY = minY - yRange * 0.1;
-  const paddedMaxY = maxY + yRange * 0.1;
+  const paddedMinX = minX - xRange * 0.08;
+  const paddedMaxX = maxX + xRange * 0.08;
+  const paddedMinY = minY - yRange * 0.15;
+  const paddedMaxY = maxY + yRange * 0.15;
   const paddedXRange = paddedMaxX - paddedMinX;
   const paddedYRange = paddedMaxY - paddedMinY || 1;
 
@@ -283,22 +284,10 @@ const SitePlanFullPageSVG: React.FC<{ points: Point[]; projectName: string }> = 
   const xPos = (x: number) => padding.left + offsetX + (x - paddedMinX) * scale;
   const yPos = (y: number) => padding.top + chartHeight - offsetY - (y - paddedMinY) * scale;
 
-  // Road alignment path - smoother
+  // Road centerline path - smooth BLACK line
   const roadPath = sortedPoints.map((p, i) => 
     `${i === 0 ? 'M' : 'L'} ${xPos(p.x)} ${yPos(p.y)}`
   ).join(' ');
-
-  // Select only key points: start, end, and 3-4 intermediate evenly spaced
-  const numIntermediateLabels = 4;
-  const step = Math.max(1, Math.floor((sortedPoints.length - 1) / (numIntermediateLabels + 1)));
-  const keyPointIndices: number[] = [0];
-  for (let i = step; i < sortedPoints.length - 1; i += step) {
-    if (keyPointIndices.length < numIntermediateLabels + 1) {
-      keyPointIndices.push(i);
-    }
-  }
-  keyPointIndices.push(sortedPoints.length - 1);
-  const keyPoints = keyPointIndices.map(i => ({ ...sortedPoints[i], index: i }));
 
   // Format station label
   const formatStation = (x: number) => {
@@ -308,15 +297,15 @@ const SitePlanFullPageSVG: React.FC<{ points: Point[]; projectName: string }> = 
     return `${major}+${minor.toString().padStart(3, '0')}`;
   };
 
-  // Calculate scale bar
+  // Calculate scale bar length
   const scaleBarLength = 50; // meters
   const scaleBarPixels = scaleBarLength * scale;
 
   // Grid lines
   const gridLinesX: number[] = [];
   const gridLinesY: number[] = [];
-  const xStep = Math.ceil(xRange / 5 / 50) * 50;
-  const yStep = Math.ceil(yRange / 4 / 10) * 10 || 10;
+  const xStep = Math.ceil(xRange / 6 / 25) * 25 || 25;
+  const yStep = Math.ceil(yRange / 5 / 5) * 5 || 5;
   
   for (let x = Math.ceil(minX / xStep) * xStep; x <= maxX; x += xStep) {
     gridLinesX.push(x);
@@ -325,90 +314,168 @@ const SitePlanFullPageSVG: React.FC<{ points: Point[]; projectName: string }> = 
     gridLinesY.push(y);
   }
 
+  // Station markers along the centerline (every 25 meters)
+  const stationInterval = 25;
+  const stationMarkers: { x: number; y: number; label: string }[] = [];
+  const stationStart = Math.ceil(minX / stationInterval) * stationInterval;
+  for (let station = stationStart; station <= maxX; station += stationInterval) {
+    // Find closest point to this station
+    const closest = sortedPoints.reduce((prev, curr) => 
+      Math.abs(curr.x - station) < Math.abs(prev.x - station) ? curr : prev
+    );
+    if (Math.abs(closest.x - station) < stationInterval * 0.6) {
+      stationMarkers.push({
+        x: xPos(closest.x),
+        y: yPos(closest.y),
+        label: formatStation(station)
+      });
+    }
+  }
+
+  // Determine which points to show labels for to avoid overcrowding
+  // Show labels for every Nth point based on total count
+  const totalPoints = sortedPoints.length;
+  const labelInterval = totalPoints > 100 ? 8 : totalPoints > 50 ? 5 : totalPoints > 25 ? 3 : 2;
+
   return (
     <svg width={width} height={height} style={{ maxWidth: '100%' }}>
-      {/* Background with light grid */}
-      <rect x={padding.left} y={padding.top} width={chartWidth} height={chartHeight} fill="#fafafa" />
+      {/* Background */}
+      <rect x={0} y={0} width={width} height={height} fill="#ffffff" />
+      <rect x={padding.left} y={padding.top} width={chartWidth} height={chartHeight} fill="#fefefe" />
       
-      {/* Grid lines */}
+      {/* Grid lines - very faint */}
       {gridLinesX.map(x => (
-        <line key={`gx-${x}`} x1={xPos(x)} y1={padding.top} x2={xPos(x)} y2={padding.top + chartHeight} stroke="#e5e7eb" strokeWidth={0.5} strokeDasharray="4,4" />
+        <line key={`gx-${x}`} x1={xPos(x)} y1={padding.top} x2={xPos(x)} y2={padding.top + chartHeight} stroke="#e8e8e8" strokeWidth={0.5} />
       ))}
       {gridLinesY.map(y => (
-        <line key={`gy-${y}`} x1={padding.left} y1={yPos(y)} x2={padding.left + chartWidth} y2={yPos(y)} stroke="#e5e7eb" strokeWidth={0.5} strokeDasharray="4,4" />
+        <line key={`gy-${y}`} x1={padding.left} y1={yPos(y)} x2={padding.left + chartWidth} y2={yPos(y)} stroke="#e8e8e8" strokeWidth={0.5} />
       ))}
       
       {/* Border */}
-      <rect x={padding.left} y={padding.top} width={chartWidth} height={chartHeight} fill="none" stroke="#94a3b8" strokeWidth={1} />
+      <rect x={padding.left} y={padding.top} width={chartWidth} height={chartHeight} fill="none" stroke="#333333" strokeWidth={1} />
       
-      {/* Road alignment - main path with shadow for depth */}
-      <path d={roadPath} fill="none" stroke="#94a3b8" strokeWidth={6} strokeLinecap="round" strokeLinejoin="round" opacity={0.3} />
-      <path d={roadPath} fill="none" stroke="#1e40af" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
+      {/* Road centerline - BLACK continuous line */}
+      <path d={roadPath} fill="none" stroke="#000000" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
       
-      {/* Key station markers with labels */}
-      {keyPoints.map((p, i) => {
+      {/* ALL Survey Points with NGL/DL Labels */}
+      {sortedPoints.map((p, i) => {
         const x = xPos(p.x);
         const y = yPos(p.y);
         const isFirst = i === 0;
-        const isLast = i === keyPoints.length - 1;
+        const isLast = i === sortedPoints.length - 1;
+        const showLabel = isFirst || isLast || i % labelInterval === 0;
+        
+        const ngl = p.z;
+        const dl = p.fgl ?? p.z;
+        
+        // Alternate label positions to reduce overlap
         const labelAbove = i % 2 === 0;
         
         return (
-          <g key={`station-${i}`}>
-            {/* Station marker dot */}
-            <circle cx={x} cy={y} r={4} fill={isFirst ? '#22c55e' : isLast ? '#ef4444' : '#1e40af'} stroke="white" strokeWidth={1.5} />
+          <g key={`point-${i}`}>
+            {/* Point marker */}
+            <circle 
+              cx={x} 
+              cy={y} 
+              r={isFirst || isLast ? 5 : 2.5} 
+              fill={isFirst ? '#22c55e' : isLast ? '#ef4444' : '#000000'} 
+              stroke={isFirst || isLast ? 'white' : 'none'} 
+              strokeWidth={isFirst || isLast ? 1.5 : 0} 
+            />
             
-            {/* Station label with background for readability */}
-            <g transform={`translate(${x}, ${labelAbove ? y - 12 : y + 12})`}>
-              <rect x={-24} y={labelAbove ? -14 : 2} width={48} height={14} fill="white" rx={2} opacity={0.9} />
-              <text x={0} y={labelAbove ? -4 : 12} textAnchor="middle" fontSize={9} fill="#1e40af" fontWeight={isFirst || isLast ? 'bold' : 'normal'}>
-                {formatStation(p.x)}
-              </text>
-            </g>
-            
-            {/* NGL elevation - small, subtle */}
-            <text x={x + (labelAbove ? 28 : -28)} y={y + 4} textAnchor={labelAbove ? "start" : "end"} fontSize={7} fill="#6b7280">
-              El: {p.z.toFixed(1)}m
-            </text>
+            {/* NGL and DL labels - shown for key points */}
+            {showLabel && (
+              <>
+                {/* NGL label - GREEN, above/left */}
+                <text 
+                  x={x + (labelAbove ? -3 : 3)} 
+                  y={labelAbove ? y - 8 : y - 8} 
+                  textAnchor={labelAbove ? "end" : "start"} 
+                  fontSize={7} 
+                  fill="#16a34a" 
+                  fontWeight="600"
+                >
+                  NGL{ngl.toFixed(2)}
+                </text>
+                
+                {/* DL label - RED, below/right (only if different from NGL) */}
+                <text 
+                  x={x + (labelAbove ? 3 : -3)} 
+                  y={labelAbove ? y + 12 : y + 12} 
+                  textAnchor={labelAbove ? "start" : "end"} 
+                  fontSize={7} 
+                  fill="#dc2626" 
+                  fontWeight="600"
+                >
+                  DL{dl.toFixed(2)}
+                </text>
+              </>
+            )}
           </g>
         );
       })}
 
+      {/* Station markers along centerline */}
+      {stationMarkers.filter((_, i) => i % 2 === 0).map((marker, i) => (
+        <g key={`station-marker-${i}`}>
+          <line x1={marker.x - 4} y1={marker.y - 4} x2={marker.x + 4} y2={marker.y + 4} stroke="#333333" strokeWidth={1} />
+          <line x1={marker.x + 4} y1={marker.y - 4} x2={marker.x - 4} y2={marker.y + 4} stroke="#333333" strokeWidth={1} />
+          <text x={marker.x} y={marker.y + 20} textAnchor="middle" fontSize={8} fill="#333333" fontWeight="500">
+            {marker.label}
+          </text>
+        </g>
+      ))}
+
       {/* Legend box */}
-      <g transform={`translate(${width - padding.right - 110}, ${padding.top + 10})`}>
-        <rect x={0} y={0} width={100} height={65} fill="white" stroke="#d1d5db" rx={4} />
-        <text x={50} y={14} textAnchor="middle" fontSize={9} fill="#374151" fontWeight="bold">LEGEND</text>
-        <line x1={10} y1={28} x2={35} y2={28} stroke="#1e40af" strokeWidth={3} />
-        <text x={42} y={31} fontSize={8} fill="#374151">Road Centerline</text>
-        <circle cx={15} cy={42} r={4} fill="#22c55e" />
-        <text x={42} y={45} fontSize={8} fill="#374151">Start Point</text>
-        <circle cx={15} cy={56} r={4} fill="#ef4444" />
-        <text x={42} y={59} fontSize={8} fill="#374151">End Point</text>
+      <g transform={`translate(${width - padding.right - 115}, ${padding.top + 8})`}>
+        <rect x={0} y={0} width={110} height={70} fill="white" stroke="#333333" strokeWidth={1} />
+        <text x={55} y={14} textAnchor="middle" fontSize={9} fill="#000000" fontWeight="bold">LEGEND</text>
+        <line x1={8} y1={26} x2={30} y2={26} stroke="#000000" strokeWidth={3} />
+        <text x={36} y={29} fontSize={7} fill="#000000">Road Centerline</text>
+        <circle cx={15} cy={40} r={4} fill="#22c55e" stroke="white" strokeWidth={1} />
+        <text x={36} y={43} fontSize={7} fill="#000000">Start Point</text>
+        <circle cx={15} cy={54} r={4} fill="#ef4444" stroke="white" strokeWidth={1} />
+        <text x={36} y={57} fontSize={7} fill="#000000">End Point</text>
+        <text x={8} y={66} fontSize={6} fill="#16a34a" fontWeight="600">NGL</text>
+        <text x={30} y={66} fontSize={6} fill="#dc2626" fontWeight="600">DL</text>
+        <text x={50} y={66} fontSize={6} fill="#666666">= Labels</text>
       </g>
 
       {/* North arrow */}
-      <g transform={`translate(${padding.left + 25}, ${padding.top + 30})`}>
-        <circle cx={0} cy={0} r={18} fill="white" stroke="#94a3b8" strokeWidth={1} />
-        <polygon points="0,-12 4,4 0,0 -4,4" fill="#374151" />
-        <text x={0} y={-14} textAnchor="middle" fontSize={8} fill="#374151" fontWeight="bold">N</text>
+      <g transform={`translate(${padding.left + 25}, ${padding.top + 28})`}>
+        <circle cx={0} cy={0} r={16} fill="white" stroke="#333333" strokeWidth={1} />
+        <polygon points="0,-10 3,4 0,1 -3,4" fill="#000000" />
+        <text x={0} y={-12} textAnchor="middle" fontSize={8} fill="#000000" fontWeight="bold">N</text>
       </g>
 
       {/* Scale bar */}
-      <g transform={`translate(${padding.left + 20}, ${height - 25})`}>
-        <line x1={0} y1={0} x2={scaleBarPixels} y2={0} stroke="#374151" strokeWidth={2} />
-        <line x1={0} y1={-4} x2={0} y2={4} stroke="#374151" strokeWidth={2} />
-        <line x1={scaleBarPixels} y1={-4} x2={scaleBarPixels} y2={4} stroke="#374151" strokeWidth={2} />
-        <text x={scaleBarPixels / 2} y={12} textAnchor="middle" fontSize={8} fill="#374151">{scaleBarLength}m</text>
-        <text x={scaleBarPixels + 10} y={4} fontSize={7} fill="#6b7280">Scale</text>
+      <g transform={`translate(${padding.left + 20}, ${height - 20})`}>
+        <line x1={0} y1={0} x2={scaleBarPixels} y2={0} stroke="#000000" strokeWidth={2} />
+        <line x1={0} y1={-4} x2={0} y2={4} stroke="#000000" strokeWidth={2} />
+        <line x1={scaleBarPixels} y1={-4} x2={scaleBarPixels} y2={4} stroke="#000000" strokeWidth={2} />
+        <line x1={scaleBarPixels / 2} y1={-2} x2={scaleBarPixels / 2} y2={2} stroke="#000000" strokeWidth={1} />
+        <text x={scaleBarPixels / 2} y={12} textAnchor="middle" fontSize={8} fill="#000000" fontWeight="500">{scaleBarLength}m</text>
       </g>
 
+      {/* Coordinate labels on axes */}
+      {gridLinesX.filter((_, i) => i % 2 === 0).map(x => (
+        <text key={`xlabel-${x}`} x={xPos(x)} y={height - padding.bottom + 12} textAnchor="middle" fontSize={7} fill="#666666">
+          {x.toFixed(0)}
+        </text>
+      ))}
+      {gridLinesY.filter((_, i) => i % 2 === 0).map(y => (
+        <text key={`ylabel-${y}`} x={padding.left - 5} y={yPos(y) + 3} textAnchor="end" fontSize={7} fill="#666666">
+          {y.toFixed(0)}
+        </text>
+      ))}
+
       {/* Axis labels */}
-      <text x={padding.left + chartWidth / 2} y={height - 8} textAnchor="middle" fontSize={10} fill="#374151">Station (X-Coordinate)</text>
-      <text x={15} y={padding.top + chartHeight / 2} textAnchor="middle" fontSize={10} fill="#374151" transform={`rotate(-90, 15, ${padding.top + chartHeight / 2})`}>Northing (Y-Coordinate)</text>
+      <text x={padding.left + chartWidth / 2} y={height - 5} textAnchor="middle" fontSize={9} fill="#333333" fontWeight="500">Easting (X)</text>
+      <text x={12} y={padding.top + chartHeight / 2} textAnchor="middle" fontSize={9} fill="#333333" fontWeight="500" transform={`rotate(-90, 12, ${padding.top + chartHeight / 2})`}>Northing (Y)</text>
 
       {/* Title block */}
-      <text x={width / 2} y={22} textAnchor="middle" fontSize={14} fill="#1e293b" fontWeight="bold">ROAD ALIGNMENT PLAN</text>
-      <text x={width / 2} y={36} textAnchor="middle" fontSize={10} fill="#64748b">{projectName}</text>
+      <text x={width / 2} y={20} textAnchor="middle" fontSize={14} fill="#000000" fontWeight="bold">ROAD ALIGNMENT PLAN</text>
+      <text x={width / 2} y={35} textAnchor="middle" fontSize={10} fill="#333333">{projectName} | Total Points: {sortedPoints.length}</text>
     </svg>
   );
 };
