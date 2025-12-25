@@ -10,6 +10,36 @@ interface FoundationVisualization3DProps {
   className?: string;
 }
 
+// Animated Load Arrow Component
+const AnimatedLoadArrow: React.FC<{
+  position: [number, number, number];
+  scale?: number;
+  color?: string;
+}> = ({ position, scale = 1, color = '#ef4444' }) => {
+  const arrowRef = useRef<THREE.Group>(null);
+  
+  useFrame((state) => {
+    if (arrowRef.current) {
+      const pulse = Math.sin(state.clock.elapsedTime * 3) * 0.1 + 1;
+      arrowRef.current.scale.setScalar(pulse * scale);
+      arrowRef.current.position.y = position[1] + Math.sin(state.clock.elapsedTime * 2) * 0.03;
+    }
+  });
+
+  return (
+    <group ref={arrowRef} position={position}>
+      <mesh position={[0, 0.2, 0]}>
+        <cylinderGeometry args={[0.03, 0.03, 0.4, 8]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.3} />
+      </mesh>
+      <mesh position={[0, 0, 0]} rotation={[Math.PI, 0, 0]}>
+        <coneGeometry args={[0.07, 0.15, 8]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.5} />
+      </mesh>
+    </group>
+  );
+};
+
 // Dimension Label Component
 const DimensionLabel: React.FC<{
   position: [number, number, number];
@@ -204,6 +234,9 @@ const FoundationMesh: React.FC<{
           <meshStandardMaterial color="#2563eb" metalness={0.7} roughness={0.3} />
         </mesh>
       ))}
+
+      {/* Animated Axial Load on Column */}
+      <AnimatedLoadArrow position={[0, fD/2 + columnHeight + 0.3, 0]} scale={1.2} />
 
       {/* Dimension Labels */}
       {showLabels && (

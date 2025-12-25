@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Text } from '@react-three/drei';
 import * as THREE from 'three';
@@ -13,6 +13,59 @@ interface SlabVisualization3DProps {
   bottomBarSpacing: number;
   slabType: string;
 }
+
+// Animated Distributed Load for Slab
+const AnimatedSlabLoad: React.FC<{
+  length: number;
+  width: number;
+  yPosition: number;
+}> = ({ length, width, yPosition }) => {
+  const arrowsRef = useRef<THREE.Group>(null);
+  
+  const arrows = useMemo(() => {
+    const positions: [number, number, number][] = [];
+    const cols = 4;
+    const rows = 3;
+    for (let i = 0; i < cols; i++) {
+      for (let j = 0; j < rows; j++) {
+        positions.push([
+          -length / 2 + length / (cols + 1) * (i + 1),
+          yPosition,
+          -width / 2 + width / (rows + 1) * (j + 1)
+        ]);
+      }
+    }
+    return positions;
+  }, [length, width, yPosition]);
+
+  useFrame((state) => {
+    if (arrowsRef.current) {
+      arrowsRef.current.children.forEach((child, i) => {
+        const offset = i * 0.2;
+        child.position.y = yPosition + Math.sin(state.clock.elapsedTime * 2 + offset) * 0.02;
+        const scale = Math.sin(state.clock.elapsedTime * 3 + offset) * 0.1 + 1;
+        child.scale.setScalar(scale);
+      });
+    }
+  });
+
+  return (
+    <group ref={arrowsRef}>
+      {arrows.map((pos, i) => (
+        <group key={i} position={pos}>
+          <mesh position={[0, 0.08, 0]}>
+            <cylinderGeometry args={[0.015, 0.015, 0.15, 8]} />
+            <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={0.3} />
+          </mesh>
+          <mesh position={[0, 0, 0]} rotation={[Math.PI, 0, 0]}>
+            <coneGeometry args={[0.03, 0.06, 8]} />
+            <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={0.5} />
+          </mesh>
+        </group>
+      ))}
+    </group>
+  );
+};
 
 // Dimension Label Component
 const DimensionLabel: React.FC<{
@@ -145,6 +198,9 @@ const Slab3D: React.FC<{
         position={[l / 2 + 0.15, 0, w / 2 + 0.1]} 
         text={`t=${thickness.toFixed(0)} mm`}
       />
+      
+      {/* Animated Distributed Load */}
+      <AnimatedSlabLoad length={l} width={w} yPosition={t / 2 + 0.12} />
     </group>
   );
 };

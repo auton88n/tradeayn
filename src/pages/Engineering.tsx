@@ -347,6 +347,24 @@ const Engineering = () => {
               </motion.div>
             )}
 
+            {/* Retaining Wall Calculator */}
+            {selectedCalculator === 'retaining_wall' && !calculationResult && (
+              <motion.div
+                key="retaining_wall"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <RetainingWallCalculator 
+                  onCalculate={handleCalculationComplete}
+                  isCalculating={isCalculating}
+                  setIsCalculating={setIsCalculating}
+                  userId={userId}
+                />
+              </motion.div>
+            )}
+
             {calculationResult && (
               <motion.div
                 key="results"

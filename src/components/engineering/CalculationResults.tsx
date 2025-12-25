@@ -425,6 +425,15 @@ export const CalculationResults = ({ result, onNewCalculation }: CalculationResu
                 bottomBarSpacing={(outputs.bottomBarSpacing || 150) as number}
                 slabType={(result.inputs.slabType || 'two_way') as string}
               />
+            ) : result.type === 'retaining_wall' ? (
+              <RetainingWallVisualization3D
+                wallHeight={(outputs.wallHeight || result.inputs.wallHeight || 4000) as number}
+                stemThicknessTop={(outputs.stemThicknessTop || 300) as number}
+                stemThicknessBottom={(outputs.stemThicknessBottom || 400) as number}
+                baseWidth={(outputs.baseWidth || 2500) as number}
+                baseThickness={(outputs.baseThickness || 400) as number}
+                toeWidth={(outputs.toeWidth || outputs.toeLength || 600) as number}
+              />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                 3D visualization not available
