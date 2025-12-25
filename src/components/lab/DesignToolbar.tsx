@@ -42,17 +42,46 @@ import {
   ChevronRight,
   Loader2,
   Send,
+  Wand2,
+  Eraser,
+  Palette,
+  Zap,
+  MessageCircle,
+  Instagram,
+  Linkedin,
+  Twitter,
+  Check,
+  Facebook,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { AspectRatio, CanvasElement, TextElement, ImageElement } from '@/hooks/useDesignCanvas';
 
 type DesignStyle = 'minimalist' | 'engaging' | 'promotional' | 'inspirational';
+type Platform = 'instagram' | 'linkedin' | 'tiktok' | 'twitter' | 'facebook';
+type StyleTransferStyle = 'instagram' | 'cyberpunk' | 'vintage' | 'luxury' | 'neon' | 'minimal';
 
 const styleOptions: { value: DesignStyle; label: string; description: string }[] = [
   { value: 'minimalist', label: 'Minimalist', description: 'Clean, bold headline only' },
   { value: 'engaging', label: 'Engaging', description: 'Headline + subtitle + hashtags' },
   { value: 'promotional', label: 'Promotional', description: 'Sale/offer focused with CTA' },
   { value: 'inspirational', label: 'Inspirational', description: 'Quote-style elegant text' },
+];
+
+const platformOptions: { value: Platform; label: string; icon: React.ReactNode }[] = [
+  { value: 'instagram', label: 'Instagram', icon: <Instagram className="w-3.5 h-3.5" /> },
+  { value: 'linkedin', label: 'LinkedIn', icon: <Linkedin className="w-3.5 h-3.5" /> },
+  { value: 'tiktok', label: 'TikTok', icon: <MessageCircle className="w-3.5 h-3.5" /> },
+  { value: 'twitter', label: 'Twitter/X', icon: <Twitter className="w-3.5 h-3.5" /> },
+  { value: 'facebook', label: 'Facebook', icon: <Facebook className="w-3.5 h-3.5" /> },
+];
+
+const styleTransferOptions: { value: StyleTransferStyle; label: string; description: string }[] = [
+  { value: 'instagram', label: 'Instagram', description: 'Warm, filtered aesthetic' },
+  { value: 'cyberpunk', label: 'Cyberpunk', description: 'Neon, futuristic vibes' },
+  { value: 'vintage', label: 'Vintage', description: 'Retro film look' },
+  { value: 'luxury', label: 'Luxury', description: 'Elegant, premium feel' },
+  { value: 'neon', label: 'Neon', description: 'Bright neon glow' },
+  { value: 'minimal', label: 'Minimal', description: 'Clean, simple tones' },
 ];
 
 interface DesignToolbarProps {
@@ -76,6 +105,15 @@ interface DesignToolbarProps {
   onGenerateDesign: () => void;
   isGeneratingDesign: boolean;
   hasBackgroundImage: boolean;
+  // AI Magic props
+  onRemoveBackground?: () => void;
+  onEnhanceImage?: () => void;
+  onStyleTransfer?: (style: StyleTransferStyle) => void;
+  isProcessingImage?: boolean;
+  // Caption Generator props
+  onGenerateCaption?: (platform: Platform) => void;
+  isGeneratingCaption?: boolean;
+  generatedCaption?: string;
 }
 
 const aspectRatioOptions: { value: AspectRatio; label: string; icon: React.ReactNode }[] = [
@@ -142,6 +180,13 @@ export const DesignToolbar: React.FC<DesignToolbarProps> = ({
   onGenerateDesign,
   isGeneratingDesign,
   hasBackgroundImage,
+  onRemoveBackground,
+  onEnhanceImage,
+  onStyleTransfer,
+  isProcessingImage,
+  onGenerateCaption,
+  isGeneratingCaption,
+  generatedCaption,
 }) => {
   const backgroundInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -150,6 +195,10 @@ export const DesignToolbar: React.FC<DesignToolbarProps> = ({
   const [elementsOpen, setElementsOpen] = useState(true);
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const [canvasSizeOpen, setCanvasSizeOpen] = useState(false);
+  const [aiMagicOpen, setAiMagicOpen] = useState(false);
+  const [captionOpen, setCaptionOpen] = useState(false);
+  const [selectedPlatform, setSelectedPlatform] = useState<Platform>('instagram');
+  const [copiedCaption, setCopiedCaption] = useState(false);
 
   const handleBackgroundUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -162,6 +211,14 @@ export const DesignToolbar: React.FC<DesignToolbarProps> = ({
     const file = e.target.files?.[0];
     if (file) {
       onUploadLogo(file);
+    }
+  };
+
+  const handleCopyCaption = async () => {
+    if (generatedCaption) {
+      await navigator.clipboard.writeText(generatedCaption);
+      setCopiedCaption(true);
+      setTimeout(() => setCopiedCaption(false), 2000);
     }
   };
 
@@ -255,6 +312,193 @@ export const DesignToolbar: React.FC<DesignToolbarProps> = ({
                   <RotateCcw className="w-4 h-4" />
                   <span className="text-[10px]">Clear</span>
                 </Button>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+
+          <Separator className="my-2" />
+
+          {/* AI Magic Tools - NEW */}
+          <Collapsible open={aiMagicOpen} onOpenChange={setAiMagicOpen}>
+            <CollapsibleTrigger asChild>
+              <Button 
+                variant="ghost" 
+                className="w-full justify-between h-9 px-2 hover:bg-muted"
+              >
+                <div className="flex items-center gap-1.5">
+                  <Wand2 className="w-3.5 h-3.5 text-primary" />
+                  <span className="text-xs font-medium">AI Magic</span>
+                </div>
+                {aiMagicOpen ? (
+                  <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+                ) : (
+                  <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+                )}
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-2 pb-1">
+              <div className="space-y-2">
+                {/* Quick Actions */}
+                <div className="grid grid-cols-2 gap-1.5">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-16 flex-col gap-1.5 hover:border-primary/50 hover:bg-primary/5"
+                    disabled={!hasBackgroundImage || isProcessingImage}
+                    onClick={onRemoveBackground}
+                  >
+                    {isProcessingImage ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                    ) : (
+                      <Eraser className="w-4 h-4 text-muted-foreground" />
+                    )}
+                    <span className="text-[10px] text-muted-foreground leading-tight">Remove BG</span>
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-16 flex-col gap-1.5 hover:border-primary/50 hover:bg-primary/5"
+                    disabled={!hasBackgroundImage || isProcessingImage}
+                    onClick={onEnhanceImage}
+                  >
+                    {isProcessingImage ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                    ) : (
+                      <Zap className="w-4 h-4 text-muted-foreground" />
+                    )}
+                    <span className="text-[10px] text-muted-foreground leading-tight">Enhance</span>
+                  </Button>
+                </div>
+
+                {/* Style Transfer */}
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] text-muted-foreground px-1">Style Transfer</Label>
+                  <div className="grid grid-cols-3 gap-1">
+                    {styleTransferOptions.map((style) => (
+                      <Button
+                        key={style.value}
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-[10px] hover:border-primary/50 hover:bg-primary/5"
+                        disabled={!hasBackgroundImage || isProcessingImage}
+                        onClick={() => onStyleTransfer?.(style.value)}
+                        title={style.description}
+                      >
+                        {style.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {!hasBackgroundImage && (
+                  <p className="text-[10px] text-muted-foreground text-center py-1">
+                    Add an image to use AI Magic
+                  </p>
+                )}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+
+          <Separator className="my-2" />
+
+          {/* Caption Generator - NEW */}
+          <Collapsible open={captionOpen} onOpenChange={setCaptionOpen}>
+            <CollapsibleTrigger asChild>
+              <Button 
+                variant="ghost" 
+                className="w-full justify-between h-9 px-2 hover:bg-muted"
+              >
+                <div className="flex items-center gap-1.5">
+                  <MessageCircle className="w-3.5 h-3.5 text-primary" />
+                  <span className="text-xs font-medium">Caption Generator</span>
+                </div>
+                {captionOpen ? (
+                  <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+                ) : (
+                  <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+                )}
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-2 pb-1">
+              <div className="space-y-3">
+                {/* Platform Selection */}
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] text-muted-foreground px-1">Platform</Label>
+                  <div className="grid grid-cols-5 gap-1">
+                    {platformOptions.map((platform) => (
+                      <Button
+                        key={platform.value}
+                        variant={selectedPlatform === platform.value ? 'default' : 'outline'}
+                        size="icon"
+                        className={cn(
+                          "h-8 w-full",
+                          selectedPlatform !== platform.value && "hover:border-primary/50"
+                        )}
+                        onClick={() => setSelectedPlatform(platform.value)}
+                        title={platform.label}
+                      >
+                        {platform.icon}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Generate Button */}
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="w-full h-9 gap-2"
+                  disabled={!hasBackgroundImage || isGeneratingCaption}
+                  onClick={() => onGenerateCaption?.(selectedPlatform)}
+                >
+                  {isGeneratingCaption ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-3.5 h-3.5" />
+                      Generate Caption
+                    </>
+                  )}
+                </Button>
+
+                {/* Generated Caption Display */}
+                {generatedCaption && (
+                  <div className="space-y-2">
+                    <div className="p-2.5 rounded-lg bg-muted/50 border border-border">
+                      <p className="text-xs text-foreground whitespace-pre-wrap leading-relaxed">
+                        {generatedCaption}
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full h-8 gap-1.5 text-xs"
+                      onClick={handleCopyCaption}
+                    >
+                      {copiedCaption ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-green-500" />
+                          Copied!
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5" />
+                          Copy Caption
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+
+                {!hasBackgroundImage && (
+                  <p className="text-[10px] text-muted-foreground text-center">
+                    Add an image to generate captions
+                  </p>
+                )}
               </div>
             </CollapsibleContent>
           </Collapsible>
