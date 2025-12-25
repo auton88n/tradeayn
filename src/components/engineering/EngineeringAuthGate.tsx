@@ -93,15 +93,20 @@ const EngineeringAuthGate = ({ onSignIn }: EngineeringAuthGateProps) => {
               </Button>
             </motion.div>
 
-            {/* Note */}
-            <motion.p
+            {/* Learn More Link */}
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.6 }}
-              className="text-xs text-muted-foreground mt-4"
+              className="mt-4"
             >
-              Free to use • No credit card required
-            </motion.p>
+              <a
+                href="/services/civil-engineering"
+                className="text-xs text-cyan-500 hover:text-cyan-400 underline underline-offset-2"
+              >
+                Learn more about our engineering tools
+              </a>
+            </motion.div>
           </div>
         </div>
       </motion.div>
