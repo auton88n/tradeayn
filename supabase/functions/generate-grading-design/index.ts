@@ -28,13 +28,13 @@ interface TerrainAnalysis {
   maxY: number;
 }
 
-// Saudi earthwork prices (SAR per m³)
+// Saudi earthwork prices
 const EARTHWORK_PRICES = {
   excavation: 25,      // SAR/m³
   fill: 35,            // SAR/m³ (imported material)
   compaction: 8,       // SAR/m³
   disposal: 15,        // SAR/m³ (off-site)
-  surveying: 2,        // SAR/m²
+  surveyingPerHectare: 2500,  // SAR per hectare
 };
 
 serve(async (req) => {
@@ -83,9 +83,15 @@ ${samplePoints.map((p: SurveyPoint) => `Point ${p.id}: (${p.x}, ${p.y}) Elev: ${
 User Requirements:
 ${requirements || 'Standard site grading for construction with proper drainage'}
 
+CRITICAL DESIGN CONSTRAINT:
+The design elevation MUST be very close to the average terrain elevation (${terrainAnalysis.avgElevation}m).
+Balance cut and fill volumes to minimize import/export of material.
+Target net earthwork as close to ZERO as possible.
+The design elevation should typically be within ±0.3m of ${terrainAnalysis.avgElevation}m unless user requirements explicitly demand a specific elevation.
+
 Generate a grading design with the following JSON structure:
 {
-  "designElevation": <recommended finished grade elevation in meters>,
+  "designElevation": <MUST be close to ${terrainAnalysis.avgElevation}m to balance cut/fill>,
   "slopeDirection": "<N/S/E/W or combination>",
   "slopePercentage": <drainage slope percentage, typically 1-3%>,
   "gradingZones": [
@@ -100,14 +106,14 @@ Generate a grading design with the following JSON structure:
   ],
   "totalCutVolume": <total cut in m³>,
   "totalFillVolume": <total fill in m³>,
-  "netVolume": <positive = excess cut, negative = fill needed>,
+  "netVolume": <MUST be close to zero - positive = excess cut, negative = fill needed>,
   "designNotes": ["<important design consideration 1>", "<design note 2>"],
   "drainageRecommendations": "<drainage design recommendation>",
   "compactionRequirements": "<compaction specifications>"
 }
 
-Consider:
-1. Minimize earthwork by balancing cut and fill
+IMPORTANT REQUIREMENTS:
+1. BALANCE CUT AND FILL - The design elevation must minimize net earthwork. Total cut should approximately equal total fill.
 2. Ensure proper drainage (min 1% slope away from structures)
 3. Account for compaction factor (typically 10-15% for fill)
 4. Provide adequate slopes for storm water management
@@ -171,7 +177,7 @@ Return ONLY valid JSON, no additional text.`;
       fill: fillVolume * EARTHWORK_PRICES.fill,
       compaction: fillVolume * EARTHWORK_PRICES.compaction,
       disposal: netVolume > 0 ? netVolume * EARTHWORK_PRICES.disposal : 0,
-      surveying: terrainAnalysis.estimatedArea * EARTHWORK_PRICES.surveying,
+      surveying: (terrainAnalysis.estimatedArea / 10000) * EARTHWORK_PRICES.surveyingPerHectare,
     };
 
     const totalCost = Object.values(costBreakdown).reduce((a, b) => a + b, 0);

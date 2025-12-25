@@ -55,9 +55,9 @@ const TerrainMesh: React.FC<{ points: Point[]; viewMode: ViewMode; bounds: any }
           const intensity = Math.min(1, p.cutFill / 3);
           color = new THREE.Color().setHSL(0, 0.8, 0.5 + intensity * 0.3);
         } else {
-          // Fill - blue gradient
+          // Fill - yellow gradient
           const intensity = Math.min(1, Math.abs(p.cutFill) / 3);
-          color = new THREE.Color().setHSL(0.6, 0.8, 0.5 + intensity * 0.3);
+          color = new THREE.Color().setHSL(0.15, 0.9, 0.5 + intensity * 0.3);
         }
       } else {
         // Elevation gradient (green to brown)
@@ -193,7 +193,7 @@ export const TerrainVisualization3D: React.FC<TerrainVisualization3DProps> = ({
             <span>Cut Area</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-blue-500" />
+            <div className="w-4 h-4 rounded bg-yellow-500" />
             <span>Fill Area</span>
           </div>
         </div>
