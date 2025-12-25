@@ -10,7 +10,8 @@ import {
   History,
   HardHat,
   Box,
-  Mountain
+  Mountain,
+  GitCompare
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -21,6 +22,8 @@ import SlabCalculator from '@/components/engineering/SlabCalculator';
 import RetainingWallCalculator from '@/components/engineering/RetainingWallCalculator';
 import { CalculationResults } from '@/components/engineering/CalculationResults';
 import { CalculationHistoryModal } from '@/components/engineering/CalculationHistoryModal';
+import { CalculationComparison } from '@/components/engineering/CalculationComparison';
+import { useEngineeringHistory } from '@/hooks/useEngineeringHistory';
 import { SEO } from '@/components/SEO';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -93,9 +96,12 @@ const Engineering = () => {
   const [calculationResult, setCalculationResult] = useState<CalculationResult | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isCompareOpen, setIsCompareOpen] = useState(false);
   const [userId, setUserId] = useState<string | undefined>();
+  
+  const { calculationHistory, fetchHistory } = useEngineeringHistory(userId);
 
-  // Get current user ID
+  // Get current user ID and fetch history
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) {
@@ -103,6 +109,12 @@ const Engineering = () => {
       }
     });
   }, []);
+
+  useEffect(() => {
+    if (userId) {
+      fetchHistory();
+    }
+  }, [userId, fetchHistory]);
 
   const handleCalculationComplete = (result: CalculationResult) => {
     setCalculationResult(result);
@@ -161,6 +173,17 @@ const Engineering = () => {
               </div>
 
               <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-2"
+                  onClick={() => setIsCompareOpen(true)}
+                  disabled={!userId || calculationHistory.length < 2}
+                  title={calculationHistory.length < 2 ? "Need at least 2 calculations to compare" : "Compare calculations"}
+                >
+                  <GitCompare className="w-4 h-4" />
+                  Compare
+                </Button>
                 <Button 
                   variant="outline" 
                   size="sm" 
@@ -397,6 +420,16 @@ const Engineering = () => {
             setIsHistoryOpen(false);
           }}
         />
+
+        {/* Comparison Modal */}
+        <AnimatePresence>
+          {isCompareOpen && (
+            <CalculationComparison
+              calculations={calculationHistory}
+              onClose={() => setIsCompareOpen(false)}
+            />
+          )}
+        </AnimatePresence>
       </div>
     </>
   );

@@ -11,8 +11,10 @@ import {
   DollarSign,
   CheckCircle2,
   AlertTriangle,
-  Loader2
+  Loader2,
+  BarChart3
 } from 'lucide-react';
+import { ForceDiagrams } from './ForceDiagrams';
 import { Button } from '@/components/ui/button';
 import { BeamVisualization3D } from './BeamVisualization3D';
 import { FoundationVisualization3D } from './FoundationVisualization3D';
@@ -534,6 +536,20 @@ export const CalculationResults = ({ result, onNewCalculation }: CalculationResu
               )}
             </div>
           </div>
+
+          {/* Force Diagrams for Beam */}
+          {result.type === 'beam' && (
+            <div className="bg-card rounded-2xl border border-border p-6 shadow-lg">
+              <div className="flex items-center gap-2 mb-4">
+                <BarChart3 className="w-5 h-5 text-purple-500" />
+                <h3 className="text-lg font-semibold">Force Diagrams</h3>
+              </div>
+              <ForceDiagrams 
+                span={Number(result.inputs.span) || 6}
+                load={(Number(result.inputs.deadLoad) || 20) + (Number(result.inputs.liveLoad) || 15)}
+              />
+            </div>
+          )}
 
           {/* Reinforcement Card */}
           <div className="bg-card rounded-2xl border border-border p-6 shadow-lg">
