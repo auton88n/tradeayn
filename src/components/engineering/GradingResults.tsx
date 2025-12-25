@@ -109,17 +109,18 @@ export const GradingResults: React.FC<GradingResultsProps> = ({
     setExportingPDF(true);
     try {
       const options = {
-        margin: [6, 0, 6, 0] as [number, number, number, number], // top, right, bottom, left margins in mm
+        margin: 0,
         filename: `${projectName.replace(/\s+/g, '_')}_Grading_Report.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
+        image: { type: 'jpeg', quality: 0.95 },
         html2canvas: { 
           scale: 2, 
           useCORS: true, 
           logging: false,
-          windowWidth: 794 // A4 width in pixels at 96 DPI
+          width: 794,
+          windowWidth: 794
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
-        pagebreak: { mode: ['css', 'legacy'], avoid: ['tr'] }
+        pagebreak: { mode: 'avoid-all' as const }
       };
 
       await html2pdf().set(options).from(pdfRef.current).save();
