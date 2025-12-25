@@ -24,6 +24,8 @@ interface AIDesignResult {
 }
 
 type DesignStyle = 'minimalist' | 'engaging' | 'promotional' | 'inspirational';
+type Platform = 'instagram' | 'linkedin' | 'tiktok' | 'twitter' | 'facebook';
+type StyleTransferStyle = 'instagram' | 'cyberpunk' | 'vintage' | 'luxury' | 'neon' | 'minimal';
 
 const DesignLAB: React.FC = () => {
   const navigate = useNavigate();
@@ -37,6 +39,12 @@ const DesignLAB: React.FC = () => {
   const [designStyle, setDesignStyle] = useState<DesignStyle>('engaging');
   const [designVariations, setDesignVariations] = useState<DesignVariation[]>([]);
   const [showVariations, setShowVariations] = useState(false);
+  // AI Magic states
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
+  // Caption Generator states
+  const [isGeneratingCaption, setIsGeneratingCaption] = useState(false);
+  const [generatedCaption, setGeneratedCaption] = useState('');
+  
   const backgroundUploadRef = React.useRef<HTMLInputElement>(null);
   
   const {
@@ -181,6 +189,127 @@ const DesignLAB: React.FC = () => {
     selectElement(null);
     setShowVariations(false);
   }, [clearElements, addTextElementWithPosition, selectElement]);
+
+  // AI Magic: Remove Background
+  const handleRemoveBackground = useCallback(async () => {
+    if (!canvasState.backgroundImage) return;
+    
+    setIsProcessingImage(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-edit-image', {
+        body: { 
+          imageUrl: canvasState.backgroundImage,
+          action: 'remove-background'
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.editedImageUrl) {
+        setBackgroundImage(data.editedImageUrl);
+        toast.success('Background removed!');
+      } else if (data?.guidance) {
+        toast.info(data.guidance);
+      }
+    } catch (error) {
+      console.error('Remove background failed:', error);
+      toast.error('Failed to remove background');
+    } finally {
+      setIsProcessingImage(false);
+    }
+  }, [canvasState.backgroundImage, setBackgroundImage]);
+
+  // AI Magic: Enhance Image
+  const handleEnhanceImage = useCallback(async () => {
+    if (!canvasState.backgroundImage) return;
+    
+    setIsProcessingImage(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-edit-image', {
+        body: { 
+          imageUrl: canvasState.backgroundImage,
+          action: 'enhance'
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.editedImageUrl) {
+        setBackgroundImage(data.editedImageUrl);
+        toast.success('Image enhanced!');
+      } else if (data?.guidance) {
+        toast.info(data.guidance);
+      }
+    } catch (error) {
+      console.error('Enhance image failed:', error);
+      toast.error('Failed to enhance image');
+    } finally {
+      setIsProcessingImage(false);
+    }
+  }, [canvasState.backgroundImage, setBackgroundImage]);
+
+  // AI Magic: Style Transfer
+  const handleStyleTransfer = useCallback(async (style: StyleTransferStyle) => {
+    if (!canvasState.backgroundImage) return;
+    
+    setIsProcessingImage(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-edit-image', {
+        body: { 
+          imageUrl: canvasState.backgroundImage,
+          action: 'style-transfer',
+          options: { style }
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.editedImageUrl) {
+        setBackgroundImage(data.editedImageUrl);
+        toast.success(`${style.charAt(0).toUpperCase() + style.slice(1)} style applied!`);
+      } else if (data?.guidance) {
+        toast.info(data.guidance);
+      }
+    } catch (error) {
+      console.error('Style transfer failed:', error);
+      toast.error('Failed to apply style');
+    } finally {
+      setIsProcessingImage(false);
+    }
+  }, [canvasState.backgroundImage, setBackgroundImage]);
+
+  // Caption Generator
+  const handleGenerateCaption = useCallback(async (platform: Platform) => {
+    if (!canvasState.backgroundImage) return;
+    
+    setIsGeneratingCaption(true);
+    setGeneratedCaption('');
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-caption-generator', {
+        body: { 
+          imageUrl: canvasState.backgroundImage,
+          context: designContext || 'social media post',
+          platform,
+          tone: designStyle === 'promotional' ? 'persuasive' : 
+                designStyle === 'inspirational' ? 'inspirational' : 
+                designStyle === 'minimalist' ? 'concise' : 'engaging'
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.caption) {
+        setGeneratedCaption(data.caption);
+        toast.success('Caption generated!');
+      }
+    } catch (error) {
+      console.error('Caption generation failed:', error);
+      toast.error('Failed to generate caption');
+    } finally {
+      setIsGeneratingCaption(false);
+    }
+  }, [canvasState.backgroundImage, designContext, designStyle]);
 
   // Handle manual background upload from error state
   const handleManualUpload = useCallback(() => {
@@ -421,6 +550,13 @@ const DesignLAB: React.FC = () => {
             onGenerateDesign={handleAutoDesign}
             isGeneratingDesign={isGeneratingDesign}
             hasBackgroundImage={!!canvasState.backgroundImage}
+            onRemoveBackground={handleRemoveBackground}
+            onEnhanceImage={handleEnhanceImage}
+            onStyleTransfer={handleStyleTransfer}
+            isProcessingImage={isProcessingImage}
+            onGenerateCaption={handleGenerateCaption}
+            isGeneratingCaption={isGeneratingCaption}
+            generatedCaption={generatedCaption}
           />
           
           {/* Canvas Area */}
