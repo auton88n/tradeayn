@@ -9,13 +9,16 @@ import { Loader2, Calculator, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import ColumnVisualization3D from './ColumnVisualization3D';
+import { useEngineeringHistory } from '@/hooks/useEngineeringHistory';
 
 interface ColumnCalculatorProps {
   onCalculationComplete: (result: any) => void;
   onBack: () => void;
+  userId?: string;
 }
 
-const ColumnCalculator: React.FC<ColumnCalculatorProps> = ({ onCalculationComplete, onBack }) => {
+const ColumnCalculator: React.FC<ColumnCalculatorProps> = ({ onCalculationComplete, onBack, userId }) => {
+  const { saveCalculation } = useEngineeringHistory(userId);
   const [isCalculating, setIsCalculating] = useState(false);
   const [inputs, setInputs] = useState({
     axialLoad: 1500,
@@ -43,6 +46,9 @@ const ColumnCalculator: React.FC<ColumnCalculatorProps> = ({ onCalculationComple
       });
 
       if (error) throw error;
+
+      // Save to history (non-blocking)
+      saveCalculation('column', inputs, data);
 
       onCalculationComplete({
         type: 'column',

@@ -14,6 +14,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useEngineeringHistory } from '@/hooks/useEngineeringHistory';
 
 interface FoundationCalculatorProps {
   onCalculate: (result: {
@@ -24,6 +25,7 @@ interface FoundationCalculatorProps {
   }) => void;
   isCalculating: boolean;
   setIsCalculating: (value: boolean) => void;
+  userId?: string;
 }
 
 const soilTypes = [
@@ -48,7 +50,9 @@ const foundationTypes = [
   { value: 'strip', label: 'Strip Footing' },
 ];
 
-export const FoundationCalculator = ({ onCalculate, isCalculating, setIsCalculating }: FoundationCalculatorProps) => {
+export const FoundationCalculator = ({ onCalculate, isCalculating, setIsCalculating, userId }: FoundationCalculatorProps) => {
+  const { saveCalculation } = useEngineeringHistory(userId);
+  
   const [formData, setFormData] = useState({
     columnLoad: '',
     momentX: '0',
@@ -107,20 +111,25 @@ export const FoundationCalculator = ({ onCalculate, isCalculating, setIsCalculat
 
       if (error) throw error;
 
+      const inputs = {
+        columnLoad,
+        momentX: parseFloat(formData.momentX) || 0,
+        momentY: parseFloat(formData.momentY) || 0,
+        columnWidth: parseFloat(formData.columnWidth),
+        columnDepth: parseFloat(formData.columnDepth),
+        bearingCapacity,
+        soilType: formData.soilType,
+        concreteGrade: formData.concreteGrade,
+        foundationType: formData.foundationType,
+        embedmentDepth: parseFloat(formData.embedmentDepth) || 1.0,
+      };
+
+      // Save to history (non-blocking)
+      saveCalculation('foundation', inputs, data);
+
       onCalculate({
         type: 'foundation',
-        inputs: {
-          columnLoad,
-          momentX: parseFloat(formData.momentX) || 0,
-          momentY: parseFloat(formData.momentY) || 0,
-          columnWidth: parseFloat(formData.columnWidth),
-          columnDepth: parseFloat(formData.columnDepth),
-          bearingCapacity,
-          soilType: formData.soilType,
-          concreteGrade: formData.concreteGrade,
-          foundationType: formData.foundationType,
-          embedmentDepth: parseFloat(formData.embedmentDepth) || 1.0,
-        },
+        inputs,
         outputs: data,
         timestamp: new Date(),
       });

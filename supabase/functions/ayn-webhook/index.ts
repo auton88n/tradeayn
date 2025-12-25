@@ -893,6 +893,27 @@ serve(async (req) => {
     const upstreamUrl = modeConfig.webhook_url;
     console.log(`[${requestId}] Using webhook URL for mode '${requestData.mode}': ${upstreamUrl}`);
 
+    // Fetch recent engineering activities for user context (last 5)
+    let engineeringContext: string | null = null;
+    try {
+      const { data: engineeringActivities } = await supabase
+        .from('engineering_activity')
+        .select('activity_type, summary, created_at')
+        .eq('user_id', requestData.userId)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (engineeringActivities && engineeringActivities.length > 0) {
+        engineeringContext = `Recent engineering activities:\n${engineeringActivities.map(a => 
+          `- ${a.activity_type}: ${a.summary} (${new Date(a.created_at).toLocaleDateString()})`
+        ).join('\n')}`;
+        console.log(`[${requestId}] Engineering context found:`, engineeringActivities.length, 'activities');
+      }
+    } catch (engErr) {
+      console.warn(`[${requestId}] Failed to fetch engineering context:`, engErr);
+      // Non-blocking - continue without engineering context
+    }
+
   // Prepare conversation key and system message based on personalization settings
   const conversationKey = requestData.allowPersonalization
     ? requestData.userId
@@ -935,7 +956,8 @@ serve(async (req) => {
         userEmotion: userEmotionAnalysis,
         emotionContext: emotionContext,
         moodPattern: moodPattern,
-        adaptiveContext: moodPattern.adaptiveContext
+        adaptiveContext: moodPattern.adaptiveContext,
+        engineeringContext: engineeringContext, // NEW: User's recent engineering activities
       }),
     });
 

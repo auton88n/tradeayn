@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Calculator, 
@@ -18,8 +18,10 @@ import { BeamCalculator } from '@/components/engineering/BeamCalculator';
 import { FoundationCalculator } from '@/components/engineering/FoundationCalculator';
 import ColumnCalculator from '@/components/engineering/ColumnCalculator';
 import { CalculationResults } from '@/components/engineering/CalculationResults';
+import { CalculationHistoryModal } from '@/components/engineering/CalculationHistoryModal';
 import { SEO } from '@/components/SEO';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 
 type CalculatorType = 'beam' | 'foundation' | 'column' | 'slab' | null;
 
@@ -80,6 +82,17 @@ const Engineering = () => {
   const [selectedCalculator, setSelectedCalculator] = useState<CalculatorType>(null);
   const [calculationResult, setCalculationResult] = useState<CalculationResult | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [userId, setUserId] = useState<string | undefined>();
+
+  // Get current user ID
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        setUserId(data.user.id);
+      }
+    });
+  }, []);
 
   const handleCalculationComplete = (result: CalculationResult) => {
     setCalculationResult(result);
@@ -138,7 +151,13 @@ const Engineering = () => {
               </div>
 
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="gap-2" disabled>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-2" 
+                  onClick={() => setIsHistoryOpen(true)}
+                  disabled={!userId}
+                >
                   <History className="w-4 h-4" />
                   History
                 </Button>
@@ -260,6 +279,7 @@ const Engineering = () => {
                   onCalculate={handleCalculationComplete}
                   isCalculating={isCalculating}
                   setIsCalculating={setIsCalculating}
+                  userId={userId}
                 />
               </motion.div>
             )}
@@ -277,6 +297,7 @@ const Engineering = () => {
                   onCalculate={handleCalculationComplete}
                   isCalculating={isCalculating}
                   setIsCalculating={setIsCalculating}
+                  userId={userId}
                 />
               </motion.div>
             )}
@@ -293,6 +314,7 @@ const Engineering = () => {
                 <ColumnCalculator 
                   onCalculationComplete={handleCalculationComplete}
                   onBack={() => setSelectedCalculator(null)}
+                  userId={userId}
                 />
               </motion.div>
             )}
@@ -313,6 +335,22 @@ const Engineering = () => {
             )}
           </AnimatePresence>
         </main>
+
+        {/* History Modal */}
+        <CalculationHistoryModal
+          isOpen={isHistoryOpen}
+          onClose={() => setIsHistoryOpen(false)}
+          userId={userId}
+          onLoadCalculation={(calc) => {
+            setCalculationResult({
+              type: calc.calculation_type as CalculatorType,
+              inputs: calc.inputs,
+              outputs: calc.outputs,
+              timestamp: new Date(calc.created_at),
+            });
+            setIsHistoryOpen(false);
+          }}
+        />
       </div>
     </>
   );
