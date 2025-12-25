@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera, Text } from '@react-three/drei';
 import * as THREE from 'three';
 import { cn } from '@/lib/utils';
 import { Box, Layers } from 'lucide-react';
@@ -9,6 +9,26 @@ interface FoundationVisualization3DProps {
   outputs: Record<string, unknown>;
   className?: string;
 }
+
+// Dimension Label Component
+const DimensionLabel: React.FC<{
+  position: [number, number, number];
+  text: string;
+  rotation?: [number, number, number];
+}> = ({ position, text, rotation = [0, 0, 0] }) => (
+  <Text
+    position={position}
+    rotation={rotation}
+    fontSize={0.18}
+    color="#22c55e"
+    anchorX="center"
+    anchorY="middle"
+    outlineWidth={0.01}
+    outlineColor="#000000"
+  >
+    {text}
+  </Text>
+);
 
 // 2D Plan View
 const Foundation2DView: React.FC<{
@@ -97,7 +117,8 @@ const FoundationMesh: React.FC<{
   foundationDepth: number;
   columnWidth: number;
   columnDepth: number;
-}> = ({ foundationLength, foundationWidth, foundationDepth, columnWidth, columnDepth }) => {
+  showLabels?: boolean;
+}> = ({ foundationLength, foundationWidth, foundationDepth, columnWidth, columnDepth, showLabels = true }) => {
   const meshRef = useRef<THREE.Group>(null);
   
   useFrame((state) => {
@@ -183,6 +204,28 @@ const FoundationMesh: React.FC<{
           <meshStandardMaterial color="#2563eb" metalness={0.7} roughness={0.3} />
         </mesh>
       ))}
+
+      {/* Dimension Labels */}
+      {showLabels && (
+        <>
+          {/* Length label */}
+          <DimensionLabel 
+            position={[0, -fD/2 - 0.35, fW/2 + 0.3]} 
+            text={`${(foundationLength/1000).toFixed(2)} m`}
+          />
+          {/* Width label */}
+          <DimensionLabel 
+            position={[fL/2 + 0.35, -fD/2 - 0.35, 0]} 
+            text={`${(foundationWidth/1000).toFixed(2)} m`}
+            rotation={[0, -Math.PI/2, 0]}
+          />
+          {/* Depth label */}
+          <DimensionLabel 
+            position={[fL/2 + 0.2, 0, fW/2 + 0.2]} 
+            text={`${foundationDepth} mm`}
+          />
+        </>
+      )}
     </group>
   );
 };

@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera, Text } from '@react-three/drei';
 import * as THREE from 'three';
 import { cn } from '@/lib/utils';
 import { Box, Layers } from 'lucide-react';
@@ -9,6 +9,26 @@ interface BeamVisualization3DProps {
   outputs: Record<string, unknown>;
   className?: string;
 }
+
+// Dimension Label Component
+const DimensionLabel: React.FC<{
+  position: [number, number, number];
+  text: string;
+  rotation?: [number, number, number];
+}> = ({ position, text, rotation = [0, 0, 0] }) => (
+  <Text
+    position={position}
+    rotation={rotation}
+    fontSize={0.15}
+    color="#22c55e"
+    anchorX="center"
+    anchorY="middle"
+    outlineWidth={0.01}
+    outlineColor="#000000"
+  >
+    {text}
+  </Text>
+);
 
 // 2D Cross-Section View
 const Beam2DView: React.FC<{
@@ -95,7 +115,8 @@ const BeamMesh: React.FC<{
   barDia: number;
   stirrupDia: number;
   cover: number;
-}> = ({ width, depth, mainBars, barDia, stirrupDia, cover }) => {
+  showLabels?: boolean;
+}> = ({ width, depth, mainBars, barDia, stirrupDia, cover, showLabels = true }) => {
   const meshRef = useRef<THREE.Group>(null);
   
   useFrame((state) => {
@@ -182,6 +203,28 @@ const BeamMesh: React.FC<{
           </group>
         );
       })}
+
+      {/* Dimension Labels */}
+      {showLabels && (
+        <>
+          {/* Width label */}
+          <DimensionLabel 
+            position={[0, -d/2 - 0.3, beamLength/2 + 0.2]} 
+            text={`${width} mm`}
+          />
+          {/* Depth label */}
+          <DimensionLabel 
+            position={[w/2 + 0.35, 0, beamLength/2 + 0.2]} 
+            text={`${depth} mm`}
+            rotation={[0, 0, -Math.PI/2]}
+          />
+          {/* Length label */}
+          <DimensionLabel 
+            position={[w/2 + 0.2, -d/2 - 0.15, 0]} 
+            text={`L`}
+          />
+        </>
+      )}
     </group>
   );
 };

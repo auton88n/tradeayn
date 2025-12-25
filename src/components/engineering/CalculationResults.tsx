@@ -20,6 +20,84 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
+// 2D Cross-Section Components for PDF Export
+const Beam2DCrossSection: React.FC<{
+  width: number;
+  depth: number;
+  mainBars: number;
+  barDia: number;
+  stirrupDia: number;
+  cover: number;
+}> = ({ width, depth, mainBars, barDia, stirrupDia, cover }) => {
+  const padding = 25;
+  const maxDim = Math.max(width, depth);
+  const scale = (160 - padding * 2) / maxDim;
+  
+  const w = width * scale;
+  const d = depth * scale;
+  const c = cover * scale;
+  const barR = Math.max(barDia * scale * 0.4, 3);
+  const stirrupT = Math.max(stirrupDia * scale * 0.3, 1.5);
+  
+  const offsetX = (180 - w) / 2;
+  const offsetY = (160 - d) / 2;
+  
+  const barSpacing = (w - c * 2 - barR * 2) / (mainBars - 1);
+  const bottomY = offsetY + d - c - barR;
+  const topY = offsetY + c + barR;
+
+  return (
+    <svg viewBox="0 0 180 160" className="w-full h-full">
+      <rect x={offsetX} y={offsetY} width={w} height={d} fill="#718096" stroke="#2d3748" strokeWidth="1.5" />
+      <rect x={offsetX + c} y={offsetY + c} width={w - c * 2} height={d - c * 2} fill="none" stroke="#f97316" strokeWidth={stirrupT} />
+      {Array.from({ length: mainBars }).map((_, i) => (
+        <circle key={`main-${i}`} cx={offsetX + c + barR + i * barSpacing} cy={bottomY} r={barR} fill="#3182ce" />
+      ))}
+      <circle cx={offsetX + c + barR} cy={topY} r={barR * 0.7} fill="#48bb78" />
+      <circle cx={offsetX + w - c - barR} cy={topY} r={barR * 0.7} fill="#48bb78" />
+      <line x1={offsetX} y1={offsetY + d + 10} x2={offsetX + w} y2={offsetY + d + 10} stroke="#e2e8f0" strokeWidth="0.8" />
+      <text x={offsetX + w/2} y={offsetY + d + 20} fill="#e2e8f0" fontSize="8" textAnchor="middle">{width} mm</text>
+      <line x1={offsetX - 10} y1={offsetY} x2={offsetX - 10} y2={offsetY + d} stroke="#e2e8f0" strokeWidth="0.8" />
+      <text x={offsetX - 14} y={offsetY + d/2} fill="#e2e8f0" fontSize="8" textAnchor="middle" transform={`rotate(-90, ${offsetX - 14}, ${offsetY + d/2})`}>{depth} mm</text>
+    </svg>
+  );
+};
+
+const Foundation2DPlan: React.FC<{
+  length: number;
+  width: number;
+  columnWidth: number;
+  columnDepth: number;
+}> = ({ length, width, columnWidth, columnDepth }) => {
+  const padding = 20;
+  const maxDim = Math.max(length, width);
+  const scale = (160 - padding * 2) / maxDim;
+  
+  const fL = length * scale;
+  const fW = width * scale;
+  const cW = columnWidth * scale;
+  const cD = columnDepth * scale;
+  
+  const offsetX = (180 - fL) / 2;
+  const offsetY = (160 - fW) / 2;
+  const gridSpacing = Math.min(fL, fW) / 5;
+
+  return (
+    <svg viewBox="0 0 180 160" className="w-full h-full">
+      <rect x={offsetX} y={offsetY} width={fL} height={fW} fill="#718096" stroke="#2d3748" strokeWidth="1.5" />
+      {Array.from({ length: Math.floor(fW / gridSpacing) + 1 }).map((_, i) => (
+        <line key={`x-${i}`} x1={offsetX + 4} y1={offsetY + 4 + i * gridSpacing} x2={offsetX + fL - 4} y2={offsetY + 4 + i * gridSpacing} stroke="#f97316" strokeWidth="1" />
+      ))}
+      {Array.from({ length: Math.floor(fL / gridSpacing) + 1 }).map((_, i) => (
+        <line key={`y-${i}`} x1={offsetX + 4 + i * gridSpacing} y1={offsetY + 4} x2={offsetX + 4 + i * gridSpacing} y2={offsetY + fW - 4} stroke="#f97316" strokeWidth="1" />
+      ))}
+      <rect x={offsetX + (fL - cW) / 2} y={offsetY + (fW - cD) / 2} width={cW} height={cD} fill="#a0aec0" stroke="#666" strokeWidth="1" />
+      <text x={offsetX + fL/2} y={offsetY + fW + 12} fill="#e2e8f0" fontSize="8" textAnchor="middle">{(length/1000).toFixed(2)} m</text>
+      <text x={offsetX - 8} y={offsetY + fW/2} fill="#e2e8f0" fontSize="8" textAnchor="middle" transform={`rotate(-90, ${offsetX - 8}, ${offsetY + fW/2})`}>{(width/1000).toFixed(2)} m</text>
+    </svg>
+  );
+};
+
 interface CalculationResultsProps {
   result: {
     type: 'beam' | 'foundation' | 'column' | 'slab' | null;
@@ -196,13 +274,45 @@ export const CalculationResults = ({ result, onNewCalculation }: CalculationResu
           </div>
         </motion.div>
 
-        {/* Results Summary */}
+        {/* Results Summary - This is the PDF export area */}
         <motion.div
           id="calculation-report"
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           className="space-y-4"
         >
+          {/* Report Header for PDF */}
+          <div className="bg-card rounded-2xl border border-border p-4 shadow-lg print:shadow-none">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-xl font-bold capitalize">{result.type} Design Report</h2>
+              <span className="text-xs text-muted-foreground">
+                {result.timestamp.toLocaleDateString()} {result.timestamp.toLocaleTimeString()}
+              </span>
+            </div>
+            
+            {/* 2D Cross-Section for PDF */}
+            <div className="bg-slate-900 rounded-lg p-2 mb-3" style={{ height: '180px' }}>
+              {result.type === 'beam' && (
+                <Beam2DCrossSection 
+                  width={(outputs.width || outputs.beamWidth || 300) as number}
+                  depth={(outputs.depth || outputs.beamDepth || 500) as number}
+                  mainBars={(outputs.numberOfBars || 4) as number}
+                  barDia={(outputs.barDiameter || 20) as number}
+                  stirrupDia={(outputs.stirrupDia || 8) as number}
+                  cover={40}
+                />
+              )}
+              {result.type === 'foundation' && (
+                <Foundation2DPlan
+                  length={((outputs.length || 2.0) as number) * 1000}
+                  width={((outputs.width || 2.0) as number) * 1000}
+                  columnWidth={(outputs.columnWidth || 400) as number}
+                  columnDepth={(outputs.columnDepth || 400) as number}
+                />
+              )}
+            </div>
+          </div>
+
           {/* Dimensions Card */}
           <div className="bg-card rounded-2xl border border-border p-6 shadow-lg">
             <div className="flex items-center gap-2 mb-4">
