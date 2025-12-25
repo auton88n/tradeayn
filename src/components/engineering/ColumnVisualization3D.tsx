@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera, Line } from '@react-three/drei';
 import * as THREE from 'three';
 
 interface ColumnVisualization3DProps {
@@ -10,6 +10,31 @@ interface ColumnVisualization3DProps {
   cover: number;
   columnType: string;
 }
+
+// Rectangular tie component using thin box segments
+const RectangularTie: React.FC<{ width: number; depth: number; thickness: number }> = ({ width, depth, thickness }) => {
+  const halfW = width / 2;
+  const halfD = depth / 2;
+  
+  // Create rectangular tie using thin boxes for each side
+  const segments: Array<{ pos: [number, number, number]; size: [number, number, number] }> = [
+    { pos: [0, 0, -halfD], size: [width + thickness, thickness, thickness] },
+    { pos: [0, 0, halfD], size: [width + thickness, thickness, thickness] },
+    { pos: [-halfW, 0, 0], size: [thickness, thickness, depth] },
+    { pos: [halfW, 0, 0], size: [thickness, thickness, depth] },
+  ];
+  
+  return (
+    <group>
+      {segments.map((segment, i) => (
+        <mesh key={i} position={segment.pos}>
+          <boxGeometry args={segment.size} />
+          <meshStandardMaterial color="#f97316" metalness={0.6} roughness={0.3} />
+        </mesh>
+      ))}
+    </group>
+  );
+};
 
 const ColumnMesh: React.FC<{ width: number; depth: number; height: number; cover: number; columnType: string }> = ({ 
   width, depth, height, cover, columnType 
@@ -22,15 +47,27 @@ const ColumnMesh: React.FC<{ width: number; depth: number; height: number; cover
     }
   });
 
-  // Normalize dimensions for visualization
-  const scale = 0.003;
-  const w = width * scale;
-  const d = depth * scale;
-  const h = height * scale;
-  const c = cover * scale;
+  // Proportional scaling - normalize to fit in view
+  // Target: width/depth around 1-2 units, height max 4 units
+  const maxDimension = Math.max(width, depth);
+  const baseScale = 2 / maxDimension; // Scale width/depth to ~2 units max
+  
+  const w = width * baseScale;
+  const d = depth * baseScale;
+  
+  // Scale height separately to maintain reasonable proportions
+  // Limit visual height to 4 units max while preserving aspect ratio info
+  const heightRatio = height / maxDimension;
+  const maxVisualHeight = 4;
+  const h = Math.min(heightRatio * 2, maxVisualHeight);
+  
+  const c = cover * baseScale;
 
-  // Calculate reinforcement positions
-  const barRadius = 0.04;
+  // Scale bar radius proportional to column size
+  const barRadius = Math.min(w, d) * 0.04;
+  const tieThickness = barRadius * 0.6;
+
+  // Calculate reinforcement positions (corner + middle bars)
   const barPositions = [
     // Corner bars
     [-w/2 + c + barRadius, -d/2 + c + barRadius],
@@ -44,9 +81,13 @@ const ColumnMesh: React.FC<{ width: number; depth: number; height: number; cover
     [w/2 - c - barRadius, 0],
   ];
 
-  // Tie/Spiral spacing
-  const tieSpacing = 0.3;
-  const numTies = Math.floor(h / tieSpacing);
+  // Limit ties to 6-10 for readability
+  const numTies = Math.min(Math.max(6, Math.floor(h / 0.4)), 10);
+  const tieSpacing = h / (numTies + 1);
+
+  // Inner tie dimensions (inside cover)
+  const tieWidth = w - 2 * c;
+  const tieDepth = d - 2 * c;
 
   return (
     <group ref={meshRef} position={[0, -h/2, 0]}>
@@ -56,7 +97,7 @@ const ColumnMesh: React.FC<{ width: number; depth: number; height: number; cover
         <meshStandardMaterial 
           color="#8B8B8B" 
           transparent 
-          opacity={0.4}
+          opacity={0.35}
           side={THREE.DoubleSide}
         />
       </mesh>
@@ -64,61 +105,59 @@ const ColumnMesh: React.FC<{ width: number; depth: number; height: number; cover
       {/* Concrete edges wireframe */}
       <lineSegments position={[0, h/2, 0]}>
         <edgesGeometry args={[new THREE.BoxGeometry(w, h, d)]} />
-        <lineBasicMaterial color="#666666" />
+        <lineBasicMaterial color="#555555" />
       </lineSegments>
 
       {/* Longitudinal reinforcement bars */}
       {barPositions.map((pos, index) => (
         <mesh key={index} position={[pos[0], h/2, pos[1]]}>
-          <cylinderGeometry args={[barRadius, barRadius, h - 0.1, 16]} />
-          <meshStandardMaterial color="#2563eb" metalness={0.8} roughness={0.2} />
+          <cylinderGeometry args={[barRadius, barRadius, h - c * 2, 12]} />
+          <meshStandardMaterial color="#2563eb" metalness={0.7} roughness={0.3} />
         </mesh>
       ))}
 
       {/* Ties or Spiral reinforcement */}
       {columnType === 'tied' ? (
-        // Rectangular ties
-        Array.from({ length: numTies + 1 }).map((_, index) => {
-          const yPos = index * tieSpacing + c;
+        // Rectangular ties evenly spaced
+        Array.from({ length: numTies }).map((_, index) => {
+          const yPos = (index + 1) * tieSpacing;
           return (
             <group key={index} position={[0, yPos, 0]}>
-              {/* Tie rectangle */}
-              <mesh rotation={[Math.PI / 2, 0, 0]}>
-                <torusGeometry args={[Math.min(w, d) / 2 - c, 0.015, 4, 4]} />
-                <meshStandardMaterial color="#f97316" metalness={0.6} roughness={0.3} />
-              </mesh>
+              <RectangularTie width={tieWidth} depth={tieDepth} thickness={tieThickness} />
             </group>
           );
         })
       ) : (
-        // Spiral reinforcement
-        <mesh position={[0, h/2, 0]}>
-          <torusGeometry args={[Math.min(w, d) / 2 - c, 0.015, 8, 32]} />
-          <meshStandardMaterial color="#f97316" metalness={0.6} roughness={0.3} />
-        </mesh>
+        // Spiral reinforcement - show as multiple rings
+        Array.from({ length: numTies }).map((_, index) => {
+          const yPos = (index + 1) * tieSpacing;
+          return (
+            <mesh key={index} position={[0, yPos, 0]} rotation={[Math.PI / 2, 0, 0]}>
+              <torusGeometry args={[Math.min(tieWidth, tieDepth) / 2, tieThickness / 2, 8, 32]} />
+              <meshStandardMaterial color="#f97316" metalness={0.6} roughness={0.3} />
+            </mesh>
+          );
+        })
       )}
 
       {/* Dimension annotations */}
-      {/* Width indicator */}
-      <group position={[0, -0.2, d/2 + 0.15]}>
+      <group position={[0, -0.15, d/2 + 0.12]}>
         <mesh>
-          <boxGeometry args={[w, 0.02, 0.02]} />
+          <boxGeometry args={[w, 0.015, 0.015]} />
           <meshBasicMaterial color="#22c55e" />
         </mesh>
       </group>
 
-      {/* Depth indicator */}
-      <group position={[w/2 + 0.15, -0.2, 0]}>
+      <group position={[w/2 + 0.12, -0.15, 0]}>
         <mesh>
-          <boxGeometry args={[0.02, 0.02, d]} />
+          <boxGeometry args={[0.015, 0.015, d]} />
           <meshBasicMaterial color="#3b82f6" />
         </mesh>
       </group>
 
-      {/* Height indicator */}
-      <group position={[w/2 + 0.2, h/2, d/2 + 0.2]}>
+      <group position={[w/2 + 0.15, h/2, d/2 + 0.15]}>
         <mesh>
-          <boxGeometry args={[0.02, h, 0.02]} />
+          <boxGeometry args={[0.015, h, 0.015]} />
           <meshBasicMaterial color="#ef4444" />
         </mesh>
       </group>
