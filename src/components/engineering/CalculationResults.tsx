@@ -16,6 +16,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { BeamVisualization3D } from './BeamVisualization3D';
 import { FoundationVisualization3D } from './FoundationVisualization3D';
+import ColumnVisualization3D from './ColumnVisualization3D';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -405,6 +406,14 @@ export const CalculationResults = ({ result, onNewCalculation }: CalculationResu
               <BeamVisualization3D outputs={outputs} />
             ) : result.type === 'foundation' ? (
               <FoundationVisualization3D outputs={outputs} />
+            ) : result.type === 'column' ? (
+              <ColumnVisualization3D
+                width={(outputs.width || result.inputs.width || 400) as number}
+                depth={(outputs.depth || result.inputs.depth || 400) as number}
+                height={(outputs.height || result.inputs.height || 3000) as number}
+                cover={(result.inputs.cover || 40) as number}
+                columnType={(result.inputs.columnType || 'tied') as string}
+              />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                 3D visualization not available
