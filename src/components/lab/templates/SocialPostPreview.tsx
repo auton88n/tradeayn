@@ -1,4 +1,5 @@
 import { memo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { 
@@ -15,7 +16,8 @@ import {
   Download,
   Loader2,
   Copy,
-  Check
+  Check,
+  Palette
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { hapticFeedback } from '@/lib/haptics';
@@ -141,12 +143,20 @@ const extractHeadline = (caption: string): string => {
 };
 
 const SocialPostPreviewComponent = ({ data, className }: SocialPostPreviewProps) => {
+  const navigate = useNavigate();
   const postRef = useRef<HTMLDivElement>(null);
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isCopying, setIsCopying] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  const openInDesignLab = () => {
+    if (data.content.imageUrl) {
+      hapticFeedback('light');
+      navigate(`/design-lab?image=${encodeURIComponent(data.content.imageUrl)}`);
+    }
+  };
   
   const platform = platformConfig[data.platform] || platformConfig.instagram;
   const PlatformIcon = platform.icon;
@@ -341,6 +351,21 @@ const SocialPostPreviewComponent = ({ data, className }: SocialPostPreviewProps)
               <Download className="w-4 h-4 text-green-600 dark:text-green-400" />
             )}
           </button>
+          
+          {/* Design This button - shown when imageUrl is present */}
+          {data.content.imageUrl && (
+            <button
+              onClick={openInDesignLab}
+              className={cn(
+                "p-1.5 rounded-lg transition-all duration-200 active:scale-95",
+                "bg-gradient-to-r from-pink-100 to-orange-100 dark:from-pink-900/40 dark:to-orange-900/40",
+                "hover:from-pink-200 hover:to-orange-200 dark:hover:from-pink-800/50 dark:hover:to-orange-800/50"
+              )}
+              title="Design in LAB"
+            >
+              <Palette className="w-4 h-4 text-pink-600 dark:text-pink-400" />
+            </button>
+          )}
           
           <button className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors">
             <MoreHorizontal className="w-5 h-5 text-muted-foreground" />

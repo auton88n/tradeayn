@@ -20,7 +20,8 @@ import {
   List,
   ToggleLeft,
   Calendar,
-  Maximize2
+  Maximize2,
+  Palette
 } from 'lucide-react';
 import { useMarketingContent } from '@/contexts/MarketingContentContext';
 import { hapticFeedback } from '@/lib/haptics';
@@ -311,6 +312,29 @@ const LABDataViewerComponent = ({ data, className }: LABDataViewerProps) => {
                   <Maximize2 size={12} />
                   <span>Open in Studio</span>
                 </button>
+                {/* Design This button - shown when imageUrl is present */}
+                {(() => {
+                  const content = (templateData as Record<string, unknown>).content as Record<string, unknown> | undefined;
+                  const imageUrl = content?.imageUrl as string | undefined;
+                  if (!imageUrl) return null;
+                  return (
+                    <button
+                      onClick={() => {
+                        hapticFeedback('light');
+                        navigate(`/design-lab?image=${encodeURIComponent(imageUrl)}`);
+                      }}
+                      className={cn(
+                        "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium",
+                        "bg-gradient-to-r from-pink-500 to-orange-500 text-white",
+                        "hover:from-pink-600 hover:to-orange-600",
+                        "transition-all duration-200 active:scale-95"
+                      )}
+                    >
+                      <Palette size={12} />
+                      <span>Design This</span>
+                    </button>
+                  );
+                })()}
               </div>
 
               {/* Template or Data View */}
