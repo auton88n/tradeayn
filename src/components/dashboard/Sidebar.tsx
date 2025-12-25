@@ -388,17 +388,22 @@ export const Sidebar = ({
           <SidebarGroupContent>
             <Button 
               onClick={() => navigate('/design-lab')}
-              variant="outline"
               className={cn(
-                "w-full h-10 rounded-xl gap-2",
-                "border-primary/30 bg-primary/5",
-                "hover:bg-primary/10 hover:border-primary/50",
-                "transition-all duration-300"
+                "w-full h-11 rounded-xl gap-2.5 relative overflow-hidden group",
+                "bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600",
+                "hover:from-violet-500 hover:via-purple-500 hover:to-fuchsia-500",
+                "text-white font-medium shadow-lg shadow-purple-500/25",
+                "hover:shadow-xl hover:shadow-purple-500/30",
+                "hover:-translate-y-0.5",
+                "transition-all duration-300 ease-out",
+                "border-0"
               )}
             >
-              <Palette className="w-4 h-4 text-primary" />
-              <span>Design LAB</span>
-              <Sparkles className="w-3 h-3 text-primary/70 ml-auto" />
+              {/* Shimmer effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+              <Palette className="w-4 h-4 relative z-10" />
+              <span className="relative z-10">Design LAB</span>
+              <Sparkles className="w-3.5 h-3.5 ml-auto relative z-10 animate-pulse" />
             </Button>
           </SidebarGroupContent>
         </SidebarGroup>
