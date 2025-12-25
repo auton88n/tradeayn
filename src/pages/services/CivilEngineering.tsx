@@ -215,6 +215,7 @@ const CivilEngineering = () => {
 
           <div className="container mx-auto max-w-6xl relative z-10">
             <div className="grid lg:grid-cols-2 gap-12 items-center">
+              {/* Left side - Text content */}
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -253,13 +254,88 @@ const CivilEngineering = () => {
                 </div>
               </motion.div>
 
+              {/* Right side - Auth Gate Card */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.8, delay: 0.2 }}
-                className="hidden lg:block"
+                className="flex justify-center"
               >
-                <EngineeringMockup />
+                <div className="w-full max-w-md p-8 rounded-2xl bg-neutral-900/80 backdrop-blur-xl border border-neutral-700/50 shadow-2xl">
+                  {/* Icon */}
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
+                    className="mx-auto mb-6 w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-500/30 to-blue-500/30 flex items-center justify-center"
+                  >
+                    <HardHat className="w-10 h-10 text-cyan-400" />
+                  </motion.div>
+
+                  {/* Title */}
+                  <motion.h2
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className="text-2xl font-bold text-white text-center mb-3"
+                  >
+                    {language === 'ar' ? 'أدوات الهندسة المدنية' : language === 'fr' ? 'Outils de Génie Civil' : 'Civil Engineering Tools'}
+                  </motion.h2>
+
+                  {/* Description */}
+                  <motion.p
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className="text-neutral-400 text-center mb-6 text-sm"
+                  >
+                    {language === 'ar' 
+                      ? 'سجل دخولك للوصول إلى الحاسبات الإنشائية الاحترافية مع التصور ثلاثي الأبعاد والتحليل بالذكاء الاصطناعي.'
+                      : language === 'fr'
+                      ? 'Connectez-vous pour accéder aux calculateurs structurels professionnels avec visualisation 3D et analyse IA.'
+                      : 'Sign in to access professional structural calculators with 3D visualization and AI-powered analysis.'}
+                  </motion.p>
+
+                  {/* Features Grid */}
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.6 }}
+                    className="grid grid-cols-2 gap-3 mb-6"
+                  >
+                    {[
+                      { icon: Calculator, label: language === 'ar' ? '5 حاسبات احترافية' : language === 'fr' ? '5 Calculateurs Pro' : '5 Professional Calculators' },
+                      { icon: Box, label: language === 'ar' ? 'تصور ثلاثي الأبعاد' : language === 'fr' ? 'Visualisation 3D' : '3D Interactive Visualization' },
+                      { icon: FileDown, label: language === 'ar' ? 'تصدير DXF لـ CAD' : language === 'fr' ? 'Export DXF pour CAO' : 'DXF Export for CAD' },
+                      { icon: Sparkles, label: language === 'ar' ? 'تحليل بالذكاء الاصطناعي' : language === 'fr' ? 'Analyse IA' : 'AI-Powered Analysis' }
+                    ].map((feature, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center gap-2 p-3 rounded-xl bg-neutral-800/50 border border-neutral-700/30"
+                      >
+                        <feature.icon className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+                        <span className="text-white text-xs font-medium">{feature.label}</span>
+                      </div>
+                    ))}
+                  </motion.div>
+
+                  {/* Sign In Button */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.7 }}
+                  >
+                    <Link to="/engineering">
+                      <Button
+                        size="lg"
+                        className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white py-6 text-lg rounded-xl"
+                      >
+                        <HardHat className="w-5 h-5 mr-2" />
+                        {language === 'ar' ? 'ابدأ الآن' : language === 'fr' ? 'Commencer' : 'Get Started'}
+                      </Button>
+                    </Link>
+                  </motion.div>
+                </div>
               </motion.div>
             </div>
           </div>
