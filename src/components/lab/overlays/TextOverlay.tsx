@@ -12,6 +12,56 @@ interface TextOverlayProps {
   onDelete: () => void;
 }
 
+// Generate effect-specific styles
+const getEffectStyles = (element: TextElement): React.CSSProperties => {
+  const baseStyles: React.CSSProperties = {};
+  
+  switch (element.effect) {
+    case 'neon':
+      const neonColor = element.color;
+      baseStyles.textShadow = `
+        0 0 5px ${neonColor},
+        0 0 10px ${neonColor},
+        0 0 20px ${neonColor},
+        0 0 40px ${neonColor},
+        0 0 80px ${neonColor}
+      `;
+      break;
+      
+    case 'outline':
+      if (!element.textStroke) {
+        baseStyles.WebkitTextStroke = `2px ${element.color === '#ffffff' ? '#000000' : '#ffffff'}`;
+        baseStyles.color = 'transparent';
+      }
+      break;
+      
+    case 'shadow3d':
+      baseStyles.textShadow = `
+        1px 1px 0 rgba(0,0,0,0.4),
+        2px 2px 0 rgba(0,0,0,0.3),
+        3px 3px 0 rgba(0,0,0,0.2),
+        4px 4px 0 rgba(0,0,0,0.1),
+        5px 5px 10px rgba(0,0,0,0.5)
+      `;
+      break;
+      
+    case 'glass':
+      baseStyles.backdropFilter = 'blur(10px)';
+      baseStyles.backgroundColor = 'rgba(255,255,255,0.1)';
+      baseStyles.padding = '12px 24px';
+      baseStyles.borderRadius = '12px';
+      baseStyles.border = '1px solid rgba(255,255,255,0.2)';
+      break;
+      
+    default:
+      if (element.shadow) {
+        baseStyles.textShadow = '2px 2px 8px rgba(0,0,0,0.8)';
+      }
+  }
+  
+  return baseStyles;
+};
+
 export const TextOverlay: React.FC<TextOverlayProps> = ({
   element,
   isSelected,
@@ -106,17 +156,39 @@ export const TextOverlay: React.FC<TextOverlayProps> = ({
     }
   }, [isEditing]);
 
+  // Build gradient CSS if gradient is set
+  const gradientStyles: React.CSSProperties = {};
+  if (element.gradient) {
+    gradientStyles.background = `linear-gradient(${element.gradient.angle}deg, ${element.gradient.from}, ${element.gradient.to})`;
+    gradientStyles.WebkitBackgroundClip = 'text';
+    gradientStyles.WebkitTextFillColor = 'transparent';
+    gradientStyles.backgroundClip = 'text';
+  }
+
+  // Build text stroke CSS if set
+  const strokeStyles: React.CSSProperties = {};
+  if (element.textStroke) {
+    strokeStyles.WebkitTextStroke = `${element.textStroke.width}px ${element.textStroke.color}`;
+  }
+
+  // Get effect-specific styles
+  const effectStyles = getEffectStyles(element);
+
   const textStyle: React.CSSProperties = {
     fontSize: `${element.fontSize}px`,
     fontFamily: element.fontFamily,
-    color: element.color,
+    color: element.gradient ? undefined : element.color,
     fontWeight: element.fontWeight,
     textAlign: element.textAlign,
-    textShadow: element.shadow ? '2px 2px 8px rgba(0,0,0,0.8)' : 'none',
     transform: `rotate(${element.rotation}deg)`,
     whiteSpace: 'pre-wrap',
     wordBreak: 'break-word',
-    lineHeight: 1.2,
+    lineHeight: element.lineHeight,
+    letterSpacing: `${element.letterSpacing}px`,
+    opacity: element.opacity,
+    ...gradientStyles,
+    ...strokeStyles,
+    ...effectStyles,
   };
 
   return (

@@ -65,3 +65,9 @@ verify_jwt = false
 
 [functions.save-generated-image]
 verify_jwt = false
+
+[functions.ai-edit-image]
+verify_jwt = false
+
+[functions.ai-caption-generator]
+verify_jwt = false
