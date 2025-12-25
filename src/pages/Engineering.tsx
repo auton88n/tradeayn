@@ -17,6 +17,7 @@ import { useNavigate } from 'react-router-dom';
 import { BeamCalculator } from '@/components/engineering/BeamCalculator';
 import { FoundationCalculator } from '@/components/engineering/FoundationCalculator';
 import ColumnCalculator from '@/components/engineering/ColumnCalculator';
+import SlabCalculator from '@/components/engineering/SlabCalculator';
 import { CalculationResults } from '@/components/engineering/CalculationResults';
 import { CalculationHistoryModal } from '@/components/engineering/CalculationHistoryModal';
 import { SEO } from '@/components/SEO';
@@ -70,10 +71,10 @@ const calculatorOptions = [
   {
     id: 'slab' as const,
     title: 'Slab Design',
-    description: 'Design one-way and two-way slabs (Coming Soon)',
+    description: 'Design one-way and two-way slabs with mesh reinforcement',
     icon: Calculator,
     gradient: 'from-green-500 to-emerald-500',
-    available: false,
+    available: true,
   },
 ];
 
@@ -314,6 +315,24 @@ const Engineering = () => {
                 <ColumnCalculator 
                   onCalculationComplete={handleCalculationComplete}
                   onBack={() => setSelectedCalculator(null)}
+                  userId={userId}
+                />
+              </motion.div>
+            )}
+
+            {/* Slab Calculator */}
+            {selectedCalculator === 'slab' && !calculationResult && (
+              <motion.div
+                key="slab"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <SlabCalculator 
+                  onCalculate={handleCalculationComplete}
+                  isCalculating={isCalculating}
+                  setIsCalculating={setIsCalculating}
                   userId={userId}
                 />
               </motion.div>

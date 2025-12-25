@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { BeamVisualization3D } from './BeamVisualization3D';
 import { FoundationVisualization3D } from './FoundationVisualization3D';
 import ColumnVisualization3D from './ColumnVisualization3D';
+import SlabVisualization3D from './SlabVisualization3D';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -414,6 +415,15 @@ export const CalculationResults = ({ result, onNewCalculation }: CalculationResu
                 cover={(result.inputs.cover || 40) as number}
                 columnType={(result.inputs.columnType || 'tied') as string}
               />
+            ) : result.type === 'slab' ? (
+              <SlabVisualization3D
+                length={(outputs.length || (Number(result.inputs.longSpan) || 6) * 1000) as number}
+                width={(outputs.width || (Number(result.inputs.shortSpan) || 4) * 1000) as number}
+                thickness={(outputs.thickness || 150) as number}
+                topBarSpacing={(outputs.topBarSpacing || 200) as number}
+                bottomBarSpacing={(outputs.bottomBarSpacing || 150) as number}
+                slabType={(result.inputs.slabType || 'two_way') as string}
+              />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                 3D visualization not available
@@ -465,6 +475,18 @@ export const CalculationResults = ({ result, onNewCalculation }: CalculationResu
                   cover={(result.inputs.cover || 40) as number}
                   columnType={(result.inputs.columnType || 'tied') as string}
                 />
+              )}
+              {result.type === 'slab' && (
+                <svg viewBox="0 0 180 160" className="w-full h-full">
+                  <rect x="20" y="30" width="140" height="100" fill="#718096" stroke="#2d3748" strokeWidth="1.5" />
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <line key={`h-${i}`} x1="28" y1={38 + i * 16} x2="152" y2={38 + i * 16} stroke="#22c55e" strokeWidth="1.5" />
+                  ))}
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <line key={`v-${i}`} x1={28 + i * 18} y1="38" x2={28 + i * 18} y2="122" stroke="#22c55e" strokeWidth="1.5" />
+                  ))}
+                  <text x="90" y="145" fill="#e2e8f0" fontSize="8" textAnchor="middle">{String(outputs.slabType || 'Two-Way')} Slab - t={String(outputs.thickness || 150)}mm</text>
+                </svg>
               )}
             </div>
             
