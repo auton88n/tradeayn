@@ -98,6 +98,145 @@ const Foundation2DPlan: React.FC<{
   );
 };
 
+// Column 2D Cross-Section for PDF Export
+const Column2DCrossSection: React.FC<{
+  width: number;
+  depth: number;
+  cover: number;
+  columnType: string;
+}> = ({ width, depth, cover, columnType }) => {
+  const padding = 25;
+  const maxDim = Math.max(width, depth);
+  const scale = (140 - padding * 2) / maxDim;
+  
+  const w = width * scale;
+  const d = depth * scale;
+  const c = cover * scale;
+  const barR = Math.max(w * 0.04, 3);
+  const tieT = barR * 0.5;
+  
+  const offsetX = (180 - w) / 2;
+  const offsetY = (160 - d) / 2;
+  
+  // Bar positions (8 bars)
+  const barPositions = [
+    [offsetX + c + barR, offsetY + c + barR],
+    [offsetX + w - c - barR, offsetY + c + barR],
+    [offsetX + c + barR, offsetY + d - c - barR],
+    [offsetX + w - c - barR, offsetY + d - c - barR],
+    [offsetX + w/2, offsetY + c + barR],
+    [offsetX + w/2, offsetY + d - c - barR],
+    [offsetX + c + barR, offsetY + d/2],
+    [offsetX + w - c - barR, offsetY + d/2],
+  ];
+
+  return (
+    <svg viewBox="0 0 180 160" className="w-full h-full">
+      {/* Concrete section */}
+      <rect x={offsetX} y={offsetY} width={w} height={d} fill="#718096" stroke="#2d3748" strokeWidth="1.5" />
+      
+      {/* Tie/Stirrup */}
+      {columnType === 'tied' ? (
+        <rect 
+          x={offsetX + c} y={offsetY + c} 
+          width={w - c * 2} height={d - c * 2}
+          fill="none" stroke="#f97316" strokeWidth={tieT}
+        />
+      ) : (
+        <circle
+          cx={offsetX + w/2} cy={offsetY + d/2}
+          r={Math.min(w, d)/2 - c}
+          fill="none" stroke="#f97316" strokeWidth={tieT}
+        />
+      )}
+      
+      {/* Reinforcement bars */}
+      {barPositions.map((pos, i) => (
+        <circle key={i} cx={pos[0]} cy={pos[1]} r={barR} fill="#3182ce" />
+      ))}
+      
+      {/* Dimensions */}
+      <line x1={offsetX} y1={offsetY + d + 10} x2={offsetX + w} y2={offsetY + d + 10} stroke="#e2e8f0" strokeWidth="0.8" />
+      <text x={offsetX + w/2} y={offsetY + d + 20} fill="#e2e8f0" fontSize="8" textAnchor="middle">{width} mm</text>
+      
+      <line x1={offsetX - 10} y1={offsetY} x2={offsetX - 10} y2={offsetY + d} stroke="#e2e8f0" strokeWidth="0.8" />
+      <text x={offsetX - 14} y={offsetY + d/2} fill="#e2e8f0" fontSize="8" textAnchor="middle" transform={`rotate(-90, ${offsetX - 14}, ${offsetY + d/2})`}>{depth} mm</text>
+    </svg>
+  );
+};
+
+// Material Cost Breakdown Table for PDF
+const MaterialCostTable: React.FC<{
+  concreteVolume: number;
+  steelWeight: number;
+  formworkArea?: number;
+  type: string;
+}> = ({ concreteVolume, steelWeight, formworkArea, type }) => {
+  // Saudi Arabia material prices (approximate SAR)
+  const concretePricePerM3 = 350; // SAR per m³
+  const steelPricePerKg = 4.5; // SAR per kg
+  const formworkPricePerM2 = 85; // SAR per m²
+  
+  const concreteCost = concreteVolume * concretePricePerM3;
+  const steelCost = steelWeight * steelPricePerKg;
+  const formworkCost = (formworkArea || 0) * formworkPricePerM2;
+  const laborCost = (concreteCost + steelCost) * 0.35; // ~35% labor
+  const totalCost = concreteCost + steelCost + formworkCost + laborCost;
+
+  return (
+    <div className="bg-card rounded-lg border border-border p-3 mt-3">
+      <h4 className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+        <DollarSign className="w-4 h-4 text-green-500" />
+        Estimated Material Costs (SAR)
+      </h4>
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="border-b border-border">
+            <th className="text-left py-1 text-muted-foreground">Material</th>
+            <th className="text-right py-1 text-muted-foreground">Quantity</th>
+            <th className="text-right py-1 text-muted-foreground">Unit Price</th>
+            <th className="text-right py-1 text-muted-foreground">Cost</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr className="border-b border-border/50">
+            <td className="py-1">Concrete (C30)</td>
+            <td className="text-right">{concreteVolume.toFixed(2)} m³</td>
+            <td className="text-right">{concretePricePerM3} /m³</td>
+            <td className="text-right font-medium">{concreteCost.toFixed(0)}</td>
+          </tr>
+          <tr className="border-b border-border/50">
+            <td className="py-1">Steel Reinforcement</td>
+            <td className="text-right">{steelWeight.toFixed(1)} kg</td>
+            <td className="text-right">{steelPricePerKg} /kg</td>
+            <td className="text-right font-medium">{steelCost.toFixed(0)}</td>
+          </tr>
+          {formworkArea && formworkArea > 0 && (
+            <tr className="border-b border-border/50">
+              <td className="py-1">Formwork</td>
+              <td className="text-right">{formworkArea.toFixed(2)} m²</td>
+              <td className="text-right">{formworkPricePerM2} /m²</td>
+              <td className="text-right font-medium">{formworkCost.toFixed(0)}</td>
+            </tr>
+          )}
+          <tr className="border-b border-border/50">
+            <td className="py-1">Labor (~35%)</td>
+            <td className="text-right">-</td>
+            <td className="text-right">-</td>
+            <td className="text-right font-medium">{laborCost.toFixed(0)}</td>
+          </tr>
+          <tr className="font-bold">
+            <td className="py-1.5">Total Estimated</td>
+            <td></td>
+            <td></td>
+            <td className="text-right text-green-600">{totalCost.toFixed(0)} SAR</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
 interface CalculationResultsProps {
   result: {
     type: 'beam' | 'foundation' | 'column' | 'slab' | null;
@@ -310,7 +449,23 @@ export const CalculationResults = ({ result, onNewCalculation }: CalculationResu
                   columnDepth={(outputs.columnDepth || 400) as number}
                 />
               )}
+              {result.type === 'column' && (
+                <Column2DCrossSection
+                  width={(outputs.width || result.inputs.width || 400) as number}
+                  depth={(outputs.depth || result.inputs.depth || 400) as number}
+                  cover={(result.inputs.cover || 40) as number}
+                  columnType={(result.inputs.columnType || 'tied') as string}
+                />
+              )}
             </div>
+            
+            {/* Material Cost Breakdown */}
+            <MaterialCostTable
+              concreteVolume={(outputs.concreteVolume || 0) as number}
+              steelWeight={(outputs.steelWeight || 0) as number}
+              formworkArea={(outputs.formworkArea || 0) as number}
+              type={result.type || 'beam'}
+            />
           </div>
 
           {/* Dimensions Card */}
