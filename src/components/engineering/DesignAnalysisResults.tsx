@@ -2,9 +2,6 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Star, 
-  AlertTriangle, 
-  AlertCircle, 
-  Info, 
   Calculator, 
   Lightbulb,
   TrendingUp,
@@ -18,8 +15,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { ProblemsSection } from './ProblemsSection';
 
 interface Problem {
   severity: 'critical' | 'warning' | 'info';
@@ -102,23 +98,6 @@ export const DesignAnalysisResults: React.FC<DesignAnalysisResultsProps> = ({
   const rating = result.aiOptimizations?.designRating || result.designRating;
   const ratingColor = rating >= 8 ? 'text-green-500' : rating >= 6 ? 'text-yellow-500' : 'text-red-500';
   const ratingBg = rating >= 8 ? 'bg-green-500/10' : rating >= 6 ? 'bg-yellow-500/10' : 'bg-red-500/10';
-
-  const getSeverityIcon = (severity: string) => {
-    switch (severity) {
-      case 'critical': return <AlertCircle className="h-4 w-4 text-red-500" />;
-      case 'warning': return <AlertTriangle className="h-4 w-4 text-amber-500" />;
-      default: return <Info className="h-4 w-4 text-blue-500" />;
-    }
-  };
-
-  const getSeverityBadge = (severity: string) => {
-    const variants: Record<string, string> = {
-      critical: 'bg-red-500/10 text-red-500 border-red-500/20',
-      warning: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
-      info: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
-    };
-    return variants[severity] || variants.info;
-  };
 
   return (
     <div className="space-y-6">
@@ -203,57 +182,11 @@ export const DesignAnalysisResults: React.FC<DesignAnalysisResultsProps> = ({
         </motion.div>
       )}
 
-      {/* Problems Found */}
-      {result.problems.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-amber-500" />
-                  Problems Identified
-                </span>
-                <div className="flex gap-2">
-                  {result.problemsSummary.critical > 0 && (
-                    <Badge variant="destructive">{result.problemsSummary.critical} Critical</Badge>
-                  )}
-                  {result.problemsSummary.warnings > 0 && (
-                    <Badge className="bg-amber-500">{result.problemsSummary.warnings} Warnings</Badge>
-                  )}
-                  {result.problemsSummary.info > 0 && (
-                    <Badge variant="secondary">{result.problemsSummary.info} Info</Badge>
-                  )}
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {result.problems.map((problem, idx) => (
-                  <div
-                    key={idx}
-                    className={`p-4 rounded-lg border ${getSeverityBadge(problem.severity)}`}
-                  >
-                    <div className="flex items-start gap-3">
-                      {getSeverityIcon(problem.severity)}
-                      <div className="flex-1">
-                        <p className="font-medium">{problem.message}</p>
-                        <p className="text-sm opacity-80 mt-1">{problem.impact}</p>
-                        {problem.location && (
-                          <p className="text-xs mt-2 opacity-60">Location: {problem.location}</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      )}
+      {/* Problems Found - New Grouped Component */}
+      <ProblemsSection 
+        problems={result.problems} 
+        problemsSummary={result.problemsSummary} 
+      />
 
       {/* AI Optimization Suggestions */}
       {result.aiOptimizations && result.aiOptimizations.optimizations?.length > 0 && (
