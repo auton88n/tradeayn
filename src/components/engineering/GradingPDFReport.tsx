@@ -237,21 +237,21 @@ const ElevationProfileSVG: React.FC<{ points: Point[] }> = ({ points }) => {
   );
 };
 
-// 2D Site Plan / Road Alignment Visualization
+// 2D Site Plan / Road Alignment Visualization - Clean, minimal design
 const SitePlanSVG: React.FC<{ points: Point[] }> = ({ points }) => {
   const sortedPoints = useMemo(() => [...points].sort((a, b) => a.x - b.x), [points]);
 
   if (sortedPoints.length < 2) {
     return (
-      <div className="h-40 flex items-center justify-center text-slate-400 text-sm">
+      <div className="h-32 flex items-center justify-center text-slate-400 text-sm">
         Insufficient data for site plan
       </div>
     );
   }
 
-  const width = 700;
-  const height = 200;
-  const padding = { top: 25, right: 30, bottom: 30, left: 50 };
+  const width = 680;
+  const height = 140;
+  const padding = { top: 15, right: 60, bottom: 25, left: 45 };
   const chartWidth = width - padding.left - padding.right;
   const chartHeight = height - padding.top - padding.bottom;
 
@@ -266,15 +266,13 @@ const SitePlanSVG: React.FC<{ points: Point[] }> = ({ points }) => {
   const xRange = maxX - minX || 1;
   const yRange = maxY - minY || 1;
   
-  // Add padding to range
-  const paddedMinX = minX - xRange * 0.05;
-  const paddedMaxX = maxX + xRange * 0.05;
-  const paddedMinY = minY - yRange * 0.1;
-  const paddedMaxY = maxY + yRange * 0.1;
+  const paddedMinX = minX - xRange * 0.02;
+  const paddedMaxX = maxX + xRange * 0.02;
+  const paddedMinY = minY - yRange * 0.05;
+  const paddedMaxY = maxY + yRange * 0.05;
   const paddedXRange = paddedMaxX - paddedMinX;
-  const paddedYRange = paddedMaxY - paddedMinY;
+  const paddedYRange = paddedMaxY - paddedMinY || 1;
 
-  // Scale functions (maintain aspect ratio)
   const scaleX = chartWidth / paddedXRange;
   const scaleY = chartHeight / paddedYRange;
   const scale = Math.min(scaleX, scaleY);
@@ -285,116 +283,76 @@ const SitePlanSVG: React.FC<{ points: Point[] }> = ({ points }) => {
   const xPos = (x: number) => padding.left + offsetX + (x - paddedMinX) * scale;
   const yPos = (y: number) => padding.top + chartHeight - offsetY - (y - paddedMinY) * scale;
 
-  // Create path for road alignment
+  // Road alignment path
   const roadPath = sortedPoints.map((p, i) => 
     `${i === 0 ? 'M' : 'L'} ${xPos(p.x)} ${yPos(p.y)}`
   ).join(' ');
 
-  // Select points for labels (every nth point based on density)
-  const labelInterval = Math.max(1, Math.floor(sortedPoints.length / 15));
-  const labeledPoints = sortedPoints.filter((_, i) => i % labelInterval === 0 || i === sortedPoints.length - 1);
+  // Select key points only (start, end, and a few intermediate)
+  const keyPointIndices = [0];
+  const step = Math.max(1, Math.floor(sortedPoints.length / 6));
+  for (let i = step; i < sortedPoints.length - 1; i += step) {
+    keyPointIndices.push(i);
+  }
+  keyPointIndices.push(sortedPoints.length - 1);
+  const keyPoints = keyPointIndices.map(i => sortedPoints[i]);
 
   return (
     <svg width={width} height={height} style={{ maxWidth: '100%' }}>
       {/* Background */}
-      <rect x={padding.left} y={padding.top} width={chartWidth} height={chartHeight} fill="#fafafa" stroke="#e2e8f0" />
+      <rect x={padding.left} y={padding.top} width={chartWidth} height={chartHeight} fill="#fefefe" stroke="#d1d5db" strokeWidth={0.5} />
       
-      {/* Grid lines */}
-      {[0.25, 0.5, 0.75].map(fraction => (
-        <g key={`grid-${fraction}`}>
-          <line 
-            x1={padding.left + chartWidth * fraction} 
-            y1={padding.top} 
-            x2={padding.left + chartWidth * fraction} 
-            y2={padding.top + chartHeight} 
-            stroke="#e2e8f0" 
-            strokeDasharray="4,4" 
-          />
-          <line 
-            x1={padding.left} 
-            y1={padding.top + chartHeight * fraction} 
-            x2={padding.left + chartWidth} 
-            y2={padding.top + chartHeight * fraction} 
-            stroke="#e2e8f0" 
-            strokeDasharray="4,4" 
-          />
-        </g>
-      ))}
-
-      {/* Road alignment path */}
-      <path d={roadPath} fill="none" stroke="#475569" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
+      {/* Road alignment - main path */}
+      <path d={roadPath} fill="none" stroke="#1e293b" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
       
-      {/* NGL points and labels */}
-      {labeledPoints.map((p, i) => {
+      {/* Key station markers */}
+      {keyPoints.map((p, i) => {
         const x = xPos(p.x);
         const y = yPos(p.y);
         const stationNum = Math.round(p.x);
         const major = Math.floor(stationNum / 1000);
         const minor = Math.abs(stationNum % 1000);
-        const stationLabel = `${major}+${minor.toString().padStart(3, '0')}`;
+        const isFirst = i === 0;
+        const isLast = i === keyPoints.length - 1;
         
         return (
-          <g key={`ngl-${i}`}>
-            {/* Point marker */}
-            <circle cx={x} cy={y} r={4} fill="#f59e0b" stroke="white" strokeWidth={1.5} />
-            {/* NGL label */}
-            <text x={x} y={y - 8} textAnchor="middle" fontSize={6} fill="#f59e0b" fontWeight="bold">
-              NGL: {p.z.toFixed(2)}
+          <g key={`station-${i}`}>
+            {/* Station tick mark */}
+            <line x1={x} y1={y - 4} x2={x} y2={y + 4} stroke="#475569" strokeWidth={1.5} />
+            {/* Station label below */}
+            <text x={x} y={y + 14} textAnchor="middle" fontSize={7} fill="#475569" fontWeight={isFirst || isLast ? 'bold' : 'normal'}>
+              {major}+{minor.toString().padStart(3, '0')}
             </text>
-            {/* Station label */}
-            <text x={x} y={y + 14} textAnchor="middle" fontSize={5} fill="#64748b">
-              {stationLabel}
+            {/* NGL value - small, above */}
+            <text x={x} y={y - 7} textAnchor="middle" fontSize={6} fill="#78716c">
+              {p.z.toFixed(1)}
             </text>
           </g>
         );
       })}
 
-      {/* DL/FGL points (overlay) */}
-      {labeledPoints.filter(p => p.fgl !== undefined).map((p, i) => {
-        const x = xPos(p.x);
-        const y = yPos(p.y);
-        
-        return (
-          <g key={`fgl-${i}`}>
-            {/* DL marker */}
-            <rect x={x - 3} y={y - 3} width={6} height={6} fill="#ef4444" stroke="white" strokeWidth={1} transform={`rotate(45, ${x}, ${y})`} />
-            {/* DL label */}
-            <text x={x + 12} y={y + 3} textAnchor="start" fontSize={6} fill="#ef4444" fontWeight="bold">
-              DL: {(p.fgl ?? p.z).toFixed(2)}
-            </text>
-          </g>
-        );
-      })}
+      {/* Start/End markers */}
+      <circle cx={xPos(sortedPoints[0].x)} cy={yPos(sortedPoints[0].y)} r={4} fill="#22c55e" stroke="white" strokeWidth={1} />
+      <circle cx={xPos(sortedPoints[sortedPoints.length-1].x)} cy={yPos(sortedPoints[sortedPoints.length-1].y)} r={4} fill="#ef4444" stroke="white" strokeWidth={1} />
 
-      {/* North arrow */}
-      <g transform={`translate(${width - padding.right - 20}, ${padding.top + 15})`}>
-        <polygon points="0,-12 4,0 -4,0" fill="#475569" />
-        <line x1={0} y1={0} x2={0} y2={8} stroke="#475569" strokeWidth={1.5} />
-        <text x={0} y={-15} textAnchor="middle" fontSize={8} fill="#475569" fontWeight="bold">N</text>
+      {/* Compact legend */}
+      <g transform={`translate(${width - padding.right + 5}, ${padding.top})`}>
+        <circle cx={5} cy={6} r={3} fill="#22c55e" />
+        <text x={12} y={9} fontSize={6} fill="#475569">Start</text>
+        <circle cx={5} cy={18} r={3} fill="#ef4444" />
+        <text x={12} y={21} fontSize={6} fill="#475569">End</text>
+        <line x1={2} y1={30} x2={8} y2={30} stroke="#1e293b" strokeWidth={2} />
+        <text x={12} y={33} fontSize={6} fill="#475569">Path</text>
       </g>
 
-      {/* Legend */}
-      <g transform={`translate(${padding.left + 5}, ${padding.top + 5})`}>
-        <rect x={0} y={0} width={90} height={40} fill="white" stroke="#e2e8f0" rx={3} />
-        <circle cx={10} cy={12} r={4} fill="#f59e0b" />
-        <text x={18} y={15} fontSize={7} fill="#475569">NGL Points</text>
-        <rect x={7} y={24} width={6} height={6} fill="#ef4444" transform="rotate(45, 10, 27)" />
-        <text x={18} y={30} fontSize={7} fill="#475569">DL/FGL Points</text>
+      {/* North arrow - compact */}
+      <g transform={`translate(${width - 20}, ${padding.top + 8})`}>
+        <polygon points="0,-8 3,0 -3,0" fill="#64748b" />
+        <text x={0} y={-10} textAnchor="middle" fontSize={6} fill="#64748b" fontWeight="bold">N</text>
       </g>
 
       {/* Axis labels */}
-      <text x={width / 2} y={height - 8} textAnchor="middle" fontSize={9} fill="#475569">Easting (m)</text>
-      <text x={15} y={height / 2} textAnchor="middle" fontSize={9} fill="#475569" transform={`rotate(-90, 15, ${height / 2})`}>Northing (m)</text>
-      
-      {/* Scale bar */}
-      <g transform={`translate(${padding.left + chartWidth - 80}, ${padding.top + chartHeight - 15})`}>
-        <line x1={0} y1={0} x2={50} y2={0} stroke="#475569" strokeWidth={2} />
-        <line x1={0} y1={-3} x2={0} y2={3} stroke="#475569" strokeWidth={2} />
-        <line x1={50} y1={-3} x2={50} y2={3} stroke="#475569" strokeWidth={2} />
-        <text x={25} y={-5} textAnchor="middle" fontSize={7} fill="#475569">
-          {Math.round(50 / scale)}m
-        </text>
-      </g>
+      <text x={padding.left + chartWidth / 2} y={height - 5} textAnchor="middle" fontSize={7} fill="#64748b">Station (m)</text>
     </svg>
   );
 };
@@ -419,7 +377,7 @@ const PageHeader: React.FC<{ projectName: string; date: string; pageNum: number;
 const PageFooter: React.FC<{ pageNum: number; totalPages: number }> = ({ pageNum, totalPages }) => (
   <div className="border-t border-slate-300 pt-2 mt-auto">
     <div className="flex justify-between text-xs text-slate-500">
-      <span>Generated by AI Grading Designer</span>
+      <span>Generated by AYN</span>
       <span>Page {pageNum} of {totalPages}</span>
     </div>
   </div>
@@ -486,7 +444,7 @@ export const GradingPDFReport = forwardRef<HTMLDivElement, GradingPDFReportProps
         {/* Page 1: Summary, Charts, Site Plan */}
         <div
           className="bg-white text-black p-8 relative"
-          style={{ width: '210mm', minHeight: '297mm', pageBreakAfter: 'always' }}
+          style={{ width: '210mm', height: '297mm', boxSizing: 'border-box' }}
         >
           {/* Header */}
           <div className="border-b-4 border-slate-800 pb-4 mb-5">
@@ -602,8 +560,8 @@ export const GradingPDFReport = forwardRef<HTMLDivElement, GradingPDFReportProps
             className="bg-white text-black p-8 relative"
             style={{ 
               width: '210mm', 
-              minHeight: '297mm', 
-              pageBreakAfter: pageIndex < stationPages.length - 1 ? 'always' : 'auto' 
+              height: '297mm',
+              boxSizing: 'border-box'
             }}
           >
             {/* Page Header */}
