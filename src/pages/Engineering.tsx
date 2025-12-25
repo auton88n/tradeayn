@@ -9,12 +9,14 @@ import {
   Sparkles,
   FileDown,
   History,
-  HardHat
+  HardHat,
+  Box
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { BeamCalculator } from '@/components/engineering/BeamCalculator';
 import { FoundationCalculator } from '@/components/engineering/FoundationCalculator';
+import ColumnCalculator from '@/components/engineering/ColumnCalculator';
 import { CalculationResults } from '@/components/engineering/CalculationResults';
 import { SEO } from '@/components/SEO';
 import { cn } from '@/lib/utils';
@@ -48,10 +50,10 @@ const calculatorOptions = [
   {
     id: 'column' as const,
     title: 'Column Design',
-    description: 'Design reinforced concrete columns (Coming Soon)',
-    icon: LayoutGrid,
+    description: 'Axial load capacity and biaxial bending analysis',
+    icon: Box,
     gradient: 'from-purple-500 to-pink-500',
-    available: false,
+    available: true,
   },
   {
     id: 'slab' as const,
@@ -261,7 +263,22 @@ const Engineering = () => {
               </motion.div>
             )}
 
-            {/* Calculation Results */}
+            {/* Column Calculator */}
+            {selectedCalculator === 'column' && !calculationResult && (
+              <motion.div
+                key="column"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <ColumnCalculator 
+                  onCalculationComplete={handleCalculationComplete}
+                  onBack={() => setSelectedCalculator(null)}
+                />
+              </motion.div>
+            )}
+
             {calculationResult && (
               <motion.div
                 key="results"

@@ -83,3 +83,6 @@ verify_jwt = false
 
 [functions.engineering-ai-analysis]
 verify_jwt = false
+
+[functions.calculate-column]
+verify_jwt = false
