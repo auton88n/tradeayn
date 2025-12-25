@@ -319,163 +319,282 @@ const SitePlanFullPageSVG: React.FC<{ points: Point[]; projectName: string }> = 
   const stationMarkers: { x: number; y: number; label: string }[] = [];
   const stationStart = Math.ceil(minX / stationInterval) * stationInterval;
   for (let station = stationStart; station <= maxX; station += stationInterval) {
-    // Find closest point to this station
-    const closest = sortedPoints.reduce((prev, curr) => 
+    const closest = sortedPoints.reduce((prev, curr) =>
       Math.abs(curr.x - station) < Math.abs(prev.x - station) ? curr : prev
     );
     if (Math.abs(closest.x - station) < stationInterval * 0.6) {
       stationMarkers.push({
         x: xPos(closest.x),
         y: yPos(closest.y),
-        label: formatStation(station)
+        label: formatStation(station),
       });
     }
   }
 
-  // Determine which points to show labels for to avoid overcrowding
-  // Show labels for every Nth point based on total count
-  const totalPoints = sortedPoints.length;
-  const labelInterval = totalPoints > 100 ? 8 : totalPoints > 50 ? 5 : totalPoints > 25 ? 3 : 2;
+  const PLAN = {
+    paper: 'hsl(var(--plan-paper))',
+    ink: 'hsl(var(--plan-ink))',
+    grid: 'hsl(var(--plan-grid))',
+    border: 'hsl(var(--plan-border))',
+    start: 'hsl(var(--plan-start))',
+    end: 'hsl(var(--plan-end))',
+    ngl: 'hsl(var(--plan-ngl))',
+    dl: 'hsl(var(--plan-dl))',
+  } as const;
 
   return (
     <svg width={width} height={height} style={{ maxWidth: '100%' }}>
       {/* Background */}
-      <rect x={0} y={0} width={width} height={height} fill="#ffffff" />
-      <rect x={padding.left} y={padding.top} width={chartWidth} height={chartHeight} fill="#fefefe" />
-      
+      <rect x={0} y={0} width={width} height={height} fill={PLAN.paper} />
+      <rect x={padding.left} y={padding.top} width={chartWidth} height={chartHeight} fill={PLAN.paper} />
+
       {/* Grid lines - very faint */}
-      {gridLinesX.map(x => (
-        <line key={`gx-${x}`} x1={xPos(x)} y1={padding.top} x2={xPos(x)} y2={padding.top + chartHeight} stroke="#e8e8e8" strokeWidth={0.5} />
+      {gridLinesX.map((x) => (
+        <line
+          key={`gx-${x}`}
+          x1={xPos(x)}
+          y1={padding.top}
+          x2={xPos(x)}
+          y2={padding.top + chartHeight}
+          stroke={PLAN.grid}
+          strokeWidth={0.5}
+        />
       ))}
-      {gridLinesY.map(y => (
-        <line key={`gy-${y}`} x1={padding.left} y1={yPos(y)} x2={padding.left + chartWidth} y2={yPos(y)} stroke="#e8e8e8" strokeWidth={0.5} />
+      {gridLinesY.map((y) => (
+        <line
+          key={`gy-${y}`}
+          x1={padding.left}
+          y1={yPos(y)}
+          x2={padding.left + chartWidth}
+          y2={yPos(y)}
+          stroke={PLAN.grid}
+          strokeWidth={0.5}
+        />
       ))}
-      
+
       {/* Border */}
-      <rect x={padding.left} y={padding.top} width={chartWidth} height={chartHeight} fill="none" stroke="#333333" strokeWidth={1} />
-      
-      {/* Road centerline - BLACK continuous line */}
-      <path d={roadPath} fill="none" stroke="#000000" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
-      
-      {/* ALL Survey Points with NGL/DL Labels */}
+      <rect
+        x={padding.left}
+        y={padding.top}
+        width={chartWidth}
+        height={chartHeight}
+        fill="none"
+        stroke={PLAN.border}
+        strokeWidth={1}
+      />
+
+      {/* Road centerline - ONE BLACK continuous line (no tick/comb marks) */}
+      <path
+        d={roadPath}
+        fill="none"
+        stroke={PLAN.ink}
+        strokeWidth={3}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+
+      {/* ALL Survey Points with NGL/DL Labels (NO leader/tick lines) */}
       {sortedPoints.map((p, i) => {
         const x = xPos(p.x);
         const y = yPos(p.y);
         const isFirst = i === 0;
         const isLast = i === sortedPoints.length - 1;
-        const showLabel = isFirst || isLast || i % labelInterval === 0;
-        
+
         const ngl = p.z;
         const dl = p.fgl ?? p.z;
-        
-        // Alternate label positions to reduce overlap
-        const labelAbove = i % 2 === 0;
-        
+
+        // Smart-ish label positioning (no leader lines): alternate left/right and stagger vertically
+        const isLeft = i % 2 === 0;
+        const stagger = (i % 3) * 2;
+
+        const nglX = x + (isLeft ? -4 : 4);
+        const nglY = y - 8 - stagger;
+        const nglAnchor: 'start' | 'end' = isLeft ? 'end' : 'start';
+
+        const dlX = x + (isLeft ? 4 : -4);
+        const dlY = y + 14 + stagger;
+        const dlAnchor: 'start' | 'end' = isLeft ? 'start' : 'end';
+
         return (
           <g key={`point-${i}`}>
             {/* Point marker */}
-            <circle 
-              cx={x} 
-              cy={y} 
-              r={isFirst || isLast ? 5 : 2.5} 
-              fill={isFirst ? '#22c55e' : isLast ? '#ef4444' : '#000000'} 
-              stroke={isFirst || isLast ? 'white' : 'none'} 
-              strokeWidth={isFirst || isLast ? 1.5 : 0} 
+            <circle
+              cx={x}
+              cy={y}
+              r={isFirst || isLast ? 5 : 2.5}
+              fill={isFirst ? PLAN.start : isLast ? PLAN.end : PLAN.ink}
+              stroke={isFirst || isLast ? PLAN.paper : 'none'}
+              strokeWidth={isFirst || isLast ? 1.5 : 0}
             />
-            
-            {/* NGL and DL labels - shown for key points */}
-            {showLabel && (
-              <>
-                {/* NGL label - GREEN, above/left */}
-                <text 
-                  x={x + (labelAbove ? -3 : 3)} 
-                  y={labelAbove ? y - 8 : y - 8} 
-                  textAnchor={labelAbove ? "end" : "start"} 
-                  fontSize={7} 
-                  fill="#16a34a" 
-                  fontWeight="600"
-                >
-                  NGL{ngl.toFixed(2)}
-                </text>
-                
-                {/* DL label - RED, below/right (only if different from NGL) */}
-                <text 
-                  x={x + (labelAbove ? 3 : -3)} 
-                  y={labelAbove ? y + 12 : y + 12} 
-                  textAnchor={labelAbove ? "start" : "end"} 
-                  fontSize={7} 
-                  fill="#dc2626" 
-                  fontWeight="600"
-                >
-                  DL{dl.toFixed(2)}
-                </text>
-              </>
-            )}
+
+            {/* NGL label - GREEN, above */}
+            <text
+              x={nglX}
+              y={nglY}
+              textAnchor={nglAnchor}
+              fontSize={7}
+              fill={PLAN.ngl}
+              fontWeight="600"
+              stroke={PLAN.paper}
+              strokeWidth={2.2}
+              paintOrder="stroke"
+            >
+              NGL{ngl.toFixed(2)}
+            </text>
+
+            {/* DL label - RED, below */}
+            <text
+              x={dlX}
+              y={dlY}
+              textAnchor={dlAnchor}
+              fontSize={7}
+              fill={PLAN.dl}
+              fontWeight="600"
+              stroke={PLAN.paper}
+              strokeWidth={2.2}
+              paintOrder="stroke"
+            >
+              DL{dl.toFixed(2)}
+            </text>
           </g>
         );
       })}
 
-      {/* Station markers along centerline */}
-      {stationMarkers.filter((_, i) => i % 2 === 0).map((marker, i) => (
-        <g key={`station-marker-${i}`}>
-          <line x1={marker.x - 4} y1={marker.y - 4} x2={marker.x + 4} y2={marker.y + 4} stroke="#333333" strokeWidth={1} />
-          <line x1={marker.x + 4} y1={marker.y - 4} x2={marker.x - 4} y2={marker.y + 4} stroke="#333333" strokeWidth={1} />
-          <text x={marker.x} y={marker.y + 20} textAnchor="middle" fontSize={8} fill="#333333" fontWeight="500">
-            {marker.label}
-          </text>
-        </g>
+      {/* Station markers (TEXT ONLY) - no X, no ticks */}
+      {stationMarkers.map((marker, i) => (
+        <text
+          key={`station-marker-${i}`}
+          x={marker.x}
+          y={marker.y - 10}
+          textAnchor="middle"
+          fontSize={8}
+          fill={PLAN.ink}
+          fontWeight="500"
+          stroke={PLAN.paper}
+          strokeWidth={2.6}
+          paintOrder="stroke"
+        >
+          {marker.label}
+        </text>
       ))}
 
       {/* Legend box */}
       <g transform={`translate(${width - padding.right - 115}, ${padding.top + 8})`}>
-        <rect x={0} y={0} width={110} height={70} fill="white" stroke="#333333" strokeWidth={1} />
-        <text x={55} y={14} textAnchor="middle" fontSize={9} fill="#000000" fontWeight="bold">LEGEND</text>
-        <line x1={8} y1={26} x2={30} y2={26} stroke="#000000" strokeWidth={3} />
-        <text x={36} y={29} fontSize={7} fill="#000000">Road Centerline</text>
-        <circle cx={15} cy={40} r={4} fill="#22c55e" stroke="white" strokeWidth={1} />
-        <text x={36} y={43} fontSize={7} fill="#000000">Start Point</text>
-        <circle cx={15} cy={54} r={4} fill="#ef4444" stroke="white" strokeWidth={1} />
-        <text x={36} y={57} fontSize={7} fill="#000000">End Point</text>
-        <text x={8} y={66} fontSize={6} fill="#16a34a" fontWeight="600">NGL</text>
-        <text x={30} y={66} fontSize={6} fill="#dc2626" fontWeight="600">DL</text>
-        <text x={50} y={66} fontSize={6} fill="#666666">= Labels</text>
+        <rect x={0} y={0} width={110} height={70} fill={PLAN.paper} stroke={PLAN.border} strokeWidth={1} />
+        <text x={55} y={14} textAnchor="middle" fontSize={9} fill={PLAN.ink} fontWeight="bold">
+          LEGEND
+        </text>
+        <line x1={8} y1={26} x2={30} y2={26} stroke={PLAN.ink} strokeWidth={3} />
+        <text x={36} y={29} fontSize={7} fill={PLAN.ink}>
+          Road Centerline
+        </text>
+        <circle cx={15} cy={40} r={4} fill={PLAN.start} stroke={PLAN.paper} strokeWidth={1} />
+        <text x={36} y={43} fontSize={7} fill={PLAN.ink}>
+          Start Point
+        </text>
+        <circle cx={15} cy={54} r={4} fill={PLAN.end} stroke={PLAN.paper} strokeWidth={1} />
+        <text x={36} y={57} fontSize={7} fill={PLAN.ink}>
+          End Point
+        </text>
+        <text x={8} y={66} fontSize={6} fill={PLAN.ngl} fontWeight="600">
+          NGL
+        </text>
+        <text x={30} y={66} fontSize={6} fill={PLAN.dl} fontWeight="600">
+          DL
+        </text>
+        <text x={50} y={66} fontSize={6} fill={PLAN.border} opacity={0.7}>
+          = Labels
+        </text>
       </g>
 
       {/* North arrow */}
       <g transform={`translate(${padding.left + 25}, ${padding.top + 28})`}>
-        <circle cx={0} cy={0} r={16} fill="white" stroke="#333333" strokeWidth={1} />
-        <polygon points="0,-10 3,4 0,1 -3,4" fill="#000000" />
-        <text x={0} y={-12} textAnchor="middle" fontSize={8} fill="#000000" fontWeight="bold">N</text>
+        <circle cx={0} cy={0} r={16} fill={PLAN.paper} stroke={PLAN.border} strokeWidth={1} />
+        <polygon points="0,-10 3,4 0,1 -3,4" fill={PLAN.ink} />
+        <text x={0} y={-12} textAnchor="middle" fontSize={8} fill={PLAN.ink} fontWeight="bold">
+          N
+        </text>
       </g>
 
       {/* Scale bar */}
       <g transform={`translate(${padding.left + 20}, ${height - 20})`}>
-        <line x1={0} y1={0} x2={scaleBarPixels} y2={0} stroke="#000000" strokeWidth={2} />
-        <line x1={0} y1={-4} x2={0} y2={4} stroke="#000000" strokeWidth={2} />
-        <line x1={scaleBarPixels} y1={-4} x2={scaleBarPixels} y2={4} stroke="#000000" strokeWidth={2} />
-        <line x1={scaleBarPixels / 2} y1={-2} x2={scaleBarPixels / 2} y2={2} stroke="#000000" strokeWidth={1} />
-        <text x={scaleBarPixels / 2} y={12} textAnchor="middle" fontSize={8} fill="#000000" fontWeight="500">{scaleBarLength}m</text>
+        <line x1={0} y1={0} x2={scaleBarPixels} y2={0} stroke={PLAN.ink} strokeWidth={2} />
+        <line x1={0} y1={-4} x2={0} y2={4} stroke={PLAN.ink} strokeWidth={2} />
+        <line x1={scaleBarPixels} y1={-4} x2={scaleBarPixels} y2={4} stroke={PLAN.ink} strokeWidth={2} />
+        <line x1={scaleBarPixels / 2} y1={-2} x2={scaleBarPixels / 2} y2={2} stroke={PLAN.ink} strokeWidth={1} />
+        <text
+          x={scaleBarPixels / 2}
+          y={12}
+          textAnchor="middle"
+          fontSize={8}
+          fill={PLAN.ink}
+          fontWeight="500"
+          stroke={PLAN.paper}
+          strokeWidth={2}
+          paintOrder="stroke"
+        >
+          {scaleBarLength}m
+        </text>
       </g>
 
       {/* Coordinate labels on axes */}
-      {gridLinesX.filter((_, i) => i % 2 === 0).map(x => (
-        <text key={`xlabel-${x}`} x={xPos(x)} y={height - padding.bottom + 12} textAnchor="middle" fontSize={7} fill="#666666">
+      {gridLinesX.filter((_, i) => i % 2 === 0).map((x) => (
+        <text
+          key={`xlabel-${x}`}
+          x={xPos(x)}
+          y={height - padding.bottom + 12}
+          textAnchor="middle"
+          fontSize={7}
+          fill={PLAN.border}
+          opacity={0.65}
+        >
           {x.toFixed(0)}
         </text>
       ))}
-      {gridLinesY.filter((_, i) => i % 2 === 0).map(y => (
-        <text key={`ylabel-${y}`} x={padding.left - 5} y={yPos(y) + 3} textAnchor="end" fontSize={7} fill="#666666">
+      {gridLinesY.filter((_, i) => i % 2 === 0).map((y) => (
+        <text
+          key={`ylabel-${y}`}
+          x={padding.left - 5}
+          y={yPos(y) + 3}
+          textAnchor="end"
+          fontSize={7}
+          fill={PLAN.border}
+          opacity={0.65}
+        >
           {y.toFixed(0)}
         </text>
       ))}
 
       {/* Axis labels */}
-      <text x={padding.left + chartWidth / 2} y={height - 5} textAnchor="middle" fontSize={9} fill="#333333" fontWeight="500">Easting (X)</text>
-      <text x={12} y={padding.top + chartHeight / 2} textAnchor="middle" fontSize={9} fill="#333333" fontWeight="500" transform={`rotate(-90, 12, ${padding.top + chartHeight / 2})`}>Northing (Y)</text>
+      <text
+        x={padding.left + chartWidth / 2}
+        y={height - 5}
+        textAnchor="middle"
+        fontSize={9}
+        fill={PLAN.border}
+        fontWeight="500"
+      >
+        Easting (X)
+      </text>
+      <text
+        x={12}
+        y={padding.top + chartHeight / 2}
+        textAnchor="middle"
+        fontSize={9}
+        fill={PLAN.border}
+        fontWeight="500"
+        transform={`rotate(-90, 12, ${padding.top + chartHeight / 2})`}
+      >
+        Northing (Y)
+      </text>
 
       {/* Title block */}
-      <text x={width / 2} y={20} textAnchor="middle" fontSize={14} fill="#000000" fontWeight="bold">ROAD ALIGNMENT PLAN</text>
-      <text x={width / 2} y={35} textAnchor="middle" fontSize={10} fill="#333333">{projectName} | Total Points: {sortedPoints.length}</text>
+      <text x={width / 2} y={20} textAnchor="middle" fontSize={14} fill={PLAN.ink} fontWeight="bold">
+        ROAD ALIGNMENT PLAN
+      </text>
+      <text x={width / 2} y={35} textAnchor="middle" fontSize={10} fill={PLAN.border}>
+        {projectName} | Total Points: {sortedPoints.length}
+      </text>
     </svg>
   );
 };

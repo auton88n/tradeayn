@@ -160,6 +160,16 @@ button, a, input, textarea, select {
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
+    /* Engineering plan (PDF) fixed colors (independent of theme) */
+    --plan-paper: 0 0% 100%;
+    --plan-ink: 0 0% 0%;
+    --plan-grid: 0 0% 90%;
+    --plan-border: 0 0% 20%;
+    --plan-start: 142 71% 45%;
+    --plan-end: 0 84% 60%;
+    --plan-ngl: 142 71% 35%;
+    --plan-dl: 0 84% 45%;
+
     --border: 0 0% 92%;                /* Subtle borders */
     --input: 0 0% 92%;
     --ring: 0 0% 8%;
@@ -221,6 +231,17 @@ button, a, input, textarea, select {
     --accent-foreground: 0 0% 98%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
+
+    /* Engineering plan (PDF) fixed colors (independent of theme) */
+    --plan-paper: 0 0% 100%;
+    --plan-ink: 0 0% 0%;
+    --plan-grid: 0 0% 90%;
+    --plan-border: 0 0% 20%;
+    --plan-start: 142 71% 45%;
+    --plan-end: 0 84% 60%;
+    --plan-ngl: 142 71% 35%;
+    --plan-dl: 0 84% 45%;
+
     --border: 0 0% 15%;                /* Subtle dark borders */
     --input: 0 0% 15%;
     --ring: 0 0% 98%;
