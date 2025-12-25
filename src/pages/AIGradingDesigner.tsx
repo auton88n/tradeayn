@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Mountain, Sparkles } from 'lucide-react';
+import { ArrowLeft, Mountain, Sparkles, PlusCircle, FileSearch } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useNavigate } from 'react-router-dom';
 import { SurveyUploader } from '@/components/engineering/SurveyUploader';
 import { GradingRequirements } from '@/components/engineering/GradingRequirements';
 import { TerrainVisualization3D } from '@/components/engineering/TerrainVisualization3D';
 import { GradingResults } from '@/components/engineering/GradingResults';
+import { DesignReviewMode } from '@/components/engineering/DesignReviewMode';
+import { DesignAnalysisResults } from '@/components/engineering/DesignAnalysisResults';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { SEO } from '@/components/SEO';
@@ -36,7 +39,10 @@ interface TerrainAnalysis {
 
 const AIGradingDesigner: React.FC = () => {
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('create');
   const [projectName, setProjectName] = useState('Untitled Project');
+  
+  // Create mode state
   const [points, setPoints] = useState<SurveyPoint[]>([]);
   const [terrainAnalysis, setTerrainAnalysis] = useState<TerrainAnalysis | null>(null);
   const [requirements, setRequirements] = useState('');
@@ -45,6 +51,11 @@ const AIGradingDesigner: React.FC = () => {
   const [costBreakdown, setCostBreakdown] = useState<any>(null);
   const [totalCost, setTotalCost] = useState(0);
   const [fglPoints, setFglPoints] = useState<SurveyPoint[]>([]);
+
+  // Review mode state
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [isApplyingOptimizations, setIsApplyingOptimizations] = useState(false);
 
   const handleUploadComplete = (uploadedPoints: SurveyPoint[], analysis: TerrainAnalysis) => {
     setPoints(uploadedPoints);
@@ -55,21 +66,14 @@ const AIGradingDesigner: React.FC = () => {
 
   const handleGenerateDesign = async () => {
     if (!terrainAnalysis || points.length === 0) {
-      toast({
-        title: 'Upload survey data first',
-        variant: 'destructive',
-      });
+      toast({ title: 'Upload survey data first', variant: 'destructive' });
       return;
     }
 
     setIsGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke('generate-grading-design', {
-        body: { 
-          points, 
-          terrainAnalysis, 
-          requirements: requirements || 'Standard site grading for construction with proper drainage'
-        }
+        body: { points, terrainAnalysis, requirements: requirements || 'Standard site grading for construction with proper drainage' }
       });
 
       if (error) throw error;
@@ -96,6 +100,51 @@ const AIGradingDesigner: React.FC = () => {
     }
   };
 
+  const handleAnalysisComplete = (result: any) => {
+    setAnalysisResult(result);
+  };
+
+  const handleApplyOptimizations = async (optimizations: any[]) => {
+    if (!analysisResult?.parsedData) return;
+
+    setIsApplyingOptimizations(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('apply-design-optimizations', {
+        body: {
+          parsedData: analysisResult.parsedData,
+          optimizations,
+          projectName,
+        }
+      });
+
+      if (error) throw error;
+      if (!data.success) throw new Error(data.error);
+
+      // Download the optimized DXF
+      const blob = new Blob([data.dxfContent], { type: 'application/dxf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = data.fileName;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: 'Optimizations applied!',
+        description: `Saved ${data.comparison.improvement.costSavings.toLocaleString()} SAR. DXF downloaded.`,
+      });
+    } catch (err) {
+      console.error('Optimization error:', err);
+      toast({
+        title: 'Failed to apply optimizations',
+        description: err instanceof Error ? err.message : 'Unknown error',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsApplyingOptimizations(false);
+    }
+  };
+
   return (
     <>
       <SEO 
@@ -104,16 +153,11 @@ const AIGradingDesigner: React.FC = () => {
       />
       
       <div className="min-h-screen bg-background">
-        {/* Header */}
         <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-between h-16">
               <div className="flex items-center gap-4">
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={() => navigate('/engineering')}
-                >
+                <Button variant="ghost" size="icon" onClick={() => navigate('/engineering')}>
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
                 <div className="flex items-center gap-2">
@@ -128,7 +172,6 @@ const AIGradingDesigner: React.FC = () => {
                   />
                 </div>
               </div>
-              
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Sparkles className="w-4 h-4 text-primary" />
                 <span>AI-Powered Grading Design</span>
@@ -137,65 +180,61 @@ const AIGradingDesigner: React.FC = () => {
           </div>
         </header>
 
-        {/* Main Content */}
         <main className="container mx-auto px-4 py-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Left Column - Input */}
-            <div className="space-y-6">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-              >
-                <SurveyUploader 
-                  onUploadComplete={handleUploadComplete}
-                  isLoading={isGenerating}
-                />
-              </motion.div>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <TabsList className="grid w-full max-w-md grid-cols-2">
+              <TabsTrigger value="create" className="flex items-center gap-2">
+                <PlusCircle className="h-4 w-4" />
+                Create New Design
+              </TabsTrigger>
+              <TabsTrigger value="review" className="flex items-center gap-2">
+                <FileSearch className="h-4 w-4" />
+                Review Existing Design
+              </TabsTrigger>
+            </TabsList>
 
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-              >
-                <GradingRequirements
-                  requirements={requirements}
-                  onRequirementsChange={setRequirements}
-                  onGenerate={handleGenerateDesign}
-                  isGenerating={isGenerating}
-                  hasPoints={points.length > 0}
-                />
-              </motion.div>
-            </div>
+            <TabsContent value="create">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="space-y-6">
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                    <SurveyUploader onUploadComplete={handleUploadComplete} isLoading={isGenerating} />
+                  </motion.div>
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+                    <GradingRequirements
+                      requirements={requirements}
+                      onRequirementsChange={setRequirements}
+                      onGenerate={handleGenerateDesign}
+                      isGenerating={isGenerating}
+                      hasPoints={points.length > 0}
+                    />
+                  </motion.div>
+                </div>
+                <div className="space-y-6">
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+                    <TerrainVisualization3D points={fglPoints.length > 0 ? fglPoints : points} showFGL={fglPoints.length > 0} />
+                  </motion.div>
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+                    <GradingResults design={design} costBreakdown={costBreakdown} totalCost={totalCost} fglPoints={fglPoints} projectName={projectName} />
+                  </motion.div>
+                </div>
+              </div>
+            </TabsContent>
 
-            {/* Right Column - Visualization & Results */}
-            <div className="space-y-6">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-              >
-                <TerrainVisualization3D 
-                  points={fglPoints.length > 0 ? fglPoints : points}
-                  showFGL={fglPoints.length > 0}
+            <TabsContent value="review">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <DesignReviewMode
+                  onAnalysisComplete={handleAnalysisComplete}
+                  isAnalyzing={isAnalyzing}
+                  setIsAnalyzing={setIsAnalyzing}
                 />
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-              >
-                <GradingResults
-                  design={design}
-                  costBreakdown={costBreakdown}
-                  totalCost={totalCost}
-                  fglPoints={fglPoints}
-                  projectName={projectName}
+                <DesignAnalysisResults
+                  result={analysisResult}
+                  onApplyOptimizations={handleApplyOptimizations}
+                  isApplying={isApplyingOptimizations}
                 />
-              </motion.div>
-            </div>
-          </div>
+              </div>
+            </TabsContent>
+          </Tabs>
         </main>
       </div>
     </>

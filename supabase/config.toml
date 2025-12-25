@@ -95,3 +95,12 @@ verify_jwt = false
 
 [functions.generate-grading-dxf]
 verify_jwt = false
+
+[functions.parse-dxf-design]
+verify_jwt = false
+
+[functions.analyze-autocad-design]
+verify_jwt = false
+
+[functions.apply-design-optimizations]
+verify_jwt = false
