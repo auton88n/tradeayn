@@ -14,6 +14,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useEngineeringHistory } from '@/hooks/useEngineeringHistory';
 
 interface BeamCalculatorProps {
   onCalculate: (result: {
@@ -24,6 +25,7 @@ interface BeamCalculatorProps {
   }) => void;
   isCalculating: boolean;
   setIsCalculating: (value: boolean) => void;
+  userId?: string;
 }
 
 const concreteGrades = [
@@ -44,7 +46,9 @@ const supportTypes = [
   { value: 'cantilever', label: 'Cantilever', momentFactor: 2 },
 ];
 
-export const BeamCalculator = ({ onCalculate, isCalculating, setIsCalculating }: BeamCalculatorProps) => {
+export const BeamCalculator = ({ onCalculate, isCalculating, setIsCalculating, userId }: BeamCalculatorProps) => {
+  const { saveCalculation } = useEngineeringHistory(userId);
+  
   const [formData, setFormData] = useState({
     span: '',
     deadLoad: '',
@@ -98,18 +102,23 @@ export const BeamCalculator = ({ onCalculate, isCalculating, setIsCalculating }:
 
       if (error) throw error;
 
+      const inputs = {
+        span,
+        deadLoad,
+        liveLoad,
+        beamWidth,
+        concreteGrade: formData.concreteGrade,
+        steelGrade: formData.steelGrade,
+        supportType: formData.supportType,
+        exposureClass: formData.exposureClass,
+      };
+
+      // Save to history (non-blocking)
+      saveCalculation('beam', inputs, data);
+
       onCalculate({
         type: 'beam',
-        inputs: {
-          span,
-          deadLoad,
-          liveLoad,
-          beamWidth,
-          concreteGrade: formData.concreteGrade,
-          steelGrade: formData.steelGrade,
-          supportType: formData.supportType,
-          exposureClass: formData.exposureClass,
-        },
+        inputs,
         outputs: data,
         timestamp: new Date(),
       });

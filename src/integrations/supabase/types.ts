@@ -539,6 +539,33 @@ export type Database = {
         }
         Relationships: []
       }
+      engineering_activity: {
+        Row: {
+          activity_type: string
+          created_at: string
+          details: Json | null
+          id: string
+          summary: string
+          user_id: string
+        }
+        Insert: {
+          activity_type: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          summary: string
+          user_id: string
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          summary?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       engineering_projects: {
         Row: {
           created_at: string
