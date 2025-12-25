@@ -1,5 +1,5 @@
-import React from 'react';
-import { Download, TrendingUp, TrendingDown, DollarSign, FileText, AlertTriangle, Printer } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { Download, TrendingUp, TrendingDown, DollarSign, FileText, AlertTriangle, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -7,6 +7,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { StationDataTable } from './StationDataTable';
 import { ElevationProfile } from './ElevationProfile';
+import { GradingPDFReport } from './GradingPDFReport';
+import html2pdf from 'html2pdf.js';
 
 interface Point {
   id: string;
@@ -60,8 +62,10 @@ export const GradingResults: React.FC<GradingResultsProps> = ({
   fglPoints,
   projectName,
 }) => {
-  const [exporting, setExporting] = React.useState(false);
-  const [activeView, setActiveView] = React.useState('summary');
+  const [exporting, setExporting] = useState(false);
+  const [exportingPDF, setExportingPDF] = useState(false);
+  const [activeView, setActiveView] = useState('summary');
+  const pdfRef = useRef<HTMLDivElement>(null);
 
   const handleExportDXF = async () => {
     setExporting(true);
@@ -99,8 +103,35 @@ export const GradingResults: React.FC<GradingResultsProps> = ({
     }
   };
 
-  const handlePrint = () => {
-    window.print();
+  const handleExportPDF = async () => {
+    if (!pdfRef.current || !design) return;
+    
+    setExportingPDF(true);
+    try {
+      const options = {
+        margin: 0,
+        filename: `${projectName.replace(/\s+/g, '_')}_Grading_Report.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const }
+      };
+
+      await html2pdf().set(options).from(pdfRef.current).save();
+
+      toast({
+        title: 'PDF exported successfully',
+        description: `Downloaded ${projectName}_Grading_Report.pdf`,
+      });
+    } catch (err) {
+      console.error('PDF export error:', err);
+      toast({
+        title: 'PDF export failed',
+        description: err instanceof Error ? err.message : 'Unknown error',
+        variant: 'destructive',
+      });
+    } finally {
+      setExportingPDF(false);
+    }
   };
 
   if (!design) {
@@ -282,17 +313,23 @@ export const GradingResults: React.FC<GradingResultsProps> = ({
         </TabsContent>
       </Tabs>
 
-      {/* Print View - shows everything */}
-      <div className="hidden print:block space-y-4">
-        <ElevationProfile points={fglPoints} height={300} />
-        <StationDataTable points={fglPoints} interval={10} />
+      {/* Hidden PDF content for export */}
+      <div className="absolute -left-[9999px] top-0">
+        <GradingPDFReport
+          ref={pdfRef}
+          design={design}
+          costBreakdown={costBreakdown}
+          totalCost={totalCost}
+          fglPoints={fglPoints}
+          projectName={projectName}
+        />
       </div>
 
       {/* Export Buttons */}
       <div className="flex gap-3 print:hidden">
         <Button
           onClick={handleExportDXF}
-          disabled={exporting}
+          disabled={exporting || exportingPDF}
           className="flex-1"
           size="lg"
         >
@@ -304,17 +341,28 @@ export const GradingResults: React.FC<GradingResultsProps> = ({
           ) : (
             <>
               <Download className="w-5 h-5 mr-2" />
-              Export to DXF (AutoCAD)
+              Export DXF
             </>
           )}
         </Button>
         <Button
-          onClick={handlePrint}
-          variant="outline"
+          onClick={handleExportPDF}
+          disabled={exporting || exportingPDF}
+          variant="secondary"
           size="lg"
+          className="flex-1"
         >
-          <Printer className="w-5 h-5 mr-2" />
-          Print Report
+          {exportingPDF ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
+              Generating PDF...
+            </>
+          ) : (
+            <>
+              <FileDown className="w-5 h-5 mr-2" />
+              Export PDF Report
+            </>
+          )}
         </Button>
       </div>
     </div>
