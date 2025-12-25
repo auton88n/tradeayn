@@ -12,6 +12,7 @@ interface DesignCanvasProps {
   onSelectElement: (id: string | null) => void;
   onUpdateElement: (id: string, updates: Partial<CanvasElement>) => void;
   onDeleteElement: (id: string) => void;
+  onUploadClick?: () => void;
 }
 
 const aspectRatioStyles: Record<string, string> = {
@@ -27,7 +28,9 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
   onSelectElement,
   onUpdateElement,
   onDeleteElement,
+  onUploadClick,
 }) => {
+  const [isDragOver, setIsDragOver] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
 
@@ -154,17 +157,82 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
           })}
         </AnimatePresence>
         
-        {/* Empty state */}
+        {/* Empty state - Clickable upload zone */}
         {!canvasState.backgroundImage && canvasState.elements.length === 0 && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center">
-              <div className="w-12 h-12 rounded-xl bg-muted/50 flex items-center justify-center mx-auto mb-3">
-                <ImagePlus className="w-5 h-5 text-muted-foreground/50" />
-              </div>
-              <p className="text-sm font-medium text-muted-foreground/70">Upload an image</p>
-              <p className="text-xs text-muted-foreground/50 mt-1">or add text elements</p>
-            </div>
-          </div>
+          <motion.div 
+            onClick={onUploadClick}
+            onDragEnter={(e) => { e.preventDefault(); setIsDragOver(true); }}
+            onDragLeave={(e) => { e.preventDefault(); setIsDragOver(false); }}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault();
+              setIsDragOver(false);
+              const file = e.dataTransfer.files[0];
+              if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                  const dataUrl = ev.target?.result as string;
+                  // We'll handle this via parent - for now trigger upload click
+                  onUploadClick?.();
+                };
+              }
+            }}
+            className={cn(
+              "absolute inset-4 border-2 border-dashed rounded-2xl",
+              "flex flex-col items-center justify-center cursor-pointer",
+              "transition-all duration-300 group",
+              isDragOver 
+                ? "border-primary bg-primary/10 scale-[1.02]" 
+                : "border-muted-foreground/20 hover:border-primary/50",
+              !isDragOver && "bg-gradient-to-br from-primary/5 via-transparent to-purple-500/5",
+              !isDragOver && "hover:from-primary/10 hover:to-purple-500/10"
+            )}
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
+          >
+            {/* Animated glow ring */}
+            <div className={cn(
+              "absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500",
+              "bg-gradient-to-br from-primary/20 via-transparent to-purple-500/20 blur-xl"
+            )} />
+            
+            {/* Icon container with gradient */}
+            <motion.div 
+              className={cn(
+                "w-16 h-16 rounded-2xl flex items-center justify-center mb-4 relative z-10",
+                "bg-gradient-to-br from-primary/20 to-purple-500/20",
+                "group-hover:from-primary/30 group-hover:to-purple-500/30",
+                "transition-all duration-300 group-hover:scale-110",
+                "ring-1 ring-primary/10 group-hover:ring-primary/30"
+              )}
+              animate={isDragOver ? { scale: 1.1 } : {}}
+            >
+              <ImagePlus className={cn(
+                "w-7 h-7 transition-colors duration-300",
+                isDragOver ? "text-primary" : "text-primary/60 group-hover:text-primary"
+              )} />
+            </motion.div>
+            
+            {/* Text */}
+            <p className={cn(
+              "text-sm font-medium mb-1 relative z-10 transition-colors",
+              isDragOver ? "text-primary" : "text-foreground/70 group-hover:text-foreground"
+            )}>
+              {isDragOver ? "Drop to upload" : "Click to upload"}
+            </p>
+            <p className="text-xs text-muted-foreground/60 relative z-10">
+              or drag and drop an image
+            </p>
+            <p className="text-[11px] text-muted-foreground/40 mt-3 relative z-10">
+              PNG, JPG, WEBP up to 10MB
+            </p>
+            
+            {/* Corner decorations */}
+            <div className="absolute top-2 left-2 w-4 h-4 border-l-2 border-t-2 border-primary/20 rounded-tl-lg group-hover:border-primary/40 transition-colors" />
+            <div className="absolute top-2 right-2 w-4 h-4 border-r-2 border-t-2 border-primary/20 rounded-tr-lg group-hover:border-primary/40 transition-colors" />
+            <div className="absolute bottom-2 left-2 w-4 h-4 border-l-2 border-b-2 border-primary/20 rounded-bl-lg group-hover:border-primary/40 transition-colors" />
+            <div className="absolute bottom-2 right-2 w-4 h-4 border-r-2 border-b-2 border-primary/20 rounded-br-lg group-hover:border-primary/40 transition-colors" />
+          </motion.div>
         )}
       </motion.div>
     </div>

@@ -596,6 +596,7 @@ const DesignLAB: React.FC = () => {
               onSelectElement={selectElement}
               onUpdateElement={updateElement}
               onDeleteElement={deleteElement}
+              onUploadClick={handleManualUpload}
             />
           )}
         </div>
