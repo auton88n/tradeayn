@@ -383,6 +383,26 @@ export const Sidebar = ({
           </SidebarGroupContent>
         </SidebarGroup>
 
+        {/* Design LAB Button */}
+        <SidebarGroup className="flex-shrink-0 px-4 pb-3">
+          <SidebarGroupContent>
+            <Button 
+              onClick={() => navigate('/design-lab')}
+              variant="outline"
+              className={cn(
+                "w-full h-10 rounded-xl gap-2",
+                "border-primary/30 bg-primary/5",
+                "hover:bg-primary/10 hover:border-primary/50",
+                "transition-all duration-300"
+              )}
+            >
+              <Palette className="w-4 h-4 text-primary" />
+              <span>Design LAB</span>
+              <Sparkles className="w-3 h-3 text-primary/70 ml-auto" />
+            </Button>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
         {/* Search Input */}
         <div className="px-4 pb-3 flex-shrink-0">
           <div className={cn("relative transition-all duration-300", isSearchFocused && "transform scale-[1.02]")}>
