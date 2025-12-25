@@ -6,13 +6,14 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-import { Plus, LogOut, Trash2, Camera, Settings, X, MessageSquare, Search, Star, Shield, Brain, ChevronDown, GraduationCap, Loader2, Volume2, VolumeX, Headphones, Sparkles, AlertTriangle, Palette } from 'lucide-react';
+import { Plus, LogOut, Trash2, Camera, Settings, X, MessageSquare, Search, Star, Shield, Brain, ChevronDown, GraduationCap, Loader2, Volume2, VolumeX, Headphones, Sparkles, AlertTriangle, Palette, Images } from 'lucide-react';
 import { format } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useSidebar } from '@/components/ui/sidebar';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { ProfileAvatarUpload } from './ProfileAvatarUpload';
+import { SavedImagesGallery } from './SavedImagesGallery';
 import SupportWidget from '@/components/support/SupportWidget';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -134,6 +135,7 @@ export const Sidebar = ({
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isDeletingAll, setIsDeletingAll] = useState(false);
   const [showSupportWidget, setShowSupportWidget] = useState(false);
+  const [showImagesGallery, setShowImagesGallery] = useState(false);
   
   // Fetch credits data directly via hook
   const { currentMonthUsage: usageFromHook, monthlyLimit: limitFromHook, usageResetDate: resetFromHook, isLoading: isUsageLoading } = useUsageTracking(userId ?? null);
@@ -209,6 +211,19 @@ export const Sidebar = ({
           <div className="flex flex-col items-start">
             <span className="text-sm font-medium">Design LAB</span>
             <span className="text-[10px] text-muted-foreground/70">Create social posts</span>
+          </div>
+        </Button>
+        
+        <Button onClick={() => {
+          setProfilePopoverOpen(false);
+          setShowImagesGallery(true);
+        }} variant="ghost" className="w-full justify-start h-11 px-3 gap-3 rounded-xl hover:bg-muted/60 transition-all duration-200 group">
+          <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center group-hover:bg-muted group-hover:scale-105 transition-all duration-200">
+            <Images className="w-4 h-4 text-muted-foreground" />
+          </div>
+          <div className="flex flex-col items-start">
+            <span className="text-sm font-medium">Image Gallery</span>
+            <span className="text-[10px] text-muted-foreground/70">Browse saved images</span>
           </div>
         </Button>
         
@@ -545,6 +560,9 @@ return <SidebarMenuItem key={chat.sessionId} className={cn("relative", index > 0
         
         {/* Support Widget */}
         <SupportWidget open={showSupportWidget} onClose={() => setShowSupportWidget(false)} />
+        
+        {/* Saved Images Gallery */}
+        <SavedImagesGallery open={showImagesGallery} onOpenChange={setShowImagesGallery} />
       </SidebarFooter>
     </div>;
 };
