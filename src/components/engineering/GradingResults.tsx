@@ -5,7 +5,6 @@ import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { ReportHeader } from './ReportHeader';
 import { StationDataTable } from './StationDataTable';
 import { ElevationProfile } from './ElevationProfile';
 
@@ -52,9 +51,6 @@ interface GradingResultsProps {
   totalCost: number;
   fglPoints: Point[];
   projectName: string;
-  clientName?: string;
-  consultantName?: string;
-  location?: string;
 }
 
 export const GradingResults: React.FC<GradingResultsProps> = ({
@@ -63,9 +59,6 @@ export const GradingResults: React.FC<GradingResultsProps> = ({
   totalCost,
   fglPoints,
   projectName,
-  clientName,
-  consultantName,
-  location,
 }) => {
   const [exporting, setExporting] = React.useState(false);
   const [activeView, setActiveView] = React.useState('summary');
@@ -126,14 +119,6 @@ export const GradingResults: React.FC<GradingResultsProps> = ({
 
   return (
     <div className="space-y-6 print:space-y-4">
-      {/* Professional Report Header */}
-      <ReportHeader
-        projectName={projectName}
-        clientName={clientName}
-        consultantName={consultantName}
-        location={location}
-      />
-
       {/* Navigation Tabs */}
       <Tabs value={activeView} onValueChange={setActiveView} className="print:hidden">
         <TabsList className="grid w-full grid-cols-4">
