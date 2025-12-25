@@ -1,8 +1,8 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Download, Share2, Palette } from 'lucide-react';
+import { ArrowLeft, Download, Share2, Palette, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDesignCanvas } from '@/hooks/useDesignCanvas';
 import { DesignCanvas } from '@/components/lab/DesignCanvas';
@@ -13,7 +13,8 @@ import html2canvas from 'html2canvas';
 const DesignLAB: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const initialImage = searchParams.get('image') || undefined;
+  const externalImageUrl = searchParams.get('image') || undefined;
+  const [isLoadingExternalImage, setIsLoadingExternalImage] = useState(!!externalImageUrl);
   
   const {
     canvasState,
@@ -30,7 +31,43 @@ const DesignLAB: React.FC = () => {
     duplicateElement,
     clearCanvas,
     getSelectedElement,
-  } = useDesignCanvas(initialImage);
+  } = useDesignCanvas(); // Don't pass initialImage directly
+
+  // Fetch and convert external image to base64 to bypass CORS
+  useEffect(() => {
+    if (!externalImageUrl) return;
+    
+    const fetchAndConvertImage = async () => {
+      setIsLoadingExternalImage(true);
+      try {
+        // Try fetching directly first
+        const response = await fetch(externalImageUrl);
+        if (!response.ok) throw new Error('Failed to fetch image');
+        
+        const blob = await response.blob();
+        const reader = new FileReader();
+        
+        reader.onload = () => {
+          setBackgroundImage(reader.result as string);
+          setIsLoadingExternalImage(false);
+          toast.success('Image loaded successfully');
+        };
+        
+        reader.onerror = () => {
+          setIsLoadingExternalImage(false);
+          toast.error('Failed to process image');
+        };
+        
+        reader.readAsDataURL(blob);
+      } catch (error) {
+        console.error('Failed to load external image:', error);
+        setIsLoadingExternalImage(false);
+        toast.error('Image could not be loaded. It may have expired or is blocked by CORS.');
+      }
+    };
+    
+    fetchAndConvertImage();
+  }, [externalImageUrl, setBackgroundImage]);
 
   const selectedElement = getSelectedElement();
 
@@ -203,13 +240,22 @@ const DesignLAB: React.FC = () => {
         {/* Main Content */}
         <div className="flex-1 flex overflow-hidden">
           {/* Canvas Area */}
-          <DesignCanvas
-            canvasState={canvasState}
-            canvasRef={canvasRef}
-            onSelectElement={selectElement}
-            onUpdateElement={updateElement}
-            onDeleteElement={deleteElement}
-          />
+          {isLoadingExternalImage ? (
+            <div className="flex-1 flex items-center justify-center bg-muted/30">
+              <div className="text-center">
+                <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-primary" />
+                <p className="text-sm text-muted-foreground">Loading image...</p>
+              </div>
+            </div>
+          ) : (
+            <DesignCanvas
+              canvasState={canvasState}
+              canvasRef={canvasRef}
+              onSelectElement={selectElement}
+              onUpdateElement={updateElement}
+              onDeleteElement={deleteElement}
+            />
+          )}
           
           {/* Toolbar */}
           <DesignToolbar
