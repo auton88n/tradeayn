@@ -24,6 +24,10 @@ import {
   ArrowUp,
   ArrowDown,
   RotateCcw,
+  Sparkles,
+  MessageSquareQuote,
+  Tag,
+  Megaphone,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { AspectRatio, CanvasElement, TextElement, ImageElement } from '@/hooks/useDesignCanvas';
@@ -33,7 +37,7 @@ interface DesignToolbarProps {
   aspectRatio: AspectRatio;
   onUploadBackground: (file: File) => void;
   onUploadLogo: (file: File) => void;
-  onAddText: () => void;
+  onAddText: (text?: string, fontSize?: number, fontWeight?: 'normal' | 'bold', color?: string) => void;
   onUpdateElement: (updates: Partial<CanvasElement>) => void;
   onDeleteElement: () => void;
   onDuplicateElement: () => void;
@@ -50,7 +54,43 @@ const aspectRatioOptions: { value: AspectRatio; label: string; icon: React.React
   { value: '16:9', label: 'Wide', icon: <Monitor className="w-4 h-4" /> },
 ];
 
-const fontFamilies = ['Inter', 'Arial', 'Georgia', 'Times New Roman', 'Courier New', 'Impact'];
+const fontFamilies = ['Inter', 'Arial', 'Georgia', 'Times New Roman', 'Courier New', 'Impact', 'Montserrat', 'Playfair Display'];
+
+// Preset text templates for quick social media post creation
+const textTemplates = [
+  { 
+    label: 'Headline', 
+    icon: Sparkles,
+    text: 'Your Headline Here',
+    fontSize: 56,
+    fontWeight: 'bold' as const,
+    color: '#ffffff',
+  },
+  { 
+    label: 'Quote', 
+    icon: MessageSquareQuote,
+    text: '"Inspiring quote goes here"',
+    fontSize: 36,
+    fontWeight: 'normal' as const,
+    color: '#ffffff',
+  },
+  { 
+    label: 'CTA', 
+    icon: Megaphone,
+    text: 'Shop Now →',
+    fontSize: 32,
+    fontWeight: 'bold' as const,
+    color: '#FFD700',
+  },
+  { 
+    label: 'Hashtag', 
+    icon: Tag,
+    text: '#YourBrand',
+    fontSize: 24,
+    fontWeight: 'normal' as const,
+    color: '#87CEEB',
+  },
+];
 
 export const DesignToolbar: React.FC<DesignToolbarProps> = ({
   selectedElement,
@@ -117,7 +157,7 @@ export const DesignToolbar: React.FC<DesignToolbarProps> = ({
               <Button
                 variant="outline"
                 className="h-16 flex-col gap-1"
-                onClick={onAddText}
+                onClick={() => onAddText()}
               >
                 <Type className="w-5 h-5" />
                 <span className="text-xs">Text</span>
@@ -147,6 +187,32 @@ export const DesignToolbar: React.FC<DesignToolbarProps> = ({
                 <RotateCcw className="w-5 h-5" />
                 <span className="text-xs">Clear</span>
               </Button>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Text Templates */}
+          <div className="space-y-3">
+            <Label className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">
+              Quick Templates
+            </Label>
+            <div className="grid grid-cols-2 gap-2">
+              {textTemplates.map((template) => {
+                const IconComponent = template.icon;
+                return (
+                  <Button
+                    key={template.label}
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 justify-start"
+                    onClick={() => onAddText(template.text, template.fontSize, template.fontWeight, template.color)}
+                  >
+                    <IconComponent className="w-4 h-4 text-primary" />
+                    <span className="text-xs">{template.label}</span>
+                  </Button>
+                );
+              })}
             </div>
           </div>
 

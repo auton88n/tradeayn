@@ -69,17 +69,22 @@ export const useDesignCanvas = (initialImage?: string) => {
     setCanvasState(prev => ({ ...prev, aspectRatio: ratio }));
   }, []);
 
-  const addTextElement = useCallback((text: string = 'Add your text') => {
+  const addTextElement = useCallback((
+    text: string = 'Add your text',
+    fontSize: number = 48,
+    fontWeight: 'normal' | 'bold' = 'bold',
+    color: string = '#ffffff'
+  ) => {
     const newElement: TextElement = {
       id: `text-${Date.now()}`,
       type: 'text',
       content: text,
       x: 50,
       y: 50,
-      fontSize: 48,
+      fontSize,
       fontFamily: 'Inter',
-      color: '#ffffff',
-      fontWeight: 'bold',
+      color,
+      fontWeight,
       textAlign: 'center',
       shadow: true,
       rotation: 0,

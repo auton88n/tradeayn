@@ -1,10 +1,11 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { useRef, useState, useEffect, useCallback, memo } from 'react';
+import { useRef, useState, useEffect, useCallback, memo, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { StreamingMarkdown } from '@/components/eye/StreamingMarkdown';
 import { MessageFormatter } from '@/components/MessageFormatter';
 import { hapticFeedback } from '@/lib/haptics';
-import { Copy, Check, ThumbsUp, ThumbsDown, Brain, Maximize2, X, ChevronDown } from 'lucide-react';
+import { Copy, Check, ThumbsUp, ThumbsDown, Brain, Maximize2, X, ChevronDown, Palette } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -27,6 +28,7 @@ interface ResponseCardProps {
 }
 
 const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant = 'inline', showPointer = true }: ResponseCardProps) => {
+  const navigate = useNavigate();
   const contentRef = useRef<HTMLDivElement>(null);
   const dialogContentRef = useRef<HTMLDivElement>(null);
   const [isScrollable, setIsScrollable] = useState(false);
@@ -46,6 +48,26 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
   const combinedContent = visibleResponses
     .map(r => r.content.replace(/^[!?\s]+/, '').trim())
     .join('\n\n');
+
+  // Detect images in content (markdown image syntax or URLs)
+  const detectedImageUrl = useMemo(() => {
+    // Match markdown image: ![alt](url) or direct image URLs
+    const markdownMatch = combinedContent.match(/!\[.*?\]\((https?:\/\/[^\s)]+)\)/);
+    if (markdownMatch) return markdownMatch[1];
+    
+    // Match direct image URLs ending with common extensions
+    const urlMatch = combinedContent.match(/(https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif|webp|svg))/i);
+    if (urlMatch) return urlMatch[1];
+    
+    return null;
+  }, [combinedContent]);
+
+  const handleDesignThis = useCallback(() => {
+    if (detectedImageUrl) {
+      hapticFeedback('light');
+      navigate(`/design-lab?image=${encodeURIComponent(detectedImageUrl)}`);
+    }
+  }, [detectedImageUrl, navigate]);
 
   // Reset streaming state when new response arrives
   useEffect(() => {
@@ -329,19 +351,38 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
               </button>
             </div>
             
-            {/* Right: Expand */}
-            <button
-              onClick={handleExpand}
-              className={cn(
-                "p-2 rounded-full transition-all duration-200",
-                "hover:bg-muted",
-                "text-muted-foreground hover:text-primary",
-                "active:scale-95"
+            {/* Right: Design This + Expand */}
+            <div className="flex items-center gap-1">
+              {detectedImageUrl && (
+                <button
+                  onClick={handleDesignThis}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium",
+                    "bg-gradient-to-r from-pink-500/10 to-orange-500/10",
+                    "hover:from-pink-500/20 hover:to-orange-500/20",
+                    "text-pink-600 dark:text-pink-400",
+                    "transition-all duration-200",
+                    "active:scale-95"
+                  )}
+                  title="Edit in Design LAB"
+                >
+                  <Palette size={14} />
+                  <span>Design</span>
+                </button>
               )}
-              title="Expand"
-            >
-              <Maximize2 size={16} />
-            </button>
+              <button
+                onClick={handleExpand}
+                className={cn(
+                  "p-2 rounded-full transition-all duration-200",
+                  "hover:bg-muted",
+                  "text-muted-foreground hover:text-primary",
+                  "active:scale-95"
+                )}
+                title="Expand"
+              >
+                <Maximize2 size={16} />
+              </button>
+            </div>
           </div>
         </motion.div>
       </AnimatePresence>
