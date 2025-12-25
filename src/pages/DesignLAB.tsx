@@ -2,12 +2,19 @@ import React, { useEffect, useCallback, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Download, Share2, Palette, Loader2, ImageOff, RefreshCw, Upload, Sparkles } from 'lucide-react';
+import { ArrowLeft, Download, Share2, Palette, Loader2, ImageOff, RefreshCw, Upload, Sparkles, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDesignCanvas } from '@/hooks/useDesignCanvas';
 import { DesignCanvas } from '@/components/lab/DesignCanvas';
 import { DesignToolbar } from '@/components/lab/DesignToolbar';
 import { SEO } from '@/components/SEO';
+import { Input } from '@/components/ui/input';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import html2canvas from 'html2canvas';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -28,6 +35,15 @@ interface AIDesignResult {
   cta?: DesignElement;
 }
 
+type DesignStyle = 'minimalist' | 'engaging' | 'promotional' | 'inspirational';
+
+const styleOptions: { value: DesignStyle; label: string; description: string }[] = [
+  { value: 'minimalist', label: 'Minimalist', description: 'Clean, bold headline only' },
+  { value: 'engaging', label: 'Engaging', description: 'Headline + subtitle + hashtags' },
+  { value: 'promotional', label: 'Promotional', description: 'Sale/offer focused with CTA' },
+  { value: 'inspirational', label: 'Inspirational', description: 'Quote-style elegant text' },
+];
+
 const DesignLAB: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -36,6 +52,8 @@ const DesignLAB: React.FC = () => {
   const [isLoadingExternalImage, setIsLoadingExternalImage] = useState(!!externalImageUrl);
   const [externalImageError, setExternalImageError] = useState(false);
   const [isGeneratingDesign, setIsGeneratingDesign] = useState(false);
+  const [designContext, setDesignContext] = useState(contextParam || '');
+  const [designStyle, setDesignStyle] = useState<DesignStyle>('engaging');
   const backgroundUploadRef = React.useRef<HTMLInputElement>(null);
   
   const {
@@ -117,8 +135,8 @@ const DesignLAB: React.FC = () => {
       const { data, error } = await supabase.functions.invoke('generate-design', {
         body: { 
           imageUrl: canvasState.backgroundImage,
-          context: contextParam || 'Create an engaging social media post',
-          style: 'engaging'
+          context: designContext || contextParam || 'Create an engaging social media post',
+          style: designStyle
         }
       });
 
@@ -352,6 +370,36 @@ const DesignLAB: React.FC = () => {
                   <p className="text-xs text-muted-foreground">Create social media posts</p>
                 </div>
               </div>
+            </div>
+            
+            {/* AI Design Controls */}
+            <div className="flex items-center gap-2 flex-1 max-w-xl mx-4">
+              <Input
+                placeholder="What's this post about? (e.g., Winter sale 50% off)"
+                value={designContext}
+                onChange={(e) => setDesignContext(e.target.value)}
+                className="h-8 text-sm"
+              />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1 shrink-0">
+                    {styleOptions.find(s => s.value === designStyle)?.label}
+                    <ChevronDown className="w-3 h-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {styleOptions.map((style) => (
+                    <DropdownMenuItem
+                      key={style.value}
+                      onClick={() => setDesignStyle(style.value)}
+                      className="flex flex-col items-start"
+                    >
+                      <span className="font-medium">{style.label}</span>
+                      <span className="text-xs text-muted-foreground">{style.description}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
             
             <div className="flex items-center gap-2">
