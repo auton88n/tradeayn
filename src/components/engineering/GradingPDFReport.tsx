@@ -237,21 +237,21 @@ const ElevationProfileSVG: React.FC<{ points: Point[] }> = ({ points }) => {
   );
 };
 
-// 2D Site Plan / Road Alignment Visualization - Clean, minimal design
-const SitePlanSVG: React.FC<{ points: Point[] }> = ({ points }) => {
+// Full-page Site Plan / Road Alignment Visualization - Clean, professional design
+const SitePlanFullPageSVG: React.FC<{ points: Point[]; projectName: string }> = ({ points, projectName }) => {
   const sortedPoints = useMemo(() => [...points].sort((a, b) => a.x - b.x), [points]);
 
   if (sortedPoints.length < 2) {
     return (
-      <div className="h-32 flex items-center justify-center text-slate-400 text-sm">
+      <div className="h-64 flex items-center justify-center text-slate-400 text-sm">
         Insufficient data for site plan
       </div>
     );
   }
 
-  const width = 680;
-  const height = 140;
-  const padding = { top: 15, right: 60, bottom: 25, left: 45 };
+  const width = 700;
+  const height = 450;
+  const padding = { top: 40, right: 50, bottom: 60, left: 60 };
   const chartWidth = width - padding.left - padding.right;
   const chartHeight = height - padding.top - padding.bottom;
 
@@ -266,10 +266,10 @@ const SitePlanSVG: React.FC<{ points: Point[] }> = ({ points }) => {
   const xRange = maxX - minX || 1;
   const yRange = maxY - minY || 1;
   
-  const paddedMinX = minX - xRange * 0.02;
-  const paddedMaxX = maxX + xRange * 0.02;
-  const paddedMinY = minY - yRange * 0.05;
-  const paddedMaxY = maxY + yRange * 0.05;
+  const paddedMinX = minX - xRange * 0.05;
+  const paddedMaxX = maxX + xRange * 0.05;
+  const paddedMinY = minY - yRange * 0.1;
+  const paddedMaxY = maxY + yRange * 0.1;
   const paddedXRange = paddedMaxX - paddedMinX;
   const paddedYRange = paddedMaxY - paddedMinY || 1;
 
@@ -283,76 +283,132 @@ const SitePlanSVG: React.FC<{ points: Point[] }> = ({ points }) => {
   const xPos = (x: number) => padding.left + offsetX + (x - paddedMinX) * scale;
   const yPos = (y: number) => padding.top + chartHeight - offsetY - (y - paddedMinY) * scale;
 
-  // Road alignment path
+  // Road alignment path - smoother
   const roadPath = sortedPoints.map((p, i) => 
     `${i === 0 ? 'M' : 'L'} ${xPos(p.x)} ${yPos(p.y)}`
   ).join(' ');
 
-  // Select key points only (start, end, and a few intermediate)
-  const keyPointIndices = [0];
-  const step = Math.max(1, Math.floor(sortedPoints.length / 6));
+  // Select only key points: start, end, and 3-4 intermediate evenly spaced
+  const numIntermediateLabels = 4;
+  const step = Math.max(1, Math.floor((sortedPoints.length - 1) / (numIntermediateLabels + 1)));
+  const keyPointIndices: number[] = [0];
   for (let i = step; i < sortedPoints.length - 1; i += step) {
-    keyPointIndices.push(i);
+    if (keyPointIndices.length < numIntermediateLabels + 1) {
+      keyPointIndices.push(i);
+    }
   }
   keyPointIndices.push(sortedPoints.length - 1);
-  const keyPoints = keyPointIndices.map(i => sortedPoints[i]);
+  const keyPoints = keyPointIndices.map(i => ({ ...sortedPoints[i], index: i }));
+
+  // Format station label
+  const formatStation = (x: number) => {
+    const stationNum = Math.round(x);
+    const major = Math.floor(stationNum / 1000);
+    const minor = Math.abs(stationNum % 1000);
+    return `${major}+${minor.toString().padStart(3, '0')}`;
+  };
+
+  // Calculate scale bar
+  const scaleBarLength = 50; // meters
+  const scaleBarPixels = scaleBarLength * scale;
+
+  // Grid lines
+  const gridLinesX: number[] = [];
+  const gridLinesY: number[] = [];
+  const xStep = Math.ceil(xRange / 5 / 50) * 50;
+  const yStep = Math.ceil(yRange / 4 / 10) * 10 || 10;
+  
+  for (let x = Math.ceil(minX / xStep) * xStep; x <= maxX; x += xStep) {
+    gridLinesX.push(x);
+  }
+  for (let y = Math.ceil(minY / yStep) * yStep; y <= maxY; y += yStep) {
+    gridLinesY.push(y);
+  }
 
   return (
     <svg width={width} height={height} style={{ maxWidth: '100%' }}>
-      {/* Background */}
-      <rect x={padding.left} y={padding.top} width={chartWidth} height={chartHeight} fill="#fefefe" stroke="#d1d5db" strokeWidth={0.5} />
+      {/* Background with light grid */}
+      <rect x={padding.left} y={padding.top} width={chartWidth} height={chartHeight} fill="#fafafa" />
       
-      {/* Road alignment - main path */}
-      <path d={roadPath} fill="none" stroke="#1e293b" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+      {/* Grid lines */}
+      {gridLinesX.map(x => (
+        <line key={`gx-${x}`} x1={xPos(x)} y1={padding.top} x2={xPos(x)} y2={padding.top + chartHeight} stroke="#e5e7eb" strokeWidth={0.5} strokeDasharray="4,4" />
+      ))}
+      {gridLinesY.map(y => (
+        <line key={`gy-${y}`} x1={padding.left} y1={yPos(y)} x2={padding.left + chartWidth} y2={yPos(y)} stroke="#e5e7eb" strokeWidth={0.5} strokeDasharray="4,4" />
+      ))}
       
-      {/* Key station markers */}
+      {/* Border */}
+      <rect x={padding.left} y={padding.top} width={chartWidth} height={chartHeight} fill="none" stroke="#94a3b8" strokeWidth={1} />
+      
+      {/* Road alignment - main path with shadow for depth */}
+      <path d={roadPath} fill="none" stroke="#94a3b8" strokeWidth={6} strokeLinecap="round" strokeLinejoin="round" opacity={0.3} />
+      <path d={roadPath} fill="none" stroke="#1e40af" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
+      
+      {/* Key station markers with labels */}
       {keyPoints.map((p, i) => {
         const x = xPos(p.x);
         const y = yPos(p.y);
-        const stationNum = Math.round(p.x);
-        const major = Math.floor(stationNum / 1000);
-        const minor = Math.abs(stationNum % 1000);
         const isFirst = i === 0;
         const isLast = i === keyPoints.length - 1;
+        const labelAbove = i % 2 === 0;
         
         return (
           <g key={`station-${i}`}>
-            {/* Station tick mark */}
-            <line x1={x} y1={y - 4} x2={x} y2={y + 4} stroke="#475569" strokeWidth={1.5} />
-            {/* Station label below */}
-            <text x={x} y={y + 14} textAnchor="middle" fontSize={7} fill="#475569" fontWeight={isFirst || isLast ? 'bold' : 'normal'}>
-              {major}+{minor.toString().padStart(3, '0')}
-            </text>
-            {/* NGL value - small, above */}
-            <text x={x} y={y - 7} textAnchor="middle" fontSize={6} fill="#78716c">
-              {p.z.toFixed(1)}
+            {/* Station marker dot */}
+            <circle cx={x} cy={y} r={4} fill={isFirst ? '#22c55e' : isLast ? '#ef4444' : '#1e40af'} stroke="white" strokeWidth={1.5} />
+            
+            {/* Station label with background for readability */}
+            <g transform={`translate(${x}, ${labelAbove ? y - 12 : y + 12})`}>
+              <rect x={-24} y={labelAbove ? -14 : 2} width={48} height={14} fill="white" rx={2} opacity={0.9} />
+              <text x={0} y={labelAbove ? -4 : 12} textAnchor="middle" fontSize={9} fill="#1e40af" fontWeight={isFirst || isLast ? 'bold' : 'normal'}>
+                {formatStation(p.x)}
+              </text>
+            </g>
+            
+            {/* NGL elevation - small, subtle */}
+            <text x={x + (labelAbove ? 28 : -28)} y={y + 4} textAnchor={labelAbove ? "start" : "end"} fontSize={7} fill="#6b7280">
+              El: {p.z.toFixed(1)}m
             </text>
           </g>
         );
       })}
 
-      {/* Start/End markers */}
-      <circle cx={xPos(sortedPoints[0].x)} cy={yPos(sortedPoints[0].y)} r={4} fill="#22c55e" stroke="white" strokeWidth={1} />
-      <circle cx={xPos(sortedPoints[sortedPoints.length-1].x)} cy={yPos(sortedPoints[sortedPoints.length-1].y)} r={4} fill="#ef4444" stroke="white" strokeWidth={1} />
-
-      {/* Compact legend */}
-      <g transform={`translate(${width - padding.right + 5}, ${padding.top})`}>
-        <circle cx={5} cy={6} r={3} fill="#22c55e" />
-        <text x={12} y={9} fontSize={6} fill="#475569">Start</text>
-        <circle cx={5} cy={18} r={3} fill="#ef4444" />
-        <text x={12} y={21} fontSize={6} fill="#475569">End</text>
-        <line x1={2} y1={30} x2={8} y2={30} stroke="#1e293b" strokeWidth={2} />
-        <text x={12} y={33} fontSize={6} fill="#475569">Path</text>
+      {/* Legend box */}
+      <g transform={`translate(${width - padding.right - 110}, ${padding.top + 10})`}>
+        <rect x={0} y={0} width={100} height={65} fill="white" stroke="#d1d5db" rx={4} />
+        <text x={50} y={14} textAnchor="middle" fontSize={9} fill="#374151" fontWeight="bold">LEGEND</text>
+        <line x1={10} y1={28} x2={35} y2={28} stroke="#1e40af" strokeWidth={3} />
+        <text x={42} y={31} fontSize={8} fill="#374151">Road Centerline</text>
+        <circle cx={15} cy={42} r={4} fill="#22c55e" />
+        <text x={42} y={45} fontSize={8} fill="#374151">Start Point</text>
+        <circle cx={15} cy={56} r={4} fill="#ef4444" />
+        <text x={42} y={59} fontSize={8} fill="#374151">End Point</text>
       </g>
 
-      {/* North arrow - compact */}
-      <g transform={`translate(${width - 20}, ${padding.top + 8})`}>
-        <polygon points="0,-8 3,0 -3,0" fill="#64748b" />
-        <text x={0} y={-10} textAnchor="middle" fontSize={6} fill="#64748b" fontWeight="bold">N</text>
+      {/* North arrow */}
+      <g transform={`translate(${padding.left + 25}, ${padding.top + 30})`}>
+        <circle cx={0} cy={0} r={18} fill="white" stroke="#94a3b8" strokeWidth={1} />
+        <polygon points="0,-12 4,4 0,0 -4,4" fill="#374151" />
+        <text x={0} y={-14} textAnchor="middle" fontSize={8} fill="#374151" fontWeight="bold">N</text>
+      </g>
+
+      {/* Scale bar */}
+      <g transform={`translate(${padding.left + 20}, ${height - 25})`}>
+        <line x1={0} y1={0} x2={scaleBarPixels} y2={0} stroke="#374151" strokeWidth={2} />
+        <line x1={0} y1={-4} x2={0} y2={4} stroke="#374151" strokeWidth={2} />
+        <line x1={scaleBarPixels} y1={-4} x2={scaleBarPixels} y2={4} stroke="#374151" strokeWidth={2} />
+        <text x={scaleBarPixels / 2} y={12} textAnchor="middle" fontSize={8} fill="#374151">{scaleBarLength}m</text>
+        <text x={scaleBarPixels + 10} y={4} fontSize={7} fill="#6b7280">Scale</text>
       </g>
 
       {/* Axis labels */}
-      <text x={padding.left + chartWidth / 2} y={height - 5} textAnchor="middle" fontSize={7} fill="#64748b">Station (m)</text>
+      <text x={padding.left + chartWidth / 2} y={height - 8} textAnchor="middle" fontSize={10} fill="#374151">Station (X-Coordinate)</text>
+      <text x={15} y={padding.top + chartHeight / 2} textAnchor="middle" fontSize={10} fill="#374151" transform={`rotate(-90, 15, ${padding.top + chartHeight / 2})`}>Northing (Y-Coordinate)</text>
+
+      {/* Title block */}
+      <text x={width / 2} y={22} textAnchor="middle" fontSize={14} fill="#1e293b" fontWeight="bold">ROAD ALIGNMENT PLAN</text>
+      <text x={width / 2} y={36} textAnchor="middle" fontSize={10} fill="#64748b">{projectName}</text>
     </svg>
   );
 };
@@ -436,8 +492,8 @@ export const GradingPDFReport = forwardRef<HTMLDivElement, GradingPDFReportProps
       return pages.length > 0 ? pages : [[]];
     }, [stationData]);
 
-    // Total pages: 1 (summary) + station table pages
-    const totalPages = 1 + stationPages.length;
+    // Total pages: 1 (summary) + 1 (site plan) + station table pages
+    const totalPages = 2 + stationPages.length;
 
     return (
       <div ref={ref} style={{ fontFamily: 'Arial, sans-serif' }}>
@@ -491,15 +547,6 @@ export const GradingPDFReport = forwardRef<HTMLDivElement, GradingPDFReportProps
             </div>
           </div>
 
-          {/* 2D Site Plan */}
-          <div className="mb-4">
-            <h2 className="text-lg font-bold text-slate-800 border-b-2 border-slate-300 pb-1 mb-2">
-              SITE PLAN / ROAD ALIGNMENT
-            </h2>
-            <div className="border border-slate-200 rounded p-2">
-              <SitePlanSVG points={fglPoints} />
-            </div>
-          </div>
 
           {/* Design Parameters */}
           <div className="mb-4">
@@ -553,6 +600,27 @@ export const GradingPDFReport = forwardRef<HTMLDivElement, GradingPDFReportProps
           </div>
         </div>
 
+        {/* Page 2: Full-page Site Plan */}
+        <div
+          className="bg-white text-black p-8 relative"
+          style={{ width: '210mm', height: '297mm', boxSizing: 'border-box' }}
+        >
+          <PageHeader 
+            projectName={projectName} 
+            date={date} 
+            pageNum={2} 
+            totalPages={totalPages} 
+          />
+          
+          <div className="flex flex-col items-center justify-center" style={{ height: 'calc(100% - 100px)' }}>
+            <SitePlanFullPageSVG points={fglPoints} projectName={projectName} />
+          </div>
+
+          <div className="absolute bottom-6 left-8 right-8">
+            <PageFooter pageNum={2} totalPages={totalPages} />
+          </div>
+        </div>
+
         {/* Station Data Table Pages */}
         {stationPages.map((pageData, pageIndex) => (
           <div
@@ -568,7 +636,7 @@ export const GradingPDFReport = forwardRef<HTMLDivElement, GradingPDFReportProps
             <PageHeader 
               projectName={projectName} 
               date={date} 
-              pageNum={pageIndex + 2} 
+              pageNum={pageIndex + 3} 
               totalPages={totalPages} 
             />
 
@@ -625,7 +693,7 @@ export const GradingPDFReport = forwardRef<HTMLDivElement, GradingPDFReportProps
 
             {/* Footer */}
             <div className="absolute bottom-6 left-8 right-8">
-              <PageFooter pageNum={pageIndex + 2} totalPages={totalPages} />
+              <PageFooter pageNum={pageIndex + 3} totalPages={totalPages} />
             </div>
           </div>
         ))}
