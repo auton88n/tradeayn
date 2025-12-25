@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera, Text } from '@react-three/drei';
 import * as THREE from 'three';
 import { cn } from '@/lib/utils';
 import { Box, Layers } from 'lucide-react';
@@ -12,6 +12,26 @@ interface ColumnVisualization3DProps {
   cover: number;
   columnType: string;
 }
+
+// Dimension Label Component
+const DimensionLabel: React.FC<{
+  position: [number, number, number];
+  text: string;
+  rotation?: [number, number, number];
+}> = ({ position, text, rotation = [0, 0, 0] }) => (
+  <Text
+    position={position}
+    rotation={rotation}
+    fontSize={0.12}
+    color="#22c55e"
+    anchorX="center"
+    anchorY="middle"
+    outlineWidth={0.008}
+    outlineColor="#000000"
+  >
+    {text}
+  </Text>
+);
 
 // 2D Cross-Section View
 const Column2DView: React.FC<{
@@ -118,9 +138,9 @@ const RectangularTie: React.FC<{ width: number; depth: number; thickness: number
   );
 };
 
-const ColumnMesh: React.FC<{ width: number; depth: number; height: number; cover: number; columnType: string }> = ({ 
-  width, depth, height, cover, columnType 
-}) => {
+const ColumnMesh: React.FC<{ 
+  width: number; depth: number; height: number; cover: number; columnType: string; showLabels?: boolean;
+}> = ({ width, depth, height, cover, columnType, showLabels = true }) => {
   const meshRef = useRef<THREE.Group>(null);
   
   useFrame((state) => {
@@ -190,6 +210,29 @@ const ColumnMesh: React.FC<{ width: number; depth: number; height: number; cover
             <meshStandardMaterial color="#f97316" metalness={0.6} roughness={0.3} />
           </mesh>
         ))
+      )}
+
+      {/* Dimension Labels */}
+      {showLabels && (
+        <>
+          {/* Width label */}
+          <DimensionLabel 
+            position={[0, -0.25, d/2 + 0.2]} 
+            text={`${width} mm`}
+          />
+          {/* Depth label */}
+          <DimensionLabel 
+            position={[w/2 + 0.25, -0.25, 0]} 
+            text={`${depth} mm`}
+            rotation={[0, -Math.PI/2, 0]}
+          />
+          {/* Height label */}
+          <DimensionLabel 
+            position={[w/2 + 0.25, h/2, d/2 + 0.25]} 
+            text={`${height} mm`}
+            rotation={[0, 0, -Math.PI/2]}
+          />
+        </>
       )}
     </group>
   );
