@@ -1,10 +1,21 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Image,
   Type,
@@ -27,9 +38,22 @@ import {
   Tag,
   Megaphone,
   Layers,
+  ChevronDown,
+  ChevronRight,
+  Loader2,
+  Send,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { AspectRatio, CanvasElement, TextElement, ImageElement } from '@/hooks/useDesignCanvas';
+
+type DesignStyle = 'minimalist' | 'engaging' | 'promotional' | 'inspirational';
+
+const styleOptions: { value: DesignStyle; label: string; description: string }[] = [
+  { value: 'minimalist', label: 'Minimalist', description: 'Clean, bold headline only' },
+  { value: 'engaging', label: 'Engaging', description: 'Headline + subtitle + hashtags' },
+  { value: 'promotional', label: 'Promotional', description: 'Sale/offer focused with CTA' },
+  { value: 'inspirational', label: 'Inspirational', description: 'Quote-style elegant text' },
+];
 
 interface DesignToolbarProps {
   selectedElement: CanvasElement | null;
@@ -44,6 +68,14 @@ interface DesignToolbarProps {
   onSendToBack: () => void;
   onSetAspectRatio: (ratio: AspectRatio) => void;
   onClearCanvas: () => void;
+  // AI Design props
+  designContext: string;
+  onDesignContextChange: (value: string) => void;
+  designStyle: DesignStyle;
+  onDesignStyleChange: (style: DesignStyle) => void;
+  onGenerateDesign: () => void;
+  isGeneratingDesign: boolean;
+  hasBackgroundImage: boolean;
 }
 
 const aspectRatioOptions: { value: AspectRatio; label: string; icon: React.ReactNode }[] = [
@@ -103,9 +135,21 @@ export const DesignToolbar: React.FC<DesignToolbarProps> = ({
   onSendToBack,
   onSetAspectRatio,
   onClearCanvas,
+  designContext,
+  onDesignContextChange,
+  designStyle,
+  onDesignStyleChange,
+  onGenerateDesign,
+  isGeneratingDesign,
+  hasBackgroundImage,
 }) => {
   const backgroundInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
+  
+  // Collapsible states
+  const [elementsOpen, setElementsOpen] = useState(true);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
+  const [canvasSizeOpen, setCanvasSizeOpen] = useState(false);
 
   const handleBackgroundUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -126,8 +170,13 @@ export const DesignToolbar: React.FC<DesignToolbarProps> = ({
   const textElement = selectedElement as TextElement | null;
   const imageElement = selectedElement as ImageElement | null;
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onGenerateDesign();
+  };
+
   return (
-    <div className="w-64 bg-background border-r border-border flex flex-col h-full">
+    <div className="w-72 bg-background border-r border-border flex flex-col h-full">
       {/* Header */}
       <div className="px-4 py-3 border-b border-border">
         <div className="flex items-center gap-2">
@@ -139,126 +188,165 @@ export const DesignToolbar: React.FC<DesignToolbarProps> = ({
       </div>
 
       <ScrollArea className="flex-1">
-        <div className="p-3 space-y-4">
-          {/* Add Elements */}
-          <div className="space-y-2">
-            <Label className="text-[10px] font-semibold uppercase text-muted-foreground tracking-wider px-1">
-              Add Elements
-            </Label>
-            <div className="grid grid-cols-2 gap-1.5">
-              <input
-                ref={backgroundInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleBackgroundUpload}
-              />
-              <Button
-                variant="outline"
-                className="h-14 flex-col gap-1 border-dashed hover:border-primary/50 hover:bg-primary/5 transition-colors"
-                onClick={() => backgroundInputRef.current?.click()}
+        <div className="p-3 space-y-1">
+          {/* Add Elements - Collapsible */}
+          <Collapsible open={elementsOpen} onOpenChange={setElementsOpen}>
+            <CollapsibleTrigger asChild>
+              <Button 
+                variant="ghost" 
+                className="w-full justify-between h-9 px-2 hover:bg-muted"
               >
-                <Image className="w-4 h-4 text-muted-foreground" />
-                <span className="text-[10px] text-muted-foreground">Background</span>
+                <span className="text-xs font-medium">Add Elements</span>
+                {elementsOpen ? (
+                  <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+                ) : (
+                  <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+                )}
               </Button>
-              
-              <Button
-                variant="outline"
-                className="h-14 flex-col gap-1 border-dashed hover:border-primary/50 hover:bg-primary/5 transition-colors"
-                onClick={() => onAddText()}
-              >
-                <Type className="w-4 h-4 text-muted-foreground" />
-                <span className="text-[10px] text-muted-foreground">Text</span>
-              </Button>
-              
-              <input
-                ref={logoInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleLogoUpload}
-              />
-              <Button
-                variant="outline"
-                className="h-14 flex-col gap-1 border-dashed hover:border-primary/50 hover:bg-primary/5 transition-colors"
-                onClick={() => logoInputRef.current?.click()}
-              >
-                <ImagePlus className="w-4 h-4 text-muted-foreground" />
-                <span className="text-[10px] text-muted-foreground">Image</span>
-              </Button>
-              
-              <Button
-                variant="outline"
-                className="h-14 flex-col gap-1 border-dashed hover:border-destructive/50 hover:bg-destructive/5 text-muted-foreground hover:text-destructive transition-colors"
-                onClick={onClearCanvas}
-              >
-                <RotateCcw className="w-4 h-4" />
-                <span className="text-[10px]">Clear</span>
-              </Button>
-            </div>
-          </div>
-
-          <Separator className="my-3" />
-
-          {/* Text Templates */}
-          <div className="space-y-2">
-            <Label className="text-[10px] font-semibold uppercase text-muted-foreground tracking-wider px-1">
-              Quick Templates
-            </Label>
-            <div className="space-y-1">
-              {textTemplates.map((template) => {
-                const IconComponent = template.icon;
-                return (
-                  <Button
-                    key={template.label}
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-start gap-2 h-8 text-xs font-normal hover:bg-muted"
-                    onClick={() => onAddText(template.text, template.fontSize, template.fontWeight, template.color)}
-                  >
-                    <IconComponent className="w-3.5 h-3.5 text-primary" />
-                    <span>{template.label}</span>
-                  </Button>
-                );
-              })}
-            </div>
-          </div>
-
-          <Separator className="my-3" />
-
-          {/* Aspect Ratio */}
-          <div className="space-y-2">
-            <Label className="text-[10px] font-semibold uppercase text-muted-foreground tracking-wider px-1">
-              Canvas Size
-            </Label>
-            <div className="grid grid-cols-4 gap-1">
-              {aspectRatioOptions.map((option) => (
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-2 pb-1">
+              <div className="grid grid-cols-2 gap-1.5">
+                <input
+                  ref={backgroundInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleBackgroundUpload}
+                />
                 <Button
-                  key={option.value}
-                  variant={aspectRatio === option.value ? 'default' : 'ghost'}
-                  size="sm"
-                  className={cn(
-                    "h-10 flex-col gap-0.5 text-[10px]",
-                    aspectRatio !== option.value && "text-muted-foreground hover:text-foreground"
-                  )}
-                  onClick={() => onSetAspectRatio(option.value)}
+                  variant="outline"
+                  className="h-14 flex-col gap-1 border-dashed hover:border-primary/50 hover:bg-primary/5 transition-colors"
+                  onClick={() => backgroundInputRef.current?.click()}
                 >
-                  {option.icon}
-                  <span className="sr-only sm:not-sr-only">{option.label.slice(0, 3)}</span>
+                  <Image className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-[10px] text-muted-foreground">Background</span>
                 </Button>
-              ))}
-            </div>
-          </div>
+                
+                <Button
+                  variant="outline"
+                  className="h-14 flex-col gap-1 border-dashed hover:border-primary/50 hover:bg-primary/5 transition-colors"
+                  onClick={() => onAddText()}
+                >
+                  <Type className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-[10px] text-muted-foreground">Text</span>
+                </Button>
+                
+                <input
+                  ref={logoInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleLogoUpload}
+                />
+                <Button
+                  variant="outline"
+                  className="h-14 flex-col gap-1 border-dashed hover:border-primary/50 hover:bg-primary/5 transition-colors"
+                  onClick={() => logoInputRef.current?.click()}
+                >
+                  <ImagePlus className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-[10px] text-muted-foreground">Image</span>
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  className="h-14 flex-col gap-1 border-dashed hover:border-destructive/50 hover:bg-destructive/5 text-muted-foreground hover:text-destructive transition-colors"
+                  onClick={onClearCanvas}
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  <span className="text-[10px]">Clear</span>
+                </Button>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+
+          <Separator className="my-2" />
+
+          {/* Text Templates - Collapsible */}
+          <Collapsible open={templatesOpen} onOpenChange={setTemplatesOpen}>
+            <CollapsibleTrigger asChild>
+              <Button 
+                variant="ghost" 
+                className="w-full justify-between h-9 px-2 hover:bg-muted"
+              >
+                <span className="text-xs font-medium">Quick Templates</span>
+                {templatesOpen ? (
+                  <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+                ) : (
+                  <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+                )}
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-2 pb-1">
+              <div className="space-y-1">
+                {textTemplates.map((template) => {
+                  const IconComponent = template.icon;
+                  return (
+                    <Button
+                      key={template.label}
+                      variant="ghost"
+                      size="sm"
+                      className="w-full justify-start gap-2 h-8 text-xs font-normal hover:bg-muted"
+                      onClick={() => onAddText(template.text, template.fontSize, template.fontWeight, template.color)}
+                    >
+                      <IconComponent className="w-3.5 h-3.5 text-primary" />
+                      <span>{template.label}</span>
+                    </Button>
+                  );
+                })}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+
+          <Separator className="my-2" />
+
+          {/* Canvas Size - Collapsible */}
+          <Collapsible open={canvasSizeOpen} onOpenChange={setCanvasSizeOpen}>
+            <CollapsibleTrigger asChild>
+              <Button 
+                variant="ghost" 
+                className="w-full justify-between h-9 px-2 hover:bg-muted"
+              >
+                <span className="text-xs font-medium">Canvas Size</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-muted-foreground">{aspectRatio}</span>
+                  {canvasSizeOpen ? (
+                    <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+                  ) : (
+                    <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+                  )}
+                </div>
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-2 pb-1">
+              <div className="grid grid-cols-4 gap-1">
+                {aspectRatioOptions.map((option) => (
+                  <Button
+                    key={option.value}
+                    variant={aspectRatio === option.value ? 'default' : 'ghost'}
+                    size="sm"
+                    className={cn(
+                      "h-10 flex-col gap-0.5 text-[10px]",
+                      aspectRatio !== option.value && "text-muted-foreground hover:text-foreground"
+                    )}
+                    onClick={() => onSetAspectRatio(option.value)}
+                  >
+                    {option.icon}
+                    <span className="sr-only sm:not-sr-only">{option.label.slice(0, 3)}</span>
+                  </Button>
+                ))}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
 
           {/* Selected Element Properties */}
           {selectedElement && (
             <>
-              <Separator className="my-3" />
+              <Separator className="my-2" />
               
-              <div className="space-y-3">
-                <div className="flex items-center justify-between px-1">
-                  <Label className="text-[10px] font-semibold uppercase text-muted-foreground tracking-wider">
-                    {isTextElement ? 'Text' : 'Image'}
+              <div className="space-y-3 px-1">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-medium">
+                    {isTextElement ? 'Text Properties' : 'Image Properties'}
                   </Label>
                   <div className="flex gap-0.5">
                     <Button
@@ -438,15 +526,15 @@ export const DesignToolbar: React.FC<DesignToolbarProps> = ({
                       <Slider
                         value={[imageElement.width]}
                         onValueChange={([value]) => {
-                          const aspectRatio = imageElement.width / imageElement.height;
+                          const ratio = imageElement.width / imageElement.height;
                           onUpdateElement({ 
                             width: value,
-                            height: value / aspectRatio 
+                            height: value / ratio 
                           });
                         }}
                         min={30}
                         max={500}
-                        step={10}
+                        step={5}
                         className="py-1"
                       />
                     </div>
@@ -457,6 +545,66 @@ export const DesignToolbar: React.FC<DesignToolbarProps> = ({
           )}
         </div>
       </ScrollArea>
+
+      {/* AI Input Footer - Fixed at bottom */}
+      <div className="border-t border-border p-3 bg-muted/30">
+        <form onSubmit={handleSubmit} className="space-y-2">
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="h-8 gap-1 px-2 text-xs font-medium shrink-0"
+                >
+                  {styleOptions.find(s => s.value === designStyle)?.label}
+                  <ChevronDown className="w-3 h-3 opacity-50" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-48">
+                {styleOptions.map((style) => (
+                  <DropdownMenuItem
+                    key={style.value}
+                    onClick={() => onDesignStyleChange(style.value)}
+                    className="flex flex-col items-start gap-0.5 py-2"
+                  >
+                    <span className="font-medium text-sm">{style.label}</span>
+                    <span className="text-xs text-muted-foreground">{style.description}</span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          
+          <div className="relative flex items-center">
+            <Sparkles className="absolute left-3 w-3.5 h-3.5 text-muted-foreground" />
+            <Input
+              placeholder="Describe your design..."
+              value={designContext}
+              onChange={(e) => onDesignContextChange(e.target.value)}
+              className="h-10 pl-9 pr-12 text-sm bg-background border-border focus-visible:ring-1 focus-visible:ring-primary"
+            />
+            <Button
+              type="submit"
+              size="icon"
+              disabled={isGeneratingDesign || !hasBackgroundImage}
+              className="absolute right-1.5 h-7 w-7 rounded-md bg-primary hover:bg-primary/90"
+            >
+              {isGeneratingDesign ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Send className="w-3.5 h-3.5" />
+              )}
+            </Button>
+          </div>
+          
+          {!hasBackgroundImage && (
+            <p className="text-[10px] text-muted-foreground text-center">
+              Add a background image first
+            </p>
+          )}
+        </form>
+      </div>
     </div>
   );
 };
