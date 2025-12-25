@@ -6,7 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-import { Plus, LogOut, Trash2, Camera, Settings, X, MessageSquare, Search, Star, Shield, Brain, ChevronDown, GraduationCap, Loader2, Volume2, VolumeX, Headphones, Sparkles, AlertTriangle, Palette, Images } from 'lucide-react';
+import { Plus, LogOut, Trash2, Camera, Settings, X, MessageSquare, Search, Star, Shield, Brain, ChevronDown, GraduationCap, Loader2, Volume2, VolumeX, Headphones, Sparkles, AlertTriangle, Calculator, Images } from 'lucide-react';
 import { format } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -203,14 +203,14 @@ export const Sidebar = ({
         
         <Button onClick={() => {
           setProfilePopoverOpen(false);
-          navigate('/design-lab');
+          navigate('/engineering');
         }} variant="ghost" className="w-full justify-start h-11 px-3 gap-3 rounded-xl hover:bg-muted/60 transition-all duration-200 group">
           <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center group-hover:bg-muted group-hover:scale-105 transition-all duration-200">
-            <Palette className="w-4 h-4 text-muted-foreground" />
+            <Calculator className="w-4 h-4 text-muted-foreground" />
           </div>
           <div className="flex flex-col items-start">
-            <span className="text-sm font-medium">Design LAB</span>
-            <span className="text-[10px] text-muted-foreground/70">Create social posts</span>
+            <span className="text-sm font-medium">Engineering</span>
+            <span className="text-[10px] text-muted-foreground/70">Structural calculators</span>
           </div>
         </Button>
         
@@ -383,17 +383,17 @@ export const Sidebar = ({
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Design LAB Button */}
+        {/* Engineering Button */}
         <SidebarGroup className="flex-shrink-0 px-4 pb-3">
           <SidebarGroupContent>
             <Button 
-              onClick={() => navigate('/design-lab')}
+              onClick={() => navigate('/engineering')}
               className={cn(
                 "w-full h-11 rounded-xl gap-2.5 relative overflow-hidden group",
-                "bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600",
-                "hover:from-violet-500 hover:via-purple-500 hover:to-fuchsia-500",
-                "text-white font-medium shadow-lg shadow-purple-500/25",
-                "hover:shadow-xl hover:shadow-purple-500/30",
+                "bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600",
+                "hover:from-cyan-500 hover:via-blue-500 hover:to-indigo-500",
+                "text-white font-medium shadow-lg shadow-blue-500/25",
+                "hover:shadow-xl hover:shadow-blue-500/30",
                 "hover:-translate-y-0.5",
                 "transition-all duration-300 ease-out",
                 "border-0"
@@ -401,8 +401,8 @@ export const Sidebar = ({
             >
               {/* Shimmer effect */}
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-              <Palette className="w-4 h-4 relative z-10" />
-              <span className="relative z-10">Design LAB</span>
+              <Calculator className="w-4 h-4 relative z-10" />
+              <span className="relative z-10">Engineering</span>
               <Sparkles className="w-3.5 h-3.5 ml-auto relative z-10 animate-pulse" />
             </Button>
           </SidebarGroupContent>
