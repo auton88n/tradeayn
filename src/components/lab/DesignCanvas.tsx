@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { TextOverlay } from './overlays/TextOverlay';
 import { ImageOverlay } from './overlays/ImageOverlay';
+import { Loader2, ImageOff } from 'lucide-react';
 import type { CanvasState, CanvasElement, TextElement, ImageElement } from '@/hooks/useDesignCanvas';
 
 interface DesignCanvasProps {
@@ -27,10 +28,23 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
   onUpdateElement,
   onDeleteElement,
 }) => {
+  const [imageLoading, setImageLoading] = useState(true);
+  const [imageError, setImageError] = useState(false);
+
   const handleCanvasClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget || (e.target as HTMLElement).id === 'canvas-background') {
       onSelectElement(null);
     }
+  };
+
+  const handleImageLoad = () => {
+    setImageLoading(false);
+    setImageError(false);
+  };
+
+  const handleImageError = () => {
+    setImageLoading(false);
+    setImageError(true);
   };
 
   return (
@@ -53,19 +67,42 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.3 }}
       >
+        {/* Background Image Loading State */}
+        {canvasState.backgroundImage && imageLoading && !imageError && (
+          <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          </div>
+        )}
+
+        {/* Background Image Error State */}
+        {canvasState.backgroundImage && imageError && (
+          <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
+            <div className="text-center text-muted-foreground">
+              <ImageOff className="w-8 h-8 mx-auto mb-2" />
+              <p className="text-sm">Image failed to load</p>
+              <p className="text-xs mt-1">It may have expired</p>
+            </div>
+          </div>
+        )}
+
         {/* Background Image */}
         {canvasState.backgroundImage && (
           <img
             id="canvas-background"
             src={canvasState.backgroundImage}
             alt="Background"
-            className="absolute inset-0 w-full h-full object-cover"
+            className={cn(
+              "absolute inset-0 w-full h-full object-cover",
+              imageLoading && "opacity-0"
+            )}
             draggable={false}
+            onLoad={handleImageLoad}
+            onError={handleImageError}
           />
         )}
         
         {/* Dark overlay for better text visibility if there's a background */}
-        {canvasState.backgroundImage && (
+        {canvasState.backgroundImage && !imageError && !imageLoading && (
           <div 
             id="canvas-background"
             className="absolute inset-0 bg-black/20 pointer-events-none" 

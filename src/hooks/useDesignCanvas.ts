@@ -46,9 +46,9 @@ const aspectRatioDimensions: Record<AspectRatio, { width: number; height: number
   '16:9': { width: 1920, height: 1080 },
 };
 
-export const useDesignCanvas = (initialImage?: string) => {
+export const useDesignCanvas = () => {
   const [canvasState, setCanvasState] = useState<CanvasState>({
-    backgroundImage: initialImage || null,
+    backgroundImage: null,
     backgroundColor: '#1a1a2e',
     elements: [],
     aspectRatio: '1:1',
