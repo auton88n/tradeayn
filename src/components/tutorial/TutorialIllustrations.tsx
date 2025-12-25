@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Brain, Smile, CircleDot, Zap, AlertCircle, HelpCircle, MessageSquare, Plus, FileText, Image, Search, X, User, Settings, LogOut, Copy, Trash2, ChevronDown, ArrowUp, Heart, Eye } from 'lucide-react';
+import { Brain, Smile, CircleDot, Zap, AlertCircle, HelpCircle, MessageSquare, Plus, FileText, Image, Search, X, User, Settings, LogOut, Copy, Trash2, ChevronDown, ArrowUp, Heart, Eye, Building2, Ruler, Calculator, Layers } from 'lucide-react';
 
 export const MeetAynIllustration = () => (
   <div className="relative w-full h-full flex items-center justify-center">
@@ -530,6 +530,77 @@ export const ProfileIllustration = () => (
           </motion.div>
         ))}
       </div>
+    </div>
+  </div>
+);
+
+export const EngineeringIllustration = () => (
+  <div className="w-full h-full flex items-center justify-center">
+    <div className="relative">
+      {/* Glow effect */}
+      <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-cyan-500/20 to-blue-500/20 blur-2xl scale-150" />
+      
+      {/* Main structure mockup */}
+      <div className="relative w-64 bg-background rounded-xl border border-border/50 shadow-lg overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center gap-2 p-2.5 border-b border-border/30 bg-gradient-to-r from-cyan-500/10 to-blue-500/10">
+          <div className="w-7 h-7 rounded-lg bg-cyan-500/20 flex items-center justify-center">
+            <Building2 className="w-4 h-4 text-cyan-500" />
+          </div>
+          <div>
+            <div className="font-semibold text-xs">Engineering Tools</div>
+            <div className="text-[10px] text-muted-foreground">Structural Design</div>
+          </div>
+        </div>
+        
+        {/* Calculator options */}
+        <div className="p-2 space-y-1.5">
+          {[
+            { icon: Layers, label: 'Beam Calculator', color: 'text-cyan-500' },
+            { icon: Building2, label: 'Column Design', color: 'text-blue-500' },
+            { icon: Calculator, label: 'Foundation', color: 'text-indigo-500' },
+          ].map((item, i) => (
+            <motion.div
+              key={item.label}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.15 }}
+              className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+            >
+              <item.icon className={`w-4 h-4 ${item.color}`} />
+              <span className="text-xs font-medium">{item.label}</span>
+            </motion.div>
+          ))}
+        </div>
+        
+        {/* Results preview */}
+        <motion.div 
+          className="p-2 border-t border-border/30"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+        >
+          <div className="bg-muted/20 rounded-lg p-2 space-y-1">
+            <div className="flex justify-between text-[10px]">
+              <span className="text-muted-foreground">Moment Capacity</span>
+              <span className="font-mono text-cyan-500">245.8 kN·m</span>
+            </div>
+            <div className="flex justify-between text-[10px]">
+              <span className="text-muted-foreground">Status</span>
+              <span className="text-emerald-500 font-medium">✓ Safe</span>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+      
+      {/* Floating 3D indicator */}
+      <motion.div
+        className="absolute -right-4 -bottom-2 w-12 h-12 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-500/30 border border-cyan-500/30 flex items-center justify-center shadow-lg"
+        animate={{ rotate: [0, 5, 0, -5, 0] }}
+        transition={{ duration: 4, repeat: Infinity }}
+      >
+        <Ruler className="w-6 h-6 text-cyan-400" />
+      </motion.div>
     </div>
   </div>
 );

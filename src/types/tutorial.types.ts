@@ -73,4 +73,10 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     description: 'Click your avatar to access settings, manage your account, replay this tutorial, or sign out. Customize AYN to work best for you.',
     icon: 'User',
   },
+  {
+    id: 'engineering',
+    title: 'Engineering Tools',
+    description: 'Design structural elements with professional calculations. Create beams, columns, foundations, slabs, and retaining walls with 3D visualization, AI analysis, and DXF export.',
+    icon: 'HardHat',
+  },
 ];
