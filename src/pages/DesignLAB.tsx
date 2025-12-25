@@ -461,7 +461,7 @@ const DesignLAB: React.FC = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => navigate(-1)}
+                onClick={() => navigate('/')}
                 className="h-8 w-8 rounded-lg hover:bg-muted"
               >
                 <ArrowLeft className="w-4 h-4" />
