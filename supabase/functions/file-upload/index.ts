@@ -42,6 +42,126 @@ const ALLOWED_FILE_TYPES = [
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
+// Magic byte signatures for file type verification
+const FILE_SIGNATURES: Record<string, number[][]> = {
+  'application/pdf': [[0x25, 0x50, 0x44, 0x46]], // %PDF
+  'image/jpeg': [[0xFF, 0xD8, 0xFF]],
+  'image/png': [[0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]],
+  'image/gif': [[0x47, 0x49, 0x46, 0x38, 0x37, 0x61], [0x47, 0x49, 0x46, 0x38, 0x39, 0x61]],
+  'image/webp': [[0x52, 0x49, 0x46, 0x46]], // RIFF
+  'image/bmp': [[0x42, 0x4D]], // BM
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': [[0x50, 0x4B, 0x03, 0x04]], // ZIP
+  'application/vnd.ms-excel': [[0xD0, 0xCF, 0x11, 0xE0]], // OLE compound
+};
+
+// Dangerous file extensions
+const DANGEROUS_EXTENSIONS = [
+  'exe', 'dll', 'bat', 'cmd', 'com', 'msi', 'scr', 'pif',
+  'vbs', 'vbe', 'js', 'jse', 'ws', 'wsf', 'wsc', 'wsh',
+  'ps1', 'psm1', 'psd1', 'ps1xml', 'psc1', 'psc2',
+  'hta', 'jar', 'php', 'asp', 'aspx', 'cgi', 'pl',
+  'sh', 'bash', 'zsh', 'reg', 'inf', 'lnk', 'url',
+];
+
+// Suspicious patterns in file content
+const SUSPICIOUS_PATTERNS = [
+  /<script[\s>]/i,
+  /javascript:/i,
+  /<iframe[\s>]/i,
+  /on\w+\s*=/i,
+  /eval\s*\(/i,
+  /document\.(write|cookie)/i,
+  /<embed[\s>]/i,
+  /<object[\s>]/i,
+  /vbscript:/i,
+  /data:text\/html/i,
+];
+
+// PDF-specific dangerous patterns
+const PDF_DANGEROUS_PATTERNS = [
+  /\/JavaScript/i,
+  /\/Launch/i,
+  /\/OpenAction.*\/JavaScript/i,
+  /\/AA\s/i,
+  /\/EmbeddedFile/i,
+];
+
+function validateMagicBytes(fileBuffer: Uint8Array, declaredType: string): boolean {
+  const expectedSignatures = FILE_SIGNATURES[declaredType];
+  
+  // If we don't have signatures for this type, skip check
+  if (!expectedSignatures) {
+    return true;
+  }
+
+  return expectedSignatures.some(signature => 
+    signature.every((byte, index) => fileBuffer[index] === byte)
+  );
+}
+
+function validateFileExtension(fileName: string): { valid: boolean; error?: string } {
+  const extension = fileName.split('.').pop()?.toLowerCase() || '';
+  
+  if (DANGEROUS_EXTENSIONS.includes(extension)) {
+    return { valid: false, error: `Files with .${extension} extension are not allowed` };
+  }
+
+  // Check for double extensions
+  const parts = fileName.toLowerCase().split('.');
+  if (parts.length > 2) {
+    const hasHiddenDanger = parts.slice(1).some(ext => DANGEROUS_EXTENSIONS.includes(ext));
+    if (hasHiddenDanger) {
+      return { valid: false, error: 'Suspicious double extension detected' };
+    }
+  }
+
+  return { valid: true };
+}
+
+function scanForMaliciousContent(content: string, fileType: string): { safe: boolean; reason?: string } {
+  // Check general suspicious patterns
+  for (const pattern of SUSPICIOUS_PATTERNS) {
+    if (pattern.test(content)) {
+      return { safe: false, reason: 'Potentially dangerous content detected' };
+    }
+  }
+
+  // Additional PDF checks
+  if (fileType === 'application/pdf') {
+    for (const pattern of PDF_DANGEROUS_PATTERNS) {
+      if (pattern.test(content)) {
+        return { safe: false, reason: 'PDF contains potentially dangerous active content' };
+      }
+    }
+  }
+
+  // SVG checks
+  if (fileType === 'image/svg+xml') {
+    if (/<script/i.test(content) || /javascript:/i.test(content) || /on\w+=/i.test(content)) {
+      return { safe: false, reason: 'SVG contains executable code' };
+    }
+  }
+
+  return { safe: true };
+}
+
+function sanitizeFileName(fileName: string): string {
+  let sanitized = fileName
+    .replace(/\.\./g, '')        // Remove path traversal
+    .replace(/[\/\\]/g, '')      // Remove directory separators
+    .replace(/\0/g, '')          // Remove null bytes
+    .replace(/[<>:"|?*]/g, '');  // Remove dangerous characters
+  
+  // Limit length
+  if (sanitized.length > 200) {
+    const ext = sanitized.split('.').pop() || '';
+    const name = sanitized.slice(0, 200 - ext.length - 1);
+    sanitized = `${name}.${ext}`;
+  }
+
+  return sanitized || 'unnamed_file';
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -107,17 +227,32 @@ Deno.serve(async (req) => {
     if (user.id !== userId) {
       throw new Error('Cannot upload files for other users');
     }
-    
-    console.log('Received file upload request:', { fileName, fileType, userId });
 
-    // Validate file type
+    // Sanitize filename
+    const sanitizedFileName = sanitizeFileName(fileName);
+    console.log('Received file upload request:', { 
+      originalFileName: fileName, 
+      sanitizedFileName, 
+      fileType, 
+      userId 
+    });
+
+    // Validate file extension
+    const extValidation = validateFileExtension(sanitizedFileName);
+    if (!extValidation.valid) {
+      console.warn('Dangerous extension blocked:', { fileName, userId });
+      return new Response(
+        JSON.stringify({ error: extValidation.error }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate file type against allowed list
     if (!ALLOWED_FILE_TYPES.includes(fileType)) {
+      console.warn('Disallowed file type:', { fileType, userId });
       return new Response(
         JSON.stringify({ error: 'File type not allowed' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -130,17 +265,49 @@ Deno.serve(async (req) => {
     if (fileBuffer.length > MAX_FILE_SIZE) {
       return new Response(
         JSON.stringify({ error: 'File size exceeds 10MB limit' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Generate unique filename
+    // Validate magic bytes
+    if (!validateMagicBytes(fileBuffer, fileType)) {
+      console.warn('Magic byte mismatch:', { fileType, userId, fileName: sanitizedFileName });
+      return new Response(
+        JSON.stringify({ error: 'File content does not match its declared type' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Scan text-based files for malicious content
+    const textTypes = ['text/plain', 'text/html', 'text/xml', 'text/csv', 
+                       'application/json', 'application/xml', 'image/svg+xml', 
+                       'application/pdf'];
+    
+    if (textTypes.includes(fileType)) {
+      try {
+        const decoder = new TextDecoder('utf-8', { fatal: false });
+        const content = decoder.decode(fileBuffer.slice(0, 1024 * 1024)); // First 1MB
+        
+        const scanResult = scanForMaliciousContent(content, fileType);
+        if (!scanResult.safe) {
+          console.warn('Malicious content detected:', { 
+            reason: scanResult.reason, 
+            userId, 
+            fileName: sanitizedFileName 
+          });
+          return new Response(
+            JSON.stringify({ error: scanResult.reason || 'File contains suspicious content' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+      } catch (e) {
+        console.log('Could not scan file content, proceeding with upload');
+      }
+    }
+
+    // Generate unique filename with sanitized name
     const timestamp = Date.now();
-    const fileExtension = fileName.split('.').pop();
-    const uniqueFileName = `${userId}/${timestamp}_${fileName}`;
+    const uniqueFileName = `${userId}/${timestamp}_${sanitizedFileName}`;
     
     console.log('Uploading file to path:', uniqueFileName);
 
@@ -156,10 +323,7 @@ Deno.serve(async (req) => {
       console.error('Upload error:', uploadError);
       return new Response(
         JSON.stringify({ error: 'Failed to upload file' }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -176,7 +340,7 @@ Deno.serve(async (req) => {
       JSON.stringify({
         success: true,
         fileUrl,
-        fileName,
+        fileName: sanitizedFileName,
         fileType,
         filePath: uniqueFileName
       }),
@@ -190,10 +354,7 @@ Deno.serve(async (req) => {
     console.error('Error in file upload:', error);
     return new Response(
       JSON.stringify({ error: 'Internal server error' }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });

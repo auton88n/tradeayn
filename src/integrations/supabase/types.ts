@@ -566,6 +566,56 @@ export type Database = {
         }
         Relationships: []
       }
+      engineering_portfolio: {
+        Row: {
+          calculation_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_public: boolean | null
+          key_specs: Json | null
+          project_type: string
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          calculation_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          key_specs?: Json | null
+          project_type: string
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          calculation_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          key_specs?: Json | null
+          project_type?: string
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "engineering_portfolio_calculation_id_fkey"
+            columns: ["calculation_id"]
+            isOneToOne: false
+            referencedRelation: "calculation_history"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       engineering_projects: {
         Row: {
           created_at: string
