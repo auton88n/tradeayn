@@ -249,8 +249,6 @@ interface CalculationResultsProps {
   };
   onNewCalculation: () => void;
 }
-  onNewCalculation: () => void;
-}
 
 export const CalculationResults = ({ result, onNewCalculation }: CalculationResultsProps) => {
   const [isExportingDXF, setIsExportingDXF] = useState(false);
