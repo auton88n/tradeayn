@@ -1,5 +1,33 @@
 import { useState, useCallback, useRef } from 'react';
 
+// Professional font library - 50+ fonts grouped by category
+export const professionalFonts = {
+  display: [
+    'Bebas Neue', 'Oswald', 'Anton', 'Playfair Display', 'Abril Fatface',
+    'Russo One', 'Righteous', 'Alfa Slab One', 'Passion One', 'Bungee'
+  ],
+  elegant: [
+    'Cormorant Garamond', 'Libre Baskerville', 'EB Garamond', 'Crimson Pro', 'Lora',
+    'Merriweather', 'Spectral', 'Cardo', 'Old Standard TT', 'Noto Serif'
+  ],
+  modern: [
+    'Montserrat', 'Poppins', 'Raleway', 'Nunito Sans', 'Source Sans 3',
+    'Open Sans', 'Lato', 'Rubik', 'Inter', 'DM Sans'
+  ],
+  bold: [
+    'Archivo Black', 'Work Sans', 'Barlow', 'Fjalla One', 'Teko',
+    'Kanit', 'Exo 2', 'Titillium Web', 'Saira', 'Orbitron'
+  ],
+  creative: [
+    'Pacifico', 'Lobster', 'Satisfy', 'Dancing Script', 'Great Vibes',
+    'Caveat', 'Kaushan Script', 'Sacramento', 'Amatic SC', 'Permanent Marker'
+  ],
+};
+
+export const allFonts = Object.values(professionalFonts).flat();
+
+export type TextEffect = 'none' | 'neon' | 'outline' | 'shadow3d' | 'glass';
+
 export interface TextElement {
   id: string;
   type: 'text';
@@ -13,6 +41,13 @@ export interface TextElement {
   textAlign: 'left' | 'center' | 'right';
   shadow: boolean;
   rotation: number;
+  // New professional properties
+  letterSpacing: number;
+  lineHeight: number;
+  opacity: number;
+  textStroke: { width: number; color: string } | null;
+  gradient: { from: string; to: string; angle: number } | null;
+  effect: TextEffect;
 }
 
 export interface ImageElement {
@@ -82,12 +117,19 @@ export const useDesignCanvas = () => {
       x: 50,
       y: 50,
       fontSize,
-      fontFamily: 'Inter',
+      fontFamily: 'Montserrat',
       color,
       fontWeight,
       textAlign: 'center',
       shadow: true,
       rotation: 0,
+      // New professional defaults
+      letterSpacing: 0,
+      lineHeight: 1.2,
+      opacity: 1,
+      textStroke: null,
+      gradient: null,
+      effect: 'none',
     };
     setCanvasState(prev => ({
       ...prev,
@@ -171,8 +213,8 @@ export const useDesignCanvas = () => {
       const newElement = {
         ...element,
         id: `${element.type}-${Date.now()}`,
-        x: element.x + 20,
-        y: element.y + 20,
+        x: Math.min(element.x + 5, 90),
+        y: Math.min(element.y + 5, 90),
       };
       return {
         ...prev,
@@ -200,6 +242,7 @@ export const useDesignCanvas = () => {
     }));
   }, []);
 
+  // Enhanced function with all professional properties
   const addTextElementWithPosition = useCallback((
     text: string,
     x: number,
@@ -207,7 +250,14 @@ export const useDesignCanvas = () => {
     fontSize: number = 48,
     fontWeight: 'normal' | 'bold' = 'bold',
     color: string = '#ffffff',
-    shadow: boolean = true
+    shadow: boolean = true,
+    fontFamily: string = 'Montserrat',
+    letterSpacing: number = 0,
+    lineHeight: number = 1.2,
+    opacity: number = 1,
+    textStroke: { width: number; color: string } | null = null,
+    gradient: { from: string; to: string; angle: number } | null = null,
+    effect: TextEffect = 'none'
   ) => {
     const newElement: TextElement = {
       id: `text-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -216,12 +266,18 @@ export const useDesignCanvas = () => {
       x,
       y,
       fontSize,
-      fontFamily: 'Inter',
+      fontFamily,
       color,
       fontWeight,
       textAlign: 'center',
       shadow,
       rotation: 0,
+      letterSpacing,
+      lineHeight,
+      opacity,
+      textStroke,
+      gradient,
+      effect,
     };
     setCanvasState(prev => ({
       ...prev,

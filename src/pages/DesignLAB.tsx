@@ -4,9 +4,10 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Download, Share2, Palette, Loader2, ImageOff, RefreshCw, Upload } from 'lucide-react';
 import { toast } from 'sonner';
-import { useDesignCanvas } from '@/hooks/useDesignCanvas';
+import { useDesignCanvas, TextEffect } from '@/hooks/useDesignCanvas';
 import { DesignCanvas } from '@/components/lab/DesignCanvas';
 import { DesignToolbar } from '@/components/lab/DesignToolbar';
+import { AIDesignVariations } from '@/components/lab/AIDesignVariations';
 import { SEO } from '@/components/SEO';
 import html2canvas from 'html2canvas';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,17 +16,37 @@ interface DesignElement {
   text: string;
   fontSize: number;
   fontWeight: 'normal' | 'bold';
+  fontFamily?: string;
   color: string;
   x: number;
   y: number;
   shadow?: boolean;
+  letterSpacing?: number;
+  lineHeight?: number;
+  textStroke?: { width: number; color: string } | null;
+  gradient?: { from: string; to: string; angle: number } | null;
+  opacity?: number;
+  effect?: TextEffect;
 }
 
-interface AIDesignResult {
+interface AIDesignVariation {
   headline?: DesignElement;
   subtitle?: DesignElement;
   hashtags?: DesignElement;
   cta?: DesignElement;
+  mood: string;
+  colorPalette: string[];
+}
+
+interface AIDesignResult {
+  design?: AIDesignVariation;
+  variations?: AIDesignVariation[];
+  imageAnalysis?: {
+    dominantColors: string[];
+    mood: string;
+    safeZones: { x: number; y: number }[];
+    suggestedFontCategory: string;
+  };
 }
 
 type DesignStyle = 'minimalist' | 'engaging' | 'promotional' | 'inspirational';
@@ -40,6 +61,8 @@ const DesignLAB: React.FC = () => {
   const [isGeneratingDesign, setIsGeneratingDesign] = useState(false);
   const [designContext, setDesignContext] = useState(contextParam || '');
   const [designStyle, setDesignStyle] = useState<DesignStyle>('engaging');
+  const [designVariations, setDesignVariations] = useState<AIDesignVariation[]>([]);
+  const [showVariations, setShowVariations] = useState(false);
   const backgroundUploadRef = React.useRef<HTMLInputElement>(null);
   
   const {
@@ -128,62 +151,21 @@ const DesignLAB: React.FC = () => {
 
       if (error) throw error;
 
-      const design: AIDesignResult = data.design;
+      const result: AIDesignResult = data;
       
-      // Clear existing elements before adding new ones
-      clearElements();
-
-      // Add design elements to canvas
-      if (design.headline) {
-        addTextElementWithPosition(
-          design.headline.text,
-          design.headline.x,
-          design.headline.y,
-          design.headline.fontSize,
-          design.headline.fontWeight,
-          design.headline.color,
-          design.headline.shadow ?? true
-        );
+      // If we have multiple variations, show the picker
+      if (result.variations && result.variations.length > 1) {
+        setDesignVariations(result.variations);
+        setShowVariations(true);
+        toast.success('✨ 4 AI designs generated! Pick your favorite.');
+      } else {
+        // Apply single design directly
+        const design = result.design || result.variations?.[0];
+        if (design) {
+          applyDesignVariation(design);
+          toast.success('✨ AI design generated!');
+        }
       }
-
-      if (design.subtitle) {
-        addTextElementWithPosition(
-          design.subtitle.text,
-          design.subtitle.x,
-          design.subtitle.y,
-          design.subtitle.fontSize,
-          design.subtitle.fontWeight,
-          design.subtitle.color,
-          design.subtitle.shadow ?? true
-        );
-      }
-
-      if (design.cta) {
-        addTextElementWithPosition(
-          design.cta.text,
-          design.cta.x,
-          design.cta.y,
-          design.cta.fontSize,
-          design.cta.fontWeight,
-          design.cta.color,
-          design.cta.shadow ?? true
-        );
-      }
-
-      if (design.hashtags) {
-        addTextElementWithPosition(
-          design.hashtags.text,
-          design.hashtags.x,
-          design.hashtags.y,
-          design.hashtags.fontSize,
-          design.hashtags.fontWeight,
-          design.hashtags.color,
-          design.hashtags.shadow ?? true
-        );
-      }
-
-      toast.success('✨ AI design generated!');
-      selectElement(null);
 
     } catch (error) {
       console.error('AI design generation failed:', error);
@@ -191,7 +173,40 @@ const DesignLAB: React.FC = () => {
     } finally {
       setIsGeneratingDesign(false);
     }
-  }, [canvasState.backgroundImage, contextParam, clearElements, addTextElementWithPosition, selectElement]);
+  }, [canvasState.backgroundImage, designContext, contextParam, designStyle]);
+
+  // Apply a design variation to the canvas
+  const applyDesignVariation = useCallback((design: AIDesignVariation) => {
+    clearElements();
+
+    const addElement = (el: DesignElement | undefined) => {
+      if (!el) return;
+      addTextElementWithPosition(
+        el.text,
+        el.x,
+        el.y,
+        el.fontSize,
+        el.fontWeight,
+        el.color,
+        el.shadow ?? true,
+        el.fontFamily || 'Montserrat',
+        el.letterSpacing || 0,
+        el.lineHeight || 1.2,
+        el.opacity || 1,
+        el.textStroke || null,
+        el.gradient || null,
+        (el.effect as TextEffect) || 'none'
+      );
+    };
+
+    addElement(design.headline);
+    addElement(design.subtitle);
+    addElement(design.cta);
+    addElement(design.hashtags);
+
+    selectElement(null);
+    setShowVariations(false);
+  }, [clearElements, addTextElementWithPosition, selectElement]);
 
   // Handle manual background upload from error state
   const handleManualUpload = useCallback(() => {
