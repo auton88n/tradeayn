@@ -1,9 +1,9 @@
-import React, { useRef, useState, useMemo } from 'react';
+import React, { useRef, useState, useMemo, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera, Text } from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera, Text, Line } from '@react-three/drei';
 import * as THREE from 'three';
 import { cn } from '@/lib/utils';
-import { Box, Layers } from 'lucide-react';
+import { Box, Layers, Activity, Thermometer } from 'lucide-react';
 
 interface BeamVisualization3DProps {
   outputs: Record<string, unknown>;
@@ -93,6 +93,85 @@ const DimensionLabel: React.FC<{
   </Text>
 );
 
+// Deflection Curve Component
+const DeflectionCurve: React.FC<{
+  beamLength: number;
+  maxDeflection: number;
+  yOffset: number;
+}> = ({ beamLength, maxDeflection, yOffset }) => {
+  const [points, setPoints] = useState<THREE.Vector3[]>([]);
+  const segments = 32;
+  
+  useEffect(() => {
+    const initialPoints: THREE.Vector3[] = [];
+    for (let i = 0; i <= segments; i++) {
+      const t = i / segments;
+      const z = -beamLength / 2 + t * beamLength;
+      initialPoints.push(new THREE.Vector3(0, yOffset, z));
+    }
+    setPoints(initialPoints);
+  }, [beamLength, yOffset, segments]);
+
+  useFrame((state) => {
+    if (points.length > 0) {
+      const time = state.clock.elapsedTime;
+      const amplitude = maxDeflection * (0.8 + 0.2 * Math.sin(time * 2));
+      
+      const newPoints = points.map((point, i) => {
+        const t = i / segments;
+        const deflection = amplitude * 4 * t * (1 - t);
+        return new THREE.Vector3(point.x, yOffset - deflection, point.z);
+      });
+      setPoints(newPoints);
+    }
+  });
+
+  if (points.length === 0) return null;
+
+  return (
+    <Line
+      points={points}
+      color="#fbbf24"
+      lineWidth={3}
+      dashed={false}
+    />
+  );
+};
+
+// Stress Color Gradient Material
+const StressGradientMesh: React.FC<{
+  width: number;
+  depth: number;
+  beamLength: number;
+  showStress: boolean;
+}> = ({ width, depth, beamLength, showStress }) => {
+  const meshRef = useRef<THREE.Mesh>(null);
+  
+  useFrame((state) => {
+    if (meshRef.current && showStress) {
+      const material = meshRef.current.material as THREE.MeshStandardMaterial;
+      // Pulsing stress visualization
+      const intensity = 0.5 + 0.2 * Math.sin(state.clock.elapsedTime * 2);
+      material.emissiveIntensity = intensity;
+    }
+  });
+
+  if (!showStress) return null;
+
+  return (
+    <mesh ref={meshRef} position={[0, -depth / 4, 0]}>
+      <boxGeometry args={[width, depth / 2, beamLength * 0.8]} />
+      <meshStandardMaterial
+        color="#ef4444"
+        transparent
+        opacity={0.3}
+        emissive="#ef4444"
+        emissiveIntensity={0.5}
+      />
+    </mesh>
+  );
+};
+
 // 2D Cross-Section View
 const Beam2DView: React.FC<{
   width: number;
@@ -179,7 +258,9 @@ const BeamMesh: React.FC<{
   stirrupDia: number;
   cover: number;
   showLabels?: boolean;
-}> = ({ width, depth, mainBars, barDia, stirrupDia, cover, showLabels = true }) => {
+  showDeflection?: boolean;
+  showStress?: boolean;
+}> = ({ width, depth, mainBars, barDia, stirrupDia, cover, showLabels = true, showDeflection = false, showStress = false }) => {
   const meshRef = useRef<THREE.Group>(null);
   
   useFrame((state) => {
@@ -270,6 +351,16 @@ const BeamMesh: React.FC<{
       {/* Animated Distributed Load */}
       <DistributedLoad length={beamLength * 0.8} yPosition={d/2 + 0.1} arrowCount={7} />
 
+      {/* Deflection Curve */}
+      {showDeflection && (
+        <DeflectionCurve beamLength={beamLength} maxDeflection={0.15} yOffset={-d/2 - 0.1} />
+      )}
+
+      {/* Stress Visualization */}
+      {showStress && (
+        <StressGradientMesh width={w} depth={d} beamLength={beamLength} showStress={showStress} />
+      )}
+
       {/* Dimension Labels */}
       {showLabels && (
         <>
@@ -297,6 +388,8 @@ const BeamMesh: React.FC<{
 
 export const BeamVisualization3D = ({ outputs, className }: BeamVisualization3DProps) => {
   const [is3D, setIs3D] = useState(true);
+  const [showDeflection, setShowDeflection] = useState(true);
+  const [showStress, setShowStress] = useState(true);
   
   const width = (outputs.width || outputs.beamWidth || 300) as number;
   const depth = (outputs.depth || outputs.beamDepth || 500) as number;
@@ -308,28 +401,60 @@ export const BeamVisualization3D = ({ outputs, className }: BeamVisualization3DP
   return (
     <div className={cn("w-full h-full relative bg-gradient-to-br from-slate-900 to-slate-800 rounded-lg overflow-hidden", className)}>
       {/* View Toggle */}
-      <div className="absolute top-3 right-3 z-10 flex bg-background/80 rounded-md overflow-hidden border border-border/50">
-        <button
-          onClick={() => setIs3D(false)}
-          className={cn(
-            "px-2 py-1.5 flex items-center gap-1 text-xs transition-colors",
-            !is3D ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-          )}
-        >
-          <Layers className="w-3.5 h-3.5" />
-          2D
-        </button>
-        <button
-          onClick={() => setIs3D(true)}
-          className={cn(
-            "px-2 py-1.5 flex items-center gap-1 text-xs transition-colors",
-            is3D ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-          )}
-        >
-          <Box className="w-3.5 h-3.5" />
-          3D
-        </button>
+      <div className="absolute top-3 right-3 z-10 flex gap-1">
+        <div className="flex bg-background/80 rounded-md overflow-hidden border border-border/50">
+          <button
+            onClick={() => setIs3D(false)}
+            className={cn(
+              "px-2 py-1.5 flex items-center gap-1 text-xs transition-colors",
+              !is3D ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            2D
+          </button>
+          <button
+            onClick={() => setIs3D(true)}
+            className={cn(
+              "px-2 py-1.5 flex items-center gap-1 text-xs transition-colors",
+              is3D ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Box className="w-3.5 h-3.5" />
+            3D
+          </button>
+        </div>
       </div>
+
+      {/* Analysis Toggles */}
+      {is3D && (
+        <div className="absolute top-3 left-3 z-10 flex flex-col gap-1">
+          <button
+            onClick={() => setShowDeflection(!showDeflection)}
+            className={cn(
+              "px-2 py-1.5 flex items-center gap-1.5 text-xs rounded-md border transition-colors",
+              showDeflection 
+                ? "bg-amber-500/20 border-amber-500/50 text-amber-400" 
+                : "bg-background/80 border-border/50 text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Activity className="w-3.5 h-3.5" />
+            Deflection
+          </button>
+          <button
+            onClick={() => setShowStress(!showStress)}
+            className={cn(
+              "px-2 py-1.5 flex items-center gap-1.5 text-xs rounded-md border transition-colors",
+              showStress 
+                ? "bg-red-500/20 border-red-500/50 text-red-400" 
+                : "bg-background/80 border-border/50 text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Thermometer className="w-3.5 h-3.5" />
+            Stress
+          </button>
+        </div>
+      )}
 
       {is3D ? (
         <Canvas>
@@ -339,7 +464,16 @@ export const BeamVisualization3D = ({ outputs, className }: BeamVisualization3DP
           <directionalLight position={[10, 10, 5]} intensity={1} />
           <directionalLight position={[-10, -10, -5]} intensity={0.3} />
           <pointLight position={[0, 5, 0]} intensity={0.5} />
-          <BeamMesh width={width} depth={depth} mainBars={mainBars} barDia={barDia} stirrupDia={stirrupDia} cover={cover} />
+          <BeamMesh 
+            width={width} 
+            depth={depth} 
+            mainBars={mainBars} 
+            barDia={barDia} 
+            stirrupDia={stirrupDia} 
+            cover={cover}
+            showDeflection={showDeflection}
+            showStress={showStress}
+          />
           <gridHelper args={[10, 20, '#444444', '#333333']} position={[0, -2.5, 0]} />
         </Canvas>
       ) : (
@@ -360,6 +494,18 @@ export const BeamVisualization3D = ({ outputs, className }: BeamVisualization3DP
           <div className="w-2 h-2 rounded-full bg-orange-500" />
           <span className="text-gray-400">Stirrups Ø{stirrupDia}</span>
         </div>
+        {showDeflection && (
+          <div className="flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full bg-amber-400" />
+            <span className="text-gray-400">Deflection</span>
+          </div>
+        )}
+        {showStress && (
+          <div className="flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full bg-red-500" />
+            <span className="text-gray-400">Tension Zone</span>
+          </div>
+        )}
       </div>
       
       <div className="absolute bottom-2 right-2 text-xs text-muted-foreground bg-background/80 px-2 py-1 rounded">
