@@ -18,13 +18,14 @@ import { BeamCalculator } from '@/components/engineering/BeamCalculator';
 import { FoundationCalculator } from '@/components/engineering/FoundationCalculator';
 import ColumnCalculator from '@/components/engineering/ColumnCalculator';
 import SlabCalculator from '@/components/engineering/SlabCalculator';
+import RetainingWallCalculator from '@/components/engineering/RetainingWallCalculator';
 import { CalculationResults } from '@/components/engineering/CalculationResults';
 import { CalculationHistoryModal } from '@/components/engineering/CalculationHistoryModal';
 import { SEO } from '@/components/SEO';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 
-type CalculatorType = 'beam' | 'foundation' | 'column' | 'slab' | null;
+type CalculatorType = 'beam' | 'foundation' | 'column' | 'slab' | 'retaining_wall' | null;
 
 interface CalculationResult {
   type: CalculatorType;
@@ -74,6 +75,14 @@ const calculatorOptions = [
     description: 'Design one-way and two-way slabs with mesh reinforcement',
     icon: Calculator,
     gradient: 'from-green-500 to-emerald-500',
+    available: true,
+  },
+  {
+    id: 'retaining_wall' as const,
+    title: 'Retaining Wall',
+    description: 'Cantilever wall design with lateral earth pressure analysis',
+    icon: Building2,
+    gradient: 'from-rose-500 to-orange-500',
     available: true,
   },
 ];

@@ -18,6 +18,7 @@ import { BeamVisualization3D } from './BeamVisualization3D';
 import { FoundationVisualization3D } from './FoundationVisualization3D';
 import ColumnVisualization3D from './ColumnVisualization3D';
 import SlabVisualization3D from './SlabVisualization3D';
+import RetainingWallVisualization3D from './RetainingWallVisualization3D';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -241,11 +242,13 @@ const MaterialCostTable: React.FC<{
 
 interface CalculationResultsProps {
   result: {
-    type: 'beam' | 'foundation' | 'column' | 'slab' | null;
+    type: 'beam' | 'foundation' | 'column' | 'slab' | 'retaining_wall' | null;
     inputs: Record<string, number | string>;
     outputs: Record<string, number | string | object>;
     timestamp: Date;
   };
+  onNewCalculation: () => void;
+}
   onNewCalculation: () => void;
 }
 
