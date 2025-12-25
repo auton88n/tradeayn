@@ -51,6 +51,8 @@ export const DesignReviewMode: React.FC<DesignReviewModeProps> = ({
     checkCompliance: true,
   });
 
+  const [isParsing, setIsParsing] = useState(false);
+
   const handleFileSelect = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -68,49 +70,99 @@ export const DesignReviewMode: React.FC<DesignReviewModeProps> = ({
 
     setUploadedFile(file);
     setParsedData(null);
+    setIsParsing(true);
 
-    // Read file content
-    if (extension === 'dxf') {
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const content = e.target?.result as string;
-        setFileContent(content);
-        
-        // Parse the DXF file
-        try {
-          const { data, error } = await supabase.functions.invoke('parse-dxf-design', {
-            body: { fileContent: content, fileType: 'dxf' }
+    try {
+      if (extension === 'dxf') {
+        // Read DXF as text
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          const content = e.target?.result as string;
+          setFileContent(content);
+          
+          try {
+            const { data, error } = await supabase.functions.invoke('parse-dxf-design', {
+              body: { fileContent: content, fileType: 'dxf' }
+            });
+            
+            if (error) throw error;
+            if (!data.success) throw new Error(data.error);
+            
+            setParsedData(data);
+            toast({
+              title: 'File parsed successfully',
+              description: `Found ${data.summary.totalPoints} points, ${data.summary.layerCount} layers`,
+            });
+          } catch (err) {
+            console.error('Parse error:', err);
+            toast({
+              title: 'Failed to parse file',
+              description: err instanceof Error ? err.message : 'Unknown error',
+              variant: 'destructive',
+            });
+          } finally {
+            setIsParsing(false);
+          }
+        };
+        reader.readAsText(file);
+      } else if (extension === 'dwg') {
+        setIsParsing(false);
+        toast({
+          title: 'DWG format not directly supported',
+          description: 'Please save your file as DXF (ASCII) format in AutoCAD',
+          variant: 'destructive',
+        });
+        setUploadedFile(null);
+      } else if (extension === 'pdf') {
+        // Read PDF as base64 and use OCR
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          const base64 = e.target?.result as string;
+          setFileContent(base64);
+          
+          toast({
+            title: 'Processing PDF with AI...',
+            description: 'Extracting survey points and levels using OCR',
           });
           
-          if (error) throw error;
-          if (!data.success) throw new Error(data.error);
-          
-          setParsedData(data);
-          toast({
-            title: 'File parsed successfully',
-            description: `Found ${data.summary.totalPoints} points, ${data.summary.layerCount} layers`,
-          });
-        } catch (err) {
-          console.error('Parse error:', err);
-          toast({
-            title: 'Failed to parse file',
-            description: err instanceof Error ? err.message : 'Unknown error',
-            variant: 'destructive',
-          });
-        }
-      };
-      reader.readAsText(file);
-    } else if (extension === 'dwg') {
+          try {
+            const { data, error } = await supabase.functions.invoke('parse-pdf-drawing', {
+              body: { pdfBase64: base64, fileName: file.name }
+            });
+            
+            if (error) throw error;
+            if (!data.success) throw new Error(data.error);
+            
+            setParsedData(data);
+            
+            const levelInfo = data.summary.extractedLevels?.length > 0 
+              ? `, ${data.summary.extractedLevels.length} elevation values`
+              : '';
+            
+            toast({
+              title: 'PDF analyzed successfully',
+              description: `Found ${data.summary.totalPoints} points${levelInfo}`,
+            });
+          } catch (err) {
+            console.error('PDF parse error:', err);
+            toast({
+              title: 'Failed to parse PDF',
+              description: err instanceof Error ? err.message : 'OCR extraction failed',
+              variant: 'destructive',
+            });
+            setUploadedFile(null);
+          } finally {
+            setIsParsing(false);
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+    } catch (err) {
+      setIsParsing(false);
+      console.error('File read error:', err);
       toast({
-        title: 'DWG format not directly supported',
-        description: 'Please save your file as DXF (ASCII) format in AutoCAD',
-        variant: 'destructive',
-      });
-      setUploadedFile(null);
-    } else if (extension === 'pdf') {
-      toast({
-        title: 'PDF support coming soon',
-        description: 'For now, please use DXF format',
+        title: 'Failed to read file',
+        description: err instanceof Error ? err.message : 'Unknown error',
         variant: 'destructive',
       });
       setUploadedFile(null);
@@ -219,11 +271,11 @@ export const DesignReviewMode: React.FC<DesignReviewModeProps> = ({
                 className="hidden"
               />
               <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-lg font-medium mb-2">Drop your AutoCAD file here</p>
+              <p className="text-lg font-medium mb-2">Drop your engineering drawing here</p>
               <p className="text-sm text-muted-foreground mb-4">
-                Supports .dxf, .dwg, and .pdf files
+                Supports DXF, DWG, and PDF files (PDFs use AI-powered OCR)
               </p>
-              <Button 
+              <Button
                 variant="outline" 
                 type="button"
                 onClick={triggerFileInput}
@@ -235,15 +287,24 @@ export const DesignReviewMode: React.FC<DesignReviewModeProps> = ({
             <div className="space-y-4">
               <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                 <div className="flex items-center gap-3">
-                  <FileText className="h-8 w-8 text-primary" />
+                  {isParsing ? (
+                    <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                  ) : (
+                    <FileText className="h-8 w-8 text-primary" />
+                  )}
                   <div>
                     <p className="font-medium">{uploadedFile.name}</p>
                     <p className="text-sm text-muted-foreground">
-                      {(uploadedFile.size / 1024).toFixed(1)} KB
+                      {isParsing 
+                        ? uploadedFile.name.endsWith('.pdf') 
+                          ? 'Analyzing with AI OCR...' 
+                          : 'Parsing file...'
+                        : `${(uploadedFile.size / 1024).toFixed(1)} KB`
+                      }
                     </p>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" onClick={removeFile}>
+                <Button variant="ghost" size="icon" onClick={removeFile} disabled={isParsing}>
                   <X className="h-4 w-4" />
                 </Button>
               </div>
