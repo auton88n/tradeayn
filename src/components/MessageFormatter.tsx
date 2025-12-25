@@ -1,13 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { cn } from '@/lib/utils';
 import { sanitizeUserInput, isValidUserInput } from '@/lib/security';
-import { Copy, Check } from 'lucide-react';
+import { Copy, Check, AlertCircle, Loader2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
 } from '@/components/ui/dialog';
+import { persistDalleImage } from '@/hooks/useImagePersistence';
 
 interface MessageFormatterProps {
   content: string;
@@ -131,6 +132,42 @@ const decodeHtmlEntities = (text: string): string => {
 export function MessageFormatter({ content, className }: MessageFormatterProps) {
   const [lightboxImage, setLightboxImage] = useState<{ src: string; alt: string } | null>(null);
   const [copiedCodeId, setCopiedCodeId] = useState<string | null>(null);
+  const [persistedUrls, setPersistedUrls] = useState<Map<string, string>>(new Map());
+  const [savingImages, setSavingImages] = useState<Set<string>>(new Set());
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+
+  // Auto-persist DALL-E images when content changes
+  useEffect(() => {
+    const dalleUrlRegex = /https:\/\/oaidalleapiprodscus\.blob\.core\.windows\.net[^\s)]+/g;
+    const matches = content.match(dalleUrlRegex);
+    
+    if (matches) {
+      matches.forEach(async (url) => {
+        if (persistedUrls.has(url) || savingImages.has(url)) return;
+        
+        setSavingImages(prev => new Set(prev).add(url));
+        try {
+          const permanentUrl = await persistDalleImage(url);
+          if (permanentUrl !== url) {
+            setPersistedUrls(prev => new Map(prev).set(url, permanentUrl));
+          }
+        } catch {
+          setFailedImages(prev => new Set(prev).add(url));
+        } finally {
+          setSavingImages(prev => {
+            const next = new Set(prev);
+            next.delete(url);
+            return next;
+          });
+        }
+      });
+    }
+  }, [content, persistedUrls, savingImages]);
+
+  // Helper to get the best URL for an image
+  const getImageUrl = useCallback((originalUrl: string) => {
+    return persistedUrls.get(originalUrl) || originalUrl;
+  }, [persistedUrls]);
 
   // Step 1: Detect and convert JSON image responses to markdown
   const imageProcessedContent = detectImageJsonResponse(content);
@@ -333,16 +370,48 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
                 {children}
               </a>
             ),
-            // Images with click-to-zoom
-            img: ({ src, alt }) => (
-              <img 
-                src={src} 
-                alt={alt || ''} 
-                loading="lazy"
-                className="max-w-full h-auto rounded-lg my-2 cursor-zoom-in hover:opacity-90 transition-opacity shadow-sm"
-                onClick={() => setLightboxImage({ src: src || '', alt: alt || '' })}
-              />
-            ),
+            // Images with click-to-zoom and persistence
+            img: ({ src, alt }) => {
+              const originalSrc = src || '';
+              const displaySrc = getImageUrl(originalSrc);
+              const isDalleUrl = originalSrc.includes('oaidalleapiprodscus.blob.core.windows.net');
+              const isSaving = savingImages.has(originalSrc);
+              const hasFailed = failedImages.has(originalSrc);
+
+              return (
+                <div className="relative my-2">
+                  <img 
+                    src={displaySrc} 
+                    alt={alt || ''} 
+                    loading="lazy"
+                    className="max-w-full h-auto rounded-lg cursor-zoom-in hover:opacity-90 transition-opacity shadow-sm"
+                    onClick={() => setLightboxImage({ src: displaySrc, alt: alt || '' })}
+                    onError={(e) => {
+                      if (isDalleUrl && !hasFailed) {
+                        setFailedImages(prev => new Set(prev).add(originalSrc));
+                      }
+                    }}
+                  />
+                  {/* Saving indicator */}
+                  {isSaving && (
+                    <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-1 rounded-full bg-black/60 text-white text-xs">
+                      <Loader2 size={12} className="animate-spin" />
+                      <span>Saving...</span>
+                    </div>
+                  )}
+                  {/* Failed/Expired indicator */}
+                  {hasFailed && displaySrc === originalSrc && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg">
+                      <div className="text-center p-4">
+                        <AlertCircle className="w-8 h-8 text-amber-500 mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">Image has expired</p>
+                        <p className="text-xs text-muted-foreground mt-1">Please regenerate the image</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            },
           }}
         >
           {processedContent}

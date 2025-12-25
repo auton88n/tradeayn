@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { persistDalleImage } from '@/hooks/useImagePersistence';
 
 interface ResponseBubble {
   id: string;
@@ -62,10 +63,17 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
     return null;
   }, [combinedContent]);
 
-  const handleDesignThis = useCallback(() => {
+  const handleDesignThis = useCallback(async () => {
     if (detectedImageUrl) {
       hapticFeedback('light');
-      navigate(`/design-lab?image=${encodeURIComponent(detectedImageUrl)}`);
+      // Try to persist the image first, then navigate with permanent URL
+      try {
+        const permanentUrl = await persistDalleImage(detectedImageUrl);
+        navigate(`/design-lab?image=${encodeURIComponent(permanentUrl)}`);
+      } catch {
+        // Fallback to original URL if persistence fails
+        navigate(`/design-lab?image=${encodeURIComponent(detectedImageUrl)}`);
+      }
     }
   }, [detectedImageUrl, navigate]);
 
