@@ -13,6 +13,8 @@ interface ExtractedPoint {
   z: number;
   type: 'ngl' | 'design' | 'unknown';
   label?: string;
+  confidence?: 'high' | 'medium' | 'low';
+  confidenceReason?: string;
 }
 
 interface ParsedPDFResult {
@@ -20,13 +22,15 @@ interface ParsedPDFResult {
   nglPoints: ExtractedPoint[];
   designPoints: ExtractedPoint[];
   textAnnotations: string[];
-  extractedLevels: Array<{ label: string; value: number; type: string }>;
+  extractedLevels: Array<{ label: string; value: number; type: string; confidence?: string }>;
   gridLines?: Array<{ direction: string; value: number }>;
   metadata: {
     pageCount?: number;
     hasCoordinateGrid: boolean;
     hasLevelAnnotations: boolean;
     estimatedScale?: string;
+    overallConfidence?: 'high' | 'medium' | 'low';
+    lowConfidenceCount?: number;
   };
 }
 
@@ -65,23 +69,35 @@ When analyzing a drawing, look for:
 Extract and return data in this exact JSON format:
 {
   "points": [
-    {"id": "P1", "x": 100.0, "y": 200.0, "z": 580.50, "type": "ngl", "label": "Survey Point 1"},
-    {"id": "P2", "x": 100.0, "y": 200.0, "z": 581.20, "type": "design", "label": "Design Level 1"}
+    {"id": "P1", "x": 100.0, "y": 200.0, "z": 580.50, "type": "ngl", "label": "Survey Point 1", "confidence": "high", "confidenceReason": "Clearly labeled with NGL prefix"},
+    {"id": "P2", "x": 100.0, "y": 200.0, "z": 581.20, "type": "design", "label": "Design Level 1", "confidence": "medium", "confidenceReason": "Value partially obscured"}
   ],
   "levelTable": [
-    {"pointId": "P1", "ngl": 580.50, "fgl": 581.20, "cutFill": 0.70}
+    {"pointId": "P1", "ngl": 580.50, "fgl": 581.20, "cutFill": 0.70, "confidence": "high"}
   ],
   "contourElevations": [580, 581, 582],
   "gridReference": {"originX": 0, "originY": 0, "spacing": 10},
   "drawingScale": "1:500",
-  "notes": ["Any relevant notes from the drawing"]
+  "notes": ["Any relevant notes from the drawing"],
+  "overallConfidence": "medium",
+  "qualityNotes": ["Some text was blurry", "Contour labels were clear"]
 }
 
+CONFIDENCE SCORING RULES:
+- "high": Value is clearly visible, properly labeled, and unambiguous
+- "medium": Value is readable but may have minor ambiguity (e.g., slightly blurry, unlabeled but contextually clear)
+- "low": Value is partially obscured, estimated, or inferred from context
+
+For each point, include:
+- "confidence": one of "high", "medium", or "low"
+- "confidenceReason": brief explanation of why this confidence level was assigned
+
 IMPORTANT: 
-- Extract ALL visible elevation values, even if partially visible
+- Extract ALL visible elevation values, even if partially visible (mark low confidence)
 - Coordinates may be in meters or feet - note the units if visible
 - If a point has both NGL and FGL, create two separate entries
-- Be thorough - every elevation number matters for volume calculations`;
+- Be thorough - every elevation number matters for volume calculations
+- Always provide confidence scores for each extracted value`;
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -200,17 +216,7 @@ function extractPointsFromText(text: string): any {
   const levelTable: any[] = [];
   let pointCounter = 0;
   
-  // Pattern for elevation values like "580.50", "EL. 581.20", "NGL: 580.00"
-  const elevationPatterns = [
-    /ngl[:\s=]*(\d+\.?\d*)/gi,
-    /fgl[:\s=]*(\d+\.?\d*)/gi,
-    /el\.?\s*(\d+\.?\d*)/gi,
-    /elevation[:\s=]*(\d+\.?\d*)/gi,
-    /level[:\s=]*(\d+\.?\d*)/gi,
-    /(\d{2,3}\.\d{1,3})\s*m?/g, // Common elevation format like 580.50
-  ];
-  
-  // Extract NGL values
+  // Extract NGL values - low confidence since extracted via regex fallback
   const nglMatches = text.matchAll(/ngl[:\s=]*(\d+\.?\d*)/gi);
   for (const match of nglMatches) {
     points.push({
@@ -219,7 +225,9 @@ function extractPointsFromText(text: string): any {
       y: pointCounter * 10,
       z: parseFloat(match[1]),
       type: 'ngl',
-      label: `NGL ${match[1]}`
+      label: `NGL ${match[1]}`,
+      confidence: 'low',
+      confidenceReason: 'Extracted via text pattern matching (fallback mode)'
     });
   }
   
@@ -232,7 +240,9 @@ function extractPointsFromText(text: string): any {
       y: pointCounter * 10,
       z: parseFloat(match[1]),
       type: 'design',
-      label: `FGL ${match[1]}`
+      label: `FGL ${match[1]}`,
+      confidence: 'low',
+      confidenceReason: 'Extracted via text pattern matching (fallback mode)'
     });
   }
   
@@ -248,17 +258,20 @@ function extractPointsFromText(text: string): any {
       pointId,
       ngl,
       fgl,
-      cutFill: fgl - ngl
+      cutFill: fgl - ngl,
+      confidence: 'medium'
     });
     
-    // Add as separate points
+    // Add as separate points - medium confidence for table data
     points.push({
       id: `${pointId}_NGL`,
       x: 0,
       y: 0,
       z: ngl,
       type: 'ngl',
-      label: `${pointId} NGL`
+      label: `${pointId} NGL`,
+      confidence: 'medium',
+      confidenceReason: 'Extracted from level table pattern'
     });
     points.push({
       id: `${pointId}_FGL`,
@@ -266,22 +279,28 @@ function extractPointsFromText(text: string): any {
       y: 0,
       z: fgl,
       type: 'design',
-      label: `${pointId} FGL`
+      label: `${pointId} FGL`,
+      confidence: 'medium',
+      confidenceReason: 'Extracted from level table pattern'
     });
   }
   
-  return { points, levelTable };
+  return { points, levelTable, overallConfidence: 'low', qualityNotes: ['Data extracted via fallback text parsing'] };
 }
 
 // Convert AI extracted data to standard format
 function convertToStandardFormat(data: any): ParsedPDFResult {
   const points: ExtractedPoint[] = [];
-  const extractedLevels: Array<{ label: string; value: number; type: string }> = [];
+  const extractedLevels: Array<{ label: string; value: number; type: string; confidence?: string }> = [];
   let pointCounter = 0;
+  let lowConfidenceCount = 0;
   
   // Process points array if present
   if (data.points && Array.isArray(data.points)) {
     for (const p of data.points) {
+      const confidence = p.confidence || 'medium';
+      if (confidence === 'low') lowConfidenceCount++;
+      
       points.push({
         id: p.id || `P${++pointCounter}`,
         x: parseFloat(p.x) || 0,
@@ -289,13 +308,16 @@ function convertToStandardFormat(data: any): ParsedPDFResult {
         z: parseFloat(p.z) || 0,
         type: p.type === 'design' || p.type === 'fgl' ? 'design' : 
               p.type === 'ngl' || p.type === 'existing' ? 'ngl' : 'unknown',
-        label: p.label
+        label: p.label,
+        confidence: confidence,
+        confidenceReason: p.confidenceReason || 'No reason provided'
       });
       
       extractedLevels.push({
         label: p.id || p.label || `Point ${pointCounter}`,
         value: parseFloat(p.z) || 0,
-        type: p.type || 'unknown'
+        type: p.type || 'unknown',
+        confidence: confidence
       });
     }
   }
@@ -303,34 +325,44 @@ function convertToStandardFormat(data: any): ParsedPDFResult {
   // Process level table if present
   if (data.levelTable && Array.isArray(data.levelTable)) {
     for (const level of data.levelTable) {
+      const tableConfidence = level.confidence || 'medium';
+      
       if (level.ngl) {
+        if (tableConfidence === 'low') lowConfidenceCount++;
         points.push({
           id: `${level.pointId}_NGL`,
           x: parseFloat(level.x) || pointCounter * 10,
           y: parseFloat(level.y) || pointCounter * 10,
           z: parseFloat(level.ngl),
           type: 'ngl',
-          label: `${level.pointId} NGL`
+          label: `${level.pointId} NGL`,
+          confidence: tableConfidence,
+          confidenceReason: level.confidenceReason || 'From level table'
         });
         extractedLevels.push({
           label: `${level.pointId} NGL`,
           value: parseFloat(level.ngl),
-          type: 'ngl'
+          type: 'ngl',
+          confidence: tableConfidence
         });
       }
       if (level.fgl) {
+        if (tableConfidence === 'low') lowConfidenceCount++;
         points.push({
           id: `${level.pointId}_FGL`,
           x: parseFloat(level.x) || pointCounter * 10,
           y: parseFloat(level.y) || pointCounter * 10,
           z: parseFloat(level.fgl),
           type: 'design',
-          label: `${level.pointId} FGL`
+          label: `${level.pointId} FGL`,
+          confidence: tableConfidence,
+          confidenceReason: level.confidenceReason || 'From level table'
         });
         extractedLevels.push({
           label: `${level.pointId} FGL`,
           value: parseFloat(level.fgl),
-          type: 'design'
+          type: 'design',
+          confidence: tableConfidence
         });
       }
       pointCounter++;
@@ -340,16 +372,26 @@ function convertToStandardFormat(data: any): ParsedPDFResult {
   const nglPoints = points.filter(p => p.type === 'ngl');
   const designPoints = points.filter(p => p.type === 'design');
   
+  // Calculate overall confidence
+  const totalPoints = points.length;
+  const overallConfidence: 'high' | 'medium' | 'low' = 
+    totalPoints === 0 ? 'low' :
+    lowConfidenceCount / totalPoints > 0.3 ? 'low' :
+    lowConfidenceCount / totalPoints > 0.1 ? 'medium' : 
+    data.overallConfidence || 'high';
+  
   return {
     points,
     nglPoints,
     designPoints,
-    textAnnotations: data.notes || [],
+    textAnnotations: data.notes || data.qualityNotes || [],
     extractedLevels,
     metadata: {
       hasCoordinateGrid: !!data.gridReference,
       hasLevelAnnotations: extractedLevels.length > 0,
       estimatedScale: data.drawingScale,
+      overallConfidence,
+      lowConfidenceCount,
     }
   };
 }
