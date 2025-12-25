@@ -23,6 +23,9 @@ import RetainingWallCalculator from '@/components/engineering/RetainingWallCalcu
 import { CalculationResults } from '@/components/engineering/CalculationResults';
 import { CalculationHistoryModal } from '@/components/engineering/CalculationHistoryModal';
 import { CalculationComparison } from '@/components/engineering/CalculationComparison';
+import EngineeringPortfolio from '@/components/engineering/EngineeringPortfolio';
+import EngineeringAuthGate from '@/components/engineering/EngineeringAuthGate';
+import { AuthModal } from '@/components/auth/AuthModal';
 import { useEngineeringHistory } from '@/hooks/useEngineeringHistory';
 import { SEO } from '@/components/SEO';
 import { cn } from '@/lib/utils';
@@ -98,23 +101,35 @@ const Engineering = () => {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isCompareOpen, setIsCompareOpen] = useState(false);
   const [userId, setUserId] = useState<string | undefined>();
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   
   const { calculationHistory, fetchHistory } = useEngineeringHistory(userId);
 
-  // Get current user ID and fetch history
+  // Check authentication on mount
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) {
-        setUserId(data.user.id);
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserId(user.id);
+      }
+      setIsCheckingAuth(false);
+    };
+
+    checkAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        setUserId(session.user.id);
+        setShowAuthModal(false);
+      } else {
+        setUserId(undefined);
       }
     });
-  }, []);
 
-  useEffect(() => {
-    if (userId) {
-      fetchHistory();
-    }
-  }, [userId, fetchHistory]);
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleCalculationComplete = (result: CalculationResult) => {
     setCalculationResult(result);
@@ -133,6 +148,30 @@ const Engineering = () => {
   const handleNewCalculation = () => {
     setCalculationResult(null);
   };
+
+  // Show loading while checking auth
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center">
+        <div className="animate-pulse">
+          <HardHat className="w-12 h-12 text-muted-foreground" />
+        </div>
+      </div>
+    );
+  }
+
+  // Show auth gate if not logged in
+  if (!userId) {
+    return (
+      <>
+        <EngineeringAuthGate onSignIn={() => setShowAuthModal(true)} />
+        <AuthModal 
+          open={showAuthModal} 
+          onOpenChange={setShowAuthModal} 
+        />
+      </>
+    );
+  }
 
   return (
     <>
@@ -296,6 +335,9 @@ const Engineering = () => {
                     </div>
                   ))}
                 </motion.div>
+
+                {/* Portfolio Section */}
+                <EngineeringPortfolio userId={userId} />
               </motion.div>
             )}
 
