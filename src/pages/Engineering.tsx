@@ -128,6 +128,13 @@ const Engineering = () => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Redirect to landing page if not logged in - MUST be before any early returns
+  useEffect(() => {
+    if (!isCheckingAuth && !userId) {
+      navigate('/services/civil-engineering');
+    }
+  }, [isCheckingAuth, userId, navigate]);
+
   const handleCalculationComplete = (result: CalculationResult) => {
     setCalculationResult(result);
   };
@@ -146,26 +153,8 @@ const Engineering = () => {
     setCalculationResult(null);
   };
 
-  // Show loading while checking auth
-  if (isCheckingAuth) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center">
-        <div className="animate-pulse">
-          <HardHat className="w-12 h-12 text-muted-foreground" />
-        </div>
-      </div>
-    );
-  }
-
-  // Redirect to landing page if not logged in
-  useEffect(() => {
-    if (!isCheckingAuth && !userId) {
-      navigate('/services/civil-engineering');
-    }
-  }, [isCheckingAuth, userId, navigate]);
-
-  // Show loading while redirecting unauthenticated users
-  if (!userId) {
+  // Show loading while checking auth or redirecting unauthenticated users
+  if (isCheckingAuth || !userId) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center">
         <div className="animate-pulse">
