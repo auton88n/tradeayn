@@ -24,8 +24,7 @@ import { CalculationResults } from '@/components/engineering/CalculationResults'
 import { CalculationHistoryModal } from '@/components/engineering/CalculationHistoryModal';
 import { CalculationComparison } from '@/components/engineering/CalculationComparison';
 import EngineeringPortfolio from '@/components/engineering/EngineeringPortfolio';
-import EngineeringAuthGate from '@/components/engineering/EngineeringAuthGate';
-import { AuthModal } from '@/components/auth/AuthModal';
+// EngineeringAuthGate removed - now redirects to landing page
 import { useEngineeringHistory } from '@/hooks/useEngineeringHistory';
 import { SEO } from '@/components/SEO';
 import { cn } from '@/lib/utils';
@@ -102,7 +101,6 @@ const Engineering = () => {
   const [isCompareOpen, setIsCompareOpen] = useState(false);
   const [userId, setUserId] = useState<string | undefined>();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-  const [showAuthModal, setShowAuthModal] = useState(false);
   
   const { calculationHistory, fetchHistory } = useEngineeringHistory(userId);
 
@@ -122,7 +120,6 @@ const Engineering = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
         setUserId(session.user.id);
-        setShowAuthModal(false);
       } else {
         setUserId(undefined);
       }
@@ -160,16 +157,21 @@ const Engineering = () => {
     );
   }
 
-  // Show auth gate if not logged in
+  // Redirect to landing page if not logged in
+  useEffect(() => {
+    if (!isCheckingAuth && !userId) {
+      navigate('/services/civil-engineering');
+    }
+  }, [isCheckingAuth, userId, navigate]);
+
+  // Show loading while redirecting unauthenticated users
   if (!userId) {
     return (
-      <>
-        <EngineeringAuthGate onSignIn={() => setShowAuthModal(true)} />
-        <AuthModal 
-          open={showAuthModal} 
-          onOpenChange={setShowAuthModal} 
-        />
-      </>
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center">
+        <div className="animate-pulse">
+          <HardHat className="w-12 h-12 text-muted-foreground" />
+        </div>
+      </div>
     );
   }
 
