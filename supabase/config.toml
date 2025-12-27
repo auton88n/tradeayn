@@ -107,3 +107,6 @@ verify_jwt = false
 
 [functions.parse-pdf-drawing]
 verify_jwt = false
+
+[functions.engineering-ai-assistant]
+verify_jwt = false
