@@ -24,11 +24,12 @@ import { CalculationResults } from '@/components/engineering/CalculationResults'
 import { CalculationHistoryModal } from '@/components/engineering/CalculationHistoryModal';
 import { CalculationComparison } from '@/components/engineering/CalculationComparison';
 import EngineeringPortfolio from '@/components/engineering/EngineeringPortfolio';
-// EngineeringAuthGate removed - now redirects to landing page
+import { EngineeringAIPanel } from '@/components/engineering/EngineeringAIPanel';
 import { useEngineeringHistory } from '@/hooks/useEngineeringHistory';
 import { SEO } from '@/components/SEO';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
+import { CalculatorType as AICalculatorType } from '@/lib/engineeringKnowledge';
 
 type CalculatorType = 'beam' | 'foundation' | 'column' | 'slab' | 'retaining_wall' | null;
 
@@ -101,6 +102,8 @@ const Engineering = () => {
   const [isCompareOpen, setIsCompareOpen] = useState(false);
   const [userId, setUserId] = useState<string | undefined>();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [isAIPanelOpen, setIsAIPanelOpen] = useState(false);
+  const [currentInputs, setCurrentInputs] = useState<Record<string, unknown>>({});
   
   const { calculationHistory, fetchHistory } = useEngineeringHistory(userId);
 
@@ -463,6 +466,17 @@ const Engineering = () => {
             />
           )}
         </AnimatePresence>
+
+        {/* AI Engineering Assistant Panel */}
+        {selectedCalculator && (
+          <EngineeringAIPanel
+            calculatorType={selectedCalculator as AICalculatorType}
+            currentInputs={currentInputs}
+            currentOutputs={calculationResult?.outputs || null}
+            isVisible={isAIPanelOpen}
+            onToggle={() => setIsAIPanelOpen(!isAIPanelOpen)}
+          />
+        )}
       </div>
     </>
   );
