@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -10,9 +10,8 @@ import {
   Bot, 
   Send, 
   Loader2,
-  X,
-  MessageSquare,
-  Sparkles
+  Sparkles,
+  Trash2
 } from 'lucide-react';
 
 interface Message {
@@ -21,23 +20,11 @@ interface Message {
   actions?: Array<{ type: string; params: string }>;
 }
 
-interface AdminAIAssistantProps {
-  isOpen?: boolean;
-  onClose?: () => void;
-}
-
-export function AdminAIAssistant({ isOpen: controlledOpen, onClose: controlledClose }: AdminAIAssistantProps = {}) {
-  const [internalOpen, setInternalOpen] = useState(false);
-  
-  // Use controlled or internal state
-  const isOpen = controlledOpen ?? internalOpen;
-  const onClose = controlledClose ?? (() => setInternalOpen(false));
-  const onOpen = () => setInternalOpen(true);
-  
+export function AdminAIAssistant() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: "hey! i'm your admin assistant. ask me anything about the system - user issues, costs, model health, whatever you need help with."
+      content: "Hey! I'm your admin assistant. Ask me anything about the system - user issues, costs, model health, whatever you need help with."
     }
   ]);
   const [input, setInput] = useState('');
@@ -55,6 +42,7 @@ export function AdminAIAssistant({ isOpen: controlledOpen, onClose: controlledCl
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         toast.error('Not authenticated');
+        setIsLoading(false);
         return;
       }
 
@@ -85,7 +73,7 @@ export function AdminAIAssistant({ isOpen: controlledOpen, onClose: controlledCl
       console.error('Admin AI error:', error);
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: "sorry, couldn't process that. try again?"
+        content: "Sorry, couldn't process that. Try again?"
       }]);
     } finally {
       setIsLoading(false);
@@ -97,113 +85,112 @@ export function AdminAIAssistant({ isOpen: controlledOpen, onClose: controlledCl
     // Action execution would be implemented here
   };
 
-  if (!isOpen) {
-    return (
-      <Button
-        onClick={onOpen}
-        className="fixed bottom-4 right-4 w-12 h-12 rounded-full shadow-lg z-40"
-        size="icon"
-      >
-        <MessageSquare className="w-5 h-5" />
-      </Button>
-    );
-  }
+  const clearChat = () => {
+    setMessages([{
+      role: 'assistant',
+      content: "Hey! I'm your admin assistant. Ask me anything about the system - user issues, costs, model health, whatever you need help with."
+    }]);
+  };
 
   return (
-    <Card className="fixed bottom-4 right-4 w-96 h-[500px] shadow-2xl z-50 flex flex-col">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between p-3 border-b">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-            <Bot className="w-4 h-4 text-primary" />
-          </div>
-          <div>
-            <p className="font-medium text-sm">Admin Assistant</p>
-            <p className="text-xs text-muted-foreground">AI-powered help</p>
-          </div>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-semibold flex items-center gap-2">
+            <Bot className="w-5 h-5" />
+            AI Admin Assistant
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Ask questions about system status, users, costs, and more
+          </p>
         </div>
-        <Button variant="ghost" size="icon" onClick={onClose}>
-          <X className="w-4 h-4" />
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={clearChat}
+        >
+          <Trash2 className="w-4 h-4 mr-2" />
+          Clear Chat
         </Button>
       </div>
 
-      {/* Messages */}
-      <ScrollArea className="flex-1 p-3">
-        <div className="space-y-3">
-          {messages.map((msg, i) => (
-            <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[85%] rounded-lg p-3 ${
-                msg.role === 'user' 
-                  ? 'bg-primary text-primary-foreground' 
-                  : 'bg-muted'
-              }`}>
-                <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                
-                {/* Action buttons */}
-                {msg.actions && msg.actions.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {msg.actions.map((action, j) => (
-                      <Badge 
-                        key={j}
-                        variant="outline" 
-                        className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
-                        onClick={() => executeAction(action)}
-                      >
-                        <Sparkles className="w-3 h-3 mr-1" />
-                        {action.type.replace(/_/g, ' ')}
-                      </Badge>
-                    ))}
+      {/* Chat Interface */}
+      <Card className="h-[500px] flex flex-col">
+        <CardHeader className="py-3 border-b">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+            Assistant Online
+          </CardTitle>
+        </CardHeader>
+        
+        <CardContent className="flex-1 flex flex-col p-0">
+          {/* Messages */}
+          <ScrollArea className="flex-1 p-4">
+            <div className="space-y-4">
+              {messages.map((msg, i) => (
+                <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[80%] rounded-lg p-3 ${
+                    msg.role === 'user' 
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'bg-muted'
+                  }`}>
+                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                    
+                    {/* Action buttons */}
+                    {msg.actions && msg.actions.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {msg.actions.map((action, j) => (
+                          <Badge 
+                            key={j}
+                            variant="outline" 
+                            className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+                            onClick={() => executeAction(action)}
+                          >
+                            <Sparkles className="w-3 h-3 mr-1" />
+                            {action.type.replace(/_/g, ' ')}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                </div>
+              ))}
+              
+              {isLoading && (
+                <div className="flex justify-start">
+                  <div className="bg-muted rounded-lg p-3">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  </div>
+                </div>
+              )}
             </div>
-          ))}
-          
-          {isLoading && (
-            <div className="flex justify-start">
-              <div className="bg-muted rounded-lg p-3">
-                <Loader2 className="w-4 h-4 animate-spin" />
-              </div>
+          </ScrollArea>
+
+          {/* Input */}
+          <div className="p-4 border-t">
+            <div className="flex gap-2">
+              <Input
+                placeholder="Ask about users, costs, issues..."
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+                disabled={isLoading}
+              />
+              <Button 
+                size="icon" 
+                onClick={sendMessage}
+                disabled={isLoading || !input.trim()}
+              >
+                <Send className="w-4 h-4" />
+              </Button>
             </div>
-          )}
-        </div>
-      </ScrollArea>
-
-      {/* Input */}
-      <div className="p-3 border-t">
-        <div className="flex gap-2">
-          <Input
-            placeholder="Ask about users, costs, issues..."
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-            disabled={isLoading}
-          />
-          <Button 
-            size="icon" 
-            onClick={sendMessage}
-            disabled={isLoading || !input.trim()}
-          >
-            <Send className="w-4 h-4" />
-          </Button>
-        </div>
-        <p className="text-xs text-muted-foreground mt-2 text-center">
-          Try: "why is the fallback rate high?" or "show me blocked users"
-        </p>
-      </div>
-    </Card>
-  );
-}
-
-// Floating button to open the assistant
-export function AdminAIButton({ onClick }: { onClick: () => void }) {
-  return (
-    <Button
-      onClick={onClick}
-      className="fixed bottom-4 right-4 w-12 h-12 rounded-full shadow-lg z-40"
-      size="icon"
-    >
-      <MessageSquare className="w-5 h-5" />
-    </Button>
+            <p className="text-xs text-muted-foreground mt-2 text-center">
+              Try: "why is the fallback rate high?" or "show me blocked users"
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

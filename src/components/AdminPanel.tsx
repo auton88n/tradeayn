@@ -19,7 +19,7 @@ import { GoogleAnalytics } from '@/components/admin/GoogleAnalytics';
 import { LLMManagement } from '@/components/admin/LLMManagement';
 import { AICostDashboard } from '@/components/admin/AICostDashboard';
 import { UserAILimits } from '@/components/admin/UserAILimits';
-import { AdminAIAssistant, AdminAIButton } from '@/components/admin/AdminAIAssistant';
+import { AdminAIAssistant } from '@/components/admin/AdminAIAssistant';
 
 // Supabase config - use direct values to avoid any import issues
 const SUPABASE_URL = 'https://dfkoxuokfkttjhfjcecx.supabase.co' as const;
@@ -119,6 +119,11 @@ const allTabs = [{
   id: 'ai-limits',
   label: 'AI Limits',
   icon: Gauge,
+  adminOnly: true
+}, {
+  id: 'ai-assistant',
+  label: 'AI Assistant',
+  icon: Bot,
   adminOnly: true
 }];
 export const AdminPanel = ({
@@ -427,12 +432,10 @@ export const AdminPanel = ({
               {activeTab === 'ai-models' && <LLMManagement />}
               {activeTab === 'ai-costs' && <AICostDashboard />}
               {activeTab === 'ai-limits' && <UserAILimits />}
+              {activeTab === 'ai-assistant' && <AdminAIAssistant />}
             </ErrorBoundary>
           </motion.div>
         </AnimatePresence>
       </ScrollArea>
-      
-      {/* Floating Admin AI Assistant */}
-      {isAdmin && <AdminAIAssistant />}
     </div>;
 };
