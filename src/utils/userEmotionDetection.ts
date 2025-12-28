@@ -5,7 +5,10 @@
 
 export type UserEmotion = 'happy' | 'sad' | 'frustrated' | 'excited' | 'anxious' | 'neutral' | 'confused' | 'angry' | 'grieving' | 'overwhelmed';
 
-export type AYNEmotion = 'calm' | 'happy' | 'excited' | 'thinking' | 'curious';
+// Import AYNEmotion from context for consistency
+import type { AYNEmotion } from '@/contexts/AYNEmotionContext';
+export type { AYNEmotion };
+
 export type AYNBehavior = 'supportive' | 'celebratory' | 'patient' | 'reassuring' | 'attentive' | 'playful';
 export type HapticPattern = 'empathy' | 'comfort' | 'mirror-joy' | 'patience' | 'calm' | 'curious' | 'celebration' | 'reassurance';
 
