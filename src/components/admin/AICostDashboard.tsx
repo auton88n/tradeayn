@@ -20,6 +20,9 @@ interface UsageStats {
   month: number;
   byIntent: Record<string, number>;
   byModel: Record<string, number>;
+  avgResponseTime: number | null;
+  successRate: number | null;
+  totalCost: number;
 }
 
 export function AICostDashboard() {
@@ -28,10 +31,13 @@ export function AICostDashboard() {
     week: 0,
     month: 0,
     byIntent: {},
-    byModel: {}
+    byModel: {},
+    avgResponseTime: null,
+    successRate: null,
+    totalCost: 0
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [fallbackRate, setFallbackRate] = useState(0);
+  const [fallbackRate, setFallbackRate] = useState<number | null>(null);
 
   const fetchStats = async () => {
     try {
@@ -58,31 +64,49 @@ export function AICostDashboard() {
         .select('*', { count: 'exact', head: true })
         .gte('created_at', monthStart);
 
-      // Get detailed breakdown
+      // Get detailed breakdown with response times
       const { data: usageLogs } = await supabase
         .from('llm_usage_logs')
-        .select('intent_type, was_fallback, cost_sar')
+        .select('intent_type, was_fallback, cost_sar, response_time_ms')
+        .gte('created_at', weekStart);
+
+      // Get failure count for uptime calculation
+      const { count: failureCount } = await supabase
+        .from('llm_failures')
+        .select('*', { count: 'exact', head: true })
         .gte('created_at', weekStart);
 
       const byIntent: Record<string, number> = {};
       let fallbackCount = 0;
       let totalCost = 0;
+      let totalResponseTime = 0;
+      let responseTimeCount = 0;
 
-      (usageLogs || []).forEach((log: { intent_type: string; was_fallback: boolean | null; cost_sar: number | null }) => {
+      (usageLogs || []).forEach((log: { intent_type: string; was_fallback: boolean | null; cost_sar: number | null; response_time_ms: number | null }) => {
         byIntent[log.intent_type] = (byIntent[log.intent_type] || 0) + 1;
         if (log.was_fallback) fallbackCount++;
         totalCost += log.cost_sar || 0;
+        if (log.response_time_ms) {
+          totalResponseTime += log.response_time_ms;
+          responseTimeCount++;
+        }
       });
 
       const total = usageLogs?.length || 0;
-      setFallbackRate(total > 0 ? (fallbackCount / total) * 100 : 0);
+      const avgResponseTime = responseTimeCount > 0 ? totalResponseTime / responseTimeCount : null;
+      const successRate = total > 0 ? ((total - (failureCount || 0)) / (total + (failureCount || 0))) * 100 : null;
+      
+      setFallbackRate(total > 0 ? (fallbackCount / total) * 100 : null);
 
       setStats({
         today: todayCount || 0,
         week: weekCount || 0,
         month: monthCount || 0,
         byIntent,
-        byModel: {}
+        byModel: {},
+        avgResponseTime,
+        successRate,
+        totalCost
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -244,9 +268,13 @@ export function AICostDashboard() {
                     When primary models fail
                   </p>
                 </div>
-                <Badge variant={fallbackRate < 5 ? 'default' : fallbackRate < 15 ? 'secondary' : 'destructive'}>
-                  {fallbackRate.toFixed(1)}%
-                </Badge>
+                {fallbackRate !== null ? (
+                  <Badge variant={fallbackRate < 5 ? 'default' : fallbackRate < 15 ? 'secondary' : 'destructive'}>
+                    {fallbackRate.toFixed(1)}%
+                  </Badge>
+                ) : (
+                  <Badge variant="outline">No data</Badge>
+                )}
               </div>
 
               <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
@@ -256,17 +284,27 @@ export function AICostDashboard() {
                     Typical AI response latency
                   </p>
                 </div>
-                <Badge variant="outline">~2.5s</Badge>
+                {stats.avgResponseTime !== null ? (
+                  <Badge variant="outline">{(stats.avgResponseTime / 1000).toFixed(1)}s</Badge>
+                ) : (
+                  <Badge variant="outline">No data</Badge>
+                )}
               </div>
 
               <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                 <div>
-                  <p className="font-medium">Primary Model Uptime</p>
+                  <p className="font-medium">Success Rate</p>
                   <p className="text-sm text-muted-foreground">
-                    Lovable AI availability
+                    Successful AI responses
                   </p>
                 </div>
-                <Badge variant="default" className="bg-green-500">99.5%</Badge>
+                {stats.successRate !== null ? (
+                  <Badge variant="default" className={stats.successRate >= 95 ? 'bg-green-500' : stats.successRate >= 80 ? 'bg-yellow-500' : 'bg-red-500'}>
+                    {stats.successRate.toFixed(1)}%
+                  </Badge>
+                ) : (
+                  <Badge variant="outline">No data</Badge>
+                )}
               </div>
             </div>
           </CardContent>
