@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Session } from '@supabase/supabase-js';
 import { supabaseApi } from '@/lib/supabaseApi';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -28,7 +28,9 @@ import {
   XCircle,
   ChevronLeft,
   ChevronRight,
-  RefreshCw
+  RefreshCw,
+  FileText,
+  Sparkles
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ApplicationDetailModal } from './ApplicationDetailModal';
@@ -72,7 +74,7 @@ const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.05 }
+    transition: { staggerChildren: 0.03 }
   }
 };
 
@@ -103,15 +105,15 @@ const STATUS_OPTIONS = [
 const getStatusConfig = (status: string) => {
   switch (status) {
     case 'new':
-      return { icon: Clock, color: 'bg-blue-500/10 text-blue-600 border-blue-500/20' };
+      return { icon: Sparkles, color: 'bg-blue-500/10 text-blue-600 border-blue-500/20', dot: 'bg-blue-500' };
     case 'reviewed':
-      return { icon: Eye, color: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20' };
+      return { icon: Eye, color: 'bg-amber-500/10 text-amber-600 border-amber-500/20', dot: 'bg-amber-500' };
     case 'contacted':
-      return { icon: MessageSquare, color: 'bg-green-500/10 text-green-600 border-green-500/20' };
+      return { icon: MessageSquare, color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20', dot: 'bg-emerald-500' };
     case 'closed':
-      return { icon: CheckCircle, color: 'bg-muted text-muted-foreground border-muted' };
+      return { icon: CheckCircle, color: 'bg-muted text-muted-foreground border-border', dot: 'bg-muted-foreground' };
     default:
-      return { icon: Clock, color: 'bg-muted text-muted-foreground border-muted' };
+      return { icon: Clock, color: 'bg-muted text-muted-foreground border-border', dot: 'bg-muted-foreground' };
   }
 };
 
@@ -182,7 +184,6 @@ export const ApplicationManagement = ({ session, applications, onRefresh }: Appl
   }, [session.access_token, onRefresh]);
 
   const handleViewApplication = (app: ServiceApplication) => {
-    // Mark as reviewed if new
     if (app.status === 'new') {
       handleStatusChange(app.id, 'reviewed');
     }
@@ -216,38 +217,54 @@ export const ApplicationManagement = ({ session, applications, onRefresh }: Appl
 
   return (
     <>
-      <Card className="border-0 shadow-sm bg-card/50 backdrop-blur-sm">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+      <Card className="relative overflow-hidden border border-border/50 shadow-lg bg-card/80 backdrop-blur-xl">
+        {/* Gradient accent bar */}
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-500/60 via-violet-500 to-violet-500/60" />
+        
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <CardTitle className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-violet-500/10 ring-1 ring-violet-500/20">
+                <FileText className="w-5 h-5 text-violet-500" />
+              </div>
               <div>
-                <CardTitle className="flex items-center gap-2">
-                  Applications
+                <div className="flex items-center gap-2">
+                  <span>Applications</span>
                   {newCount > 0 && (
-                    <Badge variant="destructive" className="text-xs">
+                    <Badge variant="destructive" className="text-xs animate-pulse">
                       {newCount} new
                     </Badge>
                   )}
-                </CardTitle>
-                <CardDescription>{filteredApplications.length} total applications</CardDescription>
+                </div>
+                <p className="text-sm text-muted-foreground font-normal mt-0.5">
+                  {filteredApplications.length} total
+                </p>
               </div>
-            </div>
+            </CardTitle>
+            
             <div className="flex items-center gap-2">
               <Button 
                 variant="ghost" 
                 size="icon" 
                 onClick={handleRefresh}
                 disabled={isRefreshing}
+                className="border border-border/50"
               >
                 <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
               </Button>
-              <Button variant="outline" size="sm" onClick={exportApplications}>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={exportApplications}
+                className="border-border/50"
+              >
                 <Download className="w-4 h-4 mr-2" />
                 Export
               </Button>
             </div>
           </div>
         </CardHeader>
+        
         <CardContent className="space-y-4">
           {/* Filters */}
           <div className="flex gap-3 flex-wrap">
@@ -257,12 +274,12 @@ export const ApplicationManagement = ({ session, applications, onRefresh }: Appl
                 placeholder="Search by name, email, or phone..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-10 bg-muted/30 border-border/50"
               />
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="gap-2">
+                <Button variant="outline" className="gap-2 border-border/50">
                   <Filter className="w-4 h-4" />
                   {STATUS_OPTIONS.find(s => s.value === statusFilter)?.label}
                 </Button>
@@ -280,7 +297,7 @@ export const ApplicationManagement = ({ session, applications, onRefresh }: Appl
             </DropdownMenu>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="gap-2">
+                <Button variant="outline" className="gap-2 border-border/50">
                   <Filter className="w-4 h-4" />
                   {SERVICE_TYPES.find(s => s.value === serviceFilter)?.label}
                 </Button>
@@ -307,9 +324,12 @@ export const ApplicationManagement = ({ session, applications, onRefresh }: Appl
               className="space-y-2"
             >
               {paginatedApplications.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8">
-                  No applications found
-                </p>
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="p-4 rounded-2xl bg-muted/50 mb-4">
+                    <FileText className="w-8 h-8 text-muted-foreground" />
+                  </div>
+                  <p className="text-sm text-muted-foreground">No applications found</p>
+                </div>
               ) : (
                 paginatedApplications.map((app) => {
                   const statusConfig = getStatusConfig(app.status);
@@ -319,35 +339,50 @@ export const ApplicationManagement = ({ session, applications, onRefresh }: Appl
                     <motion.div
                       key={app.id}
                       variants={itemVariants}
-                      className="flex items-center justify-between p-4 rounded-xl border bg-card hover:bg-muted/50 transition-colors cursor-pointer"
+                      whileHover={{ x: 4 }}
+                      className="group flex items-center justify-between p-4 rounded-xl border bg-muted/20 border-border/30 hover:bg-muted/40 hover:border-border/50 transition-all cursor-pointer"
                       onClick={() => handleViewApplication(app)}
                     >
                       <div className="flex items-center gap-4 flex-1 min-w-0">
+                        {/* Avatar */}
+                        <div className="relative w-10 h-10 rounded-full bg-gradient-to-br from-violet-500/20 to-violet-500/10 flex items-center justify-center ring-2 ring-background">
+                          <span className="text-sm font-medium text-violet-600">
+                            {app.full_name.charAt(0).toUpperCase()}
+                          </span>
+                          {app.status === 'new' && (
+                            <span className={`absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full ${statusConfig.dot} ring-2 ring-card animate-pulse`} />
+                          )}
+                        </div>
+                        
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium truncate">{app.full_name}</p>
-                            {app.status === 'new' && (
-                              <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                            )}
-                          </div>
+                          <p className="font-medium truncate group-hover:text-primary transition-colors">
+                            {app.full_name}
+                          </p>
                           <p className="text-sm text-muted-foreground truncate">{app.email}</p>
                         </div>
-                        <Badge variant="outline" className="shrink-0">
+                        
+                        <Badge variant="outline" className="shrink-0 bg-muted/50">
                           {getServiceLabel(app.service_type)}
                         </Badge>
+                        
                         <Badge variant="outline" className={`shrink-0 ${statusConfig.color}`}>
                           <StatusIcon className="w-3 h-3 mr-1" />
                           {app.status}
                         </Badge>
-                        <span className="text-xs text-muted-foreground shrink-0">
-                          {format(new Date(app.created_at), 'MMM d, yyyy')}
+                        
+                        <span className="text-xs text-muted-foreground shrink-0 hidden sm:block">
+                          {format(new Date(app.created_at), 'MMM d')}
                         </span>
                       </div>
 
                       <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="w-8 h-8">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="w-8 h-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
                               <MoreVertical className="w-4 h-4" />
                             </Button>
                           </DropdownMenuTrigger>
@@ -385,7 +420,7 @@ export const ApplicationManagement = ({ session, applications, onRefresh }: Appl
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between pt-4 border-t">
+            <div className="flex items-center justify-between pt-4 border-t border-border/50">
               <p className="text-sm text-muted-foreground">
                 Page {currentPage} of {totalPages}
               </p>
@@ -395,6 +430,7 @@ export const ApplicationManagement = ({ session, applications, onRefresh }: Appl
                   size="sm"
                   onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
+                  className="border-border/50"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
@@ -403,6 +439,7 @@ export const ApplicationManagement = ({ session, applications, onRefresh }: Appl
                   size="sm"
                   onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
+                  className="border-border/50"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </Button>

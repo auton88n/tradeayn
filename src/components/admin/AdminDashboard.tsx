@@ -8,9 +8,11 @@ import {
   UserCheck, 
   Clock, 
   MessageSquare,
-  TrendingUp
+  TrendingUp,
+  Activity
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { useEffect, useState } from 'react';
 
 interface Profile {
   company_name: string | null;
@@ -44,6 +46,31 @@ interface AdminDashboardProps {
   allUsers: AccessGrantWithProfile[];
 }
 
+// Animated counter component
+const AnimatedCounter = ({ value, duration = 1000 }: { value: number; duration?: number }) => {
+  const [displayValue, setDisplayValue] = useState(0);
+  
+  useEffect(() => {
+    let startTime: number;
+    let animationFrame: number;
+    
+    const animate = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / duration, 1);
+      setDisplayValue(Math.floor(progress * value));
+      
+      if (progress < 1) {
+        animationFrame = requestAnimationFrame(animate);
+      }
+    };
+    
+    animationFrame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animationFrame);
+  }, [value, duration]);
+  
+  return <span>{displayValue}</span>;
+};
+
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -57,7 +84,7 @@ const itemVariants = {
   visible: { 
     opacity: 1, 
     y: 0,
-    transition: { duration: 0.3 }
+    transition: { duration: 0.4 }
   }
 };
 
@@ -67,29 +94,37 @@ export const AdminDashboard = ({ systemMetrics, allUsers }: AdminDashboardProps)
       label: 'Total Users', 
       value: systemMetrics.totalUsers, 
       icon: Users, 
-      color: 'text-blue-500',
-      bg: 'bg-blue-500/10'
+      gradient: 'from-blue-500/20 to-blue-600/5',
+      iconColor: 'text-blue-500',
+      iconBg: 'bg-blue-500/10 ring-1 ring-blue-500/20',
+      glow: 'shadow-blue-500/20'
     },
     { 
       label: 'Active Users', 
       value: systemMetrics.activeUsers, 
       icon: UserCheck, 
-      color: 'text-green-500',
-      bg: 'bg-green-500/10'
+      gradient: 'from-emerald-500/20 to-emerald-600/5',
+      iconColor: 'text-emerald-500',
+      iconBg: 'bg-emerald-500/10 ring-1 ring-emerald-500/20',
+      glow: 'shadow-emerald-500/20'
     },
     { 
       label: 'Pending', 
       value: systemMetrics.pendingUsers, 
       icon: Clock, 
-      color: 'text-orange-500',
-      bg: 'bg-orange-500/10'
+      gradient: 'from-amber-500/20 to-amber-600/5',
+      iconColor: 'text-amber-500',
+      iconBg: 'bg-amber-500/10 ring-1 ring-amber-500/20',
+      glow: 'shadow-amber-500/20'
     },
     { 
       label: 'Messages Today', 
       value: systemMetrics.todayMessages, 
       icon: MessageSquare, 
-      color: 'text-purple-500',
-      bg: 'bg-purple-500/10'
+      gradient: 'from-violet-500/20 to-violet-600/5',
+      iconColor: 'text-violet-500',
+      iconBg: 'bg-violet-500/10 ring-1 ring-violet-500/20',
+      glow: 'shadow-violet-500/20'
     },
   ];
 
@@ -102,22 +137,45 @@ export const AdminDashboard = ({ systemMetrics, allUsers }: AdminDashboardProps)
       animate="visible"
       className="space-y-6"
     >
-      {/* Metrics Cards */}
+      {/* Premium Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {metrics.map((metric) => {
+        {metrics.map((metric, index) => {
           const Icon = metric.icon;
           return (
-            <motion.div key={metric.label} variants={itemVariants}>
-              <Card className="border-0 shadow-sm bg-card/50 backdrop-blur-sm">
-                <CardContent className="p-6">
+            <motion.div 
+              key={metric.label} 
+              variants={itemVariants}
+              whileHover={{ scale: 1.02, y: -4 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            >
+              <Card className={`relative overflow-hidden border border-border/50 shadow-lg ${metric.glow} bg-card/80 backdrop-blur-xl group cursor-default`}>
+                {/* Gradient background */}
+                <div className={`absolute inset-0 bg-gradient-to-br ${metric.gradient} opacity-60 group-hover:opacity-80 transition-opacity`} />
+                
+                {/* Subtle pattern overlay */}
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(255,255,255,0.1),transparent_70%)]" />
+                
+                <CardContent className="relative p-6">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">{metric.label}</p>
-                      <p className="text-3xl font-bold mt-1">{metric.value}</p>
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground font-medium">{metric.label}</p>
+                      <p className="text-3xl font-bold tracking-tight">
+                        <AnimatedCounter value={metric.value} />
+                      </p>
                     </div>
-                    <div className={`p-3 rounded-xl ${metric.bg}`}>
-                      <Icon className={`w-6 h-6 ${metric.color}`} />
-                    </div>
+                    <motion.div 
+                      className={`p-3.5 rounded-2xl ${metric.iconBg}`}
+                      whileHover={{ rotate: 5, scale: 1.1 }}
+                      transition={{ type: 'spring', stiffness: 400 }}
+                    >
+                      <Icon className={`w-6 h-6 ${metric.iconColor}`} />
+                    </motion.div>
+                  </div>
+                  
+                  {/* Trend indicator */}
+                  <div className="flex items-center gap-1 mt-3 pt-3 border-t border-border/30">
+                    <Activity className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">Updated just now</span>
                   </div>
                 </CardContent>
               </Card>
@@ -126,52 +184,74 @@ export const AdminDashboard = ({ systemMetrics, allUsers }: AdminDashboardProps)
         })}
       </div>
 
-      {/* Recent Activity */}
+      {/* Recent Activity - Premium Card */}
       <motion.div variants={itemVariants}>
-        <Card className="border-0 shadow-sm bg-card/50 backdrop-blur-sm">
-          <CardHeader>
+        <Card className="relative overflow-hidden border border-border/50 shadow-lg bg-card/80 backdrop-blur-xl">
+          {/* Gradient accent bar */}
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
+          
+          <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg">
-              <TrendingUp className="w-5 h-5" />
+              <div className="p-2 rounded-xl bg-primary/10 ring-1 ring-primary/20">
+                <TrendingUp className="w-4 h-4 text-primary" />
+              </div>
               Recent Activity
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ScrollArea className="h-[300px]">
-              <div className="space-y-3">
+            <ScrollArea className="h-[320px] pr-4">
+              <div className="space-y-2">
                 {recentUsers.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-8">
-                    No recent activity
-                  </p>
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <div className="p-4 rounded-2xl bg-muted/50 mb-4">
+                      <Users className="w-8 h-8 text-muted-foreground" />
+                    </div>
+                    <p className="text-sm text-muted-foreground">No recent activity</p>
+                  </div>
                 ) : (
-                  recentUsers.map((user) => (
-                    <div
+                  recentUsers.map((user, index) => (
+                    <motion.div
                       key={user.id}
-                      className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      whileHover={{ x: 4 }}
+                      className="flex items-center justify-between p-3 rounded-xl bg-muted/30 hover:bg-muted/50 border border-transparent hover:border-border/50 transition-all cursor-default group"
                     >
                       <div className="flex items-center gap-3">
-                        <Avatar className="w-9 h-9">
-                          <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                            {(user.profiles?.company_name || user.profiles?.contact_person || 'U')
-                              .charAt(0)
-                              .toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
+                        <div className="relative">
+                          <Avatar className="w-10 h-10 ring-2 ring-background">
+                            <AvatarFallback className="text-xs bg-gradient-to-br from-primary/20 to-primary/10 text-primary font-medium">
+                              {(user.profiles?.company_name || user.profiles?.contact_person || 'U')
+                                .charAt(0)
+                                .toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          {/* Online indicator */}
+                          {user.is_active && (
+                            <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full ring-2 ring-card" />
+                          )}
+                        </div>
                         <div>
-                          <p className="text-sm font-medium">
+                          <p className="text-sm font-medium group-hover:text-primary transition-colors">
                             {user.profiles?.company_name || user.profiles?.contact_person || 'Unknown'}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {format(new Date(user.created_at), 'MMM d, yyyy')}
+                            {format(new Date(user.created_at), 'MMM d, yyyy • h:mm a')}
                           </p>
                         </div>
                       </div>
                       <Badge 
                         variant={user.is_active ? 'default' : 'secondary'}
-                        className="text-xs"
+                        className={`text-xs ${
+                          user.is_active 
+                            ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 hover:bg-emerald-500/20' 
+                            : 'bg-amber-500/10 text-amber-600 border border-amber-500/20'
+                        }`}
                       >
                         {user.is_active ? 'Active' : 'Pending'}
                       </Badge>
-                    </div>
+                    </motion.div>
                   ))
                 )}
               </div>

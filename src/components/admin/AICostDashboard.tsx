@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { 
@@ -11,7 +13,10 @@ import {
   RefreshCw,
   Calendar,
   Zap,
-  PieChart
+  PieChart,
+  Activity,
+  CheckCircle,
+  Clock
 } from 'lucide-react';
 
 interface UsageStats {
@@ -24,6 +29,23 @@ interface UsageStats {
   successRate: number | null;
   totalCost: number;
 }
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { duration: 0.3 }
+  }
+};
 
 export function AICostDashboard() {
   const [stats, setStats] = useState<UsageStats>({
@@ -46,31 +68,26 @@ export function AICostDashboard() {
       const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
-      // Get today's usage
       const { count: todayCount } = await supabase
         .from('llm_usage_logs')
         .select('*', { count: 'exact', head: true })
         .gte('created_at', todayStart);
 
-      // Get week's usage
       const { count: weekCount } = await supabase
         .from('llm_usage_logs')
         .select('*', { count: 'exact', head: true })
         .gte('created_at', weekStart);
 
-      // Get month's usage
       const { count: monthCount } = await supabase
         .from('llm_usage_logs')
         .select('*', { count: 'exact', head: true })
         .gte('created_at', monthStart);
 
-      // Get detailed breakdown with response times
       const { data: usageLogs } = await supabase
         .from('llm_usage_logs')
         .select('intent_type, was_fallback, cost_sar, response_time_ms')
         .gte('created_at', weekStart);
 
-      // Get failure count for uptime calculation
       const { count: failureCount } = await supabase
         .from('llm_failures')
         .select('*', { count: 'exact', head: true })
@@ -120,8 +137,7 @@ export function AICostDashboard() {
     fetchStats();
   }, []);
 
-  // Estimated costs (rough estimates based on typical pricing)
-  const estimatedCostToday = stats.today * 0.001; // ~$0.001 per request average
+  const estimatedCostToday = stats.today * 0.001;
   const estimatedCostWeek = stats.week * 0.001;
   const estimatedCostMonth = stats.month * 0.001;
   const projectedMonthly = (stats.today * 30) * 0.001;
@@ -129,121 +145,106 @@ export function AICostDashboard() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <RefreshCw className="w-6 h-6 animate-spin text-muted-foreground" />
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+        >
+          <RefreshCw className="w-8 h-8 text-primary" />
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="space-y-6"
+    >
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold flex items-center gap-2">
-            <DollarSign className="w-5 h-5" />
-            AI Cost Dashboard
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Monitor AI usage and estimated costs
-          </p>
+      <motion.div variants={itemVariants} className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-xl bg-emerald-500/10 ring-1 ring-emerald-500/20">
+            <DollarSign className="w-5 h-5 text-emerald-500" />
+          </div>
+          <div>
+            <h2 className="text-xl font-semibold">AI Cost Dashboard</h2>
+            <p className="text-sm text-muted-foreground">
+              Monitor AI usage and estimated costs
+            </p>
+          </div>
         </div>
         <Button 
           variant="outline" 
           size="sm"
           onClick={() => { setIsLoading(true); fetchStats(); }}
+          className="border-border/50"
         >
           <RefreshCw className="w-4 h-4 mr-2" />
           Refresh
         </Button>
-      </div>
+      </motion.div>
 
       {/* Cost Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Today</p>
-                <p className="text-2xl font-bold">${estimatedCostToday.toFixed(2)}</p>
-                <p className="text-xs text-muted-foreground">{stats.today} requests</p>
-              </div>
-              <Calendar className="w-8 h-8 text-primary/20" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">This Week</p>
-                <p className="text-2xl font-bold">${estimatedCostWeek.toFixed(2)}</p>
-                <p className="text-xs text-muted-foreground">{stats.week} requests</p>
-              </div>
-              <TrendingUp className="w-8 h-8 text-green-500/20" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">This Month</p>
-                <p className="text-2xl font-bold">${estimatedCostMonth.toFixed(2)}</p>
-                <p className="text-xs text-muted-foreground">{stats.month} requests</p>
-              </div>
-              <DollarSign className="w-8 h-8 text-blue-500/20" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Projected</p>
-                <p className="text-2xl font-bold">${projectedMonthly.toFixed(2)}</p>
-                <p className="text-xs text-muted-foreground">per month</p>
-              </div>
-              <TrendingDown className="w-8 h-8 text-orange-500/20" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {[
+          { label: 'Today', value: `$${estimatedCostToday.toFixed(2)}`, sub: `${stats.today} requests`, icon: Calendar, color: 'from-primary/20 to-primary/5', iconColor: 'text-primary' },
+          { label: 'This Week', value: `$${estimatedCostWeek.toFixed(2)}`, sub: `${stats.week} requests`, icon: TrendingUp, color: 'from-emerald-500/20 to-emerald-500/5', iconColor: 'text-emerald-500' },
+          { label: 'This Month', value: `$${estimatedCostMonth.toFixed(2)}`, sub: `${stats.month} requests`, icon: DollarSign, color: 'from-blue-500/20 to-blue-500/5', iconColor: 'text-blue-500' },
+          { label: 'Projected', value: `$${projectedMonthly.toFixed(2)}`, sub: 'per month', icon: TrendingDown, color: 'from-amber-500/20 to-amber-500/5', iconColor: 'text-amber-500' },
+        ].map((stat) => {
+          const Icon = stat.icon;
+          return (
+            <Card key={stat.label} className="relative overflow-hidden border border-border/50 bg-card/80 backdrop-blur-xl group hover:shadow-lg transition-shadow">
+              <div className={`absolute inset-0 bg-gradient-to-br ${stat.color}`} />
+              <CardContent className="relative pt-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">{stat.label}</p>
+                    <p className="text-2xl font-bold mt-1">{stat.value}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{stat.sub}</p>
+                  </div>
+                  <div className="p-2 rounded-xl bg-background/50 group-hover:scale-110 transition-transform">
+                    <Icon className={`w-6 h-6 ${stat.iconColor}`} />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </motion.div>
 
       {/* Usage Breakdown */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
+      <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card className="relative overflow-hidden border border-border/50 bg-card/80 backdrop-blur-xl">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-500/60 via-violet-500 to-violet-500/60" />
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <PieChart className="w-4 h-4" />
+              <div className="p-1.5 rounded-lg bg-violet-500/10">
+                <PieChart className="w-4 h-4 text-violet-500" />
+              </div>
               Usage by Intent (7 days)
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
+            <div className="space-y-4">
               {Object.entries(stats.byIntent).length === 0 ? (
-                <p className="text-sm text-muted-foreground">No usage data yet</p>
+                <p className="text-sm text-muted-foreground text-center py-8">No usage data yet</p>
               ) : (
                 Object.entries(stats.byIntent)
                   .sort(([, a], [, b]) => b - a)
                   .map(([intent, count]) => {
                     const percentage = (count / stats.week) * 100;
                     return (
-                      <div key={intent} className="space-y-1">
+                      <div key={intent} className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm capitalize">{intent}</span>
+                          <span className="text-sm font-medium capitalize">{intent}</span>
                           <span className="text-sm text-muted-foreground">
                             {count} ({percentage.toFixed(1)}%)
                           </span>
                         </div>
-                        <div className="h-2 bg-muted rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-primary rounded-full transition-all"
-                            style={{ width: `${percentage}%` }}
-                          />
-                        </div>
+                        <Progress value={percentage} className="h-2" />
                       </div>
                     );
                   })
@@ -252,64 +253,70 @@ export function AICostDashboard() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="relative overflow-hidden border border-border/50 bg-card/80 backdrop-blur-xl">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500/60 via-emerald-500 to-emerald-500/60" />
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <Zap className="w-4 h-4" />
+              <div className="p-1.5 rounded-lg bg-emerald-500/10">
+                <Zap className="w-4 h-4 text-emerald-500" />
+              </div>
               System Health
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                <div>
-                  <p className="font-medium">Fallback Rate</p>
-                  <p className="text-sm text-muted-foreground">
-                    When primary models fail
-                  </p>
-                </div>
-                {fallbackRate !== null ? (
-                  <Badge variant={fallbackRate < 5 ? 'default' : fallbackRate < 15 ? 'secondary' : 'destructive'}>
-                    {fallbackRate.toFixed(1)}%
-                  </Badge>
-                ) : (
-                  <Badge variant="outline">No data</Badge>
-                )}
-              </div>
-
-              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                <div>
-                  <p className="font-medium">Avg Response Time</p>
-                  <p className="text-sm text-muted-foreground">
-                    Typical AI response latency
-                  </p>
-                </div>
-                {stats.avgResponseTime !== null ? (
-                  <Badge variant="outline">{(stats.avgResponseTime / 1000).toFixed(1)}s</Badge>
-                ) : (
-                  <Badge variant="outline">No data</Badge>
-                )}
-              </div>
-
-              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                <div>
-                  <p className="font-medium">Success Rate</p>
-                  <p className="text-sm text-muted-foreground">
-                    Successful AI responses
-                  </p>
-                </div>
-                {stats.successRate !== null ? (
-                  <Badge variant="default" className={stats.successRate >= 95 ? 'bg-green-500' : stats.successRate >= 80 ? 'bg-yellow-500' : 'bg-red-500'}>
-                    {stats.successRate.toFixed(1)}%
-                  </Badge>
-                ) : (
-                  <Badge variant="outline">No data</Badge>
-                )}
-              </div>
+            <div className="space-y-3">
+              {[
+                { 
+                  label: 'Fallback Rate', 
+                  desc: 'When primary models fail',
+                  value: fallbackRate !== null ? `${fallbackRate.toFixed(1)}%` : 'No data',
+                  status: fallbackRate !== null ? (fallbackRate < 5 ? 'success' : fallbackRate < 15 ? 'warning' : 'error') : 'neutral',
+                  icon: Activity
+                },
+                { 
+                  label: 'Avg Response Time', 
+                  desc: 'Typical AI response latency',
+                  value: stats.avgResponseTime !== null ? `${(stats.avgResponseTime / 1000).toFixed(1)}s` : 'No data',
+                  status: 'neutral',
+                  icon: Clock
+                },
+                { 
+                  label: 'Success Rate', 
+                  desc: 'Successful AI responses',
+                  value: stats.successRate !== null ? `${stats.successRate.toFixed(1)}%` : 'No data',
+                  status: stats.successRate !== null ? (stats.successRate >= 95 ? 'success' : stats.successRate >= 80 ? 'warning' : 'error') : 'neutral',
+                  icon: CheckCircle
+                },
+              ].map((item) => {
+                const Icon = item.icon;
+                const statusColors: Record<string, string> = {
+                  success: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+                  warning: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+                  error: 'bg-red-500/10 text-red-600 border-red-500/20',
+                  neutral: 'bg-muted text-muted-foreground border-border'
+                };
+                
+                return (
+                  <div key={item.label} className="flex items-center justify-between p-3 rounded-xl bg-muted/30 border border-border/30">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-muted/50">
+                        <Icon className="w-4 h-4 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">{item.label}</p>
+                        <p className="text-xs text-muted-foreground">{item.desc}</p>
+                      </div>
+                    </div>
+                    <Badge variant="outline" className={statusColors[item.status]}>
+                      {item.value}
+                    </Badge>
+                  </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

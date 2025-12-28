@@ -22,7 +22,8 @@ import {
   Clock,
   Mail,
   Bell,
-  Eye
+  Eye,
+  Settings
 } from 'lucide-react';
 
 interface SystemConfig {
@@ -66,29 +67,44 @@ interface CollapsibleSectionProps {
   icon: React.ReactNode;
   children: React.ReactNode;
   defaultOpen?: boolean;
+  accentColor?: string;
 }
 
-const CollapsibleSection = ({ title, description, icon, children, defaultOpen = false }: CollapsibleSectionProps) => {
+const CollapsibleSection = ({ title, description, icon, children, defaultOpen = false, accentColor = 'primary' }: CollapsibleSectionProps) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
+  
+  const colorMap: Record<string, string> = {
+    primary: 'from-primary/60 via-primary to-primary/60',
+    orange: 'from-orange-500/60 via-orange-500 to-orange-500/60',
+    blue: 'from-blue-500/60 via-blue-500 to-blue-500/60',
+    green: 'from-emerald-500/60 via-emerald-500 to-emerald-500/60',
+    purple: 'from-purple-500/60 via-purple-500 to-purple-500/60',
+  };
   
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-      <Card className="border-0 shadow-sm bg-card/50 backdrop-blur-sm overflow-hidden">
+      <Card className="relative overflow-hidden border border-border/50 shadow-lg bg-card/80 backdrop-blur-xl">
+        {/* Accent bar */}
+        <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${colorMap[accentColor] || colorMap.primary} ${isOpen ? 'opacity-100' : 'opacity-40'} transition-opacity`} />
+        
         <CollapsibleTrigger asChild>
           <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                {icon}
+                <div className="p-2 rounded-xl bg-muted/50 ring-1 ring-border/50">
+                  {icon}
+                </div>
                 <div>
                   <CardTitle className="text-base">{title}</CardTitle>
                   <CardDescription className="text-sm">{description}</CardDescription>
                 </div>
               </div>
-              {isOpen ? (
-                <ChevronDown className="w-5 h-5 text-muted-foreground transition-transform" />
-              ) : (
-                <ChevronRight className="w-5 h-5 text-muted-foreground transition-transform" />
-              )}
+              <motion.div
+                animate={{ rotate: isOpen ? 180 : 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <ChevronDown className="w-5 h-5 text-muted-foreground" />
+              </motion.div>
             </div>
           </CardHeader>
         </CollapsibleTrigger>
@@ -144,9 +160,7 @@ export const SystemSettings = ({ systemConfig, onUpdateConfig }: SystemSettingsP
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // If enabling maintenance mode, send notification emails to all users
       if (localConfig.maintenanceMode && !systemConfig.maintenanceMode) {
-        // Trigger maintenance notification
         const { error: notifyError } = await supabase.functions.invoke('admin-notifications', {
           body: {
             type: 'maintenance_announcement',
@@ -210,7 +224,6 @@ export const SystemSettings = ({ systemConfig, onUpdateConfig }: SystemSettingsP
       setNewPin('');
       setConfirmPin('');
       
-      // Update pending state
       if (data.pending_id) {
         setPendingPinChange({
           id: data.pending_id,
@@ -233,18 +246,47 @@ export const SystemSettings = ({ systemConfig, onUpdateConfig }: SystemSettingsP
       animate="visible"
       className="space-y-4"
     >
+      {/* Header */}
+      <motion.div variants={itemVariants} className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-xl bg-primary/10 ring-1 ring-primary/20">
+            <Settings className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-xl font-semibold">System Settings</h2>
+            <p className="text-sm text-muted-foreground">Configure system behavior and security</p>
+          </div>
+        </div>
+        
+        {hasChanges && (
+          <Button 
+            onClick={handleSave} 
+            disabled={isSaving}
+            className="bg-gradient-to-r from-primary to-primary/80"
+          >
+            {isSaving ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Save className="w-4 h-4 mr-2" />
+            )}
+            Save Changes
+          </Button>
+        )}
+      </motion.div>
+      
       {/* Maintenance Mode */}
       <motion.div variants={itemVariants}>
         <CollapsibleSection
           title="Maintenance Mode"
           description="Block users during maintenance"
           icon={<AlertTriangle className="w-5 h-5 text-orange-500" />}
+          accentColor="orange"
         >
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+            <div className="flex items-center justify-between p-4 bg-muted/30 rounded-xl border border-border/50">
               <div>
                 <Label htmlFor="maintenance-mode" className="font-medium">Enable Maintenance Mode</Label>
-                <p className="text-xs text-muted-foreground">Blocks all regular users, admins can still access</p>
+                <p className="text-xs text-muted-foreground mt-1">Blocks all regular users, admins can still access</p>
               </div>
               <Switch
                 id="maintenance-mode"
@@ -260,7 +302,7 @@ export const SystemSettings = ({ systemConfig, onUpdateConfig }: SystemSettingsP
                   <Label className="flex items-center gap-2 text-sm font-medium">
                     <Eye className="w-4 h-4" /> Live Preview
                   </Label>
-                  <div className="p-3 bg-muted/30 rounded-lg border border-dashed">
+                  <div className="p-3 bg-muted/30 rounded-xl border border-dashed border-border/50">
                     <div className="flex items-center justify-center gap-3 px-4 py-3 rounded-xl border bg-orange-500/15 border-orange-500/40 text-orange-600 dark:text-orange-400 text-sm font-medium">
                       <AlertTriangle className="w-4 h-4 shrink-0 animate-pulse" />
                       <span className="flex-1 text-center">
@@ -278,6 +320,7 @@ export const SystemSettings = ({ systemConfig, onUpdateConfig }: SystemSettingsP
                     onChange={(e) => handleChange('maintenanceMessage', e.target.value)}
                     placeholder="Enter message to display during maintenance..."
                     rows={3}
+                    className="bg-muted/30 border-border/50"
                   />
                 </div>
                 
@@ -291,6 +334,7 @@ export const SystemSettings = ({ systemConfig, onUpdateConfig }: SystemSettingsP
                       type="datetime-local"
                       value={localConfig.maintenanceStartTime || ''}
                       onChange={(e) => handleChange('maintenanceStartTime', e.target.value)}
+                      className="bg-muted/30 border-border/50"
                     />
                   </div>
                   <div className="space-y-2">
@@ -302,6 +346,7 @@ export const SystemSettings = ({ systemConfig, onUpdateConfig }: SystemSettingsP
                       type="datetime-local"
                       value={localConfig.maintenanceEndTime || ''}
                       onChange={(e) => handleChange('maintenanceEndTime', e.target.value)}
+                      className="bg-muted/30 border-border/50"
                     />
                   </div>
                 </div>
@@ -309,14 +354,14 @@ export const SystemSettings = ({ systemConfig, onUpdateConfig }: SystemSettingsP
             )}
             
             {/* Pre-Maintenance Notice */}
-            <div className="border-t pt-4 mt-4">
-              <div className="flex items-center justify-between p-3 bg-yellow-500/10 rounded-lg mb-3">
+            <div className="border-t border-border/50 pt-4 mt-4">
+              <div className="flex items-center justify-between p-4 bg-amber-500/5 rounded-xl border border-amber-500/20 mb-3">
                 <div>
                   <Label htmlFor="pre-notice" className="font-medium flex items-center gap-2">
-                    <Bell className="w-4 h-4 text-yellow-600" />
+                    <Bell className="w-4 h-4 text-amber-600" />
                     Pre-Maintenance Notice
                   </Label>
-                  <p className="text-xs text-muted-foreground">Show warning banner before maintenance starts</p>
+                  <p className="text-xs text-muted-foreground mt-1">Show warning banner before maintenance starts</p>
                 </div>
                 <Switch
                   id="pre-notice"
@@ -335,28 +380,14 @@ export const SystemSettings = ({ systemConfig, onUpdateConfig }: SystemSettingsP
                       onChange={(e) => handleChange('preMaintenanceMessage', e.target.value)}
                       placeholder="e.g., Scheduled maintenance in 2 hours..."
                       rows={2}
+                      className="bg-muted/30 border-border/50"
                     />
-                  </div>
-                  
-                  {/* Pre-Notice Preview */}
-                  <div className="space-y-2">
-                    <Label className="flex items-center gap-2 text-sm font-medium">
-                      <Eye className="w-4 h-4" /> Preview
-                    </Label>
-                    <div className="p-3 bg-muted/30 rounded-lg border border-dashed">
-                      <div className="flex items-center justify-center gap-3 px-4 py-2.5 rounded-xl border bg-yellow-500/10 border-yellow-500/30 text-yellow-600 dark:text-yellow-400 text-sm font-medium">
-                        <Clock className="w-4 h-4 shrink-0" />
-                        <span className="flex-1 text-center">
-                          {localConfig.preMaintenanceMessage || "Scheduled maintenance coming soon..."}
-                        </span>
-                      </div>
-                    </div>
                   </div>
                 </div>
               )}
             </div>
             
-            <p className="text-xs text-muted-foreground flex items-center gap-2">
+            <p className="text-xs text-muted-foreground flex items-center gap-2 pt-2">
               <Mail className="w-4 h-4" />
               Enabling maintenance will send email notifications to all users
             </p>
@@ -370,6 +401,7 @@ export const SystemSettings = ({ systemConfig, onUpdateConfig }: SystemSettingsP
           title="Default User Settings"
           description="Settings applied to new users"
           icon={<Users className="w-5 h-5 text-blue-500" />}
+          accentColor="blue"
         >
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -381,10 +413,11 @@ export const SystemSettings = ({ systemConfig, onUpdateConfig }: SystemSettingsP
                   value={localConfig.defaultMonthlyLimit}
                   onChange={(e) => handleChange('defaultMonthlyLimit', Number(e.target.value))}
                   min={0}
+                  className="bg-muted/30 border-border/50"
                 />
               </div>
               
-              <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+              <div className="flex items-center justify-between p-4 bg-muted/30 rounded-xl border border-border/50">
                 <Label htmlFor="require-approval">Require Approval</Label>
                 <Switch
                   id="require-approval"
@@ -402,7 +435,8 @@ export const SystemSettings = ({ systemConfig, onUpdateConfig }: SystemSettingsP
         <CollapsibleSection
           title="Security Settings"
           description="Configure authentication and session security"
-          icon={<Shield className="w-5 h-5 text-green-500" />}
+          icon={<Shield className="w-5 h-5 text-emerald-500" />}
+          accentColor="green"
         >
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -415,6 +449,7 @@ export const SystemSettings = ({ systemConfig, onUpdateConfig }: SystemSettingsP
                   onChange={(e) => handleChange('maxLoginAttempts', Number(e.target.value))}
                   min={1}
                   max={10}
+                  className="bg-muted/30 border-border/50"
                 />
               </div>
               
@@ -427,6 +462,7 @@ export const SystemSettings = ({ systemConfig, onUpdateConfig }: SystemSettingsP
                   onChange={(e) => handleChange('sessionTimeout', Number(e.target.value))}
                   min={5}
                   max={120}
+                  className="bg-muted/30 border-border/50"
                 />
               </div>
             </div>
@@ -440,11 +476,12 @@ export const SystemSettings = ({ systemConfig, onUpdateConfig }: SystemSettingsP
           title="Admin Panel PIN"
           description="Change the PIN with email approval"
           icon={<KeyRound className="w-5 h-5 text-purple-500" />}
+          accentColor="purple"
         >
           <div className="space-y-4">
             {pendingPinChange && (
-              <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-                <div className="flex items-center gap-2 text-yellow-700 dark:text-yellow-400">
+              <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl">
+                <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span className="font-medium">PIN Change Pending Approval</span>
                 </div>
@@ -465,11 +502,11 @@ export const SystemSettings = ({ systemConfig, onUpdateConfig }: SystemSettingsP
                   placeholder="••••"
                   maxLength={6}
                   disabled={!!pendingPinChange}
+                  className="bg-muted/30 border-border/50"
                 />
               </div>
-              
               <div className="space-y-2">
-                <Label htmlFor="confirm-pin">Confirm New PIN</Label>
+                <Label htmlFor="confirm-pin">Confirm PIN</Label>
                 <Input
                   id="confirm-pin"
                   type="password"
@@ -478,6 +515,7 @@ export const SystemSettings = ({ systemConfig, onUpdateConfig }: SystemSettingsP
                   placeholder="••••"
                   maxLength={6}
                   disabled={!!pendingPinChange}
+                  className="bg-muted/30 border-border/50"
                 />
               </div>
             </div>
@@ -485,45 +523,28 @@ export const SystemSettings = ({ systemConfig, onUpdateConfig }: SystemSettingsP
             <Button 
               onClick={handleChangePin} 
               disabled={isChangingPin || !newPin || !confirmPin || !!pendingPinChange}
-              variant="outline"
+              className="w-full bg-gradient-to-r from-purple-600 to-purple-500"
             >
               {isChangingPin ? (
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               ) : (
-                <Mail className="w-4 h-4 mr-2" />
+                <KeyRound className="w-4 h-4 mr-2" />
               )}
               Request PIN Change
             </Button>
             
             <p className="text-xs text-muted-foreground">
-              An approval email will be sent. Click the link in the email to confirm the PIN change.
+              <Mail className="w-4 h-4 inline mr-1" />
+              You'll receive an email with an approval link. PIN changes require email confirmation.
             </p>
           </div>
         </CollapsibleSection>
       </motion.div>
 
-      {/* Notification Log Viewer */}
+      {/* Notification Log */}
       <motion.div variants={itemVariants}>
         <NotificationLogViewer />
       </motion.div>
-
-      {/* Save Button */}
-      {hasChanges && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex justify-end"
-        >
-          <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? (
-              <Loader2 className="w-4 h-4 animate-spin mr-2" />
-            ) : (
-              <Save className="w-4 h-4 mr-2" />
-            )}
-            Save Changes
-          </Button>
-        </motion.div>
-      )}
     </motion.div>
   );
 };
