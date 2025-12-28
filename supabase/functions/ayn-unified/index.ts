@@ -34,9 +34,47 @@ const FALLBACK_CHAINS: Record<string, LLMModel[]> = {
     { id: 'lovable-gemini-flash', provider: 'lovable', model_id: 'google/gemini-2.5-flash', display_name: 'Gemini Flash' }
   ],
   image: [
-    { id: 'lovable-gemini-flash', provider: 'lovable', model_id: 'google/gemini-2.5-flash', display_name: 'Gemini Flash' }
+    { id: 'lovable-gemini-image', provider: 'lovable', model_id: 'google/gemini-2.5-flash-image-preview', display_name: 'Gemini Image' }
   ]
 };
+
+// Generate image using Lovable AI
+async function generateImage(prompt: string): Promise<{ imageUrl: string; revisedPrompt: string }> {
+  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+  if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY not configured');
+
+  console.log('[ayn-unified] Generating image with prompt:', prompt.substring(0, 100));
+
+  const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'google/gemini-2.5-flash-image-preview',
+      messages: [{ role: 'user', content: prompt }],
+      modalities: ['image', 'text']
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('[ayn-unified] Image generation failed:', response.status, errorText);
+    throw new Error(`Image generation failed: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url || '';
+  const revisedPrompt = data.choices?.[0]?.message?.content || prompt;
+
+  if (!imageUrl) {
+    throw new Error('No image generated');
+  }
+
+  console.log('[ayn-unified] Image generated successfully');
+  return { imageUrl, revisedPrompt };
+}
 
 // Build system prompt based on intent
 function buildSystemPrompt(intent: string, language: string, context: Record<string, unknown>): string {
@@ -358,6 +396,45 @@ serve(async (req) => {
 
     // Build system prompt
     const systemPrompt = buildSystemPrompt(intent, language, context);
+
+    // Handle image generation intent (LAB mode)
+    if (intent === 'image') {
+      try {
+        const { imageUrl, revisedPrompt } = await generateImage(lastMessage);
+        
+        // Log usage
+        try {
+          await supabase.from('llm_usage_logs').insert({
+            user_id: user.id,
+            intent_type: 'image',
+            was_fallback: false
+          });
+        } catch (logError) {
+          console.error('Failed to log image usage:', logError);
+        }
+
+        return new Response(JSON.stringify({
+          content: revisedPrompt,
+          imageUrl,
+          revisedPrompt,
+          model: 'Gemini Image',
+          wasFallback: false,
+          intent: 'image'
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      } catch (imageError) {
+        console.error('[ayn-unified] Image generation failed:', imageError);
+        return new Response(JSON.stringify({
+          content: "sorry, couldn't generate that image right now. try describing it differently?",
+          error: imageError instanceof Error ? imageError.message : 'Image generation failed',
+          intent: 'image'
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+    }
 
     // If search intent, perform search first
     let enrichedMessages = [...messages];
