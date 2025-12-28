@@ -1084,7 +1084,60 @@ serve(async (req) => {
     }
 
     // For LAB mode, don't enforce conciseness - we want full structured responses
-    const finalText = (requestData.concise && !isLABMode) ? enforceConciseness(sanitizedText) : sanitizedText;
+    let finalText = (requestData.concise && !isLABMode) ? enforceConciseness(sanitizedText) : sanitizedText;
+
+    // Persist DALL-E images immediately before they expire
+    // DALL-E URLs expire in ~1 hour, so we must save them now
+    const dalleUrlPattern = /https:\/\/oaidalleapiprodscus\.blob\.core\.windows\.net[^\s"')]+/g;
+    const dalleMatches = finalText.match(dalleUrlPattern);
+    
+    if (dalleMatches && dalleMatches.length > 0) {
+      console.log(`[${requestId}] Found ${dalleMatches.length} DALL-E image(s) to persist`);
+      
+      for (const dalleUrl of dalleMatches) {
+        try {
+          console.log(`[${requestId}] Fetching DALL-E image...`);
+          const imageResponse = await fetch(dalleUrl);
+          
+          if (imageResponse.ok) {
+            const imageBlob = await imageResponse.blob();
+            const imageBuffer = await imageBlob.arrayBuffer();
+            const uint8Array = new Uint8Array(imageBuffer);
+            
+            // Generate unique filename
+            const timestamp = Date.now();
+            const randomId = crypto.randomUUID().split('-')[0];
+            const filename = `dalle-${timestamp}-${randomId}.png`;
+            
+            // Upload to Supabase Storage
+            const { data: uploadData, error: uploadError } = await supabase.storage
+              .from('generated-images')
+              .upload(filename, uint8Array, {
+                contentType: 'image/png',
+                upsert: false
+              });
+            
+            if (!uploadError && uploadData) {
+              // Get public URL
+              const { data: publicUrlData } = supabase.storage
+                .from('generated-images')
+                .getPublicUrl(filename);
+              
+              // Replace the DALL-E URL with the permanent URL in the response
+              finalText = finalText.replace(dalleUrl, publicUrlData.publicUrl);
+              console.log(`[${requestId}] Image persisted: ${filename}`);
+            } else {
+              console.error(`[${requestId}] Failed to upload image:`, uploadError);
+            }
+          } else {
+            console.error(`[${requestId}] Failed to fetch DALL-E image: ${imageResponse.status}`);
+          }
+        } catch (imgError) {
+          console.error(`[${requestId}] Error persisting image:`, imgError);
+          // Continue with original URL if persistence fails
+        }
+      }
+    }
 
     console.log(`[${requestId}] Text processing:`, {
       original: rawText.slice(0, 100),
