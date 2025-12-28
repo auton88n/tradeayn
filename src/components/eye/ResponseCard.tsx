@@ -305,47 +305,42 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
             </button>
             
             {/* Right: Feedback + actions */}
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-2">
               <button 
                 onClick={() => handleFeedback('up')}
                 className={cn(
-                  "p-1.5 rounded-lg transition-colors",
+                  "p-2 rounded-lg transition-colors",
                   feedback === 'up' 
                     ? "text-foreground bg-muted" 
                     : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 )}
+                aria-label="Helpful"
               >
-                <ThumbsUp size={16} />
+                <ThumbsUp size={18} />
               </button>
               <button 
                 onClick={() => handleFeedback('down')}
                 className={cn(
-                  "p-1.5 rounded-lg transition-colors",
+                  "p-2 rounded-lg transition-colors",
                   feedback === 'down' 
                     ? "text-foreground bg-muted" 
                     : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 )}
+                aria-label="Not helpful"
               >
-                <ThumbsDown size={16} />
+                <ThumbsDown size={18} />
               </button>
               
               {detectedImageUrl && (
                 <button
                   onClick={handleDesignThis}
-                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors ml-1"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                   title="Edit in Design LAB"
                 >
-                  <Palette size={14} />
+                  <Palette size={16} />
                   <span>Design</span>
                 </button>
               )}
-              <button
-                onClick={handleExpand}
-                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                title="Expand"
-              >
-                <Maximize2 size={16} />
-              </button>
             </div>
           </div>
         </motion.div>
