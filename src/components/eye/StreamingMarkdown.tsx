@@ -79,30 +79,25 @@ export const StreamingMarkdown = memo(({
 
   return (
     <div 
-      className={cn("relative contain-layout", className)}
+      className={cn("cursor-pointer", className)}
       onClick={handleSkip}
-      style={{ willChange: 'contents' }}
     >
-      <MessageFormatter 
-        content={visibleContent}
-        className="text-sm text-gray-700 dark:text-gray-200 leading-relaxed"
-      />
-      
-      {/* Blinking cursor while streaming - CSS animation only */}
-      {!isComplete && (
-        <span 
-          className="inline-block w-0.5 h-4 ml-0.5 bg-primary/70" 
-          style={{ 
-            animation: 'pulse 1s ease-in-out infinite',
-            willChange: 'opacity'
-          }}
+      <div className="inline">
+        <MessageFormatter 
+          content={visibleContent}
+          className="text-sm text-foreground/90 leading-relaxed"
         />
-      )}
+        
+        {/* Blinking cursor while streaming - inline with text */}
+        {!isComplete && displayedWordCount > 0 && (
+          <span className="inline-block w-0.5 h-4 ml-0.5 align-middle bg-primary/60 animate-pulse" />
+        )}
+      </div>
       
-      {/* Skip hint - shows after some progress */}
-      {!isComplete && progress > 15 && (
-        <div className="absolute -bottom-6 left-0 text-[10px] text-muted-foreground/60 animate-fade-in">
-          Click to skip
+      {/* Skip hint - inline below content */}
+      {!isComplete && progress > 20 && (
+        <div className="mt-3 text-[10px] text-muted-foreground/50 text-center animate-fade-in">
+          Tap to skip
         </div>
       )}
     </div>
