@@ -8,6 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { ArrowLeft, Sun, Moon, RefreshCw, LayoutDashboard, Users, Shield, Settings, FileText, Loader2, MessageSquare, LineChart, Bot, DollarSign, Gauge, Sparkles } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { UserManagement } from '@/components/admin/UserManagement';
@@ -135,7 +136,6 @@ export const AdminPanel = ({
 }: AdminPanelProps) => {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
-  const tabsRef = useRef<HTMLDivElement>(null);
 
   // Filter tabs based on role - duty users only see Applications and Support
   const tabs = allTabs.filter(tab => isAdmin || !tab.adminOnly);
@@ -147,7 +147,6 @@ export const AdminPanel = ({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [allUsers, setAllUsers] = useState<AccessGrantWithProfile[]>([]);
   const [applications, setApplications] = useState<ServiceApplication[]>([]);
-  const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
   const [systemMetrics, setSystemMetrics] = useState<SystemMetrics>({
     totalUsers: 0,
     activeUsers: 0,
@@ -168,20 +167,6 @@ export const AdminPanel = ({
     sessionTimeout: 30
   });
 
-  // Update indicator position when active tab changes
-  useEffect(() => {
-    if (tabsRef.current) {
-      const activeButton = tabsRef.current.querySelector(`[data-tab="${activeTab}"]`) as HTMLButtonElement;
-      if (activeButton) {
-        const containerRect = tabsRef.current.getBoundingClientRect();
-        const buttonRect = activeButton.getBoundingClientRect();
-        setIndicatorStyle({
-          left: buttonRect.left - containerRect.left,
-          width: buttonRect.width
-        });
-      }
-    }
-  }, [activeTab, tabs]);
 
   // Direct REST API fetch to avoid Supabase client deadlock
   const fetchWithAuth = useCallback(async (endpoint: string, options: RequestInit = {}) => {
@@ -436,28 +421,13 @@ export const AdminPanel = ({
         </div>
       </motion.div>
 
-      {/* Premium Tabs with Sliding Indicator */}
+      {/* Simple Tabs */}
       <motion.div 
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="relative"
       >
-        <div 
-          ref={tabsRef}
-          className="relative flex gap-1 p-1.5 bg-card/80 backdrop-blur-xl rounded-2xl border border-border/50 shadow-lg shadow-primary/5 w-fit flex-wrap overflow-hidden"
-        >
-          {/* Sliding indicator */}
-          <motion.div
-            className="absolute top-1.5 bottom-1.5 bg-gradient-to-r from-primary/20 via-primary/10 to-primary/20 rounded-xl border border-primary/30 shadow-sm"
-            initial={false}
-            animate={{
-              left: indicatorStyle.left,
-              width: indicatorStyle.width
-            }}
-            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-          />
-          
+        <div className="flex flex-wrap gap-1 p-1 bg-muted/50 rounded-xl border border-border">
           {tabs.map(tab => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -468,18 +438,19 @@ export const AdminPanel = ({
                 key={tab.id}
                 data-tab={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`relative z-10 flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                   isActive 
-                    ? 'text-primary' 
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
+                    ? 'bg-background text-foreground shadow-sm border border-border' 
+                    : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
+                )}
               >
-                <Icon className={`w-4 h-4 transition-colors ${isActive ? 'text-primary' : ''}`} />
+                <Icon className="w-4 h-4" />
                 <span className="hidden sm:inline">{tab.label}</span>
                 {tabNewCount > 0 && (
                   <Badge 
                     variant="destructive" 
-                    className="ml-1 text-xs px-1.5 py-0 min-w-5 h-5 flex items-center justify-center animate-pulse"
+                    className="ml-1 text-xs px-1.5 py-0 min-w-5 h-5 flex items-center justify-center"
                   >
                     {tabNewCount}
                   </Badge>
