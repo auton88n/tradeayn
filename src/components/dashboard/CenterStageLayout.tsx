@@ -17,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { hapticFeedback } from '@/lib/haptics';
 import { useEmotionOrchestrator } from '@/hooks/useEmotionOrchestrator';
+import { useEmpathyReaction } from '@/hooks/useEmpathyReaction';
 import type { Message, AIMode, AIModeConfig } from '@/types/dashboard.types';
 
 // Fallback suggestions when API fails
@@ -161,10 +162,22 @@ export const CenterStageLayout = ({
   const gazeIndexRef = useRef<number | null>(null);
   const [gazeForRender, setGazeForRender] = useState<number | null>(null);
   
-  // AI empathy micro-behavior state (passed to EmotionalEye)
-  const [aiPupilReaction] = useState<'normal' | 'dilate-slightly' | 'dilate-more' | 'contract'>('normal');
-  const [aiBlinkPattern] = useState<'normal' | 'slow-comfort' | 'quick-attentive' | 'double-understanding'>('normal');
-  const [aiColorIntensity] = useState(0.5);
+  // Typing content for empathy detection
+  const [typingContent, setTypingContent] = useState<string>('');
+  
+  // Empathy reaction hook - analyzes user typing and triggers eye reactions
+  const { 
+    userEmotion,
+    empathyResponse,
+    pupilReaction: empathyPupilReaction,
+    blinkPattern: empathyBlinkPattern,
+    colorIntensity: empathyColorIntensity,
+    resetEmpathy,
+  } = useEmpathyReaction(typingContent, {
+    debounceMs: 400,
+    minTextLength: 3,
+    enabled: true,
+  });
 
   // Measure footer height dynamically for bottom padding
   useEffect(() => {
@@ -329,9 +342,11 @@ export const CenterStageLayout = ({
         baselineLastMessageId: messages[messages.length - 1]?.id ?? null,
       };
 
-      // Clear previous response bubbles and suggestions
+      // Clear previous response bubbles, suggestions, and reset empathy state
       clearResponseBubbles();
       clearSuggestions();
+      resetEmpathy();
+      setTypingContent('');
 
       // Start flying animation
       const inputPos = getInputPosition();
@@ -369,6 +384,7 @@ export const CenterStageLayout = ({
       messages,
       clearResponseBubbles,
       clearSuggestions,
+      resetEmpathy,
       getInputPosition,
       getEyePosition,
       startMessageAnimation,
@@ -573,9 +589,9 @@ export const CenterStageLayout = ({
             <EmotionalEye 
               size={isMobile ? "md" : "lg"} 
               gazeTarget={gazeTarget} 
-              pupilReaction={aiPupilReaction}
-              blinkPattern={aiBlinkPattern}
-              colorIntensity={aiColorIntensity}
+              pupilReaction={empathyPupilReaction}
+              blinkPattern={empathyBlinkPattern}
+              colorIntensity={empathyColorIntensity}
             />
 
             {/* Thinking indicator when typing - simplified animation */}
@@ -720,6 +736,7 @@ export const CenterStageLayout = ({
           prefillValue={prefillValue}
           onPrefillConsumed={onPrefillConsumed}
           onLanguageChange={onLanguageChange}
+          onTypingContentChange={setTypingContent}
           hasReachedLimit={hasReachedLimit}
           messageCount={messageCount}
           maxMessages={maxMessages}
