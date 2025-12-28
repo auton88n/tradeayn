@@ -211,7 +211,7 @@ export function UserAILimits() {
                 <p className="text-sm text-muted-foreground">At Limit Today</p>
                 <p className="text-2xl font-bold text-red-500">
                   {limits.filter(l => 
-                    !l.is_unlimited && l.current_daily_messages >= l.daily_messages
+                    !l.is_unlimited && (l.current_daily_messages ?? 0) >= (l.daily_messages ?? 10)
                   ).length}
                 </p>
               </div>
@@ -256,7 +256,7 @@ export function UserAILimits() {
                               <label className="text-xs text-muted-foreground">Messages</label>
                               <Input
                                 type="number"
-                                value={editValues.daily_messages}
+                                value={editValues.daily_messages ?? 0}
                                 onChange={(e) => setEditValues(prev => ({ ...prev, daily_messages: parseInt(e.target.value) }))}
                                 className="h-8"
                               />
@@ -265,7 +265,7 @@ export function UserAILimits() {
                               <label className="text-xs text-muted-foreground">Engineering</label>
                               <Input
                                 type="number"
-                                value={editValues.daily_engineering}
+                                value={editValues.daily_engineering ?? 0}
                                 onChange={(e) => setEditValues(prev => ({ ...prev, daily_engineering: parseInt(e.target.value) }))}
                                 className="h-8"
                               />
@@ -274,7 +274,7 @@ export function UserAILimits() {
                               <label className="text-xs text-muted-foreground">Search</label>
                               <Input
                                 type="number"
-                                value={editValues.daily_search}
+                                value={editValues.daily_search ?? 0}
                                 onChange={(e) => setEditValues(prev => ({ ...prev, daily_search: parseInt(e.target.value) }))}
                                 className="h-8"
                               />
@@ -283,7 +283,7 @@ export function UserAILimits() {
                               <label className="text-xs text-muted-foreground">Files</label>
                               <Input
                                 type="number"
-                                value={editValues.daily_files}
+                                value={editValues.daily_files ?? 0}
                                 onChange={(e) => setEditValues(prev => ({ ...prev, daily_files: parseInt(e.target.value) }))}
                                 className="h-8"
                               />
@@ -324,9 +324,9 @@ export function UserAILimits() {
                             </Button>
                           </>
                         ) : (
-                          <>
+                        <>
                             <Switch
-                              checked={user.is_unlimited}
+                              checked={user.is_unlimited ?? false}
                               onCheckedChange={(checked) => toggleUnlimited(user.user_id, checked)}
                             />
                             <Button size="sm" variant="ghost" onClick={() => startEditing(user)}>
