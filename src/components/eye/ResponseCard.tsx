@@ -190,105 +190,73 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
           layout={false}
           className={cn(
             "relative flex flex-col",
-            // Full width on mobile, contained on desktop
             "w-full sm:w-[90%] md:max-w-[600px] lg:max-w-[680px]",
             "mx-2 sm:mx-auto",
-            // Modern glassmorphism background with gradient
-            "bg-gradient-to-br from-white/90 via-white/80 to-gray-100/70",
-            "dark:from-gray-900/95 dark:via-gray-800/90 dark:to-gray-900/85",
-            "backdrop-blur-2xl",
-            // Layered border effects for depth
-            "border border-white/40 dark:border-white/10",
-            "ring-1 ring-black/5 dark:ring-white/5",
-            // Premium shadow with color tint
-            "shadow-[0_8px_40px_-12px_rgba(0,0,0,0.15),0_4px_20px_-8px_rgba(0,0,0,0.1)]",
-            "dark:shadow-[0_8px_40px_-12px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.05)]",
+            // Clean white background
+            "bg-background",
+            // Simple subtle border
+            "border border-border",
+            // Minimal shadow
+            "shadow-sm",
             // Rounding
-            variant === 'sheet' ? "rounded-t-3xl rounded-b-xl" : "rounded-3xl",
-            "overflow-hidden",
-            // CSS containment for performance
-            "contain-layout contain-paint"
+            variant === 'sheet' ? "rounded-t-2xl rounded-b-lg" : "rounded-2xl",
+            "overflow-hidden"
           )}
           style={{
             willChange: 'transform, opacity',
             transform: 'translateZ(0)',
             ...(variant === 'sheet' ? { maxHeight: 'min(50vh, 100%)' } : {}),
           }}
-          initial={{ opacity: 0, y: 20, scale: 0.95 }}
+          initial={{ opacity: 0, y: 20, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 10, scale: 0.98 }}
           transition={{
-            duration: 0.4,
+            duration: 0.3,
             ease: [0.25, 0.1, 0.25, 1],
-            delay: 0.1,
           }}
         >
-          {/* Glossy top shine effect */}
-          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/60 dark:via-white/20 to-transparent" />
-          <div className="absolute inset-x-4 top-0 h-[1px] bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-          
           {/* Speech bubble pointer */}
           {showPointer && variant !== 'sheet' && (
-            <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 rotate-45 bg-gradient-to-br from-white/90 to-gray-100/70 dark:from-gray-900/95 dark:to-gray-800/90 border-l border-t border-white/40 dark:border-white/10" />
+            <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 rotate-45 bg-background border-l border-t border-border" />
           )}
 
-          {/* Header with gradient icon container */}
-          <div className="flex-shrink-0 flex items-center justify-between px-5 py-3.5 border-b border-black/5 dark:border-white/5">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-gradient-to-br from-primary/20 via-primary/10 to-primary/5 shadow-sm shadow-primary/10 ring-1 ring-primary/10">
-                <Brain className="w-4 h-4 text-primary" />
+          {/* Header */}
+          <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
+            <div className="flex items-center gap-2.5">
+              <div className="p-1.5 rounded-lg bg-muted">
+                <Brain className="w-4 h-4 text-foreground" />
               </div>
-              <span className="text-sm font-semibold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text">AYN</span>
+              <span className="text-sm font-medium text-foreground">AYN</span>
             </div>
             {onDismiss && (
               <button
                 onClick={handleDismiss}
-                className={cn(
-                  "p-2 rounded-xl transition-all duration-200",
-                  "bg-gray-100/50 dark:bg-white/5",
-                  "hover:bg-red-100/80 dark:hover:bg-red-500/10",
-                  "text-muted-foreground hover:text-red-500",
-                  "active:scale-90"
-                )}
+                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                 title="Dismiss"
               >
-                <X size={15} />
+                <X size={16} />
               </button>
             )}
           </div>
 
-          {/* Content area with inner glow */}
+          {/* Content area */}
           <div 
             ref={contentRef}
             className={cn(
               "flex-1 min-h-0 overflow-y-auto overflow-x-hidden",
-              "relative",
-              // Height constraints
               variant === 'inline' && "max-h-[45vh] sm:max-h-[50vh]",
-              // Full-width images
-              "[&_img]:w-full [&_img]:max-h-[280px] [&_img]:object-cover [&_img]:rounded-none",
-              "[&_img]:border-b [&_img]:border-black/5 dark:[&_img]:border-white/5",
-              // Text padding
-              "[&>div]:px-5 [&>div]:py-4",
-              // Premium scrollbar
-              "[&::-webkit-scrollbar]:w-1",
-              "[&::-webkit-scrollbar-track]:bg-transparent",
-              "[&::-webkit-scrollbar-thumb]:bg-gray-300/50 dark:[&::-webkit-scrollbar-thumb]:bg-white/10",
-              "[&::-webkit-scrollbar-thumb]:rounded-full",
-              "[&::-webkit-scrollbar-thumb]:hover:bg-gray-400/50 dark:[&::-webkit-scrollbar-thumb]:hover:bg-white/20",
+              "[&_img]:w-full [&_img]:max-h-[280px] [&_img]:object-cover [&_img]:rounded-lg",
+              "[&>div]:px-4 [&>div]:py-4",
               "[-webkit-overflow-scrolling:touch]"
             )}
           >
-            {/* Inner glow effect */}
-            <div className="absolute inset-x-0 top-0 h-6 bg-gradient-to-b from-white/30 dark:from-white/5 to-transparent pointer-events-none" />
-            
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentResponseId || 'content'}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.2, ease: 'easeInOut' }}
+                transition={{ duration: 0.2 }}
               >
                 {isStreaming ? (
                   <StreamingMarkdown 
@@ -296,12 +264,12 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
                     speed={50}
                     onComplete={handleStreamComplete}
                     enableHaptics={isMobile}
-                    className="text-sm text-foreground leading-relaxed [&_pre]:max-w-full [&_pre]:overflow-x-auto"
+                    className="text-sm text-foreground leading-relaxed [&_pre]:max-w-full [&_pre]:overflow-x-auto [&_pre]:bg-muted [&_pre]:rounded-lg [&_pre]:p-3"
                   />
                 ) : (
                   <MessageFormatter 
                     content={combinedContent} 
-                    className="text-sm text-foreground leading-relaxed [&_pre]:max-w-full [&_pre]:overflow-x-auto" 
+                    className="text-sm text-foreground leading-relaxed [&_pre]:max-w-full [&_pre]:overflow-x-auto [&_pre]:bg-muted [&_pre]:rounded-lg [&_pre]:p-3" 
                   />
                 )}
               </motion.div>
@@ -311,161 +279,110 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
           {/* Fade gradient when scrollable */}
           {isScrollable && !isAtBottom && (
             <div 
-              className="absolute bottom-16 left-0 right-0 h-10 bg-gradient-to-t from-white/80 dark:from-gray-900/80 to-transparent pointer-events-none"
+              className="absolute bottom-14 left-0 right-0 h-8 bg-gradient-to-t from-background to-transparent pointer-events-none"
               aria-hidden="true"
             />
           )}
 
-          {/* Modern glossy action bar */}
-          <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-t border-black/5 dark:border-white/5 bg-gradient-to-b from-gray-50/50 to-gray-100/30 dark:from-gray-800/30 dark:to-gray-900/20">
-            {/* Left: Copy pill button */}
+          {/* Clean action bar */}
+          <div className="flex-shrink-0 flex items-center justify-between px-4 py-2.5 border-t border-border">
+            {/* Left: Copy button */}
             <button
               onClick={copyContent}
-              className={cn(
-                "flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium",
-                "bg-white/80 dark:bg-white/10",
-                "backdrop-blur-sm",
-                "border border-black/5 dark:border-white/10",
-                "shadow-sm hover:shadow-md",
-                "hover:bg-white dark:hover:bg-white/15",
-                "text-muted-foreground hover:text-foreground",
-                "transition-all duration-200",
-                "active:scale-95"
-              )}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
             >
               {copied ? (
                 <>
-                  <Check size={13} className="text-green-500" />
-                  <span className="text-green-600 dark:text-green-400">Copied!</span>
+                  <Check size={14} className="text-green-600" />
+                  <span className="text-green-600">Copied</span>
                 </>
               ) : (
                 <>
-                  <Copy size={13} />
+                  <Copy size={14} />
                   <span>Copy</span>
                 </>
               )}
             </button>
             
-            {/* Center: Glossy feedback buttons */}
-            <div className="flex items-center gap-1.5 p-1 rounded-full bg-white/50 dark:bg-white/5 backdrop-blur-sm border border-black/5 dark:border-white/5">
+            {/* Right: Feedback + actions */}
+            <div className="flex items-center gap-1">
               <button 
                 onClick={() => handleFeedback('up')}
                 className={cn(
-                  "p-2 rounded-full transition-all duration-200 active:scale-90",
+                  "p-1.5 rounded-lg transition-colors",
                   feedback === 'up' 
-                    ? "bg-gradient-to-br from-green-400/30 to-green-500/20 text-green-600 dark:text-green-400 shadow-sm shadow-green-500/20" 
-                    : "hover:bg-white/80 dark:hover:bg-white/10 text-muted-foreground hover:text-green-500"
+                    ? "text-foreground bg-muted" 
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 )}
               >
-                <ThumbsUp size={15} />
+                <ThumbsUp size={16} />
               </button>
               <button 
                 onClick={() => handleFeedback('down')}
                 className={cn(
-                  "p-2 rounded-full transition-all duration-200 active:scale-90",
+                  "p-1.5 rounded-lg transition-colors",
                   feedback === 'down' 
-                    ? "bg-gradient-to-br from-red-400/30 to-red-500/20 text-red-600 dark:text-red-400 shadow-sm shadow-red-500/20" 
-                    : "hover:bg-white/80 dark:hover:bg-white/10 text-muted-foreground hover:text-red-500"
+                    ? "text-foreground bg-muted" 
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 )}
               >
-                <ThumbsDown size={15} />
+                <ThumbsDown size={16} />
               </button>
-            </div>
-            
-            {/* Right: Design + Expand */}
-            <div className="flex items-center gap-1.5">
+              
               {detectedImageUrl && (
                 <button
                   onClick={handleDesignThis}
-                  className={cn(
-                    "flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium",
-                    "bg-gradient-to-r from-pink-500/15 via-orange-500/10 to-amber-500/15",
-                    "backdrop-blur-sm",
-                    "border border-pink-300/30 dark:border-pink-500/20",
-                    "shadow-sm hover:shadow-md hover:shadow-pink-500/10",
-                    "hover:from-pink-500/25 hover:via-orange-500/20 hover:to-amber-500/25",
-                    "text-pink-600 dark:text-pink-400",
-                    "transition-all duration-200",
-                    "active:scale-95"
-                  )}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors ml-1"
                   title="Edit in Design LAB"
                 >
-                  <Palette size={13} />
+                  <Palette size={14} />
                   <span>Design</span>
                 </button>
               )}
               <button
                 onClick={handleExpand}
-                className={cn(
-                  "p-2.5 rounded-full transition-all duration-200",
-                  "bg-white/80 dark:bg-white/10",
-                  "backdrop-blur-sm",
-                  "border border-black/5 dark:border-white/10",
-                  "shadow-sm hover:shadow-md",
-                  "hover:bg-white dark:hover:bg-white/15",
-                  "text-muted-foreground hover:text-primary",
-                  "active:scale-95"
-                )}
+                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                 title="Expand"
               >
-                <Maximize2 size={14} />
+                <Maximize2 size={16} />
               </button>
             </div>
           </div>
         </motion.div>
       </AnimatePresence>
 
-      {/* Reading Mode Dialog - Glossy Modern Style */}
+      {/* Reading Mode Dialog - Clean Style */}
       <Dialog open={isExpanded} onOpenChange={setIsExpanded}>
         <DialogContent 
           className={cn(
             "flex flex-col p-0 gap-0",
-            // Full screen on mobile, large panel on desktop
             "w-screen h-[100dvh] max-w-none rounded-none",
-            "sm:w-[90vw] sm:max-w-4xl sm:h-[85vh] sm:max-h-[85vh] sm:rounded-3xl",
-            // Modern glassmorphism
-            "bg-gradient-to-br from-white/95 via-gray-50/90 to-white/95",
-            "dark:from-gray-900/98 dark:via-gray-800/95 dark:to-gray-900/98",
-            "backdrop-blur-2xl",
-            "border-0 sm:border sm:border-white/30 dark:sm:border-white/10",
-            "sm:shadow-[0_25px_80px_-20px_rgba(0,0,0,0.25)]",
-            "sm:ring-1 sm:ring-black/5 dark:sm:ring-white/5",
+            "sm:w-[90vw] sm:max-w-4xl sm:h-[85vh] sm:max-h-[85vh] sm:rounded-2xl",
+            "bg-background",
+            "border-0 sm:border sm:border-border",
+            "sm:shadow-lg",
             "overflow-hidden"
           )}
         >
-          {/* Glossy top shine */}
-          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/60 dark:via-white/15 to-transparent" />
-          
-          {/* Sticky Header - Glassmorphism */}
-          <DialogHeader className="flex-shrink-0 px-5 sm:px-8 py-4 border-b border-black/5 dark:border-white/5 bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl">
+          {/* Header */}
+          <DialogHeader className="flex-shrink-0 px-5 sm:px-6 py-4 border-b border-border bg-background">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary/20 via-primary/10 to-primary/5 shadow-sm shadow-primary/10 ring-1 ring-primary/10">
-                  <Brain className="w-5 h-5 text-primary" />
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-lg bg-muted">
+                  <Brain className="w-5 h-5 text-foreground" />
                 </div>
-                <DialogTitle className="text-lg font-semibold">AYN Response</DialogTitle>
+                <DialogTitle className="text-base font-medium">AYN Response</DialogTitle>
               </div>
               
-              <div className="flex items-center gap-2">
-                {/* Copy pill button */}
+              <div className="flex items-center gap-1">
                 <button
                   onClick={copyContent}
-                  className={cn(
-                    "flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium",
-                    "bg-white/80 dark:bg-white/10",
-                    "backdrop-blur-sm",
-                    "border border-black/5 dark:border-white/10",
-                    "shadow-sm hover:shadow-md",
-                    "hover:bg-white dark:hover:bg-white/15",
-                    "text-muted-foreground hover:text-foreground",
-                    "transition-all duration-200",
-                    "active:scale-95"
-                  )}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {copied ? (
                     <>
-                      <Check size={14} className="text-green-500" />
-                      <span className="hidden sm:inline text-green-600 dark:text-green-400">Copied!</span>
+                      <Check size={14} className="text-green-600" />
+                      <span className="hidden sm:inline text-green-600">Copied</span>
                     </>
                   ) : (
                     <>
@@ -475,31 +392,28 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
                   )}
                 </button>
                 
-                {/* Glossy feedback container */}
-                <div className="flex gap-1 p-1 rounded-full bg-white/50 dark:bg-white/5 backdrop-blur-sm border border-black/5 dark:border-white/5 ml-1">
-                  <button 
-                    onClick={() => handleFeedback('up')}
-                    className={cn(
-                      "p-2 rounded-full transition-all duration-200 active:scale-90",
-                      feedback === 'up' 
-                        ? "bg-gradient-to-br from-green-400/30 to-green-500/20 text-green-600 dark:text-green-400 shadow-sm shadow-green-500/20" 
-                        : "hover:bg-white/80 dark:hover:bg-white/10 text-muted-foreground hover:text-green-500"
-                    )}
-                  >
-                    <ThumbsUp size={15} />
-                  </button>
-                  <button 
-                    onClick={() => handleFeedback('down')}
-                    className={cn(
-                      "p-2 rounded-full transition-all duration-200 active:scale-90",
-                      feedback === 'down' 
-                        ? "bg-gradient-to-br from-red-400/30 to-red-500/20 text-red-600 dark:text-red-400 shadow-sm shadow-red-500/20" 
-                        : "hover:bg-white/80 dark:hover:bg-white/10 text-muted-foreground hover:text-red-500"
-                    )}
-                  >
-                    <ThumbsDown size={15} />
-                  </button>
-                </div>
+                <button 
+                  onClick={() => handleFeedback('up')}
+                  className={cn(
+                    "p-1.5 rounded-lg transition-colors",
+                    feedback === 'up' 
+                      ? "text-foreground bg-muted" 
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  <ThumbsUp size={16} />
+                </button>
+                <button 
+                  onClick={() => handleFeedback('down')}
+                  className={cn(
+                    "p-1.5 rounded-lg transition-colors",
+                    feedback === 'down' 
+                      ? "text-foreground bg-muted" 
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  <ThumbsDown size={16} />
+                </button>
               </div>
             </div>
           </DialogHeader>
@@ -509,19 +423,10 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
             ref={dialogContentRef}
             className={cn(
               "flex-1 overflow-y-auto overflow-x-hidden",
-              "px-5 sm:px-10 py-6",
-              // Premium scrollbar
-              "[&::-webkit-scrollbar]:w-1.5",
-              "[&::-webkit-scrollbar-track]:bg-transparent",
-              "[&::-webkit-scrollbar-thumb]:bg-gray-300/40 dark:[&::-webkit-scrollbar-thumb]:bg-white/10",
-              "[&::-webkit-scrollbar-thumb]:rounded-full",
-              "[&::-webkit-scrollbar-thumb]:hover:bg-gray-400/50 dark:[&::-webkit-scrollbar-thumb]:hover:bg-white/20",
+              "px-5 sm:px-8 py-6",
               "[-webkit-overflow-scrolling:touch]"
             )}
           >
-            {/* Inner glow */}
-            <div className="pointer-events-none absolute top-[57px] left-0 right-0 h-6 bg-gradient-to-b from-white/50 dark:from-gray-900/50 to-transparent z-10" />
-            
             <div className="max-w-3xl mx-auto">
               <MessageFormatter 
                 content={combinedContent} 
@@ -529,7 +434,7 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
                   "text-base sm:text-[15px] leading-relaxed sm:leading-7",
                   "text-foreground",
                   "prose prose-gray dark:prose-invert max-w-none",
-                  "[&_pre]:max-w-full [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:p-4",
+                  "[&_pre]:max-w-full [&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:p-4 [&_pre]:bg-muted",
                   "[&_code]:text-sm",
                   "[&_ul]:space-y-2 [&_ol]:space-y-2",
                   "[&_h1]:text-2xl [&_h2]:text-xl [&_h3]:text-lg",
@@ -541,28 +446,16 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
             </div>
           </div>
           
-          {/* Bottom fade + glossy scroll button */}
+          {/* Bottom fade + scroll button */}
           {dialogScrollable && !dialogAtBottom && (
             <>
               <div 
-                className="pointer-events-none absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-white/90 dark:from-gray-900/90 via-white/50 dark:via-gray-900/50 to-transparent"
+                className="pointer-events-none absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background to-transparent"
                 aria-hidden="true"
               />
               <button
                 onClick={scrollDialogToBottom}
-                className={cn(
-                  "absolute bottom-5 left-1/2 -translate-x-1/2",
-                  "flex items-center gap-1.5 px-5 py-2.5 rounded-full",
-                  "bg-gradient-to-r from-primary via-primary to-primary/90",
-                  "text-primary-foreground",
-                  "backdrop-blur-sm",
-                  "shadow-lg shadow-primary/30",
-                  "hover:shadow-xl hover:shadow-primary/40",
-                  "ring-1 ring-white/20",
-                  "transition-all duration-200",
-                  "animate-bounce",
-                  "text-sm font-medium"
-                )}
+                className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-4 py-2 rounded-full bg-foreground text-background text-sm font-medium shadow-lg animate-bounce"
               >
                 <ChevronDown size={16} />
                 <span>Scroll down</span>
