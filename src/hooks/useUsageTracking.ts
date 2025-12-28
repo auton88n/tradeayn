@@ -51,38 +51,48 @@ export const useUsageTracking = (userId: string | null): UsageData & { refreshUs
   useEffect(() => {
     if (!userId) return;
 
-    const channel = supabase
-      .channel(`usage-tracking-${userId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'access_grants',
-          filter: `user_id=eq.${userId}`
-        },
-        (payload) => {
-          console.log('[useUsageTracking] Real-time update received:', payload);
-          const newData = payload.new as {
-            current_month_usage: number;
-            monthly_limit: number | null;
-            usage_reset_date: string | null;
-          };
-          
-          setUsageData(prev => ({
-            ...prev,
-            currentMonthUsage: newData.current_month_usage || 0,
-            monthlyLimit: newData.monthly_limit,
-            usageResetDate: newData.usage_reset_date
-          }));
-        }
-      )
-      .subscribe((status) => {
-        console.log('[useUsageTracking] Subscription status:', status);
-      });
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    try {
+      channel = supabase
+        .channel(`usage-tracking-${userId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'access_grants',
+            filter: `user_id=eq.${userId}`
+          },
+          (payload) => {
+            const newData = payload.new as {
+              current_month_usage: number;
+              monthly_limit: number | null;
+              usage_reset_date: string | null;
+            };
+            
+            setUsageData(prev => ({
+              ...prev,
+              currentMonthUsage: newData.current_month_usage || 0,
+              monthlyLimit: newData.monthly_limit,
+              usageResetDate: newData.usage_reset_date
+            }));
+          }
+        )
+        .subscribe((status, err) => {
+          if (status === 'CHANNEL_ERROR' || err) {
+            // Gracefully handle subscription errors (RLS, auth, or realtime not enabled)
+            console.warn('[useUsageTracking] Real-time subscription unavailable, using polling fallback');
+          }
+        });
+    } catch (err) {
+      console.warn('[useUsageTracking] Failed to setup real-time subscription:', err);
+    }
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
     };
   }, [userId]);
 

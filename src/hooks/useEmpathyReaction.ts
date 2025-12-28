@@ -127,13 +127,15 @@ export const useEmpathyReaction = (
         // Orchestrate the emotion change (handles sound + visual sync)
         orchestrateEmotionChange(aynEmotion, { skipSound: true });
         
-        // Trigger appropriate blink pattern
+        // Trigger appropriate blink pattern and pulse
         if (empathyResponse.blinkPattern === 'slow-comfort') {
           triggerEmpathyBlink();
+          triggerEmpathyPulse(); // Gentle pulse for comfort
         } else if (empathyResponse.blinkPattern === 'quick-attentive') {
           triggerBlink();
         } else if (empathyResponse.blinkPattern === 'double-understanding') {
           triggerEmpathyBlink();
+          triggerEmpathyPulse(); // Pulse for understanding
         }
 
         // Trigger haptic feedback
@@ -164,6 +166,7 @@ export const useEmpathyReaction = (
     orchestrateEmotionChange,
     triggerBlink,
     triggerEmpathyBlink,
+    triggerEmpathyPulse,
     triggerEmpathyHaptic,
     bumpActivity,
   ]);

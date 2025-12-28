@@ -396,7 +396,6 @@ export const CenterStageLayout = ({
       completeAbsorption,
       onSendMessage,
       onRemoveFile,
-      triggerPulse,
     ]
   );
 
@@ -452,9 +451,10 @@ export const CenterStageLayout = ({
     completeSuggestionAbsorption,
     triggerBlink,
     triggerAbsorption,
-    setEmotion,
+    orchestrateEmotionChange,
     setIsResponding,
     onSendMessage,
+    playSound,
   ]);
 
   // Process AYN responses and emit speech bubbles + suggestions
