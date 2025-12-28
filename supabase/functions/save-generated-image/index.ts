@@ -40,9 +40,12 @@ serve(async (req) => {
     
     if (!imageResponse.ok) {
       console.error('Failed to fetch image:', imageResponse.status, imageResponse.statusText);
+      
+      // IMPORTANT: Do NOT return a 4xx here.
+      // The frontend calls this function as a best-effort cache; an expired DALL·E URL should not crash the app.
       return new Response(
-        JSON.stringify({ error: 'Image has expired or is unavailable', expired: true }),
-        { status: 410, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ permanentUrl: imageUrl, saved: false, expired: true }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 

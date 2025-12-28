@@ -4,23 +4,30 @@ import { supabase } from '@/integrations/supabase/client';
 // Cache for URL mappings to avoid re-saving
 const urlCache = new Map<string, string>();
 
+const normalizeImageUrl = (url: string): string => {
+  // Fix occasional trailing quotes coming from upstream JSON formatting
+  return (url || '').trim().replace(/^['"]+|['"]+$/g, '');
+};
+
 export const useImagePersistence = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const isDalleUrl = useCallback((url: string): boolean => {
-    return url.includes('oaidalleapiprodscus.blob.core.windows.net');
+    return normalizeImageUrl(url).includes('oaidalleapiprodscus.blob.core.windows.net');
   }, []);
 
   const getPersistentUrl = useCallback(async (imageUrl: string): Promise<string> => {
+    const normalizedUrl = normalizeImageUrl(imageUrl);
+
     // Check cache first
-    if (urlCache.has(imageUrl)) {
-      return urlCache.get(imageUrl)!;
+    if (urlCache.has(normalizedUrl)) {
+      return urlCache.get(normalizedUrl)!;
     }
 
     // If not a DALL-E URL, return as-is
-    if (!isDalleUrl(imageUrl)) {
-      return imageUrl;
+    if (!isDalleUrl(normalizedUrl)) {
+      return normalizedUrl;
     }
 
     setIsSaving(true);
@@ -28,25 +35,28 @@ export const useImagePersistence = () => {
 
     try {
       const { data, error: fnError } = await supabase.functions.invoke('save-generated-image', {
-        body: { imageUrl }
+        body: { imageUrl: normalizedUrl }
       });
 
       if (fnError) {
+        // Cache negative result to avoid repeated retries
+        urlCache.set(normalizedUrl, normalizedUrl);
         throw new Error(fnError.message);
       }
 
-      if (data.error) {
-        if (data.expired) {
-          throw new Error('Image has expired');
-        }
+      if (data?.error) {
+        urlCache.set(normalizedUrl, normalizedUrl);
         throw new Error(data.error);
       }
 
-      const permanentUrl = data.permanentUrl;
-      
-      // Cache the mapping
-      urlCache.set(imageUrl, permanentUrl);
-      
+      const permanentUrl = data?.permanentUrl ?? normalizedUrl;
+
+      // Cache the mapping (and any unnormalized variant)
+      urlCache.set(normalizedUrl, permanentUrl);
+      if (normalizedUrl !== imageUrl) {
+        urlCache.set(imageUrl, permanentUrl);
+      }
+
       return permanentUrl;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to save image';
@@ -58,15 +68,18 @@ export const useImagePersistence = () => {
   }, [isDalleUrl]);
 
   const saveImageIfNeeded = useCallback(async (imageUrl: string): Promise<{ url: string; wasSaved: boolean }> => {
-    if (!isDalleUrl(imageUrl)) {
-      return { url: imageUrl, wasSaved: false };
+    const normalizedUrl = normalizeImageUrl(imageUrl);
+
+    if (!isDalleUrl(normalizedUrl)) {
+      return { url: normalizedUrl, wasSaved: false };
     }
 
     try {
-      const permanentUrl = await getPersistentUrl(imageUrl);
-      return { url: permanentUrl, wasSaved: permanentUrl !== imageUrl };
+      const permanentUrl = await getPersistentUrl(normalizedUrl);
+      return { url: permanentUrl, wasSaved: permanentUrl !== normalizedUrl };
     } catch {
-      return { url: imageUrl, wasSaved: false };
+      // Don't block the UI if persistence fails
+      return { url: normalizedUrl, wasSaved: false };
     }
   }, [isDalleUrl, getPersistentUrl]);
 
@@ -82,24 +95,31 @@ export const useImagePersistence = () => {
 
 // Utility function for use outside React components
 export const persistDalleImage = async (imageUrl: string): Promise<string> => {
-  if (!imageUrl.includes('oaidalleapiprodscus.blob.core.windows.net')) {
-    return imageUrl;
+  const normalizedUrl = normalizeImageUrl(imageUrl);
+
+  if (!normalizedUrl.includes('oaidalleapiprodscus.blob.core.windows.net')) {
+    return normalizedUrl;
   }
 
   // Check cache
-  if (urlCache.has(imageUrl)) {
-    return urlCache.get(imageUrl)!;
+  if (urlCache.has(normalizedUrl)) {
+    return urlCache.get(normalizedUrl)!;
   }
 
   const { data, error } = await supabase.functions.invoke('save-generated-image', {
-    body: { imageUrl }
+    body: { imageUrl: normalizedUrl }
   });
 
-  if (error || data.error) {
-    console.error('Failed to persist image:', error || data.error);
-    return imageUrl;
+  // Best-effort: never throw, and cache failures to avoid retry loops
+  if (error || data?.error) {
+    console.error('Failed to persist image:', error || data?.error);
+    urlCache.set(normalizedUrl, normalizedUrl);
+    if (normalizedUrl !== imageUrl) urlCache.set(imageUrl, normalizedUrl);
+    return normalizedUrl;
   }
 
-  urlCache.set(imageUrl, data.permanentUrl);
-  return data.permanentUrl;
+  const permanentUrl = data?.permanentUrl ?? normalizedUrl;
+  urlCache.set(normalizedUrl, permanentUrl);
+  if (normalizedUrl !== imageUrl) urlCache.set(imageUrl, permanentUrl);
+  return permanentUrl;
 };

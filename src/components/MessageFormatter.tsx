@@ -136,15 +136,21 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
   const [savingImages, setSavingImages] = useState<Set<string>>(new Set());
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
 
+  const normalizeImageUrl = useCallback((url: string) => {
+    return (url || '').trim().replace(/^['"]+|['"]+$/g, '');
+  }, []);
+
   // Auto-persist DALL-E images when content changes
   useEffect(() => {
     const dalleUrlRegex = /https:\/\/oaidalleapiprodscus\.blob\.core\.windows\.net[^\s)]+/g;
     const matches = content.match(dalleUrlRegex);
-    
+
     if (matches) {
-      matches.forEach(async (url) => {
+      matches.forEach(async (rawUrl) => {
+        const url = normalizeImageUrl(rawUrl);
+        if (!url) return;
         if (persistedUrls.has(url) || savingImages.has(url)) return;
-        
+
         setSavingImages(prev => new Set(prev).add(url));
         try {
           const permanentUrl = await persistDalleImage(url);
@@ -162,12 +168,13 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
         }
       });
     }
-  }, [content, persistedUrls, savingImages]);
+  }, [content, persistedUrls, savingImages, normalizeImageUrl]);
 
   // Helper to get the best URL for an image
   const getImageUrl = useCallback((originalUrl: string) => {
-    return persistedUrls.get(originalUrl) || originalUrl;
-  }, [persistedUrls]);
+    const clean = normalizeImageUrl(originalUrl);
+    return persistedUrls.get(clean) || clean;
+  }, [persistedUrls, normalizeImageUrl]);
 
   // Step 1: Detect and convert JSON image responses to markdown
   const imageProcessedContent = detectImageJsonResponse(content);
@@ -372,11 +379,12 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
             ),
             // Images with click-to-zoom and persistence
             img: ({ src, alt }) => {
-              const originalSrc = src || '';
-              const displaySrc = getImageUrl(originalSrc);
-              const isDalleUrl = originalSrc.includes('oaidalleapiprodscus.blob.core.windows.net');
-              const isSaving = savingImages.has(originalSrc);
-              const hasFailed = failedImages.has(originalSrc);
+              const rawSrc = src || '';
+              const cleanSrc = normalizeImageUrl(rawSrc);
+              const displaySrc = getImageUrl(cleanSrc);
+              const isDalleUrl = cleanSrc.includes('oaidalleapiprodscus.blob.core.windows.net');
+              const isSaving = savingImages.has(cleanSrc);
+              const hasFailed = failedImages.has(cleanSrc);
 
               return (
                 <div className="relative my-2">
@@ -386,9 +394,9 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
                     loading="lazy"
                     className="max-w-full h-auto rounded-lg cursor-zoom-in hover:opacity-90 transition-opacity shadow-sm"
                     onClick={() => setLightboxImage({ src: displaySrc, alt: alt || '' })}
-                    onError={(e) => {
+                    onError={() => {
                       if (isDalleUrl && !hasFailed) {
-                        setFailedImages(prev => new Set(prev).add(originalSrc));
+                        setFailedImages(prev => new Set(prev).add(cleanSrc));
                       }
                     }}
                   />
@@ -400,7 +408,7 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
                     </div>
                   )}
                   {/* Failed/Expired indicator */}
-                  {hasFailed && displaySrc === originalSrc && (
+                  {hasFailed && displaySrc === cleanSrc && (
                     <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg">
                       <div className="text-center p-4">
                         <AlertCircle className="w-8 h-8 text-amber-500 mx-auto mb-2" />
