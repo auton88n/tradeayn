@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { ArrowLeft, Sun, Moon, RefreshCw, LayoutDashboard, Users, Shield, Settings, FileText, Loader2, MessageSquare, LineChart } from 'lucide-react';
+import { ArrowLeft, Sun, Moon, RefreshCw, LayoutDashboard, Users, Shield, Settings, FileText, Loader2, MessageSquare, LineChart, Bot, DollarSign, Gauge } from 'lucide-react';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { UserManagement } from '@/components/admin/UserManagement';
@@ -16,6 +16,10 @@ import { SystemSettings } from '@/components/admin/SystemSettings';
 import { ApplicationManagement, ServiceApplication } from '@/components/admin/ApplicationManagement';
 import SupportManagement from '@/components/admin/SupportManagement';
 import { GoogleAnalytics } from '@/components/admin/GoogleAnalytics';
+import { LLMManagement } from '@/components/admin/LLMManagement';
+import { AICostDashboard } from '@/components/admin/AICostDashboard';
+import { UserAILimits } from '@/components/admin/UserAILimits';
+import { AdminAIAssistant, AdminAIButton } from '@/components/admin/AdminAIAssistant';
 
 // Supabase config - use direct values to avoid any import issues
 const SUPABASE_URL = 'https://dfkoxuokfkttjhfjcecx.supabase.co' as const;
@@ -100,6 +104,21 @@ const allTabs = [{
   id: 'settings',
   label: 'Settings',
   icon: Settings,
+  adminOnly: true
+}, {
+  id: 'ai-models',
+  label: 'AI Models',
+  icon: Bot,
+  adminOnly: true
+}, {
+  id: 'ai-costs',
+  label: 'AI Costs',
+  icon: DollarSign,
+  adminOnly: true
+}, {
+  id: 'ai-limits',
+  label: 'AI Limits',
+  icon: Gauge,
   adminOnly: true
 }];
 export const AdminPanel = ({
@@ -405,9 +424,15 @@ export const AdminPanel = ({
               {activeTab === 'users' && <UserManagement session={session} allUsers={allUsers} onRefresh={fetchData} />}
               {activeTab === 'rate-limits' && <RateLimitMonitoring session={session} />}
               {activeTab === 'settings' && <SystemSettings systemConfig={systemConfig} onUpdateConfig={updateSystemConfig} />}
+              {activeTab === 'ai-models' && <LLMManagement />}
+              {activeTab === 'ai-costs' && <AICostDashboard />}
+              {activeTab === 'ai-limits' && <UserAILimits />}
             </ErrorBoundary>
           </motion.div>
         </AnimatePresence>
       </ScrollArea>
+      
+      {/* Floating Admin AI Assistant */}
+      {isAdmin && <AdminAIAssistant />}
     </div>;
 };

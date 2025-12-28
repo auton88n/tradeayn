@@ -22,11 +22,18 @@ interface Message {
 }
 
 interface AdminAIAssistantProps {
-  isOpen: boolean;
-  onClose: () => void;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
-export function AdminAIAssistant({ isOpen, onClose }: AdminAIAssistantProps) {
+export function AdminAIAssistant({ isOpen: controlledOpen, onClose: controlledClose }: AdminAIAssistantProps = {}) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  
+  // Use controlled or internal state
+  const isOpen = controlledOpen ?? internalOpen;
+  const onClose = controlledClose ?? (() => setInternalOpen(false));
+  const onOpen = () => setInternalOpen(true);
+  
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
@@ -90,7 +97,17 @@ export function AdminAIAssistant({ isOpen, onClose }: AdminAIAssistantProps) {
     // Action execution would be implemented here
   };
 
-  if (!isOpen) return null;
+  if (!isOpen) {
+    return (
+      <Button
+        onClick={onOpen}
+        className="fixed bottom-4 right-4 w-12 h-12 rounded-full shadow-lg z-40"
+        size="icon"
+      >
+        <MessageSquare className="w-5 h-5" />
+      </Button>
+    );
+  }
 
   return (
     <Card className="fixed bottom-4 right-4 w-96 h-[500px] shadow-2xl z-50 flex flex-col">
