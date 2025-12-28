@@ -193,15 +193,20 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
             // Full width on mobile, contained on desktop
             "w-full sm:w-[90%] md:max-w-[600px] lg:max-w-[680px]",
             "mx-2 sm:mx-auto",
-            // Glass morphism background
-            "bg-background/95 dark:bg-gray-900/95 backdrop-blur-xl",
-            // Glow border effect
-            "ring-1 ring-primary/20",
-            "shadow-xl shadow-primary/10",
-            // Rounding - sheet has rounded top, inline has full rounding
-            variant === 'sheet' ? "rounded-t-3xl rounded-b-xl" : "rounded-2xl",
+            // Modern glassmorphism background with gradient
+            "bg-gradient-to-br from-white/90 via-white/80 to-gray-100/70",
+            "dark:from-gray-900/95 dark:via-gray-800/90 dark:to-gray-900/85",
+            "backdrop-blur-2xl",
+            // Layered border effects for depth
+            "border border-white/40 dark:border-white/10",
+            "ring-1 ring-black/5 dark:ring-white/5",
+            // Premium shadow with color tint
+            "shadow-[0_8px_40px_-12px_rgba(0,0,0,0.15),0_4px_20px_-8px_rgba(0,0,0,0.1)]",
+            "dark:shadow-[0_8px_40px_-12px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.05)]",
+            // Rounding
+            variant === 'sheet' ? "rounded-t-3xl rounded-b-xl" : "rounded-3xl",
             "overflow-hidden",
-            // CSS containment for performance isolation
+            // CSS containment for performance
             "contain-layout contain-paint"
           )}
           style={{
@@ -213,65 +218,70 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 10, scale: 0.98 }}
           transition={{
-            duration: 0.35,
+            duration: 0.4,
             ease: [0.25, 0.1, 0.25, 1],
             delay: 0.1,
           }}
         >
-          {/* Speech bubble pointer toward eye - controlled by showPointer prop */}
-          {showPointer && variant !== 'sheet' && (
-            <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 rotate-45 bg-background/95 dark:bg-gray-900/95 ring-1 ring-primary/20 ring-b-0 ring-r-0" />
-          )}
+          {/* Glossy top shine effect */}
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/60 dark:via-white/20 to-transparent" />
+          <div className="absolute inset-x-4 top-0 h-[1px] bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
           
-          {/* Subtle top glow line */}
-          <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+          {/* Speech bubble pointer */}
+          {showPointer && variant !== 'sheet' && (
+            <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 rotate-45 bg-gradient-to-br from-white/90 to-gray-100/70 dark:from-gray-900/95 dark:to-gray-800/90 border-l border-t border-white/40 dark:border-white/10" />
+          )}
 
-          {/* Header with Brain icon and dismiss button */}
-          <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-border/30">
-            <div className="flex items-center gap-2.5">
-              <div className="p-1.5 rounded-lg bg-primary/10">
+          {/* Header with gradient icon container */}
+          <div className="flex-shrink-0 flex items-center justify-between px-5 py-3.5 border-b border-black/5 dark:border-white/5">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-primary/20 via-primary/10 to-primary/5 shadow-sm shadow-primary/10 ring-1 ring-primary/10">
                 <Brain className="w-4 h-4 text-primary" />
               </div>
-              <span className="text-sm font-medium text-foreground">AYN</span>
+              <span className="text-sm font-semibold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text">AYN</span>
             </div>
             {onDismiss && (
               <button
                 onClick={handleDismiss}
                 className={cn(
-                  "p-1.5 rounded-full transition-all duration-200",
-                  "hover:bg-destructive/10",
-                  "text-muted-foreground hover:text-destructive",
-                  "active:scale-95"
+                  "p-2 rounded-xl transition-all duration-200",
+                  "bg-gray-100/50 dark:bg-white/5",
+                  "hover:bg-red-100/80 dark:hover:bg-red-500/10",
+                  "text-muted-foreground hover:text-red-500",
+                  "active:scale-90"
                 )}
                 title="Dismiss"
               >
-                <X size={16} />
+                <X size={15} />
               </button>
             )}
           </div>
 
-          {/* Content area - images full width */}
+          {/* Content area with inner glow */}
           <div 
             ref={contentRef}
             className={cn(
               "flex-1 min-h-0 overflow-y-auto overflow-x-hidden",
-              // Height constraints (inline only)
+              "relative",
+              // Height constraints
               variant === 'inline' && "max-h-[45vh] sm:max-h-[50vh]",
-              // Full-width images with proper styling
+              // Full-width images
               "[&_img]:w-full [&_img]:max-h-[280px] [&_img]:object-cover [&_img]:rounded-none",
-              "[&_img]:border-b [&_img]:border-border/20",
-              // Text padding (images go edge to edge)
+              "[&_img]:border-b [&_img]:border-black/5 dark:[&_img]:border-white/5",
+              // Text padding
               "[&>div]:px-5 [&>div]:py-4",
-              // Premium thin scrollbar
-              "[&::-webkit-scrollbar]:w-1.5",
+              // Premium scrollbar
+              "[&::-webkit-scrollbar]:w-1",
               "[&::-webkit-scrollbar-track]:bg-transparent",
-              "[&::-webkit-scrollbar-thumb]:bg-muted-foreground/20",
+              "[&::-webkit-scrollbar-thumb]:bg-gray-300/50 dark:[&::-webkit-scrollbar-thumb]:bg-white/10",
               "[&::-webkit-scrollbar-thumb]:rounded-full",
-              "[&::-webkit-scrollbar-thumb]:hover:bg-muted-foreground/30",
-              // iOS touch scrolling
+              "[&::-webkit-scrollbar-thumb]:hover:bg-gray-400/50 dark:[&::-webkit-scrollbar-thumb]:hover:bg-white/20",
               "[-webkit-overflow-scrolling:touch]"
             )}
           >
+            {/* Inner glow effect */}
+            <div className="absolute inset-x-0 top-0 h-6 bg-gradient-to-b from-white/30 dark:from-white/5 to-transparent pointer-events-none" />
+            
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentResponseId || 'content'}
@@ -301,131 +311,152 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
           {/* Fade gradient when scrollable */}
           {isScrollable && !isAtBottom && (
             <div 
-              className="absolute bottom-14 left-0 right-0 h-8 bg-gradient-to-t from-background dark:from-gray-900 to-transparent pointer-events-none"
+              className="absolute bottom-16 left-0 right-0 h-10 bg-gradient-to-t from-white/80 dark:from-gray-900/80 to-transparent pointer-events-none"
               aria-hidden="true"
             />
           )}
 
-          {/* Clean single-row action bar */}
-          <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-t border-border/30 bg-muted/30">
-            {/* Left: Copy button */}
+          {/* Modern glossy action bar */}
+          <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-t border-black/5 dark:border-white/5 bg-gradient-to-b from-gray-50/50 to-gray-100/30 dark:from-gray-800/30 dark:to-gray-900/20">
+            {/* Left: Copy pill button */}
             <button
               onClick={copyContent}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium",
-                "bg-background/80 dark:bg-gray-800/80",
-                "hover:bg-primary/10",
-                "text-muted-foreground hover:text-primary",
+                "flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium",
+                "bg-white/80 dark:bg-white/10",
+                "backdrop-blur-sm",
+                "border border-black/5 dark:border-white/10",
+                "shadow-sm hover:shadow-md",
+                "hover:bg-white dark:hover:bg-white/15",
+                "text-muted-foreground hover:text-foreground",
                 "transition-all duration-200",
                 "active:scale-95"
               )}
             >
               {copied ? (
                 <>
-                  <Check size={14} className="text-green-500" />
+                  <Check size={13} className="text-green-500" />
                   <span className="text-green-600 dark:text-green-400">Copied!</span>
                 </>
               ) : (
                 <>
-                  <Copy size={14} />
+                  <Copy size={13} />
                   <span>Copy</span>
                 </>
               )}
             </button>
             
-            {/* Center: Feedback Buttons */}
-            <div className="flex items-center gap-1">
+            {/* Center: Glossy feedback buttons */}
+            <div className="flex items-center gap-1.5 p-1 rounded-full bg-white/50 dark:bg-white/5 backdrop-blur-sm border border-black/5 dark:border-white/5">
               <button 
                 onClick={() => handleFeedback('up')}
                 className={cn(
                   "p-2 rounded-full transition-all duration-200 active:scale-90",
                   feedback === 'up' 
-                    ? "bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400" 
-                    : "hover:bg-muted text-muted-foreground hover:text-green-500"
+                    ? "bg-gradient-to-br from-green-400/30 to-green-500/20 text-green-600 dark:text-green-400 shadow-sm shadow-green-500/20" 
+                    : "hover:bg-white/80 dark:hover:bg-white/10 text-muted-foreground hover:text-green-500"
                 )}
               >
-                <ThumbsUp size={16} />
+                <ThumbsUp size={15} />
               </button>
               <button 
                 onClick={() => handleFeedback('down')}
                 className={cn(
                   "p-2 rounded-full transition-all duration-200 active:scale-90",
                   feedback === 'down' 
-                    ? "bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400" 
-                    : "hover:bg-muted text-muted-foreground hover:text-red-500"
+                    ? "bg-gradient-to-br from-red-400/30 to-red-500/20 text-red-600 dark:text-red-400 shadow-sm shadow-red-500/20" 
+                    : "hover:bg-white/80 dark:hover:bg-white/10 text-muted-foreground hover:text-red-500"
                 )}
               >
-                <ThumbsDown size={16} />
+                <ThumbsDown size={15} />
               </button>
             </div>
             
-            {/* Right: Design This + Expand */}
-            <div className="flex items-center gap-1">
+            {/* Right: Design + Expand */}
+            <div className="flex items-center gap-1.5">
               {detectedImageUrl && (
                 <button
                   onClick={handleDesignThis}
                   className={cn(
-                    "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium",
-                    "bg-gradient-to-r from-pink-500/10 to-orange-500/10",
-                    "hover:from-pink-500/20 hover:to-orange-500/20",
+                    "flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium",
+                    "bg-gradient-to-r from-pink-500/15 via-orange-500/10 to-amber-500/15",
+                    "backdrop-blur-sm",
+                    "border border-pink-300/30 dark:border-pink-500/20",
+                    "shadow-sm hover:shadow-md hover:shadow-pink-500/10",
+                    "hover:from-pink-500/25 hover:via-orange-500/20 hover:to-amber-500/25",
                     "text-pink-600 dark:text-pink-400",
                     "transition-all duration-200",
                     "active:scale-95"
                   )}
                   title="Edit in Design LAB"
                 >
-                  <Palette size={14} />
+                  <Palette size={13} />
                   <span>Design</span>
                 </button>
               )}
               <button
                 onClick={handleExpand}
                 className={cn(
-                  "p-2 rounded-full transition-all duration-200",
-                  "hover:bg-muted",
+                  "p-2.5 rounded-full transition-all duration-200",
+                  "bg-white/80 dark:bg-white/10",
+                  "backdrop-blur-sm",
+                  "border border-black/5 dark:border-white/10",
+                  "shadow-sm hover:shadow-md",
+                  "hover:bg-white dark:hover:bg-white/15",
                   "text-muted-foreground hover:text-primary",
                   "active:scale-95"
                 )}
                 title="Expand"
               >
-                <Maximize2 size={16} />
+                <Maximize2 size={14} />
               </button>
             </div>
           </div>
         </motion.div>
       </AnimatePresence>
 
-      {/* Reading Mode Dialog */}
+      {/* Reading Mode Dialog - Glossy Modern Style */}
       <Dialog open={isExpanded} onOpenChange={setIsExpanded}>
         <DialogContent 
           className={cn(
             "flex flex-col p-0 gap-0",
             // Full screen on mobile, large panel on desktop
             "w-screen h-[100dvh] max-w-none rounded-none",
-            "sm:w-[90vw] sm:max-w-4xl sm:h-[85vh] sm:max-h-[85vh] sm:rounded-2xl",
-            "bg-background dark:bg-gray-900",
-            "border-0 sm:border sm:border-border/40",
+            "sm:w-[90vw] sm:max-w-4xl sm:h-[85vh] sm:max-h-[85vh] sm:rounded-3xl",
+            // Modern glassmorphism
+            "bg-gradient-to-br from-white/95 via-gray-50/90 to-white/95",
+            "dark:from-gray-900/98 dark:via-gray-800/95 dark:to-gray-900/98",
+            "backdrop-blur-2xl",
+            "border-0 sm:border sm:border-white/30 dark:sm:border-white/10",
+            "sm:shadow-[0_25px_80px_-20px_rgba(0,0,0,0.25)]",
+            "sm:ring-1 sm:ring-black/5 dark:sm:ring-white/5",
             "overflow-hidden"
           )}
         >
-          {/* Sticky Header */}
-          <DialogHeader className="flex-shrink-0 px-4 sm:px-6 py-4 border-b border-border/40 bg-background/95 dark:bg-gray-900/95 backdrop-blur-sm">
+          {/* Glossy top shine */}
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/60 dark:via-white/15 to-transparent" />
+          
+          {/* Sticky Header - Glassmorphism */}
+          <DialogHeader className="flex-shrink-0 px-5 sm:px-8 py-4 border-b border-black/5 dark:border-white/5 bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-primary/10">
+                <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary/20 via-primary/10 to-primary/5 shadow-sm shadow-primary/10 ring-1 ring-primary/10">
                   <Brain className="w-5 h-5 text-primary" />
                 </div>
                 <DialogTitle className="text-lg font-semibold">AYN Response</DialogTitle>
               </div>
               
               <div className="flex items-center gap-2">
-                {/* Copy in dialog */}
+                {/* Copy pill button */}
                 <button
                   onClick={copyContent}
                   className={cn(
-                    "flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium",
-                    "bg-gray-100/60 dark:bg-gray-800/60",
-                    "hover:bg-gray-200/70 dark:hover:bg-gray-700/70",
+                    "flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium",
+                    "bg-white/80 dark:bg-white/10",
+                    "backdrop-blur-sm",
+                    "border border-black/5 dark:border-white/10",
+                    "shadow-sm hover:shadow-md",
+                    "hover:bg-white dark:hover:bg-white/15",
                     "text-muted-foreground hover:text-foreground",
                     "transition-all duration-200",
                     "active:scale-95"
@@ -444,29 +475,29 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
                   )}
                 </button>
                 
-                {/* Feedback in dialog */}
-                <div className="flex gap-1 border-l border-border/40 pl-2 ml-1">
+                {/* Glossy feedback container */}
+                <div className="flex gap-1 p-1 rounded-full bg-white/50 dark:bg-white/5 backdrop-blur-sm border border-black/5 dark:border-white/5 ml-1">
                   <button 
                     onClick={() => handleFeedback('up')}
                     className={cn(
-                      "p-2 rounded-lg transition-all duration-200 active:scale-90",
+                      "p-2 rounded-full transition-all duration-200 active:scale-90",
                       feedback === 'up' 
-                        ? "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400" 
-                        : "hover:bg-gray-100/60 dark:hover:bg-gray-800/60 text-muted-foreground hover:text-green-500"
+                        ? "bg-gradient-to-br from-green-400/30 to-green-500/20 text-green-600 dark:text-green-400 shadow-sm shadow-green-500/20" 
+                        : "hover:bg-white/80 dark:hover:bg-white/10 text-muted-foreground hover:text-green-500"
                     )}
                   >
-                    <ThumbsUp size={16} />
+                    <ThumbsUp size={15} />
                   </button>
                   <button 
                     onClick={() => handleFeedback('down')}
                     className={cn(
-                      "p-2 rounded-lg transition-all duration-200 active:scale-90",
+                      "p-2 rounded-full transition-all duration-200 active:scale-90",
                       feedback === 'down' 
-                        ? "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400" 
-                        : "hover:bg-gray-100/60 dark:hover:bg-gray-800/60 text-muted-foreground hover:text-red-500"
+                        ? "bg-gradient-to-br from-red-400/30 to-red-500/20 text-red-600 dark:text-red-400 shadow-sm shadow-red-500/20" 
+                        : "hover:bg-white/80 dark:hover:bg-white/10 text-muted-foreground hover:text-red-500"
                     )}
                   >
-                    <ThumbsDown size={16} />
+                    <ThumbsDown size={15} />
                   </button>
                 </div>
               </div>
@@ -478,58 +509,56 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
             ref={dialogContentRef}
             className={cn(
               "flex-1 overflow-y-auto overflow-x-hidden",
-              "px-4 sm:px-8 py-6",
+              "px-5 sm:px-10 py-6",
               // Premium scrollbar
-              "[&::-webkit-scrollbar]:w-2",
+              "[&::-webkit-scrollbar]:w-1.5",
               "[&::-webkit-scrollbar-track]:bg-transparent",
-              "[&::-webkit-scrollbar-thumb]:bg-gray-300/50 dark:[&::-webkit-scrollbar-thumb]:bg-gray-600/50",
+              "[&::-webkit-scrollbar-thumb]:bg-gray-300/40 dark:[&::-webkit-scrollbar-thumb]:bg-white/10",
               "[&::-webkit-scrollbar-thumb]:rounded-full",
-              "[&::-webkit-scrollbar-thumb]:hover:bg-gray-400/60 dark:[&::-webkit-scrollbar-thumb]:hover:bg-gray-500/60",
+              "[&::-webkit-scrollbar-thumb]:hover:bg-gray-400/50 dark:[&::-webkit-scrollbar-thumb]:hover:bg-white/20",
               "[-webkit-overflow-scrolling:touch]"
             )}
           >
-            {/* Top fade */}
-            <div className="pointer-events-none absolute top-[57px] left-0 right-0 h-4 bg-gradient-to-b from-background dark:from-gray-900 to-transparent z-10" />
+            {/* Inner glow */}
+            <div className="pointer-events-none absolute top-[57px] left-0 right-0 h-6 bg-gradient-to-b from-white/50 dark:from-gray-900/50 to-transparent z-10" />
             
             <div className="max-w-3xl mx-auto">
               <MessageFormatter 
                 content={combinedContent} 
                 className={cn(
-                  // Larger, more comfortable typography
                   "text-base sm:text-[15px] leading-relaxed sm:leading-7",
                   "text-foreground",
                   "prose prose-gray dark:prose-invert max-w-none",
-                  // Code blocks
                   "[&_pre]:max-w-full [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:p-4",
                   "[&_code]:text-sm",
-                  // Lists
                   "[&_ul]:space-y-2 [&_ol]:space-y-2",
-                  // Headings
                   "[&_h1]:text-2xl [&_h2]:text-xl [&_h3]:text-lg",
                   "[&_h1]:font-bold [&_h2]:font-semibold [&_h3]:font-medium",
                   "[&_h1]:mt-6 [&_h2]:mt-5 [&_h3]:mt-4",
-                  // Paragraphs
                   "[&_p]:mb-4"
                 )}
               />
             </div>
           </div>
           
-          {/* Bottom fade + scroll to bottom button */}
+          {/* Bottom fade + glossy scroll button */}
           {dialogScrollable && !dialogAtBottom && (
             <>
               <div 
-                className="pointer-events-none absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background dark:from-gray-900 to-transparent"
+                className="pointer-events-none absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-white/90 dark:from-gray-900/90 via-white/50 dark:via-gray-900/50 to-transparent"
                 aria-hidden="true"
               />
               <button
                 onClick={scrollDialogToBottom}
                 className={cn(
-                  "absolute bottom-4 left-1/2 -translate-x-1/2",
-                  "flex items-center gap-1.5 px-4 py-2 rounded-full",
-                  "bg-primary text-primary-foreground",
-                  "shadow-lg shadow-primary/25",
-                  "hover:shadow-xl hover:shadow-primary/30",
+                  "absolute bottom-5 left-1/2 -translate-x-1/2",
+                  "flex items-center gap-1.5 px-5 py-2.5 rounded-full",
+                  "bg-gradient-to-r from-primary via-primary to-primary/90",
+                  "text-primary-foreground",
+                  "backdrop-blur-sm",
+                  "shadow-lg shadow-primary/30",
+                  "hover:shadow-xl hover:shadow-primary/40",
+                  "ring-1 ring-white/20",
                   "transition-all duration-200",
                   "animate-bounce",
                   "text-sm font-medium"
