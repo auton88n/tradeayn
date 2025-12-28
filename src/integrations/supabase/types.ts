@@ -65,6 +65,36 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_ai_conversations: {
+        Row: {
+          actions_taken: Json | null
+          admin_id: string
+          context: Json | null
+          created_at: string | null
+          id: string
+          message: string
+          role: string
+        }
+        Insert: {
+          actions_taken?: Json | null
+          admin_id: string
+          context?: Json | null
+          created_at?: string | null
+          id?: string
+          message: string
+          role: string
+        }
+        Update: {
+          actions_taken?: Json | null
+          admin_id?: string
+          context?: Json | null
+          created_at?: string | null
+          id?: string
+          message?: string
+          role?: string
+        }
+        Relationships: []
+      }
       admin_notification_config: {
         Row: {
           created_at: string
@@ -820,6 +850,145 @@ export type Database = {
         }
         Relationships: []
       }
+      llm_failures: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          error_type: string
+          id: string
+          model_id: string | null
+          request_payload: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          error_type: string
+          id?: string
+          model_id?: string | null
+          request_payload?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          error_type?: string
+          id?: string
+          model_id?: string | null
+          request_payload?: Json | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "llm_failures_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "llm_models"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      llm_models: {
+        Row: {
+          api_endpoint: string | null
+          cost_per_1k_input: number | null
+          cost_per_1k_output: number | null
+          created_at: string | null
+          display_name: string
+          id: string
+          intent_type: string
+          is_enabled: boolean | null
+          max_tokens: number | null
+          model_id: string
+          priority: number | null
+          provider: string
+          supports_streaming: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          api_endpoint?: string | null
+          cost_per_1k_input?: number | null
+          cost_per_1k_output?: number | null
+          created_at?: string | null
+          display_name: string
+          id?: string
+          intent_type: string
+          is_enabled?: boolean | null
+          max_tokens?: number | null
+          model_id: string
+          priority?: number | null
+          provider: string
+          supports_streaming?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          api_endpoint?: string | null
+          cost_per_1k_input?: number | null
+          cost_per_1k_output?: number | null
+          created_at?: string | null
+          display_name?: string
+          id?: string
+          intent_type?: string
+          is_enabled?: boolean | null
+          max_tokens?: number | null
+          model_id?: string
+          priority?: number | null
+          provider?: string
+          supports_streaming?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      llm_usage_logs: {
+        Row: {
+          cost_sar: number | null
+          created_at: string | null
+          fallback_reason: string | null
+          id: string
+          input_tokens: number | null
+          intent_type: string
+          model_id: string | null
+          output_tokens: number | null
+          response_time_ms: number | null
+          user_id: string
+          was_fallback: boolean | null
+        }
+        Insert: {
+          cost_sar?: number | null
+          created_at?: string | null
+          fallback_reason?: string | null
+          id?: string
+          input_tokens?: number | null
+          intent_type: string
+          model_id?: string | null
+          output_tokens?: number | null
+          response_time_ms?: number | null
+          user_id: string
+          was_fallback?: boolean | null
+        }
+        Update: {
+          cost_sar?: number | null
+          created_at?: string | null
+          fallback_reason?: string | null
+          id?: string
+          input_tokens?: number | null
+          intent_type?: string
+          model_id?: string | null
+          output_tokens?: number | null
+          response_time_ms?: number | null
+          user_id?: string
+          was_fallback?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "llm_usage_logs_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "llm_models"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       material_prices: {
         Row: {
           created_at: string
@@ -1503,6 +1672,141 @@ export type Database = {
         }
         Relationships: []
       }
+      user_ai_limits: {
+        Row: {
+          created_at: string | null
+          current_daily_engineering: number | null
+          current_daily_files: number | null
+          current_daily_messages: number | null
+          current_daily_search: number | null
+          current_month_cost_sar: number | null
+          daily_engineering: number | null
+          daily_files: number | null
+          daily_messages: number | null
+          daily_reset_at: string | null
+          daily_search: number | null
+          id: string
+          is_unlimited: boolean | null
+          monthly_cost_limit_sar: number | null
+          monthly_reset_at: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          current_daily_engineering?: number | null
+          current_daily_files?: number | null
+          current_daily_messages?: number | null
+          current_daily_search?: number | null
+          current_month_cost_sar?: number | null
+          daily_engineering?: number | null
+          daily_files?: number | null
+          daily_messages?: number | null
+          daily_reset_at?: string | null
+          daily_search?: number | null
+          id?: string
+          is_unlimited?: boolean | null
+          monthly_cost_limit_sar?: number | null
+          monthly_reset_at?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          current_daily_engineering?: number | null
+          current_daily_files?: number | null
+          current_daily_messages?: number | null
+          current_daily_search?: number | null
+          current_month_cost_sar?: number | null
+          daily_engineering?: number | null
+          daily_files?: number | null
+          daily_messages?: number | null
+          daily_reset_at?: string | null
+          daily_search?: number | null
+          id?: string
+          is_unlimited?: boolean | null
+          monthly_cost_limit_sar?: number | null
+          monthly_reset_at?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_memory: {
+        Row: {
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          memory_data: Json
+          memory_key: string
+          memory_type: string
+          priority: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          memory_data?: Json
+          memory_key: string
+          memory_type: string
+          priority?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          memory_data?: Json
+          memory_key?: string
+          memory_type?: string
+          priority?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_preferences: {
+        Row: {
+          building_code: string | null
+          communication_style: string | null
+          created_at: string | null
+          currency: string | null
+          id: string
+          personalization_enabled: boolean | null
+          preferred_language: string | null
+          region: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          building_code?: string | null
+          communication_style?: string | null
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          personalization_enabled?: boolean | null
+          preferred_language?: string | null
+          region?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          building_code?: string | null
+          communication_style?: string | null
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          personalization_enabled?: boolean | null
+          preferred_language?: string | null
+          region?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1749,10 +2053,15 @@ export type Database = {
         Returns: boolean
       }
       check_usage_limit: { Args: { _user_id: string }; Returns: boolean }
+      check_user_ai_limit: {
+        Args: { _intent_type: string; _user_id: string }
+        Returns: Json
+      }
       check_webhook_rate_limit: {
         Args: { p_endpoint: string; p_user_id: string }
         Returns: boolean
       }
+      cleanup_expired_memories: { Args: never; Returns: number }
       cleanup_location_data: { Args: never; Returns: undefined }
       cleanup_old_health_metrics: { Args: never; Returns: undefined }
       cleanup_old_security_logs: { Args: never; Returns: undefined }
@@ -1809,6 +2118,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      generate_monthly_summaries: { Args: never; Returns: number }
       get_alert_history_with_emails: {
         Args: { p_alert_id?: string; p_encryption_key?: string }
         Returns: {
@@ -1873,6 +2183,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_user_context: { Args: { _user_id: string }; Returns: Json }
       get_user_profile_secure: {
         Args: { _user_id: string }
         Returns: {
@@ -1918,6 +2229,19 @@ export type Database = {
       log_chat_security_event: {
         Args: { _action: string; _details?: Json; _session_id?: string }
         Returns: undefined
+      }
+      log_llm_usage: {
+        Args: {
+          _fallback_reason?: string
+          _input_tokens: number
+          _intent_type: string
+          _model_id: string
+          _output_tokens: number
+          _response_time_ms: number
+          _user_id: string
+          _was_fallback?: boolean
+        }
+        Returns: string
       }
       log_profiles_sensitive_access: {
         Args: {
@@ -1986,6 +2310,16 @@ export type Database = {
           p_encryption_key?: string
         }
         Returns: undefined
+      }
+      upsert_user_memory: {
+        Args: {
+          _memory_data: Json
+          _memory_key: string
+          _memory_type: string
+          _priority?: number
+          _user_id: string
+        }
+        Returns: string
       }
       validate_input_sanitization: {
         Args: { input_text: string }
