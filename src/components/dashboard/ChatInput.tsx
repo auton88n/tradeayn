@@ -41,6 +41,8 @@ interface ChatInputProps {
   prefillValue?: string;
   onPrefillConsumed?: () => void;
   onLanguageChange?: (language: DetectedLanguage) => void;
+  // Empathy callback - pass typing content up for emotion detection
+  onTypingContentChange?: (content: string) => void;
   // Message limit props
   hasReachedLimit?: boolean;
   messageCount?: number;
@@ -150,6 +152,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
   prefillValue = '',
   onPrefillConsumed,
   onLanguageChange,
+  onTypingContentChange,
   hasReachedLimit = false,
   messageCount = 0,
   maxMessages = 100,
@@ -205,12 +208,15 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
     return () => clearInterval(interval);
   }, []);
 
-  // Simplified typing detection with language analysis
+  // Simplified typing detection with language analysis + empathy callback
   useEffect(() => {
     if (inputMessage.trim()) {
       setIsUserTyping(true);
       setIsAttentive(true);
       updateActivity();
+      
+      // Notify parent of typing content for empathy detection
+      onTypingContentChange?.(inputMessage);
 
       // Detect language after a brief pause
       if (languageTimeoutRef.current) {
@@ -235,6 +241,8 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
     } else {
       setIsUserTyping(false);
       setDetectedLang(null);
+      // Notify parent that typing stopped
+      onTypingContentChange?.('');
     }
     return () => {
       if (typingTimeoutRef.current) {
@@ -244,7 +252,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
         clearTimeout(languageTimeoutRef.current);
       }
     };
-  }, [inputMessage, setIsUserTyping, setIsAttentive, updateActivity, onLanguageChange]);
+  }, [inputMessage, setIsUserTyping, setIsAttentive, updateActivity, onLanguageChange, onTypingContentChange]);
 
   const handleSend = useCallback(() => {
     if (!inputMessage.trim() && !selectedFile) return;
