@@ -249,11 +249,16 @@ export const useMessages = (
 
       setIsTyping(false);
 
-      // Handle 429 Rate Limit Response
+      // Handle 429 Rate Limit / Daily Limit Response
       if (webhookResponse.status === 429) {
+        const errorData = await webhookResponse.json().catch(() => ({}));
+        const isDailyLimit = errorData?.reason === 'daily_limit_reached';
+        
         const errorMessage: Message = {
           id: (Date.now() + 1).toString(),
-          content: "You've reached the rate limit for messages. Please wait a moment before sending more messages.",
+          content: isDailyLimit 
+            ? "You've reached your daily message limit. Your limit will reset tomorrow. Check your usage in Settings."
+            : "You're sending messages too quickly. Please wait a moment before trying again.",
           sender: 'ayn',
           timestamp: new Date(),
           status: 'error'
@@ -261,8 +266,10 @@ export const useMessages = (
         setMessages(prev => [...prev, errorMessage]);
         
         toast({
-          title: "Rate Limit Reached",
-          description: "You're sending messages too quickly. Please wait before trying again.",
+          title: isDailyLimit ? "Daily Limit Reached" : "Rate Limit Reached",
+          description: isDailyLimit 
+            ? "You've used all your messages for today. Limit resets tomorrow."
+            : "You're sending messages too quickly. Please wait before trying again.",
           variant: "destructive"
         });
         return;
