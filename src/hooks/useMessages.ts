@@ -338,7 +338,8 @@ export const useMessages = (
       }
 
       // THEN: Save both messages to database via direct REST API
-      await fetch(`${SUPABASE_URL}/rest/v1/messages`, {
+      // CRITICAL: Both objects MUST have identical keys to avoid PGRST102 error
+      const saveResponse = await fetch(`${SUPABASE_URL}/rest/v1/messages`, {
         method: 'POST',
         headers: {
           'apikey': SUPABASE_KEY,
@@ -353,9 +354,9 @@ export const useMessages = (
             content: content,
             sender: 'user',
             mode_used: selectedMode,
-            attachment_url: attachment?.url,
-            attachment_name: attachment?.name,
-            attachment_type: attachment?.type
+            attachment_url: attachment?.url || null,
+            attachment_name: attachment?.name || null,
+            attachment_type: attachment?.type || null
           },
           {
             user_id: userId,
@@ -369,6 +370,17 @@ export const useMessages = (
           }
         ])
       });
+
+      // Check if save was successful
+      if (!saveResponse.ok) {
+        const errorText = await saveResponse.text();
+        console.error('[useMessages] Failed to save messages:', saveResponse.status, errorText);
+        toast({
+          title: "Save Warning",
+          description: "Message may not have been saved. Please refresh if issues persist.",
+          variant: "destructive"
+        });
+      }
 
       // Check usage and show in-app warning if approaching limit
       try {

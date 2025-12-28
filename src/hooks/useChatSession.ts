@@ -30,7 +30,7 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
           sender: string;
           session_id: string | null;
         }>>(
-          `messages?user_id=eq.${userId}&select=id,content,created_at,sender,session_id&order=created_at.desc&limit=100`,
+          `messages?user_id=eq.${userId}&select=id,content,created_at,sender,session_id&order=created_at.desc&limit=200`,
           session.access_token
         ),
         supabaseApi.get<Array<{ session_id: string; title: string }>>(
@@ -288,7 +288,7 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
             sender: string;
             session_id: string | null;
           }>>(
-            `messages?user_id=eq.${userId}&select=id,content,created_at,sender,session_id&order=created_at.desc&limit=50`,
+            `messages?user_id=eq.${userId}&select=id,content,created_at,sender,session_id&order=created_at.desc&limit=200`,
             session.access_token
           ),
           // Query 3: Get stored session titles
