@@ -301,10 +301,10 @@ describe('useMessages', () => {
       });
     });
 
-    it('should call ayn-webhook edge function with correct payload', async () => {
+    it('should call ayn-unified edge function with correct payload', async () => {
       mockSupabase._mocks.rpc.mockResolvedValueOnce({ data: true, error: null });
       mockSupabase._mocks.invoke.mockResolvedValueOnce({
-        data: { output: 'AI response' },
+        data: { content: 'AI response' },
         error: null,
       });
       mockSupabase._mocks.insert.mockResolvedValue({ data: null, error: null });
@@ -317,14 +317,16 @@ describe('useMessages', () => {
         await result.current.sendMessage('Hello AI');
       });
 
+      // ayn-unified uses messages array format
       expect(mockSupabase._mocks.invoke).toHaveBeenCalledWith(
-        'ayn-webhook',
+        'ayn-unified',
         expect.objectContaining({
           body: expect.objectContaining({
-            message: 'Hello AI',
-            userId: 'test-user-id',
-            sessionId: 'test-session-id',
-            allowPersonalization: true,
+            messages: expect.arrayContaining([
+              expect.objectContaining({ role: 'user', content: 'Hello AI' })
+            ]),
+            intent: 'chat',
+            stream: false
           }),
         })
       );
@@ -422,12 +424,17 @@ describe('useMessages', () => {
         await result.current.sendMessage('Check this file', attachment);
       });
 
+      // ayn-unified includes file context in context object
       expect(mockSupabase._mocks.invoke).toHaveBeenCalledWith(
-        'ayn-webhook',
+        'ayn-unified',
         expect.objectContaining({
           body: expect.objectContaining({
-            has_attachment: true,
-            file_data: attachment,
+            context: expect.objectContaining({
+              fileContext: expect.objectContaining({
+                name: 'document.pdf',
+                type: 'application/pdf'
+              })
+            }),
           }),
         })
       );

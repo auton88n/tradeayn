@@ -193,48 +193,58 @@ export const useMessages = (
     setIsTyping(true);
 
     try {
-      // CRITICAL FIX: Construct payload with has_attachment and file_data
-      // When content is empty but attachment exists, send a placeholder message
+      // Build message content
       const messageContent = content.trim() || (attachment ? `📎 Attached file: ${attachment.name}` : '');
       
-      const payload: WebhookPayload = {
-        message: messageContent,
-        userId,
-        userEmail,
-        mode: selectedMode,
-        sessionId,
-        conversationHistory: messages.slice(-5).map(msg => ({
-          content: msg.content,
-          sender: msg.sender,
-          timestamp: msg.timestamp instanceof Date 
-            ? msg.timestamp.toISOString() 
-            : msg.timestamp,
-          has_attachment: !!msg.attachment,
-          attachment: msg.attachment || null
-        })),
-        userProfile: {
-          company_name: userProfile?.company_name || '',
-          contact_person: userProfile?.contact_person || '',
-          business_type: userProfile?.business_type || '',
-        },
-        allowPersonalization,
-        detectedLanguage: detectLanguage(content).code, // Fresh detection from actual message
-        concise: false,
-        timestamp: new Date().toISOString(),
-        has_attachment: !!attachment,
-        file_data: attachment || null,
-        emotionHistory: emotionHistory.slice(-10) // Send last 10 emotions for pattern analysis
+      // Detect intent based on mode and content
+      const detectIntent = (): string => {
+        if (selectedMode === 'LAB' || selectedMode === 'Vision Lab') return 'image';
+        if (selectedMode === 'Civil Engineering') return 'engineering';
+        if (selectedMode === 'Research Pro') return 'search';
+        if (selectedMode === 'PDF Analyst') return 'files';
+        const lower = messageContent.toLowerCase();
+        if (/search|find|look up|latest|news/.test(lower)) return 'search';
+        if (/beam|column|foundation|slab|calculate|structural/.test(lower)) return 'engineering';
+        return 'chat';
       };
 
-      // Call webhook via direct fetch to avoid deadlocks
-      const webhookResponse = await fetch(`${SUPABASE_URL}/functions/v1/ayn-webhook`, {
+      // Build conversation history in ayn-unified format
+      const conversationMessages = messages.slice(-5).map(msg => ({
+        role: msg.sender === 'user' ? 'user' : 'assistant',
+        content: msg.content
+      }));
+
+      // Add current user message
+      conversationMessages.push({
+        role: 'user',
+        content: messageContent + (attachment ? `\n\n[Attached file: ${attachment.name}]` : '')
+      });
+
+      // Build context for ayn-unified
+      const context: Record<string, unknown> = {
+        buildingCode: userProfile?.business_type ? 'SBC 304-2018' : undefined,
+        fileContext: attachment ? {
+          name: attachment.name,
+          type: attachment.type,
+          url: attachment.url
+        } : undefined,
+        emotionHistory: emotionHistory.slice(-5)
+      };
+
+      // Call ayn-unified via direct fetch (replaces n8n)
+      const webhookResponse = await fetch(`${SUPABASE_URL}/functions/v1/ayn-unified`, {
         method: 'POST',
         headers: {
           'apikey': SUPABASE_KEY,
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          messages: conversationMessages,
+          intent: detectIntent(),
+          context,
+          stream: false
+        })
       });
 
       setIsTyping(false);
@@ -264,34 +274,21 @@ export const useMessages = (
 
       const webhookData = await webhookResponse.json();
 
-      // Extract suggested emotion from backend
-      if (webhookData?.suggestedAynEmotion) {
-        setLastSuggestedEmotion(webhookData.suggestedAynEmotion);
-      }
+      // Handle ayn-unified response format
+      // Response is: { content, model, wasFallback, intent } OR { imageUrl, revisedPrompt, model } for images
+      const response = webhookData?.content || 
+                       webhookData?.response ||
+                       webhookData?.output ||
+                       "i'm processing your request...";
 
-      // Extract and store mood pattern
-      if (webhookData?.moodPattern) {
-        setMoodPattern(webhookData.moodPattern);
-      }
-
-      // Track emotion history from user emotion
-      if (webhookData?.userEmotion) {
-        setEmotionHistory(prev => [...prev.slice(-9), {
-          emotion: webhookData.userEmotion.emotion,
-          intensity: webhookData.userEmotion.intensity,
-          timestamp: new Date().toISOString()
-        }]);
-      }
-
-      // Extract response (handle both string and nested object formats)
-      const response = typeof webhookData?.response === 'string'
-        ? webhookData.response
-        : webhookData?.response?.output || 
-          webhookData?.output ||
-          'I received your message and I\'m processing it. Please try again if you don\'t see a proper response.';
-
-      // Extract LAB data if present (for LAB mode)
-      const labData: LABResponse | undefined = webhookData?.labData;
+      // Extract LAB data if present (for image generation)
+      const labData: LABResponse | undefined = webhookData?.imageUrl ? {
+        json: { image_url: webhookData.imageUrl, revised_prompt: webhookData.revisedPrompt || '' },
+        text: webhookData.revisedPrompt || '',
+        emotion: 'creative',
+        raw: JSON.stringify(webhookData),
+        hasStructuredData: true
+      } : undefined;
 
       // Create AI response message
       const aynMessage: Message = {
@@ -300,7 +297,7 @@ export const useMessages = (
         sender: 'ayn',
         timestamp: new Date(),
         isTyping: true,
-        ...(selectedMode === 'LAB' && labData ? { labData } : {})
+        ...(labData ? { labData } : {})
       };
 
       setMessages(prev => [...prev, aynMessage]);
