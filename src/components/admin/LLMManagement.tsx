@@ -277,7 +277,7 @@ export function LLMManagement() {
                             />
                           </div>
                           <Switch
-                            checked={model.is_enabled}
+                            checked={model.is_enabled ?? false}
                             onCheckedChange={(checked) => toggleModel(model.id, checked)}
                           />
                         </div>
