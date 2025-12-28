@@ -39,22 +39,14 @@ interface DashboardContainerProps {
   maintenanceConfig?: MaintenanceConfig;
 }
 
-// Get modes - English only
+// Single unified mode - ayn-unified auto-detects intent
 const getModes = (): AIModeConfig[] => [
   { 
     name: 'General', 
-    translatedName: 'General',
-    description: 'AI assistant for all your needs',
+    translatedName: 'AYN',
+    description: 'Your AI assistant',
     icon: Brain,
-    color: 'text-slate-500',
-    webhookUrl: ''
-  },
-  { 
-    name: 'LAB', 
-    translatedName: 'LAB',
-    description: 'Marketing tools & creative content',
-    icon: FlaskConical,
-    color: 'text-purple-500',
+    color: 'text-primary',
     webhookUrl: ''
   },
 ];
