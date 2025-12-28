@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { 
@@ -15,7 +17,11 @@ import {
   Infinity,
   Edit2,
   Save,
-  X
+  X,
+  AlertTriangle,
+  MessageSquare,
+  Wrench,
+  FileText
 } from 'lucide-react';
 
 interface UserLimit {
@@ -35,6 +41,23 @@ interface UserLimit {
   email?: string;
 }
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.05 }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 10 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { duration: 0.2 }
+  }
+};
+
 export function UserAILimits() {
   const [limits, setLimits] = useState<UserLimit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -50,10 +73,6 @@ export function UserAILimits() {
         .order('current_daily_messages', { ascending: false });
 
       if (error) throw error;
-
-      // Get user emails
-      const userIds = (data || []).map((l: UserLimit) => l.user_id);
-      
       setLimits(data || []);
     } catch (error) {
       console.error('Error fetching limits:', error);
@@ -130,225 +149,221 @@ export function UserAILimits() {
 
   const getUsageColor = (percentage: number) => {
     if (percentage >= 90) return 'text-red-500';
-    if (percentage >= 70) return 'text-yellow-500';
-    return 'text-green-500';
+    if (percentage >= 70) return 'text-amber-500';
+    return 'text-emerald-500';
   };
 
   const filteredLimits = limits.filter((l: UserLimit) => 
     l.user_id.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const unlimitedCount = limits.filter(l => l.is_unlimited).length;
+  const atLimitCount = limits.filter(l => 
+    !l.is_unlimited && (l.current_daily_messages ?? 0) >= (l.daily_messages ?? 10)
+  ).length;
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <RefreshCw className="w-6 h-6 animate-spin text-muted-foreground" />
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+        >
+          <RefreshCw className="w-8 h-8 text-primary" />
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="space-y-6"
+    >
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold flex items-center gap-2">
-            <Shield className="w-5 h-5" />
-            User AI Limits
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Manage per-user daily and monthly AI usage limits
-          </p>
+      <motion.div variants={itemVariants} className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-xl bg-primary/10 ring-1 ring-primary/20">
+            <Shield className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-xl font-semibold">User AI Limits</h2>
+            <p className="text-sm text-muted-foreground">
+              Manage per-user daily and monthly AI usage limits
+            </p>
+          </div>
         </div>
         <Button 
           variant="outline" 
           size="sm"
           onClick={() => { setIsLoading(true); fetchLimits(); }}
+          className="border-border/50"
         >
           <RefreshCw className="w-4 h-4 mr-2" />
           Refresh
         </Button>
-      </div>
+      </motion.div>
 
       {/* Search */}
-      <div className="relative">
+      <motion.div variants={itemVariants} className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
           placeholder="Search by user ID..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9"
+          className="pl-10 bg-muted/30 border-border/50"
         />
-      </div>
+      </motion.div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Users</p>
-                <p className="text-2xl font-bold">{limits.length}</p>
-              </div>
-              <Users className="w-8 h-8 text-primary/20" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Unlimited Users</p>
-                <p className="text-2xl font-bold">{limits.filter(l => l.is_unlimited).length}</p>
-              </div>
-              <Infinity className="w-8 h-8 text-green-500/20" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">At Limit Today</p>
-                <p className="text-2xl font-bold text-red-500">
-                  {limits.filter(l => 
-                    !l.is_unlimited && (l.current_daily_messages ?? 0) >= (l.daily_messages ?? 10)
-                  ).length}
-                </p>
-              </div>
-              <Shield className="w-8 h-8 text-red-500/20" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {[
+          { label: 'Total Users', value: limits.length, Icon: Users, color: 'from-primary/20 to-primary/5', iconColor: 'text-primary' },
+          { label: 'Unlimited Users', value: unlimitedCount, Icon: Infinity, color: 'from-emerald-500/20 to-emerald-500/5', iconColor: 'text-emerald-500' },
+          { label: 'At Limit Today', value: atLimitCount, Icon: AlertTriangle, color: 'from-red-500/20 to-red-500/5', iconColor: 'text-red-500' },
+        ].map((stat) => {
+          const Icon = stat.Icon;
+          return (
+            <Card key={stat.label} className="relative overflow-hidden border border-border/50 bg-card/80 backdrop-blur-xl">
+              <div className={`absolute inset-0 bg-gradient-to-br ${stat.color}`} />
+              <CardContent className="relative pt-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">{stat.label}</p>
+                    <p className="text-2xl font-bold">{stat.value}</p>
+                  </div>
+                  <div className="p-2 rounded-xl bg-background/50">
+                    <Icon className={`w-6 h-6 ${stat.iconColor}`} />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </motion.div>
 
       {/* User List */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">User Limits ({filteredLimits.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ScrollArea className="h-[400px]">
-            <div className="space-y-3">
-              {filteredLimits.map(user => {
-                const isEditing = editingUser === user.user_id;
-                const msgPercentage = getUsagePercentage(user.current_daily_messages, user.daily_messages);
-                
-                return (
-                  <div 
-                    key={user.user_id}
-                    className="p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2">
-                          <p className="font-mono text-sm truncate">{user.user_id}</p>
-                          {user.is_unlimited && (
-                            <Badge variant="default" className="bg-green-500">
-                              <Infinity className="w-3 h-3 mr-1" />
-                              Unlimited
-                            </Badge>
+      <motion.div variants={itemVariants}>
+        <Card className="relative overflow-hidden border border-border/50 bg-card/80 backdrop-blur-xl">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
+          <CardHeader>
+            <CardTitle className="text-base">User Limits ({filteredLimits.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ScrollArea className="h-[400px]">
+              <motion.div variants={containerVariants} className="space-y-2">
+                {filteredLimits.map(user => {
+                  const isEditing = editingUser === user.user_id;
+                  const msgPercentage = getUsagePercentage(user.current_daily_messages, user.daily_messages);
+                  
+                  return (
+                    <motion.div 
+                      key={user.user_id}
+                      variants={itemVariants}
+                      whileHover={{ x: 4 }}
+                      className={`p-4 rounded-xl border transition-all ${
+                        isEditing 
+                          ? 'bg-primary/5 border-primary/30' 
+                          : 'bg-muted/20 border-border/30 hover:bg-muted/40'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-3">
+                            <p className="font-mono text-sm truncate">{user.user_id.substring(0, 8)}...</p>
+                            {user.is_unlimited && (
+                              <Badge variant="default" className="bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                                <Infinity className="w-3 h-3 mr-1" />
+                                Unlimited
+                              </Badge>
+                            )}
+                          </div>
+                          
+                          {isEditing ? (
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                              {[
+                                { key: 'daily_messages', label: 'Messages', icon: MessageSquare },
+                                { key: 'daily_engineering', label: 'Engineering', icon: Wrench },
+                                { key: 'daily_search', label: 'Search', icon: Search },
+                                { key: 'daily_files', label: 'Files', icon: FileText },
+                              ].map(({ key, label, icon: Icon }) => (
+                                <div key={key} className="space-y-1">
+                                  <label className="text-xs text-muted-foreground flex items-center gap-1">
+                                    <Icon className="w-3 h-3" /> {label}
+                                  </label>
+                                  <Input
+                                    type="number"
+                                    value={editValues[key as keyof UserLimit] as number ?? 0}
+                                    onChange={(e) => setEditValues(prev => ({ ...prev, [key]: parseInt(e.target.value) }))}
+                                    className="h-9 bg-muted/30"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-4">
+                                <div className="flex-1">
+                                  <div className="flex items-center justify-between text-xs mb-1">
+                                    <span className="text-muted-foreground">Messages</span>
+                                    <span className={getUsageColor(msgPercentage)}>
+                                      {user.current_daily_messages}/{user.daily_messages}
+                                    </span>
+                                  </div>
+                                  <Progress value={msgPercentage} className="h-1.5" />
+                                </div>
+                              </div>
+                              <div className="flex gap-4 text-xs text-muted-foreground">
+                                <span>Eng: {user.current_daily_engineering}/{user.daily_engineering}</span>
+                                <span>Search: {user.current_daily_search}/{user.daily_search}</span>
+                                <span>Files: {user.current_daily_files}/{user.daily_files}</span>
+                              </div>
+                            </div>
                           )}
                         </div>
-                        
-                        {isEditing ? (
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3">
-                            <div>
-                              <label className="text-xs text-muted-foreground">Messages</label>
-                              <Input
-                                type="number"
-                                value={editValues.daily_messages ?? 0}
-                                onChange={(e) => setEditValues(prev => ({ ...prev, daily_messages: parseInt(e.target.value) }))}
-                                className="h-8"
-                              />
-                            </div>
-                            <div>
-                              <label className="text-xs text-muted-foreground">Engineering</label>
-                              <Input
-                                type="number"
-                                value={editValues.daily_engineering ?? 0}
-                                onChange={(e) => setEditValues(prev => ({ ...prev, daily_engineering: parseInt(e.target.value) }))}
-                                className="h-8"
-                              />
-                            </div>
-                            <div>
-                              <label className="text-xs text-muted-foreground">Search</label>
-                              <Input
-                                type="number"
-                                value={editValues.daily_search ?? 0}
-                                onChange={(e) => setEditValues(prev => ({ ...prev, daily_search: parseInt(e.target.value) }))}
-                                className="h-8"
-                              />
-                            </div>
-                            <div>
-                              <label className="text-xs text-muted-foreground">Files</label>
-                              <Input
-                                type="number"
-                                value={editValues.daily_files ?? 0}
-                                onChange={(e) => setEditValues(prev => ({ ...prev, daily_files: parseInt(e.target.value) }))}
-                                className="h-8"
-                              />
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                            <div>
-                              <span className="text-muted-foreground">Messages: </span>
-                              <span className={getUsageColor(msgPercentage)}>
-                                {user.current_daily_messages}/{user.daily_messages}
-                              </span>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground">Eng: </span>
-                              <span>{user.current_daily_engineering}/{user.daily_engineering}</span>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground">Search: </span>
-                              <span>{user.current_daily_search}/{user.daily_search}</span>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground">Files: </span>
-                              <span>{user.current_daily_files}/{user.daily_files}</span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
 
-                      <div className="flex items-center gap-2">
-                        {isEditing ? (
-                          <>
-                            <Button size="sm" variant="ghost" onClick={() => setEditingUser(null)}>
-                              <X className="w-4 h-4" />
-                            </Button>
-                            <Button size="sm" onClick={saveEditing}>
-                              <Save className="w-4 h-4" />
-                            </Button>
-                          </>
-                        ) : (
-                        <>
-                            <Switch
-                              checked={user.is_unlimited ?? false}
-                              onCheckedChange={(checked) => toggleUnlimited(user.user_id, checked)}
-                            />
-                            <Button size="sm" variant="ghost" onClick={() => startEditing(user)}>
-                              <Edit2 className="w-4 h-4" />
-                            </Button>
-                          </>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {isEditing ? (
+                            <>
+                              <Button size="sm" variant="ghost" onClick={() => setEditingUser(null)}>
+                                <X className="w-4 h-4" />
+                              </Button>
+                              <Button size="sm" onClick={saveEditing}>
+                                <Save className="w-4 h-4" />
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              <Switch
+                                checked={user.is_unlimited ?? false}
+                                onCheckedChange={(checked) => toggleUnlimited(user.user_id, checked)}
+                              />
+                              <Button size="sm" variant="ghost" onClick={() => startEditing(user)}>
+                                <Edit2 className="w-4 h-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </div>
+                    </motion.div>
+                  );
+                })}
+                
+                {filteredLimits.length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <div className="p-4 rounded-2xl bg-muted/50 mb-4">
+                      <Users className="w-8 h-8 text-muted-foreground" />
                     </div>
+                    <p className="text-sm text-muted-foreground">No users found</p>
                   </div>
-                );
-              })}
-              
-              {filteredLimits.length === 0 && (
-                <p className="text-center text-muted-foreground py-8">
-                  No users found
-                </p>
-              )}
-            </div>
-          </ScrollArea>
-        </CardContent>
-      </Card>
-    </div>
+                )}
+              </motion.div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      </motion.div>
+    </motion.div>
   );
 }

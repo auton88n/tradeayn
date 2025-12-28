@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from 'next-themes';
@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { ArrowLeft, Sun, Moon, RefreshCw, LayoutDashboard, Users, Shield, Settings, FileText, Loader2, MessageSquare, LineChart, Bot, DollarSign, Gauge } from 'lucide-react';
+import { ArrowLeft, Sun, Moon, RefreshCw, LayoutDashboard, Users, Shield, Settings, FileText, Loader2, MessageSquare, LineChart, Bot, DollarSign, Gauge, Sparkles } from 'lucide-react';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { UserManagement } from '@/components/admin/UserManagement';
@@ -126,6 +126,7 @@ const allTabs = [{
   icon: Bot,
   adminOnly: true
 }];
+
 export const AdminPanel = ({
   session,
   onBackClick,
@@ -133,10 +134,8 @@ export const AdminPanel = ({
   isDuty = false
 }: AdminPanelProps) => {
   const navigate = useNavigate();
-  const {
-    theme,
-    setTheme
-  } = useTheme();
+  const { theme, setTheme } = useTheme();
+  const tabsRef = useRef<HTMLDivElement>(null);
 
   // Filter tabs based on role - duty users only see Applications and Support
   const tabs = allTabs.filter(tab => isAdmin || !tab.adminOnly);
@@ -148,6 +147,7 @@ export const AdminPanel = ({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [allUsers, setAllUsers] = useState<AccessGrantWithProfile[]>([]);
   const [applications, setApplications] = useState<ServiceApplication[]>([]);
+  const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
   const [systemMetrics, setSystemMetrics] = useState<SystemMetrics>({
     totalUsers: 0,
     activeUsers: 0,
@@ -168,6 +168,21 @@ export const AdminPanel = ({
     sessionTimeout: 30
   });
 
+  // Update indicator position when active tab changes
+  useEffect(() => {
+    if (tabsRef.current) {
+      const activeButton = tabsRef.current.querySelector(`[data-tab="${activeTab}"]`) as HTMLButtonElement;
+      if (activeButton) {
+        const containerRect = tabsRef.current.getBoundingClientRect();
+        const buttonRect = activeButton.getBoundingClientRect();
+        setIndicatorStyle({
+          left: buttonRect.left - containerRect.left,
+          width: buttonRect.width
+        });
+      }
+    }
+  }, [activeTab, tabs]);
+
   // Direct REST API fetch to avoid Supabase client deadlock
   const fetchWithAuth = useCallback(async (endpoint: string, options: RequestInit = {}) => {
     const token = session.access_token;
@@ -183,7 +198,6 @@ export const AdminPanel = ({
     if (!response.ok) {
       throw new Error(`API error: ${response.status}`);
     }
-    // Handle empty responses (e.g., from POST/PATCH/DELETE operations)
     const text = await response.text();
     if (!text) {
       return null;
@@ -204,19 +218,17 @@ export const AdminPanel = ({
       return [];
     }
   }, [fetchWithAuth]);
+
   const fetchData = useCallback(async () => {
     try {
-      // Fetch all data in parallel using Promise.allSettled for resilience
       const results = await Promise.allSettled([fetchWithRetry('access_grants?select=*&order=created_at.desc'), fetchWithRetry('profiles?select=user_id,company_name,contact_person,avatar_url'), fetchWithRetry(`messages?select=id&created_at=gte.${new Date().toISOString().split('T')[0]}`), fetchWithRetry('system_config?select=key,value'), fetchWithRetry('service_applications?select=*&order=created_at.desc')]);
 
-      // Log any failures for debugging
       results.forEach((result, index) => {
         if (result.status === 'rejected') {
           console.error(`Query ${index} failed:`, result.reason);
         }
       });
 
-      // Extract values, defaulting to empty arrays on failure
       const usersData = results[0].status === 'fulfilled' ? results[0].value as AccessGrantWithProfile[] : [];
       const profilesData = results[1].status === 'fulfilled' ? results[1].value as {
         user_id: string;
@@ -224,16 +236,10 @@ export const AdminPanel = ({
         contact_person: string | null;
         avatar_url: string | null;
       }[] : [];
-      const messagesData = results[2].status === 'fulfilled' ? results[2].value as {
-        id: string;
-      }[] : [];
-      const configData = results[3].status === 'fulfilled' ? results[3].value as {
-        key: string;
-        value: unknown;
-      }[] : [];
+      const messagesData = results[2].status === 'fulfilled' ? results[2].value as { id: string; }[] : [];
+      const configData = results[3].status === 'fulfilled' ? results[3].value as { key: string; value: unknown; }[] : [];
       const applicationsData = results[4].status === 'fulfilled' ? results[4].value as ServiceApplication[] : [];
 
-      // Map profiles to users
       const profilesMap = new Map(profilesData.map(p => [p.user_id, p]));
       const usersWithProfiles: AccessGrantWithProfile[] = usersData.map((user: AccessGrantWithProfile) => ({
         ...user,
@@ -242,7 +248,6 @@ export const AdminPanel = ({
       setAllUsers(usersWithProfiles);
       setApplications(applicationsData);
 
-      // Calculate metrics
       const activeCount = usersWithProfiles.filter((u: AccessGrantWithProfile) => u.is_active).length;
       const pendingCount = usersWithProfiles.filter((u: AccessGrantWithProfile) => !u.is_active && !u.granted_at).length;
       setSystemMetrics({
@@ -253,7 +258,6 @@ export const AdminPanel = ({
         weeklyGrowth: 0
       });
 
-      // Parse system config
       if (configData.length > 0) {
         const configMap = new Map(configData.map(c => [c.key, c.value]));
         setSystemConfig(prev => ({
@@ -278,13 +282,12 @@ export const AdminPanel = ({
       setIsRefreshing(false);
     }
   }, [fetchWithRetry]);
+
   useEffect(() => {
-    // Small delay to ensure token is fully propagated before admin queries
     const initTimer = setTimeout(() => {
       fetchData();
     }, 100);
 
-    // Safety timeout - if data doesn't load in 8 seconds, stop loading spinner
     const safetyTimeout = setTimeout(() => {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -294,10 +297,12 @@ export const AdminPanel = ({
       clearTimeout(safetyTimeout);
     };
   }, [fetchData]);
+
   const handleRefresh = () => {
     setIsRefreshing(true);
     fetchData();
   };
+
   const handleBackClick = () => {
     if (onBackClick) {
       onBackClick();
@@ -305,6 +310,7 @@ export const AdminPanel = ({
       navigate('/');
     }
   };
+
   const updateSystemConfig = async (updates: Partial<SystemConfig>) => {
     try {
       const keyMap: Record<string, string> = {
@@ -323,7 +329,6 @@ export const AdminPanel = ({
       for (const [key, value] of Object.entries(updates)) {
         const dbKey = keyMap[key];
         if (dbKey) {
-          // Use PATCH to update existing records
           const response = await fetch(`${SUPABASE_URL}/rest/v1/system_config?key=eq.${dbKey}`, {
             method: 'PATCH',
             headers: {
@@ -354,30 +359,55 @@ export const AdminPanel = ({
       toast.error('Failed to update settings');
     }
   };
+
   if (isLoading) {
-    return <div className="flex items-center justify-center min-h-[60vh]">
-        <motion.div animate={{
-        rotate: 360
-      }} transition={{
-        duration: 1,
-        repeat: Infinity,
-        ease: 'linear'
-      }}>
-          <Loader2 className="w-8 h-8 text-primary" />
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <motion.div
+          className="relative"
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+        >
+          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary/40 to-primary blur-xl" />
+          <Loader2 className="w-10 h-10 text-primary relative z-10" />
         </motion.div>
-      </div>;
+      </div>
+    );
   }
-  return <div className="max-w-7xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+
+  const newAppsCount = applications.filter(a => a.status === 'new').length;
+
+  return (
+    <div className="max-w-7xl mx-auto space-y-6 relative">
+      {/* Gradient accent line at top */}
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-60" />
+      
+      {/* Premium Header */}
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center justify-between pt-4"
+      >
         <div className="flex items-center gap-4">
-          <Button onClick={handleBackClick} variant="ghost" size="icon" className="w-10 h-10 rounded-xl hover:bg-muted/50">
+          <Button 
+            onClick={handleBackClick} 
+            variant="ghost" 
+            size="icon" 
+            className="w-10 h-10 rounded-xl hover:bg-muted/50 border border-border/50"
+          >
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold">{isAdmin ? 'Admin Panel' : 'Duty Panel'}</h1>
-              {isDuty && !isAdmin && <Badge variant="secondary">Duty</Badge>}
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                {isAdmin ? 'Admin Panel' : 'Duty Panel'}
+              </h1>
+              {isDuty && !isAdmin && (
+                <Badge variant="secondary" className="bg-primary/10 text-primary border border-primary/20">
+                  <Sparkles className="w-3 h-3 mr-1" />
+                  Duty
+                </Badge>
+              )}
             </div>
             <p className="text-sm text-muted-foreground">
               {isAdmin ? 'Manage users, settings, and system' : 'Manage applications and support'}
@@ -386,41 +416,90 @@ export const AdminPanel = ({
         </div>
         
         <div className="flex items-center gap-2">
-          
-          
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="w-10 h-10 rounded-xl border border-border/50 hover:bg-muted/50"
+          >
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="w-10 h-10 rounded-xl border border-border/50 hover:bg-muted/50"
+          >
+            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </Button>
         </div>
-      </div>
+      </motion.div>
 
-      {/* Tabs */}
-      <div className="flex gap-2 p-1 bg-muted/50 rounded-xl w-fit flex-wrap">
-        {tabs.map(tab => {
-        const Icon = tab.icon;
-        const newAppsCount = tab.id === 'applications' ? applications.filter(a => a.status === 'new').length : 0;
-        return <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === tab.id ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}>
-              <Icon className="w-4 h-4" />
-              {tab.label}
-              {newAppsCount > 0 && <Badge variant="destructive" className="ml-1 text-xs px-1.5 py-0">
-                  {newAppsCount}
-                </Badge>}
-            </button>;
-      })}
-      </div>
+      {/* Premium Tabs with Sliding Indicator */}
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="relative"
+      >
+        <div 
+          ref={tabsRef}
+          className="relative flex gap-1 p-1.5 bg-card/80 backdrop-blur-xl rounded-2xl border border-border/50 shadow-lg shadow-primary/5 w-fit flex-wrap overflow-hidden"
+        >
+          {/* Sliding indicator */}
+          <motion.div
+            className="absolute top-1.5 bottom-1.5 bg-gradient-to-r from-primary/20 via-primary/10 to-primary/20 rounded-xl border border-primary/30 shadow-sm"
+            initial={false}
+            animate={{
+              left: indicatorStyle.left,
+              width: indicatorStyle.width
+            }}
+            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+          />
+          
+          {tabs.map(tab => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            const tabNewCount = tab.id === 'applications' ? newAppsCount : 0;
+            
+            return (
+              <button
+                key={tab.id}
+                data-tab={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`relative z-10 flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                  isActive 
+                    ? 'text-primary' 
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <Icon className={`w-4 h-4 transition-colors ${isActive ? 'text-primary' : ''}`} />
+                <span className="hidden sm:inline">{tab.label}</span>
+                {tabNewCount > 0 && (
+                  <Badge 
+                    variant="destructive" 
+                    className="ml-1 text-xs px-1.5 py-0 min-w-5 h-5 flex items-center justify-center animate-pulse"
+                  >
+                    {tabNewCount}
+                  </Badge>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </motion.div>
 
       {/* Content */}
       <ScrollArea className="h-[calc(100vh-220px)]">
         <AnimatePresence mode="wait">
-          <motion.div key={activeTab} initial={{
-          opacity: 0,
-          y: 10
-        }} animate={{
-          opacity: 1,
-          y: 0
-        }} exit={{
-          opacity: 0,
-          y: -10
-        }} transition={{
-          duration: 0.2
-        }}>
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 20, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.98 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+          >
             <ErrorBoundary>
               {activeTab === 'overview' && <AdminDashboard systemMetrics={systemMetrics} allUsers={allUsers} />}
               {activeTab === 'google-analytics' && <GoogleAnalytics />}
@@ -437,5 +516,6 @@ export const AdminPanel = ({
           </motion.div>
         </AnimatePresence>
       </ScrollArea>
-    </div>;
+    </div>
+  );
 };
