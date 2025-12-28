@@ -14,7 +14,7 @@ import {
   RefreshCw, 
   Search,
   Shield,
-  Infinity,
+  Infinity as InfinityIcon,
   Edit2,
   Save,
   X,
@@ -221,7 +221,7 @@ export function UserAILimits() {
       <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[
           { label: 'Total Users', value: limits.length, Icon: Users, color: 'from-primary/20 to-primary/5', iconColor: 'text-primary' },
-          { label: 'Unlimited Users', value: unlimitedCount, Icon: Infinity, color: 'from-emerald-500/20 to-emerald-500/5', iconColor: 'text-emerald-500' },
+          { label: 'Unlimited Users', value: unlimitedCount, Icon: InfinityIcon, color: 'from-emerald-500/20 to-emerald-500/5', iconColor: 'text-emerald-500' },
           { label: 'At Limit Today', value: atLimitCount, Icon: AlertTriangle, color: 'from-red-500/20 to-red-500/5', iconColor: 'text-red-500' },
         ].map((stat) => {
           const Icon = stat.Icon;
@@ -275,7 +275,7 @@ export function UserAILimits() {
                             <p className="font-mono text-sm truncate">{user.user_id.substring(0, 8)}...</p>
                             {user.is_unlimited && (
                               <Badge variant="default" className="bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
-                                <Infinity className="w-3 h-3 mr-1" />
+                                <InfinityIcon className="w-3 h-3 mr-1" />
                                 Unlimited
                               </Badge>
                             )}
