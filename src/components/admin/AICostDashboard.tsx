@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,23 +28,6 @@ interface UsageStats {
   successRate: number | null;
   totalCost: number;
 }
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1 }
-  }
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { 
-    opacity: 1, 
-    y: 0,
-    transition: { duration: 0.3 }
-  }
-};
 
 export function AICostDashboard() {
   const [stats, setStats] = useState<UsageStats>({
@@ -145,28 +127,18 @@ export function AICostDashboard() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
-        >
-          <RefreshCw className="w-8 h-8 text-primary" />
-        </motion.div>
+        <RefreshCw className="w-8 h-8 text-muted-foreground animate-spin" />
       </div>
     );
   }
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="space-y-6"
-    >
+    <div className="space-y-6">
       {/* Header */}
-      <motion.div variants={itemVariants} className="flex items-center justify-between">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-emerald-500/10 ring-1 ring-emerald-500/20">
-            <DollarSign className="w-5 h-5 text-emerald-500" />
+          <div className="p-2 rounded-lg bg-muted">
+            <DollarSign className="w-5 h-5 text-foreground" />
           </div>
           <div>
             <h2 className="text-xl font-semibold">AI Cost Dashboard</h2>
@@ -179,51 +151,46 @@ export function AICostDashboard() {
           variant="outline" 
           size="sm"
           onClick={() => { setIsLoading(true); fetchStats(); }}
-          className="border-border/50"
         >
           <RefreshCw className="w-4 h-4 mr-2" />
           Refresh
         </Button>
-      </motion.div>
+      </div>
 
       {/* Cost Overview */}
-      <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
-          { label: 'Today', value: `$${estimatedCostToday.toFixed(2)}`, sub: `${stats.today} requests`, icon: Calendar, color: 'from-primary/20 to-primary/5', iconColor: 'text-primary' },
-          { label: 'This Week', value: `$${estimatedCostWeek.toFixed(2)}`, sub: `${stats.week} requests`, icon: TrendingUp, color: 'from-emerald-500/20 to-emerald-500/5', iconColor: 'text-emerald-500' },
-          { label: 'This Month', value: `$${estimatedCostMonth.toFixed(2)}`, sub: `${stats.month} requests`, icon: DollarSign, color: 'from-blue-500/20 to-blue-500/5', iconColor: 'text-blue-500' },
-          { label: 'Projected', value: `$${projectedMonthly.toFixed(2)}`, sub: 'per month', icon: TrendingDown, color: 'from-amber-500/20 to-amber-500/5', iconColor: 'text-amber-500' },
+          { label: 'Today', value: `$${estimatedCostToday.toFixed(2)}`, sub: `${stats.today} requests`, icon: Calendar },
+          { label: 'This Week', value: `$${estimatedCostWeek.toFixed(2)}`, sub: `${stats.week} requests`, icon: TrendingUp },
+          { label: 'This Month', value: `$${estimatedCostMonth.toFixed(2)}`, sub: `${stats.month} requests`, icon: DollarSign },
+          { label: 'Projected', value: `$${projectedMonthly.toFixed(2)}`, sub: 'per month', icon: TrendingDown },
         ].map((stat) => {
           const Icon = stat.icon;
           return (
-            <Card key={stat.label} className="relative overflow-hidden border border-border/50 bg-card/80 backdrop-blur-xl group hover:shadow-lg transition-shadow">
-              <div className={`absolute inset-0 bg-gradient-to-br ${stat.color}`} />
-              <CardContent className="relative pt-4">
+            <Card key={stat.label} className="border border-border bg-card">
+              <CardContent className="pt-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">{stat.label}</p>
                     <p className="text-2xl font-bold mt-1">{stat.value}</p>
                     <p className="text-xs text-muted-foreground mt-1">{stat.sub}</p>
                   </div>
-                  <div className="p-2 rounded-xl bg-background/50 group-hover:scale-110 transition-transform">
-                    <Icon className={`w-6 h-6 ${stat.iconColor}`} />
+                  <div className="p-2 rounded-lg bg-muted">
+                    <Icon className="w-5 h-5 text-muted-foreground" />
                   </div>
                 </div>
               </CardContent>
             </Card>
           );
         })}
-      </motion.div>
+      </div>
 
       {/* Usage Breakdown */}
-      <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="relative overflow-hidden border border-border/50 bg-card/80 backdrop-blur-xl">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-500/60 via-violet-500 to-violet-500/60" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card className="border border-border bg-card">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-violet-500/10">
-                <PieChart className="w-4 h-4 text-violet-500" />
-              </div>
+              <PieChart className="w-4 h-4 text-muted-foreground" />
               Usage by Intent (7 days)
             </CardTitle>
           </CardHeader>
@@ -253,13 +220,10 @@ export function AICostDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden border border-border/50 bg-card/80 backdrop-blur-xl">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500/60 via-emerald-500 to-emerald-500/60" />
+        <Card className="border border-border bg-card">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-emerald-500/10">
-                <Zap className="w-4 h-4 text-emerald-500" />
-              </div>
+              <Zap className="w-4 h-4 text-muted-foreground" />
               System Health
             </CardTitle>
           </CardHeader>
@@ -297,9 +261,9 @@ export function AICostDashboard() {
                 };
                 
                 return (
-                  <div key={item.label} className="flex items-center justify-between p-3 rounded-xl bg-muted/30 border border-border/30">
+                  <div key={item.label} className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-muted/50">
+                      <div className="p-2 rounded-lg bg-background">
                         <Icon className="w-4 h-4 text-muted-foreground" />
                       </div>
                       <div>
@@ -316,7 +280,7 @@ export function AICostDashboard() {
             </div>
           </CardContent>
         </Card>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 }
