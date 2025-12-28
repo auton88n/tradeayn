@@ -76,6 +76,28 @@ async function generateImage(prompt: string): Promise<{ imageUrl: string; revise
   return { imageUrl, revisedPrompt };
 }
 
+// Detect emotion from AI response content
+function detectResponseEmotion(content: string): string {
+  const lower = content.toLowerCase();
+  
+  // Positive emotions
+  if (/🎉|congratulations|amazing|excellent|wonderful|fantastic|great job|well done|perfect/i.test(lower)) return 'excited';
+  if (/😊|happy|glad|pleased|delighted|love it|that's great|awesome/i.test(lower)) return 'happy';
+  if (/here to help|support|understand|i'm sorry to hear|that must be|i understand/i.test(lower)) return 'supportive';
+  if (/don't worry|it's okay|no problem|take your time|you've got this/i.test(lower)) return 'comfort';
+  
+  // Thinking/analytical
+  if (/let me think|hmm|interesting question|analyzing|calculating|considering/i.test(lower)) return 'thinking';
+  if (/curious|wonder|fascinating|intriguing|that's interesting/i.test(lower)) return 'curious';
+  
+  // Negative emotions (rare but possible)
+  if (/unfortunately|sorry|unable|can't|cannot|error|failed/i.test(lower)) return 'sad';
+  if (/frustrating|difficult|challenging|complex issue/i.test(lower)) return 'frustrated';
+  
+  // Default to calm for neutral responses
+  return 'calm';
+}
+
 // Build system prompt based on intent
 function buildSystemPrompt(intent: string, language: string, context: Record<string, unknown>): string {
   const basePrompt = `you're ayn, a friendly ai assistant. you help people with their questions in a casual, approachable way.
@@ -477,11 +499,15 @@ serve(async (req) => {
     }
 
     // Non-streaming response
+    const responseContent = (response as { content: string }).content;
+    const detectedEmotion = detectResponseEmotion(responseContent);
+    
     return new Response(JSON.stringify({
-      content: (response as { content: string }).content,
+      content: responseContent,
       model: modelUsed.display_name,
       wasFallback,
-      intent
+      intent,
+      emotion: detectedEmotion
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });

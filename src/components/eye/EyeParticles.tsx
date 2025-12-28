@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { memo, useMemo, useState, useEffect, useRef } from 'react';
 import type { AYNEmotion, ActivityLevel } from '@/contexts/AYNEmotionContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 type ParticleType = 'sparkle' | 'orbit' | 'energy';
 
@@ -15,30 +16,33 @@ interface EyeParticlesProps {
   isPulsing?: boolean;
 }
 
-// Emotion-specific particle counts
-const getEmotionParticleCount = (emotion: AYNEmotion, activityLevel: ActivityLevel): number => {
+// Emotion-specific particle counts - reduced for performance
+const getEmotionParticleCount = (emotion: AYNEmotion, activityLevel: ActivityLevel, isMobile: boolean): number => {
   const emotionCounts: Record<AYNEmotion, number> = {
     calm: 2,
-    comfort: 4,
-    supportive: 4,
-    happy: 6,
-    excited: 10,
-    thinking: 5,
-    frustrated: 8,
-    curious: 6,
+    comfort: 3,
+    supportive: 3,
+    happy: 4,
+    excited: 6,
+    thinking: 3,
+    frustrated: 5,
+    curious: 4,
     sad: 2,
-    mad: 10,
+    mad: 6,
     bored: 1,
   };
   
   const activityMultiplier: Record<ActivityLevel, number> = { 
-    idle: 0.5, 
-    low: 1, 
-    medium: 1.3, 
-    high: 1.6 
+    idle: 0.4, 
+    low: 0.7, 
+    medium: 1.0, 
+    high: 1.3 
   };
   
-  return Math.max(1, Math.round(emotionCounts[emotion] * activityMultiplier[activityLevel]));
+  // Reduce particle count on mobile for better performance
+  const mobileMultiplier = isMobile ? 0.5 : 1;
+  
+  return Math.max(1, Math.round(emotionCounts[emotion] * activityMultiplier[activityLevel] * mobileMultiplier));
 };
 
 // Emotion-specific colors (HSL format)
@@ -124,11 +128,12 @@ const EyeParticlesComponent = ({
   const [burstParticles, setBurstParticles] = useState<number[]>([]);
   const burstIdCounter = useRef(0);
   const prevAbsorbing = useRef(false);
+  const isMobile = useIsMobile();
   
-  // Trigger burst on absorption
+  // Trigger burst on absorption - reduced count on mobile
   useEffect(() => {
     if (isAbsorbing && !prevAbsorbing.current) {
-      const burstCount = 12;
+      const burstCount = isMobile ? 6 : 12;
       const newBurst = Array.from({ length: burstCount }, () => burstIdCounter.current++);
       setBurstParticles(newBurst);
       
@@ -137,15 +142,16 @@ const EyeParticlesComponent = ({
       }, 700);
     }
     prevAbsorbing.current = isAbsorbing;
-  }, [isAbsorbing]);
+  }, [isAbsorbing, isMobile]);
 
-  const particleCount = getEmotionParticleCount(emotion, activityLevel);
+  const particleCount = getEmotionParticleCount(emotion, activityLevel, isMobile);
   const speedMultiplier = getSpeedMultiplier(emotion);
   const particleColor = getEmotionParticleColor(emotion, glowColor);
   const sizeRange = getParticleSizeRange(particleType);
   
-  // Boost during pulse
-  const effectiveCount = isPulsing ? Math.max(particleCount * 1.5, 6) : particleCount;
+  // Boost during pulse - less boost on mobile
+  const pulseBoost = isMobile ? 1.2 : 1.5;
+  const effectiveCount = isPulsing ? Math.max(particleCount * pulseBoost, isMobile ? 3 : 6) : particleCount;
 
   // Generate ambient particles
   const ambientParticles = useMemo((): Particle[] => {

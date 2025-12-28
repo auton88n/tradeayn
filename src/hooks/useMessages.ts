@@ -282,11 +282,16 @@ export const useMessages = (
       const webhookData = await webhookResponse.json();
 
       // Handle ayn-unified response format
-      // Response is: { content, model, wasFallback, intent } OR { imageUrl, revisedPrompt, model } for images
+      // Response is: { content, model, wasFallback, intent, emotion } OR { imageUrl, revisedPrompt, model } for images
       const response = webhookData?.content || 
                        webhookData?.response ||
                        webhookData?.output ||
                        "i'm processing your request...";
+
+      // Extract emotion from backend response and set it for the eye
+      if (webhookData?.emotion) {
+        setLastSuggestedEmotion(webhookData.emotion);
+      }
 
       // Extract LAB data if present (for image generation)
       const labData: LABResponse | undefined = webhookData?.imageUrl ? {
