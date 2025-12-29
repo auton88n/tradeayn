@@ -62,8 +62,9 @@ interface CenterStageLayoutProps {
   uploadFailed?: boolean;
   onRetryUpload?: () => void;
   // Usage tracking props
-  currentMonthUsage?: number;
-  monthlyLimit?: number | null;
+  currentUsage?: number;
+  dailyLimit?: number | null;
+  isUnlimited?: boolean;
   usageResetDate?: string | null;
   // Flag to prevent auto-showing historical messages
   isLoadingFromHistory?: boolean;
@@ -111,8 +112,9 @@ export const CenterStageLayout = ({
   lastSuggestedEmotion,
   uploadFailed,
   onRetryUpload,
-  currentMonthUsage,
-  monthlyLimit,
+  currentUsage,
+  dailyLimit,
+  isUnlimited,
   usageResetDate,
   isLoadingFromHistory,
   currentSessionId,
@@ -707,8 +709,9 @@ export const CenterStageLayout = ({
         {/* System notification banner - above chat input (maintenance OR usage warning) */}
         <SystemNotificationBanner
           maintenanceConfig={maintenanceConfig}
-          currentUsage={currentMonthUsage ?? 0}
-          monthlyLimit={monthlyLimit ?? null}
+          currentUsage={currentUsage ?? 0}
+          dailyLimit={dailyLimit ?? null}
+          isUnlimited={isUnlimited ?? false}
           usageResetDate={usageResetDate ?? null}
         />
         

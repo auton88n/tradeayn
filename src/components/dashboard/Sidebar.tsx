@@ -99,8 +99,9 @@ export const Sidebar = ({
   recentChats,
   showChatSelection,
   selectedChats,
-  currentMonthUsage = 0,
-  monthlyLimit = null,
+  currentUsage = 0,
+  dailyLimit = null,
+  isUnlimited: isUnlimitedProp = false,
   usageResetDate = null,
   onModeSelect,
   onNewChat,
@@ -138,7 +139,7 @@ export const Sidebar = ({
   const [showImagesGallery, setShowImagesGallery] = useState(false);
   
   // Fetch credits data directly via hook
-  const { currentMonthUsage: usageFromHook, monthlyLimit: limitFromHook, usageResetDate: resetFromHook, isLoading: isUsageLoading } = useUsageTracking(userId ?? null);
+  const { currentUsage: usageFromHook, dailyLimit: limitFromHook, isUnlimited: isUnlimitedFromHook, resetDate: resetFromHook, isLoading: isUsageLoading } = useUsageTracking(userId ?? null);
 
 
   // Profile menu content - memoized to prevent flickering
@@ -365,7 +366,8 @@ export const Sidebar = ({
             <SidebarGroupContent>
               <UsageCard 
                 currentUsage={usageFromHook}
-                monthlyLimit={limitFromHook}
+                dailyLimit={limitFromHook}
+                isUnlimited={isUnlimitedFromHook}
                 resetDate={resetFromHook}
                 compact={true}
               />

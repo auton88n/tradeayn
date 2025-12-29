@@ -18,7 +18,8 @@ interface SystemNotificationBannerProps {
   maintenanceConfig?: MaintenanceConfig;
   // Usage props
   currentUsage?: number;
-  monthlyLimit?: number | null;
+  dailyLimit?: number | null;
+  isUnlimited?: boolean;
   usageResetDate?: string | null;
   className?: string;
 }
@@ -26,7 +27,8 @@ interface SystemNotificationBannerProps {
 export const SystemNotificationBanner = ({
   maintenanceConfig,
   currentUsage = 0,
-  monthlyLimit,
+  dailyLimit,
+  isUnlimited = false,
   usageResetDate,
   className,
 }: SystemNotificationBannerProps) => {
@@ -115,20 +117,24 @@ export const SystemNotificationBanner = ({
     );
   }
 
-  // Priority 3: Usage Warning (dismissible)
-  if (!isDismissed && monthlyLimit !== null && monthlyLimit !== undefined) {
-    const remaining = monthlyLimit - currentUsage;
-    const usagePercentage = (currentUsage / monthlyLimit) * 100;
+  // Priority 3: Usage Warning (dismissible) - skip for unlimited users
+  if (!isDismissed && !isUnlimited && dailyLimit !== null && dailyLimit !== undefined) {
+    const remaining = dailyLimit - currentUsage;
+    const usagePercentage = (currentUsage / dailyLimit) * 100;
     
     // Only show when approaching limit (>80% used) or <= 10 remaining
-    const shouldShow = usagePercentage >= 80 || remaining <= 10;
+    const shouldShow = usagePercentage >= 80 || remaining <= 5;
     
     if (!shouldShow || remaining < 0) return null;
     
-    // Format the reset date nicely
-    const formattedResetDate = usageResetDate 
-      ? format(new Date(usageResetDate), "MMM d 'at' h:mm a")
-      : 'next month';
+    // Format the reset time nicely
+    let formattedResetTime = 'tomorrow';
+    if (usageResetDate) {
+      const reset = new Date(usageResetDate);
+      const now = new Date();
+      const hoursLeft = Math.max(0, Math.ceil((reset.getTime() - now.getTime()) / (1000 * 60 * 60)));
+      formattedResetTime = hoursLeft > 24 ? format(reset, "MMM d") : `${hoursLeft}h`;
+    }
 
     // Determine urgency level for styling
     const isUrgent = remaining <= 3;
@@ -157,7 +163,7 @@ export const SystemNotificationBanner = ({
             isUrgent && "animate-pulse"
           )} />
           <span className="flex-1 text-center">
-            {remaining} message{remaining !== 1 ? 's' : ''} remaining until {formattedResetDate}
+            {remaining} message{remaining !== 1 ? 's' : ''} remaining • Resets in {formattedResetTime}
           </span>
           <button
             onClick={() => setIsDismissed(true)}

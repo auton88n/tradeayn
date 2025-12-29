@@ -2,39 +2,53 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface UsageData {
-  currentMonthUsage: number;
-  monthlyLimit: number | null;
-  usageResetDate: string | null;
+  currentUsage: number;
+  dailyLimit: number | null;
+  isUnlimited: boolean;
+  resetDate: string | null;
   isLoading: boolean;
 }
 
 export const useUsageTracking = (userId: string | null): UsageData & { refreshUsage: () => void } => {
   const [usageData, setUsageData] = useState<UsageData>({
-    currentMonthUsage: 0,
-    monthlyLimit: null,
-    usageResetDate: null,
+    currentUsage: 0,
+    dailyLimit: null,
+    isUnlimited: false,
+    resetDate: null,
     isLoading: true
   });
 
   const fetchUsage = useCallback(async () => {
-    if (!userId) return;
+    if (!userId) {
+      setUsageData(prev => ({ ...prev, isLoading: false }));
+      return;
+    }
     
     try {
+      // Read from user_ai_limits - the table that backend actually enforces
       const { data, error } = await supabase
-        .from('access_grants')
-        .select('current_month_usage, monthly_limit, usage_reset_date')
+        .from('user_ai_limits')
+        .select('current_daily_messages, daily_messages, is_unlimited, daily_reset_at')
         .eq('user_id', userId)
         .maybeSingle();
 
       if (!error && data) {
         setUsageData({
-          currentMonthUsage: data.current_month_usage || 0,
-          monthlyLimit: data.monthly_limit,
-          usageResetDate: data.usage_reset_date,
+          currentUsage: data.current_daily_messages || 0,
+          dailyLimit: data.is_unlimited ? null : (data.daily_messages || 10),
+          isUnlimited: data.is_unlimited || false,
+          resetDate: data.daily_reset_at,
           isLoading: false
         });
       } else {
-        setUsageData(prev => ({ ...prev, isLoading: false }));
+        // No record yet - will be created on first AI call
+        setUsageData({
+          currentUsage: 0,
+          dailyLimit: 10, // Default limit
+          isUnlimited: false,
+          resetDate: null,
+          isLoading: false
+        });
       }
     } catch (err) {
       console.error('[useUsageTracking] Error fetching usage:', err);
@@ -47,7 +61,7 @@ export const useUsageTracking = (userId: string | null): UsageData & { refreshUs
     fetchUsage();
   }, [fetchUsage]);
 
-  // Real-time subscription for usage updates
+  // Real-time subscription for usage updates on user_ai_limits
   useEffect(() => {
     if (!userId) return;
 
@@ -61,27 +75,28 @@ export const useUsageTracking = (userId: string | null): UsageData & { refreshUs
           {
             event: 'UPDATE',
             schema: 'public',
-            table: 'access_grants',
+            table: 'user_ai_limits',
             filter: `user_id=eq.${userId}`
           },
           (payload) => {
             const newData = payload.new as {
-              current_month_usage: number;
-              monthly_limit: number | null;
-              usage_reset_date: string | null;
+              current_daily_messages: number | null;
+              daily_messages: number | null;
+              is_unlimited: boolean | null;
+              daily_reset_at: string | null;
             };
             
             setUsageData(prev => ({
               ...prev,
-              currentMonthUsage: newData.current_month_usage || 0,
-              monthlyLimit: newData.monthly_limit,
-              usageResetDate: newData.usage_reset_date
+              currentUsage: newData.current_daily_messages || 0,
+              dailyLimit: newData.is_unlimited ? null : (newData.daily_messages || 10),
+              isUnlimited: newData.is_unlimited || false,
+              resetDate: newData.daily_reset_at
             }));
           }
         )
         .subscribe((status, err) => {
           if (status === 'CHANNEL_ERROR' || err) {
-            // Gracefully handle subscription errors (RLS, auth, or realtime not enabled)
             console.warn('[useUsageTracking] Real-time subscription unavailable, using polling fallback');
           }
         });

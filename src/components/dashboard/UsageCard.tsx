@@ -8,14 +8,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 interface UsageCardProps {
   currentUsage: number;
-  monthlyLimit: number | null; // null = unlimited
+  dailyLimit: number | null; // null = unlimited
+  isUnlimited?: boolean;
   resetDate: string | null; // ISO date string
   compact?: boolean;
 }
 
 export const UsageCard = ({
   currentUsage,
-  monthlyLimit,
+  dailyLimit,
+  isUnlimited: isUnlimitedProp = false,
   resetDate,
   compact = false
 }: UsageCardProps) => {
@@ -52,28 +54,33 @@ export const UsageCard = ({
     }
   }, [currentUsage]);
 
+  const isUnlimited = isUnlimitedProp || !dailyLimit;
+  const creditsLeft = dailyLimit ? Math.max(0, dailyLimit - currentUsage) : null;
+
   const {
     percentage,
-    daysUntilReset,
-    formattedResetDate,
+    hoursUntilReset,
+    formattedResetTime,
     statusColor,
     statusBg,
     isLow
   } = useMemo(() => {
-    const pct = monthlyLimit ? Math.min(currentUsage / monthlyLimit * 100, 100) : 0;
-    let days = 0;
-    let formattedDate = '';
+    const pct = dailyLimit ? Math.min(currentUsage / dailyLimit * 100, 100) : 0;
+    let hours = 0;
+    let formattedTime = '';
     
     if (resetDate) {
       const reset = new Date(resetDate);
-      days = Math.max(0, differenceInDays(reset, new Date()));
-      formattedDate = format(reset, 'MMM d');
+      const now = new Date();
+      const diffMs = reset.getTime() - now.getTime();
+      hours = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60)));
+      formattedTime = hours > 24 ? format(reset, 'MMM d') : `${hours}h`;
     }
 
     // Color based on usage percentage
     let color = 'text-emerald-500';
     let bg = 'bg-emerald-500';
-    if (monthlyLimit) {
+    if (dailyLimit) {
       if (pct >= 90) {
         color = 'text-red-500';
         bg = 'bg-red-500';
@@ -84,20 +91,18 @@ export const UsageCard = ({
     }
 
     // Check if credits are running low (less than 20% remaining)
-    const remainingPct = monthlyLimit ? ((monthlyLimit - currentUsage) / monthlyLimit) * 100 : 100;
+    const remainingPct = dailyLimit ? ((dailyLimit - currentUsage) / dailyLimit) * 100 : 100;
     
     return {
       percentage: pct,
-      daysUntilReset: days,
-      formattedResetDate: formattedDate,
+      hoursUntilReset: hours,
+      formattedResetTime: formattedTime,
       statusColor: color,
       statusBg: bg,
-      isLow: monthlyLimit ? remainingPct < 20 : false
+      isLow: dailyLimit ? remainingPct < 20 : false
     };
-  }, [currentUsage, monthlyLimit, resetDate]);
+  }, [currentUsage, dailyLimit, resetDate]);
 
-  const isUnlimited = !monthlyLimit;
-  const creditsLeft = monthlyLimit ? Math.max(0, monthlyLimit - currentUsage) : null;
 
   if (compact) {
     return (
@@ -153,7 +158,7 @@ export const UsageCard = ({
                     {displayCount}
                   </motion.span>
                   <span className="text-xs text-muted-foreground">
-                    {isUnlimited ? 'msgs' : `/ ${monthlyLimit}`}
+                    {isUnlimited ? 'msgs' : `/ ${dailyLimit}`}
                   </span>
                 </div>
               </div>
@@ -167,7 +172,7 @@ export const UsageCard = ({
                   </div>
                   {resetDate && (
                     <span className="text-[10px] text-muted-foreground">
-                      Resets {formattedResetDate}
+                      Resets in {formattedResetTime}
                     </span>
                   )}
                 </div>
@@ -180,7 +185,7 @@ export const UsageCard = ({
                   />
                   <div className="flex items-center justify-between text-[10px] text-muted-foreground">
                     <span>{creditsLeft} left</span>
-                    {resetDate && <span>Resets {formattedResetDate}</span>}
+                    {resetDate && <span>Resets in {formattedResetTime}</span>}
                   </div>
                 </div>
               )}
@@ -188,10 +193,10 @@ export const UsageCard = ({
           </TooltipTrigger>
           <TooltipContent side="right" className="max-w-[200px]">
             <div className="space-y-1">
-              <p className="font-medium">{isUnlimited ? 'Unlimited Plan' : 'HOO Credits This Month'}</p>
+              <p className="font-medium">{isUnlimited ? 'Unlimited Plan' : 'Daily HOO Credits'}</p>
               <p className="text-xs text-muted-foreground">
                 {currentUsage} messages sent
-                {resetDate && ` • Resets in ${daysUntilReset} days`}
+                {resetDate && ` • Resets in ${hoursUntilReset}h`}
               </p>
             </div>
           </TooltipContent>
@@ -202,11 +207,11 @@ export const UsageCard = ({
 
   // Determine status level for legend
   const statusLevel = useMemo(() => {
-    if (!monthlyLimit) return 'normal';
+    if (!dailyLimit) return 'normal';
     if (percentage >= 90) return 'low';
     if (percentage >= 75) return 'warning';
     return 'normal';
-  }, [percentage, monthlyLimit]);
+  }, [percentage, dailyLimit]);
 
   // Full size card (non-compact)
   return (
@@ -236,9 +241,9 @@ export const UsageCard = ({
           <Zap className="w-5 h-5 text-primary dark:text-white" />
         </div>
         <div>
-          <p className="text-base font-semibold text-foreground">Monthly HOO Credits</p>
+          <p className="text-base font-semibold text-foreground">Daily HOO Credits</p>
           {resetDate && (
-            <p className="text-xs text-muted-foreground">Resets {formattedResetDate}</p>
+            <p className="text-xs text-muted-foreground">Resets in {formattedResetTime}</p>
           )}
         </div>
       </div>
@@ -250,7 +255,7 @@ export const UsageCard = ({
           <span className="text-base font-semibold text-foreground tabular-nums">
             <motion.span key={displayCount}>{displayCount}</motion.span>
             <span className="text-muted-foreground mx-1">/</span>
-            <span className="text-foreground">{isUnlimited ? '∞' : monthlyLimit}</span>
+            <span className="text-foreground">{isUnlimited ? '∞' : dailyLimit}</span>
           </span>
         </div>
         
