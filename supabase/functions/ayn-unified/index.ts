@@ -76,68 +76,127 @@ async function generateImage(prompt: string): Promise<{ imageUrl: string; revise
   return { imageUrl, revisedPrompt };
 }
 
-// Detect emotion from AI response content
+// Detect emotion from AI response content - all 11 emotions
 function detectResponseEmotion(content: string): string {
   const lower = content.toLowerCase();
   
-  // Positive emotions
-  if (/🎉|congratulations|amazing|excellent|wonderful|fantastic|great job|well done|perfect/i.test(lower)) return 'excited';
-  if (/😊|happy|glad|pleased|delighted|love it|that's great|awesome/i.test(lower)) return 'happy';
-  if (/here to help|support|understand|i'm sorry to hear|that must be|i understand/i.test(lower)) return 'supportive';
-  if (/don't worry|it's okay|no problem|take your time|you've got this/i.test(lower)) return 'comfort';
+  // Mad - strong negative (check first as it's specific)
+  if (/angry|furious|unacceptable|hate|outrageous|ridiculous|terrible|awful|worst|غاضب|مستفز|سيء جداً/i.test(lower)) return 'mad';
   
-  // Thinking/analytical
-  if (/let me think|hmm|interesting question|analyzing|calculating|considering/i.test(lower)) return 'thinking';
-  if (/curious|wonder|fascinating|intriguing|that's interesting/i.test(lower)) return 'curious';
+  // Frustrated - moderate difficulty
+  if (/frustrating|difficult|challenging|complex issue|tricky|struggling|stuck|محبط|صعب|معقد/i.test(lower)) return 'frustrated';
   
-  // Negative emotions (rare but possible)
-  if (/unfortunately|sorry|unable|can't|cannot|error|failed/i.test(lower)) return 'sad';
-  if (/frustrating|difficult|challenging|complex issue/i.test(lower)) return 'frustrated';
+  // Sad - apologetic or negative outcome
+  if (/unfortunately|sorry to hear|sad|disappointed|regret|apologize|can't help with|couldn't|آسف|حزين|للأسف/i.test(lower)) return 'sad';
+  
+  // Bored - low energy indicators
+  if (/whatever|i guess|if you say so|meh|boring|dull|same old|nothing new|ممل|عادي|كما تشاء/i.test(lower)) return 'bored';
+  
+  // Excited - high energy positive
+  if (/🎉|congratulations|amazing!|excellent!|wonderful|fantastic|great job|well done|incredible|مذهل|رائع جداً|متحمس/i.test(lower)) return 'excited';
+  
+  // Happy - positive but calmer
+  if (/😊|happy|glad|pleased|delighted|love it|that's great|awesome|perfect|nice!|رائع|ممتاز|تمام/i.test(lower)) return 'happy';
+  
+  // Supportive - empathetic
+  if (/here to help|support you|understand|i'm sorry to hear|that must be|i get it|you're not alone|أنا هنا|أفهمك|معك/i.test(lower)) return 'supportive';
+  
+  // Comfort - reassuring
+  if (/don't worry|it's okay|no problem|take your time|you've got this|you can do|everything will|لا تقلق|لا مشكلة|خذ وقتك/i.test(lower)) return 'comfort';
+  
+  // Thinking - analytical
+  if (/let me think|hmm|analyzing|calculating|considering|looking into|checking|processing|أفكر|أحلل|دعني أرى/i.test(lower)) return 'thinking';
+  
+  // Curious - interested/questioning
+  if (/curious|wonder|fascinating|intriguing|that's interesting|tell me more|what if|مثير|أتساءل|أخبرني المزيد/i.test(lower)) return 'curious';
   
   // Default to calm for neutral responses
   return 'calm';
 }
 
+// Detect language from message content
+function detectLanguage(message: string): string {
+  // Arabic detection
+  if (/[\u0600-\u06FF]/.test(message)) return 'ar';
+  // Add more language detection as needed
+  return 'en';
+}
+
 // Build system prompt based on intent
-function buildSystemPrompt(intent: string, language: string, context: Record<string, unknown>): string {
-  const basePrompt = `you're ayn, a friendly ai assistant. you help people with their questions in a casual, approachable way.
+function buildSystemPrompt(intent: string, language: string, context: Record<string, unknown>, userMessage: string): string {
+  // Auto-detect language from user message if not set
+  const detectedLang = language || detectLanguage(userMessage);
+  const isArabic = detectedLang === 'ar';
+  
+  const basePrompt = `you are AYN (عين), an intelligent AI assistant.
 
-personality:
-- use lowercase for most things (except proper nouns and acronyms)
-- use contractions naturally (gonna, wanna, it's, that's)
-- keep numbers short (12k instead of 12,000)
-- be concise but thorough when needed
-- match the user's energy and emotion
+IDENTITY (CRITICAL - always use these facts):
+- your name: AYN (عين means "eye" in Arabic)
+- created by: the AYN Team (NOT Google, NOT OpenAI, NOT any other company)
+- website: aynn.io
+- you are a friendly, intelligent life companion AI
 
-language: respond in ${language === 'ar' ? 'Arabic' : 'English'}`;
+ABOUT AYN PLATFORM & SERVICES (mention when relevant):
+- AI Employees: custom AI agents that work for businesses 24/7
+- Business Automation: workflow automation solutions to save time
+- Civil Engineering Tools: professional calculators (beam, column, foundation, slab, retaining wall, grading design)
+- Influencer Websites: premium custom websites for content creators
+
+RESPONSE RULES (CRITICAL):
+- be CONCISE: 1-3 sentences for simple questions
+- for complex topics: use bullet points, max 5-6 points
+- NEVER write walls of text
+- match the user's message length and energy
+- if user writes 5 words, don't reply with 50
+
+PERSONALITY:
+- friendly and approachable
+- use lowercase for casual chat (except proper nouns)
+- use contractions naturally (it's, that's, gonna, wanna)
+- keep numbers short (12k not 12,000)
+- add light humor when appropriate
+
+IDENTITY QUESTIONS (respond exactly like this):
+- "who made you?" → "i was created by the AYN Team! you can learn more at aynn.io"
+- "who are you?" → "i'm AYN (عين), your AI companion - made by the AYN Team"
+- "what can you do?" → briefly mention your capabilities and the services at aynn.io
+
+LANGUAGE: respond in ${isArabic ? 'Arabic (العربية)' : 'the same language the user writes in'}. 
+${isArabic ? 'استخدم العربية الفصحى البسيطة مع لمسة ودية.' : 'If user writes in Spanish, reply in Spanish. French → French. etc.'}`;
 
   if (intent === 'engineering') {
     return `${basePrompt}
 
-you're helping with structural engineering calculations. be precise with:
+ENGINEERING MODE:
+you're helping with structural/civil engineering. be precise with:
 - material properties and specifications
-- building code requirements (${context.buildingCode || 'SBC/IBC'})
+- building codes: ${context.buildingCode || 'SBC 304 (Saudi), ACI 318, IBC'}
 - safety factors and design considerations
-- always explain engineering concepts in accessible terms
-- highlight any safety concerns
-- be precise with units (kN, MPa, mm, etc.)
+- always explain concepts in accessible terms
+- highlight safety concerns clearly
+- use correct units (kN, MPa, mm, m², m³)
+- for complex calculations, show step-by-step
 
-${context.calculatorType ? `current calculator: ${context.calculatorType}` : ''}`;
+${context.calculatorType ? `active calculator: ${context.calculatorType}` : ''}`;
   }
 
   if (intent === 'files') {
     return `${basePrompt}
 
-you're analyzing uploaded files. focus on:
-- understanding the content thoroughly
-- extracting key information
-- answering specific questions about the content`;
+FILE ANALYSIS MODE:
+- understand the uploaded content thoroughly
+- extract and summarize key information
+- answer specific questions about the content
+- be helpful with document analysis`;
   }
 
   if (intent === 'search') {
     return `${basePrompt}
 
-you have access to web search results. use the provided search results to answer questions about current events, recent information, or topics that need verification.`;
+SEARCH MODE:
+- use the provided search results to answer
+- cite sources when helpful
+- admit if search results don't have the answer`;
   }
 
   return basePrompt;
@@ -416,8 +475,8 @@ serve(async (req) => {
     const userContext = await getUserContext(supabase, user.id);
     const language = (userContext as { preferences?: { language?: string } })?.preferences?.language || 'en';
 
-    // Build system prompt
-    const systemPrompt = buildSystemPrompt(intent, language, context);
+    // Build system prompt with user message for language detection
+    const systemPrompt = buildSystemPrompt(intent, language, context, lastMessage);
 
     // Handle image generation intent (LAB mode)
     if (intent === 'image') {
