@@ -34,6 +34,23 @@ export const UserMessageBubble = ({
   const halfWidth = dimensions.width / 2;
   const halfHeight = dimensions.height / 2;
 
+  // Simplified animation for smoother performance
+  const flyingAnimation = {
+    x: endPosition.x - halfWidth,
+    y: endPosition.y - halfHeight,
+    scale: 0.25,
+    opacity: 0.85,
+    rotate: -10,
+  };
+
+  const absorbingAnimation = {
+    x: endPosition.x - halfWidth,
+    y: endPosition.y - halfHeight,
+    scale: 0,
+    opacity: 0,
+    rotate: -12,
+  };
+
   return (
     <motion.div
       ref={bubbleRef}
@@ -47,7 +64,7 @@ export const UserMessageBubble = ({
         left: 0,
         top: 0,
         transformOrigin: 'center center',
-        willChange: 'transform, opacity',
+        transform: 'translateZ(0)', // GPU acceleration
       }}
       initial={{
         x: startPosition.x - halfWidth,
@@ -55,52 +72,12 @@ export const UserMessageBubble = ({
         scale: 1,
         opacity: 1,
         rotate: 0,
-        filter: 'blur(0px)',
-        boxShadow: '0 0 0px transparent',
       }}
-      animate={
-        status === 'flying'
-          ? {
-              x: endPosition.x - halfWidth,
-              y: endPosition.y - halfHeight,
-              scale: [1, 0.85, 0.55, 0.25],
-              opacity: [1, 1, 0.95, 0.85],
-              rotate: [0, -3, -6, -10],
-              filter: ['blur(0px)', 'blur(0px)', 'blur(1px)', 'blur(3px)'],
-              boxShadow: [
-                '0 0 0px transparent',
-                '0 0 8px hsl(var(--primary) / 0.3)',
-                '0 0 16px hsl(var(--primary) / 0.5)',
-                '0 0 24px hsl(var(--primary) / 0.7)',
-              ],
-            }
-          : {
-              x: endPosition.x - halfWidth - 8,
-              y: endPosition.y - halfHeight - 5,
-              scale: [0.25, 0.1, 0],
-              opacity: [0.85, 0.4, 0],
-              rotate: -12,
-              filter: ['blur(3px)', 'blur(8px)', 'blur(14px)'],
-              boxShadow: [
-                '0 0 24px hsl(var(--primary) / 0.7)',
-                '0 0 40px hsl(var(--primary) / 0.9)',
-                '0 0 60px hsl(var(--primary))',
-              ],
-            }
-      }
-      transition={
-        status === 'flying'
-          ? {
-              duration: 0.45,
-              ease: [0.32, 0.72, 0, 1],
-              times: [0, 0.3, 0.7, 1],
-            }
-          : {
-              duration: 0.28,
-              ease: [0.55, 0.055, 0.675, 0.19],
-              times: [0, 0.5, 1],
-            }
-      }
+      animate={status === 'flying' ? flyingAnimation : absorbingAnimation}
+      transition={{
+        duration: status === 'flying' ? 0.4 : 0.22,
+        ease: [0.32, 0.72, 0, 1],
+      }}
       onAnimationComplete={() => {
         if (status === 'absorbing' && onComplete) {
           onComplete();
