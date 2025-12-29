@@ -9,6 +9,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 import { 
   Users, 
   RefreshCw, 
@@ -125,10 +126,13 @@ export function UserAILimits() {
 
   const toggleUnlimited = async (userId: string, unlimited: boolean) => {
     try {
+      // Upsert ensures the row exists (so toggling works even for users who never used the app yet)
       const { error } = await supabase
         .from('user_ai_limits')
-        .update({ is_unlimited: unlimited, updated_at: new Date().toISOString() })
-        .eq('user_id', userId);
+        .upsert(
+          { user_id: userId, is_unlimited: unlimited, updated_at: new Date().toISOString() },
+          { onConflict: 'user_id' }
+        );
 
       if (error) throw error;
 
@@ -147,13 +151,13 @@ export function UserAILimits() {
 
       // Update local state with verified value
       const confirmedValue = verifyData.is_unlimited;
-      setLimits(prev => prev.map(l => 
+      setLimits(prev => prev.map(l =>
         l.user_id === userId ? { ...l, is_unlimited: confirmedValue } : l
       ));
-      
+
       toast.success(
-        confirmedValue 
-          ? '✓ User now has UNLIMITED access (no limits applied)' 
+        confirmedValue
+          ? '✓ User now has UNLIMITED access (no limits applied)'
           : '✓ User limits restored'
       );
     } catch (error) {
@@ -317,7 +321,11 @@ export function UserAILimits() {
                                     type="number"
                                     value={editValues[key as keyof UserLimit] as number ?? 0}
                                     onChange={(e) => setEditValues(prev => ({ ...prev, [key]: parseInt(e.target.value) }))}
-                                    className="h-9 bg-muted/30"
+                                    disabled={Boolean(editValues.is_unlimited)}
+                                    className={cn(
+                                      "h-9 bg-muted/30",
+                                      Boolean(editValues.is_unlimited) && "opacity-60 cursor-not-allowed"
+                                    )}
                                   />
                                 </div>
                               ))}

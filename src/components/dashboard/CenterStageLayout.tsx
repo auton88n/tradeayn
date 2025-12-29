@@ -672,7 +672,7 @@ export const CenterStageLayout = ({
       <ParticleBurst
         isActive={showParticleBurst}
         position={burstPosition}
-        particleCount={16}
+        particleCount={isMobile ? 8 : 16}
       />
 
       {/* Suggestion chips temporarily disabled
