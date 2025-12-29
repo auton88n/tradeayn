@@ -132,13 +132,33 @@ export function UserAILimits() {
 
       if (error) throw error;
 
+      // Verify the update was successful by querying back
+      const { data: verifyData, error: verifyError } = await supabase
+        .from('user_ai_limits')
+        .select('is_unlimited')
+        .eq('user_id', userId)
+        .single();
+
+      if (verifyError) {
+        console.error('Failed to verify update:', verifyError);
+        toast.error('Update may have failed - please refresh');
+        return;
+      }
+
+      // Update local state with verified value
+      const confirmedValue = verifyData.is_unlimited;
       setLimits(prev => prev.map(l => 
-        l.user_id === userId ? { ...l, is_unlimited: unlimited } : l
+        l.user_id === userId ? { ...l, is_unlimited: confirmedValue } : l
       ));
-      toast.success(`User ${unlimited ? 'set to unlimited' : 'limits restored'}`);
+      
+      toast.success(
+        confirmedValue 
+          ? '✓ User now has UNLIMITED access (no limits applied)' 
+          : '✓ User limits restored'
+      );
     } catch (error) {
       console.error('Error toggling unlimited:', error);
-      toast.error('Failed to update');
+      toast.error('Failed to update - please try again');
     }
   };
 

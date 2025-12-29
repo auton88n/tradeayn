@@ -36,22 +36,39 @@ export const FlyingSuggestionBubble = ({
   const halfWidth = dimensions.width / 2;
   const halfHeight = dimensions.height / 2;
 
+  // Simplified animation with fewer keyframes for smoother performance
+  const flyingAnimation = {
+    x: endPosition.x - halfWidth,
+    y: endPosition.y - halfHeight,
+    scale: 0.2,
+    opacity: 0.8,
+    rotate: 10,
+  };
+
+  const absorbingAnimation = {
+    x: endPosition.x - halfWidth,
+    y: endPosition.y - halfHeight,
+    scale: 0,
+    opacity: 0,
+    rotate: 12,
+  };
+
   return (
     <motion.div
       ref={bubbleRef}
       className={cn(
         "fixed z-50 px-4 py-3 rounded-2xl",
         "bg-white/95 dark:bg-gray-900/90",
-        "backdrop-blur-lg",
+        "backdrop-blur-md",
         "border border-gray-200/60 dark:border-gray-700/40",
-        "shadow-[0_8px_24px_rgba(0,0,0,0.1)]",
+        "shadow-lg",
         "pointer-events-none"
       )}
       style={{
         left: 0,
         top: 0,
         transformOrigin: 'center center',
-        willChange: 'transform, opacity',
+        transform: 'translateZ(0)', // GPU acceleration
       }}
       initial={{
         x: startPosition.x - halfWidth,
@@ -59,52 +76,12 @@ export const FlyingSuggestionBubble = ({
         scale: 1,
         opacity: 1,
         rotate: 0,
-        filter: 'blur(0px)',
-        boxShadow: '0 0 0px transparent',
       }}
-      animate={
-        status === 'flying'
-          ? {
-              x: endPosition.x - halfWidth,
-              y: endPosition.y - halfHeight,
-              scale: [1, 0.8, 0.45, 0.2],
-              opacity: [1, 1, 0.95, 0.85],
-              rotate: [0, 4, 8, 12],
-              filter: ['blur(0px)', 'blur(0px)', 'blur(1px)', 'blur(3px)'],
-              boxShadow: [
-                '0 0 0px transparent',
-                '0 0 8px hsl(var(--primary) / 0.3)',
-                '0 0 16px hsl(var(--primary) / 0.5)',
-                '0 0 24px hsl(var(--primary) / 0.7)',
-              ],
-            }
-          : {
-              x: endPosition.x - halfWidth - 6,
-              y: endPosition.y - halfHeight - 4,
-              scale: [0.2, 0.08, 0],
-              opacity: [0.85, 0.4, 0],
-              rotate: 15,
-              filter: ['blur(3px)', 'blur(8px)', 'blur(14px)'],
-              boxShadow: [
-                '0 0 24px hsl(var(--primary) / 0.7)',
-                '0 0 40px hsl(var(--primary) / 0.9)',
-                '0 0 60px hsl(var(--primary))',
-              ],
-            }
-      }
-      transition={
-        status === 'flying'
-          ? {
-              duration: 0.4,
-              ease: [0.32, 0.72, 0, 1],
-              times: [0, 0.3, 0.7, 1],
-            }
-          : {
-              duration: 0.28,
-              ease: [0.55, 0.055, 0.675, 0.19],
-              times: [0, 0.5, 1],
-            }
-      }
+      animate={status === 'flying' ? flyingAnimation : absorbingAnimation}
+      transition={{
+        duration: status === 'flying' ? 0.35 : 0.2,
+        ease: [0.32, 0.72, 0, 1],
+      }}
       onAnimationComplete={() => {
         if (status === 'absorbing' && onComplete) {
           onComplete();

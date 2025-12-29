@@ -288,9 +288,16 @@ export const useMessages = (
                        webhookData?.output ||
                        "i'm processing your request...";
 
-      // Extract emotion from backend response and set it for the eye
+      // Extract emotion from backend response - SET IMMEDIATELY for eye to react
       if (webhookData?.emotion) {
+        console.log('[useMessages] Backend emotion:', webhookData.emotion);
         setLastSuggestedEmotion(webhookData.emotion);
+      } else {
+        // Fallback: analyze response content for emotion if backend didn't provide one
+        const { analyzeResponseEmotion } = await import('@/utils/emotionMapping');
+        const fallbackEmotion = analyzeResponseEmotion(response);
+        console.log('[useMessages] Fallback emotion:', fallbackEmotion);
+        setLastSuggestedEmotion(fallbackEmotion);
       }
 
       // Extract LAB data if present (for image generation)
