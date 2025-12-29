@@ -1,74 +1,40 @@
 import type { AYNEmotion } from '@/contexts/AYNEmotionContext';
 
-// Analyze response text to determine AYN's emotion
+// Analyze response text to determine AYN's emotion - all 11 emotions with Arabic support
 export const analyzeResponseEmotion = (response: string): AYNEmotion => {
   const lowerResponse = response.toLowerCase();
   
-  // Happy indicators
-  const happyPatterns = [
-    'perfect!', 'great!', 'excellent!', 'wonderful!', 'awesome!',
-    'happy to help', 'glad to', 'done!', 'completed', 'success',
-    'رائع', 'ممتاز', 'تمام', 'مثالي'
-  ];
+  // Check patterns in order of specificity (most specific negative first)
   
-  // Excited indicators
-  const excitedPatterns = [
-    'exciting!', 'amazing!', 'incredible!', 'wow!', 'fantastic!',
-    'let\'s do this', 'can\'t wait', 'thrilled', 'ready to',
-    'مذهل', 'حماسي', 'متحمس'
-  ];
+  // Mad - strong anger (check first)
+  if (/angry|furious|unacceptable|hate|outrageous|ridiculous|terrible|awful|worst|غاضب|مستفز|سيء جداً/.test(lowerResponse)) return 'mad';
   
-  // Curious/questioning indicators
-  const curiousPatterns = [
-    'interesting', 'tell me more', 'could you explain', 'i\'m curious',
-    'what do you think', 'how about', 'have you considered',
-    'مثير للاهتمام', 'أخبرني المزيد', 'ما رأيك'
-  ];
+  // Frustrated - moderate difficulty  
+  if (/unfortunately|i'm not sure|i cannot|unable to|error|failed|problem|issue|frustrating|difficult|challenging|tricky|للأسف|لا أستطيع|مشكلة|صعب/.test(lowerResponse)) return 'frustrated';
   
-  // Thinking/processing indicators
-  const thinkingPatterns = [
-    'analyzing', 'processing', 'calculating', 'let me think',
-    'considering', 'evaluating', 'researching',
-    'أحلل', 'أفكر', 'أدرس'
-  ];
+  // Sad - apologetic
+  if (/sorry to hear|sad|disappointed|miss you|regret|apologize|heartbroken|upset|حزين|أعتذر|آسف/.test(lowerResponse)) return 'sad';
   
-  // Frustrated/uncertain indicators
-  const frustratedPatterns = [
-    'unfortunately', 'i\'m not sure', 'i cannot', 'unable to',
-    'error', 'failed', 'problem', 'issue',
-    'للأسف', 'لا أستطيع', 'مشكلة'
-  ];
+  // Bored - low energy
+  if (/whatever|i guess|if you say so|meh|boring|dull|same old|nothing new|ممل|عادي|كما تشاء/.test(lowerResponse)) return 'bored';
   
-  // Sad indicators
-  const sadPatterns = [
-    'sorry', 'sad', 'disappointed', 'miss you', 'regret', 'apologize',
-    'heartbroken', 'upset', 'depressed', 'lonely',
-    'آسف', 'حزين', 'أعتذر', 'أفتقدك'
-  ];
+  // Excited - high energy positive (! helps distinguish from happy)
+  if (/exciting!|amazing!|incredible!|wow!|fantastic!|let's do this|can't wait|thrilled|🎉|congratulations|مذهل|رائع جداً|متحمس/.test(lowerResponse)) return 'excited';
   
-  // Mad/angry indicators
-  const madPatterns = [
-    'angry', 'furious', 'unacceptable', 'hate', 'outrageous',
-    'ridiculous', 'terrible', 'awful', 'worst',
-    'غاضب', 'مستفز', 'سيء جداً'
-  ];
+  // Happy - positive  
+  if (/perfect|great!|excellent|wonderful|awesome|happy to help|glad to|done!|completed|success|love it|رائع|ممتاز|تمام|مثالي/.test(lowerResponse)) return 'happy';
   
-  // Bored indicators
-  const boredPatterns = [
-    'whatever', 'i guess', 'fine', 'if you say so', 'meh',
-    'boring', 'dull', 'same old', 'nothing new',
-    'ممل', 'عادي', 'كما تشاء'
-  ];
+  // Supportive - empathetic
+  if (/here to help|support you|understand|i get it|you're not alone|أنا هنا|أفهمك|معك/.test(lowerResponse)) return 'supportive';
   
-  // Check patterns in order of specificity
-  if (madPatterns.some(p => lowerResponse.includes(p))) return 'mad';
-  if (sadPatterns.some(p => lowerResponse.includes(p))) return 'sad';
-  if (boredPatterns.some(p => lowerResponse.includes(p))) return 'bored';
-  if (frustratedPatterns.some(p => lowerResponse.includes(p))) return 'frustrated';
-  if (excitedPatterns.some(p => lowerResponse.includes(p))) return 'excited';
-  if (happyPatterns.some(p => lowerResponse.includes(p))) return 'happy';
-  if (curiousPatterns.some(p => lowerResponse.includes(p))) return 'curious';
-  if (thinkingPatterns.some(p => lowerResponse.includes(p))) return 'thinking';
+  // Comfort - reassuring  
+  if (/don't worry|it's okay|no problem|take your time|you've got this|you can do|everything will|لا تقلق|لا مشكلة|خذ وقتك/.test(lowerResponse)) return 'comfort';
+  
+  // Curious - questioning
+  if (/interesting|tell me more|could you explain|i'm curious|what do you think|how about|have you considered|مثير للاهتمام|أخبرني المزيد|ما رأيك/.test(lowerResponse)) return 'curious';
+  
+  // Thinking - processing
+  if (/analyzing|processing|calculating|let me think|considering|evaluating|researching|looking into|أحلل|أفكر|أدرس/.test(lowerResponse)) return 'thinking';
   
   // Default to calm for neutral responses
   return 'calm';
@@ -107,20 +73,20 @@ export const getBubbleType = (content: string): BubbleType => {
   return 'speaking';
 };
 
-// Emotion color for inline styles
+// Emotion colors - psychology-based palette matching eye colors
 export const getEmotionColor = (emotion: AYNEmotion): string => {
   const colors: Record<AYNEmotion, string> = {
-    calm: 'hsl(0, 0%, 50%)',
-    happy: 'hsl(142, 71%, 45%)',
-    excited: 'hsl(25, 95%, 53%)',
-    thinking: 'hsl(217, 91%, 60%)',
-    frustrated: 'hsl(0, 72%, 51%)',
-    curious: 'hsl(270, 76%, 60%)',
-    sad: 'hsl(210, 20%, 50%)',
-    mad: 'hsl(0, 85%, 40%)',
-    bored: 'hsl(0, 0%, 60%)',
-    comfort: 'hsl(30, 85%, 65%)',
-    supportive: 'hsl(350, 60%, 70%)',
+    calm: 'hsl(195, 35%, 47%)',      // soft ocean blue #4A90A4
+    happy: 'hsl(38, 100%, 65%)',     // warm peach-gold #FFB84D
+    excited: 'hsl(0, 100%, 67%)',    // electric coral #FF5757
+    thinking: 'hsl(239, 84%, 61%)',  // royal indigo #4B4DED
+    curious: 'hsl(280, 50%, 62%)',   // bright magenta #B565D8
+    frustrated: 'hsl(9, 78%, 56%)',  // hot orange-red #E74C3C
+    sad: 'hsl(265, 10%, 63%)',       // muted lavender #9B8FA6
+    mad: 'hsl(354, 80%, 43%)',       // deep crimson #C21626
+    bored: 'hsl(200, 8%, 57%)',      // muted slate-blue #8A979C
+    comfort: 'hsl(344, 58%, 65%)',   // deep warm rose #D98695
+    supportive: 'hsl(15, 62%, 75%)', // soft rose-beige #E8A598
   };
   return colors[emotion];
 };
