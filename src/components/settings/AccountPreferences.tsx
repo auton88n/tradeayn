@@ -21,9 +21,10 @@ interface AccountPreferencesProps {
 }
 
 interface UsageData {
-  currentMonthUsage: number;
-  monthlyLimit: number | null;
-  usageResetDate: string | null;
+  currentUsage: number;
+  dailyLimit: number | null;
+  isUnlimited: boolean;
+  resetDate: string | null;
 }
 
 export const AccountPreferences = ({ userId, userEmail, accessToken }: AccountPreferencesProps) => {
@@ -42,9 +43,10 @@ export const AccountPreferences = ({ userId, userEmail, accessToken }: AccountPr
   });
   const [originalProfile, setOriginalProfile] = useState(profile);
   const [usageData, setUsageData] = useState<UsageData>({
-    currentMonthUsage: 0,
-    monthlyLimit: null,
-    usageResetDate: null,
+    currentUsage: 0,
+    dailyLimit: null,
+    isUnlimited: false,
+    resetDate: null,
   });
 
   useEffect(() => {
@@ -97,19 +99,21 @@ export const AccountPreferences = ({ userId, userEmail, accessToken }: AccountPr
     if (!userId) return;
 
     try {
+      // Read from user_ai_limits - the table that backend actually enforces
       const { data, error } = await supabase
-        .from('access_grants')
-        .select('current_month_usage, monthly_limit, usage_reset_date')
+        .from('user_ai_limits')
+        .select('current_daily_messages, daily_messages, is_unlimited, daily_reset_at')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 
       if (data) {
         setUsageData({
-          currentMonthUsage: data.current_month_usage ?? 0,
-          monthlyLimit: data.monthly_limit ?? null,
-          usageResetDate: data.usage_reset_date ?? null,
+          currentUsage: data.current_daily_messages ?? 0,
+          dailyLimit: data.is_unlimited ? null : (data.daily_messages ?? 10),
+          isUnlimited: data.is_unlimited ?? false,
+          resetDate: data.daily_reset_at ?? null,
         });
       }
     } catch (error) {
@@ -194,9 +198,10 @@ export const AccountPreferences = ({ userId, userEmail, accessToken }: AccountPr
         <Card className="p-6 bg-card/50 backdrop-blur-xl border-border/50">
           <h2 className="text-xl font-semibold mb-4">Usage & Limits</h2>
           <UsageCard
-            currentUsage={usageData.currentMonthUsage}
-            monthlyLimit={usageData.monthlyLimit}
-            resetDate={usageData.usageResetDate}
+            currentUsage={usageData.currentUsage}
+            dailyLimit={usageData.dailyLimit}
+            isUnlimited={usageData.isUnlimited}
+            resetDate={usageData.resetDate}
           />
         </Card>
       )}
