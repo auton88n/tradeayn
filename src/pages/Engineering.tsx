@@ -24,7 +24,7 @@ import { CalculationResults } from '@/components/engineering/CalculationResults'
 import { CalculationHistoryModal } from '@/components/engineering/CalculationHistoryModal';
 import { CalculationComparison } from '@/components/engineering/CalculationComparison';
 import EngineeringPortfolio from '@/components/engineering/EngineeringPortfolio';
-import { EngineeringAIPanel } from '@/components/engineering/EngineeringAIPanel';
+import { EngineeringAIChat } from '@/components/engineering/EngineeringAIChat';
 import { useEngineeringHistory } from '@/hooks/useEngineeringHistory';
 import { SEO } from '@/components/SEO';
 import { cn } from '@/lib/utils';
@@ -467,15 +467,26 @@ const Engineering = () => {
           )}
         </AnimatePresence>
 
-        {/* AI Engineering Assistant Panel */}
+        {/* AI Engineering Chat - Full Conversational Assistant */}
         {selectedCalculator && (
-          <EngineeringAIPanel
+          <EngineeringAIChat
             calculatorType={selectedCalculator as AICalculatorType}
             currentInputs={currentInputs}
             currentOutputs={calculationResult?.outputs || null}
-            isVisible={isAIPanelOpen}
-            onToggle={() => setIsAIPanelOpen(!isAIPanelOpen)}
+            isOpen={isAIPanelOpen}
+            onClose={() => setIsAIPanelOpen(false)}
           />
+        )}
+
+        {/* AI Chat Toggle Button */}
+        {selectedCalculator && !isAIPanelOpen && (
+          <button
+            onClick={() => setIsAIPanelOpen(true)}
+            className="fixed right-4 bottom-24 z-50 flex items-center gap-2 bg-primary text-primary-foreground px-4 py-3 rounded-full shadow-lg hover:bg-primary/90 transition-all hover:scale-105"
+          >
+            <span className="text-lg">🤖</span>
+            <span className="font-medium">Ask AI</span>
+          </button>
         )}
       </div>
     </>
