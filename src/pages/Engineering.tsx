@@ -26,7 +26,7 @@ import { CalculationResults } from '@/components/engineering/CalculationResults'
 import { CalculationHistoryModal } from '@/components/engineering/CalculationHistoryModal';
 import { CalculationComparison } from '@/components/engineering/CalculationComparison';
 import EngineeringPortfolio from '@/components/engineering/EngineeringPortfolio';
-import { EngineeringAIChat } from '@/components/engineering/EngineeringAIChat';
+
 import { useEngineeringHistory } from '@/hooks/useEngineeringHistory';
 import { SEO } from '@/components/SEO';
 import { cn } from '@/lib/utils';
@@ -112,8 +112,6 @@ const Engineering = () => {
   const [isCompareOpen, setIsCompareOpen] = useState(false);
   const [userId, setUserId] = useState<string | undefined>();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-  const [isAIPanelOpen, setIsAIPanelOpen] = useState(false);
-  const [currentInputs, setCurrentInputs] = useState<Record<string, unknown>>({});
   
   const { calculationHistory, fetchHistory } = useEngineeringHistory(userId);
 
@@ -434,6 +432,24 @@ const Engineering = () => {
               </motion.div>
             )}
 
+            {/* Car Parking Designer */}
+            {selectedCalculator === 'parking' && !calculationResult && (
+              <motion.div
+                key="parking"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <ParkingDesigner 
+                  onCalculate={handleCalculationComplete}
+                  isCalculating={isCalculating}
+                  setIsCalculating={setIsCalculating}
+                  userId={userId}
+                />
+              </motion.div>
+            )}
+
             {calculationResult && (
               <motion.div
                 key="results"
@@ -477,27 +493,6 @@ const Engineering = () => {
           )}
         </AnimatePresence>
 
-        {/* AI Engineering Chat - Full Conversational Assistant */}
-        {selectedCalculator && (
-          <EngineeringAIChat
-            calculatorType={selectedCalculator as AICalculatorType}
-            currentInputs={currentInputs}
-            currentOutputs={calculationResult?.outputs || null}
-            isOpen={isAIPanelOpen}
-            onClose={() => setIsAIPanelOpen(false)}
-          />
-        )}
-
-        {/* AI Chat Toggle Button */}
-        {selectedCalculator && !isAIPanelOpen && (
-          <button
-            onClick={() => setIsAIPanelOpen(true)}
-            className="fixed right-4 bottom-24 z-50 flex items-center gap-2 bg-primary text-primary-foreground px-4 py-3 rounded-full shadow-lg hover:bg-primary/90 transition-all hover:scale-105"
-          >
-            <span className="text-lg">🤖</span>
-            <span className="font-medium">Ask AI</span>
-          </button>
-        )}
       </div>
     </>
   );

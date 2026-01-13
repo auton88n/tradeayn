@@ -106,6 +106,19 @@ export const CalculationComparison = ({
         { key: 'steelWeight', label: 'Steel Weight', values: filledSlots.map(s => s.calculation!.outputs.steelWeight || 0), unit: 'kg', better: 'lower' },
         { key: 'thickness', label: 'Slab Thickness', values: filledSlots.map(s => s.calculation!.outputs.thickness || 0), unit: 'mm', better: 'neutral' },
       );
+    } else if (type === 'retaining_wall') {
+      metrics.push(
+        { key: 'concreteVolume', label: 'Concrete Volume', values: filledSlots.map(s => s.calculation!.outputs.concreteVolume || 0), unit: 'm³', better: 'lower' },
+        { key: 'steelWeight', label: 'Steel Weight', values: filledSlots.map(s => s.calculation!.outputs.steelWeight || 0), unit: 'kg', better: 'lower' },
+        { key: 'safetyFactor', label: 'Safety Factor', values: filledSlots.map(s => s.calculation!.outputs.safetyFactor || 0), unit: '', better: 'higher' },
+      );
+    } else if (type === 'parking') {
+      metrics.push(
+        { key: 'totalSpaces', label: 'Total Spaces', values: filledSlots.map(s => s.calculation!.outputs.totalSpaces || 0), unit: '', better: 'higher' },
+        { key: 'accessibleSpaces', label: 'Accessible Spaces', values: filledSlots.map(s => s.calculation!.outputs.accessibleSpaces || 0), unit: '', better: 'neutral' },
+        { key: 'evSpaces', label: 'EV Spaces', values: filledSlots.map(s => s.calculation!.outputs.evSpaces || 0), unit: '', better: 'higher' },
+        { key: 'efficiency', label: 'Space Efficiency', values: filledSlots.map(s => s.calculation!.outputs.efficiency || 0), unit: '%', better: 'higher' },
+      );
     }
 
     return { metrics, type };
