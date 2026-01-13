@@ -244,7 +244,7 @@ const MaterialCostTable: React.FC<{
 
 interface CalculationResultsProps {
   result: {
-    type: 'beam' | 'foundation' | 'column' | 'slab' | 'retaining_wall' | null;
+    type: 'beam' | 'foundation' | 'column' | 'slab' | 'retaining_wall' | 'parking' | null;
     inputs: Record<string, number | string>;
     outputs: Record<string, number | string | object>;
     timestamp: Date;
