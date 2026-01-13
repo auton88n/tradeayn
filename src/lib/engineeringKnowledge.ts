@@ -311,4 +311,4 @@ export interface AIEngineeringResponse {
   quickReplies?: string[];
 }
 
-export type CalculatorType = 'beam' | 'column' | 'foundation' | 'slab' | 'retaining_wall' | 'grading';
+export type CalculatorType = 'beam' | 'column' | 'foundation' | 'slab' | 'retaining_wall' | 'grading' | 'parking';
