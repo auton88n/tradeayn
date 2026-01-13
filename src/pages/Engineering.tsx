@@ -11,7 +11,8 @@ import {
   HardHat,
   Box,
   Mountain,
-  GitCompare
+  GitCompare,
+  Car
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -20,6 +21,7 @@ import { FoundationCalculator } from '@/components/engineering/FoundationCalcula
 import ColumnCalculator from '@/components/engineering/ColumnCalculator';
 import SlabCalculator from '@/components/engineering/SlabCalculator';
 import RetainingWallCalculator from '@/components/engineering/RetainingWallCalculator';
+import { ParkingDesigner } from '@/components/engineering/ParkingDesigner';
 import { CalculationResults } from '@/components/engineering/CalculationResults';
 import { CalculationHistoryModal } from '@/components/engineering/CalculationHistoryModal';
 import { CalculationComparison } from '@/components/engineering/CalculationComparison';
@@ -31,7 +33,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { CalculatorType as AICalculatorType } from '@/lib/engineeringKnowledge';
 
-type CalculatorType = 'beam' | 'foundation' | 'column' | 'slab' | 'retaining_wall' | null;
+type CalculatorType = 'beam' | 'foundation' | 'column' | 'slab' | 'retaining_wall' | 'parking' | null;
 
 interface CalculationResult {
   type: CalculatorType;
@@ -89,6 +91,14 @@ const calculatorOptions = [
     description: 'Cantilever wall design with lateral earth pressure analysis',
     icon: Building2,
     gradient: 'from-rose-500 to-orange-500',
+    available: true,
+  },
+  {
+    id: 'parking' as const,
+    title: 'Car Parking Designer',
+    description: 'AI-powered parking layout with 2D/3D visualization',
+    icon: Car,
+    gradient: 'from-indigo-500 to-violet-500',
     available: true,
   },
 ];

@@ -58,6 +58,11 @@ const QUICK_ACTIONS: Record<CalculatorType, { label: string; question: string }[
     { label: 'Optimize cut/fill', question: 'How can I minimize earthwork costs?' },
     { label: 'Drainage', question: 'Are the drainage slopes adequate?' },
   ],
+  parking: [
+    { label: 'Maximize spaces', question: 'How can I maximize parking capacity in this area?' },
+    { label: 'ADA compliance', question: 'How many accessible spaces are required?' },
+    { label: 'Traffic flow', question: 'What is the optimal traffic circulation pattern?' },
+  ],
 };
 
 export const EngineeringAIPanel = ({
