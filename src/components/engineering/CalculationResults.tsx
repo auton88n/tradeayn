@@ -12,7 +12,8 @@ import {
   CheckCircle2,
   AlertTriangle,
   Loader2,
-  BarChart3
+  BarChart3,
+  Car
 } from 'lucide-react';
 import { ForceDiagrams } from './ForceDiagrams';
 import { Button } from '@/components/ui/button';
@@ -436,6 +437,18 @@ export const CalculationResults = ({ result, onNewCalculation }: CalculationResu
                 baseThickness={(outputs.baseThickness || 400) as number}
                 toeWidth={(outputs.toeWidth || outputs.toeLength || 600) as number}
               />
+            ) : result.type === 'parking' ? (
+              <div className="w-full h-full flex flex-col items-center justify-center text-center p-4 bg-gradient-to-br from-primary/5 to-accent/5">
+                <Car className="w-16 h-16 text-primary mb-4" />
+                <p className="text-lg font-semibold">Parking Layout Generated</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {Number(outputs.totalSpaces) || 0} total spaces designed
+                </p>
+                <div className="flex gap-4 mt-4 text-xs">
+                  <span className="text-blue-600">♿ {Number(outputs.accessibleSpaces) || 0} ADA</span>
+                  <span className="text-green-600">⚡ {Number(outputs.evSpaces) || 0} EV</span>
+                </div>
+              </div>
             ) : (
               <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                 3D visualization not available
@@ -503,15 +516,34 @@ export const CalculationResults = ({ result, onNewCalculation }: CalculationResu
                   <text x="90" y="145" fill="#e2e8f0" fontSize="8" textAnchor="middle">{String(outputs.slabType || 'Two-Way')} Slab - t={String(outputs.thickness || 150)}mm</text>
                 </svg>
               )}
+              {result.type === 'parking' && (
+                <svg viewBox="0 0 180 160" className="w-full h-full">
+                  <rect x="15" y="20" width="150" height="120" fill="#374151" stroke="#4b5563" strokeWidth="1.5" rx="4" />
+                  {/* Parking spaces representation */}
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <rect key={`space-${i}`} x={25 + i * 28} y="35" width="20" height="40" fill="none" stroke="#22c55e" strokeWidth="1" />
+                  ))}
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <rect key={`space2-${i}`} x={25 + i * 28} y="95" width="20" height="40" fill="none" stroke="#22c55e" strokeWidth="1" />
+                  ))}
+                  {/* Drive aisle */}
+                  <line x1="20" y1="85" x2="160" y2="85" stroke="#fbbf24" strokeWidth="2" strokeDasharray="8,4" />
+                  <text x="90" y="155" fill="#e2e8f0" fontSize="8" textAnchor="middle">
+                    Parking Layout - {Number(outputs.totalSpaces) || 0} spaces @ {result.inputs.parkingAngle || 90}°
+                  </text>
+                </svg>
+              )}
             </div>
             
-            {/* Material Cost Breakdown */}
-            <MaterialCostTable
-              concreteVolume={(outputs.concreteVolume || 0) as number}
-              steelWeight={(outputs.steelWeight || 0) as number}
-              formworkArea={(outputs.formworkArea || 0) as number}
-              type={result.type || 'beam'}
-            />
+            {/* Material Cost Breakdown - Only for structural types */}
+            {result.type !== 'parking' && (
+              <MaterialCostTable
+                concreteVolume={(outputs.concreteVolume || 0) as number}
+                steelWeight={(outputs.steelWeight || 0) as number}
+                formworkArea={(outputs.formworkArea || 0) as number}
+                type={result.type || 'beam'}
+              />
+            )}
           </div>
 
           {/* Dimensions Card */}
@@ -537,6 +569,14 @@ export const CalculationResults = ({ result, onNewCalculation }: CalculationResu
                   <ResultItem label="Area" value={`${formatNumber(outputs.area)} m²`} />
                 </>
               )}
+              {result.type === 'parking' && (
+                <>
+                  <ResultItem label="Site Length" value={`${result.inputs.siteLength || 0} m`} />
+                  <ResultItem label="Site Width" value={`${result.inputs.siteWidth || 0} m`} />
+                  <ResultItem label="Site Area" value={`${formatNumber((Number(result.inputs.siteLength) || 0) * (Number(result.inputs.siteWidth) || 0))} m²`} />
+                  <ResultItem label="Parking Angle" value={`${result.inputs.parkingAngle || 90}°`} />
+                </>
+              )}
             </div>
           </div>
 
@@ -554,67 +594,99 @@ export const CalculationResults = ({ result, onNewCalculation }: CalculationResu
             </div>
           )}
 
-          {/* Reinforcement Card */}
-          <div className="bg-card rounded-2xl border border-border p-6 shadow-lg">
-            <div className="flex items-center gap-2 mb-4">
-              <Weight className="w-5 h-5 text-amber-500" />
-              <h3 className="text-lg font-semibold">Reinforcement</h3>
+          {/* Reinforcement Card - Only for structural types */}
+          {result.type !== 'parking' && (
+            <div className="bg-card rounded-2xl border border-border p-6 shadow-lg">
+              <div className="flex items-center gap-2 mb-4">
+                <Weight className="w-5 h-5 text-amber-500" />
+                <h3 className="text-lg font-semibold">Reinforcement</h3>
+              </div>
+              <div className="space-y-3">
+                {result.type === 'beam' && (
+                  <>
+                    <ReinforcementItem 
+                      label="Main Bars (Bottom)" 
+                      value={outputs.mainReinforcement as string || `${outputs.mainBars}`} 
+                    />
+                    <ReinforcementItem 
+                      label="Top Bars" 
+                      value={outputs.topReinforcement as string || '2Ø12 (nominal)'} 
+                    />
+                    <ReinforcementItem 
+                      label="Stirrups" 
+                      value={outputs.stirrups as string || `Ø${outputs.stirrupDia}@${outputs.stirrupSpacing}mm`} 
+                    />
+                  </>
+                )}
+                {result.type === 'foundation' && (
+                  <>
+                    <ReinforcementItem 
+                      label="Bottom X-Direction" 
+                      value={outputs.reinforcementX as string} 
+                    />
+                    <ReinforcementItem 
+                      label="Bottom Y-Direction" 
+                      value={outputs.reinforcementY as string} 
+                    />
+                  </>
+                )}
+              </div>
             </div>
-            <div className="space-y-3">
-              {result.type === 'beam' && (
-                <>
-                  <ReinforcementItem 
-                    label="Main Bars (Bottom)" 
-                    value={outputs.mainReinforcement as string || `${outputs.mainBars}`} 
-                  />
-                  <ReinforcementItem 
-                    label="Top Bars" 
-                    value={outputs.topReinforcement as string || '2Ø12 (nominal)'} 
-                  />
-                  <ReinforcementItem 
-                    label="Stirrups" 
-                    value={outputs.stirrups as string || `Ø${outputs.stirrupDia}@${outputs.stirrupSpacing}mm`} 
-                  />
-                </>
-              )}
-              {result.type === 'foundation' && (
-                <>
-                  <ReinforcementItem 
-                    label="Bottom X-Direction" 
-                    value={outputs.reinforcementX as string} 
-                  />
-                  <ReinforcementItem 
-                    label="Bottom Y-Direction" 
-                    value={outputs.reinforcementY as string} 
-                  />
-                </>
-              )}
-            </div>
-          </div>
+          )}
 
-          {/* Material Quantities Card */}
-          <div className="bg-card rounded-2xl border border-border p-6 shadow-lg">
-            <div className="flex items-center gap-2 mb-4">
-              <DollarSign className="w-5 h-5 text-green-500" />
-              <h3 className="text-lg font-semibold">Material Quantities</h3>
+          {/* Parking Statistics Card */}
+          {result.type === 'parking' && (
+            <div className="bg-card rounded-2xl border border-border p-6 shadow-lg">
+              <div className="flex items-center gap-2 mb-4">
+                <Car className="w-5 h-5 text-primary" />
+                <h3 className="text-lg font-semibold">Parking Statistics</h3>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
+                  <span className="text-sm text-green-700 dark:text-green-300">Total Parking Spaces</span>
+                  <span className="font-mono font-semibold text-green-900 dark:text-green-100">{Number(outputs.totalSpaces) || 0}</span>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
+                  <span className="text-sm text-blue-700 dark:text-blue-300">Accessible (ADA)</span>
+                  <span className="font-mono font-semibold text-blue-900 dark:text-blue-100">{Number(outputs.accessibleSpaces) || 0}</span>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                  <span className="text-sm text-amber-700 dark:text-amber-300">EV Charging Spaces</span>
+                  <span className="font-mono font-semibold text-amber-900 dark:text-amber-100">{Number(outputs.evSpaces) || 0}</span>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800">
+                  <span className="text-sm text-purple-700 dark:text-purple-300">Space Efficiency</span>
+                  <span className="font-mono font-semibold text-purple-900 dark:text-purple-100">{formatNumber(outputs.efficiency)}%</span>
+                </div>
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <ResultItem 
-                label="Concrete" 
-                value={`${formatNumber(outputs.concreteVolume)} m³`} 
-              />
-              <ResultItem 
-                label="Steel" 
-                value={`${formatNumber(outputs.steelWeight)} kg`} 
-              />
-              {result.type === 'beam' && (
+          )}
+
+          {/* Material Quantities Card - Only for structural types */}
+          {result.type !== 'parking' && (
+            <div className="bg-card rounded-2xl border border-border p-6 shadow-lg">
+              <div className="flex items-center gap-2 mb-4">
+                <DollarSign className="w-5 h-5 text-green-500" />
+                <h3 className="text-lg font-semibold">Material Quantities</h3>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
                 <ResultItem 
-                  label="Formwork" 
-                  value={`${formatNumber(outputs.formworkArea)} m²`} 
+                  label="Concrete" 
+                  value={`${formatNumber(outputs.concreteVolume)} m³`} 
                 />
-              )}
+                <ResultItem 
+                  label="Steel" 
+                  value={`${formatNumber(outputs.steelWeight)} kg`} 
+                />
+                {result.type === 'beam' && (
+                  <ResultItem 
+                    label="Formwork" 
+                    value={`${formatNumber(outputs.formworkArea)} m²`} 
+                  />
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </motion.div>
       </div>
 
