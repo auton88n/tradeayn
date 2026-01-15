@@ -412,7 +412,7 @@ export const CalculationResults = ({ result, onNewCalculation }: CalculationResu
             <Box className="w-5 h-5 text-primary" />
             <h3 className="text-lg font-semibold">3D Visualization</h3>
           </div>
-          <div className="aspect-square bg-muted/30 rounded-xl overflow-hidden">
+          <div className="aspect-square bg-muted/30 rounded-xl overflow-hidden flex flex-col">
             {result.type === 'beam' ? (
               <BeamVisualization3D outputs={outputs} />
             ) : result.type === 'foundation' ? (
@@ -444,7 +444,7 @@ export const CalculationResults = ({ result, onNewCalculation }: CalculationResu
                 toeWidth={(outputs.toeWidth || outputs.toeLength || 600) as number}
               />
             ) : result.type === 'parking' && parkingLayout?.spaces ? (
-              <div className="w-full h-full flex flex-col">
+              <div className="w-full flex-1 flex flex-col min-h-0">
                 {/* 2D/3D Toggle */}
                 <div className="flex items-center gap-2 p-2 border-b border-border/50">
                   <Button
@@ -471,7 +471,7 @@ export const CalculationResults = ({ result, onNewCalculation }: CalculationResu
                   </span>
                 </div>
                 {/* Visualization */}
-                <div className="flex-1 min-h-0">
+                <div className="flex-1 min-h-0 relative">
                   {parkingViewMode === '3d' ? (
                     <ParkingVisualization3D
                       layout={parkingLayout as any}
