@@ -22,6 +22,7 @@ import ColumnCalculator from '@/components/engineering/ColumnCalculator';
 import SlabCalculator from '@/components/engineering/SlabCalculator';
 import RetainingWallCalculator from '@/components/engineering/RetainingWallCalculator';
 import { ParkingDesigner } from '@/components/engineering/ParkingDesigner';
+import { AdvancedParkingDesigner } from '@/components/engineering/parking/AdvancedParkingDesigner';
 import { CalculationResults } from '@/components/engineering/CalculationResults';
 import { CalculationHistoryModal } from '@/components/engineering/CalculationHistoryModal';
 import { CalculationComparison } from '@/components/engineering/CalculationComparison';
@@ -33,7 +34,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { CalculatorType as AICalculatorType } from '@/lib/engineeringKnowledge';
 
-type CalculatorType = 'beam' | 'foundation' | 'column' | 'slab' | 'retaining_wall' | 'parking' | null;
+type CalculatorType = 'beam' | 'foundation' | 'column' | 'slab' | 'retaining_wall' | 'parking' | 'parking-advanced' | null;
 
 interface CalculationResult {
   type: CalculatorType;
