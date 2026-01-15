@@ -102,6 +102,15 @@ const calculatorOptions = [
     gradient: 'from-indigo-500 to-violet-500',
     available: true,
   },
+  {
+    id: 'parking-advanced' as const,
+    title: 'Advanced Parking Designer',
+    description: 'Polygon boundaries, survey import, and irregular site support',
+    icon: Car,
+    gradient: 'from-violet-500 to-purple-600',
+    available: true,
+    badge: 'Beta',
+  },
 ];
 
 const Engineering = () => {
@@ -316,6 +325,11 @@ const Engineering = () => {
                           Coming Soon
                         </span>
                       )}
+                      {(calc as any).badge && (
+                        <span className="absolute top-4 right-4 px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full">
+                          {(calc as any).badge}
+                        </span>
+                      )}
                     </motion.button>
                   ))}
                 </div>
@@ -443,6 +457,24 @@ const Engineering = () => {
                 transition={{ duration: 0.3 }}
               >
                 <ParkingDesigner 
+                  onCalculate={handleCalculationComplete}
+                  isCalculating={isCalculating}
+                  setIsCalculating={setIsCalculating}
+                  userId={userId}
+                />
+              </motion.div>
+            )}
+
+            {/* Advanced Parking Designer */}
+            {selectedCalculator === 'parking-advanced' && !calculationResult && (
+              <motion.div
+                key="parking-advanced"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <AdvancedParkingDesigner 
                   onCalculate={handleCalculationComplete}
                   isCalculating={isCalculating}
                   setIsCalculating={setIsCalculating}
