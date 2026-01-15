@@ -22,7 +22,6 @@ import ColumnCalculator from '@/components/engineering/ColumnCalculator';
 import SlabCalculator from '@/components/engineering/SlabCalculator';
 import RetainingWallCalculator from '@/components/engineering/RetainingWallCalculator';
 import { ParkingDesigner } from '@/components/engineering/ParkingDesigner';
-import { AdvancedParkingDesigner } from '@/components/engineering/parking/AdvancedParkingDesigner';
 import { CalculationResults } from '@/components/engineering/CalculationResults';
 import { CalculationHistoryModal } from '@/components/engineering/CalculationHistoryModal';
 import { CalculationComparison } from '@/components/engineering/CalculationComparison';
@@ -34,7 +33,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { CalculatorType as AICalculatorType } from '@/lib/engineeringKnowledge';
 
-type CalculatorType = 'beam' | 'foundation' | 'column' | 'slab' | 'retaining_wall' | 'parking' | 'parking-advanced' | null;
+type CalculatorType = 'beam' | 'foundation' | 'column' | 'slab' | 'retaining_wall' | 'parking' | null;
 
 interface CalculationResult {
   type: 'beam' | 'foundation' | 'column' | 'slab' | 'retaining_wall' | 'parking' | null;
@@ -97,19 +96,10 @@ const calculatorOptions = [
   {
     id: 'parking' as const,
     title: 'Car Parking Designer',
-    description: 'AI-powered parking layout with 2D/3D visualization',
+    description: 'Simple rectangular or custom polygon boundaries with AI optimization',
     icon: Car,
     gradient: 'from-indigo-500 to-violet-500',
     available: true,
-  },
-  {
-    id: 'parking-advanced' as const,
-    title: 'Advanced Parking Designer',
-    description: 'Polygon boundaries, survey import, and irregular site support',
-    icon: Car,
-    gradient: 'from-violet-500 to-purple-600',
-    available: true,
-    badge: 'Beta',
   },
 ];
 
@@ -465,23 +455,6 @@ const Engineering = () => {
               </motion.div>
             )}
 
-            {/* Advanced Parking Designer */}
-            {selectedCalculator === 'parking-advanced' && !calculationResult && (
-              <motion.div
-                key="parking-advanced"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-              >
-                <AdvancedParkingDesigner 
-                  onCalculate={handleCalculationComplete}
-                  isCalculating={isCalculating}
-                  setIsCalculating={setIsCalculating}
-                  userId={userId}
-                />
-              </motion.div>
-            )}
 
             {calculationResult && (
               <motion.div
