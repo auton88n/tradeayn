@@ -9,7 +9,7 @@ import {
   Wand2,
   Accessibility,
   Layers,
-  Sparkles
+  MapPin
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -60,6 +60,19 @@ interface ParkingDesignerProps {
   userId?: string;
 }
 
+interface ParkingInputs {
+  siteLength: string;
+  siteWidth: string;
+  parkingType: string;
+  parkingAngle: string;
+  spaceWidth: string;
+  spaceLength: string;
+  aisleWidth: string;
+  accessiblePercent: string;
+  evPercent: string;
+  floors: string;
+}
+
 const PARKING_ANGLES = [
   { value: '90', label: '90° (Perpendicular)', efficiency: 'Highest capacity' },
   { value: '60', label: '60° (Angled)', efficiency: 'Good flow' },
@@ -74,10 +87,111 @@ const PARKING_TYPES = [
   { value: 'underground', label: 'Underground' },
 ];
 
-// Inner component for Quick Start mode that uses regular inputs
+const defaultInputs: ParkingInputs = {
+  siteLength: '100',
+  siteWidth: '60',
+  parkingType: 'surface',
+  parkingAngle: '90',
+  spaceWidth: '2.5',
+  spaceLength: '5.0',
+  aisleWidth: '6.0',
+  accessiblePercent: '5',
+  evPercent: '10',
+  floors: '1',
+};
+
+// Custom Boundary Designer using context
+const CustomBoundaryDesigner: React.FC<{
+  onCalculate: (results: any) => void;
+}> = ({ onCalculate }) => {
+  const { boundaryPoints, config } = useParkingSite();
+  const metrics = calculateBoundaryMetrics(boundaryPoints);
+
+  const handleGenerateLayout = () => {
+    if (boundaryPoints.length < 3) {
+      toast({
+        title: "Insufficient Points",
+        description: "Add at least 3 boundary points to generate a layout",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Generate layout from polygon boundary
+    const bounds = {
+      minX: Math.min(...boundaryPoints.map((p: { x: number }) => p.x)),
+      maxX: Math.max(...boundaryPoints.map((p: { x: number }) => p.x)),
+      minY: Math.min(...boundaryPoints.map((p: { y: number }) => p.y)),
+      maxY: Math.max(...boundaryPoints.map((p: { y: number }) => p.y)),
+    };
+
+    const siteLength = bounds.maxX - bounds.minX;
+    const siteWidth = bounds.maxY - bounds.minY;
+
+    onCalculate({
+      type: 'parking',
+      inputs: {
+        siteLength,
+        siteWidth,
+        boundaryPoints: boundaryPoints,
+        parkingAngle: config.parkingAngle,
+        spaceWidth: config.spaceWidth,
+        spaceLength: config.spaceLength,
+        aisleWidth: config.aisleWidth,
+      },
+      outputs: {
+        totalSpaces: Math.floor(metrics.area / 15), // Rough estimate
+        accessibleSpaces: Math.ceil(metrics.area / 15 * 0.05),
+        evSpaces: Math.ceil(metrics.area / 15 * 0.1),
+        standardSpaces: Math.floor(metrics.area / 15 * 0.85),
+        siteArea: metrics.area,
+        efficiency: 65,
+      },
+      timestamp: new Date(),
+    });
+
+    toast({
+      title: "Layout Generated",
+      description: `Custom boundary with ${metrics.area.toFixed(0)}m² processed`,
+    });
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="space-y-6"
+    >
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Left: Point Table */}
+        <div className="space-y-4">
+          <BoundaryPointsTable />
+          <BoundaryMetrics />
+          <ParkingConfigPanel />
+          
+          <Button 
+            onClick={handleGenerateLayout}
+            disabled={state.boundaryPoints.length < 3}
+            className="w-full gap-2"
+          >
+            <Wand2 className="w-4 h-4" />
+            Generate Layout from Boundary
+          </Button>
+        </div>
+
+        {/* Right: Preview */}
+        <div className="min-h-[400px]">
+          <BoundaryPreview />
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+// Quick Start Designer with simple rectangular inputs
 const QuickStartDesigner: React.FC<{
-  inputs: typeof defaultInputs;
-  setInputs: React.Dispatch<React.SetStateAction<typeof defaultInputs>>;
+  inputs: ParkingInputs;
+  setInputs: React.Dispatch<React.SetStateAction<ParkingInputs>>;
   layout: ParkingLayout | null;
   setLayout: React.Dispatch<React.SetStateAction<ParkingLayout | null>>;
   onCalculate: (results: any) => void;
@@ -105,11 +219,11 @@ const QuickStartDesigner: React.FC<{
   setShowLabels,
 }) => {
   const handleInputChange = (field: string, value: string) => {
-    setInputs(prev => ({ ...prev, [field]: value }));
+    setInputs((prev: ParkingInputs) => ({ ...prev, [field]: value }));
   };
 
   const handleApplySuggestion = (field: string, value: any) => {
-    setInputs(prev => ({ ...prev, [field]: String(value) }));
+    setInputs((prev: ParkingInputs) => ({ ...prev, [field]: String(value) }));
     toast({
       title: "Suggestion Applied",
       description: `${field} updated to ${value}`,
@@ -121,27 +235,7 @@ const QuickStartDesigner: React.FC<{
     Object.entries(values).forEach(([k, v]) => {
       stringValues[k] = String(v);
     });
-    setInputs(prev => ({ ...prev, ...stringValues }));
-    toast({
-      title: "All Suggestions Applied",
-      description: "Input values have been optimized",
-    });
-  };
-
-  const handleApplySuggestion = (field: string, value: any) => {
-    setInputs(prev => ({ ...prev, [field]: String(value) }));
-    toast({
-      title: "Suggestion Applied",
-      description: `${field} updated to ${value}`,
-    });
-  };
-
-  const handleApplyAllSuggestions = (values: Record<string, any>) => {
-    const stringValues: Record<string, string> = {};
-    Object.entries(values).forEach(([k, v]) => {
-      stringValues[k] = String(v);
-    });
-    setInputs(prev => ({ ...prev, ...stringValues }));
+    setInputs((prev: ParkingInputs) => ({ ...prev, ...stringValues }));
     toast({
       title: "All Suggestions Applied",
       description: "Input values have been optimized",
@@ -152,7 +246,6 @@ const QuickStartDesigner: React.FC<{
     setIsGenerating(true);
 
     try {
-      // Calculate layout locally for immediate feedback
       const siteLength = parseFloat(inputs.siteLength);
       const siteWidth = parseFloat(inputs.siteWidth);
       const spaceWidth = parseFloat(inputs.spaceWidth);
@@ -160,7 +253,6 @@ const QuickStartDesigner: React.FC<{
       const aisleWidth = parseFloat(inputs.aisleWidth);
       const angle = parseFloat(inputs.parkingAngle);
 
-      // Calculate effective space dimensions based on angle
       const angleRad = (angle * Math.PI) / 180;
       const effectiveWidth = angle === 90 
         ? spaceWidth 
@@ -169,28 +261,23 @@ const QuickStartDesigner: React.FC<{
         ? spaceLength 
         : spaceWidth * Math.cos(angleRad) + spaceLength * Math.sin(angleRad);
 
-      // Calculate rows and columns
-      const moduleWidth = effectiveDepth * 2 + aisleWidth; // Two rows of parking + aisle
+      const moduleWidth = effectiveDepth * 2 + aisleWidth;
       const numModules = Math.floor(siteWidth / moduleWidth);
       const spacesPerRow = Math.floor(siteLength / effectiveWidth);
       const totalSpaces = numModules * 2 * spacesPerRow;
 
-      // Calculate accessible spaces (minimum 2% or 1)
       const accessiblePercent = parseFloat(inputs.accessiblePercent) / 100;
       const accessibleSpaces = Math.max(1, Math.ceil(totalSpaces * accessiblePercent));
       
-      // Calculate EV spaces
       const evPercent = parseFloat(inputs.evPercent) / 100;
       const evSpaces = Math.ceil(totalSpaces * evPercent);
 
-      // Generate parking spaces
       const spaces: ParkingSpace[] = [];
       let spaceId = 0;
 
       for (let module = 0; module < numModules; module++) {
         const moduleY = module * moduleWidth;
         
-        // First row of module
         for (let col = 0; col < spacesPerRow; col++) {
           const isAccessible = spaceId < accessibleSpaces;
           const isEV = !isAccessible && spaceId < accessibleSpaces + evSpaces;
@@ -208,7 +295,6 @@ const QuickStartDesigner: React.FC<{
           });
         }
 
-        // Second row of module (facing opposite direction)
         for (let col = 0; col < spacesPerRow; col++) {
           spaces.push({
             id: `space-${spaceId++}`,
@@ -224,7 +310,6 @@ const QuickStartDesigner: React.FC<{
         }
       }
 
-      // Generate aisles
       const aisles = [];
       for (let module = 0; module < numModules; module++) {
         aisles.push({
@@ -236,7 +321,6 @@ const QuickStartDesigner: React.FC<{
         });
       }
 
-      // Entry and exit points
       const entries = [{ x: 0, y: siteWidth / 2 - 3, width: 6 }];
       const exits = [{ x: siteLength - 6, y: siteWidth / 2 - 3, width: 6 }];
 
@@ -253,7 +337,6 @@ const QuickStartDesigner: React.FC<{
 
       setLayout(newLayout);
 
-      // Calculate results in the expected format for CalculationResults
       const siteArea = siteLength * siteWidth;
       const parkingArea = spaces.length * spaceWidth * spaceLength;
       const aisleArea = aisles.reduce((sum, a) => sum + a.width * a.height, 0);
@@ -308,7 +391,7 @@ const QuickStartDesigner: React.FC<{
     } finally {
       setIsGenerating(false);
     }
-  }, [inputs, onCalculate]);
+  }, [inputs, onCalculate, setIsGenerating, setLayout]);
 
   const aiGenerateLayout = async () => {
     setIsGenerating(true);
@@ -329,8 +412,6 @@ const QuickStartDesigner: React.FC<{
       });
 
       if (error) throw error;
-
-      // Generate layout after AI analysis
       await generateLayout();
 
       toast({
@@ -339,7 +420,6 @@ const QuickStartDesigner: React.FC<{
       });
     } catch (err) {
       console.error('AI generation error:', err);
-      // Fall back to local generation
       await generateLayout();
     } finally {
       setIsGenerating(false);
@@ -656,3 +736,63 @@ const QuickStartDesigner: React.FC<{
     </motion.div>
   );
 };
+
+// Main component with tabs for Quick Start and Custom Boundary
+export const ParkingDesigner: React.FC<ParkingDesignerProps> = ({
+  onCalculate,
+  isCalculating,
+  setIsCalculating,
+  userId,
+}) => {
+  const [inputs, setInputs] = useState<ParkingInputs>(defaultInputs);
+  const [layout, setLayout] = useState<ParkingLayout | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
+  const [showDimensions, setShowDimensions] = useState(true);
+  const [showLabels, setShowLabels] = useState(true);
+  const [designMode, setDesignMode] = useState<'quick' | 'custom'>('quick');
+
+  return (
+    <div className="space-y-6">
+      {/* Mode Selector */}
+      <Tabs value={designMode} onValueChange={(v) => setDesignMode(v as 'quick' | 'custom')}>
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="quick" className="gap-2">
+            <Grid3X3 className="w-4 h-4" />
+            Quick Start
+          </TabsTrigger>
+          <TabsTrigger value="custom" className="gap-2">
+            <MapPin className="w-4 h-4" />
+            Custom Boundary
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="quick" className="mt-6">
+          <QuickStartDesigner
+            inputs={inputs}
+            setInputs={setInputs}
+            layout={layout}
+            setLayout={setLayout}
+            onCalculate={onCalculate}
+            isGenerating={isGenerating}
+            setIsGenerating={setIsGenerating}
+            viewMode={viewMode}
+            setViewMode={setViewMode}
+            showDimensions={showDimensions}
+            setShowDimensions={setShowDimensions}
+            showLabels={showLabels}
+            setShowLabels={setShowLabels}
+          />
+        </TabsContent>
+
+        <TabsContent value="custom" className="mt-6">
+          <ParkingSiteProvider>
+            <CustomBoundaryDesigner onCalculate={onCalculate} />
+          </ParkingSiteProvider>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+};
+
+export default ParkingDesigner;
