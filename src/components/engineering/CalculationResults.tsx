@@ -13,7 +13,9 @@ import {
   AlertTriangle,
   Loader2,
   BarChart3,
-  Car
+  Car,
+  Grid3X3,
+  Box as Cube3D
 } from 'lucide-react';
 import { ForceDiagrams } from './ForceDiagrams';
 import { Button } from '@/components/ui/button';
@@ -22,6 +24,8 @@ import { FoundationVisualization3D } from './FoundationVisualization3D';
 import ColumnVisualization3D from './ColumnVisualization3D';
 import SlabVisualization3D from './SlabVisualization3D';
 import RetainingWallVisualization3D from './RetainingWallVisualization3D';
+import { ParkingVisualization3D } from './ParkingVisualization3D';
+import { ParkingLayout2D } from './ParkingLayout2D';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -257,6 +261,7 @@ export const CalculationResults = ({ result, onNewCalculation }: CalculationResu
   const [isExportingDXF, setIsExportingDXF] = useState(false);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [parkingViewMode, setParkingViewMode] = useState<'2d' | '3d'>('3d');
   const [aiAnalysis, setAiAnalysis] = useState<{
     compliance: string[];
     optimizations: string[];
@@ -264,6 +269,7 @@ export const CalculationResults = ({ result, onNewCalculation }: CalculationResu
   } | null>(null);
 
   const outputs = result.outputs as Record<string, unknown>;
+  const parkingLayout = outputs.layout as { spaces: unknown[]; aisles: unknown[] } | undefined;
 
   const handleExportDXF = async () => {
     setIsExportingDXF(true);
@@ -437,17 +443,59 @@ export const CalculationResults = ({ result, onNewCalculation }: CalculationResu
                 baseThickness={(outputs.baseThickness || 400) as number}
                 toeWidth={(outputs.toeWidth || outputs.toeLength || 600) as number}
               />
+            ) : result.type === 'parking' && parkingLayout?.spaces ? (
+              <div className="w-full h-full flex flex-col">
+                {/* 2D/3D Toggle */}
+                <div className="flex items-center gap-2 p-2 border-b border-border/50">
+                  <Button
+                    variant={parkingViewMode === '2d' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setParkingViewMode('2d')}
+                    className="gap-1.5 h-7 text-xs"
+                  >
+                    <Grid3X3 className="w-3.5 h-3.5" />
+                    2D Plan
+                  </Button>
+                  <Button
+                    variant={parkingViewMode === '3d' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setParkingViewMode('3d')}
+                    className="gap-1.5 h-7 text-xs"
+                  >
+                    <Cube3D className="w-3.5 h-3.5" />
+                    3D View
+                  </Button>
+                  <div className="flex-1" />
+                  <span className="text-xs text-muted-foreground">
+                    {Number(outputs.totalSpaces) || 0} spaces
+                  </span>
+                </div>
+                {/* Visualization */}
+                <div className="flex-1 min-h-0">
+                  {parkingViewMode === '3d' ? (
+                    <ParkingVisualization3D
+                      layout={parkingLayout as any}
+                      siteLength={Number(result.inputs.siteLength) || 50}
+                      siteWidth={Number(result.inputs.siteWidth) || 30}
+                      parkingType={String(result.inputs.parkingType || 'surface')}
+                      floors={Number(result.inputs.floors) || 1}
+                    />
+                  ) : (
+                    <ParkingLayout2D
+                      layout={parkingLayout as any}
+                      siteLength={Number(result.inputs.siteLength) || 50}
+                      siteWidth={Number(result.inputs.siteWidth) || 30}
+                      showDimensions={true}
+                      showLabels={false}
+                    />
+                  )}
+                </div>
+              </div>
             ) : result.type === 'parking' ? (
               <div className="w-full h-full flex flex-col items-center justify-center text-center p-4 bg-gradient-to-br from-primary/5 to-accent/5">
-                <Car className="w-16 h-16 text-primary mb-4" />
-                <p className="text-lg font-semibold">Parking Layout Generated</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {Number(outputs.totalSpaces) || 0} total spaces designed
-                </p>
-                <div className="flex gap-4 mt-4 text-xs">
-                  <span className="text-blue-600">♿ {Number(outputs.accessibleSpaces) || 0} ADA</span>
-                  <span className="text-green-600">⚡ {Number(outputs.evSpaces) || 0} EV</span>
-                </div>
+                <Car className="w-16 h-16 text-primary/50 mb-4" />
+                <p className="text-muted-foreground">No layout data available</p>
+                <p className="text-xs text-muted-foreground mt-1">Run the Parking Designer to generate a layout</p>
               </div>
             ) : (
               <div className="w-full h-full flex items-center justify-center text-muted-foreground">
