@@ -456,7 +456,10 @@ export const CalculationResults = ({ result, onNewCalculation }: CalculationResu
             <div className="flex items-center justify-between mb-2">
               <h2 className="text-xl font-bold capitalize">{result.type} Design Report</h2>
               <span className="text-xs text-muted-foreground">
-                {result.timestamp.toLocaleDateString()} {result.timestamp.toLocaleTimeString()}
+                {result.timestamp instanceof Date 
+                  ? `${result.timestamp.toLocaleDateString()} ${result.timestamp.toLocaleTimeString()}`
+                  : new Date(result.timestamp).toLocaleDateString() + ' ' + new Date(result.timestamp).toLocaleTimeString()
+                }
               </span>
             </div>
             
