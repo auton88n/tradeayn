@@ -37,7 +37,7 @@ import { CalculatorType as AICalculatorType } from '@/lib/engineeringKnowledge';
 type CalculatorType = 'beam' | 'foundation' | 'column' | 'slab' | 'retaining_wall' | 'parking' | 'parking-advanced' | null;
 
 interface CalculationResult {
-  type: CalculatorType;
+  type: 'beam' | 'foundation' | 'column' | 'slab' | 'retaining_wall' | 'parking' | null;
   inputs: Record<string, number | string>;
   outputs: Record<string, number | string | object>;
   timestamp: Date;
@@ -475,7 +475,7 @@ const Engineering = () => {
           userId={userId}
           onLoadCalculation={(calc) => {
             setCalculationResult({
-              type: calc.calculation_type as CalculatorType,
+              type: calc.calculation_type as CalculationResult['type'],
               inputs: calc.inputs,
               outputs: calc.outputs,
               timestamp: new Date(calc.created_at),
