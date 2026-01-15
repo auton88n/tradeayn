@@ -171,7 +171,7 @@ const CustomBoundaryDesigner: React.FC<{
           
           <Button 
             onClick={handleGenerateLayout}
-            disabled={state.boundaryPoints.length < 3}
+            disabled={boundaryPoints.length < 3}
             className="w-full gap-2"
           >
             <Wand2 className="w-4 h-4" />
