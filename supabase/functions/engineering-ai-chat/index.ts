@@ -349,6 +349,7 @@ serve(async (req) => {
       currentInputs, 
       currentOutputs, 
       question,
+      messages: userMessages = [],
       conversationHistory = [],
       stream = true
     } = await req.json();
@@ -367,7 +368,7 @@ ${calculatorContext}
 
 ## Current Design Context
 
-**Calculator Type:** ${calculatorType.toUpperCase()}
+**Calculator Type:** ${calculatorType?.toUpperCase() || 'GENERAL'}
 
 **User's Current Input Values:**
 \`\`\`json
@@ -381,7 +382,7 @@ ${currentOutputs ? JSON.stringify(currentOutputs, null, 2) : 'No calculation per
 
 ## Your Task
 
-You are assisting an engineer with their ${calculatorType.replace('_', ' ')} design. 
+You are assisting an engineer with their ${(calculatorType || 'engineering').replace('_', ' ')} design. 
 
 1. **Answer their specific question** using the actual input values provided
 2. **Show step-by-step calculations** with real numbers
@@ -400,17 +401,35 @@ If the user asks about optimization, provide specific alternatives with:
 Remember: You're talking to a practicing engineer who needs accurate, actionable information.
 `;
 
-    // Build messages array with conversation history
-    const messages = [
-      { role: 'system', content: systemPrompt },
-      ...conversationHistory.map((msg: { role: string; content: string }) => ({
-        role: msg.role,
-        content: msg.content
-      })),
-      { role: 'user', content: question }
-    ];
+    // Handle both old format (question + conversationHistory) and new format (messages array)
+    let messages: Array<{ role: string; content: string }>;
+    
+    if (userMessages && userMessages.length > 0) {
+      // New format: messages array passed directly
+      messages = [
+        { role: 'system', content: systemPrompt },
+        ...userMessages.map((msg: { role: string; content: string }) => ({
+          role: msg.role,
+          content: msg.content
+        }))
+      ];
+    } else if (question) {
+      // Old format: question with optional conversationHistory
+      messages = [
+        { role: 'system', content: systemPrompt },
+        ...conversationHistory.map((msg: { role: string; content: string }) => ({
+          role: msg.role,
+          content: msg.content
+        })),
+        { role: 'user', content: question }
+      ];
+    } else {
+      throw new Error('No question or messages provided');
+    }
 
-    console.log(`Engineering AI Chat - Calculator: ${calculatorType}, Question: ${question.substring(0, 100)}...`);
+    // Get last user message for logging
+    const lastUserMessage = messages.filter(m => m.role === 'user').pop()?.content || '';
+    console.log(`Engineering AI Chat - Calculator: ${calculatorType || 'unknown'}, Question: ${lastUserMessage.substring(0, 100)}...`);
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
