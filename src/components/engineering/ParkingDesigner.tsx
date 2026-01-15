@@ -224,35 +224,46 @@ export const ParkingDesigner: React.FC<ParkingDesignerProps> = ({
 
       setLayout(newLayout);
 
-      // Calculate results
-      const results = {
-        layout: newLayout,
-        dimensions: {
-          siteArea: siteLength * siteWidth,
-          parkingArea: spaces.length * spaceWidth * spaceLength,
-          aisleArea: aisles.reduce((sum, a) => sum + a.width * a.height, 0),
-          efficiency: ((spaces.length * spaceWidth * spaceLength) / (siteLength * siteWidth) * 100).toFixed(1),
+      // Calculate results in the expected format for CalculationResults
+      const siteArea = siteLength * siteWidth;
+      const parkingArea = spaces.length * spaceWidth * spaceLength;
+      const aisleArea = aisles.reduce((sum, a) => sum + a.width * a.height, 0);
+      const efficiency = parseFloat(((parkingArea / siteArea) * 100).toFixed(1));
+
+      onCalculate({
+        type: 'parking',
+        inputs: {
+          siteLength,
+          siteWidth,
+          parkingType: inputs.parkingType,
+          parkingAngle: angle,
+          spaceWidth,
+          spaceLength,
+          aisleWidth,
+          accessiblePercent: parseFloat(inputs.accessiblePercent),
+          evPercent: parseFloat(inputs.evPercent),
+          floors: parseFloat(inputs.floors),
         },
-        capacity: {
-          total: spaces.length,
-          standard: spaces.filter(s => s.type === 'standard').length,
-          accessible: accessibleSpaces,
-          ev: evSpaces,
-          compact: 0,
-        },
-        materials: {
-          asphalt: (siteLength * siteWidth).toFixed(0),
-          striping: (spaces.length * (spaceWidth + spaceLength) * 2).toFixed(0),
-          curbing: ((siteLength + siteWidth) * 2).toFixed(0),
-        },
-        compliance: {
+        outputs: {
+          totalSpaces: spaces.length,
+          accessibleSpaces,
+          evSpaces,
+          standardSpaces: spaces.filter(s => s.type === 'standard').length,
+          compactSpaces: 0,
+          siteArea,
+          parkingArea,
+          aisleArea,
+          efficiency,
+          layout: newLayout,
+          asphaltArea: siteArea,
+          stripingLength: spaces.length * (spaceWidth + spaceLength) * 2,
+          curbingLength: (siteLength + siteWidth) * 2,
           adaCompliant: accessibleSpaces >= Math.max(1, Math.ceil(spaces.length * 0.02)),
           minAisleWidth: aisleWidth >= 6.0,
           fireAccess: true,
         },
-      };
-
-      onCalculate(results);
+        timestamp: new Date(),
+      });
 
       toast({
         title: "Layout Generated",
