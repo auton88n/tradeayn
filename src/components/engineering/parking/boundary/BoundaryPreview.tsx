@@ -14,12 +14,13 @@ export function BoundaryPreview() {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
   
-  // Calculate viewBox based on points
+  // Calculate viewBox based on points - use fixed viewport for empty state
+  const hasPoints = boundaryPoints.length > 0;
   const bbox = getBoundingBox(boundaryPoints);
-  const viewWidth = Math.max(bbox.width + PADDING * 2, 100);
-  const viewHeight = Math.max(bbox.height + PADDING * 2, 100);
-  const viewMinX = bbox.minX - PADDING;
-  const viewMinY = bbox.minY - PADDING;
+  const viewWidth = hasPoints ? Math.max(bbox.width + PADDING * 2, 100) : 200;
+  const viewHeight = hasPoints ? Math.max(bbox.height + PADDING * 2, 100) : 150;
+  const viewMinX = hasPoints ? bbox.minX - PADDING : 0;
+  const viewMinY = hasPoints ? bbox.minY - PADDING : 0;
 
   // Convert screen coordinates to world coordinates
   const screenToWorld = useCallback((clientX: number, clientY: number): Point2D | null => {
@@ -200,15 +201,26 @@ export function BoundaryPreview() {
 
           {/* No points message */}
           {boundaryPoints.length === 0 && (
-            <text
-              x={viewMinX + viewWidth / 2}
-              y={viewMinY + viewHeight / 2}
-              textAnchor="middle"
-              fontSize={14}
-              fill="hsl(var(--muted-foreground))"
-            >
-              Add points to define boundary
-            </text>
+            <g>
+              <text
+                x={100}
+                y={70}
+                textAnchor="middle"
+                fontSize={12}
+                fill="hsl(var(--muted-foreground))"
+              >
+                Add points to define boundary
+              </text>
+              <text
+                x={100}
+                y={88}
+                textAnchor="middle"
+                fontSize={10}
+                fill="hsl(var(--muted-foreground) / 0.6)"
+              >
+                or import from CSV
+              </text>
+            </g>
           )}
         </svg>
       </div>

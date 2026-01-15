@@ -130,7 +130,7 @@ function DesignerContent({ onCalculate, isCalculating, setIsCalculating, userId 
         {/* Left Column - Boundary Definition */}
         <div className="lg:col-span-2 space-y-4">
           {/* Points Table + Preview */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-[400px]">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 min-h-[400px]">
             <BoundaryPointsTable />
             <BoundaryPreview />
           </div>

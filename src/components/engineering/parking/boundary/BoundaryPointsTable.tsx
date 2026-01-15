@@ -4,12 +4,19 @@ import {
   Trash2, 
   GripVertical, 
   FileText,
-  AlertCircle
+  AlertCircle,
+  Download,
+  ChevronDown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useParkingSite } from '../context/ParkingSiteContext';
 import { CSVImportDialog } from './CSVImportDialog';
 
@@ -17,6 +24,36 @@ export function BoundaryPointsTable() {
   const { boundaryPoints, addPoint, updatePoint, deletePoint, reorderPoints } = useParkingSite();
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
+
+  const downloadAsCSV = () => {
+    const header = 'Point,X,Y\n';
+    const content = boundaryPoints.map((p, i) => 
+      `${i + 1},${p.x.toFixed(2)},${p.y.toFixed(2)}`
+    ).join('\n');
+    
+    const blob = new Blob([header + content], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'boundary-points.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadAsTXT = () => {
+    const header = 'Point\tX\tY\n';
+    const content = boundaryPoints.map((p, i) => 
+      `${i + 1}\t${p.x.toFixed(2)}\t${p.y.toFixed(2)}`
+    ).join('\n');
+    
+    const blob = new Blob([header + content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'boundary-points.txt';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const handleAddPoint = () => {
     // Add point at origin or offset from last point
@@ -68,15 +105,40 @@ export function BoundaryPointsTable() {
     <div className="bg-card border rounded-lg p-4 h-full flex flex-col">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-semibold text-sm">Boundary Points</h3>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsImportOpen(true)}
-          className="gap-1 text-xs"
-        >
-          <FileText className="w-3 h-3" />
-          Import
-        </Button>
+        <div className="flex gap-1">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsImportOpen(true)}
+            className="gap-1 text-xs"
+          >
+            <FileText className="w-3 h-3" />
+            Import
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={boundaryPoints.length === 0}
+                className="gap-1 text-xs"
+              >
+                <Download className="w-3 h-3" />
+                <ChevronDown className="w-3 h-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={downloadAsCSV}>
+                <FileText className="w-3 h-3 mr-2" />
+                Download as CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={downloadAsTXT}>
+                <FileText className="w-3 h-3 mr-2" />
+                Download as TXT
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       {/* Column Headers */}
