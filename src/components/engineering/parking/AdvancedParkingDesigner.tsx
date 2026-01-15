@@ -20,7 +20,7 @@ interface AdvancedParkingDesignerProps {
 }
 
 function DesignerContent({ onCalculate, isCalculating, setIsCalculating, userId }: AdvancedParkingDesignerProps) {
-  const { boundaryPoints, config, clearBoundary, setLayout } = useParkingSite();
+  const { boundaryPoints, config, setConfig, clearBoundary, setLayout } = useParkingSite();
 
   const generateLayout = useCallback(() => {
     const metrics = calculateBoundaryMetrics(boundaryPoints);
@@ -167,6 +167,26 @@ function DesignerContent({ onCalculate, isCalculating, setIsCalculating, userId 
           
           <AICalculatorAssistant
             calculatorType="parking"
+            inputs={{
+              ...config,
+              boundaryPoints: boundaryPoints.length,
+              siteArea: metrics.area,
+            }}
+            outputs={null}
+            onApplySuggestion={(field, value) => {
+              if (field in config) {
+                setConfig({ [field]: value });
+              }
+            }}
+            onApplyAllSuggestions={(values) => {
+              const configUpdates: Partial<typeof config> = {};
+              Object.entries(values).forEach(([key, value]) => {
+                if (key in config) {
+                  (configUpdates as any)[key] = value;
+                }
+              });
+              setConfig(configUpdates);
+            }}
           />
         </div>
       </div>
