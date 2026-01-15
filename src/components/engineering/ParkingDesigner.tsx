@@ -8,10 +8,8 @@ import {
   Download, 
   Wand2,
   Accessibility,
-  ArrowUpDown,
   Layers,
-  Eye,
-  EyeOff
+  Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,6 +23,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { AICalculatorAssistant } from './AICalculatorAssistant';
 import { ParkingLayout2D } from './ParkingLayout2D';
 import { ParkingVisualization3D } from './ParkingVisualization3D';
+import { ParkingSiteProvider, useParkingSite } from './parking/context/ParkingSiteContext';
+import { BoundaryPointsTable } from './parking/boundary/BoundaryPointsTable';
+import { BoundaryPreview } from './parking/boundary/BoundaryPreview';
+import { BoundaryMetrics } from './parking/boundary/BoundaryMetrics';
+import { ParkingConfigPanel } from './parking/boundary/ParkingConfigPanel';
+import { calculateBoundaryMetrics } from './parking/utils/geometry';
 
 interface ParkingSpace {
   id: string;
@@ -70,33 +74,58 @@ const PARKING_TYPES = [
   { value: 'underground', label: 'Underground' },
 ];
 
-export const ParkingDesigner: React.FC<ParkingDesignerProps> = ({
+// Inner component for Quick Start mode that uses regular inputs
+const QuickStartDesigner: React.FC<{
+  inputs: typeof defaultInputs;
+  setInputs: React.Dispatch<React.SetStateAction<typeof defaultInputs>>;
+  layout: ParkingLayout | null;
+  setLayout: React.Dispatch<React.SetStateAction<ParkingLayout | null>>;
+  onCalculate: (results: any) => void;
+  isGenerating: boolean;
+  setIsGenerating: React.Dispatch<React.SetStateAction<boolean>>;
+  viewMode: '2d' | '3d';
+  setViewMode: React.Dispatch<React.SetStateAction<'2d' | '3d'>>;
+  showDimensions: boolean;
+  setShowDimensions: React.Dispatch<React.SetStateAction<boolean>>;
+  showLabels: boolean;
+  setShowLabels: React.Dispatch<React.SetStateAction<boolean>>;
+}> = ({
+  inputs,
+  setInputs,
+  layout,
+  setLayout,
   onCalculate,
-  isCalculating,
-  setIsCalculating,
-  userId,
+  isGenerating,
+  setIsGenerating,
+  viewMode,
+  setViewMode,
+  showDimensions,
+  setShowDimensions,
+  showLabels,
+  setShowLabels,
 }) => {
-  const [inputs, setInputs] = useState({
-    siteLength: '60',
-    siteWidth: '40',
-    parkingType: 'surface',
-    parkingAngle: '90',
-    aisleWidth: '6.0',
-    spaceWidth: '2.5',
-    spaceLength: '5.0',
-    accessiblePercent: '2',
-    evPercent: '5',
-    floors: '1',
-  });
-
-  const [layout, setLayout] = useState<ParkingLayout | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
-  const [showDimensions, setShowDimensions] = useState(true);
-  const [showLabels, setShowLabels] = useState(true);
-
   const handleInputChange = (field: string, value: string) => {
     setInputs(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleApplySuggestion = (field: string, value: any) => {
+    setInputs(prev => ({ ...prev, [field]: String(value) }));
+    toast({
+      title: "Suggestion Applied",
+      description: `${field} updated to ${value}`,
+    });
+  };
+
+  const handleApplyAllSuggestions = (values: Record<string, any>) => {
+    const stringValues: Record<string, string> = {};
+    Object.entries(values).forEach(([k, v]) => {
+      stringValues[k] = String(v);
+    });
+    setInputs(prev => ({ ...prev, ...stringValues }));
+    toast({
+      title: "All Suggestions Applied",
+      description: "Input values have been optimized",
+    });
   };
 
   const handleApplySuggestion = (field: string, value: any) => {
