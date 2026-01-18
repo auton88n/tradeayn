@@ -34,7 +34,7 @@ const AIAgentsApply = lazy(() => import("./pages/services/AIAgentsApply"));
 const Automation = lazy(() => import("./pages/services/Automation"));
 const AutomationApply = lazy(() => import("./pages/services/AutomationApply"));
 const Support = lazy(() => import("./pages/Support"));
-const Engineering = lazy(() => import("./pages/Engineering"));
+const Engineering = lazy(() => import("./pages/EngineeringWorkspacePage"));
 const AIGradingDesigner = lazy(() => import("./pages/AIGradingDesigner"));
 const CivilEngineering = lazy(() => import("./pages/services/CivilEngineering"));
 
