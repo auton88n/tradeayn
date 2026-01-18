@@ -14,35 +14,38 @@ interface EyeParticlesProps {
   particleType?: ParticleType;
   isAbsorbing?: boolean;
   isPulsing?: boolean;
+  performanceMultiplier?: number; // 0-1 scale for performance mode
 }
 
-// Emotion-specific particle counts - reduced for performance
-const getEmotionParticleCount = (emotion: AYNEmotion, activityLevel: ActivityLevel, isMobile: boolean): number => {
+// Emotion-specific particle counts - significantly reduced for performance
+const getEmotionParticleCount = (emotion: AYNEmotion, activityLevel: ActivityLevel, isMobile: boolean, performanceMultiplier: number): number => {
+  // Much lower base counts for better performance
   const emotionCounts: Record<AYNEmotion, number> = {
-    calm: 2,
-    comfort: 3,
-    supportive: 3,
-    happy: 4,
-    excited: 6,
-    thinking: 3,
-    frustrated: 5,
-    curious: 4,
-    sad: 2,
-    mad: 6,
-    bored: 1,
+    calm: 1,
+    comfort: 1,
+    supportive: 1,
+    happy: 2,
+    excited: 3,
+    thinking: 1,
+    frustrated: 2,
+    curious: 2,
+    sad: 1,
+    mad: 3,
+    bored: 0,
   };
   
+  // More aggressive reduction at lower activity
   const activityMultiplier: Record<ActivityLevel, number> = { 
-    idle: 0.4, 
-    low: 0.7, 
-    medium: 1.0, 
-    high: 1.3 
+    idle: 0.2, 
+    low: 0.5, 
+    medium: 0.8, 
+    high: 1.0 
   };
   
   // Reduce particle count on mobile for better performance
-  const mobileMultiplier = isMobile ? 0.5 : 1;
+  const mobileMultiplier = isMobile ? 0.4 : 1;
   
-  return Math.max(1, Math.round(emotionCounts[emotion] * activityMultiplier[activityLevel] * mobileMultiplier));
+  return Math.max(0, Math.round(emotionCounts[emotion] * activityMultiplier[activityLevel] * mobileMultiplier * performanceMultiplier));
 };
 
 // Emotion-specific colors (HSL format)
@@ -124,11 +127,15 @@ const EyeParticlesComponent = ({
   particleType = 'sparkle',
   isAbsorbing = false,
   isPulsing = false,
+  performanceMultiplier = 1,
 }: EyeParticlesProps) => {
   const [burstParticles, setBurstParticles] = useState<number[]>([]);
   const burstIdCounter = useRef(0);
   const prevAbsorbing = useRef(false);
   const isMobile = useIsMobile();
+  
+  // Skip rendering entirely if performance multiplier is 0
+  if (performanceMultiplier === 0 || !isActive) return null;
   
   // Trigger burst on absorption - reduced count on mobile
   useEffect(() => {
@@ -144,14 +151,17 @@ const EyeParticlesComponent = ({
     prevAbsorbing.current = isAbsorbing;
   }, [isAbsorbing, isMobile]);
 
-  const particleCount = getEmotionParticleCount(emotion, activityLevel, isMobile);
+  const particleCount = getEmotionParticleCount(emotion, activityLevel, isMobile, performanceMultiplier);
   const speedMultiplier = getSpeedMultiplier(emotion);
   const particleColor = getEmotionParticleColor(emotion, glowColor);
   const sizeRange = getParticleSizeRange(particleType);
   
-  // Boost during pulse - less boost on mobile
-  const pulseBoost = isMobile ? 1.2 : 1.5;
-  const effectiveCount = isPulsing ? Math.max(particleCount * pulseBoost, isMobile ? 3 : 6) : particleCount;
+  // Boost during pulse - reduced boost on mobile
+  const pulseBoost = isMobile ? 1.1 : 1.3;
+  const effectiveCount = isPulsing ? Math.min(particleCount * pulseBoost, isMobile ? 2 : 4) : particleCount;
+  
+  // Skip if no particles to render
+  if (effectiveCount === 0 && burstParticles.length === 0) return null;
 
   // Generate ambient particles
   const ambientParticles = useMemo((): Particle[] => {
@@ -201,14 +211,14 @@ const EyeParticlesComponent = ({
         animate={{
           x: [startX - particle.size / 2, startX + driftX - particle.size / 2],
           y: [startY - particle.size / 2, startY + driftY - particle.size / 2],
-          opacity: [0, 0.7, 0.5, 0],
-          scale: [0.3, 1, 0.7, 0.2],
+          opacity: [0, 0.6, 0],
+          scale: [0.4, 0.9, 0.3],
         }}
         transition={{
-          duration: (5 + Math.random() * 3) / speedMultiplier,
+          duration: (6 + Math.random() * 4) / speedMultiplier, // Slower = fewer updates
           delay: particle.delay,
           repeat: Infinity,
-          ease: 'easeOut',
+          ease: 'linear', // Linear is cheaper than easeOut
         }}
       />
     );
@@ -363,8 +373,6 @@ const EyeParticlesComponent = ({
       />
     );
   };
-
-  if (!isActive) return null;
 
   return (
     <div 

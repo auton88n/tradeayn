@@ -1,11 +1,12 @@
 import { useEffect, useState, useRef, useCallback, memo } from 'react';
-import { motion, useMotionValue, useSpring, useTransform, useReducedMotion } from 'framer-motion';
+import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
 import { useSoundContextOptional } from '@/contexts/SoundContext';
 
 import { useIdleDetection } from '@/hooks/useIdleDetection';
 import { useEyeGestures } from '@/hooks/useEyeGestures';
+import { usePerformanceMode } from '@/hooks/usePerformanceMode';
 import { EyeParticles } from './EyeParticles';
 import { ThinkingDots } from './ThinkingDots';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -61,27 +62,20 @@ const EmotionalEyeComponent = ({
   const isSignificantBlinkRef = useRef(false);
   const isMobile = useIsMobile();
   
-  // Performance optimizations
-  const prefersReducedMotion = useReducedMotion();
+  // Performance optimizations - centralized config
+  const performanceConfig = usePerformanceMode();
   const { isDeepIdle } = useIdleDetection({ idleThreshold: 15, deepIdleThreshold: 30 });
   
   // Eye gestures for click interactions
   const { isSquished, handlers: gestureHandlers } = useEyeGestures();
 
-  // Mouse tracking for gaze
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-
-  // AI gaze target (for looking at suggestions)
-  const aiGazeX = useMotionValue(0);
-  const aiGazeY = useMotionValue(0);
-
-  // Particle tracking for smart eye response
-  const particleGazeX = useMotionValue(0);
-  const particleGazeY = useMotionValue(0);
-  const smoothParticleGazeX = useSpring(particleGazeX, { damping: 80, stiffness: 300, mass: 0.4 });
-  const smoothParticleGazeY = useSpring(particleGazeY, { damping: 80, stiffness: 300, mass: 0.4 });
-  const particleNearEyeRef = useRef(false);
+  // Simplified gaze tracking - single combined motion value
+  const gazeX = useMotionValue(0);
+  const gazeY = useMotionValue(0);
+  
+  // Single optimized spring for all gaze movements - high damping for fast settling
+  const smoothGazeX = useSpring(gazeX, { damping: 60, stiffness: 200, mass: 0.5 });
+  const smoothGazeY = useSpring(gazeY, { damping: 60, stiffness: 200, mass: 0.5 });
 
   // Activity-based glow intensity multipliers
   const ACTIVITY_GLOW = {
@@ -92,33 +86,7 @@ const EmotionalEyeComponent = ({
   };
   
   const baseGlowIntensity = ACTIVITY_GLOW[activityLevel];
-  const [particleBoost, setParticleBoost] = useState(0);
-  const glowIntensity = Math.min(baseGlowIntensity + particleBoost, 1);
-
-  // Handle particle approaching eye - pupil micro-tracks toward particle
-  const handleParticleNearEye = useCallback((angle: number) => {
-    if (!particleNearEyeRef.current) {
-      particleNearEyeRef.current = true;
-      
-      // Convert angle to slight gaze offset (subtle tracking)
-      const angleRad = (angle * Math.PI) / 180;
-      const gazeOffset = 3; // Subtle offset
-      particleGazeX.set(Math.cos(angleRad) * gazeOffset);
-      particleGazeY.set(Math.sin(angleRad) * gazeOffset);
-      
-      // Pulse glow intensity when particles are near
-      setParticleBoost(0.2);
-      
-      // Reset after particle passes
-      setTimeout(() => {
-        particleNearEyeRef.current = false;
-        particleGazeX.set(0);
-        particleGazeY.set(0);
-        setParticleBoost(0);
-      }, 400);
-    }
-  }, [particleGazeX, particleGazeY]);
-
+  const glowIntensity = baseGlowIntensity;
 
   // Play blink sounds ONLY for significant blinks (user-triggered, not idle)
   useEffect(() => {
@@ -138,36 +106,70 @@ const EmotionalEyeComponent = ({
     prevBlinkingRef.current = isBlinking;
   }, [isBlinking, soundContext]);
 
-  // Gaze intensity defaults (AI-driven)
-  const gazeIntensity = 0.4;
-  const gazeSpeed = 0.4;
+  // Unified gaze tracking - combines mouse, AI target, and typing state
+  useEffect(() => {
+    // Skip mouse tracking if disabled or deep idle
+    if (!performanceConfig.enableMouseTracking || isDeepIdle || performanceConfig.shouldReduceAnimations) {
+      gazeX.set(0);
+      gazeY.set(0);
+      return;
+    }
+    
+    let rafId: number | null = null;
+    let lastX = 0;
+    let lastY = 0;
+    const throttleMs = performanceConfig.mouseTrackingThrottle;
+    let lastUpdate = 0;
 
-  // Optimized spring config - higher damping for faster, smoother settling
-  const springConfig = { 
-    damping: 90 - (gazeSpeed * 15), // Higher damping = faster, smoother settling
-    stiffness: 250 + (gazeSpeed * 80),
-    mass: 0.8 // Lower mass for quicker response
-  };
-  const eyeX = useSpring(useTransform(mouseX, (v) => v * 0.012 * gazeIntensity * 2), springConfig);
-  const eyeY = useSpring(useTransform(mouseY, (v) => v * 0.012 * gazeIntensity * 2), springConfig);
-  const smoothAiGazeX = useSpring(aiGazeX, { damping: 70, stiffness: 200, mass: 0.6 });
-  const smoothAiGazeY = useSpring(aiGazeY, { damping: 70, stiffness: 200, mass: 0.6 });
+    function onMove(e: MouseEvent) {
+      const now = Date.now();
+      if (now - lastUpdate < throttleMs) return;
+      
+      if (rafId !== null) return;
+      
+      rafId = requestAnimationFrame(() => {
+        const cx = window.innerWidth / 2;
+        const cy = window.innerHeight / 2;
+        const newX = (e.clientX - cx) * 0.01;
+        const newY = (e.clientY - cy) * 0.01;
+        
+        // Only update if moved significantly (reduces repaints)
+        if (Math.abs(newX - lastX) > 0.5 || Math.abs(newY - lastY) > 0.5) {
+          gazeX.set(newX);
+          gazeY.set(newY);
+          lastX = newX;
+          lastY = newY;
+          lastUpdate = now;
+        }
+        rafId = null;
+      });
+    }
 
-  // Micro-movement for idle "look around" - optimized for smoothness
-  const microX = useMotionValue(0);
-  const microY = useMotionValue(0);
-  const smoothMicroX = useSpring(microX, { damping: 60, stiffness: 120, mass: 0.5 });
-  const smoothMicroY = useSpring(microY, { damping: 60, stiffness: 120, mass: 0.5 });
+    function onLeave() {
+      gazeX.set(0);
+      gazeY.set(0);
+    }
 
-  // Combined eye movement (mouse + AI gaze + micro + particle tracking)
-  const combinedX = useTransform(
-    [eyeX, smoothMicroX, smoothAiGazeX, smoothParticleGazeX], 
-    ([eye, micro, ai, particle]) => (eye as number) + (micro as number) + (ai as number) + (particle as number)
-  );
-  const combinedY = useTransform(
-    [eyeY, smoothMicroY, smoothAiGazeY, smoothParticleGazeY], 
-    ([eye, micro, ai, particle]) => (eye as number) + (micro as number) + (ai as number) + (particle as number)
-  );
+    window.addEventListener('mousemove', onMove, { passive: true });
+    window.addEventListener('mouseleave', onLeave);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseleave', onLeave);
+      if (rafId !== null) cancelAnimationFrame(rafId);
+    };
+  }, [gazeX, gazeY, performanceConfig.enableMouseTracking, performanceConfig.mouseTrackingThrottle, performanceConfig.shouldReduceAnimations, isDeepIdle]);
+
+  // AI gaze towards suggestions or input field
+  useEffect(() => {
+    if (isUserTyping) {
+      // Look slightly down toward input field when user is typing
+      gazeX.set(0);
+      gazeY.set(4); // Subtle downward gaze toward input
+    } else if (gazeTarget && !isResponding) {
+      gazeX.set(gazeTarget.x * 0.5);
+      gazeY.set(gazeTarget.y * 0.2);
+    }
+  }, [gazeTarget, isUserTyping, isResponding, gazeX, gazeY]);
 
   // Mouse tracking effect - throttled for performance
   useEffect(() => {
@@ -362,56 +364,18 @@ const EmotionalEyeComponent = ({
     };
   }, [lastActivityTime, isUserTyping, isResponding, isAbsorbing, triggerBlink]);
 
-  // Get micro-movement params based on emotion
-  const getMicroParams = useCallback(() => {
-    // Emotion-based params
+  // Get tilt based on emotion - simplified, no micro-movements
+  const getEmotionTilt = useCallback(() => {
     switch (emotion) {
-      case 'curious':
-        return { range: 6, interval: 3000, tilt: 3 };
-      case 'excited':
-        return { range: 8, interval: 1500, tilt: 0 };
-      case 'happy':
-        return { range: 5, interval: 4000, tilt: 1 };
-      case 'thinking':
-        return { range: 3, interval: 6000, tilt: -2 };
-      case 'frustrated':
-        return { range: 2, interval: 8000, tilt: 0 };
-      default:
-        return { range: 4, interval: 5000, tilt: 0 };
+      case 'curious': return 3;
+      case 'thinking': return -2;
+      case 'happy': return 1;
+      default: return 0;
     }
   }, [emotion]);
 
-  // Head tilt based on behavior/emotion - smoother spring
-  const tiltRotation = useMotionValue(0);
-  const smoothTilt = useSpring(tiltRotation, { damping: 50, stiffness: 60, mass: 0.8 });
-
-  useEffect(() => {
-    const { tilt } = getMicroParams();
-    tiltRotation.set(tilt);
-  }, [emotion, getMicroParams, tiltRotation]);
-
-  // Micro-movements when idle - DISABLED on mobile for performance
-  useEffect(() => {
-    // Disable micro-movements on mobile devices for better performance
-    if (isMobile || isUserTyping || isResponding || isAbsorbing || isDeepIdle || prefersReducedMotion) {
-      microX.set(0);
-      microY.set(0);
-      return;
-    }
-
-    const { range, interval } = getMicroParams();
-    // Longer intervals when idle to reduce CPU
-    const adjustedInterval = interval * 2;
-
-    const microMovementInterval = setInterval(() => {
-      const newX = (Math.random() - 0.5) * range;
-      const newY = (Math.random() - 0.5) * (range * 0.75);
-      microX.set(newX);
-      microY.set(newY);
-    }, adjustedInterval);
-
-    return () => clearInterval(microMovementInterval);
-  }, [isMobile, isUserTyping, isResponding, isAbsorbing, isDeepIdle, prefersReducedMotion, microX, microY, getMicroParams]);
+  // Head tilt based on emotion - CSS transition instead of spring
+  const emotionTilt = getEmotionTilt();
 
   const sizeClasses = {
     sm: 'w-[100px] h-[100px] md:w-[120px] md:h-[120px]',
@@ -503,10 +467,11 @@ const EmotionalEyeComponent = ({
       
       <motion.div
         style={{ 
-          x: combinedX, 
-          y: combinedY, 
-          rotate: smoothTilt,
-          willChange: 'transform'
+          x: smoothGazeX, 
+          y: smoothGazeY, 
+          rotate: emotionTilt,
+          willChange: 'transform',
+          transform: 'translateZ(0)', // GPU acceleration
         }}
         className="relative z-10 flex items-center justify-center group cursor-pointer overflow-visible"
         initial={{ opacity: 0, y: 8 }}
@@ -520,6 +485,7 @@ const EmotionalEyeComponent = ({
           y: { duration: 0.35, ease: [0.25, 0.1, 0.25, 1] },
           scale: { duration: isSurprised ? 0.15 : isSquished ? 0.08 : 0.4, ease: [0.25, 0.1, 0.25, 1] }
         }}
+        layout={false}
         onMouseEnter={() => setIsHovered(true)} 
         onMouseLeave={() => { setIsHovered(false); gestureHandlers.onMouseLeave(); }}
         onClick={gestureHandlers.onClick}
@@ -660,17 +626,20 @@ const EmotionalEyeComponent = ({
           </motion.svg>
         </div>
         
-        {/* Particle effects - emotion-specific type and behavior */}
-        <EyeParticles 
-          isActive={true}
-          size={eyeSize}
-          glowColor={boostedGlowColor}
-          activityLevel={activityLevel}
-          emotion={emotion}
-          particleType={emotionConfig.particleType === 'none' ? 'sparkle' : emotionConfig.particleType}
-          isAbsorbing={isAbsorbing}
-          isPulsing={isPulsing}
-        />
+        {/* Particle effects - disabled when deep idle or reduced animations */}
+        {performanceConfig.enableParticles && !isDeepIdle && (
+          <EyeParticles 
+            isActive={true}
+            size={eyeSize}
+            glowColor={boostedGlowColor}
+            activityLevel={activityLevel}
+            emotion={emotion}
+            particleType={emotionConfig.particleType === 'none' ? 'sparkle' : emotionConfig.particleType}
+            isAbsorbing={isAbsorbing}
+            isPulsing={isPulsing}
+            performanceMultiplier={performanceConfig.particleMultiplier}
+          />
+        )}
       </motion.div>
     </div>
   );
