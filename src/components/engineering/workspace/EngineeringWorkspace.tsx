@@ -24,9 +24,9 @@ const ParkingDesigner = lazy(() => import('@/components/engineering/ParkingDesig
 // Lazy load 3D visualizations
 const BeamVisualization3D = lazy(() => import('@/components/engineering/BeamVisualization3D').then(m => ({ default: m.BeamVisualization3D })));
 const FoundationVisualization3D = lazy(() => import('@/components/engineering/FoundationVisualization3D').then(m => ({ default: m.FoundationVisualization3D })));
-const ColumnVisualization3D = lazy(() => import('@/components/engineering/ColumnVisualization3D').then(m => ({ default: m.ColumnVisualization3D })));
-const SlabVisualization3D = lazy(() => import('@/components/engineering/SlabVisualization3D').then(m => ({ default: m.SlabVisualization3D })));
-const RetainingWallVisualization3D = lazy(() => import('@/components/engineering/RetainingWallVisualization3D').then(m => ({ default: m.RetainingWallVisualization3D })));
+const ColumnVisualization3D = lazy(() => import('@/components/engineering/ColumnVisualization3D'));
+const SlabVisualization3D = lazy(() => import('@/components/engineering/SlabVisualization3D'));
+const RetainingWallVisualization3D = lazy(() => import('@/components/engineering/RetainingWallVisualization3D'));
 const ParkingVisualization3D = lazy(() => import('@/components/engineering/ParkingVisualization3D').then(m => ({ default: m.ParkingVisualization3D })));
 
 interface CalculationResult {
@@ -170,27 +170,24 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
       case 'beam':
         return (
           <Suspense fallback={<LoadingFallback />}>
-            <BeamVisualization3D 
-              inputs={previewInputs as any}
-              outputs={previewOutputs as any}
-            />
+            <BeamVisualization3D outputs={previewOutputs || {}} />
           </Suspense>
         );
       case 'foundation':
         return (
           <Suspense fallback={<LoadingFallback />}>
-            <FoundationVisualization3D 
-              inputs={previewInputs as any}
-              outputs={previewOutputs as any}
-            />
+            <FoundationVisualization3D outputs={previewOutputs || {}} />
           </Suspense>
         );
       case 'column':
         return (
           <Suspense fallback={<LoadingFallback />}>
             <ColumnVisualization3D 
-              inputs={previewInputs as any}
-              outputs={previewOutputs as any}
+              width={Number(previewInputs.width) || 400}
+              depth={Number(previewInputs.depth) || 400}
+              height={Number(previewInputs.height) || 3000}
+              cover={Number(previewInputs.cover) || 40}
+              columnType={String(previewInputs.columnType) || 'tied'}
             />
           </Suspense>
         );
@@ -198,8 +195,12 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
         return (
           <Suspense fallback={<LoadingFallback />}>
             <SlabVisualization3D 
-              inputs={previewInputs as any}
-              outputs={previewOutputs as any}
+              length={Number(previewInputs.length) || 5000}
+              width={Number(previewInputs.width) || 4000}
+              thickness={Number(previewInputs.thickness) || 200}
+              topBarSpacing={Number(previewInputs.topBarSpacing) || 200}
+              bottomBarSpacing={Number(previewInputs.bottomBarSpacing) || 150}
+              slabType={String(previewInputs.slabType) || 'one_way'}
             />
           </Suspense>
         );
@@ -207,8 +208,12 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
         return (
           <Suspense fallback={<LoadingFallback />}>
             <RetainingWallVisualization3D 
-              inputs={previewInputs as any}
-              outputs={previewOutputs as any}
+              wallHeight={Number(previewInputs.wallHeight) || 3}
+              stemThicknessTop={Number(previewInputs.stemThicknessTop) || 300}
+              stemThicknessBottom={Number(previewInputs.stemThicknessBottom) || 500}
+              baseWidth={Number(previewInputs.baseWidth) || 2500}
+              baseThickness={Number(previewInputs.baseThickness) || 400}
+              toeWidth={Number(previewInputs.toeWidth) || 600}
             />
           </Suspense>
         );
@@ -216,7 +221,11 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
         return (
           <Suspense fallback={<LoadingFallback />}>
             <ParkingVisualization3D 
-              outputs={previewOutputs as any}
+              layout={previewOutputs?.layout || { spaces: [], aisles: [], entries: [], exits: [], totalSpaces: 0, accessibleSpaces: 0, evSpaces: 0, compactSpaces: 0 }}
+              siteLength={Number(previewInputs.siteLength) || 50}
+              siteWidth={Number(previewInputs.siteWidth) || 30}
+              parkingType={String(previewInputs.parkingType) || 'surface'}
+              floors={Number(previewInputs.floors) || 1}
             />
           </Suspense>
         );
