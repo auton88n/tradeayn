@@ -67,6 +67,7 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
   const handleCalculationComplete = useCallback((result: CalculationResult) => {
     setCalculationResult(result);
     setCurrentOutputs(result.outputs as Record<string, any>);
+    setIsCalculating(false);
   }, []);
 
   const handleInputChange = useCallback((inputs: Record<string, any>) => {
@@ -87,12 +88,27 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
 
   const handleCalculate = useCallback(() => {
     // Trigger calculation from current calculator
-    // This will be connected to individual calculator's calculate method
     setIsCalculating(true);
     // The actual calculation is handled by each calculator component
   }, []);
 
   const handleReset = useCallback(() => {
+    setCurrentInputs({});
+    setCurrentOutputs(null);
+    setCalculationResult(null);
+  }, []);
+
+  // AI Agent control functions
+  const handleSetInput = useCallback((field: string, value: any) => {
+    setCurrentInputs(prev => ({ ...prev, [field]: value }));
+  }, []);
+
+  const handleSetMultipleInputs = useCallback((inputs: Record<string, any>) => {
+    setCurrentInputs(prev => ({ ...prev, ...inputs }));
+  }, []);
+
+  const handleSwitchCalculator = useCallback((type: string) => {
+    setSelectedCalculator(type as CalculatorType);
     setCurrentInputs({});
     setCurrentOutputs(null);
     setCalculationResult(null);
@@ -361,6 +377,9 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
           calculatorType={selectedCalculator}
           currentInputs={currentInputs}
           currentOutputs={currentOutputs}
+          onSetInput={handleSetInput}
+          onSetMultipleInputs={handleSetMultipleInputs}
+          onSwitchCalculator={handleSwitchCalculator}
         />
 
         {/* History Modal */}
