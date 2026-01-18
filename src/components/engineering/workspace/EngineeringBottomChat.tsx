@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowUp, 
+  Plus,
   Play, 
   FileDown, 
   FileText,
@@ -13,14 +14,12 @@ import {
   Brain,
   X,
   ChevronUp,
+  ChevronDown,
   Sparkles,
-  Command,
-  Zap
+  CheckCircle2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Separator } from '@/components/ui/separator';
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useEngineeringAIAgent, type ChatMessage } from '@/hooks/useEngineeringAIAgent';
@@ -54,13 +53,6 @@ const placeholders = [
   "What's the required reinforcement?",
 ];
 
-const quickCommands = [
-  { label: '/calc', desc: 'Run calculation' },
-  { label: '/save', desc: 'Save design' },
-  { label: '/export', desc: 'Export file' },
-  { label: '/reset', desc: 'Reset form' },
-];
-
 export const EngineeringBottomChat: React.FC<EngineeringBottomChatProps> = ({
   onCalculate,
   onExportDXF,
@@ -83,9 +75,10 @@ export const EngineeringBottomChat: React.FC<EngineeringBottomChatProps> = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const [currentPlaceholder, setCurrentPlaceholder] = useState(0);
   const [showPlaceholder, setShowPlaceholder] = useState(true);
-  const [showQuickCommands, setShowQuickCommands] = useState(false);
+  const [showActionsMenu, setShowActionsMenu] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const actionsMenuRef = useRef<HTMLDivElement>(null);
 
   // AI Agent hook
   const {
@@ -128,7 +121,7 @@ export const EngineeringBottomChat: React.FC<EngineeringBottomChatProps> = ({
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 100) + 'px';
+      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 120) + 'px';
     }
   }, [input]);
 
@@ -146,10 +139,18 @@ export const EngineeringBottomChat: React.FC<EngineeringBottomChatProps> = ({
     }
   }, [messages.length]);
 
-  // Check for quick commands
+  // Close actions menu when clicking outside
   useEffect(() => {
-    setShowQuickCommands(input.startsWith('/'));
-  }, [input]);
+    const handleClickOutside = (e: MouseEvent) => {
+      if (actionsMenuRef.current && !actionsMenuRef.current.contains(e.target as Node)) {
+        setShowActionsMenu(false);
+      }
+    };
+    if (showActionsMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showActionsMenu]);
 
   const handleSubmit = useCallback(async () => {
     if (!input.trim() || isLoading) return;
@@ -175,406 +176,302 @@ export const EngineeringBottomChat: React.FC<EngineeringBottomChatProps> = ({
     }
   };
 
-  const handleQuickCommandClick = (command: string) => {
-    setInput(command + ' ');
-    textareaRef.current?.focus();
+  const handleAction = (action: () => void) => {
+    action();
+    setShowActionsMenu(false);
   };
 
-  return (
-    <TooltipProvider delayDuration={300}>
-      <motion.div
-        initial={{ y: 100, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.3, delay: 0.2 }}
-        className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/50 bg-background/95 backdrop-blur-xl"
-      >
-        {/* AI Action Status Bar */}
-        <AnimatePresence>
-          {currentAction && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="border-b border-border/30 bg-primary/5"
-            >
-              <div className="container mx-auto px-4 py-2 flex items-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                <span className="text-sm text-primary font-medium">{currentAction}</span>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+  const actionItems = [
+    { 
+      icon: Play, 
+      label: 'Calculate', 
+      onClick: onCalculate, 
+      disabled: isCalculating || !calculatorType,
+      primary: true 
+    },
+    { icon: RotateCcw, label: 'Reset Form', onClick: onReset, show: !!onReset },
+    { icon: FileDown, label: 'Export DXF', onClick: onExportDXF, show: !!onExportDXF && hasResults },
+    { icon: FileText, label: 'Export PDF', onClick: onExportPDF, show: !!onExportPDF && hasResults },
+    { icon: Save, label: 'Save Design', onClick: onSave, show: !!onSave && hasResults },
+    { icon: GitCompare, label: 'Compare', onClick: onCompare, show: canCompare },
+    { icon: History, label: 'History', onClick: onHistory },
+  ].filter(item => item.show !== false);
 
+  return (
+    <motion.div
+      initial={{ y: 100, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.3, delay: 0.2 }}
+      className="fixed bottom-0 left-0 right-0 z-50 p-4 pb-6"
+    >
+      <div className="container mx-auto max-w-2xl">
         {/* Expandable Messages Area */}
         <AnimatePresence>
           {isExpanded && messages.length > 0 && (
             <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
+              initial={{ height: 0, opacity: 0, y: 20 }}
+              animate={{ height: 'auto', opacity: 1, y: 0 }}
+              exit={{ height: 0, opacity: 0, y: 20 }}
               transition={{ duration: 0.2 }}
-              className="border-b border-border/30"
+              className="mb-3"
             >
-              <div className="flex items-center justify-between px-4 py-2 bg-muted/30">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Brain className="w-4 h-4 text-primary" />
-                  <span className="font-medium">AI Engineering Assistant</span>
-                  <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                    Can modify your design
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 text-xs"
-                    onClick={clearConversation}
-                  >
-                    Clear
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={() => setIsExpanded(false)}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-              <ScrollArea className="max-h-[250px]">
-                <div className="p-4 space-y-4">
-                  {messages.map((msg, i) => (
-                    <div
-                      key={i}
-                      className={cn(
-                        "flex flex-col gap-2",
-                        msg.role === 'user' ? 'items-end' : 'items-start'
-                      )}
+              <div className={cn(
+                "rounded-2xl overflow-hidden",
+                "bg-background/95 backdrop-blur-xl",
+                "border border-border/50",
+                "shadow-lg shadow-black/5"
+              )}>
+                <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/30">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Brain className="w-4 h-4 text-primary" />
+                    <span className="font-medium">AYN Engineering</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                      onClick={clearConversation}
                     >
+                      Clear
+                    </button>
+                    <button
+                      className="w-6 h-6 rounded-lg flex items-center justify-center hover:bg-muted/50 transition-colors"
+                      onClick={() => setIsExpanded(false)}
+                    >
+                      <X className="w-4 h-4 text-muted-foreground" />
+                    </button>
+                  </div>
+                </div>
+                <ScrollArea className="max-h-[280px]">
+                  <div className="p-4 space-y-4">
+                    {messages.map((msg, i) => (
                       <div
+                        key={i}
                         className={cn(
-                          "max-w-[85%] rounded-2xl px-4 py-2.5",
-                          msg.role === 'user'
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted"
+                          "flex flex-col gap-2",
+                          msg.role === 'user' ? 'items-end' : 'items-start'
                         )}
                       >
-                        {msg.role === 'assistant' ? (
-                          <div className="prose prose-sm dark:prose-invert max-w-none">
-                            <ReactMarkdown>{msg.content}</ReactMarkdown>
+                        <div
+                          className={cn(
+                            "max-w-[85%] rounded-2xl px-4 py-2.5",
+                            msg.role === 'user'
+                              ? "bg-foreground text-background"
+                              : "bg-muted"
+                          )}
+                        >
+                          {msg.role === 'assistant' ? (
+                            <div className="prose prose-sm dark:prose-invert max-w-none">
+                              <ReactMarkdown>{msg.content}</ReactMarkdown>
+                            </div>
+                          ) : (
+                            <p className="text-sm">{msg.content}</p>
+                          )}
+                        </div>
+                        
+                        {/* Action chips for assistant messages */}
+                        {msg.role === 'assistant' && msg.actions && msg.actions.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 max-w-[85%]">
+                            {msg.actions.map((action, j) => (
+                              <AIActionChip key={j} action={action} />
+                            ))}
                           </div>
-                        ) : (
-                          <p className="text-sm">{msg.content}</p>
                         )}
                       </div>
-                      
-                      {/* Action chips for assistant messages */}
-                      {msg.role === 'assistant' && msg.actions && msg.actions.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 max-w-[85%]">
-                          {msg.actions.map((action, j) => (
-                            <AIActionChip key={j} action={action} />
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                  {isLoading && (
-                    <div className="flex justify-start">
-                      <div className="bg-muted rounded-2xl px-4 py-2.5">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Sparkles className="w-4 h-4 animate-pulse text-primary" />
-                          <span>Thinking...</span>
+                    ))}
+                    {isLoading && (
+                      <div className="flex justify-start">
+                        <div className="bg-muted rounded-2xl px-4 py-2.5">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Sparkles className="w-4 h-4 animate-pulse text-primary" />
+                            <span>Thinking...</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
-                  <div ref={messagesEndRef} />
-                </div>
-              </ScrollArea>
+                    )}
+                    <div ref={messagesEndRef} />
+                  </div>
+                </ScrollArea>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Quick Commands Dropdown */}
+        {/* Current Action Status */}
         <AnimatePresence>
-          {showQuickCommands && (
+          {currentAction && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
-              className="absolute bottom-full left-0 right-0 p-2"
+              className="mb-2 flex items-center justify-center gap-2 text-sm text-primary"
             >
-              <div className="container mx-auto max-w-2xl">
-                <div className="bg-popover border border-border rounded-xl shadow-xl p-2 flex flex-wrap gap-2">
-                  {quickCommands.map((cmd) => (
-                    <button
-                      key={cmd.label}
-                      onClick={() => handleQuickCommandClick(cmd.label)}
-                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-accent text-sm transition-colors"
-                    >
-                      <Command className="w-3 h-3 text-muted-foreground" />
-                      <span className="font-mono text-primary">{cmd.label}</span>
-                      <span className="text-muted-foreground">{cmd.desc}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>{currentAction}</span>
             </motion.div>
           )}
         </AnimatePresence>
 
-        <div className="container mx-auto px-4 py-3">
-          {/* Chat Input Row */}
-          <div className="flex items-end gap-3 mb-3">
-            {/* Toggle messages button */}
-            {messages.length > 0 && !isExpanded && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="shrink-0 h-10 w-10"
-                    onClick={() => setIsExpanded(true)}
-                  >
-                    <ChevronUp className="w-4 h-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Show AI conversation</TooltipContent>
-              </Tooltip>
-            )}
-
-            {/* AI Indicator */}
-            <div className="shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20">
-              <Zap className="w-4 h-4 text-primary" />
-              <span className="text-xs font-medium text-primary">AI</span>
-            </div>
-
-            {/* Input Area */}
+        {/* Main Input Container - Matching AYN Style */}
+        <div
+          dir="ltr"
+          className={cn(
+            "relative rounded-2xl overflow-hidden",
+            "bg-background/95 backdrop-blur-xl",
+            "border border-border/50",
+            "shadow-lg shadow-black/5",
+            "transition-all duration-300",
+            "hover:border-border hover:shadow-xl"
+          )}
+        >
+          {/* Row 1: Input Area */}
+          <div className="flex items-end gap-2 px-4 pt-3 pb-2">
             <div className="flex-1 relative">
-              <div
+              <Textarea
+                ref={textareaRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder=""
+                disabled={isLoading}
                 className={cn(
-                  "relative rounded-2xl overflow-hidden",
-                  "bg-muted/50 border border-border/50",
-                  "transition-all duration-200",
-                  "focus-within:border-primary/50 focus-within:bg-muted/70 focus-within:shadow-lg focus-within:shadow-primary/5"
+                  "resize-none border-0 bg-transparent p-0 min-h-[44px] max-h-[120px]",
+                  "focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0",
+                  "text-base placeholder:text-muted-foreground/60"
                 )}
-              >
-                <div className="flex items-end gap-2 px-4 py-2.5">
-                  <div className="flex-1 relative">
-                    <Textarea
-                      ref={textareaRef}
-                      value={input}
-                      onChange={(e) => setInput(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      placeholder=""
-                      disabled={isLoading}
-                      className={cn(
-                        "resize-none border-0 bg-transparent p-0 min-h-[40px] max-h-[100px]",
-                        "focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0",
-                        "text-sm placeholder:text-muted-foreground/60"
-                      )}
-                      rows={1}
-                    />
-                    
-                    {/* Animated placeholder */}
-                    {!input && (
-                      <div 
-                        className={cn(
-                          "absolute top-1/2 -translate-y-1/2 left-0 pointer-events-none text-muted-foreground/50 text-sm",
-                          "transition-opacity duration-200",
-                          showPlaceholder ? "opacity-100" : "opacity-0"
-                        )}
-                      >
-                        {placeholders[currentPlaceholder]}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Send Button */}
-                  <AnimatePresence>
-                    {input.trim() && (
-                      <motion.button
-                        initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0.8, opacity: 0 }}
-                        transition={{ duration: 0.15 }}
-                        onClick={handleSubmit}
-                        disabled={isLoading}
-                        className={cn(
-                          "flex-shrink-0 w-8 h-8 rounded-xl",
-                          "flex items-center justify-center",
-                          "bg-primary text-primary-foreground",
-                          "transition-all duration-200",
-                          "hover:scale-105 hover:shadow-lg hover:shadow-primary/25",
-                          "active:scale-95",
-                          "disabled:opacity-50"
-                        )}
-                      >
-                        {isLoading ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <ArrowUp className="w-4 h-4" strokeWidth={2.5} />
-                        )}
-                      </motion.button>
-                    )}
-                  </AnimatePresence>
+                rows={1}
+              />
+              
+              {/* Animated placeholder */}
+              {!input && (
+                <div 
+                  className={cn(
+                    "absolute top-1/2 -translate-y-1/2 left-0 pointer-events-none text-muted-foreground/50",
+                    "transition-opacity duration-200",
+                    showPlaceholder ? "opacity-100" : "opacity-0"
+                  )}
+                >
+                  {placeholders[currentPlaceholder]}
                 </div>
-              </div>
+              )}
             </div>
+
+            {/* Send Button - Only shows when there's text */}
+            <AnimatePresence>
+              {input.trim() && (
+                <motion.button
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.8, opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                  onClick={handleSubmit}
+                  disabled={isLoading}
+                  className={cn(
+                    "flex-shrink-0 w-9 h-9 rounded-xl",
+                    "flex items-center justify-center",
+                    "bg-foreground text-background",
+                    "transition-all duration-200",
+                    "hover:scale-105 hover:shadow-lg",
+                    "active:scale-95",
+                    "disabled:opacity-50"
+                  )}
+                >
+                  {isLoading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <ArrowUp className="w-5 h-5" strokeWidth={2.5} />
+                  )}
+                </motion.button>
+              )}
+            </AnimatePresence>
           </div>
 
-          {/* Toolbar Row */}
-          <div className="flex items-center justify-between gap-4">
-            {/* Left Actions - Primary */}
-            <div className="flex items-center gap-2">
-              <Button
-                onClick={onCalculate}
-                disabled={isCalculating || !calculatorType}
-                className="gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/20"
-                size="default"
-              >
-                {isCalculating ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span className="hidden sm:inline">Calculating...</span>
-                  </>
-                ) : (
-                  <>
-                    <Play className="w-4 h-4" />
-                    <span className="hidden sm:inline">Calculate</span>
-                  </>
+          {/* Row 2: Toolbar - Matching AYN Style */}
+          <div className="flex items-center justify-between px-3 py-2 border-t border-border/30 bg-muted/20">
+            {/* Left: Actions Menu */}
+            <div className="relative" ref={actionsMenuRef}>
+              <button
+                onClick={() => setShowActionsMenu(!showActionsMenu)}
+                className={cn(
+                  "w-8 h-8 rounded-lg flex items-center justify-center",
+                  "text-muted-foreground/60 hover:text-muted-foreground",
+                  "hover:bg-muted/50 transition-colors",
+                  showActionsMenu && "bg-muted/50 text-muted-foreground"
                 )}
-              </Button>
+              >
+                <Plus className="w-5 h-5" />
+              </button>
 
-              {onReset && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={onReset}
-                      disabled={isCalculating}
-                    >
-                      <RotateCcw className="w-4 h-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Reset Form</TooltipContent>
-                </Tooltip>
+              {/* Actions Dropdown Menu */}
+              <AnimatePresence>
+                {showActionsMenu && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute bottom-full left-0 mb-2 w-48 py-2 rounded-xl bg-popover border border-border shadow-xl z-50"
+                  >
+                    {actionItems.map((item, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => item.onClick && handleAction(item.onClick)}
+                        disabled={item.disabled}
+                        className={cn(
+                          "w-full flex items-center gap-3 px-3 py-2 text-sm transition-colors",
+                          "hover:bg-accent",
+                          item.disabled && "opacity-50 cursor-not-allowed",
+                          item.primary && "text-primary font-medium"
+                        )}
+                      >
+                        <item.icon className="w-4 h-4" />
+                        <span>{item.label}</span>
+                        {item.label === 'Calculate' && isCalculating && (
+                          <Loader2 className="w-3 h-3 animate-spin ml-auto" />
+                        )}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Center: Status */}
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              {hasResults ? (
+                <div className="flex items-center gap-1.5 text-emerald-500">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span className="text-xs">Results Ready</span>
+                </div>
+              ) : (
+                <span className="text-xs text-muted-foreground/60">
+                  {calculatorType ? `${calculatorType.charAt(0).toUpperCase() + calculatorType.slice(1)} Mode` : 'Ready'}
+                </span>
               )}
             </div>
 
-            {/* Center Actions - Export & Utils */}
-            <div className="flex items-center gap-1">
-              {hasResults && (
-                <>
-                  {onExportDXF && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={onExportDXF}
-                          className="gap-1.5 h-8"
-                        >
-                          <FileDown className="w-3.5 h-3.5" />
-                          <span className="hidden md:inline text-xs">DXF</span>
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Export CAD Drawing</TooltipContent>
-                    </Tooltip>
-                  )}
-
-                  {onExportPDF && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={onExportPDF}
-                          className="gap-1.5 h-8"
-                        >
-                          <FileText className="w-3.5 h-3.5" />
-                          <span className="hidden md:inline text-xs">PDF</span>
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Export Report</TooltipContent>
-                    </Tooltip>
-                  )}
-
-                  {onSave && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={onSave}
-                          className="gap-1.5 h-8"
-                        >
-                          <Save className="w-3.5 h-3.5" />
-                          <span className="hidden md:inline text-xs">Save</span>
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Save to Portfolio</TooltipContent>
-                    </Tooltip>
-                  )}
-
-                  <Separator orientation="vertical" className="h-5 mx-1 hidden sm:block" />
-                </>
-              )}
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={onCompare}
-                    disabled={!canCompare}
-                    className="gap-1.5 h-8"
-                  >
-                    <GitCompare className="w-3.5 h-3.5" />
-                    <span className="hidden md:inline text-xs">Compare</span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {canCompare ? 'Compare Calculations' : 'Need 2+ calculations'}
-                </TooltipContent>
-              </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={onHistory}
-                    className="gap-1.5 h-8"
-                  >
-                    <History className="w-3.5 h-3.5" />
-                    <span className="hidden md:inline text-xs">History</span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>View History</TooltipContent>
-              </Tooltip>
-            </div>
-
-            {/* Right - Status */}
+            {/* Right: AYN Brain + Toggle */}
             <div className="flex items-center gap-2">
-              <div className={cn(
-                "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium",
-                hasResults
-                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                  : "bg-muted text-muted-foreground"
-              )}>
-                <div className={cn(
-                  "w-1.5 h-1.5 rounded-full",
-                  hasResults ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground/50"
-                )} />
-                <span className="hidden sm:inline">{hasResults ? 'Results Ready' : 'Ready'}</span>
+              {messages.length > 0 && !isExpanded && (
+                <button
+                  onClick={() => setIsExpanded(true)}
+                  className="w-6 h-6 rounded-lg flex items-center justify-center hover:bg-muted/50 transition-colors"
+                >
+                  <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                </button>
+              )}
+              <div
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-lg",
+                  "text-sm text-muted-foreground"
+                )}
+              >
+                <Brain className="w-4 h-4" />
+                <span>AYN</span>
               </div>
             </div>
           </div>
         </div>
-      </motion.div>
-    </TooltipProvider>
+      </div>
+    </motion.div>
   );
 };
