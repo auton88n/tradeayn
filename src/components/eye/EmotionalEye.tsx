@@ -171,61 +171,6 @@ const EmotionalEyeComponent = ({
     }
   }, [gazeTarget, isUserTyping, isResponding, gazeX, gazeY]);
 
-  // Mouse tracking effect - throttled for performance
-  useEffect(() => {
-    let rafId: number | null = null;
-    let lastX = 0;
-    let lastY = 0;
-
-    function onMove(e: MouseEvent) {
-      // Throttle with RAF for 60fps max
-      if (rafId !== null) return;
-      
-      rafId = requestAnimationFrame(() => {
-        const cx = window.innerWidth / 2;
-        const cy = window.innerHeight / 2;
-        const newX = e.clientX - cx;
-        const newY = e.clientY - cy;
-        
-        // Only update if moved significantly (reduces repaints)
-        if (Math.abs(newX - lastX) > 2 || Math.abs(newY - lastY) > 2) {
-          mouseX.set(newX);
-          mouseY.set(newY);
-          lastX = newX;
-          lastY = newY;
-        }
-        rafId = null;
-      });
-    }
-
-    function onLeave() {
-      mouseX.set(0);
-      mouseY.set(0);
-    }
-
-    window.addEventListener('mousemove', onMove, { passive: true });
-    window.addEventListener('mouseleave', onLeave);
-    return () => {
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseleave', onLeave);
-      if (rafId !== null) cancelAnimationFrame(rafId);
-    };
-  }, [mouseX, mouseY]);
-
-  // AI gaze towards suggestions or input field
-  useEffect(() => {
-    if (isUserTyping) {
-      // Look slightly down toward input field when user is typing
-      aiGazeX.set(0);
-      aiGazeY.set(8); // Subtle downward gaze toward input
-    } else if (gazeTarget && !isResponding) {
-      aiGazeX.set(gazeTarget.x * 0.8);
-      aiGazeY.set(gazeTarget.y * 0.3);
-    } else {
-      aiGazeX.set(0);
-      aiGazeY.set(0);
-    }
-  }, [gazeTarget, isUserTyping, isResponding, aiGazeX, aiGazeY]);
 
   // Track typing state for contextual blinks (no sounds - visual only)
   const typingStartRef = useRef<number | null>(null);
@@ -460,7 +405,7 @@ const EmotionalEyeComponent = ({
     <div className={cn("relative flex items-center justify-center overflow-visible", className)}>
       {/* Thinking dots when processing */}
       <ThinkingDots 
-        isVisible={isResponding && !prefersReducedMotion} 
+        isVisible={isResponding && !performanceConfig.shouldReduceAnimations} 
         color={emotionConfig.glowColor}
         size={eyeSize}
       />
@@ -511,7 +456,7 @@ const EmotionalEyeComponent = ({
             "relative rounded-full bg-gradient-to-b from-white to-neutral-100 dark:from-neutral-900 dark:to-neutral-950 flex items-center justify-center overflow-hidden will-change-transform",
             sizeClasses[size],
             // Always animate breathing unless reduced motion preference
-            !prefersReducedMotion && "animate-eye-breathe"
+            !performanceConfig.shouldReduceAnimations && "animate-eye-breathe"
           )}
           style={{
             // CSS custom property for dynamic breathing speed based on emotion
@@ -568,7 +513,7 @@ const EmotionalEyeComponent = ({
               cy="50" 
               fill="#000000"
               animate={{
-                r: prefersReducedMotion 
+                r: performanceConfig.shouldReduceAnimations 
                   ? irisRadius 
                   : [irisRadius, irisRadius * 1.06, irisRadius], // 6% dilation with breath
               }}
