@@ -119,3 +119,6 @@ verify_jwt = true
 
 [functions.engineering-ai-chat]
 verify_jwt = false
+
+[functions.engineering-ai-agent]
+verify_jwt = false
