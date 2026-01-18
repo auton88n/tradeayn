@@ -4,9 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, HardHat, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CalculatorSidebar, CalculatorType } from './CalculatorSidebar';
-import { BottomToolbar } from './BottomToolbar';
+import { EngineeringBottomChat } from './EngineeringBottomChat';
 import { SplitViewLayout } from './SplitViewLayout';
-import { FloatingAIButton } from './FloatingAIButton';
 import { CalculationHistoryModal } from '@/components/engineering/CalculationHistoryModal';
 import { CalculationComparison } from '@/components/engineering/CalculationComparison';
 import { useEngineeringHistory } from '@/hooks/useEngineeringHistory';
@@ -350,8 +349,8 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
           </main>
         </div>
 
-        {/* Bottom Toolbar */}
-        <BottomToolbar
+        {/* Bottom Chat + Toolbar */}
+        <EngineeringBottomChat
           onCalculate={handleCalculate}
           onCompare={() => setIsCompareOpen(true)}
           onHistory={() => setIsHistoryOpen(true)}
@@ -360,13 +359,8 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
           hasResults={!!calculationResult}
           canCompare={calculationHistory.length >= 2}
           calculatorType={selectedCalculator}
-        />
-
-        {/* Floating AI Chat */}
-        <FloatingAIButton
-          calculatorType={selectedCalculator}
-          inputs={currentInputs}
-          outputs={currentOutputs}
+          currentInputs={currentInputs}
+          currentOutputs={currentOutputs}
         />
 
         {/* History Modal */}
