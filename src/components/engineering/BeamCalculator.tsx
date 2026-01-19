@@ -114,12 +114,7 @@ export const BeamCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
       onCalculate({
         type: 'beam',
         inputs,
-        outputs: data as Record<string, number | string | object>,
-        timestamp: new Date(),
-      });
-        type: 'beam',
-        inputs,
-        outputs: data,
+        outputs: data as unknown as Record<string, number | string | object>,
         timestamp: new Date(),
       });
 
