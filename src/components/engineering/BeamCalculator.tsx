@@ -49,9 +49,9 @@ export const BeamCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
   const { saveCalculation } = useEngineeringHistory(userId);
   
   const [formData, setFormData] = useState({
-    span: '',
-    deadLoad: '',
-    liveLoad: '',
+    span: '6.0',
+    deadLoad: '15.0',
+    liveLoad: '10.0',
     beamWidth: '300',
     concreteGrade: 'C30',
     steelGrade: 'Fy420',

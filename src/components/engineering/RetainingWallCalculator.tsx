@@ -57,12 +57,12 @@ export const RetainingWallCalculator = ({
   const { saveCalculation } = useEngineeringHistory(userId);
   
   const [formData, setFormData] = useState({
-    wallHeight: '',
+    wallHeight: '3.0',
     stemThicknessTop: '250',
     stemThicknessBottom: '400',
-    baseWidth: '',
+    baseWidth: '1800',
     baseThickness: '400',
-    toeWidth: '',
+    toeWidth: '200',
     soilType: 'medium_sand',
     surchargeLoad: '10',
     concreteGrade: 'C30',
