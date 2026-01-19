@@ -157,6 +157,9 @@ export const useEngineeringAIAgent = ({
     setIsLoading(true);
 
     try {
+      // Get session context if available
+      const sessionContext = (window as any).__engineeringSessionContext?.();
+
       const { data, error } = await supabase.functions.invoke('engineering-ai-agent', {
         body: {
           calculatorType,
@@ -164,6 +167,9 @@ export const useEngineeringAIAgent = ({
           currentOutputs,
           question: question.trim(),
           messages: messages.slice(-10).map(m => ({ role: m.role, content: m.content })),
+          allCalculatorStates: sessionContext?.allCalculatorStates || {},
+          recentActions: sessionContext?.recentActions || [],
+          sessionInfo: sessionContext?.sessionInfo || {},
         },
       });
 
