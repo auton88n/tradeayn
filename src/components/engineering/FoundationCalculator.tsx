@@ -11,10 +11,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useEngineeringHistory } from '@/hooks/useEngineeringHistory';
+import { calculateFoundation } from '@/lib/engineeringCalculations';
 
 interface FoundationCalculatorProps {
   onCalculate: (result: {
@@ -95,21 +95,16 @@ export const FoundationCalculator = ({ onCalculate, isCalculating, setIsCalculat
     setIsCalculating(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('calculate-foundation', {
-        body: {
-          columnLoad,
-          momentX: parseFloat(formData.momentX) || 0,
-          momentY: parseFloat(formData.momentY) || 0,
-          columnWidth: parseFloat(formData.columnWidth),
-          columnDepth: parseFloat(formData.columnDepth),
-          bearingCapacity,
-          concreteGrade: formData.concreteGrade,
-          foundationType: formData.foundationType,
-          embedmentDepth: parseFloat(formData.embedmentDepth) || 1.0,
-        },
+      // Client-side calculation for instant results
+      const data = calculateFoundation({
+        columnLoad,
+        momentX: parseFloat(formData.momentX) || 0,
+        momentY: parseFloat(formData.momentY) || 0,
+        columnWidth: parseFloat(formData.columnWidth),
+        columnDepth: parseFloat(formData.columnDepth),
+        bearingCapacity,
+        concreteGrade: formData.concreteGrade,
       });
-
-      if (error) throw error;
 
       const inputs = {
         columnLoad,

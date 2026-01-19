@@ -11,11 +11,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useEngineeringHistory } from '@/hooks/useEngineeringHistory';
-
+import { calculateBeam } from '@/lib/engineeringCalculations';
 interface BeamCalculatorProps {
   onCalculate: (result: {
     type: 'beam';
@@ -87,20 +86,16 @@ export const BeamCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
     setIsCalculating(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('calculate-beam', {
-        body: {
-          span,
-          deadLoad,
-          liveLoad,
-          beamWidth,
-          concreteGrade: formData.concreteGrade,
-          steelGrade: formData.steelGrade,
-          supportType: formData.supportType,
-          exposureClass: formData.exposureClass,
-        },
+      // Client-side calculation for instant results
+      const data = calculateBeam({
+        span,
+        deadLoad,
+        liveLoad,
+        beamWidth,
+        concreteGrade: formData.concreteGrade,
+        steelGrade: formData.steelGrade,
+        supportType: formData.supportType,
       });
-
-      if (error) throw error;
 
       const inputs = {
         span,
@@ -117,6 +112,11 @@ export const BeamCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
       saveCalculation('beam', inputs, data);
 
       onCalculate({
+        type: 'beam',
+        inputs,
+        outputs: data as Record<string, number | string | object>,
+        timestamp: new Date(),
+      });
         type: 'beam',
         inputs,
         outputs: data,

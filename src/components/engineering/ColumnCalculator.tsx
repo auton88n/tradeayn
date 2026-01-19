@@ -5,11 +5,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Calculator, ArrowLeft } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { Calculator, ArrowLeft, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import ColumnVisualization3D from './ColumnVisualization3D';
 import { useEngineeringHistory } from '@/hooks/useEngineeringHistory';
+import { calculateColumn } from '@/lib/engineeringCalculations';
 
 interface ColumnCalculatorProps {
   onCalculationComplete: (result: any) => void;
@@ -41,11 +41,19 @@ const ColumnCalculator: React.FC<ColumnCalculatorProps> = ({ onCalculationComple
   const handleCalculate = async () => {
     setIsCalculating(true);
     try {
-      const { data, error } = await supabase.functions.invoke('calculate-column', {
-        body: { inputs }
+      // Client-side calculation for instant results
+      const data = calculateColumn({
+        axialLoad: inputs.axialLoad,
+        momentX: inputs.momentX,
+        momentY: inputs.momentY,
+        columnWidth: inputs.columnWidth,
+        columnDepth: inputs.columnDepth,
+        columnHeight: inputs.columnHeight,
+        concreteGrade: inputs.concreteGrade,
+        steelGrade: inputs.steelGrade,
+        coverThickness: inputs.coverThickness,
+        columnType: inputs.columnType,
       });
-
-      if (error) throw error;
 
       // Save to history (non-blocking)
       saveCalculation('column', inputs, data);

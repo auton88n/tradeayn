@@ -11,10 +11,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useEngineeringHistory } from '@/hooks/useEngineeringHistory';
+import { calculateRetainingWall } from '@/lib/engineeringCalculations';
 
 interface RetainingWallCalculatorProps {
   onCalculate: (result: {
@@ -122,25 +122,22 @@ export const RetainingWallCalculator = ({
     setIsCalculating(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('calculate-retaining-wall', {
-        body: {
-          wallHeight,
-          stemThicknessTop,
-          stemThicknessBottom,
-          baseWidth,
-          baseThickness,
-          toeWidth,
-          soilUnitWeight: selectedSoil.unitWeight,
-          soilFrictionAngle: selectedSoil.friction,
-          surchargeLoad,
-          concreteGrade: formData.concreteGrade,
-          steelGrade: formData.steelGrade,
-          allowableBearingPressure,
-          backfillSlope,
-        },
+      // Client-side calculation for instant results
+      const data = calculateRetainingWall({
+        wallHeight,
+        stemThicknessTop,
+        stemThicknessBottom,
+        baseWidth,
+        baseThickness,
+        toeWidth,
+        soilUnitWeight: selectedSoil.unitWeight,
+        soilFrictionAngle: selectedSoil.friction,
+        surchargeLoad,
+        concreteGrade: formData.concreteGrade,
+        steelGrade: formData.steelGrade,
+        allowableBearingPressure,
+        backfillSlope,
       });
-
-      if (error) throw error;
 
       const result = {
         type: 'retaining_wall' as const,
