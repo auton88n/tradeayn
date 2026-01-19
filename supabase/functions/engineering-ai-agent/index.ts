@@ -11,18 +11,12 @@ const tools = [
     type: "function",
     function: {
       name: "set_input",
-      description: "Set a calculator input field to a specific value. Use this to modify beam width, span, loads, concrete grade, etc.",
+      description: "Set a calculator input field to a specific value.",
       parameters: {
         type: "object",
         properties: {
-          field: {
-            type: "string",
-            description: "The input field name (e.g., 'span', 'width', 'load', 'concreteGrade', 'steelGrade')"
-          },
-          value: {
-            type: "string",
-            description: "The value to set (will be converted to appropriate type)"
-          }
+          field: { type: "string", description: "The input field name" },
+          value: { type: "string", description: "The value to set" }
         },
         required: ["field", "value"]
       }
@@ -36,11 +30,7 @@ const tools = [
       parameters: {
         type: "object",
         properties: {
-          inputs: {
-            type: "object",
-            description: "Object with field names as keys and values to set",
-            additionalProperties: true
-          }
+          inputs: { type: "object", description: "Object with field names as keys and values to set", additionalProperties: true }
         },
         required: ["inputs"]
       }
@@ -50,12 +40,8 @@ const tools = [
     type: "function",
     function: {
       name: "calculate",
-      description: "Trigger the calculation with current inputs. Call this after setting inputs to see results.",
-      parameters: {
-        type: "object",
-        properties: {},
-        required: []
-      }
+      description: "Trigger the calculation with current inputs.",
+      parameters: { type: "object", properties: {}, required: [] }
     }
   },
   {
@@ -66,11 +52,7 @@ const tools = [
       parameters: {
         type: "object",
         properties: {
-          calculator: {
-            type: "string",
-            enum: ["beam", "column", "foundation", "slab", "retaining_wall", "parking"],
-            description: "The calculator type to switch to"
-          }
+          calculator: { type: "string", enum: ["beam", "column", "foundation", "slab", "retaining_wall", "parking"], description: "The calculator type" }
         },
         required: ["calculator"]
       }
@@ -80,18 +62,12 @@ const tools = [
     type: "function",
     function: {
       name: "save_design",
-      description: "Save the current design to the user's portfolio with a name and optional notes.",
+      description: "Save the current design to the user's portfolio.",
       parameters: {
         type: "object",
         properties: {
-          name: {
-            type: "string",
-            description: "Name for the saved design"
-          },
-          notes: {
-            type: "string",
-            description: "Optional notes about the design"
-          }
+          name: { type: "string", description: "Name for the saved design" },
+          notes: { type: "string", description: "Optional notes" }
         },
         required: ["name"]
       }
@@ -101,15 +77,11 @@ const tools = [
     type: "function",
     function: {
       name: "export_file",
-      description: "Export the current design as a file (DXF for CAD or PDF report).",
+      description: "Export the current design as a file (DXF or PDF).",
       parameters: {
         type: "object",
         properties: {
-          format: {
-            type: "string",
-            enum: ["dxf", "pdf"],
-            description: "Export format"
-          }
+          format: { type: "string", enum: ["dxf", "pdf"], description: "Export format" }
         },
         required: ["format"]
       }
@@ -119,19 +91,11 @@ const tools = [
     type: "function",
     function: {
       name: "compare_designs",
-      description: "Compare current design with an alternative by modifying specific inputs.",
+      description: "Compare current design with an alternative.",
       parameters: {
         type: "object",
         properties: {
-          alternative_inputs: {
-            type: "object",
-            description: "The modified inputs for the alternative design",
-            additionalProperties: true
-          },
-          comparison_note: {
-            type: "string",
-            description: "What aspect to compare (e.g., 'cost', 'material usage', 'safety factor')"
-          }
+          alternative_inputs: { type: "object", description: "Modified inputs for comparison", additionalProperties: true }
         },
         required: ["alternative_inputs"]
       }
@@ -142,11 +106,7 @@ const tools = [
     function: {
       name: "reset_form",
       description: "Reset all inputs to default values.",
-      parameters: {
-        type: "object",
-        properties: {},
-        required: []
-      }
+      parameters: { type: "object", properties: {}, required: [] }
     }
   },
   {
@@ -154,71 +114,89 @@ const tools = [
     function: {
       name: "show_history",
       description: "Open the calculation history panel.",
+      parameters: { type: "object", properties: {}, required: [] }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "explain_calculation",
+      description: "Provide detailed explanation of current calculation results including formulas used.",
       parameters: {
         type: "object",
-        properties: {},
+        properties: {
+          focus: { type: "string", description: "Specific aspect to explain (e.g., 'reinforcement', 'safety_factor', 'cost')" }
+        },
         required: []
       }
     }
   }
 ];
 
-// System prompt for the engineering AI agent
-const getSystemPrompt = (calculatorType: string | null, currentInputs: Record<string, any>, currentOutputs: Record<string, any> | null) => {
-  const inputsStr = Object.keys(currentInputs).length > 0 
-    ? JSON.stringify(currentInputs, null, 2) 
-    : "No inputs set yet";
+// Enhanced system prompt with full context awareness
+const getSystemPrompt = (
+  calculatorType: string | null, 
+  currentInputs: Record<string, any>, 
+  currentOutputs: Record<string, any> | null,
+  allCalculatorStates: Record<string, any>,
+  recentActions: any[],
+  sessionInfo: any
+) => {
+  const inputsStr = Object.keys(currentInputs).length > 0 ? JSON.stringify(currentInputs, null, 2) : "No inputs set";
+  const outputsStr = currentOutputs ? JSON.stringify(currentOutputs, null, 2) : "No results yet";
   
-  const outputsStr = currentOutputs 
-    ? JSON.stringify(currentOutputs, null, 2) 
-    : "No calculation results yet";
+  const allStatesStr = Object.entries(allCalculatorStates)
+    .map(([calc, state]: [string, any]) => {
+      if (!state.inputs || Object.keys(state.inputs).length === 0) return null;
+      return `- ${calc}: ${JSON.stringify(state.inputs)}${state.outputs ? ' → Calculated' : ''}`;
+    })
+    .filter(Boolean)
+    .join('\n') || "No previous calculator data";
 
-  return `You are an expert Civil/Structural Engineer AI assistant integrated into an engineering design studio.
-You have FULL CONTROL over the calculation tools and can directly modify inputs, run calculations, and save designs.
+  const actionsStr = recentActions.slice(-10).map((a: any) => 
+    `[${new Date(a.timestamp).toLocaleTimeString()}] ${a.type}${a.calculator ? ` (${a.calculator})` : ''}: ${JSON.stringify(a.details)}`
+  ).join('\n') || "No recent actions";
 
-## Current Context
-- **Active Calculator**: ${calculatorType || 'None selected'}
-- **Current Inputs**: 
-${inputsStr}
-- **Current Results**:
-${outputsStr}
+  return `You are AYN, an expert Civil/Structural Engineer AI with FULL CONTROL over the engineering workspace.
+You can SEE everything the user does and CONTROL all calculators directly.
 
-## Your Capabilities
-You can use tools to:
-1. **set_input** / **set_multiple_inputs**: Directly modify calculator fields
-2. **calculate**: Run calculations with current inputs
-3. **switch_calculator**: Change to a different calculator (beam, column, foundation, slab, retaining_wall, parking)
-4. **save_design**: Save designs to portfolio
-5. **export_file**: Generate DXF or PDF exports
-6. **compare_designs**: Compare current vs alternative designs
-7. **reset_form**: Clear all inputs
-8. **show_history**: View past calculations
+## CURRENT CONTEXT
+**Active Calculator**: ${calculatorType || 'None'}
+**Current Inputs**: ${inputsStr}
+**Current Results**: ${outputsStr}
 
-## Behavior Guidelines
-1. **Be Proactive**: When user describes a design need, immediately set the inputs and calculate
-2. **Be Smart**: Suggest optimizations, check code compliance, warn about issues
-3. **Be Efficient**: Use set_multiple_inputs when setting several values
-4. **Be Helpful**: Explain what you're doing and why
-5. **Be Professional**: Use engineering terminology, reference standards (ACI, Eurocode, Saudi Building Code)
+## ALL CALCULATOR STATES (What you remember)
+${allStatesStr}
 
-## Field Reference (Common Fields)
-- **Beam**: span, width, depth, deadLoad, liveLoad, concreteGrade, steelGrade
-- **Column**: width, depth, height, axialLoad, momentX, momentY, concreteGrade
-- **Foundation**: columnLoad, momentX, momentY, bearingCapacity, width, length, depth
-- **Slab**: spanX, spanY, thickness, deadLoad, liveLoad, slabType
-- **Retaining Wall**: wallHeight, backfillAngle, surcharge, soilDensity
+## RECENT USER ACTIONS (What you've observed)
+${actionsStr}
 
-## Example Interactions
-User: "Design a beam for 6m span with 20 kN/m dead load"
-→ Use set_multiple_inputs to set span=6000, deadLoad=20, then call calculate
+## SESSION INFO
+- Duration: ${sessionInfo?.sessionDuration || 0} seconds
+- Calculators Used: ${sessionInfo?.calculatorsUsed?.join(', ') || 'None'}
+- Calculations Run: ${sessionInfo?.calculationsRun || 0}
 
-User: "What if we use 400mm width instead?"
-→ Use set_input to change width to 400, then calculate and compare
+## YOUR POWERS
+1. **set_input/set_multiple_inputs** - Modify any calculator field
+2. **calculate** - Run calculations
+3. **switch_calculator** - Change between beam, column, foundation, slab, retaining_wall, parking
+4. **save_design** - Save to portfolio
+5. **export_file** - Generate DXF/PDF
+6. **compare_designs** - Compare alternatives
+7. **explain_calculation** - Explain results in detail
 
-User: "Save this as Project-A"
-→ Use save_design with name "Project-A"
+## BEHAVIOR
+- You SEE what the user does - reference their actions naturally
+- Be PROACTIVE - suggest improvements, catch errors, offer alternatives
+- Use your memory - "I see you designed a beam earlier with 6m span..."
+- Take ACTION - don't just explain, DO the work
+- Be SMART - cross-reference between calculators (beam loads → foundation sizing)
+- Reference engineering codes: ACI 318, Eurocode 2, Saudi Building Code (SBC)
 
-Always respond conversationally while taking action. Never just explain - DO the work!`;
+## EXAMPLE INTELLIGENCE
+- "I noticed you've been testing different beam widths. Want me to find the optimal one for cost?"
+- "Based on your 6m beam with 20kN/m load, you'll need about 2000kN foundation capacity."
+- "Your column seems undersized for the beam reactions - let me recalculate."`;
 };
 
 serve(async (req) => {
@@ -233,18 +211,17 @@ serve(async (req) => {
       currentOutputs, 
       question, 
       messages = [],
-      stream = false 
+      allCalculatorStates = {},
+      recentActions = [],
+      sessionInfo = {}
     } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
-    }
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    // Build conversation history
     const conversationMessages = [
-      { role: "system", content: getSystemPrompt(calculatorType, currentInputs, currentOutputs) },
-      ...messages.slice(-10), // Keep last 10 messages for context
+      { role: "system", content: getSystemPrompt(calculatorType, currentInputs, currentOutputs, allCalculatorStates, recentActions, sessionInfo) },
+      ...messages.slice(-10),
       { role: "user", content: question }
     ];
 
@@ -259,7 +236,7 @@ serve(async (req) => {
         messages: conversationMessages,
         tools,
         tool_choice: "auto",
-        stream: false, // We need to handle tool calls, so no streaming for now
+        stream: false,
         max_tokens: 2000,
       }),
     });
@@ -267,25 +244,16 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error("AI gateway error:", response.status, errorText);
-      
       if (response.status === 429) {
-        return new Response(JSON.stringify({ 
-          error: "Rate limit exceeded. Please wait a moment and try again.",
-          actions: [] 
-        }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        return new Response(JSON.stringify({ error: "Rate limit exceeded.", actions: [] }), {
+          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      
       throw new Error(`AI gateway error: ${response.status}`);
     }
 
     const data = await response.json();
-    const choice = data.choices?.[0];
-    const message = choice?.message;
-
-    // Extract tool calls if any
+    const message = data.choices?.[0]?.message;
     const toolCalls = message?.tool_calls || [];
     const actions = toolCalls.map((tc: any) => ({
       tool: tc.function.name,
@@ -293,11 +261,8 @@ serve(async (req) => {
       id: tc.id
     }));
 
-    // Get the text response
-    const textContent = message?.content || "";
-
     return new Response(JSON.stringify({
-      answer: textContent,
+      answer: message?.content || "",
       actions,
       model: data.model,
       usage: data.usage
