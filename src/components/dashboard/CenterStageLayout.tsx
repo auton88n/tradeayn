@@ -535,35 +535,47 @@ export const CenterStageLayout = ({
     }
   }, [isTyping, setIsResponding]);
 
+  const { isEngineeringMode } = useAYNEmotion();
+
   return (
     <div
       ref={containerRef}
       dir="ltr"
       className={cn(
-        "relative flex-1 flex flex-col items-center",
-        "min-h-0 overflow-y-auto overscroll-contain",
-        // Premium thin scrollbar
-        "[&::-webkit-scrollbar]:w-1.5",
-        "[&::-webkit-scrollbar-track]:bg-transparent",
-        "[&::-webkit-scrollbar-thumb]:bg-gray-300/50 dark:[&::-webkit-scrollbar-thumb]:bg-gray-600/50",
-        "[&::-webkit-scrollbar-thumb]:rounded-full",
-        "[-webkit-overflow-scrolling:touch]"
+        "relative flex-1 flex flex-row", // Changed to flex-row for side-by-side layout
+        "min-h-0 overflow-hidden" // Changed from overflow-y-auto
       )}
-      style={{ paddingBottom: footerHeight }}
     >
-      {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-background via-background to-muted/10 pointer-events-none" />
+      {/* Engineering Panel - slides in from left when active */}
+      <EngineeringPanel />
 
-      {/* Central Eye Stage - unified column layout for Eye + ResponseCard */}
+      {/* Main Content Area */}
       <div 
-        ref={eyeStageRef} 
         className={cn(
-          "flex-1 flex flex-col relative w-full",
-          "items-center",
-          hasVisibleResponses ? "justify-start pt-4" : "justify-center",
-          "transition-all duration-300 ease-out"
+          "flex-1 flex flex-col items-center",
+          "min-h-0 overflow-y-auto overscroll-contain",
+          // Premium thin scrollbar
+          "[&::-webkit-scrollbar]:w-1.5",
+          "[&::-webkit-scrollbar-track]:bg-transparent",
+          "[&::-webkit-scrollbar-thumb]:bg-gray-300/50 dark:[&::-webkit-scrollbar-thumb]:bg-gray-600/50",
+          "[&::-webkit-scrollbar-thumb]:rounded-full",
+          "[-webkit-overflow-scrolling:touch]"
         )}
+        style={{ paddingBottom: footerHeight }}
       >
+        {/* Background gradient */}
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-background to-muted/10 pointer-events-none" />
+
+        {/* Central Eye Stage - unified column layout for Eye + ResponseCard */}
+        <div 
+          ref={eyeStageRef} 
+          className={cn(
+            "flex-1 flex flex-col relative w-full",
+            "items-center",
+            hasVisibleResponses ? "justify-start pt-4" : "justify-center",
+            "transition-all duration-300 ease-out"
+          )}
+        >
         {/* Unified layout - Eye and ResponseCard in same flex column */}
         <motion.div 
           className={cn(
@@ -749,6 +761,7 @@ export const CenterStageLayout = ({
           onRetryUpload={onRetryUpload}
           maintenanceActive={maintenanceConfig?.enabled}
         />
+      </div>
       </div>
     </div>
   );
