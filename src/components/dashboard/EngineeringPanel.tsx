@@ -109,7 +109,7 @@ export const EngineeringPanel = ({ className }: EngineeringPanelProps) => {
           </div>
           
           {/* Calculator Content */}
-          <div className="flex-1 overflow-y-auto overflow-x-hidden p-4">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 pb-28">
             <Suspense fallback={<CalculatorSkeleton />}>
               {activeEngineeringTool === 'beam' && (
                 <BeamCalculator

@@ -711,15 +711,19 @@ export const CenterStageLayout = ({
       </div>
       */}
 
-      {/* Input area - Fixed at bottom */}
+      {/* Input area - Fixed at bottom, docks around sidebars and engineering panel */}
       <div 
         ref={footerRef}
         className={cn(
-          "fixed bottom-0 left-0 right-0 z-30",
-          "transition-all duration-300",
-          sidebarOpen && "md:left-[20rem]",
-          transcriptOpen && "md:right-[20rem]"
+          "fixed bottom-0 z-30",
+          "transition-all duration-300"
         )}
+        style={{
+          left: isEngineeringMode 
+            ? 'min(550px, 60vw)' // Engineering panel width
+            : sidebarOpen ? '20rem' : '0',
+          right: transcriptOpen ? '20rem' : '0',
+        }}
       >
         {/* System notification banner - above chat input (maintenance OR usage warning) */}
         <SystemNotificationBanner
