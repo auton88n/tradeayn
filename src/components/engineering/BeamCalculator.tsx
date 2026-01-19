@@ -149,12 +149,14 @@ export const BeamCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
         className="h-[220px]"
       >
         <BeamVisualization3D
-          span={parseFloat(formData.span) || 6}
-          width={parseFloat(formData.beamWidth) || 300}
-          depth={parseFloat(formData.beamDepth) || 500}
-          supportType={formData.supportType}
-          deadLoad={parseFloat(formData.deadLoad) || 15}
-          liveLoad={parseFloat(formData.liveLoad) || 10}
+          outputs={{
+            span: parseFloat(formData.span) || 6,
+            beamWidth: parseFloat(formData.beamWidth) || 300,
+            beamDepth: parseFloat(formData.beamDepth) || 500,
+            supportType: formData.supportType,
+            deadLoad: parseFloat(formData.deadLoad) || 15,
+            liveLoad: parseFloat(formData.liveLoad) || 10,
+          }}
         />
       </ZoomableVisualization>
 
