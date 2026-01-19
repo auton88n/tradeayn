@@ -9,6 +9,7 @@ import { FlyingSuggestionBubble } from '@/components/eye/FlyingSuggestionBubble'
 import { ParticleBurst } from '@/components/eye/ParticleBurst';
 import { ChatInput } from './ChatInput';
 import { SystemNotificationBanner } from './SystemNotificationBanner';
+import { EngineeringPanel } from './EngineeringPanel';
 import { useBubbleAnimation } from '@/hooks/useBubbleAnimation';
 import { useAYNEmotion, AYNEmotion } from '@/contexts/AYNEmotionContext';
 import { useSoundContextOptional } from '@/contexts/SoundContext';
