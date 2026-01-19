@@ -183,22 +183,22 @@ export const RetainingWallCalculator = ({
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="bg-card rounded-2xl border border-border p-6 shadow-lg"
+      className="bg-card rounded-xl border border-border p-4 shadow-lg"
     >
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 rounded-xl bg-gradient-to-br from-rose-500 to-orange-500">
-          <Calculator className="w-6 h-6 text-white" />
+      <div className="flex items-center gap-2 mb-4">
+        <div className="p-2 rounded-lg bg-gradient-to-br from-rose-500 to-orange-500">
+          <Calculator className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h2 className="text-xl font-bold">Retaining Wall Calculator</h2>
-          <p className="text-sm text-muted-foreground">Cantilever retaining wall design with stability analysis</p>
+          <h2 className="text-lg font-bold">Retaining Wall</h2>
+          <p className="text-xs text-muted-foreground">Cantilever wall design</p>
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="space-y-4">
         {/* Wall Geometry */}
-        <div className="space-y-4">
-          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+        <div className="space-y-3">
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Wall Geometry
           </h3>
           
@@ -283,8 +283,8 @@ export const RetainingWallCalculator = ({
         </div>
 
         {/* Soil & Materials */}
-        <div className="space-y-4">
-          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+        <div className="space-y-3">
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Soil & Materials
           </h3>
 
@@ -366,37 +366,35 @@ export const RetainingWallCalculator = ({
             </div>
           </div>
 
-          {/* Info Box */}
-          <div className={cn(
-            "p-3 rounded-lg bg-amber-500/10 border border-amber-500/30",
-            "flex items-start gap-2 text-sm"
-          )}>
-            <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
-            <div className="text-muted-foreground">
-              <p className="font-medium text-foreground">Stability Requirements</p>
-              <p>FOS Overturning ≥ 2.0, Sliding ≥ 1.5, Bearing ≥ 3.0</p>
-            </div>
+        {/* Info Box */}
+        <div className={cn(
+          "p-2 rounded-lg bg-amber-500/10 border border-amber-500/30",
+          "flex items-start gap-2 text-xs"
+        )}>
+          <AlertTriangle className="w-3 h-3 text-amber-500 mt-0.5 shrink-0" />
+          <div className="text-muted-foreground">
+            <p className="font-medium text-foreground">FOS: OT≥2.0, SL≥1.5, BR≥3.0</p>
           </div>
         </div>
-      </div>
 
-      <Button
-        className="w-full mt-6 gap-2 h-12 text-base"
-        onClick={handleCalculate}
-        disabled={isCalculating}
-      >
-        {isCalculating ? (
-          <>
-            <Loader2 className="w-5 h-5 animate-spin" />
-            Calculating...
-          </>
-        ) : (
-          <>
-            <Calculator className="w-5 h-5" />
-            Analyze Retaining Wall
-          </>
-        )}
-      </Button>
+        <Button
+          className="w-full h-10 gap-2"
+          onClick={handleCalculate}
+          disabled={isCalculating}
+        >
+          {isCalculating ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Calculating...
+            </>
+          ) : (
+            <>
+              <Calculator className="w-4 h-4" />
+              Analyze Retaining Wall
+            </>
+          )}
+        </Button>
+      </div>
     </motion.div>
   );
 };

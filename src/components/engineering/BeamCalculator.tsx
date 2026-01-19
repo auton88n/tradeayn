@@ -133,29 +133,28 @@ export const BeamCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
   };
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-card rounded-2xl border border-border p-6 shadow-lg"
-      >
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 text-white">
-            <Calculator className="w-6 h-6" />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold">Beam Design Calculator</h2>
-            <p className="text-sm text-muted-foreground">Reinforced Concrete Beam Design</p>
-          </div>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-card rounded-xl border border-border p-4 shadow-lg"
+    >
+      <div className="flex items-center gap-2 mb-4">
+        <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 text-white">
+          <Calculator className="w-5 h-5" />
         </div>
+        <div>
+          <h2 className="text-lg font-bold">Beam Design</h2>
+          <p className="text-xs text-muted-foreground">RC Beam Design</p>
+        </div>
+      </div>
 
-        <div className="space-y-6">
-          {/* Geometry Section */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-              Geometry
-            </h3>
-            <div className="grid md:grid-cols-2 gap-4">
+      <div className="space-y-4">
+        {/* Geometry Section */}
+        <div className="space-y-3">
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Geometry
+          </h3>
+          <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label htmlFor="span">Span Length (m)</Label>
                 <Input
@@ -183,12 +182,12 @@ export const BeamCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
             </div>
           </div>
 
-          {/* Loads Section */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-              Applied Loads
-            </h3>
-            <div className="grid md:grid-cols-2 gap-4">
+        {/* Loads Section */}
+        <div className="space-y-3">
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Applied Loads
+          </h3>
+          <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label htmlFor="deadLoad">Dead Load (kN/m)</Label>
                 <Input
@@ -216,12 +215,12 @@ export const BeamCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
             </div>
           </div>
 
-          {/* Materials Section */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-              Materials
-            </h3>
-            <div className="grid md:grid-cols-2 gap-4">
+        {/* Materials Section */}
+        <div className="space-y-3">
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Materials
+          </h3>
+          <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Concrete Grade</Label>
                 <Select value={formData.concreteGrade} onValueChange={(v) => handleInputChange('concreteGrade', v)}>
@@ -255,11 +254,11 @@ export const BeamCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
             </div>
           </div>
 
-          {/* Support Conditions */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-              Support Conditions
-            </h3>
+        {/* Support Conditions */}
+        <div className="space-y-3">
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Support Conditions
+          </h3>
             <div className="space-y-2">
               <Label>Support Type</Label>
               <Select value={formData.supportType} onValueChange={(v) => handleInputChange('supportType', v)}>
@@ -277,41 +276,39 @@ export const BeamCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
             </div>
           </div>
 
-          {/* Info Box */}
-          <div className={cn(
-            "flex items-start gap-3 p-4 rounded-xl",
-            "bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800"
-          )}>
-            <Info className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
-            <div className="text-sm text-blue-700 dark:text-blue-300">
-              <p className="font-medium mb-1">Calculation Method</p>
-              <p className="text-blue-600 dark:text-blue-400">
-                Uses ACI 318 / Eurocode 2 methods with load factors: 1.4 DL + 1.6 LL. 
-                Results are for reference only - professional verification required.
-              </p>
-            </div>
+        {/* Info Box */}
+        <div className={cn(
+          "flex items-start gap-2 p-3 rounded-lg text-xs",
+          "bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800"
+        )}>
+          <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
+          <div className="text-blue-700 dark:text-blue-300">
+            <p className="font-medium">ACI 318 / Eurocode 2</p>
+            <p className="text-blue-600 dark:text-blue-400">
+              Load factors: 1.4 DL + 1.6 LL
+            </p>
           </div>
-
-          {/* Calculate Button */}
-          <Button
-            onClick={handleCalculate}
-            disabled={isCalculating}
-            className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
-          >
-            {isCalculating ? (
-              <>
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                Calculating...
-              </>
-            ) : (
-              <>
-                <Calculator className="w-5 h-5 mr-2" />
-                Calculate Beam Design
-              </>
-            )}
-          </Button>
         </div>
-      </motion.div>
-    </div>
+
+        {/* Calculate Button */}
+        <Button
+          onClick={handleCalculate}
+          disabled={isCalculating}
+          className="w-full h-10 font-semibold bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
+        >
+          {isCalculating ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Calculating...
+            </>
+          ) : (
+            <>
+              <Calculator className="w-4 h-4 mr-2" />
+              Calculate Beam Design
+            </>
+          )}
+        </Button>
+      </div>
+    </motion.div>
   );
 };

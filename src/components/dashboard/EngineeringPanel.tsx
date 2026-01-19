@@ -68,6 +68,7 @@ export const EngineeringPanel = ({ className }: EngineeringPanelProps) => {
           transition={{ type: 'spring', damping: 30, stiffness: 300 }}
           className={cn(
             "w-[550px] max-w-[60vw] h-full",
+            "relative z-10",
             "bg-background/95 backdrop-blur-xl",
             "border-r border-border/50",
             "flex flex-col",
