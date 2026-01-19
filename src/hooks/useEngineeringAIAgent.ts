@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -15,6 +15,7 @@ export interface ChatMessage {
   content: string;
   timestamp: Date;
   actions?: AIAction[];
+  id?: string; // Database ID for persistence
 }
 
 interface UseEngineeringAIAgentProps {
@@ -30,7 +31,19 @@ interface UseEngineeringAIAgentProps {
   onSaveDesign?: (name: string, notes?: string) => Promise<void>;
   onExportFile?: (format: 'dxf' | 'pdf') => void;
   onCompareDesigns?: (alternativeInputs: Record<string, any>) => void;
+  sessionId?: string; // Optional: link to main chat session
 }
+
+// Get or create engineering session ID
+const getEngineeringSessionId = (): string => {
+  const key = 'engineering_session_id';
+  let sessionId = sessionStorage.getItem(key);
+  if (!sessionId) {
+    sessionId = crypto.randomUUID();
+    sessionStorage.setItem(key, sessionId);
+  }
+  return sessionId;
+};
 
 export const useEngineeringAIAgent = ({
   calculatorType,
@@ -45,11 +58,93 @@ export const useEngineeringAIAgent = ({
   onSaveDesign,
   onExportFile,
   onCompareDesigns,
+  sessionId: externalSessionId,
 }: UseEngineeringAIAgentProps) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [currentAction, setCurrentAction] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  
+  // Use external session ID or generate one for engineering
+  const engineeringSessionId = useMemo(() => {
+    return externalSessionId || getEngineeringSessionId();
+  }, [externalSessionId]);
+
+  // Get current user
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUserId(user?.id || null);
+    };
+    getUser();
+  }, []);
+
+  // Load previous engineering messages from database
+  useEffect(() => {
+    const loadPreviousMessages = async () => {
+      if (!userId) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('messages')
+          .select('*')
+          .eq('session_id', engineeringSessionId)
+          .eq('mode_used', 'engineering')
+          .order('created_at', { ascending: true });
+        
+        if (error) {
+          console.error('Error loading engineering messages:', error);
+          return;
+        }
+        
+        if (data && data.length > 0) {
+          setMessages(data.map(m => ({
+            id: m.id,
+            role: m.sender === 'user' ? 'user' : 'assistant' as const,
+            content: m.content,
+            timestamp: new Date(m.created_at),
+          })));
+        }
+      } catch (err) {
+        console.error('Failed to load engineering messages:', err);
+      }
+    };
+    
+    loadPreviousMessages();
+  }, [userId, engineeringSessionId]);
+
+  // Save message to database
+  const saveMessageToDb = useCallback(async (
+    content: string, 
+    sender: 'user' | 'ayn'
+  ): Promise<string | null> => {
+    if (!userId) return null;
+    
+    try {
+      const { data, error } = await supabase
+        .from('messages')
+        .insert({
+          user_id: userId,
+          content,
+          sender,
+          session_id: engineeringSessionId,
+          mode_used: 'engineering'
+        })
+        .select('id')
+        .single();
+      
+      if (error) {
+        console.error('Error saving message:', error);
+        return null;
+      }
+      
+      return data?.id || null;
+    } catch (err) {
+      console.error('Failed to save message:', err);
+      return null;
+    }
+  }, [userId, engineeringSessionId]);
 
   // Execute a single AI action
   const executeAction = useCallback(async (action: AIAction): Promise<any> => {
@@ -156,6 +251,9 @@ export const useEngineeringAIAgent = ({
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
 
+    // Save user message to database (non-blocking)
+    saveMessageToDb(question.trim(), 'user');
+
     try {
       // Get session context if available
       const sessionContext = (window as any).__engineeringSessionContext?.();
@@ -181,23 +279,29 @@ export const useEngineeringAIAgent = ({
         executedActions = await executeActions(data.actions);
       }
 
+      const assistantContent = data.answer || 'done!';
       const assistantMessage: ChatMessage = {
         role: 'assistant',
-        content: data.answer || 'Done!',
+        content: assistantContent,
         timestamp: new Date(),
         actions: executedActions,
       };
 
       setMessages(prev => [...prev, assistantMessage]);
+      
+      // Save assistant message to database (non-blocking)
+      saveMessageToDb(assistantContent, 'ayn');
 
     } catch (err) {
       console.error('AI agent error:', err);
       
+      const errorContent = err instanceof Error && err.message.includes('rate limit')
+        ? 'rate limit reached. please wait a moment and try again.'
+        : 'sorry, i encountered an error. please try again.';
+      
       const errorMessage: ChatMessage = {
         role: 'assistant',
-        content: err instanceof Error && err.message.includes('rate limit')
-          ? 'Rate limit reached. Please wait a moment and try again.'
-          : 'Sorry, I encountered an error. Please try again.',
+        content: errorContent,
         timestamp: new Date(),
       };
 
@@ -206,7 +310,7 @@ export const useEngineeringAIAgent = ({
       setIsLoading(false);
       setCurrentAction(null);
     }
-  }, [calculatorType, currentInputs, currentOutputs, messages, isLoading, executeActions]);
+  }, [calculatorType, currentInputs, currentOutputs, messages, isLoading, executeActions, saveMessageToDb]);
 
   // Quick command shortcuts
   const executeQuickCommand = useCallback((command: string) => {
@@ -241,6 +345,13 @@ export const useEngineeringAIAgent = ({
     setCurrentAction(null);
   }, []);
 
+  // Start new engineering session (clears memory)
+  const startNewSession = useCallback(() => {
+    sessionStorage.removeItem('engineering_session_id');
+    setMessages([]);
+    setCurrentAction(null);
+  }, []);
+
   return {
     messages,
     isLoading,
@@ -248,5 +359,7 @@ export const useEngineeringAIAgent = ({
     sendMessage,
     executeQuickCommand,
     clearConversation,
+    startNewSession,
+    engineeringSessionId,
   };
 };
