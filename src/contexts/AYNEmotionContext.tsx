@@ -4,6 +4,9 @@ import { hapticFeedback } from '@/lib/haptics';
 export type AYNEmotion = 'calm' | 'happy' | 'excited' | 'thinking' | 'frustrated' | 'curious' | 'sad' | 'mad' | 'bored' | 'comfort' | 'supportive';
 export type EmotionSource = 'content' | 'behavior' | 'response' | 'default';
 
+// Engineering tool types for integrated mode
+export type EngineeringToolType = 'beam' | 'foundation' | 'column' | 'slab' | 'retaining_wall' | 'parking' | 'grading' | null;
+
 export interface EmotionConfig {
   color: string;
   glowColor: string;
@@ -11,7 +14,7 @@ export interface EmotionConfig {
   glowClass: string;
   irisScale: number;
   breathingSpeed: number;
-  particleType: 'sparkle' | 'orbit' | 'energy' | 'none';
+  particleType: 'sparkle' | 'orbit' | 'energy' | 'none' | 'grid';
   transitionMs: number; // Sync with sound duration
 }
 
@@ -187,6 +190,10 @@ interface AYNEmotionContextType {
   // Dynamic activity level for particles
   activityLevel: ActivityLevel;
   bumpActivity: () => void;
+  // Engineering mode - deeper, focused eye state
+  isEngineeringMode: boolean;
+  activeEngineeringTool: EngineeringToolType;
+  setEngineeringMode: (active: boolean, tool?: EngineeringToolType) => void;
 }
 
 const AYNEmotionContext = createContext<AYNEmotionContextType | undefined>(undefined);
@@ -204,6 +211,9 @@ export const AYNEmotionProvider = ({ children }: { children: ReactNode }) => {
   const [isPulsing, setIsPulsing] = useState(false);
   const [isWinking, setIsWinking] = useState(false);
   const [activityLevel, setActivityLevel] = useState<ActivityLevel>('idle');
+  // Engineering mode state
+  const [isEngineeringMode, setIsEngineeringModeState] = useState(false);
+  const [activeEngineeringTool, setActiveEngineeringTool] = useState<EngineeringToolType>(null);
   const activityCountRef = useRef(0);
   const activityDecayRef = useRef<NodeJS.Timeout | null>(null);
   const blinkTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -345,6 +355,20 @@ export const AYNEmotionProvider = ({ children }: { children: ReactNode }) => {
     triggerPulse();
   }, [triggerPulse]);
 
+  // Engineering mode toggle - activates deeper, focused eye state
+  const setEngineeringMode = useCallback((active: boolean, tool?: EngineeringToolType) => {
+    setIsEngineeringModeState(active);
+    setActiveEngineeringTool(active ? (tool ?? null) : null);
+    
+    if (active) {
+      // Enter engineering mode - focused/thinking state
+      hapticFeedback('thinking');
+    } else {
+      // Exit engineering mode - return to calm
+      hapticFeedback('light');
+    }
+  }, []);
+
   // Trigger wink (asymmetric blink)
   const triggerWink = useCallback(() => {
     if (winkTimeoutRef.current) {
@@ -391,6 +415,9 @@ export const AYNEmotionProvider = ({ children }: { children: ReactNode }) => {
         triggerEmpathyPulse,
         activityLevel,
         bumpActivity,
+        isEngineeringMode,
+        activeEngineeringTool,
+        setEngineeringMode,
       }}
     >
       {children}
