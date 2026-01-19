@@ -76,6 +76,7 @@ export const EngineeringBottomChat: React.FC<EngineeringBottomChatProps> = ({
   sidebarCollapsed = false,
 }) => {
   const [input, setInput] = useState('');
+  const [isFocused, setIsFocused] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [currentPlaceholder, setCurrentPlaceholder] = useState(0);
@@ -411,10 +412,12 @@ export const EngineeringBottomChat: React.FC<EngineeringBottomChatProps> = ({
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
                 placeholder=""
                 disabled={isLoading}
                 className={cn(
-                  "resize-none border-0 bg-transparent p-0 min-h-[44px] max-h-[120px]",
+                  "resize-none border-0 bg-transparent pl-0.5 pr-0 py-0 min-h-[44px] max-h-[120px]",
                   "focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0",
                   "text-base placeholder:text-muted-foreground/60"
                 )}
@@ -422,10 +425,10 @@ export const EngineeringBottomChat: React.FC<EngineeringBottomChatProps> = ({
               />
               
               {/* Animated placeholder */}
-              {!input && (
+              {!input && !isFocused && (
                 <div 
                   className={cn(
-                    "absolute top-1/2 -translate-y-1/2 left-0 pointer-events-none text-muted-foreground/50",
+                    "absolute top-1/2 -translate-y-1/2 left-0.5 pointer-events-none text-muted-foreground/50",
                     "transition-opacity duration-200",
                     showPlaceholder ? "opacity-100" : "opacity-0"
                   )}
