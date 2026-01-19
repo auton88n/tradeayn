@@ -380,6 +380,7 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
           onSetInput={handleSetInput}
           onSetMultipleInputs={handleSetMultipleInputs}
           onSwitchCalculator={handleSwitchCalculator}
+          sidebarCollapsed={sidebarCollapsed}
         />
 
         {/* History Modal */}

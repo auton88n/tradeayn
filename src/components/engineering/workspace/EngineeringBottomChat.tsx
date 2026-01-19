@@ -43,6 +43,7 @@ interface EngineeringBottomChatProps {
   onSetInput?: (field: string, value: any) => void;
   onSetMultipleInputs?: (inputs: Record<string, any>) => void;
   onSwitchCalculator?: (type: string) => void;
+  sidebarCollapsed?: boolean;
 }
 
 const placeholders = [
@@ -70,6 +71,7 @@ export const EngineeringBottomChat: React.FC<EngineeringBottomChatProps> = ({
   onSetInput,
   onSetMultipleInputs,
   onSwitchCalculator,
+  sidebarCollapsed = false,
 }) => {
   const [input, setInput] = useState('');
   const [isExpanded, setIsExpanded] = useState(false);
@@ -181,30 +183,26 @@ export const EngineeringBottomChat: React.FC<EngineeringBottomChatProps> = ({
     setShowActionsMenu(false);
   };
 
-  const actionItems = [
-    { 
-      icon: Play, 
-      label: 'Calculate', 
-      onClick: onCalculate, 
-      disabled: isCalculating || !calculatorType,
-      primary: true 
-    },
-    { icon: RotateCcw, label: 'Reset Form', onClick: onReset, show: !!onReset },
+  // Secondary actions for dropdown menu
+  const secondaryActions = [
     { icon: FileDown, label: 'Export DXF', onClick: onExportDXF, show: !!onExportDXF && hasResults },
     { icon: FileText, label: 'Export PDF', onClick: onExportPDF, show: !!onExportPDF && hasResults },
     { icon: Save, label: 'Save Design', onClick: onSave, show: !!onSave && hasResults },
     { icon: GitCompare, label: 'Compare', onClick: onCompare, show: canCompare },
-    { icon: History, label: 'History', onClick: onHistory },
   ].filter(item => item.show !== false);
+
+  // Calculate sidebar width offset
+  const sidebarWidth = sidebarCollapsed ? 64 : 200;
 
   return (
     <motion.div
       initial={{ y: 100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.3, delay: 0.2 }}
-      className="fixed bottom-0 left-0 right-0 z-50 p-4 pb-6"
+      style={{ left: sidebarWidth }}
+      className="fixed bottom-0 right-0 z-50 p-4 pb-6"
     >
-      <div className="container mx-auto max-w-2xl">
+      <div className="mx-auto max-w-2xl">
         {/* Expandable Messages Area */}
         <AnimatePresence>
           {isExpanded && messages.length > 0 && (
@@ -385,67 +383,98 @@ export const EngineeringBottomChat: React.FC<EngineeringBottomChatProps> = ({
             </AnimatePresence>
           </div>
 
-          {/* Row 2: Toolbar - Matching AYN Style */}
+          {/* Row 2: Toolbar with visible buttons */}
           <div className="flex items-center justify-between px-3 py-2 border-t border-border/30 bg-muted/20">
-            {/* Left: Actions Menu */}
-            <div className="relative" ref={actionsMenuRef}>
-              <button
-                onClick={() => setShowActionsMenu(!showActionsMenu)}
-                className={cn(
-                  "w-8 h-8 rounded-lg flex items-center justify-center",
-                  "text-muted-foreground/60 hover:text-muted-foreground",
-                  "hover:bg-muted/50 transition-colors",
-                  showActionsMenu && "bg-muted/50 text-muted-foreground"
-                )}
+            {/* Left: Main Action Buttons */}
+            <div className="flex items-center gap-1">
+              {/* Calculate Button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onCalculate}
+                disabled={isCalculating || !calculatorType}
+                className="h-7 px-2.5 text-xs gap-1.5"
               >
-                <Plus className="w-5 h-5" />
-              </button>
-
-              {/* Actions Dropdown Menu */}
-              <AnimatePresence>
-                {showActionsMenu && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute bottom-full left-0 mb-2 w-48 py-2 rounded-xl bg-popover border border-border shadow-xl z-50"
-                  >
-                    {actionItems.map((item, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => item.onClick && handleAction(item.onClick)}
-                        disabled={item.disabled}
-                        className={cn(
-                          "w-full flex items-center gap-3 px-3 py-2 text-sm transition-colors",
-                          "hover:bg-accent",
-                          item.disabled && "opacity-50 cursor-not-allowed",
-                          item.primary && "text-primary font-medium"
-                        )}
-                      >
-                        <item.icon className="w-4 h-4" />
-                        <span>{item.label}</span>
-                        {item.label === 'Calculate' && isCalculating && (
-                          <Loader2 className="w-3 h-3 animate-spin ml-auto" />
-                        )}
-                      </button>
-                    ))}
-                  </motion.div>
+                {isCalculating ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Play className="w-3.5 h-3.5" />
                 )}
-              </AnimatePresence>
+                Calculate
+              </Button>
+
+              {/* Reset Button */}
+              {onReset && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onReset}
+                  className="h-7 px-2.5 text-xs gap-1.5 text-muted-foreground"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  Reset
+                </Button>
+              )}
+
+              {/* History Button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onHistory}
+                className="h-7 px-2.5 text-xs gap-1.5 text-muted-foreground"
+              >
+                <History className="w-3.5 h-3.5" />
+                History
+              </Button>
+
+              {/* More Actions Menu */}
+              {secondaryActions.length > 0 && (
+                <div className="relative" ref={actionsMenuRef}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowActionsMenu(!showActionsMenu)}
+                    className={cn(
+                      "h-7 w-7 p-0",
+                      showActionsMenu && "bg-muted"
+                    )}
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+
+                  <AnimatePresence>
+                    {showActionsMenu && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute bottom-full left-0 mb-2 w-40 py-1.5 rounded-lg bg-popover border border-border shadow-xl z-50"
+                      >
+                        {secondaryActions.map((item, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => item.onClick && handleAction(item.onClick)}
+                            className="w-full flex items-center gap-2.5 px-3 py-1.5 text-sm hover:bg-accent transition-colors"
+                          >
+                            <item.icon className="w-3.5 h-3.5" />
+                            <span>{item.label}</span>
+                          </button>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
             </div>
 
             {/* Center: Status */}
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              {hasResults ? (
+              {hasResults && (
                 <div className="flex items-center gap-1.5 text-emerald-500">
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span className="text-xs">Results Ready</span>
+                  <span className="text-xs">Ready</span>
                 </div>
-              ) : (
-                <span className="text-xs text-muted-foreground/60">
-                  {calculatorType ? `${calculatorType.charAt(0).toUpperCase() + calculatorType.slice(1)} Mode` : 'Ready'}
-                </span>
               )}
             </div>
 
