@@ -284,7 +284,7 @@ const ColumnVisualization3D: React.FC<ColumnVisualization3DProps> = (props) => {
   const [is3D, setIs3D] = useState(true);
 
   return (
-    <div className="w-full h-[350px] bg-gradient-to-br from-slate-900 to-slate-800 rounded-lg overflow-hidden relative">
+    <div className="w-full h-full min-h-[180px] max-h-[250px] bg-gradient-to-br from-slate-900 to-slate-800 rounded-lg overflow-hidden relative">
       {/* View Toggle */}
       <div className="absolute top-3 right-3 z-10 flex bg-background/80 rounded-md overflow-hidden border border-border/50">
         <button

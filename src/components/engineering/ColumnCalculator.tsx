@@ -73,16 +73,7 @@ const ColumnCalculator: React.FC<ColumnCalculatorProps> = ({ onCalculationComple
       exit={{ opacity: 0, y: -20 }}
       className="space-y-6"
     >
-      <Button
-        variant="ghost"
-        onClick={onBack}
-        className="mb-4 gap-2"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back to Calculators
-      </Button>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="flex flex-col gap-4">
         {/* Input Form */}
         <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
           <CardHeader>
@@ -251,19 +242,21 @@ const ColumnCalculator: React.FC<ColumnCalculatorProps> = ({ onCalculationComple
           </CardContent>
         </Card>
 
-        {/* 3D Visualization */}
+        {/* 3D Visualization - Constrained Height */}
         <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
-          <CardHeader>
+          <CardHeader className="py-2 px-3">
             <CardTitle className="text-sm">Column Cross-Section Preview</CardTitle>
           </CardHeader>
-          <CardContent>
-            <ColumnVisualization3D
-              width={inputs.columnWidth}
-              depth={inputs.columnDepth}
-              height={inputs.columnHeight}
-              cover={inputs.coverThickness}
-              columnType={inputs.columnType}
-            />
+          <CardContent className="p-2">
+            <div className="h-[200px] w-full">
+              <ColumnVisualization3D
+                width={inputs.columnWidth}
+                depth={inputs.columnDepth}
+                height={inputs.columnHeight}
+                cover={inputs.coverThickness}
+                columnType={inputs.columnType}
+              />
+            </div>
           </CardContent>
         </Card>
       </div>
