@@ -3,7 +3,7 @@ import { memo, useMemo, useState, useEffect, useRef } from 'react';
 import type { AYNEmotion, ActivityLevel } from '@/contexts/AYNEmotionContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 
-type ParticleType = 'sparkle' | 'orbit' | 'energy';
+type ParticleType = 'sparkle' | 'orbit' | 'energy' | 'grid';
 
 interface EyeParticlesProps {
   isActive: boolean;
