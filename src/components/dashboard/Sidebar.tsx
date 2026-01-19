@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { UsageCard } from './UsageCard';
 import { useUsageTracking } from '@/hooks/useUsageTracking';
+import { EngineeringToolsSection } from './EngineeringToolsSection';
 
 // Moved outside to prevent recreation on each render
 interface ProfileTriggerButtonProps extends React.ComponentPropsWithoutRef<'button'> {
