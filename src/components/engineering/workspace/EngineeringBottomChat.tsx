@@ -321,8 +321,8 @@ export const EngineeringBottomChat: React.FC<EngineeringBottomChatProps> = ({
                     </button>
                   </div>
                 </div>
-                <ScrollArea className="max-h-[280px]">
-                  <div className="p-4 space-y-4">
+                <ScrollArea className="h-[280px]">
+                  <div className="p-4 space-y-4 flex flex-col">
                     {messages.map((msg, i) => (
                       <div
                         key={i}
