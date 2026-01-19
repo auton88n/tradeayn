@@ -331,6 +331,7 @@ export const SlabCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
               </SelectContent>
             </Select>
           </div>
+        </div>
 
         {/* Info Box */}
         <div className={cn(

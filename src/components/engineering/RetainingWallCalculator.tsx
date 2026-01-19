@@ -365,6 +365,7 @@ export const RetainingWallCalculator = ({
               </Select>
             </div>
           </div>
+        </div>
 
         {/* Info Box */}
         <div className={cn(
