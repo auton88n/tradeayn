@@ -14,9 +14,10 @@ import {
   Brain,
   X,
   ChevronUp,
-  ChevronDown,
   Sparkles,
-  CheckCircle2
+  CheckCircle2,
+  Minimize2,
+  MessageSquare
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -25,6 +26,7 @@ import { cn } from '@/lib/utils';
 import { useEngineeringAIAgent, type ChatMessage } from '@/hooks/useEngineeringAIAgent';
 import { AIActionChip } from './AIActionChip';
 import ReactMarkdown from 'react-markdown';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface EngineeringBottomChatProps {
   onCalculate: () => void;
@@ -75,6 +77,7 @@ export const EngineeringBottomChat: React.FC<EngineeringBottomChatProps> = ({
 }) => {
   const [input, setInput] = useState('');
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const [currentPlaceholder, setCurrentPlaceholder] = useState(0);
   const [showPlaceholder, setShowPlaceholder] = useState(true);
   const [showActionsMenu, setShowActionsMenu] = useState(false);
@@ -154,6 +157,26 @@ export const EngineeringBottomChat: React.FC<EngineeringBottomChatProps> = ({
     }
   }, [showActionsMenu]);
 
+  // Keyboard shortcuts: Esc to collapse, / to expand
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Escape to collapse
+      if (e.key === 'Escape' && !isCollapsed) {
+        setIsCollapsed(true);
+      }
+      // / to expand (only when not in input)
+      if (e.key === '/' && isCollapsed && 
+          !(document.activeElement instanceof HTMLInputElement || 
+            document.activeElement instanceof HTMLTextAreaElement)) {
+        e.preventDefault();
+        setIsCollapsed(false);
+        setTimeout(() => textareaRef.current?.focus(), 100);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isCollapsed]);
+
   const handleSubmit = useCallback(async () => {
     if (!input.trim() || isLoading) return;
 
@@ -194,11 +217,70 @@ export const EngineeringBottomChat: React.FC<EngineeringBottomChatProps> = ({
   // Calculate sidebar width offset
   const sidebarWidth = sidebarCollapsed ? 64 : 200;
 
+  // Collapsed state - floating button
+  if (isCollapsed) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <motion.button
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0, opacity: 0 }}
+              transition={{ type: "spring", duration: 0.4 }}
+              onClick={() => {
+                setIsCollapsed(false);
+                setTimeout(() => textareaRef.current?.focus(), 100);
+              }}
+              className={cn(
+                "fixed bottom-6 right-6 w-14 h-14 rounded-full z-50",
+                "bg-background/95 backdrop-blur-xl",
+                "border border-border/50",
+                "shadow-lg hover:shadow-xl",
+                "flex items-center justify-center",
+                "transition-all duration-200",
+                "hover:scale-110 hover:border-primary/50",
+                "group"
+              )}
+            >
+              <Brain className="w-6 h-6 text-primary group-hover:scale-110 transition-transform" />
+              
+              {/* Message count badge */}
+              {messages.length > 0 && (
+                <motion.span
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs font-medium flex items-center justify-center"
+                >
+                  {messages.length > 9 ? '9+' : messages.length}
+                </motion.span>
+              )}
+              
+              {/* Pulse animation when loading */}
+              {isLoading && (
+                <motion.div
+                  className="absolute inset-0 rounded-full border-2 border-primary"
+                  animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0, 0.5] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                />
+              )}
+            </motion.button>
+          </TooltipTrigger>
+          <TooltipContent side="left" className="text-xs">
+            <p>Open AYN Chat <kbd className="ml-1 px-1 py-0.5 rounded bg-muted text-muted-foreground">/</kbd></p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  // Expanded state - full chat bar
   return (
     <motion.div
       initial={{ y: 100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.3, delay: 0.2 }}
+      exit={{ y: 100, opacity: 0 }}
+      transition={{ duration: 0.3, delay: 0.1 }}
       style={{ left: sidebarWidth }}
       className="fixed bottom-0 right-0 z-50 p-4 pb-6"
     >
@@ -478,24 +560,42 @@ export const EngineeringBottomChat: React.FC<EngineeringBottomChatProps> = ({
               )}
             </div>
 
-            {/* Right: AYN Brain + Toggle */}
-            <div className="flex items-center gap-2">
+            {/* Right: Minimize + AYN Brain + Toggle */}
+            <div className="flex items-center gap-1">
+              {/* Minimize button */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => setIsCollapsed(true)}
+                      className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground"
+                    >
+                      <Minimize2 className="w-4 h-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs">
+                    <p>Minimize <kbd className="ml-1 px-1 py-0.5 rounded bg-muted text-muted-foreground">Esc</kbd></p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              
               {messages.length > 0 && !isExpanded && (
                 <button
                   onClick={() => setIsExpanded(true)}
-                  className="w-6 h-6 rounded-lg flex items-center justify-center hover:bg-muted/50 transition-colors"
+                  className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-muted/50 transition-colors"
                 >
                   <ChevronUp className="w-4 h-4 text-muted-foreground" />
                 </button>
               )}
+              
               <div
                 className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 rounded-lg",
+                  "flex items-center gap-1.5 px-2 py-1.5 rounded-lg",
                   "text-sm text-muted-foreground"
                 )}
               >
                 <Brain className="w-4 h-4" />
-                <span>AYN</span>
+                <span className="text-xs">AYN</span>
               </div>
             </div>
           </div>
