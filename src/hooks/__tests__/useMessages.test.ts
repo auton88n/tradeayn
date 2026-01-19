@@ -40,14 +40,15 @@ const mockSession: Session = {
   },
 };
 
-const waitFor = async (callback: () => void, timeout = 1000) => {
+// Fast waitFor with reduced timeout
+const waitFor = async (callback: () => void, timeout = 200) => {
   const startTime = Date.now();
   while (Date.now() - startTime < timeout) {
     try {
       callback();
       return;
-    } catch (error) {
-      await new Promise(resolve => setTimeout(resolve, 50));
+    } catch {
+      await new Promise(resolve => setTimeout(resolve, 10));
     }
   }
   callback();
