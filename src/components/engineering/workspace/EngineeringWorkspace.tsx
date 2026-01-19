@@ -89,7 +89,8 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
   const handleCalculate = useCallback(() => {
     // Trigger calculation from current calculator
     setIsCalculating(true);
-    // The actual calculation is handled by each calculator component
+    // Safety timeout - reset after 5 seconds if calculator doesn't respond
+    setTimeout(() => setIsCalculating(false), 5000);
   }, []);
 
   const handleReset = useCallback(() => {
@@ -140,11 +141,7 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
       case 'column':
         return (
           <Suspense fallback={<LoadingFallback />}>
-            <ColumnCalculator 
-              onCalculationComplete={handleCalculationComplete}
-              onBack={() => setSelectedCalculator(null)}
-              userId={userId}
-            />
+            <ColumnCalculator {...commonProps} />
           </Suspense>
         );
       case 'slab':

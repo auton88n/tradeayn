@@ -394,8 +394,9 @@ const Engineering = () => {
                 transition={{ duration: 0.3 }}
               >
                 <ColumnCalculator 
-                  onCalculationComplete={handleCalculationComplete}
-                  onBack={() => setSelectedCalculator(null)}
+                  onCalculate={handleCalculationComplete}
+                  isCalculating={isCalculating}
+                  setIsCalculating={setIsCalculating}
                   userId={userId}
                 />
               </motion.div>

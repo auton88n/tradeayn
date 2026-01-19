@@ -5,21 +5,28 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calculator, ArrowLeft, Loader2 } from 'lucide-react';
+import { Calculator, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import ColumnVisualization3D from './ColumnVisualization3D';
 import { useEngineeringHistory } from '@/hooks/useEngineeringHistory';
 import { calculateColumn } from '@/lib/engineeringCalculations';
 
 interface ColumnCalculatorProps {
-  onCalculationComplete: (result: any) => void;
-  onBack: () => void;
+  onCalculate: (result: any) => void;
+  isCalculating: boolean;
+  setIsCalculating: (value: boolean) => void;
   userId?: string;
+  onInputChange?: (inputs: Record<string, any>) => void;
 }
 
-const ColumnCalculator: React.FC<ColumnCalculatorProps> = ({ onCalculationComplete, onBack, userId }) => {
+const ColumnCalculator: React.FC<ColumnCalculatorProps> = ({ 
+  onCalculate, 
+  isCalculating, 
+  setIsCalculating, 
+  userId,
+  onInputChange 
+}) => {
   const { saveCalculation } = useEngineeringHistory(userId);
-  const [isCalculating, setIsCalculating] = useState(false);
   const [inputs, setInputs] = useState({
     axialLoad: 1500,
     momentX: 80,
@@ -35,7 +42,9 @@ const ColumnCalculator: React.FC<ColumnCalculatorProps> = ({ onCalculationComple
   });
 
   const handleInputChange = (field: string, value: string | number | boolean) => {
-    setInputs(prev => ({ ...prev, [field]: value }));
+    const newInputs = { ...inputs, [field]: value };
+    setInputs(newInputs);
+    onInputChange?.(newInputs);
   };
 
   const handleCalculate = async () => {
@@ -58,11 +67,11 @@ const ColumnCalculator: React.FC<ColumnCalculatorProps> = ({ onCalculationComple
       // Save to history (non-blocking)
       saveCalculation('column', inputs, data);
 
-      onCalculationComplete({
+      onCalculate({
         type: 'column',
         inputs,
         outputs: data,
-        timestamp: new Date().toISOString()
+        timestamp: new Date()
       });
 
       toast.success('Column design calculated successfully!');
@@ -79,18 +88,9 @@ const ColumnCalculator: React.FC<ColumnCalculatorProps> = ({ onCalculationComple
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="space-y-6"
+      className="space-y-6 p-6"
     >
-      <Button
-        variant="ghost"
-        onClick={onBack}
-        className="mb-4 gap-2"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back to Calculators
-      </Button>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         {/* Input Form */}
         <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
           <CardHeader>
