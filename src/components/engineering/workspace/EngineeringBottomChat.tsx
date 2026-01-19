@@ -417,7 +417,7 @@ export const EngineeringBottomChat: React.FC<EngineeringBottomChatProps> = ({
                 placeholder=""
                 disabled={isLoading}
                 className={cn(
-                  "resize-none border-0 bg-transparent pl-0.5 pr-0 py-0 min-h-[44px] max-h-[120px]",
+                  "resize-none border-0 bg-transparent pl-0.5 pr-0 py-3 min-h-[44px] max-h-[120px]",
                   "focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0",
                   "text-base placeholder:text-muted-foreground/60"
                 )}
