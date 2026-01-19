@@ -62,16 +62,17 @@ export const EngineeringPanel = ({ className }: EngineeringPanelProps) => {
     <AnimatePresence>
       {isEngineeringMode && (
         <motion.div
-          initial={{ x: -400, opacity: 0 }}
+          initial={{ x: -550, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
-          exit={{ x: -400, opacity: 0 }}
+          exit={{ x: -550, opacity: 0 }}
           transition={{ type: 'spring', damping: 30, stiffness: 300 }}
           className={cn(
-            "w-[420px] max-w-[90vw] h-full",
+            "w-[550px] max-w-[60vw] h-full",
             "bg-background/95 backdrop-blur-xl",
             "border-r border-border/50",
             "flex flex-col",
             "shadow-2xl shadow-black/20",
+            "overflow-hidden",
             className
           )}
         >
@@ -107,7 +108,7 @@ export const EngineeringPanel = ({ className }: EngineeringPanelProps) => {
           </div>
           
           {/* Calculator Content */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden p-4">
             <Suspense fallback={<CalculatorSkeleton />}>
               {activeEngineeringTool === 'beam' && (
                 <BeamCalculator

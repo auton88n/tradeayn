@@ -592,7 +592,9 @@ export const CenterStageLayout = ({
             className="relative overflow-visible"
             data-tutorial="eye"
             animate={{
-              scale: hasVisibleResponses ? (isMobile ? 0.55 : 0.5) : 1,
+              scale: isEngineeringMode 
+                ? 0.6 
+                : hasVisibleResponses ? (isMobile ? 0.55 : 0.5) : 1,
               marginBottom: hasVisibleResponses ? -20 : 0,
             }}
             transition={{
