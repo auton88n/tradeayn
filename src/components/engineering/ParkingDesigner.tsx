@@ -624,14 +624,6 @@ const QuickStartDesigner: React.FC<{
           </Button>
         </div>
 
-        {/* AI Assistant */}
-        <AICalculatorAssistant
-          calculatorType="parking"
-          inputs={inputs}
-          outputs={layout ? { layout } : null}
-          onApplySuggestion={handleApplySuggestion}
-          onApplyAllSuggestions={handleApplyAllSuggestions}
-        />
       </div>
 
       {/* Right Column - Visualization */}

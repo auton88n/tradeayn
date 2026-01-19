@@ -96,14 +96,17 @@ export const SplitViewLayout: React.FC<SplitViewLayoutProps> = ({
                 key="form"
                 initial={{ width: 0, opacity: 0 }}
                 animate={{ 
-                  width: viewMode === 'form-only' ? '100%' : `${100 - previewWidth}%`,
+                  width: viewMode === 'form-only' || !hasPreview ? '100%' : `${100 - previewWidth}%`,
                   opacity: 1 
                 }}
                 exit={{ width: 0, opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="h-full overflow-y-auto border-r border-border/30"
+                className={cn(
+                  "h-full overflow-y-auto",
+                  hasPreview && viewMode !== 'form-only' && "border-r border-border/30"
+                )}
               >
-                <div className="p-6">
+                <div className="p-4">
                   {formContent}
                 </div>
               </motion.div>
@@ -123,10 +126,7 @@ export const SplitViewLayout: React.FC<SplitViewLayoutProps> = ({
                 className="h-full bg-muted/10 flex flex-col"
               >
                 {/* Preview Header */}
-                <div className="flex items-center justify-between px-4 py-2 border-b border-border/30">
-                  <span className="text-xs font-medium text-muted-foreground">
-                    Live Preview
-                  </span>
+                <div className="flex items-center justify-end px-4 py-2 border-b border-border/30">
                   <div className="flex items-center gap-1">
                     <Button
                       variant="ghost"
@@ -152,22 +152,6 @@ export const SplitViewLayout: React.FC<SplitViewLayoutProps> = ({
                 {/* Preview Content */}
                 <div className="flex-1 min-h-0 p-4">
                   {previewContent}
-                </div>
-              </motion.div>
-            )}
-
-            {/* No Preview Placeholder */}
-            {viewMode !== 'form-only' && !hasPreview && (
-              <motion.div
-                key="no-preview"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex-1 flex items-center justify-center bg-muted/20"
-              >
-                <div className="text-center text-muted-foreground">
-                  <EyeOff className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                  <p className="text-sm">Enter values to see preview</p>
                 </div>
               </motion.div>
             )}

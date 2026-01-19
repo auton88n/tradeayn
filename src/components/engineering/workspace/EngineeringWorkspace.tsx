@@ -338,7 +338,7 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
         </header>
 
         {/* Main Content Area */}
-        <div className="flex-1 flex min-h-0 pb-16">
+        <div className="flex-1 flex min-h-0">
           {/* Sidebar */}
           <CalculatorSidebar
             selectedCalculator={selectedCalculator}
