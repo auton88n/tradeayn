@@ -11,10 +11,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useEngineeringHistory } from '@/hooks/useEngineeringHistory';
+import { calculateSlab } from '@/lib/engineeringCalculations';
 
 interface SlabCalculatorProps {
   onCalculate: (result: {
@@ -98,21 +98,18 @@ export const SlabCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
     setIsCalculating(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('calculate-slab', {
-        body: {
-          longSpan,
-          shortSpan,
-          deadLoad,
-          liveLoad,
-          concreteGrade: formData.concreteGrade,
-          steelGrade: formData.steelGrade,
-          slabType: formData.slabType,
-          supportCondition: formData.supportCondition,
-          cover,
-        },
+      // Client-side calculation for instant results
+      const data = calculateSlab({
+        longSpan,
+        shortSpan,
+        deadLoad,
+        liveLoad,
+        concreteGrade: formData.concreteGrade,
+        steelGrade: formData.steelGrade,
+        slabType: formData.slabType,
+        supportCondition: formData.supportCondition,
+        cover,
       });
-
-      if (error) throw error;
 
       const result = {
         type: 'slab' as const,
