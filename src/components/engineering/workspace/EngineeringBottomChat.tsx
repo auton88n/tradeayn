@@ -428,7 +428,7 @@ export const EngineeringBottomChat: React.FC<EngineeringBottomChatProps> = ({
               {!input && !isFocused && (
                 <div 
                   className={cn(
-                    "absolute top-1/2 -translate-y-1/2 left-0.5 pointer-events-none text-muted-foreground/50",
+                    "absolute top-3 left-0.5 pointer-events-none text-muted-foreground/50",
                     "transition-opacity duration-200",
                     showPlaceholder ? "opacity-100" : "opacity-0"
                   )}
