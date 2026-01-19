@@ -54,7 +54,7 @@ export const FoundationCalculator = ({ onCalculate, isCalculating, setIsCalculat
   const { saveCalculation } = useEngineeringHistory(userId);
   
   const [formData, setFormData] = useState({
-    columnLoad: '',
+    columnLoad: '800',
     momentX: '0',
     momentY: '0',
     columnWidth: '400',

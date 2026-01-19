@@ -56,10 +56,10 @@ export const SlabCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
   const { saveCalculation } = useEngineeringHistory(userId);
   
   const [formData, setFormData] = useState({
-    longSpan: '',
-    shortSpan: '',
-    deadLoad: '',
-    liveLoad: '',
+    longSpan: '6.0',
+    shortSpan: '4.0',
+    deadLoad: '5.0',
+    liveLoad: '3.0',
     concreteGrade: 'C30',
     steelGrade: 'Fy420',
     slabType: 'two_way',
