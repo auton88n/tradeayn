@@ -3,7 +3,7 @@ import { memo, useMemo, useState, useEffect, useRef } from 'react';
 import type { AYNEmotion, ActivityLevel } from '@/contexts/AYNEmotionContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 
-type ParticleType = 'sparkle' | 'orbit' | 'energy' | 'grid';
+type ParticleType = 'sparkle' | 'orbit' | 'energy';
 
 interface EyeParticlesProps {
   isActive: boolean;
@@ -129,21 +129,42 @@ const EyeParticlesComponent = ({
   isPulsing = false,
   performanceMultiplier = 1,
 }: EyeParticlesProps) => {
-  // ALL HOOKS MUST BE CALLED FIRST - before any early returns
   const [burstParticles, setBurstParticles] = useState<number[]>([]);
   const burstIdCounter = useRef(0);
   const prevAbsorbing = useRef(false);
   const isMobile = useIsMobile();
+  
+  // Skip rendering entirely if performance multiplier is 0
+  if (performanceMultiplier === 0 || !isActive) return null;
+  
+  // Trigger burst on absorption - reduced count on mobile
+  useEffect(() => {
+    if (isAbsorbing && !prevAbsorbing.current) {
+      const burstCount = isMobile ? 6 : 12;
+      const newBurst = Array.from({ length: burstCount }, () => burstIdCounter.current++);
+      setBurstParticles(newBurst);
+      
+      setTimeout(() => {
+        setBurstParticles([]);
+      }, 700);
+    }
+    prevAbsorbing.current = isAbsorbing;
+  }, [isAbsorbing, isMobile]);
 
-  // Calculate derived values needed for useMemo
   const particleCount = getEmotionParticleCount(emotion, activityLevel, isMobile, performanceMultiplier);
+  const speedMultiplier = getSpeedMultiplier(emotion);
+  const particleColor = getEmotionParticleColor(emotion, glowColor);
   const sizeRange = getParticleSizeRange(particleType);
+  
+  // Boost during pulse - reduced boost on mobile
   const pulseBoost = isMobile ? 1.1 : 1.3;
   const effectiveCount = isPulsing ? Math.min(particleCount * pulseBoost, isMobile ? 2 : 4) : particleCount;
+  
+  // Skip if no particles to render
+  if (effectiveCount === 0 && burstParticles.length === 0) return null;
 
-  // useMemo MUST be called before any early returns
+  // Generate ambient particles
   const ambientParticles = useMemo((): Particle[] => {
-    if (effectiveCount === 0) return [];
     return Array.from({ length: Math.round(effectiveCount) }, (_, i) => {
       const particleSize = sizeRange.min + Math.random() * (sizeRange.max - sizeRange.min);
       const baseAngle = (i / effectiveCount) * Math.PI * 2;
@@ -158,28 +179,6 @@ const EyeParticlesComponent = ({
       };
     });
   }, [effectiveCount, sizeRange.min, sizeRange.max]);
-
-  // useEffect MUST be called before any early returns
-  useEffect(() => {
-    if (isAbsorbing && !prevAbsorbing.current) {
-      const burstCount = isMobile ? 6 : 12;
-      const newBurst = Array.from({ length: burstCount }, () => burstIdCounter.current++);
-      setBurstParticles(newBurst);
-      
-      setTimeout(() => {
-        setBurstParticles([]);
-      }, 700);
-    }
-    prevAbsorbing.current = isAbsorbing;
-  }, [isAbsorbing, isMobile]);
-
-  // NOW safe to do early returns - after all hooks
-  if (performanceMultiplier === 0 || !isActive) return null;
-  if (ambientParticles.length === 0 && burstParticles.length === 0) return null;
-
-  // Non-hook derived values can be calculated after early returns
-  const speedMultiplier = getSpeedMultiplier(emotion);
-  const particleColor = getEmotionParticleColor(emotion, glowColor);
 
   // SPARKLE: Gentle floating upward with twinkling
   const renderSparkle = (particle: Particle) => {

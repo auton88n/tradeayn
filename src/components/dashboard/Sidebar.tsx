@@ -33,7 +33,6 @@ import {
 } from '@/components/ui/alert-dialog';
 import { UsageCard } from './UsageCard';
 import { useUsageTracking } from '@/hooks/useUsageTracking';
-import { EngineeringToolsSection } from './EngineeringToolsSection';
 
 // Moved outside to prevent recreation on each render
 interface ProfileTriggerButtonProps extends React.ComponentPropsWithoutRef<'button'> {
@@ -386,8 +385,30 @@ export const Sidebar = ({
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Engineering Tools - Collapsible Section */}
-        <EngineeringToolsSection />
+        {/* Engineering Button */}
+        <SidebarGroup className="flex-shrink-0 px-4 pb-3">
+          <SidebarGroupContent>
+            <Button 
+              onClick={() => navigate('/engineering')}
+              className={cn(
+                "w-full h-11 rounded-xl gap-2.5 relative overflow-hidden group",
+                "bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600",
+                "hover:from-cyan-500 hover:via-blue-500 hover:to-indigo-500",
+                "text-white font-medium shadow-lg shadow-blue-500/25",
+                "hover:shadow-xl hover:shadow-blue-500/30",
+                "hover:-translate-y-0.5",
+                "transition-all duration-300 ease-out",
+                "border-0"
+              )}
+            >
+              {/* Shimmer effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+              <Calculator className="w-4 h-4 relative z-10" />
+              <span className="relative z-10">Engineering</span>
+              <Sparkles className="w-3.5 h-3.5 ml-auto relative z-10 animate-pulse" />
+            </Button>
+          </SidebarGroupContent>
+        </SidebarGroup>
 
         {/* Search Input */}
         <div className="px-4 pb-3 flex-shrink-0">

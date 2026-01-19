@@ -9,7 +9,6 @@ import { FlyingSuggestionBubble } from '@/components/eye/FlyingSuggestionBubble'
 import { ParticleBurst } from '@/components/eye/ParticleBurst';
 import { ChatInput } from './ChatInput';
 import { SystemNotificationBanner } from './SystemNotificationBanner';
-import { EngineeringPanel } from './EngineeringPanel';
 import { useBubbleAnimation } from '@/hooks/useBubbleAnimation';
 import { useAYNEmotion, AYNEmotion } from '@/contexts/AYNEmotionContext';
 import { useSoundContextOptional } from '@/contexts/SoundContext';
@@ -535,47 +534,35 @@ export const CenterStageLayout = ({
     }
   }, [isTyping, setIsResponding]);
 
-  const { isEngineeringMode } = useAYNEmotion();
-
   return (
     <div
       ref={containerRef}
       dir="ltr"
       className={cn(
-        "relative flex-1 flex flex-row", // Changed to flex-row for side-by-side layout
-        "min-h-0 overflow-hidden" // Changed from overflow-y-auto
+        "relative flex-1 flex flex-col items-center",
+        "min-h-0 overflow-y-auto overscroll-contain",
+        // Premium thin scrollbar
+        "[&::-webkit-scrollbar]:w-1.5",
+        "[&::-webkit-scrollbar-track]:bg-transparent",
+        "[&::-webkit-scrollbar-thumb]:bg-gray-300/50 dark:[&::-webkit-scrollbar-thumb]:bg-gray-600/50",
+        "[&::-webkit-scrollbar-thumb]:rounded-full",
+        "[-webkit-overflow-scrolling:touch]"
       )}
+      style={{ paddingBottom: footerHeight }}
     >
-      {/* Engineering Panel - slides in from left when active */}
-      <EngineeringPanel />
+      {/* Background gradient */}
+      <div className="absolute inset-0 bg-gradient-to-b from-background via-background to-muted/10 pointer-events-none" />
 
-      {/* Main Content Area */}
+      {/* Central Eye Stage - unified column layout for Eye + ResponseCard */}
       <div 
+        ref={eyeStageRef} 
         className={cn(
-          "flex-1 flex flex-col items-center",
-          "min-h-0 overflow-y-auto overscroll-contain",
-          // Premium thin scrollbar
-          "[&::-webkit-scrollbar]:w-1.5",
-          "[&::-webkit-scrollbar-track]:bg-transparent",
-          "[&::-webkit-scrollbar-thumb]:bg-gray-300/50 dark:[&::-webkit-scrollbar-thumb]:bg-gray-600/50",
-          "[&::-webkit-scrollbar-thumb]:rounded-full",
-          "[-webkit-overflow-scrolling:touch]"
+          "flex-1 flex flex-col relative w-full",
+          "items-center",
+          hasVisibleResponses ? "justify-start pt-4" : "justify-center",
+          "transition-all duration-300 ease-out"
         )}
-        style={{ paddingBottom: footerHeight }}
       >
-        {/* Background gradient */}
-        <div className="absolute inset-0 bg-gradient-to-b from-background via-background to-muted/10 pointer-events-none" />
-
-        {/* Central Eye Stage - unified column layout for Eye + ResponseCard */}
-        <div 
-          ref={eyeStageRef} 
-          className={cn(
-            "flex-1 flex flex-col relative w-full",
-            "items-center",
-            hasVisibleResponses ? "justify-start pt-4" : "justify-center",
-            "transition-all duration-300 ease-out"
-          )}
-        >
         {/* Unified layout - Eye and ResponseCard in same flex column */}
         <motion.div 
           className={cn(
@@ -592,9 +579,7 @@ export const CenterStageLayout = ({
             className="relative overflow-visible"
             data-tutorial="eye"
             animate={{
-              scale: isEngineeringMode 
-                ? 0.6 
-                : hasVisibleResponses ? (isMobile ? 0.55 : 0.5) : 1,
+              scale: hasVisibleResponses ? (isMobile ? 0.55 : 0.5) : 1,
               marginBottom: hasVisibleResponses ? -20 : 0,
             }}
             transition={{
@@ -711,19 +696,15 @@ export const CenterStageLayout = ({
       </div>
       */}
 
-      {/* Input area - Fixed at bottom, docks around sidebars and engineering panel */}
+      {/* Input area - Fixed at bottom */}
       <div 
         ref={footerRef}
         className={cn(
-          "fixed bottom-0 z-30",
-          "transition-all duration-300"
+          "fixed bottom-0 left-0 right-0 z-30",
+          "transition-all duration-300",
+          sidebarOpen && "md:left-[20rem]",
+          transcriptOpen && "md:right-[20rem]"
         )}
-        style={{
-          left: isEngineeringMode 
-            ? 'min(550px, 60vw)' // Engineering panel width
-            : sidebarOpen ? '20rem' : '0',
-          right: transcriptOpen ? '20rem' : '0',
-        }}
       >
         {/* System notification banner - above chat input (maintenance OR usage warning) */}
         <SystemNotificationBanner
@@ -767,7 +748,6 @@ export const CenterStageLayout = ({
           onRetryUpload={onRetryUpload}
           maintenanceActive={maintenanceConfig?.enabled}
         />
-      </div>
       </div>
     </div>
   );

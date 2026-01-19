@@ -159,26 +159,26 @@ export const SlabCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="bg-card rounded-xl border border-border p-4 shadow-lg"
+      className="bg-card rounded-2xl border border-border p-6 shadow-lg"
     >
-      <div className="flex items-center gap-2 mb-4">
-        <div className="p-2 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500">
-          <Calculator className="w-5 h-5 text-white" />
+      <div className="flex items-center gap-3 mb-6">
+        <div className="p-2 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500">
+          <Calculator className="w-6 h-6 text-white" />
         </div>
         <div>
-          <h2 className="text-lg font-bold">Slab Calculator</h2>
-          <p className="text-xs text-muted-foreground">One-way & Two-way</p>
+          <h2 className="text-xl font-bold">Slab Calculator</h2>
+          <p className="text-sm text-muted-foreground">One-way & Two-way slab design</p>
         </div>
       </div>
 
-      <div className="space-y-4">
+      <div className="grid md:grid-cols-2 gap-6">
         {/* Geometry */}
-        <div className="space-y-3">
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+        <div className="space-y-4">
+          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
             Geometry
           </h3>
           
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="longSpan">Long Span (m)</Label>
               <Input
@@ -264,12 +264,12 @@ export const SlabCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
         </div>
 
         {/* Loads & Materials */}
-        <div className="space-y-3">
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+        <div className="space-y-4">
+          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
             Loads & Materials
           </h3>
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="deadLoad">Dead Load (kN/m²)</Label>
               <Input
@@ -331,37 +331,38 @@ export const SlabCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
               </SelectContent>
             </Select>
           </div>
-        </div>
 
-        {/* Info Box */}
-        <div className={cn(
-          "p-2 rounded-lg bg-muted/50 border border-border",
-          "flex items-start gap-2 text-xs"
-        )}>
-          <Info className="w-3 h-3 text-blue-500 mt-0.5 shrink-0" />
-          <div className="text-muted-foreground">
-            <p className="font-medium text-foreground">ACI 318 / Eurocode 2</p>
+          {/* Info Box */}
+          <div className={cn(
+            "p-3 rounded-lg bg-muted/50 border border-border",
+            "flex items-start gap-2 text-sm"
+          )}>
+            <Info className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
+            <div className="text-muted-foreground">
+              <p className="font-medium text-foreground">Design Standards</p>
+              <p>Calculations follow ACI 318 and Eurocode 2 provisions for slab design.</p>
+            </div>
           </div>
         </div>
-
-        <Button
-          className="w-full h-10 gap-2"
-          onClick={handleCalculate}
-          disabled={isCalculating}
-        >
-          {isCalculating ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Calculating...
-            </>
-          ) : (
-            <>
-              <Calculator className="w-4 h-4" />
-              Calculate Slab Design
-            </>
-          )}
-        </Button>
       </div>
+
+      <Button
+        className="w-full mt-6 gap-2 h-12 text-base"
+        onClick={handleCalculate}
+        disabled={isCalculating}
+      >
+        {isCalculating ? (
+          <>
+            <Loader2 className="w-5 h-5 animate-spin" />
+            Calculating...
+          </>
+        ) : (
+          <>
+            <Calculator className="w-5 h-5" />
+            Calculate Slab Design
+          </>
+        )}
+      </Button>
     </motion.div>
   );
 };

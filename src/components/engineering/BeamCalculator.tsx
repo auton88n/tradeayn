@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Calculator, Loader2, Ruler, Weight, Layers, Settings2 } from 'lucide-react';
+import { Calculator, Info, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { 
   Select,
@@ -14,10 +15,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useEngineeringHistory } from '@/hooks/useEngineeringHistory';
-import ZoomableVisualization from './ZoomableVisualization';
-import FuturisticInputSection from './FuturisticInputSection';
-import FuturisticInput from './FuturisticInput';
-import { BeamVisualization3D } from './BeamVisualization3D';
 
 interface BeamCalculatorProps {
   onCalculate: (result: {
@@ -51,14 +48,12 @@ const supportTypes = [
 
 export const BeamCalculator = ({ onCalculate, isCalculating, setIsCalculating, userId }: BeamCalculatorProps) => {
   const { saveCalculation } = useEngineeringHistory(userId);
-  const [is3DView, setIs3DView] = useState(true);
   
   const [formData, setFormData] = useState({
-    span: '6',
-    deadLoad: '15',
-    liveLoad: '10',
+    span: '',
+    deadLoad: '',
+    liveLoad: '',
     beamWidth: '300',
-    beamDepth: '500',
     concreteGrade: 'C30',
     steelGrade: 'Fy420',
     supportType: 'simply_supported',
@@ -70,6 +65,7 @@ export const BeamCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
   };
 
   const handleCalculate = async () => {
+    // Validate inputs
     const span = parseFloat(formData.span);
     const deadLoad = parseFloat(formData.deadLoad);
     const liveLoad = parseFloat(formData.liveLoad);
@@ -117,6 +113,7 @@ export const BeamCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
         exposureClass: formData.exposureClass,
       };
 
+      // Save to history (non-blocking)
       saveCalculation('beam', inputs, data);
 
       onCalculate({
@@ -136,202 +133,185 @@ export const BeamCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="flex flex-col gap-4"
-    >
-      {/* 3D Visualization - Hero Section */}
-      <ZoomableVisualization
-        title="Beam Structure"
-        is3D={is3DView}
-        onViewModeChange={setIs3DView}
-        className="h-[220px]"
+    <div className="max-w-2xl mx-auto">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-card rounded-2xl border border-border p-6 shadow-lg"
       >
-        <BeamVisualization3D
-          outputs={{
-            span: parseFloat(formData.span) || 6,
-            beamWidth: parseFloat(formData.beamWidth) || 300,
-            beamDepth: parseFloat(formData.beamDepth) || 500,
-            supportType: formData.supportType,
-            deadLoad: parseFloat(formData.deadLoad) || 15,
-            liveLoad: parseFloat(formData.liveLoad) || 10,
-          }}
-        />
-      </ZoomableVisualization>
-
-      {/* Input Sections - Collapsible */}
-      <div className="space-y-3">
-        {/* Geometry */}
-        <FuturisticInputSection 
-          title="Geometry" 
-          icon={<Ruler className="w-3.5 h-3.5" />}
-          defaultOpen={true}
-        >
-          <div className="grid grid-cols-2 gap-3">
-            <FuturisticInput
-              label="Span Length"
-              unit="m"
-              type="number"
-              placeholder="6.0"
-              value={formData.span}
-              onChange={(e) => handleInputChange('span', e.target.value)}
-              step="0.1"
-              min="0"
-            />
-            <FuturisticInput
-              label="Beam Width"
-              unit="mm"
-              type="number"
-              placeholder="300"
-              value={formData.beamWidth}
-              onChange={(e) => handleInputChange('beamWidth', e.target.value)}
-              step="25"
-              min="200"
-            />
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 text-white">
+            <Calculator className="w-6 h-6" />
           </div>
-        </FuturisticInputSection>
-
-        {/* Loads */}
-        <FuturisticInputSection 
-          title="Applied Loads" 
-          icon={<Weight className="w-3.5 h-3.5" />}
-          defaultOpen={true}
-        >
-          <div className="grid grid-cols-2 gap-3">
-            <FuturisticInput
-              label="Dead Load"
-              unit="kN/m"
-              type="number"
-              placeholder="15.0"
-              value={formData.deadLoad}
-              onChange={(e) => handleInputChange('deadLoad', e.target.value)}
-              step="0.5"
-              min="0"
-            />
-            <FuturisticInput
-              label="Live Load"
-              unit="kN/m"
-              type="number"
-              placeholder="10.0"
-              value={formData.liveLoad}
-              onChange={(e) => handleInputChange('liveLoad', e.target.value)}
-              step="0.5"
-              min="0"
-            />
-          </div>
-        </FuturisticInputSection>
-
-        {/* Materials */}
-        <FuturisticInputSection 
-          title="Materials" 
-          icon={<Layers className="w-3.5 h-3.5" />}
-          defaultOpen={false}
-        >
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-[11px] text-slate-400 font-medium uppercase tracking-wider">
-                Concrete Grade
-              </Label>
-              <Select value={formData.concreteGrade} onValueChange={(v) => handleInputChange('concreteGrade', v)}>
-                <SelectTrigger className="h-9 bg-slate-800/60 border-slate-700/60 text-sm focus:border-cyan-500/50 focus:ring-cyan-500/20">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {concreteGrades.map((grade) => (
-                    <SelectItem key={grade.value} value={grade.value}>
-                      {grade.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-[11px] text-slate-400 font-medium uppercase tracking-wider">
-                Steel Grade
-              </Label>
-              <Select value={formData.steelGrade} onValueChange={(v) => handleInputChange('steelGrade', v)}>
-                <SelectTrigger className="h-9 bg-slate-800/60 border-slate-700/60 text-sm focus:border-cyan-500/50 focus:ring-cyan-500/20">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {steelGrades.map((grade) => (
-                    <SelectItem key={grade.value} value={grade.value}>
-                      {grade.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </FuturisticInputSection>
-
-        {/* Configuration */}
-        <FuturisticInputSection 
-          title="Configuration" 
-          icon={<Settings2 className="w-3.5 h-3.5" />}
-          defaultOpen={false}
-        >
-          <div className="space-y-1.5">
-            <Label className="text-[11px] text-slate-400 font-medium uppercase tracking-wider">
-              Support Type
-            </Label>
-            <Select value={formData.supportType} onValueChange={(v) => handleInputChange('supportType', v)}>
-              <SelectTrigger className="h-9 bg-slate-800/60 border-slate-700/60 text-sm focus:border-cyan-500/50 focus:ring-cyan-500/20">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {supportTypes.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </FuturisticInputSection>
-
-        {/* Design Code Info */}
-        <div className={cn(
-          "flex items-center gap-3 px-3 py-2 rounded-xl",
-          "bg-cyan-500/5 border border-cyan-500/20"
-        )}>
-          <div className="w-1 h-8 rounded-full bg-gradient-to-b from-cyan-400 to-blue-500" />
           <div>
-            <p className="text-[10px] font-semibold text-cyan-300 uppercase tracking-wider">ACI 318 / Eurocode 2</p>
-            <p className="text-[10px] text-slate-400">
-              Load factors: 1.4 DL + 1.6 LL
-            </p>
+            <h2 className="text-xl font-bold">Beam Design Calculator</h2>
+            <p className="text-sm text-muted-foreground">Reinforced Concrete Beam Design</p>
           </div>
         </div>
 
-        {/* Calculate Button */}
-        <Button
-          onClick={handleCalculate}
-          disabled={isCalculating}
-          className={cn(
-            "w-full h-11 font-semibold text-sm",
-            "bg-gradient-to-r from-cyan-500 to-blue-500",
-            "hover:from-cyan-400 hover:to-blue-400",
-            "shadow-[0_0_20px_rgba(6,182,212,0.3)]",
-            "hover:shadow-[0_0_30px_rgba(6,182,212,0.5)]",
-            "transition-all duration-300",
-            "border border-cyan-400/30"
-          )}
-        >
-          {isCalculating ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Analyzing Structure...
-            </>
-          ) : (
-            <>
-              <Calculator className="w-4 h-4 mr-2" />
-              Calculate Beam Design
-            </>
-          )}
-        </Button>
-      </div>
-    </motion.div>
+        <div className="space-y-6">
+          {/* Geometry Section */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+              Geometry
+            </h3>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="span">Span Length (m)</Label>
+                <Input
+                  id="span"
+                  type="number"
+                  placeholder="e.g., 6.0"
+                  value={formData.span}
+                  onChange={(e) => handleInputChange('span', e.target.value)}
+                  step="0.1"
+                  min="0"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="beamWidth">Beam Width (mm)</Label>
+                <Input
+                  id="beamWidth"
+                  type="number"
+                  placeholder="e.g., 300"
+                  value={formData.beamWidth}
+                  onChange={(e) => handleInputChange('beamWidth', e.target.value)}
+                  step="25"
+                  min="200"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Loads Section */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+              Applied Loads
+            </h3>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="deadLoad">Dead Load (kN/m)</Label>
+                <Input
+                  id="deadLoad"
+                  type="number"
+                  placeholder="e.g., 15.0"
+                  value={formData.deadLoad}
+                  onChange={(e) => handleInputChange('deadLoad', e.target.value)}
+                  step="0.5"
+                  min="0"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="liveLoad">Live Load (kN/m)</Label>
+                <Input
+                  id="liveLoad"
+                  type="number"
+                  placeholder="e.g., 10.0"
+                  value={formData.liveLoad}
+                  onChange={(e) => handleInputChange('liveLoad', e.target.value)}
+                  step="0.5"
+                  min="0"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Materials Section */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+              Materials
+            </h3>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Concrete Grade</Label>
+                <Select value={formData.concreteGrade} onValueChange={(v) => handleInputChange('concreteGrade', v)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {concreteGrades.map((grade) => (
+                      <SelectItem key={grade.value} value={grade.value}>
+                        {grade.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Steel Grade</Label>
+                <Select value={formData.steelGrade} onValueChange={(v) => handleInputChange('steelGrade', v)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {steelGrades.map((grade) => (
+                      <SelectItem key={grade.value} value={grade.value}>
+                        {grade.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          {/* Support Conditions */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+              Support Conditions
+            </h3>
+            <div className="space-y-2">
+              <Label>Support Type</Label>
+              <Select value={formData.supportType} onValueChange={(v) => handleInputChange('supportType', v)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {supportTypes.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Info Box */}
+          <div className={cn(
+            "flex items-start gap-3 p-4 rounded-xl",
+            "bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800"
+          )}>
+            <Info className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+            <div className="text-sm text-blue-700 dark:text-blue-300">
+              <p className="font-medium mb-1">Calculation Method</p>
+              <p className="text-blue-600 dark:text-blue-400">
+                Uses ACI 318 / Eurocode 2 methods with load factors: 1.4 DL + 1.6 LL. 
+                Results are for reference only - professional verification required.
+              </p>
+            </div>
+          </div>
+
+          {/* Calculate Button */}
+          <Button
+            onClick={handleCalculate}
+            disabled={isCalculating}
+            className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
+          >
+            {isCalculating ? (
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                Calculating...
+              </>
+            ) : (
+              <>
+                <Calculator className="w-5 h-5 mr-2" />
+                Calculate Beam Design
+              </>
+            )}
+          </Button>
+        </div>
+      </motion.div>
+    </div>
   );
 };

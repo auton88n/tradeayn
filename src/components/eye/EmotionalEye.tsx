@@ -51,8 +51,6 @@ const EmotionalEyeComponent = ({
     triggerPulse,
     isWinking,
     activityLevel,
-    isEngineeringMode,
-    activeEngineeringTool,
   } = useAYNEmotion();
   const soundContext = useSoundContextOptional();
   const [isHovered, setIsHovered] = useState(false);
@@ -395,49 +393,20 @@ const EmotionalEyeComponent = ({
     return `hsl(${h}, ${newSat}%, ${l}%)`;
   };
 
-  // Apply saturation boost to colors - override for engineering mode
-  const engineeringGlowColor = 'hsl(195, 85%, 55%)'; // Cyan for engineering
-  const baseGlowColor = isEngineeringMode ? engineeringGlowColor : emotionConfig.glowColor;
-  const baseColor = isEngineeringMode ? 'hsl(195, 70%, 50%)' : emotionConfig.color;
-  
-  const boostedGlowColor = boostSaturation(baseGlowColor, saturationBoost);
-  const boostedColor = boostSaturation(baseColor, saturationBoost);
+  // Apply saturation boost to colors
+  const boostedGlowColor = boostSaturation(emotionConfig.glowColor, saturationBoost);
+  const boostedColor = boostSaturation(emotionConfig.color, saturationBoost);
 
-  // Calculate eye size for particles - smaller in engineering mode
+  // Calculate eye size for particles
   const eyeSizeMap = { sm: 120, md: 180, lg: 260 };
-  const baseEyeSize = eyeSizeMap[size];
-  const eyeSize = isEngineeringMode ? baseEyeSize * 0.7 : baseEyeSize;
-  
-  // Engineering mode uses grid particles and slower breathing
-  const effectiveParticleType = isEngineeringMode ? 'grid' : emotionConfig.particleType;
-  const effectiveBreathingDuration = isEngineeringMode 
-    ? breathingDuration * 1.5  // Slower, focused breathing
-    : breathingDuration;
+  const eyeSize = eyeSizeMap[size];
 
   return (
-    <div className={cn(
-      "relative flex items-center justify-center overflow-visible transition-transform duration-500",
-      isEngineeringMode && "scale-[0.7]", // Smaller eye in engineering mode
-      className
-    )}>
-      {/* Engineering mode indicator ring */}
-      {isEngineeringMode && (
-        <motion.div
-          className="absolute inset-0 rounded-full pointer-events-none"
-          initial={{ opacity: 0, scale: 1.2 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 1.2 }}
-          style={{
-            border: '2px solid hsl(195, 85%, 55%)',
-            boxShadow: '0 0 20px hsl(195, 85%, 55%, 0.4), inset 0 0 20px hsl(195, 85%, 55%, 0.1)',
-          }}
-        />
-      )}
-      
+    <div className={cn("relative flex items-center justify-center overflow-visible", className)}>
       {/* Thinking dots when processing */}
       <ThinkingDots 
         isVisible={isResponding && !performanceConfig.shouldReduceAnimations} 
-        color={boostedGlowColor}
+        color={emotionConfig.glowColor}
         size={eyeSize}
       />
       
