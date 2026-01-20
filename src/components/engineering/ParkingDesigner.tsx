@@ -402,80 +402,80 @@ const UnifiedDesigner: React.FC<{
       // Create printable content
       const printContent = document.createElement('div');
       printContent.innerHTML = `
-        <div style="padding: 40px; font-family: Arial, sans-serif; color: #333;">
-          <h1 style="color: #1a1a2e; border-bottom: 2px solid #3b82f6; padding-bottom: 10px;">Parking Layout Report</h1>
-          <p style="color: #666;">Generated: ${new Date().toLocaleString()}</p>
+        <div style="padding: 20px; font-family: Arial, sans-serif; color: #333;">
+          <h1 style="color: #1a1a2e; border-bottom: 2px solid #3b82f6; padding-bottom: 8px; margin-bottom: 5px;">Parking Layout Report</h1>
+          <p style="color: #666; margin: 0;">Generated: ${new Date().toLocaleString()}</p>
           
-          <h2 style="margin-top: 30px; color: #1a1a2e;">Site Dimensions</h2>
-          <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+          <h2 style="margin-top: 15px; margin-bottom: 8px; color: #1a1a2e; font-size: 16px;">Site Dimensions</h2>
+          <table style="width: 100%; border-collapse: collapse;">
             <tr style="background: #f8f9fa;">
-              <td style="padding: 10px; border: 1px solid #ddd;"><strong>Length:</strong></td>
-              <td style="padding: 10px; border: 1px solid #ddd;">${inputs.siteLength} m</td>
+              <td style="padding: 8px; border: 1px solid #ddd;"><strong>Length:</strong></td>
+              <td style="padding: 8px; border: 1px solid #ddd;">${inputs.siteLength} m</td>
             </tr>
             <tr>
-              <td style="padding: 10px; border: 1px solid #ddd;"><strong>Width:</strong></td>
-              <td style="padding: 10px; border: 1px solid #ddd;">${inputs.siteWidth} m</td>
+              <td style="padding: 8px; border: 1px solid #ddd;"><strong>Width:</strong></td>
+              <td style="padding: 8px; border: 1px solid #ddd;">${inputs.siteWidth} m</td>
             </tr>
             <tr style="background: #f8f9fa;">
-              <td style="padding: 10px; border: 1px solid #ddd;"><strong>Total Area:</strong></td>
-              <td style="padding: 10px; border: 1px solid #ddd;">${siteArea.toLocaleString()} m²</td>
+              <td style="padding: 8px; border: 1px solid #ddd;"><strong>Total Area:</strong></td>
+              <td style="padding: 8px; border: 1px solid #ddd;">${siteArea.toLocaleString()} m²</td>
             </tr>
             <tr>
-              <td style="padding: 10px; border: 1px solid #ddd;"><strong>Parking Type:</strong></td>
-              <td style="padding: 10px; border: 1px solid #ddd;">${inputs.parkingType.charAt(0).toUpperCase() + inputs.parkingType.slice(1)}</td>
+              <td style="padding: 8px; border: 1px solid #ddd;"><strong>Parking Type:</strong></td>
+              <td style="padding: 8px; border: 1px solid #ddd;">${inputs.parkingType.charAt(0).toUpperCase() + inputs.parkingType.slice(1)}</td>
             </tr>
             <tr style="background: #f8f9fa;">
-              <td style="padding: 10px; border: 1px solid #ddd;"><strong>Parking Angle:</strong></td>
-              <td style="padding: 10px; border: 1px solid #ddd;">${inputs.parkingAngle}°</td>
+              <td style="padding: 8px; border: 1px solid #ddd;"><strong>Parking Angle:</strong></td>
+              <td style="padding: 8px; border: 1px solid #ddd;">${inputs.parkingAngle}°</td>
             </tr>
           </table>
           
-          <h2 style="margin-top: 30px; color: #1a1a2e;">Parking Summary</h2>
-          <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+          <h2 style="margin-top: 15px; margin-bottom: 8px; color: #1a1a2e; font-size: 16px;">Parking Summary</h2>
+          <table style="width: 100%; border-collapse: collapse;">
             <tr style="background: #3b82f6; color: white;">
-              <td style="padding: 12px; border: 1px solid #2563eb;"><strong>Total Spaces</strong></td>
-              <td style="padding: 12px; border: 1px solid #2563eb; font-size: 18px;">${layout.totalSpaces}</td>
+              <td style="padding: 10px; border: 1px solid #2563eb;"><strong>Total Spaces</strong></td>
+              <td style="padding: 10px; border: 1px solid #2563eb; font-size: 16px;">${layout.totalSpaces}</td>
             </tr>
             <tr style="background: #f0f9ff;">
-              <td style="padding: 10px; border: 1px solid #ddd;"><strong>Accessible (ADA):</strong></td>
-              <td style="padding: 10px; border: 1px solid #ddd;">${layout.accessibleSpaces}</td>
+              <td style="padding: 8px; border: 1px solid #ddd;"><strong>Accessible (ADA):</strong></td>
+              <td style="padding: 8px; border: 1px solid #ddd;">${layout.accessibleSpaces}</td>
             </tr>
             <tr>
-              <td style="padding: 10px; border: 1px solid #ddd;"><strong>EV Charging:</strong></td>
-              <td style="padding: 10px; border: 1px solid #ddd;">${layout.evSpaces}</td>
+              <td style="padding: 8px; border: 1px solid #ddd;"><strong>EV Charging:</strong></td>
+              <td style="padding: 8px; border: 1px solid #ddd;">${layout.evSpaces}</td>
             </tr>
             <tr style="background: #f0f9ff;">
-              <td style="padding: 10px; border: 1px solid #ddd;"><strong>Compact:</strong></td>
-              <td style="padding: 10px; border: 1px solid #ddd;">${layout.compactSpaces}</td>
+              <td style="padding: 8px; border: 1px solid #ddd;"><strong>Compact:</strong></td>
+              <td style="padding: 8px; border: 1px solid #ddd;">${layout.compactSpaces}</td>
             </tr>
             <tr>
-              <td style="padding: 10px; border: 1px solid #ddd;"><strong>Standard:</strong></td>
-              <td style="padding: 10px; border: 1px solid #ddd;">${layout.spaces.filter(s => s.type === 'standard').length}</td>
+              <td style="padding: 8px; border: 1px solid #ddd;"><strong>Standard:</strong></td>
+              <td style="padding: 8px; border: 1px solid #ddd;">${layout.spaces.filter(s => s.type === 'standard').length}</td>
             </tr>
             <tr style="background: #22c55e; color: white;">
-              <td style="padding: 12px; border: 1px solid #16a34a;"><strong>Efficiency</strong></td>
-              <td style="padding: 12px; border: 1px solid #16a34a; font-size: 18px;">${stats.efficiency}%</td>
+              <td style="padding: 10px; border: 1px solid #16a34a;"><strong>Efficiency</strong></td>
+              <td style="padding: 10px; border: 1px solid #16a34a; font-size: 16px;">${stats.efficiency}%</td>
             </tr>
           </table>
 
-          <h2 style="margin-top: 30px; color: #1a1a2e;">Space Dimensions</h2>
-          <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+          <h2 style="margin-top: 15px; margin-bottom: 8px; color: #1a1a2e; font-size: 16px;">Space Dimensions</h2>
+          <table style="width: 100%; border-collapse: collapse;">
             <tr style="background: #f8f9fa;">
-              <td style="padding: 10px; border: 1px solid #ddd;"><strong>Space Width:</strong></td>
-              <td style="padding: 10px; border: 1px solid #ddd;">${inputs.spaceWidth} m</td>
+              <td style="padding: 8px; border: 1px solid #ddd;"><strong>Space Width:</strong></td>
+              <td style="padding: 8px; border: 1px solid #ddd;">${inputs.spaceWidth} m</td>
             </tr>
             <tr>
-              <td style="padding: 10px; border: 1px solid #ddd;"><strong>Space Length:</strong></td>
-              <td style="padding: 10px; border: 1px solid #ddd;">${inputs.spaceLength} m</td>
+              <td style="padding: 8px; border: 1px solid #ddd;"><strong>Space Length:</strong></td>
+              <td style="padding: 8px; border: 1px solid #ddd;">${inputs.spaceLength} m</td>
             </tr>
             <tr style="background: #f8f9fa;">
-              <td style="padding: 10px; border: 1px solid #ddd;"><strong>Aisle Width:</strong></td>
-              <td style="padding: 10px; border: 1px solid #ddd;">${inputs.aisleWidth} m</td>
+              <td style="padding: 8px; border: 1px solid #ddd;"><strong>Aisle Width:</strong></td>
+              <td style="padding: 8px; border: 1px solid #ddd;">${inputs.aisleWidth} m</td>
             </tr>
           </table>
           
-          <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #999; font-size: 12px;">
-            <p>Generated by AYN Civil Engineering Studio | aynn.io</p>
+          <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #ddd; color: #999; font-size: 11px;">
+            <p style="margin: 0;">Generated by AYN Civil Engineering Studio | aynn.io</p>
           </div>
         </div>
       `;
