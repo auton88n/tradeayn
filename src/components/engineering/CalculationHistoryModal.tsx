@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Calculator, Building2, Box, Mountain, Trash2, Clock, ArrowRight } from 'lucide-react';
+import { X, Calculator, Building2, Box, Mountain, Trash2, Clock, ArrowRight, Layers, Blocks, Car } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useEngineeringHistory, CalculationHistoryItem } from '@/hooks/useEngineeringHistory';
@@ -18,6 +18,9 @@ const typeConfig: Record<string, { icon: React.ElementType; color: string; label
   beam: { icon: Calculator, color: 'from-blue-500 to-cyan-500', label: 'Beam Design' },
   foundation: { icon: Building2, color: 'from-amber-500 to-orange-500', label: 'Foundation Design' },
   column: { icon: Box, color: 'from-purple-500 to-pink-500', label: 'Column Design' },
+  slab: { icon: Layers, color: 'from-green-500 to-emerald-500', label: 'Slab Design' },
+  retaining_wall: { icon: Blocks, color: 'from-stone-500 to-slate-500', label: 'Retaining Wall' },
+  parking: { icon: Car, color: 'from-violet-500 to-indigo-500', label: 'Parking Layout' },
   grading: { icon: Mountain, color: 'from-emerald-500 to-teal-500', label: 'Grading Design' },
 };
 
@@ -47,26 +50,38 @@ export const CalculationHistoryModal: React.FC<CalculationHistoryModalProps> = (
   const formatInputs = (inputs: Record<string, any>, type: string) => {
     switch (type) {
       case 'beam':
-        return `${inputs.span}m span, ${inputs.deadLoad}+${inputs.liveLoad} kN/m`;
+        return `${inputs.span || 0}m span, ${(inputs.deadLoad || 0) + (inputs.liveLoad || 0)} kN/m`;
       case 'foundation':
-        return `${inputs.columnLoad} kN load, ${inputs.soilType || 'standard'} soil`;
+        return `${inputs.columnLoad || 0} kN load, ${inputs.soilType || 'standard'} soil`;
       case 'column':
-        return `${inputs.axialLoad} kN, ${inputs.columnWidth}x${inputs.columnDepth}mm`;
+        return `${inputs.axialLoad || 0} kN, ${inputs.columnWidth || 0}x${inputs.columnDepth || 0}mm`;
+      case 'slab':
+        return `${inputs.longSpan || 0}x${inputs.shortSpan || 0}m, ${(inputs.deadLoad || 0) + (inputs.liveLoad || 0)} kN/m²`;
+      case 'retaining_wall':
+        return `${inputs.wallHeight || 0}m height, ${inputs.soilType || 'standard'} soil`;
+      case 'parking':
+        return `${inputs.siteLength || 0}x${inputs.siteWidth || 0}m site, ${inputs.floors || 1} floor(s)`;
       case 'grading':
-        return `${inputs.pointCount || '?'} survey points`;
+        return `${inputs.pointCount || inputs.surveyPoints?.length || '?'} survey points`;
       default:
-        return JSON.stringify(inputs).slice(0, 50);
+        return 'Custom design';
     }
   };
 
   const formatOutputs = (outputs: Record<string, any>, type: string) => {
     switch (type) {
       case 'beam':
-        return `${outputs.beamWidth}x${outputs.totalDepth}mm`;
+        return `${outputs.beamWidth || 0}x${outputs.totalDepth || 0}mm`;
       case 'foundation':
-        return `${outputs.length}x${outputs.width}m, ${outputs.depth}mm`;
+        return `${outputs.length || 0}x${outputs.width || 0}m, ${outputs.depth || 0}mm`;
       case 'column':
         return `${outputs.requiredSteelArea?.toFixed(0) || '?'}mm² steel`;
+      case 'slab':
+        return `${outputs.slabThickness || outputs.thickness || '?'}mm thick`;
+      case 'retaining_wall':
+        return `Base: ${outputs.baseWidth || '?'}mm`;
+      case 'parking':
+        return `${outputs.totalSpaces || outputs.layout?.totalSpaces || '?'} spaces`;
       case 'grading':
         return `Cut: ${outputs.totalCutVolume?.toLocaleString() || '?'}m³`;
       default:
