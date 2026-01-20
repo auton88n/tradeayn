@@ -3,6 +3,7 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Environment, ContactShadows } from '@react-three/drei';
 import * as THREE from 'three';
 import { ParkingCar3D } from './parking/components/ParkingCar3D';
+import { usePerformanceMode } from '@/hooks/usePerformanceMode';
 
 interface ParkingSpace {
   id: string;
@@ -389,26 +390,31 @@ const ParkingFloor: React.FC<{
   );
 };
 
-const Scene: React.FC<ParkingVisualization3DProps> = ({
+const Scene: React.FC<ParkingVisualization3DProps & { isLowEndDevice: boolean }> = ({
   layout,
   siteLength,
   siteWidth,
   parkingType,
   floors,
+  isLowEndDevice,
 }) => {
   const floorHeight = 3;
+  
+  // Performance-based car display ratio
+  const carDisplayRatio = isLowEndDevice ? 0.3 : 0.6;
 
-  // Determine which spaces have cars (roughly 60% occupancy)
+  // Determine which spaces have cars (performance-aware occupancy)
   const carsInSpaces = useMemo(() => {
     const carMap = new Map<string, boolean>();
     layout.spaces.forEach((space) => {
-      carMap.set(space.id, Math.random() > 0.4);
+      carMap.set(space.id, Math.random() < carDisplayRatio);
     });
     return carMap;
-  }, [layout.spaces]);
+  }, [layout.spaces, carDisplayRatio]);
 
-  // Generate tree positions around perimeter
+  // Generate tree positions around perimeter (skip on low-end devices)
   const treePositions = useMemo(() => {
+    if (isLowEndDevice) return [];
     const positions: [number, number, number][] = [];
     // Along top edge
     for (let x = 5; x < siteLength - 5; x += 15) {
@@ -419,17 +425,18 @@ const Scene: React.FC<ParkingVisualization3DProps> = ({
       positions.push([x, 0, siteWidth + 3]);
     }
     return positions;
-  }, [siteLength, siteWidth]);
+  }, [siteLength, siteWidth, isLowEndDevice]);
 
-  // Light pole positions
+  // Light pole positions (skip on low-end devices)
   const lightPolePositions = useMemo(() => {
+    if (isLowEndDevice) return [];
     const positions: [number, number, number][] = [];
     for (let x = 10; x < siteLength - 5; x += 25) {
       positions.push([x, 0, -2]);
       positions.push([x, 0, siteWidth + 2]);
     }
     return positions;
-  }, [siteLength, siteWidth]);
+  }, [siteLength, siteWidth, isLowEndDevice]);
 
   return (
     <>
@@ -522,14 +529,16 @@ const Scene: React.FC<ParkingVisualization3DProps> = ({
         <LightPole key={`light-${i}`} position={pos} />
       ))}
 
-      {/* Contact shadows for extra realism */}
-      <ContactShadows
-        position={[siteLength / 2, 0, siteWidth / 2]}
-        opacity={0.4}
-        scale={Math.max(siteLength, siteWidth) * 1.5}
-        blur={2}
-        far={10}
-      />
+      {/* Contact shadows for extra realism (skip on low-end) */}
+      {!isLowEndDevice && (
+        <ContactShadows
+          position={[siteLength / 2, 0, siteWidth / 2]}
+          opacity={0.4}
+          scale={Math.max(siteLength, siteWidth) * 1.5}
+          blur={2}
+          far={10}
+        />
+      )}
     </>
   );
 };
@@ -537,10 +546,16 @@ const Scene: React.FC<ParkingVisualization3DProps> = ({
 export const ParkingVisualization3D: React.FC<ParkingVisualization3DProps> = (props) => {
   const { siteLength, siteWidth } = props;
   const maxDim = Math.max(siteLength, siteWidth);
+  const { isLowEndDevice } = usePerformanceMode();
 
   return (
     <div className="w-full h-full">
-      <Canvas shadows>
+      <Canvas 
+        shadows={!isLowEndDevice}
+        dpr={isLowEndDevice ? 1 : [1, 2]}
+        frameloop="demand"
+        gl={{ antialias: !isLowEndDevice }}
+      >
         <PerspectiveCamera
           makeDefault
           position={[siteLength * 0.7, maxDim * 0.5, siteWidth * 1.2]}
@@ -555,8 +570,8 @@ export const ParkingVisualization3D: React.FC<ParkingVisualization3DProps> = (pr
           enableDamping
           dampingFactor={0.05}
         />
-        <Scene {...props} />
-        <Environment preset="city" />
+        <Scene {...props} isLowEndDevice={isLowEndDevice} />
+        {!isLowEndDevice && <Environment preset="city" />}
       </Canvas>
     </div>
   );
