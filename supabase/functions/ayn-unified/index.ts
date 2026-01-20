@@ -199,11 +199,26 @@ function detectLanguage(message: string): string {
   return 'en';
 }
 
-// Build system prompt based on intent
-function buildSystemPrompt(intent: string, language: string, context: Record<string, unknown>, userMessage: string): string {
+// Build system prompt based on intent with user memories
+function buildSystemPrompt(
+  intent: string, 
+  language: string, 
+  context: Record<string, unknown>, 
+  userMessage: string,
+  userContext: Record<string, unknown> = {}
+): string {
   // Auto-detect language from user message if not set
   const detectedLang = language || detectLanguage(userMessage);
   const isArabic = detectedLang === 'ar';
+  
+  // Extract memories from user context
+  const memories = (userContext as { memories?: Array<{ type: string; key: string; data: Record<string, unknown> }> })?.memories || [];
+  
+  // Build personalized memory section
+  const memorySection = memories.length > 0 
+    ? `\n\nYOU REMEMBER ABOUT THIS USER (use naturally when relevant):
+${memories.map(m => `- ${m.type}/${m.key}: ${JSON.stringify(m.data)}`).join('\n')}`
+    : '';
   
   const basePrompt = `you are AYN (عين), an intelligent AI assistant.
 
@@ -239,7 +254,12 @@ IDENTITY QUESTIONS (respond exactly like this):
 - "what can you do?" → briefly mention your capabilities and the services at aynn.io
 
 LANGUAGE: respond in ${isArabic ? 'Arabic (العربية)' : 'the same language the user writes in'}. 
-${isArabic ? 'استخدم العربية الفصحى البسيطة مع لمسة ودية.' : 'If user writes in Spanish, reply in Spanish. French → French. etc.'}`;
+${isArabic ? 'استخدم العربية الفصحى البسيطة مع لمسة ودية.' : 'If user writes in Spanish, reply in Spanish. French → French. etc.'}
+
+USER PRIVACY:
+- NEVER share any information about other users
+- all memories are private to this user only
+- if asked about other users, say you can't share that info${memorySection}`;
 
   if (intent === 'engineering') {
     return `${basePrompt}
@@ -277,6 +297,42 @@ SEARCH MODE:
   }
 
   return basePrompt;
+}
+
+// Extract and save memories from conversation
+async function extractAndSaveMemories(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  userMessage: string
+): Promise<void> {
+  const patterns = [
+    { regex: /my name is (\w+)/i, type: 'profile', key: 'name' },
+    { regex: /i'm (\w+), /i, type: 'profile', key: 'name' },
+    { regex: /call me (\w+)/i, type: 'profile', key: 'preferred_name' },
+    { regex: /i'm (?:a |an )?(\w+(?:\s+\w+)?)\s*(?:engineer|developer|designer|architect|manager)/i, type: 'profile', key: 'profession' },
+    { regex: /i work (?:at|for|with) (.+?)(?:\.|,|$)/i, type: 'profile', key: 'company' },
+    { regex: /i (?:prefer|use|follow) (.+?) code/i, type: 'preference', key: 'building_code' },
+    { regex: /i (?:usually|always|prefer to) use (.+?) units/i, type: 'preference', key: 'units' },
+    { regex: /i'm (?:from|based in|located in) (.+?)(?:\.|,|$)/i, type: 'profile', key: 'location' },
+  ];
+
+  for (const pattern of patterns) {
+    const match = userMessage.match(pattern.regex);
+    if (match && match[1]) {
+      try {
+        await supabase.rpc('upsert_user_memory', {
+          _user_id: userId,
+          _memory_type: pattern.type,
+          _memory_key: pattern.key,
+          _memory_data: { value: match[1].trim(), source: 'conversation', extracted_at: new Date().toISOString() },
+          _priority: 1
+        });
+        console.log(`[ayn-unified] Saved memory: ${pattern.type}/${pattern.key} = ${match[1]}`);
+      } catch (err) {
+        console.error(`[ayn-unified] Failed to save memory:`, err);
+      }
+    }
+  }
 }
 
 // Detect intent from message
@@ -548,12 +604,17 @@ serve(async (req) => {
       });
     }
 
-    // Get user context for personalization
+    // Get user context for personalization (includes memories)
     const userContext = await getUserContext(supabase, user.id);
     const language = (userContext as { preferences?: { language?: string } })?.preferences?.language || 'en';
 
-    // Build system prompt with user message for language detection
-    const systemPrompt = buildSystemPrompt(intent, language, context, lastMessage);
+    // Extract and save any memories from the user's message (async, don't block)
+    extractAndSaveMemories(supabase, user.id, lastMessage).catch(err => 
+      console.error('[ayn-unified] Memory extraction failed:', err)
+    );
+
+    // Build system prompt with user message for language detection AND user memories
+    const systemPrompt = buildSystemPrompt(intent, language, context, lastMessage, userContext);
 
     // Handle image generation intent (LAB mode)
     if (intent === 'image') {

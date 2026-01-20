@@ -159,6 +159,28 @@ export const SaveDesignDialog: React.FC<SaveDesignDialogProps> = ({
 
       if (portfolioError) throw portfolioError;
 
+      // Also save to user memory for AYN context
+      try {
+        await supabase.rpc('upsert_user_memory', {
+          _user_id: userId,
+          _memory_type: 'project',
+          _memory_key: `saved_${calculationType}_${title.toLowerCase().replace(/\s+/g, '_').slice(0, 30)}`,
+          _memory_data: {
+            type: calculationType,
+            title: title.trim(),
+            keySpecs: Object.fromEntries(
+              Object.entries(keySpecs).slice(0, 5)
+            ),
+            savedAt: new Date().toISOString()
+          },
+          _priority: 2
+        });
+        console.log('[SaveDesignDialog] Design saved to user memory for AYN');
+      } catch (memoryError) {
+        console.error('[SaveDesignDialog] Failed to save to memory:', memoryError);
+        // Non-blocking - design still saved to portfolio
+      }
+
       toast({
         title: 'Design Saved!',
         description: `"${title}" has been added to your portfolio.`,
