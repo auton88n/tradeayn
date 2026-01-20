@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Upload, FileText, AlertCircle, CheckCircle } from 'lucide-react';
 import {
   Dialog,
@@ -16,11 +16,14 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useParkingSite } from '../context/ParkingSiteContext';
 import { parsePointsFromText, roundTo } from '../utils/geometry';
 import { Point2D } from '../types/parking.types';
+import { toast } from 'sonner';
 
 interface CSVImportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
+
+const VALID_EXTENSIONS = ['.csv', '.txt', '.xyz', '.pts'];
 
 export function CSVImportDialog({ open, onOpenChange }: CSVImportDialogProps) {
   const { boundaryPoints, setBoundaryPoints } = useParkingSite();
@@ -28,6 +31,9 @@ export function CSVImportDialog({ open, onOpenChange }: CSVImportDialogProps) {
   const [replaceExisting, setReplaceExisting] = useState(true);
   const [parsedPoints, setParsedPoints] = useState<Point2D[]>([]);
   const [parseError, setParseError] = useState<string | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [fileName, setFileName] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleTextChange = (text: string) => {
     setCsvText(text);
@@ -51,6 +57,44 @@ export function CSVImportDialog({ open, onOpenChange }: CSVImportDialogProps) {
     }
   };
 
+  const handleFileUpload = async (file: File) => {
+    const ext = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+    
+    if (!VALID_EXTENSIONS.includes(ext)) {
+      toast.error('Unsupported file type', {
+        description: 'Use CSV, TXT, XYZ, or PTS files.'
+      });
+      return;
+    }
+    
+    try {
+      const text = await file.text();
+      setFileName(file.name);
+      handleTextChange(text);
+      toast.success('File loaded', {
+        description: `${file.name} ready for import`
+      });
+    } catch (err) {
+      toast.error('Failed to read file');
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const file = e.dataTransfer?.files[0];
+    if (file) handleFileUpload(file);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragOver(false);
+  };
+
   const handleImport = () => {
     if (parsedPoints.length === 0) return;
     
@@ -63,6 +107,7 @@ export function CSVImportDialog({ open, onOpenChange }: CSVImportDialogProps) {
     onOpenChange(false);
     setCsvText('');
     setParsedPoints([]);
+    setFileName(null);
   };
 
   const handleClose = () => {
@@ -70,6 +115,7 @@ export function CSVImportDialog({ open, onOpenChange }: CSVImportDialogProps) {
     setCsvText('');
     setParsedPoints([]);
     setParseError(null);
+    setFileName(null);
   };
 
   const sampleData = `# Example formats (comma, tab, or space separated)
@@ -88,12 +134,54 @@ export function CSVImportDialog({ open, onOpenChange }: CSVImportDialogProps) {
             Import Boundary Points
           </DialogTitle>
           <DialogDescription>
-            Paste coordinates from survey data, CSV, or spreadsheet.
-            Supports comma, tab, or space-separated values.
+            Upload a file or paste coordinates from survey data.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* File Drop Zone */}
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer ${
+              isDragOver ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-muted-foreground/50'
+            }`}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Upload className={`w-8 h-8 mx-auto mb-2 ${isDragOver ? 'text-primary' : 'text-muted-foreground'}`} />
+            {fileName ? (
+              <p className="text-sm font-medium text-foreground flex items-center justify-center gap-2">
+                <FileText className="w-4 h-4" />
+                {fileName}
+              </p>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  Drop a file here or{' '}
+                  <span className="text-primary font-medium">browse</span>
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Supports CSV, TXT, XYZ, PTS
+                </p>
+              </>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv,.txt,.xyz,.pts"
+              onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
+              className="hidden"
+            />
+          </div>
+
+          {/* Separator */}
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <div className="flex-1 h-px bg-border" />
+            or paste coordinates
+            <div className="flex-1 h-px bg-border" />
+          </div>
+
           {/* Input Area */}
           <div>
             <Label htmlFor="csv-input">Coordinates (X, Y per line)</Label>
@@ -101,8 +189,11 @@ export function CSVImportDialog({ open, onOpenChange }: CSVImportDialogProps) {
               id="csv-input"
               placeholder={sampleData}
               value={csvText}
-              onChange={(e) => handleTextChange(e.target.value)}
-              className="h-40 font-mono text-sm mt-2"
+              onChange={(e) => {
+                setFileName(null);
+                handleTextChange(e.target.value);
+              }}
+              className="h-32 font-mono text-sm mt-2"
             />
           </div>
 
