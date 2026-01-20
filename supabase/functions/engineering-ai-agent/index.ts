@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -225,8 +226,6 @@ examples of good responses:
 - "based on your 6m beam with 20kN/m load, you'll need about 2000kN foundation capacity"
 - "that column seems undersized for the beam reactions - let me recalculate"`;
 };
-
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
