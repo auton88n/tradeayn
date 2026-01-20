@@ -28,6 +28,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { cn } from '@/lib/utils';
 import { useEngineeringSessionOptional } from '@/contexts/EngineeringSessionContext';
 import html2pdf from 'html2pdf.js';
+import { SaveDesignDialog } from './SaveDesignDialog';
 
 interface ParkingSpace {
   id: string;
@@ -169,7 +170,7 @@ const UnifiedDesigner: React.FC<{
   userId,
 }) => {
   const session = useEngineeringSessionOptional();
-
+  const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
   const handleInputChange = (field: string, value: string | number) => {
     setInputs((prev: ParkingInputs) => ({ ...prev, [field]: value }));
     // Track input changes for AYN
@@ -796,8 +797,40 @@ const UnifiedDesigner: React.FC<{
           onViewModeChange={setViewMode}
           onExportDXF={handleExportDXF}
           onExportPDF={handleExportPDF}
+          onSave={() => setIsSaveDialogOpen(true)}
         />
       </div>
+
+      {/* Save Design Dialog */}
+      <SaveDesignDialog
+        isOpen={isSaveDialogOpen}
+        onClose={() => setIsSaveDialogOpen(false)}
+        userId={userId}
+        calculationType="parking"
+        inputs={{
+          siteLength: inputs.siteLength,
+          siteWidth: inputs.siteWidth,
+          parkingType: inputs.parkingType,
+          parkingAngle: inputs.parkingAngle,
+          spaceWidth: inputs.spaceWidth,
+          spaceLength: inputs.spaceLength,
+          aisleWidth: inputs.aisleWidth,
+          accessiblePercent: inputs.accessiblePercent,
+          evPercent: inputs.evPercent,
+          compactPercent: inputs.compactPercent,
+          floors: inputs.floors,
+        }}
+        outputs={{
+          layout,
+          totalSpaces: layout?.totalSpaces || 0,
+          accessibleSpaces: layout?.accessibleSpaces || 0,
+          evSpaces: layout?.evSpaces || 0,
+          efficiency: stats.efficiency,
+        }}
+        onSaved={() => {
+          session?.trackSave('parking design');
+        }}
+      />
     </div>
   );
 };

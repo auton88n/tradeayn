@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Car, Accessibility, Zap, TrendingUp, Download, FileText } from 'lucide-react';
+import { Car, Accessibility, Zap, TrendingUp, Download, FileText, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -17,6 +17,7 @@ interface ParkingStatsBarProps {
   onViewModeChange: (mode: '2d' | '3d') => void;
   onExportDXF?: () => void;
   onExportPDF?: () => void;
+  onSave?: () => void;
   className?: string;
 }
 
@@ -53,6 +54,7 @@ export const ParkingStatsBar: React.FC<ParkingStatsBarProps> = ({
   onViewModeChange,
   onExportDXF,
   onExportPDF,
+  onSave,
   className,
 }) => {
   return (
@@ -125,6 +127,17 @@ export const ParkingStatsBar: React.FC<ParkingStatsBarProps> = ({
 
         {/* Export Buttons */}
         <div className="flex items-center gap-1 ml-2">
+          {onSave && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onSave}
+              className="gap-1.5 text-xs"
+            >
+              <Save className="w-3.5 h-3.5" />
+              Save
+            </Button>
+          )}
           <Button
             variant="outline"
             size="sm"
