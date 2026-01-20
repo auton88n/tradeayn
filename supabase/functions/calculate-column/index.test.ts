@@ -14,28 +14,28 @@ Deno.test("calculate-column returns valid results for tied column", async () => 
       "apikey": SUPABASE_ANON_KEY,
     },
     body: JSON.stringify({
-      width: 400,
-      depth: 400,
-      height: 3000,
-      axialLoad: 1500,
-      momentX: 80,
-      momentY: 60,
-      concreteGrade: "C30",
-      steelGrade: "Fy420",
-      columnType: "tied",
-      cover: 40,
-      effectiveLengthFactorX: 1.0,
-      effectiveLengthFactorY: 1.0
+      inputs: {
+        columnWidth: 400,
+        columnDepth: 400,
+        columnHeight: 3000,
+        axialLoad: 1500,
+        momentX: 80,
+        momentY: 60,
+        concreteGrade: "C30",
+        steelGrade: "420",
+        columnType: "tied",
+        coverThickness: 40
+      }
     }),
   });
 
   const data = await response.json();
   
   assertEquals(response.status, 200);
-  assertExists(data.AsRequired);
+  assertExists(data.steelAreaRequired);
   assertExists(data.barDiameter);
   assertExists(data.numberOfBars);
-  assert(data.AsRequired > 0, "Required steel area should be positive");
+  assert(data.steelAreaRequired > 0, "Required steel area should be positive");
 });
 
 Deno.test("calculate-column handles spiral column", async () => {
@@ -46,18 +46,18 @@ Deno.test("calculate-column handles spiral column", async () => {
       "apikey": SUPABASE_ANON_KEY,
     },
     body: JSON.stringify({
-      width: 500,
-      depth: 500,
-      height: 4000,
-      axialLoad: 2500,
-      momentX: 120,
-      momentY: 100,
-      concreteGrade: "C35",
-      steelGrade: "Fy500",
-      columnType: "spiral",
-      cover: 50,
-      effectiveLengthFactorX: 0.85,
-      effectiveLengthFactorY: 0.85
+      inputs: {
+        columnWidth: 500,
+        columnDepth: 500,
+        columnHeight: 4000,
+        axialLoad: 2500,
+        momentX: 120,
+        momentY: 100,
+        concreteGrade: "C35",
+        steelGrade: "500",
+        columnType: "spiral",
+        coverThickness: 50
+      }
     }),
   });
 
@@ -76,26 +76,26 @@ Deno.test("calculate-column checks slenderness", async () => {
       "apikey": SUPABASE_ANON_KEY,
     },
     body: JSON.stringify({
-      width: 300,
-      depth: 300,
-      height: 6000, // Tall column
-      axialLoad: 800,
-      momentX: 50,
-      momentY: 50,
-      concreteGrade: "C25",
-      steelGrade: "Fy420",
-      columnType: "tied",
-      cover: 40,
-      effectiveLengthFactorX: 1.0,
-      effectiveLengthFactorY: 1.0
+      inputs: {
+        columnWidth: 300,
+        columnDepth: 300,
+        columnHeight: 6000, // Tall column
+        axialLoad: 800,
+        momentX: 50,
+        momentY: 50,
+        concreteGrade: "C25",
+        steelGrade: "420",
+        columnType: "tied",
+        coverThickness: 40
+      }
     }),
   });
 
   const data = await response.json();
   
   assertEquals(response.status, 200);
-  assertExists(data.slendernessX);
-  assertExists(data.slendernessY);
+  assertExists(data.slendernessRatio);
+  assertExists(data.slendernessLimit);
 });
 
 Deno.test("calculate-column returns tie design", async () => {
@@ -106,18 +106,18 @@ Deno.test("calculate-column returns tie design", async () => {
       "apikey": SUPABASE_ANON_KEY,
     },
     body: JSON.stringify({
-      width: 450,
-      depth: 450,
-      height: 3500,
-      axialLoad: 2000,
-      momentX: 100,
-      momentY: 80,
-      concreteGrade: "C30",
-      steelGrade: "Fy420",
-      columnType: "tied",
-      cover: 40,
-      effectiveLengthFactorX: 1.0,
-      effectiveLengthFactorY: 1.0
+      inputs: {
+        columnWidth: 450,
+        columnDepth: 450,
+        columnHeight: 3500,
+        axialLoad: 2000,
+        momentX: 100,
+        momentY: 80,
+        concreteGrade: "C30",
+        steelGrade: "420",
+        columnType: "tied",
+        coverThickness: 40
+      }
     }),
   });
 
