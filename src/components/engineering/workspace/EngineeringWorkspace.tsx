@@ -435,14 +435,16 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
                     {/* Calculator Form */}
                     {renderCalculatorForm()}
                     
-                    {/* 3D Visualization */}
-                    <div className="h-[400px] md:h-[500px] bg-card border border-border/50 rounded-2xl overflow-hidden">
-                      {(Object.keys(currentInputs).length > 0 || calculationResult) ? (
-                        renderPreview()
-                      ) : (
-                        <PreviewPlaceholder calculatorType={selectedCalculator || undefined} />
-                      )}
-                    </div>
+                    {/* 3D Visualization - skip for parking since it has its own */}
+                    {selectedCalculator !== 'parking' && (
+                      <div className="h-[400px] md:h-[500px] bg-card border border-border/50 rounded-2xl overflow-hidden">
+                        {(Object.keys(currentInputs).length > 0 || calculationResult) ? (
+                          renderPreview()
+                        ) : (
+                          <PreviewPlaceholder calculatorType={selectedCalculator || undefined} />
+                        )}
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               )}
