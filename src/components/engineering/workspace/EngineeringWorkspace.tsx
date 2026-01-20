@@ -19,6 +19,7 @@ const ColumnCalculator = lazy(() => import('@/components/engineering/ColumnCalcu
 const SlabCalculator = lazy(() => import('@/components/engineering/SlabCalculator'));
 const RetainingWallCalculator = lazy(() => import('@/components/engineering/RetainingWallCalculator'));
 const ParkingDesigner = lazy(() => import('@/components/engineering/ParkingDesigner').then(m => ({ default: m.ParkingDesigner })));
+const GradingDesigner = lazy(() => import('@/components/engineering/GradingDesignerPanel'));
 
 // Lazy load 3D visualizations
 const BeamVisualization3D = lazy(() => import('@/components/engineering/BeamVisualization3D').then(m => ({ default: m.BeamVisualization3D })));
@@ -27,6 +28,7 @@ const ColumnVisualization3D = lazy(() => import('@/components/engineering/Column
 const SlabVisualization3D = lazy(() => import('@/components/engineering/SlabVisualization3D'));
 const RetainingWallVisualization3D = lazy(() => import('@/components/engineering/RetainingWallVisualization3D'));
 const ParkingVisualization3D = lazy(() => import('@/components/engineering/ParkingVisualization3D').then(m => ({ default: m.ParkingVisualization3D })));
+const TerrainVisualization3D = lazy(() => import('@/components/engineering/TerrainVisualization3D').then(m => ({ default: m.TerrainVisualization3D })));
 
 interface CalculationResult {
   type: CalculatorType;
@@ -162,6 +164,12 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
             <ParkingDesigner {...commonProps} />
           </Suspense>
         );
+      case 'grading':
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <GradingDesigner onInputChange={handleInputChange} />
+          </Suspense>
+        );
       default:
         return null;
     }
@@ -238,6 +246,18 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
               siteWidth={Number(previewInputs.siteWidth) || 30}
               parkingType={String(previewInputs.parkingType) || 'surface'}
               floors={Number(previewInputs.floors) || 1}
+            />
+          </Suspense>
+        );
+      case 'grading':
+        // Use fglPoints if available (after design generation), otherwise use survey points
+        const gradingPoints = previewInputs.fglPoints || previewInputs.points || [];
+        if (gradingPoints.length === 0) return null;
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <TerrainVisualization3D 
+              points={gradingPoints}
+              showFGL={!!previewInputs.fglPoints}
             />
           </Suspense>
         );
@@ -356,6 +376,7 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
                   formContent={renderCalculatorForm()}
                   previewContent={renderPreview()}
                   hasPreview={Object.keys(currentInputs).length > 0 || !!calculationResult}
+                  calculatorType={selectedCalculator || undefined}
                 />
               )}
             </AnimatePresence>
