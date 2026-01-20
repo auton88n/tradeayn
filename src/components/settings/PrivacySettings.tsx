@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, Download, Trash2, AlertTriangle } from 'lucide-react';
 import { Session } from '@supabase/supabase-js';
+import { MemoryManagement } from './MemoryManagement';
 
 interface PrivacySettingsProps {
   userId: string;
@@ -124,6 +125,14 @@ export const PrivacySettings = ({ userId, session }: PrivacySettingsProps) => {
 
   return (
     <div className="space-y-6">
+      {/* AYN Memory Management */}
+      <MemoryManagement
+        userId={userId}
+        allowMemoryCollection={(settings as any).allow_memory_collection ?? true}
+        onToggleMemoryCollection={(checked) => updateSettings({ allow_memory_collection: checked } as any)}
+        updating={updating}
+      />
+
       <Card className="p-6 bg-card/50 backdrop-blur-xl border-border/50">
         <h2 className="text-xl font-semibold mb-6">{t('settings.dataPersonalization')}</h2>
         <div className="space-y-4">

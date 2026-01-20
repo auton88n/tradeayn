@@ -140,7 +140,8 @@ const getSystemPrompt = (
   currentOutputs: Record<string, any> | null,
   allCalculatorStates: Record<string, any>,
   recentActions: any[],
-  sessionInfo: any
+  sessionInfo: any,
+  userMemories: Array<{ type: string; key: string; data: Record<string, any> }> = []
 ) => {
   const inputsStr = Object.keys(currentInputs).length > 0 ? JSON.stringify(currentInputs, null, 2) : "none set yet";
   const outputsStr = currentOutputs ? JSON.stringify(currentOutputs, null, 2) : "no results yet - need to run calculation";
@@ -157,6 +158,11 @@ const getSystemPrompt = (
     `[${new Date(a.timestamp).toLocaleTimeString()}] ${a.type}${a.calculator ? ` (${a.calculator})` : ''}: ${JSON.stringify(a.details)}`
   ).join('\n') || "none yet";
 
+  // Build personalized memory section
+  const memorySection = userMemories.length > 0 
+    ? `\nyou remember about this user:\n${userMemories.map(m => `- ${m.type}/${m.key}: ${JSON.stringify(m.data)}`).join('\n')}\n`
+    : '';
+
   return `you're ayn, a friendly ai assistant with engineering superpowers.
 
 personality & style:
@@ -172,6 +178,11 @@ identity:
 - website: aynn.io
 - you're NOT a separate "engineering AI" - you're the same AYN with calculator tools
 
+USER PRIVACY (CRITICAL):
+- NEVER share information about other users
+- all data shown here is private to THIS user only
+- if asked about other users, say you can't share that info
+${memorySection}
 current context:
 - active calculator: ${calculatorType || 'none selected'}
 - inputs: ${inputsStr}
@@ -215,6 +226,8 @@ examples of good responses:
 - "that column seems undersized for the beam reactions - let me recalculate"`;
 };
 
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -229,14 +242,31 @@ serve(async (req) => {
       messages = [],
       allCalculatorStates = {},
       recentActions = [],
-      sessionInfo = {}
+      sessionInfo = {},
+      userId
     } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
+    // Fetch user memories for personalization
+    let userMemories: Array<{ type: string; key: string; data: Record<string, any> }> = [];
+    if (userId) {
+      try {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        
+        const { data: userContext } = await supabase.rpc('get_user_context', { _user_id: userId });
+        userMemories = (userContext as { memories?: Array<{ type: string; key: string; data: Record<string, any> }> })?.memories || [];
+        console.log(`[engineering-ai-agent] Loaded ${userMemories.length} memories for user`);
+      } catch (err) {
+        console.error('[engineering-ai-agent] Failed to fetch user memories:', err);
+      }
+    }
+
     const conversationMessages = [
-      { role: "system", content: getSystemPrompt(calculatorType, currentInputs, currentOutputs, allCalculatorStates, recentActions, sessionInfo) },
+      { role: "system", content: getSystemPrompt(calculatorType, currentInputs, currentOutputs, allCalculatorStates, recentActions, sessionInfo, userMemories) },
       ...messages.slice(-10),
       { role: "user", content: question }
     ];

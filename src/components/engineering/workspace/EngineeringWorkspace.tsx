@@ -1,4 +1,4 @@
-import React, { useState, useCallback, Suspense, lazy, useEffect } from 'react';
+import React, { useState, useCallback, Suspense, lazy, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, HardHat, Sparkles } from 'lucide-react';
@@ -13,6 +13,7 @@ import { useEngineeringHistory } from '@/hooks/useEngineeringHistory';
 import { useEngineeringSession } from '@/contexts/EngineeringSessionContext';
 import { SEO } from '@/components/SEO';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 
 // Lazy load calculator components
 const BeamCalculator = lazy(() => import('@/components/engineering/BeamCalculator').then(m => ({ default: m.BeamCalculator })));
@@ -82,6 +83,41 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
     (window as any).__engineeringSessionContext = session.getAIContext;
     return () => { delete (window as any).__engineeringSessionContext; };
   }, [session]);
+
+  // Track session start time for memory saving
+  const sessionStartRef = useRef(Date.now());
+  const hasSavedSessionRef = useRef(false);
+
+  // Save session summary to user memory on unmount (for AYN context)
+  useEffect(() => {
+    return () => {
+      if (userId && !hasSavedSessionRef.current) {
+        const context = session.getAIContext();
+        const sessionDuration = Math.round((Date.now() - sessionStartRef.current) / 1000);
+        
+        // Only save if user actually used calculators and session was meaningful
+        const calcUsed = (context as any).calculatorsUsed;
+        if (calcUsed && calcUsed.length > 0 && sessionDuration > 30) {
+          hasSavedSessionRef.current = true;
+          
+          // Fire and forget - don't block unmount
+          supabase.rpc('upsert_user_memory', {
+            _user_id: userId,
+            _memory_type: 'project',
+            _memory_key: `eng_session_${Date.now()}`,
+            _memory_data: {
+              calculators: calcUsed,
+              lastCalculator: (context as any).activeCalculator,
+              calculationsRun: (context as any).calculationsRun || 0,
+              sessionDuration,
+              date: new Date().toISOString()
+            },
+            _priority: 2
+          });
+        }
+      }
+    };
+  }, [userId, session]);
 
   const handleCalculationComplete = useCallback((result: CalculationResult) => {
     setCalculationResult(result);
