@@ -109,7 +109,7 @@ export const CalculatorSidebar: React.FC<CalculatorSidebarProps> = ({
         initial={false}
         animate={{ width: isCollapsed ? 64 : 220 }}
         transition={{ duration: 0.2, ease: 'easeInOut' }}
-        className="h-full border-r border-border/50 bg-card/50 backdrop-blur-sm flex flex-col"
+        className="h-full border-r border-border/50 bg-card/50 backdrop-blur-sm flex flex-col z-30 relative"
       >
         {/* Header */}
         <div className={cn(
