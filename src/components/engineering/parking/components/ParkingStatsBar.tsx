@@ -33,17 +33,17 @@ const StatCard: React.FC<StatCardProps> = ({ icon, value, label, color }) => (
     initial={{ opacity: 0, y: 10 }}
     animate={{ opacity: 1, y: 0 }}
     className={cn(
-      "flex items-center gap-3 px-4 py-2 rounded-xl",
+      "flex items-center gap-2 px-2 py-1.5 rounded-lg",
       "bg-gradient-to-br from-background/80 to-background/40",
-      "border border-border/50 backdrop-blur-sm"
+      "border border-border/50 backdrop-blur-sm min-w-fit"
     )}
   >
-    <div className={cn("p-2 rounded-lg", color)}>
+    <div className={cn("p-1.5 rounded-md", color)}>
       {icon}
     </div>
     <div className="flex flex-col">
-      <span className="text-xl font-bold text-foreground">{value}</span>
-      <span className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</span>
+      <span className="text-base font-bold text-foreground">{value}</span>
+      <span className="text-[9px] text-muted-foreground uppercase tracking-wide whitespace-nowrap">{label}</span>
     </div>
   </motion.div>
 );
@@ -62,15 +62,15 @@ export const ParkingStatsBar: React.FC<ParkingStatsBarProps> = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        "flex items-center justify-between gap-4 p-3",
+        "flex flex-wrap items-center justify-between gap-2 p-2",
         "bg-gradient-to-r from-card/95 via-card to-card/95",
-        "border border-border/50 rounded-2xl backdrop-blur-md",
+        "border border-border/50 rounded-xl backdrop-blur-md",
         "shadow-lg shadow-black/5",
         className
       )}
     >
       {/* Stats Cards */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1.5 flex-wrap min-w-0">
         <StatCard
           icon={<Car className="w-4 h-4 text-primary-foreground" />}
           value={stats.totalSpaces}

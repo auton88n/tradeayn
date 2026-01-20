@@ -86,22 +86,22 @@ export function BoundaryPreview() {
     : '';
 
   return (
-    <div className="bg-card border rounded-lg p-4 h-full flex flex-col">
+    <div className="bg-card border rounded-lg p-4 h-full flex flex-col min-h-[300px]">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="font-semibold text-sm">Preview</h3>
+        <h3 className="font-semibold text-sm">Site Boundary Preview</h3>
         {mousePos && (
-          <span className="text-xs text-muted-foreground font-mono">
+          <span className="text-xs text-muted-foreground font-mono bg-muted px-2 py-0.5 rounded">
             ({mousePos.x}, {mousePos.y}) m
           </span>
         )}
       </div>
 
-      <div className="flex-1 min-h-0 bg-muted/30 rounded-lg overflow-hidden">
+      <div className="flex-1 min-h-[200px] bg-muted/50 rounded-lg overflow-hidden border border-border/30">
         <svg
           ref={svgRef}
           viewBox={`${viewMinX} ${viewMinY} ${viewWidth} ${viewHeight}`}
-          className="w-full h-full"
-          style={{ cursor: draggingId ? 'grabbing' : 'default' }}
+          className="w-full h-full bg-background"
+          style={{ cursor: draggingId ? 'grabbing' : 'crosshair' }}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={() => setMousePos(null)}
