@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -49,9 +48,6 @@ interface Memory {
 
 interface MemoryManagementProps {
   userId: string;
-  allowMemoryCollection: boolean;
-  onToggleMemoryCollection: (value: boolean) => void;
-  updating: boolean;
 }
 
 const memoryTypeIcons: Record<string, React.ReactNode> = {
@@ -68,12 +64,7 @@ const memoryTypeColors: Record<string, string> = {
   conversation: 'bg-orange-500/10 text-orange-500 border-orange-500/20',
 };
 
-export const MemoryManagement: React.FC<MemoryManagementProps> = ({
-  userId,
-  allowMemoryCollection,
-  onToggleMemoryCollection,
-  updating,
-}) => {
+export const MemoryManagement: React.FC<MemoryManagementProps> = ({ userId }) => {
   const { toast } = useToast();
   const [memories, setMemories] = useState<Memory[]>([]);
   const [loading, setLoading] = useState(false);
@@ -194,21 +185,6 @@ export const MemoryManagement: React.FC<MemoryManagementProps> = ({
       </div>
 
       <div className="space-y-4">
-        {/* Memory Collection Toggle */}
-        <div className="flex items-center justify-between p-4 rounded-lg bg-muted/30">
-          <div className="space-y-0.5">
-            <Label className="text-sm font-medium">Allow Memory Collection</Label>
-            <p className="text-sm text-muted-foreground">
-              Let AYN learn from our conversations for personalized help
-            </p>
-          </div>
-          <Switch
-            checked={allowMemoryCollection}
-            onCheckedChange={onToggleMemoryCollection}
-            disabled={updating}
-          />
-        </div>
-
         {/* View Memories Button */}
         <div className="flex items-center justify-between">
           <div className="space-y-0.5">

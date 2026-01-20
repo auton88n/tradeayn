@@ -126,12 +126,7 @@ export const PrivacySettings = ({ userId, session }: PrivacySettingsProps) => {
   return (
     <div className="space-y-6">
       {/* AYN Memory Management */}
-      <MemoryManagement
-        userId={userId}
-        allowMemoryCollection={(settings as any).allow_memory_collection ?? true}
-        onToggleMemoryCollection={(checked) => updateSettings({ allow_memory_collection: checked } as any)}
-        updating={updating}
-      />
+      <MemoryManagement userId={userId} />
 
       <Card className="p-6 bg-card/50 backdrop-blur-xl border-border/50">
         <h2 className="text-xl font-semibold mb-6">{t('settings.dataPersonalization')}</h2>
