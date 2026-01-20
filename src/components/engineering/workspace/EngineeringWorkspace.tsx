@@ -5,7 +5,7 @@ import { ArrowLeft, HardHat, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CalculatorSidebar, CalculatorType } from './CalculatorSidebar';
 import { EngineeringBottomChat } from './EngineeringBottomChat';
-import { SplitViewLayout } from './SplitViewLayout';
+import { PreviewPlaceholder } from './PreviewPlaceholder';
 import { CalculationHistoryModal } from '@/components/engineering/CalculationHistoryModal';
 import { CalculationComparison } from '@/components/engineering/CalculationComparison';
 import { SaveDesignDialog } from '@/components/engineering/SaveDesignDialog';
@@ -419,18 +419,32 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
           />
 
           {/* Workspace */}
-          <main className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <main className="flex-1 flex flex-col min-h-0 overflow-y-auto">
             <AnimatePresence mode="wait">
               {!selectedCalculator ? (
                 renderCalculatorSelection()
               ) : (
-                <SplitViewLayout
+                <motion.div
                   key={selectedCalculator}
-                  formContent={renderCalculatorForm()}
-                  previewContent={renderPreview()}
-                  hasPreview={Object.keys(currentInputs).length > 0 || !!calculationResult}
-                  calculatorType={selectedCalculator || undefined}
-                />
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="p-4 md:p-6"
+                >
+                  <div className="max-w-4xl mx-auto space-y-6">
+                    {/* Calculator Form */}
+                    {renderCalculatorForm()}
+                    
+                    {/* 3D Visualization */}
+                    <div className="h-[400px] md:h-[500px] bg-card border border-border/50 rounded-2xl overflow-hidden">
+                      {(Object.keys(currentInputs).length > 0 || calculationResult) ? (
+                        renderPreview()
+                      ) : (
+                        <PreviewPlaceholder calculatorType={selectedCalculator || undefined} />
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
               )}
             </AnimatePresence>
           </main>
