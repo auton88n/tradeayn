@@ -27,8 +27,27 @@ interface AnalysisOptions {
   checkCompliance: boolean;
 }
 
+interface ParsedDesignData {
+  data?: {
+    points: Array<{ x: number; y: number; z: number }>;
+    layers: string[];
+  };
+  summary: {
+    totalPoints: number;
+    nglPointCount: number;
+    designPointCount: number;
+    layerCount: number;
+    extractedLevels?: number[];
+  };
+  terrainAnalysis?: {
+    minElevation: number;
+    maxElevation: number;
+    avgElevation: number;
+  };
+}
+
 interface DesignReviewModeProps {
-  onAnalysisComplete: (result: any) => void;
+  onAnalysisComplete: (result: Record<string, unknown>) => void;
   isAnalyzing: boolean;
   setIsAnalyzing: (value: boolean) => void;
 }
@@ -41,7 +60,7 @@ export const DesignReviewMode: React.FC<DesignReviewModeProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [fileContent, setFileContent] = useState<string | null>(null);
-  const [parsedData, setParsedData] = useState<any>(null);
+  const [parsedData, setParsedData] = useState<ParsedDesignData | null>(null);
   const [userRequirements, setUserRequirements] = useState('');
   const [analysisOptions, setAnalysisOptions] = useState<AnalysisOptions>({
     calculateVolumes: true,
@@ -178,7 +197,7 @@ export const DesignReviewMode: React.FC<DesignReviewModeProps> = ({
       const dataTransfer = new DataTransfer();
       dataTransfer.items.add(file);
       input.files = dataTransfer.files;
-      handleFileSelect({ target: input } as any);
+      handleFileSelect({ target: input } as React.ChangeEvent<HTMLInputElement>);
     }
   }, [handleFileSelect]);
 

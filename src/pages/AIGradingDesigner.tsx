@@ -37,6 +37,12 @@ interface TerrainAnalysis {
   maxY: number;
 }
 
+// Using component-compatible types (matching GradingResults and DesignAnalysisResults props)
+type GradingDesign = Parameters<typeof GradingResults>[0]['design'];
+type CostBreakdown = Parameters<typeof GradingResults>[0]['costBreakdown'];
+type AnalysisResult = Parameters<typeof DesignAnalysisResults>[0]['result'];
+type Optimization = Parameters<typeof DesignAnalysisResults>[0]['onApplyOptimizations'] extends (optimizations: infer T) => void ? T extends Array<infer O> ? O : never : never;
+
 const AIGradingDesigner: React.FC = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('create');
@@ -47,14 +53,14 @@ const AIGradingDesigner: React.FC = () => {
   const [terrainAnalysis, setTerrainAnalysis] = useState<TerrainAnalysis | null>(null);
   const [requirements, setRequirements] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [design, setDesign] = useState<any>(null);
-  const [costBreakdown, setCostBreakdown] = useState<any>(null);
+  const [design, setDesign] = useState<GradingDesign>(null);
+  const [costBreakdown, setCostBreakdown] = useState<CostBreakdown>(null);
   const [totalCost, setTotalCost] = useState(0);
   const [fglPoints, setFglPoints] = useState<SurveyPoint[]>([]);
 
   // Review mode state
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult>(null);
   const [isApplyingOptimizations, setIsApplyingOptimizations] = useState(false);
 
   const handleUploadComplete = (uploadedPoints: SurveyPoint[], analysis: TerrainAnalysis) => {
@@ -100,11 +106,11 @@ const AIGradingDesigner: React.FC = () => {
     }
   };
 
-  const handleAnalysisComplete = (result: any) => {
-    setAnalysisResult(result);
+  const handleAnalysisComplete = (result: Record<string, unknown>) => {
+    setAnalysisResult(result as unknown as NonNullable<AnalysisResult>);
   };
 
-  const handleApplyOptimizations = async (optimizations: any[]) => {
+  const handleApplyOptimizations = async (optimizations: Optimization[]) => {
     if (!analysisResult?.parsedData) return;
 
     setIsApplyingOptimizations(true);
