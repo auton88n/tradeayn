@@ -342,9 +342,9 @@ const UnifiedDesigner: React.FC<{
   };
 
   return (
-    <div className="flex gap-6 h-full">
-      {/* Left Panel - Form Inputs */}
-      <div className="w-[380px] flex-shrink-0 space-y-4 overflow-y-auto pr-2">
+    <div className="flex flex-col h-full overflow-y-auto">
+      {/* Form Section - Full Width */}
+      <div className="space-y-4 pb-6">
         {/* Site Definition */}
         <InputSection 
           title="Site Definition" 
@@ -575,42 +575,46 @@ const UnifiedDesigner: React.FC<{
             </div>
           </InputSection>
         )}
-
-        {/* Generate Button */}
-        <Button
-          onClick={generateLayout}
-          disabled={isGenerating}
-          size="lg"
-          className="w-full gap-2 h-12 text-base font-semibold"
-        >
-          {isGenerating ? (
-            <>
-              <RotateCw className="w-5 h-5 animate-spin" />
-              Generating...
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-5 h-5" />
-              Generate Layout
-            </>
-          )}
-        </Button>
       </div>
 
-      {/* Right Panel - Visualization */}
-      <div className="flex-1 flex flex-col min-h-0">
-        {/* 3D/2D Visualization */}
-        <div className="flex-1 bg-card border rounded-2xl overflow-hidden relative min-h-0">
-          {layout ? (
-            viewMode === '2d' ? (
-              <ParkingLayout2D
-                layout={layout}
-                siteLength={parseFloat(inputs.siteLength)}
-                siteWidth={parseFloat(inputs.siteWidth)}
-                showDimensions={true}
-                showLabels={false}
-              />
-            ) : (
+      {/* Generate Button - Full Width */}
+      <Button
+        onClick={generateLayout}
+        disabled={isGenerating}
+        size="lg"
+        className="w-full gap-2 h-12 text-base font-semibold flex-shrink-0"
+      >
+        {isGenerating ? (
+          <>
+            <RotateCw className="w-5 h-5 animate-spin" />
+            Generating...
+          </>
+        ) : (
+          <>
+            <Sparkles className="w-5 h-5" />
+            Generate Layout
+          </>
+        )}
+      </Button>
+
+      {/* 3D/2D Visualization - Full Width Hero */}
+      <div className="flex-shrink-0 h-[450px] bg-card border rounded-2xl overflow-hidden relative mt-6">
+        {layout ? (
+          viewMode === '2d' ? (
+            <ParkingLayout2D
+              layout={layout}
+              siteLength={parseFloat(inputs.siteLength)}
+              siteWidth={parseFloat(inputs.siteWidth)}
+              showDimensions={true}
+              showLabels={false}
+            />
+          ) : (
+            <React.Suspense fallback={
+              <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                <RotateCw className="w-10 h-10 animate-spin mb-4 opacity-50" />
+                <p className="text-sm">Loading 3D Preview...</p>
+              </div>
+            }>
               <ParkingVisualization3D
                 layout={layout}
                 siteLength={parseFloat(inputs.siteLength)}
@@ -618,25 +622,25 @@ const UnifiedDesigner: React.FC<{
                 parkingType={inputs.parkingType}
                 floors={parseInt(inputs.floors)}
               />
-            )
-          ) : (
-            <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-              <Car className="w-20 h-20 mb-4 opacity-20" />
-              <p className="text-lg font-medium">Generating Layout...</p>
-            </div>
-          )}
-        </div>
+            </React.Suspense>
+          )
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+            <Car className="w-20 h-20 mb-4 opacity-20" />
+            <p className="text-lg font-medium">Generating Layout...</p>
+          </div>
+        )}
+      </div>
 
-        {/* Stats Bar */}
-        <div className="mt-4">
-          <ParkingStatsBar
-            stats={stats}
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
-            onExportDXF={() => toast({ title: "Export DXF", description: "DXF export coming soon" })}
-            onExportPDF={() => toast({ title: "Export PDF", description: "PDF export coming soon" })}
-          />
-        </div>
+      {/* Stats Bar - Full Width */}
+      <div className="mt-4 flex-shrink-0 pb-4">
+        <ParkingStatsBar
+          stats={stats}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          onExportDXF={() => toast({ title: "Export DXF", description: "DXF export coming soon" })}
+          onExportPDF={() => toast({ title: "Export PDF", description: "PDF export coming soon" })}
+        />
       </div>
     </div>
   );
