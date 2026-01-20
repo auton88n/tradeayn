@@ -436,7 +436,7 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
                     {renderCalculatorForm()}
                     
                     {/* 3D Visualization - skip for parking since it has its own */}
-                    {selectedCalculator !== 'parking' && (
+                    {selectedCalculator !== 'parking' && selectedCalculator !== 'column' && (
                       <div className="h-[400px] md:h-[500px] bg-card border border-border/50 rounded-2xl overflow-hidden">
                         {(Object.keys(currentInputs).length > 0 || calculationResult) ? (
                           renderPreview()
