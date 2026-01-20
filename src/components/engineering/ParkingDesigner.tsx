@@ -21,7 +21,7 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { ParkingLayout2D } from './ParkingLayout2D';
 import { ParkingVisualization3D } from './ParkingVisualization3D';
-import { ParkingSiteProvider } from './parking/context/ParkingSiteContext';
+import { ParkingSiteProvider, useParkingSite } from './parking/context/ParkingSiteContext';
 import { InputSection } from './ui';
 import { AnglePicker, ParkingStatsBar } from './parking/components';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -29,6 +29,10 @@ import { cn } from '@/lib/utils';
 import { useEngineeringSessionOptional } from '@/contexts/EngineeringSessionContext';
 import html2pdf from 'html2pdf.js';
 import { SaveDesignDialog } from './SaveDesignDialog';
+import { BoundaryPointsTable } from './parking/boundary/BoundaryPointsTable';
+import { BoundaryPreview } from './parking/boundary/BoundaryPreview';
+import { BoundaryMetrics } from './parking/boundary/BoundaryMetrics';
+import { calculateBoundaryMetrics, getBoundingBox } from './parking/utils/geometry';
 
 interface ParkingSpace {
   id: string;
@@ -171,6 +175,9 @@ const UnifiedDesigner: React.FC<{
 }) => {
   const session = useEngineeringSessionOptional();
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
+  const { boundaryPoints } = useParkingSite();
+  const polygonMetrics = calculateBoundaryMetrics(boundaryPoints);
+  
   const handleInputChange = (field: string, value: string | number) => {
     setInputs((prev: ParkingInputs) => ({ ...prev, [field]: value }));
     // Track input changes for AYN
@@ -181,8 +188,28 @@ const UnifiedDesigner: React.FC<{
     setIsGenerating(true);
 
     try {
-      const siteLength = parseFloat(inputs.siteLength);
-      const siteWidth = parseFloat(inputs.siteWidth);
+      let siteLength: number;
+      let siteWidth: number;
+      
+      // Handle polygon mode - use bounding box dimensions
+      if (inputs.siteMode === 'polygon') {
+        if (!polygonMetrics.isValid || boundaryPoints.length < 3) {
+          toast({
+            title: "Invalid Boundary",
+            description: polygonMetrics.validationError || "Please define at least 3 boundary points",
+            variant: "destructive",
+          });
+          setIsGenerating(false);
+          return;
+        }
+        const bbox = getBoundingBox(boundaryPoints);
+        siteLength = bbox.width;
+        siteWidth = bbox.height;
+      } else {
+        siteLength = parseFloat(inputs.siteLength);
+        siteWidth = parseFloat(inputs.siteWidth);
+      }
+      
       const spaceWidth = parseFloat(inputs.spaceWidth);
       const spaceLength = parseFloat(inputs.spaceLength);
       const aisleWidth = parseFloat(inputs.aisleWidth);
@@ -564,10 +591,17 @@ const UnifiedDesigner: React.FC<{
               </div>
             </div>
           ) : (
-            <div className="text-sm text-muted-foreground text-center py-4 border-2 border-dashed rounded-lg">
-              <MapPin className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p>Polygon boundary mode</p>
-              <p className="text-xs">Click on the preview to add points</p>
+            <div className="space-y-4">
+              {/* Points Table with Import/Export */}
+              <BoundaryPointsTable />
+              
+              {/* Interactive Preview Canvas */}
+              <div className="h-[200px] border border-border rounded-lg overflow-hidden">
+                <BoundaryPreview />
+              </div>
+              
+              {/* Metrics Bar */}
+              <BoundaryMetrics />
             </div>
           )}
 
@@ -575,7 +609,10 @@ const UnifiedDesigner: React.FC<{
           <div className="mt-3 p-2 bg-muted/30 rounded-lg flex items-center justify-between">
             <span className="text-xs text-muted-foreground">Total Site Area</span>
             <span className="text-sm font-medium">
-              {(parseFloat(inputs.siteLength) * parseFloat(inputs.siteWidth)).toLocaleString()} m²
+              {inputs.siteMode === 'rectangle'
+                ? (parseFloat(inputs.siteLength) * parseFloat(inputs.siteWidth)).toLocaleString()
+                : Math.round(polygonMetrics.area).toLocaleString()
+              } m²
             </span>
           </div>
         </InputSection>
@@ -737,7 +774,7 @@ const UnifiedDesigner: React.FC<{
       {/* Generate Button - Full Width */}
       <Button
         onClick={generateLayout}
-        disabled={isGenerating}
+        disabled={isGenerating || (inputs.siteMode === 'polygon' && (!polygonMetrics.isValid || boundaryPoints.length < 3))}
         size="lg"
         className="w-full gap-2 h-12 text-base font-semibold flex-shrink-0"
       >
