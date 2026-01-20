@@ -37,8 +37,6 @@ const calculatorOptions: CalculatorOption[] = [
     icon: Mountain,
     gradient: 'from-emerald-500 to-teal-500',
     available: true,
-    isPage: true,
-    path: '/engineering/grading',
   },
   {
     id: 'beam',
