@@ -348,7 +348,7 @@ const UnifiedDesigner: React.FC<{
         {/* Site Definition */}
         <InputSection 
           title="Site Definition" 
-          icon={<Maximize2 className="w-4 h-4" />}
+          icon={Maximize2}
           defaultOpen={true}
         >
           {/* Site Mode Toggle */}
@@ -426,7 +426,7 @@ const UnifiedDesigner: React.FC<{
         {/* Parking Configuration */}
         <InputSection 
           title="Parking Configuration" 
-          icon={<Car className="w-4 h-4" />}
+          icon={Car}
           defaultOpen={true}
         >
           {/* Parking Type */}
@@ -515,7 +515,7 @@ const UnifiedDesigner: React.FC<{
         {/* Special Spaces */}
         <InputSection 
           title="Special Spaces & Compliance" 
-          icon={<Accessibility className="w-4 h-4" />}
+          icon={Accessibility}
           defaultOpen={true}
         >
           <div className="space-y-4">
@@ -556,7 +556,7 @@ const UnifiedDesigner: React.FC<{
         {inputs.parkingType !== 'surface' && (
           <InputSection 
             title="Structure Options" 
-            icon={<Layers className="w-4 h-4" />}
+            icon={Layers}
             defaultOpen={true}
           >
             <div>
