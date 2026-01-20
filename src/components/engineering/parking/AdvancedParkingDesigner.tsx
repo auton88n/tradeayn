@@ -1,6 +1,6 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Wand2, Download, Trash2 } from 'lucide-react';
+import { Wand2, Trash2, MapPin, Settings, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 
@@ -11,6 +11,7 @@ import { BoundaryMetrics } from './boundary/BoundaryMetrics';
 import { ParkingConfigPanel } from './boundary/ParkingConfigPanel';
 import { AICalculatorAssistant } from '../AICalculatorAssistant';
 import { calculateBoundaryMetrics } from './utils/geometry';
+import { InputSection } from '../ui/InputSection';
 
 interface AdvancedParkingDesignerProps {
   onCalculate: (results: any) => void;
@@ -123,72 +124,76 @@ function DesignerContent({ onCalculate, isCalculating, setIsCalculating, userId 
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-6"
+      className="space-y-4"
     >
-      {/* Main Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - Boundary Definition */}
-        <div className="lg:col-span-2 space-y-4">
-          {/* Points Table + Preview */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 min-h-[400px]">
-            <BoundaryPointsTable />
+      {/* Boundary Definition Section */}
+      <InputSection title="Boundary Definition" icon={MapPin} iconColor="text-blue-500" defaultOpen={true}>
+        <div className="space-y-4">
+          {/* Points Table */}
+          <BoundaryPointsTable />
+          
+          {/* Preview */}
+          <div className="h-[200px] border border-border rounded-lg overflow-hidden">
             <BoundaryPreview />
           </div>
-
+          
           {/* Metrics Bar */}
           <BoundaryMetrics />
-
-          {/* Action Buttons */}
-          <div className="flex gap-3">
-            <Button
-              onClick={generateLayout}
-              disabled={isCalculating || !metrics.isValid}
-              className="flex-1 gap-2"
-              size="lg"
-            >
-              <Wand2 className="w-4 h-4" />
-              {isCalculating ? 'Generating...' : 'Generate Layout'}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleClearAll}
-              disabled={boundaryPoints.length === 0}
-              className="gap-2"
-            >
-              <Trash2 className="w-4 h-4" />
-              Clear
-            </Button>
-          </div>
         </div>
+      </InputSection>
 
-        {/* Right Column - Configuration + AI */}
-        <div className="lg:col-span-1 space-y-4">
-          <ParkingConfigPanel />
-          
-          <AICalculatorAssistant
-            calculatorType="parking"
-            inputs={{
-              ...config,
-              boundaryPoints: boundaryPoints.length,
-              siteArea: metrics.area,
-            }}
-            outputs={null}
-            onApplySuggestion={(field, value) => {
-              if (field in config) {
-                setConfig({ [field]: value });
+      {/* Configuration Section */}
+      <InputSection title="Parking Configuration" icon={Settings} iconColor="text-amber-500" defaultOpen={true}>
+        <ParkingConfigPanel />
+      </InputSection>
+
+      {/* AI Assistant Section */}
+      <InputSection title="AI Assistant" icon={Sparkles} iconColor="text-purple-500" defaultOpen={false}>
+        <AICalculatorAssistant
+          calculatorType="parking"
+          inputs={{
+            ...config,
+            boundaryPoints: boundaryPoints.length,
+            siteArea: metrics.area,
+          }}
+          outputs={null}
+          onApplySuggestion={(field, value) => {
+            if (field in config) {
+              setConfig({ [field]: value });
+            }
+          }}
+          onApplyAllSuggestions={(values) => {
+            const configUpdates: Partial<typeof config> = {};
+            Object.entries(values).forEach(([key, value]) => {
+              if (key in config) {
+                (configUpdates as any)[key] = value;
               }
-            }}
-            onApplyAllSuggestions={(values) => {
-              const configUpdates: Partial<typeof config> = {};
-              Object.entries(values).forEach(([key, value]) => {
-                if (key in config) {
-                  (configUpdates as any)[key] = value;
-                }
-              });
-              setConfig(configUpdates);
-            }}
-          />
-        </div>
+            });
+            setConfig(configUpdates);
+          }}
+        />
+      </InputSection>
+
+      {/* Action Buttons */}
+      <div className="flex gap-3">
+        <Button
+          onClick={generateLayout}
+          disabled={isCalculating || !metrics.isValid}
+          className="flex-1 gap-2"
+          size="lg"
+        >
+          <Wand2 className="w-4 h-4" />
+          {isCalculating ? 'Generating...' : 'Generate Layout'}
+        </Button>
+        <Button
+          variant="outline"
+          onClick={handleClearAll}
+          disabled={boundaryPoints.length === 0}
+          className="gap-2"
+        >
+          <Trash2 className="w-4 h-4" />
+          Clear
+        </Button>
       </div>
     </motion.div>
   );

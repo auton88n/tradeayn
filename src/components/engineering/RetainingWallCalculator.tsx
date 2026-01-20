@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Calculator, Info, Loader2, AlertTriangle } from 'lucide-react';
+import { Calculator, Info, Loader2, AlertTriangle, Ruler, Mountain, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useEngineeringHistory } from '@/hooks/useEngineeringHistory';
 import { calculateRetainingWall } from '@/lib/engineeringCalculations';
+import { InputSection } from './ui/InputSection';
 
 interface RetainingWallCalculatorProps {
   onCalculate: (result: {
@@ -192,13 +193,9 @@ export const RetainingWallCalculator = ({
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
-        {/* Wall Geometry */}
-        <div className="space-y-4">
-          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-            Wall Geometry
-          </h3>
-          
+      <div className="space-y-4">
+        {/* Wall Geometry Section */}
+        <InputSection title="Wall Geometry" icon={Ruler} iconColor="text-blue-500">
           <div className="space-y-2">
             <Label htmlFor="wallHeight">Wall Height (m)</Label>
             <Input
@@ -277,14 +274,10 @@ export const RetainingWallCalculator = ({
               onChange={(e) => handleInputChange('backfillSlope', e.target.value)}
             />
           </div>
-        </div>
+        </InputSection>
 
-        {/* Soil & Materials */}
-        <div className="space-y-4">
-          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-            Soil & Materials
-          </h3>
-
+        {/* Soil Properties Section */}
+        <InputSection title="Soil Properties" icon={Mountain} iconColor="text-amber-500">
           <div className="space-y-2">
             <Label htmlFor="soilType">Backfill Soil Type</Label>
             <Select value={formData.soilType} onValueChange={handleSoilTypeChange}>
@@ -323,7 +316,10 @@ export const RetainingWallCalculator = ({
               />
             </div>
           </div>
+        </InputSection>
 
+        {/* Materials Section */}
+        <InputSection title="Materials" icon={Layers} iconColor="text-emerald-500">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="concreteGrade">Concrete Grade</Label>
@@ -374,7 +370,7 @@ export const RetainingWallCalculator = ({
               <p>FOS Overturning ≥ 2.0, Sliding ≥ 1.5, Bearing ≥ 3.0</p>
             </div>
           </div>
-        </div>
+        </InputSection>
       </div>
 
       <Button

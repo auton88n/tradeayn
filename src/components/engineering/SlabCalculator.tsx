@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Calculator, Info, Loader2 } from 'lucide-react';
+import { Calculator, Info, Loader2, Ruler, Weight, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useEngineeringHistory } from '@/hooks/useEngineeringHistory';
 import { calculateSlab } from '@/lib/engineeringCalculations';
+import { InputSection } from './ui/InputSection';
 
 interface SlabCalculatorProps {
   onCalculate: (result: {
@@ -168,13 +169,9 @@ export const SlabCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
-        {/* Geometry */}
-        <div className="space-y-4">
-          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-            Geometry
-          </h3>
-          
+      <div className="space-y-4">
+        {/* Geometry Section */}
+        <InputSection title="Geometry" icon={Ruler} iconColor="text-blue-500">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="longSpan">Long Span (m)</Label>
@@ -201,7 +198,7 @@ export const SlabCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
           </div>
           
           {spanRatio && (
-            <div className="flex items-center gap-2 text-sm">
+            <div className="flex items-center gap-2 text-sm p-2 rounded-md bg-muted/50">
               <Info className="w-4 h-4 text-muted-foreground" />
               <span className="text-muted-foreground">
                 Span ratio: {spanRatio} 
@@ -258,14 +255,10 @@ export const SlabCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
               onChange={(e) => handleInputChange('cover', e.target.value)}
             />
           </div>
-        </div>
+        </InputSection>
 
-        {/* Loads & Materials */}
-        <div className="space-y-4">
-          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-            Loads & Materials
-          </h3>
-
+        {/* Loading Section */}
+        <InputSection title="Loading" icon={Weight} iconColor="text-amber-500">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="deadLoad">Dead Load (kN/m²)</Label>
@@ -290,43 +283,47 @@ export const SlabCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
               />
             </div>
           </div>
+        </InputSection>
 
-          <div className="space-y-2">
-            <Label htmlFor="concreteGrade">Concrete Grade</Label>
-            <Select
-              value={formData.concreteGrade}
-              onValueChange={(value) => handleInputChange('concreteGrade', value)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {concreteGrades.map((grade) => (
-                  <SelectItem key={grade.value} value={grade.value}>
-                    {grade.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="steelGrade">Steel Grade</Label>
-            <Select
-              value={formData.steelGrade}
-              onValueChange={(value) => handleInputChange('steelGrade', value)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {steelGrades.map((grade) => (
-                  <SelectItem key={grade.value} value={grade.value}>
-                    {grade.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        {/* Materials Section */}
+        <InputSection title="Materials" icon={Layers} iconColor="text-emerald-500">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="concreteGrade">Concrete Grade</Label>
+              <Select
+                value={formData.concreteGrade}
+                onValueChange={(value) => handleInputChange('concreteGrade', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {concreteGrades.map((grade) => (
+                    <SelectItem key={grade.value} value={grade.value}>
+                      {grade.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="steelGrade">Steel Grade</Label>
+              <Select
+                value={formData.steelGrade}
+                onValueChange={(value) => handleInputChange('steelGrade', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {steelGrades.map((grade) => (
+                    <SelectItem key={grade.value} value={grade.value}>
+                      {grade.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Info Box */}
@@ -340,7 +337,7 @@ export const SlabCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
               <p>Calculations follow ACI 318 and Eurocode 2 provisions for slab design.</p>
             </div>
           </div>
-        </div>
+        </InputSection>
       </div>
 
       <Button

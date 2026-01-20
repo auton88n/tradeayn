@@ -13,11 +13,11 @@ import {
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { ChecklistGroup } from './ui/ChecklistGroup';
 
 interface AnalysisOptions {
   calculateVolumes: boolean;
@@ -353,93 +353,68 @@ export const DesignReviewMode: React.FC<DesignReviewModeProps> = ({
 
       {/* Analysis Options */}
       <Card>
-        <CardHeader>
+        <CardHeader className="pb-3">
           <CardTitle>Analysis Options</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <label className="flex items-start gap-3 p-3 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors">
-              <Checkbox
-                checked={analysisOptions.calculateVolumes}
-                onCheckedChange={() => toggleOption('calculateVolumes')}
-              />
-              <div>
-                <div className="flex items-center gap-2">
-                  <Calculator className="h-4 w-4 text-blue-500" />
-                  <span className="font-medium">Calculate Cut/Fill Volumes</span>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Compute missing earthwork quantities from NGL vs design levels
-                </p>
-              </div>
-            </label>
+          <ChecklistGroup
+            title="Select Analyses"
+            options={[
+              {
+                id: 'calculateVolumes',
+                label: 'Calculate Cut/Fill Volumes',
+                description: 'Compute missing earthwork quantities from NGL vs design levels',
+                icon: Calculator,
+                iconColor: 'text-blue-500',
+                checked: analysisOptions.calculateVolumes,
+              },
+              {
+                id: 'findProblems',
+                label: 'Find Design Problems',
+                description: 'Identify earthwork imbalances, steep slopes, and other issues',
+                icon: AlertTriangle,
+                iconColor: 'text-amber-500',
+                checked: analysisOptions.findProblems,
+              },
+              {
+                id: 'suggestOptimizations',
+                label: 'Suggest Cost Optimizations',
+                description: 'AI-powered suggestions to reduce costs and improve design',
+                icon: Lightbulb,
+                iconColor: 'text-yellow-500',
+                checked: analysisOptions.suggestOptimizations,
+              },
+              {
+                id: 'checkDrainage',
+                label: 'Check Drainage Adequacy',
+                description: 'Verify minimum slopes for proper water drainage',
+                icon: Droplets,
+                iconColor: 'text-cyan-500',
+                checked: analysisOptions.checkDrainage,
+              },
+              {
+                id: 'checkCompliance',
+                label: 'Verify Saudi Code Compliance',
+                description: 'Check against MOT standards for road grades, compaction requirements',
+                icon: Shield,
+                iconColor: 'text-emerald-500',
+                checked: analysisOptions.checkCompliance,
+              },
+            ]}
+            onToggle={(id) => toggleOption(id as keyof AnalysisOptions)}
+            onToggleAll={() => {
+              const allChecked = Object.values(analysisOptions).every(v => v);
+              setAnalysisOptions({
+                calculateVolumes: !allChecked,
+                findProblems: !allChecked,
+                suggestOptimizations: !allChecked,
+                checkDrainage: !allChecked,
+                checkCompliance: !allChecked,
+              });
+            }}
+          />
 
-            <label className="flex items-start gap-3 p-3 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors">
-              <Checkbox
-                checked={analysisOptions.findProblems}
-                onCheckedChange={() => toggleOption('findProblems')}
-              />
-              <div>
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4 text-amber-500" />
-                  <span className="font-medium">Find Design Problems</span>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Identify earthwork imbalances, steep slopes, and other issues
-                </p>
-              </div>
-            </label>
-
-            <label className="flex items-start gap-3 p-3 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors">
-              <Checkbox
-                checked={analysisOptions.suggestOptimizations}
-                onCheckedChange={() => toggleOption('suggestOptimizations')}
-              />
-              <div>
-                <div className="flex items-center gap-2">
-                  <Lightbulb className="h-4 w-4 text-yellow-500" />
-                  <span className="font-medium">Suggest Cost Optimizations</span>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  AI-powered suggestions to reduce costs and improve design
-                </p>
-              </div>
-            </label>
-
-            <label className="flex items-start gap-3 p-3 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors">
-              <Checkbox
-                checked={analysisOptions.checkDrainage}
-                onCheckedChange={() => toggleOption('checkDrainage')}
-              />
-              <div>
-                <div className="flex items-center gap-2">
-                  <Droplets className="h-4 w-4 text-cyan-500" />
-                  <span className="font-medium">Check Drainage Adequacy</span>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Verify minimum slopes for proper water drainage
-                </p>
-              </div>
-            </label>
-
-            <label className="flex items-start gap-3 p-3 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors md:col-span-2">
-              <Checkbox
-                checked={analysisOptions.checkCompliance}
-                onCheckedChange={() => toggleOption('checkCompliance')}
-              />
-              <div>
-                <div className="flex items-center gap-2">
-                  <Shield className="h-4 w-4 text-emerald-500" />
-                  <span className="font-medium">Verify Saudi Code Compliance</span>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Check against MOT standards for road grades, compaction requirements
-                </p>
-              </div>
-            </label>
-          </div>
-
-          <div className="pt-4">
+          <div>
             <Label htmlFor="requirements" className="text-sm font-medium mb-2 block">
               Specific Concerns or Requirements (Optional)
             </Label>
