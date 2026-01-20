@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -103,7 +103,6 @@ export const SaveDesignDialog: React.FC<SaveDesignDialogProps> = ({
 }) => {
   const [title, setTitle] = useState(defaultTitle || `${typeLabels[calculationType] || calculationType} - ${new Date().toLocaleDateString()}`);
   const [description, setDescription] = useState('');
-  const [isPublic, setIsPublic] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async () => {
@@ -154,7 +153,7 @@ export const SaveDesignDialog: React.FC<SaveDesignDialogProps> = ({
           description: description.trim() || null,
           project_type: calculationType,
           key_specs: keySpecs as Json,
-          is_public: isPublic,
+          is_public: false,
         });
 
       if (portfolioError) throw portfolioError;
@@ -192,7 +191,6 @@ export const SaveDesignDialog: React.FC<SaveDesignDialogProps> = ({
       // Reset form
       setTitle('');
       setDescription('');
-      setIsPublic(false);
     } catch (error) {
       console.error('Error saving design:', error);
       toast({
@@ -287,19 +285,6 @@ export const SaveDesignDialog: React.FC<SaveDesignDialogProps> = ({
               </div>
             </div>
 
-            {/* Public Toggle */}
-            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-              <div>
-                <p className="text-sm font-medium">Make Public</p>
-                <p className="text-xs text-muted-foreground">
-                  Share in the community gallery
-                </p>
-              </div>
-              <Switch
-                checked={isPublic}
-                onCheckedChange={setIsPublic}
-              />
-            </div>
           </div>
 
           {/* Actions */}
