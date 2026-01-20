@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SurveyUploader } from '@/components/engineering/SurveyUploader';
 import { GradingRequirements } from '@/components/engineering/GradingRequirements';
-import { TerrainVisualization3D } from '@/components/engineering/TerrainVisualization3D';
 import { GradingResults } from '@/components/engineering/GradingResults';
 import { DesignReviewMode } from '@/components/engineering/DesignReviewMode';
 import { DesignAnalysisResults } from '@/components/engineering/DesignAnalysisResults';
@@ -35,8 +34,14 @@ interface TerrainAnalysis {
   maxY: number;
 }
 
+// Using component-compatible types
+type GradingDesign = Parameters<typeof GradingResults>[0]['design'];
+type CostBreakdown = Parameters<typeof GradingResults>[0]['costBreakdown'];
+type AnalysisResult = Parameters<typeof DesignAnalysisResults>[0]['result'];
+type Optimization = Parameters<typeof DesignAnalysisResults>[0]['onApplyOptimizations'] extends (optimizations: infer T) => void ? T extends Array<infer O> ? O : never : never;
+
 interface GradingDesignerPanelProps {
-  onInputChange?: (inputs: Record<string, any>) => void;
+  onInputChange?: (inputs: Record<string, unknown>) => void;
 }
 
 const GradingDesignerPanel: React.FC<GradingDesignerPanelProps> = ({ onInputChange }) => {
@@ -48,14 +53,14 @@ const GradingDesignerPanel: React.FC<GradingDesignerPanelProps> = ({ onInputChan
   const [terrainAnalysis, setTerrainAnalysis] = useState<TerrainAnalysis | null>(null);
   const [requirements, setRequirements] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [design, setDesign] = useState<any>(null);
-  const [costBreakdown, setCostBreakdown] = useState<any>(null);
+  const [design, setDesign] = useState<GradingDesign>(null);
+  const [costBreakdown, setCostBreakdown] = useState<CostBreakdown>(null);
   const [totalCost, setTotalCost] = useState(0);
   const [fglPoints, setFglPoints] = useState<SurveyPoint[]>([]);
 
   // Review mode state
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult>(null);
   const [isApplyingOptimizations, setIsApplyingOptimizations] = useState(false);
 
   const handleUploadComplete = (uploadedPoints: SurveyPoint[], analysis: TerrainAnalysis) => {
@@ -117,11 +122,11 @@ const GradingDesignerPanel: React.FC<GradingDesignerPanelProps> = ({ onInputChan
     }
   };
 
-  const handleAnalysisComplete = (result: any) => {
-    setAnalysisResult(result);
+  const handleAnalysisComplete = (result: Record<string, unknown>) => {
+    setAnalysisResult(result as unknown as NonNullable<AnalysisResult>);
   };
 
-  const handleApplyOptimizations = async (optimizations: any[]) => {
+  const handleApplyOptimizations = async (optimizations: Optimization[]) => {
     if (!analysisResult?.parsedData) return;
 
     setIsApplyingOptimizations(true);
