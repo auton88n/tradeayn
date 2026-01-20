@@ -19,6 +19,8 @@ serve(async (req) => {
       dxfContent = generateBeamDXF(inputs, outputs);
     } else if (type === 'foundation') {
       dxfContent = generateFoundationDXF(inputs, outputs);
+    } else if (type === 'parking') {
+      dxfContent = generateParkingDXF(inputs, outputs);
     }
 
     return new Response(JSON.stringify({ dxfContent }), {
@@ -274,6 +276,226 @@ ${length / 2}
 1
 ${outputs.length}m x ${outputs.width}m
 0
+ENDSEC
+0
+EOF`;
+}
+
+function generateParkingDXF(inputs: any, outputs: any): string {
+  const siteLength = (inputs.siteLength || 100) * 1000; // Convert to mm
+  const siteWidth = (inputs.siteWidth || 60) * 1000;
+  const layout = outputs.layout || { spaces: [], aisles: [], entries: [], exits: [] };
+  
+  let entities = '';
+  
+  // Site boundary
+  entities += `0
+LINE
+8
+SITE_BOUNDARY
+10
+0
+20
+0
+11
+${siteLength}
+21
+0
+0
+LINE
+8
+SITE_BOUNDARY
+10
+${siteLength}
+20
+0
+11
+${siteLength}
+21
+${siteWidth}
+0
+LINE
+8
+SITE_BOUNDARY
+10
+${siteLength}
+20
+${siteWidth}
+11
+0
+21
+${siteWidth}
+0
+LINE
+8
+SITE_BOUNDARY
+10
+0
+20
+${siteWidth}
+11
+0
+21
+0
+`;
+
+  // Parking spaces
+  if (layout.spaces && Array.isArray(layout.spaces)) {
+    layout.spaces.forEach((space: any, i: number) => {
+      const x = (space.x || 0) * 1000;
+      const y = (space.y || 0) * 1000;
+      const w = (space.width || 2.5) * 1000;
+      const l = (space.length || 5) * 1000;
+      const layer = space.type === 'accessible' ? 'ACCESSIBLE_SPACE' : 
+                    space.type === 'ev' ? 'EV_SPACE' : 
+                    space.type === 'compact' ? 'COMPACT_SPACE' : 'PARKING_SPACE';
+      
+      entities += `0
+LINE
+8
+${layer}
+10
+${x}
+20
+${y}
+11
+${x + w}
+21
+${y}
+0
+LINE
+8
+${layer}
+10
+${x + w}
+20
+${y}
+11
+${x + w}
+21
+${y + l}
+0
+LINE
+8
+${layer}
+10
+${x + w}
+20
+${y + l}
+11
+${x}
+21
+${y + l}
+0
+LINE
+8
+${layer}
+10
+${x}
+20
+${y + l}
+11
+${x}
+21
+${y}
+`;
+    });
+  }
+
+  // Aisles
+  if (layout.aisles && Array.isArray(layout.aisles)) {
+    layout.aisles.forEach((aisle: any, i: number) => {
+      const x = (aisle.x || 0) * 1000;
+      const y = (aisle.y || 0) * 1000;
+      const w = (aisle.width || 6) * 1000;
+      const h = (aisle.height || 6) * 1000;
+      
+      entities += `0
+LINE
+8
+AISLE
+10
+${x}
+20
+${y}
+11
+${x + w}
+21
+${y}
+0
+LINE
+8
+AISLE
+10
+${x + w}
+20
+${y}
+11
+${x + w}
+21
+${y + h}
+0
+LINE
+8
+AISLE
+10
+${x + w}
+20
+${y + h}
+11
+${x}
+21
+${y + h}
+0
+LINE
+8
+AISLE
+10
+${x}
+20
+${y + h}
+11
+${x}
+21
+${y}
+`;
+    });
+  }
+
+  // Summary text
+  const totalSpaces = layout.spaces?.length || outputs.totalSpaces || 0;
+  const accessibleSpaces = outputs.accessibleSpaces || 0;
+  const evSpaces = outputs.evSpaces || 0;
+  
+  entities += `0
+TEXT
+8
+SUMMARY
+10
+${siteLength / 2}
+20
+-80
+40
+30
+1
+Parking Layout: ${totalSpaces} Total | ${accessibleSpaces} ADA | ${evSpaces} EV
+`;
+
+  return `0
+SECTION
+2
+HEADER
+9
+$ACADVER
+1
+AC1015
+0
+ENDSEC
+0
+SECTION
+2
+ENTITIES
+${entities}0
 ENDSEC
 0
 EOF`;

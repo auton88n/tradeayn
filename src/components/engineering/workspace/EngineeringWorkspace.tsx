@@ -1,4 +1,4 @@
-import React, { useState, useCallback, Suspense, lazy } from 'react';
+import React, { useState, useCallback, Suspense, lazy, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, HardHat, Sparkles } from 'lucide-react';
@@ -9,6 +9,7 @@ import { SplitViewLayout } from './SplitViewLayout';
 import { CalculationHistoryModal } from '@/components/engineering/CalculationHistoryModal';
 import { CalculationComparison } from '@/components/engineering/CalculationComparison';
 import { useEngineeringHistory } from '@/hooks/useEngineeringHistory';
+import { useEngineeringSession } from '@/contexts/EngineeringSessionContext';
 import { SEO } from '@/components/SEO';
 import { cn } from '@/lib/utils';
 
@@ -53,6 +54,7 @@ const LoadingFallback = () => (
 
 export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ userId }) => {
   const navigate = useNavigate();
+  const session = useEngineeringSession();
   const [selectedCalculator, setSelectedCalculator] = useState<CalculatorType>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [calculationResult, setCalculationResult] = useState<CalculationResult | null>(null);
@@ -65,6 +67,19 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
   const [currentOutputs, setCurrentOutputs] = useState<Record<string, any> | null>(null);
 
   const { calculationHistory } = useEngineeringHistory(userId);
+
+  // Track calculator switches for AYN
+  useEffect(() => {
+    if (selectedCalculator) {
+      session.trackCalculatorSwitch(selectedCalculator);
+    }
+  }, [selectedCalculator, session]);
+
+  // Expose context to AI agent via window
+  useEffect(() => {
+    (window as any).__engineeringSessionContext = session.getAIContext;
+    return () => { delete (window as any).__engineeringSessionContext; };
+  }, [session]);
 
   const handleCalculationComplete = useCallback((result: CalculationResult) => {
     setCalculationResult(result);

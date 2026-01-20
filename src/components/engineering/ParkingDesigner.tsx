@@ -1,10 +1,9 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Car, 
   Maximize2, 
   RotateCw, 
-  Wand2,
   Accessibility,
   Layers,
   Zap,
@@ -17,21 +16,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { ParkingLayout2D } from './ParkingLayout2D';
 import { ParkingVisualization3D } from './ParkingVisualization3D';
-import { ParkingSiteProvider, useParkingSite } from './parking/context/ParkingSiteContext';
-import { BoundaryPointsTable } from './parking/boundary/BoundaryPointsTable';
-import { BoundaryPreview } from './parking/boundary/BoundaryPreview';
-import { BoundaryMetrics } from './parking/boundary/BoundaryMetrics';
-import { calculateBoundaryMetrics } from './parking/utils/geometry';
+import { ParkingSiteProvider } from './parking/context/ParkingSiteContext';
 import { InputSection } from './ui';
 import { AnglePicker, ParkingStatsBar } from './parking/components';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { useEngineeringSessionOptional } from '@/contexts/EngineeringSessionContext';
+import html2pdf from 'html2pdf.js';
 
 interface ParkingSpace {
   id: string;
@@ -159,6 +155,7 @@ const UnifiedDesigner: React.FC<{
   setIsGenerating: React.Dispatch<React.SetStateAction<boolean>>;
   viewMode: '2d' | '3d';
   setViewMode: React.Dispatch<React.SetStateAction<'2d' | '3d'>>;
+  userId?: string;
 }> = ({
   inputs,
   setInputs,
@@ -169,9 +166,14 @@ const UnifiedDesigner: React.FC<{
   setIsGenerating,
   viewMode,
   setViewMode,
+  userId,
 }) => {
+  const session = useEngineeringSessionOptional();
+
   const handleInputChange = (field: string, value: string | number) => {
     setInputs((prev: ParkingInputs) => ({ ...prev, [field]: value }));
+    // Track input changes for AYN
+    session?.trackInputChange(field, value);
   };
 
   const generateLayout = useCallback(async () => {
@@ -277,6 +279,14 @@ const UnifiedDesigner: React.FC<{
       const parkingArea = spaces.length * spaceWidth * spaceLength;
       const efficiency = parseFloat(((parkingArea / siteArea) * 100).toFixed(1));
 
+      // Track calculation for AYN
+      session?.trackCalculation({
+        totalSpaces: spaces.length,
+        accessibleSpaces,
+        evSpaces,
+        efficiency,
+      });
+
       onCalculate({
         type: 'parking',
         inputs: {
@@ -328,17 +338,163 @@ const UnifiedDesigner: React.FC<{
     }
   }, []);
 
-  const stats = layout ? {
-    totalSpaces: layout.totalSpaces,
-    accessibleSpaces: layout.accessibleSpaces,
-    evSpaces: layout.evSpaces,
-    efficiency: Math.round((layout.totalSpaces * parseFloat(inputs.spaceWidth) * parseFloat(inputs.spaceLength)) / 
-      (parseFloat(inputs.siteLength) * parseFloat(inputs.siteWidth)) * 100),
-  } : {
-    totalSpaces: 0,
-    accessibleSpaces: 0,
-    evSpaces: 0,
-    efficiency: 0,
+  // Memoized stats for performance
+  const stats = useMemo(() => {
+    if (!layout) return { totalSpaces: 0, accessibleSpaces: 0, evSpaces: 0, efficiency: 0 };
+    const siteArea = parseFloat(inputs.siteLength) * parseFloat(inputs.siteWidth);
+    const parkingArea = layout.totalSpaces * parseFloat(inputs.spaceWidth) * parseFloat(inputs.spaceLength);
+    return {
+      totalSpaces: layout.totalSpaces,
+      accessibleSpaces: layout.accessibleSpaces,
+      evSpaces: layout.evSpaces,
+      efficiency: siteArea > 0 ? Math.round((parkingArea / siteArea) * 100) : 0,
+    };
+  }, [layout, inputs.siteLength, inputs.siteWidth, inputs.spaceWidth, inputs.spaceLength]);
+
+  // DXF Export handler
+  const handleExportDXF = async () => {
+    if (!layout) return;
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-dxf', {
+        body: { 
+          type: 'parking', 
+          inputs: {
+            siteLength: parseFloat(inputs.siteLength),
+            siteWidth: parseFloat(inputs.siteWidth),
+            parkingAngle: inputs.parkingAngle,
+          },
+          outputs: { 
+            layout,
+            totalSpaces: layout.totalSpaces,
+            accessibleSpaces: layout.accessibleSpaces,
+            evSpaces: layout.evSpaces,
+          }
+        }
+      });
+      
+      if (error) throw error;
+      
+      const blob = new Blob([data.dxfContent], { type: 'application/dxf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `parking-layout-${Date.now()}.dxf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      session?.trackExport('dxf');
+      toast({ title: "DXF Exported", description: "Drawing downloaded successfully" });
+    } catch (err) {
+      console.error('DXF export error:', err);
+      toast({ title: "Export Failed", description: "Could not generate DXF file", variant: "destructive" });
+    }
+  };
+
+  // PDF Export handler
+  const handleExportPDF = async () => {
+    if (!layout) return;
+    
+    try {
+      const siteArea = parseFloat(inputs.siteLength) * parseFloat(inputs.siteWidth);
+      
+      // Create printable content
+      const printContent = document.createElement('div');
+      printContent.innerHTML = `
+        <div style="padding: 40px; font-family: Arial, sans-serif; color: #333;">
+          <h1 style="color: #1a1a2e; border-bottom: 2px solid #3b82f6; padding-bottom: 10px;">Parking Layout Report</h1>
+          <p style="color: #666;">Generated: ${new Date().toLocaleString()}</p>
+          
+          <h2 style="margin-top: 30px; color: #1a1a2e;">Site Dimensions</h2>
+          <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+            <tr style="background: #f8f9fa;">
+              <td style="padding: 10px; border: 1px solid #ddd;"><strong>Length:</strong></td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${inputs.siteLength} m</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ddd;"><strong>Width:</strong></td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${inputs.siteWidth} m</td>
+            </tr>
+            <tr style="background: #f8f9fa;">
+              <td style="padding: 10px; border: 1px solid #ddd;"><strong>Total Area:</strong></td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${siteArea.toLocaleString()} m²</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ddd;"><strong>Parking Type:</strong></td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${inputs.parkingType.charAt(0).toUpperCase() + inputs.parkingType.slice(1)}</td>
+            </tr>
+            <tr style="background: #f8f9fa;">
+              <td style="padding: 10px; border: 1px solid #ddd;"><strong>Parking Angle:</strong></td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${inputs.parkingAngle}°</td>
+            </tr>
+          </table>
+          
+          <h2 style="margin-top: 30px; color: #1a1a2e;">Parking Summary</h2>
+          <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+            <tr style="background: #3b82f6; color: white;">
+              <td style="padding: 12px; border: 1px solid #2563eb;"><strong>Total Spaces</strong></td>
+              <td style="padding: 12px; border: 1px solid #2563eb; font-size: 18px;">${layout.totalSpaces}</td>
+            </tr>
+            <tr style="background: #f0f9ff;">
+              <td style="padding: 10px; border: 1px solid #ddd;"><strong>Accessible (ADA):</strong></td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${layout.accessibleSpaces}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ddd;"><strong>EV Charging:</strong></td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${layout.evSpaces}</td>
+            </tr>
+            <tr style="background: #f0f9ff;">
+              <td style="padding: 10px; border: 1px solid #ddd;"><strong>Compact:</strong></td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${layout.compactSpaces}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ddd;"><strong>Standard:</strong></td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${layout.spaces.filter(s => s.type === 'standard').length}</td>
+            </tr>
+            <tr style="background: #22c55e; color: white;">
+              <td style="padding: 12px; border: 1px solid #16a34a;"><strong>Efficiency</strong></td>
+              <td style="padding: 12px; border: 1px solid #16a34a; font-size: 18px;">${stats.efficiency}%</td>
+            </tr>
+          </table>
+
+          <h2 style="margin-top: 30px; color: #1a1a2e;">Space Dimensions</h2>
+          <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+            <tr style="background: #f8f9fa;">
+              <td style="padding: 10px; border: 1px solid #ddd;"><strong>Space Width:</strong></td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${inputs.spaceWidth} m</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ddd;"><strong>Space Length:</strong></td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${inputs.spaceLength} m</td>
+            </tr>
+            <tr style="background: #f8f9fa;">
+              <td style="padding: 10px; border: 1px solid #ddd;"><strong>Aisle Width:</strong></td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${inputs.aisleWidth} m</td>
+            </tr>
+          </table>
+          
+          <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #999; font-size: 12px;">
+            <p>Generated by AYN Civil Engineering Studio | aynn.io</p>
+          </div>
+        </div>
+      `;
+      
+      html2pdf()
+        .set({
+          margin: 10,
+          filename: `parking-report-${Date.now()}.pdf`,
+          html2canvas: { scale: 2 },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        })
+        .from(printContent)
+        .save();
+      
+      session?.trackExport('pdf');
+      toast({ title: "PDF Exported", description: "Report downloaded successfully" });
+    } catch (err) {
+      console.error('PDF export error:', err);
+      toast({ title: "Export Failed", description: "Could not generate PDF file", variant: "destructive" });
+    }
   };
 
   return (
@@ -638,8 +794,8 @@ const UnifiedDesigner: React.FC<{
           stats={stats}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
-          onExportDXF={() => toast({ title: "Export DXF", description: "DXF export coming soon" })}
-          onExportPDF={() => toast({ title: "Export PDF", description: "PDF export coming soon" })}
+          onExportDXF={handleExportDXF}
+          onExportPDF={handleExportPDF}
         />
       </div>
     </div>
@@ -675,6 +831,7 @@ export const ParkingDesigner: React.FC<ParkingDesignerProps> = ({
           setIsGenerating={setIsGenerating}
           viewMode={viewMode}
           setViewMode={setViewMode}
+          userId={userId}
         />
       </ParkingSiteProvider>
     </motion.div>

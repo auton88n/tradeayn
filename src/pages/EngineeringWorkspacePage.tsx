@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { HardHat } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { EngineeringWorkspace } from '@/components/engineering/workspace/EngineeringWorkspace';
+import { EngineeringSessionProvider } from '@/contexts/EngineeringSessionContext';
 
 const EngineeringWorkspacePage = () => {
   const navigate = useNavigate();
@@ -46,7 +47,11 @@ const EngineeringWorkspacePage = () => {
     );
   }
 
-  return <EngineeringWorkspace userId={userId} />;
+  return (
+    <EngineeringSessionProvider>
+      <EngineeringWorkspace userId={userId} />
+    </EngineeringSessionProvider>
+  );
 };
 
 export default EngineeringWorkspacePage;
