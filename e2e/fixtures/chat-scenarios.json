@@ -1,0 +1,107 @@
+{
+  "general": [
+    {
+      "message": "Hello, how can you help me?",
+      "expectContains": ["help", "assist", "engineering", "AYN"]
+    },
+    {
+      "message": "What services does AYN offer?",
+      "expectContains": ["service", "engineering", "AI", "automation"]
+    },
+    {
+      "message": "Tell me about yourself",
+      "expectContains": ["AYN", "assistant", "help"]
+    }
+  ],
+  "engineering": [
+    {
+      "message": "What is a simply supported beam?",
+      "expectContains": ["beam", "support", "load"]
+    },
+    {
+      "message": "How do I calculate the moment in a cantilever beam?",
+      "expectContains": ["moment", "cantilever", "load", "length"]
+    },
+    {
+      "message": "What is the minimum reinforcement ratio for columns?",
+      "expectContains": ["reinforcement", "ratio", "code", "ACI"]
+    },
+    {
+      "message": "Explain the difference between one-way and two-way slabs",
+      "expectContains": ["slab", "span", "direction"]
+    },
+    {
+      "message": "What factors affect foundation design?",
+      "expectContains": ["soil", "load", "bearing", "capacity"]
+    },
+    {
+      "message": "How do I check retaining wall stability?",
+      "expectContains": ["overturning", "sliding", "bearing", "factor"]
+    }
+  ],
+  "business": [
+    {
+      "message": "I need help with my business strategy",
+      "expectContains": ["business", "strategy", "help"]
+    },
+    {
+      "message": "What AI automation services do you provide?",
+      "expectContains": ["automation", "AI", "service"]
+    }
+  ],
+  "arabic": [
+    {
+      "message": "مرحبا، كيف يمكنك مساعدتي؟",
+      "expectContains": ["مساعدة", "خدمة"]
+    },
+    {
+      "message": "ما هي خدمات الهندسة المدنية؟",
+      "expectContains": ["هندسة", "خدم"]
+    }
+  ],
+  "edgeCases": [
+    {
+      "message": "",
+      "expectError": true,
+      "description": "Empty message"
+    },
+    {
+      "message": "a".repeat(10000),
+      "expectHandled": true,
+      "description": "Very long message"
+    },
+    {
+      "message": "<script>alert('xss')</script>",
+      "expectSanitized": true,
+      "description": "XSS attempt"
+    },
+    {
+      "message": "'; DROP TABLE users; --",
+      "expectSanitized": true,
+      "description": "SQL injection attempt"
+    },
+    {
+      "message": "🎉🚀💡🔧⚡️",
+      "expectHandled": true,
+      "description": "Emoji only message"
+    }
+  ],
+  "stressScenarios": [
+    {
+      "description": "Rapid-fire questions",
+      "messages": [
+        "What is concrete?",
+        "What is steel?",
+        "What is load?",
+        "What is moment?",
+        "What is shear?"
+      ],
+      "delayMs": 100
+    },
+    {
+      "description": "Long conversation",
+      "messageCount": 50,
+      "topic": "engineering"
+    }
+  ]
+}
