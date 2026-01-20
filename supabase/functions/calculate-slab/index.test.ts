@@ -60,8 +60,8 @@ Deno.test("calculate-slab - two-way slab continuous", async () => {
   
   assertExists(data.thickness);
   // Two-way slab has reinforcement in both directions
-  assertExists(data.shortSpanReinforcement);
-  assertExists(data.longSpanReinforcement);
+  assertExists(data.xDirection);
+  assertExists(data.yDirection);
 });
 
 Deno.test("calculate-slab - cantilever slab", async () => {

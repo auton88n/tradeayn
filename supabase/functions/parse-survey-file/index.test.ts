@@ -83,7 +83,7 @@ Deno.test("parse-survey-file - terrain analysis with elevation range", async () 
   
   assertExists(data.terrainAnalysis.minElevation);
   assertExists(data.terrainAnalysis.maxElevation);
-  assertExists(data.terrainAnalysis.averageElevation);
+  assertExists(data.terrainAnalysis.avgElevation);
   
   // Just verify these are numbers in reasonable range
   assertEquals(typeof data.terrainAnalysis.minElevation, "number");

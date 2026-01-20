@@ -32,13 +32,13 @@ Deno.test("calculate-retaining-wall - valid cantilever wall 3m height", async ()
   assertEquals(response.status, 200);
   const data = await response.json();
   
-  assertExists(data.overturningFS);
-  assertExists(data.slidingFS);
-  assertExists(data.bearingFS);
+  assertExists(data.stability);
+  assertExists(data.stability.FOS_overturning);
+  assertExists(data.stability.FOS_sliding);
   
   // Stability checks - FS should be greater than minimum
-  assertEquals(data.overturningFS >= 1.5, true, "Overturning FS should be >= 1.5");
-  assertEquals(data.slidingFS >= 1.2, true, "Sliding FS should be >= 1.2");
+  assertEquals(data.stability.FOS_overturning >= 1.5, true, "Overturning FS should be >= 1.5");
+  assertEquals(data.stability.FOS_sliding >= 1.2, true, "Sliding FS should be >= 1.2");
 });
 
 Deno.test("calculate-retaining-wall - gravity wall 2.5m height", async () => {
@@ -69,9 +69,9 @@ Deno.test("calculate-retaining-wall - gravity wall 2.5m height", async () => {
   assertEquals(response.status, 200);
   const data = await response.json();
   
-  assertExists(data.overturningFS);
-  assertExists(data.slidingFS);
-  assertExists(data.concreteVolume);
+  assertExists(data.stability);
+  assertExists(data.stability.FOS_overturning);
+  assertExists(data.stability.FOS_sliding);
 });
 
 Deno.test("calculate-retaining-wall - high wall 5m with surcharge", async () => {
@@ -102,8 +102,8 @@ Deno.test("calculate-retaining-wall - high wall 5m with surcharge", async () => 
   assertEquals(response.status, 200);
   const data = await response.json();
   
-  assertExists(data.stemReinforcement);
-  assertExists(data.earthPressure);
+  assertExists(data.reinforcement);
+  assertExists(data.reinforcement.stem);
 });
 
 Deno.test("calculate-retaining-wall - reinforcement details", async () => {
@@ -134,9 +134,10 @@ Deno.test("calculate-retaining-wall - reinforcement details", async () => {
   assertEquals(response.status, 200);
   const data = await response.json();
   
-  assertExists(data.stemReinforcement);
-  assertExists(data.heelReinforcement);
-  assertExists(data.toeReinforcement);
+  assertExists(data.reinforcement);
+  assertExists(data.reinforcement.stem);
+  assertExists(data.reinforcement.heel);
+  assertExists(data.reinforcement.toe);
 });
 
 Deno.test("calculate-retaining-wall - CORS preflight", async () => {
