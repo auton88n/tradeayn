@@ -8,6 +8,7 @@ import { EngineeringBottomChat } from './EngineeringBottomChat';
 import { SplitViewLayout } from './SplitViewLayout';
 import { CalculationHistoryModal } from '@/components/engineering/CalculationHistoryModal';
 import { CalculationComparison } from '@/components/engineering/CalculationComparison';
+import { SaveDesignDialog } from '@/components/engineering/SaveDesignDialog';
 import { useEngineeringHistory } from '@/hooks/useEngineeringHistory';
 import { useEngineeringSession } from '@/contexts/EngineeringSessionContext';
 import { SEO } from '@/components/SEO';
@@ -61,6 +62,7 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
   const [isCalculating, setIsCalculating] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isCompareOpen, setIsCompareOpen] = useState(false);
+  const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
   
   // Current inputs/outputs for live preview
   const [currentInputs, setCurrentInputs] = useState<Record<string, any>>({});
@@ -404,8 +406,9 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
           onCompare={() => setIsCompareOpen(true)}
           onHistory={() => setIsHistoryOpen(true)}
           onReset={handleReset}
+          onSave={() => setIsSaveDialogOpen(true)}
           isCalculating={isCalculating}
-          hasResults={!!calculationResult}
+          hasResults={!!calculationResult || !!currentOutputs}
           canCompare={calculationHistory.length >= 2}
           calculatorType={selectedCalculator}
           currentInputs={currentInputs}
@@ -444,6 +447,19 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
             />
           )}
         </AnimatePresence>
+
+        {/* Save Design Dialog */}
+        <SaveDesignDialog
+          isOpen={isSaveDialogOpen}
+          onClose={() => setIsSaveDialogOpen(false)}
+          userId={userId}
+          calculationType={selectedCalculator || 'beam'}
+          inputs={currentInputs}
+          outputs={currentOutputs}
+          onSaved={() => {
+            session.trackSave(`${selectedCalculator} design`);
+          }}
+        />
       </div>
     </>
   );
