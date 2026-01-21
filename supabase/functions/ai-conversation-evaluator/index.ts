@@ -500,9 +500,14 @@ serve(async (req) => {
       testsToRun = CONVERSATION_TESTS.filter(t => requestedCategories.includes(t.category));
     }
     
-    // Quick mode: run only high-weight tests
+    // Quick mode: run core tests (branding, privacy, safety, memory) + sample of personality/emotion
     if (quick) {
-      testsToRun = testsToRun.filter(t => t.weight >= 2);
+      const coreCategories = ['branding', 'privacy', 'safety', 'memory'];
+      const coreTests = testsToRun.filter(t => coreCategories.includes(t.category));
+      // Add a sample of personality/emotion tests (first 3 of each)
+      const personalityTests = testsToRun.filter(t => t.category === 'personality').slice(0, 3);
+      const emotionTests = testsToRun.filter(t => t.category === 'emotion').slice(0, 3);
+      testsToRun = [...coreTests, ...personalityTests, ...emotionTests];
     }
     
     console.log(`Running ${testsToRun.length} conversation tests...`);
