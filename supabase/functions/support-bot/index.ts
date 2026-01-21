@@ -87,8 +87,65 @@ serve(async (req) => {
     // Initialize Supabase client
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
-    // Extract user ID from auth header if present, otherwise use guest identifier
-    let userId = 'guest';
+    // Parse request body with error handling
+    let rawBody: Record<string, unknown> = {};
+    try {
+      rawBody = await req.json();
+    } catch {
+      return new Response(
+        JSON.stringify({
+          error: 'Invalid JSON body',
+          answer: "Please provide a valid message to get support.",
+          needsHumanSupport: false
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // Validate message exists and is a string
+    const message = rawBody?.message;
+    if (!message || typeof message !== 'string') {
+      return new Response(
+        JSON.stringify({
+          error: 'Message is required',
+          answer: "Please provide a message to get support.",
+          needsHumanSupport: false
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // Validate message length
+    if (message.length > 5000) {
+      return new Response(
+        JSON.stringify({
+          error: 'Message too long',
+          answer: "Your message is too long. Please keep it under 5000 characters.",
+          needsHumanSupport: false
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // Extract optional fields with validation
+    const conversationHistory = Array.isArray(rawBody?.conversationHistory) 
+      ? rawBody.conversationHistory as Array<{ role: string; content: string }> 
+      : [];
+    const ticketId = typeof rawBody?.ticketId === 'string' ? rawBody.ticketId : undefined;
+
+    // Extract user ID from auth header if present, otherwise use guest UUID
+    // Using a valid UUID format for guest users to avoid RPC type errors
+    const GUEST_UUID = '00000000-0000-0000-0000-000000000000';
+    let userId: string = GUEST_UUID;
     const authHeader = req.headers.get('authorization');
     if (authHeader?.startsWith('Bearer ')) {
       try {
@@ -134,8 +191,6 @@ serve(async (req) => {
         }
       );
     }
-
-    const { message, conversationHistory = [], ticketId } = await req.json();
 
     // SSRF Protection - check user message for malicious URLs
     if (containsSSRFAttempt(message)) {
