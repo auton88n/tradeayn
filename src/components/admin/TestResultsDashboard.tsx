@@ -35,6 +35,8 @@ import EngineeringBenchmark from './test-results/EngineeringBenchmark';
 import AIImprovements from './test-results/AIImprovements';
 import { OWASPSecurityReport } from './test-results/OWASPSecurityReport';
 import { DetailedTestCard } from './test-results/DetailedTestCard';
+import { ComprehensiveTestResults } from './test-results/ComprehensiveTestResults';
+import { UXJourneyResults } from './test-results/UXJourneyResults';
 
 interface TestResult {
   id: string;
@@ -134,8 +136,42 @@ const TestResultsDashboard: React.FC = () => {
   const [isRunningBugHunter, setIsRunningBugHunter] = useState(false);
   const [isRunningComprehensive, setIsRunningComprehensive] = useState(false);
   const [isRunningUxTester, setIsRunningUxTester] = useState(false);
-  const [comprehensiveResults, setComprehensiveResults] = useState<{ passRate: string; totalTests: number } | null>(null);
-  const [uxResults, setUxResults] = useState<{ avgScore: string; successRate: string } | null>(null);
+  const [comprehensiveResults, setComprehensiveResults] = useState<{ passRate: string; totalTests: number; passed: number; failed: number; avgDuration?: number } | null>(null);
+  const [comprehensiveEndpoints, setComprehensiveEndpoints] = useState<Array<{
+    endpoint: string;
+    tests: Array<{
+      name: string;
+      category: 'valid' | 'edge_case' | 'type_error' | 'security' | 'performance';
+      status: 'passed' | 'failed' | 'slow';
+      duration_ms: number;
+      error?: string;
+    }>;
+    passRate: number;
+    avgDuration: number;
+  }>>([]);
+  const [uxResults, setUxResults] = useState<{ avgScore: string; successRate: string; personasTested?: number; journeysTested?: number; avgResponseTime?: number } | null>(null);
+  const [uxPersonas, setUxPersonas] = useState<Array<{
+    name: string;
+    type: 'new_user' | 'expert' | 'mobile' | 'arabic' | 'power_user';
+    avgScore: number;
+    completedJourneys: number;
+    totalJourneys: number;
+    frustrations: number;
+    avgResponseTime: number;
+  }>>([]);
+  const [uxJourneys, setUxJourneys] = useState<Array<{
+    name: string;
+    steps: Array<{
+      name: string;
+      status: 'passed' | 'failed' | 'slow';
+      duration_ms: number;
+      error?: string;
+    }>;
+    completionRate: number;
+    uxScore: number;
+    status: 'success' | 'partial' | 'failed';
+    personaName: string;
+  }>>([]);
   
   // Test suite running states
   const [runningSecurityTests, setRunningSecurityTests] = useState(false);
@@ -325,6 +361,18 @@ const TestResultsDashboard: React.FC = () => {
       const result = await safeFetchJson<{
         success: boolean;
         summary?: { passRate: string; totalTests: number; passed: number; failed: number };
+        byEndpoint?: Array<{
+          endpoint: string;
+          tests: Array<{
+            name: string;
+            category: 'valid' | 'edge_case' | 'type_error' | 'security' | 'performance';
+            status: 'passed' | 'failed' | 'slow';
+            duration_ms: number;
+            error?: string;
+          }>;
+          passRate: number;
+          avgDuration: number;
+        }>;
         analysis?: string;
         error?: string;
       }>(`${SUPABASE_URL}/functions/v1/ai-comprehensive-tester`, {
@@ -335,6 +383,9 @@ const TestResultsDashboard: React.FC = () => {
       
       if (result.success && result.summary) {
         setComprehensiveResults(result.summary);
+        if (result.byEndpoint) {
+          setComprehensiveEndpoints(result.byEndpoint);
+        }
         setAiAnalysis(result.analysis || '');
         setAiModel('AI Comprehensive Tester');
         
@@ -362,7 +413,29 @@ const TestResultsDashboard: React.FC = () => {
       
       const result = await safeFetchJson<{
         success: boolean;
-        summary?: { avgUxScore: string; overallSuccessRate: string; personasTested: number; journeysTested: number };
+        summary?: { avgUxScore: string; overallSuccessRate: string; personasTested: number; journeysTested: number; avgResponseTime?: number };
+        byPersona?: Array<{
+          name: string;
+          type: 'new_user' | 'expert' | 'mobile' | 'arabic' | 'power_user';
+          avgScore: number;
+          completedJourneys: number;
+          totalJourneys: number;
+          frustrations: number;
+          avgResponseTime: number;
+        }>;
+        results?: Array<{
+          journey: string;
+          persona: string;
+          steps: Array<{
+            name: string;
+            status: 'passed' | 'failed' | 'slow';
+            duration_ms: number;
+            error?: string;
+          }>;
+          completionRate: number;
+          uxScore: number;
+          status: 'success' | 'partial' | 'failed';
+        }>;
         analysis?: string;
         error?: string;
       }>(`${SUPABASE_URL}/functions/v1/ai-ux-tester`, {
@@ -372,7 +445,26 @@ const TestResultsDashboard: React.FC = () => {
       });
       
       if (result.success && result.summary) {
-        setUxResults({ avgScore: result.summary.avgUxScore, successRate: result.summary.overallSuccessRate });
+        setUxResults({ 
+          avgScore: result.summary.avgUxScore, 
+          successRate: result.summary.overallSuccessRate,
+          personasTested: result.summary.personasTested,
+          journeysTested: result.summary.journeysTested,
+          avgResponseTime: result.summary.avgResponseTime
+        });
+        if (result.byPersona) {
+          setUxPersonas(result.byPersona);
+        }
+        if (result.results) {
+          setUxJourneys(result.results.map(r => ({
+            name: r.journey,
+            steps: r.steps,
+            completionRate: r.completionRate,
+            uxScore: r.uxScore,
+            status: r.status,
+            personaName: r.persona
+          })));
+        }
         setAiAnalysis(result.analysis || '');
         setAiModel('AI UX Journey Tester');
         
@@ -655,6 +747,70 @@ const TestResultsDashboard: React.FC = () => {
           lastAnalyzedAt={testRuns.length > 0 ? new Date(testRuns[0].created_at) : undefined}
         />
       </div>
+
+      {/* Section 5: Dedicated Results Section - Comprehensive & UX Journey */}
+      <Collapsible open={expandedSections.has('results')} onOpenChange={() => toggleSection('results')}>
+        <Card className="border-purple-500/20">
+          <CollapsibleTrigger asChild>
+            <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Activity className="h-4 w-4 text-purple-500" />
+                  Comprehensive Test Results
+                  {(comprehensiveEndpoints.length > 0 || uxJourneys.length > 0) && (
+                    <Badge variant="secondary" className="ml-2">
+                      {comprehensiveEndpoints.length} endpoints • {uxJourneys.length} journeys
+                    </Badge>
+                  )}
+                </CardTitle>
+                <div className="flex items-center gap-2">
+                  {comprehensiveResults && (
+                    <Badge variant={parseInt(comprehensiveResults.passRate) >= 90 ? 'default' : 'secondary'}>
+                      System: {comprehensiveResults.passRate}
+                    </Badge>
+                  )}
+                  {uxResults && (
+                    <Badge variant={parseInt(uxResults.avgScore) >= 80 ? 'default' : 'secondary'}>
+                      UX: {uxResults.avgScore}/100
+                    </Badge>
+                  )}
+                  {expandedSections.has('results') ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                </div>
+              </div>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="pt-0 space-y-6">
+              {/* Comprehensive Test Results */}
+              <ComprehensiveTestResults
+                results={comprehensiveEndpoints}
+                summary={comprehensiveResults ? {
+                  passRate: comprehensiveResults.passRate,
+                  totalTests: comprehensiveResults.totalTests,
+                  passed: comprehensiveResults.passed,
+                  failed: comprehensiveResults.failed,
+                  avgDuration: comprehensiveResults.avgDuration || 0
+                } : undefined}
+                isLoading={isRunningComprehensive}
+              />
+
+              {/* UX Journey Results */}
+              <UXJourneyResults
+                personas={uxPersonas}
+                journeys={uxJourneys}
+                summary={uxResults ? {
+                  avgUxScore: uxResults.avgScore,
+                  overallSuccessRate: uxResults.successRate,
+                  personasTested: uxResults.personasTested || 0,
+                  journeysTested: uxResults.journeysTested || 0,
+                  avgResponseTime: uxResults.avgResponseTime || 0
+                } : undefined}
+                isLoading={isRunningUxTester}
+              />
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
 
       {/* Section 5: AI Improvements */}
       <Collapsible open={expandedSections.has('improvements')} onOpenChange={() => toggleSection('improvements')}>
