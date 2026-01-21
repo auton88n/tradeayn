@@ -221,6 +221,11 @@ const TestResultsDashboard: React.FC = () => {
     byCategory?: Record<string, { passed: number; total: number; avgScore: number; results?: Array<{ name: string; passed: boolean; score: number; aynResponse: string; reason: string }> }>;
     improvements?: string[];
     sampleTranscripts?: Array<{ category: string; name: string; userMessage: string; aynResponse: string; passed: boolean; score: number; reason: string; emotion?: string }>;
+    // Explicit emotion data
+    emotionSyncRate?: number;
+    emotionTestResults?: Array<{ name: string; userMessage: string; expectedEmotion: string; detectedEmotion: string; passed: boolean; aynResponse?: string }>;
+    emotionCoverage?: Record<string, { tested: boolean; matched: boolean }>;
+    personalityScore?: number;
   } | null>(null);
   
   // Test suite running states
@@ -1245,37 +1250,11 @@ const TestResultsDashboard: React.FC = () => {
                 />
               )}
 
-              {/* Emotion Sync Results - Always show when conversation results exist */}
+              {/* Eye Emotion Sync Results - Using explicit emotion data from evaluator */}
               <EmotionSyncResults
-                syncRate={conversationResults?.byCategory?.emotion?.avgScore ?? conversationResults?.byCategory?.personality?.avgScore ?? 0}
-                emotionTests={conversationResults?.byCategory?.emotion?.results?.map(r => ({
-                  name: r.name,
-                  userMessage: conversationResults?.sampleTranscripts?.find(t => t.name === r.name)?.userMessage || '',
-                  expectedEmotion: r.name.split(' ')[0] || 'calm',
-                  detectedEmotion: conversationResults?.sampleTranscripts?.find(t => t.name === r.name)?.emotion || '',
-                  passed: r.passed
-                })) ?? conversationResults?.byCategory?.personality?.results?.map(r => ({
-                  name: r.name,
-                  userMessage: conversationResults?.sampleTranscripts?.find(t => t.name === r.name)?.userMessage || '',
-                  expectedEmotion: r.name.includes('Frustration') ? 'comfort' : r.name.includes('Excitement') ? 'excited' : r.name.includes('Sad') ? 'supportive' : 'calm',
-                  detectedEmotion: conversationResults?.sampleTranscripts?.find(t => t.name === r.name)?.emotion || '',
-                  passed: r.passed
-                })) ?? []}
-                emotionCoverage={(() => {
-                  const coverage: Record<string, { tested: boolean; matched: boolean }> = {};
-                  const emotionTests = conversationResults?.byCategory?.emotion?.results || conversationResults?.byCategory?.personality?.results || [];
-                  emotionTests.forEach(r => {
-                    const emotion = r.name.toLowerCase().includes('frustrat') ? 'comfort' : 
-                                   r.name.toLowerCase().includes('excit') ? 'excited' :
-                                   r.name.toLowerCase().includes('sad') ? 'supportive' :
-                                   r.name.toLowerCase().includes('angry') ? 'comfort' :
-                                   r.name.toLowerCase().includes('greet') ? 'happy' :
-                                   r.name.toLowerCase().includes('technic') ? 'thinking' :
-                                   r.name.toLowerCase().includes('casual') ? 'calm' : 'calm';
-                    coverage[emotion] = { tested: true, matched: r.passed };
-                  });
-                  return coverage;
-                })()}
+                syncRate={conversationResults?.emotionSyncRate ?? conversationResults?.byCategory?.emotion?.avgScore ?? 0}
+                emotionTests={conversationResults?.emotionTestResults ?? []}
+                emotionCoverage={conversationResults?.emotionCoverage ?? {}}
                 isLoading={isRunningConversation}
               />
 

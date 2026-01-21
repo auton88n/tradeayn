@@ -334,7 +334,7 @@ const CONVERSATION_TESTS: ConversationTest[] = [
     weight: 2
   },
   
-  // ===== EMOTION DETECTION TESTS =====
+  // ===== EMOTION DETECTION TESTS (All 11 emotions) =====
   {
     category: 'emotion',
     name: 'Happy Response Detection',
@@ -369,13 +369,55 @@ const CONVERSATION_TESTS: ConversationTest[] = [
     messages: [{ role: 'user', content: 'Wow! The design passed all checks! This is amazing!' }],
     expectedEmotion: 'excited',
     weight: 1
+  },
+  {
+    category: 'emotion',
+    name: 'Frustrated Response Detection',
+    messages: [{ role: 'user', content: "Ugh! Nothing is working and I've tried everything!" }],
+    expectedEmotion: 'frustrated',
+    weight: 1
+  },
+  {
+    category: 'emotion',
+    name: 'Supportive Response Detection',
+    messages: [{ role: 'user', content: "I'm really struggling with this project and feel like giving up" }],
+    expectedEmotion: 'supportive',
+    weight: 1
+  },
+  {
+    category: 'emotion',
+    name: 'Comfort Response Detection',
+    messages: [{ role: 'user', content: 'I made a huge mistake and I am worried about the consequences' }],
+    expectedEmotion: 'comfort',
+    weight: 1
+  },
+  {
+    category: 'emotion',
+    name: 'Sad Response Detection',
+    messages: [{ role: 'user', content: 'My project failed and the client is disappointed' }],
+    expectedEmotion: 'sad',
+    weight: 1
+  },
+  {
+    category: 'emotion',
+    name: 'Mad Response Detection',
+    messages: [{ role: 'user', content: 'This is completely unacceptable! How could this happen?!' }],
+    expectedEmotion: 'mad',
+    weight: 1
+  },
+  {
+    category: 'emotion',
+    name: 'Bored Response Detection',
+    messages: [{ role: 'user', content: 'Whatever, just do the same thing as before I guess' }],
+    expectedEmotion: 'bored',
+    weight: 1
   }
 ];
 
 // Call AYN unified endpoint with timeout
 async function callAYN(messages: { role: string; content: string }[]): Promise<{ content: string; emotion?: string }> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 8000); // 8 second max per call
+  const timeout = setTimeout(() => controller.abort(), 12000); // 12 second max per call (privacy tests need more time)
   
   try {
     const response = await fetch(`${SUPABASE_URL}/functions/v1/ayn-unified`, {
@@ -621,6 +663,37 @@ serve(async (req) => {
       }
     });
 
+    // Build emotion test results with complete data
+    const emotionTestResults = results
+      .filter(r => r.category === 'emotion')
+      .map(r => {
+        const testDef = CONVERSATION_TESTS.find(t => t.name === r.name);
+        return {
+          name: r.name,
+          userMessage: r.messages[r.messages.length - 1]?.content || '',
+          expectedEmotion: testDef?.expectedEmotion || 'calm',
+          detectedEmotion: r.detectedEmotion || '',
+          passed: r.passed,
+          aynResponse: r.aynResponse.slice(0, 200)
+        };
+      });
+    
+    // Calculate emotion sync rate
+    const emotionSyncRate = emotionTestResults.length > 0
+      ? Math.round((emotionTestResults.filter(e => e.passed).length / emotionTestResults.length) * 100)
+      : 0;
+    
+    // Build emotion coverage map for all 11 emotions
+    const allEmotions = ['calm', 'happy', 'excited', 'thinking', 'frustrated', 'curious', 'sad', 'mad', 'bored', 'comfort', 'supportive'];
+    const emotionCoverage: Record<string, { tested: boolean; matched: boolean }> = {};
+    for (const emotion of allEmotions) {
+      const test = emotionTestResults.find(t => t.expectedEmotion?.toLowerCase() === emotion);
+      emotionCoverage[emotion] = {
+        tested: !!test,
+        matched: test?.passed || false
+      };
+    }
+
     return new Response(JSON.stringify({
       success: true,
       summary: {
@@ -632,7 +705,13 @@ serve(async (req) => {
       },
       byCategory,
       improvements,
-      sampleTranscripts: results.slice(0, 10).map(r => ({
+      // Explicit emotion data for dashboard
+      emotionSyncRate,
+      emotionTestResults,
+      emotionCoverage,
+      // Personality traits extraction
+      personalityScore: byCategory.personality?.avgScore ?? overallScore,
+      sampleTranscripts: results.slice(0, 15).map(r => ({
         category: r.category,
         name: r.name,
         userMessage: r.messages[r.messages.length - 1]?.content,
