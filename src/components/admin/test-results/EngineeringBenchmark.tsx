@@ -201,7 +201,7 @@ const EngineeringBenchmark: React.FC = () => {
           </div>
         )}
 
-        <ScrollArea className="max-h-[600px]">
+        <ScrollArea>
           <div className="space-y-3">
             {results.map((result) => (
               <Collapsible 
