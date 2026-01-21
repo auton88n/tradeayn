@@ -134,3 +134,9 @@ verify_jwt = false
 
 [functions.ai-test-runner]
 verify_jwt = false
+
+[functions.ai-bug-hunter]
+verify_jwt = false
+
+[functions.measure-ux]
+verify_jwt = false
