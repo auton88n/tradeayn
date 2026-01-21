@@ -7,7 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
   Calculator, CheckCircle, XCircle, AlertTriangle, Play, Loader2, Clock, 
-  ChevronDown, ChevronRight, FileText, Beaker, Target, Code
+  ChevronDown, ChevronRight, FileText, Beaker, Target, Code, Car, Mountain
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -83,7 +83,7 @@ const EngineeringBenchmark: React.FC = () => {
     setIsRunning(true);
     try {
       const { data, error } = await supabase.functions.invoke('engineering-ai-validator', {
-        body: { calculators: ['beam', 'column', 'foundation', 'slab', 'retaining-wall'] }
+        body: { calculators: ['beam', 'column', 'foundation', 'slab', 'retaining-wall', 'parking', 'grading'] }
       });
       
       if (error) throw error;
@@ -218,14 +218,33 @@ const EngineeringBenchmark: React.FC = () => {
                         ) : (
                           <ChevronRight className="h-4 w-4" />
                         )}
-                        <span className="font-medium capitalize">{result.calculator.replace('-', ' ')} Calculator</span>
+                        {result.calculator === 'parking' && <Car className="h-4 w-4 text-blue-500" />}
+                        {result.calculator === 'grading' && <Mountain className="h-4 w-4 text-amber-500" />}
+                        {!['parking', 'grading'].includes(result.calculator) && <Calculator className="h-4 w-4 text-muted-foreground" />}
+                        <span className="font-medium capitalize">{result.calculator.replace('-', ' ')} {result.calculator === 'parking' ? 'Designer' : result.calculator === 'grading' ? 'Designer' : 'Calculator'}</span>
                       </div>
                       <div className="flex items-center gap-3">
-                        <div className="flex gap-1">
-                          {result.standardsCompliance.ACI_318 ? (
-                            <Badge variant="outline" className="text-green-600 text-xs"><CheckCircle className="h-3 w-3 mr-1" />ACI</Badge>
+                        <div className="flex gap-1 flex-wrap">
+                          {result.calculator === 'parking' ? (
+                            <>
+                              <Badge variant="outline" className={`text-xs ${result.standardsCompliance.ACI_318 ? 'text-green-600' : 'text-red-600'}`}>
+                                {result.standardsCompliance.ACI_318 ? <CheckCircle className="h-3 w-3 mr-1" /> : <XCircle className="h-3 w-3 mr-1" />}ADA
+                              </Badge>
+                              <Badge variant="outline" className="text-xs text-blue-600">ITE</Badge>
+                            </>
+                          ) : result.calculator === 'grading' ? (
+                            <>
+                              <Badge variant="outline" className={`text-xs ${result.standardsCompliance.ACI_318 ? 'text-green-600' : 'text-red-600'}`}>
+                                {result.standardsCompliance.ACI_318 ? <CheckCircle className="h-3 w-3 mr-1" /> : <XCircle className="h-3 w-3 mr-1" />}ASCE
+                              </Badge>
+                              <Badge variant="outline" className="text-xs text-blue-600">Drainage</Badge>
+                            </>
                           ) : (
-                            <Badge variant="destructive" className="text-xs"><XCircle className="h-3 w-3 mr-1" />ACI</Badge>
+                            result.standardsCompliance.ACI_318 ? (
+                              <Badge variant="outline" className="text-green-600 text-xs"><CheckCircle className="h-3 w-3 mr-1" />ACI</Badge>
+                            ) : (
+                              <Badge variant="destructive" className="text-xs"><XCircle className="h-3 w-3 mr-1" />ACI</Badge>
+                            )
                           )}
                         </div>
                         <span className={`font-bold ${getGradeColor(result.grade)}`}>{result.grade}</span>
@@ -411,7 +430,7 @@ const EngineeringBenchmark: React.FC = () => {
 
         {results.length === 0 && !isRunning && (
           <p className="text-center text-muted-foreground py-8">
-            Click "Run Validation" to benchmark engineering calculators against ACI 318 and Eurocode 2 standards
+            Click "Run Validation" to benchmark all 7 engineering tools (Beam, Column, Foundation, Slab, Retaining Wall, Parking Designer, Grading Designer) against ACI 318, ADA, ASCE and Eurocode 2 standards
           </p>
         )}
       </CardContent>
