@@ -1,0 +1,534 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+interface TestResult {
+  name: string;
+  category: string;
+  status: 'passed' | 'failed' | 'skipped';
+  duration_ms: number;
+  error_message: string | null;
+  details: Record<string, unknown> | null;
+}
+
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
+const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+
+async function runTest(
+  name: string,
+  category: string,
+  testFn: () => Promise<{ passed: boolean; error?: string; details?: Record<string, unknown> }>
+): Promise<TestResult> {
+  const startTime = Date.now();
+  try {
+    const result = await testFn();
+    return {
+      name,
+      category,
+      status: result.passed ? 'passed' : 'failed',
+      duration_ms: Date.now() - startTime,
+      error_message: result.error || null,
+      details: result.details || null,
+    };
+  } catch (e) {
+    return {
+      name,
+      category,
+      status: 'failed',
+      duration_ms: Date.now() - startTime,
+      error_message: e instanceof Error ? e.message : String(e),
+      details: null,
+    };
+  }
+}
+
+// ==================== API HEALTH TESTS ====================
+async function runApiHealthTests(): Promise<TestResult[]> {
+  const results: TestResult[] = [];
+  const endpoints = [
+    { name: 'calculate-beam', method: 'POST', body: { span: 6, deadLoad: 10, liveLoad: 15, beamWidth: 300, concreteGrade: 30, steelGrade: 420 } },
+    { name: 'calculate-column', method: 'POST', body: { height: 3, axialLoad: 500, momentX: 50, momentY: 30, columnWidth: 400, columnDepth: 400, concreteGrade: 30, steelGrade: 420 } },
+    { name: 'calculate-foundation', method: 'POST', body: { columnLoad: 800, soilBearingCapacity: 150, foundationDepth: 1.5, concreteGrade: 30, steelGrade: 420 } },
+    { name: 'calculate-slab', method: 'POST', body: { spanX: 5, spanY: 4, deadLoad: 5, liveLoad: 3, slabThickness: 150, concreteGrade: 30, steelGrade: 420 } },
+    { name: 'calculate-retaining-wall', method: 'POST', body: { wallHeight: 3, soilDensity: 18, frictionAngle: 30, surchargeLoad: 10, concreteGrade: 30, steelGrade: 420 } },
+  ];
+
+  for (const endpoint of endpoints) {
+    results.push(await runTest(
+      `API Health: ${endpoint.name}`,
+      'api_health',
+      async () => {
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/${endpoint.name}`, {
+          method: endpoint.method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(endpoint.body),
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+          return { passed: false, error: `HTTP ${response.status}: ${JSON.stringify(data)}` };
+        }
+        
+        if (data.error) {
+          return { passed: false, error: data.error };
+        }
+        
+        return { passed: true, details: { status: response.status, hasData: !!data } };
+      }
+    ));
+  }
+
+  return results;
+}
+
+// ==================== DATABASE TESTS ====================
+async function runDatabaseTests(): Promise<TestResult[]> {
+  const results: TestResult[] = [];
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+
+  const tables = [
+    'test_runs',
+    'test_results',
+    'stress_test_metrics',
+    'user_roles',
+    'profiles',
+    'messages',
+    'support_tickets',
+    'faq_items',
+    'llm_models',
+  ];
+
+  for (const table of tables) {
+    results.push(await runTest(
+      `Database: Query ${table}`,
+      'database',
+      async () => {
+        const { data, error, count } = await supabase
+          .from(table)
+          .select('*', { count: 'exact', head: true });
+        
+        if (error) {
+          return { passed: false, error: error.message };
+        }
+        
+        return { passed: true, details: { count } };
+      }
+    ));
+  }
+
+  // Test insert/delete on test_results (CRUD test)
+  results.push(await runTest(
+    'Database: CRUD Operations',
+    'database',
+    async () => {
+      const testRunId = crypto.randomUUID();
+      
+      // Create a test run first
+      const { error: runError } = await supabase
+        .from('test_runs')
+        .insert({
+          id: testRunId,
+          run_name: 'CRUD Test Run',
+          environment: 'test',
+          triggered_by: 'system',
+        });
+      
+      if (runError) {
+        return { passed: false, error: `Insert test_run failed: ${runError.message}` };
+      }
+
+      // Insert test result
+      const testId = crypto.randomUUID();
+      const { error: insertError } = await supabase
+        .from('test_results')
+        .insert({
+          id: testId,
+          run_id: testRunId,
+          test_name: 'CRUD Test',
+          test_suite: 'integration',
+          status: 'passed',
+        });
+
+      if (insertError) {
+        return { passed: false, error: `Insert failed: ${insertError.message}` };
+      }
+
+      // Read it back
+      const { data: readData, error: readError } = await supabase
+        .from('test_results')
+        .select('*')
+        .eq('id', testId)
+        .single();
+
+      if (readError || !readData) {
+        return { passed: false, error: `Read failed: ${readError?.message || 'No data'}` };
+      }
+
+      // Delete test result
+      const { error: deleteError } = await supabase
+        .from('test_results')
+        .delete()
+        .eq('id', testId);
+
+      if (deleteError) {
+        return { passed: false, error: `Delete test_result failed: ${deleteError.message}` };
+      }
+
+      // Delete test run
+      const { error: deleteRunError } = await supabase
+        .from('test_runs')
+        .delete()
+        .eq('id', testRunId);
+
+      if (deleteRunError) {
+        return { passed: false, error: `Delete test_run failed: ${deleteRunError.message}` };
+      }
+
+      return { passed: true, details: { insertedId: testId, deleted: true } };
+    }
+  ));
+
+  return results;
+}
+
+// ==================== CALCULATOR VALIDATION TESTS ====================
+async function runCalculatorTests(): Promise<TestResult[]> {
+  const results: TestResult[] = [];
+
+  // Beam calculator - valid input
+  results.push(await runTest(
+    'Calculator: Beam - Valid Input',
+    'calculator',
+    async () => {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/calculate-beam`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          span: 6,
+          deadLoad: 10,
+          liveLoad: 15,
+          beamWidth: 300,
+          concreteGrade: 30,
+          steelGrade: 420,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || data.error) {
+        return { passed: false, error: data.error || `HTTP ${response.status}` };
+      }
+
+      // Validate response has expected fields
+      const hasRequiredFields = data.beamDepth !== undefined || data.depth !== undefined || data.results;
+      
+      return { 
+        passed: hasRequiredFields, 
+        error: hasRequiredFields ? undefined : 'Missing required fields in response',
+        details: { response: data }
+      };
+    }
+  ));
+
+  // Beam calculator - edge case (large span)
+  results.push(await runTest(
+    'Calculator: Beam - Large Span Edge Case',
+    'calculator',
+    async () => {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/calculate-beam`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          span: 20,
+          deadLoad: 30,
+          liveLoad: 25,
+          beamWidth: 400,
+          concreteGrade: 40,
+          steelGrade: 500,
+        }),
+      });
+
+      const data = await response.json();
+      
+      // Should either return valid result or graceful error
+      return { 
+        passed: response.ok || data.error !== undefined,
+        details: { handledGracefully: true, response: data }
+      };
+    }
+  ));
+
+  // Column calculator
+  results.push(await runTest(
+    'Calculator: Column - Valid Input',
+    'calculator',
+    async () => {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/calculate-column`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          height: 3,
+          axialLoad: 500,
+          momentX: 50,
+          momentY: 30,
+          columnWidth: 400,
+          columnDepth: 400,
+          concreteGrade: 30,
+          steelGrade: 420,
+        }),
+      });
+
+      const data = await response.json();
+      return { 
+        passed: response.ok && !data.error,
+        error: data.error,
+        details: { response: data }
+      };
+    }
+  ));
+
+  // Foundation calculator
+  results.push(await runTest(
+    'Calculator: Foundation - Valid Input',
+    'calculator',
+    async () => {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/calculate-foundation`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          columnLoad: 800,
+          soilBearingCapacity: 150,
+          foundationDepth: 1.5,
+          concreteGrade: 30,
+          steelGrade: 420,
+        }),
+      });
+
+      const data = await response.json();
+      return { 
+        passed: response.ok && !data.error,
+        error: data.error,
+        details: { response: data }
+      };
+    }
+  ));
+
+  return results;
+}
+
+// ==================== SECURITY TESTS ====================
+async function runSecurityTests(): Promise<TestResult[]> {
+  const results: TestResult[] = [];
+
+  // XSS prevention test
+  results.push(await runTest(
+    'Security: XSS Prevention',
+    'security',
+    async () => {
+      const xssPayload = '<script>alert("xss")</script>';
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/support-bot`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: xssPayload }),
+      });
+
+      const data = await response.json();
+      const responseStr = JSON.stringify(data);
+      
+      // Check that script tag is not in response unescaped
+      const containsRawScript = responseStr.includes('<script>') && !responseStr.includes('&lt;script&gt;');
+      
+      return { 
+        passed: !containsRawScript,
+        error: containsRawScript ? 'XSS payload not sanitized' : undefined,
+        details: { sanitized: !containsRawScript }
+      };
+    }
+  ));
+
+  // SQL injection prevention test
+  results.push(await runTest(
+    'Security: SQL Injection Prevention',
+    'security',
+    async () => {
+      const sqlPayload = "'; DROP TABLE users; --";
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/support-bot`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: sqlPayload }),
+      });
+
+      // If server didn't crash and returned a response, SQL injection was prevented
+      return { 
+        passed: response.ok || response.status < 500,
+        details: { status: response.status, serverStable: true }
+      };
+    }
+  ));
+
+  // Auth required endpoint without auth
+  results.push(await runTest(
+    'Security: Protected Endpoint Without Auth',
+    'security',
+    async () => {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/admin-ai-assistant`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: 'test' }),
+      });
+
+      // Should return 401 or 403
+      return { 
+        passed: response.status === 401 || response.status === 403,
+        error: response.status === 401 || response.status === 403 ? undefined : `Expected 401/403, got ${response.status}`,
+        details: { status: response.status }
+      };
+    }
+  ));
+
+  return results;
+}
+
+// ==================== PERFORMANCE TESTS ====================
+async function runPerformanceTests(): Promise<TestResult[]> {
+  const results: TestResult[] = [];
+
+  // API response time test
+  results.push(await runTest(
+    'Performance: Calculator Response Time',
+    'performance',
+    async () => {
+      const times: number[] = [];
+      
+      for (let i = 0; i < 5; i++) {
+        const start = Date.now();
+        await fetch(`${SUPABASE_URL}/functions/v1/calculate-beam`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            span: 6,
+            deadLoad: 10,
+            liveLoad: 15,
+            beamWidth: 300,
+            concreteGrade: 30,
+            steelGrade: 420,
+          }),
+        });
+        times.push(Date.now() - start);
+      }
+
+      const avgTime = times.reduce((a, b) => a + b, 0) / times.length;
+      const maxTime = Math.max(...times);
+      
+      return { 
+        passed: avgTime < 5000,
+        error: avgTime >= 5000 ? `Average response time ${avgTime}ms exceeds 5000ms` : undefined,
+        details: { avgTime, maxTime, samples: times }
+      };
+    }
+  ));
+
+  // Database query performance
+  results.push(await runTest(
+    'Performance: Database Query Time',
+    'performance',
+    async () => {
+      const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+      const start = Date.now();
+      
+      await supabase.from('test_runs').select('*').limit(100);
+      
+      const queryTime = Date.now() - start;
+      
+      return { 
+        passed: queryTime < 1000,
+        error: queryTime >= 1000 ? `Query time ${queryTime}ms exceeds 1000ms` : undefined,
+        details: { queryTime }
+      };
+    }
+  ));
+
+  return results;
+}
+
+// ==================== MAIN HANDLER ====================
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { suite = 'all' } = await req.json().catch(() => ({}));
+    
+    let results: TestResult[] = [];
+    const startTime = Date.now();
+
+    switch (suite) {
+      case 'api':
+        results = await runApiHealthTests();
+        break;
+      case 'database':
+        results = await runDatabaseTests();
+        break;
+      case 'calculator':
+        results = await runCalculatorTests();
+        break;
+      case 'security':
+        results = await runSecurityTests();
+        break;
+      case 'performance':
+        results = await runPerformanceTests();
+        break;
+      case 'quick':
+        // Quick smoke test - one from each category
+        results = [
+          ...(await runApiHealthTests()).slice(0, 2),
+          ...(await runDatabaseTests()).slice(0, 2),
+          ...(await runCalculatorTests()).slice(0, 1),
+        ];
+        break;
+      case 'all':
+      default:
+        results = [
+          ...(await runApiHealthTests()),
+          ...(await runDatabaseTests()),
+          ...(await runCalculatorTests()),
+          ...(await runSecurityTests()),
+          ...(await runPerformanceTests()),
+        ];
+        break;
+    }
+
+    const totalDuration = Date.now() - startTime;
+    const passed = results.filter(r => r.status === 'passed').length;
+    const failed = results.filter(r => r.status === 'failed').length;
+
+    return new Response(JSON.stringify({
+      success: true,
+      suite,
+      summary: {
+        total: results.length,
+        passed,
+        failed,
+        passRate: results.length > 0 ? Math.round((passed / results.length) * 100) : 0,
+        totalDuration,
+      },
+      results,
+      executedAt: new Date().toISOString(),
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+});

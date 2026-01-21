@@ -193,109 +193,86 @@ const TestResultsDashboard: React.FC = () => {
     const startTime = Date.now();
     
     try {
-      // Map suite ID to feature/category
-      const suiteConfig: Record<string, { name: string; feature: string; count: number }> = {
-        quick: { name: 'Quick AI Tests', feature: 'authentication', count: 8 },
-        auth: { name: 'Authentication Suite', feature: 'authentication', count: 19 },
-        security: { name: 'Security Suite', feature: 'security', count: 30 },
-        stress: { name: 'Stress Tests', feature: 'performance', count: 35 },
-        journeys: { name: 'User Journeys', feature: 'user_flow', count: 19 },
-        full: { name: 'Full E2E Suite', feature: 'full', count: 300 },
+      // Map suite ID to real test suite
+      const suiteConfig: Record<string, { name: string; suite: string }> = {
+        quick: { name: 'Quick Integration Tests', suite: 'quick' },
+        api: { name: 'API Health Tests', suite: 'api' },
+        database: { name: 'Database Tests', suite: 'database' },
+        calculator: { name: 'Calculator Tests', suite: 'calculator' },
+        security: { name: 'Security Tests', suite: 'security' },
+        performance: { name: 'Performance Tests', suite: 'performance' },
+        full: { name: 'Full Integration Suite', suite: 'all' },
       };
       
       const config = suiteConfig[suiteId] || suiteConfig.quick;
-      toast.info(`Running ${config.name} (${config.count} tests)...`);
+      toast.info(`Running ${config.name}... (Real integration tests)`);
       
-      // Call the ai-test-agent edge function
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/ai-test-agent`, {
+      // Call the REAL test runner edge function
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/run-real-tests`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
         },
         body: JSON.stringify({
-          feature: config.feature,
-          coverageType: 'comprehensive',
-          suiteId,
+          suite: config.suite,
         }),
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to generate test scenarios: ${response.statusText}`);
+        const errorText = await response.text();
+        throw new Error(`Test runner failed: ${response.status} - ${errorText}`);
       }
 
       const result = await response.json();
       
-      if (result.success && result.scenarios) {
-        setGeneratedScenarios(result.scenarios);
-        
-        // Create a test run record
-        const { data: runData, error: runError } = await supabase.from('test_runs').insert({
+      if (result.success && result.results) {
+        // Create a test run record with real results
+        const { error: runError } = await supabase.from('test_runs').insert({
           id: runId,
           run_name: config.name,
-          total_tests: result.scenarios.length,
-          passed_tests: 0,
-          failed_tests: 0,
+          total_tests: result.summary.total,
+          passed_tests: result.summary.passed,
+          failed_tests: result.summary.failed,
           skipped_tests: 0,
+          duration_ms: result.summary.totalDuration,
           environment: 'production',
-        }).select().single();
+          completed_at: new Date().toISOString(),
+        });
 
-        if (runError) throw runError;
+        if (runError) {
+          console.error('Failed to save test run:', runError);
+        }
 
-        // Simulate test execution and store results
-        let passed = 0;
-        let failed = 0;
-        
-        for (const scenario of result.scenarios as TestScenario[]) {
-          // Simulate test execution with realistic failure rates per category
-          const failureRates: Record<string, number> = {
-            auth: 0.05,      // 5% failure
-            security: 0.08,  // 8% failure  
-            calculator: 0.03, // 3% failure
-            validation: 0.12, // 12% failure
-            stress: 0.15,    // 15% failure
-            chat: 0.06,      // 6% failure
-            i18n: 0.04,      // 4% failure
-          };
-          
-          const failureRate = failureRates[scenario.category] || 0.1;
-          const testPassed = Math.random() > failureRate;
-          const duration = Math.floor(Math.random() * 3000) + 500;
-          
-          if (testPassed) passed++;
-          else failed++;
-          
-          // Generate realistic error messages based on category
-          const errorMessage = testPassed ? null : generateRealisticError(scenario);
-          
+        // Store individual REAL test results
+        for (const testResult of result.results) {
           await supabase.from('test_results').insert({
             run_id: runId,
-            test_suite: scenario.category,
-            test_name: scenario.name,
-            status: testPassed ? 'passed' : 'failed',
-            duration_ms: duration,
-            browser: ['Chrome', 'Firefox', 'Safari'][Math.floor(Math.random() * 3)],
-            error_message: errorMessage,
+            test_suite: testResult.category,
+            test_name: testResult.name,
+            status: testResult.status,
+            duration_ms: testResult.duration_ms,
+            error_message: testResult.error_message,
+            browser: 'Edge Function',
           });
         }
 
-        // Update the test run with final results
-        const totalDuration = Date.now() - startTime;
-        await supabase.from('test_runs').update({
-          passed_tests: passed,
-          failed_tests: failed,
-          duration_ms: totalDuration,
-          completed_at: new Date().toISOString(),
-        }).eq('id', runId);
-
-        toast.success(`${config.name} complete: ${passed}/${result.scenarios.length} passed`);
+        const passRate = result.summary.passRate;
+        if (passRate === 100) {
+          toast.success(`✅ ${config.name}: All ${result.summary.total} tests passed!`);
+        } else if (passRate >= 80) {
+          toast.warning(`⚠️ ${config.name}: ${result.summary.passed}/${result.summary.total} passed (${passRate}%)`);
+        } else {
+          toast.error(`❌ ${config.name}: ${result.summary.failed} tests failed`);
+        }
         
         // Reload data to show new results
         await loadData();
+      } else {
+        throw new Error(result.error || 'Unknown error from test runner');
       }
     } catch (error) {
       console.error('Test run failed:', error);
-      toast.error('Failed to run tests. Check console for details.');
+      toast.error(`Failed to run tests: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsRunningTests(false);
     }
