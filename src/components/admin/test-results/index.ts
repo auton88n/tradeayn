@@ -1,3 +1,4 @@
+// Test Results Components - Full Experience Report Dashboard
 export { default as E2ETestCoverage } from './E2ETestCoverage';
 export { default as TestSuiteSelector } from './TestSuiteSelector';
 export { FullExperienceReport } from './FullExperienceReport';
