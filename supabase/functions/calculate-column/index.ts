@@ -5,14 +5,80 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Input validation helper
+function validateNumeric(value: unknown, fieldName: string, options: { min?: number; max?: number; required?: boolean } = {}): { valid: boolean; error?: string; value?: number } {
+  const { min, max, required = true } = options;
+  
+  if (value === undefined || value === null) {
+    if (required) {
+      return { valid: false, error: `Missing required field: ${fieldName}` };
+    }
+    return { valid: true, value: undefined };
+  }
+  
+  const num = Number(value);
+  if (isNaN(num)) {
+    return { valid: false, error: `${fieldName} must be a valid number` };
+  }
+  
+  if (min !== undefined && num < min) {
+    return { valid: false, error: `${fieldName} cannot be less than ${min}` };
+  }
+  
+  if (max !== undefined && num > max) {
+    return { valid: false, error: `${fieldName} cannot be greater than ${max}` };
+  }
+  
+  return { valid: true, value: num };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { inputs } = await req.json();
+    const body = await req.json();
     
+    // Handle both formats: { inputs: {...} } OR {...} directly
+    const rawInputs = body.inputs || body;
+    
+    // Validate all required numeric fields
+    const validations = [
+      validateNumeric(rawInputs.axialLoad, 'axialLoad', { min: 0 }),
+      validateNumeric(rawInputs.momentX, 'momentX', { min: 0, required: false }),
+      validateNumeric(rawInputs.momentY, 'momentY', { min: 0, required: false }),
+      validateNumeric(rawInputs.columnWidth, 'columnWidth', { min: 150, max: 2000 }),
+      validateNumeric(rawInputs.columnDepth, 'columnDepth', { min: 150, max: 2000 }),
+      validateNumeric(rawInputs.columnHeight, 'columnHeight', { min: 1, max: 50 }),
+      validateNumeric(rawInputs.coverThickness, 'coverThickness', { min: 20, max: 100, required: false }),
+    ];
+    
+    const errors = validations.filter(v => !v.valid).map(v => v.error);
+    if (errors.length > 0) {
+      return new Response(JSON.stringify({ 
+        error: errors.join('; '),
+        validationFailed: true 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
+    // Extract validated inputs with defaults
+    const inputs = {
+      axialLoad: Number(rawInputs.axialLoad),
+      momentX: Number(rawInputs.momentX) || 0,
+      momentY: Number(rawInputs.momentY) || 0,
+      columnWidth: Number(rawInputs.columnWidth),
+      columnDepth: Number(rawInputs.columnDepth),
+      columnHeight: Number(rawInputs.columnHeight),
+      concreteGrade: rawInputs.concreteGrade || 'C30',
+      steelGrade: rawInputs.steelGrade || '420',
+      coverThickness: Number(rawInputs.coverThickness) || 40,
+      columnType: rawInputs.columnType || 'interior'
+    };
+
     const {
       axialLoad,
       momentX,
@@ -27,8 +93,8 @@ serve(async (req) => {
     } = inputs;
 
     // Material properties
-    const fck = parseInt(concreteGrade.replace('C', ''));
-    const fy = parseInt(steelGrade);
+    const fck = parseInt(String(concreteGrade).replace('C', '')) || 30;
+    const fy = parseInt(String(steelGrade)) || 420;
     
     // Partial safety factors (EC2)
     const gammaC = 1.5;
@@ -49,7 +115,7 @@ serve(async (req) => {
     const dPrime = cover + 10 + 10;
     
     // Slenderness check (EC2)
-    const Le = columnHeight; // Assuming pinned-pinned
+    const Le = columnHeight * 1000; // Convert to mm
     const i = Math.min(b, h) / Math.sqrt(12); // Radius of gyration
     const lambda = Le / i;
     const lambdaLim = 20 * Math.sqrt(fck) / Math.sqrt(axialLoad * 1000 / Ac);
@@ -59,8 +125,8 @@ serve(async (req) => {
     const e0 = Math.max(h / 30, 20); // mm
     
     // First order eccentricities
-    const ex = (momentX * 1000000) / (axialLoad * 1000) + e0;
-    const ey = (momentY * 1000000) / (axialLoad * 1000) + e0;
+    const ex = axialLoad > 0 ? (momentX * 1000000) / (axialLoad * 1000) + e0 : e0;
+    const ey = axialLoad > 0 ? (momentY * 1000000) / (axialLoad * 1000) + e0 : e0;
     
     // Second order effects (simplified for slender columns)
     let e2x = 0, e2y = 0;
@@ -139,7 +205,9 @@ serve(async (req) => {
     const isAdequate = utilizationRatio <= 100 && reinforcementRatio <= 4 && reinforcementRatio >= 0.2;
     
     console.log('Column calculation completed:', {
-      inputs,
+      axialLoad,
+      columnWidth,
+      columnDepth,
       AsRequired,
       AsProvided,
       utilizationRatio,
@@ -203,7 +271,10 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Column calculation error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ 
+      error: error.message || 'Invalid request',
+      validationFailed: true 
+    }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

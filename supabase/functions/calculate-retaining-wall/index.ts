@@ -5,28 +5,83 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Input validation helper
+function validateNumeric(value: unknown, fieldName: string, options: { min?: number; max?: number; required?: boolean } = {}): { valid: boolean; error?: string; value?: number } {
+  const { min, max, required = true } = options;
+  
+  if (value === undefined || value === null) {
+    if (required) {
+      return { valid: false, error: `Missing required field: ${fieldName}` };
+    }
+    return { valid: true, value: undefined };
+  }
+  
+  const num = Number(value);
+  if (isNaN(num)) {
+    return { valid: false, error: `${fieldName} must be a valid number` };
+  }
+  
+  if (min !== undefined && num < min) {
+    return { valid: false, error: `${fieldName} cannot be less than ${min}` };
+  }
+  
+  if (max !== undefined && num > max) {
+    return { valid: false, error: `${fieldName} cannot be greater than ${max}` };
+  }
+  
+  return { valid: true, value: num };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { 
-      wallHeight,
-      stemThicknessTop,
-      stemThicknessBottom,
-      baseWidth,
-      baseThickness,
-      toeWidth,
-      soilUnitWeight,
-      soilFrictionAngle,
-      surchargeLoad,
-      concreteGrade,
-      steelGrade,
-      waterTableDepth,
-      backfillSlope,
-      allowableBearingPressure,
-    } = await req.json();
+    const body = await req.json();
+    
+    // Handle both formats: { inputs: {...} } OR {...} directly
+    const rawInputs = body.inputs || body;
+    
+    // Validate all required numeric fields
+    const validations = [
+      validateNumeric(rawInputs.wallHeight, 'wallHeight', { min: 1, max: 15 }),
+      validateNumeric(rawInputs.stemThicknessTop, 'stemThicknessTop', { min: 150, max: 1000 }),
+      validateNumeric(rawInputs.stemThicknessBottom, 'stemThicknessBottom', { min: 200, max: 1500 }),
+      validateNumeric(rawInputs.baseWidth, 'baseWidth', { min: 500, max: 10000 }),
+      validateNumeric(rawInputs.baseThickness, 'baseThickness', { min: 200, max: 2000 }),
+      validateNumeric(rawInputs.toeWidth, 'toeWidth', { min: 0, max: 5000 }),
+      validateNumeric(rawInputs.soilUnitWeight, 'soilUnitWeight', { min: 14, max: 25 }),
+      validateNumeric(rawInputs.soilFrictionAngle, 'soilFrictionAngle', { min: 15, max: 45 }),
+      validateNumeric(rawInputs.surchargeLoad, 'surchargeLoad', { min: 0, required: false }),
+      validateNumeric(rawInputs.allowableBearingPressure, 'allowableBearingPressure', { min: 50, max: 1000 }),
+    ];
+    
+    const errors = validations.filter(v => !v.valid).map(v => v.error);
+    if (errors.length > 0) {
+      return new Response(JSON.stringify({ 
+        error: errors.join('; '),
+        validationFailed: true 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const wallHeight = Number(rawInputs.wallHeight);
+    const stemThicknessTop = Number(rawInputs.stemThicknessTop);
+    const stemThicknessBottom = Number(rawInputs.stemThicknessBottom);
+    const baseWidth = Number(rawInputs.baseWidth);
+    const baseThickness = Number(rawInputs.baseThickness);
+    const toeWidth = Number(rawInputs.toeWidth);
+    const soilUnitWeight = Number(rawInputs.soilUnitWeight);
+    const soilFrictionAngle = Number(rawInputs.soilFrictionAngle);
+    const surchargeLoad = Number(rawInputs.surchargeLoad) || 0;
+    const concreteGrade = rawInputs.concreteGrade || 'C30';
+    const steelGrade = rawInputs.steelGrade || 'Fy420';
+    const waterTableDepth = Number(rawInputs.waterTableDepth) || null;
+    const backfillSlope = Number(rawInputs.backfillSlope) || 0;
+    const allowableBearingPressure = Number(rawInputs.allowableBearingPressure);
 
     console.log('Retaining wall calculation started:', { wallHeight, baseWidth, soilFrictionAngle });
 
@@ -36,92 +91,72 @@ serve(async (req) => {
     
     const fck = concreteProps[concreteGrade] || 30;
     const fy = steelProps[steelGrade] || 420;
-    const gammaConcrete = 24; // kN/m³
+    const gammaConcrete = 24;
     
     // Convert to consistent units (m, kN)
-    const H = wallHeight; // m
-    const tTop = stemThicknessTop / 1000; // m
-    const tBottom = stemThicknessBottom / 1000; // m
-    const B = baseWidth / 1000; // m
-    const D = baseThickness / 1000; // m
-    const toe = toeWidth / 1000; // m
+    const H = wallHeight;
+    const tTop = stemThicknessTop / 1000;
+    const tBottom = stemThicknessBottom / 1000;
+    const B = baseWidth / 1000;
+    const D = baseThickness / 1000;
+    const toe = toeWidth / 1000;
     const heel = B - toe - tBottom;
     
-    const gamma = soilUnitWeight; // kN/m³
-    const phi = soilFrictionAngle * Math.PI / 180; // radians
-    const q = surchargeLoad; // kN/m²
-    const beta = (backfillSlope || 0) * Math.PI / 180; // backfill slope in radians
+    const gamma = soilUnitWeight;
+    const phi = soilFrictionAngle * Math.PI / 180;
+    const q = surchargeLoad;
+    const beta = (backfillSlope || 0) * Math.PI / 180;
     
-    // ============ LATERAL EARTH PRESSURE (Rankine Theory) ============
-    
-    // Active earth pressure coefficient (with sloping backfill)
+    // Active earth pressure coefficient
     const Ka = beta === 0 
       ? Math.pow(Math.tan(Math.PI/4 - phi/2), 2)
       : (Math.cos(beta) - Math.sqrt(Math.cos(beta)**2 - Math.cos(phi)**2)) / 
         (Math.cos(beta) + Math.sqrt(Math.cos(beta)**2 - Math.cos(phi)**2)) * Math.cos(beta);
     
-    // Passive earth pressure coefficient
     const Kp = Math.pow(Math.tan(Math.PI/4 + phi/2), 2);
     
-    // Active earth pressure at base (triangular)
-    const Pa_soil = 0.5 * Ka * gamma * H * H; // kN/m
-    const Pa_surcharge = Ka * q * H; // kN/m (rectangular)
+    const Pa_soil = 0.5 * Ka * gamma * H * H;
+    const Pa_surcharge = Ka * q * H;
     const Pa_total = Pa_soil + Pa_surcharge;
     
-    // Point of application
-    const ya_soil = H / 3; // from base
+    const ya_soil = H / 3;
     const ya_surcharge = H / 2;
     const ya = (Pa_soil * ya_soil + Pa_surcharge * ya_surcharge) / Pa_total;
     
-    // Passive pressure (in front of toe, if embedded)
-    const embedDepth = 0.3; // Assume 0.3m embedment
+    const embedDepth = 0.3;
     const Pp = 0.5 * Kp * gamma * embedDepth * embedDepth;
     
-    // ============ STABILITY ANALYSIS ============
-    
-    // Weight calculations (per meter length)
-    const W1 = tTop * H * gammaConcrete; // Stem (simplified as rectangle)
-    const W2 = 0.5 * (tBottom - tTop) * H * gammaConcrete; // Stem taper
-    const W3 = B * D * gammaConcrete; // Base slab
-    const W4 = heel * H * gamma; // Backfill on heel
-    const W5 = q * heel; // Surcharge on heel
+    // Weight calculations
+    const W1 = tTop * H * gammaConcrete;
+    const W2 = 0.5 * (tBottom - tTop) * H * gammaConcrete;
+    const W3 = B * D * gammaConcrete;
+    const W4 = heel * H * gamma;
+    const W5 = q * heel;
     
     const Wtotal = W1 + W2 + W3 + W4 + W5;
     
-    // Moment arms from toe
     const x1 = toe + tBottom / 2;
     const x2 = toe + tBottom - (tBottom - tTop) / 3;
     const x3 = B / 2;
     const x4 = toe + tBottom + heel / 2;
     const x5 = x4;
     
-    // Resisting moment (about toe)
     const Mr = W1 * x1 + W2 * x2 + W3 * x3 + W4 * x4 + W5 * x5 + Pp * embedDepth / 3;
-    
-    // Overturning moment (about toe)
     const Mo = Pa_total * ya;
     
-    // Factor of Safety against Overturning
     const FOS_overturning = Mr / Mo;
     
-    // Factor of Safety against Sliding
-    const frictionCoeff = Math.tan(phi * 0.67); // Base friction (2/3 of soil friction)
+    const frictionCoeff = Math.tan(phi * 0.67);
     const FOS_sliding = (Wtotal * frictionCoeff + Pp) / Pa_total;
     
-    // ============ BEARING PRESSURE CHECK ============
-    
-    // Eccentricity
     const e = B / 2 - (Mr - Mo) / Wtotal;
-    const eMax = B / 6; // Middle third rule
+    const eMax = B / 6;
     
-    // Bearing pressures
     let qToe: number, qHeel: number;
     if (Math.abs(e) <= eMax) {
-      // Trapezoidal distribution
       qToe = (Wtotal / B) * (1 + 6 * e / B);
       qHeel = (Wtotal / B) * (1 - 6 * e / B);
     } else {
-      // Triangular distribution (tension at heel)
       const Beff = 3 * (B / 2 - e);
       qToe = 2 * Wtotal / Beff;
       qHeel = 0;
@@ -129,28 +164,20 @@ serve(async (req) => {
     
     const FOS_bearing = allowableBearingPressure / Math.max(qToe, qHeel);
     
-    // ============ STEM DESIGN ============
-    
-    // Critical section at base of stem
+    // Stem design
     const Mu_stem = Pa_soil * H / 3 + Pa_surcharge * H / 2;
-    
-    // Stem reinforcement
-    const dStem = (tBottom * 1000) - 50 - 8; // effective depth (mm)
+    const dStem = (tBottom * 1000) - 50 - 8;
     const Ast_stem = (Mu_stem * 1e6) / (0.87 * fy * 0.9 * dStem);
     
-    // Select bars
     const barDia = 16;
     const areaPerBar = Math.PI * barDia * barDia / 4;
     const stemSpacing = Math.min(Math.floor((1000 * areaPerBar) / Ast_stem / 25) * 25, 200);
     
-    // Distribution steel
     const Ast_dist = 0.002 * tBottom * 1000 * 1000;
     const distBarDia = 10;
     const distSpacing = Math.min(Math.floor((1000 * Math.PI * distBarDia * distBarDia / 4) / Ast_dist / 25) * 25, 300);
     
-    // ============ HEEL DESIGN ============
-    
-    // Net pressure on heel (upward bearing - downward soil + surcharge)
+    // Heel design
     const avgBearing = (qToe + qHeel) / 2;
     const heelLoad = gamma * H + q - avgBearing;
     const Mu_heel = 0.5 * Math.abs(heelLoad) * heel * heel;
@@ -159,9 +186,7 @@ serve(async (req) => {
     const Ast_heel = Math.max((Mu_heel * 1e6) / (0.87 * fy * 0.9 * dHeel), 0.0018 * 1000 * D * 1000);
     const heelSpacing = Math.min(Math.floor((1000 * areaPerBar) / Ast_heel / 25) * 25, 200);
     
-    // ============ TOE DESIGN ============
-    
-    // Net upward pressure on toe
+    // Toe design
     const toeLoad = qToe - gammaConcrete * D;
     const Mu_toe = 0.5 * toeLoad * toe * toe;
     
@@ -169,14 +194,12 @@ serve(async (req) => {
     const Ast_toe = Math.max((Mu_toe * 1e6) / (0.87 * fy * 0.9 * dToe), 0.0018 * 1000 * D * 1000);
     const toeSpacing = Math.min(Math.floor((1000 * areaPerBar) / Ast_toe / 25) * 25, 200);
     
-    // ============ VOLUME & COST ============
-    
-    const stemVolume = ((tTop + tBottom) / 2) * H * 1; // per meter length
+    // Volumes
+    const stemVolume = ((tTop + tBottom) / 2) * H * 1;
     const baseVolume = B * D * 1;
     const concreteVolume = stemVolume + baseVolume;
-    const steelWeight = concreteVolume * 120; // ~120 kg/m³ for retaining walls
+    const steelWeight = concreteVolume * 120;
     
-    // Status checks
     const stabilityStatus = {
       overturning: FOS_overturning >= 2.0 ? 'OK' : 'INADEQUATE',
       sliding: FOS_sliding >= 1.5 ? 'OK' : 'INADEQUATE',
@@ -190,7 +213,6 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({
-        // Input echo
         wallHeight: H,
         stemThicknessTop: tTop * 1000,
         stemThicknessBottom: tBottom * 1000,
@@ -199,7 +221,6 @@ serve(async (req) => {
         toeWidth: toe * 1000,
         heelWidth: heel * 1000,
         
-        // Earth pressure
         earthPressure: {
           Ka,
           Kp,
@@ -210,7 +231,6 @@ serve(async (req) => {
           Pp: parseFloat(Pp.toFixed(2)),
         },
         
-        // Stability
         stability: {
           totalWeight: parseFloat(Wtotal.toFixed(2)),
           resistingMoment: parseFloat(Mr.toFixed(2)),
@@ -222,14 +242,12 @@ serve(async (req) => {
           maxEccentricity: parseFloat(eMax.toFixed(3)),
         },
         
-        // Bearing pressure
         bearingPressure: {
           toe: parseFloat(qToe.toFixed(2)),
           heel: parseFloat(qHeel.toFixed(2)),
           allowable: allowableBearingPressure,
         },
         
-        // Reinforcement
         reinforcement: {
           stem: {
             mainBars: `T${barDia}@${stemSpacing}mm c/c (rear face)`,
@@ -246,16 +264,13 @@ serve(async (req) => {
           },
         },
         
-        // Status
         stabilityStatus,
         overallStatus,
         
-        // Quantities
         concreteVolume: parseFloat(concreteVolume.toFixed(3)),
         steelWeight: parseFloat(steelWeight.toFixed(1)),
         formworkArea: parseFloat((2 * H + B + heel + toe).toFixed(2)),
         
-        // Materials
         concreteGrade,
         steelGrade,
         fck,
@@ -269,7 +284,10 @@ serve(async (req) => {
   } catch (error) {
     console.error('Retaining wall calculation error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message || 'Invalid request',
+        validationFailed: true 
+      }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

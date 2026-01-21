@@ -5,23 +5,73 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Input validation helper
+function validateNumeric(value: unknown, fieldName: string, options: { min?: number; max?: number; required?: boolean } = {}): { valid: boolean; error?: string; value?: number } {
+  const { min, max, required = true } = options;
+  
+  if (value === undefined || value === null) {
+    if (required) {
+      return { valid: false, error: `Missing required field: ${fieldName}` };
+    }
+    return { valid: true, value: undefined };
+  }
+  
+  const num = Number(value);
+  if (isNaN(num)) {
+    return { valid: false, error: `${fieldName} must be a valid number` };
+  }
+  
+  if (min !== undefined && num < min) {
+    return { valid: false, error: `${fieldName} cannot be less than ${min}` };
+  }
+  
+  if (max !== undefined && num > max) {
+    return { valid: false, error: `${fieldName} cannot be greater than ${max}` };
+  }
+  
+  return { valid: true, value: num };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { 
-      longSpan, 
-      shortSpan, 
-      deadLoad, 
-      liveLoad, 
-      concreteGrade, 
-      steelGrade, 
-      slabType,
-      supportCondition,
-      cover 
-    } = await req.json();
+    const body = await req.json();
+    
+    // Handle both formats: { inputs: {...} } OR {...} directly
+    const rawInputs = body.inputs || body;
+    
+    // Validate all required numeric fields
+    const validations = [
+      validateNumeric(rawInputs.longSpan, 'longSpan', { min: 1, max: 20 }),
+      validateNumeric(rawInputs.shortSpan, 'shortSpan', { min: 1, max: 20 }),
+      validateNumeric(rawInputs.deadLoad, 'deadLoad', { min: 0 }),
+      validateNumeric(rawInputs.liveLoad, 'liveLoad', { min: 0 }),
+      validateNumeric(rawInputs.cover, 'cover', { min: 15, max: 75, required: false }),
+    ];
+    
+    const errors = validations.filter(v => !v.valid).map(v => v.error);
+    if (errors.length > 0) {
+      return new Response(JSON.stringify({ 
+        error: errors.join('; '),
+        validationFailed: true 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const longSpan = Number(rawInputs.longSpan);
+    const shortSpan = Number(rawInputs.shortSpan);
+    const deadLoad = Number(rawInputs.deadLoad);
+    const liveLoad = Number(rawInputs.liveLoad);
+    const concreteGrade = rawInputs.concreteGrade || 'C30';
+    const steelGrade = rawInputs.steelGrade || 'Fy420';
+    const slabType = rawInputs.slabType || 'two_way';
+    const supportCondition = rawInputs.supportCondition || 'simply_supported';
+    const cover = Number(rawInputs.cover) || 25;
 
     // Material properties
     const concreteProps: Record<string, number> = { C25: 25, C30: 30, C35: 35, C40: 40 };
@@ -39,7 +89,6 @@ serve(async (req) => {
     const Wu = 1.4 * deadLoad + 1.6 * liveLoad;
 
     // Minimum thickness calculation based on ACI 318
-    // Deflection control coefficients
     const deflectionCoeffs: Record<string, number> = {
       simply_supported: 20,
       one_edge_continuous: 24,
@@ -50,17 +99,16 @@ serve(async (req) => {
     
     // Minimum thickness
     const hMin = Lx / deflCoeff;
-    const thickness = Math.max(Math.ceil(hMin / 25) * 25, 120); // Round to 25mm, min 120mm
+    const thickness = Math.max(Math.ceil(hMin / 25) * 25, 120);
     
     // Effective depth
-    const barDia = 10; // Assumed 10mm bars
+    const barDia = 10;
     const d = thickness - cover - barDia / 2;
 
     let results: Record<string, unknown>;
 
     if (slabType === 'one_way') {
       // One-way slab design
-      // Moment coefficient based on support condition
       const momentCoeffs: Record<string, { positive: number; negative: number }> = {
         simply_supported: { positive: 8, negative: 0 },
         one_edge_continuous: { positive: 11, negative: 9 },
@@ -69,24 +117,19 @@ serve(async (req) => {
       };
       const coeffs = momentCoeffs[supportCondition] || { positive: 8, negative: 0 };
 
-      // Moments per meter width (kN·m/m)
       const MuPos = (Wu * Lx * Lx) / (1000 * 1000 * coeffs.positive);
       const MuNeg = coeffs.negative > 0 ? (Wu * Lx * Lx) / (1000 * 1000 * coeffs.negative) : 0;
 
-      // Required steel area (mm²/m)
       const AstPos = (MuPos * 1e6) / (0.87 * fy * 0.9 * d);
       const AstNeg = (MuNeg * 1e6) / (0.87 * fy * 0.9 * d);
       
-      // Minimum steel ratio
       const rhoMin = 0.0018;
       const AstMin = rhoMin * 1000 * thickness;
       
-      // Final steel areas
       const mainAst = Math.max(AstPos, AstMin);
       const topAst = Math.max(AstNeg, AstMin * 0.5);
-      const distAst = Math.max(0.002 * 1000 * thickness, AstMin * 0.3); // Distribution steel
+      const distAst = Math.max(0.002 * 1000 * thickness, AstMin * 0.3);
 
-      // Bar spacing calculations
       const areaPerBar = Math.PI * barDia * barDia / 4;
       const mainSpacing = Math.min(Math.floor((1000 * areaPerBar) / mainAst / 25) * 25, 300);
       const distSpacing = Math.min(Math.floor((1000 * areaPerBar) / distAst / 25) * 25, 450);
@@ -126,16 +169,13 @@ serve(async (req) => {
         bottomBarSpacing: mainSpacing,
       };
     } else {
-      // Two-way slab design (Direct Design Method / Coefficient Method)
-      // Moment coefficients for two-way slabs (simplified)
+      // Two-way slab design
       const alphaX = 1 / (1 + Math.pow(spanRatio, 4));
       const alphaY = 1 - alphaX;
 
-      // Total moment per meter width
       const MuX = alphaX * Wu * Lx * Lx / (8 * 1000 * 1000);
       const MuY = alphaY * Wu * Ly * Ly / (8 * 1000 * 1000);
 
-      // Positive and negative moment distribution
       const posRatio = supportCondition === 'simply_supported' ? 1.0 : 0.6;
       const negRatio = supportCondition === 'simply_supported' ? 0 : 0.65;
 
@@ -144,23 +184,19 @@ serve(async (req) => {
       const MyPos = MuY * posRatio;
       const MyNeg = MuY * negRatio;
 
-      // Required steel areas
       const AstXPos = (MxPos * 1e6) / (0.87 * fy * 0.9 * d);
       const AstXNeg = (MxNeg * 1e6) / (0.87 * fy * 0.9 * d);
       const AstYPos = (MyPos * 1e6) / (0.87 * fy * 0.9 * (d - barDia));
       const AstYNeg = (MyNeg * 1e6) / (0.87 * fy * 0.9 * (d - barDia));
 
-      // Minimum steel
       const rhoMin = 0.0018;
       const AstMin = rhoMin * 1000 * thickness;
 
-      // Final areas
       const xBottomAst = Math.max(AstXPos, AstMin);
       const xTopAst = Math.max(AstXNeg, AstMin * 0.5);
       const yBottomAst = Math.max(AstYPos, AstMin);
       const yTopAst = Math.max(AstYNeg, AstMin * 0.5);
 
-      // Spacings
       const areaPerBar = Math.PI * barDia * barDia / 4;
       const xBottomSpacing = Math.min(Math.floor((1000 * areaPerBar) / xBottomAst / 25) * 25, 200);
       const xTopSpacing = Math.min(Math.floor((1000 * areaPerBar) / xTopAst / 25) * 25, 200);
@@ -215,92 +251,64 @@ serve(async (req) => {
       };
     }
 
-    // ============ SERVICEABILITY CHECKS ============
-    
-    // Elastic modulus of concrete (MPa)
+    // Serviceability checks
     const Ec = 4700 * Math.sqrt(fck);
-    // Elastic modulus of steel (MPa)
     const Es = 200000;
-    // Modular ratio
     const n = Es / Ec;
-    
-    // Service load (unfactored)
-    const Ws = deadLoad + liveLoad; // kN/m²
-    
-    // === DEFLECTION CHECK (Eurocode 2 / ACI 318 simplified) ===
-    // Immediate deflection using Branson's equation (simplified)
-    const L = Lx; // Governing span in mm
-    const Ig = (1000 * Math.pow(thickness, 3)) / 12; // Gross moment of inertia per meter width
-    
-    // Cracking moment
-    const fr = 0.62 * Math.sqrt(fck); // Modulus of rupture (MPa)
-    const Mcr = (fr * Ig) / (thickness / 2) / 1e6; // kN·m/m
-    
-    // Service moment
-    const Ma = (Ws * L * L) / (8 * 1000 * 1000); // kN·m/m
-    
-    // Effective moment of inertia (Branson)
+    const Ws = deadLoad + liveLoad;
+    const L = Lx;
+    const Ig = (1000 * Math.pow(thickness, 3)) / 12;
+    const fr = 0.62 * Math.sqrt(fck);
+    const Mcr = (fr * Ig) / (thickness / 2) / 1e6;
+    const Ma = (Ws * L * L) / (8 * 1000 * 1000);
     const Ie = Ma <= Mcr 
       ? Ig 
       : Math.min(Ig, Math.pow(Mcr / Ma, 3) * Ig + (1 - Math.pow(Mcr / Ma, 3)) * 0.35 * Ig);
     
-    // Immediate deflection
     const kDefl = supportCondition === 'simply_supported' ? 5/384 : 
                   supportCondition === 'cantilever' ? 1/8 : 1/384;
-    const deltaImmediate = (kDefl * Ws * Math.pow(L, 4)) / (Ec * Ie) * 1e6; // mm
+    const deltaImmediate = (kDefl * Ws * Math.pow(L, 4)) / (Ec * Ie) * 1e6;
     
-    // Long-term deflection (considering creep and shrinkage)
-    const xi = 2.0; // Time-dependent factor for 5+ years
-    const rhoComp = 0; // Compression reinforcement ratio (assumed 0 for slabs)
+    const xi = 2.0;
+    const rhoComp = 0;
     const lambda = xi / (1 + 50 * rhoComp);
     const deltaLongTerm = deltaImmediate * (1 + lambda);
     const deltaTotalLT = deltaImmediate + deltaLongTerm;
     
-    // Allowable deflection (L/250 for total, L/500 for live load)
     const deltaAllowable = L / 250;
-    const deltaLiveAllowable = L / 500;
     const deflectionRatio = deltaTotalLT / deltaAllowable;
     const deflectionStatus = deltaTotalLT <= deltaAllowable ? 'OK' : 'EXCEEDS LIMIT';
     
-    // === CRACK WIDTH CHECK (Eurocode 2 approach) ===
-    // Steel stress under service load
-    const As = (results as any).mainReinforcement?.area || 
-               (results as any).xDirection?.bottomReinforcement?.area || 300; // mm²/m
-    const sigma_s = (Ma * 1e6) / (0.9 * d * As); // MPa (approximate)
+    const As = (results as Record<string, unknown>).mainReinforcement?.area || 
+               (results as Record<string, unknown>).xDirection?.bottomReinforcement?.area || 300;
+    const sigma_s = (Ma * 1e6) / (0.9 * d * (As as number));
     
-    // Maximum bar spacing for crack control
-    const k1 = 0.8; // High bond bars
-    const k2 = 0.5; // Bending
+    const k1 = 0.8;
+    const k2 = 0.5;
     const k3 = 3.4;
     const k4 = 0.425;
     const c = cover;
     
-    // Effective tension area
     const hceff = Math.min(2.5 * (thickness - d), (thickness - d) / 3, thickness / 2);
     const Aceff = 1000 * hceff;
-    const rhoEff = As / Aceff;
-    
-    // Crack spacing
+    const rhoEff = (As as number) / Aceff;
     const srMax = k3 * c + k1 * k2 * k4 * barDia / rhoEff;
     
-    // Mean strain difference
-    const kt = 0.4; // Long-term loading
-    const fctEff = 0.3 * Math.pow(fck, 2/3); // Mean tensile strength
+    const kt = 0.4;
+    const fctEff = 0.3 * Math.pow(fck, 2/3);
     const esmEcm = Math.max(
       (sigma_s - kt * (fctEff / rhoEff) * (1 + n * rhoEff)) / Es,
       0.6 * sigma_s / Es
     );
     
-    // Crack width
     const wk = srMax * esmEcm;
-    
-    // Allowable crack width based on exposure
-    const wkAllowable = 0.3; // mm (normal exposure)
+    const wkAllowable = 0.3;
     const crackWidthStatus = wk <= wkAllowable ? 'OK' : 'EXCEEDS LIMIT';
     
-    // Common outputs
     const concreteVolume = (Lx / 1000) * (Ly / 1000) * (thickness / 1000);
-    const steelWeight = concreteVolume * 100; // Approximate 100 kg/m³
+    const steelWeight = concreteVolume * 100;
+
+    console.log('Slab calculation completed:', { longSpan, shortSpan, thickness, slabType });
 
     return new Response(
       JSON.stringify({
@@ -313,7 +321,6 @@ serve(async (req) => {
         concreteVolume,
         steelWeight,
         formworkArea: (Lx / 1000) * (Ly / 1000),
-        // Serviceability checks
         serviceabilityChecks: {
           deflection: {
             immediate: parseFloat(deltaImmediate.toFixed(2)),
@@ -341,7 +348,10 @@ serve(async (req) => {
   } catch (error) {
     console.error('Slab calculation error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message || 'Invalid request',
+        validationFailed: true 
+      }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

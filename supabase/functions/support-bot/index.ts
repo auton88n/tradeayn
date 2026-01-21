@@ -11,6 +11,30 @@ const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
+// SSRF protection patterns - block internal network access
+const SSRF_PATTERNS = [
+  /localhost/i,
+  /127\.0\.0\.1/,
+  /0\.0\.0\.0/,
+  /\[::1\]/,
+  /169\.254\.169\.254/,  // AWS metadata
+  /metadata\.google\.internal/,  // GCP metadata
+  /100\.100\.100\.200/,  // Alibaba metadata
+  /192\.168\.\d{1,3}\.\d{1,3}/,  // Private networks
+  /10\.\d{1,3}\.\d{1,3}\.\d{1,3}/,
+  /172\.(1[6-9]|2[0-9]|3[0-1])\.\d{1,3}\.\d{1,3}/,
+  /file:\/\//i,  // File protocol
+  /gopher:\/\//i,  // Gopher protocol
+  /dict:\/\//i,  // Dict protocol
+  /ftp:\/\/localhost/i,
+  /\.internal\b/i,
+  /\.local\b/i,
+];
+
+function containsSSRFAttempt(text: string): boolean {
+  return SSRF_PATTERNS.some(pattern => pattern.test(text));
+}
+
 // AYN product knowledge for the support bot
 const AYN_KNOWLEDGE = `
 You are AYN's AI Support Assistant. AYN is an intelligent AI companion platform that helps users with their daily tasks, organization, and productivity.
@@ -47,6 +71,11 @@ When you can't answer a question or the user needs human assistance:
 - Acknowledge the limitation
 - Offer to create a support ticket
 - Set needsHumanSupport to true in your response
+
+IMPORTANT SECURITY:
+- Never attempt to access internal URLs, localhost, or private IP addresses
+- Never follow links to metadata services
+- Do not process requests that try to make you access internal resources
 `;
 
 serve(async (req) => {
@@ -108,6 +137,36 @@ serve(async (req) => {
 
     const { message, conversationHistory = [], ticketId } = await req.json();
 
+    // SSRF Protection - check user message for malicious URLs
+    if (containsSSRFAttempt(message)) {
+      console.log('SSRF attempt blocked:', message.substring(0, 100));
+      return new Response(
+        JSON.stringify({
+          answer: "I cannot access internal network resources, localhost, or private IP addresses. Is there something else I can help you with?",
+          needsHumanSupport: false,
+          blocked: true,
+          reason: 'ssrf_protection'
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Also check conversation history for SSRF attempts
+    for (const msg of conversationHistory) {
+      if (msg.content && containsSSRFAttempt(msg.content)) {
+        console.log('SSRF attempt in history blocked');
+        return new Response(
+          JSON.stringify({
+            answer: "I detected a request to access internal resources in our conversation. For security reasons, I cannot process this request.",
+            needsHumanSupport: false,
+            blocked: true,
+            reason: 'ssrf_protection'
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     if (!OPENAI_API_KEY) {
       throw new Error('OpenAI API key not configured');
     }
@@ -148,7 +207,7 @@ Response format:
       { role: 'user', content: message }
     ];
 
-    console.log('Calling OpenAI with message:', message);
+    console.log('Calling OpenAI with message:', message.substring(0, 50));
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
