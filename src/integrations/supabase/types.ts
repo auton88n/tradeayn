@@ -1406,6 +1406,54 @@ export type Database = {
         }
         Relationships: []
       }
+      stress_test_metrics: {
+        Row: {
+          avg_response_time_ms: number | null
+          concurrent_users: number | null
+          created_at: string
+          error_rate: number | null
+          failure_count: number | null
+          id: string
+          p50_response_time_ms: number | null
+          p95_response_time_ms: number | null
+          p99_response_time_ms: number | null
+          requests_per_second: number | null
+          run_id: string
+          success_count: number | null
+          test_name: string
+        }
+        Insert: {
+          avg_response_time_ms?: number | null
+          concurrent_users?: number | null
+          created_at?: string
+          error_rate?: number | null
+          failure_count?: number | null
+          id?: string
+          p50_response_time_ms?: number | null
+          p95_response_time_ms?: number | null
+          p99_response_time_ms?: number | null
+          requests_per_second?: number | null
+          run_id: string
+          success_count?: number | null
+          test_name: string
+        }
+        Update: {
+          avg_response_time_ms?: number | null
+          concurrent_users?: number | null
+          created_at?: string
+          error_rate?: number | null
+          failure_count?: number | null
+          id?: string
+          p50_response_time_ms?: number | null
+          p95_response_time_ms?: number | null
+          p99_response_time_ms?: number | null
+          requests_per_second?: number | null
+          run_id?: string
+          success_count?: number | null
+          test_name?: string
+        }
+        Relationships: []
+      }
       support_tickets: {
         Row: {
           assigned_to: string | null
@@ -1550,6 +1598,96 @@ export type Database = {
           shutdown_initiated_at?: string | null
           shutdown_initiated_by?: string | null
           shutdown_reason?: string | null
+        }
+        Relationships: []
+      }
+      test_results: {
+        Row: {
+          browser: string | null
+          created_at: string
+          duration_ms: number | null
+          error_message: string | null
+          id: string
+          retry_count: number | null
+          run_id: string
+          screenshot_url: string | null
+          status: string
+          test_name: string
+          test_suite: string
+          viewport: string | null
+        }
+        Insert: {
+          browser?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          retry_count?: number | null
+          run_id: string
+          screenshot_url?: string | null
+          status: string
+          test_name: string
+          test_suite: string
+          viewport?: string | null
+        }
+        Update: {
+          browser?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          retry_count?: number | null
+          run_id?: string
+          screenshot_url?: string | null
+          status?: string
+          test_name?: string
+          test_suite?: string
+          viewport?: string | null
+        }
+        Relationships: []
+      }
+      test_runs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          duration_ms: number | null
+          environment: string | null
+          failed_tests: number | null
+          git_commit: string | null
+          id: string
+          passed_tests: number | null
+          run_name: string | null
+          skipped_tests: number | null
+          total_tests: number | null
+          triggered_by: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          environment?: string | null
+          failed_tests?: number | null
+          git_commit?: string | null
+          id?: string
+          passed_tests?: number | null
+          run_name?: string | null
+          skipped_tests?: number | null
+          total_tests?: number | null
+          triggered_by?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          environment?: string | null
+          failed_tests?: number | null
+          git_commit?: string | null
+          id?: string
+          passed_tests?: number | null
+          run_name?: string | null
+          skipped_tests?: number | null
+          total_tests?: number | null
+          triggered_by?: string | null
         }
         Relationships: []
       }
