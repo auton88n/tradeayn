@@ -151,10 +151,10 @@ export const AdminSidebar = ({
       initial={false}
       animate={{ width: isCollapsed ? 64 : 220 }}
       transition={{ duration: 0.3, ease: 'easeInOut' }}
-      className="relative z-30 shrink-0 border-r border-border bg-muted/30 backdrop-blur-sm flex flex-col"
+      className="relative z-30 shrink-0 min-h-0 border-r border-border bg-muted/30 backdrop-blur-sm flex flex-col"
     >
       {/* Main Sections */}
-      <div className="flex-1 p-2 space-y-1 overflow-y-auto">
+      <div className="flex-1 p-2 space-y-1 overflow-y-auto overscroll-contain min-h-0">
         {!isCollapsed && (
           <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Main
