@@ -1,4 +1,4 @@
-// Test Results Components - Cache invalidation: 2026-01-21T03:47:30
+// Test Results Components
 export { default as E2ETestCoverage } from './E2ETestCoverage';
 export { default as TestSuiteSelector } from './TestSuiteSelector';
 export { default as FullExperienceReport } from './FullExperienceReport';
@@ -11,3 +11,8 @@ export { default as PerformanceFeeling } from './PerformanceFeeling';
 export { OWASPSecurityReport } from './OWASPSecurityReport';
 export { default as EngineeringBenchmark } from './EngineeringBenchmark';
 export { default as AIImprovements } from './AIImprovements';
+export { default as SimplePlatformHealth } from './SimplePlatformHealth';
+export { default as QuickStatusBar } from './QuickStatusBar';
+export { TestSuiteGrid } from './TestSuiteGrid';
+export { default as AIAnalysisCard } from './AIAnalysisCard';
+export { default as IndustryComparison } from './IndustryComparison';
