@@ -152,3 +152,9 @@ verify_jwt = false
 
 [functions.ai-improvement-advisor]
 verify_jwt = false
+
+[functions.ai-comprehensive-tester]
+verify_jwt = false
+
+[functions.ai-ux-tester]
+verify_jwt = false
