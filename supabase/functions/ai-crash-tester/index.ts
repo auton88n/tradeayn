@@ -49,7 +49,7 @@ const ENDPOINTS: EndpointConfig[] = [
   },
   {
     name: 'ayn-unified',
-    validPayload: { message: 'Hello', userId: 'test-user', mode: 'chat' }
+    validPayload: { messages: [{ role: 'user', content: 'Hello' }], intent: 'chat', stream: false }
   },
   {
     name: 'engineering-ai-chat',
