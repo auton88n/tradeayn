@@ -115,7 +115,13 @@ export const useMessages = (
     content: string,
     attachment: FileAttachment | null = null
   ) => {
+    // Show thinking state IMMEDIATELY - before any validation
+    console.log('[useMessages] sendMessage called:', { content: content.substring(0, 50), hasAttachment: !!attachment });
+    setIsTyping(true);
+
     if (!session) {
+      console.warn('[useMessages] No session - aborting');
+      setIsTyping(false);
       toast({
         title: "Session Error",
         description: "Please sign in again to continue.",
@@ -126,6 +132,8 @@ export const useMessages = (
 
     // Check chat message limit
     if (messages.length >= MAX_MESSAGES_PER_CHAT) {
+      console.warn('[useMessages] Message limit reached');
+      setIsTyping(false);
       toast({
         title: "Limit reached",
         description: "Start a new chat to continue.",
@@ -151,6 +159,8 @@ export const useMessages = (
       });
 
       if (!rpcResponse.ok) {
+        console.warn('[useMessages] Usage check failed');
+        setIsTyping(false);
         toast({
           title: "Usage Error",
           description: "Unable to verify usage limits. Please try again.",
@@ -162,6 +172,8 @@ export const useMessages = (
       const canUse = await rpcResponse.json();
 
       if (!canUse) {
+        console.warn('[useMessages] Usage limit reached');
+        setIsTyping(false);
         toast({
           title: "Usage Limit Reached",
           description: "You've reached your monthly message limit. Please contact support.",
@@ -170,6 +182,8 @@ export const useMessages = (
         return;
       }
     } catch (error) {
+      console.error('[useMessages] Usage check error:', error);
+      setIsTyping(false);
       toast({
         title: "System Error",
         description: "Unable to process your request. Please try again.",
@@ -188,9 +202,9 @@ export const useMessages = (
       attachment: attachment || undefined
     };
 
-    // Add to UI immediately
+    // Add to UI immediately (isTyping already set at start)
     setMessages(prev => [...prev, userMessage]);
-    setIsTyping(true);
+    console.log('[useMessages] User message added to UI');
 
     try {
       // Build message content

@@ -326,7 +326,7 @@ export const CenterStageLayout = ({
   // NOTE: analyzeEmotionWithAI removed - now using simpler hybrid approach:
   // Real-time detection while typing + backend emotion on response
 
-  // Handle sending message with bubble animation - SIMPLIFIED
+  // Handle sending message with bubble animation - FIXED: Send immediately, animate in parallel
   const handleSendWithAnimation = useCallback(
     async (content: string, file?: File | null) => {
       // Block if file is still uploading
@@ -334,11 +334,12 @@ export const CenterStageLayout = ({
       
       if (!content.trim() && !file) return;
 
+      console.log('[CenterStageLayout] handleSendWithAnimation called:', { content: content.substring(0, 30) });
+
       // Track the user's message for suggestion context
       setLastUserMessage(content);
 
       // Mark that we're awaiting a live response (enables ResponseCard display)
-      // Capture current last message id to prevent immediately showing the previous AYN response.
       awaitingLiveResponseRef.current = {
         active: true,
         baselineLastMessageId: messages[messages.length - 1]?.id ?? null,
@@ -355,14 +356,15 @@ export const CenterStageLayout = ({
       const eyePos = getEyePosition();
       startMessageAnimation(content, inputPos, eyePos);
 
-      // After flight completes, trigger eye absorption and send message
+      // CRITICAL FIX: Send message IMMEDIATELY - don't wait for animation
+      // This prevents the 350ms delay from causing lost messages
+      onSendMessage(content, file);
+
+      // Animation effects run in parallel (non-blocking)
       setTimeout(() => {
         triggerBlink();
         triggerAbsorption();
         playSound?.('message-absorb');
-        
-        // SIMPLIFIED: Just show 'thinking' while waiting for backend response
-        // Backend emotion (lastSuggestedEmotion) will take priority when response arrives
         orchestrateEmotionChange('thinking');
         setIsResponding(true);
         
@@ -374,10 +376,7 @@ export const CenterStageLayout = ({
         
         completeAbsorption();
 
-        // Actually send the message immediately
-        onSendMessage(content, file);
-        
-        // Clear file after send
+        // Clear file after animation completes
         onRemoveFile();
       }, 350);
     },
