@@ -131,3 +131,6 @@ verify_jwt = false
 
 [functions.run-real-tests]
 verify_jwt = false
+
+[functions.ai-test-runner]
+verify_jwt = false

@@ -77,35 +77,56 @@ export class BrowserTestRunner {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  // Find element by various selectors
-  findElement(selector: string): HTMLElement | null {
-    // Try direct selector first
-    let element = document.querySelector(selector) as HTMLElement;
-    if (element) return element;
+  // Find element by text content - helper for buttons, links, etc.
+  findElementByText(baseSelector: string, text: string): HTMLElement | null {
+    const elements = document.querySelectorAll(baseSelector);
+    for (const el of elements) {
+      if (el.textContent?.toLowerCase().includes(text.toLowerCase())) {
+        return el as HTMLElement;
+      }
+    }
+    return null;
+  }
 
-    // Try finding by text content
+  // Find element by various selectors - FIXED: Handle :has-text() BEFORE querySelector
+  findElement(selector: string): HTMLElement | null {
+    // CRITICAL FIX: Handle :has-text() BEFORE calling querySelector
+    // This syntax is Playwright-specific and NOT valid for native DOM API
     if (selector.includes(':has-text(')) {
       const match = selector.match(/:has-text\("([^"]+)"\)/);
       if (match) {
         const text = match[1];
-        const baseSelector = selector.split(':has-text')[0] || '*';
-        const elements = document.querySelectorAll(baseSelector);
-        for (const el of elements) {
-          if (el.textContent?.includes(text)) {
-            return el as HTMLElement;
-          }
-        }
+        const baseSelector = selector.split(':has-text')[0].trim() || '*';
+        return this.findElementByText(baseSelector, text);
       }
+      return null;
+    }
+
+    // Try direct selector for standard CSS selectors
+    try {
+      const element = document.querySelector(selector) as HTMLElement;
+      if (element) return element;
+    } catch {
+      // Invalid selector - try fallback approaches
+      this.log(`Invalid selector: ${selector}, trying fallbacks...`);
     }
 
     // Try by aria-label
     if (selector.startsWith('[aria-label=')) {
-      return document.querySelector(selector) as HTMLElement;
+      try {
+        return document.querySelector(selector) as HTMLElement;
+      } catch {
+        return null;
+      }
     }
 
     // Try by role and name
     if (selector.includes('[role=')) {
-      return document.querySelector(selector) as HTMLElement;
+      try {
+        return document.querySelector(selector) as HTMLElement;
+      } catch {
+        return null;
+      }
     }
 
     return null;
@@ -192,6 +213,16 @@ export class BrowserTestRunner {
   // Check if element exists
   exists(selector: string): boolean {
     return this.findElement(selector) !== null;
+  }
+
+  // NEW: Check if any button contains specific text
+  buttonWithTextExists(text: string): boolean {
+    return this.findElementByText('button', text) !== null;
+  }
+
+  // NEW: Check if any link contains specific text
+  linkWithTextExists(text: string): boolean {
+    return this.findElementByText('a', text) !== null;
   }
 
   // Check if element is visible
