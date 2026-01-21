@@ -10,6 +10,7 @@ export interface UserJourneyTest {
 }
 
 // Safe mode tests - these work without navigating away from admin panel
+// FIXED: All tests now use valid DOM selectors (no Playwright-specific :has-text syntax)
 export const userJourneyTests: UserJourneyTest[] = [
   // ============ NAVIGATION TESTS (Safe Mode - verify elements exist) ============
   {
@@ -114,21 +115,22 @@ export const userJourneyTests: UserJourneyTest[] = [
     run: async (runner) => {
       await runner.wait(500);
       
-      const authSelectors = [
-        'button:has-text("Sign")',
-        'button:has-text("Login")',
-        'button:has-text("Log")',
-        'button:has-text("Account")',
-        '[data-testid*="auth"]'
-      ];
-      
+      // FIXED: Use text search instead of :has-text() Playwright syntax
+      const authTerms = ['Sign', 'Login', 'Log', 'Account', 'Auth'];
       let found = false;
-      for (const selector of authSelectors) {
-        if (runner.exists(selector)) {
+      
+      for (const term of authTerms) {
+        if (runner.buttonWithTextExists(term)) {
           found = true;
-          runner.log(`Found auth element: ${selector}`);
+          runner.log(`Found auth button with text: ${term}`);
           break;
         }
+      }
+      
+      // Also check for data-testid
+      if (!found && runner.exists('[data-testid*="auth"]')) {
+        found = true;
+        runner.log('Found auth element via data-testid');
       }
       
       runner.log(`Auth controls ${found ? 'found' : 'not visible in current view'}`);
@@ -182,18 +184,29 @@ export const userJourneyTests: UserJourneyTest[] = [
     run: async (runner) => {
       await runner.wait(500);
       
-      const sendSelectors = [
-        'button[type="submit"]',
-        'button:has-text("Send")',
-        '[data-testid="send-button"]',
-        'button[class*="send"]'
-      ];
+      // FIXED: Use text search instead of :has-text() Playwright syntax
+      // Check submit buttons first
+      if (runner.exists('button[type="submit"]')) {
+        runner.log('Found submit button');
+        return;
+      }
       
-      for (const selector of sendSelectors) {
-        if (runner.exists(selector)) {
-          runner.log(`Found send button: ${selector}`);
-          return;
-        }
+      // Check for button with "Send" text
+      if (runner.buttonWithTextExists('Send')) {
+        runner.log('Found button with Send text');
+        return;
+      }
+      
+      // Check data-testid
+      if (runner.exists('[data-testid="send-button"]')) {
+        runner.log('Found send button via data-testid');
+        return;
+      }
+      
+      // Check class-based
+      if (runner.exists('button[class*="send"]')) {
+        runner.log('Found button with send class');
+        return;
       }
       
       runner.log('Send button not visible in current view');
@@ -343,13 +356,14 @@ export const userJourneyTests: UserJourneyTest[] = [
     run: async (runner) => {
       await runner.wait(500);
       
+      // FIXED: Use text search instead of :has-text() Playwright syntax
       const calcTerms = ['Beam', 'Column', 'Slab', 'Foundation', 'Wall', 'Calculate'];
       let foundCount = 0;
       
       for (const term of calcTerms) {
-        if (runner.exists(`button:has-text("${term}")`)) {
+        if (runner.buttonWithTextExists(term)) {
           foundCount++;
-          runner.log(`Found: ${term}`);
+          runner.log(`Found button: ${term}`);
         }
       }
       
