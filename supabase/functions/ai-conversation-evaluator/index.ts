@@ -502,13 +502,28 @@ async function evaluateTest(test: ConversationTest): Promise<TestResult> {
       }
     }
     
-    // Check emotion if specified
-    if (test.expectedEmotion && aynResponse.emotion) {
-      const emotionMatch = aynResponse.emotion.toLowerCase().includes(test.expectedEmotion.toLowerCase()) ||
-        test.expectedEmotion.toLowerCase().includes(aynResponse.emotion.toLowerCase());
-      if (!emotionMatch) {
-        score -= 15;
-        reasons.push(`Expected emotion ${test.expectedEmotion}, got ${aynResponse.emotion}`);
+    // Check emotion if specified - this is the primary check for emotion category tests
+    if (test.expectedEmotion) {
+      const detected = aynResponse.emotion?.toLowerCase() || '';
+      const expected = test.expectedEmotion.toLowerCase();
+      
+      // Check if emotion matches (partial matching for flexibility)
+      const emotionMatch = detected && (
+        detected === expected ||
+        detected.includes(expected) ||
+        expected.includes(detected)
+      );
+      
+      if (!detected) {
+        // No emotion returned at all - fail for emotion tests
+        passed = false;
+        score -= 50;
+        reasons.push(`No emotion detected (expected ${test.expectedEmotion})`);
+      } else if (!emotionMatch) {
+        // Wrong emotion - fail for emotion tests
+        passed = false;
+        score -= 40;
+        reasons.push(`Emotion mismatch: expected "${test.expectedEmotion}", got "${aynResponse.emotion}"`);
       }
     }
     
