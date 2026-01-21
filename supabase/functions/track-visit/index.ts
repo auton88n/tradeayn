@@ -75,6 +75,13 @@ async function getGeoLocation(ip: string): Promise<{ country: string; country_co
   return { country: 'Unknown', country_code: 'XX', city: 'Unknown', region: 'Unknown' };
 }
 
+// Sanitize path to prevent XSS and handle malicious input
+function sanitizePath(path: string): string {
+  if (typeof path !== 'string') return '/';
+  // Remove any HTML/script tags and limit length
+  return path.replace(/<[^>]*>/g, '').replace(/[<>'"]/g, '').slice(0, 500);
+}
+
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -86,7 +93,24 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const visitData: VisitData = await req.json();
+    // Safely parse JSON, handle non-JSON input
+    let visitData: VisitData;
+    try {
+      visitData = await req.json();
+    } catch {
+      return new Response(
+        JSON.stringify({ error: "Invalid JSON payload" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+    
+    // Validate required fields
+    if (!visitData.visitor_id || !visitData.page_path) {
+      return new Response(
+        JSON.stringify({ error: "Missing required fields: visitor_id, page_path" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
     
     // Get client IP from headers
     const forwardedFor = req.headers.get('x-forwarded-for');
@@ -106,10 +130,10 @@ const handler = async (req: Request): Promise<Response> => {
     
     console.log(`Tracking visit: ${visitData.page_path} from ${geo.country} (${geo.city})`);
 
-    // Insert analytics record
+    // Insert analytics record with sanitized data
     const { error } = await supabase.from('visitor_analytics').insert({
-      visitor_id: visitData.visitor_id,
-      page_path: visitData.page_path,
+      visitor_id: sanitizePath(visitData.visitor_id),
+      page_path: sanitizePath(visitData.page_path),
       referrer: visitData.referrer || null,
       country: geo.country,
       country_code: geo.country_code,
