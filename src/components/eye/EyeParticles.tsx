@@ -129,15 +129,21 @@ const EyeParticlesComponent = ({
   isPulsing = false,
   performanceMultiplier = 1,
 }: EyeParticlesProps) => {
+  // ALL HOOKS MUST BE AT THE TOP - UNCONDITIONALLY (React Rules of Hooks)
   const [burstParticles, setBurstParticles] = useState<number[]>([]);
   const burstIdCounter = useRef(0);
   const prevAbsorbing = useRef(false);
   const isMobile = useIsMobile();
   
-  // Skip rendering entirely if performance multiplier is 0
-  if (performanceMultiplier === 0 || !isActive) return null;
+  // Calculate values needed for hooks (before any early returns)
+  const particleCount = getEmotionParticleCount(emotion, activityLevel, isMobile, performanceMultiplier);
+  const speedMultiplier = getSpeedMultiplier(emotion);
+  const particleColor = getEmotionParticleColor(emotion, glowColor);
+  const sizeRange = getParticleSizeRange(particleType);
+  const pulseBoost = isMobile ? 1.1 : 1.3;
+  const effectiveCount = isPulsing ? Math.min(particleCount * pulseBoost, isMobile ? 2 : 4) : particleCount;
   
-  // Trigger burst on absorption - reduced count on mobile
+  // useEffect - called unconditionally
   useEffect(() => {
     if (isAbsorbing && !prevAbsorbing.current) {
       const burstCount = isMobile ? 6 : 12;
@@ -151,20 +157,10 @@ const EyeParticlesComponent = ({
     prevAbsorbing.current = isAbsorbing;
   }, [isAbsorbing, isMobile]);
 
-  const particleCount = getEmotionParticleCount(emotion, activityLevel, isMobile, performanceMultiplier);
-  const speedMultiplier = getSpeedMultiplier(emotion);
-  const particleColor = getEmotionParticleColor(emotion, glowColor);
-  const sizeRange = getParticleSizeRange(particleType);
-  
-  // Boost during pulse - reduced boost on mobile
-  const pulseBoost = isMobile ? 1.1 : 1.3;
-  const effectiveCount = isPulsing ? Math.min(particleCount * pulseBoost, isMobile ? 2 : 4) : particleCount;
-  
-  // Skip if no particles to render
-  if (effectiveCount === 0 && burstParticles.length === 0) return null;
-
-  // Generate ambient particles
+  // useMemo - called unconditionally (returns empty array if no particles needed)
   const ambientParticles = useMemo((): Particle[] => {
+    if (effectiveCount === 0) return [];
+    
     return Array.from({ length: Math.round(effectiveCount) }, (_, i) => {
       const particleSize = sizeRange.min + Math.random() * (sizeRange.max - sizeRange.min);
       const baseAngle = (i / effectiveCount) * Math.PI * 2;
@@ -179,6 +175,10 @@ const EyeParticlesComponent = ({
       };
     });
   }, [effectiveCount, sizeRange.min, sizeRange.max]);
+  
+  // NOW safe to do early returns - AFTER all hooks have been called
+  if (performanceMultiplier === 0 || !isActive) return null;
+  if (ambientParticles.length === 0 && burstParticles.length === 0) return null;
 
   // SPARKLE: Gentle floating upward with twinkling
   const renderSparkle = (particle: Particle) => {
