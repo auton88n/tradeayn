@@ -11,7 +11,6 @@ import {
   Shield,
   Zap,
   Route,
-  Globe,
   Settings,
   Users,
   MessageSquare,
