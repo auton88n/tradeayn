@@ -132,6 +132,10 @@ const TestResultsDashboard: React.FC = () => {
   const [aiModel, setAiModel] = useState<string>('');
   const [bugs, setBugs] = useState<BugReport[]>([]);
   const [isRunningBugHunter, setIsRunningBugHunter] = useState(false);
+  const [isRunningComprehensive, setIsRunningComprehensive] = useState(false);
+  const [isRunningUxTester, setIsRunningUxTester] = useState(false);
+  const [comprehensiveResults, setComprehensiveResults] = useState<{ passRate: string; totalTests: number } | null>(null);
+  const [uxResults, setUxResults] = useState<{ avgScore: string; successRate: string } | null>(null);
   
   // Test suite running states
   const [runningSecurityTests, setRunningSecurityTests] = useState(false);
@@ -313,6 +317,85 @@ const TestResultsDashboard: React.FC = () => {
     }
   };
 
+  const runComprehensiveTester = async () => {
+    setIsRunningComprehensive(true);
+    try {
+      toast.info('🧪 Running comprehensive system tests on all endpoints...');
+      
+      const result = await safeFetchJson<{
+        success: boolean;
+        summary?: { passRate: string; totalTests: number; passed: number; failed: number };
+        analysis?: string;
+        error?: string;
+      }>(`${SUPABASE_URL}/functions/v1/ai-comprehensive-tester`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ concurrency: 3 }),
+      });
+      
+      if (result.success && result.summary) {
+        setComprehensiveResults(result.summary);
+        setAiAnalysis(result.analysis || '');
+        setAiModel('AI Comprehensive Tester');
+        
+        if (result.summary.failed === 0) {
+          toast.success(`✅ All ${result.summary.totalTests} tests passed!`);
+        } else {
+          toast.warning(`⚠️ ${result.summary.passed}/${result.summary.totalTests} tests passed (${result.summary.passRate})`);
+        }
+        await loadData();
+      } else if (result.error) {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      console.error('Comprehensive tester failed:', error);
+      toast.error(`Failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsRunningComprehensive(false);
+    }
+  };
+
+  const runUxTester = async () => {
+    setIsRunningUxTester(true);
+    try {
+      toast.info('🎭 Running AI UX journey tests with multiple personas...');
+      
+      const result = await safeFetchJson<{
+        success: boolean;
+        summary?: { avgUxScore: string; overallSuccessRate: string; personasTested: number; journeysTested: number };
+        analysis?: string;
+        error?: string;
+      }>(`${SUPABASE_URL}/functions/v1/ai-ux-tester`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      
+      if (result.success && result.summary) {
+        setUxResults({ avgScore: result.summary.avgUxScore, successRate: result.summary.overallSuccessRate });
+        setAiAnalysis(result.analysis || '');
+        setAiModel('AI UX Journey Tester');
+        
+        const score = parseInt(result.summary.avgUxScore);
+        if (score >= 80) {
+          toast.success(`✅ UX Score: ${result.summary.avgUxScore}/100, ${result.summary.overallSuccessRate} success`);
+        } else if (score >= 60) {
+          toast.warning(`⚠️ UX Score: ${result.summary.avgUxScore}/100, ${result.summary.overallSuccessRate} success`);
+        } else {
+          toast.error(`❌ UX Score: ${result.summary.avgUxScore}/100 needs improvement`);
+        }
+        await loadData();
+      } else if (result.error) {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      console.error('UX tester failed:', error);
+      toast.error(`Failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsRunningUxTester(false);
+    }
+  };
+
   // Calculate summary stats
   const totalTests = testResults.length;
   const passedTests = testResults.filter(t => t.status === 'passed').length;
@@ -466,6 +549,32 @@ const TestResultsDashboard: React.FC = () => {
             >
               {runningPerfTests ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Zap className="h-3 w-3 mr-1" />}
               Performance
+            </Button>
+            
+            <div className="w-px h-6 bg-border mx-1" />
+            
+            <Button 
+              variant="default" 
+              size="sm" 
+              onClick={runComprehensiveTester} 
+              disabled={isRunningComprehensive}
+              className="h-8 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+            >
+              {isRunningComprehensive ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Activity className="h-3 w-3 mr-1" />}
+              Full System Test
+              {comprehensiveResults && <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">{comprehensiveResults.passRate}</Badge>}
+            </Button>
+            
+            <Button 
+              variant="default" 
+              size="sm" 
+              onClick={runUxTester} 
+              disabled={isRunningUxTester}
+              className="h-8 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700"
+            >
+              {isRunningUxTester ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Bot className="h-3 w-3 mr-1" />}
+              UX Journey Test
+              {uxResults && <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">{uxResults.avgScore}/100</Badge>}
             </Button>
           </div>
         </CardContent>
