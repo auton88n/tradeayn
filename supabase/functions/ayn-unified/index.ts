@@ -17,21 +17,21 @@ interface LLMModel {
 // Fallback chains by intent
 const FALLBACK_CHAINS: Record<string, LLMModel[]> = {
   chat: [
-    { id: 'lovable-gemini-flash', provider: 'lovable', model_id: 'google/gemini-2.5-flash', display_name: 'Gemini Flash' },
-    { id: 'openrouter-llama', provider: 'openrouter', model_id: 'meta-llama/llama-3.1-8b-instruct:free', display_name: 'Llama 3.1' },
-    { id: 'openrouter-qwen', provider: 'openrouter', model_id: 'qwen/qwen-2.5-7b-instruct:free', display_name: 'Qwen 2.5' }
+    { id: 'lovable-gemini-3-flash', provider: 'lovable', model_id: 'google/gemini-3-flash-preview', display_name: 'Gemini 3 Flash' },
+    { id: 'lovable-gemini-flash', provider: 'lovable', model_id: 'google/gemini-2.5-flash', display_name: 'Gemini 2.5 Flash' },
+    { id: 'openrouter-llama', provider: 'openrouter', model_id: 'meta-llama/llama-3.1-8b-instruct:free', display_name: 'Llama 3.1' }
   ],
   engineering: [
+    { id: 'lovable-gemini-3-pro', provider: 'lovable', model_id: 'google/gemini-3-pro-preview', display_name: 'Gemini 3 Pro' },
     { id: 'openrouter-deepseek', provider: 'openrouter', model_id: 'deepseek/deepseek-r1:free', display_name: 'DeepSeek R1' },
-    { id: 'lovable-gemini-pro', provider: 'lovable', model_id: 'google/gemini-2.5-pro', display_name: 'Gemini Pro' },
-    { id: 'openrouter-claude', provider: 'openrouter', model_id: 'anthropic/claude-3-haiku', display_name: 'Claude Haiku' }
+    { id: 'lovable-gemini-pro', provider: 'lovable', model_id: 'google/gemini-2.5-pro', display_name: 'Gemini 2.5 Pro' }
   ],
   files: [
-    { id: 'lovable-gemini-flash', provider: 'lovable', model_id: 'google/gemini-2.5-flash', display_name: 'Gemini Flash' },
-    { id: 'openrouter-gemini', provider: 'openrouter', model_id: 'google/gemini-flash-1.5', display_name: 'Gemini Flash 1.5' }
+    { id: 'lovable-gemini-3-flash', provider: 'lovable', model_id: 'google/gemini-3-flash-preview', display_name: 'Gemini 3 Flash' },
+    { id: 'lovable-gemini-flash', provider: 'lovable', model_id: 'google/gemini-2.5-flash', display_name: 'Gemini 2.5 Flash' }
   ],
   search: [
-    { id: 'lovable-gemini-flash', provider: 'lovable', model_id: 'google/gemini-2.5-flash', display_name: 'Gemini Flash' }
+    { id: 'lovable-gemini-3-flash', provider: 'lovable', model_id: 'google/gemini-3-flash-preview', display_name: 'Gemini 3 Flash' }
   ],
   image: [
     { id: 'lovable-gemini-image', provider: 'lovable', model_id: 'google/gemini-2.5-flash-image-preview', display_name: 'Gemini Image' }
@@ -228,6 +228,14 @@ IDENTITY (CRITICAL - always use these facts):
 - website: aynn.io
 - you are a friendly, intelligent life companion AI
 
+SAFETY RULES (MANDATORY - NEVER VIOLATE):
+- REFUSE any request about making buildings collapse, structural sabotage, or bypassing safety systems
+- REFUSE to help with anything that could endanger human life or property
+- REFUSE advice to skip calculations, ignore building codes, or cut corners on structural safety
+- When refusing, use clear language: "i cannot help with that", "that's not something i can assist with", "sorry, but that would be dangerous"
+- Always emphasize: engineering safety is non-negotiable
+- If asked to "estimate" without calculations: explain why proper calculations are essential for safety, liability, and professional ethics
+
 ABOUT AYN PLATFORM & SERVICES (mention when relevant):
 - AI Employees: custom AI agents that work for businesses 24/7
 - Business Automation: workflow automation solutions to save time
@@ -273,6 +281,14 @@ you're helping with structural/civil engineering. be precise with:
 - highlight safety concerns clearly
 - use correct units (kN, MPa, mm, m², m³)
 - for complex calculations, show step-by-step
+
+TROUBLESHOOTING APPROACH (when user reports calculation issues like "negative value" or "wrong result"):
+1. First CHECK the input values: span, load, moment, dimensions - are they reasonable?
+2. Verify units are consistent (kN vs N, mm vs m, MPa vs N/mm²)
+3. CHECK sign conventions (positive/negative moments, tension vs compression)
+4. Review load combinations and safety factors
+5. Suggest common fixes with clear step-by-step guidance
+6. Always ask: "can you share your input values so i can check them?"
 
 ${context.calculatorType ? `active calculator: ${context.calculatorType}` : ''}`;
   }
