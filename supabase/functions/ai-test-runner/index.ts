@@ -321,12 +321,12 @@ function getTestInputs(endpoint: string): Record<string, unknown>[] {
       { span: 3, deadLoad: 5, liveLoad: 8, beamWidth: 200, concreteGrade: 25, steelGrade: 420 }
     ],
     'calculate-column': [
-      { height: 3, axialLoad: 500, momentX: 50, momentY: 30, columnWidth: 400, columnDepth: 400, concreteGrade: 30, steelGrade: 420 },
-      { height: 5, axialLoad: 1000, momentX: 100, momentY: 80, columnWidth: 500, columnDepth: 500, concreteGrade: 40, steelGrade: 500 }
+      { columnHeight: 3, axialLoad: 500, momentX: 50, momentY: 30, columnWidth: 400, columnDepth: 400, concreteGrade: 30, steelGrade: 420 },
+      { columnHeight: 5, axialLoad: 1000, momentX: 100, momentY: 80, columnWidth: 500, columnDepth: 500, concreteGrade: 40, steelGrade: 500 }
     ],
     'calculate-foundation': [
-      { columnLoad: 800, soilBearingCapacity: 150, foundationDepth: 1.5, concreteGrade: 30, steelGrade: 420 },
-      { columnLoad: 1500, soilBearingCapacity: 200, foundationDepth: 2.0, concreteGrade: 35, steelGrade: 500 }
+      { columnLoad: 800, columnWidth: 400, columnDepth: 400, bearingCapacity: 150, concreteGrade: 30, steelGrade: 420 },
+      { columnLoad: 1500, columnWidth: 500, columnDepth: 500, bearingCapacity: 200, concreteGrade: 35, steelGrade: 500 }
     ],
     'calculate-slab': [
       { spanX: 5, spanY: 4, deadLoad: 5, liveLoad: 3, slabThickness: 150, concreteGrade: 30, steelGrade: 420 },
