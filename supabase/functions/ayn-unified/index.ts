@@ -563,8 +563,11 @@ serve(async (req) => {
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    
+    // Service client for DB operations
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get user from token
     const token = authHeader.replace('Bearer ', '');
@@ -573,22 +576,30 @@ serve(async (req) => {
     let userId: string;
     let isInternalCall = false;
 
-    if (token === supabaseKey) {
+    console.log('[ayn-unified] Request received, checking auth...');
+
+    if (token === supabaseServiceKey) {
       // Internal service call (from evaluator, tests, etc.) - use synthetic user ID
       userId = 'internal-evaluator';
       isInternalCall = true;
       console.log('[ayn-unified] Internal service call detected - bypassing user auth');
     } else {
-      // Normal user call - validate JWT
-      const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+      // Normal user call - validate JWT using getClaims (recommended for signing-keys)
+      const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } }
+      });
       
-      if (userError || !user) {
+      const { data, error: claimsError } = await authClient.auth.getClaims(token);
+      
+      if (claimsError || !data?.claims?.sub) {
+        console.log('[ayn-unified] Auth failed:', claimsError?.message || 'no claims');
         return new Response(JSON.stringify({ error: 'Invalid token' }), {
           status: 401,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }
-      userId = user.id;
+      userId = data.claims.sub as string;
+      console.log('[ayn-unified] User authenticated:', userId.substring(0, 8) + '...');
     }
 
     const { messages, intent: forcedIntent, context = {}, stream = true } = await req.json();
