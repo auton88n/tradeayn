@@ -3,17 +3,29 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Eye, CheckCircle, AlertTriangle, XCircle, Loader2, RefreshCw } from 'lucide-react';
+import { 
+  Eye, 
+  CheckCircle, 
+  AlertTriangle, 
+  XCircle, 
+  Loader2, 
+  RefreshCw,
+  Camera,
+  Monitor,
+  Smartphone
+} from 'lucide-react';
 
 interface VisualTestSummary {
   totalPages: number;
+  totalScreenshots?: number;
   passed: number;
   warnings: number;
   failed: number;
   totalIssues: number;
   criticalIssues: number;
-  highIssues: number;
-  avgLoadTime: string;
+  highIssues?: number;
+  avgLoadTime?: string;
+  avgAnalysisTime?: string;
   healthScore: number;
   overallRating: 'excellent' | 'good' | 'needs_improvement' | 'poor';
 }
@@ -66,8 +78,8 @@ export const VisualTestCard: React.FC<VisualTestCardProps> = ({
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm flex items-center gap-2">
-            <Eye className="h-4 w-4 text-indigo-500" />
-            Visual Health
+            <Camera className="h-4 w-4 text-indigo-500" />
+            Visual AI Tester
           </CardTitle>
           {summary && (
             <Badge variant={getRatingBadge(summary.overallRating)}>
@@ -75,25 +87,44 @@ export const VisualTestCard: React.FC<VisualTestCardProps> = ({
             </Badge>
           )}
         </div>
+        <p className="text-xs text-muted-foreground">GPT-4 Vision + Screenshots</p>
       </CardHeader>
       <CardContent className="space-y-3">
         {isLoading ? (
-          <div className="flex items-center justify-center py-6">
+          <div className="flex flex-col items-center justify-center py-6">
             <Loader2 className="h-6 w-6 animate-spin text-indigo-500" />
-            <span className="ml-2 text-sm text-muted-foreground">Scanning pages...</span>
+            <span className="mt-2 text-sm text-muted-foreground">Capturing screenshots...</span>
+            <span className="text-xs text-muted-foreground">Analyzing with GPT-4 Vision</span>
           </div>
         ) : summary ? (
           <>
             {/* Health Score */}
             <div>
               <div className="flex justify-between text-xs mb-1">
-                <span>Health Score</span>
+                <span>Visual Health</span>
                 <span className={getRatingColor(summary.overallRating)}>
                   {summary.overallRating.replace('_', ' ')}
                 </span>
               </div>
               <Progress value={summary.healthScore} className="h-2" />
             </div>
+            
+            {/* Screenshot Stats */}
+            {summary.totalScreenshots && (
+              <div className="flex items-center justify-center gap-4 py-2 bg-muted/30 rounded-lg">
+                <div className="flex items-center gap-1 text-xs">
+                  <Monitor className="h-3 w-3 text-muted-foreground" />
+                  <span>Desktop</span>
+                </div>
+                <div className="flex items-center gap-1 text-xs">
+                  <Smartphone className="h-3 w-3 text-muted-foreground" />
+                  <span>Mobile</span>
+                </div>
+                <Badge variant="outline" className="text-xs">
+                  {summary.totalScreenshots} shots
+                </Badge>
+              </div>
+            )}
             
             {/* Quick Stats */}
             <div className="grid grid-cols-3 gap-2 text-center">
@@ -117,7 +148,7 @@ export const VisualTestCard: React.FC<VisualTestCardProps> = ({
             {/* Issues Summary */}
             <div className="text-xs space-y-1 border-t pt-2">
               <div className="flex justify-between">
-                <span>Total Issues</span>
+                <span>Total Issues Found</span>
                 <span className="font-medium">{summary.totalIssues}</span>
               </div>
               {summary.criticalIssues > 0 && (
@@ -126,10 +157,18 @@ export const VisualTestCard: React.FC<VisualTestCardProps> = ({
                   <span className="font-medium">{summary.criticalIssues}</span>
                 </div>
               )}
-              <div className="flex justify-between">
-                <span>Avg Load Time</span>
-                <span className="font-medium">{summary.avgLoadTime}</span>
-              </div>
+              {summary.highIssues && summary.highIssues > 0 && (
+                <div className="flex justify-between text-orange-500">
+                  <span>High Priority</span>
+                  <span className="font-medium">{summary.highIssues}</span>
+                </div>
+              )}
+              {summary.avgAnalysisTime && (
+                <div className="flex justify-between">
+                  <span>Avg Analysis Time</span>
+                  <span className="font-medium">{summary.avgAnalysisTime}</span>
+                </div>
+              )}
             </div>
             
             {/* Run Button */}
@@ -152,8 +191,11 @@ export const VisualTestCard: React.FC<VisualTestCardProps> = ({
           </>
         ) : (
           <div className="py-4 text-center">
-            <Eye className="h-8 w-8 mx-auto mb-2 text-muted-foreground opacity-50" />
-            <p className="text-sm text-muted-foreground mb-3">No visual tests run yet</p>
+            <Camera className="h-8 w-8 mx-auto mb-2 text-muted-foreground opacity-50" />
+            <p className="text-sm text-muted-foreground mb-1">No visual tests run yet</p>
+            <p className="text-xs text-muted-foreground mb-3">
+              Captures real screenshots & analyzes with AI
+            </p>
             <Button 
               variant="default" 
               size="sm" 
