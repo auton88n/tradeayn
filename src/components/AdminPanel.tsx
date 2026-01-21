@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { ArrowLeft, Sun, Moon, RefreshCw, LayoutDashboard, Users, Shield, Settings, FileText, Loader2, MessageSquare, LineChart, Bot, DollarSign, Gauge, Sparkles } from 'lucide-react';
+import { ArrowLeft, Sun, Moon, RefreshCw, LayoutDashboard, Users, Shield, Settings, FileText, Loader2, MessageSquare, LineChart, Bot, DollarSign, Gauge, Sparkles, FlaskConical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
@@ -21,6 +21,7 @@ import { LLMManagement } from '@/components/admin/LLMManagement';
 import { AICostDashboard } from '@/components/admin/AICostDashboard';
 import { UserAILimits } from '@/components/admin/UserAILimits';
 import { AdminAIAssistant } from '@/components/admin/AdminAIAssistant';
+import TestResultsDashboard from '@/components/admin/TestResultsDashboard';
 
 // Supabase config - use direct values to avoid any import issues
 const SUPABASE_URL = 'https://dfkoxuokfkttjhfjcecx.supabase.co' as const;
@@ -125,6 +126,11 @@ const allTabs = [{
   id: 'ai-assistant',
   label: 'AI Assistant',
   icon: Bot,
+  adminOnly: true
+}, {
+  id: 'test-results',
+  label: 'Test Results',
+  icon: FlaskConical,
   adminOnly: true
 }];
 
@@ -483,6 +489,7 @@ export const AdminPanel = ({
               {activeTab === 'ai-costs' && <AICostDashboard />}
               {activeTab === 'ai-limits' && <UserAILimits />}
               {activeTab === 'ai-assistant' && <AdminAIAssistant />}
+              {activeTab === 'test-results' && <TestResultsDashboard />}
             </ErrorBoundary>
           </motion.div>
         </AnimatePresence>
