@@ -21,22 +21,20 @@ import {
   Shield,
   Activity,
   Globe,
-  UserCheck,
   Calculator,
   ChevronDown,
   ChevronUp,
-  FileCode,
   Play
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import QuickStatusBar from './test-results/QuickStatusBar';
-import { TestSuiteGrid, TestSuite } from './test-results/TestSuiteGrid';
 import SimplePlatformHealth from './test-results/SimplePlatformHealth';
 import AIAnalysisCard from './test-results/AIAnalysisCard';
 import EngineeringBenchmark from './test-results/EngineeringBenchmark';
 import AIImprovements from './test-results/AIImprovements';
 import { OWASPSecurityReport } from './test-results/OWASPSecurityReport';
+import { DetailedTestCard } from './test-results/DetailedTestCard';
 
 interface TestResult {
   id: string;
@@ -71,6 +69,14 @@ interface StressMetric {
   created_at: string;
 }
 
+interface BugReport {
+  endpoint: string;
+  bugType: string;
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  description: string;
+  suggestedFix: string;
+}
+
 const SUPABASE_URL = 'https://dfkoxuokfkttjhfjcecx.supabase.co';
 
 const TestResultsDashboard: React.FC = () => {
@@ -78,15 +84,14 @@ const TestResultsDashboard: React.FC = () => {
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [stressMetrics, setStressMetrics] = useState<StressMetric[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isRunningTests, setIsRunningTests] = useState(false);
   
   // Expanded sections
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['suites', 'activity']));
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['activity']));
   
   // AI Analysis state
   const [aiAnalysis, setAiAnalysis] = useState<string>('');
   const [aiModel, setAiModel] = useState<string>('');
-  const [bugs, setBugs] = useState<Array<{ endpoint: string; bugType: string; severity: 'critical' | 'high' | 'medium' | 'low'; description: string; suggestedFix: string }>>([]);
+  const [bugs, setBugs] = useState<BugReport[]>([]);
   const [isRunningBugHunter, setIsRunningBugHunter] = useState(false);
   
   // Test suite running states
@@ -94,6 +99,7 @@ const TestResultsDashboard: React.FC = () => {
   const [runningApiTests, setRunningApiTests] = useState(false);
   const [runningDbTests, setRunningDbTests] = useState(false);
   const [runningPerfTests, setRunningPerfTests] = useState(false);
+  const [runningCalcTests, setRunningCalcTests] = useState(false);
   
   // Engineering grade from localStorage
   const [engineeringGrade, setEngineeringGrade] = useState<string | null>(null);
@@ -120,7 +126,7 @@ const TestResultsDashboard: React.FC = () => {
     try {
       const [runsRes, resultsRes, metricsRes] = await Promise.all([
         supabase.from('test_runs').select('*').order('created_at', { ascending: false }).limit(20),
-        supabase.from('test_results').select('*').order('created_at', { ascending: false }).limit(100),
+        supabase.from('test_results').select('*').order('created_at', { ascending: false }).limit(500),
         supabase.from('stress_test_metrics').select('*').order('created_at', { ascending: false }).limit(50),
       ]);
       
@@ -152,6 +158,7 @@ const TestResultsDashboard: React.FC = () => {
         database: { name: 'Database Tests', suite: 'database' },
         security: { name: 'Security Tests', suite: 'security' },
         performance: { name: 'Performance Tests', suite: 'performance' },
+        calculator: { name: 'Calculator Tests', suite: 'calculator' },
       };
       
       const config = suiteConfig[suiteId] || { name: 'Quick Tests', suite: 'quick' };
@@ -277,91 +284,21 @@ const TestResultsDashboard: React.FC = () => {
     ? testResults.reduce((acc, t) => acc + (t.duration_ms || 0), 0) / totalTests 
     : 0;
 
-  // Group test results by category for suite grid
+  // Group test results by category
   const getTestsByCategory = (category: string) => 
-    testResults.filter(t => t.test_suite === category);
+    testResults.filter(t => t.test_suite === category).map(t => ({
+      name: t.test_name,
+      status: t.status as 'passed' | 'failed' | 'skipped',
+      duration_ms: t.duration_ms ?? undefined,
+      error_message: t.error_message
+    }));
 
-  const testSuites: TestSuite[] = [
-    {
-      id: 'security',
-      name: 'Security',
-      icon: <Shield className="h-4 w-4 text-red-500" />,
-      passed: getTestsByCategory('security').filter(t => t.status === 'passed').length,
-      failed: getTestsByCategory('security').filter(t => t.status === 'failed').length,
-      total: getTestsByCategory('security').length,
-      tests: getTestsByCategory('security').map(t => ({
-        name: t.test_name,
-        status: t.status as 'passed' | 'failed' | 'skipped',
-        duration_ms: t.duration_ms ?? undefined,
-        error_message: t.error_message
-      })),
-      isLoading: runningSecurityTests,
-      onRun: () => runTests('security', setRunningSecurityTests)
-    },
-    {
-      id: 'api',
-      name: 'API Health',
-      icon: <Globe className="h-4 w-4 text-cyan-500" />,
-      passed: getTestsByCategory('api').filter(t => t.status === 'passed').length,
-      failed: getTestsByCategory('api').filter(t => t.status === 'failed').length,
-      total: getTestsByCategory('api').length,
-      tests: getTestsByCategory('api').map(t => ({
-        name: t.test_name,
-        status: t.status as 'passed' | 'failed' | 'skipped',
-        duration_ms: t.duration_ms ?? undefined,
-        error_message: t.error_message
-      })),
-      isLoading: runningApiTests,
-      onRun: () => runTests('api', setRunningApiTests)
-    },
-    {
-      id: 'database',
-      name: 'Database',
-      icon: <Database className="h-4 w-4 text-purple-500" />,
-      passed: getTestsByCategory('database').filter(t => t.status === 'passed').length,
-      failed: getTestsByCategory('database').filter(t => t.status === 'failed').length,
-      total: getTestsByCategory('database').length,
-      tests: getTestsByCategory('database').map(t => ({
-        name: t.test_name,
-        status: t.status as 'passed' | 'failed' | 'skipped',
-        duration_ms: t.duration_ms ?? undefined,
-        error_message: t.error_message
-      })),
-      isLoading: runningDbTests,
-      onRun: () => runTests('database', setRunningDbTests)
-    },
-    {
-      id: 'performance',
-      name: 'Performance',
-      icon: <Zap className="h-4 w-4 text-yellow-500" />,
-      passed: getTestsByCategory('performance').filter(t => t.status === 'passed').length,
-      failed: getTestsByCategory('performance').filter(t => t.status === 'failed').length,
-      total: getTestsByCategory('performance').length,
-      tests: getTestsByCategory('performance').map(t => ({
-        name: t.test_name,
-        status: t.status as 'passed' | 'failed' | 'skipped',
-        duration_ms: t.duration_ms ?? undefined,
-        error_message: t.error_message
-      })),
-      isLoading: runningPerfTests,
-      onRun: () => runTests('performance', setRunningPerfTests)
-    },
-    {
-      id: 'calculator',
-      name: 'Calculators',
-      icon: <Calculator className="h-4 w-4 text-blue-500" />,
-      passed: getTestsByCategory('calculator').filter(t => t.status === 'passed').length,
-      failed: getTestsByCategory('calculator').filter(t => t.status === 'failed').length,
-      total: getTestsByCategory('calculator').length,
-      grade: engineeringGrade || undefined,
-      tests: getTestsByCategory('calculator').map(t => ({
-        name: t.test_name,
-        status: t.status as 'passed' | 'failed' | 'skipped',
-        duration_ms: t.duration_ms ?? undefined,
-        error_message: t.error_message
-      })),
-    }
-  ];
+  const getLastRunByCategory = (category: string) => {
+    const categoryRuns = testRuns.filter(r => 
+      r.run_name?.toLowerCase().includes(category.toLowerCase())
+    );
+    return categoryRuns.length > 0 ? new Date(categoryRuns[0].created_at) : undefined;
+  };
 
   const toggleSection = (section: string) => {
     const newExpanded = new Set(expandedSections);
@@ -381,8 +318,8 @@ const TestResultsDashboard: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="text-xl font-bold">Test Results</h1>
-          <p className="text-sm text-muted-foreground">Real-time testing dashboard</p>
+          <h1 className="text-xl font-bold">Test Results Dashboard</h1>
+          <p className="text-sm text-muted-foreground">Real-time testing with full result details</p>
         </div>
         <Button variant="outline" size="sm" onClick={loadData} disabled={isLoading}>
           <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
@@ -496,30 +433,68 @@ const TestResultsDashboard: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Section 3: Test Suites Grid (Collapsible) */}
-      <Collapsible open={expandedSections.has('suites')} onOpenChange={() => toggleSection('suites')}>
-        <Card>
-          <CollapsibleTrigger asChild>
-            <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <FileCode className="h-4 w-4" />
-                  Test Suites
-                </CardTitle>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline">{totalTests} tests</Badge>
-                  {expandedSections.has('suites') ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                </div>
-              </div>
-            </CardHeader>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <CardContent className="pt-0">
-              <TestSuiteGrid suites={testSuites} />
-            </CardContent>
-          </CollapsibleContent>
-        </Card>
-      </Collapsible>
+      {/* Section 3: Test Category Cards - DEDICATED CARDS */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        {/* Security Tests Card */}
+        <DetailedTestCard
+          title="Security Tests"
+          icon={<Shield className="h-4 w-4 text-red-500" />}
+          tests={getTestsByCategory('security')}
+          lastRun={getLastRunByCategory('security')}
+          isLoading={runningSecurityTests}
+          onRun={() => runTests('security', setRunningSecurityTests)}
+        />
+
+        {/* API Health Card */}
+        <DetailedTestCard
+          title="API Health"
+          icon={<Globe className="h-4 w-4 text-cyan-500" />}
+          tests={getTestsByCategory('api')}
+          lastRun={getLastRunByCategory('api')}
+          isLoading={runningApiTests}
+          onRun={() => runTests('api', setRunningApiTests)}
+        />
+
+        {/* Database Tests Card */}
+        <DetailedTestCard
+          title="Database Tests"
+          icon={<Database className="h-4 w-4 text-purple-500" />}
+          tests={getTestsByCategory('database')}
+          lastRun={getLastRunByCategory('database')}
+          isLoading={runningDbTests}
+          onRun={() => runTests('database', setRunningDbTests)}
+        />
+
+        {/* Performance Tests Card */}
+        <DetailedTestCard
+          title="Performance Tests"
+          icon={<Zap className="h-4 w-4 text-yellow-500" />}
+          tests={getTestsByCategory('performance')}
+          lastRun={getLastRunByCategory('performance')}
+          isLoading={runningPerfTests}
+          onRun={() => runTests('performance', setRunningPerfTests)}
+        />
+
+        {/* Calculator Tests Card */}
+        <DetailedTestCard
+          title="Calculator Tests"
+          icon={<Calculator className="h-4 w-4 text-blue-500" />}
+          tests={getTestsByCategory('calculator')}
+          grade={engineeringGrade || undefined}
+          lastRun={getLastRunByCategory('calculator')}
+          isLoading={runningCalcTests}
+          onRun={() => runTests('calculator', setRunningCalcTests)}
+        />
+
+        {/* AI Bug Hunter Results Card */}
+        <DetailedTestCard
+          title="AI Bug Hunter"
+          icon={<Bot className="h-4 w-4 text-purple-500" />}
+          bugs={bugs}
+          isLoading={isRunningBugHunter}
+          onRun={runBugHunter}
+        />
+      </div>
 
       {/* Section 4: Engineering & AI Analysis */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
