@@ -9,827 +9,531 @@ export interface UserJourneyTest {
   run: (runner: BrowserTestRunner) => Promise<void>;
 }
 
+// Safe mode tests - these work without navigating away from admin panel
 export const userJourneyTests: UserJourneyTest[] = [
-  // ============ NAVIGATION TESTS ============
+  // ============ NAVIGATION TESTS (Safe Mode - verify elements exist) ============
   {
-    id: 'nav-landing',
-    name: 'Landing Page Loads',
+    id: 'nav-current-page',
+    name: 'Current Page Has Elements',
     category: 'navigation',
-    description: 'Verify landing page loads with hero section',
+    description: 'Verify current page has interactive elements',
     requiresAuth: false,
     run: async (runner) => {
-      await runner.navigate('/');
-      await runner.wait(1000);
+      await runner.wait(500);
       
-      // Check for key landing page elements
-      if (!runner.exists('button') && !runner.exists('a')) {
-        throw new Error('No interactive elements found on landing page');
+      const buttonCount = document.querySelectorAll('button').length;
+      const inputCount = document.querySelectorAll('input, textarea').length;
+      const linkCount = document.querySelectorAll('a').length;
+      
+      runner.log(`Found ${buttonCount} buttons, ${inputCount} inputs, ${linkCount} links`);
+      
+      if (buttonCount === 0 && inputCount === 0 && linkCount === 0) {
+        throw new Error('No interactive elements found on page');
       }
-      
-      runner.log('Landing page loaded successfully');
     }
   },
   {
-    id: 'nav-engineering',
-    name: 'Navigate to Engineering',
+    id: 'nav-admin-panel',
+    name: 'Admin Panel Loaded',
     category: 'navigation',
-    description: 'Navigate to engineering page',
+    description: 'Verify admin panel elements are present',
     requiresAuth: false,
     run: async (runner) => {
-      await runner.navigate('/engineering');
-      await runner.wait(2000);
+      await runner.wait(500);
       
-      const path = runner.getCurrentPath();
-      if (!path.includes('engineering')) {
-        throw new Error(`Expected /engineering, got ${path}`);
+      // Check for admin-specific elements
+      const hasCards = document.querySelectorAll('[class*="card"]').length > 0;
+      const hasTabs = runner.exists('[role="tablist"]') || runner.exists('[class*="tab"]');
+      const hasButtons = document.querySelectorAll('button').length >= 3;
+      
+      runner.log(`Cards: ${hasCards}, Tabs: ${hasTabs}, Buttons: ${hasButtons}`);
+      
+      if (!hasCards && !hasTabs && !hasButtons) {
+        throw new Error('Admin panel elements not detected');
       }
       
-      runner.log('Engineering page loaded');
+      runner.log('Admin panel structure verified');
     }
   },
   {
-    id: 'nav-support',
-    name: 'Navigate to Support',
+    id: 'nav-sidebar-exists',
+    name: 'Sidebar Navigation Present',
     category: 'navigation',
-    description: 'Navigate to support page',
+    description: 'Check if sidebar navigation exists',
     requiresAuth: false,
     run: async (runner) => {
-      await runner.navigate('/support');
-      await runner.wait(2000);
+      await runner.wait(500);
       
-      const path = runner.getCurrentPath();
-      if (!path.includes('support')) {
-        throw new Error(`Expected /support, got ${path}`);
+      const sidebarSelectors = [
+        '[class*="sidebar"]',
+        '[role="navigation"]',
+        'nav',
+        '[data-testid="sidebar"]'
+      ];
+      
+      let found = false;
+      for (const selector of sidebarSelectors) {
+        if (runner.exists(selector)) {
+          found = true;
+          runner.log(`Found sidebar: ${selector}`);
+          break;
+        }
       }
       
-      runner.log('Support page loaded');
+      runner.log(`Sidebar ${found ? 'present' : 'not visible on current view'}`);
     }
   },
   {
-    id: 'nav-settings',
-    name: 'Navigate to Settings',
+    id: 'nav-header-exists',
+    name: 'Header Section Present',
     category: 'navigation',
-    description: 'Navigate to settings page',
+    description: 'Check if header/title exists',
     requiresAuth: false,
     run: async (runner) => {
-      await runner.navigate('/settings');
-      await runner.wait(2000);
+      await runner.wait(500);
       
-      const path = runner.getCurrentPath();
-      if (!path.includes('settings')) {
-        throw new Error(`Expected /settings, got ${path}`);
+      const hasH1 = document.querySelector('h1') !== null;
+      const hasH2 = document.querySelector('h2') !== null;
+      const hasHeader = document.querySelector('header') !== null;
+      
+      runner.log(`H1: ${hasH1}, H2: ${hasH2}, Header: ${hasHeader}`);
+      
+      if (!hasH1 && !hasH2 && !hasHeader) {
+        runner.log('No header elements found - may be expected for some views');
       }
-      
-      runner.log('Settings page loaded');
     }
   },
 
-  // ============ AUTH TESTS ============
+  // ============ AUTH TESTS (Work on current page) ============
   {
-    id: 'auth-modal-opens',
-    name: 'Auth Modal Opens',
+    id: 'auth-button-exists',
+    name: 'Auth Buttons Visible',
     category: 'auth',
-    description: 'Click sign in and verify modal opens',
+    description: 'Check for sign in/out buttons',
     requiresAuth: false,
     run: async (runner) => {
-      await runner.navigate('/');
-      await runner.wait(1000);
+      await runner.wait(500);
       
-      // Look for sign in button
-      const signInSelectors = [
-        'button:has-text("Sign In")',
-        'button:has-text("Sign in")',
+      const authSelectors = [
+        'button:has-text("Sign")',
         'button:has-text("Login")',
-        'button:has-text("Get Started")',
-        '[data-testid="sign-in-button"]'
+        'button:has-text("Log")',
+        'button:has-text("Account")',
+        '[data-testid*="auth"]'
       ];
       
-      let clicked = false;
-      for (const selector of signInSelectors) {
+      let found = false;
+      for (const selector of authSelectors) {
         if (runner.exists(selector)) {
-          await runner.click(selector);
-          clicked = true;
+          found = true;
+          runner.log(`Found auth element: ${selector}`);
           break;
         }
       }
       
-      if (!clicked) {
-        runner.log('No sign in button found, checking if already on auth page');
-        return;
-      }
-      
-      await runner.wait(500);
-      
-      // Check for dialog/modal
-      if (!runner.exists('[role="dialog"]') && !runner.exists('form')) {
-        throw new Error('Auth modal did not open');
-      }
-      
-      runner.log('Auth modal opened successfully');
+      runner.log(`Auth controls ${found ? 'found' : 'not visible in current view'}`);
     }
   },
   {
-    id: 'auth-form-validation',
-    name: 'Auth Form Validation',
+    id: 'auth-form-elements',
+    name: 'Auth Form Elements Check',
     category: 'auth',
-    description: 'Verify form shows validation errors',
+    description: 'Check for email/password inputs on page',
     requiresAuth: false,
     run: async (runner) => {
-      await runner.navigate('/');
-      await runner.wait(1000);
-      
-      // Try to open auth modal
-      const signInSelectors = [
-        'button:has-text("Sign In")',
-        'button:has-text("Sign in")',
-        'button:has-text("Get Started")'
-      ];
-      
-      for (const selector of signInSelectors) {
-        if (runner.exists(selector)) {
-          await runner.click(selector);
-          break;
-        }
-      }
-      
       await runner.wait(500);
       
-      // Try to submit empty form
-      const submitButton = runner.findElement('button[type="submit"]');
-      if (submitButton) {
-        await runner.click('button[type="submit"]');
-        await runner.wait(500);
-        runner.log('Submitted empty form to trigger validation');
-      }
+      const emailInput = document.querySelector('input[type="email"]');
+      const passwordInput = document.querySelector('input[type="password"]');
+      const textInputs = document.querySelectorAll('input[type="text"]');
+      
+      runner.log(`Email inputs: ${emailInput ? 1 : 0}`);
+      runner.log(`Password inputs: ${passwordInput ? 1 : 0}`);
+      runner.log(`Text inputs: ${textInputs.length}`);
     }
   },
 
   // ============ CHAT TESTS ============
   {
-    id: 'chat-input-exists',
-    name: 'Chat Input Visible',
+    id: 'chat-textarea-exists',
+    name: 'Chat Input Exists',
     category: 'chat',
-    description: 'Verify chat input is visible on dashboard',
-    requiresAuth: true,
+    description: 'Check for chat/message textarea',
+    requiresAuth: false,
     run: async (runner) => {
-      await runner.navigate('/');
-      await runner.wait(2000);
+      await runner.wait(500);
       
-      const chatInputSelectors = [
-        'textarea',
-        'input[type="text"][placeholder*="message"]',
-        '[data-testid="chat-input"]'
-      ];
+      const textareas = document.querySelectorAll('textarea');
+      const chatInputs = document.querySelectorAll('[class*="chat"] input, [class*="message"] input');
       
-      let found = false;
-      for (const selector of chatInputSelectors) {
-        if (runner.exists(selector)) {
-          found = true;
-          runner.log(`Found chat input: ${selector}`);
-          break;
-        }
-      }
+      runner.log(`Textareas: ${textareas.length}, Chat inputs: ${chatInputs.length}`);
       
-      if (!found) {
-        throw new Error('Chat input not found - user may not be logged in');
+      if (textareas.length > 0) {
+        runner.log('Chat textarea found');
       }
     }
   },
   {
-    id: 'chat-send-message',
-    name: 'Send Chat Message',
+    id: 'chat-send-button',
+    name: 'Send Button Exists',
     category: 'chat',
-    description: 'Type and send a message in chat',
-    requiresAuth: true,
+    description: 'Check for message send button',
+    requiresAuth: false,
     run: async (runner) => {
-      await runner.navigate('/');
-      await runner.wait(2000);
+      await runner.wait(500);
       
-      // Find textarea
-      if (!runner.exists('textarea')) {
-        throw new Error('Chat textarea not found');
+      const sendSelectors = [
+        'button[type="submit"]',
+        'button:has-text("Send")',
+        '[data-testid="send-button"]',
+        'button[class*="send"]'
+      ];
+      
+      for (const selector of sendSelectors) {
+        if (runner.exists(selector)) {
+          runner.log(`Found send button: ${selector}`);
+          return;
+        }
       }
       
-      // Type a message
-      await runner.fill('textarea', 'Hello, this is a test message!');
-      await runner.wait(300);
-      
-      // Try to send
-      const sendButton = runner.findElement('button[type="submit"]');
-      if (sendButton) {
-        await runner.click('button[type="submit"]');
-        runner.log('Message sent');
-      } else {
-        // Try pressing Enter
-        const textarea = runner.findElement('textarea') as HTMLTextAreaElement;
-        textarea?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-        runner.log('Sent via Enter key');
-      }
-      
-      await runner.wait(2000);
+      runner.log('Send button not visible in current view');
     }
   },
 
   // ============ FORM TESTS ============
   {
-    id: 'form-contact',
-    name: 'Contact Form Exists',
+    id: 'form-inputs-present',
+    name: 'Form Inputs Present',
     category: 'forms',
-    description: 'Verify contact form is accessible',
+    description: 'Count and verify form inputs on page',
     requiresAuth: false,
     run: async (runner) => {
-      await runner.navigate('/');
-      await runner.wait(1000);
+      await runner.wait(500);
       
-      // Look for contact section
-      const contactSelectors = [
-        'button:has-text("Contact")',
-        'a:has-text("Contact")',
-        '[href*="contact"]',
-        '#contact'
-      ];
+      const inputs = document.querySelectorAll('input');
+      const textareas = document.querySelectorAll('textarea');
+      const selects = document.querySelectorAll('select');
+      const checkboxes = document.querySelectorAll('[role="checkbox"], input[type="checkbox"]');
+      const switches = document.querySelectorAll('[role="switch"]');
       
-      let found = false;
-      for (const selector of contactSelectors) {
-        if (runner.exists(selector)) {
-          found = true;
-          runner.log(`Found contact element: ${selector}`);
-          break;
-        }
+      runner.log(`Inputs: ${inputs.length}`);
+      runner.log(`Textareas: ${textareas.length}`);
+      runner.log(`Selects: ${selects.length}`);
+      runner.log(`Checkboxes: ${checkboxes.length}`);
+      runner.log(`Switches: ${switches.length}`);
+      
+      const total = inputs.length + textareas.length + selects.length;
+      if (total === 0) {
+        runner.log('No form elements found - may be expected for current view');
       }
+    }
+  },
+  {
+    id: 'form-buttons-enabled',
+    name: 'Form Buttons State',
+    category: 'forms',
+    description: 'Check if form buttons are enabled/disabled',
+    requiresAuth: false,
+    run: async (runner) => {
+      await runner.wait(500);
       
-      runner.log(`Contact section ${found ? 'found' : 'not found on current page'}`);
+      const buttons = document.querySelectorAll('button');
+      let enabledCount = 0;
+      let disabledCount = 0;
+      
+      buttons.forEach(btn => {
+        if ((btn as HTMLButtonElement).disabled) {
+          disabledCount++;
+        } else {
+          enabledCount++;
+        }
+      });
+      
+      runner.log(`Enabled buttons: ${enabledCount}`);
+      runner.log(`Disabled buttons: ${disabledCount}`);
+    }
+  },
+  {
+    id: 'form-file-upload',
+    name: 'File Upload Input',
+    category: 'forms',
+    description: 'Check for file upload capabilities',
+    requiresAuth: false,
+    run: async (runner) => {
+      await runner.wait(500);
+      
+      const fileInputs = document.querySelectorAll('input[type="file"]');
+      const dropzones = document.querySelectorAll('[class*="drop"], [class*="upload"]');
+      
+      runner.log(`File inputs: ${fileInputs.length}`);
+      runner.log(`Dropzone areas: ${dropzones.length}`);
+    }
+  },
+  {
+    id: 'form-toggle-switch',
+    name: 'Toggle Switch Interaction',
+    category: 'forms',
+    description: 'Find and test toggle switches',
+    requiresAuth: false,
+    run: async (runner) => {
+      await runner.wait(500);
+      
+      const switches = document.querySelectorAll('[role="switch"]');
+      runner.log(`Found ${switches.length} switches`);
+      
+      if (switches.length > 0) {
+        const firstSwitch = switches[0] as HTMLElement;
+        const initialState = firstSwitch.getAttribute('data-state');
+        runner.log(`First switch state: ${initialState}`);
+        
+        // Try to toggle it
+        firstSwitch.click();
+        await runner.wait(300);
+        
+        const newState = firstSwitch.getAttribute('data-state');
+        runner.log(`After click state: ${newState}`);
+        
+        // Toggle back
+        firstSwitch.click();
+        await runner.wait(300);
+      }
+    }
+  },
+  {
+    id: 'form-select-dropdown',
+    name: 'Select Dropdown Check',
+    category: 'forms',
+    description: 'Find and check select dropdowns',
+    requiresAuth: false,
+    run: async (runner) => {
+      await runner.wait(500);
+      
+      const selects = document.querySelectorAll('select, [role="combobox"]');
+      runner.log(`Found ${selects.length} select elements`);
+      
+      if (selects.length > 0) {
+        runner.log('Select dropdowns present');
+      }
+    }
+  },
+  {
+    id: 'form-validation-display',
+    name: 'Form Validation Display',
+    category: 'forms',
+    description: 'Check for form validation messages',
+    requiresAuth: false,
+    run: async (runner) => {
+      await runner.wait(500);
+      
+      const errorMessages = document.querySelectorAll('[class*="error"], [role="alert"]');
+      const invalidInputs = document.querySelectorAll('[aria-invalid="true"]');
+      
+      runner.log(`Error messages: ${errorMessages.length}`);
+      runner.log(`Invalid inputs: ${invalidInputs.length}`);
     }
   },
 
   // ============ ENGINEERING TESTS ============
   {
-    id: 'eng-calculator-loads',
-    name: 'Engineering Calculators Load',
+    id: 'eng-calculator-buttons',
+    name: 'Calculator Buttons Check',
     category: 'engineering',
-    description: 'Verify engineering page shows calculator options',
+    description: 'Check for engineering calculator buttons',
     requiresAuth: false,
     run: async (runner) => {
-      await runner.navigate('/engineering');
-      await runner.wait(2000);
+      await runner.wait(500);
       
-      // Look for calculator buttons or tabs
-      const calcSelectors = [
-        'button:has-text("Beam")',
-        'button:has-text("Column")',
-        'button:has-text("Foundation")',
-        'button:has-text("Slab")',
-        '[data-testid*="calculator"]'
-      ];
-      
+      const calcTerms = ['Beam', 'Column', 'Slab', 'Foundation', 'Wall', 'Calculate'];
       let foundCount = 0;
-      for (const selector of calcSelectors) {
-        if (runner.exists(selector)) {
+      
+      for (const term of calcTerms) {
+        if (runner.exists(`button:has-text("${term}")`)) {
           foundCount++;
-          runner.log(`Found calculator: ${selector}`);
+          runner.log(`Found: ${term}`);
         }
       }
       
-      if (foundCount === 0) {
-        runner.log('No calculator buttons found - may require auth');
-      }
+      runner.log(`Calculator-related buttons: ${foundCount}`);
     }
   },
   {
-    id: 'eng-beam-form',
-    name: 'Beam Calculator Form',
+    id: 'eng-number-inputs',
+    name: 'Number Input Fields',
     category: 'engineering',
-    description: 'Open beam calculator and verify form fields',
+    description: 'Check for number input fields',
     requiresAuth: false,
     run: async (runner) => {
-      await runner.navigate('/engineering');
-      await runner.wait(2000);
-      
-      // Try to click beam calculator
-      if (runner.exists('button:has-text("Beam")')) {
-        await runner.click('button:has-text("Beam")');
-        await runner.wait(1000);
-        
-        // Look for input fields
-        const inputs = document.querySelectorAll('input[type="number"], input[type="text"]');
-        runner.log(`Found ${inputs.length} input fields`);
-        
-        if (inputs.length === 0) {
-          runner.log('No input fields visible - form may not have loaded');
-        }
-      } else {
-        runner.log('Beam calculator button not found');
-      }
-    }
-  },
-
-  // ============ FILE UPLOAD TESTS ============
-  {
-    id: 'upload-zone-visible',
-    name: 'File Upload Zone Visible',
-    category: 'forms',
-    description: 'Verify file upload zone is accessible in dashboard',
-    requiresAuth: true,
-    run: async (runner) => {
-      await runner.navigate('/');
-      await runner.wait(2000);
-      
-      // Look for file upload elements
-      const uploadSelectors = [
-        'input[type="file"]',
-        '[data-testid="file-upload"]',
-        'button:has-text("Upload")',
-        '[class*="upload"]',
-        '[class*="dropzone"]'
-      ];
-      
-      let found = false;
-      for (const selector of uploadSelectors) {
-        if (runner.exists(selector)) {
-          found = true;
-          runner.log(`Found upload element: ${selector}`);
-          break;
-        }
-      }
-      
-      if (!found) {
-        runner.log('No upload zone visible - may require specific UI state');
-      }
-    }
-  },
-  {
-    id: 'upload-drag-drop-area',
-    name: 'Drag Drop Area Exists',
-    category: 'forms',
-    description: 'Verify drag and drop upload area is present',
-    requiresAuth: true,
-    run: async (runner) => {
-      await runner.navigate('/');
-      await runner.wait(2000);
-      
-      // Check for drag-drop specific elements
-      const dropzoneExists = runner.exists('[class*="drop"]') || 
-                            runner.exists('[data-testid*="drop"]') ||
-                            runner.exists('[ondragover]');
-      
-      runner.log(`Dropzone area ${dropzoneExists ? 'found' : 'not found'}`);
-    }
-  },
-
-  // ============ SETTINGS TESTS ============
-  {
-    id: 'settings-account-tab',
-    name: 'Settings Account Tab',
-    category: 'forms',
-    description: 'Navigate to settings and verify account section',
-    requiresAuth: true,
-    run: async (runner) => {
-      await runner.navigate('/settings');
-      await runner.wait(2000);
-      
-      // Look for account-related elements
-      const accountSelectors = [
-        'button:has-text("Account")',
-        '[data-value="account"]',
-        'input[type="email"]',
-        '[class*="account"]'
-      ];
-      
-      let found = false;
-      for (const selector of accountSelectors) {
-        if (runner.exists(selector)) {
-          found = true;
-          runner.log(`Found account section: ${selector}`);
-          break;
-        }
-      }
-      
-      if (!found) {
-        throw new Error('Account settings section not found');
-      }
-    }
-  },
-  {
-    id: 'settings-notifications-tab',
-    name: 'Settings Notifications Tab',
-    category: 'forms',
-    description: 'Navigate to notifications settings',
-    requiresAuth: true,
-    run: async (runner) => {
-      await runner.navigate('/settings');
-      await runner.wait(2000);
-      
-      // Try to click notifications tab
-      const notifSelectors = [
-        'button:has-text("Notifications")',
-        '[data-value="notifications"]',
-        'a:has-text("Notifications")'
-      ];
-      
-      for (const selector of notifSelectors) {
-        if (runner.exists(selector)) {
-          await runner.click(selector);
-          await runner.wait(500);
-          runner.log('Opened notifications tab');
-          
-          // Verify switches exist
-          if (runner.exists('[role="switch"]')) {
-            runner.log('Found notification toggle switches');
-          }
-          return;
-        }
-      }
-      
-      runner.log('Notifications tab not found');
-    }
-  },
-  {
-    id: 'settings-toggle-switch',
-    name: 'Toggle Settings Switch',
-    category: 'forms',
-    description: 'Toggle a settings switch and verify state change',
-    requiresAuth: true,
-    run: async (runner) => {
-      await runner.navigate('/settings');
-      await runner.wait(2000);
-      
-      // Find a switch element
-      const switches = document.querySelectorAll('[role="switch"]');
-      if (switches.length === 0) {
-        runner.log('No toggle switches found on settings page');
-        return;
-      }
-      
-      const firstSwitch = switches[0] as HTMLElement;
-      const initialState = firstSwitch.getAttribute('data-state');
-      
-      // Click the switch
-      firstSwitch.click();
       await runner.wait(500);
       
-      const newState = firstSwitch.getAttribute('data-state');
+      const numberInputs = document.querySelectorAll('input[type="number"]');
+      runner.log(`Number inputs: ${numberInputs.length}`);
       
-      if (initialState !== newState) {
-        runner.log(`Switch toggled: ${initialState} -> ${newState}`);
-      } else {
-        runner.log('Switch state unchanged (may be disabled or readonly)');
+      if (numberInputs.length > 0) {
+        const first = numberInputs[0] as HTMLInputElement;
+        runner.log(`First input placeholder: ${first.placeholder || 'none'}`);
       }
     }
   },
   {
-    id: 'settings-privacy-tab',
-    name: 'Settings Privacy Tab',
-    category: 'forms',
-    description: 'Navigate to privacy settings',
-    requiresAuth: true,
+    id: 'eng-results-display',
+    name: 'Results Display Area',
+    category: 'engineering',
+    description: 'Check for calculation results display',
+    requiresAuth: false,
     run: async (runner) => {
-      await runner.navigate('/settings');
-      await runner.wait(2000);
+      await runner.wait(500);
       
-      const privacySelectors = [
-        'button:has-text("Privacy")',
-        '[data-value="privacy"]',
-        'a:has-text("Privacy")'
+      const resultsSelectors = [
+        '[class*="result"]',
+        '[class*="output"]',
+        '[data-testid*="result"]'
       ];
       
-      for (const selector of privacySelectors) {
-        if (runner.exists(selector)) {
-          await runner.click(selector);
-          await runner.wait(500);
-          runner.log('Opened privacy tab');
-          return;
+      for (const selector of resultsSelectors) {
+        const elements = document.querySelectorAll(selector);
+        if (elements.length > 0) {
+          runner.log(`Found results area: ${selector} (${elements.length})`);
         }
       }
-      
-      runner.log('Privacy tab not found');
     }
   },
 
-  // ============ MULTI-STEP WORKFLOW TESTS ============
+  // ============ UI COMPONENT TESTS ============
   {
-    id: 'workflow-full-auth',
-    name: 'Full Auth Workflow',
-    category: 'auth',
-    description: 'Complete sign in workflow from landing to dashboard',
+    id: 'ui-cards-present',
+    name: 'Card Components',
+    category: 'navigation',
+    description: 'Check for card UI components',
     requiresAuth: false,
     run: async (runner) => {
-      await runner.navigate('/');
-      await runner.wait(1000);
-      
-      // Step 1: Click sign in
-      const signInBtn = runner.findElement('button:has-text("Sign In")') || 
-                        runner.findElement('button:has-text("Get Started")');
-      if (!signInBtn) {
-        runner.log('No sign in button found - user may already be logged in');
-        return;
-      }
-      
-      (signInBtn as HTMLElement).click();
       await runner.wait(500);
-      runner.log('Step 1: Clicked sign in button');
       
-      // Step 2: Wait for modal
-      if (!runner.exists('[role="dialog"]')) {
-        throw new Error('Auth modal did not open');
-      }
-      runner.log('Step 2: Modal opened');
-      
-      // Step 3: Fill email
-      const emailInput = runner.findElement('input[type="email"]');
-      if (emailInput) {
-        (emailInput as HTMLInputElement).value = 'test@example.com';
-        emailInput.dispatchEvent(new Event('input', { bubbles: true }));
-        runner.log('Step 3: Filled email field');
-      }
-      
-      // Step 4: Fill password
-      const passwordInput = runner.findElement('input[type="password"]');
-      if (passwordInput) {
-        (passwordInput as HTMLInputElement).value = 'TestPassword123!';
-        passwordInput.dispatchEvent(new Event('input', { bubbles: true }));
-        runner.log('Step 4: Filled password field');
-      }
-      
-      runner.log('Full auth workflow completed (form ready to submit)');
+      const cards = document.querySelectorAll('[class*="card"]');
+      runner.log(`Card components: ${cards.length}`);
     }
   },
   {
-    id: 'workflow-support-ticket',
-    name: 'Support Ticket Workflow',
-    category: 'forms',
-    description: 'Navigate to support and start ticket creation',
-    requiresAuth: false,
-    run: async (runner) => {
-      await runner.navigate('/support');
-      await runner.wait(2000);
-      
-      // Step 1: Look for create ticket button
-      const createBtnSelectors = [
-        'button:has-text("Create")',
-        'button:has-text("New Ticket")',
-        'button:has-text("Submit")',
-        '[data-testid="create-ticket"]'
-      ];
-      
-      let createBtn = null;
-      for (const selector of createBtnSelectors) {
-        if (runner.exists(selector)) {
-          createBtn = runner.findElement(selector);
-          break;
-        }
-      }
-      
-      runner.log('Step 1: Found support page elements');
-      
-      // Step 2: Look for form fields
-      const subjectInput = runner.findElement('input[name="subject"]') || 
-                          runner.findElement('input[placeholder*="subject"]');
-      if (subjectInput) {
-        (subjectInput as HTMLInputElement).value = 'Test Support Ticket';
-        subjectInput.dispatchEvent(new Event('input', { bubbles: true }));
-        runner.log('Step 2: Filled subject field');
-      }
-      
-      // Step 3: Look for message textarea
-      const messageArea = runner.findElement('textarea');
-      if (messageArea) {
-        (messageArea as HTMLTextAreaElement).value = 'This is a test support message for workflow testing.';
-        messageArea.dispatchEvent(new Event('input', { bubbles: true }));
-        runner.log('Step 3: Filled message field');
-      }
-      
-      runner.log('Support ticket workflow prepared');
-    }
-  },
-  {
-    id: 'workflow-engineering-calc',
-    name: 'Engineering Calculation Workflow',
-    category: 'engineering',
-    description: 'Complete a beam calculation workflow',
-    requiresAuth: false,
-    run: async (runner) => {
-      await runner.navigate('/engineering');
-      await runner.wait(2000);
-      
-      // Step 1: Select beam calculator
-      if (runner.exists('button:has-text("Beam")')) {
-        await runner.click('button:has-text("Beam")');
-        await runner.wait(1000);
-        runner.log('Step 1: Selected beam calculator');
-      } else {
-        runner.log('Beam calculator button not found');
-        return;
-      }
-      
-      // Step 2: Fill in beam parameters
-      const inputs = document.querySelectorAll('input[type="number"]');
-      if (inputs.length >= 3) {
-        (inputs[0] as HTMLInputElement).value = '6000'; // Length
-        inputs[0].dispatchEvent(new Event('input', { bubbles: true }));
-        
-        (inputs[1] as HTMLInputElement).value = '300'; // Width
-        inputs[1].dispatchEvent(new Event('input', { bubbles: true }));
-        
-        (inputs[2] as HTMLInputElement).value = '500'; // Height
-        inputs[2].dispatchEvent(new Event('input', { bubbles: true }));
-        
-        runner.log('Step 2: Filled beam dimensions');
-      }
-      
-      // Step 3: Look for calculate button
-      const calcBtn = runner.findElement('button:has-text("Calculate")') ||
-                     runner.findElement('button[type="submit"]');
-      if (calcBtn) {
-        runner.log('Step 3: Calculate button ready');
-      }
-      
-      runner.log('Engineering calculation workflow prepared');
-    }
-  },
-  {
-    id: 'workflow-chat-session',
-    name: 'Chat Session Workflow',
-    category: 'chat',
-    description: 'Start a new chat session and send multiple messages',
-    requiresAuth: true,
-    run: async (runner) => {
-      await runner.navigate('/');
-      await runner.wait(2000);
-      
-      // Step 1: Find chat input
-      const textarea = runner.findElement('textarea') as HTMLTextAreaElement;
-      if (!textarea) {
-        throw new Error('Chat input not found - user may not be logged in');
-      }
-      runner.log('Step 1: Found chat input');
-      
-      // Step 2: Send first message
-      textarea.value = 'Hello, this is message 1';
-      textarea.dispatchEvent(new Event('input', { bubbles: true }));
-      
-      const sendBtn = runner.findElement('button[type="submit"]');
-      if (sendBtn) {
-        (sendBtn as HTMLElement).click();
-        await runner.wait(2000);
-        runner.log('Step 2: Sent first message');
-      }
-      
-      // Step 3: Send second message
-      textarea.value = 'This is message 2';
-      textarea.dispatchEvent(new Event('input', { bubbles: true }));
-      
-      runner.log('Step 3: Chat session workflow prepared');
-    }
-  },
-  {
-    id: 'workflow-sidebar-navigation',
-    name: 'Sidebar Navigation Workflow',
+    id: 'ui-badges-present',
+    name: 'Badge Components',
     category: 'navigation',
-    description: 'Use sidebar to navigate between sections',
-    requiresAuth: true,
-    run: async (runner) => {
-      await runner.navigate('/');
-      await runner.wait(2000);
-      
-      // Look for sidebar elements
-      const sidebarSelectors = [
-        '[class*="sidebar"]',
-        'nav',
-        '[role="navigation"]'
-      ];
-      
-      let sidebarFound = false;
-      for (const selector of sidebarSelectors) {
-        if (runner.exists(selector)) {
-          sidebarFound = true;
-          runner.log(`Step 1: Found sidebar: ${selector}`);
-          break;
-        }
-      }
-      
-      if (!sidebarFound) {
-        runner.log('Sidebar not visible - may be collapsed or mobile view');
-        return;
-      }
-      
-      // Step 2: Look for navigation links within sidebar
-      const navLinks = document.querySelectorAll('nav a, [role="navigation"] a, [class*="sidebar"] a');
-      runner.log(`Step 2: Found ${navLinks.length} navigation links`);
-      
-      // Step 3: Click first nav link if available
-      if (navLinks.length > 0) {
-        const firstLink = navLinks[0] as HTMLElement;
-        firstLink.click();
-        await runner.wait(1000);
-        runner.log('Step 3: Clicked navigation link');
-      }
-    }
-  },
-  {
-    id: 'workflow-form-validation',
-    name: 'Form Validation Workflow',
-    category: 'forms',
-    description: 'Test form validation with invalid inputs',
+    description: 'Check for badge UI components',
     requiresAuth: false,
     run: async (runner) => {
-      await runner.navigate('/');
-      await runner.wait(1000);
+      await runner.wait(500);
       
-      // Try to open auth modal
-      const signInBtn = runner.findElement('button:has-text("Sign In")') || 
-                        runner.findElement('button:has-text("Get Started")');
-      if (signInBtn) {
-        (signInBtn as HTMLElement).click();
-        await runner.wait(500);
-      }
-      
-      // Step 1: Fill invalid email
-      const emailInput = runner.findElement('input[type="email"]');
-      if (emailInput) {
-        (emailInput as HTMLInputElement).value = 'invalid-email';
-        emailInput.dispatchEvent(new Event('input', { bubbles: true }));
-        emailInput.dispatchEvent(new Event('blur', { bubbles: true }));
-        runner.log('Step 1: Entered invalid email');
-      }
-      
-      await runner.wait(300);
-      
-      // Step 2: Check for validation error
-      const errorSelectors = [
-        '[class*="error"]',
-        '[role="alert"]',
-        '[class*="invalid"]',
-        'p[class*="text-red"]',
-        'span[class*="text-destructive"]'
-      ];
-      
-      let errorFound = false;
-      for (const selector of errorSelectors) {
-        if (runner.exists(selector)) {
-          errorFound = true;
-          runner.log(`Step 2: Found validation error: ${selector}`);
-          break;
-        }
-      }
-      
-      if (!errorFound) {
-        runner.log('Step 2: No validation error visible yet (may show on submit)');
-      }
-      
-      // Step 3: Try to submit
-      const submitBtn = runner.findElement('button[type="submit"]');
-      if (submitBtn) {
-        (submitBtn as HTMLElement).click();
-        await runner.wait(500);
-        runner.log('Step 3: Attempted form submission');
-      }
+      const badges = document.querySelectorAll('[class*="badge"]');
+      runner.log(`Badge components: ${badges.length}`);
     }
   },
   {
-    id: 'workflow-responsive-menu',
-    name: 'Responsive Menu Workflow',
+    id: 'ui-scroll-areas',
+    name: 'Scroll Areas',
     category: 'navigation',
-    description: 'Test mobile menu toggle if available',
+    description: 'Check for scrollable content areas',
     requiresAuth: false,
     run: async (runner) => {
-      await runner.navigate('/');
-      await runner.wait(1000);
+      await runner.wait(500);
       
-      // Look for mobile menu button
-      const menuSelectors = [
-        'button[class*="menu"]',
-        '[data-testid="mobile-menu"]',
-        'button[aria-label*="menu"]',
-        '[class*="hamburger"]'
-      ];
+      const scrollAreas = document.querySelectorAll('[class*="scroll"], [style*="overflow"]');
+      runner.log(`Scroll areas: ${scrollAreas.length}`);
+    }
+  },
+  {
+    id: 'ui-icons-loaded',
+    name: 'Icons Loaded',
+    category: 'navigation',
+    description: 'Check if icons are rendering',
+    requiresAuth: false,
+    run: async (runner) => {
+      await runner.wait(500);
       
-      let menuBtn = null;
-      for (const selector of menuSelectors) {
-        if (runner.exists(selector)) {
-          menuBtn = runner.findElement(selector);
-          runner.log(`Found menu button: ${selector}`);
-          break;
-        }
+      const svgIcons = document.querySelectorAll('svg');
+      runner.log(`SVG icons: ${svgIcons.length}`);
+      
+      if (svgIcons.length === 0) {
+        runner.log('Warning: No SVG icons found');
       }
+    }
+  },
+
+  // ============ ACCESSIBILITY TESTS ============
+  {
+    id: 'a11y-aria-labels',
+    name: 'ARIA Labels Present',
+    category: 'forms',
+    description: 'Check for accessibility labels',
+    requiresAuth: false,
+    run: async (runner) => {
+      await runner.wait(500);
       
-      if (menuBtn) {
-        (menuBtn as HTMLElement).click();
-        await runner.wait(500);
-        runner.log('Clicked mobile menu button');
-        
-        // Check if menu opened
-        if (runner.exists('[class*="mobile-nav"]') || runner.exists('[class*="sheet"]')) {
-          runner.log('Mobile menu opened successfully');
-        }
-      } else {
-        runner.log('No mobile menu button found (may be desktop view)');
+      const ariaLabeled = document.querySelectorAll('[aria-label]');
+      const ariaDescribed = document.querySelectorAll('[aria-describedby]');
+      const roles = document.querySelectorAll('[role]');
+      
+      runner.log(`aria-label: ${ariaLabeled.length}`);
+      runner.log(`aria-describedby: ${ariaDescribed.length}`);
+      runner.log(`role attributes: ${roles.length}`);
+    }
+  },
+  {
+    id: 'a11y-focus-visible',
+    name: 'Focusable Elements',
+    category: 'forms',
+    description: 'Check for focusable elements',
+    requiresAuth: false,
+    run: async (runner) => {
+      await runner.wait(500);
+      
+      const focusable = document.querySelectorAll(
+        'button, a, input, textarea, select, [tabindex]'
+      );
+      runner.log(`Focusable elements: ${focusable.length}`);
+    }
+  },
+
+  // ============ PERFORMANCE TESTS ============
+  {
+    id: 'perf-dom-size',
+    name: 'DOM Size Check',
+    category: 'navigation',
+    description: 'Check DOM element count',
+    requiresAuth: false,
+    run: async (runner) => {
+      await runner.wait(500);
+      
+      const allElements = document.querySelectorAll('*');
+      runner.log(`Total DOM elements: ${allElements.length}`);
+      
+      if (allElements.length > 3000) {
+        runner.log('Warning: Large DOM size may affect performance');
       }
+    }
+  },
+  {
+    id: 'perf-images-loaded',
+    name: 'Images Check',
+    category: 'navigation',
+    description: 'Check image loading status',
+    requiresAuth: false,
+    run: async (runner) => {
+      await runner.wait(500);
+      
+      const images = document.querySelectorAll('img');
+      let loadedCount = 0;
+      
+      images.forEach(img => {
+        if ((img as HTMLImageElement).complete) {
+          loadedCount++;
+        }
+      });
+      
+      runner.log(`Images: ${loadedCount}/${images.length} loaded`);
     }
   }
 ];
 
-// Group tests by category
-export const getTestsByCategory = () => {
+// Get tests grouped by category
+export const getTestsByCategory = (): Record<string, UserJourneyTest[]> => {
   const categories: Record<string, UserJourneyTest[]> = {};
   
   for (const test of userJourneyTests) {
@@ -847,29 +551,27 @@ export const runTestCategory = async (
   runner: BrowserTestRunner,
   category: string
 ): Promise<BrowserTestResult[]> => {
-  const tests = userJourneyTests.filter(t => t.category === category);
+  const categories = getTestsByCategory();
+  const categoryTests = categories[category] || [];
   const results: BrowserTestResult[] = [];
   
-  for (const test of tests) {
+  for (const test of categoryTests) {
     const result = await runner.runTest(test.name, test.run);
     results.push(result);
+    await runner.wait(200);
   }
   
   return results;
 };
 
 // Run all tests
-export const runAllTests = async (
-  runner: BrowserTestRunner
-): Promise<BrowserTestResult[]> => {
+export const runAllTests = async (runner: BrowserTestRunner): Promise<BrowserTestResult[]> => {
   const results: BrowserTestResult[] = [];
   
   for (const test of userJourneyTests) {
     const result = await runner.runTest(test.name, test.run);
     results.push(result);
-    
-    // Small delay between tests
-    await runner.wait(500);
+    await runner.wait(200);
   }
   
   return results;

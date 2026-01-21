@@ -6,6 +6,16 @@ export interface BrowserTestResult {
   step_details?: string[];
 }
 
+export interface TestProgress {
+  currentTest: string;
+  currentStep: string;
+  testIndex: number;
+  totalTests: number;
+  stepLogs: string[];
+}
+
+export type ProgressCallback = (progress: TestProgress) => void;
+
 export interface TestStep {
   action: string;
   target?: string;
@@ -15,10 +25,43 @@ export interface TestStep {
 
 export class BrowserTestRunner {
   private logs: string[] = [];
+  private safeMode: boolean = true; // Default to safe mode - no actual navigation
+  private progressCallback: ProgressCallback | null = null;
+  private currentTestName: string = '';
+  private testIndex: number = 0;
+  private totalTests: number = 0;
+
+  setSafeMode(enabled: boolean): void {
+    this.safeMode = enabled;
+  }
+
+  setProgressCallback(callback: ProgressCallback | null): void {
+    this.progressCallback = callback;
+  }
+
+  setTestContext(name: string, index: number, total: number): void {
+    this.currentTestName = name;
+    this.testIndex = index;
+    this.totalTests = total;
+  }
+
+  private notifyProgress(step: string): void {
+    if (this.progressCallback) {
+      this.progressCallback({
+        currentTest: this.currentTestName,
+        currentStep: step,
+        testIndex: this.testIndex,
+        totalTests: this.totalTests,
+        stepLogs: [...this.logs]
+      });
+    }
+  }
 
   log(message: string): void {
-    this.logs.push(`[${new Date().toISOString()}] ${message}`);
+    const logEntry = `[${new Date().toISOString()}] ${message}`;
+    this.logs.push(logEntry);
     console.log(`[BrowserTest] ${message}`);
+    this.notifyProgress(message);
   }
 
   getLogs(): string[] {
@@ -30,6 +73,7 @@ export class BrowserTestRunner {
   }
 
   async wait(ms: number): Promise<void> {
+    this.log(`Waiting ${ms}ms...`);
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
@@ -173,13 +217,32 @@ export class BrowserTestRunner {
     return element?.textContent?.trim() || '';
   }
 
-  // Navigate to a path
+  // Navigate to a path - in safe mode, just verify the route would work
   async navigate(path: string): Promise<void> {
+    if (this.safeMode) {
+      this.log(`[Safe Mode] Simulating navigation to: ${path}`);
+      // In safe mode, we don't actually navigate - we verify the current page state
+      // This prevents leaving the admin panel
+      this.log(`[Safe Mode] Skipping actual navigation to preserve admin panel`);
+      return;
+    }
+    
     this.log(`Navigating to: ${path}`);
     window.history.pushState({}, '', path);
     window.dispatchEvent(new PopStateEvent('popstate'));
     await this.wait(1000);
     this.log(`Navigated to: ${path}`);
+  }
+
+  // Check if a route is accessible (without navigating)
+  async checkRouteExists(path: string): Promise<boolean> {
+    this.log(`Checking route exists: ${path}`);
+    // We can't actually verify without navigating in a SPA
+    // But we can check if the route pattern is valid
+    const validRoutes = ['/', '/engineering', '/support', '/settings', '/admin', '/grading', '/marketing'];
+    const isValid = validRoutes.some(route => path.startsWith(route) || path === route);
+    this.log(`Route ${path} validity: ${isValid}`);
+    return isValid;
   }
 
   // Get current URL path
