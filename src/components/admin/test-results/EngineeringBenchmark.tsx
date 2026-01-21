@@ -201,8 +201,7 @@ const EngineeringBenchmark: React.FC = () => {
           </div>
         )}
 
-        <ScrollArea>
-          <div className="space-y-3">
+        <div className="space-y-3">
             {results.map((result) => (
               <Collapsible 
                 key={result.calculator} 
@@ -425,8 +424,7 @@ const EngineeringBenchmark: React.FC = () => {
                 </div>
               </Collapsible>
             ))}
-          </div>
-        </ScrollArea>
+        </div>
 
         {results.length === 0 && !isRunning && (
           <p className="text-center text-muted-foreground py-8">
