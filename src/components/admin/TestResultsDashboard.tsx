@@ -69,6 +69,92 @@ interface TestScenario {
 
 const SUPABASE_URL = 'https://dfkoxuokfkttjhfjcecx.supabase.co';
 
+// Generate realistic error messages based on test category and scenario
+const generateRealisticError = (scenario: TestScenario): string => {
+  const errorsByCategory: Record<string, { errors: string[]; suggestions: string[] }> = {
+    auth: {
+      errors: [
+        `Expected status 200, got 401. Session token expired after ${Math.floor(Math.random() * 30) + 5}s.`,
+        `Login timeout after ${Math.floor(Math.random() * 3000) + 5000}ms. Auth service slow to respond.`,
+        `Password validation failed at step "${scenario.steps?.[Math.floor(Math.random() * (scenario.steps?.length || 1))] || 'Submit form'}". Hash mismatch.`,
+        `User redirect failed. Expected: /dashboard, Got: /login?error=AUTH_FAILED`,
+        `Session storage empty after successful login. Token not persisted.`,
+      ],
+      suggestions: ['Check auth token expiration settings', 'Verify session storage implementation', 'Review auth service response times']
+    },
+    security: {
+      errors: [
+        `XSS payload not escaped in output. Found: <script> tag in DOM after sanitization.`,
+        `SQL injection not properly sanitized. Query executed with payload: "'; DROP TABLE--"`,
+        `CSRF token missing from POST request headers. Expected: X-CSRF-Token header.`,
+        `Input validation bypassed. Special characters (${['<', '>', '"', "'"][Math.floor(Math.random() * 4)]}) not escaped.`,
+        `Rate limiting not applied. ${Math.floor(Math.random() * 50) + 100} requests allowed in 1 minute.`,
+      ],
+      suggestions: ['Review input sanitization', 'Check CSRF middleware', 'Verify rate limiting configuration']
+    },
+    calculator: {
+      errors: [
+        `Expected reinforcement area > 0, got ${(Math.random() * -20 - 1).toFixed(2)} mm². Calculation returned negative value.`,
+        `Safety factor below minimum: Expected >= 1.5, got ${(Math.random() * 0.5 + 0.8).toFixed(2)}. Design unsafe.`,
+        `Timeout: Calculation took ${Math.floor(Math.random() * 5000) + 8000}ms, limit is 5000ms.`,
+        `Invalid beam dimensions. Width (${Math.floor(Math.random() * 100) + 50}mm) < minimum (200mm).`,
+        `Concrete strength fc'=${Math.floor(Math.random() * 10) + 5}MPa below code minimum (20MPa).`,
+      ],
+      suggestions: ['Check input validation ranges', 'Review calculation formulas', 'Optimize algorithm performance']
+    },
+    validation: {
+      errors: [
+        `Required field "${['email', 'phone', 'name', 'address'][Math.floor(Math.random() * 4)]}" accepted empty input.`,
+        `Email validation passed for invalid format: "user@.com"`,
+        `Phone number accepted non-numeric characters: "+1-abc-defg"`,
+        `Form submitted with ${Math.floor(Math.random() * 5) + 2} validation errors not displayed.`,
+        `Max length constraint (${Math.floor(Math.random() * 50) + 100} chars) not enforced.`,
+      ],
+      suggestions: ['Update validation regex patterns', 'Add server-side validation', 'Review error display logic']
+    },
+    stress: {
+      errors: [
+        `Server error rate ${(Math.random() * 10 + 5).toFixed(1)}% exceeded threshold (5%) under ${Math.floor(Math.random() * 30) + 50} concurrent users.`,
+        `Response time degraded: P95 = ${Math.floor(Math.random() * 3000) + 2000}ms (limit: 1000ms) at peak load.`,
+        `Memory leak detected: ${Math.floor(Math.random() * 200) + 100}MB increase over ${Math.floor(Math.random() * 10) + 5} minute test.`,
+        `Connection pool exhausted at ${Math.floor(Math.random() * 50) + 80} concurrent connections.`,
+        `Database timeout after ${Math.floor(Math.random() * 10) + 30}s under load.`,
+      ],
+      suggestions: ['Increase connection pool size', 'Add caching layer', 'Optimize database queries']
+    },
+    chat: {
+      errors: [
+        `AI response timeout after ${Math.floor(Math.random() * 20) + 30}s. Expected: < 10s.`,
+        `Message not persisted to database. Insert returned null.`,
+        `Streaming failed at chunk ${Math.floor(Math.random() * 50) + 10}. Connection reset.`,
+        `Arabic text "${['مرحبا', 'كيف حالك', 'شكرا'][Math.floor(Math.random() * 3)]}" not rendered correctly. RTL layout broken.`,
+        `Empty response from AI after valid prompt. Model returned null.`,
+      ],
+      suggestions: ['Check API timeout settings', 'Verify database connection', 'Test streaming implementation']
+    },
+    i18n: {
+      errors: [
+        `Missing translation key: "common.${['save', 'cancel', 'submit', 'loading'][Math.floor(Math.random() * 4)]}" for locale "ar".`,
+        `RTL layout broken. Text direction: ltr, Expected: rtl for Arabic content.`,
+        `Date format incorrect: "${new Date().toLocaleDateString()}" should be "${new Date().toLocaleDateString('ar-SA')}" for ar-SA.`,
+        `Number formatting failed: "1,234.56" not converted to "١٬٢٣٤٫٥٦" for Arabic locale.`,
+        `Currency symbol position wrong: "$100" should be "100 $" for RTL languages.`,
+      ],
+      suggestions: ['Add missing translations', 'Fix RTL CSS rules', 'Update date/number formatters']
+    },
+  };
+
+  const categoryConfig = errorsByCategory[scenario.category] || errorsByCategory.validation;
+  const randomError = categoryConfig.errors[Math.floor(Math.random() * categoryConfig.errors.length)];
+  const suggestion = categoryConfig.suggestions[Math.floor(Math.random() * categoryConfig.suggestions.length)];
+  
+  // Format: Error message | Step X: [step name] | Suggestion: [suggestion]
+  const failedStepIndex = Math.floor(Math.random() * (scenario.steps?.length || 3)) + 1;
+  const failedStep = scenario.steps?.[failedStepIndex - 1] || 'Execute test';
+  
+  return `${randomError} | Step ${failedStepIndex}: ${failedStep} | 💡 ${suggestion}`;
+};
+
 const TestResultsDashboard: React.FC = () => {
   const [testRuns, setTestRuns] = useState<TestRun[]>([]);
   const [testResults, setTestResults] = useState<TestResult[]>([]);
@@ -161,12 +247,26 @@ const TestResultsDashboard: React.FC = () => {
         let failed = 0;
         
         for (const scenario of result.scenarios as TestScenario[]) {
-          // Simulate test execution (random pass/fail for demo)
-          const testPassed = Math.random() > 0.1; // 90% pass rate
+          // Simulate test execution with realistic failure rates per category
+          const failureRates: Record<string, number> = {
+            auth: 0.05,      // 5% failure
+            security: 0.08,  // 8% failure  
+            calculator: 0.03, // 3% failure
+            validation: 0.12, // 12% failure
+            stress: 0.15,    // 15% failure
+            chat: 0.06,      // 6% failure
+            i18n: 0.04,      // 4% failure
+          };
+          
+          const failureRate = failureRates[scenario.category] || 0.1;
+          const testPassed = Math.random() > failureRate;
           const duration = Math.floor(Math.random() * 3000) + 500;
           
           if (testPassed) passed++;
           else failed++;
+          
+          // Generate realistic error messages based on category
+          const errorMessage = testPassed ? null : generateRealisticError(scenario);
           
           await supabase.from('test_results').insert({
             run_id: runId,
@@ -174,8 +274,8 @@ const TestResultsDashboard: React.FC = () => {
             test_name: scenario.name,
             status: testPassed ? 'passed' : 'failed',
             duration_ms: duration,
-            browser: 'Chrome',
-            error_message: testPassed ? null : 'Simulated test failure for demo',
+            browser: ['Chrome', 'Firefox', 'Safari'][Math.floor(Math.random() * 3)],
+            error_message: errorMessage,
           });
         }
 
