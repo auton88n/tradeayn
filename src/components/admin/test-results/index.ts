@@ -21,4 +21,6 @@ export { default as IndustryComparison } from './IndustryComparison';
 export { default as DetailedTestCard } from './DetailedTestCard';
 export { default as BugReportCard } from './BugReportCard';
 export { default as TestReportPDF } from './TestReportPDF';
+export { ComprehensiveTestResults } from './ComprehensiveTestResults';
+export { UXJourneyResults } from './UXJourneyResults';
 export type { TestSuite, TestResult } from './TestSuiteGrid';

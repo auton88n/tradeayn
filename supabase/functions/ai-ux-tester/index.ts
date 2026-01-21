@@ -469,15 +469,18 @@ Deno.serve(async (req) => {
       },
     });
     
-    // Calculate summaries
+    // Calculate summaries - format for frontend
     const byPersona = selectedPersonas.map(persona => {
       const personaResults = allResults.filter(r => r.persona === persona.id);
+      const frustrations = personaResults.filter(r => r.status === 'failed').length;
       return {
-        persona: persona.id,
         name: persona.name,
-        avgScore: personaResults.reduce((a, r) => a + r.uxScore, 0) / personaResults.length,
-        successRate: personaResults.filter(r => r.status === 'success').length / personaResults.length,
-        journeys: personaResults.length,
+        type: persona.id as 'new_user' | 'expert' | 'mobile' | 'arabic' | 'power_user',
+        avgScore: Math.round(personaResults.reduce((a, r) => a + r.uxScore, 0) / personaResults.length),
+        completedJourneys: personaResults.filter(r => r.status === 'success').length,
+        totalJourneys: personaResults.length,
+        frustrations,
+        avgResponseTime: Math.round(personaResults.reduce((a, r) => a + r.totalDuration, 0) / personaResults.length),
       };
     });
     
@@ -492,6 +495,25 @@ Deno.serve(async (req) => {
       };
     });
     
+    // Format results for frontend
+    const formattedResults = allResults.map(r => {
+      const journey = selectedJourneys.find(j => j.id === r.journey);
+      const persona = selectedPersonas.find(p => p.id === r.persona);
+      return {
+        journey: journey?.name || r.journey,
+        persona: persona?.name || r.persona,
+        steps: r.steps.map((s, idx) => ({
+          name: journey?.steps[idx]?.action || s.action || `Step ${idx + 1}`,
+          status: s.status,
+          duration_ms: s.duration_ms,
+          error: s.error,
+        })),
+        completionRate: Math.round(r.completionRate * 100),
+        uxScore: r.uxScore,
+        status: r.status,
+      };
+    });
+    
     return new Response(JSON.stringify({
       success: true,
       summary: {
@@ -500,10 +522,11 @@ Deno.serve(async (req) => {
         overallSuccessRate: (successRate * 100).toFixed(0) + '%',
         personasTested: selectedPersonas.length,
         journeysTested: selectedJourneys.length,
+        avgResponseTime: Math.round(allResults.reduce((a, r) => a + r.totalDuration, 0) / allResults.length),
       },
       byPersona,
       byJourney,
-      results: allResults,
+      results: formattedResults,
       analysis,
       timestamp: new Date().toISOString(),
     }), {

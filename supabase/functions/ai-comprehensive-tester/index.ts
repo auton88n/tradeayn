@@ -434,6 +434,28 @@ Deno.serve(async (req) => {
       });
     }
     
+    // Build byEndpoint array for frontend
+    const byEndpoint = endpointsToTest.map(endpoint => {
+      const endpointResults = allResults.filter(r => r.endpoint === endpoint);
+      const passed = endpointResults.filter(r => r.passed).length;
+      const avgDuration = endpointResults.length > 0 
+        ? endpointResults.reduce((a, r) => a + r.duration_ms, 0) / endpointResults.length 
+        : 0;
+      
+      return {
+        endpoint,
+        tests: endpointResults.map(r => ({
+          name: r.testCase,
+          category: r.category as 'valid' | 'edge_case' | 'type_error' | 'security' | 'performance',
+          status: r.passed ? 'passed' as const : r.duration_ms > 2000 ? 'slow' as const : 'failed' as const,
+          duration_ms: r.duration_ms,
+          error: r.error,
+        })),
+        passRate: endpointResults.length > 0 ? (passed / endpointResults.length) * 100 : 0,
+        avgDuration,
+      };
+    });
+    
     return new Response(JSON.stringify({
       success: true,
       summary: {
@@ -442,8 +464,9 @@ Deno.serve(async (req) => {
         passed: totalPassed,
         failed: totalFailed,
         passRate: (totalPassed / allResults.length * 100).toFixed(1) + '%',
-        avgDuration: (allResults.reduce((a, r) => a + r.duration_ms, 0) / allResults.length).toFixed(0) + 'ms',
+        avgDuration: Math.round(allResults.reduce((a, r) => a + r.duration_ms, 0) / allResults.length),
       },
+      byEndpoint,
       endpointSummaries: summaries,
       analysis,
       runId,
