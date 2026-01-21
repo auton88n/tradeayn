@@ -527,7 +527,7 @@ function validateBeamResults(inputs: Record<string, unknown>, outputs: Record<st
   // Moment formula verification - using actual formula: 1.4*DL + 1.6*LL
   const deadLoad = inputs.deadLoad as number;
   const liveLoad = inputs.liveLoad as number;
-  const supportType = inputs.supportType as string;
+  // supportType already declared at line 479
   const maxMoment = outputs.maxMoment as number;
   
   if (maxMoment && span && deadLoad && liveLoad) {
