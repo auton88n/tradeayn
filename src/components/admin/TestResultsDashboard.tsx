@@ -24,6 +24,7 @@ import { toast } from 'sonner';
 import E2ETestCoverage from './test-results/E2ETestCoverage';
 import TestSuiteSelector from './test-results/TestSuiteSelector';
 import FullExperienceReport from './test-results/FullExperienceReport';
+import BrowserTestRunner from './BrowserTestRunner';
 
 interface TestResult {
   id: string;
@@ -421,6 +422,7 @@ const TestResultsDashboard: React.FC = () => {
       <Tabs defaultValue="report" className="space-y-4">
         <TabsList>
           <TabsTrigger value="report">Full Report</TabsTrigger>
+          <TabsTrigger value="user-journey">User Journey</TabsTrigger>
           <TabsTrigger value="coverage">E2E Coverage</TabsTrigger>
           <TabsTrigger value="runs">Test Runs</TabsTrigger>
           <TabsTrigger value="results">Results</TabsTrigger>
@@ -439,6 +441,10 @@ const TestResultsDashboard: React.FC = () => {
             testResults={testResults}
             stressMetrics={stressMetrics}
           />
+        </TabsContent>
+
+        <TabsContent value="user-journey">
+          <BrowserTestRunner onResultsUpdate={loadData} />
         </TabsContent>
 
         <TabsContent value="coverage">
