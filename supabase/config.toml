@@ -125,3 +125,6 @@ verify_jwt = false
 
 [functions.ai-test-agent]
 verify_jwt = false
+
+[functions.setup-test-users]
+verify_jwt = false
