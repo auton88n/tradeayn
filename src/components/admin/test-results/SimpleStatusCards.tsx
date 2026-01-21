@@ -44,7 +44,21 @@ interface TestDetail {
   duration: number | null;
   error: string | null;
   browser: string | null;
+  failedStep?: string | null;
+  suggestion?: string | null;
 }
+
+// Parse structured error message into parts
+const parseErrorMessage = (error: string | null): { message: string; step: string | null; suggestion: string | null } => {
+  if (!error) return { message: '', step: null, suggestion: null };
+  
+  const parts = error.split(' | ');
+  return {
+    message: parts[0] || error,
+    step: parts[1]?.replace('Step ', '') || null,
+    suggestion: parts[2]?.replace('💡 ', '') || null,
+  };
+};
 
 interface StatusCard {
   id: string;
@@ -264,41 +278,71 @@ const SimpleStatusCards = ({ testResults = [], testRuns = [] }: SimpleStatusCard
                     <div className="mt-3 pt-3 border-t border-border/50">
                       <ScrollArea className="max-h-64">
                         <div className="space-y-2 pr-2">
-                          {card.tests.map((test, i) => (
-                            <div 
-                              key={i} 
-                              className={`p-2.5 rounded-md text-sm ${
-                                test.status === 'failed' 
-                                  ? 'bg-red-500/10 border border-red-500/20' 
-                                  : 'bg-background/50 border border-border/30'
-                              }`}
-                            >
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="flex items-center gap-2 flex-1 min-w-0">
-                                  {test.status === 'passed' ? (
-                                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                                  ) : (
-                                    <XCircle className="w-4 h-4 text-red-400 shrink-0" />
-                                  )}
-                                  <span className="font-medium truncate">{test.name}</span>
+                          {card.tests.map((test, i) => {
+                            const parsedError = parseErrorMessage(test.error);
+                            
+                            return (
+                              <div 
+                                key={i} 
+                                className={`p-3 rounded-md text-sm ${
+                                  test.status === 'failed' 
+                                    ? 'bg-red-500/10 border border-red-500/20' 
+                                    : 'bg-background/50 border border-border/30'
+                                }`}
+                              >
+                                {/* Test Name & Meta */}
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                                    {test.status === 'passed' ? (
+                                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                                    ) : (
+                                      <XCircle className="w-4 h-4 text-red-400 shrink-0" />
+                                    )}
+                                    <span className="font-medium">{test.name}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 shrink-0 text-xs text-muted-foreground">
+                                    {test.browser && (
+                                      <span className="bg-muted/50 px-1.5 py-0.5 rounded text-[11px]">
+                                        {test.browser}
+                                      </span>
+                                    )}
+                                    <span className="font-mono">{formatDuration(test.duration)}</span>
+                                  </div>
                                 </div>
-                                <div className="flex items-center gap-2 shrink-0 text-xs text-muted-foreground">
-                                  {test.browser && (
-                                    <span className="bg-muted/50 px-1.5 py-0.5 rounded text-[11px]">
-                                      {test.browser}
-                                    </span>
-                                  )}
-                                  <span className="font-mono">{formatDuration(test.duration)}</span>
-                                </div>
+                                
+                                {/* Error Details for Failed Tests */}
+                                {test.status === 'failed' && parsedError.message && (
+                                  <div className="mt-3 ml-6 space-y-2 text-xs">
+                                    {/* Error Message */}
+                                    <div className="bg-red-500/5 border border-red-500/20 rounded-md p-2">
+                                      <div className="flex items-start gap-2">
+                                        <XCircle className="w-3.5 h-3.5 text-red-400 shrink-0 mt-0.5" />
+                                        <span className="text-red-300 leading-relaxed">{parsedError.message}</span>
+                                      </div>
+                                    </div>
+                                    
+                                    {/* Failed Step */}
+                                    {parsedError.step && (
+                                      <div className="flex items-center gap-2 text-amber-400/80">
+                                        <span className="text-[10px] bg-amber-500/20 px-1.5 py-0.5 rounded">📍 FAILED AT</span>
+                                        <span>{parsedError.step}</span>
+                                      </div>
+                                    )}
+                                    
+                                    {/* Suggestion */}
+                                    {parsedError.suggestion && (
+                                      <div className="bg-blue-500/10 border border-blue-500/20 rounded-md p-2">
+                                        <div className="flex items-start gap-2">
+                                          <span className="text-blue-400">💡</span>
+                                          <span className="text-blue-300/90">{parsedError.suggestion}</span>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
                               </div>
-                              {test.error && (
-                                <div className="mt-2 pl-6 text-red-400/90 text-xs leading-relaxed">
-                                  <span className="font-semibold">Error: </span>
-                                  <span className="break-words">{test.error}</span>
-                                </div>
-                              )}
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </ScrollArea>
                     </div>
