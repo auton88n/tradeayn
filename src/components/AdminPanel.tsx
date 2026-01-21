@@ -1,15 +1,14 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from 'next-themes';
 import { Session } from '@supabase/supabase-js';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { ArrowLeft, Sun, Moon, RefreshCw, LayoutDashboard, Users, Shield, Settings, FileText, Loader2, MessageSquare, LineChart, Bot, DollarSign, Gauge, Sparkles, FlaskConical } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { ArrowLeft, Sun, Moon, RefreshCw, Loader2, Sparkles } from 'lucide-react';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { AdminSidebar, AdminTabId } from '@/components/admin/AdminSidebar';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { UserManagement } from '@/components/admin/UserManagement';
 import { RateLimitMonitoring } from '@/components/admin/RateLimitMonitoring';
@@ -17,13 +16,12 @@ import { SystemSettings } from '@/components/admin/SystemSettings';
 import { ApplicationManagement, ServiceApplication } from '@/components/admin/ApplicationManagement';
 import SupportManagement from '@/components/admin/SupportManagement';
 import { GoogleAnalytics } from '@/components/admin/GoogleAnalytics';
-import { LLMManagement } from '@/components/admin/LLMManagement';
 import { AICostDashboard } from '@/components/admin/AICostDashboard';
 import { UserAILimits } from '@/components/admin/UserAILimits';
 import { AdminAIAssistant } from '@/components/admin/AdminAIAssistant';
 import TestResultsDashboard from '@/components/admin/TestResultsDashboard';
 
-// Supabase config - use direct values to avoid any import issues
+// Supabase config
 const SUPABASE_URL = 'https://dfkoxuokfkttjhfjcecx.supabase.co' as const;
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRma294dW9rZmt0dGpoZmpjZWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYzNTg4NzMsImV4cCI6MjA3MTkzNDg3M30.Th_-ds6dHsxIhRpkzJLREwBIVdgkcdm2SmMNDmjNbxw';
 
@@ -71,69 +69,6 @@ interface AdminPanelProps {
   isDuty?: boolean;
 }
 
-// All tabs - filtered based on role
-const allTabs = [{
-  id: 'overview',
-  label: 'Overview',
-  icon: LayoutDashboard,
-  adminOnly: true
-}, {
-  id: 'google-analytics',
-  label: 'Analytics',
-  icon: LineChart,
-  adminOnly: true
-}, {
-  id: 'applications',
-  label: 'Applications',
-  icon: FileText,
-  adminOnly: false
-}, {
-  id: 'support',
-  label: 'Support',
-  icon: MessageSquare,
-  adminOnly: false
-}, {
-  id: 'users',
-  label: 'Users',
-  icon: Users,
-  adminOnly: true
-}, {
-  id: 'rate-limits',
-  label: 'Rate Limits',
-  icon: Shield,
-  adminOnly: true
-}, {
-  id: 'settings',
-  label: 'Settings',
-  icon: Settings,
-  adminOnly: true
-}, {
-  id: 'ai-models',
-  label: 'AI Models',
-  icon: Bot,
-  adminOnly: true
-}, {
-  id: 'ai-costs',
-  label: 'AI Costs',
-  icon: DollarSign,
-  adminOnly: true
-}, {
-  id: 'ai-limits',
-  label: 'AI Limits',
-  icon: Gauge,
-  adminOnly: true
-}, {
-  id: 'ai-assistant',
-  label: 'AI Assistant',
-  icon: Bot,
-  adminOnly: true
-}, {
-  id: 'test-results',
-  label: 'Test Results',
-  icon: FlaskConical,
-  adminOnly: true
-}];
-
 export const AdminPanel = ({
   session,
   onBackClick,
@@ -143,12 +78,10 @@ export const AdminPanel = ({
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
 
-  // Filter tabs based on role - duty users only see Applications and Support
-  const tabs = allTabs.filter(tab => isAdmin || !tab.adminOnly);
-
   // Set default tab based on role
-  const defaultTab = isAdmin ? 'overview' : 'applications';
-  const [activeTab, setActiveTab] = useState(defaultTab);
+  const defaultTab: AdminTabId = isAdmin ? 'overview' : 'applications';
+  const [activeTab, setActiveTab] = useState<AdminTabId>(defaultTab);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [allUsers, setAllUsers] = useState<AccessGrantWithProfile[]>([]);
@@ -173,8 +106,7 @@ export const AdminPanel = ({
     sessionTimeout: 30
   });
 
-
-  // Direct REST API fetch to avoid Supabase client deadlock
+  // Direct REST API fetch
   const fetchWithAuth = useCallback(async (endpoint: string, options: RequestInit = {}) => {
     const token = session.access_token;
     const response = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}`, {
@@ -196,7 +128,7 @@ export const AdminPanel = ({
     return JSON.parse(text);
   }, [session.access_token]);
 
-  // Fetch with retry logic for transient failures
+  // Fetch with retry logic
   const fetchWithRetry = useCallback(async (endpoint: string, retries = 1): Promise<unknown[]> => {
     try {
       return await fetchWithAuth(endpoint);
@@ -212,13 +144,13 @@ export const AdminPanel = ({
 
   const fetchData = useCallback(async () => {
     try {
-      const results = await Promise.allSettled([fetchWithRetry('access_grants?select=*&order=created_at.desc'), fetchWithRetry('profiles?select=user_id,company_name,contact_person,avatar_url'), fetchWithRetry(`messages?select=id&created_at=gte.${new Date().toISOString().split('T')[0]}`), fetchWithRetry('system_config?select=key,value'), fetchWithRetry('service_applications?select=*&order=created_at.desc')]);
-
-      results.forEach((result, index) => {
-        if (result.status === 'rejected') {
-          console.error(`Query ${index} failed:`, result.reason);
-        }
-      });
+      const results = await Promise.allSettled([
+        fetchWithRetry('access_grants?select=*&order=created_at.desc'),
+        fetchWithRetry('profiles?select=user_id,company_name,contact_person,avatar_url'),
+        fetchWithRetry(`messages?select=id&created_at=gte.${new Date().toISOString().split('T')[0]}`),
+        fetchWithRetry('system_config?select=key,value'),
+        fetchWithRetry('service_applications?select=*&order=created_at.desc')
+      ]);
 
       const usersData = results[0].status === 'fulfilled' ? results[0].value as AccessGrantWithProfile[] : [];
       const profilesData = results[1].status === 'fulfilled' ? results[1].value as {
@@ -283,6 +215,7 @@ export const AdminPanel = ({
       setIsLoading(false);
       setIsRefreshing(false);
     }, 8000);
+    
     return () => {
       clearTimeout(initTimer);
       clearTimeout(safetyTimeout);
@@ -353,7 +286,7 @@ export const AdminPanel = ({
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="flex items-center justify-center min-h-screen bg-background">
         <motion.div
           className="relative"
           animate={{ rotate: 360 }}
@@ -369,15 +302,12 @@ export const AdminPanel = ({
   const newAppsCount = applications.filter(a => a.status === 'new').length;
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 relative">
-      {/* Gradient accent line at top */}
-      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-60" />
-      
-      {/* Premium Header */}
-      <motion.div 
+    <div className="h-screen flex flex-col bg-background">
+      {/* Header */}
+      <motion.header 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between pt-4"
+        className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border bg-background/80 backdrop-blur-sm"
       >
         <div className="flex items-center gap-4">
           <Button 
@@ -390,7 +320,7 @@ export const AdminPanel = ({
           </Button>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+              <h1 className="text-xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
                 {isAdmin ? 'Admin Panel' : 'Duty Panel'}
               </h1>
               {isDuty && !isAdmin && (
@@ -400,7 +330,7 @@ export const AdminPanel = ({
                 </Badge>
               )}
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               {isAdmin ? 'Manage users, settings, and system' : 'Manage applications and support'}
             </p>
           </div>
@@ -425,75 +355,47 @@ export const AdminPanel = ({
             {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </Button>
         </div>
-      </motion.div>
+      </motion.header>
 
-      {/* Simple Tabs */}
-      <motion.div 
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-      >
-        <div className="flex flex-wrap gap-1 p-1 bg-muted/50 rounded-xl border border-border">
-          {tabs.map(tab => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            const tabNewCount = tab.id === 'applications' ? newAppsCount : 0;
-            
-            return (
-              <button
-                key={tab.id}
-                data-tab={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                  isActive 
-                    ? 'bg-background text-foreground shadow-sm border border-border' 
-                    : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
-                )}
-              >
-                <Icon className="w-4 h-4" />
-                <span className="hidden sm:inline">{tab.label}</span>
-                {tabNewCount > 0 && (
-                  <Badge 
-                    variant="destructive" 
-                    className="ml-1 text-xs px-1.5 py-0 min-w-5 h-5 flex items-center justify-center"
-                  >
-                    {tabNewCount}
-                  </Badge>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </motion.div>
+      {/* Main Layout: Sidebar + Content */}
+      <div className="flex-1 flex min-h-0">
+        <AdminSidebar
+          activeTab={activeTab}
+          onSelectTab={setActiveTab}
+          isCollapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+          newAppsCount={newAppsCount}
+          isAdmin={isAdmin}
+        />
 
-      {/* Content */}
-      <ScrollArea className="h-[calc(100vh-220px)]">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 20, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -20, scale: 0.98 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
-          >
-            <ErrorBoundary>
-              {activeTab === 'overview' && <AdminDashboard systemMetrics={systemMetrics} allUsers={allUsers} />}
-              {activeTab === 'google-analytics' && <GoogleAnalytics />}
-              {activeTab === 'applications' && <ApplicationManagement session={session} applications={applications} onRefresh={fetchData} />}
-              {activeTab === 'support' && <SupportManagement />}
-              {activeTab === 'users' && <UserManagement session={session} allUsers={allUsers} onRefresh={fetchData} />}
-              {activeTab === 'rate-limits' && <RateLimitMonitoring session={session} />}
-              {activeTab === 'settings' && <SystemSettings systemConfig={systemConfig} onUpdateConfig={updateSystemConfig} />}
-              {activeTab === 'ai-models' && <LLMManagement />}
-              {activeTab === 'ai-costs' && <AICostDashboard />}
-              {activeTab === 'ai-limits' && <UserAILimits />}
-              {activeTab === 'ai-assistant' && <AdminAIAssistant />}
-              {activeTab === 'test-results' && <TestResultsDashboard />}
-            </ErrorBoundary>
-          </motion.div>
-        </AnimatePresence>
-      </ScrollArea>
+        {/* Content Area */}
+        <main className="flex-1 overflow-y-auto p-6">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 20, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -20, scale: 0.98 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="max-w-6xl mx-auto"
+            >
+              <ErrorBoundary>
+                {activeTab === 'overview' && <AdminDashboard systemMetrics={systemMetrics} allUsers={allUsers} />}
+                {activeTab === 'google-analytics' && <GoogleAnalytics />}
+                {activeTab === 'applications' && <ApplicationManagement session={session} applications={applications} onRefresh={fetchData} />}
+                {activeTab === 'support' && <SupportManagement />}
+                {activeTab === 'users' && <UserManagement session={session} allUsers={allUsers} onRefresh={fetchData} />}
+                {activeTab === 'rate-limits' && <RateLimitMonitoring session={session} />}
+                {activeTab === 'settings' && <SystemSettings systemConfig={systemConfig} onUpdateConfig={updateSystemConfig} />}
+                {activeTab === 'ai-costs' && <AICostDashboard />}
+                {activeTab === 'ai-limits' && <UserAILimits />}
+                {activeTab === 'ai-assistant' && <AdminAIAssistant />}
+                {activeTab === 'test-results' && <TestResultsDashboard />}
+              </ErrorBoundary>
+            </motion.div>
+          </AnimatePresence>
+        </main>
+      </div>
     </div>
   );
 };
