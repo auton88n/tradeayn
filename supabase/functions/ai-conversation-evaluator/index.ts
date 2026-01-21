@@ -372,32 +372,40 @@ const CONVERSATION_TESTS: ConversationTest[] = [
   }
 ];
 
-// Call AYN unified endpoint
+// Call AYN unified endpoint with timeout
 async function callAYN(messages: { role: string; content: string }[]): Promise<{ content: string; emotion?: string }> {
-  const response = await fetch(`${SUPABASE_URL}/functions/v1/ayn-unified`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
-      'apikey': SUPABASE_SERVICE_KEY
-    },
-    body: JSON.stringify({
-      messages: messages,
-      intent: 'chat',
-      stream: false
-    })
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000); // 8 second max per call
   
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`AYN call failed: ${response.status} - ${text.slice(0, 200)}`);
+  try {
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/ayn-unified`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
+        'apikey': SUPABASE_SERVICE_KEY
+      },
+      body: JSON.stringify({
+        messages: messages,
+        intent: 'chat',
+        stream: false
+      }),
+      signal: controller.signal
+    });
+    
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`AYN call failed: ${response.status} - ${text.slice(0, 200)}`);
+    }
+    
+    const data = await response.json();
+    return {
+      content: data.content || data.choices?.[0]?.message?.content || '',
+      emotion: data.emotion
+    };
+  } finally {
+    clearTimeout(timeout);
   }
-  
-  const data = await response.json();
-  return {
-    content: data.content || data.choices?.[0]?.message?.content || '',
-    emotion: data.emotion
-  };
 }
 
 // Evaluate a single test
@@ -500,21 +508,27 @@ serve(async (req) => {
       testsToRun = CONVERSATION_TESTS.filter(t => requestedCategories.includes(t.category));
     }
     
-    // Quick mode: run core tests (branding, privacy, safety, memory) + sample of personality/emotion
+    // Quick mode: run max 12 essential tests to fit within edge function timeout (~30s)
     if (quick) {
       const coreCategories = ['branding', 'privacy', 'safety', 'memory'];
       const coreTests = testsToRun.filter(t => coreCategories.includes(t.category));
-      // Add a sample of personality/emotion tests (first 3 of each)
-      const personalityTests = testsToRun.filter(t => t.category === 'personality').slice(0, 3);
-      const emotionTests = testsToRun.filter(t => t.category === 'emotion').slice(0, 3);
-      testsToRun = [...coreTests, ...personalityTests, ...emotionTests];
+      // Only take first 2 from each core category to limit total to ~12 tests
+      const limitedCore: ConversationTest[] = [];
+      for (const cat of coreCategories) {
+        const catTests = coreTests.filter(t => t.category === cat).slice(0, 3);
+        limitedCore.push(...catTests);
+      }
+      // Add 2 personality and 2 emotion tests  
+      const personalityTests = testsToRun.filter(t => t.category === 'personality').slice(0, 2);
+      const emotionTests = testsToRun.filter(t => t.category === 'emotion').slice(0, 2);
+      testsToRun = [...limitedCore, ...personalityTests, ...emotionTests].slice(0, 15); // Max 15 tests
     }
     
-    console.log(`Running ${testsToRun.length} conversation tests...`);
+    console.log(`Running ${testsToRun.length} conversation tests (quick=${quick})...`);
     
-    // Run tests with concurrency control (3 at a time to avoid rate limits)
+    // Run tests with higher concurrency (5 at a time for speed)
     const results: TestResult[] = [];
-    const batchSize = 3;
+    const batchSize = 5;
     
     for (let i = 0; i < testsToRun.length; i += batchSize) {
       const batch = testsToRun.slice(i, i + batchSize);
