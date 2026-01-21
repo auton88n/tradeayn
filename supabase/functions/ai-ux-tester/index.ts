@@ -191,21 +191,18 @@ const USER_JOURNEYS: Journey[] = [
 ];
 
 // Simulate a single step
-async function simulateStep(step: JourneyStep, persona: UserPersona): Promise<{
+async function simulateStep(step: JourneyStep, _persona: UserPersona): Promise<{
   status: 'passed' | 'failed' | 'slow';
   duration_ms: number;
   error?: string;
 }> {
   const startTime = Date.now();
   
-  // Add persona-based delay for non-API steps (simulating human interaction time)
+  // Skip delay for non-API steps - we're testing real endpoints, not human behavior
   if (!step.endpoint) {
-    const thinkingTime = step.expectedDuration * (persona.patience === 'low' ? 0.5 : persona.patience === 'high' ? 1.5 : 1);
-    await new Promise(resolve => setTimeout(resolve, Math.min(thinkingTime, 500))); // Cap simulation delay
-    
     return {
       status: 'passed',
-      duration_ms: Date.now() - startTime,
+      duration_ms: 0,
     };
   }
   
@@ -413,6 +410,12 @@ Provide:
   return `UX Score: ${avgScore.toFixed(0)}/100. ${(successRate * 100).toFixed(0)}% of journeys completed successfully.`;
 }
 
+// Default quick personas (3 instead of 5)
+const QUICK_PERSONAS = ['new_engineer', 'expert_engineer', 'mobile_user'];
+
+// Default quick journeys (3 instead of 5)
+const QUICK_JOURNEYS = ['first_beam_calculation', 'quick_column_check', 'foundation_design_flow'];
+
 // Main handler
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -420,30 +423,39 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { personas, journeys } = await req.json().catch(() => ({}));
+    const { personas, journeys, mode = 'quick' } = await req.json().catch(() => ({}));
     
+    // Use quick defaults unless mode is 'full' or specific selections provided
     const selectedPersonas = personas 
       ? USER_PERSONAS.filter(p => personas.includes(p.id))
-      : USER_PERSONAS;
+      : mode === 'full' 
+        ? USER_PERSONAS 
+        : USER_PERSONAS.filter(p => QUICK_PERSONAS.includes(p.id));
     
     const selectedJourneys = journeys
       ? USER_JOURNEYS.filter(j => journeys.includes(j.id))
-      : USER_JOURNEYS;
+      : mode === 'full'
+        ? USER_JOURNEYS
+        : USER_JOURNEYS.filter(j => QUICK_JOURNEYS.includes(j.id));
     
-    console.log(`🎭 UX Tester: Testing ${selectedJourneys.length} journeys with ${selectedPersonas.length} personas...`);
+    console.log(`🎭 UX Tester (${mode} mode): Testing ${selectedJourneys.length} journeys with ${selectedPersonas.length} personas...`);
     
     const allResults: JourneyResult[] = [];
     
-    // Run each journey with each persona
+    // Run journeys in PARALLEL for each persona (much faster)
     for (const persona of selectedPersonas) {
       console.log(`  👤 Testing as: ${persona.name}`);
       
-      for (const journey of selectedJourneys) {
+      // Run all journeys for this persona in parallel
+      const journeyPromises = selectedJourneys.map(async (journey) => {
         console.log(`    📍 Journey: ${journey.name}`);
         const result = await simulateJourney(journey, persona);
-        allResults.push(result);
         console.log(`       Status: ${result.status}, Score: ${result.uxScore}/100`);
-      }
+        return result;
+      });
+      
+      const personaResults = await Promise.all(journeyPromises);
+      allResults.push(...personaResults);
     }
     
     // Generate AI analysis

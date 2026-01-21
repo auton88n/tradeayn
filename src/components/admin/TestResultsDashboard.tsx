@@ -406,10 +406,13 @@ const TestResultsDashboard: React.FC = () => {
     }
   };
 
-  const runUxTester = async () => {
+  const runUxTester = async (mode: 'quick' | 'full' = 'quick') => {
     setIsRunningUxTester(true);
     try {
-      toast.info('🎭 Running AI UX journey tests with multiple personas...');
+      toast.info(mode === 'quick' 
+        ? '🎭 Running quick UX journey tests (3 personas × 3 journeys)...'
+        : '🎭 Running full UX journey tests (5 personas × 5 journeys)...'
+      );
       
       const result = await safeFetchJson<{
         success: boolean;
@@ -441,7 +444,7 @@ const TestResultsDashboard: React.FC = () => {
       }>(`${SUPABASE_URL}/functions/v1/ai-ux-tester`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ mode }),
       });
       
       if (result.success && result.summary) {
@@ -660,13 +663,24 @@ const TestResultsDashboard: React.FC = () => {
             <Button 
               variant="default" 
               size="sm" 
-              onClick={runUxTester} 
+              onClick={() => runUxTester('quick')} 
               disabled={isRunningUxTester}
               className="h-8 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700"
             >
               {isRunningUxTester ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Bot className="h-3 w-3 mr-1" />}
-              UX Journey Test
+              Quick UX Test
               {uxResults && <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">{uxResults.avgScore}/100</Badge>}
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => runUxTester('full')} 
+              disabled={isRunningUxTester}
+              className="h-8"
+            >
+              <Bot className="h-3 w-3 mr-1" />
+              Full UX Test
             </Button>
           </div>
         </CardContent>
