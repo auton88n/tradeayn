@@ -140,3 +140,15 @@ verify_jwt = false
 
 [functions.measure-ux]
 verify_jwt = false
+
+[functions.engineering-ai-validator]
+verify_jwt = false
+
+[functions.ai-website-crawler]
+verify_jwt = false
+
+[functions.ai-user-simulator]
+verify_jwt = false
+
+[functions.ai-improvement-advisor]
+verify_jwt = false
