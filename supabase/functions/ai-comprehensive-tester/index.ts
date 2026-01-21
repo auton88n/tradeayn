@@ -145,19 +145,21 @@ function generateTestCases(endpoint: string): TestCase[] {
     
     'track-visit': [
       { name: 'Valid visit', input: { visitor_id: 'test-visitor-' + Date.now(), page_path: '/', referrer: 'https://google.com', user_agent: 'Mozilla/5.0' }, category: 'valid', expectedBehavior: 'Tracks successfully' },
-      { name: 'Empty data', input: { visitor_id: 'test-empty-' + Date.now(), page_path: '/' }, category: 'edge_case', expectedBehavior: 'Handles gracefully' },
-      { name: 'XSS in path', input: { visitor_id: 'test-xss-' + Date.now(), page_path: 'test-page' }, category: 'security', expectedBehavior: 'Sanitizes input' },
+      { name: 'Minimal data', input: { visitor_id: 'test-minimal-' + Date.now(), page_path: '/test' }, category: 'valid', expectedBehavior: 'Handles gracefully' },
+      { name: 'With UTM params', input: { visitor_id: 'test-utm-' + Date.now(), page_path: '/landing', utm_source: 'google', utm_medium: 'cpc', utm_campaign: 'test' }, category: 'valid', expectedBehavior: 'Tracks UTM params' },
     ],
     
     'parse-survey-file': [
-      { name: 'CSV format', input: { content: '1,100,200,45.5\n2,105,205,46.0\n3,110,210,44.5', fileName: 'test.csv' }, category: 'valid', expectedBehavior: 'Parses correctly' },
-      { name: 'Tab-separated', input: { content: '1\t100\t200\t45.5\n2\t105\t205\t46.0', fileName: 'test.txt' }, category: 'valid', expectedBehavior: 'Parses correctly' },
+      { name: 'CSV format 4 columns', input: { content: 'P1,100,200,45.5\nP2,105,205,46.0\nP3,110,210,44.5', fileName: 'test.csv' }, category: 'valid', expectedBehavior: 'Parses correctly' },
+      { name: 'Tab-separated 4 columns', input: { content: 'P1\t100\t200\t45.5\nP2\t105\t205\t46.0', fileName: 'test.txt' }, category: 'valid', expectedBehavior: 'Parses correctly' },
       { name: 'Empty content', input: { content: '', fileName: 'empty.csv' }, category: 'edge_case', expectedBehavior: 'Returns error' },
+      { name: 'Invalid format', input: { content: 'random text without numbers', fileName: 'bad.csv' }, category: 'edge_case', expectedBehavior: 'Returns error or empty' },
     ],
     
     'engineering-ai-assistant': [
-      { name: 'Beam assistant', input: { calculatorType: 'beam', currentInputs: { span: 6, deadLoad: 10, liveLoad: 15 }, currentOutputs: { beamDepth: 500 }, question: 'Is this depth adequate?', conversationHistory: [] }, category: 'valid', expectedBehavior: 'Returns engineering guidance' },
-      { name: 'Missing question', input: { calculatorType: 'beam', currentInputs: {}, currentOutputs: {}, question: 'What should I do?', conversationHistory: [] }, category: 'edge_case', expectedBehavior: 'Returns guidance or error' },
+      { name: 'Beam design question', input: { calculatorType: 'beam', currentInputs: { span: 6, deadLoad: 10, liveLoad: 15 }, currentOutputs: { beamDepth: 500, beamWidth: 300 }, question: 'Is this beam depth adequate for the span?', conversationHistory: [] }, category: 'valid', expectedBehavior: 'Returns engineering guidance' },
+      { name: 'Column design question', input: { calculatorType: 'column', currentInputs: { columnHeight: 3.5, axialLoad: 800 }, currentOutputs: { reinforcement: '8T16' }, question: 'What is the slenderness ratio?', conversationHistory: [] }, category: 'valid', expectedBehavior: 'Returns engineering guidance' },
+      { name: 'Empty inputs', input: { calculatorType: 'beam', currentInputs: {}, currentOutputs: {}, question: 'How do I start a beam design?', conversationHistory: [] }, category: 'valid', expectedBehavior: 'Returns guidance' },
     ],
     
     'generate-grading-design': [

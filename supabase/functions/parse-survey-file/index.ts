@@ -125,8 +125,16 @@ serve(async (req) => {
   try {
     const { content, fileName } = await req.json();
     
-    if (!content) {
-      throw new Error('No file content provided');
+    if (!content || content.trim() === '') {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'No file content provided',
+        points: [],
+        terrainAnalysis: null,
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     console.log(`Parsing survey file: ${fileName}`);
