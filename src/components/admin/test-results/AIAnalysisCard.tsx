@@ -1,6 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Bot, Sparkles, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Bot, Sparkles, AlertTriangle, CheckCircle, Loader2, Copy } from 'lucide-react';
+import { BugReportCard } from './BugReportCard';
+import { TestReportPDF } from './TestReportPDF';
+import { useTestExport } from '@/hooks/useTestExport';
 
 interface BugReport {
   endpoint: string;
@@ -27,18 +32,12 @@ export function AIAnalysisCard({
   isLoading = false,
   lastAnalyzedAt 
 }: AIAnalysisCardProps) {
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case 'critical': return 'bg-red-500/10 text-red-500 border-red-500/20';
-      case 'high': return 'bg-orange-500/10 text-orange-500 border-orange-500/20';
-      case 'medium': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
-      case 'low': return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
-      default: return 'bg-muted text-muted-foreground';
-    }
-  };
+  const { copyAllBugs } = useTestExport();
 
   const criticalBugs = bugs.filter(b => b.severity === 'critical').length;
   const highBugs = bugs.filter(b => b.severity === 'high').length;
+  const mediumBugs = bugs.filter(b => b.severity === 'medium').length;
+  const lowBugs = bugs.filter(b => b.severity === 'low').length;
 
   return (
     <Card className="border-purple-500/20 bg-gradient-to-br from-purple-500/5 to-transparent">
@@ -46,7 +45,7 @@ export function AIAnalysisCard({
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Bot className="h-5 w-5 text-purple-500" />
-            AI Analysis
+            AI Bug Hunter Results
           </CardTitle>
           <div className="flex items-center gap-2">
             {isLoading && <Loader2 className="h-4 w-4 animate-spin text-purple-500" />}
@@ -64,58 +63,75 @@ export function AIAnalysisCard({
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Bug Summary */}
+        <div className="flex flex-wrap gap-2">
+          {criticalBugs > 0 && (
+            <Badge variant="outline" className="bg-red-500/10 text-red-500 border-red-500/20">
+              <AlertTriangle className="h-3 w-3 mr-1" />
+              {criticalBugs} Critical
+            </Badge>
+          )}
+          {highBugs > 0 && (
+            <Badge variant="outline" className="bg-orange-500/10 text-orange-500 border-orange-500/20">
+              <AlertTriangle className="h-3 w-3 mr-1" />
+              {highBugs} High
+            </Badge>
+          )}
+          {mediumBugs > 0 && (
+            <Badge variant="outline" className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20">
+              {mediumBugs} Medium
+            </Badge>
+          )}
+          {lowBugs > 0 && (
+            <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20">
+              {lowBugs} Low
+            </Badge>
+          )}
+          {bugs.length === 0 && !isLoading && (
+            <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">
+              <CheckCircle className="h-3 w-3 mr-1" />
+              No bugs found
+            </Badge>
+          )}
+        </div>
+
+        {/* Action buttons */}
         {bugs.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {criticalBugs > 0 && (
-              <Badge variant="outline" className="bg-red-500/10 text-red-500 border-red-500/20">
-                <AlertTriangle className="h-3 w-3 mr-1" />
-                {criticalBugs} Critical
-              </Badge>
-            )}
-            {highBugs > 0 && (
-              <Badge variant="outline" className="bg-orange-500/10 text-orange-500 border-orange-500/20">
-                <AlertTriangle className="h-3 w-3 mr-1" />
-                {highBugs} High
-              </Badge>
-            )}
-            {bugs.length === 0 && (
-              <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">
-                <CheckCircle className="h-3 w-3 mr-1" />
-                No bugs found
-              </Badge>
-            )}
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => copyAllBugs(bugs, 'AI Bug Hunter')}
+              className="h-7 px-2"
+            >
+              <Copy className="h-3 w-3 mr-1" />
+              Copy All ({bugs.length})
+            </Button>
+            <TestReportPDF
+              categoryName="AI Bug Hunter"
+              bugs={bugs}
+              lastRun={lastAnalyzedAt}
+            />
           </div>
         )}
 
         {/* AI Analysis Text */}
         <div className="p-3 rounded-lg bg-muted/50 border">
           <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
-            {isLoading ? 'AI is analyzing test results...' : analysis || 'No analysis available yet. Run tests to generate AI insights.'}
+            {isLoading ? 'AI is analyzing endpoints for bugs...' : analysis || 'No analysis available yet. Run Bug Hunter to discover potential issues.'}
           </p>
         </div>
 
-        {/* Bug Details */}
+        {/* Bug Details - ALL bugs shown */}
         {bugs.length > 0 && (
           <div className="space-y-2">
-            <h4 className="text-sm font-medium">Bugs Discovered:</h4>
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {bugs.slice(0, 5).map((bug, index) => (
-                <div key={index} className={`p-2 rounded-lg border ${getSeverityColor(bug.severity)}`}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-medium">{bug.endpoint}</span>
-                    <Badge variant="outline" className="text-[10px]">
-                      {bug.severity.toUpperCase()}
-                    </Badge>
-                  </div>
-                  <p className="text-xs">{bug.description}</p>
-                </div>
-              ))}
-              {bugs.length > 5 && (
-                <p className="text-xs text-muted-foreground text-center">
-                  +{bugs.length - 5} more bugs
-                </p>
-              )}
-            </div>
+            <h4 className="text-sm font-medium">All Bugs Discovered ({bugs.length}):</h4>
+            <ScrollArea className="h-[400px]">
+              <div className="space-y-2 pr-4">
+                {bugs.map((bug, index) => (
+                  <BugReportCard key={index} bug={bug} />
+                ))}
+              </div>
+            </ScrollArea>
           </div>
         )}
 

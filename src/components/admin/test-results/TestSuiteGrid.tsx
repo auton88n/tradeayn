@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Shield, 
   Calculator, 
@@ -14,8 +15,11 @@ import {
   CheckCircle,
   XCircle,
   AlertTriangle,
-  Loader2
+  Loader2,
+  Copy
 } from 'lucide-react';
+import { useTestExport } from '@/hooks/useTestExport';
+import { TestReportPDF } from './TestReportPDF';
 
 interface TestResult {
   name: string;
@@ -44,6 +48,7 @@ interface TestSuiteGridProps {
 
 const TestSuiteGrid: React.FC<TestSuiteGridProps> = ({ suites }) => {
   const [expandedSuites, setExpandedSuites] = useState<Set<string>>(new Set());
+  const { copyAllTests, copyTestAsMarkdown } = useTestExport();
 
   const toggleSuite = (id: string) => {
     const newExpanded = new Set(expandedSuites);
@@ -124,14 +129,14 @@ const TestSuiteGrid: React.FC<TestSuiteGridProps> = ({ suites }) => {
               </p>
             )}
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               {suite.onRun && (
                 <Button 
                   size="sm" 
                   variant="outline" 
                   onClick={suite.onRun}
                   disabled={suite.isLoading}
-                  className="flex-1"
+                  className="flex-1 h-7"
                 >
                   {suite.isLoading ? (
                     <Loader2 className="h-3 w-3 animate-spin mr-1" />
@@ -141,55 +146,85 @@ const TestSuiteGrid: React.FC<TestSuiteGridProps> = ({ suites }) => {
                   Run
                 </Button>
               )}
+              
               {suite.tests && suite.tests.length > 0 && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => toggleSuite(suite.id)}
-                  className="px-2"
-                >
-                  {expandedSuites.has(suite.id) ? (
-                    <ChevronUp className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
-                </Button>
+                <>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => copyAllTests(suite.tests!, suite.name)}
+                    className="h-7 px-2"
+                  >
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                  
+                  <TestReportPDF
+                    categoryName={suite.name}
+                    tests={suite.tests}
+                    grade={suite.grade}
+                    passRate={getPassRate(suite)}
+                    lastRun={suite.lastRun}
+                  />
+                  
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => toggleSuite(suite.id)}
+                    className="h-7 px-2"
+                  >
+                    {expandedSuites.has(suite.id) ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    )}
+                  </Button>
+                </>
               )}
             </div>
 
             {expandedSuites.has(suite.id) && suite.tests && (
-              <div className="mt-3 border-t pt-3 space-y-1 max-h-60 overflow-y-auto">
-                {suite.tests.map((test, idx) => (
-                  <div 
-                    key={idx}
-                    className={`p-2 rounded text-xs flex items-start justify-between ${
-                      test.status === 'passed' ? 'bg-green-500/10' : 
-                      test.status === 'failed' ? 'bg-red-500/10' : 'bg-muted'
-                    }`}
-                  >
-                    <div className="flex items-start gap-2 flex-1">
-                      {test.status === 'passed' ? (
-                        <CheckCircle className="h-3 w-3 text-green-500 mt-0.5 shrink-0" />
-                      ) : test.status === 'failed' ? (
-                        <XCircle className="h-3 w-3 text-red-500 mt-0.5 shrink-0" />
-                      ) : (
-                        <AlertTriangle className="h-3 w-3 text-yellow-500 mt-0.5 shrink-0" />
-                      )}
-                      <div className="min-w-0">
-                        <p className="font-medium truncate">{test.name}</p>
-                        {test.error_message && (
-                          <p className="text-red-500 mt-1 break-words">{test.error_message}</p>
+              <ScrollArea className="h-[500px]">
+                <div className="mt-3 border-t pt-3 space-y-2 pr-4">
+                  {suite.tests.map((test, idx) => (
+                    <div 
+                      key={idx}
+                      className={`p-2 rounded text-xs flex items-start justify-between ${
+                        test.status === 'passed' ? 'bg-green-500/10 border border-green-500/20' : 
+                        test.status === 'failed' ? 'bg-red-500/10 border border-red-500/20' : 'bg-muted border'
+                      }`}
+                    >
+                      <div className="flex items-start gap-2 flex-1 min-w-0">
+                        {test.status === 'passed' ? (
+                          <CheckCircle className="h-3 w-3 text-green-500 mt-0.5 shrink-0" />
+                        ) : test.status === 'failed' ? (
+                          <XCircle className="h-3 w-3 text-red-500 mt-0.5 shrink-0" />
+                        ) : (
+                          <AlertTriangle className="h-3 w-3 text-yellow-500 mt-0.5 shrink-0" />
                         )}
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium">{test.name}</p>
+                          {test.error_message && (
+                            <p className="text-red-500 mt-1 break-words text-[11px]">{test.error_message}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0 ml-2">
+                        {test.duration_ms !== undefined && (
+                          <span className="text-muted-foreground">{test.duration_ms}ms</span>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => copyTestAsMarkdown(test)}
+                          className="h-6 w-6 p-0"
+                        >
+                          <Copy className="h-2.5 w-2.5" />
+                        </Button>
                       </div>
                     </div>
-                    {test.duration_ms && (
-                      <span className="text-muted-foreground shrink-0 ml-2">
-                        {test.duration_ms}ms
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              </ScrollArea>
             )}
           </CardContent>
         </Card>

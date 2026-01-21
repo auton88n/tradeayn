@@ -16,3 +16,9 @@ export { default as QuickStatusBar } from './QuickStatusBar';
 export { TestSuiteGrid } from './TestSuiteGrid';
 export { default as AIAnalysisCard } from './AIAnalysisCard';
 export { default as IndustryComparison } from './IndustryComparison';
+
+// New detailed test components
+export { default as DetailedTestCard } from './DetailedTestCard';
+export { default as BugReportCard } from './BugReportCard';
+export { default as TestReportPDF } from './TestReportPDF';
+export type { TestSuite, TestResult } from './TestSuiteGrid';

@@ -163,6 +163,14 @@ const TestResultsDashboard: React.FC = () => {
         body: JSON.stringify({ suite: config.suite }),
       });
 
+      // Validate content type before parsing
+      const contentType = response.headers.get('content-type');
+      if (!contentType?.includes('application/json')) {
+        const text = await response.text();
+        console.error('Non-JSON response from test runner:', text.substring(0, 200));
+        throw new Error('Server returned HTML error page instead of JSON. Check edge function logs.');
+      }
+
       if (!response.ok) {
         throw new Error(`Test runner failed: ${response.status}`);
       }
@@ -227,7 +235,17 @@ const TestResultsDashboard: React.FC = () => {
         }),
       });
 
-      if (!response.ok) throw new Error(`Bug hunter failed: ${response.status}`);
+      // Validate content type before parsing
+      const contentType = response.headers.get('content-type');
+      if (!contentType?.includes('application/json')) {
+        const text = await response.text();
+        console.error('Non-JSON response from bug hunter:', text.substring(0, 200));
+        throw new Error('Server returned HTML error page instead of JSON. Check edge function logs.');
+      }
+
+      if (!response.ok) {
+        throw new Error(`Bug hunter failed: ${response.status}`);
+      }
 
       const result = await response.json();
       
@@ -244,7 +262,7 @@ const TestResultsDashboard: React.FC = () => {
       }
     } catch (error) {
       console.error('Bug hunter failed:', error);
-      toast.error('Bug hunter failed');
+      toast.error(`Bug hunter failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsRunningBugHunter(false);
     }
