@@ -374,8 +374,6 @@ const CONVERSATION_TESTS: ConversationTest[] = [
 
 // Call AYN unified endpoint
 async function callAYN(messages: { role: string; content: string }[]): Promise<{ content: string; emotion?: string }> {
-  const lastUserMessage = messages.filter(m => m.role === 'user').pop();
-  
   const response = await fetch(`${SUPABASE_URL}/functions/v1/ayn-unified`, {
     method: 'POST',
     headers: {
@@ -384,10 +382,8 @@ async function callAYN(messages: { role: string; content: string }[]): Promise<{
       'apikey': SUPABASE_SERVICE_KEY
     },
     body: JSON.stringify({
-      message: lastUserMessage?.content || '',
-      userId: 'conversation-evaluator',
-      mode: 'chat',
-      conversationHistory: messages.slice(0, -1),
+      messages: messages,
+      intent: 'chat',
       stream: false
     })
   });
@@ -399,7 +395,7 @@ async function callAYN(messages: { role: string; content: string }[]): Promise<{
   
   const data = await response.json();
   return {
-    content: data.content || data.response || '',
+    content: data.content || data.choices?.[0]?.message?.content || '',
     emotion: data.emotion
   };
 }
