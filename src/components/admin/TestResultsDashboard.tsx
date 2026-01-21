@@ -19,7 +19,9 @@ import {
   Loader2,
   FileCode,
   Database,
-  AlertCircle
+  Bot,
+  Shield,
+  Activity
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -27,6 +29,8 @@ import E2ETestCoverage from './test-results/E2ETestCoverage';
 import TestSuiteSelector from './test-results/TestSuiteSelector';
 import FullExperienceReport from './test-results/FullExperienceReport';
 import BrowserTestRunner from './BrowserTestRunner';
+import AIAnalysisCard from './test-results/AIAnalysisCard';
+import IndustryComparison from './test-results/IndustryComparison';
 
 interface TestResult {
   id: string;
@@ -70,6 +74,17 @@ const TestResultsDashboard: React.FC = () => {
   const [selectedRun, setSelectedRun] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRunningTests, setIsRunningTests] = useState(false);
+  
+  // AI Analysis state
+  const [aiAnalysis, setAiAnalysis] = useState<string>('');
+  const [aiModel, setAiModel] = useState<string>('');
+  const [bugs, setBugs] = useState<Array<{ endpoint: string; bugType: string; severity: 'critical' | 'high' | 'medium' | 'low'; description: string; suggestedFix: string }>>([]);
+  const [isRunningBugHunter, setIsRunningBugHunter] = useState(false);
+  
+  // UX Metrics state
+  const [uxBenchmarks, setUxBenchmarks] = useState<Array<{ metric: string; yourValue: number; industryTarget: number; unit: string; rating: 'excellent' | 'good' | 'needs_improvement' | 'poor'; percentile: number }>>([]);
+  const [uxOverallScore, setUxOverallScore] = useState(0);
+  const [isLoadingUX, setIsLoadingUX] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -184,6 +199,82 @@ const TestResultsDashboard: React.FC = () => {
     }
   };
 
+  // Run AI Bug Hunter
+  const runBugHunter = async () => {
+    setIsRunningBugHunter(true);
+    try {
+      toast.info('🔍 AI Bug Hunter starting... (Claude Sonnet 4)');
+      
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/ai-bug-hunter`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          endpoints: ['calculate-beam', 'calculate-column', 'calculate-foundation', 'support-bot'],
+          model: 'claude'
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Bug hunter failed: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setBugs(result.bugs || []);
+        setAiAnalysis(result.analysis || '');
+        setAiModel(result.modelUsed || 'Claude Sonnet 4');
+        
+        if (result.bugs.length === 0) {
+          toast.success('✅ No bugs found! All edge cases handled correctly.');
+        } else {
+          toast.warning(`⚠️ Found ${result.bugs.length} potential bugs`);
+        }
+        
+        await loadData();
+      } else {
+        throw new Error(result.error || 'Unknown error');
+      }
+    } catch (error) {
+      console.error('Bug hunter failed:', error);
+      toast.error(`Bug hunter failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsRunningBugHunter(false);
+    }
+  };
+
+  // Measure UX metrics
+  const measureUX = async () => {
+    setIsLoadingUX(true);
+    try {
+      toast.info('📊 Measuring UX metrics...');
+      
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/measure-ux`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!response.ok) {
+        throw new Error(`UX measurement failed: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setUxBenchmarks(result.benchmarks || []);
+        setUxOverallScore(result.overallScore || 0);
+        toast.success(`📊 UX Score: ${result.overallScore}% - ${result.overallRating}`);
+      } else {
+        throw new Error(result.error || 'Unknown error');
+      }
+    } catch (error) {
+      console.error('UX measurement failed:', error);
+      toast.error(`UX measurement failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsLoadingUX(false);
+    }
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'passed': return <CheckCircle className="h-4 w-4 text-green-500" />;
@@ -242,7 +333,7 @@ const TestResultsDashboard: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold">Test Results Dashboard</h1>
           <p className="text-muted-foreground">
-            100% Real Data • No Demo/Mock Results
+            100% Real Data • AI-Powered Analysis • Claude Sonnet 4
             {testRuns.length > 0 && (
               <span className="ml-2 text-green-600">
                 • Last run: {new Date(testRuns[0].created_at).toLocaleString()}
@@ -257,6 +348,52 @@ const TestResultsDashboard: React.FC = () => {
           </Button>
           <TestSuiteSelector isRunning={isRunningTests} onRunSuite={runTests} />
         </div>
+      </div>
+
+      {/* AI Tools Bar */}
+      <div className="flex flex-wrap gap-2 p-3 rounded-lg bg-purple-500/5 border border-purple-500/20">
+        <div className="flex items-center gap-2 mr-4">
+          <Bot className="h-5 w-5 text-purple-500" />
+          <span className="text-sm font-medium">AI Tools:</span>
+        </div>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={runBugHunter} 
+          disabled={isRunningBugHunter}
+          className="border-purple-500/30 hover:bg-purple-500/10"
+        >
+          {isRunningBugHunter ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <Shield className="h-4 w-4 mr-2" />
+          )}
+          AI Bug Hunter
+        </Button>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={measureUX} 
+          disabled={isLoadingUX}
+          className="border-blue-500/30 hover:bg-blue-500/10"
+        >
+          {isLoadingUX ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <Activity className="h-4 w-4 mr-2" />
+          )}
+          Measure UX
+        </Button>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => runTests('security')} 
+          disabled={isRunningTests}
+          className="border-red-500/30 hover:bg-red-500/10"
+        >
+          <Shield className="h-4 w-4 mr-2" />
+          OWASP Security
+        </Button>
       </div>
 
       {/* Real Data Indicator */}
@@ -363,8 +500,10 @@ const TestResultsDashboard: React.FC = () => {
 
       {/* Tabs */}
       <Tabs defaultValue="report" className="space-y-4">
-        <TabsList>
+        <TabsList className="flex-wrap">
           <TabsTrigger value="report">Full Report</TabsTrigger>
+          <TabsTrigger value="ai-analysis">AI Analysis</TabsTrigger>
+          <TabsTrigger value="benchmarks">Benchmarks</TabsTrigger>
           <TabsTrigger value="user-journey">User Journey</TabsTrigger>
           <TabsTrigger value="coverage">E2E Coverage</TabsTrigger>
           <TabsTrigger value="runs">Test Runs</TabsTrigger>
@@ -384,6 +523,75 @@ const TestResultsDashboard: React.FC = () => {
             testResults={testResults}
             stressMetrics={stressMetrics}
           />
+        </TabsContent>
+
+        <TabsContent value="ai-analysis">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <AIAnalysisCard
+              analysis={aiAnalysis}
+              model={aiModel || 'Claude Sonnet 4'}
+              bugs={bugs}
+              isLoading={isRunningBugHunter}
+              lastAnalyzedAt={testRuns.length > 0 ? new Date(testRuns[0].created_at) : undefined}
+            />
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="h-5 w-5 text-red-500" />
+                  Security Summary
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">XSS Protection</span>
+                    <Badge variant="outline" className="bg-green-500/10 text-green-500">
+                      {testResults.filter(t => t.test_name.includes('XSS') && t.status === 'passed').length} / {testResults.filter(t => t.test_name.includes('XSS')).length || '?'}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">SQL Injection</span>
+                    <Badge variant="outline" className="bg-green-500/10 text-green-500">
+                      {testResults.filter(t => t.test_name.includes('SQL') && t.status === 'passed').length} / {testResults.filter(t => t.test_name.includes('SQL')).length || '?'}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">SSRF Protection</span>
+                    <Badge variant="outline" className="bg-green-500/10 text-green-500">
+                      {testResults.filter(t => t.test_name.includes('SSRF') && t.status === 'passed').length} / {testResults.filter(t => t.test_name.includes('SSRF')).length || '?'}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Auth Protection</span>
+                    <Badge variant="outline" className="bg-green-500/10 text-green-500">
+                      {testResults.filter(t => t.test_name.includes('Auth') && t.status === 'passed').length} / {testResults.filter(t => t.test_name.includes('Auth')).length || '?'}
+                    </Badge>
+                  </div>
+                  {testResults.filter(t => t.test_suite === 'security').length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      Run security tests to see protection status
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="benchmarks">
+          <IndustryComparison 
+            benchmarks={uxBenchmarks}
+            overallScore={uxOverallScore}
+            isLoading={isLoadingUX}
+          />
+          {uxBenchmarks.length === 0 && !isLoadingUX && (
+            <div className="mt-4 text-center">
+              <Button onClick={measureUX} variant="outline">
+                <Activity className="h-4 w-4 mr-2" />
+                Run UX Measurement
+              </Button>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="user-journey">

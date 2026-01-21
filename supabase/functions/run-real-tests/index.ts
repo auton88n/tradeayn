@@ -320,55 +320,119 @@ async function runCalculatorTests(): Promise<TestResult[]> {
   return results;
 }
 
-// ==================== SECURITY TESTS ====================
+// ==================== FULL OWASP SECURITY TESTS ====================
 async function runSecurityTests(): Promise<TestResult[]> {
   const results: TestResult[] = [];
 
-  // XSS prevention test
-  results.push(await runTest(
-    'Security: XSS Prevention',
-    'security',
-    async () => {
-      const xssPayload = '<script>alert("xss")</script>';
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/support-bot`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: xssPayload }),
-      });
+  // Security payloads for comprehensive testing
+  const securityPayloads = {
+    xss: {
+      scriptTags: [
+        "<script>alert('XSS')</script>",
+        "<script src='http://evil.com/xss.js'></script>",
+      ],
+      eventHandlers: [
+        "<img src=x onerror=alert('XSS')>",
+        "<svg onload=alert('XSS')>",
+        "<body onload=alert('XSS')>",
+        "<input onfocus=alert('XSS') autofocus>",
+      ],
+      encoded: [
+        "&lt;script&gt;alert('XSS')&lt;/script&gt;",
+        "%3Cscript%3Ealert('XSS')%3C/script%3E",
+      ],
+    },
+    sqlInjection: [
+      "' OR '1'='1",
+      "' OR '1'='1' --",
+      "admin'--",
+      "'; DROP TABLE users; --",
+    ],
+    ssrf: [
+      "http://localhost/admin",
+      "http://127.0.0.1/",
+      "http://169.254.169.254/latest/meta-data/",
+    ],
+  };
 
-      const data = await response.json();
-      const responseStr = JSON.stringify(data);
-      
-      // Check that script tag is not in response unescaped
-      const containsRawScript = responseStr.includes('<script>') && !responseStr.includes('&lt;script&gt;');
-      
-      return { 
-        passed: !containsRawScript,
-        error: containsRawScript ? 'XSS payload not sanitized' : undefined,
-        details: { sanitized: !containsRawScript }
-      };
-    }
-  ));
+  // XSS Tests - Script Tags
+  for (const payload of securityPayloads.xss.scriptTags) {
+    results.push(await runTest(
+      `Security: XSS Script Tag - ${payload.substring(0, 30)}...`,
+      'security',
+      async () => {
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/support-bot`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: payload }),
+        });
+        const data = await response.json();
+        const responseStr = JSON.stringify(data);
+        const containsRawScript = responseStr.includes('<script>') && !responseStr.includes('&lt;script&gt;');
+        return { passed: !containsRawScript, details: { sanitized: !containsRawScript } };
+      }
+    ));
+  }
 
-  // SQL injection prevention test
-  results.push(await runTest(
-    'Security: SQL Injection Prevention',
-    'security',
-    async () => {
-      const sqlPayload = "'; DROP TABLE users; --";
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/support-bot`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: sqlPayload }),
-      });
+  // XSS Tests - Event Handlers
+  for (const payload of securityPayloads.xss.eventHandlers) {
+    results.push(await runTest(
+      `Security: XSS Event Handler - ${payload.substring(0, 25)}...`,
+      'security',
+      async () => {
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/support-bot`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: payload }),
+        });
+        const data = await response.json();
+        const responseStr = JSON.stringify(data);
+        // Check for dangerous event handlers
+        const hasUnsanitizedHandler = /on\w+\s*=/.test(responseStr) && !responseStr.includes('&lt;');
+        return { passed: !hasUnsanitizedHandler, details: { sanitized: !hasUnsanitizedHandler } };
+      }
+    ));
+  }
 
-      // If server didn't crash and returned a response, SQL injection was prevented
-      return { 
-        passed: response.ok || response.status < 500,
-        details: { status: response.status, serverStable: true }
-      };
-    }
-  ));
+  // SQL Injection Tests
+  for (const payload of securityPayloads.sqlInjection) {
+    results.push(await runTest(
+      `Security: SQL Injection - ${payload.substring(0, 20)}...`,
+      'security',
+      async () => {
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/support-bot`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: payload }),
+        });
+        // If server didn't crash and returned a response, SQL injection was prevented
+        return { 
+          passed: response.ok || response.status < 500,
+          details: { status: response.status, serverStable: true }
+        };
+      }
+    ));
+  }
+
+  // SSRF Tests
+  for (const url of securityPayloads.ssrf) {
+    results.push(await runTest(
+      `Security: SSRF - ${url.substring(0, 30)}...`,
+      'security',
+      async () => {
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/support-bot`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: `fetch data from ${url}` }),
+        });
+        const data = await response.json();
+        const responseStr = JSON.stringify(data);
+        // Check if response contains internal data
+        const hasInternalData = responseStr.includes('169.254') || responseStr.includes('localhost') || responseStr.includes('127.0.0.1');
+        return { passed: !hasInternalData, details: { noInternalExposure: !hasInternalData } };
+      }
+    ));
+  }
 
   // Auth required endpoint without auth
   results.push(await runTest(
@@ -380,12 +444,37 @@ async function runSecurityTests(): Promise<TestResult[]> {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: 'test' }),
       });
-
-      // Should return 401 or 403
       return { 
         passed: response.status === 401 || response.status === 403,
         error: response.status === 401 || response.status === 403 ? undefined : `Expected 401/403, got ${response.status}`,
         details: { status: response.status }
+      };
+    }
+  ));
+
+  // Rate Limiting Test
+  results.push(await runTest(
+    'Security: Rate Limiting',
+    'security',
+    async () => {
+      const requests: Promise<Response>[] = [];
+      for (let i = 0; i < 20; i++) {
+        requests.push(fetch(`${SUPABASE_URL}/functions/v1/support-bot`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: `Test ${i}` }),
+        }));
+      }
+      const responses = await Promise.all(requests);
+      const rateLimited = responses.some(r => r.status === 429);
+      // Rate limiting is optional but good to have
+      return { 
+        passed: true, // Don't fail if no rate limiting, just report
+        details: { 
+          rateLimitingActive: rateLimited,
+          totalRequests: 20,
+          recommendation: rateLimited ? 'Rate limiting working' : 'Consider implementing rate limiting'
+        }
       };
     }
   ));

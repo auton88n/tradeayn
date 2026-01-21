@@ -25,6 +25,78 @@ interface AITestPlan {
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
 const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY') || '';
+const OPENROUTER_API_KEY = Deno.env.get('OPENROUTER_API_KEY') || '';
+
+// Available AI models for testing
+const AI_MODELS = {
+  claude: {
+    provider: 'openrouter',
+    model_id: 'anthropic/claude-sonnet-4-20250514',
+    display_name: 'Claude Sonnet 4'
+  },
+  gemini: {
+    provider: 'lovable',
+    model_id: 'google/gemini-2.5-flash-preview-05-20',
+    display_name: 'Gemini 2.5 Flash'
+  },
+  deepseek: {
+    provider: 'openrouter',
+    model_id: 'deepseek/deepseek-r1',
+    display_name: 'DeepSeek R1'
+  }
+};
+
+// Call AI with model selection (Claude via OpenRouter, or Gemini via Lovable)
+async function callAI(prompt: string, model: string = 'claude'): Promise<string> {
+  const config = AI_MODELS[model as keyof typeof AI_MODELS] || AI_MODELS.gemini;
+  
+  try {
+    if (config.provider === 'openrouter' && OPENROUTER_API_KEY) {
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://ayn.sa',
+        },
+        body: JSON.stringify({
+          model: config.model_id,
+          messages: [{ role: 'user', content: prompt }],
+          max_tokens: 2000,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.choices?.[0]?.message?.content || '';
+      }
+    }
+    
+    // Fallback to Lovable Gateway (Gemini)
+    if (LOVABLE_API_KEY) {
+      const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash-preview-05-20',
+          messages: [{ role: 'user', content: prompt }],
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.choices?.[0]?.message?.content || '';
+      }
+    }
+  } catch (error) {
+    console.error('AI call failed:', error);
+  }
+  
+  return '';
+}
 
 // AI generates a test plan for the feature
 async function generateTestPlan(feature: string): Promise<AITestPlan> {
@@ -276,50 +348,41 @@ function getTestInputs(endpoint: string): Record<string, unknown>[] {
   return inputs[endpoint] || [{}];
 }
 
-// AI analyzes the test results
-async function analyzeResults(results: TestResult[]): Promise<string> {
-  if (!LOVABLE_API_KEY) {
-    const passed = results.filter(r => r.status === 'passed').length;
-    const failed = results.filter(r => r.status === 'failed').length;
-    return `${passed}/${results.length} tests passed. ${failed > 0 ? `Issues: ${results.filter(r => r.status === 'failed').map(r => r.name).join(', ')}` : 'All systems healthy.'}`;
-  }
-
-  try {
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-3-flash-preview',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a QA analyst. Analyze test results and provide a brief summary (2-3 sentences) with key insights and recommendations.'
-          },
-          {
-            role: 'user',
-            content: `Analyze these test results:\n${JSON.stringify(results, null, 2)}`
-          }
-        ]
-      }),
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      return data.choices?.[0]?.message?.content || 'Analysis complete.';
-    }
-  } catch (error) {
-    console.error('AI analysis failed:', error);
-  }
-
+// AI analyzes the test results (with model selection)
+async function analyzeResults(results: TestResult[], model: string = 'claude'): Promise<{ analysis: string; modelUsed: string }> {
+  const config = AI_MODELS[model as keyof typeof AI_MODELS] || AI_MODELS.gemini;
+  
   const passed = results.filter(r => r.status === 'passed').length;
-  return `${passed}/${results.length} tests passed.`;
+  const failed = results.filter(r => r.status === 'failed').length;
+  const failedTests = results.filter(r => r.status === 'failed');
+  
+  const prompt = `You are a QA analyst. Analyze these test results and provide a brief summary (2-3 sentences) with key insights and recommendations.
+
+Test Summary:
+- Total: ${results.length}
+- Passed: ${passed}
+- Failed: ${failed}
+
+Failed Tests:
+${failedTests.map(t => `- ${t.name}: ${t.error_message || 'Unknown error'}`).join('\n')}
+
+Provide actionable insights.`;
+
+  const analysis = await callAI(prompt, model);
+  
+  if (analysis) {
+    return { analysis, modelUsed: config.display_name };
+  }
+  
+  // Fallback response
+  return {
+    analysis: `${passed}/${results.length} tests passed. ${failed > 0 ? `Issues: ${failedTests.map(r => r.name).join(', ')}` : 'All systems healthy.'}`,
+    modelUsed: 'Fallback (no AI)'
+  };
 }
 
 // Run tests for a specific feature
-async function runFeatureTests(feature: string): Promise<{ results: TestResult[]; plan: AITestPlan; analysis: string }> {
+async function runFeatureTests(feature: string, model: string = 'claude'): Promise<{ results: TestResult[]; plan: AITestPlan; analysis: string; modelUsed: string }> {
   const plan = await generateTestPlan(feature);
   const results: TestResult[] = [];
 
@@ -340,10 +403,10 @@ async function runFeatureTests(feature: string): Promise<{ results: TestResult[]
     results.push(...dbResults);
   }
 
-  // Get AI analysis
-  const analysis = await analyzeResults(results);
+  // Get AI analysis with model selection
+  const { analysis, modelUsed } = await analyzeResults(results, model);
 
-  return { results, plan, analysis };
+  return { results, plan, analysis, modelUsed };
 }
 
 // Database tests
@@ -465,26 +528,29 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { feature = 'all', includeAI = true } = await req.json().catch(() => ({}));
+    const { feature = 'all', includeAI = true, model = 'claude' } = await req.json().catch(() => ({}));
     const startTime = Date.now();
 
     let allResults: TestResult[] = [];
     let plans: AITestPlan[] = [];
     let analysis = '';
+    let modelUsed = '';
 
     if (feature === 'all') {
       // Run all feature tests
       for (const f of ['calculators', 'security', 'database']) {
-        const { results, plan, analysis: a } = await runFeatureTests(f);
-        allResults = [...allResults, ...results];
-        plans.push(plan);
-        analysis += `\n${f}: ${a}`;
+        const result = await runFeatureTests(f, model);
+        allResults = [...allResults, ...result.results];
+        plans.push(result.plan);
+        analysis += `\n${f}: ${result.analysis}`;
+        modelUsed = result.modelUsed;
       }
     } else {
-      const { results, plan, analysis: a } = await runFeatureTests(feature);
-      allResults = results;
-      plans.push(plan);
-      analysis = a;
+      const result = await runFeatureTests(feature, model);
+      allResults = result.results;
+      plans.push(result.plan);
+      analysis = result.analysis;
+      modelUsed = result.modelUsed;
     }
 
     const passed = allResults.filter(r => r.status === 'passed').length;
@@ -529,6 +595,7 @@ Deno.serve(async (req) => {
       },
       plans,
       analysis: analysis.trim(),
+      modelUsed,
       results: allResults,
       runId,
       executedAt: new Date().toISOString(),
