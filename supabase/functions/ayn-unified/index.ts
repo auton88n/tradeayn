@@ -568,13 +568,27 @@ serve(async (req) => {
 
     // Get user from token
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
     
-    if (userError || !user) {
-      return new Response(JSON.stringify({ error: 'Invalid token' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+    // Check if this is an internal service call (using service role key)
+    let userId: string;
+    let isInternalCall = false;
+
+    if (token === supabaseKey) {
+      // Internal service call (from evaluator, tests, etc.) - use synthetic user ID
+      userId = 'internal-evaluator';
+      isInternalCall = true;
+      console.log('[ayn-unified] Internal service call detected - bypassing user auth');
+    } else {
+      // Normal user call - validate JWT
+      const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+      
+      if (userError || !user) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+      userId = user.id;
     }
 
     const { messages, intent: forcedIntent, context = {}, stream = true } = await req.json();
@@ -591,27 +605,31 @@ serve(async (req) => {
     const intent = forcedIntent || detectIntent(lastMessage);
     console.log(`Detected intent: ${intent}`);
 
-    // Check user limits
-    const limitCheck = await checkUserLimit(supabase, user.id, intent);
-    if (!limitCheck.allowed) {
-      return new Response(JSON.stringify({ 
-        error: 'Daily limit reached',
-        reason: limitCheck.reason,
-        limitExceeded: true
-      }), {
-        status: 429,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+    // Check user limits (skip for internal service calls)
+    if (!isInternalCall) {
+      const limitCheck = await checkUserLimit(supabase, userId, intent);
+      if (!limitCheck.allowed) {
+        return new Response(JSON.stringify({ 
+          error: 'Daily limit reached',
+          reason: limitCheck.reason,
+          limitExceeded: true
+        }), {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
     }
 
-    // Get user context for personalization (includes memories)
-    const userContext = await getUserContext(supabase, user.id);
+    // Get user context for personalization (includes memories) - skip for internal calls
+    const userContext = isInternalCall ? {} : await getUserContext(supabase, userId);
     const language = (userContext as { preferences?: { language?: string } })?.preferences?.language || 'en';
 
-    // Extract and save any memories from the user's message (async, don't block)
-    extractAndSaveMemories(supabase, user.id, lastMessage).catch(err => 
-      console.error('[ayn-unified] Memory extraction failed:', err)
-    );
+    // Extract and save any memories from the user's message (async, don't block) - skip for internal calls
+    if (!isInternalCall) {
+      extractAndSaveMemories(supabase, userId, lastMessage).catch(err => 
+        console.error('[ayn-unified] Memory extraction failed:', err)
+      );
+    }
 
     // Build system prompt with user message for language detection AND user memories
     const systemPrompt = buildSystemPrompt(intent, language, context, lastMessage, userContext);
@@ -624,7 +642,7 @@ serve(async (req) => {
         // Log usage
         try {
           await supabase.from('llm_usage_logs').insert({
-            user_id: user.id,
+            user_id: userId,
             intent_type: 'image',
             was_fallback: false
           });
@@ -680,7 +698,7 @@ serve(async (req) => {
       fullMessages,
       stream,
       supabase,
-      user.id
+      userId
     );
 
     if (stream && response instanceof Response) {
