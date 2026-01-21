@@ -167,3 +167,9 @@ verify_jwt = false
 
 [functions.ai-visual-tester]
 verify_jwt = false
+
+[functions.ai-crash-tester]
+verify_jwt = false
+
+[functions.ai-conversation-evaluator]
+verify_jwt = false

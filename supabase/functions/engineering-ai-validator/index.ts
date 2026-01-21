@@ -573,8 +573,10 @@ function validateColumnResults(inputs: Record<string, unknown>, outputs: Record<
   
   // Slenderness calculation verification
   if (width && height) {
+    // height is in meters, width is in mm - convert height to mm for consistent units
+    const heightInMm = height * 1000;
     const i = width / Math.sqrt(12);
-    const expectedLambda = height / i;
+    const expectedLambda = heightInMm / i;
     const lambdaError = slendernessRatio ? Math.abs(slendernessRatio - expectedLambda) / expectedLambda * 100 : 100;
     checks.push({
       name: 'Slenderness Calculation (Le/i)',
