@@ -122,3 +122,6 @@ verify_jwt = false
 
 [functions.engineering-ai-agent]
 verify_jwt = false
+
+[functions.ai-test-agent]
+verify_jwt = false
