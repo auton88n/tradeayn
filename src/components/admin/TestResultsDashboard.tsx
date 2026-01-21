@@ -352,11 +352,15 @@ const TestResultsDashboard: React.FC = () => {
 
         <TabsContent value="report">
           <FullExperienceReport
-            testPassRate={passRate > 0 ? passRate : 94}
-            errorRate={2.5}
-            avgResponseTime={avgDuration > 0 ? avgDuration / 1000 : 1.8}
-            supportTickets={5}
+            testPassRate={passRate}
+            errorRate={failedTests > 0 ? (failedTests / totalTests) * 100 : 0}
+            avgResponseTime={avgDuration / 1000}
+            supportTickets={0}
             coveragePercent={87}
+            lastUpdated={new Date()}
+            testRuns={testRuns}
+            testResults={testResults}
+            stressMetrics={stressMetrics}
           />
         </TabsContent>
 

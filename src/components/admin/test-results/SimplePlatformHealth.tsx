@@ -1,43 +1,62 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
+import { CheckCircle2, AlertTriangle, XCircle, HelpCircle } from "lucide-react";
 
 interface SimplePlatformHealthProps {
   testPassRate?: number;
   errorRate?: number;
   criticalIssues?: number;
+  totalTests?: number;
+  hasRealData?: boolean;
 }
 
 const SimplePlatformHealth = ({
-  testPassRate = 94,
-  errorRate = 2.5,
+  testPassRate = 0,
+  errorRate = 0,
   criticalIssues = 0,
+  totalTests = 0,
+  hasRealData = false,
 }: SimplePlatformHealthProps) => {
-  // Simple logic: GOOD if pass rate > 90 and no critical issues
   const getStatus = () => {
+    // No data state
+    if (!hasRealData || totalTests === 0) {
+      return {
+        status: "NO DATA",
+        color: "text-muted-foreground",
+        bgColor: "bg-muted/50 border-border",
+        icon: <HelpCircle className="h-8 w-8 text-muted-foreground" />,
+        message: "Run tests to see your platform health status",
+      };
+    }
+
+    // Has critical issues
     if (criticalIssues > 0 || testPassRate < 70) {
       return {
         status: "NEEDS ATTENTION",
         color: "text-red-500",
         bgColor: "bg-red-500/10 border-red-500/20",
         icon: <XCircle className="h-8 w-8 text-red-500" />,
-        message: `${criticalIssues} critical issue${criticalIssues !== 1 ? 's' : ''} found that need your attention.`,
+        message: `${criticalIssues} failing test${criticalIssues !== 1 ? 's' : ''} detected • ${testPassRate.toFixed(1)}% pass rate`,
       };
     }
+
+    // Warnings
     if (testPassRate < 90 || errorRate > 5) {
       return {
         status: "GOOD",
         color: "text-yellow-500",
         bgColor: "bg-yellow-500/10 border-yellow-500/20",
         icon: <AlertTriangle className="h-8 w-8 text-yellow-500" />,
-        message: "Everything is working, but there are some minor issues to review.",
+        message: `${testPassRate.toFixed(1)}% pass rate • ${totalTests} tests analyzed`,
       };
     }
+
+    // All good
     return {
       status: "EXCELLENT",
       color: "text-green-500",
       bgColor: "bg-green-500/10 border-green-500/20",
       icon: <CheckCircle2 className="h-8 w-8 text-green-500" />,
-      message: "Everything is working well. No urgent issues detected.",
+      message: `${testPassRate.toFixed(1)}% pass rate • ${totalTests} tests passing`,
     };
   };
 
