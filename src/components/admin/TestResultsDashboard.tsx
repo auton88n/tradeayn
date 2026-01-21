@@ -43,6 +43,11 @@ import { ResponseTimeResults } from './test-results/ResponseTimeResults';
 import { AYNIntelligenceResults } from './test-results/AYNIntelligenceResults';
 import { VisualTestCard } from './test-results/VisualTestCard';
 import { VisualTestResults } from './test-results/VisualTestResults';
+import { CrashTestResults } from './test-results/CrashTestResults';
+import { AIConversationResults } from './test-results/AIConversationResults';
+import { BrandingPrivacyResults } from './test-results/BrandingPrivacyResults';
+import { EmotionSyncResults } from './test-results/EmotionSyncResults';
+import { PersonalityProfile } from './test-results/PersonalityProfile';
 
 interface TestResult {
   id: string;
@@ -145,6 +150,8 @@ const TestResultsDashboard: React.FC = () => {
   const [isRunningResponseTime, setIsRunningResponseTime] = useState(false);
   const [isRunningIntelligence, setIsRunningIntelligence] = useState(false);
   const [isRunningVisualTest, setIsRunningVisualTest] = useState(false);
+  const [isRunningCrashTest, setIsRunningCrashTest] = useState(false);
+  const [isRunningConversation, setIsRunningConversation] = useState(false);
   
   // New test results
   const [responseTimeResults, setResponseTimeResults] = useState<{
@@ -199,6 +206,22 @@ const TestResultsDashboard: React.FC = () => {
     status: 'success' | 'partial' | 'failed';
     personaName: string;
   }>>([]);
+  
+  // Crash Test Results
+  const [crashTestResults, setCrashTestResults] = useState<{
+    summary?: { totalTests: number; passed: number; failed: number; skipped: number; crashRate: string; avgResponseTime: number; totalTime: number };
+    byEndpoint?: Record<string, { passed: number; failed: number; skipped: number }>;
+    byCategory?: Record<string, { passed: number; failed: number; skipped: number }>;
+    failures?: Array<{ endpoint: string; category: string; httpStatus: number; error?: string; payload?: unknown }>;
+  } | null>(null);
+  
+  // AI Conversation Results
+  const [conversationResults, setConversationResults] = useState<{
+    summary?: { overallScore: number; intelligenceRating: string; totalTests: number; passed: number; failed: number };
+    byCategory?: Record<string, { passed: number; total: number; avgScore: number; results?: Array<{ name: string; passed: boolean; score: number; aynResponse: string; reason: string }> }>;
+    improvements?: string[];
+    sampleTranscripts?: Array<{ category: string; name: string; userMessage: string; aynResponse: string; passed: boolean; score: number; reason: string; emotion?: string }>;
+  } | null>(null);
   
   // Test suite running states
   const [runningSecurityTests, setRunningSecurityTests] = useState(false);
@@ -646,6 +669,104 @@ const TestResultsDashboard: React.FC = () => {
     }
   };
 
+  const runCrashTester = async () => {
+    setIsRunningCrashTest(true);
+    try {
+      toast.info('🔨 Running crash tests on all endpoints...');
+      
+      const result = await safeFetchJson<{
+        success: boolean;
+        summary?: { totalTests: number; passed: number; failed: number; skipped: number; crashRate: string; avgResponseTime: number; totalTime: number };
+        byEndpoint?: Record<string, { passed: number; failed: number; skipped: number }>;
+        byCategory?: Record<string, { passed: number; failed: number; skipped: number }>;
+        failures?: Array<{ endpoint: string; category: string; httpStatus: number; error?: string; payload?: unknown }>;
+        error?: string;
+      }>(`${SUPABASE_URL}/functions/v1/ai-crash-tester`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      
+      if (result.success && result.summary) {
+        setCrashTestResults({
+          summary: result.summary,
+          byEndpoint: result.byEndpoint,
+          byCategory: result.byCategory,
+          failures: result.failures
+        });
+        
+        setExpandedSections(prev => new Set([...prev, 'reliability']));
+        
+        if (result.summary.failed === 0) {
+          toast.success(`✅ All ${result.summary.totalTests} crash tests passed! System is crash-free.`);
+        } else {
+          toast.error(`❌ ${result.summary.failed} crashes detected! Crash rate: ${result.summary.crashRate}`);
+        }
+        await loadData();
+      } else if (result.error) {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      console.error('Crash tester failed:', error);
+      toast.error(`Failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsRunningCrashTest(false);
+    }
+  };
+
+  const runConversationEvaluator = async (quick = true) => {
+    setIsRunningConversation(true);
+    try {
+      toast.info(quick 
+        ? '💬 Running quick conversation tests (branding, privacy, safety)...'
+        : '💬 Running full conversation evaluation...'
+      );
+      
+      const result = await safeFetchJson<{
+        success: boolean;
+        summary?: { overallScore: number; intelligenceRating: string; totalTests: number; passed: number; failed: number };
+        byCategory?: Record<string, { passed: number; total: number; avgScore: number; results?: Array<{ name: string; passed: boolean; score: number; aynResponse: string; reason: string }> }>;
+        improvements?: string[];
+        sampleTranscripts?: Array<{ category: string; name: string; userMessage: string; aynResponse: string; passed: boolean; score: number; reason: string; emotion?: string }>;
+        error?: string;
+      }>(`${SUPABASE_URL}/functions/v1/ai-conversation-evaluator`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quick }),
+      });
+      
+      if (result.success && result.summary) {
+        setConversationResults({
+          summary: result.summary,
+          byCategory: result.byCategory,
+          improvements: result.improvements,
+          sampleTranscripts: result.sampleTranscripts
+        });
+        
+        setExpandedSections(prev => new Set([...prev, 'reliability']));
+        
+        const rating = result.summary.intelligenceRating;
+        if (rating === 'genius') {
+          toast.success(`🧠 AYN Conversation: Genius level! ${result.summary.overallScore}%`);
+        } else if (rating === 'smart') {
+          toast.success(`💡 AYN Conversation: Smart! ${result.summary.overallScore}%`);
+        } else if (rating === 'average') {
+          toast.warning(`📊 AYN Conversation: Average. ${result.summary.overallScore}%`);
+        } else {
+          toast.error(`📚 AYN needs training. ${result.summary.overallScore}%`);
+        }
+        await loadData();
+      } else if (result.error) {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      console.error('Conversation evaluator failed:', error);
+      toast.error(`Failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsRunningConversation(false);
+    }
+  };
+
   // Calculate summary stats
   const totalTests = testResults.length;
   const passedTests = testResults.filter(t => t.status === 'passed').length;
@@ -1052,7 +1173,114 @@ const TestResultsDashboard: React.FC = () => {
         </Card>
       </Collapsible>
 
-      {/* Section 5: AI Improvements */}
+      {/* Section 6: Reliability & AI Conversation Testing */}
+      <Collapsible open={expandedSections.has('reliability')} onOpenChange={() => toggleSection('reliability')}>
+        <Card className="border-cyan-500/20">
+          <CollapsibleTrigger asChild>
+            <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-cyan-500" />
+                  Reliability & AI Conversation Tests
+                  {(crashTestResults?.summary || conversationResults?.summary) && (
+                    <Badge variant="secondary" className="ml-2">
+                      {crashTestResults?.summary ? `Crash: ${crashTestResults.summary.crashRate}` : ''} 
+                      {crashTestResults?.summary && conversationResults?.summary ? ' • ' : ''}
+                      {conversationResults?.summary ? `AI: ${conversationResults.summary.overallScore}%` : ''}
+                    </Badge>
+                  )}
+                </CardTitle>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={(e) => { e.stopPropagation(); runCrashTester(); }}
+                    disabled={isRunningCrashTest}
+                    className="text-xs"
+                  >
+                    {isRunningCrashTest ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Zap className="h-3 w-3 mr-1" />}
+                    Crash Tests
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={(e) => { e.stopPropagation(); runConversationEvaluator(true); }}
+                    disabled={isRunningConversation}
+                    className="text-xs"
+                  >
+                    {isRunningConversation ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Brain className="h-3 w-3 mr-1" />}
+                    AI Conversation
+                  </Button>
+                  {expandedSections.has('reliability') ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                </div>
+              </div>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="pt-0 space-y-6">
+              {/* Crash Test Results */}
+              <CrashTestResults
+                summary={crashTestResults?.summary}
+                byEndpoint={crashTestResults?.byEndpoint}
+                byCategory={crashTestResults?.byCategory}
+                failures={crashTestResults?.failures}
+                isLoading={isRunningCrashTest}
+              />
+
+              {/* AI Conversation Results */}
+              <AIConversationResults
+                summary={conversationResults?.summary}
+                byCategory={conversationResults?.byCategory}
+                improvements={conversationResults?.improvements}
+                sampleTranscripts={conversationResults?.sampleTranscripts}
+                isLoading={isRunningConversation}
+              />
+
+              {/* Branding & Privacy Results - Extract from conversation results */}
+              {conversationResults?.byCategory && (
+                <BrandingPrivacyResults
+                  branding={conversationResults.byCategory.branding}
+                  privacy={conversationResults.byCategory.privacy}
+                  isLoading={isRunningConversation}
+                />
+              )}
+
+              {/* Emotion Sync Results - Extract from conversation results */}
+              {conversationResults?.byCategory?.emotion && (
+                <EmotionSyncResults
+                  syncRate={conversationResults.byCategory.emotion.avgScore}
+                  emotionTests={conversationResults.byCategory.emotion.results?.map(r => ({
+                    name: r.name,
+                    userMessage: '',
+                    expectedEmotion: '',
+                    detectedEmotion: '',
+                    passed: r.passed
+                  }))}
+                  isLoading={isRunningConversation}
+                />
+              )}
+
+              {/* Personality Profile - Extract from conversation results */}
+              {conversationResults?.byCategory?.personality && (
+                <PersonalityProfile
+                  overallPersonalityScore={conversationResults.byCategory.personality.avgScore}
+                  traits={[
+                    { name: 'Friendly', description: 'Warm and approachable', score: conversationResults.byCategory.personality.avgScore || 0 },
+                    { name: 'Concise', description: 'Gets to the point', score: conversationResults.byCategory.personality.avgScore || 0 },
+                    { name: 'Empathetic', description: 'Shows understanding', score: conversationResults.byCategory.personality.avgScore || 0 },
+                    { name: 'Professional', description: 'Accurate for technical topics', score: conversationResults.byCategory.personality.avgScore || 0 },
+                    { name: 'Playful', description: 'Light-hearted when appropriate', score: conversationResults.byCategory.personality.avgScore || 0 },
+                    { name: 'Supportive', description: 'Encouraging and helpful', score: conversationResults.byCategory.personality.avgScore || 0 }
+                  ]}
+                  isLoading={isRunningConversation}
+                />
+              )}
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
+      {/* Section 7: AI Improvements */}
       <Collapsible open={expandedSections.has('improvements')} onOpenChange={() => toggleSection('improvements')}>
         <Card>
           <CollapsibleTrigger asChild>

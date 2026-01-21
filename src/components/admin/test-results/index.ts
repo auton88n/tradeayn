@@ -23,4 +23,12 @@ export { default as BugReportCard } from './BugReportCard';
 export { default as TestReportPDF } from './TestReportPDF';
 export { ComprehensiveTestResults } from './ComprehensiveTestResults';
 export { UXJourneyResults } from './UXJourneyResults';
+
+// NEW: Reliability & AI Conversation Testing Components
+export { CrashTestResults } from './CrashTestResults';
+export { AIConversationResults } from './AIConversationResults';
+export { BrandingPrivacyResults } from './BrandingPrivacyResults';
+export { EmotionSyncResults } from './EmotionSyncResults';
+export { PersonalityProfile } from './PersonalityProfile';
+
 export type { TestSuite, TestResult } from './TestSuiteGrid';
