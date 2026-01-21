@@ -368,32 +368,35 @@ export const AdminPanel = ({
           isAdmin={isAdmin}
         />
 
-        {/* Content Area */}
-        <main className="flex-1 overflow-y-auto p-6">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 20, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -20, scale: 0.98 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="max-w-6xl mx-auto"
-            >
-              <ErrorBoundary>
-                {activeTab === 'overview' && <AdminDashboard systemMetrics={systemMetrics} allUsers={allUsers} />}
-                {activeTab === 'google-analytics' && <GoogleAnalytics />}
-                {activeTab === 'applications' && <ApplicationManagement session={session} applications={applications} onRefresh={fetchData} />}
-                {activeTab === 'support' && <SupportManagement />}
-                {activeTab === 'users' && <UserManagement session={session} allUsers={allUsers} onRefresh={fetchData} />}
-                {activeTab === 'rate-limits' && <RateLimitMonitoring session={session} />}
-                {activeTab === 'settings' && <SystemSettings systemConfig={systemConfig} onUpdateConfig={updateSystemConfig} />}
-                {activeTab === 'ai-costs' && <AICostDashboard />}
-                {activeTab === 'ai-limits' && <UserAILimits />}
-                {activeTab === 'ai-assistant' && <AdminAIAssistant />}
-                {activeTab === 'test-results' && <TestResultsDashboard />}
-              </ErrorBoundary>
-            </motion.div>
-          </AnimatePresence>
+        {/* Content Area - Fixed scroll containment */}
+        <main className="flex-1 overflow-hidden flex flex-col">
+          <div className="flex-1 overflow-y-auto">
+            <div className="p-6 max-w-6xl mx-auto">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeTab}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                >
+                  <ErrorBoundary>
+                    {activeTab === 'overview' && <AdminDashboard systemMetrics={systemMetrics} allUsers={allUsers} />}
+                    {activeTab === 'google-analytics' && <GoogleAnalytics />}
+                    {activeTab === 'applications' && <ApplicationManagement session={session} applications={applications} onRefresh={fetchData} />}
+                    {activeTab === 'support' && <SupportManagement />}
+                    {activeTab === 'users' && <UserManagement session={session} allUsers={allUsers} onRefresh={fetchData} />}
+                    {activeTab === 'rate-limits' && <RateLimitMonitoring session={session} />}
+                    {activeTab === 'settings' && <SystemSettings systemConfig={systemConfig} onUpdateConfig={updateSystemConfig} />}
+                    {activeTab === 'ai-costs' && <AICostDashboard />}
+                    {activeTab === 'ai-limits' && <UserAILimits />}
+                    {activeTab === 'ai-assistant' && <AdminAIAssistant />}
+                    {activeTab === 'test-results' && <TestResultsDashboard />}
+                  </ErrorBoundary>
+                </motion.div>
+              </AnimatePresence>
+            </div>
+          </div>
         </main>
       </div>
     </div>
