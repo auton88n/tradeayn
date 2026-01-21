@@ -8,7 +8,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AYNEmotionProvider } from "@/contexts/AYNEmotionContext";
 import { SoundProvider } from "@/contexts/SoundContext";
-import { MarketingContentProvider } from "@/contexts/MarketingContentContext";
+
 import { PageLoader } from "@/components/ui/page-loader";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { OfflineBanner } from "@/components/OfflineBanner";
@@ -24,7 +24,7 @@ const Settings = lazy(() => import("./pages/Settings"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const ApprovalResult = lazy(() => import("./pages/ApprovalResult"));
-const MarketingStudio = lazy(() => import("./pages/MarketingStudio"));
+
 const AIEmployee = lazy(() => import("./pages/services/AIEmployee"));
 const AIEmployeeApply = lazy(() => import("./pages/services/AIEmployeeApply"));
 const InfluencerSites = lazy(() => import("./pages/services/InfluencerSites"));
@@ -52,7 +52,7 @@ const AnimatedRoutes = () => {
         <Route path="/" element={<PageTransition><Index /></PageTransition>} />
         <Route path="/settings" element={<PageTransition><Settings /></PageTransition>} />
         <Route path="/reset-password" element={<PageTransition><ResetPassword /></PageTransition>} />
-        <Route path="/marketing-studio" element={<PageTransition><MarketingStudio /></PageTransition>} />
+        
         <Route path="/services/ai-employee" element={<PageTransition><AIEmployee /></PageTransition>} />
         <Route path="/services/ai-employee/apply" element={<PageTransition><AIEmployeeApply /></PageTransition>} />
         <Route path="/services/content-creator-sites" element={<PageTransition><InfluencerSites /></PageTransition>} />
@@ -80,21 +80,19 @@ const App = () => (
         <ThemeProvider defaultTheme="light" storageKey="ayn-theme">
           <AYNEmotionProvider>
             <SoundProvider>
-              <MarketingContentProvider>
-                <TooltipProvider>
-                  <OfflineBanner />
-                  <Toaster />
-                  <Sonner />
-                  <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-                    <ScrollToTop />
-                    <ErrorBoundary>
-                      <Suspense fallback={<PageLoader />}>
-                        <AnimatedRoutes />
-                      </Suspense>
-                    </ErrorBoundary>
-                  </BrowserRouter>
-                </TooltipProvider>
-              </MarketingContentProvider>
+              <TooltipProvider>
+                <OfflineBanner />
+                <Toaster />
+                <Sonner />
+                <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                  <ScrollToTop />
+                  <ErrorBoundary>
+                    <Suspense fallback={<PageLoader />}>
+                      <AnimatedRoutes />
+                    </Suspense>
+                  </ErrorBoundary>
+                </BrowserRouter>
+              </TooltipProvider>
             </SoundProvider>
           </AYNEmotionProvider>
         </ThemeProvider>

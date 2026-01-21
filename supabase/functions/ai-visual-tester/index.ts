@@ -41,7 +41,7 @@ const PAGES_TO_TEST = [
   // === CORE APP TOOLS ===
   { path: '/support', name: 'Support Center', viewports: ['desktop', 'mobile'] },
   { path: '/settings', name: 'User Settings', viewports: ['desktop', 'mobile'] },
-  { path: '/marketing-studio', name: 'Marketing Studio (LAB)', viewports: ['desktop', 'mobile'] },
+  
   { path: '/engineering', name: 'Engineering Workspace', viewports: ['desktop'] },
   { path: '/engineering/grading', name: 'AI Grading Designer', viewports: ['desktop'] },
   

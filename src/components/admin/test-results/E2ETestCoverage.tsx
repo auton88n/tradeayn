@@ -192,17 +192,6 @@ const E2E_TEST_CATEGORIES: TestCategory[] = [
     coverage: 90,
   },
   {
-    id: 'marketing',
-    name: 'Marketing Studio',
-    icon: <Globe className="h-4 w-4" />,
-    description: 'Content generation, image editing, captions',
-    files: [
-      { name: 'marketing-studio.spec.ts', path: 'e2e/tests/marketing/marketing-studio.spec.ts', testCount: 10, status: 'passed' },
-    ],
-    totalTests: 10,
-    coverage: 85,
-  },
-  {
     id: 'onboarding',
     name: 'Onboarding',
     icon: <Users className="h-4 w-4" />,
