@@ -138,7 +138,8 @@ async function callAYN(messages: { role: string; content: string }[]): Promise<s
     });
     
     if (!response.ok) {
-      return `Error: HTTP ${response.status}`;
+      const errorBody = await response.text().catch(() => 'no body');
+      return `Error: HTTP ${response.status} - ${errorBody.substring(0, 200)}`;
     }
     
     const data = await response.json();

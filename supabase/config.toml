@@ -112,7 +112,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.ayn-unified]
-verify_jwt = true
+verify_jwt = false
 
 [functions.admin-ai-assistant]
 verify_jwt = true
