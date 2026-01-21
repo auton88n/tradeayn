@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useLayoutEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from 'next-themes';
@@ -206,6 +206,19 @@ export const AdminPanel = ({
     }
   }, [fetchWithRetry]);
 
+  // Lock body scroll when admin panel is mounted
+  useLayoutEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    const originalHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      document.documentElement.style.overflow = originalHtmlOverflow;
+    };
+  }, []);
+
   useEffect(() => {
     const initTimer = setTimeout(() => {
       fetchData();
@@ -369,8 +382,8 @@ export const AdminPanel = ({
         />
 
         {/* Content Area - Fixed scroll containment */}
-        <main className="flex-1 overflow-hidden flex flex-col">
-          <div className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-hidden flex flex-col min-h-0">
+          <div className="flex-1 overflow-y-auto overscroll-contain">
             <div className="p-6 max-w-6xl mx-auto">
               <AnimatePresence mode="wait">
                 <motion.div

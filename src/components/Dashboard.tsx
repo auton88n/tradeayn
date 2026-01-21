@@ -187,7 +187,7 @@ export default function Dashboard({ user, session }: DashboardProps) {
 
       {/* Main Content - conditionally render based on active view */}
       {activeView === 'admin' && auth.hasDutyAccess && isAdminUnlocked ? (
-        <div className="min-h-screen p-6 pt-16 bg-background">
+        <div className="fixed inset-0 bg-background overflow-hidden z-50">
           <AdminPanel 
             session={session} 
             onBackClick={() => setActiveView('chat')} 
