@@ -8,3 +8,6 @@ export { default as TestInsightsSection } from './TestInsightsSection';
 export { default as ImprovementPriorities } from './ImprovementPriorities';
 export { default as JourneyHealthMap } from './JourneyHealthMap';
 export { default as PerformanceFeeling } from './PerformanceFeeling';
+export { default as OWASPSecurityReport } from './OWASPSecurityReport';
+export { default as EngineeringBenchmark } from './EngineeringBenchmark';
+export { default as AIImprovements } from './AIImprovements';
