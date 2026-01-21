@@ -21,7 +21,11 @@ import {
   Database,
   Bot,
   Shield,
-  Activity
+  Activity,
+  Globe,
+  UserCheck,
+  Lightbulb,
+  Wrench
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -31,6 +35,8 @@ import FullExperienceReport from './test-results/FullExperienceReport';
 import BrowserTestRunner from './BrowserTestRunner';
 import AIAnalysisCard from './test-results/AIAnalysisCard';
 import IndustryComparison from './test-results/IndustryComparison';
+import EngineeringBenchmark from './test-results/EngineeringBenchmark';
+import AIImprovements from './test-results/AIImprovements';
 
 interface TestResult {
   id: string;
@@ -85,6 +91,14 @@ const TestResultsDashboard: React.FC = () => {
   const [uxBenchmarks, setUxBenchmarks] = useState<Array<{ metric: string; yourValue: number; industryTarget: number; unit: string; rating: 'excellent' | 'good' | 'needs_improvement' | 'poor'; percentile: number }>>([]);
   const [uxOverallScore, setUxOverallScore] = useState(0);
   const [isLoadingUX, setIsLoadingUX] = useState(false);
+  
+  // Website Crawler state
+  const [isRunningCrawler, setIsRunningCrawler] = useState(false);
+  const [crawlerResults, setCrawlerResults] = useState<{ healthScore: number; issues: number } | null>(null);
+  
+  // User Simulator state
+  const [isRunningSimulator, setIsRunningSimulator] = useState(false);
+  const [simulatorResults, setSimulatorResults] = useState<{ successRate: number; personas: number } | null>(null);
 
   useEffect(() => {
     loadData();
@@ -275,6 +289,86 @@ const TestResultsDashboard: React.FC = () => {
     }
   };
 
+  // Run Website Crawler
+  const runCrawler = async () => {
+    setIsRunningCrawler(true);
+    try {
+      toast.info('🌐 AI Website Crawler starting...');
+      
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/ai-website-crawler`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ includeApi: true }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Crawler failed: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setCrawlerResults({
+          healthScore: result.summary.healthScore,
+          issues: result.summary.totalIssues,
+        });
+        
+        if (result.summary.totalIssues === 0) {
+          toast.success(`✅ Website health: ${result.summary.healthScore}% - No issues found!`);
+        } else {
+          toast.warning(`⚠️ Website health: ${result.summary.healthScore}% - ${result.summary.totalIssues} issues found`);
+        }
+      } else {
+        throw new Error(result.error || 'Unknown error');
+      }
+    } catch (error) {
+      console.error('Crawler failed:', error);
+      toast.error(`Crawler failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsRunningCrawler(false);
+    }
+  };
+
+  // Run User Simulator
+  const runSimulator = async () => {
+    setIsRunningSimulator(true);
+    try {
+      toast.info('👥 AI User Simulator starting...');
+      
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/ai-user-simulator`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Simulator failed: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setSimulatorResults({
+          successRate: result.summary.overallSuccessRate,
+          personas: result.personas.length,
+        });
+        
+        if (result.summary.overallSuccessRate >= 90) {
+          toast.success(`✅ User simulation: ${result.summary.overallSuccessRate.toFixed(1)}% success rate across ${result.personas.length} personas`);
+        } else {
+          toast.warning(`⚠️ User simulation: ${result.summary.overallSuccessRate.toFixed(1)}% success - needs improvement`);
+        }
+      } else {
+        throw new Error(result.error || 'Unknown error');
+      }
+    } catch (error) {
+      console.error('Simulator failed:', error);
+      toast.error(`Simulator failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsRunningSimulator(false);
+    }
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'passed': return <CheckCircle className="h-4 w-4 text-green-500" />;
@@ -383,6 +477,44 @@ const TestResultsDashboard: React.FC = () => {
             <Activity className="h-4 w-4 mr-2" />
           )}
           Measure UX
+        </Button>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={runCrawler} 
+          disabled={isRunningCrawler}
+          className="border-cyan-500/30 hover:bg-cyan-500/10"
+        >
+          {isRunningCrawler ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <Globe className="h-4 w-4 mr-2" />
+          )}
+          Website Crawler
+          {crawlerResults && (
+            <Badge variant="outline" className="ml-2 text-[10px]">
+              {crawlerResults.healthScore}%
+            </Badge>
+          )}
+        </Button>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={runSimulator} 
+          disabled={isRunningSimulator}
+          className="border-orange-500/30 hover:bg-orange-500/10"
+        >
+          {isRunningSimulator ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <UserCheck className="h-4 w-4 mr-2" />
+          )}
+          User Simulator
+          {simulatorResults && (
+            <Badge variant="outline" className="ml-2 text-[10px]">
+              {simulatorResults.successRate.toFixed(0)}%
+            </Badge>
+          )}
         </Button>
         <Button 
           variant="outline" 
@@ -503,6 +635,8 @@ const TestResultsDashboard: React.FC = () => {
         <TabsList className="flex-wrap">
           <TabsTrigger value="report">Full Report</TabsTrigger>
           <TabsTrigger value="ai-analysis">AI Analysis</TabsTrigger>
+          <TabsTrigger value="engineering">Engineering</TabsTrigger>
+          <TabsTrigger value="improvements">AI Improvements</TabsTrigger>
           <TabsTrigger value="benchmarks">Benchmarks</TabsTrigger>
           <TabsTrigger value="user-journey">User Journey</TabsTrigger>
           <TabsTrigger value="coverage">E2E Coverage</TabsTrigger>
@@ -576,6 +710,14 @@ const TestResultsDashboard: React.FC = () => {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="engineering">
+          <EngineeringBenchmark />
+        </TabsContent>
+
+        <TabsContent value="improvements">
+          <AIImprovements />
         </TabsContent>
 
         <TabsContent value="benchmarks">
