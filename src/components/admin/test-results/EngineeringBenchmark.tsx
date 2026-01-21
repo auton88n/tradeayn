@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Calculator, CheckCircle, XCircle, AlertTriangle, Play, Loader2 } from 'lucide-react';
+import { Calculator, CheckCircle, XCircle, AlertTriangle, Play, Loader2, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -16,10 +16,34 @@ interface ValidationResult {
   suggestions: string[];
 }
 
+interface StoredResults {
+  results: ValidationResult[];
+  summary: { overallAccuracy: number; overallGrade: string };
+  timestamp: number;
+}
+
+const STORAGE_KEY = 'engineering_benchmark_results';
+
 const EngineeringBenchmark: React.FC = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [results, setResults] = useState<ValidationResult[]>([]);
   const [summary, setSummary] = useState<{ overallAccuracy: number; overallGrade: string } | null>(null);
+  const [lastRun, setLastRun] = useState<Date | null>(null);
+
+  // Load persisted results on mount
+  useEffect(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      try {
+        const parsed: StoredResults = JSON.parse(stored);
+        setResults(parsed.results);
+        setSummary(parsed.summary);
+        setLastRun(new Date(parsed.timestamp));
+      } catch (e) {
+        console.error('Failed to parse stored results:', e);
+      }
+    }
+  }, []);
 
   const runValidation = async () => {
     setIsRunning(true);
@@ -30,15 +54,38 @@ const EngineeringBenchmark: React.FC = () => {
       
       if (error) throw error;
       
-      setResults(data.results || []);
-      setSummary(data.summary);
-      toast.success(`Validation complete: ${data.summary?.overallGrade} grade`);
+      const newResults = data.results || [];
+      const newSummary = data.summary;
+      const now = new Date();
+      
+      setResults(newResults);
+      setSummary(newSummary);
+      setLastRun(now);
+      
+      // Persist to localStorage
+      const toStore: StoredResults = {
+        results: newResults,
+        summary: newSummary,
+        timestamp: now.getTime()
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(toStore));
+      
+      toast.success(`Validation complete: ${newSummary?.overallGrade} grade`);
     } catch (err) {
       toast.error('Validation failed');
       console.error(err);
     } finally {
       setIsRunning(false);
     }
+  };
+  
+  const formatTimeAgo = (date: Date) => {
+    const mins = Math.floor((Date.now() - date.getTime()) / 60000);
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    return `${Math.floor(hours / 24)}d ago`;
   };
 
   const getGradeColor = (grade: string) => {
@@ -50,15 +97,23 @@ const EngineeringBenchmark: React.FC = () => {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-2">
         <CardTitle className="flex items-center gap-2">
           <Calculator className="h-5 w-5" />
           Engineering Accuracy Benchmark
         </CardTitle>
-        <Button onClick={runValidation} disabled={isRunning} size="sm">
-          {isRunning ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Play className="h-4 w-4 mr-2" />}
-          {isRunning ? 'Validating...' : 'Run Validation'}
-        </Button>
+        <div className="flex items-center gap-2">
+          {lastRun && (
+            <span className="text-xs text-muted-foreground flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              {formatTimeAgo(lastRun)}
+            </span>
+          )}
+          <Button onClick={runValidation} disabled={isRunning} size="sm">
+            {isRunning ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Play className="h-4 w-4 mr-2" />}
+            {isRunning ? 'Validating...' : 'Run Validation'}
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {summary && (

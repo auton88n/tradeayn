@@ -3,8 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   CheckCircle, 
@@ -14,29 +14,29 @@ import {
   RefreshCw,
   TrendingUp,
   Zap,
-  Users,
   Timer,
   Loader2,
-  FileCode,
   Database,
   Bot,
   Shield,
   Activity,
   Globe,
   UserCheck,
-  Lightbulb,
-  Wrench
+  Calculator,
+  ChevronDown,
+  ChevronUp,
+  FileCode,
+  Play
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
-import E2ETestCoverage from './test-results/E2ETestCoverage';
-import TestSuiteSelector from './test-results/TestSuiteSelector';
-import FullExperienceReport from './test-results/FullExperienceReport';
-import BrowserTestRunner from './BrowserTestRunner';
+import QuickStatusBar from './test-results/QuickStatusBar';
+import { TestSuiteGrid, TestSuite } from './test-results/TestSuiteGrid';
+import SimplePlatformHealth from './test-results/SimplePlatformHealth';
 import AIAnalysisCard from './test-results/AIAnalysisCard';
-import IndustryComparison from './test-results/IndustryComparison';
 import EngineeringBenchmark from './test-results/EngineeringBenchmark';
 import AIImprovements from './test-results/AIImprovements';
+import { OWASPSecurityReport } from './test-results/OWASPSecurityReport';
 
 interface TestResult {
   id: string;
@@ -77,9 +77,11 @@ const TestResultsDashboard: React.FC = () => {
   const [testRuns, setTestRuns] = useState<TestRun[]>([]);
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [stressMetrics, setStressMetrics] = useState<StressMetric[]>([]);
-  const [selectedRun, setSelectedRun] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRunningTests, setIsRunningTests] = useState(false);
+  
+  // Expanded sections
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['suites', 'activity']));
   
   // AI Analysis state
   const [aiAnalysis, setAiAnalysis] = useState<string>('');
@@ -87,21 +89,30 @@ const TestResultsDashboard: React.FC = () => {
   const [bugs, setBugs] = useState<Array<{ endpoint: string; bugType: string; severity: 'critical' | 'high' | 'medium' | 'low'; description: string; suggestedFix: string }>>([]);
   const [isRunningBugHunter, setIsRunningBugHunter] = useState(false);
   
-  // UX Metrics state
-  const [uxBenchmarks, setUxBenchmarks] = useState<Array<{ metric: string; yourValue: number; industryTarget: number; unit: string; rating: 'excellent' | 'good' | 'needs_improvement' | 'poor'; percentile: number }>>([]);
-  const [uxOverallScore, setUxOverallScore] = useState(0);
-  const [isLoadingUX, setIsLoadingUX] = useState(false);
+  // Test suite running states
+  const [runningSecurityTests, setRunningSecurityTests] = useState(false);
+  const [runningApiTests, setRunningApiTests] = useState(false);
+  const [runningDbTests, setRunningDbTests] = useState(false);
+  const [runningPerfTests, setRunningPerfTests] = useState(false);
   
-  // Website Crawler state
-  const [isRunningCrawler, setIsRunningCrawler] = useState(false);
-  const [crawlerResults, setCrawlerResults] = useState<{ healthScore: number; issues: number } | null>(null);
+  // Engineering grade from localStorage
+  const [engineeringGrade, setEngineeringGrade] = useState<string | null>(null);
   
-  // User Simulator state
-  const [isRunningSimulator, setIsRunningSimulator] = useState(false);
-  const [simulatorResults, setSimulatorResults] = useState<{ successRate: number; personas: number } | null>(null);
+  // Security score
+  const [securityScore, setSecurityScore] = useState<number | null>(null);
 
   useEffect(() => {
     loadData();
+    // Load engineering grade from localStorage
+    const stored = localStorage.getItem('engineering_benchmark_results');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        setEngineeringGrade(parsed.summary?.overallGrade);
+      } catch (e) {
+        console.error('Failed to parse engineering results:', e);
+      }
+    }
   }, []);
 
   const loadData = async () => {
@@ -114,7 +125,15 @@ const TestResultsDashboard: React.FC = () => {
       ]);
       
       if (runsRes.data) setTestRuns(runsRes.data);
-      if (resultsRes.data) setTestResults(resultsRes.data);
+      if (resultsRes.data) {
+        setTestResults(resultsRes.data);
+        // Calculate security score from results
+        const secTests = resultsRes.data.filter(t => t.test_suite === 'security');
+        if (secTests.length > 0) {
+          const passed = secTests.filter(t => t.status === 'passed').length;
+          setSecurityScore(Math.round((passed / secTests.length) * 100));
+        }
+      }
       if (metricsRes.data) setStressMetrics(metricsRes.data);
     } catch (error) {
       console.error('Failed to load test data:', error);
@@ -123,46 +142,35 @@ const TestResultsDashboard: React.FC = () => {
     }
   };
 
-  const runTests = async (suiteId: string = 'quick') => {
-    setIsRunningTests(true);
+  const runTests = async (suiteId: string, setLoading: (v: boolean) => void) => {
+    setLoading(true);
     const runId = crypto.randomUUID();
     
     try {
-      // Map suite ID to real test suite
       const suiteConfig: Record<string, { name: string; suite: string }> = {
-        quick: { name: 'Quick Integration Tests', suite: 'quick' },
         api: { name: 'API Health Tests', suite: 'api' },
         database: { name: 'Database Tests', suite: 'database' },
-        calculator: { name: 'Calculator Tests', suite: 'calculator' },
         security: { name: 'Security Tests', suite: 'security' },
         performance: { name: 'Performance Tests', suite: 'performance' },
-        full: { name: 'Full Integration Suite', suite: 'all' },
       };
       
-      const config = suiteConfig[suiteId] || suiteConfig.quick;
-      toast.info(`Running ${config.name}... (Real integration tests)`);
+      const config = suiteConfig[suiteId] || { name: 'Quick Tests', suite: 'quick' };
+      toast.info(`Running ${config.name}...`);
       
-      // Call the REAL test runner edge function
       const response = await fetch(`${SUPABASE_URL}/functions/v1/run-real-tests`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          suite: config.suite,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ suite: config.suite }),
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Test runner failed: ${response.status} - ${errorText}`);
+        throw new Error(`Test runner failed: ${response.status}`);
       }
 
       const result = await response.json();
       
       if (result.success && result.results) {
-        // Create a test run record with real results
-        const { error: runError } = await supabase.from('test_runs').insert({
+        await supabase.from('test_runs').insert({
           id: runId,
           run_name: config.name,
           total_tests: result.summary.total,
@@ -174,11 +182,6 @@ const TestResultsDashboard: React.FC = () => {
           completed_at: new Date().toISOString(),
         });
 
-        if (runError) {
-          console.error('Failed to save test run:', runError);
-        }
-
-        // Store individual REAL test results
         for (const testResult of result.results) {
           await supabase.from('test_results').insert({
             run_id: runId,
@@ -195,29 +198,25 @@ const TestResultsDashboard: React.FC = () => {
         if (passRate === 100) {
           toast.success(`✅ ${config.name}: All ${result.summary.total} tests passed!`);
         } else if (passRate >= 80) {
-          toast.warning(`⚠️ ${config.name}: ${result.summary.passed}/${result.summary.total} passed (${passRate}%)`);
+          toast.warning(`⚠️ ${config.name}: ${result.summary.passed}/${result.summary.total} passed`);
         } else {
           toast.error(`❌ ${config.name}: ${result.summary.failed} tests failed`);
         }
         
-        // Reload data to show new results
         await loadData();
-      } else {
-        throw new Error(result.error || 'Unknown error from test runner');
       }
     } catch (error) {
       console.error('Test run failed:', error);
-      toast.error(`Failed to run tests: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error(`Failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
-      setIsRunningTests(false);
+      setLoading(false);
     }
   };
 
-  // Run AI Bug Hunter
   const runBugHunter = async () => {
     setIsRunningBugHunter(true);
     try {
-      toast.info('🔍 AI Bug Hunter starting... (Claude Sonnet 4)');
+      toast.info('🔍 AI Bug Hunter starting...');
       
       const response = await fetch(`${SUPABASE_URL}/functions/v1/ai-bug-hunter`, {
         method: 'POST',
@@ -228,9 +227,7 @@ const TestResultsDashboard: React.FC = () => {
         }),
       });
 
-      if (!response.ok) {
-        throw new Error(`Bug hunter failed: ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`Bug hunter failed: ${response.status}`);
 
       const result = await response.json();
       
@@ -240,156 +237,20 @@ const TestResultsDashboard: React.FC = () => {
         setAiModel(result.modelUsed || 'Claude Sonnet 4');
         
         if (result.bugs.length === 0) {
-          toast.success('✅ No bugs found! All edge cases handled correctly.');
+          toast.success('✅ No bugs found!');
         } else {
           toast.warning(`⚠️ Found ${result.bugs.length} potential bugs`);
         }
-        
-        await loadData();
-      } else {
-        throw new Error(result.error || 'Unknown error');
       }
     } catch (error) {
       console.error('Bug hunter failed:', error);
-      toast.error(`Bug hunter failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error('Bug hunter failed');
     } finally {
       setIsRunningBugHunter(false);
     }
   };
 
-  // Measure UX metrics
-  const measureUX = async () => {
-    setIsLoadingUX(true);
-    try {
-      toast.info('📊 Measuring UX metrics...');
-      
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/measure-ux`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      if (!response.ok) {
-        throw new Error(`UX measurement failed: ${response.status}`);
-      }
-
-      const result = await response.json();
-      
-      if (result.success) {
-        setUxBenchmarks(result.benchmarks || []);
-        setUxOverallScore(result.overallScore || 0);
-        toast.success(`📊 UX Score: ${result.overallScore}% - ${result.overallRating}`);
-      } else {
-        throw new Error(result.error || 'Unknown error');
-      }
-    } catch (error) {
-      console.error('UX measurement failed:', error);
-      toast.error(`UX measurement failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      setIsLoadingUX(false);
-    }
-  };
-
-  // Run Website Crawler
-  const runCrawler = async () => {
-    setIsRunningCrawler(true);
-    try {
-      toast.info('🌐 AI Website Crawler starting...');
-      
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/ai-website-crawler`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ includeApi: true }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Crawler failed: ${response.status}`);
-      }
-
-      const result = await response.json();
-      
-      if (result.success) {
-        setCrawlerResults({
-          healthScore: result.summary.healthScore,
-          issues: result.summary.totalIssues,
-        });
-        
-        if (result.summary.totalIssues === 0) {
-          toast.success(`✅ Website health: ${result.summary.healthScore}% - No issues found!`);
-        } else {
-          toast.warning(`⚠️ Website health: ${result.summary.healthScore}% - ${result.summary.totalIssues} issues found`);
-        }
-      } else {
-        throw new Error(result.error || 'Unknown error');
-      }
-    } catch (error) {
-      console.error('Crawler failed:', error);
-      toast.error(`Crawler failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      setIsRunningCrawler(false);
-    }
-  };
-
-  // Run User Simulator
-  const runSimulator = async () => {
-    setIsRunningSimulator(true);
-    try {
-      toast.info('👥 AI User Simulator starting...');
-      
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/ai-user-simulator`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Simulator failed: ${response.status}`);
-      }
-
-      const result = await response.json();
-      
-      if (result.success) {
-        setSimulatorResults({
-          successRate: result.summary.overallSuccessRate,
-          personas: result.personas.length,
-        });
-        
-        if (result.summary.overallSuccessRate >= 90) {
-          toast.success(`✅ User simulation: ${result.summary.overallSuccessRate.toFixed(1)}% success rate across ${result.personas.length} personas`);
-        } else {
-          toast.warning(`⚠️ User simulation: ${result.summary.overallSuccessRate.toFixed(1)}% success - needs improvement`);
-        }
-      } else {
-        throw new Error(result.error || 'Unknown error');
-      }
-    } catch (error) {
-      console.error('Simulator failed:', error);
-      toast.error(`Simulator failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      setIsRunningSimulator(false);
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'passed': return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'failed': return <XCircle className="h-4 w-4 text-red-500" />;
-      case 'skipped': return <Clock className="h-4 w-4 text-yellow-500" />;
-      case 'flaky': return <AlertTriangle className="h-4 w-4 text-orange-500" />;
-      default: return null;
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-      passed: 'default',
-      failed: 'destructive',
-      skipped: 'secondary',
-      flaky: 'outline',
-    };
-    return <Badge variant={variants[status] || 'default'}>{status}</Badge>;
-  };
-
-  // Calculate summary stats from REAL data only
+  // Calculate summary stats
   const totalTests = testResults.length;
   const passedTests = testResults.filter(t => t.status === 'passed').length;
   const failedTests = testResults.filter(t => t.status === 'failed').length;
@@ -398,398 +259,345 @@ const TestResultsDashboard: React.FC = () => {
     ? testResults.reduce((acc, t) => acc + (t.duration_ms || 0), 0) / totalTests 
     : 0;
 
-  // Empty state component
-  const EmptyState = ({ title, description }: { title: string; description: string }) => (
-    <div className="flex flex-col items-center justify-center py-12 text-center">
-      <Database className="h-12 w-12 text-muted-foreground mb-4" />
-      <h3 className="text-lg font-medium mb-2">{title}</h3>
-      <p className="text-sm text-muted-foreground max-w-sm">{description}</p>
-      <Button onClick={() => runTests('quick')} className="mt-4" disabled={isRunningTests}>
-        {isRunningTests ? (
-          <>
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            Running...
-          </>
-        ) : (
-          <>
-            <Zap className="h-4 w-4 mr-2" />
-            Run Tests Now
-          </>
-        )}
-      </Button>
-    </div>
-  );
+  // Group test results by category for suite grid
+  const getTestsByCategory = (category: string) => 
+    testResults.filter(t => t.test_suite === category);
+
+  const testSuites: TestSuite[] = [
+    {
+      id: 'security',
+      name: 'Security',
+      icon: <Shield className="h-4 w-4 text-red-500" />,
+      passed: getTestsByCategory('security').filter(t => t.status === 'passed').length,
+      failed: getTestsByCategory('security').filter(t => t.status === 'failed').length,
+      total: getTestsByCategory('security').length,
+      tests: getTestsByCategory('security').map(t => ({
+        name: t.test_name,
+        status: t.status as 'passed' | 'failed' | 'skipped',
+        duration_ms: t.duration_ms ?? undefined,
+        error_message: t.error_message
+      })),
+      isLoading: runningSecurityTests,
+      onRun: () => runTests('security', setRunningSecurityTests)
+    },
+    {
+      id: 'api',
+      name: 'API Health',
+      icon: <Globe className="h-4 w-4 text-cyan-500" />,
+      passed: getTestsByCategory('api').filter(t => t.status === 'passed').length,
+      failed: getTestsByCategory('api').filter(t => t.status === 'failed').length,
+      total: getTestsByCategory('api').length,
+      tests: getTestsByCategory('api').map(t => ({
+        name: t.test_name,
+        status: t.status as 'passed' | 'failed' | 'skipped',
+        duration_ms: t.duration_ms ?? undefined,
+        error_message: t.error_message
+      })),
+      isLoading: runningApiTests,
+      onRun: () => runTests('api', setRunningApiTests)
+    },
+    {
+      id: 'database',
+      name: 'Database',
+      icon: <Database className="h-4 w-4 text-purple-500" />,
+      passed: getTestsByCategory('database').filter(t => t.status === 'passed').length,
+      failed: getTestsByCategory('database').filter(t => t.status === 'failed').length,
+      total: getTestsByCategory('database').length,
+      tests: getTestsByCategory('database').map(t => ({
+        name: t.test_name,
+        status: t.status as 'passed' | 'failed' | 'skipped',
+        duration_ms: t.duration_ms ?? undefined,
+        error_message: t.error_message
+      })),
+      isLoading: runningDbTests,
+      onRun: () => runTests('database', setRunningDbTests)
+    },
+    {
+      id: 'performance',
+      name: 'Performance',
+      icon: <Zap className="h-4 w-4 text-yellow-500" />,
+      passed: getTestsByCategory('performance').filter(t => t.status === 'passed').length,
+      failed: getTestsByCategory('performance').filter(t => t.status === 'failed').length,
+      total: getTestsByCategory('performance').length,
+      tests: getTestsByCategory('performance').map(t => ({
+        name: t.test_name,
+        status: t.status as 'passed' | 'failed' | 'skipped',
+        duration_ms: t.duration_ms ?? undefined,
+        error_message: t.error_message
+      })),
+      isLoading: runningPerfTests,
+      onRun: () => runTests('performance', setRunningPerfTests)
+    },
+    {
+      id: 'calculator',
+      name: 'Calculators',
+      icon: <Calculator className="h-4 w-4 text-blue-500" />,
+      passed: getTestsByCategory('calculator').filter(t => t.status === 'passed').length,
+      failed: getTestsByCategory('calculator').filter(t => t.status === 'failed').length,
+      total: getTestsByCategory('calculator').length,
+      grade: engineeringGrade || undefined,
+      tests: getTestsByCategory('calculator').map(t => ({
+        name: t.test_name,
+        status: t.status as 'passed' | 'failed' | 'skipped',
+        duration_ms: t.duration_ms ?? undefined,
+        error_message: t.error_message
+      })),
+    }
+  ];
+
+  const toggleSection = (section: string) => {
+    const newExpanded = new Set(expandedSections);
+    if (newExpanded.has(section)) {
+      newExpanded.delete(section);
+    } else {
+      newExpanded.add(section);
+    }
+    setExpandedSections(newExpanded);
+  };
+
+  const criticalIssues = failedTests;
+  const warnings = testResults.filter(t => t.status === 'skipped').length;
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-4 p-4 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="text-2xl font-bold">Test Results Dashboard</h1>
-          <p className="text-muted-foreground">
-            100% Real Data • AI-Powered Analysis • Claude Sonnet 4
-            {testRuns.length > 0 && (
-              <span className="ml-2 text-green-600">
-                • Last run: {new Date(testRuns[0].created_at).toLocaleString()}
-              </span>
-            )}
-          </p>
+          <h1 className="text-xl font-bold">Test Results</h1>
+          <p className="text-sm text-muted-foreground">Real-time testing dashboard</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={loadData} disabled={isLoading}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-          <TestSuiteSelector isRunning={isRunningTests} onRunSuite={runTests} />
-        </div>
-      </div>
-
-      {/* AI Tools Bar */}
-      <div className="flex flex-wrap gap-2 p-3 rounded-lg bg-purple-500/5 border border-purple-500/20">
-        <div className="flex items-center gap-2 mr-4">
-          <Bot className="h-5 w-5 text-purple-500" />
-          <span className="text-sm font-medium">AI Tools:</span>
-        </div>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={runBugHunter} 
-          disabled={isRunningBugHunter}
-          className="border-purple-500/30 hover:bg-purple-500/10"
-        >
-          {isRunningBugHunter ? (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          ) : (
-            <Shield className="h-4 w-4 mr-2" />
-          )}
-          AI Bug Hunter
-        </Button>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={measureUX} 
-          disabled={isLoadingUX}
-          className="border-blue-500/30 hover:bg-blue-500/10"
-        >
-          {isLoadingUX ? (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          ) : (
-            <Activity className="h-4 w-4 mr-2" />
-          )}
-          Measure UX
-        </Button>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={runCrawler} 
-          disabled={isRunningCrawler}
-          className="border-cyan-500/30 hover:bg-cyan-500/10"
-        >
-          {isRunningCrawler ? (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          ) : (
-            <Globe className="h-4 w-4 mr-2" />
-          )}
-          Website Crawler
-          {crawlerResults && (
-            <Badge variant="outline" className="ml-2 text-[10px]">
-              {crawlerResults.healthScore}%
-            </Badge>
-          )}
-        </Button>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={runSimulator} 
-          disabled={isRunningSimulator}
-          className="border-orange-500/30 hover:bg-orange-500/10"
-        >
-          {isRunningSimulator ? (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          ) : (
-            <UserCheck className="h-4 w-4 mr-2" />
-          )}
-          User Simulator
-          {simulatorResults && (
-            <Badge variant="outline" className="ml-2 text-[10px]">
-              {simulatorResults.successRate.toFixed(0)}%
-            </Badge>
-          )}
-        </Button>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={() => runTests('security')} 
-          disabled={isRunningTests}
-          className="border-red-500/30 hover:bg-red-500/10"
-        >
-          <Shield className="h-4 w-4 mr-2" />
-          OWASP Security
+        <Button variant="outline" size="sm" onClick={loadData} disabled={isLoading}>
+          <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+          Refresh
         </Button>
       </div>
 
-      {/* Real Data Indicator */}
-      <div className="flex items-center gap-2 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-        <CheckCircle className="h-5 w-5 text-green-500" />
-        <span className="text-sm font-medium text-green-600">
-          All data shown is from REAL test executions via Edge Functions and browser tests
-        </span>
-        {totalTests === 0 && (
-          <Badge variant="outline" className="ml-auto">No tests run yet</Badge>
-        )}
-      </div>
+      {/* Quick Status Bar */}
+      <QuickStatusBar
+        passing={passedTests}
+        warnings={warnings}
+        critical={criticalIssues}
+        lastRun={testRuns.length > 0 ? new Date(testRuns[0].created_at) : undefined}
+        engineeringGrade={engineeringGrade || undefined}
+        securityScore={securityScore ?? undefined}
+      />
 
-      {/* Summary Cards - Show real data or zeros */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Pass Rate</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-6 w-6 text-green-500" />
-                <span className="text-2xl font-bold">
-                  {totalTests > 0 ? passRate.toFixed(1) : '0'}%
-                </span>
+      {/* Section 1: Platform Health + Key Metrics */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <SimplePlatformHealth
+          testPassRate={passRate}
+          errorRate={totalTests > 0 ? (failedTests / totalTests) * 100 : 0}
+          criticalIssues={criticalIssues}
+          totalTests={totalTests}
+          hasRealData={totalTests > 0}
+        />
+        
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Pass Rate</p>
+                <p className="text-2xl font-bold">{passRate.toFixed(0)}%</p>
               </div>
-              <Progress value={passRate} className="mt-2" />
-              {totalTests === 0 && (
-                <p className="text-xs text-muted-foreground mt-1">Run tests to see data</p>
-              )}
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Tests</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2">
-                <FileCode className="h-6 w-6 text-primary" />
-                <span className="text-2xl font-bold">{totalTests}</span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {testRuns.length} run(s) recorded
-              </p>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Results</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2">
-                <Zap className="h-6 w-6 text-blue-500" />
-                <span className="text-2xl font-bold">{passedTests}/{totalTests}</span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {failedTests} failed
-              </p>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Avg Duration</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2">
-                <Timer className="h-6 w-6 text-orange-500" />
-                <span className="text-2xl font-bold">
-                  {totalTests > 0 ? (avgDuration / 1000).toFixed(1) : '0'}s
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">Per test</p>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Stress Tests</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2">
-                <Users className="h-6 w-6 text-purple-500" />
-                <span className="text-2xl font-bold">{stressMetrics.length}</span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {stressMetrics.length > 0 ? 'Metrics recorded' : 'None yet'}
-              </p>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
-
-      {/* Tabs */}
-      <Tabs defaultValue="report" className="space-y-4">
-        <TabsList className="flex-wrap">
-          <TabsTrigger value="report">Full Report</TabsTrigger>
-          <TabsTrigger value="ai-analysis">AI Analysis</TabsTrigger>
-          <TabsTrigger value="engineering">Engineering</TabsTrigger>
-          <TabsTrigger value="improvements">AI Improvements</TabsTrigger>
-          <TabsTrigger value="benchmarks">Benchmarks</TabsTrigger>
-          <TabsTrigger value="user-journey">User Journey</TabsTrigger>
-          <TabsTrigger value="coverage">E2E Coverage</TabsTrigger>
-          <TabsTrigger value="runs">Test Runs</TabsTrigger>
-          <TabsTrigger value="results">Results</TabsTrigger>
-          <TabsTrigger value="stress">Stress Tests</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="report">
-          <FullExperienceReport
-            testPassRate={passRate}
-            errorRate={totalTests > 0 && failedTests > 0 ? (failedTests / totalTests) * 100 : 0}
-            avgResponseTime={avgDuration / 1000}
-            supportTickets={0}
-            coveragePercent={totalTests > 0 ? 87 : 0}
-            lastUpdated={testRuns.length > 0 ? new Date(testRuns[0].created_at) : new Date()}
-            testRuns={testRuns}
-            testResults={testResults}
-            stressMetrics={stressMetrics}
-          />
-        </TabsContent>
-
-        <TabsContent value="ai-analysis">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <AIAnalysisCard
-              analysis={aiAnalysis}
-              model={aiModel || 'Claude Sonnet 4'}
-              bugs={bugs}
-              isLoading={isRunningBugHunter}
-              lastAnalyzedAt={testRuns.length > 0 ? new Date(testRuns[0].created_at) : undefined}
-            />
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5 text-red-500" />
-                  Security Summary
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">XSS Protection</span>
-                    <Badge variant="outline" className="bg-green-500/10 text-green-500">
-                      {testResults.filter(t => t.test_name.includes('XSS') && t.status === 'passed').length} / {testResults.filter(t => t.test_name.includes('XSS')).length || '?'}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">SQL Injection</span>
-                    <Badge variant="outline" className="bg-green-500/10 text-green-500">
-                      {testResults.filter(t => t.test_name.includes('SQL') && t.status === 'passed').length} / {testResults.filter(t => t.test_name.includes('SQL')).length || '?'}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">SSRF Protection</span>
-                    <Badge variant="outline" className="bg-green-500/10 text-green-500">
-                      {testResults.filter(t => t.test_name.includes('SSRF') && t.status === 'passed').length} / {testResults.filter(t => t.test_name.includes('SSRF')).length || '?'}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Auth Protection</span>
-                    <Badge variant="outline" className="bg-green-500/10 text-green-500">
-                      {testResults.filter(t => t.test_name.includes('Auth') && t.status === 'passed').length} / {testResults.filter(t => t.test_name.includes('Auth')).length || '?'}
-                    </Badge>
-                  </div>
-                  {testResults.filter(t => t.test_suite === 'security').length === 0 && (
-                    <p className="text-sm text-muted-foreground text-center py-4">
-                      Run security tests to see protection status
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="engineering">
-          <EngineeringBenchmark />
-        </TabsContent>
-
-        <TabsContent value="improvements">
-          <AIImprovements />
-        </TabsContent>
-
-        <TabsContent value="benchmarks">
-          <IndustryComparison 
-            benchmarks={uxBenchmarks}
-            overallScore={uxOverallScore}
-            isLoading={isLoadingUX}
-          />
-          {uxBenchmarks.length === 0 && !isLoadingUX && (
-            <div className="mt-4 text-center">
-              <Button onClick={measureUX} variant="outline">
-                <Activity className="h-4 w-4 mr-2" />
-                Run UX Measurement
-              </Button>
+              <TrendingUp className={`h-8 w-8 ${passRate >= 90 ? 'text-green-500' : passRate >= 70 ? 'text-yellow-500' : 'text-red-500'}`} />
             </div>
-          )}
-        </TabsContent>
+            <Progress value={passRate} className="mt-2 h-2" />
+            <p className="text-xs text-muted-foreground mt-1">{passedTests}/{totalTests} tests</p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Avg Response</p>
+                <p className="text-2xl font-bold">{(avgDuration / 1000).toFixed(1)}s</p>
+              </div>
+              <Timer className="h-8 w-8 text-orange-500" />
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">{testRuns.length} runs recorded</p>
+          </CardContent>
+        </Card>
+      </div>
 
-        <TabsContent value="user-journey">
-          <BrowserTestRunner onResultsUpdate={loadData} />
-        </TabsContent>
+      {/* Section 2: AI Tools Quick Actions */}
+      <Card className="border-purple-500/20 bg-purple-500/5">
+        <CardContent className="py-3">
+          <div className="flex items-center flex-wrap gap-2">
+            <div className="flex items-center gap-2 mr-2">
+              <Bot className="h-4 w-4 text-purple-500" />
+              <span className="text-sm font-medium">AI Tools:</span>
+            </div>
+            
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={runBugHunter} 
+              disabled={isRunningBugHunter}
+              className="h-8"
+            >
+              {isRunningBugHunter ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Shield className="h-3 w-3 mr-1" />}
+              Bug Hunter
+              {bugs.length > 0 && <Badge variant="destructive" className="ml-1 h-4 px-1 text-[10px]">{bugs.length}</Badge>}
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => runTests('security', setRunningSecurityTests)} 
+              disabled={runningSecurityTests}
+              className="h-8"
+            >
+              {runningSecurityTests ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Shield className="h-3 w-3 mr-1" />}
+              OWASP Scan
+              {securityScore !== null && <Badge variant="outline" className="ml-1 h-4 px-1 text-[10px]">{securityScore}%</Badge>}
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => runTests('api', setRunningApiTests)} 
+              disabled={runningApiTests}
+              className="h-8"
+            >
+              {runningApiTests ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Globe className="h-3 w-3 mr-1" />}
+              API Health
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => runTests('performance', setRunningPerfTests)} 
+              disabled={runningPerfTests}
+              className="h-8"
+            >
+              {runningPerfTests ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Zap className="h-3 w-3 mr-1" />}
+              Performance
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
-        <TabsContent value="coverage">
-          <E2ETestCoverage />
-        </TabsContent>
-
-        <TabsContent value="runs">
-          <Card>
-            <CardHeader>
+      {/* Section 3: Test Suites Grid (Collapsible) */}
+      <Collapsible open={expandedSections.has('suites')} onOpenChange={() => toggleSection('suites')}>
+        <Card>
+          <CollapsibleTrigger asChild>
+            <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
               <div className="flex items-center justify-between">
-                <CardTitle>Recent Test Runs</CardTitle>
-                <Badge variant="outline" className="bg-green-500/10 text-green-600">
-                  REAL DATA
-                </Badge>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <FileCode className="h-4 w-4" />
+                  Test Suites
+                </CardTitle>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">{totalTests} tests</Badge>
+                  {expandedSections.has('suites') ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                </div>
               </div>
             </CardHeader>
-            <CardContent>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="pt-0">
+              <TestSuiteGrid suites={testSuites} />
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
+      {/* Section 4: Engineering & AI Analysis */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <EngineeringBenchmark />
+        
+        <AIAnalysisCard
+          analysis={aiAnalysis}
+          model={aiModel || 'Claude Sonnet 4'}
+          bugs={bugs}
+          isLoading={isRunningBugHunter}
+          lastAnalyzedAt={testRuns.length > 0 ? new Date(testRuns[0].created_at) : undefined}
+        />
+      </div>
+
+      {/* Section 5: AI Improvements */}
+      <Collapsible open={expandedSections.has('improvements')} onOpenChange={() => toggleSection('improvements')}>
+        <Card>
+          <CollapsibleTrigger asChild>
+            <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Activity className="h-4 w-4" />
+                  AI Improvement Suggestions
+                </CardTitle>
+                {expandedSections.has('improvements') ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </div>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="pt-0">
+              <AIImprovements />
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
+      {/* Section 6: Recent Activity (Collapsible) */}
+      <Collapsible open={expandedSections.has('activity')} onOpenChange={() => toggleSection('activity')}>
+        <Card>
+          <CollapsibleTrigger asChild>
+            <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  Recent Activity
+                </CardTitle>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">{testRuns.length} runs</Badge>
+                  {expandedSections.has('activity') ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                </div>
+              </div>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="pt-0">
               {testRuns.length === 0 ? (
-                <EmptyState 
-                  title="No test runs yet"
-                  description="Run your first test suite to see real results here. All data comes from actual Edge Function executions."
-                />
+                <div className="text-center py-8 text-muted-foreground">
+                  <Database className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                  <p>No test runs yet</p>
+                  <Button onClick={() => runTests('api', setRunningApiTests)} className="mt-3" size="sm" disabled={runningApiTests}>
+                    <Play className="h-3 w-3 mr-1" /> Run First Test
+                  </Button>
+                </div>
               ) : (
-                <ScrollArea className="h-[400px]">
-                  <div className="space-y-3">
-                    {testRuns.map((run) => (
+                <ScrollArea className="h-[250px]">
+                  <div className="space-y-2">
+                    {testRuns.slice(0, 10).map((run) => (
                       <div
                         key={run.id}
-                        className="flex items-center justify-between p-4 rounded-lg border hover:bg-accent/50 cursor-pointer transition-colors"
-                        onClick={() => setSelectedRun(run.id)}
+                        className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/30 transition-colors"
                       >
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium">{run.run_name}</p>
-                            <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-600">
-                              REAL
-                            </Badge>
+                        <div className="flex items-center gap-3">
+                          {(run.passed_tests ?? 0) === (run.total_tests ?? 0) ? (
+                            <CheckCircle className="h-4 w-4 text-green-500" />
+                          ) : (run.failed_tests ?? 0) > 0 ? (
+                            <XCircle className="h-4 w-4 text-red-500" />
+                          ) : (
+                            <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                          )}
+                          <div>
+                            <p className="font-medium text-sm">{run.run_name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(run.created_at).toLocaleString()}
+                            </p>
                           </div>
-                          <p className="text-sm text-muted-foreground">
-                            {new Date(run.created_at).toLocaleString()} • {run.environment}
-                          </p>
                         </div>
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-3">
                           <div className="text-right">
-                            <p className="font-medium">{run.passed_tests ?? 0}/{run.total_tests ?? 0} passed</p>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-sm font-medium">{run.passed_tests ?? 0}/{run.total_tests ?? 0}</p>
+                            <p className="text-xs text-muted-foreground">
                               {((run.duration_ms ?? 0) / 1000).toFixed(1)}s
                             </p>
                           </div>
                           <Progress 
                             value={((run.passed_tests ?? 0) / (run.total_tests || 1)) * 100} 
-                            className="w-24"
+                            className="w-16 h-2"
                           />
                         </div>
                       </div>
@@ -798,118 +606,33 @@ const TestResultsDashboard: React.FC = () => {
                 </ScrollArea>
               )}
             </CardContent>
-          </Card>
-        </TabsContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
 
-        <TabsContent value="results">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Test Results</CardTitle>
-                <Badge variant="outline" className="bg-green-500/10 text-green-600">
-                  REAL DATA
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {testResults.length === 0 ? (
-                <EmptyState 
-                  title="No test results yet"
-                  description="Run a test suite to see individual test results. Each result comes from actual Edge Function or browser test execution."
-                />
-              ) : (
-                <ScrollArea className="h-[400px]">
-                  <div className="space-y-2">
-                    {testResults.map((result) => (
-                      <div
-                        key={result.id}
-                        className="flex items-center justify-between p-3 rounded-lg border"
-                      >
-                        <div className="flex items-center gap-3">
-                          {getStatusIcon(result.status)}
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <p className="font-medium">{result.test_name}</p>
-                              <Badge variant="outline" className="text-[10px] bg-blue-500/10 text-blue-600">
-                                REAL
-                              </Badge>
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                              {result.test_suite} • {result.browser}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span className="text-sm text-muted-foreground">
-                            {result.duration_ms}ms
-                          </span>
-                          {getStatusBadge(result.status)}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="stress">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Stress Test Metrics</CardTitle>
-                <Badge variant="outline" className="bg-green-500/10 text-green-600">
-                  REAL DATA
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {stressMetrics.length === 0 ? (
-                <EmptyState 
-                  title="No stress test data yet"
-                  description="Run stress tests to see performance metrics here. These measure real concurrent load and response times."
-                />
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {stressMetrics.map((metric) => (
-                    <Card key={metric.id}>
-                      <CardContent className="pt-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <h4 className="font-semibold">{metric.test_name}</h4>
-                          <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-600">
-                            REAL
-                          </Badge>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div>
-                            <p className="text-muted-foreground">Concurrent Users</p>
-                            <p className="text-lg font-bold">{metric.concurrent_users}</p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Avg Response</p>
-                            <p className="text-lg font-bold">{metric.avg_response_time_ms}ms</p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">P95 Response</p>
-                            <p className="text-lg font-bold">{metric.p95_response_time_ms}ms</p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Error Rate</p>
-                            <p className={`text-lg font-bold ${(metric.error_rate ?? 0) > 0.05 ? 'text-red-500' : 'text-green-500'}`}>
-                              {((metric.error_rate ?? 0) * 100).toFixed(1)}%
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+      {/* Section 7: OWASP Detailed Report (Collapsible) */}
+      <Collapsible open={expandedSections.has('owasp')} onOpenChange={() => toggleSection('owasp')}>
+        <CollapsibleTrigger asChild>
+          <div className="cursor-pointer">
+            <Card className="hover:bg-muted/30 transition-colors">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Shield className="h-4 w-4 text-orange-500" />
+                    OWASP Security Details
+                  </CardTitle>
+                  {expandedSections.has('owasp') ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              </CardHeader>
+            </Card>
+          </div>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="mt-2">
+            <OWASPSecurityReport />
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
     </div>
   );
 };
