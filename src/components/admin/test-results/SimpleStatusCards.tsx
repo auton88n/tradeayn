@@ -7,10 +7,31 @@ import {
   CheckCircle2,
   AlertCircle,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  TestTube2
 } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { formatDistanceToNow } from "date-fns";
+
+interface TestResult {
+  id: string;
+  test_suite: string;
+  test_name: string;
+  status: string;
+  duration_ms: number | null;
+  error_message?: string | null;
+  created_at: string;
+}
+
+interface TestRun {
+  id: string;
+  run_name: string | null;
+  total_tests: number | null;
+  passed_tests: number | null;
+  failed_tests: number | null;
+  created_at: string;
+}
 
 interface StatusCard {
   id: string;
@@ -18,62 +39,109 @@ interface StatusCard {
   icon: React.ReactNode;
   status: "good" | "warning" | "error";
   summary: string;
-  details?: string[];
+  details: string[];
 }
 
-const defaultCards: StatusCard[] = [
-  {
-    id: "security",
-    title: "Security",
-    icon: <Shield className="h-5 w-5" />,
-    status: "good",
-    summary: "All security tests passing",
-    details: [
-      "Login and authentication working",
-      "Data protection verified",
-      "No vulnerabilities detected"
-    ]
-  },
-  {
-    id: "performance",
-    title: "Performance",
-    icon: <Zap className="h-5 w-5" />,
-    status: "good",
-    summary: "Fast response times",
-    details: [
-      "Pages load in under 2 seconds",
-      "AI responses averaging 2.5s",
-      "Handles 100+ concurrent users"
-    ]
-  },
-  {
-    id: "engineering",
-    title: "Engineering Tools",
-    icon: <Calculator className="h-5 w-5" />,
-    status: "good",
-    summary: "All calculators working",
-    details: [
-      "Beam, column, foundation calculators verified",
-      "3D visualizations rendering correctly",
-      "PDF reports generating properly"
-    ]
-  },
-  {
-    id: "languages",
-    title: "Languages",
-    icon: <Globe className="h-5 w-5" />,
-    status: "warning",
-    summary: "Arabic 85% complete",
-    details: [
-      "Most pages fully translated",
-      "Settings page needs translation",
-      "Some admin labels in English"
-    ]
-  }
-];
+interface SimpleStatusCardsProps {
+  testResults?: TestResult[];
+  testRuns?: TestRun[];
+}
 
-const SimpleStatusCards = ({ cards = defaultCards }: { cards?: StatusCard[] }) => {
+const getSuiteIcon = (suite: string) => {
+  const lowerSuite = suite.toLowerCase();
+  if (lowerSuite.includes('security') || lowerSuite.includes('auth')) {
+    return <Shield className="h-5 w-5" />;
+  }
+  if (lowerSuite.includes('performance') || lowerSuite.includes('stress')) {
+    return <Zap className="h-5 w-5" />;
+  }
+  if (lowerSuite.includes('engineering') || lowerSuite.includes('calculator')) {
+    return <Calculator className="h-5 w-5" />;
+  }
+  if (lowerSuite.includes('i18n') || lowerSuite.includes('language')) {
+    return <Globe className="h-5 w-5" />;
+  }
+  return <TestTube2 className="h-5 w-5" />;
+};
+
+const SimpleStatusCards = ({ 
+  testResults = [], 
+  testRuns = [] 
+}: SimpleStatusCardsProps) => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const generateCards = (): StatusCard[] => {
+    if (testResults.length === 0) {
+      return [
+        {
+          id: "no-data",
+          title: "No Test Data",
+          icon: <TestTube2 className="h-5 w-5" />,
+          status: "warning",
+          summary: "Run tests to see status",
+          details: ["Use the 'Run Tests' button above to execute test suites"],
+        },
+      ];
+    }
+
+    // Group tests by suite
+    const suiteGroups: Record<string, TestResult[]> = {};
+    testResults.forEach(result => {
+      const suite = result.test_suite || "Other";
+      if (!suiteGroups[suite]) suiteGroups[suite] = [];
+      suiteGroups[suite].push(result);
+    });
+
+    return Object.entries(suiteGroups).map(([suite, tests]) => {
+      const passed = tests.filter(t => t.status === 'passed').length;
+      const failed = tests.filter(t => t.status === 'failed').length;
+      const total = tests.length;
+
+      // Determine status
+      let status: "good" | "warning" | "error" = "good";
+      if (failed > 0) status = "error";
+      else if (passed < total) status = "warning";
+
+      // Get latest test time
+      const latestTest = tests.sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      )[0];
+      const timeAgo = formatDistanceToNow(new Date(latestTest.created_at), { addSuffix: true });
+
+      // Build details
+      const details: string[] = [
+        `${passed}/${total} tests passing`,
+        `Last run: ${timeAgo}`,
+      ];
+
+      // Add failed test names
+      const failedTests = tests.filter(t => t.status === 'failed');
+      if (failedTests.length > 0) {
+        details.push(`Failed: ${failedTests.map(t => t.test_name).slice(0, 2).join(', ')}${failedTests.length > 2 ? '...' : ''}`);
+      }
+
+      // Add passing test names (first few)
+      const passingTests = tests.filter(t => t.status === 'passed');
+      if (passingTests.length > 0) {
+        details.push(`Tests: ${passingTests.map(t => t.test_name).slice(0, 2).join(', ')}${passingTests.length > 2 ? '...' : ''}`);
+      }
+
+      return {
+        id: suite,
+        title: suite.charAt(0).toUpperCase() + suite.slice(1).replace(/_/g, ' '),
+        icon: getSuiteIcon(suite),
+        status,
+        summary: failed > 0 
+          ? `${failed} failing` 
+          : passed === total 
+            ? "All passing" 
+            : `${passed}/${total} passing`,
+        details,
+      };
+    });
+  };
+
+  const cards = generateCards();
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -120,7 +188,7 @@ const SimpleStatusCards = ({ cards = defaultCards }: { cards?: StatusCard[] }) =
               </div>
               
               <AnimatePresence>
-                {isExpanded && card.details && (
+                {isExpanded && card.details.length > 0 && (
                   <motion.div
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: "auto", opacity: 1 }}
