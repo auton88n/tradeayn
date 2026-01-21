@@ -24,7 +24,8 @@ import {
   Calculator,
   ChevronDown,
   ChevronUp,
-  Play
+  Play,
+  Brain,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -37,6 +38,8 @@ import { OWASPSecurityReport } from './test-results/OWASPSecurityReport';
 import { DetailedTestCard } from './test-results/DetailedTestCard';
 import { ComprehensiveTestResults } from './test-results/ComprehensiveTestResults';
 import { UXJourneyResults } from './test-results/UXJourneyResults';
+import { ResponseTimeResults } from './test-results/ResponseTimeResults';
+import { AYNIntelligenceResults } from './test-results/AYNIntelligenceResults';
 
 interface TestResult {
   id: string;
@@ -136,6 +139,20 @@ const TestResultsDashboard: React.FC = () => {
   const [isRunningBugHunter, setIsRunningBugHunter] = useState(false);
   const [isRunningComprehensive, setIsRunningComprehensive] = useState(false);
   const [isRunningUxTester, setIsRunningUxTester] = useState(false);
+  const [isRunningResponseTime, setIsRunningResponseTime] = useState(false);
+  const [isRunningIntelligence, setIsRunningIntelligence] = useState(false);
+  
+  // New test results
+  const [responseTimeResults, setResponseTimeResults] = useState<{
+    summary?: { totalTests: number; successRate: string; avgTTFT: string; avgTotal: string; p95Total: string; overallRating: 'excellent' | 'good' | 'needs_improvement' | 'poor' };
+    byIntent?: Record<string, unknown>;
+    sloTargets?: Record<string, { ttft: number; total: number }>;
+  } | null>(null);
+  const [intelligenceResults, setIntelligenceResults] = useState<{
+    summary?: { overallScore: number; intelligenceRating: 'genius' | 'smart' | 'average' | 'needs_training'; totalTests: number; passed: number; failed: number };
+    byCategory?: Record<string, unknown>;
+    improvements?: string[];
+  } | null>(null);
   const [comprehensiveResults, setComprehensiveResults] = useState<{ passRate: string; totalTests: number; passed: number; failed: number; avgDuration?: number } | null>(null);
   const [comprehensiveEndpoints, setComprehensiveEndpoints] = useState<Array<{
     endpoint: string;
@@ -491,6 +508,89 @@ const TestResultsDashboard: React.FC = () => {
     }
   };
 
+  const runResponseTimeTester = async () => {
+    setIsRunningResponseTime(true);
+    try {
+      toast.info('⏱️ Running response time benchmarks...');
+      
+      const result = await safeFetchJson<{
+        success: boolean;
+        summary?: { totalTests: number; successRate: string; avgTTFT: string; avgTotal: string; p95Total: string; overallRating: 'excellent' | 'good' | 'needs_improvement' | 'poor' };
+        byIntent?: Record<string, unknown>;
+        sloTargets?: Record<string, { ttft: number; total: number }>;
+        error?: string;
+      }>(`${SUPABASE_URL}/functions/v1/ai-response-time-tester`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ intents: ['chat', 'engineering'], iterations: 2 }),
+      });
+      
+      if (result.success && result.summary) {
+        setResponseTimeResults({ summary: result.summary, byIntent: result.byIntent, sloTargets: result.sloTargets });
+        setAiModel('Response Time Tester');
+        
+        if (result.summary.overallRating === 'excellent') {
+          toast.success(`✅ Response times excellent! Avg: ${result.summary.avgTotal}`);
+        } else if (result.summary.overallRating === 'good') {
+          toast.success(`👍 Response times good. Avg: ${result.summary.avgTotal}`);
+        } else {
+          toast.warning(`⚠️ Response times need improvement. Avg: ${result.summary.avgTotal}`);
+        }
+        await loadData();
+      } else if (result.error) {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      console.error('Response time tester failed:', error);
+      toast.error(`Failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsRunningResponseTime(false);
+    }
+  };
+
+  const runIntelligenceTester = async () => {
+    setIsRunningIntelligence(true);
+    try {
+      toast.info('🧠 Evaluating AYN intelligence...');
+      
+      const result = await safeFetchJson<{
+        success: boolean;
+        summary?: { overallScore: number; intelligenceRating: 'genius' | 'smart' | 'average' | 'needs_training'; totalTests: number; passed: number; failed: number };
+        byCategory?: Record<string, unknown>;
+        improvements?: string[];
+        error?: string;
+      }>(`${SUPABASE_URL}/functions/v1/ai-ayn-evaluator`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      
+      if (result.success && result.summary) {
+        setIntelligenceResults({ summary: result.summary, byCategory: result.byCategory, improvements: result.improvements });
+        setAiModel('AYN Intelligence Evaluator');
+        
+        const rating = result.summary.intelligenceRating;
+        if (rating === 'genius') {
+          toast.success(`🧠 AYN is a genius! Score: ${result.summary.overallScore}/100`);
+        } else if (rating === 'smart') {
+          toast.success(`💡 AYN is smart! Score: ${result.summary.overallScore}/100`);
+        } else if (rating === 'average') {
+          toast.warning(`📚 AYN is average. Score: ${result.summary.overallScore}/100`);
+        } else {
+          toast.error(`📖 AYN needs training. Score: ${result.summary.overallScore}/100`);
+        }
+        await loadData();
+      } else if (result.error) {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      console.error('Intelligence tester failed:', error);
+      toast.error(`Failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsRunningIntelligence(false);
+    }
+  };
+
   // Calculate summary stats
   const totalTests = testResults.length;
   const passedTests = testResults.filter(t => t.status === 'passed').length;
@@ -682,6 +782,32 @@ const TestResultsDashboard: React.FC = () => {
               <Bot className="h-3 w-3 mr-1" />
               Full UX Test
             </Button>
+            
+            <div className="w-px h-6 bg-border mx-1" />
+            
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={runResponseTimeTester} 
+              disabled={isRunningResponseTime}
+              className="h-8"
+            >
+              {isRunningResponseTime ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Timer className="h-3 w-3 mr-1" />}
+              Response Time
+              {responseTimeResults?.summary && <Badge variant="outline" className="ml-1 h-4 px-1 text-[10px]">{responseTimeResults.summary.avgTotal}</Badge>}
+            </Button>
+            
+            <Button 
+              variant="default" 
+              size="sm" 
+              onClick={runIntelligenceTester} 
+              disabled={isRunningIntelligence}
+              className="h-8 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+            >
+              {isRunningIntelligence ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Brain className="h-3 w-3 mr-1" />}
+              AYN IQ Test
+              {intelligenceResults?.summary && <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">{intelligenceResults.summary.overallScore}/100</Badge>}
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -820,6 +946,22 @@ const TestResultsDashboard: React.FC = () => {
                   avgResponseTime: uxResults.avgResponseTime || 0
                 } : undefined}
                 isLoading={isRunningUxTester}
+              />
+
+              {/* Response Time Results */}
+              <ResponseTimeResults
+                summary={responseTimeResults?.summary}
+                byIntent={responseTimeResults?.byIntent as Record<string, { ttftStats: { p50: number; p95: number; p99: number; avg: number; min: number; max: number }; totalStats: { p50: number; p95: number; p99: number; avg: number; min: number; max: number }; sloCompliance: { ttft: number; total: number }; results: Array<{ intent: string; testName: string; ttft_ms: number; totalTime_ms: number; success: boolean; error?: string }> }> | undefined}
+                sloTargets={responseTimeResults?.sloTargets}
+                isLoading={isRunningResponseTime}
+              />
+
+              {/* AYN Intelligence Results */}
+              <AYNIntelligenceResults
+                summary={intelligenceResults?.summary}
+                byCategory={intelligenceResults?.byCategory as Record<string, { passed: number; total: number; avgScore: number; results: Array<{ category: string; name: string; passed: boolean; score: number; response: string; reason: string }> }> | undefined}
+                improvements={intelligenceResults?.improvements}
+                isLoading={isRunningIntelligence}
               />
             </CardContent>
           </CollapsibleContent>

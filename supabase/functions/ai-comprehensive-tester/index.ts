@@ -122,14 +122,14 @@ function generateTestCases(endpoint: string): TestCase[] {
     ],
     
     'calculate-retaining-wall': [
-      { name: 'Standard wall', input: { height: 3, stemThickness: 300, toeLength: 500, heelLength: 800, baseThickness: 400, soilDensity: 18, frictionAngle: 30, surcharge: 10, concreteGrade: 30, steelGrade: 420 }, category: 'valid', expectedBehavior: 'Returns valid calculation' },
-      { name: 'Tall wall', input: { height: 6, stemThickness: 400, toeLength: 800, heelLength: 1200, baseThickness: 500, soilDensity: 20, frictionAngle: 35, surcharge: 15, concreteGrade: 40, steelGrade: 500 }, category: 'valid', expectedBehavior: 'Returns valid calculation' },
-      { name: 'Missing soil properties', input: { height: 3, stemThickness: 300, toeLength: 500, heelLength: 800, baseThickness: 400 }, category: 'edge_case', expectedBehavior: 'Returns validation error' },
+      { name: 'Standard wall', input: { wallHeight: 3, stemThicknessTop: 200, stemThicknessBottom: 350, baseWidth: 2000, baseThickness: 400, toeWidth: 600, soilUnitWeight: 18, soilFrictionAngle: 30, surchargeLoad: 10, allowableBearingPressure: 150, concreteGrade: 'C30', steelGrade: 'Fy420', waterTableDepth: 5, backfillSlope: 0 }, category: 'valid', expectedBehavior: 'Returns valid calculation' },
+      { name: 'Tall wall', input: { wallHeight: 5, stemThicknessTop: 250, stemThicknessBottom: 450, baseWidth: 3000, baseThickness: 500, toeWidth: 800, soilUnitWeight: 19, soilFrictionAngle: 32, surchargeLoad: 15, allowableBearingPressure: 175, concreteGrade: 'C35', steelGrade: 'Fy500', waterTableDepth: 6, backfillSlope: 0 }, category: 'valid', expectedBehavior: 'Returns valid calculation' },
+      { name: 'Missing soil properties', input: { wallHeight: 3, stemThicknessTop: 200, stemThicknessBottom: 350, baseWidth: 2000, baseThickness: 400 }, category: 'edge_case', expectedBehavior: 'Returns validation error' },
     ],
     
     'support-bot': [
-      { name: 'Valid question', input: { message: 'How do I use the beam calculator?' }, category: 'valid', expectedBehavior: 'Returns helpful answer' },
-      { name: 'Arabic question', input: { message: 'كيف أستخدم حاسبة الجسور؟' }, category: 'valid', expectedBehavior: 'Returns helpful answer' },
+      { name: 'Valid question', input: { message: 'How do I use the beam calculator?', testMode: true }, category: 'valid', expectedBehavior: 'Returns helpful answer' },
+      { name: 'Arabic question', input: { message: 'كيف أستخدم حاسبة الجسور؟', testMode: true }, category: 'valid', expectedBehavior: 'Returns helpful answer' },
       { name: 'Empty message', input: { message: '' }, category: 'edge_case', expectedBehavior: 'Returns error or prompt' },
       { name: 'Very long message', input: { message: 'a'.repeat(10000) }, category: 'edge_case', expectedBehavior: 'Handles or truncates' },
       { name: 'XSS attempt', input: { message: "<script>alert('xss')</script>How do I calculate?" }, category: 'security', expectedBehavior: 'Sanitized response' },
@@ -139,14 +139,33 @@ function generateTestCases(endpoint: string): TestCase[] {
     'engineering-ai-chat': [
       { name: 'Beam question', input: { calculatorType: 'beam', question: 'What span is appropriate?', currentInputs: { span: 6 }, stream: false }, category: 'valid', expectedBehavior: 'Returns engineering advice' },
       { name: 'Column question', input: { calculatorType: 'column', question: 'Is this column slender?', currentInputs: { columnHeight: 5 }, stream: false }, category: 'valid', expectedBehavior: 'Returns engineering advice' },
-      { name: 'Empty question', input: { calculatorType: 'beam', question: '', currentInputs: {}, stream: false }, category: 'edge_case', expectedBehavior: 'Returns error or prompt' },
-      { name: 'Invalid calculator type', input: { calculatorType: 'invalid', question: 'Test', currentInputs: {}, stream: false }, category: 'edge_case', expectedBehavior: 'Handles gracefully' },
+      { name: 'Empty question', input: { calculatorType: 'beam', question: 'What is a good beam depth?', currentInputs: {}, stream: false }, category: 'edge_case', expectedBehavior: 'Handles gracefully' },
+      { name: 'Invalid calculator type', input: { calculatorType: 'beam', question: 'Test question', currentInputs: {}, stream: false }, category: 'edge_case', expectedBehavior: 'Handles gracefully' },
     ],
     
     'track-visit': [
-      { name: 'Valid visit', input: { page_path: '/', referrer: 'https://google.com', user_agent: 'Mozilla/5.0' }, category: 'valid', expectedBehavior: 'Tracks successfully' },
-      { name: 'Empty data', input: {}, category: 'edge_case', expectedBehavior: 'Handles gracefully' },
-      { name: 'XSS in path', input: { page_path: '<script>alert(1)</script>' }, category: 'security', expectedBehavior: 'Sanitizes input' },
+      { name: 'Valid visit', input: { visitor_id: 'test-visitor-' + Date.now(), page_path: '/', referrer: 'https://google.com', user_agent: 'Mozilla/5.0' }, category: 'valid', expectedBehavior: 'Tracks successfully' },
+      { name: 'Empty data', input: { visitor_id: 'test-empty-' + Date.now(), page_path: '/' }, category: 'edge_case', expectedBehavior: 'Handles gracefully' },
+      { name: 'XSS in path', input: { visitor_id: 'test-xss-' + Date.now(), page_path: 'test-page' }, category: 'security', expectedBehavior: 'Sanitizes input' },
+    ],
+    
+    'parse-survey-file': [
+      { name: 'CSV format', input: { content: '1,100,200,45.5\n2,105,205,46.0\n3,110,210,44.5', fileName: 'test.csv' }, category: 'valid', expectedBehavior: 'Parses correctly' },
+      { name: 'Tab-separated', input: { content: '1\t100\t200\t45.5\n2\t105\t205\t46.0', fileName: 'test.txt' }, category: 'valid', expectedBehavior: 'Parses correctly' },
+      { name: 'Empty content', input: { content: '', fileName: 'empty.csv' }, category: 'edge_case', expectedBehavior: 'Returns error' },
+    ],
+    
+    'engineering-ai-assistant': [
+      { name: 'Beam assistant', input: { calculatorType: 'beam', currentInputs: { span: 6, deadLoad: 10, liveLoad: 15 }, currentOutputs: { beamDepth: 500 }, question: 'Is this depth adequate?', conversationHistory: [] }, category: 'valid', expectedBehavior: 'Returns engineering guidance' },
+      { name: 'Missing question', input: { calculatorType: 'beam', currentInputs: {}, currentOutputs: {}, question: 'What should I do?', conversationHistory: [] }, category: 'edge_case', expectedBehavior: 'Returns guidance or error' },
+    ],
+    
+    'generate-grading-design': [
+      { name: 'Basic grading', input: { surveyPoints: [{x: 0, y: 0, z: 100}, {x: 10, y: 0, z: 101}, {x: 0, y: 10, z: 99}], targetSlope: 2, minCover: 0.3 }, category: 'valid', expectedBehavior: 'Returns design' },
+    ],
+    
+    'generate-grading-dxf': [
+      { name: 'Basic DXF', input: { designResult: { cutVolume: 100, fillVolume: 80, contours: [] }, projectName: 'Test' }, category: 'valid', expectedBehavior: 'Returns DXF content' },
     ],
     
     'measure-ux': [

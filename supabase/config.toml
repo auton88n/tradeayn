@@ -158,3 +158,9 @@ verify_jwt = false
 
 [functions.ai-ux-tester]
 verify_jwt = false
+
+[functions.ai-response-time-tester]
+verify_jwt = false
+
+[functions.ai-ayn-evaluator]
+verify_jwt = false
