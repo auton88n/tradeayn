@@ -733,6 +733,10 @@ const TestResultsDashboard: React.FC = () => {
         byCategory?: Record<string, { passed: number; total: number; avgScore: number; results?: Array<{ name: string; passed: boolean; score: number; aynResponse: string; reason: string }> }>;
         improvements?: string[];
         sampleTranscripts?: Array<{ category: string; name: string; userMessage: string; aynResponse: string; passed: boolean; score: number; reason: string; emotion?: string }>;
+        emotionSyncRate?: number;
+        emotionTestResults?: Array<{ name: string; userMessage: string; expectedEmotion: string; detectedEmotion: string; passed: boolean; aynResponse?: string }>;
+        emotionCoverage?: Record<string, { tested: boolean; matched: boolean }>;
+        personalityScore?: number;
         error?: string;
       }>(`${SUPABASE_URL}/functions/v1/ai-conversation-evaluator`, {
         method: 'POST',
@@ -745,7 +749,11 @@ const TestResultsDashboard: React.FC = () => {
           summary: result.summary,
           byCategory: result.byCategory,
           improvements: result.improvements,
-          sampleTranscripts: result.sampleTranscripts
+          sampleTranscripts: result.sampleTranscripts,
+          emotionSyncRate: result.emotionSyncRate,
+          emotionTestResults: result.emotionTestResults,
+          emotionCoverage: result.emotionCoverage,
+          personalityScore: result.personalityScore
         });
         
         setExpandedSections(prev => new Set([...prev, 'reliability']));

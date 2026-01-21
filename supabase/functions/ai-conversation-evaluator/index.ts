@@ -550,20 +550,23 @@ serve(async (req) => {
       testsToRun = CONVERSATION_TESTS.filter(t => requestedCategories.includes(t.category));
     }
     
-    // Quick mode: run max 12 essential tests to fit within edge function timeout (~30s)
+    // Quick mode: prioritize ALL 11 emotion tests for complete sync coverage
     if (quick) {
-      const coreCategories = ['branding', 'privacy', 'safety', 'memory'];
-      const coreTests = testsToRun.filter(t => coreCategories.includes(t.category));
-      // Only take first 2 from each core category to limit total to ~12 tests
+      // Core categories: reduced to 2 each to fit timeout
+      const coreCategories = ['branding', 'privacy', 'safety'];
       const limitedCore: ConversationTest[] = [];
       for (const cat of coreCategories) {
-        const catTests = coreTests.filter(t => t.category === cat).slice(0, 3);
+        const catTests = testsToRun.filter(t => t.category === cat).slice(0, 2);
         limitedCore.push(...catTests);
       }
-      // Add 2 personality and 2 emotion tests  
+      // Memory: 1 test only
+      const memoryTests = testsToRun.filter(t => t.category === 'memory').slice(0, 1);
+      // Personality: 2 tests
       const personalityTests = testsToRun.filter(t => t.category === 'personality').slice(0, 2);
-      const emotionTests = testsToRun.filter(t => t.category === 'emotion').slice(0, 2);
-      testsToRun = [...limitedCore, ...personalityTests, ...emotionTests].slice(0, 15); // Max 15 tests
+      // ALL emotion tests for complete coverage (11 tests)
+      const emotionTests = testsToRun.filter(t => t.category === 'emotion');
+      testsToRun = [...limitedCore, ...memoryTests, ...personalityTests, ...emotionTests];
+      // Total: ~6 core + 1 memory + 2 personality + 11 emotion = 20 tests
     }
     
     console.log(`Running ${testsToRun.length} conversation tests (quick=${quick})...`);
