@@ -16,7 +16,7 @@ interface PerformanceFeelingProps {
   calculation?: number;
 }
 
-export const PerformanceFeeling = ({
+const PerformanceFeeling = ({
   pageLoad = 1.2,
   aiResponse = 2.5,
   fileUpload = 3.1,
@@ -151,3 +151,5 @@ export const PerformanceFeeling = ({
     </Card>
   );
 };
+
+export default PerformanceFeeling;

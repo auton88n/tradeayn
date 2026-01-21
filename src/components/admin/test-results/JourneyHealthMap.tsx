@@ -77,7 +77,7 @@ const defaultSteps: JourneyStep[] = [
   },
 ];
 
-export const JourneyHealthMap = ({ steps = defaultSteps }: JourneyHealthMapProps) => {
+const JourneyHealthMap = ({ steps = defaultSteps }: JourneyHealthMapProps) => {
   const getStatusInfo = (status: string) => {
     switch (status) {
       case "excellent":
@@ -183,3 +183,5 @@ export const JourneyHealthMap = ({ steps = defaultSteps }: JourneyHealthMapProps
     </Card>
   );
 };
+
+export default JourneyHealthMap;

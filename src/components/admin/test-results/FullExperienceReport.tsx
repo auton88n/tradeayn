@@ -1,12 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FileText, Download, Share2, RefreshCw, Clock } from "lucide-react";
-import { ExperienceScoreCard } from "./ExperienceScoreCard";
-import { UserSentimentSection } from "./UserSentimentSection";
-import { TestInsightsSection } from "./TestInsightsSection";
-import { ImprovementPriorities } from "./ImprovementPriorities";
-import { JourneyHealthMap } from "./JourneyHealthMap";
-import { PerformanceFeeling } from "./PerformanceFeeling";
+import ExperienceScoreCard from "./ExperienceScoreCard";
+import UserSentimentSection from "./UserSentimentSection";
+import TestInsightsSection from "./TestInsightsSection";
+import ImprovementPriorities from "./ImprovementPriorities";
+import JourneyHealthMap from "./JourneyHealthMap";
+import PerformanceFeeling from "./PerformanceFeeling";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -19,7 +19,7 @@ interface FullExperienceReportProps {
   lastUpdated?: Date;
 }
 
-export const FullExperienceReport = ({
+const FullExperienceReport = ({
   testPassRate = 94,
   errorRate = 2.5,
   avgResponseTime = 1.8,
@@ -133,3 +133,5 @@ export const FullExperienceReport = ({
     </div>
   );
 };
+
+export default FullExperienceReport;

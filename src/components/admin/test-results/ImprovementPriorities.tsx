@@ -93,7 +93,7 @@ const defaultImprovements: Improvement[] = [
   },
 ];
 
-export const ImprovementPriorities = ({ improvements = defaultImprovements }: ImprovementPrioritiesProps) => {
+const ImprovementPriorities = ({ improvements = defaultImprovements }: ImprovementPrioritiesProps) => {
   const [items, setItems] = useState(improvements);
 
   const toggleCompleted = (id: string) => {
@@ -189,3 +189,5 @@ export const ImprovementPriorities = ({ improvements = defaultImprovements }: Im
     </Card>
   );
 };
+
+export default ImprovementPriorities;

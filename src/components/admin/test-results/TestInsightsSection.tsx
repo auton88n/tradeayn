@@ -103,7 +103,7 @@ const defaultCategories: TestCategory[] = [
   },
 ];
 
-export const TestInsightsSection = ({ categories = defaultCategories }: TestInsightsSectionProps) => {
+const TestInsightsSection = ({ categories = defaultCategories }: TestInsightsSectionProps) => {
   const getStatusInfo = (status: string) => {
     switch (status) {
       case "excellent":
@@ -162,3 +162,5 @@ export const TestInsightsSection = ({ categories = defaultCategories }: TestInsi
     </Card>
   );
 };
+
+export default TestInsightsSection;

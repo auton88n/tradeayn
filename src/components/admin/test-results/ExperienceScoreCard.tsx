@@ -11,7 +11,7 @@ interface ExperienceScoreCardProps {
   coveragePercent: number;
 }
 
-export const ExperienceScoreCard = ({
+const ExperienceScoreCard = ({
   testPassRate = 95,
   errorRate = 2,
   avgResponseTime = 1.5,
@@ -107,3 +107,5 @@ export const ExperienceScoreCard = ({
     </Card>
   );
 };
+
+export default ExperienceScoreCard;
