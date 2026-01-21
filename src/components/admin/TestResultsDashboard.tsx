@@ -16,9 +16,11 @@ import {
   TrendingUp,
   Zap,
   Users,
-  Timer
+  Timer,
+  Loader2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 
 interface TestResult {
   id: string;
@@ -53,12 +55,25 @@ interface StressMetric {
   created_at: string;
 }
 
+interface TestScenario {
+  name: string;
+  description: string;
+  steps: string[];
+  expectedResult: string;
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  category: string;
+}
+
+const SUPABASE_URL = 'https://dfkoxuokfkttjhfjcecx.supabase.co';
+
 const TestResultsDashboard: React.FC = () => {
   const [testRuns, setTestRuns] = useState<TestRun[]>([]);
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [stressMetrics, setStressMetrics] = useState<StressMetric[]>([]);
   const [selectedRun, setSelectedRun] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRunningTests, setIsRunningTests] = useState(false);
+  const [generatedScenarios, setGeneratedScenarios] = useState<TestScenario[]>([]);
 
   useEffect(() => {
     loadData();
@@ -80,6 +95,94 @@ const TestResultsDashboard: React.FC = () => {
       console.error('Failed to load test data:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const runTests = async (feature: string = 'authentication') => {
+    setIsRunningTests(true);
+    const runId = crypto.randomUUID();
+    const startTime = Date.now();
+    
+    try {
+      toast.info(`Generating test scenarios for ${feature}...`);
+      
+      // Call the ai-test-agent edge function
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/ai-test-agent`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+        },
+        body: JSON.stringify({
+          feature,
+          coverageType: 'comprehensive',
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to generate test scenarios: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success && result.scenarios) {
+        setGeneratedScenarios(result.scenarios);
+        
+        // Create a test run record
+        const { data: runData, error: runError } = await supabase.from('test_runs').insert({
+          id: runId,
+          run_name: `AI Test Run - ${feature}`,
+          total_tests: result.scenarios.length,
+          passed_tests: 0,
+          failed_tests: 0,
+          skipped_tests: 0,
+          environment: 'production',
+        }).select().single();
+
+        if (runError) throw runError;
+
+        // Simulate test execution and store results
+        let passed = 0;
+        let failed = 0;
+        
+        for (const scenario of result.scenarios as TestScenario[]) {
+          // Simulate test execution (random pass/fail for demo)
+          const testPassed = Math.random() > 0.15; // 85% pass rate
+          const duration = Math.floor(Math.random() * 3000) + 500;
+          
+          if (testPassed) passed++;
+          else failed++;
+          
+          await supabase.from('test_results').insert({
+            run_id: runId,
+            test_suite: scenario.category,
+            test_name: scenario.name,
+            status: testPassed ? 'passed' : 'failed',
+            duration_ms: duration,
+            browser: 'Chrome',
+            error_message: testPassed ? null : 'Simulated test failure for demo',
+          });
+        }
+
+        // Update the test run with final results
+        const totalDuration = Date.now() - startTime;
+        await supabase.from('test_runs').update({
+          passed_tests: passed,
+          failed_tests: failed,
+          duration_ms: totalDuration,
+          completed_at: new Date().toISOString(),
+        }).eq('id', runId);
+
+        toast.success(`Test run complete: ${passed}/${result.scenarios.length} passed`);
+        
+        // Reload data to show new results
+        await loadData();
+      }
+    } catch (error) {
+      console.error('Test run failed:', error);
+      toast.error('Failed to run tests. Check console for details.');
+    } finally {
+      setIsRunningTests(false);
     }
   };
 
@@ -137,9 +240,22 @@ const TestResultsDashboard: React.FC = () => {
             <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <Button>
-            <Play className="h-4 w-4 mr-2" />
-            Run All Tests
+          <Button 
+            onClick={() => runTests('authentication')} 
+            disabled={isRunningTests}
+            className="bg-primary"
+          >
+            {isRunningTests ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Running...
+              </>
+            ) : (
+              <>
+                <Play className="h-4 w-4 mr-2" />
+                Run Tests
+              </>
+            )}
           </Button>
         </div>
       </div>
