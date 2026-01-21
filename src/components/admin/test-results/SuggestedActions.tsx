@@ -1,9 +1,10 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Lightbulb, AlertTriangle } from "lucide-react";
-import { useState, useMemo } from "react";
-import { formatDistanceToNow } from "date-fns";
+import React, { useState, useMemo } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Lightbulb, CheckCircle2, ArrowRight, AlertCircle, Play, Bug, Zap, Shield, AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { formatDistanceToNow } from 'date-fns';
 
 interface TestResult {
   id: string;
@@ -11,6 +12,7 @@ interface TestResult {
   test_name: string;
   status: string;
   error_message?: string | null;
+  duration_ms?: number | null;
   created_at: string;
 }
 
@@ -27,13 +29,18 @@ interface StressMetric {
   id: string;
   test_name: string;
   error_rate: number | null;
+  avg_response_time_ms?: number | null;
   created_at: string;
 }
 
 interface Action {
   id: string;
-  text: string;
-  priority: "low" | "medium" | "high";
+  title: string;
+  description: string;
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  icon: React.ReactNode;
+  testNames?: string[];
+  actionLabel?: string;
 }
 
 interface SuggestedActionsProps {
@@ -42,112 +49,154 @@ interface SuggestedActionsProps {
   stressMetrics?: StressMetric[];
 }
 
-const SuggestedActions = ({ 
-  testResults = [], 
-  testRuns = [], 
-  stressMetrics = [] 
-}: SuggestedActionsProps) => {
-  const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
+const SuggestedActions = ({ testResults = [], testRuns = [], stressMetrics = [] }: SuggestedActionsProps) => {
+  const [completedActions, setCompletedActions] = useState<Set<string>>(new Set());
 
   const actions = useMemo((): Action[] => {
-    const generatedActions: Action[] = [];
+    const suggestions: Action[] = [];
 
-    // No data - suggest running tests
+    // No data suggestion
     if (testResults.length === 0 && testRuns.length === 0) {
       return [
         {
-          id: "run-first-test",
-          text: "Run your first test suite to get started",
-          priority: "high",
+          id: 'run-initial',
+          title: 'Run your first test suite',
+          description: 'Establish baseline metrics by running the Quick AI Tests suite',
+          priority: 'critical',
+          icon: <Play className="w-4 h-4" />,
+          actionLabel: 'Run Quick Tests'
         },
         {
-          id: "explore-suites",
-          text: "Explore available test suites (Auth, Security, Stress, etc.)",
-          priority: "medium",
-        },
+          id: 'explore-suites',
+          title: 'Explore available test suites',
+          description: 'Check out Auth, Security, Stress, and more test categories',
+          priority: 'medium',
+          icon: <Lightbulb className="w-4 h-4" />,
+          actionLabel: 'View Suites'
+        }
       ];
     }
 
-    // Fix failing tests - highest priority
-    const failedTests = testResults.filter(t => t.status === 'failed');
+    // Specific failed tests with names
+    const failedTests = testResults.filter(r => r.status === 'failed');
     if (failedTests.length > 0) {
-      // Group by suite
-      const failedBySuite: Record<string, TestResult[]> = {};
-      failedTests.forEach(test => {
-        const suite = test.test_suite || "Other";
-        if (!failedBySuite[suite]) failedBySuite[suite] = [];
-        failedBySuite[suite].push(test);
-      });
+      const groupedByError = failedTests.reduce((acc, t) => {
+        const key = t.error_message || 'Unknown error';
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(t.test_name);
+        return acc;
+      }, {} as Record<string, string[]>);
 
-      Object.entries(failedBySuite).forEach(([suite, tests]) => {
-        generatedActions.push({
-          id: `fix-${suite}`,
-          text: `Fix ${tests.length} failing test${tests.length !== 1 ? 's' : ''} in ${suite}: ${tests[0].test_name}${tests.length > 1 ? '...' : ''}`,
-          priority: "high",
+      Object.entries(groupedByError).slice(0, 2).forEach(([error, tests], i) => {
+        suggestions.push({
+          id: `fix-${i}`,
+          title: `Fix ${tests.length} failing test${tests.length > 1 ? 's' : ''}`,
+          description: error.length > 80 ? error.substring(0, 77) + '...' : error,
+          priority: 'critical',
+          icon: <Bug className="w-4 h-4" />,
+          testNames: tests.slice(0, 3),
+          actionLabel: 'View Details'
         });
       });
     }
 
-    // Check for old test runs
+    // Slow tests that need optimization
+    const slowTests = testResults.filter(r => (r.duration_ms || 0) > 5000);
+    if (slowTests.length > 0) {
+      suggestions.push({
+        id: 'optimize-slow',
+        title: `Optimize ${slowTests.length} slow test${slowTests.length > 1 ? 's' : ''}`,
+        description: 'Tests taking over 5 seconds may indicate performance issues',
+        priority: 'medium',
+        icon: <Zap className="w-4 h-4" />,
+        testNames: slowTests.slice(0, 3).map(t => t.test_name),
+        actionLabel: 'Review Tests'
+      });
+    }
+
+    // Old test runs
     if (testRuns.length > 0) {
-      const latestRun = testRuns[0];
-      const hoursAgo = (Date.now() - new Date(latestRun.created_at).getTime()) / (1000 * 60 * 60);
+      const latestRun = new Date(testRuns[0].created_at);
+      const hoursSinceRun = (Date.now() - latestRun.getTime()) / (1000 * 60 * 60);
       
-      if (hoursAgo > 24) {
-        generatedActions.push({
-          id: "run-tests",
-          text: `Last test run was ${formatDistanceToNow(new Date(latestRun.created_at), { addSuffix: true })} - consider running again`,
-          priority: "medium",
+      if (hoursSinceRun > 24) {
+        suggestions.push({
+          id: 'run-tests',
+          title: 'Tests may be stale',
+          description: `Last run was ${formatDistanceToNow(latestRun, { addSuffix: true })}. Re-run to verify current state.`,
+          priority: 'medium',
+          icon: <Play className="w-4 h-4" />,
+          actionLabel: 'Run Tests'
         });
       }
     }
 
     // No stress tests
     if (stressMetrics.length === 0 && testResults.length > 0) {
-      generatedActions.push({
-        id: "run-stress",
-        text: "No stress test data - run stress tests to check load capacity",
-        priority: "medium",
+      suggestions.push({
+        id: 'run-stress',
+        title: 'No stress test data',
+        description: 'Run stress tests to check load capacity and performance under pressure',
+        priority: 'medium',
+        icon: <Zap className="w-4 h-4" />,
+        actionLabel: 'Run Stress Tests'
       });
     }
 
-    // High error rate in stress tests
-    const highErrorStress = stressMetrics.filter(m => (m.error_rate || 0) > 0.05);
-    if (highErrorStress.length > 0) {
-      generatedActions.push({
-        id: "fix-stress",
-        text: `${highErrorStress.length} stress test${highErrorStress.length !== 1 ? 's' : ''} showing high error rates - investigate performance`,
-        priority: "high",
+    // High error rate in stress tests with specifics
+    const highErrorMetrics = stressMetrics.filter(m => (m.error_rate || 0) >= 0.05);
+    if (highErrorMetrics.length > 0) {
+      const worst = highErrorMetrics.sort((a, b) => (b.error_rate || 0) - (a.error_rate || 0))[0];
+      suggestions.push({
+        id: 'fix-stress',
+        title: 'High error rate under load',
+        description: `${worst.test_name}: ${((worst.error_rate || 0) * 100).toFixed(1)}% errors`,
+        priority: 'high',
+        icon: <AlertCircle className="w-4 h-4" />,
+        actionLabel: 'Investigate'
       });
     }
 
-    // Check test coverage across suites
-    const testedSuites = new Set(testResults.map(t => t.test_suite));
-    const expectedSuites = ['auth', 'security', 'engineering', 'performance', 'user_flow'];
-    const missingSuites = expectedSuites.filter(s => !testedSuites.has(s));
+    // Missing critical test suites
+    const existingSuites = new Set(testResults.map(r => r.test_suite.toLowerCase()));
+    const criticalSuites = [
+      { name: 'security', label: 'Security Tests' },
+      { name: 'auth', label: 'Auth Tests' }
+    ];
     
-    if (missingSuites.length > 0 && testResults.length > 0) {
-      generatedActions.push({
-        id: "expand-coverage",
-        text: `Expand test coverage to include: ${missingSuites.slice(0, 3).join(', ')}`,
-        priority: "low",
+    const missingSuites = criticalSuites.filter(s => 
+      ![...existingSuites].some(es => es.includes(s.name))
+    );
+    
+    if (missingSuites.length > 0) {
+      suggestions.push({
+        id: 'add-security',
+        title: 'Add critical test coverage',
+        description: `Missing: ${missingSuites.map(s => s.label).join(', ')}`,
+        priority: 'high',
+        icon: <Shield className="w-4 h-4" />,
+        actionLabel: 'Add Tests'
       });
     }
 
     // All good state
-    if (generatedActions.length === 0 && testResults.length > 0) {
-      generatedActions.push({
-        id: "maintain",
-        text: "All tests passing! Keep up the good work and run tests regularly",
-        priority: "low",
+    if (suggestions.length === 0) {
+      const passedCount = testResults.filter(r => r.status === 'passed').length;
+      suggestions.push({
+        id: 'all-good',
+        title: 'All systems healthy',
+        description: `${passedCount} tests passing. Consider expanding edge case coverage.`,
+        priority: 'low',
+        icon: <CheckCircle2 className="w-4 h-4" />,
+        actionLabel: 'Add More Tests'
       });
     }
 
-    return generatedActions.slice(0, 5); // Max 5 actions
+    return suggestions.slice(0, 5);
   }, [testResults, testRuns, stressMetrics]);
 
   const toggleCompleted = (id: string) => {
-    setCompletedIds(prev => {
+    setCompletedActions(prev => {
       const newSet = new Set(prev);
       if (newSet.has(id)) {
         newSet.delete(id);
@@ -158,19 +207,31 @@ const SuggestedActions = ({
     });
   };
 
-  const getPriorityBadge = (priority: string) => {
+  const getPriorityStyles = (priority: string) => {
     switch (priority) {
-      case "high":
-        return <Badge variant="destructive" className="text-xs">Urgent</Badge>;
-      case "medium":
-        return <Badge variant="secondary" className="text-xs">Soon</Badge>;
+      case 'critical':
+        return {
+          badge: 'bg-red-500/20 text-red-400 border-red-500/30',
+          card: 'border-red-500/20 bg-red-500/5'
+        };
+      case 'high':
+        return {
+          badge: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+          card: 'border-orange-500/20 bg-orange-500/5'
+        };
+      case 'medium':
+        return {
+          badge: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+          card: 'border-amber-500/20 bg-amber-500/5'
+        };
+      case 'low':
       default:
-        return <Badge variant="outline" className="text-xs">When possible</Badge>;
+        return {
+          badge: 'bg-muted text-muted-foreground border-border',
+          card: 'border-border/50 bg-muted/20'
+        };
     }
   };
-
-  const pendingActions = actions.filter(a => !completedIds.has(a.id));
-  const completedActions = actions.filter(a => completedIds.has(a.id));
 
   if (actions.length === 0) {
     return (
@@ -185,57 +246,106 @@ const SuggestedActions = ({
     );
   }
 
+  const pendingActions = actions.filter(a => !completedActions.has(a.id));
+  const doneActions = actions.filter(a => completedActions.has(a.id));
+
   return (
-    <Card>
+    <Card className="bg-card/50 border-border/50">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Lightbulb className="h-5 w-5 text-primary" />
+        <CardTitle className="text-lg flex items-center gap-2">
+          <Lightbulb className="w-5 h-5 text-amber-400" />
           Suggested Actions
           {pendingActions.length > 0 && (
-            <Badge variant="secondary" className="ml-2 text-xs">
+            <Badge variant="secondary" className="ml-auto text-xs">
               {pendingActions.length} pending
             </Badge>
           )}
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-2">
-          {pendingActions.map((action) => (
+      <CardContent className="space-y-3">
+        {pendingActions.map((action) => {
+          const styles = getPriorityStyles(action.priority);
+          return (
             <div
               key={action.id}
-              className="flex items-start gap-3 p-2 rounded-lg hover:bg-accent/50 transition-colors"
+              className={`p-3 rounded-lg border ${styles.card}`}
             >
-              <Checkbox
-                checked={false}
-                onCheckedChange={() => toggleCompleted(action.id)}
-                className="mt-0.5"
-              />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm">{action.text}</p>
-              </div>
-              {getPriorityBadge(action.priority)}
-            </div>
-          ))}
-          
-          {completedActions.length > 0 && (
-            <div className="pt-2 mt-2 border-t border-border/50">
-              <p className="text-xs text-muted-foreground mb-2">Completed</p>
-              {completedActions.map((action) => (
-                <div
-                  key={action.id}
-                  className="flex items-start gap-3 p-2 opacity-60"
-                >
-                  <Checkbox
-                    checked={true}
-                    onCheckedChange={() => toggleCompleted(action.id)}
-                    className="mt-0.5"
-                  />
-                  <p className="text-sm line-through">{action.text}</p>
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id={action.id}
+                  checked={false}
+                  onCheckedChange={() => toggleCompleted(action.id)}
+                  className="mt-1"
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-muted-foreground">{action.icon}</span>
+                    <label 
+                      htmlFor={action.id}
+                      className="font-medium cursor-pointer"
+                    >
+                      {action.title}
+                    </label>
+                    <Badge className={`${styles.badge} border text-[10px] ml-auto shrink-0`}>
+                      {action.priority}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    {action.description}
+                  </p>
+                  {action.testNames && action.testNames.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      {action.testNames.map((name, i) => (
+                        <Badge 
+                          key={i} 
+                          variant="outline" 
+                          className="text-[10px] py-0 h-5"
+                        >
+                          {name}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                  {action.actionLabel && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-7 text-xs px-2 -ml-2"
+                    >
+                      {action.actionLabel}
+                      <ArrowRight className="w-3 h-3 ml-1" />
+                    </Button>
+                  )}
                 </div>
-              ))}
+              </div>
             </div>
-          )}
-        </div>
+          );
+        })}
+        
+        {doneActions.length > 0 && (
+          <div className="pt-3 border-t border-border/50 space-y-2">
+            <p className="text-xs text-muted-foreground mb-2">Completed</p>
+            {doneActions.map((action) => (
+              <div
+                key={action.id}
+                className="flex items-center gap-3 p-2 rounded-md opacity-60"
+              >
+                <Checkbox
+                  id={`done-${action.id}`}
+                  checked={true}
+                  onCheckedChange={() => toggleCompleted(action.id)}
+                />
+                <label 
+                  htmlFor={`done-${action.id}`}
+                  className="flex-1 text-sm cursor-pointer line-through"
+                >
+                  {action.title}
+                </label>
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
