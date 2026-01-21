@@ -264,10 +264,8 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
     setShowPlaceholder(true);
     setDetectedLang(null);
     
-    // Clear file immediately after initiating send
-    if (onRemoveFile) {
-      onRemoveFile();
-    }
+    // NOTE: File removal is handled by CenterStageLayout after animation
+    // Do NOT call onRemoveFile here to avoid race condition
     
     if (textareaRef.current) {
       textareaRef.current.style.height = '44px';
@@ -275,7 +273,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
     setTimeout(() => {
       triggerAttentionBlink();
     }, 100);
-  }, [inputMessage, selectedFile, isDisabled, isUploading, onSend, onRemoveFile, triggerAttentionBlink, playSound, bumpActivity]);
+  }, [inputMessage, selectedFile, isDisabled, isUploading, onSend, triggerAttentionBlink, playSound, bumpActivity]);
   const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
