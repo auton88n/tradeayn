@@ -85,16 +85,14 @@ export const AdminSidebar = ({
     const showBadge = section.hasBadge && newAppsCount > 0;
 
     const button = (
-      <motion.button
+      <button
         key={section.id}
         onClick={() => onSelectTab(section.id)}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
         className={cn(
-          "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 relative group",
+          "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors duration-150 relative group",
           isActive
             ? "bg-background shadow-md border border-border"
-            : "hover:bg-background/50"
+            : "hover:bg-muted/50"
         )}
       >
         <div className={cn(
@@ -107,17 +105,14 @@ export const AdminSidebar = ({
         </div>
         
         {!isCollapsed && (
-          <motion.span
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -10 }}
+          <span
             className={cn(
-              "text-sm font-medium flex-1 text-left",
+              "text-sm font-medium flex-1 text-left transition-colors",
               isActive ? "text-foreground" : "text-muted-foreground"
             )}
           >
             {section.title}
-          </motion.span>
+          </span>
         )}
 
         {showBadge && (
@@ -131,7 +126,7 @@ export const AdminSidebar = ({
             {newAppsCount}
           </Badge>
         )}
-      </motion.button>
+      </button>
     );
 
     if (isCollapsed) {

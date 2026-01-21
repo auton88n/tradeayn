@@ -145,10 +145,8 @@ export const AdminDashboard = ({ systemMetrics, allUsers }: AdminDashboardProps)
             <motion.div 
               key={metric.label} 
               variants={itemVariants}
-              whileHover={{ scale: 1.02, y: -4 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
             >
-              <Card className={`relative overflow-hidden border border-border/50 shadow-lg ${metric.glow} bg-card/80 backdrop-blur-xl group cursor-default`}>
+              <Card className={`relative overflow-hidden border border-border/50 shadow-lg ${metric.glow} bg-card/80 backdrop-blur-xl cursor-default`}>
                 {/* Gradient background */}
                 <div className={`absolute inset-0 bg-gradient-to-br ${metric.gradient} opacity-60 group-hover:opacity-80 transition-opacity`} />
                 
@@ -163,13 +161,9 @@ export const AdminDashboard = ({ systemMetrics, allUsers }: AdminDashboardProps)
                         <AnimatedCounter value={metric.value} />
                       </p>
                     </div>
-                    <motion.div 
-                      className={`p-3.5 rounded-2xl ${metric.iconBg}`}
-                      whileHover={{ rotate: 5, scale: 1.1 }}
-                      transition={{ type: 'spring', stiffness: 400 }}
-                    >
+                    <div className={`p-3.5 rounded-2xl ${metric.iconBg}`}>
                       <Icon className={`w-6 h-6 ${metric.iconColor}`} />
-                    </motion.div>
+                    </div>
                   </div>
                   
                   {/* Trend indicator */}
@@ -209,14 +203,10 @@ export const AdminDashboard = ({ systemMetrics, allUsers }: AdminDashboardProps)
                     <p className="text-sm text-muted-foreground">No recent activity</p>
                   </div>
                 ) : (
-                  recentUsers.map((user, index) => (
-                    <motion.div
+                  recentUsers.map((user) => (
+                    <div
                       key={user.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      whileHover={{ x: 4 }}
-                      className="flex items-center justify-between p-3 rounded-xl bg-muted/30 hover:bg-muted/50 border border-transparent hover:border-border/50 transition-all cursor-default group"
+                      className="flex items-center justify-between p-3 rounded-xl bg-muted/30 hover:bg-muted/50 border border-transparent hover:border-border/50 transition-colors cursor-default"
                     >
                       <div className="flex items-center gap-3">
                         <div className="relative">
@@ -233,7 +223,7 @@ export const AdminDashboard = ({ systemMetrics, allUsers }: AdminDashboardProps)
                           )}
                         </div>
                         <div>
-                          <p className="text-sm font-medium group-hover:text-primary transition-colors">
+                          <p className="text-sm font-medium">
                             {user.profiles?.company_name || user.profiles?.contact_person || 'Unknown'}
                           </p>
                           <p className="text-xs text-muted-foreground">
@@ -251,7 +241,7 @@ export const AdminDashboard = ({ systemMetrics, allUsers }: AdminDashboardProps)
                       >
                         {user.is_active ? 'Active' : 'Pending'}
                       </Badge>
-                    </motion.div>
+                    </div>
                   ))
                 )}
               </div>
