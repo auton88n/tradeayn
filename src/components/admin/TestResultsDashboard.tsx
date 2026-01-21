@@ -21,7 +21,9 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
-import { E2ETestCoverage, TestSuiteSelector, FullExperienceReport } from './test-results';
+import E2ETestCoverage from './test-results/E2ETestCoverage';
+import TestSuiteSelector from './test-results/TestSuiteSelector';
+import FullExperienceReport from './test-results/FullExperienceReport';
 
 interface TestResult {
   id: string;
