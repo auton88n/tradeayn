@@ -12,19 +12,47 @@ const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY') || '';
 const SCREENSHOTONE_API_KEY = Deno.env.get('SCREENSHOTONE_API_KEY') || '';
 
-// Pages to test with viewports
-const PAGES_TO_TEST = [
+// Critical pages for quick tests
+const CRITICAL_PAGES = [
   { path: '/', name: 'Landing Page', viewports: ['desktop', 'mobile'] },
-  { path: '/engineering', name: 'Engineering Portal', viewports: ['desktop', 'mobile'] },
+  { path: '/engineering', name: 'Engineering Workspace', viewports: ['desktop'] },
   { path: '/support', name: 'Support Center', viewports: ['desktop'] },
-  { path: '/services/ai-agents', name: 'AI Agents', viewports: ['desktop'] },
-  { path: '/services/automation', name: 'Automation', viewports: ['desktop'] },
-  { path: '/services/civil-engineering', name: 'Civil Engineering', viewports: ['desktop'] },
+  { path: '/settings', name: 'User Settings', viewports: ['desktop'] },
+];
+
+// Full coverage of ALL pages (16 pages)
+const PAGES_TO_TEST = [
+  // === PUBLIC LANDING PAGES ===
+  { path: '/', name: 'Landing Page', viewports: ['desktop', 'mobile'] },
+  
+  // === SERVICE PAGES ===
+  { path: '/services/ai-employee', name: 'AI Employee Service', viewports: ['desktop', 'mobile'] },
+  { path: '/services/content-creator-sites', name: 'Influencer Sites', viewports: ['desktop', 'mobile'] },
+  { path: '/services/ai-agents', name: 'AI Agents Service', viewports: ['desktop', 'mobile'] },
+  { path: '/services/automation', name: 'Automation Service', viewports: ['desktop', 'mobile'] },
+  { path: '/services/civil-engineering', name: 'Civil Engineering', viewports: ['desktop', 'mobile'] },
+  
+  // === APPLICATION FORMS ===
+  { path: '/services/ai-employee/apply', name: 'AI Employee Apply', viewports: ['desktop', 'mobile'] },
+  { path: '/services/content-creator-sites/apply', name: 'Influencer Apply', viewports: ['desktop', 'mobile'] },
+  { path: '/services/ai-agents/apply', name: 'AI Agents Apply', viewports: ['desktop', 'mobile'] },
+  { path: '/services/automation/apply', name: 'Automation Apply', viewports: ['desktop', 'mobile'] },
+  
+  // === CORE APP TOOLS ===
+  { path: '/support', name: 'Support Center', viewports: ['desktop', 'mobile'] },
+  { path: '/settings', name: 'User Settings', viewports: ['desktop', 'mobile'] },
+  { path: '/marketing-studio', name: 'Marketing Studio (LAB)', viewports: ['desktop', 'mobile'] },
+  { path: '/engineering', name: 'Engineering Workspace', viewports: ['desktop'] },
+  { path: '/engineering/grading', name: 'AI Grading Designer', viewports: ['desktop'] },
+  
+  // === UTILITY PAGES ===
+  { path: '/reset-password', name: 'Password Reset', viewports: ['desktop', 'mobile'] },
 ];
 
 // Viewport configurations
 const VIEWPORTS: Record<string, { width: number; height: number }> = {
   desktop: { width: 1920, height: 1080 },
+  tablet: { width: 768, height: 1024 },
   mobile: { width: 375, height: 812 }
 };
 
@@ -369,29 +397,38 @@ serve(async (req) => {
   }
   
   try {
-    const { pages: customPages, siteUrl: customSiteUrl } = await req.json().catch(() => ({}));
+    const { pages: customPages, siteUrl: customSiteUrl, quickTest } = await req.json().catch(() => ({}));
     
     const siteUrl = customSiteUrl || 'https://ayn-insight-forge.lovable.app';
-    const pagesToTest = customPages || PAGES_TO_TEST;
+    const pagesToTest = customPages || (quickTest ? CRITICAL_PAGES : PAGES_TO_TEST);
     
     console.log(`Starting GPT-4 Vision visual tests for ${pagesToTest.length} pages on ${siteUrl}`);
+    console.log(`Mode: ${quickTest ? 'QUICK TEST (critical pages only)' : 'FULL TEST (all pages)'}`);
     console.log(`SCREENSHOTONE_API_KEY configured: ${!!SCREENSHOTONE_API_KEY}`);
     console.log(`OPENAI_API_KEY configured: ${!!OPENAI_API_KEY}`);
     
-    // Run tests sequentially to avoid rate limiting
+    // Process pages in parallel batches for speed
+    const batchSize = 3;
     const results: PageResult[] = [];
     
-    for (const page of pagesToTest) {
-      const pageResult = await analyzePageWithScreenshots(
-        page.path, 
-        page.name, 
-        page.viewports || ['desktop'],
-        siteUrl
-      );
-      results.push(pageResult);
+    for (let i = 0; i < pagesToTest.length; i += batchSize) {
+      const batch = pagesToTest.slice(i, i + batchSize);
+      console.log(`Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(pagesToTest.length / batchSize)}: ${batch.map(p => p.name).join(', ')}`);
       
-      // Small delay between pages to avoid rate limits
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const batchResults = await Promise.all(
+        batch.map(page => analyzePageWithScreenshots(
+          page.path, 
+          page.name, 
+          page.viewports || ['desktop'],
+          siteUrl
+        ))
+      );
+      results.push(...batchResults);
+      
+      // Small delay between batches to avoid rate limits
+      if (i + batchSize < pagesToTest.length) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
     }
     
     // Get AI summary
