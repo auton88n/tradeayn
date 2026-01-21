@@ -5,13 +5,70 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Input validation helper
+function validateNumeric(value: unknown, fieldName: string, options: { min?: number; max?: number; required?: boolean } = {}): { valid: boolean; error?: string; value?: number } {
+  const { min, max, required = true } = options;
+  
+  if (value === undefined || value === null) {
+    if (required) {
+      return { valid: false, error: `Missing required field: ${fieldName}` };
+    }
+    return { valid: true, value: undefined };
+  }
+  
+  const num = Number(value);
+  if (isNaN(num)) {
+    return { valid: false, error: `${fieldName} must be a valid number` };
+  }
+  
+  if (min !== undefined && num < min) {
+    return { valid: false, error: `${fieldName} cannot be less than ${min}` };
+  }
+  
+  if (max !== undefined && num > max) {
+    return { valid: false, error: `${fieldName} cannot be greater than ${max}` };
+  }
+  
+  return { valid: true, value: num };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { span, deadLoad, liveLoad, beamWidth, concreteGrade, steelGrade, supportType } = await req.json();
+    const body = await req.json();
+    
+    // Handle both formats: { inputs: {...} } OR {...} directly
+    const rawInputs = body.inputs || body;
+    
+    // Validate all required numeric fields
+    const validations = [
+      validateNumeric(rawInputs.span, 'span', { min: 0.5, max: 30 }),
+      validateNumeric(rawInputs.deadLoad, 'deadLoad', { min: 0 }),
+      validateNumeric(rawInputs.liveLoad, 'liveLoad', { min: 0 }),
+      validateNumeric(rawInputs.beamWidth, 'beamWidth', { min: 150, max: 1000 }),
+    ];
+    
+    const errors = validations.filter(v => !v.valid).map(v => v.error);
+    if (errors.length > 0) {
+      return new Response(JSON.stringify({ 
+        error: errors.join('; '),
+        validationFailed: true 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const span = Number(rawInputs.span);
+    const deadLoad = Number(rawInputs.deadLoad);
+    const liveLoad = Number(rawInputs.liveLoad);
+    const beamWidth = Number(rawInputs.beamWidth);
+    const concreteGrade = rawInputs.concreteGrade || 'C30';
+    const steelGrade = rawInputs.steelGrade || 'Fy420';
+    const supportType = rawInputs.supportType || 'simply_supported';
 
     // Material properties
     const concreteProps: Record<string, number> = { C25: 25, C30: 30, C35: 35, C40: 40 };
@@ -131,7 +188,10 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Beam calculation error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ 
+      error: error.message || 'Invalid request',
+      validationFailed: true 
+    }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

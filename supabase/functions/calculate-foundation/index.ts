@@ -5,13 +5,72 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Input validation helper
+function validateNumeric(value: unknown, fieldName: string, options: { min?: number; max?: number; required?: boolean } = {}): { valid: boolean; error?: string; value?: number } {
+  const { min, max, required = true } = options;
+  
+  if (value === undefined || value === null) {
+    if (required) {
+      return { valid: false, error: `Missing required field: ${fieldName}` };
+    }
+    return { valid: true, value: undefined };
+  }
+  
+  const num = Number(value);
+  if (isNaN(num)) {
+    return { valid: false, error: `${fieldName} must be a valid number` };
+  }
+  
+  if (min !== undefined && num < min) {
+    return { valid: false, error: `${fieldName} cannot be less than ${min}` };
+  }
+  
+  if (max !== undefined && num > max) {
+    return { valid: false, error: `${fieldName} cannot be greater than ${max}` };
+  }
+  
+  return { valid: true, value: num };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { columnLoad, momentX, momentY, columnWidth, columnDepth, bearingCapacity, concreteGrade } = await req.json();
+    const body = await req.json();
+    
+    // Handle both formats: { inputs: {...} } OR {...} directly
+    const rawInputs = body.inputs || body;
+    
+    // Validate all required numeric fields
+    const validations = [
+      validateNumeric(rawInputs.columnLoad, 'columnLoad', { min: 0 }),
+      validateNumeric(rawInputs.momentX, 'momentX', { min: 0, required: false }),
+      validateNumeric(rawInputs.momentY, 'momentY', { min: 0, required: false }),
+      validateNumeric(rawInputs.columnWidth, 'columnWidth', { min: 150, max: 2000 }),
+      validateNumeric(rawInputs.columnDepth, 'columnDepth', { min: 150, max: 2000 }),
+      validateNumeric(rawInputs.bearingCapacity, 'bearingCapacity', { min: 50, max: 2000 }),
+    ];
+    
+    const errors = validations.filter(v => !v.valid).map(v => v.error);
+    if (errors.length > 0) {
+      return new Response(JSON.stringify({ 
+        error: errors.join('; '),
+        validationFailed: true 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const columnLoad = Number(rawInputs.columnLoad);
+    const momentX = Number(rawInputs.momentX) || 0;
+    const momentY = Number(rawInputs.momentY) || 0;
+    const columnWidth = Number(rawInputs.columnWidth);
+    const columnDepth = Number(rawInputs.columnDepth);
+    const bearingCapacity = Number(rawInputs.bearingCapacity);
+    const concreteGrade = rawInputs.concreteGrade || 'C30';
 
     const concreteProps: Record<string, number> = { C25: 25, C30: 30, C35: 35 };
     const fck = concreteProps[concreteGrade] || 30;
@@ -27,8 +86,8 @@ serve(async (req) => {
     
     // Adjust for moments (eccentricity)
     if (momentX > 0 || momentY > 0) {
-      const ex = momentX / columnLoad;
-      const ey = momentY / columnLoad;
+      const ex = columnLoad > 0 ? momentX / columnLoad : 0;
+      const ey = columnLoad > 0 ? momentY / columnLoad : 0;
       length = Math.max(length, 6 * ex + columnWidth / 1000);
       width = Math.max(width, 6 * ey + columnDepth / 1000);
     }
@@ -123,7 +182,10 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Foundation calculation error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ 
+      error: error.message || 'Invalid request',
+      validationFailed: true 
+    }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
