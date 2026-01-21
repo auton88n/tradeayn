@@ -1,10 +1,10 @@
-// Test Results Components - Full Experience Report Dashboard
+// Test Results Components - Cache invalidation: 2026-01-21T03:47:30
 export { default as E2ETestCoverage } from './E2ETestCoverage';
 export { default as TestSuiteSelector } from './TestSuiteSelector';
-export { FullExperienceReport } from './FullExperienceReport';
-export { ExperienceScoreCard } from './ExperienceScoreCard';
-export { UserSentimentSection } from './UserSentimentSection';
-export { TestInsightsSection } from './TestInsightsSection';
-export { ImprovementPriorities } from './ImprovementPriorities';
-export { JourneyHealthMap } from './JourneyHealthMap';
-export { PerformanceFeeling } from './PerformanceFeeling';
+export { default as FullExperienceReport } from './FullExperienceReport';
+export { default as ExperienceScoreCard } from './ExperienceScoreCard';
+export { default as UserSentimentSection } from './UserSentimentSection';
+export { default as TestInsightsSection } from './TestInsightsSection';
+export { default as ImprovementPriorities } from './ImprovementPriorities';
+export { default as JourneyHealthMap } from './JourneyHealthMap';
+export { default as PerformanceFeeling } from './PerformanceFeeling';

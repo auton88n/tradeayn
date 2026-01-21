@@ -16,7 +16,7 @@ interface UserSentimentSectionProps {
   featureAdoptionRate?: number;
 }
 
-export const UserSentimentSection = ({
+const UserSentimentSection = ({
   avgLoadSpeed = 1.2,
   errorRate = 0.5,
   supportTicketsThisWeek = 3,
@@ -98,3 +98,5 @@ export const UserSentimentSection = ({
     </Card>
   );
 };
+
+export default UserSentimentSection;
