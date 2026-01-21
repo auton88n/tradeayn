@@ -255,9 +255,9 @@ async function analyzePageWithScreenshots(
         issues: [{
           type: 'content',
           severity: 'critical',
-          description: `Failed to capture ${viewport} screenshot`,
+          description: `Failed to capture ${viewport} screenshot - API key may be invalid or quota exceeded`,
           location: 'entire page',
-          suggestion: 'Check if the page is accessible and screenshotone.com API is working'
+          suggestion: 'Verify SCREENSHOTONE_API_KEY in Supabase secrets. Check screenshotone.com account for valid access key.'
         }],
         analysisTime: Date.now() - startTime
       });
@@ -279,13 +279,24 @@ async function analyzePageWithScreenshots(
     allIssues.push(...issues);
   }
 
-  // Determine status based on issues
+  // Determine status based on issues AND screenshot failures
   const criticalCount = allIssues.filter(i => i.severity === 'critical').length;
   const highCount = allIssues.filter(i => i.severity === 'high').length;
+  const screenshotsFailed = viewportResults.filter(v => !v.screenshotUrl).length;
+  const totalViewports = viewportResults.length;
   
   let status: 'passed' | 'warning' | 'failed' = 'passed';
-  if (criticalCount > 0) status = 'failed';
-  else if (highCount > 0 || allIssues.length > 3) status = 'warning';
+  
+  // Screenshot failures take priority
+  if (screenshotsFailed === totalViewports) {
+    status = 'failed'; // All screenshots failed
+  } else if (screenshotsFailed > 0) {
+    status = 'warning'; // Some screenshots failed
+  } else if (criticalCount > 0) {
+    status = 'failed';
+  } else if (highCount > 0 || allIssues.length > 3) {
+    status = 'warning';
+  }
 
   return {
     path,
@@ -398,8 +409,14 @@ serve(async (req) => {
     const totalScreenshots = results.reduce((sum, r) => sum + r.metrics.screenshotCount, 0);
     const avgAnalysisTime = results.reduce((sum, r) => sum + r.metrics.analysisTime, 0) / results.length;
     
-    // Calculate health score
+    // Calculate health score accounting for screenshot failures
+    const totalExpectedScreenshots = pagesToTest.reduce((sum: number, p: { viewports?: string[] }) => sum + (p.viewports?.length || 1), 0);
+    const screenshotFailureRate = totalExpectedScreenshots > 0 
+      ? (totalExpectedScreenshots - totalScreenshots) / totalExpectedScreenshots 
+      : 0;
+    
     let healthScore = 100;
+    healthScore -= screenshotFailureRate * 50; // Heavy penalty for screenshot failures
     healthScore -= criticalIssues.length * 15;
     healthScore -= highIssues.length * 5;
     healthScore -= warningCount * 3;
