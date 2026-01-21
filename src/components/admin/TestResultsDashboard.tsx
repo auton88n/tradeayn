@@ -79,6 +79,45 @@ interface BugReport {
 
 const SUPABASE_URL = 'https://dfkoxuokfkttjhfjcecx.supabase.co';
 
+/**
+ * Safely fetch JSON from an edge function with proper content-type validation
+ * Returns parsed JSON or throws a user-friendly error
+ */
+async function safeFetchJson<T>(url: string, options: RequestInit): Promise<T> {
+  const response = await fetch(url, options);
+  
+  // Check content-type before parsing
+  const contentType = response.headers.get('content-type');
+  if (!contentType?.includes('application/json')) {
+    const text = await response.text();
+    console.error(`Non-JSON response from ${url}:`, text.substring(0, 300));
+    
+    // Provide user-friendly error messages based on common issues
+    if (text.includes('<!DOCTYPE') || text.includes('<html')) {
+      throw new Error('Server returned an error page. The edge function may have crashed or timed out.');
+    }
+    if (text.includes('Rate limit') || text.includes('429')) {
+      throw new Error('Rate limit exceeded. Please wait a moment and try again.');
+    }
+    if (text.includes('Unauthorized') || text.includes('401')) {
+      throw new Error('Authentication required. Please sign in and try again.');
+    }
+    throw new Error('Server returned an unexpected response. Check edge function logs for details.');
+  }
+  
+  if (!response.ok) {
+    // Try to extract error message from JSON response
+    try {
+      const errorData = await response.json();
+      throw new Error(errorData.error || errorData.message || `Request failed with status ${response.status}`);
+    } catch {
+      throw new Error(`Request failed with status ${response.status}`);
+    }
+  }
+  
+  return response.json();
+}
+
 const TestResultsDashboard: React.FC = () => {
   const [testRuns, setTestRuns] = useState<TestRun[]>([]);
   const [testResults, setTestResults] = useState<TestResult[]>([]);
@@ -164,27 +203,30 @@ const TestResultsDashboard: React.FC = () => {
       const config = suiteConfig[suiteId] || { name: 'Quick Tests', suite: 'quick' };
       toast.info(`Running ${config.name}...`);
       
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/run-real-tests`, {
+      const result = await safeFetchJson<{
+        success: boolean;
+        results?: Array<{
+          category: string;
+          name: string;
+          status: string;
+          duration_ms: number;
+          error_message?: string;
+        }>;
+        summary?: {
+          total: number;
+          passed: number;
+          failed: number;
+          passRate: number;
+          totalDuration: number;
+        };
+        error?: string;
+      }>(`${SUPABASE_URL}/functions/v1/run-real-tests`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ suite: config.suite }),
       });
-
-      // Validate content type before parsing
-      const contentType = response.headers.get('content-type');
-      if (!contentType?.includes('application/json')) {
-        const text = await response.text();
-        console.error('Non-JSON response from test runner:', text.substring(0, 200));
-        throw new Error('Server returned HTML error page instead of JSON. Check edge function logs.');
-      }
-
-      if (!response.ok) {
-        throw new Error(`Test runner failed: ${response.status}`);
-      }
-
-      const result = await response.json();
       
-      if (result.success && result.results) {
+      if (result.success && result.results && result.summary) {
         await supabase.from('test_runs').insert({
           id: runId,
           run_name: config.name,
@@ -219,6 +261,8 @@ const TestResultsDashboard: React.FC = () => {
         }
         
         await loadData();
+      } else if (result.error) {
+        throw new Error(result.error);
       }
     } catch (error) {
       console.error('Test run failed:', error);
@@ -233,7 +277,13 @@ const TestResultsDashboard: React.FC = () => {
     try {
       toast.info('🔍 AI Bug Hunter starting...');
       
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/ai-bug-hunter`, {
+      const result = await safeFetchJson<{
+        success: boolean;
+        bugs?: BugReport[];
+        analysis?: string;
+        modelUsed?: string;
+        error?: string;
+      }>(`${SUPABASE_URL}/functions/v1/ai-bug-hunter`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -241,31 +291,19 @@ const TestResultsDashboard: React.FC = () => {
           model: 'claude'
         }),
       });
-
-      // Validate content type before parsing
-      const contentType = response.headers.get('content-type');
-      if (!contentType?.includes('application/json')) {
-        const text = await response.text();
-        console.error('Non-JSON response from bug hunter:', text.substring(0, 200));
-        throw new Error('Server returned HTML error page instead of JSON. Check edge function logs.');
-      }
-
-      if (!response.ok) {
-        throw new Error(`Bug hunter failed: ${response.status}`);
-      }
-
-      const result = await response.json();
       
       if (result.success) {
         setBugs(result.bugs || []);
         setAiAnalysis(result.analysis || '');
         setAiModel(result.modelUsed || 'Claude Sonnet 4');
         
-        if (result.bugs.length === 0) {
+        if (!result.bugs || result.bugs.length === 0) {
           toast.success('✅ No bugs found!');
         } else {
           toast.warning(`⚠️ Found ${result.bugs.length} potential bugs`);
         }
+      } else if (result.error) {
+        throw new Error(result.error);
       }
     } catch (error) {
       console.error('Bug hunter failed:', error);
