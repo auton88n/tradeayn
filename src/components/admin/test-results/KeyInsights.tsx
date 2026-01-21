@@ -1,6 +1,8 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle2, AlertCircle, Info, XCircle, Clock } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CheckCircle2, AlertTriangle, XCircle, Info, TrendingUp, AlertCircle, Timer, Clock } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
 
 interface TestResult {
   id: string;
@@ -18,6 +20,7 @@ interface TestRun {
   total_tests: number | null;
   passed_tests: number | null;
   failed_tests: number | null;
+  duration_ms?: number | null;
   created_at: string;
 }
 
@@ -25,13 +28,10 @@ interface StressMetric {
   id: string;
   test_name: string;
   concurrent_users: number | null;
+  avg_response_time_ms?: number | null;
+  p95_response_time_ms?: number | null;
   error_rate: number | null;
   created_at: string;
-}
-
-interface Insight {
-  type: "success" | "warning" | "info" | "error";
-  message: string;
 }
 
 interface KeyInsightsProps {
@@ -40,128 +40,251 @@ interface KeyInsightsProps {
   stressMetrics?: StressMetric[];
 }
 
-const KeyInsights = ({ 
-  testRuns = [], 
-  testResults = [], 
-  stressMetrics = [] 
-}: KeyInsightsProps) => {
+interface Insight {
+  type: 'success' | 'warning' | 'error' | 'info';
+  title: string;
+  details: string[];
+  metric?: string;
+}
+
+const KeyInsights = ({ testRuns = [], testResults = [], stressMetrics = [] }: KeyInsightsProps) => {
   const generateInsights = (): Insight[] => {
     const insights: Insight[] = [];
 
     // No data state
     if (testResults.length === 0 && testRuns.length === 0) {
       return [
-        { type: "warning", message: "No test data available yet. Run your first test suite to see insights!" },
+        { 
+          type: 'warning', 
+          title: 'No test data available yet',
+          details: ['Run your first test suite to see insights', 'Use the "Run Tests" button above']
+        },
       ];
     }
-
-    // Recent test run insight
+    
+    // Latest run analysis with specific test names
     if (testRuns.length > 0) {
       const latestRun = testRuns[0];
-      const timeAgo = formatDistanceToNow(new Date(latestRun.created_at), { addSuffix: true });
-      const passRate = latestRun.total_tests 
-        ? ((latestRun.passed_tests || 0) / latestRun.total_tests * 100).toFixed(0)
+      const passRate = latestRun.total_tests && latestRun.passed_tests 
+        ? Math.round((latestRun.passed_tests / latestRun.total_tests) * 100)
         : 0;
       
-      if ((latestRun.failed_tests || 0) > 0) {
-        insights.push({
-          type: "error",
-          message: `Last run "${latestRun.run_name || 'Test Run'}": ${latestRun.passed_tests}/${latestRun.total_tests} passed (${passRate}%) - ${timeAgo}`,
-        });
-      } else {
-        insights.push({
-          type: "success",
-          message: `Last run "${latestRun.run_name || 'Test Run'}": ${latestRun.passed_tests}/${latestRun.total_tests} passed - ${timeAgo}`,
-        });
-      }
-    }
-
-    // Failed tests insight
-    const failedTests = testResults.filter(t => t.status === 'failed');
-    if (failedTests.length > 0) {
-      const uniqueFailedSuites = [...new Set(failedTests.map(t => t.test_suite))];
-      insights.push({
-        type: "error",
-        message: `${failedTests.length} failing test${failedTests.length !== 1 ? 's' : ''} in: ${uniqueFailedSuites.slice(0, 3).join(', ')}${uniqueFailedSuites.length > 3 ? '...' : ''}`,
-      });
-    } else if (testResults.length > 0) {
-      insights.push({
-        type: "success",
-        message: `All ${testResults.length} tests passing - no failures detected`,
-      });
-    }
-
-    // Test suite coverage insight
-    const uniqueSuites = [...new Set(testResults.map(t => t.test_suite))];
-    if (uniqueSuites.length > 0) {
-      insights.push({
-        type: "success",
-        message: `Testing ${uniqueSuites.length} categories: ${uniqueSuites.slice(0, 4).join(', ')}${uniqueSuites.length > 4 ? '...' : ''}`,
-      });
-    }
-
-    // Stress test insight
-    if (stressMetrics.length > 0) {
-      const maxUsers = Math.max(...stressMetrics.map(m => m.concurrent_users || 0));
-      const avgErrorRate = stressMetrics.reduce((sum, m) => sum + (m.error_rate || 0), 0) / stressMetrics.length;
+      const timeAgo = formatDistanceToNow(new Date(latestRun.created_at), { addSuffix: true });
       
-      if (avgErrorRate > 0.05) {
+      if (passRate === 100) {
         insights.push({
-          type: "warning",
-          message: `Stress tests: ${(avgErrorRate * 100).toFixed(1)}% avg error rate at ${maxUsers} concurrent users`,
+          type: 'success',
+          title: `All ${latestRun.total_tests} tests passing`,
+          details: [`Last run: ${timeAgo}`, latestRun.run_name || 'Unnamed run'],
+          metric: '100%'
+        });
+      } else if (passRate >= 80) {
+        insights.push({
+          type: 'warning',
+          title: `${latestRun.failed_tests} tests need attention`,
+          details: [`${passRate}% pass rate`, `Run: ${timeAgo}`],
+          metric: `${passRate}%`
         });
       } else {
         insights.push({
-          type: "success",
-          message: `Stress tests passing: supports ${maxUsers}+ concurrent users`,
+          type: 'error',
+          title: `Critical: ${latestRun.failed_tests} test failures`,
+          details: [`Only ${passRate}% passing`, `Immediate action required`],
+          metric: `${passRate}%`
         });
       }
-    } else if (testResults.length > 0) {
+    }
+
+    // Specific failed tests with names and errors
+    const failedTests = testResults.filter(r => r.status === 'failed');
+    if (failedTests.length > 0) {
+      const failedNames = failedTests.slice(0, 3).map(t => t.test_name);
+      const hasMore = failedTests.length > 3;
+      
       insights.push({
-        type: "info",
-        message: "No stress test data - consider running stress tests",
+        type: 'error',
+        title: `${failedTests.length} failing test${failedTests.length > 1 ? 's' : ''}`,
+        details: [
+          ...failedNames,
+          ...(hasMore ? [`+${failedTests.length - 3} more failures`] : [])
+        ],
+        metric: failedTests.length.toString()
       });
     }
 
-    return insights.slice(0, 4); // Max 4 insights
+    // Slow tests detection
+    const slowTests = testResults.filter(r => (r.duration_ms || 0) > 5000);
+    if (slowTests.length > 0) {
+      const slowestTest = slowTests.sort((a, b) => (b.duration_ms || 0) - (a.duration_ms || 0))[0];
+      insights.push({
+        type: 'warning',
+        title: `${slowTests.length} slow test${slowTests.length > 1 ? 's' : ''} detected`,
+        details: [
+          `Slowest: ${slowestTest.test_name}`,
+          `Duration: ${((slowestTest.duration_ms || 0) / 1000).toFixed(1)}s`
+        ],
+        metric: `${slowTests.length}`
+      });
+    }
+
+    // Stress test insights with specifics
+    if (stressMetrics.length > 0) {
+      const highErrorMetrics = stressMetrics.filter(m => (m.error_rate || 0) >= 0.05);
+      if (highErrorMetrics.length > 0) {
+        const worstMetric = highErrorMetrics.sort((a, b) => (b.error_rate || 0) - (a.error_rate || 0))[0];
+        insights.push({
+          type: 'warning',
+          title: 'High error rate in load tests',
+          details: [
+            `${worstMetric.test_name}: ${((worstMetric.error_rate || 0) * 100).toFixed(1)}% errors`,
+            `${worstMetric.concurrent_users} concurrent users`
+          ],
+          metric: `${((worstMetric.error_rate || 0) * 100).toFixed(0)}%`
+        });
+      }
+
+      // P95 response time analysis
+      const slowP95 = stressMetrics.filter(m => (m.p95_response_time_ms || 0) > 2000);
+      if (slowP95.length > 0) {
+        const slowest = slowP95.sort((a, b) => (b.p95_response_time_ms || 0) - (a.p95_response_time_ms || 0))[0];
+        insights.push({
+          type: 'info',
+          title: 'Response time optimization needed',
+          details: [
+            `${slowest.test_name}: ${((slowest.p95_response_time_ms || 0) / 1000).toFixed(1)}s P95`,
+            'Consider caching or query optimization'
+          ],
+          metric: `${((slowest.p95_response_time_ms || 0) / 1000).toFixed(1)}s`
+        });
+      }
+    }
+
+    // Test coverage insight
+    const uniqueSuites = [...new Set(testResults.map(r => r.test_suite))];
+    if (uniqueSuites.length > 0 && insights.length < 5) {
+      const totalTests = testResults.length;
+      insights.push({
+        type: 'info',
+        title: `${uniqueSuites.length} test suites active`,
+        details: [
+          `${totalTests} total tests across suites`,
+          uniqueSuites.slice(0, 3).join(', ') + (uniqueSuites.length > 3 ? '...' : '')
+        ],
+        metric: uniqueSuites.length.toString()
+      });
+    }
+
+    // No recent tests warning
+    if (testRuns.length > 0) {
+      const latestRunDate = new Date(testRuns[0].created_at);
+      const hoursSinceRun = (Date.now() - latestRunDate.getTime()) / (1000 * 60 * 60);
+      if (hoursSinceRun > 24) {
+        insights.push({
+          type: 'warning',
+          title: 'Tests may be stale',
+          details: [
+            `Last run: ${formatDistanceToNow(latestRunDate, { addSuffix: true })}`,
+            'Consider running tests to verify current state'
+          ],
+          metric: `${Math.floor(hoursSinceRun)}h`
+        });
+      }
+    }
+
+    return insights.slice(0, 5);
   };
 
   const insights = generateInsights();
 
   const getIcon = (type: string) => {
     switch (type) {
-      case "success":
-        return <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />;
-      case "warning":
-        return <AlertCircle className="h-4 w-4 text-yellow-500 shrink-0" />;
-      case "error":
-        return <XCircle className="h-4 w-4 text-red-500 shrink-0" />;
+      case 'success':
+        return <CheckCircle2 className="w-5 h-5 text-emerald-400" />;
+      case 'warning':
+        return <AlertTriangle className="w-5 h-5 text-amber-400" />;
+      case 'error':
+        return <XCircle className="w-5 h-5 text-red-400" />;
+      case 'info':
       default:
-        return <Info className="h-4 w-4 text-blue-500 shrink-0" />;
+        return <Info className="w-5 h-5 text-blue-400" />;
     }
   };
 
+  const getTypeStyles = (type: string) => {
+    switch (type) {
+      case 'success':
+        return 'border-emerald-500/20 bg-emerald-500/5';
+      case 'warning':
+        return 'border-amber-500/20 bg-amber-500/5';
+      case 'error':
+        return 'border-red-500/20 bg-red-500/5';
+      case 'info':
+      default:
+        return 'border-blue-500/20 bg-blue-500/5';
+    }
+  };
+
+  if (insights.length === 0) {
+    return (
+      <Card className="bg-card/50 border-border/50">
+        <CardContent className="p-6 text-center text-muted-foreground">
+          <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
+          <p className="text-sm">No test data available yet</p>
+          <p className="text-xs mt-1">Run tests to generate insights</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Card>
+    <Card className="bg-card/50 border-border/50">
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg">What You Need to Know</CardTitle>
+        <CardTitle className="text-lg flex items-center gap-2">
+          <TrendingUp className="w-5 h-5" />
+          What You Need to Know
+          <Badge variant="secondary" className="ml-auto text-xs">
+            {insights.length} insights
+          </Badge>
+        </CardTitle>
       </CardHeader>
-      <CardContent>
-        <ul className="space-y-2">
-          {insights.map((insight, index) => (
-            <li key={index} className="flex items-start gap-2 text-sm">
-              {getIcon(insight.type)}
-              <span className={
-                insight.type === "error" ? "text-red-600 dark:text-red-400" :
-                insight.type === "warning" ? "text-yellow-600 dark:text-yellow-400" :
-                insight.type === "success" ? "text-green-600 dark:text-green-400" :
-                "text-muted-foreground"
-              }>
-                {insight.message}
-              </span>
-            </li>
-          ))}
-        </ul>
+      <CardContent className="space-y-3">
+        {insights.map((insight, index) => (
+          <div 
+            key={index} 
+            className={`p-3 rounded-lg border ${getTypeStyles(insight.type)}`}
+          >
+            <div className="flex items-start gap-3">
+              <div className="shrink-0 mt-0.5">
+                {getIcon(insight.type)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <h4 className="font-medium">{insight.title}</h4>
+                  {insight.metric && (
+                    <Badge 
+                      variant="outline" 
+                      className={`shrink-0 text-xs font-mono ${
+                        insight.type === 'success' ? 'text-emerald-400 border-emerald-500/30' :
+                        insight.type === 'warning' ? 'text-amber-400 border-amber-500/30' :
+                        insight.type === 'error' ? 'text-red-400 border-red-500/30' :
+                        'text-blue-400 border-blue-500/30'
+                      }`}
+                    >
+                      {insight.metric}
+                    </Badge>
+                  )}
+                </div>
+                <ul className="mt-1.5 space-y-0.5">
+                  {insight.details.map((detail, i) => (
+                    <li key={i} className="text-sm text-muted-foreground truncate">
+                      • {detail}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        ))}
       </CardContent>
     </Card>
   );
