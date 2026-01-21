@@ -128,3 +128,6 @@ verify_jwt = false
 
 [functions.setup-test-users]
 verify_jwt = false
+
+[functions.run-real-tests]
+verify_jwt = false
