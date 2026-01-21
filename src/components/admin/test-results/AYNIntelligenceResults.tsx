@@ -158,7 +158,7 @@ export const AYNIntelligenceResults: React.FC<AYNIntelligenceResultsProps> = ({
                       <p className="text-muted-foreground truncate">{result.reason}</p>
                     </div>
                     <span className={result.passed ? 'text-green-500' : 'text-red-500'}>
-                      {result.score}%
+                      {Math.round(result.score)}%
                     </span>
                   </div>
                 ))}

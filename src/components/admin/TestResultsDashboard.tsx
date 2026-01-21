@@ -950,10 +950,11 @@ const TestResultsDashboard: React.FC = () => {
         />
       </div>
 
-      {/* Section 4: Engineering & AI Analysis */}
+      {/* Section 4: Engineering Benchmark - Full Width for Better Visibility */}
+      <EngineeringBenchmark />
+
+      {/* Section 5: AI Analysis */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <EngineeringBenchmark />
-        
         <AIAnalysisCard
           analysis={aiAnalysis}
           model={aiModel || 'Claude Sonnet 4'}
