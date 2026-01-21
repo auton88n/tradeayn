@@ -25,6 +25,7 @@ import {
   ChevronDown,
   ChevronUp,
   Play,
+  Eye,
   Brain,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -40,6 +41,8 @@ import { ComprehensiveTestResults } from './test-results/ComprehensiveTestResult
 import { UXJourneyResults } from './test-results/UXJourneyResults';
 import { ResponseTimeResults } from './test-results/ResponseTimeResults';
 import { AYNIntelligenceResults } from './test-results/AYNIntelligenceResults';
+import { VisualTestCard } from './test-results/VisualTestCard';
+import { VisualTestResults } from './test-results/VisualTestResults';
 
 interface TestResult {
   id: string;
@@ -141,6 +144,7 @@ const TestResultsDashboard: React.FC = () => {
   const [isRunningUxTester, setIsRunningUxTester] = useState(false);
   const [isRunningResponseTime, setIsRunningResponseTime] = useState(false);
   const [isRunningIntelligence, setIsRunningIntelligence] = useState(false);
+  const [isRunningVisualTest, setIsRunningVisualTest] = useState(false);
   
   // New test results
   const [responseTimeResults, setResponseTimeResults] = useState<{
@@ -151,6 +155,12 @@ const TestResultsDashboard: React.FC = () => {
   const [intelligenceResults, setIntelligenceResults] = useState<{
     summary?: { overallScore: number; intelligenceRating: 'genius' | 'smart' | 'average' | 'needs_training'; totalTests: number; passed: number; failed: number };
     byCategory?: Record<string, unknown>;
+    improvements?: string[];
+  } | null>(null);
+  const [visualTestResults, setVisualTestResults] = useState<{
+    summary?: { totalPages: number; passed: number; warnings: number; failed: number; totalIssues: number; criticalIssues: number; highIssues: number; avgLoadTime: string; healthScore: number; overallRating: 'excellent' | 'good' | 'needs_improvement' | 'poor' };
+    results?: Array<{ path: string; name: string; status: 'passed' | 'warning' | 'failed'; analysisMethod: string; issues: Array<{ type: string; severity: string; description: string; element?: string; suggestion: string }>; metrics: { htmlSize: number; loadTime: number; elementsCount: number; imagesCount: number; linksCount: number; formsCount: number } }>;
+    aiAnalysis?: string;
     improvements?: string[];
   } | null>(null);
   const [comprehensiveResults, setComprehensiveResults] = useState<{ passRate: string; totalTests: number; passed: number; failed: number; avgDuration?: number } | null>(null);
@@ -591,6 +601,51 @@ const TestResultsDashboard: React.FC = () => {
     }
   };
 
+  const runVisualTester = async () => {
+    setIsRunningVisualTest(true);
+    try {
+      toast.info('👁️ Running visual tests across all pages...');
+      
+      const result = await safeFetchJson<{
+        success: boolean;
+        summary?: { totalPages: number; passed: number; warnings: number; failed: number; totalIssues: number; criticalIssues: number; highIssues: number; avgLoadTime: string; healthScore: number; overallRating: 'excellent' | 'good' | 'needs_improvement' | 'poor' };
+        results?: Array<{ path: string; name: string; status: 'passed' | 'warning' | 'failed'; analysisMethod: string; issues: Array<{ type: string; severity: string; description: string; element?: string; suggestion: string }>; metrics: { htmlSize: number; loadTime: number; elementsCount: number; imagesCount: number; linksCount: number; formsCount: number } }>;
+        aiAnalysis?: string;
+        error?: string;
+      }>(`${SUPABASE_URL}/functions/v1/ai-visual-tester`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      
+      if (result.success && result.summary) {
+        setVisualTestResults({ summary: result.summary, results: result.results, aiAnalysis: result.aiAnalysis });
+        setAiModel('Visual Tester');
+        
+        // Auto-expand results section
+        setExpandedSections(prev => new Set([...prev, 'results']));
+        
+        if (result.summary.overallRating === 'excellent') {
+          toast.success(`✨ Visual health excellent! ${result.summary.healthScore}%`);
+        } else if (result.summary.overallRating === 'good') {
+          toast.success(`👍 Visual health good. ${result.summary.healthScore}%`);
+        } else if (result.summary.criticalIssues > 0) {
+          toast.error(`🔴 ${result.summary.criticalIssues} critical visual issues found`);
+        } else {
+          toast.warning(`⚠️ Visual health: ${result.summary.healthScore}% - ${result.summary.totalIssues} issues`);
+        }
+        await loadData();
+      } else if (result.error) {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      console.error('Visual tester failed:', error);
+      toast.error(`Failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsRunningVisualTest(false);
+    }
+  };
+
   // Calculate summary stats
   const totalTests = testResults.length;
   const passedTests = testResults.filter(t => t.status === 'passed').length;
@@ -808,6 +863,18 @@ const TestResultsDashboard: React.FC = () => {
               AYN IQ Test
               {intelligenceResults?.summary && <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">{intelligenceResults.summary.overallScore}/100</Badge>}
             </Button>
+            
+            <Button 
+              variant="default" 
+              size="sm" 
+              onClick={runVisualTester} 
+              disabled={isRunningVisualTest}
+              className="h-8 bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700"
+            >
+              {isRunningVisualTest ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Eye className="h-3 w-3 mr-1" />}
+              Visual Test
+              {visualTestResults?.summary && <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">{visualTestResults.summary.healthScore}%</Badge>}
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -872,6 +939,14 @@ const TestResultsDashboard: React.FC = () => {
           bugs={bugs}
           isLoading={isRunningBugHunter}
           onRun={runBugHunter}
+        />
+        
+        {/* Visual Test Card */}
+        <VisualTestCard
+          summary={visualTestResults?.summary}
+          isLoading={isRunningVisualTest}
+          onRun={runVisualTester}
+          lastRun={visualTestResults?.summary ? new Date() : undefined}
         />
       </div>
 
@@ -962,6 +1037,14 @@ const TestResultsDashboard: React.FC = () => {
                 byCategory={intelligenceResults?.byCategory as Record<string, { passed: number; total: number; avgScore: number; results: Array<{ category: string; name: string; passed: boolean; score: number; response: string; reason: string }> }> | undefined}
                 improvements={intelligenceResults?.improvements}
                 isLoading={isRunningIntelligence}
+              />
+
+              {/* Visual Test Results */}
+              <VisualTestResults
+                summary={visualTestResults?.summary}
+                results={visualTestResults?.results as Array<{ path: string; name: string; status: 'passed' | 'warning' | 'failed'; analysisMethod: string; issues: Array<{ type: 'layout' | 'visual' | 'responsive' | 'accessibility' | 'content' | 'performance'; severity: 'critical' | 'high' | 'medium' | 'low'; description: string; element?: string; suggestion: string }>; metrics: { htmlSize: number; loadTime: number; elementsCount: number; imagesCount: number; linksCount: number; formsCount: number } }> | undefined}
+                aiAnalysis={visualTestResults?.aiAnalysis}
+                isLoading={isRunningVisualTest}
               />
             </CardContent>
           </CollapsibleContent>
