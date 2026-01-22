@@ -97,7 +97,12 @@ export const useMessages = (
           } : undefined
         }));
 
-        setMessages(chatMessages);
+        // Deduplicate by ID and sort chronologically
+        const uniqueMessages = Array.from(
+          new Map(chatMessages.map(m => [m.id, m])).values()
+        ).sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+
+        setMessages(uniqueMessages);
       }
     } catch (error) {
       console.error('[useMessages] Error loading messages:', error);
@@ -202,8 +207,11 @@ export const useMessages = (
       attachment: attachment || undefined
     };
 
-    // Add to UI immediately (isTyping already set at start)
-    setMessages(prev => [...prev, userMessage]);
+    // Add to UI immediately with duplicate prevention
+    setMessages(prev => {
+      if (prev.some(m => m.id === userMessage.id)) return prev;
+      return [...prev, userMessage];
+    });
     console.log('[useMessages] User message added to UI');
 
     try {
@@ -333,7 +341,11 @@ export const useMessages = (
         ...(labData ? { labData } : {})
       };
 
-      setMessages(prev => [...prev, aynMessage]);
+      // Add AYN message with duplicate prevention
+      setMessages(prev => {
+        if (prev.some(m => m.id === aynMessage.id)) return prev;
+        return [...prev, aynMessage];
+      });
 
       // FIRST: Save chat session title BEFORE messages (prevents race condition)
       try {
