@@ -35,7 +35,13 @@ export const LazyLoad = ({
   }, [rootMargin, threshold]);
 
   return (
-    <div ref={ref}>
+    <div 
+      ref={ref}
+      style={{ 
+        contain: 'layout paint',
+        willChange: isVisible ? 'auto' : 'contents'
+      }}
+    >
       {isVisible ? children : placeholder}
     </div>
   );

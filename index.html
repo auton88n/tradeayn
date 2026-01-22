@@ -71,6 +71,8 @@
            window.matchMedia('(prefers-color-scheme: dark)').matches);
         document.documentElement.classList.add(isDark ? 'dark' : 'light');
         document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
+        // Set body background immediately to prevent flash
+        document.body.style.backgroundColor = isDark ? '#0a0a0a' : '#ffffff';
       } catch (e) {
         document.documentElement.classList.add('light');
       }
@@ -78,7 +80,7 @@
   </script>
 </head>
 
-  <body style="background-color: var(--background, #ffffff);">
+  <body style="background-color: #0a0a0a;">
     <div id="root" style="min-height: 100vh;"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

@@ -283,8 +283,6 @@ const LandingPage = () => {
       jsonLd={{ '@graph': [organizationSchema, websiteSchema, softwareApplicationSchema, faqSchema] }}
     />
     <div className="min-h-screen bg-background scroll-smooth">
-      {/* Single global background layer - prevents flickering from multiple overlapping gradients */}
-      <div className="fixed inset-0 -z-20 pointer-events-none bg-background" />
       {/* Vertical Dropdown Navigation */}
       <nav className="fixed top-4 md:top-6 left-4 md:left-6 z-50 animate-fade-in">
         <div className="relative">
