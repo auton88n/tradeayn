@@ -230,13 +230,16 @@ const Ticketing = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5 }}
+                  className="overflow-visible"
                 >
                   <span className="inline-flex items-center gap-2 text-sm font-mono text-purple-500 tracking-wider uppercase mb-4">
                     <Ticket className="w-4 h-4" />
                     {language === 'ar' ? 'جديد' : 'NEW'}
                   </span>
-                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent leading-relaxed pb-2">
-                    {t.title}
+                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-[1.35] overflow-visible">
+                    <span className="inline-block overflow-visible pt-[0.06em] pb-[0.42em] bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">
+                      {t.title}
+                    </span>
                   </h1>
                   <p className="text-lg md:text-xl text-muted-foreground mb-8">
                     {t.heroDescription}
