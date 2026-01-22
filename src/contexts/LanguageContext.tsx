@@ -503,6 +503,11 @@ const translations = {
     'auth.passwordReqLowercase': 'One lowercase letter',
     'auth.passwordReqNumber': 'One number',
     'auth.passwordReqSpecial': 'One special character',
+    'auth.termsCheckboxLabel': 'I agree to the',
+    'auth.termsLink': 'Terms & Conditions',
+    'auth.termsAnd': 'and',
+    'auth.privacyLink': 'Privacy Policy',
+    'auth.termsRequiredSignup': 'Please accept the terms to continue',
     
     // Terms Modal
     'terms.welcomeToAynAI': 'Welcome to AYN AI',
@@ -1103,6 +1108,11 @@ const translations = {
     'auth.passwordReqLowercase': 'حرف صغير واحد',
     'auth.passwordReqNumber': 'رقم واحد',
     'auth.passwordReqSpecial': 'رمز خاص واحد',
+    'auth.termsCheckboxLabel': 'أوافق على',
+    'auth.termsLink': 'الشروط والأحكام',
+    'auth.termsAnd': 'و',
+    'auth.privacyLink': 'سياسة الخصوصية',
+    'auth.termsRequiredSignup': 'يرجى قبول الشروط للمتابعة',
     
     // Terms Modal
     'terms.welcomeToAynAI': 'مرحباً بك في AYN AI',
@@ -1478,6 +1488,11 @@ const translations = {
     'auth.passwordReqLowercase': 'Une lettre minuscule',
     'auth.passwordReqNumber': 'Un chiffre',
     'auth.passwordReqSpecial': 'Un caractère spécial',
+    'auth.termsCheckboxLabel': 'J\'accepte les',
+    'auth.termsLink': 'Conditions d\'utilisation',
+    'auth.termsAnd': 'et la',
+    'auth.privacyLink': 'Politique de confidentialité',
+    'auth.termsRequiredSignup': 'Veuillez accepter les conditions pour continuer',
     
     // Terms Modal
     'terms.welcomeToAynAI': 'Bienvenue sur AYN AI',
