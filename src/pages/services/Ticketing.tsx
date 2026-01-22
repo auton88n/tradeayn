@@ -210,7 +210,7 @@ const Ticketing = () => {
                 transition={{ duration: 0.5, delay: 0.2 }}
                 className="flex justify-center"
               >
-                <div className="w-full max-w-md h-[360px] bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20 rounded-3xl p-4 flex items-center justify-center overflow-hidden">
+                <div className="w-full max-w-3xl h-[480px] flex items-center justify-center">
                   <TicketingMockup />
                 </div>
               </motion.div>
