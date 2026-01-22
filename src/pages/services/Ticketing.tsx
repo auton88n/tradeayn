@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, QrCode, Smartphone, BarChart3, Calendar, Wifi, Palette, Check, Loader2, Ticket, ShieldCheck, Users } from 'lucide-react';
+import { ArrowLeft, QrCode, Smartphone, BarChart3, Calendar, Wifi, Palette, Check, Loader2, Ticket, ShieldCheck, Users, Brain, MessageCircle, Crown, Megaphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -28,18 +28,68 @@ const Ticketing = () => {
 
   const t = {
     title: language === 'ar' ? 'نظام التذاكر الذكي' : language === 'fr' ? 'Système de Billetterie Intelligent' : 'Smart Ticketing System',
-    subtitle: language === 'ar' ? 'بيع التذاكر أونلاين والتحقق بمسح QR من الجوال' : language === 'fr' ? 'Vendez des billets en ligne et validez par scan QR' : 'Sell tickets online and validate with phone QR scanning',
+    subtitle: language === 'ar' ? 'بيع التذاكر عبر الإنترنت والتحقق بمسح رمز QR من الهاتف' : language === 'fr' ? 'Vendez des billets en ligne et validez par code QR' : 'Sell tickets online and validate with phone QR scanning',
     heroDescription: language === 'ar' 
       ? 'نظام متكامل لإدارة الفعاليات: بيع التذاكر إلكترونياً، إرسال رموز QR للهواتف، والتحقق الفوري عند الدخول.'
       : language === 'fr' 
-      ? 'Système complet de gestion d\'événements: vente de billets en ligne, codes QR mobiles et validation instantanée.'
+      ? 'Système complet de gestion d\'événements : vente de billets en ligne, codes QR mobiles et validation instantanée à l\'entrée.'
       : 'Complete event management: online ticket sales, mobile QR codes, and instant validation at entry.',
     getStarted: language === 'ar' ? 'ابدأ الآن' : language === 'fr' ? 'Commencer' : 'Get Started',
     back: language === 'ar' ? 'العودة' : language === 'fr' ? 'Retour' : 'Back',
-    howItWorks: language === 'ar' ? 'كيف يعمل' : language === 'fr' ? 'Comment ça marche' : 'How It Works',
+    howItWorks: language === 'ar' ? 'كيف يعمل النظام' : language === 'fr' ? 'Comment ça fonctionne' : 'How It Works',
     features: language === 'ar' ? 'المميزات' : language === 'fr' ? 'Fonctionnalités' : 'Features',
-    applyNow: language === 'ar' ? 'قدم طلبك الآن' : language === 'fr' ? 'Postuler maintenant' : 'Apply Now'
+    applyNow: language === 'ar' ? 'قدّم طلبك الآن' : language === 'fr' ? 'Postulez maintenant' : 'Apply Now',
+    
+    // AI Features Section
+    aiFeatures: language === 'ar' ? 'مميزات الذكاء الاصطناعي' : language === 'fr' ? 'Fonctionnalités IA' : 'AI-Powered Features',
+    aiSubtitle: language === 'ar' ? 'دع الذكاء الاصطناعي يتولى المهام المعقدة نيابةً عنك' : language === 'fr' ? 'Laissez l\'intelligence artificielle gérer les tâches complexes' : 'Let artificial intelligence handle the heavy lifting',
+    aiPowered: language === 'ar' ? 'مدعوم بالذكاء الاصطناعي' : language === 'fr' ? 'Propulsé par l\'IA' : 'AI-Powered',
+    
+    aiCustomerService: language === 'ar' ? 'خدمة العملاء الذكية' : language === 'fr' ? 'Service Client IA' : 'AI Customer Service',
+    aiCustomerServiceDesc: language === 'ar' 
+      ? 'روبوت محادثة ذكي يعمل على مدار الساعة للرد على استفسارات الحضور حول الفعاليات والتذاكر ومعلومات المكان'
+      : language === 'fr' 
+      ? 'Chatbot intelligent disponible 24h/24 répondant aux questions des participants sur les événements, billets et informations du lieu'
+      : '24/7 AI chatbot answers attendee questions about events, tickets, and venue info',
+    
+    aiVipInvitations: language === 'ar' ? 'دعوات VIP الذكية' : language === 'fr' ? 'Invitations VIP IA' : 'AI VIP Invitations',
+    aiVipInvitationsDesc: language === 'ar' 
+      ? 'إنشاء دعوات VIP مخصصة تلقائياً بناءً على سجل الضيوف وتفضيلاتهم السابقة'
+      : language === 'fr' 
+      ? 'Génération automatique d\'invitations VIP personnalisées basées sur l\'historique et les préférences des invités'
+      : 'Auto-generate personalized VIP invitations based on guest history and preferences',
+    
+    aiMarketing: language === 'ar' ? 'حملات التسويق الذكية' : language === 'fr' ? 'Campagnes Marketing IA' : 'AI Marketing Campaigns',
+    aiMarketingDesc: language === 'ar' 
+      ? 'حملات بريد إلكتروني ورسائل نصية ذكية تُحسّن التوقيت والمحتوى لتحقيق أقصى مبيعات للتذاكر'
+      : language === 'fr' 
+      ? 'Campagnes email et SMS intelligentes optimisant le timing et le contenu pour maximiser les ventes de billets'
+      : 'Smart email and SMS campaigns that optimize timing and messaging for maximum ticket sales',
+    
+    ctaTitle: language === 'ar' ? 'جاهز لإدارة فعالياتك؟' : language === 'fr' ? 'Prêt à gérer vos événements ?' : 'Ready to manage your events?',
+    ctaDesc: language === 'ar' ? 'ابدأ اليوم وحوّل طريقة إدارة التذاكر لديك' : language === 'fr' ? 'Commencez aujourd\'hui et transformez votre gestion des billets' : 'Start today and transform your ticket management'
   };
+
+  const aiFeatures = [
+    {
+      icon: MessageCircle,
+      title: t.aiCustomerService,
+      description: t.aiCustomerServiceDesc,
+      gradient: 'from-cyan-500 to-blue-500'
+    },
+    {
+      icon: Crown,
+      title: t.aiVipInvitations,
+      description: t.aiVipInvitationsDesc,
+      gradient: 'from-amber-500 to-orange-500'
+    },
+    {
+      icon: Megaphone,
+      title: t.aiMarketing,
+      description: t.aiMarketingDesc,
+      gradient: 'from-pink-500 to-rose-500'
+    }
+  ];
 
   const features = [
     {
@@ -274,6 +324,39 @@ const Ticketing = () => {
           </div>
         </section>
 
+        {/* AI-Powered Features Section */}
+        <section className="py-16 md:py-24 px-4 md:px-6 bg-muted/30">
+          <div className="container mx-auto max-w-6xl">
+            <div className="text-center mb-12">
+              <span className="inline-flex items-center gap-2 text-sm font-mono text-purple-500 tracking-wider uppercase mb-4">
+                <Brain className="w-4 h-4" />
+                {t.aiPowered}
+              </span>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">{t.aiFeatures}</h2>
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">{t.aiSubtitle}</p>
+            </div>
+            
+            <div className="grid md:grid-cols-3 gap-8">
+              {aiFeatures.map((feature, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 }}
+                  className="relative p-6 rounded-2xl bg-background border border-border hover:border-purple-500/50 transition-all group"
+                >
+                  <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform`}>
+                    <feature.icon className="w-7 h-7 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
+                  <p className="text-muted-foreground">{feature.description}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
         {/* CTA Section */}
         <section className="py-16 md:py-24 px-4 md:px-6">
           <div className="container mx-auto max-w-4xl text-center">
@@ -283,12 +366,8 @@ const Ticketing = () => {
               viewport={{ once: true }}
               className="p-12 rounded-3xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20"
             >
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                {language === 'ar' ? 'جاهز لإدارة فعالياتك؟' : language === 'fr' ? 'Prêt à gérer vos événements?' : 'Ready to manage your events?'}
-              </h2>
-              <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
-                {language === 'ar' ? 'ابدأ اليوم وحوّل طريقة إدارة التذاكر لديك' : language === 'fr' ? 'Commencez aujourd\'hui et transformez votre gestion des billets' : 'Start today and transform your ticket management'}
-              </p>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">{t.ctaTitle}</h2>
+              <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">{t.ctaDesc}</p>
               <Button size="lg" onClick={() => setIsModalOpen(true)} className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600">
                 {t.getStarted}
               </Button>
