@@ -7,6 +7,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useUserSettings } from '@/hooks/useUserSettings';
 import { supabase } from '@/integrations/supabase/client';
 import { supabaseApi } from '@/lib/supabaseApi';
+
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, Download, Trash2, AlertTriangle } from 'lucide-react';
@@ -90,21 +91,32 @@ export const PrivacySettings = ({ userId, session }: PrivacySettingsProps) => {
     if (!userId) return;
 
     try {
-      // Delete user data using REST API
-      await Promise.all([
-        supabaseApi.delete(`messages?user_id=eq.${userId}`, token),
-        supabaseApi.delete(`profiles?user_id=eq.${userId}`, token),
-        supabaseApi.delete(`user_settings?user_id=eq.${userId}`, token),
-      ]);
+      // Call edge function to fully delete account including auth.users
+      const response = await fetch(
+        'https://dfkoxuokfkttjhfjcecx.supabase.co/functions/v1/delete-account',
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
-      // Sign out (keep using supabase.auth for auth operations)
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to delete account');
+      }
+
+      // Sign out locally and redirect
       await supabase.auth.signOut();
-      navigate('/');
-
+      
       toast({
         title: t('common.success'),
         description: t('settings.accountDeleted'),
       });
+      
+      navigate('/');
     } catch (error) {
       console.error('Error deleting account:', error);
       toast({
@@ -145,19 +157,6 @@ export const PrivacySettings = ({ userId, session }: PrivacySettingsProps) => {
             />
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>{t('settings.shareAnonymousData')}</Label>
-              <p className="text-sm text-muted-foreground">
-                {t('settings.shareAnonymousDataDesc')}
-              </p>
-            </div>
-            <Switch
-              checked={settings.share_anonymous_data}
-              onCheckedChange={(checked) => updateSettings({ share_anonymous_data: checked })}
-              disabled={updating}
-            />
-          </div>
         </div>
       </Card>
 

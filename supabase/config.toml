@@ -173,3 +173,6 @@ verify_jwt = false
 
 [functions.ai-conversation-evaluator]
 verify_jwt = false
+
+[functions.delete-account]
+verify_jwt = false
