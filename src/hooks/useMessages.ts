@@ -347,6 +347,23 @@ export const useMessages = (
         return [...prev, aynMessage];
       });
 
+      // Send desktop notification if tab is hidden
+      if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+        try {
+          const notification = new Notification('AYN', {
+            body: response.length > 100 ? response.substring(0, 100) + '...' : response,
+            icon: '/favicon.png',
+            tag: 'ayn-response', // Prevents duplicate notifications
+          });
+          notification.onclick = () => {
+            window.focus();
+            notification.close();
+          };
+        } catch {
+          // Silent fail - notifications are non-critical
+        }
+      }
+
       // FIRST: Save chat session title BEFORE messages (prevents race condition)
       try {
         const existingSession = await fetch(
