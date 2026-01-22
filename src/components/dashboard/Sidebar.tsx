@@ -257,6 +257,25 @@ export const Sidebar = ({
           </div>
         </Button>
         
+        {subscriptionTier === 'free' && (
+          <Button 
+            onClick={() => {
+              setProfilePopoverOpen(false);
+              navigate('/pricing');
+            }} 
+            variant="ghost" 
+            className="w-full justify-start h-11 px-3 gap-3 rounded-xl bg-gradient-to-r from-purple-500/10 to-purple-600/10 hover:from-purple-500/20 hover:to-purple-600/20 border border-purple-500/20 transition-all duration-200 group"
+          >
+            <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center group-hover:scale-105 transition-all duration-200">
+              <Sparkles className="w-4 h-4 text-purple-500" />
+            </div>
+            <div className="flex flex-col items-start">
+              <span className="text-sm font-medium text-purple-500">Upgrade Plan</span>
+              <span className="text-[10px] text-purple-400/70">Get more credits</span>
+            </div>
+          </Button>
+        )}
+        
         {hasDutyAccess && (
           <Button onClick={onAdminPanelClick} variant="ghost" className="w-full justify-start h-11 px-3 gap-3 rounded-xl hover:bg-muted/60 transition-all duration-200 group">
             <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center group-hover:bg-muted group-hover:scale-105 transition-all duration-200">
@@ -300,7 +319,7 @@ export const Sidebar = ({
         </Button>
       </div>
     </>
-  ), [userName, userEmail, hasDutyAccess, isAdmin, isSigningOut, onAdminPanelClick, onLogout, onStartTutorial, navigate]);
+  ), [userName, userEmail, hasDutyAccess, isAdmin, isSigningOut, subscriptionTier, onAdminPanelClick, onLogout, onStartTutorial, navigate]);
 
   // Control profile popover during tutorial
   useEffect(() => {
