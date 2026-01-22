@@ -688,7 +688,7 @@ const LandingPage = () => {
               {/* Ticketing System - Featured Card */}
               <ScrollReveal delay={0.5}>
                 <Link to="/services/ticketing" className="block">
-                  <motion.div className="bg-card/50 border border-border/50 rounded-3xl p-6 md:p-8 min-h-[420px] flex flex-col group cursor-pointer overflow-visible" whileHover={{
+                  <motion.div className="bg-card/50 border border-border/50 rounded-3xl p-6 md:p-8 min-h-[500px] flex flex-col group cursor-pointer overflow-visible" whileHover={{
                   y: -4
                 }} transition={{
                   duration: 0.3,
@@ -703,7 +703,7 @@ const LandingPage = () => {
                         {services[5].description}
                       </p>
                     </div>
-                    <div className="flex-1 flex items-center justify-center overflow-visible min-h-[300px]">
+                    <div className="flex-1 flex items-center justify-center overflow-visible">
                       {services[5].mockup}
                     </div>
                     <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors mt-4">
