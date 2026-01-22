@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Brain, ArrowRight, CheckCircle, Send, Loader2, Sparkles, Globe, Shield, Menu, ChevronDown } from 'lucide-react';
+import { Brain, ArrowRight, CheckCircle, Send, Loader2, Sparkles, Globe, Shield, Menu, ChevronDown, Calculator, Car, Mountain } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -407,16 +407,17 @@ const LandingPage = () => {
             </span>
 
             <h2 className="text-3xl md:text-5xl lg:text-6xl font-serif font-bold mb-4 md:mb-6">
-              {language === 'ar' ? 'رفيقك الذكي' : language === 'fr' ? 'Votre Compagnon de Vie Intelligent' : 'Your Intelligent Life Companion'}
+              {language === 'ar' ? 'ذكاء اصطناعي + أدوات هندسية' : language === 'fr' ? 'IA + Outils d\'Ingénierie' : 'AI Assistant + Engineering Tools'}
             </h2>
 
             <p className="text-base md:text-xl text-muted-foreground max-w-3xl mx-auto mb-10 md:mb-16">
-              {language === 'ar' ? 'AYN يتعرّف عليك ويتعلم عاداتك ويساعدك على البقاء منظماً كل يوم.' : language === 'fr' ? 'AYN apprend à vous connaître. Il comprend vos habitudes, vos objectifs, et vous aide à rester organisé et concentré chaque jour.' : 'AYN gets to know you. It learns your habits, understands your goals, and helps you stay organized and focused every day.'}
+              {language === 'ar' ? 'AYN يتعرّف عليك ويساعدك في مهامك اليومية، بالإضافة إلى أدوات هندسية احترافية للتصميم الإنشائي.' : language === 'fr' ? 'AYN apprend vos habitudes et vous aide à rester organisé, avec des outils d\'ingénierie professionnels.' : 'AYN learns your habits and helps you stay organized, plus professional engineering tools for structural design.'}
             </p>
           </ScrollReveal>
 
-          {/* 3 Value Props */}
+          {/* 6 Value Props - 2 Rows */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
+            {/* Row 1: AI Capabilities */}
             <ScrollReveal delay={0.1}>
               <div className="text-center space-y-3 md:space-y-4">
                 <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-muted/50 mx-auto flex items-center justify-center">
@@ -426,7 +427,7 @@ const LandingPage = () => {
                   {language === 'ar' ? 'يتكيّف معك' : language === 'fr' ? 'Compréhension Adaptative' : 'Adaptive Understanding'}
                 </h3>
                 <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-                  {language === 'ar' ? 'يتعلم تفضيلاتك ويقدم إرشادات تناسبك.' : language === 'fr' ? 'Apprend vos préférences et offre des conseils personnalisés adaptés à vous.' : 'Learns your preferences over time and offers personalized guidance tailored to you.'}
+                  {language === 'ar' ? 'يتعلم تفضيلاتك ويقدم إرشادات تناسبك.' : language === 'fr' ? 'Apprend vos préférences et offre des conseils personnalisés.' : 'Learns your preferences and offers personalized guidance tailored to you.'}
                 </p>
               </div>
             </ScrollReveal>
@@ -440,7 +441,7 @@ const LandingPage = () => {
                   {language === 'ar' ? 'دائماً بجانبك' : language === 'fr' ? 'Toujours Disponible' : 'Always Available'}
                 </h3>
                 <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-                  {language === 'ar' ? 'رفيق متاح ٢٤ ساعة جاهز لمساعدتك.' : language === 'fr' ? 'Un compagnon attentionné disponible 24/7, prêt à vous aider quand vous en avez besoin.' : 'A thoughtful companion available 24/7, ready to help whenever you need support or clarity.'}
+                  {language === 'ar' ? 'رفيق متاح ٢٤ ساعة جاهز لمساعدتك.' : language === 'fr' ? 'Un compagnon disponible 24/7, prêt à vous aider.' : 'A thoughtful companion available 24/7, ready to help whenever you need.'}
                 </p>
               </div>
             </ScrollReveal>
@@ -451,10 +452,53 @@ const LandingPage = () => {
                   <Shield className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
                 </div>
                 <h3 className="text-lg md:text-xl font-bold">
-                  {language === 'ar' ? 'خصوصيتك محمية' : language === 'fr' ? 'Votre Vie Privée, Protégée' : 'Your Privacy, Protected'}
+                  {language === 'ar' ? 'خصوصيتك محمية' : language === 'fr' ? 'Vie Privée Protégée' : 'Your Privacy, Protected'}
                 </h3>
                 <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-                  {language === 'ar' ? 'محادثاتك وبياناتك مشفرة بالكامل.' : language === 'fr' ? 'Vos conversations et données sont sécurisées avec un chiffrement de bout en bout.' : 'Your conversations and data are secured with end-to-end encryption.'}
+                  {language === 'ar' ? 'محادثاتك وبياناتك مشفرة بالكامل.' : language === 'fr' ? 'Vos données sont sécurisées avec chiffrement.' : 'Your conversations and data are secured with end-to-end encryption.'}
+                </p>
+              </div>
+            </ScrollReveal>
+
+            {/* Row 2: Engineering Tools */}
+            <ScrollReveal delay={0.4}>
+              <div className="text-center space-y-3 md:space-y-4">
+                <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-muted/50 mx-auto flex items-center justify-center">
+                  <Calculator className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
+                </div>
+                <h3 className="text-lg md:text-xl font-bold">
+                  {language === 'ar' ? 'حاسبات إنشائية' : language === 'fr' ? 'Calculateurs Structurels' : 'Structural Calculators'}
+                </h3>
+                <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+                  {language === 'ar' ? 'تصميم الكمرات والأعمدة والأساسات مع تصور ثلاثي الأبعاد.' : language === 'fr' ? 'Concevez poutres, colonnes et fondations avec visualisation 3D.' : 'Design beams, columns, slabs and foundations with 3D visualization.'}
+                </p>
+              </div>
+            </ScrollReveal>
+
+            <ScrollReveal delay={0.5}>
+              <div className="text-center space-y-3 md:space-y-4">
+                <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-muted/50 mx-auto flex items-center justify-center">
+                  <Car className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
+                </div>
+                <h3 className="text-lg md:text-xl font-bold">
+                  {language === 'ar' ? 'تصميم المواقف' : language === 'fr' ? 'Conception de Parking' : 'Parking Design'}
+                </h3>
+                <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+                  {language === 'ar' ? 'تصميم مواقف السيارات مع تصدير DXF وPDF.' : language === 'fr' ? 'Aménagez les parkings avec exports DXF et PDF.' : 'Layout parking lots with custom boundaries and DXF/PDF exports.'}
+                </p>
+              </div>
+            </ScrollReveal>
+
+            <ScrollReveal delay={0.6}>
+              <div className="text-center space-y-3 md:space-y-4">
+                <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-muted/50 mx-auto flex items-center justify-center">
+                  <Mountain className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
+                </div>
+                <h3 className="text-lg md:text-xl font-bold">
+                  {language === 'ar' ? 'تصميم التسوية' : language === 'fr' ? 'Conception de Terrassement' : 'Site Grading'}
+                </h3>
+                <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+                  {language === 'ar' ? 'تحليل التضاريس وتصميم المناسيب بالذكاء الاصطناعي.' : language === 'fr' ? 'Analyse du terrain et conception d\'élévation avec IA.' : 'Terrain analysis and elevation design with AI assistance.'}
                 </p>
               </div>
             </ScrollReveal>
