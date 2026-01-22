@@ -61,10 +61,25 @@
   <meta name="twitter:title" content="AYN AI - Personal AI Assistant That Learns You | Smart AI Platform">
   <meta property="og:description" content="AYN AI is a perceptive artificial intelligence that learns your habits, understands your goals, and helps you succeed.">
   <meta name="twitter:description" content="AYN AI is a perceptive artificial intelligence that learns your habits, understands your goals, and helps you succeed.">
+  <!-- Prevent FOUC: Apply theme before paint -->
+  <script>
+    (function() {
+      try {
+        var theme = localStorage.getItem('ayn-theme');
+        var isDark = theme === 'dark' || 
+          ((!theme || theme === 'system') && 
+           window.matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.classList.add(isDark ? 'dark' : 'light');
+        document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
+      } catch (e) {
+        document.documentElement.classList.add('light');
+      }
+    })();
+  </script>
 </head>
 
-  <body>
-    <div id="root"></div>
+  <body style="background-color: var(--background, #ffffff);">
+    <div id="root" style="min-height: 100vh;"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
