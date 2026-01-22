@@ -1,6 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { Sparkles } from 'lucide-react';
 
 interface Suggestion {
   id: string;
@@ -32,52 +31,44 @@ export const MobileSuggestionChips = ({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 10 }}
+      exit={{ opacity: 0, y: 8 }}
       transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-      className="w-full pb-3"
+      className="w-full pb-2"
     >
-      <div className="flex flex-wrap gap-2.5 justify-center items-center px-3 max-w-full">
+      <div className="flex flex-wrap gap-2 justify-center items-center px-3 max-w-full">
         <AnimatePresence mode="popLayout">
           {visibleSuggestions.map((suggestion, index) => (
             <motion.button
               key={suggestion.id}
               onClick={(e) => handleClick(suggestion, e)}
               className={cn(
-                "flex items-center gap-2",
-                "px-3 py-2",
-                // Premium glassmorphism
-                "bg-white/95 dark:bg-gray-900/90",
-                "backdrop-blur-xl",
-                "border border-gray-200/60 dark:border-gray-700/40",
+                "flex items-center gap-1.5",
+                "px-2.5 py-1.5",
+                "bg-background",
+                "border border-border",
                 "rounded-xl",
-                "text-sm font-medium text-foreground",
-                // Enhanced shadows with glow on hover
-                "shadow-[0_2px_12px_rgba(0,0,0,0.05)]",
-                "hover:shadow-[0_8px_24px_rgba(0,0,0,0.08),0_0_20px_rgba(147,51,234,0.04)]",
-                // Hover effects
-                "hover:scale-105 hover:-translate-y-0.5",
-                "hover:border-primary/30",
+                "text-xs font-medium text-foreground",
+                "shadow-sm",
+                "hover:bg-muted hover:border-border/80",
                 "active:scale-95",
-                "transition-all duration-200 ease-out",
-                "min-w-[140px] max-w-[280px]",
+                "transition-all duration-150",
+                "min-w-[100px] max-w-[220px]",
                 "cursor-pointer"
               )}
-              initial={{ opacity: 0, scale: 0.8, y: 10 }}
+              initial={{ opacity: 0, scale: 0.9, y: 8 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.8, y: 5 }}
+              exit={{ opacity: 0, scale: 0.9, y: 4 }}
               transition={{
                 type: 'spring',
                 stiffness: 400,
                 damping: 25,
-                delay: index * 0.06,
+                delay: index * 0.05,
               }}
-              whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
             >
-              <Sparkles className="w-3.5 h-3.5 text-primary/70 flex-shrink-0" />
-              <span className="text-base flex-shrink-0">{suggestion.emoji}</span>
+              <span className="text-sm flex-shrink-0">{suggestion.emoji}</span>
               <span className="line-clamp-1 text-left flex-1">{suggestion.content}</span>
             </motion.button>
           ))}

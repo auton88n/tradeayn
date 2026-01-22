@@ -221,20 +221,20 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
           )}
 
           {/* Header */}
-          <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
-            <div className="flex items-center gap-2.5">
-              <div className="p-1.5 rounded-lg bg-muted">
-                <Brain className="w-4 h-4 text-foreground" />
+          <div className="flex-shrink-0 flex items-center justify-between px-3 py-2 border-b border-border">
+            <div className="flex items-center gap-2">
+              <div className="p-1 rounded-lg bg-muted">
+                <Brain className="w-3.5 h-3.5 text-foreground" />
               </div>
-              <span className="text-sm font-medium text-foreground">AYN</span>
+              <span className="text-xs font-medium text-foreground">AYN</span>
             </div>
             {onDismiss && (
               <button
                 onClick={handleDismiss}
-                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                 title="Dismiss"
               >
-                <X size={16} />
+                <X size={14} />
               </button>
             )}
           </div>
@@ -244,9 +244,9 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
             ref={contentRef}
             className={cn(
               "flex-1 min-h-0 overflow-y-auto overflow-x-hidden",
-              variant === 'inline' && "max-h-[35vh] sm:max-h-[40vh]",
-              "[&_img]:w-full [&_img]:max-h-[280px] [&_img]:object-cover [&_img]:rounded-lg",
-              "[&>div]:px-4 [&>div]:py-4",
+              variant === 'inline' && "max-h-[28vh] sm:max-h-[32vh]",
+              "[&_img]:w-full [&_img]:max-h-[200px] [&_img]:object-cover [&_img]:rounded-lg",
+              "[&>div]:px-3 [&>div]:py-2.5",
               "[-webkit-overflow-scrolling:touch]"
             )}
           >
@@ -285,7 +285,7 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
           )}
 
           {/* Clean action bar */}
-          <div className="flex-shrink-0 flex items-center justify-between px-4 py-2.5 border-t border-border">
+          <div className="flex-shrink-0 flex items-center justify-between px-3 py-2 border-t border-border">
             {/* Left: Copy button */}
             <button
               onClick={copyContent}
