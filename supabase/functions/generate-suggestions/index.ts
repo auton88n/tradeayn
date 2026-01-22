@@ -14,39 +14,67 @@ serve(async (req) => {
   try {
     const { lastUserMessage, lastAynResponse, mode } = await req.json();
     
-    const openAIApiKey = Deno.env.get("OPENAI_API_KEY");
-    if (!openAIApiKey) {
-      throw new Error("OPENAI_API_KEY is not configured");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      console.error("LOVABLE_API_KEY is not configured");
+      return new Response(
+        JSON.stringify({ suggestions: getDefaultSuggestions(mode) }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const systemPrompt = `You are a helpful assistant that generates contextual follow-up suggestions for a conversation with an AI assistant named AYN.
 
-Based on the conversation context, generate 3 short, relevant follow-up suggestions that the user might want to ask next.
+Based on the conversation context, generate 3 short, highly relevant follow-up suggestions.
 
 Rules:
 - Each suggestion must be 2-5 words maximum
-- Make them action-oriented and specific to the context
-- Include an appropriate emoji for each
-- Suggestions should feel natural and helpful
+- Make them SPECIFIC to the response content, not generic
+- For technical topics: suggest diving deeper, getting examples, or exploring alternatives
+- For explanations: suggest clarifications, real-world applications, or related topics
+- For creative content: suggest variations, expansions, or refinements
+- Include an appropriate emoji that matches the topic
+- Never suggest generic phrases like "Tell me more" - be specific to the content
 - Consider the AI mode: ${mode || 'general'}
 
-Return ONLY a JSON array with exactly 3 objects, each with "content" (string) and "emoji" (single emoji string).
-Example: [{"content":"Tell me more","emoji":"💬"},{"content":"Show examples","emoji":"📝"},{"content":"Simplify this","emoji":"🔍"}]`;
+Examples for engineering/technical topics:
+- "Show load diagram" 📊
+- "Compare materials" ⚖️
+- "Check safety factors" 🔒
+- "Optimize the design" ⚡
+- "Add code example" 💻
 
+Examples for creative/writing topics:
+- "Make it funnier" 😄
+- "Add more drama" 🎭
+- "Shorten this" ✂️
+- "Try formal tone" 📜
+
+Examples for general/explanatory topics:
+- "Give real examples" 📝
+- "Explain the benefits" ✨
+- "What are the risks?" ⚠️
+- "How to implement?" 🛠️
+
+Return ONLY a JSON array with exactly 3 objects, each with "content" (string) and "emoji" (single emoji string).`;
+
+    // Increase context window to 1000 chars for better relevance
+    const responseContext = lastAynResponse?.substring(0, 1000) || 'No response yet';
+    
     const userPrompt = `User asked: "${lastUserMessage}"
 
-AYN responded: "${lastAynResponse?.substring(0, 500) || 'No response yet'}"
+AYN responded: "${responseContext}"
 
-Generate 3 contextual follow-up suggestions based on this conversation.`;
+Generate 3 contextual follow-up suggestions that are SPECIFIC to this response. Focus on what the user might logically want to know next based on the content above.`;
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${openAIApiKey}`,
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
@@ -57,19 +85,30 @@ Generate 3 contextual follow-up suggestions based on this conversation.`;
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
+      
       if (response.status === 429) {
+        console.warn("Rate limited by Lovable AI Gateway");
         return new Response(
           JSON.stringify({ 
             error: "Rate limited",
-            suggestions: getDefaultSuggestions() 
+            suggestions: getDefaultSuggestions(mode) 
           }),
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       
-      console.error("OpenAI API error:", response.status);
+      if (response.status === 402) {
+        console.warn("Payment required for Lovable AI Gateway");
+        return new Response(
+          JSON.stringify({ suggestions: getDefaultSuggestions(mode) }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      console.error("Lovable AI Gateway error:", response.status, errorText);
       return new Response(
-        JSON.stringify({ suggestions: getDefaultSuggestions() }),
+        JSON.stringify({ suggestions: getDefaultSuggestions(mode) }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -85,20 +124,20 @@ Generate 3 contextual follow-up suggestions based on this conversation.`;
       if (jsonMatch) {
         suggestions = JSON.parse(jsonMatch[0]);
       } else {
-        suggestions = getDefaultSuggestions();
+        suggestions = getDefaultSuggestions(mode);
       }
     } catch {
       console.error("Failed to parse suggestions:", content);
-      suggestions = getDefaultSuggestions();
+      suggestions = getDefaultSuggestions(mode);
     }
 
     // Validate and limit to 3 suggestions
     if (!Array.isArray(suggestions) || suggestions.length === 0) {
-      suggestions = getDefaultSuggestions();
+      suggestions = getDefaultSuggestions(mode);
     }
     
     suggestions = suggestions.slice(0, 3).map((s: any) => ({
-      content: String(s.content || "Tell me more").substring(0, 30),
+      content: String(s.content || "Ask follow-up").substring(0, 30),
       emoji: String(s.emoji || "💡").substring(0, 2),
     }));
 
@@ -115,10 +154,31 @@ Generate 3 contextual follow-up suggestions based on this conversation.`;
   }
 });
 
-function getDefaultSuggestions() {
+function getDefaultSuggestions(mode?: string) {
+  if (mode === 'engineering' || mode === 'duty') {
+    return [
+      { content: "Show calculations", emoji: "📐" },
+      { content: "Check code specs", emoji: "📋" },
+      { content: "Compare options", emoji: "⚖️" },
+    ];
+  }
+  if (mode === 'lab' || mode === 'creative') {
+    return [
+      { content: "Make it longer", emoji: "✍️" },
+      { content: "Try different style", emoji: "🎨" },
+      { content: "Add more details", emoji: "✨" },
+    ];
+  }
+  if (mode === 'search') {
+    return [
+      { content: "Find more sources", emoji: "🔍" },
+      { content: "Recent news only", emoji: "📰" },
+      { content: "Compare results", emoji: "📊" },
+    ];
+  }
   return [
-    { content: "Tell me more", emoji: "💬" },
     { content: "Give examples", emoji: "📝" },
     { content: "Explain simpler", emoji: "🔍" },
+    { content: "What's next?", emoji: "➡️" },
   ];
 }
