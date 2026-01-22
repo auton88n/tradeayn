@@ -27,7 +27,7 @@ import { AnglePicker, ParkingStatsBar } from './parking/components';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useEngineeringSessionOptional } from '@/contexts/EngineeringSessionContext';
-import html2pdf from 'html2pdf.js';
+import generatePDF, { Margin } from 'react-to-pdf';
 import { SaveDesignDialog } from './SaveDesignDialog';
 import { BoundaryPointsTable } from './parking/boundary/BoundaryPointsTable';
 import { BoundaryPreview } from './parking/boundary/BoundaryPreview';
@@ -506,16 +506,22 @@ const UnifiedDesigner: React.FC<{
           </div>
         </div>
       `;
+      document.body.appendChild(printContent);
       
-      html2pdf()
-        .set({
-          margin: 10,
-          filename: `parking-report-${Date.now()}.pdf`,
-          html2canvas: { scale: 2 },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        })
-        .from(printContent)
-        .save();
+      await generatePDF(() => printContent, {
+        filename: `parking-report-${Date.now()}.pdf`,
+        page: {
+          margin: Margin.SMALL,
+          format: 'A4',
+          orientation: 'portrait',
+        },
+        canvas: {
+          mimeType: 'image/jpeg',
+          qualityRatio: 0.98,
+        },
+      });
+      
+      document.body.removeChild(printContent);
       
       session?.trackExport('pdf');
       toast({ title: "PDF Exported", description: "Report downloaded successfully" });
