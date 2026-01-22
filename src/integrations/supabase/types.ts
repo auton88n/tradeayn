@@ -2485,15 +2485,25 @@ export type Database = {
         Returns: boolean
       }
       is_ip_blocked: { Args: { _ip_address: unknown }; Returns: boolean }
-      log_admin_action: {
-        Args: {
-          _action: string
-          _details?: Json
-          _target_id?: string
-          _target_table?: string
-        }
-        Returns: undefined
-      }
+      log_admin_action:
+        | {
+            Args: {
+              _action: string
+              _details?: Json
+              _target_id?: string
+              _target_table?: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_action_type: string
+              p_details?: Json
+              p_target_email?: string
+              p_target_user_id?: string
+            }
+            Returns: string
+          }
       log_chat_security_event: {
         Args: { _action: string; _details?: Json; _session_id?: string }
         Returns: undefined

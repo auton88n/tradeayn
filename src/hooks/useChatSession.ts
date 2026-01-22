@@ -256,16 +256,18 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
 
   // Load recent chats on mount and set initial session using REST API - PARALLELIZED
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
     
     const initializeSession = async () => {
       // Skip if no user or already initialized for this user
       if (!userId || lastInitializedUserId.current === userId) return;
       
+      // Mark as initialized immediately to prevent duplicate calls
+      lastInitializedUserId.current = userId;
+      
       // Skip if no session available
       if (!session) {
         setCurrentSessionId(crypto.randomUUID());
-        lastInitializedUserId.current = userId;
         setIsLoadingChats(false);
         return;
       }
@@ -278,9 +280,10 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
           // Query 1: Get latest session_id
           supabaseApi.get<Array<{ session_id: string }>>(
             `messages?user_id=eq.${userId}&select=session_id&order=created_at.desc&limit=1`,
-            session.access_token
+            session.access_token,
+            { signal: controller.signal }
           ),
-          // Query 2: Get recent messages (reduced from 100 to 50)
+          // Query 2: Get recent messages
           supabaseApi.get<Array<{
             id: string;
             content: string;
@@ -289,16 +292,19 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
             session_id: string | null;
           }>>(
             `messages?user_id=eq.${userId}&select=id,content,created_at,sender,session_id&order=created_at.desc&limit=200`,
-            session.access_token
+            session.access_token,
+            { signal: controller.signal }
           ),
           // Query 3: Get stored session titles
           supabaseApi.get<Array<{ session_id: string; title: string }>>(
             `chat_sessions?user_id=eq.${userId}&select=session_id,title`,
-            session.access_token
+            session.access_token,
+            { signal: controller.signal }
           )
         ]);
         
-        if (cancelled) return;
+        // Check if aborted after fetch
+        if (controller.signal.aborted) return;
         
         // Set current session ID
         if (latestSessionData && latestSessionData.length > 0 && latestSessionData[0].session_id) {
@@ -374,24 +380,22 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
             .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
             .slice(0, 10);
 
-          if (!cancelled) {
-            setRecentChats(chatHistories);
-          }
+          setRecentChats(chatHistories);
         } else {
-          if (!cancelled) {
-            setRecentChats([]);
-          }
-        }
-        
-        lastInitializedUserId.current = userId;
-      } catch {
-        if (!cancelled) {
-          setCurrentSessionId(crypto.randomUUID());
           setRecentChats([]);
         }
-        lastInitializedUserId.current = userId;
+      } catch (error) {
+        // Silently ignore AbortError (expected on unmount)
+        if (error instanceof Error && error.name === 'AbortError') {
+          // Reset initialization flag so it can retry on next mount
+          lastInitializedUserId.current = null;
+          return;
+        }
+        console.error('[useChatSession] Initialization error:', error);
+        setCurrentSessionId(crypto.randomUUID());
+        setRecentChats([]);
       } finally {
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setIsLoadingChats(false);
         }
       }
@@ -399,7 +403,7 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
     
     initializeSession();
     
-    return () => { cancelled = true; };
+    return () => controller.abort();
   }, [userId, session]);
 
   return {
