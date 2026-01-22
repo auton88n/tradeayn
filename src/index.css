@@ -715,13 +715,16 @@ button, a, input, textarea, select {
   /* Scroll Animation Utilities */
   .scroll-animate {
     opacity: 0;
-    transform: translateY(40px);
-    transition: all 0.8s cubic-bezier(0.32, 0.72, 0, 1);
+    transform: translateY(40px) translateZ(0);
+    transition: opacity 0.8s cubic-bezier(0.32, 0.72, 0, 1), 
+                transform 0.8s cubic-bezier(0.32, 0.72, 0, 1);
+    will-change: transform, opacity;
+    backface-visibility: hidden;
   }
 
   .scroll-animate.visible {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) translateZ(0);
   }
 
   /* Staggered animation delays for lists */
