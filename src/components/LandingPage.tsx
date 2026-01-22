@@ -685,10 +685,10 @@ const LandingPage = () => {
                 </Link>
               </ScrollReveal>
               
-              {/* Ticketing System - Featured Card */}
+              {/* Ticketing System - Featured Card - Bigger */}
               <ScrollReveal delay={0.5}>
                 <Link to="/services/ticketing" className="block">
-                  <motion.div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20 rounded-3xl p-6 md:p-8 min-h-[280px] flex flex-col group cursor-pointer overflow-visible" whileHover={{
+                  <motion.div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20 rounded-3xl p-6 md:p-8 min-h-[420px] lg:min-h-[480px] flex flex-col group cursor-pointer overflow-visible" whileHover={{
                   y: -4
                 }} transition={{
                   duration: 0.3,
@@ -703,7 +703,7 @@ const LandingPage = () => {
                         {services[5].description}
                       </p>
                     </div>
-                    <div className="flex-1 flex items-center justify-center overflow-visible">
+                    <div className="flex-1 flex items-center justify-center overflow-visible min-h-[320px]">
                       {services[5].mockup}
                     </div>
                     <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors mt-4">
