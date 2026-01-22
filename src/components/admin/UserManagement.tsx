@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Session } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 import { supabaseApi } from '@/lib/supabaseApi';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,7 +31,9 @@ import {
   CheckSquare,
   ShieldCheck,
   Shield,
-  User
+  User,
+  Users,
+  Loader2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { EditLimitModal } from './EditLimitModal';
@@ -81,10 +84,12 @@ const itemVariants = {
 export const UserManagement = ({ session, allUsers, onRefresh }: UserManagementProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'pending' | 'revoked'>('all');
+  const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'duty' | 'user'>('all');
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [editingUser, setEditingUser] = useState<AccessGrantWithProfile | null>(null);
   const [bulkEditUsers, setBulkEditUsers] = useState<AccessGrantWithProfile[]>([]);
   const [userRoles, setUserRoles] = useState<Map<string, string>>(new Map());
+  const [changingRole, setChangingRole] = useState<string | null>(null);
 
   // Fetch user roles on mount
   const fetchUserRoles = async () => {
@@ -119,10 +124,37 @@ export const UserManagement = ({ session, allUsers, onRefresh }: UserManagementP
         (statusFilter === 'active' && user.is_active) ||
         (statusFilter === 'pending' && !user.is_active && !user.granted_at) ||
         (statusFilter === 'revoked' && !user.is_active && user.granted_at);
+
+      const userRole = userRoles.get(user.user_id) || 'user';
+      const matchesRole = 
+        roleFilter === 'all' || roleFilter === userRole;
       
-      return (matchesSearch || !searchQuery) && matchesStatus;
+      return (matchesSearch || !searchQuery) && matchesStatus && matchesRole;
     });
-  }, [allUsers, searchQuery, statusFilter]);
+  }, [allUsers, searchQuery, statusFilter, roleFilter, userRoles]);
+
+  // Group users by role for organized display
+  const groupedUsers = useMemo(() => {
+    const groups = {
+      admin: [] as typeof filteredUsers,
+      duty: [] as typeof filteredUsers,
+      user: [] as typeof filteredUsers,
+    };
+    
+    filteredUsers.forEach(user => {
+      const role = (userRoles.get(user.user_id) || 'user') as keyof typeof groups;
+      groups[role].push(user);
+    });
+    
+    return groups;
+  }, [filteredUsers, userRoles]);
+
+  // Role stats
+  const roleStats = useMemo(() => ({
+    admin: allUsers.filter(u => userRoles.get(u.user_id) === 'admin').length,
+    duty: allUsers.filter(u => userRoles.get(u.user_id) === 'duty').length,
+    user: allUsers.filter(u => !userRoles.get(u.user_id) || userRoles.get(u.user_id) === 'user').length,
+  }), [allUsers, userRoles]);
 
   const toggleUserSelection = (userId: string) => {
     const newSelected = new Set(selectedUsers);
@@ -206,26 +238,26 @@ export const UserManagement = ({ session, allUsers, onRefresh }: UserManagementP
     }
   };
 
-  // Handle role change
+  // Handle role change using secure RPC
   const handleRoleChange = async (userId: string, newRole: 'admin' | 'duty' | 'user') => {
+    setChangingRole(userId);
     try {
-      // Check if user already has a role entry
-      const existingRole = userRoles.get(userId);
-      
-      if (existingRole) {
-        // Update existing role
-        await supabaseApi.patch(
-          `user_roles?user_id=eq.${userId}`,
-          session.access_token,
-          { role: newRole }
-        );
-      } else {
-        // Insert new role (for users who don't have one)
-        await supabaseApi.post(
-          'user_roles',
-          session.access_token,
-          { user_id: userId, role: newRole }
-        );
+      // Use the secure RPC function
+      const { error } = await supabase.rpc('manage_user_role', {
+        p_target_user_id: userId,
+        p_new_role: newRole
+      });
+
+      if (error) {
+        console.error('RPC error:', error);
+        if (error.message.includes('Only admins')) {
+          toast.error('Permission denied: Only admins can change roles');
+        } else if (error.message.includes('Cannot demote yourself')) {
+          toast.error('Cannot demote yourself');
+        } else {
+          toast.error('Failed to change role');
+        }
+        return;
       }
       
       // Update local state
@@ -235,6 +267,8 @@ export const UserManagement = ({ session, allUsers, onRefresh }: UserManagementP
     } catch (error) {
       console.error('Error changing role:', error);
       toast.error('Failed to change role');
+    } finally {
+      setChangingRole(null);
     }
   };
 
@@ -311,6 +345,144 @@ export const UserManagement = ({ session, allUsers, onRefresh }: UserManagementP
     return Math.min((usage / limit) * 100, 100);
   };
 
+  // Render a single user card
+  const renderUserCard = (user: AccessGrantWithProfile) => {
+    const role = userRoles.get(user.user_id) || 'user';
+    const roleConfig = {
+      admin: { label: 'Admin', variant: 'destructive' as const, icon: ShieldCheck },
+      duty: { label: 'Duty', variant: 'default' as const, icon: Shield },
+      user: { label: 'User', variant: 'secondary' as const, icon: User },
+    };
+    const config = roleConfig[role as keyof typeof roleConfig] || roleConfig.user;
+    const RoleIcon = config.icon;
+    const isChangingRole = changingRole === user.user_id;
+
+    return (
+      <motion.div
+        key={user.id}
+        variants={itemVariants}
+        className={`flex items-center justify-between p-4 rounded-xl border transition-colors ${
+          selectedUsers.has(user.user_id) 
+            ? 'bg-primary/5 border-primary/20' 
+            : 'bg-card hover:bg-muted/50 border-border/50'
+        }`}
+      >
+        <div className="flex items-center gap-4">
+          <input
+            type="checkbox"
+            checked={selectedUsers.has(user.user_id)}
+            onChange={() => toggleUserSelection(user.user_id)}
+            className="w-4 h-4 rounded border-muted-foreground/30"
+          />
+          <Avatar className="w-10 h-10">
+            <AvatarFallback className="bg-primary/10 text-primary">
+              {(user.profiles?.company_name || user.user_email || 'U').charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div className="min-w-0">
+            <p className="font-medium truncate">
+              {user.profiles?.company_name || user.profiles?.contact_person || 'Unknown'}
+            </p>
+            <p className="text-xs text-muted-foreground truncate">
+              {user.user_email || format(new Date(user.created_at), 'MMM d, yyyy')}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {/* Usage Progress */}
+          <div className="w-28 hidden sm:block">
+            <div className="flex justify-between text-xs mb-1">
+              <span>{user.current_month_usage ?? 0}</span>
+              <span className="text-muted-foreground">
+                {user.monthly_limit || '∞'}
+              </span>
+            </div>
+            <Progress 
+              value={getUsagePercent(user.current_month_usage, user.monthly_limit)} 
+              className="h-1.5"
+            />
+          </div>
+
+          {/* Role Badge - Clickable dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-7 px-2 gap-1.5"
+                disabled={isChangingRole}
+              >
+                {isChangingRole ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <RoleIcon className="w-3 h-3" />
+                )}
+                <span className="text-xs">{config.label}</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel className="text-xs">Change Role</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                onClick={() => handleRoleChange(user.user_id, 'user')}
+                disabled={role === 'user'}
+              >
+                <User className="w-4 h-4 mr-2" />
+                User
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => handleRoleChange(user.user_id, 'duty')}
+                disabled={role === 'duty'}
+              >
+                <Shield className="w-4 h-4 mr-2" />
+                Duty
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => handleRoleChange(user.user_id, 'admin')}
+                disabled={role === 'admin'}
+              >
+                <ShieldCheck className="w-4 h-4 mr-2" />
+                Admin
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Status Badge */}
+          <Badge variant={user.is_active ? 'outline' : 'secondary'} className="text-xs">
+            {user.is_active ? 'Active' : 'Pending'}
+          </Badge>
+
+          {/* Actions */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="w-8 h-8">
+                <MoreVertical className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setEditingUser(user)}>
+                <Edit className="w-4 h-4 mr-2" />
+                Edit Limit
+              </DropdownMenuItem>
+              {user.is_active ? (
+                <DropdownMenuItem onClick={() => handleDeactivate(user.user_id)}>
+                  <UserX className="w-4 h-4 mr-2" />
+                  Deactivate
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem onClick={() => handleActivate(user.user_id)}>
+                  <UserCheck className="w-4 h-4 mr-2" />
+                  Activate
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </motion.div>
+    );
+  };
+
   return (
     <>
       <Card className="border-0 shadow-sm bg-card/50 backdrop-blur-sm">
@@ -363,12 +535,52 @@ export const UserManagement = ({ session, allUsers, onRefresh }: UserManagementP
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Role Stats Bar */}
+          <div className="flex gap-2 flex-wrap">
+            <Button
+              variant={roleFilter === 'all' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setRoleFilter('all')}
+              className="gap-2"
+            >
+              <Users className="w-4 h-4" />
+              All ({allUsers.length})
+            </Button>
+            <Button
+              variant={roleFilter === 'admin' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setRoleFilter('admin')}
+              className="gap-2"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              Admins ({roleStats.admin})
+            </Button>
+            <Button
+              variant={roleFilter === 'duty' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setRoleFilter('duty')}
+              className="gap-2"
+            >
+              <Shield className="w-4 h-4" />
+              Duty ({roleStats.duty})
+            </Button>
+            <Button
+              variant={roleFilter === 'user' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setRoleFilter('user')}
+              className="gap-2"
+            >
+              <User className="w-4 h-4" />
+              Users ({roleStats.user})
+            </Button>
+          </div>
+
           {/* Filters */}
           <div className="flex gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="Search users..."
+                placeholder="Search by name, company, or email..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -376,12 +588,13 @@ export const UserManagement = ({ session, allUsers, onRefresh }: UserManagementP
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon">
+                <Button variant="outline" size="sm" className="gap-2">
                   <Filter className="w-4 h-4" />
+                  {statusFilter === 'all' ? 'All Status' : statusFilter}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => setStatusFilter('all')}>All</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setStatusFilter('all')}>All Status</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setStatusFilter('active')}>Active</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setStatusFilter('pending')}>Pending</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setStatusFilter('revoked')}>Revoked</DropdownMenuItem>
@@ -390,141 +603,69 @@ export const UserManagement = ({ session, allUsers, onRefresh }: UserManagementP
           </div>
 
           {/* User List */}
-          <ScrollArea className="h-[400px]">
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              className="space-y-2"
-            >
-              {filteredUsers.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8">
-                  No users found
-                </p>
-              ) : (
-                filteredUsers.map((user) => (
-                  <motion.div
-                    key={user.id}
-                    variants={itemVariants}
-                    className={`flex items-center justify-between p-4 rounded-xl border transition-colors ${
-                      selectedUsers.has(user.user_id) 
-                        ? 'bg-primary/5 border-primary/20' 
-                        : 'bg-card hover:bg-muted/50 border-transparent'
-                    }`}
-                  >
-                    <div className="flex items-center gap-4">
-                      <input
-                        type="checkbox"
-                        checked={selectedUsers.has(user.user_id)}
-                        onChange={() => toggleUserSelection(user.user_id)}
-                        className="w-4 h-4 rounded border-muted-foreground/30"
-                      />
-                      <Avatar className="w-10 h-10">
-                        <AvatarFallback className="bg-primary/10 text-primary">
-                          {(user.profiles?.company_name || 'U').charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium">
-                          {user.profiles?.company_name || user.profiles?.contact_person || 'Unknown'}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {format(new Date(user.created_at), 'MMM d, yyyy')}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                      {/* Usage */}
-                      <div className="w-32">
-                        <div className="flex justify-between text-xs mb-1">
-                          <span>{user.current_month_usage ?? 0}</span>
-                          <span className="text-muted-foreground">
-                            {user.monthly_limit || '∞'}
-                          </span>
+          <ScrollArea className="h-[450px]">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={roleFilter}
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                className="space-y-4"
+              >
+                {filteredUsers.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">
+                    No users found
+                  </p>
+                ) : (
+                  // Render grouped sections when showing all, otherwise flat list
+                  roleFilter === 'all' ? (
+                    <>
+                      {/* Admins Section */}
+                      {groupedUsers.admin.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 px-2">
+                            <ShieldCheck className="w-4 h-4 text-destructive" />
+                            <span className="text-sm font-medium text-muted-foreground">
+                              Admins ({groupedUsers.admin.length})
+                            </span>
+                          </div>
+                          {groupedUsers.admin.map(user => renderUserCard(user))}
                         </div>
-                        <Progress 
-                          value={getUsagePercent(user.current_month_usage, user.monthly_limit)} 
-                          className="h-1.5"
-                        />
-                      </div>
-
-                      {/* Role Badge */}
-                      {(() => {
-                        const role = userRoles.get(user.user_id) || 'user';
-                        const roleConfig = {
-                          admin: { label: 'Admin', variant: 'destructive' as const, icon: ShieldCheck },
-                          duty: { label: 'Duty', variant: 'default' as const, icon: Shield },
-                          user: { label: 'User', variant: 'secondary' as const, icon: User },
-                        };
-                        const config = roleConfig[role as keyof typeof roleConfig] || roleConfig.user;
-                        const Icon = config.icon;
-                        return (
-                          <Badge variant={config.variant} className="gap-1">
-                            <Icon className="w-3 h-3" />
-                            {config.label}
-                          </Badge>
-                        );
-                      })()}
-
-                      {/* Status */}
-                      <Badge variant={user.is_active ? 'outline' : 'secondary'}>
-                        {user.is_active ? 'Active' : 'Pending'}
-                      </Badge>
-
-                      {/* Actions */}
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="w-8 h-8">
-                            <MoreVertical className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => setEditingUser(user)}>
-                            <Edit className="w-4 h-4 mr-2" />
-                            Edit Limit
-                          </DropdownMenuItem>
-                          {user.is_active ? (
-                            <DropdownMenuItem onClick={() => handleDeactivate(user.user_id)}>
-                              <UserX className="w-4 h-4 mr-2" />
-                              Deactivate
-                            </DropdownMenuItem>
-                          ) : (
-                            <DropdownMenuItem onClick={() => handleActivate(user.user_id)}>
-                              <UserCheck className="w-4 h-4 mr-2" />
-                              Activate
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuSeparator />
-                          <DropdownMenuLabel className="text-xs text-muted-foreground">Change Role</DropdownMenuLabel>
-                          <DropdownMenuItem 
-                            onClick={() => handleRoleChange(user.user_id, 'user')}
-                            disabled={userRoles.get(user.user_id) === 'user' || !userRoles.get(user.user_id)}
-                          >
-                            <User className="w-4 h-4 mr-2" />
-                            User
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={() => handleRoleChange(user.user_id, 'duty')}
-                            disabled={userRoles.get(user.user_id) === 'duty'}
-                          >
-                            <Shield className="w-4 h-4 mr-2" />
-                            Duty
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={() => handleRoleChange(user.user_id, 'admin')}
-                            disabled={userRoles.get(user.user_id) === 'admin'}
-                          >
-                            <ShieldCheck className="w-4 h-4 mr-2" />
-                            Admin
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </motion.div>
-                ))
-              )}
-            </motion.div>
+                      )}
+                      
+                      {/* Duty Section */}
+                      {groupedUsers.duty.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 px-2">
+                            <Shield className="w-4 h-4 text-primary" />
+                            <span className="text-sm font-medium text-muted-foreground">
+                              Duty ({groupedUsers.duty.length})
+                            </span>
+                          </div>
+                          {groupedUsers.duty.map(user => renderUserCard(user))}
+                        </div>
+                      )}
+                      
+                      {/* Users Section */}
+                      {groupedUsers.user.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 px-2">
+                            <User className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-sm font-medium text-muted-foreground">
+                              Users ({groupedUsers.user.length})
+                            </span>
+                          </div>
+                          {groupedUsers.user.map(user => renderUserCard(user))}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    // Flat list when filtered by role
+                    filteredUsers.map(user => renderUserCard(user))
+                  )
+                )}
+              </motion.div>
+            </AnimatePresence>
           </ScrollArea>
         </CardContent>
       </Card>
