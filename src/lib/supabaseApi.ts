@@ -11,6 +11,7 @@ interface FetchOptions {
   body?: unknown;
   headers?: Record<string, string>;
   timeout?: number;
+  signal?: AbortSignal;
 }
 
 /**
@@ -72,10 +73,12 @@ export const supabaseApi = {
    * Core fetch method with timeout and error handling
    */
   async fetch<T = unknown>(endpoint: string, token: string, options: FetchOptions = {}): Promise<T> {
-    const { method = 'GET', body, headers = {}, timeout = 10000 } = options;
+    const { method = 'GET', body, headers = {}, timeout = 15000, signal } = options;
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    // Only create internal controller if no external signal provided
+    const internalController = signal ? null : new AbortController();
+    const timeoutId = internalController ? setTimeout(() => internalController.abort(), timeout) : null;
+    const effectiveSignal = signal || internalController?.signal;
 
     try {
       const response = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}`, {
@@ -88,10 +91,10 @@ export const supabaseApi = {
           ...headers,
         },
         body: body ? JSON.stringify(body) : undefined,
-        signal: controller.signal,
+        signal: effectiveSignal,
       });
 
-      clearTimeout(timeoutId);
+      if (timeoutId) clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -101,9 +104,10 @@ export const supabaseApi = {
       const text = await response.text();
       return (text ? JSON.parse(text) : null) as T;
     } catch (error) {
-      clearTimeout(timeoutId);
+      if (timeoutId) clearTimeout(timeoutId);
       if (error instanceof Error && error.name === 'AbortError') {
-        throw new Error('Request timeout');
+        // Re-throw AbortError so callers can handle it
+        throw error;
       }
       throw error;
     }
