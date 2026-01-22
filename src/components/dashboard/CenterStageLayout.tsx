@@ -678,7 +678,7 @@ export const CenterStageLayout = ({
 
       {/* Suggestion chips above chat input */}
       <div className={cn(
-        "fixed bottom-24 sm:bottom-28 z-40",
+        "fixed bottom-32 sm:bottom-36 z-40",
         "flex justify-center",
         "transition-all duration-300 ease-out",
         "left-0 right-0 px-4",
