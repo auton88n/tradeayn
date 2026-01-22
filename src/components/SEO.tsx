@@ -12,7 +12,7 @@ interface SEOProps {
 }
 
 const SITE_URL = 'https://aynn.io';
-const DEFAULT_IMAGE = 'https://storage.googleapis.com/gpt-engineer-file-uploads/Pz2xKwkLPlXyG6FmqAI4XtwjtIx2/social-images/social-1765237957534-Screenshot 2025-12-09 at 2.52.15 AM.png';
+const DEFAULT_IMAGE = 'https://aynn.io/og-image.jpg';
 
 export const SEO = ({
   title,
