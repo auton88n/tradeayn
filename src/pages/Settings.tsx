@@ -17,31 +17,25 @@ const Settings = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Auth timeout')), 5000)
-        );
-        
-        // Use getSession instead of getUser to get both user and session
-        const authPromise = supabase.auth.getSession();
-        const { data: { session: currentSession } } = await Promise.race([authPromise, timeoutPromise]) as Awaited<ReturnType<typeof supabase.auth.getSession>>;
-        
-        if (!currentSession?.user) {
-          navigate('/');
-          return;
-        }
-        setUser(currentSession.user);
-        setSession(currentSession);
-      } catch (error) {
-        console.error('Auth check failed:', error);
+    // Get cached session immediately (no timeout needed - it's synchronous from cache)
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      if (!currentSession?.user) {
         navigate('/');
-      } finally {
-        setLoading(false);
+        return;
       }
-    };
-    
-    checkAuth();
+      setUser(currentSession.user);
+      setSession(currentSession);
+      setLoading(false);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || !session?.user) {
+        navigate('/');
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, [navigate]);
 
   if (loading) {

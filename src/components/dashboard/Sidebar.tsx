@@ -190,7 +190,12 @@ export const Sidebar = ({
           </div>
         </Button>
         
-        <Button onClick={() => navigate('/settings')} variant="ghost" className="w-full justify-start h-11 px-3 gap-3 rounded-xl hover:bg-muted/60 transition-all duration-200 group">
+        <Button 
+          onClick={() => navigate('/settings')} 
+          onMouseEnter={() => import('@/pages/Settings')} 
+          variant="ghost" 
+          className="w-full justify-start h-11 px-3 gap-3 rounded-xl hover:bg-muted/60 transition-all duration-200 group"
+        >
           <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center group-hover:bg-muted group-hover:scale-105 transition-all duration-200">
             <Settings className="w-4 h-4 text-muted-foreground" />
           </div>
