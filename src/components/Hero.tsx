@@ -23,14 +23,14 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
   // Responsive card positions - mobile uses top/bottom layout to avoid horizontal clipping
   const getCardPositions = () => {
     if (isMobile) {
-      // Position cards above and below the eye on mobile (vertical layout)
+      // Tighter positions to prevent clipping on small screens
       return {
-        topLeft: { x: -50, y: -95 },      // Top-left above eye
-        middleLeft: { x: 0, y: -105 },     // Center-top above eye
-        bottomLeft: { x: 50, y: -95 },     // Top-right above eye
-        topRight: { x: -50, y: 95 },       // Bottom-left below eye
-        middleRight: { x: 0, y: 105 },     // Center-bottom below eye
-        bottomRight: { x: 50, y: 95 }      // Bottom-right below eye
+        topLeft: { x: -30, y: -90 },
+        middleLeft: { x: 0, y: -100 },
+        bottomLeft: { x: 30, y: -90 },
+        topRight: { x: -30, y: 90 },
+        middleRight: { x: 0, y: 100 },
+        bottomRight: { x: 30, y: 90 }
       };
     }
     return {
@@ -148,7 +148,7 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
   }, []);
 
   const CARDS = language === 'ar' ? CARDS_AR : CARDS_EN;
-  return <section ref={containerRef} className="relative min-h-[100dvh] flex flex-col items-center justify-between pt-20 md:pt-24 pb-6 md:pb-8 px-4 md:px-12 lg:px-24 overflow-hidden" aria-label="Hero">
+  return <section ref={containerRef} className="relative min-h-[100dvh] flex flex-col items-center justify-between pt-20 md:pt-24 pb-6 md:pb-8 px-4 md:px-12 lg:px-24 overflow-x-hidden overflow-y-visible" aria-label="Hero">
       {/* Subtle vignette / soft gradient background */}
       <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-background via-background to-muted/10" />
 
