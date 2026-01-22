@@ -5,7 +5,9 @@ import { Slider } from '@/components/ui/slider';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useUserSettings } from '@/hooks/useUserSettings';
 import { useSoundContextOptional } from '@/contexts/SoundContext';
-import { Loader2, Volume1, Volume2 } from 'lucide-react';
+import { useDesktopNotifications } from '@/hooks/useDesktopNotifications';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2, Volume1, Volume2, Bell, BellOff } from 'lucide-react';
 
 interface NotificationSettingsProps {
   userId: string;
@@ -14,13 +16,31 @@ interface NotificationSettingsProps {
 
 export const NotificationSettings = ({ userId, accessToken }: NotificationSettingsProps) => {
   const { t } = useLanguage();
+  const { toast } = useToast();
   const { settings, loading, updating, updateSettings } = useUserSettings(userId, accessToken);
   const soundContext = useSoundContextOptional();
+  const { isSupported, permission, requestPermission } = useDesktopNotifications();
 
   const handleSoundToggle = (checked: boolean) => {
     updateSettings({ in_app_sounds: checked });
     // Also update SoundContext for immediate effect
     soundContext?.setEnabled(checked);
+  };
+
+  const handleDesktopNotificationsToggle = async (checked: boolean) => {
+    if (checked) {
+      // Request permission when enabling
+      const granted = await requestPermission();
+      if (!granted) {
+        toast({
+          title: t('settings.notificationPermissionDenied') || 'Permission Denied',
+          description: t('settings.notificationPermissionDeniedDesc') || 'Please enable notifications in your browser settings',
+          variant: 'destructive',
+        });
+        return; // Don't save if permission denied
+      }
+    }
+    updateSettings({ desktop_notifications: checked });
   };
 
   if (loading || !settings) {
@@ -46,20 +66,6 @@ export const NotificationSettings = ({ userId, accessToken }: NotificationSettin
             <Switch
               checked={settings.email_system_alerts}
               onCheckedChange={(checked) => updateSettings({ email_system_alerts: checked })}
-              disabled={updating}
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>{t('settings.usageWarnings')}</Label>
-              <p className="text-sm text-muted-foreground">
-                {t('settings.usageWarningsDesc')}
-              </p>
-            </div>
-            <Switch
-              checked={settings.email_usage_warnings}
-              onCheckedChange={(checked) => updateSettings({ email_usage_warnings: checked })}
               disabled={updating}
             />
           </div>
@@ -136,15 +142,32 @@ export const NotificationSettings = ({ userId, accessToken }: NotificationSettin
 
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label>{t('settings.desktopNotifications')}</Label>
+              <Label className="flex items-center gap-2">
+                {settings.desktop_notifications && permission === 'granted' ? (
+                  <Bell className="h-4 w-4 text-primary" />
+                ) : (
+                  <BellOff className="h-4 w-4 text-muted-foreground" />
+                )}
+                {t('settings.desktopNotifications')}
+              </Label>
               <p className="text-sm text-muted-foreground">
                 {t('settings.desktopNotificationsDesc')}
               </p>
+              {!isSupported && (
+                <p className="text-xs text-yellow-600 dark:text-yellow-400">
+                  {t('settings.browserNotSupported') || "Your browser doesn't support desktop notifications"}
+                </p>
+              )}
+              {permission === 'denied' && (
+                <p className="text-xs text-destructive">
+                  {t('settings.notificationsBlocked') || 'Notifications blocked - check browser settings'}
+                </p>
+              )}
             </div>
             <Switch
-              checked={settings.desktop_notifications}
-              onCheckedChange={(checked) => updateSettings({ desktop_notifications: checked })}
-              disabled={updating}
+              checked={settings.desktop_notifications && permission === 'granted'}
+              onCheckedChange={handleDesktopNotificationsToggle}
+              disabled={updating || !isSupported || permission === 'denied'}
             />
           </div>
         </div>
