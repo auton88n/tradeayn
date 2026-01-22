@@ -235,7 +235,7 @@ const Ticketing = () => {
                     <Ticket className="w-4 h-4" />
                     {language === 'ar' ? 'جديد' : 'NEW'}
                   </span>
-                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">
+                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent leading-relaxed pb-2">
                     {t.title}
                   </h1>
                   <p className="text-lg md:text-xl text-muted-foreground mb-8">
