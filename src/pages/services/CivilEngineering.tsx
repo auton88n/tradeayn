@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Calculator, Box, FileDown, Sparkles, Building2, Ruler, Layers, FileText, HardHat, CheckCircle2, Loader2, Car, Mountain } from 'lucide-react';
+import Building3DShowcase from '@/components/services/Building3DShowcase';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -333,22 +334,11 @@ const CivilEngineering = () => {
             }} viewport={{
               once: true
             }} className="relative">
-                <div className="aspect-square rounded-3xl bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-neutral-800 overflow-hidden relative">
-                  {/* 3D Building visualization */}
-                  <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=600&h=600&fit=crop" alt="Modern building architecture" className="w-full h-full object-cover opacity-60" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-neutral-900 via-transparent to-transparent" />
-                  <motion.div className="absolute inset-0 flex items-center justify-center" animate={{
-                  scale: [1, 1.05, 1]
-                }} transition={{
-                  duration: 4,
-                  repeat: Infinity
-                }}>
-                    <div className="text-center">
-                      <Box className="w-20 h-20 text-cyan-400 mx-auto mb-2" strokeWidth={1} />
-                      <p className="text-cyan-400 text-sm font-medium">3D Structural View</p>
-                    </div>
-                  </motion.div>
-                </div>
+                <Building3DShowcase 
+                  variant="structural"
+                  showStressIndicators={true}
+                  showLoadArrows={true}
+                />
               </motion.div>
             </div>
           </div>
@@ -367,28 +357,11 @@ const CivilEngineering = () => {
             }} viewport={{
               once: true
             }} className="order-2 lg:order-1">
-                <div className="aspect-video rounded-3xl bg-gradient-to-br from-neutral-900 to-neutral-800 border border-neutral-800 overflow-hidden relative">
-                  {/* Blueprint/CAD visualization */}
-                  <img src="https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=800&h=450&fit=crop" alt="Architectural blueprints and construction plans" className="w-full h-full object-cover opacity-40" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-neutral-900 via-neutral-900/80 to-transparent" />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center">
-                      <FileDown className="w-16 h-16 text-cyan-400 mx-auto mb-4" />
-                      <div className="flex gap-4 justify-center">
-                        <motion.div className="px-4 py-2 bg-cyan-500/20 rounded-lg text-cyan-400 text-sm font-medium border border-cyan-500/30" whileHover={{
-                        scale: 1.05
-                      }}>
-                          .DXF
-                        </motion.div>
-                        <motion.div className="px-4 py-2 bg-blue-500/20 rounded-lg text-blue-400 text-sm font-medium border border-blue-500/30" whileHover={{
-                        scale: 1.05
-                      }}>
-                          .PDF
-                        </motion.div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <Building3DShowcase 
+                  variant="blueprint"
+                  showExportButtons={true}
+                  className="aspect-video"
+                />
               </motion.div>
 
               <motion.div initial={{
