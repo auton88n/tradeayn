@@ -170,6 +170,60 @@ export const MemoryManagement: React.FC<MemoryManagementProps> = ({ userId }) =>
     return acc;
   }, {} as Record<string, Memory[]>);
 
+  // Format memory data for display in a human-readable way
+  const formatMemoryDisplay = (memory: Memory): string => {
+    if (!memory.memory_data) return 'No data';
+    
+    const data = memory.memory_data;
+    
+    // Simple value field
+    if (data.value && typeof data.value === 'string') return data.value;
+    
+    // Project memory with title
+    if (data.title) {
+      let summary = String(data.title);
+      
+      // Add key specs if available
+      if (data.keySpecs && typeof data.keySpecs === 'object') {
+        const specs = data.keySpecs as Record<string, unknown>;
+        const parts: string[] = [];
+        
+        if (specs.siteArea) parts.push(String(specs.siteArea));
+        if (specs.totalSpaces) parts.push(`${specs.totalSpaces} spaces`);
+        if (specs.efficiency) parts.push(`${specs.efficiency} efficiency`);
+        if (specs.evSpaces) parts.push(`${specs.evSpaces} EV`);
+        
+        if (parts.length > 0) {
+          summary += ` (${parts.slice(0, 3).join(', ')})`;
+        }
+      }
+      
+      return summary;
+    }
+    
+    // Engineering calculation with type
+    if (data.type && typeof data.type === 'string') {
+      const type = data.type.charAt(0).toUpperCase() + data.type.slice(1);
+      if (data.savedAt) {
+        return `${type} design saved`;
+      }
+      return `${type} data`;
+    }
+    
+    // Fallback: show first few meaningful fields
+    const keys = Object.keys(data).filter(k => 
+      !['id', 'created_at', 'updated_at', 'user_id'].includes(k)
+    ).slice(0, 2);
+    
+    if (keys.length === 0) return 'Stored data';
+    
+    return keys.map(k => {
+      const val = data[k];
+      const strVal = typeof val === 'object' ? JSON.stringify(val).substring(0, 20) : String(val).substring(0, 30);
+      return `${k.replace(/_/g, ' ')}: ${strVal}`;
+    }).join(', ');
+  };
+
   return (
     <Card className="p-6 bg-card/50 backdrop-blur-xl border-border/50">
       <div className="flex items-center gap-3 mb-6">
@@ -299,9 +353,7 @@ export const MemoryManagement: React.FC<MemoryManagementProps> = ({ userId }) =>
                                   {memory.memory_key.replace(/_/g, ' ')}
                                 </p>
                                 <p className="text-sm text-muted-foreground mt-1 break-words">
-                                  {memory.memory_data 
-                                    ? (memory.memory_data.value || JSON.stringify(memory.memory_data))
-                                    : 'No data'}
+                                  {formatMemoryDisplay(memory)}
                                 </p>
                                 <p className="text-xs text-muted-foreground mt-2">
                                   Learned {memory.created_at ? new Date(memory.created_at).toLocaleDateString() : 'Unknown'}
