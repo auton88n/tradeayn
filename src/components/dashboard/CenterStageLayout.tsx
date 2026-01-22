@@ -10,6 +10,8 @@ import { ParticleBurst } from '@/components/eye/ParticleBurst';
 import { ChatInput } from './ChatInput';
 import { SystemNotificationBanner } from './SystemNotificationBanner';
 import { BetaBadge } from '@/components/ui/BetaBadge';
+import { FloatingFeedbackButton } from './FloatingFeedbackButton';
+import { BetaFeedbackModal } from './BetaFeedbackModal';
 import { useBubbleAnimation } from '@/hooks/useBubbleAnimation';
 import { useAYNEmotion, AYNEmotion } from '@/contexts/AYNEmotionContext';
 import { useSoundContextOptional } from '@/contexts/SoundContext';
@@ -82,6 +84,8 @@ interface CenterStageLayoutProps {
   };
   // Beta mode
   betaMode?: boolean;
+  betaFeedbackReward?: number;
+  userId?: string;
 }
 
 export const CenterStageLayout = ({
@@ -123,6 +127,8 @@ export const CenterStageLayout = ({
   currentSessionId,
   maintenanceConfig,
   betaMode,
+  betaFeedbackReward,
+  userId,
 }: CenterStageLayoutProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const eyeStageRef = useRef<HTMLDivElement>(null);
@@ -132,6 +138,9 @@ export const CenterStageLayout = ({
   
   // Dynamic footer height for bottom padding
   const [footerHeight, setFooterHeight] = useState(112); // Default ~28*4 = 112px
+  
+  // Floating feedback modal state
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   
   // Gate to only show ResponseCard for actively-sent messages
   // We store the last message id at the moment of sending, to avoid re-processing the previous
@@ -740,6 +749,25 @@ export const CenterStageLayout = ({
           maintenanceActive={maintenanceConfig?.enabled}
         />
       </div>
+
+      {/* Floating Feedback Button - Only show when beta mode is enabled */}
+      {betaMode && userId && (
+        <FloatingFeedbackButton
+          userId={userId}
+          rewardAmount={betaFeedbackReward || 5}
+          onOpenFeedback={() => setShowFeedbackModal(true)}
+        />
+      )}
+
+      {/* Beta Feedback Modal */}
+      {userId && (
+        <BetaFeedbackModal
+          isOpen={showFeedbackModal}
+          onClose={() => setShowFeedbackModal(false)}
+          userId={userId}
+          rewardAmount={betaFeedbackReward || 5}
+        />
+      )}
     </div>
   );
 };

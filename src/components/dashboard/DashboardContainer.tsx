@@ -563,6 +563,8 @@ const DashboardContent = ({
           currentSessionId={chatSession.currentSessionId}
           maintenanceConfig={maintenanceConfig}
           betaMode={betaConfig?.enabled}
+          betaFeedbackReward={betaConfig?.feedbackReward}
+          userId={user.id}
         />
       </main>
 

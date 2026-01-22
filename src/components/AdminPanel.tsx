@@ -21,6 +21,8 @@ import { UserAILimits } from '@/components/admin/UserAILimits';
 import { AdminAIAssistant } from '@/components/admin/AdminAIAssistant';
 import TestResultsDashboard from '@/components/admin/TestResultsDashboard';
 import { SubscriptionManagement } from '@/components/admin/SubscriptionManagement';
+import { CreditGiftHistory } from '@/components/admin/CreditGiftHistory';
+import { BetaFeedbackViewer } from '@/components/admin/BetaFeedbackViewer';
 
 // Supabase config
 const SUPABASE_URL = 'https://dfkoxuokfkttjhfjcecx.supabase.co' as const;
@@ -406,6 +408,8 @@ export const AdminPanel = ({
                     {activeTab === 'ai-limits' && <UserAILimits />}
                     {activeTab === 'ai-assistant' && <AdminAIAssistant />}
                     {activeTab === 'subscriptions' && <SubscriptionManagement />}
+                    {activeTab === 'credit-history' && <CreditGiftHistory />}
+                    {activeTab === 'beta-feedback' && <BetaFeedbackViewer />}
                     {activeTab === 'test-results' && <TestResultsDashboard />}
                   </ErrorBoundary>
                 </motion.div>
