@@ -9,6 +9,7 @@ import { FlyingSuggestionBubble } from '@/components/eye/FlyingSuggestionBubble'
 import { ParticleBurst } from '@/components/eye/ParticleBurst';
 import { ChatInput } from './ChatInput';
 import { SystemNotificationBanner } from './SystemNotificationBanner';
+import { BetaBadge } from '@/components/ui/BetaBadge';
 import { useBubbleAnimation } from '@/hooks/useBubbleAnimation';
 import { useAYNEmotion, AYNEmotion } from '@/contexts/AYNEmotionContext';
 import { useSoundContextOptional } from '@/contexts/SoundContext';
@@ -79,6 +80,8 @@ interface CenterStageLayoutProps {
     preMaintenanceNotice?: boolean;
     preMaintenanceMessage?: string;
   };
+  // Beta mode
+  betaMode?: boolean;
 }
 
 export const CenterStageLayout = ({
@@ -119,6 +122,7 @@ export const CenterStageLayout = ({
   isLoadingFromHistory,
   currentSessionId,
   maintenanceConfig,
+  betaMode,
 }: CenterStageLayoutProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const eyeStageRef = useRef<HTMLDivElement>(null);
@@ -587,13 +591,16 @@ export const CenterStageLayout = ({
               bounce: 0.1,
             }}
           >
-            <EmotionalEye 
-              size={isMobile ? "md" : "lg"} 
-              gazeTarget={gazeTarget} 
-              pupilReaction={empathyPupilReaction}
-              blinkPattern={empathyBlinkPattern}
-              colorIntensity={empathyColorIntensity}
-            />
+            <div className="relative inline-block">
+              <EmotionalEye 
+                size={isMobile ? "md" : "lg"} 
+                gazeTarget={gazeTarget} 
+                pupilReaction={empathyPupilReaction}
+                blinkPattern={empathyBlinkPattern}
+                colorIntensity={empathyColorIntensity}
+              />
+              {betaMode && <BetaBadge className={isMobile ? "scale-90" : ""} />}
+            </div>
 
             {/* Thinking indicator when typing - simplified animation */}
             <AnimatePresence>

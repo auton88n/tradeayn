@@ -23,6 +23,11 @@ export interface MaintenanceConfig {
   preMaintenanceMessage?: string;
 }
 
+export interface BetaConfig {
+  enabled: boolean;
+  feedbackReward: number;
+}
+
 export default function Dashboard({ user, session }: DashboardProps) {
   const auth = useAuth(user, session);
   const [activeView, setActiveView] = useState<'chat' | 'admin'>('chat');
@@ -35,6 +40,10 @@ export default function Dashboard({ user, session }: DashboardProps) {
     endTime: '',
     preMaintenanceNotice: false,
     preMaintenanceMessage: ''
+  });
+  const [betaConfig, setBetaConfig] = useState<BetaConfig>({
+    enabled: false,
+    feedbackReward: 5
   });
 
   // Apply no-overscroll class to prevent pull-to-refresh on dashboard
@@ -56,7 +65,9 @@ export default function Dashboard({ user, session }: DashboardProps) {
             'maintenance_start_time',
             'maintenance_end_time',
             'pre_maintenance_notice',
-            'pre_maintenance_message'
+            'pre_maintenance_message',
+            'beta_mode',
+            'beta_feedback_reward'
           ]);
 
         if (error) {
@@ -73,6 +84,10 @@ export default function Dashboard({ user, session }: DashboardProps) {
             endTime: (configMap.get('maintenance_end_time') as string) || '',
             preMaintenanceNotice: configMap.get('pre_maintenance_notice') === true || configMap.get('pre_maintenance_notice') === 'true',
             preMaintenanceMessage: (configMap.get('pre_maintenance_message') as string) || ''
+          });
+          setBetaConfig({
+            enabled: configMap.get('beta_mode') === true || configMap.get('beta_mode') === 'true',
+            feedbackReward: parseInt(String(configMap.get('beta_feedback_reward'))) || 5
           });
         }
       } catch (error) {
@@ -93,11 +108,11 @@ export default function Dashboard({ user, session }: DashboardProps) {
           table: 'system_config'
         },
         (payload) => {
-          // Check if the changed key is maintenance-related
+          // Check if the changed key is maintenance or beta related
           if (payload.new && typeof payload.new === 'object' && 'key' in payload.new) {
             const key = payload.new.key as string;
-            if (key.startsWith('maintenance_') || key.startsWith('pre_maintenance_')) {
-              // Re-fetch all maintenance config on any maintenance key change
+            if (key.startsWith('maintenance_') || key.startsWith('pre_maintenance_') || key.startsWith('beta_')) {
+              // Re-fetch all config on any related key change
               loadMaintenanceConfig();
             }
           }
@@ -211,6 +226,7 @@ export default function Dashboard({ user, session }: DashboardProps) {
             hasDutyAccess={auth.hasDutyAccess}
             onAdminPanelClick={handleAdminPanelClick}
             maintenanceConfig={maintenanceConfig}
+            betaConfig={betaConfig}
           />
         </SidebarProvider>
       )}

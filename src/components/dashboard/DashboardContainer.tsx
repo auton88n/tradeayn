@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { AIMode, FileAttachment, AIModeConfig, ChatHistory } from '@/types/dashboard.types';
-import type { MaintenanceConfig } from '@/components/Dashboard';
+import type { MaintenanceConfig, BetaConfig } from '@/components/Dashboard';
 
 // Import custom hooks
 import type { UseAuthReturn } from '@/types/dashboard.types';
@@ -37,6 +37,7 @@ interface DashboardContainerProps {
   hasDutyAccess?: boolean;
   onAdminPanelClick?: () => void;
   maintenanceConfig?: MaintenanceConfig;
+  betaConfig?: BetaConfig;
 }
 
 // Single unified mode - ayn-unified auto-detects intent
@@ -51,7 +52,7 @@ const getModes = (): AIModeConfig[] => [
   },
 ];
 
-export const DashboardContainer = ({ user, session, auth, isAdmin, hasDutyAccess, onAdminPanelClick, maintenanceConfig }: DashboardContainerProps) => {
+export const DashboardContainer = ({ user, session, auth, isAdmin, hasDutyAccess, onAdminPanelClick, maintenanceConfig, betaConfig }: DashboardContainerProps) => {
   const { toast } = useToast();
   
   // Real-time usage tracking
@@ -558,6 +559,7 @@ const DashboardContent = ({
           isLoadingFromHistory={messagesHook.isLoadingFromHistory}
           currentSessionId={chatSession.currentSessionId}
           maintenanceConfig={maintenanceConfig}
+          betaMode={betaConfig?.enabled}
         />
       </main>
 
