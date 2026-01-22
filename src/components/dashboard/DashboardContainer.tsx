@@ -216,6 +216,7 @@ export const DashboardContainer = ({ user, session, auth, isAdmin, hasDutyAccess
       onAdminPanelClick={onAdminPanelClick}
       usageTracking={usageTracking}
       maintenanceConfig={maintenanceConfig}
+      betaConfig={betaConfig}
     />
   );
 };
@@ -243,6 +244,7 @@ const DashboardContent = ({
   onLanguageChange,
   usageTracking,
   maintenanceConfig,
+  betaConfig,
 }: {
   user: User;
   session: Session;
@@ -265,6 +267,7 @@ const DashboardContent = ({
   onLanguageChange?: (language: { code: string; flag: string; name: string }) => void;
   usageTracking: ReturnType<typeof useUsageTracking>;
   maintenanceConfig?: MaintenanceConfig;
+  betaConfig?: BetaConfig;
 }) => {
   const { open, setOpen, openMobile, setOpenMobile, isMobile, toggleSidebar } = useSidebar();
   const [transcriptOpen, setTranscriptOpen] = useState(false);
