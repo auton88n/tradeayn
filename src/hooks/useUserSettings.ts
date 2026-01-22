@@ -13,7 +13,6 @@ export interface UserSettings {
   desktop_notifications: boolean;
   allow_personalization: boolean;
   store_chat_history: boolean;
-  share_anonymous_data: boolean;
 }
 
 export interface DeviceSession {
@@ -67,7 +66,6 @@ export const useUserSettings = (userId: string, accessToken?: string) => {
             desktop_notifications: created.desktop_notifications ?? false,
             allow_personalization: created.allow_personalization ?? false,
             store_chat_history: created.store_chat_history ?? true,
-            share_anonymous_data: created.share_anonymous_data ?? false,
           };
           setSettings(normalizedNewSettings);
         }
@@ -84,7 +82,6 @@ export const useUserSettings = (userId: string, accessToken?: string) => {
           desktop_notifications: fetched.desktop_notifications ?? false,
           allow_personalization: fetched.allow_personalization ?? false,
           store_chat_history: fetched.store_chat_history ?? true,
-          share_anonymous_data: fetched.share_anonymous_data ?? false,
         };
         setSettings(normalizedSettings);
       }
