@@ -195,7 +195,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
         <Tabs defaultValue="signin" className="w-full">
           <TabsList className="grid w-full grid-cols-2 bg-neutral-900/80 border border-white/10">
             <TabsTrigger value="signin">{t('auth.signIn')}</TabsTrigger>
-            <TabsTrigger value="signup">{t('auth.requestAccess')}</TabsTrigger>
+            <TabsTrigger value="signup">{t('auth.signUp')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="signin" className="space-y-4 mt-6">
@@ -250,7 +250,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
 
           <TabsContent value="signup" className="space-y-4 mt-6">
             <div className="text-center text-sm text-muted-foreground mb-4">
-              {t('auth.requestAccessDesc')}
+              {t('auth.signUpDesc')}
             </div>
             
             <form onSubmit={handleSignUp} className="space-y-4">
@@ -334,12 +334,8 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                 disabled={isLoading}
               >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {t('auth.requestAccess')}
+                {t('auth.signUp')}
               </Button>
-
-              <div className="text-xs text-muted-foreground text-center">
-                {t('auth.accessReviewDesc')}
-              </div>
             </form>
           </TabsContent>
         </Tabs>
