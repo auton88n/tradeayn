@@ -20,6 +20,7 @@ import { AICostDashboard } from '@/components/admin/AICostDashboard';
 import { UserAILimits } from '@/components/admin/UserAILimits';
 import { AdminAIAssistant } from '@/components/admin/AdminAIAssistant';
 import TestResultsDashboard from '@/components/admin/TestResultsDashboard';
+import { SubscriptionManagement } from '@/components/admin/SubscriptionManagement';
 
 // Supabase config
 const SUPABASE_URL = 'https://dfkoxuokfkttjhfjcecx.supabase.co' as const;
@@ -404,6 +405,7 @@ export const AdminPanel = ({
                     {activeTab === 'ai-costs' && <AICostDashboard />}
                     {activeTab === 'ai-limits' && <UserAILimits />}
                     {activeTab === 'ai-assistant' && <AdminAIAssistant />}
+                    {activeTab === 'subscriptions' && <SubscriptionManagement />}
                     {activeTab === 'test-results' && <TestResultsDashboard />}
                   </ErrorBoundary>
                 </motion.div>

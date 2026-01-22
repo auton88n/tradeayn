@@ -39,6 +39,7 @@ export const SUBSCRIPTION_TIERS = {
 } as const;
 
 export type SubscriptionTier = keyof typeof SUBSCRIPTION_TIERS;
+export type TierKey = SubscriptionTier;
 
 interface SubscriptionState {
   isLoading: boolean;

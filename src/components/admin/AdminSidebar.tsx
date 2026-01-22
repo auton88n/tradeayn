@@ -12,7 +12,8 @@ import {
   Bot, 
   FlaskConical,
   ChevronLeft,
-  ChevronsRight
+  ChevronsRight,
+  CreditCard
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -30,7 +31,8 @@ export type AdminTabId =
   | 'ai-costs' 
   | 'ai-limits' 
   | 'ai-assistant' 
-  | 'test-results';
+  | 'test-results'
+  | 'subscriptions';
 
 interface AdminSection {
   id: AdminTabId;
@@ -56,6 +58,7 @@ const aiSections: AdminSection[] = [
   { id: 'ai-costs', title: 'AI Costs', shortTitle: 'Cost', icon: DollarSign, gradient: 'from-emerald-500 to-teal-500', adminOnly: true },
   { id: 'ai-limits', title: 'AI Limits', shortTitle: 'Lim', icon: Gauge, gradient: 'from-yellow-500 to-amber-500', adminOnly: true },
   { id: 'ai-assistant', title: 'AI Assistant', shortTitle: 'Asst', icon: Bot, gradient: 'from-cyan-500 to-blue-500', adminOnly: true },
+  { id: 'subscriptions', title: 'Subscriptions', shortTitle: 'Subs', icon: CreditCard, gradient: 'from-indigo-500 to-violet-500', adminOnly: true },
   { id: 'test-results', title: 'Test Results', shortTitle: 'Test', icon: FlaskConical, gradient: 'from-pink-500 to-rose-500', adminOnly: true },
 ];
 
