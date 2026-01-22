@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { X, Search, Copy, Trash2, MessageSquare, Brain, ArrowDown } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { X, Search, Copy, Trash2, MessageSquare, Brain } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,14 +26,12 @@ const TranscriptContent = ({
   setSearchQuery,
   isSearchFocused,
   setIsSearchFocused,
-  viewportRef,
+  scrollRef,
   currentMode,
   onReply,
   onToggle,
   onClear,
-  handleCopyAll,
-  showScrollButton,
-  onScrollToBottom
+  handleCopyAll
 }: {
   messages: Message[];
   filteredMessages: Message[];
@@ -41,14 +39,12 @@ const TranscriptContent = ({
   setSearchQuery: (q: string) => void;
   isSearchFocused: boolean;
   setIsSearchFocused: (f: boolean) => void;
-  viewportRef: React.RefObject<HTMLDivElement>;
+  scrollRef: React.RefObject<HTMLDivElement>;
   currentMode?: string;
   onReply?: (quotedContent: string) => void;
   onToggle: (open?: boolean) => void;
   onClear?: () => void;
   handleCopyAll: () => void;
-  showScrollButton: boolean;
-  onScrollToBottom: () => void;
 }) => <div className="flex flex-col h-full bg-gradient-to-b from-background to-background/95">
     {/* Premium Header */}
     <div className="relative">
@@ -91,9 +87,8 @@ const TranscriptContent = ({
     </div>
 
     {/* Messages */}
-    <div className="relative flex-1">
-      <ScrollArea className="h-full px-4" viewportRef={viewportRef}>
-        <div className="space-y-3 pb-4">
+    <ScrollArea className="flex-1 px-4" ref={scrollRef}>
+      <div className="space-y-3 pb-4">
         {filteredMessages.length === 0 ? <div className="flex flex-col items-center justify-center py-12 px-4 relative">
             {/* Decorative dots pattern - top right */}
             <div className="absolute top-4 right-4 grid grid-cols-3 gap-1.5 opacity-20">
@@ -139,29 +134,8 @@ const TranscriptContent = ({
                 onReply={onReply} 
               />
             </div>)}
-        </div>
-      </ScrollArea>
-      
-      {/* Scroll to latest button */}
-      {showScrollButton && (
-        <button
-          onClick={onScrollToBottom}
-          className={cn(
-            "absolute bottom-4 right-6 z-10",
-            "w-10 h-10 rounded-full",
-            "bg-primary text-primary-foreground",
-            "flex items-center justify-center",
-            "shadow-lg hover:shadow-xl",
-            "hover:scale-105 active:scale-95",
-            "transition-all duration-200",
-            "animate-fade-in"
-          )}
-          aria-label="Scroll to latest message"
-        >
-          <ArrowDown className="w-5 h-5" />
-        </button>
-      )}
-    </div>
+      </div>
+    </ScrollArea>
 
     {/* Premium Actions Footer */}
     <div className="relative p-4 pt-2">
@@ -188,55 +162,19 @@ export const TranscriptSidebar = ({
   currentMode,
   onReply
 }: TranscriptSidebarProps) => {
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [showScrollButton, setShowScrollButton] = useState(false);
-  const viewportRef = useRef<HTMLDivElement>(null);
-  const isNearBottomRef = useRef(true);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Check if scrolled near bottom
-  const checkScrollPosition = useCallback(() => {
-    if (viewportRef.current) {
-      const { scrollTop, scrollHeight, clientHeight } = viewportRef.current;
-      const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
-      isNearBottomRef.current = isNearBottom;
-      setShowScrollButton(!isNearBottom && messages.length > 0);
-    }
-  }, [messages.length]);
-
-  // Attach scroll listener
+  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    const scrollEl = viewportRef.current;
-    if (scrollEl) {
-      scrollEl.addEventListener('scroll', checkScrollPosition);
-      return () => scrollEl.removeEventListener('scroll', checkScrollPosition);
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [checkScrollPosition]);
-
-  // Auto-scroll to bottom when new messages arrive (only if already near bottom)
-  useEffect(() => {
-    if (viewportRef.current && isNearBottomRef.current) {
-      viewportRef.current.scrollTo({
-        top: viewportRef.current.scrollHeight,
-        behavior: 'smooth'
-      });
-    } else if (messages.length > 0) {
-      // Show button if new message arrived while scrolled up
-      checkScrollPosition();
-    }
-  }, [messages, checkScrollPosition]);
-
-  // Scroll to bottom handler
-  const handleScrollToBottom = useCallback(() => {
-    if (viewportRef.current) {
-      viewportRef.current.scrollTo({
-        top: viewportRef.current.scrollHeight,
-        behavior: 'smooth'
-      });
-      setShowScrollButton(false);
-    }
-  }, []);
+  }, [messages]);
 
   // Filter and sort messages chronologically (oldest first)
   const filteredMessages = messages
@@ -270,14 +208,12 @@ export const TranscriptSidebar = ({
     setSearchQuery,
     isSearchFocused,
     setIsSearchFocused,
-    viewportRef,
+    scrollRef,
     currentMode,
     onReply,
     onToggle,
     onClear,
-    handleCopyAll,
-    showScrollButton,
-    onScrollToBottom: handleScrollToBottom
+    handleCopyAll
   };
 
   // Floating toggle button - desktop only (mobile uses header button)
