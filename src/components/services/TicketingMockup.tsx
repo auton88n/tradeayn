@@ -346,7 +346,7 @@ const TicketingMockup = () => {
   }, []);
 
   return (
-    <div className="relative w-full h-full min-h-[400px] flex items-center justify-center">
+    <div className="relative w-full h-full min-h-[400px] flex items-center justify-center overflow-hidden">
       {/* Subtle ambient glow - no box */}
       <motion.div 
         className="absolute inset-0 pointer-events-none"
@@ -360,8 +360,8 @@ const TicketingMockup = () => {
         transition={{ duration: 0.4 }}
       />
 
-      {/* Centered overlapping layout */}
-      <div className="flex items-center justify-center">
+      {/* Centered overlapping layout - scaled down on mobile */}
+      <div className="flex items-center justify-center scale-[0.65] sm:scale-75 md:scale-90 lg:scale-100 origin-center">
         {/* Laptop - Left/Back with 3D tilt */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
