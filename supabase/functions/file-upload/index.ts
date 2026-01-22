@@ -150,7 +150,8 @@ function sanitizeFileName(fileName: string): string {
     .replace(/\.\./g, '')        // Remove path traversal
     .replace(/[\/\\]/g, '')      // Remove directory separators
     .replace(/\0/g, '')          // Remove null bytes
-    .replace(/[<>:"|?*]/g, '');  // Remove dangerous characters
+    .replace(/[<>:"|?*]/g, '')   // Remove dangerous characters
+    .replace(/\s+/g, '_');       // Replace spaces with underscores
   
   // Limit length
   if (sanitized.length > 200) {
