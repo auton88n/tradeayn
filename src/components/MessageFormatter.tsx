@@ -239,7 +239,7 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
 
   return (
     <>
-      <div className={cn("space-y-2 leading-relaxed break-words", className)}>
+      <div className={cn("space-y-4 leading-relaxed break-words", className)}>
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           components={{
@@ -255,21 +255,21 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
             del: ({ children }) => (
               <del className="line-through text-muted-foreground">{children}</del>
             ),
-            // Unordered lists
+            // Unordered lists with styled bullets
             ul: ({ children }) => (
-              <ul className="space-y-1 my-2 first:mt-0 last:mb-0 pl-2">{children}</ul>
+              <ul className="space-y-2.5 my-4 first:mt-0 last:mb-0 pl-1 list-none">{children}</ul>
             ),
-            // Ordered lists
+            // Ordered lists with styled markers
             ol: ({ children }) => (
-              <ol className="space-y-1 my-2 first:mt-0 last:mb-0 pl-2 list-decimal list-inside">{children}</ol>
+              <ol className="space-y-2.5 my-4 first:mt-0 last:mb-0 pl-5 list-decimal list-outside marker:text-primary/70 marker:font-medium">{children}</ol>
             ),
-            // List items
+            // List items with custom bullet styling
             li: ({ children }) => (
-              <li className="leading-relaxed break-words [overflow-wrap:anywhere] [&>p]:inline [&>p]:m-0">{children}</li>
+              <li className="relative pl-5 leading-relaxed pb-1 break-words [overflow-wrap:anywhere] [&>p]:inline [&>p]:m-0 before:content-['•'] before:absolute before:left-0 before:text-primary/70 before:font-bold before:text-lg [ol>&]:before:content-none [ol>&]:pl-0">{children}</li>
             ),
-            // Paragraphs
+            // Paragraphs with improved spacing
             p: ({ children }) => (
-              <p className="leading-relaxed mb-2 last:mb-0 text-current break-words">{children}</p>
+              <p className="leading-relaxed mb-4 last:mb-0 text-current break-words">{children}</p>
             ),
             // Code blocks with copy button
             code: ({ children, className: codeClassName }) => {
@@ -314,22 +314,22 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
             },
             // Pre blocks (for code) - let code component handle rendering
             pre: ({ children }) => <>{children}</>,
-            // Headers
+            // Headers with improved spacing
             h1: ({ children }) => (
-              <h1 className="text-xl font-bold mt-4 mb-2 first:mt-0 text-gray-900 dark:text-white">{children}</h1>
+              <h1 className="text-xl font-bold mt-6 mb-3 first:mt-0 text-gray-900 dark:text-white">{children}</h1>
             ),
             h2: ({ children }) => (
-              <h2 className="text-lg font-semibold mt-4 mb-2 first:mt-0 text-gray-900 dark:text-white">{children}</h2>
+              <h2 className="text-lg font-semibold mt-6 mb-3 first:mt-0 text-gray-900 dark:text-white">{children}</h2>
             ),
             h3: ({ children }) => (
-              <h3 className="text-base font-medium mt-3 mb-2 first:mt-0 text-gray-900 dark:text-white">{children}</h3>
+              <h3 className="text-base font-medium mt-5 mb-2.5 first:mt-0 text-gray-900 dark:text-white">{children}</h3>
             ),
             h4: ({ children }) => (
-              <h4 className="text-sm font-medium mt-3 mb-2 first:mt-0 text-gray-900 dark:text-white">{children}</h4>
+              <h4 className="text-sm font-medium mt-4 mb-2 first:mt-0 text-gray-900 dark:text-white">{children}</h4>
             ),
-            // Blockquotes
+            // Blockquotes with improved spacing
             blockquote: ({ children }) => (
-              <blockquote className="border-l-4 border-primary/50 bg-gray-50 dark:bg-gray-800/50 pl-4 py-2 italic my-2 first:mt-0 last:mb-0 rounded-r text-gray-600 dark:text-gray-300">
+              <blockquote className="border-l-4 border-primary/50 bg-gray-50 dark:bg-gray-800/50 pl-4 py-3 italic my-4 first:mt-0 last:mb-0 rounded-r text-gray-600 dark:text-gray-300">
                 {children}
               </blockquote>
             ),
