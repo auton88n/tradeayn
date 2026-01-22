@@ -33,6 +33,8 @@ const AIAgents = lazy(() => import("./pages/services/AIAgents"));
 const AIAgentsApply = lazy(() => import("./pages/services/AIAgentsApply"));
 const Automation = lazy(() => import("./pages/services/Automation"));
 const AutomationApply = lazy(() => import("./pages/services/AutomationApply"));
+const Ticketing = lazy(() => import("./pages/services/Ticketing"));
+const TicketingApply = lazy(() => import("./pages/services/TicketingApply"));
 const Support = lazy(() => import("./pages/Support"));
 const Engineering = lazy(() => import("./pages/EngineeringWorkspacePage"));
 const AIGradingDesigner = lazy(() => import("./pages/AIGradingDesigner"));
@@ -61,6 +63,8 @@ const AnimatedRoutes = () => {
         <Route path="/services/ai-agents/apply" element={<PageTransition><AIAgentsApply /></PageTransition>} />
         <Route path="/services/automation" element={<PageTransition><Automation /></PageTransition>} />
         <Route path="/services/automation/apply" element={<PageTransition><AutomationApply /></PageTransition>} />
+        <Route path="/services/ticketing" element={<PageTransition><Ticketing /></PageTransition>} />
+        <Route path="/services/ticketing/apply" element={<PageTransition><TicketingApply /></PageTransition>} />
         <Route path="/support" element={<PageTransition><Support /></PageTransition>} />
         <Route path="/engineering" element={<PageTransition><Engineering /></PageTransition>} />
         <Route path="/engineering/grading" element={<PageTransition><AIGradingDesigner /></PageTransition>} />
