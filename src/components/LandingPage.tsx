@@ -24,7 +24,7 @@ import AutomationFlowMockup from './services/AutomationFlowMockup';
 import AIEmployeeMockup from './services/AIEmployeeMockup';
 import EngineeringMockup from './services/EngineeringMockup';
 import TicketingMockup from './services/TicketingMockup';
-import { SEO, organizationSchema, websiteSchema } from './SEO';
+import { SEO, organizationSchema, websiteSchema, softwareApplicationSchema, createFAQSchema } from './SEO';
 
 // ScrollReveal component - defined outside to prevent recreation on re-renders
 const ScrollReveal = ({
@@ -254,13 +254,33 @@ const LandingPage = () => {
     description: language === 'ar' ? 'بيع التذاكر أونلاين والتحقق بمسح QR من الجوال.' : language === 'fr' ? 'Vendez des billets en ligne et validez par scan QR.' : 'Sell tickets online and validate with phone QR scanning.',
     mockup: <LazyLoad><TicketingMockup /></LazyLoad>
   }];
+  // FAQ Schema for rich snippets
+  const faqSchema = createFAQSchema([
+    { 
+      question: "What is AYN AI?", 
+      answer: "AYN AI is a perceptive artificial intelligence platform that learns your habits, understands your goals, and helps you succeed. It offers AI employees, custom AI agents, and business automation tools." 
+    },
+    { 
+      question: "How does AYN AI learn my preferences?", 
+      answer: "AYN AI uses advanced machine learning to analyze your interactions, understand your communication style, and adapt to your workflow patterns over time." 
+    },
+    { 
+      question: "What services does AYN AI offer?", 
+      answer: "AYN AI offers AI employees for 24/7 customer support, custom AI agents for business automation, content creator websites, smart ticketing systems, and engineering calculation tools." 
+    },
+    { 
+      question: "Is AYN AI available in Arabic?", 
+      answer: "Yes! AYN AI (عين) is fully multilingual with native support for Arabic, English, and French, making it ideal for Middle Eastern and international businesses." 
+    }
+  ]);
+
   return <>
     <SEO
-      title="AYN - AI That Knows You"
-      description="AYN is an AI assistant that learns your habits, understands your goals, and helps you stay organized and focused every day. Discover AI employees, custom AI agents, and business automation."
+      title="AYN AI - Personal AI Assistant That Learns You | Smart AI Platform"
+      description="AYN AI is a perceptive artificial intelligence that learns your habits, understands your goals, and helps you succeed. AI employees, custom AI agents, business automation, and more."
       canonical="/"
-      keywords="AI assistant, AI employees, AI agents, business automation, content creator sites, productivity, artificial intelligence"
-      jsonLd={{ '@graph': [organizationSchema, websiteSchema] }}
+      keywords="AYN AI, AYN artificial intelligence, personal AI assistant, AI that learns you, perceptive AI, smart AI platform, AI employees, AI agents, business automation, Arabic AI assistant, عين AI, machine learning assistant, AI productivity tools, custom AI bots, virtual employees"
+      jsonLd={{ '@graph': [organizationSchema, websiteSchema, softwareApplicationSchema, faqSchema] }}
     />
     <div className="min-h-screen bg-background scroll-smooth">
       {/* Vertical Dropdown Navigation */}

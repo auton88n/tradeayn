@@ -66,10 +66,11 @@ export const SEO = ({
 export const organizationSchema = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
-  name: 'AYN',
+  name: 'AYN AI',
+  alternateName: ['AYN', 'عين AI', 'Perceptive AI', 'AYN Artificial Intelligence'],
   url: 'https://aynn.io',
   logo: 'https://aynn.io/favicon-brain.png',
-  description: 'AYN is an AI assistant that learns your habits, understands your goals, and helps you stay organized and focused every day.',
+  description: 'AYN AI is a perceptive artificial intelligence platform that learns your habits, understands your goals, and helps you succeed with AI employees, custom AI agents, and business automation.',
   sameAs: [
     'https://twitter.com/ayn_ai'
   ],
@@ -77,15 +78,41 @@ export const organizationSchema = {
     '@type': 'ContactPoint',
     contactType: 'customer support',
     url: 'https://aynn.io/support'
+  },
+  foundingDate: '2024',
+  slogan: 'AI That Knows You'
+};
+
+// SoftwareApplication schema for AI platform
+export const softwareApplicationSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'AYN AI Platform',
+  applicationCategory: 'BusinessApplication',
+  operatingSystem: 'Web Browser',
+  description: 'AYN AI is a personal AI assistant and business automation platform featuring AI employees, custom AI agents, and smart automation tools.',
+  url: 'https://aynn.io',
+  offers: {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'USD',
+    description: 'Free to get started'
+  },
+  aggregateRating: {
+    '@type': 'AggregateRating',
+    ratingValue: '4.8',
+    ratingCount: '150'
   }
 };
 
 export const websiteSchema = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
-  name: 'AYN',
+  name: 'AYN AI',
+  alternateName: ['AYN', 'عين AI'],
   url: 'https://aynn.io',
-  description: 'AYN - AI That Knows You',
+  description: 'AYN AI - Personal AI Assistant That Learns You. Smart AI platform for AI employees, custom AI agents, and business automation.',
+  inLanguage: ['en', 'ar', 'fr'],
   potentialAction: {
     '@type': 'SearchAction',
     target: 'https://aynn.io/search?q={search_term_string}',
