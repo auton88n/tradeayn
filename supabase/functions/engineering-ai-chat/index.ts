@@ -441,6 +441,8 @@ Remember: You're talking to a practicing engineer who needs accurate, actionable
         model: 'google/gemini-3-flash-preview',
         messages,
         stream: stream,
+        max_tokens: 1024,
+        temperature: 0.7,
       }),
     });
 

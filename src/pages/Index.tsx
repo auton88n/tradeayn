@@ -19,18 +19,11 @@ const Index = () => {
 
     const initializeAuth = async () => {
       try {
-        // Get initial session with 3-second timeout
-        const timeoutPromise = new Promise<null>((resolve) => 
-          setTimeout(() => resolve(null), 3000)
-        );
-
-        const sessionPromise = supabase.auth.getSession();
-        const result = await Promise.race([sessionPromise, timeoutPromise]);
-        
-        if (mounted && result && 'data' in result && result.data.session) {
-          setSession(result.data.session);
-          setUser(result.data.session.user);
-          setLoading(true); // Only show loader when actually loading dashboard
+        const { data } = await supabase.auth.getSession();
+        if (mounted && data.session) {
+          setSession(data.session);
+          setUser(data.session.user);
+          setLoading(true);
         }
       } catch {
         // Silent failure - show landing page
