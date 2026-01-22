@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Infinity, ArrowRight, X, Zap } from 'lucide-react';
+import { Sparkles, Infinity, ArrowRight, X, Zap, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useNavigate } from 'react-router-dom';
@@ -70,38 +70,50 @@ export const CreditUpgradeCard = ({
     <motion.div
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
+      whileHover={{ scale: 1.01 }}
       transition={{ duration: 0.2 }}
       className={cn(
-        "rounded-xl overflow-hidden",
-        "bg-gradient-to-br from-card/80 via-card/60 to-card/40",
+        "relative rounded-xl overflow-hidden",
+        "bg-gradient-to-br from-card/90 via-card/70 to-card/50",
         "backdrop-blur-xl",
-        "border border-white/10 dark:border-white/5",
-        "shadow-sm"
+        "shadow-lg shadow-black/10",
+        "transition-all duration-300"
       )}
     >
+      {/* Gradient border effect */}
+      <div className="absolute inset-0 rounded-xl p-[1px] pointer-events-none">
+        <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/20 via-white/5 to-transparent" />
+      </div>
+
       {/* Credit Section */}
-      <div className="px-3 py-2.5 space-y-2">
+      <div className="relative px-3 py-2.5 space-y-2">
         {/* Header Row */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <div className={cn(
-              "p-1 rounded-md transition-colors",
-              isLow ? "bg-destructive/20" : "bg-foreground/10"
+              "relative p-1 rounded-md transition-colors",
+              isLow 
+                ? "bg-destructive/20" 
+                : "bg-gradient-to-br from-primary/20 to-purple-500/20"
             )}>
+              {/* Icon glow */}
+              <div className="absolute inset-0 rounded-md bg-primary/10 blur-sm" />
               {isLow ? (
-                <Zap className="w-3 h-3 text-destructive" />
+                <Zap className="relative w-3 h-3 text-destructive" />
               ) : (
-                <Sparkles className="w-3 h-3 text-foreground" />
+                <Sparkles className="relative w-3 h-3 text-primary" />
               )}
             </div>
-            <span className="font-medium text-xs">HOO Credit</span>
+            <span className="font-semibold text-xs bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+              HOO Credit
+            </span>
           </div>
           <div className="flex items-baseline gap-0.5">
             <motion.span 
               key={displayCount}
-              initial={{ scale: 1.1, opacity: 0 }}
+              initial={{ scale: 1.2, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="text-sm font-bold tabular-nums"
+              className="text-base font-bold tabular-nums"
             >
               {isUnlimited ? '∞' : String(creditsLeft)}
             </motion.span>
@@ -112,9 +124,17 @@ export const CreditUpgradeCard = ({
         {/* Status Row */}
         <div className="flex items-center gap-2">
           {isUnlimited ? (
-            <div className="px-2 py-1 rounded-md bg-foreground text-background text-[10px] font-medium flex items-center gap-1">
-              <Infinity className="w-2.5 h-2.5" />
-              Unlimited
+            <div className={cn(
+              "px-2 py-0.5 rounded-md",
+              "bg-gradient-to-r from-purple-500/20 via-primary/20 to-blue-500/20",
+              "border border-white/10",
+              "flex items-center gap-1"
+            )}>
+              <Crown className="w-2.5 h-2.5 text-amber-400" />
+              <Infinity className="w-2.5 h-2.5 text-primary animate-pulse" />
+              <span className="text-[10px] font-semibold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+                Unlimited
+              </span>
             </div>
           ) : (
             <div className="flex-1">
@@ -144,53 +164,64 @@ export const CreditUpgradeCard = ({
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2 }}
           >
-            {/* Gradient Divider */}
-            <div className="h-px bg-gradient-to-r from-transparent via-border/50 to-transparent" />
+            {/* Animated Gradient Divider */}
+            <div className="relative h-px">
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-pulse" />
+            </div>
             
-            <div className="px-3 py-2.5 space-y-2 relative">
+            <div className="relative px-3 py-2.5 space-y-2">
               {/* Dismiss Button */}
               <button
                 onClick={() => setIsDismissed(true)}
                 className={cn(
-                  "absolute top-2 right-2",
-                  "w-5 h-5 rounded-full",
+                  "absolute top-1.5 right-1.5",
+                  "w-4 h-4 rounded-full",
                   "flex items-center justify-center",
-                  "bg-muted/50 hover:bg-muted",
-                  "text-muted-foreground hover:text-foreground",
-                  "transition-colors duration-200"
+                  "bg-muted/30 hover:bg-muted/50",
+                  "text-muted-foreground/50 hover:text-muted-foreground",
+                  "transition-all duration-200"
                 )}
               >
-                <X className="w-2.5 h-2.5" />
+                <X className="w-2 h-2" />
               </button>
 
               {/* Upgrade Header */}
-              <div className="flex items-center gap-1.5 pr-6">
-                <div className="p-1 rounded-md bg-primary/20">
-                  <Sparkles className="w-3 h-3 text-primary" />
+              <div className="flex items-center gap-1.5 pr-5">
+                <div className="relative p-1 rounded-md bg-gradient-to-br from-purple-500/20 to-primary/20">
+                  <div className="absolute inset-0 rounded-md bg-purple-500/10 blur-sm" />
+                  <Sparkles className="relative w-3 h-3 text-purple-400" />
                 </div>
-                <span className="font-medium text-xs">Upgrade to Pro</span>
+                <span className="font-semibold text-xs">
+                  Go{' '}
+                  <span className="bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+                    Pro
+                  </span>
+                </span>
               </div>
 
               {/* Benefits */}
               <p className="text-[10px] text-muted-foreground leading-relaxed">
-                1,000 credits/mo & priority support
+                ✦ 1,000 credits/mo ✦ Priority support
               </p>
 
-              {/* CTA Button */}
+              {/* Premium CTA Button */}
               <Button
                 onClick={() => navigate('/pricing')}
                 size="sm"
                 className={cn(
-                  "w-full h-7 text-xs",
-                  "bg-gradient-to-r from-primary to-primary/80",
-                  "hover:from-primary/90 hover:to-primary/70",
-                  "text-primary-foreground font-medium",
-                  "rounded-lg",
-                  "transition-all duration-200"
+                  "w-full h-7 text-xs font-medium",
+                  "bg-gradient-to-r from-purple-500 via-primary to-blue-500",
+                  "hover:from-purple-600 hover:via-primary hover:to-blue-600",
+                  "text-white rounded-lg",
+                  "shadow-md shadow-primary/20",
+                  "hover:shadow-lg hover:shadow-primary/30",
+                  "transition-all duration-300",
+                  "group"
                 )}
               >
-                View Plans
-                <ArrowRight className="w-3 h-3 ml-1" />
+                <span>View Plans</span>
+                <ArrowRight className="w-3 h-3 ml-1 group-hover:translate-x-0.5 transition-transform" />
               </Button>
             </div>
           </motion.div>
