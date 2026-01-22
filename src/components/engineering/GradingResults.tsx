@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 import { Download, TrendingUp, TrendingDown, DollarSign, FileText, AlertTriangle, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -8,7 +8,7 @@ import { toast } from '@/hooks/use-toast';
 import { StationDataTable } from './StationDataTable';
 import { ElevationProfile } from './ElevationProfile';
 import { GradingPDFReport } from './GradingPDFReport';
-import html2pdf from 'html2pdf.js';
+import generatePDF, { Margin } from 'react-to-pdf';
 
 interface Point {
   id: string;
@@ -103,27 +103,30 @@ export const GradingResults: React.FC<GradingResultsProps> = ({
     }
   };
 
+  const getTargetElement = useCallback(() => pdfRef.current, []);
+
   const handleExportPDF = async () => {
     if (!pdfRef.current || !design) return;
     
     setExportingPDF(true);
     try {
-      const options = {
-        margin: 0,
+      await generatePDF(getTargetElement, {
         filename: `${projectName.replace(/\s+/g, '_')}_Grading_Report.pdf`,
-        image: { type: 'jpeg', quality: 0.95 },
-        html2canvas: { 
-          scale: 2, 
-          useCORS: true, 
-          logging: false,
-          width: 794,
-          windowWidth: 794
+        page: {
+          margin: Margin.SMALL,
+          format: 'A4',
+          orientation: 'portrait',
         },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
-        pagebreak: { mode: 'avoid-all' as const }
-      };
-
-      await html2pdf().set(options).from(pdfRef.current).save();
+        canvas: {
+          mimeType: 'image/jpeg',
+          qualityRatio: 0.95,
+        },
+        overrides: {
+          canvas: {
+            useCORS: true,
+          },
+        },
+      });
 
       toast({
         title: 'PDF exported successfully',

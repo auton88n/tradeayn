@@ -307,23 +307,26 @@ export const CalculationResults = ({ result, onNewCalculation }: CalculationResu
   const handleExportPDF = async () => {
     setIsExportingPDF(true);
     try {
-      // Use html2pdf.js for PDF generation
-      const html2pdf = (await import('html2pdf.js')).default;
+      const generatePDF = (await import('react-to-pdf')).default;
+      const { Margin } = await import('react-to-pdf');
       const element = document.getElementById('calculation-report');
       
       if (!element) {
         throw new Error('Report element not found');
       }
 
-      const opt = {
-        margin: 10,
+      await generatePDF(() => element, {
         filename: `${result.type}-calculation-${Date.now()}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const }
-      };
-
-      await html2pdf().set(opt).from(element).save();
+        page: {
+          margin: Margin.SMALL,
+          format: 'A4',
+          orientation: 'portrait',
+        },
+        canvas: {
+          mimeType: 'image/jpeg',
+          qualityRatio: 0.98,
+        },
+      });
       toast.success('PDF report downloaded!');
     } catch (err) {
       console.error('PDF export error:', err);

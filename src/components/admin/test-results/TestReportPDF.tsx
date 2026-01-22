@@ -1,8 +1,8 @@
-import React, { useRef } from 'react';
+import React, { useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { FileDown, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import html2pdf from 'html2pdf.js';
+import generatePDF, { Margin } from 'react-to-pdf';
 
 interface TestResult {
   name: string;
@@ -37,9 +37,8 @@ export function TestReportPDF({
   lastRun 
 }: TestReportPDFProps) {
   const [isGenerating, setIsGenerating] = React.useState(false);
-  const contentRef = useRef<HTMLDivElement>(null);
 
-  const generatePDF = async () => {
+  const handleGeneratePDF = async () => {
     setIsGenerating(true);
     
     try {
@@ -48,8 +47,11 @@ export function TestReportPDF({
       const critical = bugs.filter(b => b.severity === 'critical').length;
       const high = bugs.filter(b => b.severity === 'high').length;
 
-      const reportHtml = `
-        <div style="font-family: Arial, sans-serif; padding: 30px; color: #1a1a1a;">
+      // Create a temporary element for PDF generation
+      const tempDiv = document.createElement('div');
+      tempDiv.id = 'temp-pdf-container';
+      tempDiv.innerHTML = `
+        <div style="font-family: Arial, sans-serif; padding: 30px; color: #1a1a1a; background: white;">
           <div style="border-bottom: 3px solid #6366f1; padding-bottom: 20px; margin-bottom: 30px;">
             <h1 style="margin: 0; color: #1a1a1a; font-size: 28px;">${categoryName} Test Report</h1>
             <p style="margin: 10px 0 0 0; color: #666;">Generated: ${new Date().toLocaleString()}</p>
@@ -142,16 +144,25 @@ export function TestReportPDF({
           </div>
         </div>
       `;
+      
+      document.body.appendChild(tempDiv);
 
-      const opt = {
-        margin: 10,
+      const getTargetElement = () => document.getElementById('temp-pdf-container');
+
+      await generatePDF(getTargetElement, {
         filename: `${categoryName.replace(/\s+/g, '-')}-Report-${new Date().toISOString().split('T')[0]}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const }
-      };
+        page: {
+          margin: Margin.SMALL,
+          format: 'A4',
+          orientation: 'portrait',
+        },
+        canvas: {
+          mimeType: 'image/jpeg',
+          qualityRatio: 0.98,
+        },
+      });
 
-      await html2pdf().set(opt).from(reportHtml).save();
+      document.body.removeChild(tempDiv);
       toast.success('PDF report downloaded');
     } catch (error) {
       console.error('Failed to generate PDF:', error);
@@ -165,7 +176,7 @@ export function TestReportPDF({
     <Button 
       variant="outline" 
       size="sm" 
-      onClick={generatePDF}
+      onClick={handleGeneratePDF}
       disabled={isGenerating || (tests.length === 0 && bugs.length === 0)}
       className="h-7 px-2"
     >
