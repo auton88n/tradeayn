@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Shield, AlertTriangle } from 'lucide-react';
@@ -52,6 +52,9 @@ export const TermsModal = ({ open, onAccept }: TermsModalProps) => {
   return (
     <Dialog open={open} onOpenChange={() => {}}>
       <DialogContent className="sm:max-w-2xl max-h-[85vh] z-[9999] bg-neutral-950 border border-white/20 backdrop-blur-xl p-0 overflow-hidden flex flex-col">
+        <DialogDescription className="sr-only">
+          Review and accept AYN's Privacy Policy and Terms of Service to continue using the platform.
+        </DialogDescription>
         {/* Header */}
         <div className="text-center pt-8 pb-4 px-6 border-b border-white/10">
           <div className="flex items-center justify-center gap-2 mb-3">
