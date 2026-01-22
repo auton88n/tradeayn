@@ -90,9 +90,52 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
     hapticFeedback('light');
   }, []);
 
+  // Convert markdown to plain text for copying (matches visual display)
+  const markdownToPlainText = useCallback((markdown: string): string => {
+    let text = markdown;
+    
+    // Remove headers (### Title → Title)
+    text = text.replace(/^#{1,6}\s+/gm, '');
+    
+    // Remove bold (**text** or __text__ → text)
+    text = text.replace(/\*\*(.+?)\*\*/g, '$1');
+    text = text.replace(/__(.+?)__/g, '$1');
+    
+    // Remove italic (*text* or _text_ → text)  
+    text = text.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '$1');
+    text = text.replace(/(?<!_)_(?!_)(.+?)(?<!_)_(?!_)/g, '$1');
+    
+    // Remove inline code (`code` → code)
+    text = text.replace(/`(.+?)`/g, '$1');
+    
+    // Remove code blocks (```code``` → code)
+    text = text.replace(/```[\w]*\n?([\s\S]*?)```/g, '$1');
+    
+    // Convert bullet points (* item → • item)
+    text = text.replace(/^\s*[-*+]\s+/gm, '• ');
+    
+    // Remove link syntax [text](url) → text
+    text = text.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+    
+    // Remove image syntax ![alt](url) → [Image: alt]
+    text = text.replace(/!\[([^\]]*)\]\([^)]+\)/g, '[Image: $1]');
+    
+    // Remove horizontal rules
+    text = text.replace(/^[-*_]{3,}$/gm, '');
+    
+    // Remove blockquote markers (> text → text)
+    text = text.replace(/^>\s+/gm, '');
+    
+    // Clean up multiple newlines
+    text = text.replace(/\n{3,}/g, '\n\n');
+    
+    return text.trim();
+  }, []);
+
   const copyContent = async () => {
     try {
-      await navigator.clipboard.writeText(combinedContent);
+      const plainText = markdownToPlainText(combinedContent);
+      await navigator.clipboard.writeText(plainText);
       hapticFeedback('success');
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
