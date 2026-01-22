@@ -287,8 +287,10 @@ const Building3DShowcase: React.FC<Building3DShowcaseProps> = ({
   className = ''
 }) => {
   return (
-    <div className={`relative aspect-square rounded-3xl overflow-hidden ${className}`}
+    <div 
+      className={`relative rounded-3xl overflow-hidden ${className}`}
       style={{ 
+        aspectRatio: className.includes('aspect-') ? undefined : '4/3',
         background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%)',
         border: '1px solid rgba(63, 63, 70, 0.5)'
       }}
