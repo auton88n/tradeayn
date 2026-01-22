@@ -60,6 +60,10 @@ const faqItems = [
   {
     question: 'Is there a free trial?',
     answer: 'Our Free tier gives you 50 credits per month to try AYN. No credit card required to get started.'
+  },
+  {
+    question: 'What is your refund policy?',
+    answer: 'All payments are final and non-refundable. You can cancel your subscription at any time, and it will remain active until the end of your current billing period. No partial refunds are provided for unused time or credits.'
   }
 ];
 
@@ -322,7 +326,7 @@ const Pricing = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.8 }}
-                className="flex flex-wrap items-center justify-center gap-6 md:gap-12 text-sm text-muted-foreground mb-20"
+                className="flex flex-wrap items-center justify-center gap-6 md:gap-12 text-sm text-muted-foreground mb-6"
               >
                 <div className="flex items-center gap-2">
                   <Shield className="w-5 h-5" />
@@ -333,10 +337,20 @@ const Pricing = () => {
                   <span>Cancel Anytime</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <RefreshCw className="w-5 h-5" />
-                  <span>30-Day Guarantee</span>
+                  <Shield className="w-5 h-5" />
+                  <span>No Hidden Fees</span>
                 </div>
               </motion.div>
+
+              {/* Policy Note */}
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.9 }}
+                className="text-center text-xs text-muted-foreground/70 mb-20"
+              >
+                By subscribing, you agree to our Terms of Service and No Refund Policy.
+              </motion.p>
             </>
           )}
 

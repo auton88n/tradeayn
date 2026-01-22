@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Shield } from 'lucide-react';
+import { Shield, AlertTriangle } from 'lucide-react';
 
 interface TermsModalProps {
   open: boolean;
@@ -42,9 +41,10 @@ const BulletList = ({ items }: { items: string[] }) => (
 export const TermsModal = ({ open, onAccept }: TermsModalProps) => {
   const [hasRead, setHasRead] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
+  const [acceptAI, setAcceptAI] = useState(false);
 
   const handleAccept = () => {
-    if (hasRead && acceptTerms) {
+    if (hasRead && acceptTerms && acceptAI) {
       onAccept();
     }
   };
@@ -187,6 +187,38 @@ export const TermsModal = ({ open, onAccept }: TermsModalProps) => {
                 Continued use of AYN means you accept the updated policy.
               </p>
             </PolicySection>
+
+            {/* Section 11 - No Refund Policy */}
+            <PolicySection number="11" title="NO REFUND POLICY">
+              <div className="flex items-center gap-2 mb-3">
+                <AlertTriangle className="w-4 h-4 text-amber-500" />
+                <p className="text-amber-500/80 text-sm font-medium">All payments are final and non-refundable.</p>
+              </div>
+              <BulletList items={[
+                "All subscription fees (monthly and annual) are non-refundable",
+                "If you cancel, your subscription remains active until the end of the current billing period",
+                "No partial refunds are provided for unused time or credits",
+                "Exceptions may be made at AYN's sole discretion for billing errors only"
+              ]} />
+            </PolicySection>
+
+            {/* Section 12 - AI Disclaimer */}
+            <PolicySection number="12" title="AI DISCLAIMER & LIMITATION OF LIABILITY">
+              <div className="flex items-center gap-2 mb-3">
+                <AlertTriangle className="w-4 h-4 text-amber-500" />
+                <p className="text-amber-500/80 text-sm font-medium">AYN is an artificial intelligence system with inherent limitations.</p>
+              </div>
+              <BulletList items={[
+                "AYN may produce inaccurate, incomplete, or inappropriate responses",
+                "Users should NOT rely solely on AYN's outputs for critical or professional decisions",
+                "AYN does NOT provide professional advice (legal, medical, financial, engineering, etc.)",
+                "All AI-generated information must be independently verified by the user",
+                "AYN is provided \"as is\" without warranties of any kind",
+                "We are NOT liable for any damages, losses, or consequences arising from use of AYN's responses",
+                "For engineering calculations, all outputs require review by a licensed professional",
+                "By using AYN, you acknowledge and fully accept these limitations"
+              ]} />
+            </PolicySection>
           </div>
         </div>
 
@@ -219,9 +251,22 @@ export const TermsModal = ({ open, onAccept }: TermsModalProps) => {
             </label>
           </div>
 
+          <div className="flex items-start space-x-3">
+            <Checkbox 
+              id="acceptAI" 
+              checked={acceptAI}
+              onCheckedChange={(checked) => setAcceptAI(checked as boolean)}
+              disabled={!acceptTerms}
+              className="border-white/30 data-[state=checked]:bg-amber-500 data-[state=checked]:text-white disabled:opacity-30"
+            />
+            <label htmlFor="acceptAI" className="text-sm leading-5 text-white/70 cursor-pointer">
+              I understand AYN is AI and may make mistakes, and I accept the no-refund policy
+            </label>
+          </div>
+
           <Button
             onClick={handleAccept}
-            disabled={!hasRead || !acceptTerms}
+            disabled={!hasRead || !acceptTerms || !acceptAI}
             className="w-full bg-white text-neutral-950 hover:bg-white/90 disabled:opacity-30 disabled:cursor-not-allowed font-medium"
           >
             Accept & Continue
