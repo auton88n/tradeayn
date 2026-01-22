@@ -10,8 +10,17 @@ import { useSoundContextOptional } from '@/contexts/SoundContext';
 import { detectLanguage, DetectedLanguage } from '@/utils/languageDetection';
 import type { AIMode } from '@/types/dashboard.types';
 
+interface Suggestion {
+  id: string;
+  content: string;
+  emoji: string;
+  isVisible: boolean;
+}
+
 interface ChatInputProps {
   onSend: (message: string, file?: File | null) => void;
+  suggestions?: Suggestion[];
+  onSuggestionClick?: (content: string, emoji: string, position: { x: number; y: number }) => void;
   isDisabled?: boolean;
   selectedMode: AIMode;
   onModeChange: (mode: AIMode) => void;
@@ -134,6 +143,8 @@ const formatFileSize = (bytes: number) => {
 };
 export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
   onSend,
+  suggestions = [],
+  onSuggestionClick,
   isDisabled = false,
   selectedMode = 'General' as AIMode,
   onModeChange,
@@ -162,6 +173,15 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
   maintenanceActive = false,
 }, ref) => {
   const [inputMessage, setInputMessage] = useState('');
+  const visibleSuggestions = suggestions.filter(s => s.isVisible);
+
+  const handleSuggestionClickInternal = (suggestion: Suggestion, e: React.MouseEvent<HTMLButtonElement>) => {
+    if (!onSuggestionClick) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+    onSuggestionClick(suggestion.content, suggestion.emoji, { x, y });
+  };
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [currentPlaceholder, setCurrentPlaceholder] = useState(0);
   const [showPlaceholder, setShowPlaceholder] = useState(true);
@@ -310,6 +330,44 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
       {/* Main container */}
       <div className={cn("relative bg-background/95 backdrop-blur-xl border border-border rounded-2xl shadow-lg overflow-hidden transition-all duration-300", isDragOver && "border-primary shadow-xl", isInputFocused && "border-border/80 shadow-xl")}>
         
+        {/* Suggestions row - inside card, above input */}
+        <AnimatePresence>
+          {visibleSuggestions.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="px-3 pt-3 pb-1 border-b border-border/30"
+            >
+              <div className="flex flex-wrap gap-2 justify-center">
+                {visibleSuggestions.map((suggestion, index) => (
+                  <motion.button
+                    key={suggestion.id}
+                    onClick={(e) => handleSuggestionClickInternal(suggestion, e)}
+                    className={cn(
+                      "flex items-center gap-1.5",
+                      "px-3 py-1.5",
+                      "bg-muted/50 hover:bg-muted",
+                      "border border-border/50 hover:border-border",
+                      "rounded-xl",
+                      "text-xs font-medium",
+                      "transition-all duration-150",
+                      "active:scale-95"
+                    )}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: index * 0.05 }}
+                  >
+                    <span>{suggestion.emoji}</span>
+                    <span className="line-clamp-1 max-w-[120px]">{suggestion.content}</span>
+                  </motion.button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        
         {/* Drag overlay - INSIDE the card container for proper sizing */}
         <AnimatePresence>
           {isDragOver && (
@@ -320,23 +378,6 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
               className="absolute inset-0 bg-primary/10 border-2 border-dashed border-primary rounded-2xl flex items-center justify-center z-30 pointer-events-none"
             >
               <p className="text-primary font-medium">Drop file here</p>
-            </motion.div>
-          )}
-        </AnimatePresence>
-        
-        {/* Maintenance mode overlay */}
-        <AnimatePresence>
-          {maintenanceActive && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-background/95 backdrop-blur-sm flex flex-col items-center justify-center gap-2 z-20 rounded-2xl"
-            >
-              <AlertTriangle className="w-5 h-5 text-orange-500" />
-              <p className="text-sm text-muted-foreground text-center px-4">
-                AYN is under maintenance. Please wait...
-              </p>
             </motion.div>
           )}
         </AnimatePresence>

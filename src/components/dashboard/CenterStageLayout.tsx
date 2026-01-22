@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EmotionalEye } from '@/components/eye/EmotionalEye';
 import { UserMessageBubble } from '@/components/eye/UserMessageBubble';
-import { MobileSuggestionChips } from '@/components/eye/MobileSuggestionChips';
+
 import { ResponseCard } from '@/components/eye/ResponseCard';
 import { FlyingSuggestionBubble } from '@/components/eye/FlyingSuggestionBubble';
 import { ParticleBurst } from '@/components/eye/ParticleBurst';
@@ -676,22 +676,6 @@ export const CenterStageLayout = ({
         particleCount={isMobile ? 8 : 16}
       />
 
-      {/* Suggestion chips above chat input */}
-      <div className={cn(
-        "fixed bottom-32 sm:bottom-36 z-40",
-        "flex justify-center",
-        "transition-all duration-300 ease-out",
-        "left-0 right-0 px-4",
-        sidebarOpen && "md:left-[20rem]",
-        transcriptOpen && "md:right-[20rem]"
-      )}>
-        <AnimatePresence>
-          <MobileSuggestionChips
-            suggestions={suggestionBubbles}
-            onSuggestionClick={handleSuggestionClick}
-          />
-        </AnimatePresence>
-      </div>
 
       {/* Input area - Fixed at bottom */}
       <div 
@@ -716,6 +700,8 @@ export const CenterStageLayout = ({
         <ChatInput
           ref={inputRef}
           onSend={handleSendWithAnimation}
+          suggestions={suggestionBubbles}
+          onSuggestionClick={handleSuggestionClick}
           isDisabled={isDisabled || maintenanceConfig?.enabled}
           selectedMode={selectedMode}
           selectedFile={selectedFile}
