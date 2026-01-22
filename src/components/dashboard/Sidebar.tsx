@@ -14,6 +14,7 @@ import { useSidebar } from '@/components/ui/sidebar';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { ProfileAvatarUpload } from './ProfileAvatarUpload';
 import { SavedImagesGallery } from './SavedImagesGallery';
+import { UpgradeBanner } from './UpgradeBanner';
 import SupportWidget from '@/components/support/SupportWidget';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -33,6 +34,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { UsageCard } from './UsageCard';
 import { useUsageTracking } from '@/hooks/useUsageTracking';
+import { supabase } from '@/integrations/supabase/client';
 
 // Moved outside to prevent recreation on each render
 interface ProfileTriggerButtonProps extends React.ComponentPropsWithoutRef<'button'> {
@@ -140,6 +142,28 @@ export const Sidebar = ({
   
   // Fetch credits data directly via hook
   const { currentUsage: usageFromHook, monthlyLimit: limitFromHook, isUnlimited: isUnlimitedFromHook, resetDate: resetFromHook, isLoading: isUsageLoading } = useUsageTracking(userId ?? null);
+  
+  // Fetch user subscription tier
+  const [subscriptionTier, setSubscriptionTier] = useState<string>('free');
+  
+  useEffect(() => {
+    const fetchTier = async () => {
+      if (!userId) return;
+      try {
+        const { data } = await supabase
+          .from('user_subscriptions')
+          .select('subscription_tier')
+          .eq('user_id', userId)
+          .maybeSingle();
+        if (data?.subscription_tier) {
+          setSubscriptionTier(data.subscription_tier);
+        }
+      } catch (err) {
+        console.error('Failed to fetch subscription tier:', err);
+      }
+    };
+    fetchTier();
+  }, [userId]);
 
 
   // Profile menu content - memoized to prevent flickering
@@ -371,6 +395,15 @@ export const Sidebar = ({
                 resetDate={resetFromHook}
                 compact={true}
               />
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {/* Upgrade Banner - Show for free tier users */}
+        {hasAccess && subscriptionTier === 'free' && (
+          <SidebarGroup className="flex-shrink-0 px-4 pb-2">
+            <SidebarGroupContent>
+              <UpgradeBanner currentTier={subscriptionTier} />
             </SidebarGroupContent>
           </SidebarGroup>
         )}
