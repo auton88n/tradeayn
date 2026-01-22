@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Building, User } from 'lucide-react';
@@ -22,6 +23,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [companyName, setCompanyName] = useState('');
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   
   const { toast } = useToast();
   const { t } = useLanguage();
@@ -139,6 +141,15 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
       return;
     }
 
+    if (!acceptedTerms) {
+      toast({
+        title: t('auth.termsRequired'),
+        description: t('auth.termsRequiredDesc'),
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.signUp({
@@ -185,6 +196,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
         setPassword('');
         setFullName('');
         setCompanyName('');
+        setAcceptedTerms(false);
       }
     } catch (error) {
       toast({
@@ -328,6 +340,41 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                   className="bg-neutral-900/80 border-white/15 placeholder:text-gray-400 auth-input-text"
                 />
                 <PasswordStrengthIndicator password={password} />
+              </div>
+
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="terms-checkbox"
+                  checked={acceptedTerms}
+                  onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
+                  disabled={isLoading}
+                  className="mt-0.5 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                />
+                <label 
+                  htmlFor="terms-checkbox" 
+                  className="text-xs text-muted-foreground leading-relaxed cursor-pointer select-none"
+                >
+                  {t('auth.termsCheckboxLabel')}{' '}
+                  <a 
+                    href="/terms" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {t('auth.termsLink')}
+                  </a>
+                  {' '}{t('auth.termsAnd')}{' '}
+                  <a 
+                    href="/privacy" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {t('auth.privacyLink')}
+                  </a>
+                </label>
               </div>
 
               <Button
