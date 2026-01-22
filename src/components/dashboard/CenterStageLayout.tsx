@@ -698,6 +698,7 @@ export const CenterStageLayout = ({
         ref={footerRef}
         className={cn(
           "fixed bottom-0 left-0 right-0 z-30",
+          "pb-safe",
           "transition-all duration-300",
           sidebarOpen && "md:left-[20rem]",
           transcriptOpen && "md:right-[20rem]"

@@ -37,6 +37,12 @@ export default function Dashboard({ user, session }: DashboardProps) {
     preMaintenanceMessage: ''
   });
 
+  // Apply no-overscroll class to prevent pull-to-refresh on dashboard
+  useEffect(() => {
+    document.body.classList.add('no-overscroll');
+    return () => document.body.classList.remove('no-overscroll');
+  }, []);
+
   // Load maintenance config from database (reading separate keys)
   useEffect(() => {
     const loadMaintenanceConfig = async () => {
