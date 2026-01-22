@@ -15,8 +15,7 @@ import {
   ChevronsRight,
   CreditCard,
   Gift,
-  Sparkles,
-  ClipboardList
+  Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -37,8 +36,7 @@ export type AdminTabId =
   | 'test-results'
   | 'subscriptions'
   | 'credit-history'
-  | 'beta-feedback'
-  | 'audit-log';
+  | 'beta-feedback';
 
 interface AdminSection {
   id: AdminTabId;
@@ -67,7 +65,6 @@ const aiSections: AdminSection[] = [
   { id: 'subscriptions', title: 'Subscriptions', shortTitle: 'Subs', icon: CreditCard, gradient: 'from-indigo-500 to-violet-500', adminOnly: true },
   { id: 'credit-history', title: 'Credit History', shortTitle: 'Gift', icon: Gift, gradient: 'from-purple-500 to-fuchsia-500', adminOnly: true },
   { id: 'beta-feedback', title: 'Beta Feedback', shortTitle: 'Beta', icon: Sparkles, gradient: 'from-amber-500 to-yellow-500', adminOnly: true },
-  { id: 'audit-log', title: 'Audit Log', shortTitle: 'Audit', icon: ClipboardList, gradient: 'from-slate-500 to-zinc-500', adminOnly: true },
   { id: 'test-results', title: 'Test Results', shortTitle: 'Test', icon: FlaskConical, gradient: 'from-pink-500 to-rose-500', adminOnly: true },
 ];
 

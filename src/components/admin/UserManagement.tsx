@@ -37,7 +37,6 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { EditLimitModal } from './EditLimitModal';
-import { logAdminAction } from './AdminAuditLog';
 
 interface Profile {
   company_name: string | null;
@@ -168,7 +167,6 @@ export const UserManagement = ({ session, allUsers, onRefresh }: UserManagementP
   };
 
   const handleActivate = async (userId: string) => {
-    const user = allUsers.find(u => u.user_id === userId);
     try {
       await supabaseApi.patch(
         `access_grants?user_id=eq.${userId}`,
@@ -176,8 +174,6 @@ export const UserManagement = ({ session, allUsers, onRefresh }: UserManagementP
         { is_active: true, granted_at: new Date().toISOString() }
       );
       toast.success('User activated');
-      // Log admin action
-      logAdminAction('user_activation', userId, user?.user_email, { action: 'activated' });
       onRefresh();
     } catch (error) {
       console.error('Error activating user:', error);
@@ -186,7 +182,6 @@ export const UserManagement = ({ session, allUsers, onRefresh }: UserManagementP
   };
 
   const handleDeactivate = async (userId: string) => {
-    const user = allUsers.find(u => u.user_id === userId);
     try {
       await supabaseApi.patch(
         `access_grants?user_id=eq.${userId}`,
@@ -194,8 +189,6 @@ export const UserManagement = ({ session, allUsers, onRefresh }: UserManagementP
         { is_active: false }
       );
       toast.success('User deactivated');
-      // Log admin action
-      logAdminAction('user_deactivation', userId, user?.user_email, { action: 'deactivated' });
       onRefresh();
     } catch (error) {
       console.error('Error deactivating user:', error);
@@ -207,18 +200,12 @@ export const UserManagement = ({ session, allUsers, onRefresh }: UserManagementP
     if (!editingUser) return;
     
     try {
-      const oldLimit = editingUser.monthly_limit;
       await supabaseApi.patch(
         `access_grants?user_id=eq.${editingUser.user_id}`,
         session.access_token,
         { monthly_limit: newLimit }
       );
       toast.success('Limit updated');
-      // Log admin action
-      logAdminAction('limit_change', editingUser.user_id, editingUser.user_email, { 
-        old_limit: oldLimit, 
-        new_limit: newLimit 
-      });
       setEditingUser(null);
       onRefresh();
     } catch (error) {
