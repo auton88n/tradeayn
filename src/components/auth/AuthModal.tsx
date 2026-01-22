@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Building, User } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { PasswordStrengthIndicator } from './PasswordStrengthIndicator';
 
 interface AuthModalProps {
   open: boolean;
@@ -326,6 +327,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                   disabled={isLoading}
                   className="bg-neutral-900/80 border-white/15 placeholder:text-gray-400 auth-input-text"
                 />
+                <PasswordStrengthIndicator password={password} />
               </div>
 
               <Button
