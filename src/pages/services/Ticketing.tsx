@@ -222,8 +222,8 @@ const Ticketing = () => {
         </div>
 
         {/* Hero Section */}
-        <section className="pt-24 pb-16 md:pt-32 md:pb-24 px-4 md:px-6">
-          <div className="container mx-auto max-w-6xl">
+        <section className="w-full pt-24 pb-16 md:pt-32 md:pb-24">
+          <div className="container mx-auto max-w-6xl px-4 md:px-6">
             <div className="grid lg:grid-cols-2 gap-12 items-center">
               <div>
                 <motion.div
@@ -272,8 +272,8 @@ const Ticketing = () => {
         </section>
 
         {/* How It Works */}
-        <section className="py-16 md:py-24 px-4 md:px-6 bg-muted/30">
-          <div className="container mx-auto max-w-6xl">
+        <section className="w-full py-16 md:py-24 bg-muted/30">
+          <div className="container mx-auto max-w-6xl px-4 md:px-6">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">{t.howItWorks}</h2>
             </div>
@@ -300,8 +300,8 @@ const Ticketing = () => {
         </section>
 
         {/* Features Grid */}
-        <section className="py-16 md:py-24 px-4 md:px-6">
-          <div className="container mx-auto max-w-6xl">
+        <section className="w-full py-16 md:py-24">
+          <div className="container mx-auto max-w-6xl px-4 md:px-6">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">{t.features}</h2>
             </div>
@@ -328,8 +328,8 @@ const Ticketing = () => {
         </section>
 
         {/* AI-Powered Features Section */}
-        <section className="py-16 md:py-24 px-4 md:px-6 bg-muted/30">
-          <div className="container mx-auto max-w-6xl">
+        <section className="w-full py-16 md:py-24 bg-muted/30">
+          <div className="container mx-auto max-w-6xl px-4 md:px-6">
             <div className="text-center mb-12">
               <span className="inline-flex items-center gap-2 text-sm font-mono text-purple-500 tracking-wider uppercase mb-4">
                 <Brain className="w-4 h-4" />
@@ -361,8 +361,8 @@ const Ticketing = () => {
         </section>
 
         {/* CTA Section */}
-        <section className="py-16 md:py-24 px-4 md:px-6">
-          <div className="container mx-auto max-w-4xl text-center">
+        <section className="w-full py-16 md:py-24">
+          <div className="container mx-auto max-w-4xl px-4 md:px-6 text-center">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
