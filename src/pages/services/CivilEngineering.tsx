@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Calculator, Box, FileDown, Sparkles, Building2, Ruler, Layers, FileText, HardHat, CheckCircle2, Loader2 } from 'lucide-react';
+import { ArrowLeft, Calculator, Box, FileDown, Sparkles, Building2, Ruler, Layers, FileText, HardHat, CheckCircle2, Loader2, Car, Mountain } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -114,50 +114,58 @@ const CivilEngineering = () => {
     });
   };
   const calculators = [{
-    icon: Building2,
-    title: language === 'ar' ? 'حاسبة الأعمدة' : language === 'fr' ? 'Calculateur de Colonnes' : 'Column Calculator',
-    description: language === 'ar' ? 'تصميم وتحليل الأعمدة الخرسانية المسلحة' : language === 'fr' ? 'Conception et analyse des colonnes en béton armé' : 'Design and analyze reinforced concrete columns'
-  }, {
-    icon: Layers,
-    title: language === 'ar' ? 'حاسبة الكمرات' : language === 'fr' ? 'Calculateur de Poutres' : 'Beam Calculator',
-    description: language === 'ar' ? 'حساب العزوم والقص والتسليح للكمرات' : language === 'fr' ? 'Calcul des moments, du cisaillement et du ferraillage' : 'Calculate moments, shear, and reinforcement for beams'
-  }, {
-    icon: Box,
-    title: language === 'ar' ? 'حاسبة البلاطات' : language === 'fr' ? 'Calculateur de Dalles' : 'Slab Calculator',
-    description: language === 'ar' ? 'تصميم البلاطات الخرسانية بأنواعها' : language === 'fr' ? 'Conception de dalles en béton de tous types' : 'Design concrete slabs of all types'
-  }, {
-    icon: FileText,
-    title: language === 'ar' ? 'حاسبة الأساسات' : language === 'fr' ? 'Calculateur de Fondations' : 'Foundation Calculator',
-    description: language === 'ar' ? 'تصميم الأساسات المنفردة والشريطية' : language === 'fr' ? 'Conception des fondations isolées et filantes' : 'Design isolated and strip foundations'
+    icon: Mountain,
+    title: language === 'ar' ? 'مصمم التسوية بالذكاء الاصطناعي' : language === 'fr' ? 'Concepteur de Nivellement IA' : 'AI Grading Designer',
+    description: language === 'ar' ? 'تصميم مناسيب الموقع مع تحليل التضاريس والذكاء الاصطناعي' : language === 'fr' ? 'Conception de nivellement avec analyse de terrain et IA' : 'Site grading with terrain analysis and AI assistance'
   }, {
     icon: Ruler,
+    title: language === 'ar' ? 'حاسبة الكمرات' : language === 'fr' ? 'Calculateur de Poutres' : 'Beam Calculator',
+    description: language === 'ar' ? 'تصميم الكمرات الخرسانية مع حساب التسليح' : language === 'fr' ? 'Conception de poutres en béton avec calcul d\'armature' : 'Concrete beam design with reinforcement calculations'
+  }, {
+    icon: Building2,
+    title: language === 'ar' ? 'حاسبة الأساسات' : language === 'fr' ? 'Calculateur de Fondations' : 'Foundation Calculator',
+    description: language === 'ar' ? 'تصميم الأساسات المنفردة والمشتركة' : language === 'fr' ? 'Conception de fondations isolées et combinées' : 'Isolated and combined footing design'
+  }, {
+    icon: Box,
+    title: language === 'ar' ? 'حاسبة الأعمدة' : language === 'fr' ? 'Calculateur de Colonnes' : 'Column Calculator',
+    description: language === 'ar' ? 'تصميم الأعمدة الخرسانية المسلحة مع تحليل الانبعاج' : language === 'fr' ? 'Conception de colonnes en béton armé avec analyse de flambage' : 'Reinforced concrete column design with buckling analysis'
+  }, {
+    icon: Layers,
+    title: language === 'ar' ? 'حاسبة البلاطات' : language === 'fr' ? 'Calculateur de Dalles' : 'Slab Calculator',
+    description: language === 'ar' ? 'تصميم البلاطات أحادية واثنائية الاتجاه' : language === 'fr' ? 'Conception de dalles unidirectionnelles et bidirectionnelles' : 'One-way and two-way slab design'
+  }, {
+    icon: Building2,
     title: language === 'ar' ? 'حاسبة الجدران الاستنادية' : language === 'fr' ? 'Calculateur de Murs de Soutènement' : 'Retaining Wall Calculator',
-    description: language === 'ar' ? 'تصميم جدران الاستناد مع تحليل الاستقرار' : language === 'fr' ? 'Conception des murs de soutènement avec analyse de stabilité' : 'Design retaining walls with stability analysis'
+    description: language === 'ar' ? 'تصميم الجدران الاستنادية الكابولية' : language === 'fr' ? 'Conception de murs de soutènement en porte-à-faux' : 'Cantilever retaining wall design'
+  }, {
+    icon: Car,
+    title: language === 'ar' ? 'مصمم المواقف' : language === 'fr' ? 'Concepteur de Parking' : 'Parking Designer',
+    description: language === 'ar' ? 'تصميم مواقف السيارات مع تصور ثلاثي الأبعاد وتصدير DXF' : language === 'fr' ? 'Conception de parkings avec visualisation 3D et export DXF' : 'Design parking lots with 3D visualization and DXF export'
   }];
   const features = [{
     icon: Calculator,
-    title: language === 'ar' ? '5 حاسبات احترافية' : language === 'fr' ? '5 Calculateurs Pro' : '5 Professional Calculators',
-    description: language === 'ar' ? 'أعمدة، كمرات، بلاطات، أساسات، وجدران استنادية' : language === 'fr' ? 'Colonnes, poutres, dalles, fondations et murs de soutènement' : 'Columns, beams, slabs, foundations, and retaining walls'
+    title: language === 'ar' ? '7 أدوات هندسية' : language === 'fr' ? '7 Outils d\'Ingénierie' : '7 Engineering Tools',
+    description: language === 'ar' ? 'حاسبات إنشائية + مصممات بالذكاء الاصطناعي' : language === 'fr' ? 'Calculateurs structurels + concepteurs IA' : 'Structural calculators + AI-powered designers'
   }, {
     icon: Box,
     title: language === 'ar' ? 'تصور ثلاثي الأبعاد' : language === 'fr' ? 'Visualisation 3D' : '3D Visualization',
-    description: language === 'ar' ? 'شاهد تصاميمك بشكل تفاعلي' : language === 'fr' ? 'Visualisez vos conceptions de manière interactive' : 'View your designs interactively'
+    description: language === 'ar' ? 'نماذج تفاعلية مع التحكم بالتكبير والدوران' : language === 'fr' ? 'Modèles interactifs avec zoom et rotation' : 'Interactive models with zoom and rotation controls'
   }, {
     icon: FileDown,
-    title: language === 'ar' ? 'تصدير DXF' : language === 'fr' ? 'Export DXF' : 'DXF Export',
-    description: language === 'ar' ? 'للاستخدام في AutoCAD' : language === 'fr' ? 'Pour utilisation dans AutoCAD' : 'For use in AutoCAD'
+    title: language === 'ar' ? 'تصدير DXF و PDF' : language === 'fr' ? 'Export DXF et PDF' : 'DXF & PDF Export',
+    description: language === 'ar' ? 'رسومات جاهزة للـ CAD وتقارير مفصلة' : language === 'fr' ? 'Dessins prêts pour CAO et rapports détaillés' : 'CAD-ready drawings and detailed reports'
   }, {
     icon: Sparkles,
     title: language === 'ar' ? 'تحليل بالذكاء الاصطناعي' : language === 'fr' ? 'Analyse IA' : 'AI Analysis',
-    description: language === 'ar' ? 'توصيات ذكية للتصميم' : language === 'fr' ? 'Recommandations intelligentes' : 'Smart design recommendations'
+    description: language === 'ar' ? 'توصيات ذكية للتصميم الأمثل' : language === 'fr' ? 'Recommandations intelligentes pour la conception' : 'Smart recommendations for optimal design'
   }, {
     icon: FileText,
-    title: language === 'ar' ? 'تقارير PDF' : language === 'fr' ? 'Rapports PDF' : 'PDF Reports',
-    description: language === 'ar' ? 'تقارير مفصلة للمشاريع' : language === 'fr' ? 'Rapports détaillés pour projets' : 'Detailed reports for projects'
+    title: language === 'ar' ? 'تقارير PDF مفصلة' : language === 'fr' ? 'Rapports PDF Détaillés' : 'Detailed PDF Reports',
+    description: language === 'ar' ? 'تقارير احترافية جاهزة للطباعة' : language === 'fr' ? 'Rapports professionnels prêts à imprimer' : 'Professional print-ready reports'
   }, {
     icon: HardHat,
-    title: language === 'ar' ? 'معايير البناء' : language === 'fr' ? 'Normes de Construction' : 'Building Codes',
-    description: language === 'ar' ? 'متوافق مع ACI و Saudi Building Code' : language === 'fr' ? 'Conforme aux normes ACI et Saudi Building Code' : 'Compliant with ACI and Saudi Building Code'
+    title: language === 'ar' ? 'معايير دولية' : language === 'fr' ? 'Normes Internationales' : 'International Codes',
+    description: language === 'ar' ? 'متوافق مع ACI 318 و ASCE 7' : language === 'fr' ? 'Conforme ACI 318 et ASCE 7' : 'Compliant with ACI 318 & ASCE 7'
   }];
   const breadcrumbSchema = createBreadcrumbSchema([{
     name: 'Home',
