@@ -26,7 +26,7 @@ const TranscriptContent = ({
   setSearchQuery,
   isSearchFocused,
   setIsSearchFocused,
-  scrollRef,
+  viewportRef,
   currentMode,
   onReply,
   onToggle,
@@ -41,7 +41,7 @@ const TranscriptContent = ({
   setSearchQuery: (q: string) => void;
   isSearchFocused: boolean;
   setIsSearchFocused: (f: boolean) => void;
-  scrollRef: React.RefObject<HTMLDivElement>;
+  viewportRef: React.RefObject<HTMLDivElement>;
   currentMode?: string;
   onReply?: (quotedContent: string) => void;
   onToggle: (open?: boolean) => void;
@@ -92,7 +92,7 @@ const TranscriptContent = ({
 
     {/* Messages */}
     <div className="relative flex-1">
-      <ScrollArea className="h-full px-4" ref={scrollRef}>
+      <ScrollArea className="h-full px-4" viewportRef={viewportRef}>
         <div className="space-y-3 pb-4">
         {filteredMessages.length === 0 ? <div className="flex flex-col items-center justify-center py-12 px-4 relative">
             {/* Decorative dots pattern - top right */}
@@ -192,13 +192,13 @@ export const TranscriptSidebar = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
   const isNearBottomRef = useRef(true);
 
   // Check if scrolled near bottom
   const checkScrollPosition = useCallback(() => {
-    if (scrollRef.current) {
-      const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+    if (viewportRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = viewportRef.current;
       const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
       isNearBottomRef.current = isNearBottom;
       setShowScrollButton(!isNearBottom && messages.length > 0);
@@ -207,7 +207,7 @@ export const TranscriptSidebar = ({
 
   // Attach scroll listener
   useEffect(() => {
-    const scrollEl = scrollRef.current;
+    const scrollEl = viewportRef.current;
     if (scrollEl) {
       scrollEl.addEventListener('scroll', checkScrollPosition);
       return () => scrollEl.removeEventListener('scroll', checkScrollPosition);
@@ -216,9 +216,9 @@ export const TranscriptSidebar = ({
 
   // Auto-scroll to bottom when new messages arrive (only if already near bottom)
   useEffect(() => {
-    if (scrollRef.current && isNearBottomRef.current) {
-      scrollRef.current.scrollTo({
-        top: scrollRef.current.scrollHeight,
+    if (viewportRef.current && isNearBottomRef.current) {
+      viewportRef.current.scrollTo({
+        top: viewportRef.current.scrollHeight,
         behavior: 'smooth'
       });
     } else if (messages.length > 0) {
@@ -229,9 +229,9 @@ export const TranscriptSidebar = ({
 
   // Scroll to bottom handler
   const handleScrollToBottom = useCallback(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTo({
-        top: scrollRef.current.scrollHeight,
+    if (viewportRef.current) {
+      viewportRef.current.scrollTo({
+        top: viewportRef.current.scrollHeight,
         behavior: 'smooth'
       });
       setShowScrollButton(false);
@@ -270,7 +270,7 @@ export const TranscriptSidebar = ({
     setSearchQuery,
     isSearchFocused,
     setIsSearchFocused,
-    scrollRef,
+    viewportRef,
     currentMode,
     onReply,
     onToggle,
