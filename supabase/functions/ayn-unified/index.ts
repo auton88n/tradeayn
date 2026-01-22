@@ -497,6 +497,13 @@ async function callWithFallback(
           was_fallback: i > 0,
           fallback_reason: i > 0 ? `Primary model failed, used ${model.display_name}` : null
         });
+        
+        // Check if user has crossed 90% credit usage - send warning email
+        if (userId !== 'internal-evaluator') {
+          checkAndSendCreditWarning(supabase, userId).catch(err => 
+            console.error('[ayn-unified] Credit warning check failed:', err)
+          );
+        }
       } catch (logError) {
         console.error('Failed to log usage:', logError);
       }
@@ -574,6 +581,95 @@ async function getUserContext(supabase: ReturnType<typeof createClient>, userId:
   } catch (error) {
     console.error('Error in getUserContext:', error);
     return {};
+  }
+}
+
+// Check and send credit warning email if user crossed 90% threshold
+async function checkAndSendCreditWarning(
+  supabase: ReturnType<typeof createClient>,
+  userId: string
+): Promise<void> {
+  try {
+    // Get user's current usage
+    const { data: limits, error: limitsError } = await supabase
+      .from('user_ai_limits')
+      .select('current_monthly_messages, monthly_messages')
+      .eq('user_id', userId)
+      .single();
+
+    if (limitsError || !limits) {
+      console.log('[ayn-unified] Could not fetch limits for credit warning check');
+      return;
+    }
+
+    const { current_monthly_messages, monthly_messages } = limits;
+    const percentage = (current_monthly_messages / monthly_messages) * 100;
+
+    // Only proceed if between 90% and 100%
+    if (percentage < 90 || percentage >= 100) {
+      return;
+    }
+
+    // Check if we already sent a warning this month (30-day window)
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const { data: existingAlert } = await supabase
+      .from('email_logs')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('email_type', 'credit_warning')
+      .gte('sent_at', thirtyDaysAgo)
+      .maybeSingle();
+
+    if (existingAlert) {
+      console.log('[ayn-unified] Credit warning already sent this period for user:', userId);
+      return;
+    }
+
+    // Get user email and profile
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('user_id', userId)
+      .single();
+
+    const { data: authUser } = await supabase.auth.admin.getUserById(userId);
+    const userEmail = authUser?.user?.email;
+
+    if (!userEmail) {
+      console.log('[ayn-unified] No email found for user:', userId);
+      return;
+    }
+
+    const creditsLeft = monthly_messages - current_monthly_messages;
+    const userName = profile?.full_name || 'there';
+
+    // Send credit warning email via send-email function
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const response = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
+      },
+      body: JSON.stringify({
+        to: userEmail,
+        emailType: 'credit_warning',
+        data: {
+          userName,
+          creditsLeft,
+          totalCredits: monthly_messages
+        },
+        userId
+      })
+    });
+
+    if (response.ok) {
+      console.log('[ayn-unified] Credit warning email sent to:', userEmail);
+    } else {
+      console.error('[ayn-unified] Failed to send credit warning:', await response.text());
+    }
+  } catch (error) {
+    console.error('[ayn-unified] Error in checkAndSendCreditWarning:', error);
   }
 }
 

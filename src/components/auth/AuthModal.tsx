@@ -160,6 +160,21 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
           variant: "destructive"
         });
       } else {
+        // Send welcome email (async, don't block signup)
+        try {
+          await supabase.functions.invoke('send-email', {
+            body: {
+              to: email,
+              emailType: 'welcome',
+              data: { userName: fullName || 'there' }
+            }
+          });
+          console.log('[AuthModal] Welcome email sent');
+        } catch (emailError) {
+          console.warn('[AuthModal] Welcome email failed:', emailError);
+          // Don't block signup if email fails
+        }
+
         toast({
           title: t('auth.registrationSuccess'),
           description: t('auth.registrationSuccessDesc')
