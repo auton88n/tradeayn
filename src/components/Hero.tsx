@@ -149,8 +149,7 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
 
   const CARDS = language === 'ar' ? CARDS_AR : CARDS_EN;
   return <section ref={containerRef} className="relative min-h-[100dvh] flex flex-col items-center justify-between pt-20 md:pt-24 pb-6 md:pb-8 px-4 md:px-12 lg:px-24 overflow-x-hidden overflow-y-visible" aria-label="Hero">
-      {/* Subtle vignette / soft gradient background */}
-      <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-background via-background to-muted/10" />
+      {/* Background handled by global layer in LandingPage */}
 
       {/* Headline - instant appearance */}
       <div className="w-full max-w-4xl text-center mb-4 md:mb-6">
