@@ -426,7 +426,8 @@ const LandingPage = () => {
     }} />
 
       {/* About AYN - Value Proposition Section */}
-      <section id="about" className="py-16 md:py-32 px-4 md:px-6">
+      <section id="about" className="relative py-16 md:py-32 px-4 md:px-6">
+        <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-muted/10 via-muted/5 to-muted/10" />
         <div className="container mx-auto max-w-6xl text-center">
           <ScrollReveal>
             <span className="text-sm font-mono text-muted-foreground tracking-wider uppercase mb-4 block">
@@ -534,7 +535,8 @@ const LandingPage = () => {
       </section>
 
       {/* Services Section - Bento Grid */}
-      <section id="services" className="py-16 md:py-32 px-4 md:px-6">
+      <section id="services" className="relative py-16 md:py-32 px-4 md:px-6">
+        <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-muted/10 via-muted/5 to-muted/10" />
         <div className="container mx-auto max-w-6xl">
           {/* Section header */}
           <ScrollReveal>
@@ -739,7 +741,8 @@ const LandingPage = () => {
       </section>
 
       {/* Premium Contact Section */}
-      <section id="contact" className="py-16 md:py-32 px-4 md:px-6">
+      <section id="contact" className="relative py-16 md:py-32 px-4 md:px-6">
+        <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-muted/10 via-muted/5 to-muted/10" />
         <div className="container mx-auto max-w-3xl">
           <ScrollReveal>
             <div className="text-center mb-10 md:mb-16">
@@ -823,7 +826,8 @@ const LandingPage = () => {
       </section>
 
       {/* Minimal Footer */}
-      <footer className="py-6 border-t border-border">
+      <footer className="relative py-6 border-t border-border">
+        <div className="pointer-events-none absolute inset-0 -z-10 bg-muted/10" />
         <div className="container max-w-6xl mx-auto px-6">
           <div className="flex items-center justify-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-foreground flex items-center justify-center">
