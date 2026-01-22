@@ -2554,6 +2554,13 @@ export type Database = {
         }
         Returns: undefined
       }
+      manage_user_role: {
+        Args: {
+          p_new_role: Database["public"]["Enums"]["app_role"]
+          p_target_user_id: string
+        }
+        Returns: undefined
+      }
       record_device_fingerprint: {
         Args: {
           _device_info: Json
