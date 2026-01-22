@@ -100,6 +100,11 @@
   }
 }
 
+/* Prevent FOUC: Hide content until theme is applied */
+html:not(.light):not(.dark) #root {
+  visibility: hidden;
+}
+
 /* Theme transitions - scoped for performance */
 html, body {
   transition: background-color 0.2s ease-out, color 0.2s ease-out;
