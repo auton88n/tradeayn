@@ -590,6 +590,39 @@ export type Database = {
         }
         Relationships: []
       }
+      email_logs: {
+        Row: {
+          email_type: string
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          recipient_email: string | null
+          sent_at: string | null
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          email_type: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          recipient_email?: string | null
+          sent_at?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          email_type?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          recipient_email?: string | null
+          sent_at?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       emergency_alerts: {
         Row: {
           alert_level: string
