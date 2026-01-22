@@ -591,6 +591,35 @@ const LandingPage = () => {
                   </motion.div>
                 </Link>
               </ScrollReveal>
+
+              {/* Ticketing System - Featured Card */}
+              <ScrollReveal delay={0.3}>
+                <Link to="/services/ticketing" className="block">
+                  <motion.div className="bg-card/50 border border-border/50 rounded-3xl p-6 md:p-8 min-h-[500px] flex flex-col group cursor-pointer overflow-visible" whileHover={{
+                  y: -4
+                }} transition={{
+                  duration: 0.3,
+                  ease: [0.32, 0.72, 0, 1]
+                }}>
+                    <div className="mb-4">
+                      <span className="text-xs font-mono text-purple-500 tracking-wider">NEW</span>
+                      <h3 className="text-xl md:text-2xl font-bold mt-2 group-hover:text-purple-500 transition-colors">
+                        {services[5].title}
+                      </h3>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        {services[5].description}
+                      </p>
+                    </div>
+                    <div className="flex-1 flex items-center justify-center overflow-visible">
+                      {services[5].mockup}
+                    </div>
+                    <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors mt-4">
+                      {language === 'ar' ? 'اكتشف المزيد' : language === 'fr' ? 'En Savoir Plus' : 'Learn More'}
+                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </motion.div>
+                </Link>
+              </ScrollReveal>
             </div>
 
             {/* Right Column */}
@@ -679,35 +708,6 @@ const LandingPage = () => {
                     </div>
                     <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors mt-4">
                       {language === 'ar' ? 'ابدأ التصميم' : language === 'fr' ? 'Commencer la Conception' : 'Start Designing'}
-                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                    </div>
-                  </motion.div>
-                </Link>
-              </ScrollReveal>
-              
-              {/* Ticketing System - Featured Card */}
-              <ScrollReveal delay={0.5}>
-                <Link to="/services/ticketing" className="block">
-                  <motion.div className="bg-card/50 border border-border/50 rounded-3xl p-6 md:p-8 min-h-[500px] flex flex-col group cursor-pointer overflow-visible" whileHover={{
-                  y: -4
-                }} transition={{
-                  duration: 0.3,
-                  ease: [0.32, 0.72, 0, 1]
-                }}>
-                    <div className="mb-4">
-                      <span className="text-xs font-mono text-purple-500 tracking-wider">NEW</span>
-                      <h3 className="text-xl md:text-2xl font-bold mt-2 group-hover:text-purple-500 transition-colors">
-                        {services[5].title}
-                      </h3>
-                      <p className="text-sm text-muted-foreground mt-2">
-                        {services[5].description}
-                      </p>
-                    </div>
-                    <div className="flex-1 flex items-center justify-center overflow-visible">
-                      {services[5].mockup}
-                    </div>
-                    <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors mt-4">
-                      {language === 'ar' ? 'اكتشف المزيد' : language === 'fr' ? 'En Savoir Plus' : 'Learn More'}
                       <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     </div>
                   </motion.div>
