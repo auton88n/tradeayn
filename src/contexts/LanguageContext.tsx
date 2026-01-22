@@ -494,6 +494,15 @@ const translations = {
     'auth.emailRequiredDesc': 'Please enter your email address first.',
     'auth.checkEmail': 'Check Your Email',
     'auth.passwordResetSent': 'We\'ve sent you a password reset link.',
+    'auth.passwordStrength': 'Password strength',
+    'auth.passwordWeak': 'Weak',
+    'auth.passwordMedium': 'Medium',
+    'auth.passwordStrong': 'Strong',
+    'auth.passwordReqLength': 'At least 8 characters',
+    'auth.passwordReqUppercase': 'One uppercase letter',
+    'auth.passwordReqLowercase': 'One lowercase letter',
+    'auth.passwordReqNumber': 'One number',
+    'auth.passwordReqSpecial': 'One special character',
     
     // Terms Modal
     'terms.welcomeToAynAI': 'Welcome to AYN AI',
@@ -1085,6 +1094,15 @@ const translations = {
     'auth.emailRequiredDesc': 'يرجى إدخال بريدك الإلكتروني أولاً.',
     'auth.checkEmail': 'تحقق من بريدك الإلكتروني',
     'auth.passwordResetSent': 'لقد أرسلنا لك رابط إعادة تعيين كلمة المرور.',
+    'auth.passwordStrength': 'قوة كلمة المرور',
+    'auth.passwordWeak': 'ضعيفة',
+    'auth.passwordMedium': 'متوسطة',
+    'auth.passwordStrong': 'قوية',
+    'auth.passwordReqLength': '٨ أحرف على الأقل',
+    'auth.passwordReqUppercase': 'حرف كبير واحد',
+    'auth.passwordReqLowercase': 'حرف صغير واحد',
+    'auth.passwordReqNumber': 'رقم واحد',
+    'auth.passwordReqSpecial': 'رمز خاص واحد',
     
     // Terms Modal
     'terms.welcomeToAynAI': 'مرحباً بك في AYN AI',
@@ -1451,6 +1469,15 @@ const translations = {
     'auth.emailRequiredDesc': 'Veuillez d\'abord entrer votre adresse email.',
     'auth.checkEmail': 'Vérifiez votre Email',
     'auth.passwordResetSent': 'Nous vous avons envoyé un lien de réinitialisation.',
+    'auth.passwordStrength': 'Force du mot de passe',
+    'auth.passwordWeak': 'Faible',
+    'auth.passwordMedium': 'Moyen',
+    'auth.passwordStrong': 'Fort',
+    'auth.passwordReqLength': 'Au moins 8 caractères',
+    'auth.passwordReqUppercase': 'Une lettre majuscule',
+    'auth.passwordReqLowercase': 'Une lettre minuscule',
+    'auth.passwordReqNumber': 'Un chiffre',
+    'auth.passwordReqSpecial': 'Un caractère spécial',
     
     // Terms Modal
     'terms.welcomeToAynAI': 'Bienvenue sur AYN AI',
