@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Brain, ArrowRight, CheckCircle, Send, Loader2, Sparkles, Globe, Shield, Menu, ChevronDown, Calculator, Car, Mountain } from 'lucide-react';
+import { Brain, ArrowRight, CheckCircle, Send, Loader2, Sparkles, Globe, Shield, Menu, ChevronDown, Calculator, Car, Mountain, Ticket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -23,6 +23,7 @@ import DeviceMockups from './services/DeviceMockups';
 import AutomationFlowMockup from './services/AutomationFlowMockup';
 import AIEmployeeMockup from './services/AIEmployeeMockup';
 import EngineeringMockup from './services/EngineeringMockup';
+import TicketingMockup from './services/TicketingMockup';
 import { SEO, organizationSchema, websiteSchema } from './SEO';
 
 // ScrollReveal component - defined outside to prevent recreation on re-renders
@@ -246,6 +247,12 @@ const LandingPage = () => {
     title: language === 'ar' ? 'حاسبات الهندسة المدنية' : language === 'fr' ? 'Calculateurs de Génie Civil' : 'Civil Engineering Calculators',
     description: language === 'ar' ? 'تصميم العناصر الإنشائية مع التصور ثلاثي الأبعاد والتحليل بالذكاء الاصطناعي.' : language === 'fr' ? 'Concevez des éléments structurels avec visualisation 3D et analyse IA.' : 'Design structural elements with 3D visualization and AI-powered analysis.',
     mockup: <LazyLoad><EngineeringMockup /></LazyLoad>
+  }, {
+    number: '06',
+    slug: 'ticketing',
+    title: language === 'ar' ? 'نظام التذاكر الذكي' : language === 'fr' ? 'Billetterie Intelligente' : 'Smart Ticketing System',
+    description: language === 'ar' ? 'بيع التذاكر أونلاين والتحقق بمسح QR من الجوال.' : language === 'fr' ? 'Vendez des billets en ligne et validez par scan QR.' : 'Sell tickets online and validate with phone QR scanning.',
+    mockup: <LazyLoad><TicketingMockup /></LazyLoad>
   }];
   return <>
     <SEO
@@ -516,7 +523,7 @@ const LandingPage = () => {
                 {language === 'ar' ? 'خدماتنا' : language === 'fr' ? 'Ce Que Nous Faisons' : 'What We Do'}
               </span>
               <h2 className="text-3xl md:text-5xl lg:text-6xl font-serif mb-4 md:mb-6">
-                {language === 'ar' ? <>خمس طرق <span className="font-bold">لتبسيط حياتك</span></> : language === 'fr' ? <>Cinq Façons de <span className="font-bold">Simplifier Votre Vie</span></> : <>Five Ways We Help <span className="font-bold">Simplify Your Life</span></>}
+                {language === 'ar' ? <>ست طرق <span className="font-bold">لتبسيط حياتك</span></> : language === 'fr' ? <>Six Façons de <span className="font-bold">Simplifier Votre Vie</span></> : <>Six Ways We Help <span className="font-bold">Simplify Your Life</span></>}
               </h2>
             </div>
           </ScrollReveal>
@@ -672,6 +679,35 @@ const LandingPage = () => {
                     </div>
                     <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors mt-4">
                       {language === 'ar' ? 'ابدأ التصميم' : language === 'fr' ? 'Commencer la Conception' : 'Start Designing'}
+                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </motion.div>
+                </Link>
+              </ScrollReveal>
+              
+              {/* Ticketing System - Featured Card */}
+              <ScrollReveal delay={0.5}>
+                <Link to="/services/ticketing" className="block">
+                  <motion.div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20 rounded-3xl p-6 md:p-8 min-h-[280px] flex flex-col group cursor-pointer overflow-visible" whileHover={{
+                  y: -4
+                }} transition={{
+                  duration: 0.3,
+                  ease: [0.32, 0.72, 0, 1]
+                }}>
+                    <div className="mb-4">
+                      <span className="text-xs font-mono text-purple-500 tracking-wider">NEW</span>
+                      <h3 className="text-xl md:text-2xl font-bold mt-2 group-hover:text-purple-500 transition-colors">
+                        {services[5].title}
+                      </h3>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        {services[5].description}
+                      </p>
+                    </div>
+                    <div className="flex-1 flex items-center justify-center overflow-visible">
+                      {services[5].mockup}
+                    </div>
+                    <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors mt-4">
+                      {language === 'ar' ? 'اكتشف المزيد' : language === 'fr' ? 'En Savoir Plus' : 'Learn More'}
                       <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     </div>
                   </motion.div>
