@@ -124,10 +124,15 @@ const TranscriptContent = ({
             {!searchQuery && <div className="mt-6 px-3 py-1.5 rounded-full bg-muted/50 backdrop-blur-sm border border-border/50 flex items-center gap-1.5">
                 <span className="text-[10px] text-muted-foreground">✨ Type below to begin</span>
               </div>}
-          </div> : filteredMessages.map(msg => <div key={msg.id} className="animate-fade-in">
-              <TranscriptMessage content={msg.content} sender={msg.sender} timestamp={msg.timestamp} emotion={(msg as Message & {
-          emotion?: AYNEmotion;
-        }).emotion} mode={msg.sender === 'ayn' ? currentMode : undefined} onReply={onReply} />
+          </div> : filteredMessages.map(msg => <div key={`transcript-${msg.id}`} className="animate-fade-in">
+              <TranscriptMessage 
+                content={msg.content} 
+                sender={msg.sender} 
+                timestamp={msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp)} 
+                emotion={(msg as Message & { emotion?: AYNEmotion }).emotion} 
+                mode={msg.sender === 'ayn' ? currentMode : undefined} 
+                onReply={onReply} 
+              />
             </div>)}
       </div>
     </ScrollArea>
@@ -171,8 +176,14 @@ export const TranscriptSidebar = ({
     }
   }, [messages]);
 
-  // Filter messages by search
-  const filteredMessages = messages.filter(msg => msg.content.toLowerCase().includes(searchQuery.toLowerCase()));
+  // Filter and sort messages chronologically (oldest first)
+  const filteredMessages = messages
+    .filter(msg => msg.content.toLowerCase().includes(searchQuery.toLowerCase()))
+    .sort((a, b) => {
+      const timeA = a.timestamp instanceof Date ? a.timestamp.getTime() : new Date(a.timestamp).getTime();
+      const timeB = b.timestamp instanceof Date ? b.timestamp.getTime() : new Date(b.timestamp).getTime();
+      return timeA - timeB;
+    });
 
   // Copy all messages
   const handleCopyAll = async () => {
