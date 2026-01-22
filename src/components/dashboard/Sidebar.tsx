@@ -14,7 +14,7 @@ import { useSidebar } from '@/components/ui/sidebar';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { ProfileAvatarUpload } from './ProfileAvatarUpload';
 import { SavedImagesGallery } from './SavedImagesGallery';
-import { UpgradeBanner } from './UpgradeBanner';
+import { CreditUpgradeCard } from './CreditUpgradeCard';
 import SupportWidget from '@/components/support/SupportWidget';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -32,7 +32,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { UsageCard } from './UsageCard';
+
 import { useUsageTracking } from '@/hooks/useUsageTracking';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -384,29 +384,21 @@ export const Sidebar = ({
       </SidebarHeader>
 
       <SidebarContent className="flex flex-col overflow-hidden">
-        {/* Credits Card - Above New Chat */}
+        {/* Unified Credit & Upgrade Card */}
         {hasAccess && !isUsageLoading && (
           <SidebarGroup className="flex-shrink-0 px-4 pt-4 pb-2">
             <SidebarGroupContent>
-              <UsageCard 
+              <CreditUpgradeCard 
                 currentUsage={usageFromHook}
-                dailyLimit={limitFromHook}
+                monthlyLimit={limitFromHook}
                 isUnlimited={isUnlimitedFromHook}
                 resetDate={resetFromHook}
-                compact={true}
+                currentTier={subscriptionTier}
               />
             </SidebarGroupContent>
           </SidebarGroup>
         )}
 
-        {/* Upgrade Banner - Show for free tier users */}
-        {hasAccess && subscriptionTier === 'free' && (
-          <SidebarGroup className="flex-shrink-0 px-4 pb-2">
-            <SidebarGroupContent>
-              <UpgradeBanner currentTier={subscriptionTier} />
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
         
         {/* New Chat Button */}
         <SidebarGroup className="flex-shrink-0 px-4 pb-2">
