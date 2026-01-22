@@ -139,7 +139,7 @@ export const Sidebar = ({
   const [showImagesGallery, setShowImagesGallery] = useState(false);
   
   // Fetch credits data directly via hook
-  const { currentUsage: usageFromHook, dailyLimit: limitFromHook, isUnlimited: isUnlimitedFromHook, resetDate: resetFromHook, isLoading: isUsageLoading } = useUsageTracking(userId ?? null);
+  const { currentUsage: usageFromHook, monthlyLimit: limitFromHook, isUnlimited: isUnlimitedFromHook, resetDate: resetFromHook, isLoading: isUsageLoading } = useUsageTracking(userId ?? null);
 
 
   // Profile menu content - memoized to prevent flickering

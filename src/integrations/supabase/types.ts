@@ -1818,6 +1818,8 @@ export type Database = {
           current_daily_messages: number | null
           current_daily_search: number | null
           current_month_cost_sar: number | null
+          current_monthly_engineering: number | null
+          current_monthly_messages: number | null
           daily_engineering: number | null
           daily_files: number | null
           daily_messages: number | null
@@ -1826,6 +1828,8 @@ export type Database = {
           id: string
           is_unlimited: boolean | null
           monthly_cost_limit_sar: number | null
+          monthly_engineering: number | null
+          monthly_messages: number | null
           monthly_reset_at: string | null
           updated_at: string | null
           user_id: string
@@ -1837,6 +1841,8 @@ export type Database = {
           current_daily_messages?: number | null
           current_daily_search?: number | null
           current_month_cost_sar?: number | null
+          current_monthly_engineering?: number | null
+          current_monthly_messages?: number | null
           daily_engineering?: number | null
           daily_files?: number | null
           daily_messages?: number | null
@@ -1845,6 +1851,8 @@ export type Database = {
           id?: string
           is_unlimited?: boolean | null
           monthly_cost_limit_sar?: number | null
+          monthly_engineering?: number | null
+          monthly_messages?: number | null
           monthly_reset_at?: string | null
           updated_at?: string | null
           user_id: string
@@ -1856,6 +1864,8 @@ export type Database = {
           current_daily_messages?: number | null
           current_daily_search?: number | null
           current_month_cost_sar?: number | null
+          current_monthly_engineering?: number | null
+          current_monthly_messages?: number | null
           daily_engineering?: number | null
           daily_files?: number | null
           daily_messages?: number | null
@@ -1864,6 +1874,8 @@ export type Database = {
           id?: string
           is_unlimited?: boolean | null
           monthly_cost_limit_sar?: number | null
+          monthly_engineering?: number | null
+          monthly_messages?: number | null
           monthly_reset_at?: string | null
           updated_at?: string | null
           user_id?: string
@@ -2015,6 +2027,42 @@ export type Database = {
           in_app_sounds?: boolean | null
           share_anonymous_data?: boolean | null
           store_chat_history?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_subscriptions: {
+        Row: {
+          created_at: string | null
+          current_period_end: string | null
+          id: string
+          status: string | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          subscription_tier: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          current_period_end?: string | null
+          id?: string
+          status?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_tier?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          current_period_end?: string | null
+          id?: string
+          status?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_tier?: string | null
           updated_at?: string | null
           user_id?: string
         }
