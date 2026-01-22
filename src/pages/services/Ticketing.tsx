@@ -195,8 +195,8 @@ const Ticketing = () => {
   const breadcrumbSchema = {
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://ayn-insight-forge.lovable.app' },
-      { '@type': 'ListItem', position: 2, name: 'Smart Ticketing System', item: 'https://ayn-insight-forge.lovable.app/services/ticketing' }
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://aynn.io' },
+      { '@type': 'ListItem', position: 2, name: 'Smart Ticketing System', item: 'https://aynn.io/services/ticketing' }
     ]
   };
 
