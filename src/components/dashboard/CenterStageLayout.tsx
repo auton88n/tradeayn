@@ -676,7 +676,7 @@ export const CenterStageLayout = ({
         particleCount={isMobile ? 8 : 16}
       />
 
-      {/* Suggestion chips temporarily disabled
+      {/* Suggestion chips above chat input */}
       <div className={cn(
         "fixed bottom-28 sm:bottom-32 z-40",
         "flex justify-center",
@@ -693,7 +693,6 @@ export const CenterStageLayout = ({
           />
         </AnimatePresence>
       </div>
-      */}
 
       {/* Input area - Fixed at bottom */}
       <div 
