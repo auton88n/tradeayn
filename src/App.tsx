@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AYNEmotionProvider } from "@/contexts/AYNEmotionContext";
 import { SoundProvider } from "@/contexts/SoundContext";
+import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 
 import { PageLoader } from "@/components/ui/page-loader";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -39,6 +40,9 @@ const Support = lazy(() => import("./pages/Support"));
 const Engineering = lazy(() => import("./pages/EngineeringWorkspacePage"));
 const AIGradingDesigner = lazy(() => import("./pages/AIGradingDesigner"));
 const CivilEngineering = lazy(() => import("./pages/services/CivilEngineering"));
+const Pricing = lazy(() => import("./pages/Pricing"));
+const SubscriptionSuccess = lazy(() => import("./pages/SubscriptionSuccess"));
+const SubscriptionCanceled = lazy(() => import("./pages/SubscriptionCanceled"));
 
 const queryClient = new QueryClient();
 
@@ -70,6 +74,9 @@ const AnimatedRoutes = () => {
         <Route path="/engineering/grading" element={<PageTransition><AIGradingDesigner /></PageTransition>} />
         <Route path="/services/civil-engineering" element={<PageTransition><CivilEngineering /></PageTransition>} />
         <Route path="/approval-result" element={<PageTransition><ApprovalResult /></PageTransition>} />
+        <Route path="/pricing" element={<PageTransition><Pricing /></PageTransition>} />
+        <Route path="/subscription-success" element={<PageTransition><SubscriptionSuccess /></PageTransition>} />
+        <Route path="/subscription-canceled" element={<PageTransition><SubscriptionCanceled /></PageTransition>} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>
@@ -84,19 +91,21 @@ const App = () => (
         <ThemeProvider defaultTheme="light" storageKey="ayn-theme">
           <AYNEmotionProvider>
             <SoundProvider>
-              <TooltipProvider>
-                <OfflineBanner />
-                <Toaster />
-                <Sonner />
-                <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-                  <ScrollToTop />
-                  <ErrorBoundary>
-                    <Suspense fallback={<PageLoader />}>
-                      <AnimatedRoutes />
-                    </Suspense>
-                  </ErrorBoundary>
-                </BrowserRouter>
-              </TooltipProvider>
+              <SubscriptionProvider>
+                <TooltipProvider>
+                  <OfflineBanner />
+                  <Toaster />
+                  <Sonner />
+                  <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                    <ScrollToTop />
+                    <ErrorBoundary>
+                      <Suspense fallback={<PageLoader />}>
+                        <AnimatedRoutes />
+                      </Suspense>
+                    </ErrorBoundary>
+                  </BrowserRouter>
+                </TooltipProvider>
+              </SubscriptionProvider>
             </SoundProvider>
           </AYNEmotionProvider>
         </ThemeProvider>

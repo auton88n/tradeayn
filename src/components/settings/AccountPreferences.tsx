@@ -22,7 +22,7 @@ interface AccountPreferencesProps {
 
 interface UsageData {
   currentUsage: number;
-  dailyLimit: number | null;
+  monthlyLimit: number | null;
   isUnlimited: boolean;
   resetDate: string | null;
 }
@@ -44,7 +44,7 @@ export const AccountPreferences = ({ userId, userEmail, accessToken }: AccountPr
   const [originalProfile, setOriginalProfile] = useState(profile);
   const [usageData, setUsageData] = useState<UsageData>({
     currentUsage: 0,
-    dailyLimit: null,
+    monthlyLimit: null,
     isUnlimited: false,
     resetDate: null,
   });
@@ -99,10 +99,10 @@ export const AccountPreferences = ({ userId, userEmail, accessToken }: AccountPr
     if (!userId) return;
 
     try {
-      // Read from user_ai_limits - the table that backend actually enforces
+      // Read from user_ai_limits - now using monthly tracking
       const { data, error } = await supabase
         .from('user_ai_limits')
-        .select('current_daily_messages, daily_messages, is_unlimited, daily_reset_at')
+        .select('current_monthly_messages, monthly_messages, is_unlimited, monthly_reset_at')
         .eq('user_id', userId)
         .maybeSingle();
 
@@ -110,10 +110,10 @@ export const AccountPreferences = ({ userId, userEmail, accessToken }: AccountPr
 
       if (data) {
         setUsageData({
-          currentUsage: data.current_daily_messages ?? 0,
-          dailyLimit: data.is_unlimited ? null : (data.daily_messages ?? 10),
+          currentUsage: data.current_monthly_messages ?? 0,
+          monthlyLimit: data.is_unlimited ? null : (data.monthly_messages ?? 50),
           isUnlimited: data.is_unlimited ?? false,
-          resetDate: data.daily_reset_at ?? null,
+          resetDate: data.monthly_reset_at ?? null,
         });
       }
     } catch (error) {
@@ -199,7 +199,7 @@ export const AccountPreferences = ({ userId, userEmail, accessToken }: AccountPr
           <h2 className="text-xl font-semibold mb-4">Usage & Limits</h2>
           <UsageCard
             currentUsage={usageData.currentUsage}
-            dailyLimit={usageData.dailyLimit}
+            monthlyLimit={usageData.monthlyLimit}
             isUnlimited={usageData.isUnlimited}
             resetDate={usageData.resetDate}
           />

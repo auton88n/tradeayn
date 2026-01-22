@@ -8,7 +8,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 interface UsageCardProps {
   currentUsage: number;
-  dailyLimit: number | null; // null = unlimited
+  monthlyLimit?: number | null; // null = unlimited
+  dailyLimit?: number | null; // deprecated, use monthlyLimit
   isUnlimited?: boolean;
   resetDate: string | null; // ISO date string
   compact?: boolean;
@@ -16,11 +17,14 @@ interface UsageCardProps {
 
 export const UsageCard = ({
   currentUsage,
+  monthlyLimit,
   dailyLimit,
   isUnlimited: isUnlimitedProp = false,
   resetDate,
   compact = false
 }: UsageCardProps) => {
+  // Support both props during migration (prefer monthlyLimit)
+  const limit = monthlyLimit ?? dailyLimit ?? null;
   const prevUsageRef = useRef(currentUsage);
   const [showPulse, setShowPulse] = useState(false);
   const [displayCount, setDisplayCount] = useState(currentUsage);
@@ -54,8 +58,8 @@ export const UsageCard = ({
     }
   }, [currentUsage]);
 
-  const isUnlimited = isUnlimitedProp || !dailyLimit;
-  const creditsLeft = dailyLimit ? Math.max(0, dailyLimit - currentUsage) : null;
+  const isUnlimited = isUnlimitedProp || !limit;
+  const creditsLeft = limit ? Math.max(0, limit - currentUsage) : null;
 
   const {
     percentage,
@@ -65,22 +69,22 @@ export const UsageCard = ({
     statusBg,
     isLow
   } = useMemo(() => {
-    const pct = dailyLimit ? Math.min(currentUsage / dailyLimit * 100, 100) : 0;
-    let hours = 0;
+    const pct = limit ? Math.min(currentUsage / limit * 100, 100) : 0;
+    let days = 0;
     let formattedTime = '';
     
     if (resetDate) {
       const reset = new Date(resetDate);
       const now = new Date();
-      const diffMs = reset.getTime() - now.getTime();
-      hours = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60)));
-      formattedTime = hours > 24 ? format(reset, 'MMM d') : `${hours}h`;
+      const diffDays = differenceInDays(reset, now);
+      days = Math.max(0, diffDays);
+      formattedTime = days > 7 ? format(reset, 'MMM d') : `${days}d`;
     }
 
     // Color based on usage percentage
     let color = 'text-emerald-500';
     let bg = 'bg-emerald-500';
-    if (dailyLimit) {
+    if (limit) {
       if (pct >= 90) {
         color = 'text-red-500';
         bg = 'bg-red-500';
@@ -91,17 +95,17 @@ export const UsageCard = ({
     }
 
     // Check if credits are running low (less than 20% remaining)
-    const remainingPct = dailyLimit ? ((dailyLimit - currentUsage) / dailyLimit) * 100 : 100;
+    const remainingPct = limit ? ((limit - currentUsage) / limit) * 100 : 100;
     
     return {
       percentage: pct,
-      hoursUntilReset: hours,
+      hoursUntilReset: days, // now actually days
       formattedResetTime: formattedTime,
       statusColor: color,
       statusBg: bg,
-      isLow: dailyLimit ? remainingPct < 20 : false
+      isLow: limit ? remainingPct < 20 : false
     };
-  }, [currentUsage, dailyLimit, resetDate]);
+  }, [currentUsage, limit, resetDate]);
 
 
   if (compact) {
@@ -158,7 +162,7 @@ export const UsageCard = ({
                     {displayCount}
                   </motion.span>
                   <span className="text-xs text-muted-foreground">
-                    {isUnlimited ? 'msgs' : `/ ${dailyLimit}`}
+                    {isUnlimited ? 'credits' : `/ ${limit}`}
                   </span>
                 </div>
               </div>
@@ -207,11 +211,11 @@ export const UsageCard = ({
 
   // Determine status level for legend
   const statusLevel = useMemo(() => {
-    if (!dailyLimit) return 'normal';
+    if (!limit) return 'normal';
     if (percentage >= 90) return 'low';
     if (percentage >= 75) return 'warning';
     return 'normal';
-  }, [percentage, dailyLimit]);
+  }, [percentage, limit]);
 
   // Full size card (non-compact)
   return (
@@ -255,7 +259,7 @@ export const UsageCard = ({
           <span className="text-base font-semibold text-foreground tabular-nums">
             <motion.span key={displayCount}>{displayCount}</motion.span>
             <span className="text-muted-foreground mx-1">/</span>
-            <span className="text-foreground">{isUnlimited ? '∞' : dailyLimit}</span>
+            <span className="text-foreground">{isUnlimited ? '∞' : limit}</span>
           </span>
         </div>
         

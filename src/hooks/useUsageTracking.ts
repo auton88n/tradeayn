@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface UsageData {
   currentUsage: number;
-  dailyLimit: number | null;
+  monthlyLimit: number | null;
   isUnlimited: boolean;
   resetDate: string | null;
   isLoading: boolean;
@@ -12,7 +12,7 @@ interface UsageData {
 export const useUsageTracking = (userId: string | null): UsageData & { refreshUsage: () => void } => {
   const [usageData, setUsageData] = useState<UsageData>({
     currentUsage: 0,
-    dailyLimit: null,
+    monthlyLimit: null,
     isUnlimited: false,
     resetDate: null,
     isLoading: true
@@ -25,26 +25,26 @@ export const useUsageTracking = (userId: string | null): UsageData & { refreshUs
     }
     
     try {
-      // Read from user_ai_limits - the table that backend actually enforces
+      // Read from user_ai_limits - now using monthly tracking
       const { data, error } = await supabase
         .from('user_ai_limits')
-        .select('current_daily_messages, daily_messages, is_unlimited, daily_reset_at')
+        .select('current_monthly_messages, monthly_messages, is_unlimited, monthly_reset_at')
         .eq('user_id', userId)
         .maybeSingle();
 
       if (!error && data) {
         setUsageData({
-          currentUsage: data.current_daily_messages || 0,
-          dailyLimit: data.is_unlimited ? null : (data.daily_messages || 10),
+          currentUsage: data.current_monthly_messages || 0,
+          monthlyLimit: data.is_unlimited ? null : (data.monthly_messages || 50),
           isUnlimited: data.is_unlimited || false,
-          resetDate: data.daily_reset_at,
+          resetDate: data.monthly_reset_at,
           isLoading: false
         });
       } else {
         // No record yet - will be created on first AI call
         setUsageData({
           currentUsage: 0,
-          dailyLimit: 10, // Default limit
+          monthlyLimit: 50, // Default free tier limit
           isUnlimited: false,
           resetDate: null,
           isLoading: false
@@ -80,18 +80,18 @@ export const useUsageTracking = (userId: string | null): UsageData & { refreshUs
           },
           (payload) => {
             const newData = payload.new as {
-              current_daily_messages: number | null;
-              daily_messages: number | null;
+              current_monthly_messages: number | null;
+              monthly_messages: number | null;
               is_unlimited: boolean | null;
-              daily_reset_at: string | null;
+              monthly_reset_at: string | null;
             };
             
             setUsageData(prev => ({
               ...prev,
-              currentUsage: newData.current_daily_messages || 0,
-              dailyLimit: newData.is_unlimited ? null : (newData.daily_messages || 10),
+              currentUsage: newData.current_monthly_messages || 0,
+              monthlyLimit: newData.is_unlimited ? null : (newData.monthly_messages || 50),
               isUnlimited: newData.is_unlimited || false,
-              resetDate: newData.daily_reset_at
+              resetDate: newData.monthly_reset_at
             }));
           }
         )
