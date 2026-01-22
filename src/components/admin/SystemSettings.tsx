@@ -23,8 +23,97 @@ import {
   Mail,
   Bell,
   Eye,
-  Settings
+  Settings,
+  Sparkles,
+  Gift
 } from 'lucide-react';
+
+// Beta Program Settings Sub-component
+const BetaProgramSettings = () => {
+  const [betaMode, setBetaMode] = useState(false);
+  const [feedbackReward, setFeedbackReward] = useState(5);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const loadConfig = async () => {
+      const { data } = await supabase
+        .from('system_config')
+        .select('key, value')
+        .in('key', ['beta_mode', 'beta_feedback_reward']);
+      
+      if (data) {
+        data.forEach(item => {
+          if (item.key === 'beta_mode') {
+            setBetaMode(item.value === true || item.value === 'true');
+          } else if (item.key === 'beta_feedback_reward') {
+            setFeedbackReward(parseInt(String(item.value)) || 5);
+          }
+        });
+      }
+      setLoading(false);
+    };
+    loadConfig();
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await supabase.from('system_config').upsert([
+        { key: 'beta_mode', value: betaMode },
+        { key: 'beta_feedback_reward', value: feedbackReward }
+      ], { onConflict: 'key' });
+      toast.success('Beta settings saved');
+    } catch (err) {
+      toast.error('Failed to save beta settings');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) return <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin" /></div>;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between p-4 bg-violet-500/5 rounded-xl border border-violet-500/20">
+        <div>
+          <Label htmlFor="beta-mode" className="font-medium flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-violet-500" />
+            Enable Beta Mode
+          </Label>
+          <p className="text-xs text-muted-foreground mt-1">Show "BETA" badge on AYN for all users</p>
+        </div>
+        <Switch
+          id="beta-mode"
+          checked={betaMode}
+          onCheckedChange={setBetaMode}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="feedback-reward" className="flex items-center gap-2">
+          <Gift className="w-4 h-4 text-purple-500" />
+          Feedback Survey Reward (credits)
+        </Label>
+        <Input
+          id="feedback-reward"
+          type="number"
+          min={0}
+          max={100}
+          value={feedbackReward}
+          onChange={(e) => setFeedbackReward(parseInt(e.target.value) || 0)}
+          className="bg-muted/30 border-border/50 w-32"
+        />
+        <p className="text-xs text-muted-foreground">Credits awarded when users complete the beta feedback survey</p>
+      </div>
+
+      <Button onClick={handleSave} disabled={saving} className="bg-gradient-to-r from-violet-500 to-purple-500">
+        {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+        Save Beta Settings
+      </Button>
+    </div>
+  );
+};
 
 interface SystemConfig {
   maintenanceMode: boolean;
@@ -467,6 +556,18 @@ export const SystemSettings = ({ systemConfig, onUpdateConfig }: SystemSettingsP
               </div>
             </div>
           </div>
+        </CollapsibleSection>
+      </motion.div>
+
+      {/* Beta Program Settings */}
+      <motion.div variants={itemVariants}>
+        <CollapsibleSection
+          title="Beta Program"
+          description="Beta mode and feedback rewards"
+          icon={<Sparkles className="w-5 h-5 text-violet-500" />}
+          accentColor="purple"
+        >
+          <BetaProgramSettings />
         </CollapsibleSection>
       </motion.div>
 

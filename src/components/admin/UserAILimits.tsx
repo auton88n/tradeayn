@@ -10,6 +10,7 @@ import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { CreditGiftModal } from './CreditGiftModal';
 import { 
   Users, 
   RefreshCw, 
@@ -22,7 +23,8 @@ import {
   AlertTriangle,
   MessageSquare,
   Wrench,
-  FileText
+  FileText,
+  Gift
 } from 'lucide-react';
 
 interface UserLimit {
@@ -39,6 +41,9 @@ interface UserLimit {
   is_unlimited: boolean | null;
   monthly_cost_limit_sar: number | null;
   current_month_cost_sar: number | null;
+  bonus_credits: number | null;
+  monthly_messages: number | null;
+  current_monthly_messages: number | null;
   email?: string;
 }
 
@@ -65,6 +70,8 @@ export function UserAILimits() {
   const [searchQuery, setSearchQuery] = useState('');
   const [editingUser, setEditingUser] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<Partial<UserLimit>>({});
+  const [giftModalOpen, setGiftModalOpen] = useState(false);
+  const [selectedUserForGift, setSelectedUserForGift] = useState<UserLimit | null>(null);
 
   const fetchLimits = async () => {
     try {
@@ -303,6 +310,12 @@ export function UserAILimits() {
                                 Unlimited
                               </Badge>
                             )}
+                            {(user.bonus_credits ?? 0) > 0 && (
+                              <Badge variant="secondary" className="bg-purple-500/10 text-purple-600 border border-purple-500/20">
+                                <Gift className="w-3 h-3 mr-1" />
+                                +{user.bonus_credits} bonus
+                              </Badge>
+                            )}
                           </div>
                           
                           {isEditing ? (
@@ -364,6 +377,18 @@ export function UserAILimits() {
                             </>
                           ) : (
                             <>
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                onClick={() => {
+                                  setSelectedUserForGift(user);
+                                  setGiftModalOpen(true);
+                                }}
+                                className="text-purple-500 hover:text-purple-600 hover:bg-purple-500/10"
+                                title="Gift credits"
+                              >
+                                <Gift className="w-4 h-4" />
+                              </Button>
                               <Switch
                                 checked={user.is_unlimited ?? false}
                                 onCheckedChange={(checked) => toggleUnlimited(user.user_id, checked)}
@@ -392,6 +417,19 @@ export function UserAILimits() {
           </CardContent>
         </Card>
       </motion.div>
+
+      {/* Credit Gift Modal */}
+      <CreditGiftModal
+        isOpen={giftModalOpen}
+        onClose={() => {
+          setGiftModalOpen(false);
+          setSelectedUserForGift(null);
+        }}
+        user={selectedUserForGift}
+        onSuccess={() => {
+          fetchLimits();
+        }}
+      />
     </motion.div>
   );
 }
