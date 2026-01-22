@@ -21,7 +21,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [companyName, setCompanyName] = useState('');
-  const [phone, setPhone] = useState('');
+  
   const { toast } = useToast();
   const { t } = useLanguage();
 
@@ -147,8 +147,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
           emailRedirectTo: `${window.location.origin}/`,
           data: {
             full_name: fullName,
-            company_name: companyName,
-            phone: phone
+            company_name: companyName
           }
         }
       });
@@ -185,7 +184,6 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
         setPassword('');
         setFullName('');
         setCompanyName('');
-        setPhone('');
       }
     } catch (error) {
       toast({
@@ -316,18 +314,6 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="signup-phone" className="auth-label">{t('auth.phoneNumber')}</Label>
-                <Input
-                  id="signup-phone"
-                  type="tel"
-                  placeholder="+1 (555) 123-4567"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  disabled={isLoading}
-                  className="bg-neutral-900/80 border-white/15 placeholder:text-gray-400 auth-input-text"
-                />
-              </div>
 
               <div className="space-y-2">
                 <Label htmlFor="signup-password" className="auth-label">{t('auth.password')} *</Label>
