@@ -678,13 +678,12 @@ export const CenterStageLayout = ({
 
       {/* Suggestion chips above chat input */}
       <div className={cn(
-        "fixed bottom-28 sm:bottom-32 z-40",
+        "fixed bottom-24 sm:bottom-28 z-40",
         "flex justify-center",
         "transition-all duration-300 ease-out",
-        "left-4 right-4",
-        sidebarOpen && "lg:left-[21rem]",
-        transcriptOpen && "lg:right-[21rem]",
-        "overflow-hidden"
+        "left-0 right-0 px-4",
+        sidebarOpen && "md:left-[20rem]",
+        transcriptOpen && "md:right-[20rem]"
       )}>
         <AnimatePresence>
           <MobileSuggestionChips
