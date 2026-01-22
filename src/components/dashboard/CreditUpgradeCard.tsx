@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Sparkles, Infinity, Zap, Crown } from 'lucide-react';
+import { Sparkles, Infinity, Zap, Crown, ArrowRight } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { differenceInDays, differenceInHours } from 'date-fns';
@@ -18,8 +19,11 @@ export const CreditUpgradeCard = ({
   monthlyLimit,
   isUnlimited = false,
   resetDate,
+  currentTier = 'free',
 }: CreditUpgradeCardProps) => {
+  const navigate = useNavigate();
   const [displayCount, setDisplayCount] = useState(currentUsage);
+  const showUpgrade = currentTier === 'free' && !isUnlimited;
   
   const limit = monthlyLimit ?? 50;
   const creditsLeft = isUnlimited ? 999 : Math.max(0, limit - currentUsage);
@@ -131,6 +135,25 @@ export const CreditUpgradeCard = ({
           </span>
         )}
       </div>
+
+      {/* Upgrade Link for Free Tier */}
+      {showUpgrade && (
+        <motion.button
+          onClick={() => navigate('/pricing')}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.1 }}
+          className={cn(
+            "mt-2 w-full flex items-center justify-center gap-1.5",
+            "text-xs font-medium text-primary",
+            "hover:text-primary/80 transition-colors",
+            "group"
+          )}
+        >
+          <span>Upgrade to Pro</span>
+          <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+        </motion.button>
+      )}
     </motion.div>
   );
 };
