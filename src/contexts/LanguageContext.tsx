@@ -508,6 +508,8 @@ const translations = {
     'auth.termsAnd': 'and',
     'auth.privacyLink': 'Privacy Policy',
     'auth.termsRequiredSignup': 'Please accept the terms to continue',
+    'auth.emailAlreadyRegistered': 'Email Already Registered',
+    'auth.emailAlreadyRegisteredDesc': 'This email is already in use. Please sign in or use the password reset option.',
     
     // Terms Modal
     'terms.welcomeToAynAI': 'Welcome to AYN AI',
@@ -1113,6 +1115,8 @@ const translations = {
     'auth.termsAnd': 'و',
     'auth.privacyLink': 'سياسة الخصوصية',
     'auth.termsRequiredSignup': 'يرجى قبول الشروط للمتابعة',
+    'auth.emailAlreadyRegistered': 'البريد الإلكتروني مسجل مسبقاً',
+    'auth.emailAlreadyRegisteredDesc': 'هذا البريد الإلكتروني مستخدم بالفعل. يرجى تسجيل الدخول أو استخدام خيار إعادة تعيين كلمة المرور.',
     
     // Terms Modal
     'terms.welcomeToAynAI': 'مرحباً بك في AYN AI',
@@ -1493,6 +1497,8 @@ const translations = {
     'auth.termsAnd': 'et la',
     'auth.privacyLink': 'Politique de confidentialité',
     'auth.termsRequiredSignup': 'Veuillez accepter les conditions pour continuer',
+    'auth.emailAlreadyRegistered': 'Email déjà enregistré',
+    'auth.emailAlreadyRegisteredDesc': 'Cet email est déjà utilisé. Veuillez vous connecter ou utiliser l\'option de réinitialisation du mot de passe.',
     
     // Terms Modal
     'terms.welcomeToAynAI': 'Bienvenue sur AYN AI',

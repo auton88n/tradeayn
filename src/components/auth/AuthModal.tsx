@@ -152,7 +152,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
 
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -168,6 +168,13 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
         toast({
           title: t('auth.registrationError'),
           description: error.message,
+          variant: "destructive"
+        });
+      } else if (data.user?.identities?.length === 0) {
+        // User already exists - Supabase doesn't return error for security
+        toast({
+          title: t('auth.emailAlreadyRegistered'),
+          description: t('auth.emailAlreadyRegisteredDesc'),
           variant: "destructive"
         });
       } else {
