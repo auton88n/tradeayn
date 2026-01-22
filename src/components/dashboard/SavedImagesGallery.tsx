@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
@@ -175,6 +175,9 @@ export function SavedImagesGallery({ open, onOpenChange }: SavedImagesGalleryPro
               </div>
               <div>
                 <DialogTitle className="text-lg font-semibold">Saved Images</DialogTitle>
+                <DialogDescription className="sr-only">
+                  View and manage your saved AI-generated images.
+                </DialogDescription>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {images.length} image{images.length !== 1 ? 's' : ''} in gallery
                 </p>

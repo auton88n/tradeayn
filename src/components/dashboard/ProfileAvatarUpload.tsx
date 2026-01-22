@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Camera, Loader2, X } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useAvatarUpload } from '@/hooks/useAvatarUpload';
@@ -74,6 +74,9 @@ export const ProfileAvatarUpload = ({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Change Photo</DialogTitle>
+          <DialogDescription className="sr-only">
+            Upload a new profile photo or remove your current one.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col items-center gap-6 py-6">
