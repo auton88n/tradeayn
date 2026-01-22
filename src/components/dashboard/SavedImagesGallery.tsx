@@ -157,12 +157,15 @@ export function SavedImagesGallery({ open, onOpenChange }: SavedImagesGalleryPro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cn(
-        "flex flex-col p-0 gap-0",
-        "w-[95vw] max-w-4xl h-[85vh] max-h-[85vh]",
-        "bg-background",
-        "overflow-hidden"
-      )}>
+      <DialogContent 
+        hideCloseButton
+        className={cn(
+          "flex flex-col p-0 gap-0",
+          "w-[95vw] max-w-4xl h-[85vh] max-h-[85vh]",
+          "bg-background",
+          "overflow-hidden"
+        )}
+      >
         {/* Header */}
         <DialogHeader className="flex-shrink-0 px-6 py-4 border-b border-border/40">
           <div className="flex items-center justify-between">
@@ -177,15 +180,25 @@ export function SavedImagesGallery({ open, onOpenChange }: SavedImagesGalleryPro
                 </p>
               </div>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => loadImages()}
-              disabled={isLoading}
-              className="rounded-full"
-            >
-              <RefreshCw className={cn("w-4 h-4", isLoading && "animate-spin")} />
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => loadImages()}
+                disabled={isLoading}
+                className="rounded-full"
+              >
+                <RefreshCw className={cn("w-4 h-4", isLoading && "animate-spin")} />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onOpenChange(false)}
+                className="rounded-full hover:bg-destructive/10 hover:text-destructive"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         </DialogHeader>
 
