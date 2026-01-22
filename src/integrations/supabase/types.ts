@@ -313,6 +313,45 @@ export type Database = {
           },
         ]
       }
+      beta_feedback: {
+        Row: {
+          additional_comments: string | null
+          bugs_encountered: string | null
+          credits_awarded: number | null
+          favorite_features: string[] | null
+          id: string
+          improvement_suggestions: string | null
+          overall_rating: number | null
+          submitted_at: string | null
+          user_id: string
+          would_recommend: boolean | null
+        }
+        Insert: {
+          additional_comments?: string | null
+          bugs_encountered?: string | null
+          credits_awarded?: number | null
+          favorite_features?: string[] | null
+          id?: string
+          improvement_suggestions?: string | null
+          overall_rating?: number | null
+          submitted_at?: string | null
+          user_id: string
+          would_recommend?: boolean | null
+        }
+        Update: {
+          additional_comments?: string | null
+          bugs_encountered?: string | null
+          credits_awarded?: number | null
+          favorite_features?: string[] | null
+          id?: string
+          improvement_suggestions?: string | null
+          overall_rating?: number | null
+          submitted_at?: string | null
+          user_id?: string
+          would_recommend?: boolean | null
+        }
+        Relationships: []
+      }
       calculation_history: {
         Row: {
           ai_analysis: Json | null
@@ -478,6 +517,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      credit_gifts: {
+        Row: {
+          amount: number
+          created_at: string | null
+          gift_type: string | null
+          given_by: string | null
+          id: string
+          reason: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          gift_type?: string | null
+          given_by?: string | null
+          id?: string
+          reason: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          gift_type?: string | null
+          given_by?: string | null
+          id?: string
+          reason?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       device_fingerprints: {
         Row: {
@@ -1812,6 +1881,7 @@ export type Database = {
       }
       user_ai_limits: {
         Row: {
+          bonus_credits: number | null
           created_at: string | null
           current_daily_engineering: number | null
           current_daily_files: number | null
@@ -1835,6 +1905,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          bonus_credits?: number | null
           created_at?: string | null
           current_daily_engineering?: number | null
           current_daily_files?: number | null
@@ -1858,6 +1929,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          bonus_credits?: number | null
           created_at?: string | null
           current_daily_engineering?: number | null
           current_daily_files?: number | null
@@ -2202,6 +2274,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_bonus_credits: {
+        Args: {
+          p_amount: number
+          p_gift_type?: string
+          p_given_by?: string
+          p_reason: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       admin_can_view_message_with_logging: {
         Args: { message_user_id: string }
         Returns: boolean
