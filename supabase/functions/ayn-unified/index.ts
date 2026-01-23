@@ -15,6 +15,12 @@ interface LLMModel {
 }
 
 // Fallback chains by intent - optimized for 30K users scale
+// Document generation credit costs (premium feature)
+const DOCUMENT_CREDIT_COST = {
+  pdf: 30,
+  excel: 25
+};
+
 const FALLBACK_CHAINS: Record<string, LLMModel[]> = {
   chat: [
     { id: 'lovable-gemini-3-flash', provider: 'lovable', model_id: 'google/gemini-3-flash-preview', display_name: 'Gemini 3 Flash' },
@@ -883,6 +889,33 @@ serve(async (req) => {
       try {
         console.log('[ayn-unified] Document generation requested');
         
+        // === PREMIUM FEATURE: Check subscription tier ===
+        const { data: subscription } = await supabase
+          .from('user_subscriptions')
+          .select('tier')
+          .eq('user_id', userId)
+          .maybeSingle();
+        
+        const userTier = subscription?.tier || 'free';
+        
+        // Block free tier users
+        if (userTier === 'free' && !isInternalCall) {
+          console.log('[ayn-unified] Free user blocked from document generation');
+          const upgradeMessages: Record<string, string> = {
+            ar: '📄 إنشاء المستندات هو ميزة مدفوعة.\nقم بالترقية لإنشاء ملفات PDF و Excel احترافية!\n\n[ترقية الآن](/pricing)',
+            fr: '📄 La génération de documents est une fonctionnalité premium.\nPassez à un forfait payant pour créer des PDF et Excel professionnels!\n\n[Mettre à niveau](/pricing)',
+            en: '📄 Document generation is a premium feature.\nUpgrade to create professional PDF and Excel documents!\n\n[Upgrade Now](/pricing)'
+          };
+          return new Response(JSON.stringify({
+            content: upgradeMessages[language] || upgradeMessages.en,
+            intent: 'document',
+            requiresUpgrade: true
+          }), {
+            status: 403,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+        
         // Get structured content from LLM (non-streaming for JSON parsing)
         const docMessages = [
           { role: 'system', content: systemPrompt },
@@ -914,6 +947,40 @@ serve(async (req) => {
           });
         }
         
+        // Determine document type and credit cost
+        const docType = documentData.type || 'pdf';
+        const creditCost = docType === 'excel' ? DOCUMENT_CREDIT_COST.excel : DOCUMENT_CREDIT_COST.pdf;
+        
+        // === CHECK CREDITS: Ensure user has enough ===
+        const { data: userLimits } = await supabase
+          .from('user_ai_limits')
+          .select('monthly_messages, current_usage')
+          .eq('user_id', userId)
+          .maybeSingle();
+        
+        const currentUsage = userLimits?.current_usage || 0;
+        const monthlyLimit = userLimits?.monthly_messages || 50;
+        const creditsRemaining = monthlyLimit - currentUsage;
+        
+        if (creditsRemaining < creditCost && !isInternalCall) {
+          console.log(`[ayn-unified] Insufficient credits: ${creditsRemaining} < ${creditCost}`);
+          const insufficientMessages: Record<string, string> = {
+            ar: `❌ رصيدك غير كافٍ. مستندات ${docType === 'excel' ? 'Excel' : 'PDF'} تكلف ${creditCost} رصيد، لديك ${creditsRemaining} متبقي.`,
+            fr: `❌ Crédits insuffisants. Les ${docType === 'excel' ? 'Excel' : 'PDF'} coûtent ${creditCost} crédits, il vous reste ${creditsRemaining}.`,
+            en: `❌ Not enough credits. ${docType === 'excel' ? 'Excel' : 'PDF'} documents cost ${creditCost} credits, you have ${creditsRemaining} remaining.`
+          };
+          return new Response(JSON.stringify({
+            content: insufficientMessages[language] || insufficientMessages.en,
+            intent: 'document',
+            notEnoughCredits: true,
+            creditsRequired: creditCost,
+            creditsRemaining
+          }), {
+            status: 429,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+        
         // Call generate-document function
         const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
         const docResponse = await fetch(`${supabaseUrl}/functions/v1/generate-document`, {
@@ -933,7 +1000,15 @@ serve(async (req) => {
           throw new Error(`Document generation failed: ${errorText}`);
         }
         
-        const { downloadUrl, filename, type: docType } = await docResponse.json();
+        const { downloadUrl, filename } = await docResponse.json();
+        
+        // === DEDUCT CREDITS after successful generation ===
+        await supabase
+          .from('user_ai_limits')
+          .update({ current_usage: currentUsage + creditCost })
+          .eq('user_id', userId);
+        
+        console.log(`[ayn-unified] Deducted ${creditCost} credits for ${docType} document`);
         
         // Log usage
         try {
@@ -946,13 +1021,14 @@ serve(async (req) => {
           console.error('Failed to log document usage:', logError);
         }
         
-        // Return friendly response with download link
+        // Return friendly response with download link and credit info
         const docLang = documentData.language || language;
         const emoji = docType === 'excel' ? '📊' : '📄';
+        const newCreditsRemaining = creditsRemaining - creditCost;
         const successMessages: Record<string, string> = {
-          ar: `تم إنشاء المستند بنجاح!\n\n${emoji} [${documentData.title}](${downloadUrl})`,
-          fr: `Document créé avec succès!\n\n${emoji} [${documentData.title}](${downloadUrl})`,
-          en: `Document created successfully!\n\n${emoji} [${documentData.title}](${downloadUrl})`
+          ar: `تم إنشاء المستند بنجاح!\n\n${emoji} [${documentData.title}](${downloadUrl})\n\n_(${creditCost} رصيد مخصوم • ${newCreditsRemaining} متبقي)_`,
+          fr: `Document créé avec succès!\n\n${emoji} [${documentData.title}](${downloadUrl})\n\n_(${creditCost} crédits déduits • ${newCreditsRemaining} restants)_`,
+          en: `Document created successfully!\n\n${emoji} [${documentData.title}](${downloadUrl})\n\n_(${creditCost} credits used • ${newCreditsRemaining} remaining)_`
         };
         
         return new Response(JSON.stringify({
