@@ -366,17 +366,31 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
             hr: () => (
               <hr className="my-4 border-gray-200 dark:border-gray-700" />
             ),
-            // Links
-            a: ({ children, href }) => (
-              <a 
-                href={href} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors"
-              >
-                {children}
-              </a>
-            ),
+            // Links - handle download URLs specially
+            a: ({ children, href }) => {
+              // For Supabase signed URLs (documents), open via window.open to avoid encoding issues
+              const isSignedUrl = href?.includes('/storage/v1/object/sign/') || 
+                                  href?.includes('token=');
+              
+              const handleClick = (e: React.MouseEvent) => {
+                if (isSignedUrl && href) {
+                  e.preventDefault();
+                  window.open(href, '_blank', 'noopener,noreferrer');
+                }
+              };
+              
+              return (
+                <a 
+                  href={href} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  onClick={handleClick}
+                  className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors cursor-pointer"
+                >
+                  {children}
+                </a>
+              );
+            },
             // Images with click-to-zoom and persistence
             img: ({ src, alt }) => {
               const rawSrc = src || '';
