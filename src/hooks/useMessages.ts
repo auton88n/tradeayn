@@ -242,7 +242,16 @@ export const useMessages = (
         if (selectedMode === 'Civil Engineering') return 'engineering';
         if (selectedMode === 'Research Pro') return 'search';
         if (selectedMode === 'PDF Analyst') return 'files';
+        
         const lower = messageContent.toLowerCase();
+        
+        // Document generation detection (English, Arabic, French)
+        if (/create pdf|make pdf|generate pdf|pdf report|pdf document|pdf about|give me a pdf/.test(lower)) return 'document';
+        if (/create excel|make excel|excel sheet|spreadsheet|xlsx/.test(lower)) return 'document';
+        if (/اعمل pdf|انشئ pdf|ملف pdf|تقرير pdf|اعمل لي|سوي لي/.test(lower)) return 'document';
+        if (/créer pdf|faire pdf|rapport pdf|document pdf|créer excel/.test(lower)) return 'document';
+        
+        // Other intent detection
         if (/search|find|look up|latest|news/.test(lower)) return 'search';
         if (/beam|column|foundation|slab|calculate|structural/.test(lower)) return 'engineering';
         return 'chat';
