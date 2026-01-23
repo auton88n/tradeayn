@@ -160,13 +160,6 @@ export const useBubbleAnimation = (): UseBubbleAnimationReturn => {
 
     // Replace all previous bubbles - each AYN response is complete, not a continuation
     setResponseBubbles([newBubble]);
-
-    // Auto-dismiss after 5 minutes
-    setTimeout(() => {
-      setResponseBubbles((prev) =>
-        prev.map((b) => (b.id === id ? { ...b, isVisible: false } : b))
-      );
-    }, 300000);
   }, []);
 
   const clearResponseBubbles = useCallback(() => {
