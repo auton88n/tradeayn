@@ -82,6 +82,46 @@ function sanitizePath(path: string): string {
   return path.replace(/<[^>]*>/g, '').replace(/[<>'"]/g, '').slice(0, 500);
 }
 
+// Validate visitor_id format (alphanumeric with limited special chars)
+function validateVisitorId(visitorId: string): boolean {
+  if (typeof visitorId !== 'string') return false;
+  if (visitorId.length < 5 || visitorId.length > 100) return false;
+  // Only allow alphanumeric, hyphens, underscores
+  return /^[a-zA-Z0-9_-]+$/.test(visitorId);
+}
+
+// In-memory rate limiting for edge function (per-instance)
+const requestTracker = new Map<string, { count: number; resetAt: number }>();
+const MAX_REQUESTS_PER_MINUTE = 15;
+
+function checkEdgeFunctionRateLimit(visitorId: string): boolean {
+  const now = Date.now();
+  const tracker = requestTracker.get(visitorId);
+  
+  if (!tracker || tracker.resetAt < now) {
+    requestTracker.set(visitorId, { count: 1, resetAt: now + 60000 });
+    return true;
+  }
+  
+  if (tracker.count >= MAX_REQUESTS_PER_MINUTE) {
+    console.warn(`Rate limit exceeded for visitor: ${visitorId.slice(0, 20)}...`);
+    return false;
+  }
+  
+  tracker.count++;
+  return true;
+}
+
+// Cleanup old entries periodically (prevent memory leak)
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, value] of requestTracker.entries()) {
+    if (value.resetAt < now) {
+      requestTracker.delete(key);
+    }
+  }
+}, 60000);
+
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -109,6 +149,26 @@ const handler = async (req: Request): Promise<Response> => {
       return new Response(
         JSON.stringify({ error: "Missing required fields: visitor_id, page_path" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Validate visitor_id format
+    if (!validateVisitorId(visitData.visitor_id)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid visitor_id format" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Check edge function rate limit
+    if (!checkEdgeFunctionRateLimit(visitData.visitor_id)) {
+      return new Response(
+        JSON.stringify({ error: "Rate limit exceeded. Please slow down." }),
+        { status: 429, headers: { 
+          "Content-Type": "application/json",
+          "Retry-After": "60",
+          ...corsHeaders 
+        } }
       );
     }
     
