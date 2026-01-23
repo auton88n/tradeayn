@@ -151,6 +151,10 @@ const translations = {
     'document.downloadExcel': 'Download Excel',
     'document.pdfDocument': 'PDF Document',
     'document.excelSpreadsheet': 'Excel Spreadsheet',
+    'document.requiresUpgrade': 'Document generation requires a paid plan',
+    'document.notEnoughCredits': 'Not enough credits for this document',
+    'document.pdfCost': 'PDF documents cost 30 credits',
+    'document.excelCost': 'Excel sheets cost 25 credits',
     
     // Profile
     'profile.changePhoto': 'Change Photo',
@@ -722,6 +726,10 @@ const translations = {
     'document.downloadExcel': 'تحميل Excel',
     'document.pdfDocument': 'مستند PDF',
     'document.excelSpreadsheet': 'جدول بيانات Excel',
+    'document.requiresUpgrade': 'إنشاء المستندات يتطلب حساباً مدفوعاً',
+    'document.notEnoughCredits': 'لا يوجد رصيد كافٍ لهذا المستند',
+    'document.pdfCost': 'مستندات PDF تكلف 30 رصيد',
+    'document.excelCost': 'جداول Excel تكلف 25 رصيد',
     
     // Profile
     'profile.changePhoto': 'تغيير الصورة',
@@ -1339,6 +1347,10 @@ const translations = {
     'document.downloadExcel': 'Télécharger Excel',
     'document.pdfDocument': 'Document PDF',
     'document.excelSpreadsheet': 'Feuille Excel',
+    'document.requiresUpgrade': 'La génération de documents nécessite un abonnement',
+    'document.notEnoughCredits': 'Crédits insuffisants pour ce document',
+    'document.pdfCost': 'Les PDF coûtent 30 crédits',
+    'document.excelCost': 'Les Excel coûtent 25 crédits',
     
     // Profile
     'profile.changePhoto': 'Changer la Photo',

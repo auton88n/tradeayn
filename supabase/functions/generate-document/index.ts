@@ -10,6 +10,12 @@ const corsHeaders = {
 // This is a minimal subset - for production, consider using a CDN
 const ARABIC_FONT_URL = 'https://fonts.gstatic.com/s/notosansarabic/v18/nwpxtLGrOAZMl5nJ_wfgRg3DrWFZWsnVBJ_sS6tlqHHFlhQ5l3sQWIHPqzCfyGyvvnCBFQLaig.ttf';
 
+// Content limits (safety caps)
+const CONTENT_LIMITS = {
+  maxSections: 12,
+  maxTableRows: 50
+};
+
 interface DocumentSection {
   heading: string;
   content?: string;
@@ -25,6 +31,26 @@ interface DocumentRequest {
   title: string;
   sections: DocumentSection[];
   userId?: string;
+}
+
+// Apply content limits to prevent abuse
+function applyContentLimits(sections: DocumentSection[]): DocumentSection[] {
+  // Limit number of sections
+  const limitedSections = sections.slice(0, CONTENT_LIMITS.maxSections);
+  
+  // Limit table rows in each section
+  return limitedSections.map(section => {
+    if (section.table?.rows) {
+      return {
+        ...section,
+        table: {
+          headers: section.table.headers,
+          rows: section.table.rows.slice(0, CONTENT_LIMITS.maxTableRows)
+        }
+      };
+    }
+    return section;
+  });
 }
 
 // Detect language from content if not specified
@@ -427,6 +453,10 @@ serve(async (req) => {
     const language = body.language || detectLanguage(body.title + ' ' + 
       body.sections.map(s => s.heading + (s.content || '')).join(' '));
     
+    // Apply content limits (safety caps)
+    const limitedSections = applyContentLimits(body.sections);
+    console.log(`[generate-document] Applied limits: ${body.sections.length} → ${limitedSections.length} sections`);
+    
     console.log(`[generate-document] Creating ${body.type.toUpperCase()} in ${language}: ${body.title}`);
     
     let fileData: Uint8Array;
@@ -437,11 +467,11 @@ serve(async (req) => {
     const safeTitle = body.title.replace(/[^a-zA-Z0-9\u0600-\u06FF]/g, '_').substring(0, 50);
     
     if (body.type === 'pdf') {
-      fileData = await generatePDF({ ...body, language });
+      fileData = await generatePDF({ ...body, language, sections: limitedSections });
       filename = `${safeTitle}_${timestamp}.pdf`;
       contentType = 'application/pdf';
     } else if (body.type === 'excel') {
-      fileData = await generateExcel({ ...body, language });
+      fileData = await generateExcel({ ...body, language, sections: limitedSections });
       filename = `${safeTitle}_${timestamp}.xlsx`;
       contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
     } else {
