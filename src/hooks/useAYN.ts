@@ -24,6 +24,39 @@ export function useAYN(options: UseAYNOptions = {}) {
   const [error, setError] = useState<Error | null>(null);
   const [response, setResponse] = useState<AYNResponse | null>(null);
 
+  const tryParseUpgradePayload = (maybeJson: unknown): AYNResponse | null => {
+    // When Supabase returns a non-2xx from functions.invoke, it may surface
+    // as an error with a message like:
+    // "Edge function returned 403: Error, { ...json... }"
+    // We want to gracefully treat upgrade-required as a normal response.
+    const raw = typeof maybeJson === 'string' ? maybeJson : '';
+
+    // First attempt: extract JSON after the last comma
+    const idx = raw.lastIndexOf(',');
+    const tail = idx >= 0 ? raw.slice(idx + 1).trim() : '';
+
+    for (const candidate of [tail, raw]) {
+      if (!candidate) continue;
+      const trimmed = candidate.trim();
+      if (!trimmed.startsWith('{') || !trimmed.endsWith('}')) continue;
+
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (parsed?.requiresUpgrade && typeof parsed?.content === 'string') {
+          return {
+            content: parsed.content,
+            intent: parsed.intent,
+            wasFallback: false,
+          };
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    return null;
+  };
+
   const sendMessage = useCallback(async (
     message: string,
     context?: {
@@ -53,6 +86,13 @@ export function useAYN(options: UseAYNOptions = {}) {
       });
 
       if (invokeError) {
+        // Handle upgrade-required (403) as a normal response instead of throwing
+        const upgrade = tryParseUpgradePayload(invokeError.message);
+        if (upgrade) {
+          setResponse(upgrade);
+          options.onComplete?.(upgrade);
+          return upgrade;
+        }
         throw new Error(invokeError.message || 'Failed to get response from AYN');
       }
 
@@ -120,6 +160,18 @@ export function useAYN(options: UseAYNOptions = {}) {
       );
 
       if (!response.ok) {
+        // Upgrade-required should be shown, not treated as a crash
+        if (response.status === 403) {
+          const upgradeData = await response.json().catch(() => ({}));
+          const upgradeResponse: AYNResponse = {
+            content: upgradeData?.content || 'This feature requires a paid subscription. Please upgrade to continue.',
+            intent: upgradeData?.intent,
+            wasFallback: false,
+          };
+          setResponse(upgradeResponse);
+          options.onComplete?.(upgradeResponse);
+          return;
+        }
         throw new Error(`Stream error: ${response.status}`);
       }
 
