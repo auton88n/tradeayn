@@ -30,7 +30,8 @@ const fetchWithRetry = async (
   for (let i = 0; i < retries; i++) {
     try {
       const response = await fetch(url, options);
-      if (response.ok || response.status === 429 || response.status === 402) return response;
+      // Return on success OR known handled error codes (don't retry these)
+      if (response.ok || response.status === 429 || response.status === 402 || response.status === 403) return response;
     } catch (e) {
       if (i === retries - 1) throw e;
       await new Promise(r => setTimeout(r, 1000)); // Wait 1s before retry
@@ -327,6 +328,22 @@ export const useMessages = (
             : "You're sending messages too quickly. Please wait before trying again.",
           variant: "destructive"
         });
+        return;
+      }
+
+      // Handle 403 Premium Feature / Upgrade Required Response
+      if (webhookResponse.status === 403) {
+        const upgradeData = await webhookResponse.json().catch(() => ({}));
+        
+        // Display the upgrade message as a normal AYN response (not an error)
+        const upgradeMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: upgradeData?.content || "This feature requires a paid subscription. Please upgrade to continue.",
+          sender: 'ayn',
+          timestamp: new Date(),
+          status: 'sent'
+        };
+        setMessages(prev => [...prev, upgradeMessage]);
         return;
       }
 
