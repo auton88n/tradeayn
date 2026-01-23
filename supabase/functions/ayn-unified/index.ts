@@ -315,6 +315,37 @@ SEARCH MODE:
 - admit if search results don't have the answer`;
   }
 
+  if (intent === 'document') {
+    return `${basePrompt}
+
+DOCUMENT GENERATION MODE:
+You are creating structured content for a professional PDF or Excel document.
+RESPOND ONLY WITH VALID JSON in this exact format (no markdown, no explanation, just JSON):
+
+{
+  "type": "pdf" or "excel",
+  "language": "ar" or "en" or "fr",
+  "title": "Document Title",
+  "sections": [
+    { "heading": "Section Name", "content": "Detailed paragraph text with valuable information..." },
+    { "heading": "Data Section", "table": { 
+      "headers": ["Column 1", "Column 2", "Column 3"], 
+      "rows": [["Value1", "Value2", "Value3"], ["Value4", "Value5", "Value6"]] 
+    }}
+  ]
+}
+
+CRITICAL RULES:
+- Match the language of the user's request exactly
+- For Arabic: use proper Arabic text (RTL formatting is handled automatically)
+- For French: use proper accents (é, è, ê, à, ù, etc.)
+- Create comprehensive, professional content with 3-6 rich sections
+- Include real, valuable information - not placeholder text
+- Use "pdf" for reports, research, documents; use "excel" for data, comparisons, lists
+- Each section should have either "content" (paragraphs) OR "table" (structured data)
+- Tables should have meaningful headers and at least 3-5 rows of data`;
+  }
+
   return basePrompt;
 }
 
@@ -358,11 +389,28 @@ async function extractAndSaveMemories(
 function detectIntent(message: string): string {
   const lower = message.toLowerCase();
   
+  // Document generation keywords (all languages) - check first for specificity
+  const documentKeywords = [
+    // English
+    'create pdf', 'make pdf', 'generate pdf', 'pdf report', 'pdf document',
+    'create excel', 'make excel', 'excel sheet', 'spreadsheet', 'xlsx file',
+    'export as pdf', 'export as excel', 'make a report', 'generate report', 
+    'document about', 'create a document', 'make me a', 'give me a pdf',
+    // Arabic
+    'اعمل pdf', 'انشئ pdf', 'ملف pdf', 'تقرير pdf', 'وثيقة pdf',
+    'اعمل اكسل', 'جدول بيانات', 'ملف اكسل', 'تقرير عن', 'انشئ تقرير',
+    'اعمل لي', 'سوي لي', 'اعطني ملف', 'حمل لي',
+    // French
+    'créer pdf', 'faire pdf', 'rapport pdf', 'document pdf', 'générer pdf',
+    'créer excel', 'feuille excel', 'tableur', 'rapport sur', 'faire un rapport'
+  ];
+  
   const engineeringKeywords = ['beam', 'column', 'foundation', 'slab', 'retaining wall', 'grading', 'calculate', 'structural', 'load', 'stress', 'reinforcement', 'concrete', 'steel', 'moment', 'shear', 'deflection', 'design', 'span', 'kn', 'mpa', 'engineering'];
   const searchKeywords = ['search', 'find', 'look up', 'what is the latest', 'current', 'today', 'news', 'recent'];
-  const fileKeywords = ['uploaded', 'file', 'document', 'pdf', 'analyze this', 'summarize this'];
+  const fileKeywords = ['uploaded', 'file', 'analyze this', 'summarize this'];
   const imageKeywords = ['generate image', 'create image', 'draw', 'picture of'];
 
+  if (documentKeywords.some(kw => lower.includes(kw))) return 'document';
   if (imageKeywords.some(kw => lower.includes(kw))) return 'image';
   if (fileKeywords.some(kw => lower.includes(kw))) return 'files';
   if (searchKeywords.some(kw => lower.includes(kw))) return 'search';
@@ -823,6 +871,112 @@ serve(async (req) => {
           content: "sorry, couldn't generate that image right now. try describing it differently?",
           error: imageError instanceof Error ? imageError.message : 'Image generation failed',
           intent: 'image'
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+    }
+
+    // Handle document generation intent
+    if (intent === 'document') {
+      try {
+        console.log('[ayn-unified] Document generation requested');
+        
+        // Get structured content from LLM (non-streaming for JSON parsing)
+        const docMessages = [
+          { role: 'system', content: systemPrompt },
+          ...messages
+        ];
+        
+        const llmResult = await callWithFallback('chat', docMessages, false, supabase, userId);
+        const llmContent = (llmResult.response as { content: string }).content;
+        
+        // Parse JSON from response
+        let documentData;
+        try {
+          const jsonMatch = llmContent.match(/\{[\s\S]*\}/);
+          if (!jsonMatch) throw new Error('No JSON found in response');
+          documentData = JSON.parse(jsonMatch[0]);
+        } catch (parseError) {
+          console.error('[ayn-unified] Failed to parse document JSON:', parseError);
+          // Return helpful message asking for clarification
+          const clarifyMessages: Record<string, string> = {
+            ar: 'أحتاج مزيد من التفاصيل لإنشاء المستند. ماذا تريد أن يتضمن بالضبط؟',
+            fr: "J'ai besoin de plus de détails pour créer le document. Que souhaitez-vous y inclure exactement?",
+            en: "I need more details to create the document. What exactly would you like it to include?"
+          };
+          return new Response(JSON.stringify({
+            content: clarifyMessages[language] || clarifyMessages.en,
+            intent: 'document'
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+        
+        // Call generate-document function
+        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+        const docResponse = await fetch(`${supabaseUrl}/functions/v1/generate-document`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            ...documentData,
+            userId
+          })
+        });
+        
+        if (!docResponse.ok) {
+          const errorText = await docResponse.text();
+          throw new Error(`Document generation failed: ${errorText}`);
+        }
+        
+        const { downloadUrl, filename, type: docType } = await docResponse.json();
+        
+        // Log usage
+        try {
+          await supabase.from('llm_usage_logs').insert({
+            user_id: userId,
+            intent_type: 'document',
+            was_fallback: false
+          });
+        } catch (logError) {
+          console.error('Failed to log document usage:', logError);
+        }
+        
+        // Return friendly response with download link
+        const docLang = documentData.language || language;
+        const emoji = docType === 'excel' ? '📊' : '📄';
+        const successMessages: Record<string, string> = {
+          ar: `تم إنشاء المستند بنجاح!\n\n${emoji} [${documentData.title}](${downloadUrl})`,
+          fr: `Document créé avec succès!\n\n${emoji} [${documentData.title}](${downloadUrl})`,
+          en: `Document created successfully!\n\n${emoji} [${documentData.title}](${downloadUrl})`
+        };
+        
+        return new Response(JSON.stringify({
+          content: successMessages[docLang] || successMessages.en,
+          model: llmResult.modelUsed.display_name,
+          wasFallback: llmResult.wasFallback,
+          intent: 'document',
+          documentUrl: downloadUrl,
+          documentType: docType
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+        
+      } catch (docError) {
+        console.error('[ayn-unified] Document generation failed:', docError);
+        const errorMessages: Record<string, string> = {
+          ar: 'عذراً، حدث خطأ أثناء إنشاء المستند. حاول مرة أخرى؟',
+          fr: 'Désolé, une erreur est survenue lors de la création du document. Réessayer?',
+          en: "Sorry, couldn't create that document right now. Try again?"
+        };
+        return new Response(JSON.stringify({
+          content: errorMessages[language] || errorMessages.en,
+          error: docError instanceof Error ? docError.message : 'Document generation failed',
+          intent: 'document'
         }), {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }

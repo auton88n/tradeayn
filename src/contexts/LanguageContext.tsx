@@ -141,6 +141,16 @@ const translations = {
     'common.saving': 'Saving...',
     'common.saveChanges': 'Save Changes',
     'common.sending': 'Sending...',
+    'common.download': 'Download',
+    'common.readyToDownload': 'Ready to download',
+    
+    // Document generation
+    'document.generating': 'Generating your document...',
+    'document.ready': 'Document ready!',
+    'document.downloadPdf': 'Download PDF',
+    'document.downloadExcel': 'Download Excel',
+    'document.pdfDocument': 'PDF Document',
+    'document.excelSpreadsheet': 'Excel Spreadsheet',
     
     // Profile
     'profile.changePhoto': 'Change Photo',
@@ -702,6 +712,16 @@ const translations = {
     'common.saving': 'جاري الحفظ...',
     'common.saveChanges': 'حفظ التغييرات',
     'common.sending': 'جاري الإرسال...',
+    'common.download': 'تحميل',
+    'common.readyToDownload': 'جاهز للتحميل',
+    
+    // Document generation
+    'document.generating': 'جاري إنشاء المستند...',
+    'document.ready': 'المستند جاهز!',
+    'document.downloadPdf': 'تحميل PDF',
+    'document.downloadExcel': 'تحميل Excel',
+    'document.pdfDocument': 'مستند PDF',
+    'document.excelSpreadsheet': 'جدول بيانات Excel',
     
     // Profile
     'profile.changePhoto': 'تغيير الصورة',
@@ -1309,6 +1329,16 @@ const translations = {
     'common.saving': 'Enregistrement...',
     'common.saveChanges': 'Enregistrer',
     'common.sending': 'Envoi...',
+    'common.download': 'Télécharger',
+    'common.readyToDownload': 'Prêt à télécharger',
+    
+    // Document generation
+    'document.generating': 'Génération du document...',
+    'document.ready': 'Document prêt!',
+    'document.downloadPdf': 'Télécharger PDF',
+    'document.downloadExcel': 'Télécharger Excel',
+    'document.pdfDocument': 'Document PDF',
+    'document.excelSpreadsheet': 'Feuille Excel',
     
     // Profile
     'profile.changePhoto': 'Changer la Photo',
