@@ -2358,6 +2358,10 @@ export type Database = {
         Args: { _intent_type: string; _user_id: string }
         Returns: Json
       }
+      check_visitor_analytics_rate_limit: {
+        Args: { _visitor_id: string }
+        Returns: boolean
+      }
       check_webhook_rate_limit: {
         Args: { p_endpoint: string; p_user_id: string }
         Returns: boolean
