@@ -415,16 +415,11 @@ async function uploadToStorage(
     throw new Error(`Upload failed: ${uploadError.message}`);
   }
   
-  // Create signed URL (7 days)
-  const { data: signedData, error: signError } = await supabase.storage
-    .from(bucket)
-    .createSignedUrl(path, 7 * 24 * 60 * 60); // 7 days in seconds
+  // Create public URL (bucket is public)
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const publicUrl = `${supabaseUrl}/storage/v1/object/public/${bucket}/${path}`;
   
-  if (signError || !signedData?.signedUrl) {
-    throw new Error(`Failed to create signed URL: ${signError?.message}`);
-  }
-  
-  return signedData.signedUrl;
+  return publicUrl;
 }
 
 serve(async (req) => {
