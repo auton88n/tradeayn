@@ -21,6 +21,24 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 // Maximum messages allowed per chat session
 const MAX_MESSAGES_PER_CHAT = 100;
 
+// Silent retry helper - try twice before giving up
+const fetchWithRetry = async (
+  url: string, 
+  options: RequestInit, 
+  retries = 2
+): Promise<Response> => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const response = await fetch(url, options);
+      if (response.ok || response.status === 429 || response.status === 402) return response;
+    } catch (e) {
+      if (i === retries - 1) throw e;
+      await new Promise(r => setTimeout(r, 1000)); // Wait 1s before retry
+    }
+  }
+  throw new Error('Request failed after retries');
+};
+
 // Helper for direct REST API calls (bypasses deadlocking Supabase client)
 const fetchFromSupabase = async (
   endpoint: string,
@@ -253,9 +271,13 @@ export const useMessages = (
         emotionHistory: emotionHistory.slice(-5)
       };
 
-      // Call ayn-unified via direct fetch (replaces n8n)
-      const webhookResponse = await fetch(`${SUPABASE_URL}/functions/v1/ayn-unified`, {
+      // Call ayn-unified with timeout and retry
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
+      const webhookResponse = await fetchWithRetry(`${SUPABASE_URL}/functions/v1/ayn-unified`, {
         method: 'POST',
+        signal: controller.signal,
         headers: {
           'apikey': SUPABASE_KEY,
           'Authorization': `Bearer ${session.access_token}`,
@@ -268,6 +290,8 @@ export const useMessages = (
           stream: false
         })
       });
+
+      clearTimeout(timeoutId);
 
       setIsTyping(false);
 
@@ -305,10 +329,12 @@ export const useMessages = (
 
       // Handle ayn-unified response format
       // Response is: { content, model, wasFallback, intent, emotion } OR { imageUrl, revisedPrompt, model } for images
-      const response = webhookData?.content || 
-                       webhookData?.response ||
-                       webhookData?.output ||
-                       "i'm processing your request...";
+      const responseContent = webhookData?.content || webhookData?.response || webhookData?.output || '';
+      
+      // If response is empty, use a warm fallback instead of showing an error
+      const response = responseContent.trim() 
+        ? responseContent 
+        : "Let me think about that differently... Could you try asking again? Sometimes a fresh start helps me give you a better answer! 💭";
 
       // Extract emotion from backend response - SET IMMEDIATELY for eye to react
       if (webhookData?.emotion) {
@@ -484,21 +510,31 @@ export const useMessages = (
     } catch (error) {
       setIsTyping(false);
 
+      const isTimeout = error instanceof Error && error.name === 'AbortError';
+      
+      // Friendly messages that don't blame the system
+      const friendlyResponses = isTimeout ? [
+        "I'm taking a bit longer to think this through. Want to try asking in a simpler way? I'd love to help! ✨",
+        "That's a deep question! Let me catch up - could you try sending it again? 💫"
+      ] : [
+        "I got a little distracted there! Could you send that again? I'm all ears now 👂",
+        "Let's try that again - I want to make sure I give you my best answer! 🌟",
+        "Hmm, let me reset my thoughts. Could you ask me one more time? 💭"
+      ];
+      
+      const randomMessage = friendlyResponses[Math.floor(Math.random() * friendlyResponses.length)];
+      
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: "I'm sorry, I'm having trouble connecting right now. Please try again in a moment.",
+        content: randomMessage,
         sender: 'ayn',
         timestamp: new Date(),
-        status: 'error'
+        status: 'sent' // Use 'sent' not 'error' - looks normal to user
       };
 
       setMessages(prev => [...prev, errorMessage]);
-
-      toast({
-        title: "Connection Error",
-        description: "Unable to reach AYN. Please try again.",
-        variant: "destructive"
-      });
+      
+      // No toast notification - keep it seamless
     }
   }, [
     userId, 
