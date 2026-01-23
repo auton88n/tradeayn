@@ -889,17 +889,26 @@ serve(async (req) => {
       try {
         console.log('[ayn-unified] Document generation requested');
         
-        // === PREMIUM FEATURE: Check subscription tier ===
-        const { data: subscription } = await supabase
-          .from('user_subscriptions')
-          .select('tier')
-          .eq('user_id', userId)
-          .maybeSingle();
+        // === PREMIUM FEATURE: Check subscription tier AND admin role ===
+        const [{ data: subscription }, { data: adminRole }] = await Promise.all([
+          supabase
+            .from('user_subscriptions')
+            .select('tier')
+            .eq('user_id', userId)
+            .maybeSingle(),
+          supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', userId)
+            .eq('role', 'admin')
+            .maybeSingle()
+        ]);
         
         const userTier = subscription?.tier || 'free';
+        const isAdmin = !!adminRole;
         
-        // Block free tier users
-        if (userTier === 'free' && !isInternalCall) {
+        // Block free tier users (unless they're admin or internal call)
+        if (userTier === 'free' && !isInternalCall && !isAdmin) {
           console.log('[ayn-unified] Free user blocked from document generation');
           const upgradeMessages: Record<string, string> = {
             ar: '📄 إنشاء المستندات هو ميزة مدفوعة.\nقم بالترقية لإنشاء ملفات PDF و Excel احترافية!\n\n[ترقية الآن](/pricing)',
@@ -914,6 +923,10 @@ serve(async (req) => {
             status: 403,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           });
+        }
+        
+        if (isAdmin) {
+          console.log('[ayn-unified] Admin user bypassing premium check for document generation');
         }
         
         // Get structured content from LLM (non-streaming for JSON parsing)
