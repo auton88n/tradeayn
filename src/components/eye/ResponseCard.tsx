@@ -5,7 +5,9 @@ import { cn } from '@/lib/utils';
 import { StreamingMarkdown } from '@/components/eye/StreamingMarkdown';
 import { MessageFormatter } from '@/components/MessageFormatter';
 import { hapticFeedback } from '@/lib/haptics';
-import { Copy, Check, ThumbsUp, ThumbsDown, Brain, Maximize2, X, ChevronDown, Palette } from 'lucide-react';
+import { Copy, Check, ThumbsUp, ThumbsDown, Brain, X, ChevronDown, Palette, FileText, FileSpreadsheet, Download } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useLanguage } from '@/contexts/LanguageContext';
 import {
   Dialog,
   DialogContent,
@@ -30,6 +32,7 @@ interface ResponseCardProps {
 
 const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant = 'inline', showPointer = true }: ResponseCardProps) => {
   const navigate = useNavigate();
+  const { t, direction } = useLanguage();
   const contentRef = useRef<HTMLDivElement>(null);
   const dialogContentRef = useRef<HTMLDivElement>(null);
   const [isScrollable, setIsScrollable] = useState(false);
@@ -61,6 +64,20 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
     if (urlMatch) return urlMatch[1];
     
     return null;
+  }, [combinedContent]);
+
+  // Detect document download link in response
+  const documentLink = useMemo(() => {
+    // Match: 📄 [Title](url) or 📊 [Title](url)
+    const match = combinedContent.match(/[📄📊]\s*\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/);
+    if (!match) return null;
+    
+    const isExcel = combinedContent.includes('📊') || match[2].includes('.xlsx');
+    return {
+      title: match[1],
+      url: match[2],
+      type: isExcel ? 'excel' : 'pdf'
+    };
   }, [combinedContent]);
 
   const handleDesignThis = useCallback(async () => {
@@ -386,6 +403,47 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
               )}
             </div>
           </div>
+
+          {/* Document Download Card */}
+          {documentLink && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={cn(
+                "mx-3 mb-3 p-4 rounded-xl border",
+                "bg-gradient-to-r from-primary/10 via-primary/5 to-transparent",
+                "border-primary/20 hover:border-primary/40 transition-all"
+              )}
+            >
+              <div className={cn(
+                "flex items-center gap-4",
+                direction === 'rtl' && "flex-row-reverse"
+              )}>
+                <div className="p-3 rounded-xl bg-primary/20 shrink-0">
+                  {documentLink.type === 'excel' 
+                    ? <FileSpreadsheet className="w-6 h-6 text-green-500" />
+                    : <FileText className="w-6 h-6 text-primary" />
+                  }
+                </div>
+                <div className={cn("flex-1 min-w-0", direction === 'rtl' && "text-right")}>
+                  <p className="font-semibold text-foreground truncate">
+                    {documentLink.title}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {documentLink.type === 'excel' ? t('document.excelSpreadsheet') : t('document.pdfDocument')} • {t('common.readyToDownload')}
+                  </p>
+                </div>
+                <Button 
+                  onClick={() => window.open(documentLink.url, '_blank')}
+                  className="gap-2 shrink-0"
+                  size="sm"
+                >
+                  <Download className="w-4 h-4" />
+                  {t('common.download')}
+                </Button>
+              </div>
+            </motion.div>
+          )}
         </motion.div>
       </AnimatePresence>
 
