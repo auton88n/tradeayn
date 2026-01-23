@@ -66,18 +66,62 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
     return null;
   }, [combinedContent]);
 
-  // Detect document download link in response
+  // Detect document download link in response - using robust extraction with URL normalization
   const documentLink = useMemo(() => {
-    // Match: 📄 [Title](url) or 📊 [Title](url)
-    const match = combinedContent.match(/[📄📊]\s*\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/);
-    if (!match) return null;
-    
-    const isExcel = combinedContent.includes('📊') || match[2].includes('.xlsx');
-    return {
-      title: match[1],
-      url: match[2],
-      type: isExcel ? 'excel' : 'pdf'
+    // Import the utility inline to avoid circular deps
+    const extractBestDocumentLink = (content: string): {
+      title: string;
+      url: string;
+      type: 'pdf' | 'excel';
+    } | null => {
+      if (!content) return null;
+      
+      const SUPABASE_URL = 'https://dfkoxuokfkttjhfjcecx.supabase.co';
+      
+      // Normalize signed URLs to public URLs
+      const normalizeUrl = (url: string): string => {
+        if (!url) return url;
+        if (url.includes('/storage/v1/object/sign/documents/')) {
+          const match = url.match(/\/storage\/v1\/object\/sign\/documents\/([^?]+)/);
+          if (match) {
+            return `${SUPABASE_URL}/storage/v1/object/public/documents/${match[1]}`;
+          }
+        }
+        if (url.includes('/storage/v1/object/public/') && url.includes('?token=')) {
+          return url.split('?')[0];
+        }
+        return url;
+      };
+      
+      // Match all document links: 📄 [Title](url) or 📊 [Title](url)
+      const regex = /[📄📊]\s*\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
+      const matches: Array<{ title: string; url: string; type: 'pdf' | 'excel' }> = [];
+      
+      let match;
+      while ((match = regex.exec(content)) !== null) {
+        const isExcel = content.slice(Math.max(0, match.index - 5), match.index + 1).includes('📊') 
+                        || match[2].includes('.xlsx');
+        matches.push({
+          title: match[1],
+          url: match[2],
+          type: isExcel ? 'excel' : 'pdf'
+        });
+      }
+      
+      if (matches.length === 0) return null;
+      
+      // Priority: prefer public URLs over signed URLs
+      const publicMatch = matches.find(m => m.url.includes('/storage/v1/object/public/'));
+      if (publicMatch) {
+        return { ...publicMatch, url: normalizeUrl(publicMatch.url) };
+      }
+      
+      // Otherwise take the last match (most recent) and normalize it
+      const lastMatch = matches[matches.length - 1];
+      return { ...lastMatch, url: normalizeUrl(lastMatch.url) };
     };
+    
+    return extractBestDocumentLink(combinedContent);
   }, [combinedContent]);
 
   const handleDesignThis = useCallback(async () => {
@@ -439,7 +483,16 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
                   </p>
                 </div>
                 <Button 
-                  onClick={() => window.open(documentLink.url, '_blank')}
+                  onClick={() => {
+                    // Use anchor-based approach for better browser compatibility
+                    const anchor = document.createElement('a');
+                    anchor.href = documentLink.url;
+                    anchor.target = '_blank';
+                    anchor.rel = 'noopener noreferrer';
+                    document.body.appendChild(anchor);
+                    anchor.click();
+                    document.body.removeChild(anchor);
+                  }}
                   variant="default"
                   size="sm"
                   className="gap-1.5 shrink-0 shadow-sm"
