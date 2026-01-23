@@ -478,9 +478,16 @@ export const useMessages = (
             content: response,
             sender: 'ayn',
             mode_used: selectedMode,
-            attachment_url: null,
-            attachment_name: null,
-            attachment_type: null
+            // Save document URL as attachment for reliable download (source of truth)
+            attachment_url: webhookData?.documentUrl || null,
+            attachment_name: webhookData?.documentUrl 
+              ? (webhookData?.documentTitle || (webhookData?.documentType === 'excel' ? 'Document.xlsx' : 'Document.pdf'))
+              : null,
+            attachment_type: webhookData?.documentUrl 
+              ? (webhookData?.documentType === 'excel' 
+                  ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+                  : 'application/pdf')
+              : null
           }
         ])
       });

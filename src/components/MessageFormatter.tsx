@@ -366,22 +366,47 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
             hr: () => (
               <hr className="my-4 border-gray-200 dark:border-gray-700" />
             ),
-            // Links - handle download URLs specially
+            // Links - normalize Supabase Storage URLs (signed → public)
             a: ({ children, href }) => {
-              // For Supabase signed URLs (documents), open via window.open to avoid encoding issues
-              const isSignedUrl = href?.includes('/storage/v1/object/sign/') || 
-                                  href?.includes('token=');
+              // Normalize Supabase Storage document URLs to prevent "Invalid JWT" errors
+              const normalizeDocumentUrl = (url: string): string => {
+                if (!url) return url;
+                const SUPABASE_URL = 'https://dfkoxuokfkttjhfjcecx.supabase.co';
+                
+                // Convert signed URLs to public URLs for documents bucket
+                if (url.includes('/storage/v1/object/sign/documents/')) {
+                  const match = url.match(/\/storage\/v1\/object\/sign\/documents\/([^?]+)/);
+                  if (match) {
+                    return `${SUPABASE_URL}/storage/v1/object/public/documents/${match[1]}`;
+                  }
+                }
+                // Strip token from public URLs
+                if (url.includes('/storage/v1/object/public/') && url.includes('?token=')) {
+                  return url.split('?')[0];
+                }
+                return url;
+              };
+              
+              const isStorageUrl = href?.includes('/storage/v1/object/');
+              const normalizedHref = isStorageUrl ? normalizeDocumentUrl(href || '') : href;
               
               const handleClick = (e: React.MouseEvent) => {
-                if (isSignedUrl && href) {
+                if (isStorageUrl && normalizedHref) {
                   e.preventDefault();
-                  window.open(href, '_blank', 'noopener,noreferrer');
+                  // Use anchor-based approach for better browser compatibility
+                  const anchor = document.createElement('a');
+                  anchor.href = normalizedHref;
+                  anchor.target = '_blank';
+                  anchor.rel = 'noopener noreferrer';
+                  document.body.appendChild(anchor);
+                  anchor.click();
+                  document.body.removeChild(anchor);
                 }
               };
               
               return (
                 <a 
-                  href={href} 
+                  href={normalizedHref} 
                   target="_blank" 
                   rel="noopener noreferrer"
                   onClick={handleClick}
