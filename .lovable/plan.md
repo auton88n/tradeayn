@@ -1,127 +1,51 @@
 
 
-# Document Generation: Paid-Only + Credit Limits
+## Fix: PDF/Excel Download Not Working
 
-## Overview
+### Root Cause Analysis
+The documents bucket is configured as `public = true` but lacks an RLS SELECT policy to allow anonymous reads from `storage.objects`. When a user clicks the download link, Supabase blocks access because there's no policy granting read permissions.
 
-Implement document generation as a **premium feature** with significant credit costs to prevent abuse and reflect the value of professionally formatted documents.
+**Evidence from database:**
+- `documents` bucket: `public = true` ✓
+- RLS policy for `documents`: **Missing** ✗
+- Other buckets (`avatars`, `generated-images`) have proper SELECT policies
 
----
-
-## Credit Costs
-
-| Document Type | Credit Cost |
-|--------------|-------------|
-| **PDF** | 30 credits |
-| **Excel** | 25 credits |
-
-### Impact by Tier
-
-| Tier | Monthly Credits | Max PDFs/month | Max Excel/month |
-|------|-----------------|----------------|-----------------|
-| **Free** | 50 | ❌ Not allowed | ❌ Not allowed |
-| **Starter** | 200 | 6 PDFs | 8 Excel files |
-| **Pro** | 1,000 | 33 PDFs | 40 Excel files |
-| **Business** | 5,000 | 166 PDFs | 200 Excel files |
+### Solution
+Add an RLS policy to allow public SELECT access on the `documents` bucket, matching the pattern used for other public buckets.
 
 ---
 
-## Technical Changes
+## Implementation Plan
 
-### 1. Backend: `supabase/functions/ayn-unified/index.ts`
+### Step 1: Add Storage RLS Policy via Database Migration
 
-**Add credit cost constants and tier validation:**
+Create a new migration to add the missing SELECT policy:
 
-```typescript
-const DOCUMENT_CREDIT_COST = {
-  pdf: 30,
-  excel: 25
-};
+```sql
+-- Allow public read access to documents bucket
+CREATE POLICY "Public read for documents"
+ON storage.objects FOR SELECT
+USING (bucket_id = 'documents');
 ```
 
-**Add document intent handler with these checks:**
-
-1. Get user's subscription tier from `user_subscriptions` table
-2. Block free tier users with upgrade message
-3. Check if user has enough credits in `user_ai_limits`
-4. Deduct credits after successful document generation
-
-### 2. Backend: `supabase/functions/generate-document/index.ts`
-
-**Add server-side content limits (safety caps):**
-
-- Maximum 12 sections per document
-- Maximum 50 rows per table
-- Truncate if LLM exceeds limits
-
-### 3. Frontend: `src/hooks/useMessages.ts`
-
-**Handle document-specific error responses:**
-
-- 403 status: Show "Upgrade required" toast with pricing link
-- 429 status: Show "Not enough credits" with balance info
-
-### 4. Frontend: `src/contexts/LanguageContext.tsx`
-
-**Add translation keys:**
-
-```text
-English:
-- document.requiresUpgrade: "Document generation requires a paid plan"
-- document.notEnoughCredits: "Not enough credits for this document"
-- document.pdfCost: "PDF documents cost 30 credits"
-- document.excelCost: "Excel sheets cost 25 credits"
-
-Arabic:
-- document.requiresUpgrade: "إنشاء المستندات يتطلب حساباً مدفوعاً"
-- document.notEnoughCredits: "لا يوجد رصيد كافٍ لهذا المستند"
-- document.pdfCost: "مستندات PDF تكلف 30 رصيد"
-- document.excelCost: "جداول Excel تكلف 25 رصيد"
-
-French:
-- document.requiresUpgrade: "La génération de documents nécessite un abonnement"
-- document.notEnoughCredits: "Crédits insuffisants pour ce document"
-- document.pdfCost: "Les PDF coûtent 30 crédits"
-- document.excelCost: "Les Excel coûtent 25 crédits"
-```
+This matches the pattern used for `avatars` and `generated-images` buckets.
 
 ---
 
-## User Experience Examples
+## Technical Details
 
-### Free User
-```text
-User: Create a PDF about blockchain
+| Aspect | Details |
+|--------|---------|
+| **Files Changed** | 1 new migration file |
+| **Bucket Affected** | `documents` |
+| **Policy Type** | SELECT (read-only) |
+| **Access Level** | Public (anyone with the link) |
+| **Risk Level** | Low - documents are already stored with UUIDs making URLs unguessable |
 
-AYN: 📄 Document generation is a premium feature. 
-     Upgrade to create professional PDF and Excel documents!
-```
+### Security Consideration
+Since the user confirmed they want documents to remain public, this policy allows anyone with the full URL to download the file. URLs contain:
+- User UUID folder (`d2ceaad6-af0d-4001-a739-6b57f040e404/`)
+- Unique filename with timestamp (`Document_Name_1769207550146.pdf`)
 
-### Paid User (Insufficient Credits)
-```text
-User: Make a PDF report
-
-AYN: ❌ Not enough credits. PDF documents cost 30 credits, 
-     you have 12 remaining.
-```
-
-### Paid User (Success)
-```text
-User: Create a PDF about AI trends
-
-AYN: ✅ Document created! 
-     📄 [AI Trends Report](download-link)
-     (30 credits deducted)
-```
-
----
-
-## Files to Modify
-
-| File | Changes |
-|------|---------|
-| `supabase/functions/ayn-unified/index.ts` | Add tier check, credit costs (30/25), deduction logic |
-| `supabase/functions/generate-document/index.ts` | Add content hard caps (12 sections, 50 rows) |
-| `src/hooks/useMessages.ts` | Handle 403/429 responses for documents |
-| `src/contexts/LanguageContext.tsx` | Add document translation keys (EN/AR/FR) |
+This makes URLs practically unguessable without prior knowledge.
 
