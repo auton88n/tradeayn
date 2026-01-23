@@ -1,125 +1,490 @@
 
-
-# Graceful AYN Response Handling
+# AYN Document Generation: Stunning Multi-Language PDF & Excel
 
 ## Overview
-Ensure AYN always responds warmly, even during technical difficulties. Instead of showing error messages that make AYN seem broken, we'll provide friendly, natural responses that maintain trust.
 
-## Philosophy
-- Never show "connection error" or "broken" language
-- AYN should feel like a thoughtful friend who occasionally needs a moment
-- Retry silently when possible before showing any message
-- Use warm, conversational language
+Enable AYN to generate beautiful, professional PDF and Excel documents on-demand in **English**, **Arabic (RTL)**, and **French** when users ask naturally in chat. The documents will feature proper text direction, professional typography, and elegant styling.
 
 ---
 
-## Technical Changes
+## What You'll Get
 
-### File: `src/hooks/useMessages.ts`
+### Language-Specific Features
 
-**Change 1: Add Silent Retry Logic (before the fetch call)**
+| Language | PDF Support | Excel Support |
+|----------|-------------|---------------|
+| **English** | LTR layout, professional fonts | Standard columns, left-aligned |
+| **Arabic** | RTL layout, Noto Sans Arabic font, right-aligned text | RTL columns, right-aligned cells |
+| **French** | LTR layout, proper accent handling | French locale formatting |
 
-Wrap the API call with automatic retry (2 attempts) before showing any message to the user:
+### Document Quality
+- Gradient branded headers with AYN logo
+- Professional typography with proper font fallbacks
+- Tables with alternating row colors
+- Page numbers and timestamps
+- Download cards in chat with animated styling
 
-```typescript
-// Silent retry helper - try twice before giving up
-const fetchWithRetry = async (url: string, options: RequestInit, retries = 2): Promise<Response> => {
-  for (let i = 0; i < retries; i++) {
-    try {
-      const response = await fetch(url, options);
-      if (response.ok || response.status === 429) return response;
-    } catch (e) {
-      if (i === retries - 1) throw e;
-      await new Promise(r => setTimeout(r, 1000)); // Wait 1s before retry
-    }
-  }
-  throw new Error('Request failed after retries');
-};
+---
+
+## Architecture
+
+```text
+User: "اعمل لي PDF عن الطاقة المتجددة"
+         │
+         ▼
+┌─────────────────────────────────────────┐
+│           ayn-unified                    │
+│  1. Detect intent = 'document'          │
+│  2. Detect language (ar/en/fr)          │
+│  3. Call LLM for structured content     │
+│  4. Call generate-document function     │
+│  5. Return download link                │
+└─────────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────────┐
+│        generate-document                 │
+│  (New Edge Function)                     │
+│                                          │
+│  • Parse content structure              │
+│  • Detect language → set RTL/fonts      │
+│  • Generate PDF with jsPDF              │
+│  • Generate Excel with xlsx             │
+│  • Upload to Supabase Storage           │
+│  • Return signed URL (7-day expiry)     │
+└─────────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────────┐
+│        ResponseCard.tsx                  │
+│  Detects: 📄 [Title](url)               │
+│  Shows beautiful download card          │
+└─────────────────────────────────────────┘
 ```
 
-**Change 2: Validate Empty Responses with Friendly Fallback (lines 308-311)**
+---
 
-Replace the "i'm processing your request..." fallback with proper validation:
+## Files to Create/Modify
 
+### 1. NEW: `supabase/functions/generate-document/index.ts`
+
+Creates professional PDF and Excel files with multi-language support.
+
+**Key Features:**
+- **Language Detection**: Auto-detect Arabic/French/English from content
+- **RTL Support**: Arabic PDFs render right-to-left with proper text alignment
+- **Font Handling**: Embed Noto Sans Arabic font for perfect Arabic rendering
+- **Professional Styling**: Gradient headers, colored tables, branded footer
+
+**PDF Generation Logic:**
 ```typescript
-const responseContent = webhookData?.content || webhookData?.response || webhookData?.output || '';
+// Language-aware configuration
+const isRTL = language === 'ar';
+const fontFamily = isRTL ? 'NotoSansArabic' : 'Helvetica';
 
-// If response is empty, use a warm fallback instead of showing an error
-const response = responseContent.trim() 
-  ? responseContent 
-  : "Let me think about that differently... Could you try asking again? Sometimes a fresh start helps me give you a better answer! 💭";
+// RTL text positioning
+if (isRTL) {
+  doc.setR2L(true);
+  doc.text(title, pageWidth - margin, y, { align: 'right' });
+} else {
+  doc.text(title, margin, y, { align: 'left' });
+}
+
+// Header with gradient effect (drawn as colored rectangles)
+doc.setFillColor(26, 26, 46); // #1a1a2e
+doc.rect(0, 0, pageWidth, 40, 'F');
+
+// Branded footer with language-aware text
+const footerText = {
+  ar: 'تم إنشاؤه بواسطة AYN',
+  fr: 'Généré par AYN',
+  en: 'Generated by AYN'
+}[language];
 ```
 
-**Change 3: Add Request Timeout with Friendly Message (around line 257)**
-
+**Excel Generation Logic:**
 ```typescript
-const controller = new AbortController();
-const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+// RTL worksheet direction for Arabic
+if (language === 'ar') {
+  ws['!RTL'] = true;
+}
 
-const webhookResponse = await fetchWithRetry(`${SUPABASE_URL}/functions/v1/ayn-unified`, {
-  method: 'POST',
-  signal: controller.signal,
-  headers: {...},
-  body: JSON.stringify({...})
-});
-
-clearTimeout(timeoutId);
+// Column headers in correct language
+const headers = {
+  ar: ['العنوان', 'القيمة', 'الوحدة'],
+  fr: ['Titre', 'Valeur', 'Unité'],
+  en: ['Title', 'Value', 'Unit']
+}[language];
 ```
 
-**Change 4: Warm Error Messages (lines 484-501)**
+### 2. MODIFY: `supabase/functions/ayn-unified/index.ts`
 
-Replace cold error messages with friendly, AYN-like responses:
+**Change 1: Add document intent detection (in detectIntent function)**
 
 ```typescript
-} catch (error) {
-  setIsTyping(false);
+// Document generation keywords in all languages
+const documentKeywords = [
+  // English
+  'create pdf', 'make pdf', 'generate pdf', 'pdf report', 'pdf document',
+  'create excel', 'make excel', 'excel sheet', 'spreadsheet', 'xlsx',
+  'export as', 'make a report', 'generate report', 'document about',
+  // Arabic
+  'اعمل pdf', 'انشئ pdf', 'ملف pdf', 'تقرير pdf', 'وثيقة',
+  'اعمل اكسل', 'جدول بيانات', 'ملف اكسل', 'تقرير عن',
+  // French
+  'créer pdf', 'faire pdf', 'rapport pdf', 'document pdf',
+  'créer excel', 'feuille excel', 'tableur', 'rapport sur'
+];
 
-  const isTimeout = error instanceof Error && error.name === 'AbortError';
-  
-  // Friendly messages that don't blame the system
-  const friendlyResponses = isTimeout ? [
-    "I'm taking a bit longer to think this through. Want to try asking in a simpler way? I'd love to help! ✨",
-    "That's a deep question! Let me catch up - could you try sending it again? 💫"
-  ] : [
-    "I got a little distracted there! Could you send that again? I'm all ears now 👂",
-    "Let's try that again - I want to make sure I give you my best answer! 🌟",
-    "Hmm, let me reset my thoughts. Could you ask me one more time? 💭"
-  ];
-  
-  const randomMessage = friendlyResponses[Math.floor(Math.random() * friendlyResponses.length)];
-  
-  const errorMessage: Message = {
-    id: (Date.now() + 1).toString(),
-    content: randomMessage,
-    sender: 'ayn',
-    timestamp: new Date(),
-    status: 'sent' // Use 'sent' not 'error' - looks normal to user
-  };
+if (documentKeywords.some(kw => lower.includes(kw))) return 'document';
+```
 
-  setMessages(prev => [...prev, errorMessage]);
-  
-  // No toast notification - keep it seamless
+**Change 2: Add document system prompt (in buildSystemPrompt function)**
+
+```typescript
+if (intent === 'document') {
+  return `${basePrompt}
+
+DOCUMENT GENERATION MODE:
+You are creating structured content for a professional document.
+RESPOND ONLY WITH VALID JSON in this exact format:
+
+{
+  "type": "pdf" or "excel",
+  "language": "ar" or "en" or "fr",
+  "title": "Document Title",
+  "sections": [
+    { "heading": "Section Name", "content": "Paragraph text..." },
+    { "heading": "Data Section", "table": { 
+      "headers": ["Col1", "Col2"], 
+      "rows": [["Value1", "Value2"], ...] 
+    }}
+  ]
+}
+
+IMPORTANT:
+- Match the language of the user's request
+- For Arabic: use proper Arabic text, right-to-left formatting will be handled
+- For French: use proper accents (é, è, ê, etc.)
+- Create comprehensive, professional content
+- Include at least 3-5 sections with real, valuable information`;
 }
 ```
 
+**Change 3: Add document generation handler (in main serve function)**
+
+```typescript
+// After detecting document intent
+if (intent === 'document') {
+  // Get structured content from LLM
+  const llmResponse = await callWithFallback('chat', messages, false, supabase, userId);
+  const content = llmResponse.response.content;
+  
+  // Parse JSON from response
+  let documentData;
+  try {
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    documentData = JSON.parse(jsonMatch[0]);
+  } catch {
+    return new Response(JSON.stringify({
+      content: "I'll help you create that document! Could you be more specific about what you'd like in it?",
+      intent: 'document'
+    }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  }
+  
+  // Call generate-document function
+  const docResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/generate-document`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      ...documentData,
+      userId
+    })
+  });
+  
+  const { downloadUrl, filename } = await docResponse.json();
+  
+  // Return friendly response with download link
+  const responseMessages = {
+    ar: `تم إنشاء المستند بنجاح! 📄 [${documentData.title}](${downloadUrl})`,
+    fr: `Document créé avec succès! 📄 [${documentData.title}](${downloadUrl})`,
+    en: `Document created successfully! 📄 [${documentData.title}](${downloadUrl})`
+  };
+  
+  return new Response(JSON.stringify({
+    content: responseMessages[documentData.language || 'en'],
+    intent: 'document',
+    documentUrl: downloadUrl
+  }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+}
+```
+
+### 3. MODIFY: `src/components/eye/ResponseCard.tsx`
+
+Add beautiful download card detection and rendering.
+
+**Add new import and detection logic:**
+```typescript
+import { FileText, Download, FileSpreadsheet } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
+
+// Inside component, add document link detection
+const documentLink = useMemo(() => {
+  // Match: 📄 [Title](url) or 📊 [Title](url)
+  const match = combinedContent.match(/📄|📊\s*\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/);
+  if (!match) return null;
+  
+  const isExcel = combinedContent.includes('📊') || match[2].includes('.xlsx');
+  return {
+    title: match[1],
+    url: match[2],
+    type: isExcel ? 'excel' : 'pdf'
+  };
+}, [combinedContent]);
+```
+
+**Add download card UI (after the action bar):**
+```typescript
+{documentLink && (
+  <motion.div
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    className={cn(
+      "mt-4 p-4 rounded-xl border",
+      "bg-gradient-to-r from-primary/10 via-primary/5 to-transparent",
+      "border-primary/20 hover:border-primary/40 transition-all"
+    )}
+  >
+    <div className={cn(
+      "flex items-center gap-4",
+      direction === 'rtl' && "flex-row-reverse"
+    )}>
+      <div className="p-3 rounded-xl bg-primary/20 shrink-0">
+        {documentLink.type === 'excel' 
+          ? <FileSpreadsheet className="w-6 h-6 text-green-500" />
+          : <FileText className="w-6 h-6 text-primary" />
+        }
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="font-semibold text-foreground truncate">
+          {documentLink.title}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          {documentLink.type === 'excel' ? 'Excel Spreadsheet' : 'PDF Document'} • {t('common.readyToDownload')}
+        </p>
+      </div>
+      <Button 
+        onClick={() => window.open(documentLink.url, '_blank')}
+        className="gap-2 shrink-0"
+        size="sm"
+      >
+        <Download className="w-4 h-4" />
+        {t('common.download')}
+      </Button>
+    </div>
+  </motion.div>
+)}
+```
+
+### 4. MODIFY: `src/contexts/LanguageContext.tsx`
+
+Add translation keys for document feature:
+
+```typescript
+// English translations
+'document.generating': 'Generating your document...',
+'document.ready': 'Document ready!',
+'document.downloadPdf': 'Download PDF',
+'document.downloadExcel': 'Download Excel',
+'common.readyToDownload': 'Ready to download',
+'common.download': 'Download',
+
+// Arabic translations
+'document.generating': 'جاري إنشاء المستند...',
+'document.ready': 'المستند جاهز!',
+'document.downloadPdf': 'تحميل PDF',
+'document.downloadExcel': 'تحميل Excel',
+'common.readyToDownload': 'جاهز للتحميل',
+'common.download': 'تحميل',
+
+// French translations
+'document.generating': 'Génération du document...',
+'document.ready': 'Document prêt!',
+'document.downloadPdf': 'Télécharger PDF',
+'document.downloadExcel': 'Télécharger Excel',
+'common.readyToDownload': 'Prêt à télécharger',
+'common.download': 'Télécharger',
+```
+
+### 5. MODIFY: `supabase/config.toml`
+
+Add function configuration:
+```toml
+[functions.generate-document]
+verify_jwt = false
+```
+
+### 6. MODIFY: `index.html`
+
+Add Arabic font support for proper rendering:
+```html
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+```
+
 ---
 
-## Summary of Changes
+## PDF Visual Design
 
-| File | Change |
-|------|--------|
-| `src/hooks/useMessages.ts` | Add silent retry (2 attempts) before showing anything |
-| `src/hooks/useMessages.ts` | Add 30s timeout with AbortController |
-| `src/hooks/useMessages.ts` | Replace empty response fallback with warm message |
-| `src/hooks/useMessages.ts` | Replace error messages with friendly, randomized responses |
-| `src/hooks/useMessages.ts` | Remove error toasts - keep experience seamless |
+### English/French (LTR)
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│ ████████████████████████████████████████████████████████████████│
+│ █   ⬤ AYN                    RESEARCH REPORT                  █│
+│ █                              January 23, 2026                █│
+│ ████████████████████████████████████████████████████████████████│
+│                                                                  │
+│  EXECUTIVE SUMMARY                                              │
+│  ─────────────────────────────────────────────────────────────  │
+│  This comprehensive report examines...                          │
+│                                                                  │
+│  KEY FINDINGS                                                    │
+│  ─────────────────────────────────────────────────────────────  │
+│  ┌────────────────────────────────────────────────────────┐    │
+│  │ Category     │ Value        │ Growth    │ Status      │    │
+│  ├────────────────────────────────────────────────────────┤    │
+│  │ Solar        │ 35%          │ +18%      │ Excellent   │    │
+│  │ Wind         │ 28%          │ +12%      │ Strong      │    │
+│  └────────────────────────────────────────────────────────┘    │
+│                                                                  │
+│ ─────────────────────────────────────────────────────────────── │
+│  Generated by AYN                              Page 1 of 3      │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Arabic (RTL)
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│ ████████████████████████████████████████████████████████████████│
+│ █                  تقرير بحثي                    AYN ⬤        █│
+│ █                ٢٣ يناير ٢٠٢٦                                 █│
+│ ████████████████████████████████████████████████████████████████│
+│                                                                  │
+│                                              الملخص التنفيذي    │
+│  ─────────────────────────────────────────────────────────────  │
+│                          ...يتناول هذا التقرير الشامل           │
+│                                                                  │
+│                                              النتائج الرئيسية    │
+│  ─────────────────────────────────────────────────────────────  │
+│    ┌────────────────────────────────────────────────────────┐  │
+│    │ الحالة      │ النمو      │ القيمة     │ الفئة        │  │
+│    ├────────────────────────────────────────────────────────┤  │
+│    │ ممتاز      │ +١٨٪       │ ٣٥٪        │ الطاقة الشمسية│  │
+│    │ قوي        │ +١٢٪       │ ٢٨٪        │ طاقة الرياح   │  │
+│    └────────────────────────────────────────────────────────┘  │
+│                                                                  │
+│ ─────────────────────────────────────────────────────────────── │
+│  ٣ من ١ صفحة                              تم إنشاؤه بواسطة AYN │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Example Conversations
+
+### Arabic Request
+```
+أنت: اعمل لي PDF تقرير عن الذكاء الاصطناعي في السعودية
+
+AYN: تم إنشاء التقرير بنجاح! 
+
+     📄 [تقرير الذكاء الاصطناعي في المملكة العربية السعودية](https://...)
+     
+     ┌────────────────────────────────────────────────┐
+     │  📥 تقرير الذكاء الاصطناعي                    │
+     │  مستند PDF • جاهز للتحميل                     │
+     │                              [تحميل]          │
+     └────────────────────────────────────────────────┘
+```
+
+### French Request
+```
+Vous: Créer un PDF sur les tendances du marché français
+
+AYN: Document créé avec succès!
+
+     📄 [Rapport sur les Tendances du Marché Français](https://...)
+     
+     ┌────────────────────────────────────────────────┐
+     │  📥 Tendances du Marché Français              │
+     │  Document PDF • Prêt à télécharger            │
+     │                        [Télécharger]          │
+     └────────────────────────────────────────────────┘
+```
+
+### English Request
+```
+You: Make an Excel sheet comparing AI companies
+
+AYN: Here's your comparison spreadsheet!
+
+     📊 [AI Companies Comparison](https://...)
+     
+     ┌────────────────────────────────────────────────┐
+     │  📥 AI Companies Comparison                   │
+     │  Excel Spreadsheet • Ready to download        │
+     │                        [Download]             │
+     └────────────────────────────────────────────────┘
+```
+
+---
+
+## Technical Implementation: RTL Arabic PDF
+
+The key to perfect Arabic PDFs is proper RTL handling in jsPDF:
+
+```typescript
+// 1. Load Noto Sans Arabic font (embedded as base64 or via URL)
+const arabicFont = await fetch('https://fonts.gstatic.com/s/notosansarabic/...');
+doc.addFileToVFS('NotoSansArabic.ttf', arabicFontBase64);
+doc.addFont('NotoSansArabic.ttf', 'NotoSansArabic', 'normal');
+
+// 2. Enable RTL mode
+doc.setR2L(true);
+
+// 3. Position text from right side
+const pageWidth = doc.internal.pageSize.getWidth();
+doc.setFont('NotoSansArabic');
+doc.text(arabicTitle, pageWidth - margin, yPosition, { align: 'right' });
+
+// 4. Draw tables with RTL column order
+const reversedHeaders = headers.reverse();
+const reversedRows = rows.map(row => row.reverse());
+```
+
+---
+
+## Summary of All Changes
+
+| File | Action | Purpose |
+|------|--------|---------|
+| `supabase/functions/generate-document/index.ts` | **Create** | PDF/Excel generation with RTL/multi-language |
+| `supabase/functions/ayn-unified/index.ts` | **Modify** | Add document intent + generation routing |
+| `src/components/eye/ResponseCard.tsx` | **Modify** | Add download card UI with RTL support |
+| `src/contexts/LanguageContext.tsx` | **Modify** | Add translation keys for document feature |
+| `supabase/config.toml` | **Modify** | Add function configuration |
+| `index.html` | **Modify** | Add Noto Sans Arabic font |
 
 ---
 
 ## Result
-- AYN silently retries once before showing any message
-- Empty responses get a friendly "let's try again" message
-- Timeouts feel like AYN is thinking hard, not broken
-- No error toasts or "connection error" language
-- Users feel like they're talking to a friendly AI, not a broken system
 
+After implementation:
+- Users can request PDFs/Excel in English, Arabic, or French naturally
+- Arabic documents render perfectly with RTL layout and proper fonts
+- French documents include proper accent handling
+- Beautiful download cards appear in chat with language-aware labels
+- Documents are stored securely with 7-day expiring URLs
+- Professional styling with AYN branding in all languages
