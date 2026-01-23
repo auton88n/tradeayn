@@ -411,34 +411,40 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
               animate={{ opacity: 1, y: 0 }}
               className={cn(
                 "mx-3 mb-3 p-4 rounded-xl border",
-                "bg-gradient-to-r from-primary/10 via-primary/5 to-transparent",
-                "border-primary/20 hover:border-primary/40 transition-all"
+                "bg-gradient-to-br from-muted/80 via-muted/40 to-background",
+                "border-border hover:border-primary/40 transition-all shadow-sm"
               )}
             >
               <div className={cn(
-                "flex items-center gap-4",
+                "flex items-center gap-3",
                 direction === 'rtl' && "flex-row-reverse"
               )}>
-                <div className="p-3 rounded-xl bg-primary/20 shrink-0">
+                <div className={cn(
+                  "p-2.5 rounded-lg shrink-0",
+                  documentLink.type === 'excel' 
+                    ? "bg-green-500/15" 
+                    : "bg-primary/15"
+                )}>
                   {documentLink.type === 'excel' 
-                    ? <FileSpreadsheet className="w-6 h-6 text-green-500" />
-                    : <FileText className="w-6 h-6 text-primary" />
+                    ? <FileSpreadsheet className="w-5 h-5 text-green-500" />
+                    : <FileText className="w-5 h-5 text-primary" />
                   }
                 </div>
                 <div className={cn("flex-1 min-w-0", direction === 'rtl' && "text-right")}>
-                  <p className="font-semibold text-foreground truncate">
+                  <p className="font-medium text-sm text-foreground line-clamp-1">
                     {documentLink.title}
                   </p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     {documentLink.type === 'excel' ? t('document.excelSpreadsheet') : t('document.pdfDocument')} • {t('common.readyToDownload')}
                   </p>
                 </div>
                 <Button 
                   onClick={() => window.open(documentLink.url, '_blank')}
-                  className="gap-2 shrink-0"
+                  variant="default"
                   size="sm"
+                  className="gap-1.5 shrink-0 shadow-sm"
                 >
-                  <Download className="w-4 h-4" />
+                  <Download className="w-3.5 h-3.5" />
                   {t('common.download')}
                 </Button>
               </div>
