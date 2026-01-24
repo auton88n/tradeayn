@@ -54,6 +54,23 @@ export const ErrorCodes = {
   // Engineering Errors
   CALCULATION_FAILED: 'CALCULATION_FAILED',
   DESIGN_SAVE_FAILED: 'DESIGN_SAVE_FAILED',
+  INVALID_INPUT: 'INVALID_INPUT',
+  BOUNDARY_INVALID: 'BOUNDARY_INVALID',
+  EXPORT_FAILED: 'EXPORT_FAILED',
+  
+  // Subscription Errors
+  CHECKOUT_FAILED: 'CHECKOUT_FAILED',
+  PORTAL_FAILED: 'PORTAL_FAILED',
+  INVALID_TIER: 'INVALID_TIER',
+  
+  // Session Errors
+  SESSION_REVOKE_FAILED: 'SESSION_REVOKE_FAILED',
+  SIGN_OUT_ALL_FAILED: 'SIGN_OUT_ALL_FAILED',
+  
+  // Ticket Errors
+  TICKET_LOAD_FAILED: 'TICKET_LOAD_FAILED',
+  TICKET_MESSAGE_FAILED: 'TICKET_MESSAGE_FAILED',
+  TICKET_DELETE_FAILED: 'TICKET_DELETE_FAILED',
   
   // Generic/Fallback Errors
   GENERIC: 'GENERIC',
@@ -224,6 +241,56 @@ const errorMessages: Record<ErrorCode, ErrorMessage> = {
   [ErrorCodes.DESIGN_SAVE_FAILED]: {
     title: "Couldn't Save Design",
     description: "Your design wasn't saved. Please try again.",
+  },
+  [ErrorCodes.INVALID_INPUT]: {
+    title: 'Invalid Input',
+    description: 'Please check your values and try again.',
+  },
+  [ErrorCodes.BOUNDARY_INVALID]: {
+    title: 'Invalid Boundary',
+    description: 'Please define at least 3 boundary points.',
+  },
+  [ErrorCodes.EXPORT_FAILED]: {
+    title: 'Export Failed',
+    description: "We couldn't export your data. Please try again.",
+  },
+
+  // Subscription Errors
+  [ErrorCodes.CHECKOUT_FAILED]: {
+    title: 'Checkout Unavailable',
+    description: "We couldn't start checkout. Please try again.",
+  },
+  [ErrorCodes.PORTAL_FAILED]: {
+    title: 'Portal Unavailable',
+    description: "We couldn't open subscription management. Please try again.",
+  },
+  [ErrorCodes.INVALID_TIER]: {
+    title: 'Invalid Tier',
+    description: 'Please select a valid subscription tier.',
+  },
+
+  // Session Errors
+  [ErrorCodes.SESSION_REVOKE_FAILED]: {
+    title: "Couldn't Revoke Session",
+    description: 'The session revocation failed. Please try again.',
+  },
+  [ErrorCodes.SIGN_OUT_ALL_FAILED]: {
+    title: "Couldn't Sign Out All Devices",
+    description: 'Please try again or contact support.',
+  },
+
+  // Ticket Errors
+  [ErrorCodes.TICKET_LOAD_FAILED]: {
+    title: "Couldn't Load Ticket",
+    description: 'Unable to load ticket details. Please try again.',
+  },
+  [ErrorCodes.TICKET_MESSAGE_FAILED]: {
+    title: "Couldn't Send Message",
+    description: "Your message wasn't sent. Please try again.",
+  },
+  [ErrorCodes.TICKET_DELETE_FAILED]: {
+    title: "Couldn't Delete Ticket",
+    description: "The ticket wasn't deleted. Please try again.",
   },
 
   // Generic/Fallback Errors

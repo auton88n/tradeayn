@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabaseApi } from '@/lib/supabaseApi';
 import { useToast } from '@/hooks/use-toast';
+import { getErrorMessage, ErrorCodes } from '@/lib/errorMessages';
 
 export interface UserSettings {
   id: string;
@@ -87,9 +88,10 @@ export const useUserSettings = (userId: string, accessToken?: string) => {
       }
     } catch (error) {
       console.error('Error fetching settings:', error);
+      const errMsg = getErrorMessage(ErrorCodes.DATA_LOAD_FAILED);
       toast({
-        title: 'Error',
-        description: 'Failed to load settings',
+        title: errMsg.title,
+        description: errMsg.description,
         variant: 'destructive',
       });
     } finally {
@@ -139,9 +141,10 @@ export const useUserSettings = (userId: string, accessToken?: string) => {
       });
     } catch (error) {
       console.error('Error updating settings:', error);
+      const errMsg = getErrorMessage(ErrorCodes.SETTINGS_SAVE_FAILED);
       toast({
-        title: 'Error',
-        description: 'Failed to update settings',
+        title: errMsg.title,
+        description: errMsg.description,
         variant: 'destructive',
       });
     } finally {
@@ -165,9 +168,10 @@ export const useUserSettings = (userId: string, accessToken?: string) => {
       });
     } catch (error) {
       console.error('Error revoking session:', error);
+      const errMsg = getErrorMessage(ErrorCodes.SESSION_REVOKE_FAILED);
       toast({
-        title: 'Error',
-        description: 'Failed to revoke session',
+        title: errMsg.title,
+        description: errMsg.description,
         variant: 'destructive',
       });
     }
@@ -192,9 +196,10 @@ export const useUserSettings = (userId: string, accessToken?: string) => {
       });
     } catch (error) {
       console.error('Error signing out all devices:', error);
+      const errMsg = getErrorMessage(ErrorCodes.SIGN_OUT_ALL_FAILED);
       toast({
-        title: 'Error',
-        description: 'Failed to sign out all devices',
+        title: errMsg.title,
+        description: errMsg.description,
         variant: 'destructive',
       });
     }

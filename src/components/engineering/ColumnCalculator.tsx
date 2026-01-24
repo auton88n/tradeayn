@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import ColumnVisualization3D from './ColumnVisualization3D';
 import { useEngineeringHistory } from '@/hooks/useEngineeringHistory';
 import { calculateColumn } from '@/lib/engineeringCalculations';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ColumnCalculatorProps {
   onCalculate: (result: any) => void;
@@ -26,6 +27,7 @@ const ColumnCalculator: React.FC<ColumnCalculatorProps> = ({
   userId,
   onInputChange 
 }) => {
+  const { t } = useLanguage();
   const { saveCalculation } = useEngineeringHistory(userId);
   const [inputs, setInputs] = useState({
     axialLoad: 1500,
@@ -74,10 +76,10 @@ const ColumnCalculator: React.FC<ColumnCalculatorProps> = ({
         timestamp: new Date()
       });
 
-      toast.success('Column design calculated successfully!');
+      toast.success(t('common.success'));
     } catch (error) {
       console.error('Calculation error:', error);
-      toast.error('Calculation failed. Please try again.');
+      toast.error(t('error.calculationFailedDesc'));
     } finally {
       setIsCalculating(false);
     }

@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { supabaseApi } from '@/lib/supabaseApi';
 import { toast } from 'sonner';
 import imageCompression from 'browser-image-compression';
+import { getErrorMessage, ErrorCodes } from '@/lib/errorMessages';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
@@ -17,12 +18,12 @@ export const useAvatarUpload = ({ userId, accessToken }: UseAvatarUploadOptions)
 
   const validateImage = (file: File): boolean => {
     if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-      toast.error('Please upload a valid image (JPG, PNG, or WebP)');
+      toast.error(getErrorMessage(ErrorCodes.UPLOAD_INVALID_TYPE).description);
       return false;
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      toast.error('Image size must be less than 5MB');
+      toast.error(getErrorMessage(ErrorCodes.UPLOAD_TOO_LARGE).description);
       return false;
     }
 
@@ -51,7 +52,7 @@ export const useAvatarUpload = ({ userId, accessToken }: UseAvatarUploadOptions)
     }
 
     if (!userId || !accessToken) {
-      toast.error('You must be logged in to upload an avatar');
+      toast.error(getErrorMessage(ErrorCodes.AUTH_SESSION_EXPIRED).description);
       return null;
     }
 
@@ -87,7 +88,7 @@ export const useAvatarUpload = ({ userId, accessToken }: UseAvatarUploadOptions)
 
       if (uploadError) {
         console.error('Upload error:', uploadError);
-        toast.error('Failed to upload avatar');
+        toast.error(getErrorMessage(ErrorCodes.UPLOAD_FAILED).description);
         return null;
       }
 
@@ -107,7 +108,7 @@ export const useAvatarUpload = ({ userId, accessToken }: UseAvatarUploadOptions)
       return publicUrl;
     } catch (error) {
       console.error('Avatar upload error:', error);
-      toast.error('An error occurred while uploading');
+      toast.error(getErrorMessage(ErrorCodes.UPLOAD_FAILED).description);
       return null;
     } finally {
       setIsUploading(false);
@@ -116,7 +117,7 @@ export const useAvatarUpload = ({ userId, accessToken }: UseAvatarUploadOptions)
 
   const removeAvatar = async (): Promise<boolean> => {
     if (!userId || !accessToken) {
-      toast.error('You must be logged in');
+      toast.error(getErrorMessage(ErrorCodes.AUTH_SESSION_EXPIRED).description);
       return false;
     }
 
@@ -145,7 +146,7 @@ export const useAvatarUpload = ({ userId, accessToken }: UseAvatarUploadOptions)
       return true;
     } catch (error) {
       console.error('Avatar removal error:', error);
-      toast.error('An error occurred');
+      toast.error(getErrorMessage(ErrorCodes.GENERIC).description);
       return false;
     } finally {
       setIsUploading(false);

@@ -9,6 +9,7 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { MessageFormatter } from '@/components/MessageFormatter';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface UserTicketDetailProps {
   ticketId: string;
@@ -48,6 +49,7 @@ const statusLabels: Record<string, string> = {
 };
 
 export function UserTicketDetail({ ticketId, onBack }: UserTicketDetailProps) {
+  const { t } = useLanguage();
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [messages, setMessages] = useState<TicketMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
@@ -96,11 +98,11 @@ export function UserTicketDetail({ ticketId, onBack }: UserTicketDetailProps) {
           .eq('id', ticketId);
         
         // Show in-app notification that they have a new reply
-        toast.info('You have a new reply from the support team');
+        toast.info(t('common.success'));
       }
     } catch (error) {
       console.error('Error fetching ticket:', error);
-      toast.error('Failed to load ticket');
+      toast.error(t('error.ticketLoadFailedDesc'));
     } finally {
       setLoading(false);
     }
@@ -135,10 +137,10 @@ export function UserTicketDetail({ ticketId, onBack }: UserTicketDetailProps) {
 
       setNewMessage('');
       fetchTicketData();
-      toast.success('Message sent');
+      toast.success(t('common.success'));
     } catch (error) {
       console.error('Error sending message:', error);
-      toast.error('Failed to send message');
+      toast.error(t('error.ticketMessageFailedDesc'));
     } finally {
       setSending(false);
     }
@@ -156,11 +158,11 @@ export function UserTicketDetail({ ticketId, onBack }: UserTicketDetailProps) {
 
       if (error) throw error;
 
-      toast.success('Ticket deleted');
+      toast.success(t('common.success'));
       onBack();
     } catch (error) {
       console.error('Error deleting ticket:', error);
-      toast.error('Failed to delete ticket');
+      toast.error(t('error.ticketDeleteFailedDesc'));
     } finally {
       setClosing(false);
     }

@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
 import { useEngineeringHistory } from '@/hooks/useEngineeringHistory';
 import { calculateSlab } from '@/lib/engineeringCalculations';
 import { InputSection } from './ui/InputSection';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface SlabCalculatorProps {
   onCalculate: (result: {
@@ -54,6 +55,7 @@ const supportConditions = [
 ];
 
 export const SlabCalculator = ({ onCalculate, isCalculating, setIsCalculating, userId }: SlabCalculatorProps) => {
+  const { t } = useLanguage();
   const { saveCalculation } = useEngineeringHistory(userId);
   
   const [formData, setFormData] = useState({
@@ -80,19 +82,19 @@ export const SlabCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
     const cover = parseFloat(formData.cover);
 
     if (isNaN(longSpan) || longSpan <= 0) {
-      toast.error('Please enter a valid long span');
+      toast.error(t('error.invalidInputDesc'));
       return;
     }
     if (isNaN(shortSpan) || shortSpan <= 0) {
-      toast.error('Please enter a valid short span');
+      toast.error(t('error.invalidInputDesc'));
       return;
     }
     if (isNaN(deadLoad) || deadLoad < 0) {
-      toast.error('Please enter a valid dead load');
+      toast.error(t('error.invalidInputDesc'));
       return;
     }
     if (isNaN(liveLoad) || liveLoad < 0) {
-      toast.error('Please enter a valid live load');
+      toast.error(t('error.invalidInputDesc'));
       return;
     }
 
@@ -140,10 +142,10 @@ export const SlabCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
         );
       }
 
-      toast.success('Slab calculation complete!');
+      toast.success(t('common.success'));
     } catch (err) {
       console.error('Calculation error:', err);
-      toast.error('Calculation failed. Please try again.');
+      toast.error(t('error.calculationFailedDesc'));
     } finally {
       setIsCalculating(false);
     }

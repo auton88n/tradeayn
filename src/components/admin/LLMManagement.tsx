@@ -20,6 +20,7 @@ import {
   Trophy,
   Medal
 } from 'lucide-react';
+import { getErrorMessage, ErrorCodes } from '@/lib/errorMessages';
 
 interface LLMModel {
   id: string;
@@ -106,7 +107,7 @@ export function LLMManagement() {
       setHealthData(health);
     } catch (error) {
       console.error('Error fetching models:', error);
-      toast.error('Failed to load LLM models');
+      toast.error(getErrorMessage(ErrorCodes.DATA_LOAD_FAILED).description);
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -132,7 +133,7 @@ export function LLMManagement() {
       toast.success(`Model ${enabled ? 'enabled' : 'disabled'}`);
     } catch (error) {
       console.error('Error toggling model:', error);
-      toast.error('Failed to update model');
+      toast.error(getErrorMessage(ErrorCodes.SETTINGS_SAVE_FAILED).description);
     }
   };
 

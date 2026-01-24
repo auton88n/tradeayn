@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
 import { useEngineeringHistory } from '@/hooks/useEngineeringHistory';
 import { calculateRetainingWall } from '@/lib/engineeringCalculations';
 import { InputSection } from './ui/InputSection';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface RetainingWallCalculatorProps {
   onCalculate: (result: {
@@ -55,6 +56,7 @@ export const RetainingWallCalculator = ({
   setIsCalculating, 
   userId 
 }: RetainingWallCalculatorProps) => {
+  const { t } = useLanguage();
   const { saveCalculation } = useEngineeringHistory(userId);
   
   const [formData, setFormData] = useState({
@@ -112,11 +114,11 @@ export const RetainingWallCalculator = ({
     const backfillSlope = parseFloat(formData.backfillSlope);
 
     if (isNaN(wallHeight) || wallHeight <= 0) {
-      toast.error('Please enter a valid wall height');
+      toast.error(t('error.invalidInputDesc'));
       return;
     }
     if (isNaN(baseWidth) || baseWidth <= 0) {
-      toast.error('Please enter a valid base width');
+      toast.error(t('error.invalidInputDesc'));
       return;
     }
 
@@ -168,10 +170,10 @@ export const RetainingWallCalculator = ({
         await saveCalculation('retaining_wall', result.inputs, result.outputs);
       }
 
-      toast.success('Retaining wall calculation complete!');
+      toast.success(t('common.success'));
     } catch (err) {
       console.error('Calculation error:', err);
-      toast.error('Calculation failed. Please try again.');
+      toast.error(t('error.calculationFailedDesc'));
     } finally {
       setIsCalculating(false);
     }

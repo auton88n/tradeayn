@@ -33,6 +33,7 @@ import { BoundaryPointsTable } from './parking/boundary/BoundaryPointsTable';
 import { BoundaryPreview } from './parking/boundary/BoundaryPreview';
 import { BoundaryMetrics } from './parking/boundary/BoundaryMetrics';
 import { calculateBoundaryMetrics, getBoundingBox } from './parking/utils/geometry';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ParkingSpace {
   id: string;
@@ -173,6 +174,7 @@ const UnifiedDesigner: React.FC<{
   setViewMode,
   userId,
 }) => {
+  const { t } = useLanguage();
   const session = useEngineeringSessionOptional();
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
   const { boundaryPoints } = useParkingSite();
@@ -195,8 +197,8 @@ const UnifiedDesigner: React.FC<{
       if (inputs.siteMode === 'polygon') {
         if (!polygonMetrics.isValid || boundaryPoints.length < 3) {
           toast({
-            title: "Invalid Boundary",
-            description: polygonMetrics.validationError || "Please define at least 3 boundary points",
+            title: t('error.boundaryInvalid'),
+            description: polygonMetrics.validationError || t('error.boundaryInvalidDesc'),
             variant: "destructive",
           });
           setIsGenerating(false);
@@ -344,14 +346,14 @@ const UnifiedDesigner: React.FC<{
       });
 
       toast({
-        title: "Layout Generated",
+        title: t('common.success'),
         description: `${spaces.length} parking spaces created with ${efficiency}% efficiency`,
       });
     } catch (err) {
       console.error('Layout generation error:', err);
       toast({
-        title: "Generation Failed",
-        description: "Could not generate parking layout",
+        title: t('error.calculationFailed'),
+        description: t('error.calculationFailedDesc'),
         variant: "destructive",
       });
     } finally {
@@ -412,10 +414,10 @@ const UnifiedDesigner: React.FC<{
       URL.revokeObjectURL(url);
       
       session?.trackExport('dxf');
-      toast({ title: "DXF Exported", description: "Drawing downloaded successfully" });
+      toast({ title: t('common.success'), description: t('common.readyToDownload') });
     } catch (err) {
       console.error('DXF export error:', err);
-      toast({ title: "Export Failed", description: "Could not generate DXF file", variant: "destructive" });
+      toast({ title: t('error.exportFailed'), description: t('error.exportFailedDesc'), variant: "destructive" });
     }
   };
 
