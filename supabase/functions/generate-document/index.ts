@@ -281,7 +281,8 @@ async function generatePDF(data: DocumentRequest): Promise<Uint8Array> {
   // Add final footer
   addFooter(doc, pageWidth, pageHeight, margin, data.language, isRTL);
   
-  return doc.output('arraybuffer') as unknown as Uint8Array;
+  const arrayBuffer = doc.output('arraybuffer');
+  return new Uint8Array(arrayBuffer);
 }
 
 function addFooter(
