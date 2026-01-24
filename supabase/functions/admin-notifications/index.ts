@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
+import { Resend } from "npm:resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
 
 const corsHeaders = {
@@ -391,41 +391,28 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const approvalSecret = Deno.env.get("APPROVAL_TOKEN_SECRET");
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    if (!resendApiKey) {
+      console.error("RESEND_API_KEY not configured");
+      return new Response(
+        JSON.stringify({ error: "RESEND_API_KEY not configured" }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    const resend = new Resend(resendApiKey);
     const data: NotificationRequest = await req.json();
     console.log("Notification type:", data.type);
 
     // Special handling for maintenance announcements - send to all users
     if (data.type === 'maintenance_announcement') {
-      const smtpHost = Deno.env.get("SMTP_HOST");
-      const smtpPort = Deno.env.get("SMTP_PORT");
-      const smtpUser = Deno.env.get("SMTP_USER");
-      const smtpPass = Deno.env.get("SMTP_PASS");
-      const smtpFrom = Deno.env.get("SMTP_FROM") || "noreply@aynn.io";
-
-      if (!smtpHost || !smtpPort || !smtpUser || !smtpPass) {
-        console.error("SMTP configuration incomplete");
-        return new Response(
-          JSON.stringify({ error: "SMTP not configured" }),
-          { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
-        );
-      }
-
       const userEmails = await fetchAllUserEmails(supabase);
       console.log(`Sending maintenance notification to ${userEmails.length} users`);
 
       const subject = "🚧 Scheduled Maintenance - AYN";
       const content = generateEmailTemplate("Scheduled Maintenance", generateMaintenanceAnnouncementContent(data));
-
-      const client = new SMTPClient({
-        connection: {
-          hostname: smtpHost,
-          port: parseInt(smtpPort),
-          tls: true,
-          auth: { username: smtpUser, password: smtpPass },
-        },
-      });
 
       let successCount = 0;
       let failCount = 0;
@@ -433,30 +420,33 @@ const handler = async (req: Request): Promise<Response> => {
 
       console.log(`--- Maintenance batch send starting for ${userEmails.length} recipients ---`);
       
-      for (const email of userEmails) {
-        const masked = maskEmail(email);
-        try {
-          await client.send({
-            from: smtpFrom,
-            to: email,
-            subject: subject,
-            content: "Please view this email in an HTML-capable email client.",
-            html: content,
-          });
-          successCount++;
-          recipientResults.push({ masked, status: 'sent' });
-          console.log(`✓ Sent to: ${masked}`);
-        } catch (err) {
-          const errorMsg = err instanceof Error ? err.message : String(err);
-          console.error(`✗ Failed to send to ${masked}: ${errorMsg}`);
-          failCount++;
-          recipientResults.push({ masked, status: 'failed', error: errorMsg });
-        }
+      // Send in batches of 10 for better performance
+      const batchSize = 10;
+      for (let i = 0; i < userEmails.length; i += batchSize) {
+        const batch = userEmails.slice(i, i + batchSize);
+        const batchPromises = batch.map(async (email) => {
+          const masked = maskEmail(email);
+          try {
+            await resend.emails.send({
+              from: "AYN Admin <noreply@mail.aynn.io>",
+              to: email,
+              subject: subject,
+              html: content,
+            });
+            successCount++;
+            recipientResults.push({ masked, status: 'sent' });
+            console.log(`✓ Sent to: ${masked}`);
+          } catch (err) {
+            const errorMsg = err instanceof Error ? err.message : String(err);
+            console.error(`✗ Failed to send to ${masked}: ${errorMsg}`);
+            failCount++;
+            recipientResults.push({ masked, status: 'failed', error: errorMsg });
+          }
+        });
+        await Promise.all(batchPromises);
       }
 
       console.log(`--- Maintenance batch complete: ${successCount} sent, ${failCount} failed ---`);
-
-      await client.close();
 
       // Log the batch send with per-recipient details (masked)
       await supabase.from('admin_notification_log').insert({
@@ -492,37 +482,14 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
-      const smtpHost = Deno.env.get("SMTP_HOST");
-      const smtpPort = Deno.env.get("SMTP_PORT");
-      const smtpUser = Deno.env.get("SMTP_USER");
-      const smtpPass = Deno.env.get("SMTP_PASS");
-      const smtpFrom = Deno.env.get("SMTP_FROM") || "noreply@aynn.io";
-
-      if (!smtpHost || !smtpPort || !smtpUser || !smtpPass) {
-        return new Response(
-          JSON.stringify({ error: "SMTP not configured" }),
-          { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
-        );
-      }
-
       const subject = "🔐 Admin PIN Change Request - AYN";
       const content = generateEmailTemplate("Admin PIN Change Request", generatePinChangeApprovalContent(data));
 
-      const client = new SMTPClient({
-        connection: {
-          hostname: smtpHost,
-          port: parseInt(smtpPort),
-          tls: true,
-          auth: { username: smtpUser, password: smtpPass },
-        },
-      });
-
       try {
-        await client.send({
-          from: smtpFrom,
+        await resend.emails.send({
+          from: "AYN Admin <noreply@mail.aynn.io>",
           to: config.recipient_email,
           subject: subject,
-          content: "Please view this email in an HTML-capable email client.",
           html: content,
         });
 
@@ -533,14 +500,11 @@ const handler = async (req: Request): Promise<Response> => {
           status: 'sent'
         });
 
-        await client.close();
-
         return new Response(
           JSON.stringify({ success: true }),
           { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
         );
       } catch (emailError) {
-        await client.close();
         console.error("Email send error:", emailError);
         return new Response(
           JSON.stringify({ error: "Failed to send email" }),
@@ -608,39 +572,11 @@ const handler = async (req: Request): Promise<Response> => {
         );
     }
 
-    // Send email via SMTP
-    const smtpHost = Deno.env.get("SMTP_HOST");
-    const smtpPort = Deno.env.get("SMTP_PORT");
-    const smtpUser = Deno.env.get("SMTP_USER");
-    const smtpPass = Deno.env.get("SMTP_PASS");
-    const smtpFrom = Deno.env.get("SMTP_FROM") || "noreply@aynn.io";
-
-    if (!smtpHost || !smtpPort || !smtpUser || !smtpPass) {
-      console.error("SMTP configuration incomplete");
-      return new Response(
-        JSON.stringify({ error: "SMTP not configured" }),
-        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
-    }
-
-    const client = new SMTPClient({
-      connection: {
-        hostname: smtpHost,
-        port: parseInt(smtpPort),
-        tls: true,
-        auth: {
-          username: smtpUser,
-          password: smtpPass,
-        },
-      },
-    });
-
     try {
-      await client.send({
-        from: smtpFrom,
+      await resend.emails.send({
+        from: "AYN Admin <noreply@mail.aynn.io>",
         to: config.recipient_email,
         subject: subject,
-        content: "Please view this email in an HTML-capable email client.",
         html: content,
       });
       console.log("Email sent successfully to:", config.recipient_email);
@@ -653,8 +589,6 @@ const handler = async (req: Request): Promise<Response> => {
         status: 'sent',
         metadata: { user_id: data.user_id, user_email: data.user_email }
       });
-
-      await client.close();
 
       return new Response(
         JSON.stringify({ success: true, message: "Notification sent" }),
@@ -670,8 +604,6 @@ const handler = async (req: Request): Promise<Response> => {
         status: 'failed',
         error_message: emailError instanceof Error ? emailError.message : 'Unknown error'
       });
-
-      await client.close();
 
       return new Response(
         JSON.stringify({ error: "Failed to send email", details: emailError instanceof Error ? emailError.message : 'Unknown error' }),
