@@ -11,10 +11,12 @@ import { FormError } from '@/components/ui/form-error';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useFormValidation, aiAgentsSchema } from '@/hooks/useFormValidation';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 
 const AIAgentsApply = () => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [formData, setFormData] = useState({
@@ -31,13 +33,15 @@ const AIAgentsApply = () => {
     message: ''
   });
 
-  const { validateForm, handleBlur, getFieldError } = useFormValidation(aiAgentsSchema);
+  const { validateForm, handleBlur, getFieldError } = useFormValidation(aiAgentsSchema, t);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm(formData)) {
-      toast.error('Please fix the errors in the form');
+      toast.error(t('form.validationFailed'), {
+        description: t('form.validationFailedDesc')
+      });
       return;
     }
     
@@ -75,10 +79,12 @@ const AIAgentsApply = () => {
       });
 
       setIsSubmitted(true);
-      toast.success('Application submitted successfully!');
+      toast.success(t('common.success'), { description: 'Your application has been submitted.' });
     } catch (error) {
       console.error('Error submitting application:', error);
-      toast.error('Failed to submit application. Please try again.');
+      toast.error(t('form.submitFailed'), {
+        description: t('form.submitFailedDesc')
+      });
     } finally {
       setIsSubmitting(false);
     }

@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface BetaFeedbackModalProps {
   isOpen: boolean;
@@ -34,6 +35,7 @@ export const BetaFeedbackModal = ({
   rewardAmount,
   onSuccess 
 }: BetaFeedbackModalProps) => {
+  const { t } = useLanguage();
   const [step, setStep] = useState<'form' | 'success'>('form');
   const [rating, setRating] = useState<number>(0);
   const [hoveredRating, setHoveredRating] = useState<number>(0);
@@ -88,7 +90,9 @@ export const BetaFeedbackModal = ({
       onSuccess?.();
     } catch (err) {
       console.error('Error submitting feedback:', err);
-      toast.error('Failed to submit feedback');
+      toast.error(t('form.submitFailed'), {
+        description: t('form.submitFailedDesc')
+      });
     } finally {
       setIsSubmitting(false);
     }

@@ -72,6 +72,15 @@ export const ErrorCodes = {
   TICKET_MESSAGE_FAILED: 'TICKET_MESSAGE_FAILED',
   TICKET_DELETE_FAILED: 'TICKET_DELETE_FAILED',
   
+  // Form Validation Errors
+  FORM_VALIDATION_FAILED: 'FORM_VALIDATION_FAILED',
+  FORM_REQUIRED_FIELD: 'FORM_REQUIRED_FIELD',
+  FORM_INVALID_EMAIL: 'FORM_INVALID_EMAIL',
+  FORM_TOO_LONG: 'FORM_TOO_LONG',
+  FORM_TOO_SHORT: 'FORM_TOO_SHORT',
+  FORM_SELECT_REQUIRED: 'FORM_SELECT_REQUIRED',
+  APPLICATION_SUBMIT_FAILED: 'APPLICATION_SUBMIT_FAILED',
+  
   // Generic/Fallback Errors
   GENERIC: 'GENERIC',
   COPY_FAILED: 'COPY_FAILED',
@@ -291,6 +300,36 @@ const errorMessages: Record<ErrorCode, ErrorMessage> = {
   [ErrorCodes.TICKET_DELETE_FAILED]: {
     title: "Couldn't Delete Ticket",
     description: "The ticket wasn't deleted. Please try again.",
+  },
+
+  // Form Validation Errors
+  [ErrorCodes.FORM_VALIDATION_FAILED]: {
+    title: 'Please Fix the Errors',
+    description: 'Some fields need your attention before submitting.',
+  },
+  [ErrorCodes.FORM_REQUIRED_FIELD]: {
+    title: 'Required Field',
+    description: 'This field is required.',
+  },
+  [ErrorCodes.FORM_INVALID_EMAIL]: {
+    title: 'Invalid Email',
+    description: 'Please enter a valid email address.',
+  },
+  [ErrorCodes.FORM_TOO_LONG]: {
+    title: 'Too Long',
+    description: 'This field exceeds the maximum length.',
+  },
+  [ErrorCodes.FORM_TOO_SHORT]: {
+    title: 'Too Short',
+    description: 'This field requires more characters.',
+  },
+  [ErrorCodes.FORM_SELECT_REQUIRED]: {
+    title: 'Selection Required',
+    description: 'Please make a selection.',
+  },
+  [ErrorCodes.APPLICATION_SUBMIT_FAILED]: {
+    title: "Couldn't Submit Application",
+    description: "We couldn't submit your application. Please try again.",
   },
 
   // Generic/Fallback Errors
