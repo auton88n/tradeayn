@@ -21,26 +21,62 @@ const ResetPassword = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Set up auth state listener
+    let isMounted = true;
+    let validationTimeout: NodeJS.Timeout | null = null;
+    
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
-        console.log('Auth event:', event);
+        console.log('Auth event:', event, 'Session:', !!currentSession);
+        
+        if (!isMounted) return;
         
         if (event === 'PASSWORD_RECOVERY') {
+          console.log('PASSWORD_RECOVERY event received');
           setSession(currentSession);
           setLinkExpired(false);
           setIsValidating(false);
+          if (validationTimeout) clearTimeout(validationTimeout);
         } else if (event === 'SIGNED_IN' && currentSession) {
           // User may have been redirected with a valid recovery session
+          console.log('SIGNED_IN event with session');
           setSession(currentSession);
           setLinkExpired(false);
           setIsValidating(false);
+          if (validationTimeout) clearTimeout(validationTimeout);
         }
       }
     );
 
-    // Check for existing session (user may have followed valid link)
+    // Check URL for error parameters first
+    const urlParams = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    
+    const urlError = urlParams.get('error') || hashParams.get('error');
+    const errorDescription = urlParams.get('error_description') || hashParams.get('error_description');
+    
+    // Check if we have a recovery token in the URL (hash fragment)
+    const accessToken = hashParams.get('access_token');
+    const tokenType = hashParams.get('type');
+    const hasRecoveryToken = accessToken && tokenType === 'recovery';
+    
+    console.log('URL check - error:', urlError, 'hasRecoveryToken:', hasRecoveryToken);
+    
+    if (urlError || errorDescription?.includes('expired')) {
+      console.log('URL contains error, marking as expired');
+      setLinkExpired(true);
+      setIsValidating(false);
+      return () => {
+        isMounted = false;
+        subscription.unsubscribe();
+        if (validationTimeout) clearTimeout(validationTimeout);
+      };
+    }
+
+    // Check for existing session
     supabase.auth.getSession().then(({ data: { session: existingSession }, error }) => {
+      if (!isMounted) return;
+      
       if (error) {
         console.error('Session check error:', error);
         setLinkExpired(true);
@@ -49,34 +85,42 @@ const ResetPassword = () => {
       }
       
       if (existingSession) {
+        console.log('Found existing session');
         setSession(existingSession);
         setIsValidating(false);
+      } else if (hasRecoveryToken) {
+        // We have a recovery token but no session yet - wait for auth event
+        console.log('Has recovery token, waiting for auth event...');
+        validationTimeout = setTimeout(() => {
+          if (isMounted) {
+            console.log('Timeout waiting for auth event');
+            // Check session one more time
+            supabase.auth.getSession().then(({ data: { session: finalCheck } }) => {
+              if (isMounted) {
+                if (finalCheck) {
+                  setSession(finalCheck);
+                  setIsValidating(false);
+                } else {
+                  setLinkExpired(true);
+                  setIsValidating(false);
+                }
+              }
+            });
+          }
+        }, 3000);
       } else {
-        // No valid session - check URL for error parameters
-        const urlParams = new URLSearchParams(window.location.search);
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        
-        const error = urlParams.get('error') || hashParams.get('error');
-        const errorDescription = urlParams.get('error_description') || hashParams.get('error_description');
-        
-        if (error || errorDescription?.includes('expired')) {
-          setLinkExpired(true);
-        } else {
-          // Give a short delay for the auth event to fire
-          setTimeout(() => {
-            setIsValidating(false);
-            // If still no session after delay, mark as expired
-            if (!session) {
-              setLinkExpired(true);
-            }
-          }, 2000);
-          return;
-        }
+        // No session and no recovery token - definitely expired/invalid
+        console.log('No session and no recovery token');
+        setLinkExpired(true);
         setIsValidating(false);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+      if (validationTimeout) clearTimeout(validationTimeout);
+    };
   }, []);
 
   const handleResetPassword = async (e: React.FormEvent) => {
