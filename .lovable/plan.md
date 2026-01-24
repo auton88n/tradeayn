@@ -1,246 +1,169 @@
 
+# Fix Dark/Light Mode Text Visibility & Missing AI Employee Mockup
 
-# Complete Auth Email Migration to Resend (Auth Hooks)
+## Issues Identified
 
-## Summary
+### Issue 1: Hard-to-see text in dark mode
+From your screenshot, the "Terms & Conditions" checkbox text (`text-muted-foreground`) appears as dark gray on a dark background, making it nearly invisible.
 
-This plan creates a new Supabase Edge Function that intercepts ALL authentication emails (signup, password reset, magic link, email change) and sends them through Resend instead of Supabase's slow default email service. This will reduce email delivery time from 5-30+ seconds to under 5 seconds.
+**Affected areas:**
+- Auth modal sign-up form (Terms checkbox label at line 535)
+- PasswordStrengthIndicator requirements (uses `text-muted-foreground`)
+- TermsModal checkbox labels (lines 239, 252, 265)
 
----
+### Issue 2: Missing mockup on AI Employees service card
+From your second screenshot, the AI Employees card shows only the title and description with a blank space where the mockup should appear. This is the card on the landing page (services section).
 
-## What Gets Fixed
-
-| Email Type | Current | After |
-|------------|---------|-------|
-| Signup verification | Slow (5-30s) | Fast (~3s) |
-| Password reset | Slow (5-30s) | Fast (~3s) |
-| Magic link | Slow (5-30s) | Fast (~3s) |
-| Email change | Slow (5-30s) | Fast (~3s) |
-
----
-
-## Files to Create/Modify
-
-| File | Action | Description |
-|------|--------|-------------|
-| `supabase/functions/auth-send-email/index.ts` | **Create** | New Auth Hook edge function |
-| `supabase/config.toml` | **Modify** | Add config for new function |
-| `src/components/auth/AuthModal.tsx` | **Modify** | Remove duplicate branded email call (lines 132-144) |
-| `src/components/settings/SessionManagement.tsx` | **Modify** | Remove duplicate branded email call |
+**Root cause:** The `AIEmployeeMockup` component uses `bg-card/80` for role cards, which may render transparent or invisible in light mode. The SVG orbit gradient and central brain also lack sufficient contrast in light mode.
 
 ---
 
-## Part 1: Create Auth Email Hook Edge Function
+## Files to Modify
 
-**File**: `supabase/functions/auth-send-email/index.ts`
+| File | Changes |
+|------|---------|
+| `src/components/auth/AuthModal.tsx` | Fix terms checkbox label color for dark mode |
+| `src/components/auth/PasswordStrengthIndicator.tsx` | Fix requirement text visibility in dark mode |
+| `src/components/TermsModal.tsx` | Fix checkbox label colors |
+| `src/components/services/AIEmployeeMockup.tsx` | Add proper background/border for visibility in both modes |
+| `src/index.css` | Add auth-specific text color utilities |
 
-This function will:
-1. Receive webhook from Supabase Auth containing email data and tokens
-2. Verify webhook signature using `standardwebhooks` library (security)
-3. Build the confirmation URL with the token
-4. Render branded AYN email template (bilingual: English + Arabic)
-5. Send via Resend API
+---
 
-### Email Types Handled
+## Technical Implementation Details
 
-| Type | Triggered By | Template |
-|------|-------------|----------|
-| `signup` | User creates account | "Confirm your AYN account" + verification link |
-| `recovery` | Password reset request | "Reset your AYN password" + reset link |
-| `magiclink` | Magic link login | "Your AYN login link" + one-click login |
-| `email_change` | User changes email | "Confirm your new email" + confirmation link |
+### Part 1: Fix Auth Modal Terms Checkbox (AuthModal.tsx)
 
-### Confirmation URL Format
-
-```text
-https://dfkoxuokfkttjhfjcecx.supabase.co/auth/v1/verify?token=${token_hash}&type=${email_action_type}&redirect_to=${redirect_to}
+**Current code (line 535):**
+```tsx
+className="text-xs text-muted-foreground leading-relaxed cursor-pointer select-none"
 ```
 
-### Key Code Structure
+**Problem:** `text-muted-foreground` is too dark on the dark background of the auth modal.
 
-```typescript
-import { Webhook } from "https://esm.sh/standardwebhooks@1.0.0";
-import { Resend } from "npm:resend@2.0.0";
-
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-const hookSecret = Deno.env.get("SEND_EMAIL_HOOK_SECRET");
-
-Deno.serve(async (req) => {
-  // 1. Verify webhook signature
-  const payload = await req.text();
-  const headers = Object.fromEntries(req.headers);
-  const wh = new Webhook(hookSecret);
-  const { user, email_data } = wh.verify(payload, headers);
-  
-  // 2. Build confirmation URL
-  const confirmationUrl = `https://dfkoxuokfkttjhfjcecx.supabase.co/auth/v1/verify?token=${email_data.token_hash}&type=${email_data.email_action_type}&redirect_to=${email_data.redirect_to}`;
-  
-  // 3. Render branded template based on email_data.email_action_type
-  const { subject, html } = getTemplate(email_data.email_action_type, user, confirmationUrl);
-  
-  // 4. Send via Resend
-  await resend.emails.send({
-    from: "AYN <noreply@mail.aynn.io>",
-    to: user.email,
-    subject,
-    html
-  });
-  
-  return new Response(JSON.stringify({}), { status: 200 });
-});
+**Fix:** Change to explicit white with opacity for the dark modal background:
+```tsx
+className="text-xs text-white/70 leading-relaxed cursor-pointer select-none"
 ```
 
----
+And update the link colors (lines 543, 554) from `text-primary` to `text-cyan-400` for better visibility.
 
-## Part 2: Branded Email Templates
+### Part 2: Fix PasswordStrengthIndicator (PasswordStrengthIndicator.tsx)
 
-All templates will include:
-- AYN logo header (same as existing `send-email` templates)
-- Bilingual content (English + Arabic)
-- Clear call-to-action button with the confirmation link
-- Security tips section
-- Consistent styling with your brand
-
-### Signup Confirmation Template
-- Subject: "🔐 Confirm your AYN account | تأكيد حسابك في AYN"
-- Big "Verify Email" button with link
-- Welcome message
-- What to expect after verification
-
-### Password Reset Template
-- Subject: "🔐 Reset your AYN password | إعادة تعيين كلمة المرور"
-- Big "Reset Password" button with link
-- Security tips (don't share link, expires in 1 hour)
-- "Didn't request this?" notice
-
-### Magic Link Template
-- Subject: "🔐 Your AYN login link | رابط تسجيل الدخول"
-- Big "Log In" button with link
-- Link expires notice
-- Security warning
-
-### Email Change Template
-- Subject: "📧 Confirm your new email | تأكيد بريدك الإلكتروني الجديد"
-- Big "Confirm Email" button
-- Shows old and new email addresses
-- Security notice
-
----
-
-## Part 3: Update Config
-
-**File**: `supabase/config.toml`
-
-Add:
-```toml
-[functions.auth-send-email]
-verify_jwt = false
+**Current code (lines 82-84):**
+```tsx
+className={`flex items-center gap-2 text-xs transition-colors ${
+  req.met ? 'text-green-500' : 'text-muted-foreground'
+}`}
 ```
 
-The function doesn't use JWT because it's called by Supabase Auth via webhook, not by users.
+**Problem:** Unmet requirements use `text-muted-foreground` which is invisible on dark background.
 
----
+**Fix:** Change unmet requirement color to white with opacity:
+```tsx
+className={`flex items-center gap-2 text-xs transition-colors ${
+  req.met ? 'text-green-500' : 'text-white/50'
+}`}
+```
 
-## Part 4: Remove Duplicate Email Calls
+Also fix the strength label (line 61) from `text-muted-foreground` to `text-white/50`.
 
-### In `AuthModal.tsx` (handleForgotPassword)
+### Part 3: Fix TermsModal Checkbox Labels (TermsModal.tsx)
 
-**Remove lines 132-144**:
-```typescript
-// Also send branded email via Resend (parallel, don't block)
-try {
-  await supabase.functions.invoke('send-email', {
-    body: {
-      to: email,
-      emailType: 'password_reset',
-      data: { userName: email.split('@')[0] }
-    }
-  });
-  console.log('[AuthModal] Branded password reset email sent via Resend');
-} catch (emailError) {
-  console.warn('[AuthModal] Resend email failed (Supabase email still sent):', emailError);
+**Current code (lines 239, 252, 265):**
+```tsx
+className="text-sm leading-5 text-white/70 cursor-pointer"
+```
+
+These are already using `text-white/70` which should be visible. However, the policy content uses `text-white/60` and `text-white/50` which could be improved.
+
+No major changes needed here as they already use explicit white colors.
+
+### Part 4: Fix AIEmployeeMockup (AIEmployeeMockup.tsx)
+
+**Current issues:**
+1. Role cards use `bg-card/80` which may be transparent in light mode
+2. SVG orbit gradient uses low opacity colors
+3. Brain container uses `rgba()` colors that lack contrast in light mode
+4. Role labels use colored text that may not contrast well on light backgrounds
+
+**Fixes:**
+
+**Line 82 - Role cards:**
+```tsx
+// Before
+className="relative w-14 h-14 rounded-2xl flex items-center justify-center bg-card/80 border border-border/30 shadow-lg hover:scale-105 transition-transform"
+
+// After - add dark mode fallback
+className="relative w-14 h-14 rounded-2xl flex items-center justify-center bg-neutral-800 dark:bg-card/80 border border-neutral-600 dark:border-border/30 shadow-lg hover:scale-105 transition-transform"
+```
+
+**Line 91 - Role labels:**
+```tsx
+// Before
+className={`text-[11px] font-semibold whitespace-nowrap ${role.iconColor}`}
+
+// After - add explicit styling that works in both modes
+className={`text-[11px] font-semibold whitespace-nowrap ${role.iconColor} drop-shadow-sm`}
+```
+
+**Line 64-68 - Brain container:**
+Add explicit dark background styling that works in both light and dark modes:
+```tsx
+style={{
+  background: 'linear-gradient(135deg, rgba(34, 211, 238, 0.25) 0%, rgba(139, 92, 246, 0.25) 100%)',
+  border: '1px solid rgba(34, 211, 238, 0.4)',
+  boxShadow: '0 8px 32px rgba(34, 211, 238, 0.3)'
+}}
+```
+
+**Line 33 - Background glow:**
+```tsx
+// Before
+className="w-64 h-64 bg-cyan-500/10 rounded-full blur-2xl"
+
+// After - increase opacity for visibility
+className="w-64 h-64 bg-cyan-500/20 rounded-full blur-2xl"
+```
+
+### Part 5: Add CSS utility for auth text (index.css)
+
+Add a new utility class for auth checkbox labels:
+```css
+/* Auth checkbox label - white text for dark modal backgrounds */
+.auth-checkbox-label {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.auth-checkbox-label a {
+  color: rgb(34, 211, 238) !important;
+}
+
+.auth-checkbox-label a:hover {
+  text-decoration: underline;
 }
 ```
 
-**Reason**: The Auth Hook now sends the branded email directly - no need for duplicate.
-
-### In `SessionManagement.tsx` (handlePasswordChange)
-
-**Remove the parallel Resend call** that was added previously.
-
-**Reason**: Same as above - Auth Hook handles it.
-
 ---
 
-## Part 5: Manual Configuration Steps (After Deployment)
+## Summary of Changes
 
-You'll need to configure the Auth Hook in Supabase Dashboard:
-
-1. **Go to**: Supabase Dashboard → Authentication → Hooks
-2. **Enable**: "Send Email" hook
-3. **Select**: HTTPS (not Postgres)
-4. **Set URL**: `https://dfkoxuokfkttjhfjcecx.supabase.co/functions/v1/auth-send-email`
-5. **Set HTTP Headers**: None required (signature is in standard webhook headers)
-6. **Add Secrets**: Add `SEND_EMAIL_HOOK_SECRET` to Edge Function secrets
-
-The secret format should be: `v1,whsec_YOUR_SECRET_HERE` (you already have this ready)
-
----
-
-## Technical Details
-
-### Webhook Payload Structure
-
-When Supabase Auth triggers the hook, it sends:
-
-```json
-{
-  "user": {
-    "id": "user-uuid",
-    "email": "user@example.com",
-    "user_metadata": { "full_name": "John" }
-  },
-  "email_data": {
-    "email_action_type": "signup|recovery|magiclink|email_change",
-    "token_hash": "abc123...",
-    "token": "123456",
-    "redirect_to": "https://ayn-insight-forge.lovable.app/",
-    "site_url": "https://ayn-insight-forge.lovable.app"
-  }
-}
-```
-
-### Security
-
-1. **Webhook Signature**: Uses `standardwebhooks` library to verify the request came from Supabase
-2. **No JWT**: The function is called by Supabase's internal system, not by users
-3. **HTTPS Only**: All communication is encrypted
-
-### Error Handling
-
-- If Resend fails, return error to Supabase (will retry)
-- Log all email attempts for debugging
-- Graceful fallback messages
+| Component | Issue | Fix |
+|-----------|-------|-----|
+| AuthModal terms label | `text-muted-foreground` invisible | Change to `text-white/70` |
+| AuthModal terms links | `text-primary` low contrast | Change to `text-cyan-400` |
+| PasswordStrengthIndicator | Unmet requirements invisible | Change to `text-white/50` |
+| AIEmployeeMockup cards | `bg-card/80` transparent in light mode | Add explicit `bg-neutral-800` fallback |
+| AIEmployeeMockup glow | Too faint in light mode | Increase opacity from 10% to 20% |
+| AIEmployeeMockup brain | Low contrast | Increase color opacity |
 
 ---
 
 ## Expected Results
 
-| Metric | Before | After |
-|--------|--------|-------|
-| Signup email delivery | 5-30 seconds | < 5 seconds |
-| Password reset email | 5-30 seconds | < 5 seconds |
-| Full AYN branding | Only in parallel email | In the actual link email |
-| Duplicate emails | Yes (2 emails for password reset) | No (1 branded email) |
-
----
-
-## Verification Checklist
-
-After implementation:
-- [ ] Test signup - receive branded email with verification link within seconds
-- [ ] Test password reset - receive branded email with reset link within seconds
-- [ ] Click links - they should work and redirect correctly
-- [ ] Check no duplicate emails are received
-- [ ] Verify bilingual content renders correctly
-
+After these changes:
+1. All text in the auth modal will be clearly visible on the dark background
+2. Password requirements will be readable in both met and unmet states
+3. Terms & Conditions checkbox text and links will be clearly visible
+4. AI Employees mockup will render with proper contrast in both light and dark modes
+5. The brain hub and orbiting role cards will be visible regardless of theme
