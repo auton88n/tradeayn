@@ -532,14 +532,14 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                 />
                 <label 
                   htmlFor="terms-checkbox" 
-                  className="text-xs text-muted-foreground leading-relaxed cursor-pointer select-none"
+                  className="text-xs text-white/70 leading-relaxed cursor-pointer select-none"
                 >
                   {t('auth.termsCheckboxLabel')}{' '}
                   <a 
                     href="/terms" 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="text-primary hover:underline"
+                    className="text-cyan-400 hover:underline"
                     onClick={(e) => e.stopPropagation()}
                   >
                     {t('auth.termsLink')}
@@ -549,7 +549,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                     href="/privacy" 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="text-primary hover:underline"
+                    className="text-cyan-400 hover:underline"
                     onClick={(e) => e.stopPropagation()}
                   >
                     {t('auth.privacyLink')}

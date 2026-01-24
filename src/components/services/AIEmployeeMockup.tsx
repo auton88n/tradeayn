@@ -30,7 +30,7 @@ const AIEmployeeMockup = memo(() => {
   return <div className="relative w-full h-full min-h-[320px] flex items-center justify-center" dir="ltr">
       {/* Background ambient glow - simplified */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="w-64 h-64 bg-cyan-500/10 rounded-full blur-2xl" />
+        <div className="w-64 h-64 bg-cyan-500/20 rounded-full blur-2xl" />
       </div>
 
       {/* Orbital path ring */}
@@ -62,9 +62,9 @@ const AIEmployeeMockup = memo(() => {
 
         {/* Brain container */}
         <div className="relative w-20 h-20 rounded-full flex items-center justify-center" style={{
-        background: 'linear-gradient(135deg, rgba(34, 211, 238, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%)',
-        border: '1px solid rgba(34, 211, 238, 0.3)',
-        boxShadow: '0 8px 32px rgba(34, 211, 238, 0.2)'
+        background: 'linear-gradient(135deg, rgba(34, 211, 238, 0.25) 0%, rgba(139, 92, 246, 0.25) 100%)',
+        border: '1px solid rgba(34, 211, 238, 0.5)',
+        boxShadow: '0 8px 32px rgba(34, 211, 238, 0.35)'
       }}>
           <Brain className="w-10 h-10 text-cyan-400" strokeWidth={1.5} />
         </div>
@@ -79,7 +79,7 @@ const AIEmployeeMockup = memo(() => {
         transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`
       }}>
             {/* Card with simple styling (no backdrop-filter) */}
-            <div className="relative w-14 h-14 rounded-2xl flex items-center justify-center bg-card/80 border border-border/30 shadow-lg hover:scale-105 transition-transform">
+            <div className="relative w-14 h-14 rounded-2xl flex items-center justify-center bg-neutral-800 dark:bg-card/80 border border-neutral-600 dark:border-border/30 shadow-lg hover:scale-105 transition-transform">
               {/* Gradient accent line */}
               <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-gradient-to-r from-cyan-400 to-violet-400 opacity-80`} />
               
@@ -88,7 +88,7 @@ const AIEmployeeMockup = memo(() => {
 
               {/* Label */}
               <div className="absolute -bottom-6 left-1/2 -translate-x-1/2">
-                <span className={`text-[11px] font-semibold whitespace-nowrap ${role.iconColor}`}>{role.label}</span>
+                <span className={`text-[11px] font-semibold whitespace-nowrap ${role.iconColor} drop-shadow-sm`}>{role.label}</span>
               </div>
             </div>
           </div>;
