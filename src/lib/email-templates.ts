@@ -3,7 +3,7 @@
  * These are used for reference and SSR if needed
  */
 
-export type EmailType = 'welcome' | 'credit_warning' | 'auto_delete_warning' | 'payment_receipt' | 'password_reset';
+export type EmailType = 'welcome' | 'credit_warning' | 'auto_delete_warning' | 'payment_receipt' | 'password_reset' | 'subscription_created' | 'subscription_renewed' | 'subscription_canceled' | 'subscription_updated';
 
 export interface WelcomeEmailData {
   userName: string;
@@ -32,12 +32,43 @@ export interface PasswordResetEmailData {
   userName: string;
 }
 
+export interface SubscriptionCreatedEmailData {
+  userName: string;
+  planName: string;
+  credits: number;
+  nextBillingDate: string;
+}
+
+export interface SubscriptionRenewedEmailData {
+  userName: string;
+  planName: string;
+  amount: string;
+  nextBillingDate: string;
+}
+
+export interface SubscriptionCanceledEmailData {
+  userName: string;
+  planName: string;
+  endDate: string;
+}
+
+export interface SubscriptionUpdatedEmailData {
+  userName: string;
+  oldPlan: string;
+  newPlan: string;
+  effectiveDate: string;
+}
+
 export type EmailData = 
   | WelcomeEmailData 
   | CreditWarningEmailData 
   | AutoDeleteWarningEmailData 
   | PaymentReceiptEmailData
-  | PasswordResetEmailData;
+  | PasswordResetEmailData
+  | SubscriptionCreatedEmailData
+  | SubscriptionRenewedEmailData
+  | SubscriptionCanceledEmailData
+  | SubscriptionUpdatedEmailData;
 
 // AYN branded email header (for reference)
 export const AYN_EMAIL_HEADER = `
@@ -60,6 +91,10 @@ export const EMAIL_SUBJECTS: Record<EmailType, string | ((data: EmailData) => st
   auto_delete_warning: (data) => `🗑️ AYN: ${(data as AutoDeleteWarningEmailData).itemCount} items will be deleted in ${(data as AutoDeleteWarningEmailData).daysLeft} days`,
   payment_receipt: (data) => `✅ AYN Payment Confirmation - ${(data as PaymentReceiptEmailData).plan}`,
   password_reset: "🔐 AYN: Password Reset Request | طلب إعادة تعيين كلمة المرور",
+  subscription_created: (data) => `🎉 Welcome to AYN ${(data as SubscriptionCreatedEmailData).planName}! | !${(data as SubscriptionCreatedEmailData).planName} AYN مرحباً بك في`,
+  subscription_renewed: (data) => `✅ AYN ${(data as SubscriptionRenewedEmailData).planName} Renewed | تم تجديد اشتراكك`,
+  subscription_canceled: "😢 Your AYN Subscription Has Ended | انتهى اشتراكك في AYN",
+  subscription_updated: (data) => `📊 AYN Plan Updated to ${(data as SubscriptionUpdatedEmailData).newPlan} | تم تحديث خطتك`,
 };
 
 // Get subject line for email type
