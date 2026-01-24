@@ -40,27 +40,13 @@ export const SessionManagement = ({ userId, userEmail, accessToken }: SessionMan
         throw new Error('No email found');
       }
 
-      // Send password reset email via Supabase Auth (contains actual reset link)
+      // Send password reset email via Supabase Auth
+      // Auth Hook now handles branded email via Resend automatically
       const { error } = await supabase.auth.resetPasswordForEmail(userEmail, {
         redirectTo: `${window.location.origin}/reset-password`,
       });
 
       if (error) throw error;
-
-      // Also send branded notification via Resend (parallel, non-blocking)
-      try {
-        await supabase.functions.invoke('send-email', {
-          body: {
-            to: userEmail,
-            emailType: 'password_reset',
-            data: { userName: userEmail.split('@')[0] }
-          }
-        });
-        console.log('[SessionManagement] Branded password reset email sent via Resend');
-      } catch (emailError) {
-        console.warn('[SessionManagement] Resend email failed (Supabase email still sent):', emailError);
-        // Don't block - Supabase email was still sent
-      }
 
       toast({
         title: t('common.success'),
