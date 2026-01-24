@@ -58,7 +58,7 @@ export const PasswordStrengthIndicator = ({ password }: PasswordStrengthIndicato
       {/* Strength bar */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between text-xs">
-          <span className="text-muted-foreground">{t('auth.passwordStrength')}</span>
+          <span className="text-white/50">{t('auth.passwordStrength')}</span>
           <span className={`font-medium ${
             analysis.strength === 'weak' ? 'text-destructive' :
             analysis.strength === 'medium' ? 'text-yellow-500' : 'text-green-500'
@@ -80,7 +80,7 @@ export const PasswordStrengthIndicator = ({ password }: PasswordStrengthIndicato
           <div 
             key={req.key}
             className={`flex items-center gap-2 text-xs transition-colors ${
-              req.met ? 'text-green-500' : 'text-muted-foreground'
+              req.met ? 'text-green-500' : 'text-white/50'
             }`}
           >
             {req.met ? (
