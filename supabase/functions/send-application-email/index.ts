@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
+import { Resend } from "npm:resend@2.0.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -51,27 +51,14 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Processing application email for ${serviceType} from ${applicantEmail}`);
 
-    const smtpHost = Deno.env.get("SMTP_HOST");
-    const smtpPort = parseInt(Deno.env.get("SMTP_PORT") || "465");
-    const smtpUser = Deno.env.get("SMTP_USER");
-    const smtpPass = Deno.env.get("SMTP_PASS");
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
     const notificationEmail = Deno.env.get("NOTIFICATION_EMAIL") || "info@aynn.io";
 
-    if (!smtpHost || !smtpUser || !smtpPass) {
-      throw new Error("SMTP configuration missing");
+    if (!resendApiKey) {
+      throw new Error("RESEND_API_KEY not configured");
     }
 
-    const client = new SMTPClient({
-      connection: {
-        hostname: smtpHost,
-        port: smtpPort,
-        tls: true,
-        auth: {
-          username: smtpUser,
-          password: smtpPass,
-        },
-      },
-    });
+    const resend = new Resend(resendApiKey);
 
     // Build complete form data from individual fields and any extra formData
     const completeFormData: Record<string, unknown> = {
@@ -141,7 +128,7 @@ const handler = async (req: Request): Promise<Response> => {
 </div>
 <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
 <tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666;font-weight:600;">Name</td><td style="padding:8px 16px;border-bottom:1px solid #eee;">${applicantName}</td></tr>
-<tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666;font-weight:600;">Email</td><td style="padding:8px 16px;border-bottom:1px solid #eee;"><a href="mailto:${applicantEmail}" style="color:#0ea5e9;">${applicantEmail}</a></td></tr>
+<tr><td style="padding:8px 16px;border-bottom:1px solid #eee;color:#666;font-weight:600;">Email</td><td style="padding:8px 16px;border-bottom:1px solid #eee;"><a href="mailto:${rawApplicantEmail}" style="color:#0ea5e9;">${applicantEmail}</a></td></tr>
 ${formatFormData(completeFormData)}
 </table>
 ${completeFormData.message ? `
@@ -151,7 +138,7 @@ ${completeFormData.message ? `
 </div>
 ` : ''}
 <div style="margin-top:32px;text-align:center;">
-<a href="mailto:${applicantEmail}?subject=Re: Your ${serviceType} Application" style="display:inline-block;background:#000;color:#fff;padding:16px 40px;border-radius:8px;text-decoration:none;font-weight:600;">Reply to Applicant</a>
+<a href="mailto:${rawApplicantEmail}?subject=Re: Your ${serviceType} Application" style="display:inline-block;background:#000;color:#fff;padding:16px 40px;border-radius:8px;text-decoration:none;font-weight:600;">Reply to Applicant</a>
 </div>
 <div style="margin-top:40px;padding-top:24px;border-top:1px solid #eee;text-align:center;">
 <p style="font-size:12px;color:#999;margin:0;">AYN AI Admin Notification</p>
@@ -160,31 +147,35 @@ ${completeFormData.message ? `
 </body>
 </html>`;
 
-    // Send confirmation to applicant
-    await client.send({
-      from: smtpUser,
-      to: applicantEmail,
+    // Send confirmation to applicant (with Reply-To for support)
+    const { error: confirmError } = await resend.emails.send({
+      from: "AYN <noreply@mail.aynn.io>",
+      to: rawApplicantEmail,
       replyTo: notificationEmail,
       subject: `Application Received - ${serviceType}`,
-      content: "auto",
       html: confirmationHtml,
     });
 
-    console.log(`Confirmation email sent to ${applicantEmail}`);
+    if (confirmError) {
+      console.error("Error sending confirmation email:", confirmError);
+    } else {
+      console.log(`Confirmation email sent to ${applicantEmail}`);
+    }
 
-    // Send notification to team
-    await client.send({
-      from: smtpUser,
+    // Send notification to team (with Reply-To set to applicant so team can reply directly)
+    const { error: notifyError } = await resend.emails.send({
+      from: "AYN <noreply@mail.aynn.io>",
       to: notificationEmail,
-      replyTo: applicantEmail,
+      replyTo: rawApplicantEmail,
       subject: `New Application: ${serviceType} - ${applicantName}`,
-      content: "auto",
       html: notificationHtml,
     });
 
-    console.log(`Notification email sent to ${notificationEmail}`);
-
-    await client.close();
+    if (notifyError) {
+      console.error("Error sending notification email:", notifyError);
+    } else {
+      console.log(`Notification email sent to ${notificationEmail}`);
+    }
 
     return new Response(
       JSON.stringify({ success: true, message: "Emails sent successfully" }),
@@ -196,7 +187,7 @@ ${completeFormData.message ? `
   } catch (error) {
     console.error("Error sending application emails:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },

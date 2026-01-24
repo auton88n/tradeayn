@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
+import { Resend } from "npm:resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const corsHeaders = {
@@ -75,15 +75,13 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Sending usage alert (${alertType}) to ${userEmail} for user ${userId}`);
 
-    const smtpHost = Deno.env.get("SMTP_HOST");
-    const smtpPort = parseInt(Deno.env.get("SMTP_PORT") || "465");
-    const smtpUser = Deno.env.get("SMTP_USER") || "noreply@aynn.io";
-    const smtpPass = Deno.env.get("SMTP_PASS");
-
-    if (!smtpHost || !smtpUser || !smtpPass) {
-      console.error("SMTP configuration missing");
-      throw new Error("SMTP configuration missing");
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    if (!resendApiKey) {
+      console.error("RESEND_API_KEY not configured");
+      throw new Error("RESEND_API_KEY not configured");
     }
+
+    const resend = new Resend(resendApiKey);
 
     const displayName = userName ? escapeHtml(userName) : 'there';
     const remaining = monthlyLimit - currentUsage;
@@ -183,28 +181,19 @@ ${alertType === '100_percent' ? `
 </body>
 </html>`;
 
-    const client = new SMTPClient({
-      connection: {
-        hostname: smtpHost,
-        port: smtpPort,
-        tls: true,
-        auth: {
-          username: smtpUser,
-          password: smtpPass,
-        },
-      },
-    });
-
-    await client.send({
-      from: smtpUser,
+    const { data: emailData, error: emailError } = await resend.emails.send({
+      from: "AYN <noreply@mail.aynn.io>",
       to: userEmail,
       subject: `${config.icon} AYN Usage Alert: ${config.title}`,
-      content: "auto",
       html: emailHtml,
     });
 
-    await client.close();
-    console.log(`Usage alert sent successfully to ${userEmail}`);
+    if (emailError) {
+      console.error("Resend error:", emailError);
+      throw new Error(emailError.message || "Failed to send email");
+    }
+
+    console.log(`Usage alert sent successfully to ${userEmail}, id: ${emailData?.id}`);
 
     // Record the alert in history
     await supabase.from('alert_history').insert({
@@ -214,7 +203,7 @@ ${alertType === '100_percent' ? `
       content: `User reached ${percentageUsed}% of their monthly limit (${currentUsage}/${monthlyLimit})`,
       status: 'sent',
       sent_at: new Date().toISOString(),
-      metadata: { percentageUsed, currentUsage, monthlyLimit, resetDate }
+      metadata: { percentageUsed, currentUsage, monthlyLimit, resetDate, resendId: emailData?.id }
     });
 
     return new Response(
