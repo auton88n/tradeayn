@@ -1,76 +1,54 @@
 /**
- * Utility functions for handling Supabase Storage document URLs
- * Handles normalization of signed URLs to public URLs and provides
- * consistent URL handling across the application.
+ * Document URL utilities - simplified for base64 data URLs
+ * Data URLs are ad-blocker proof since they're inline content
  */
-
-const SUPABASE_PROJECT_ID = 'dfkoxuokfkttjhfjcecx';
-const SUPABASE_URL = `https://${SUPABASE_PROJECT_ID}.supabase.co`;
 
 /**
- * Converts a document URL to use the proxy endpoint
- * This bypasses ad-blocker blocking of Supabase domains
- * 
- * @param url - The original Supabase Storage URL
- * @returns Proxy URL through the edge function
+ * Check if URL is a base64 data URL
  */
-export const toProxyUrl = (url: string): string => {
-  if (!url) return url;
-  
-  // Extract the path from the URL
-  // Matches: /storage/v1/object/public/documents/...
-  // or: /storage/v1/object/sign/documents/...
-  const pathMatch = url.match(/\/storage\/v1\/object\/(?:public|sign)\/documents\/(.+?)(?:\?|$)/);
-  
-  if (pathMatch && pathMatch[1]) {
-    const filePath = pathMatch[1];
-    return `${SUPABASE_URL}/functions/v1/download-document?path=${encodeURIComponent(filePath)}`;
-  }
-  
-  // If we can't extract the path, return normalized URL as fallback
-  return normalizeDocumentUrl(url);
+export const isDataUrl = (url: string): boolean => {
+  return url?.startsWith('data:');
 };
 
 /**
- * Normalizes a Supabase Storage document URL to use the public endpoint
- * This prevents "Invalid JWT" errors when signed URLs expire
- * 
- * @param url - The original URL (may be signed or public)
- * @returns Normalized public URL
+ * Downloads a document from a data URL or regular URL
+ * @param url - The document URL (data URL or http URL)
+ * @param filename - Optional filename for the download
  */
-export const normalizeDocumentUrl = (url: string): string => {
-  if (!url) return url;
+export const openDocumentUrl = (url: string, filename?: string): void => {
+  if (!url) return;
   
-  // Convert signed URLs to public URLs
-  // From: /storage/v1/object/sign/documents/... 
-  // To:   /storage/v1/object/public/documents/...
-  let normalized = url.replace(
-    /\/storage\/v1\/object\/sign\/documents\//g,
-    '/storage/v1/object/public/documents/'
-  );
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename || 'document';
+  anchor.target = '_blank';
+  anchor.rel = 'noopener noreferrer';
   
-  // Strip any token query parameter from public URLs
-  // This handles cases where ?token= might still be appended
-  if (normalized.includes('/storage/v1/object/public/')) {
-    const urlParts = normalized.split('?');
-    normalized = urlParts[0];
-  }
-  
-  return normalized;
+  // Trigger download
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
 };
 
 /**
- * Checks if a URL is a Supabase Storage document URL (PDF or Excel)
+ * Checks if a URL is a document URL (PDF or Excel)
  */
-export const isDocumentStorageUrl = (url: string): boolean => {
+export const isDocumentUrl = (url: string): boolean => {
   if (!url) return false;
-  return url.includes('/storage/v1/object/') && 
-         (url.includes('/documents/') || url.includes('.pdf') || url.includes('.xlsx'));
+  
+  // Data URLs
+  if (url.startsWith('data:application/pdf') || 
+      url.startsWith('data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')) {
+    return true;
+  }
+  
+  // HTTP URLs with document extensions
+  return url.includes('.pdf') || url.includes('.xlsx') || url.includes('.xls');
 };
 
 /**
  * Extracts all document links from content and returns the best one.
- * Priority: public URLs > signed URLs, and last match wins for duplicates.
+ * Priority: data URLs > public URLs, and last match wins for duplicates.
  * 
  * @param content - The message content to scan
  * @returns The best document link info or null
@@ -82,58 +60,37 @@ export const extractBestDocumentLink = (content: string): {
 } | null => {
   if (!content) return null;
   
-  // Match all document links: 📄 [Title](url) or 📊 [Title](url)
-  const regex = /[📄📊]\s*\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
+  // Match document links: 📄 [Title](url) or 📊 [Title](url)
+  // Updated regex to match both http URLs and data URLs
+  const regex = /[📄📊]\s*\[([^\]]+)\]\(((?:https?:\/\/[^\s)]+|data:[^\s)]+))\)/g;
   const matches: Array<{ title: string; url: string; type: 'pdf' | 'excel' }> = [];
   
   let match;
   while ((match = regex.exec(content)) !== null) {
+    const url = match[2];
     const isExcel = content.slice(Math.max(0, match.index - 5), match.index + 1).includes('📊') 
-                    || match[2].includes('.xlsx');
+                    || url.includes('.xlsx')
+                    || url.includes('spreadsheetml.sheet');
     matches.push({
       title: match[1],
-      url: match[2],
+      url: url,
       type: isExcel ? 'excel' : 'pdf'
     });
   }
   
   if (matches.length === 0) return null;
   
-  // Priority: prefer public URLs over signed URLs
-  const publicMatch = matches.find(m => m.url.includes('/storage/v1/object/public/'));
-  if (publicMatch) {
-    return {
-      ...publicMatch,
-      url: normalizeDocumentUrl(publicMatch.url)
-    };
+  // Priority: prefer data URLs (they work with ad-blockers)
+  const dataUrlMatch = matches.find(m => m.url.startsWith('data:'));
+  if (dataUrlMatch) {
+    return dataUrlMatch;
   }
   
-  // Otherwise take the last match (most recent) and normalize it
-  const lastMatch = matches[matches.length - 1];
-  return {
-    ...lastMatch,
-    url: normalizeDocumentUrl(lastMatch.url)
-  };
+  // Otherwise take the last match (most recent)
+  return matches[matches.length - 1];
 };
 
-/**
- * Opens a document URL in a new tab using the proxy endpoint
- * This bypasses ad-blocker blocking of Supabase domains
- * 
- * @param url - The document URL to open
- */
-export const openDocumentUrl = (url: string): void => {
-  // Use proxy URL to bypass ad-blockers
-  const proxyUrl = toProxyUrl(url);
-  
-  // Use anchor-based navigation for better compatibility
-  const anchor = document.createElement('a');
-  anchor.href = proxyUrl;
-  anchor.target = '_blank';
-  anchor.rel = 'noopener noreferrer';
-  
-  // Programmatically click the anchor
-  document.body.appendChild(anchor);
-  anchor.click();
-  document.body.removeChild(anchor);
-};
+// Legacy exports for backward compatibility (deprecated)
+export const normalizeDocumentUrl = (url: string): string => url;
+export const toProxyUrl = (url: string): string => url;
+export const isDocumentStorageUrl = isDocumentUrl;

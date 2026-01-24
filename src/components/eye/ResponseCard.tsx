@@ -461,7 +461,7 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
                   variant="default"
                   size="sm"
                   className="gap-1.5 shrink-0 shadow-sm"
-                  onClick={() => openDocumentUrl(documentLink.url)}
+                  onClick={() => openDocumentUrl(documentLink.url, documentLink.title)}
                 >
                   <Download className="w-3.5 h-3.5" />
                   {t('common.download')}
