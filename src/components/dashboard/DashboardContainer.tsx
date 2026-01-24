@@ -528,6 +528,8 @@ const DashboardContent = ({
             }
           }}
           isTyping={messagesHook.isTyping}
+          isGeneratingDocument={messagesHook.isGeneratingDocument}
+          documentType={messagesHook.documentType}
           isDisabled={auth.isAuthLoading ? false : (!auth.hasAccess || !auth.hasAcceptedTerms)}
           selectedMode={selectedMode}
           selectedFile={fileUpload.selectedFile}
