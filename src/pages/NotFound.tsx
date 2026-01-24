@@ -18,14 +18,14 @@ const NotFound = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6">
-      <Card className="glass text-center p-12 max-w-lg">
+      <Card className="glass text-center p-12 max-w-lg bg-neutral-900/90 backdrop-blur-xl border border-white/20">
         <div className="w-24 h-24 rounded-full bg-gradient-primary mx-auto mb-6 flex items-center justify-center animate-pulse-glow">
           <Brain className="w-12 h-12 text-white" />
         </div>
         
         <h1 className="text-6xl font-bold mb-4 gradient-text-hero">404</h1>
-        <h2 className="text-2xl font-semibold mb-4">{t('notFound.pageNotFound')}</h2>
-        <p className="text-muted-foreground mb-8 leading-relaxed">
+        <h2 className="text-2xl font-semibold mb-4 text-white">{t('notFound.pageNotFound')}</h2>
+        <p className="text-white/70 mb-8 leading-relaxed">
           {t('notFound.description')}
         </p>
         
@@ -48,8 +48,8 @@ const NotFound = () => {
           </Button>
         </div>
         
-        <div className="mt-8 pt-6 border-t border-border/50">
-          <p className="text-sm text-muted-foreground">
+        <div className="mt-8 pt-6 border-t border-white/20">
+          <p className="text-sm text-white/50">
             {t('notFound.needHelp')}
           </p>
         </div>

@@ -331,19 +331,16 @@ const TicketingMockup = () => {
     })), []
   );
 
-  const qrPattern = useMemo(() => {
-    const pattern = [];
-    for (let row = 0; row < 7; row++) {
-      const rowData = [];
-      for (let col = 0; col < 7; col++) {
-        const isCorner = (row < 3 && col < 3) || (row < 3 && col > 3) || (row > 3 && col < 3);
-        const isFilled = isCorner || Math.random() > 0.4;
-        rowData.push(isFilled);
-      }
-      pattern.push(rowData);
-    }
-    return pattern;
-  }, []);
+  // Static QR code pattern with proper finder patterns in corners
+  const qrPattern = useMemo(() => [
+    [true, true, true, true, true, true, true],
+    [true, false, false, false, false, false, true],
+    [true, false, true, true, true, false, true],
+    [true, false, true, false, true, false, false],
+    [true, false, true, true, true, false, true],
+    [true, false, false, false, false, false, true],
+    [true, true, true, true, true, true, true],
+  ], []);
 
   return (
     <div className="relative w-full h-full min-h-[400px] flex items-center justify-center overflow-hidden">
