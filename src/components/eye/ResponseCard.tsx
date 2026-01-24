@@ -5,9 +5,7 @@ import { cn } from '@/lib/utils';
 import { StreamingMarkdown } from '@/components/eye/StreamingMarkdown';
 import { MessageFormatter } from '@/components/MessageFormatter';
 import { hapticFeedback } from '@/lib/haptics';
-import { Copy, Check, ThumbsUp, ThumbsDown, Brain, X, ChevronDown, Palette, FileText, FileSpreadsheet, Download } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { Copy, Check, ThumbsUp, ThumbsDown, Brain, X, ChevronDown, Palette } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -15,7 +13,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { persistDalleImage } from '@/hooks/useImagePersistence';
-import { extractBestDocumentLink, openDocumentUrl } from '@/lib/documentUrlUtils';
 
 interface ResponseBubbleAttachment {
   url: string;
@@ -40,7 +37,7 @@ interface ResponseCardProps {
 
 const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant = 'inline', showPointer = true }: ResponseCardProps) => {
   const navigate = useNavigate();
-  const { t, direction } = useLanguage();
+  
   const contentRef = useRef<HTMLDivElement>(null);
   const dialogContentRef = useRef<HTMLDivElement>(null);
   const [isScrollable, setIsScrollable] = useState(false);
@@ -74,29 +71,7 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
     return null;
   }, [combinedContent]);
 
-  // Detect document download link in response
-  // Priority: 1) attachment metadata (if PDF/Excel), 2) extract from markdown content
-  const documentLink = useMemo(() => {
-    // Check attachment first (source of truth from backend)
-    const attachment = visibleResponses[0]?.attachment;
-    if (attachment) {
-      const isPdf = attachment.type.includes('pdf') || attachment.name.endsWith('.pdf');
-      const isExcel = attachment.type.includes('spreadsheet') || 
-                      attachment.type.includes('excel') || 
-                      attachment.name.endsWith('.xlsx') || 
-                      attachment.name.endsWith('.xls');
-      if (isPdf || isExcel) {
-        return {
-          title: attachment.name,
-          url: attachment.url,
-          type: isExcel ? 'excel' as const : 'pdf' as const,
-        };
-      }
-    }
-    
-    // Fallback: extract from markdown content
-    return extractBestDocumentLink(combinedContent);
-  }, [combinedContent, visibleResponses]);
+  // Document links are now rendered inline by MessageFormatter - no separate card needed
 
   const handleDesignThis = useCallback(async () => {
     if (detectedImageUrl) {
@@ -422,53 +397,7 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
             </div>
           </div>
 
-          {/* Document Download Card */}
-          {documentLink && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={cn(
-                "mx-3 mb-3 p-4 rounded-xl border",
-                "bg-gradient-to-br from-muted/80 via-muted/40 to-background",
-                "border-border hover:border-primary/40 transition-all shadow-sm"
-              )}
-            >
-              <div className={cn(
-                "flex items-center gap-3",
-                direction === 'rtl' && "flex-row-reverse"
-              )}>
-                <div className={cn(
-                  "p-2.5 rounded-lg shrink-0",
-                  documentLink.type === 'excel' 
-                    ? "bg-green-500/15" 
-                    : "bg-primary/15"
-                )}>
-                  {documentLink.type === 'excel' 
-                    ? <FileSpreadsheet className="w-5 h-5 text-green-500" />
-                    : <FileText className="w-5 h-5 text-primary" />
-                  }
-                </div>
-                <div className={cn("flex-1 min-w-0", direction === 'rtl' && "text-right")}>
-                  <p className="font-medium text-sm text-foreground line-clamp-1">
-                    {documentLink.title}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {documentLink.type === 'excel' ? t('document.excelSpreadsheet') : t('document.pdfDocument')} • {t('common.readyToDownload')}
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  variant="default"
-                  size="sm"
-                  className="gap-1.5 shrink-0 shadow-sm"
-                  onClick={() => openDocumentUrl(documentLink.url, documentLink.title)}
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  {t('common.download')}
-                </Button>
-              </div>
-            </motion.div>
-          )}
+          {/* Inline document download link (inside action bar area) */}
         </motion.div>
       </AnimatePresence>
 

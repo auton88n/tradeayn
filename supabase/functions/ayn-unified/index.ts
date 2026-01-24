@@ -349,7 +349,19 @@ CRITICAL RULES:
 - Include real, valuable information - not placeholder text
 - Use "pdf" for reports, research, documents; use "excel" for data, comparisons, lists
 - Each section should have either "content" (paragraphs) OR "table" (structured data)
-- Tables should have meaningful headers and at least 3-5 rows of data`;
+- Tables should have meaningful headers and at least 3-5 rows of data
+
+WRITING STYLE (CRITICAL - write like a human expert, not AI):
+- Vary sentence length naturally - some short punchy, some longer flowing
+- Start some sentences with "And", "But", "Now", or "So" like real people do
+- Include subtle opinions: "Interestingly,", "What stands out is...", "Notably,"
+- Use contractions throughout: "it's", "don't", "won't", "that's", "we're"
+- Add parenthetical asides (like this) and em-dashes — for natural flow
+- Vary paragraph length — some 2 sentences, some 4-5 sentences
+- Write conversationally like explaining to a colleague over coffee
+- NEVER use these AI patterns: "It is important to note", "Furthermore", "In conclusion", "Additionally", "Moreover", "It should be noted", "In summary", "As mentioned above"
+- Avoid starting consecutive sentences with the same word
+- Throw in an occasional rhetorical question for engagement`;
   }
 
   return basePrompt;
