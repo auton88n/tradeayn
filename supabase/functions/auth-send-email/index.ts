@@ -2,7 +2,13 @@ import { Webhook } from "https://esm.sh/standardwebhooks@1.0.0";
 import { Resend } from "npm:resend@2.0.0";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-const hookSecret = Deno.env.get("SEND_EMAIL_HOOK_SECRET");
+
+// The secret comes as "v1,whsec_BASE64SECRET" - extract just the base64 part
+const rawSecret = Deno.env.get("SEND_EMAIL_HOOK_SECRET") || "";
+// Extract just the base64 secret (after whsec_ prefix)
+const hookSecret = rawSecret.includes("whsec_") 
+  ? rawSecret.split("whsec_").pop() || ""
+  : rawSecret;
 
 // AYN branded email header
 const AYN_HEADER = `
@@ -257,6 +263,8 @@ Deno.serve(async (req) => {
     // Get the raw payload for signature verification
     const payload = await req.text();
     
+    console.log('[auth-send-email] Received request, hookSecret configured:', !!hookSecret);
+    
     // Verify webhook signature
     if (!hookSecret) {
       console.error('[auth-send-email] SEND_EMAIL_HOOK_SECRET not configured');
@@ -284,6 +292,7 @@ Deno.serve(async (req) => {
       webhookData = wh.verify(payload, headers) as typeof webhookData;
     } catch (verifyError) {
       console.error('[auth-send-email] Webhook verification failed:', verifyError);
+      console.error('[auth-send-email] Secret length:', hookSecret.length);
       return new Response(
         JSON.stringify({ error: 'Invalid webhook signature' }),
         { status: 401, headers: { 'Content-Type': 'application/json' } }
