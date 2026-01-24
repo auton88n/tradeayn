@@ -1,334 +1,204 @@
 
 
-# Unified AYN-Branded Error Handling System
+# Fix All Remaining Hardcoded Error Messages
 
 ## Overview
-Create a centralized, user-friendly error messaging system with consistent AYN branding across all error scenarios. No mentions of "Lovable", "Supabase", or any third-party technologies in user-facing messages.
+Update 15+ files across the codebase to use the centralized AYN-branded error system from `errorMessages.ts`. This will ensure consistent, user-friendly messaging throughout the entire platform with no mentions of technical infrastructure.
 
 ---
 
-## Problem Analysis
+## Files to Update
 
-After reviewing the codebase, I found **67+ files** with hardcoded error messages that:
-1. Expose technical details (e.g., "API error: 500", "Database error")
-2. Sometimes mention third-party services (Supabase in admin strings)
-3. Use inconsistent language and tone across components
-4. Lack actionable guidance for users
+### 1. User Support Components
 
----
+#### `src/components/support/UserTicketDetail.tsx`
+| Line | Current Message | New Message |
+|------|-----------------|-------------|
+| 99 | `toast.info('You have a new reply from the support team')` | Keep as info, but use: `'You have a new reply!'` |
+| 103 | `toast.error('Failed to load ticket')` | `t('error.dataLoadFailed')` |
+| 138 | `toast.success('Message sent')` | Keep as success |
+| 141 | `toast.error('Failed to send message')` | `t('error.ticketUpdateFailed')` |
+| 159 | `toast.success('Ticket deleted')` | Keep as success |
+| 163 | `toast.error('Failed to delete ticket')` | `t('error.ticketUpdateFailed')` |
 
-## Solution Architecture
+#### `src/hooks/useUserSettings.ts`
+| Line | Current Message | New Message |
+|------|-----------------|-------------|
+| 90-94 | `title: 'Error', description: 'Failed to load settings'` | `title: t('error.settingsSaveFailed'), description: t('error.settingsSaveFailedDesc')` |
+| 136-139 | `title: 'Success', description: 'Settings saved successfully'` | Keep success messages |
+| 142-145 | `title: 'Error', description: 'Failed to update settings'` | Use translation keys |
+| 162-165 | `title: 'Success', description: 'Session revoked successfully'` | Keep |
+| 168-171 | `title: 'Error', description: 'Failed to revoke session'` | `t('error.sessionRevokeFailed')` |
+| 189-191 | `title: 'Success', description: 'All devices signed out successfully'` | Keep |
+| 195-198 | `title: 'Error', description: 'Failed to sign out all devices'` | `t('error.signOutAllFailed')` |
 
-### 1. Create Central Error Message Library
-**New File:** `src/lib/errorMessages.ts`
+### 2. Subscription & Avatar Hooks
 
-A single source of truth for all error messages, organized by category:
+#### `src/contexts/SubscriptionContext.tsx`
+| Line | Current Message | New Message |
+|------|-----------------|-------------|
+| 125 | `toast.info('Free tier does not require checkout')` | Keep as info |
+| 131 | `toast.error('Invalid tier selected')` | `t('error.invalidTierSelected')` |
+| 147 | `toast.error('Failed to start checkout. Please try again.')` | `t('error.checkoutFailed')` |
+| 162 | `toast.error('Failed to open subscription management. Please try again.')` | `t('error.portalFailed')` |
 
-```text
-Categories:
-├── Auth (login, signup, password reset, session)
-├── Network (offline, timeout, rate limit)
-├── Upload (file type, size, processing)
-├── AI/Chat (response errors, limits, generation)
-├── Document (PDF/Excel generation, download)
-├── Settings (profile, preferences, security)
-├── Engineering (calculators, design tools)
-├── Support (tickets, feedback)
-└── Generic (fallbacks for unknown errors)
-```
+#### `src/hooks/useAvatarUpload.ts`
+| Line | Current Message | New Message |
+|------|-----------------|-------------|
+| 20 | `'Please upload a valid image (JPG, PNG, or WebP)'` | `t('error.uploadInvalidTypeDesc')` |
+| 25 | `'Image size must be less than 5MB'` | `t('error.uploadTooLargeDesc')` |
+| 54 | `'You must be logged in to upload an avatar'` | `t('error.sessionExpiredDesc')` |
+| 90 | `'Failed to upload avatar'` | `t('error.uploadFailed')` |
+| 110 | `'An error occurred while uploading'` | `t('error.uploadFailed')` |
+| 119 | `'You must be logged in'` | `t('error.sessionExpiredDesc')` |
+| 148 | `'An error occurred'` | `t('error.generic')` |
 
-Each error includes:
-- **title**: Short, clear heading
-- **description**: User-friendly explanation with actionable guidance
-- **icon** (optional): Suggested icon for visual feedback
-- **actionLabel** (optional): CTA button text (e.g., "Try Again", "Contact Support")
+### 3. Engineering Calculators
 
-### 2. Error Code Mapping
-Map technical error codes to user-friendly messages:
+All 5 calculators have the same pattern - validation errors and calculation errors need translation:
 
-| Technical Error | AYN Error Code | User Message |
-|-----------------|----------------|--------------|
-| 401 Unauthorized | `AUTH_SESSION_EXPIRED` | "Your session has ended. Please sign in again." |
-| 403 Forbidden | `AUTH_ACCESS_DENIED` | "You don't have access to this feature." |
-| 429 Rate Limit | `RATE_LIMIT_EXCEEDED` | "You're moving too fast! Please wait a moment." |
-| 500 Server Error | `SERVICE_UNAVAILABLE` | "AYN is taking a short break. Please try again in a few moments." |
-| Network Error | `NETWORK_OFFLINE` | "Looks like you're offline. Check your connection and try again." |
-| Timeout | `REQUEST_TIMEOUT` | "This is taking longer than expected. Please try again." |
+#### `src/components/engineering/BeamCalculator.tsx`
+| Line | Current Message | New Message |
+|------|-----------------|-------------|
+| 74 | `'Please enter a valid span length'` | `t('error.invalidInput')` with context |
+| 78 | `'Please enter a valid dead load'` | `t('error.invalidInput')` |
+| 82 | `'Please enter a valid live load'` | `t('error.invalidInput')` |
+| 124 | `'Calculation failed. Please try again.'` | `t('error.calculationFailedDesc')` |
 
-### 3. Humanized Error Personas
-Errors maintain AYN's friendly, helpful personality:
+#### `src/components/engineering/FoundationCalculator.tsx`
+| Line | Current Message | New Message |
+|------|-----------------|-------------|
+| 87 | `'Please enter a valid column load'` | `t('error.invalidInput')` |
+| 91 | `'Please enter a valid bearing capacity'` | `t('error.invalidInput')` |
+| 135 | `'Calculation failed. Please try again.'` | `t('error.calculationFailedDesc')` |
 
-```text
-Instead of: "Failed to upload file"
-Say: "Hmm, I couldn't receive your file. Let's try that again?"
+#### `src/components/engineering/ColumnCalculator.tsx`
+| Line | Current Message | New Message |
+|------|-----------------|-------------|
+| 80 | `'Calculation failed. Please try again.'` | `t('error.calculationFailedDesc')` |
 
-Instead of: "Database error"
-Say: "I'm having a moment here. Give me a second and try again!"
+#### `src/components/engineering/SlabCalculator.tsx`
+| Line | Current Message | New Message |
+|------|-----------------|-------------|
+| 83-97 | Multiple `'Please enter a valid...'` | `t('error.invalidInput')` |
+| 146 | `'Calculation failed. Please try again.'` | `t('error.calculationFailedDesc')` |
 
-Instead of: "Authentication failed"
-Say: "I didn't recognize those credentials. Double-check and try again?"
-```
+#### `src/components/engineering/RetainingWallCalculator.tsx`
+| Line | Current Message | New Message |
+|------|-----------------|-------------|
+| 115 | `'Please enter a valid wall height'` | `t('error.invalidInput')` |
+| 119 | `'Please enter a valid base width'` | `t('error.invalidInput')` |
+| 174 | `'Calculation failed. Please try again.'` | `t('error.calculationFailedDesc')` |
 
----
+#### `src/components/engineering/ParkingDesigner.tsx`
+| Line | Current Message | New Message |
+|------|-----------------|-------------|
+| 197-200 | `title: "Invalid Boundary", description: ...` | Use translation keys |
+| Various | Export/generation errors | Use translation keys |
 
-## Files to Modify
+### 4. Admin Components
 
-### New Files
+#### `src/components/admin/LLMManagement.tsx`
+| Line | Current Message | New Message |
+|------|-----------------|-------------|
+| 109 | `toast.error('Failed to load LLM models')` | `toast.error(t('error.dataLoadFailed'))` |
+| 135 | `toast.error('Failed to update model')` | `toast.error(t('error.settingsSaveFailed'))` |
 
-#### `src/lib/errorMessages.ts`
-Central error message definitions with:
-- Error code constants
-- Message objects with title/description/action
-- Helper function: `getErrorMessage(code: string, context?: object)`
-- Fallback messages for unknown errors
+#### `src/components/admin/RateLimitMonitoring.tsx`
+| Line | Current Message | New Message |
+|------|-----------------|-------------|
+| 62 | `toast.error('Failed to load rate limit stats')` | `toast.error(t('error.dataLoadFailed'))` |
+| 85 | `toast.error('Failed to unblock user')` | `toast.error(t('error.generic'))` |
 
-### Files to Update
-
-#### 1. `src/contexts/LanguageContext.tsx`
-**Add comprehensive error translation keys:**
-
-```text
-New keys to add:
-- error.networkOffline / error.networkOfflineDesc
-- error.sessionExpired / error.sessionExpiredDesc
-- error.rateLimitChat / error.rateLimitChatDesc
-- error.rateLimitAuth / error.rateLimitAuthDesc
-- error.uploadFailed / error.uploadFailedDesc
-- error.uploadTooLarge / error.uploadTooLargeDesc
-- error.uploadInvalidType / error.uploadInvalidTypeDesc
-- error.documentGenerationFailed / error.documentGenerationFailedDesc
-- error.aiUnavailable / error.aiUnavailableDesc
-- error.profileUpdateFailed / error.profileUpdateFailedDesc
-- error.ticketCreationFailed / error.ticketCreationFailedDesc
-- error.calculationFailed / error.calculationFailedDesc
-- error.connectionLost / error.connectionLostDesc
-- error.tryAgainLater / error.tryAgainLaterDesc
-- error.contactSupport / error.contactSupportDesc
-- error.invalidCredentials / error.invalidCredentialsDesc
-- error.accountLocked / error.accountLockedDesc
-- error.permissionDenied / error.permissionDeniedDesc
-```
-
-**Remove/replace Supabase mentions:**
-- Line 421: `'admin.supabaseHosted'` → `'admin.cloudHosted': 'Cloud hosted'`
-- Line 1004 (Arabic): Same change
-
-#### 2. `src/hooks/useMessages.ts`
-Replace hardcoded error messages with centralized versions:
-
-| Line | Current | New |
-|------|---------|-----|
-| 152-154 | "Session Error" / "Please sign in again" | `t('error.sessionExpired')` / `t('error.sessionExpiredDesc')` |
-| 163-167 | "Limit reached" / "Start a new chat" | `t('error.chatLimitReached')` / `t('error.chatLimitReachedDesc')` |
-| 190-194 | "Usage Error" / "Unable to verify usage limits" | `t('error.usageVerification')` / `t('error.usageVerificationDesc')` |
-| 213-217 | "System Error" / "Unable to process your request" | Already using `t()` ✓ |
-| 329-331 | Daily limit message | Use translation key |
-| 513-517 | "Save Warning" message | `t('error.saveWarning')` / `t('error.saveWarningDesc')` |
-
-#### 3. `src/hooks/useFileUpload.ts`
-Update file upload error messages:
-
-| Line | Current | New |
-|------|---------|-----|
-| 48-52 | "Invalid File Type" | `t('error.uploadInvalidType')` |
-| 57-61 | "File Too Large" | `t('error.uploadTooLarge')` with size info |
-| 151-155 | "Upload Failed" | `t('error.uploadFailed')` |
-| 255-260 | "Folders Not Supported" | `t('error.foldersNotSupported')` |
-| 267-272 | "Multiple Files" | `t('error.multipleFilesNotSupported')` |
-
-#### 4. `src/components/auth/AuthModal.tsx`
-Improve authentication error handling:
-
-| Line | Current | New |
-|------|---------|-----|
-| 125-128 | Shows raw `error.message` | Parse and show user-friendly message |
-| 216-218 | Shows raw `error.message` | `t('error.invalidCredentials')` for login failures |
-| 276-279 | Shows raw `error.message` | `t('error.registrationFailed')` |
-
-**Add error parsing helper:**
-```typescript
-const parseAuthError = (error: any): string => {
-  const message = error?.message?.toLowerCase() || '';
-  if (message.includes('invalid login')) return t('error.invalidCredentials');
-  if (message.includes('email not confirmed')) return t('error.emailNotVerified');
-  if (message.includes('user already registered')) return t('error.emailAlreadyExists');
-  if (message.includes('password')) return t('error.weakPassword');
-  return t('error.authGeneric');
-};
-```
-
-#### 5. `src/components/ErrorBoundary.tsx`
-Improve the error boundary UI:
-
-**Current:** "Something went wrong" with technical error message exposed
-**New:**
-- Friendly AYN-branded message
-- Hide technical details (only show in dev mode)
-- Add AYN brain icon instead of warning triangle
-- Improved styling with gradient background
-
-```text
-Title: "Oops! AYN hit a snag"
-Description: "Something unexpected happened, but don't worry - we've got this. 
-             Let's get you back on track."
-Button: "Let's Try Again"
-```
-
-#### 6. `src/components/settings/AccountPreferences.tsx`
-Line 159-162: Replace "Failed to update profile" with `t('error.profileUpdateFailed')`
-
-#### 7. `src/components/settings/SessionManagement.tsx`
-Line 56-59: Replace "Failed to send password reset email" with `t('error.passwordResetFailed')`
-
-#### 8. `src/components/support/TicketForm.tsx`
-Line 118: Replace "Failed to create ticket" with `t('error.ticketCreationFailed')`
-
-#### 9. `src/components/admin/GoogleAnalytics.tsx`
-Lines 67-68: Replace "Failed to fetch Google Analytics data" with "Unable to load analytics. Please try again."
-
-#### 10. `src/components/admin/SupportManagement.tsx`
-Lines 95, 192: Replace "Failed to..." messages with branded versions
-
-#### 11. `src/components/admin/CreditGiftHistory.tsx`
-Line 66: Replace "Failed to load credit gift history" with branded version
-
-#### 12. `src/components/engineering/EngineeringPortfolio.tsx`
-Lines 89, 114: Replace "Failed to update/remove" with branded versions
-
-#### 13. `src/components/dashboard/DashboardContainer.tsx`
-Line 151: Replace "Failed to copy message" with `t('error.copyFailed')`
-
-#### 14. `src/pages/ResetPassword.tsx`
-Line 166: Replace "Failed to reset password" with `t('error.passwordResetFailed')`
+#### `src/components/admin/UserAILimits.tsx`
+| Line | Current Message | New Message |
+|------|-----------------|-------------|
+| 87 | `toast.error('Failed to load user limits')` | `toast.error(t('error.dataLoadFailed'))` |
+| 130 | `toast.error('Failed to update limits')` | `toast.error(t('error.settingsSaveFailed'))` |
+| 155-156 | `toast.error('Update may have failed - please refresh')` | `toast.error(t('error.settingsSaveFailed'))` |
+| 172 | `toast.error('Failed to update - please try again')` | `toast.error(t('error.settingsSaveFailed'))` |
 
 ---
 
-## Translation Keys Structure
+## New Translation Keys to Add
 
-Add to all three languages (en/ar/fr):
+Add these to `src/contexts/LanguageContext.tsx` for all 3 languages:
 
 ```typescript
-// Authentication Errors
-'error.invalidCredentials': 'Invalid email or password. Please check and try again.',
-'error.invalidCredentialsDesc': 'Make sure your email is correct and try re-entering your password.',
-'error.emailNotVerified': 'Please verify your email first',
-'error.emailNotVerifiedDesc': 'Check your inbox for a verification link. We can resend it if needed.',
-'error.sessionExpired': 'Session Ended',
-'error.sessionExpiredDesc': 'Your session has expired. Please sign in again to continue.',
-'error.accountLocked': 'Account Temporarily Locked',
-'error.accountLockedDesc': 'Too many failed attempts. Please try again in a few minutes.',
-
-// Network & Connection Errors
-'error.networkOffline': 'You\'re Offline',
-'error.networkOfflineDesc': 'Check your internet connection and try again.',
-'error.connectionLost': 'Connection Lost',
-'error.connectionLostDesc': 'We lost connection to AYN. Reconnecting...',
-'error.timeout': 'Request Timed Out',
-'error.timeoutDesc': 'This is taking longer than usual. Please try again.',
-
-// Rate Limit Errors
-'error.rateLimitChat': 'Slow Down!',
-'error.rateLimitChatDesc': 'You\'re sending messages too quickly. Wait a moment and try again.',
-'error.rateLimitAuth': 'Too Many Attempts',
-'error.rateLimitAuthDesc': 'Please wait {time} before trying again.',
-
-// File Upload Errors
-'error.uploadFailed': 'Upload Failed',
-'error.uploadFailedDesc': 'We couldn\'t upload your file. Please try again.',
-'error.uploadTooLarge': 'File Too Large',
-'error.uploadTooLargeDesc': 'Please choose a file smaller than 10MB.',
-'error.uploadInvalidType': 'Unsupported File Type',
-'error.uploadInvalidTypeDesc': 'We support PDF, Excel, images, and text files.',
-'error.foldersNotSupported': 'Folders Not Supported',
-'error.foldersNotSupportedDesc': 'Please upload individual files instead of folders.',
-
-// AI & Chat Errors
-'error.aiUnavailable': 'AYN is Resting',
-'error.aiUnavailableDesc': 'I\'m taking a quick break. Please try again in a moment.',
-'error.chatLimitReached': 'Chat Limit Reached',
-'error.chatLimitReachedDesc': 'This conversation has reached its limit. Start a new chat to continue.',
-'error.usageVerification': 'Usage Check Failed',
-'error.usageVerificationDesc': 'We couldn\'t verify your usage. Please try again.',
-
-// Document Errors
-'error.documentGenerationFailed': 'Document Creation Failed',
-'error.documentGenerationFailedDesc': 'We couldn\'t create your document. Please try again.',
-'error.downloadFailed': 'Download Failed',
-'error.downloadFailedDesc': 'The download didn\'t complete. Please try again.',
-
-// Settings & Profile Errors
-'error.profileUpdateFailed': 'Couldn\'t Update Profile',
-'error.profileUpdateFailedDesc': 'Your changes weren\'t saved. Please try again.',
-'error.passwordResetFailed': 'Reset Email Failed',
-'error.passwordResetFailedDesc': 'We couldn\'t send the reset email. Please try again.',
-'error.settingsSaveFailed': 'Settings Not Saved',
-'error.settingsSaveFailedDesc': 'Your changes weren\'t saved. Please try again.',
-
-// Support Errors
-'error.ticketCreationFailed': 'Couldn\'t Create Ticket',
-'error.ticketCreationFailedDesc': 'We couldn\'t submit your request. Please try again.',
-
-// Engineering Errors
-'error.calculationFailed': 'Calculation Error',
-'error.calculationFailedDesc': 'Something went wrong with the calculation. Please check your inputs.',
-'error.designSaveFailed': 'Couldn\'t Save Design',
-'error.designSaveFailedDesc': 'Your design wasn\'t saved. Please try again.',
-
-// Generic/Fallback Errors
-'error.generic': 'Something Went Wrong',
-'error.genericDesc': 'An unexpected error occurred. Please try again.',
-'error.tryAgain': 'Try Again',
-'error.contactSupport': 'Contact Support',
-'error.copyFailed': 'Copy Failed',
-'error.copyFailedDesc': 'Couldn\'t copy to clipboard. Please try manually.',
-'error.saveWarning': 'Save Warning',
-'error.saveWarningDesc': 'Your message may not have been saved. Refresh if issues persist.'
+// New error keys
+'error.invalidInput': 'Invalid Input',
+'error.invalidInputDesc': 'Please check your values and try again.',
+'error.checkoutFailed': 'Checkout Unavailable',
+'error.checkoutFailedDesc': "We couldn't start checkout. Please try again.",
+'error.portalFailed': 'Portal Unavailable', 
+'error.portalFailedDesc': "We couldn't open subscription management. Please try again.",
+'error.invalidTierSelected': 'Invalid Tier',
+'error.invalidTierSelectedDesc': 'Please select a valid subscription tier.',
+'error.sessionRevokeFailed': "Couldn't Revoke Session",
+'error.sessionRevokeFailedDesc': 'The session revocation failed. Please try again.',
+'error.signOutAllFailed': "Couldn't Sign Out All Devices",
+'error.signOutAllFailedDesc': 'Please try again or contact support.',
+'error.dataLoadFailed': "Couldn't Load Data",
+'error.dataLoadFailedDesc': 'Unable to load the requested data. Please try again.',
+'error.ticketLoadFailed': "Couldn't Load Ticket",
+'error.ticketLoadFailedDesc': 'Unable to load ticket details. Please try again.',
+'error.ticketMessageFailed': "Couldn't Send Message",
+'error.ticketMessageFailedDesc': 'Your message wasn\'t sent. Please try again.',
+'error.ticketDeleteFailed': "Couldn't Delete Ticket",
+'error.ticketDeleteFailedDesc': 'The ticket wasn\'t deleted. Please try again.',
+'error.exportFailed': 'Export Failed',
+'error.exportFailedDesc': "We couldn't export your data. Please try again.",
+'error.boundaryInvalid': 'Invalid Boundary',
+'error.boundaryInvalidDesc': 'Please define at least 3 boundary points.',
 ```
 
 ---
 
-## Error Response Tone Guidelines
+## Update errorMessages.ts
 
-All error messages should follow these principles:
+Add new error codes to the centralized library:
 
-1. **Be Human**: Use contractions, casual language
-   - ❌ "Unable to process your request"
-   - ✅ "We couldn't handle that right now"
+```typescript
+// Add to ErrorCodes object
+INVALID_INPUT: 'INVALID_INPUT',
+CHECKOUT_FAILED: 'CHECKOUT_FAILED',
+PORTAL_FAILED: 'PORTAL_FAILED',
+INVALID_TIER: 'INVALID_TIER',
+SESSION_REVOKE_FAILED: 'SESSION_REVOKE_FAILED',
+SIGN_OUT_ALL_FAILED: 'SIGN_OUT_ALL_FAILED',
+TICKET_LOAD_FAILED: 'TICKET_LOAD_FAILED',
+TICKET_MESSAGE_FAILED: 'TICKET_MESSAGE_FAILED',
+TICKET_DELETE_FAILED: 'TICKET_DELETE_FAILED',
+EXPORT_FAILED: 'EXPORT_FAILED',
+BOUNDARY_INVALID: 'BOUNDARY_INVALID',
+```
 
-2. **Be Helpful**: Always provide next steps
-   - ❌ "Error occurred"
-   - ✅ "Something went wrong. Try refreshing the page."
+---
 
-3. **Be Reassuring**: Don't blame the user
-   - ❌ "Invalid input"
-   - ✅ "That didn't work - let's try a different approach"
+## Implementation Approach
 
-4. **Be Brief**: Short title, slightly longer description
-   - Title: 3-5 words
-   - Description: 1-2 sentences max
+For each file, the pattern is:
+1. Import `useLanguage` hook where not already imported
+2. Get `t` function from the hook
+3. Replace hardcoded strings with `t('error.keyName')` calls
+4. For files that don't use React hooks (like utilities), use the `getErrorMessage(ErrorCodes.X).description` pattern
 
-5. **Match AYN's Personality**: Friendly, capable, slightly playful
-   - ❌ "Server error 500"
-   - ✅ "AYN is taking a quick break. Back in a moment!"
+For admin components that don't have language context access, use simple branded messages directly without i18n (admin panel is English-only).
 
 ---
 
 ## Summary of Changes
 
-| Category | Files | Key Changes |
-|----------|-------|-------------|
-| New | 1 | `errorMessages.ts` - central library |
-| Translations | 1 | `LanguageContext.tsx` - 50+ new keys in 3 languages |
-| Auth | 1 | `AuthModal.tsx` - parse & humanize errors |
-| Chat | 1 | `useMessages.ts` - use translation keys |
-| Upload | 1 | `useFileUpload.ts` - use translation keys |
-| UI | 1 | `ErrorBoundary.tsx` - AYN-branded design |
-| Settings | 2 | Profile, Sessions - use translation keys |
-| Support | 1 | TicketForm - use translation keys |
-| Admin | 3 | Analytics, Support, Credits - branded messages |
-| Engineering | 1 | Portfolio - branded messages |
-| Dashboard | 1 | Container - use translation keys |
-| Reset | 1 | Password reset - use translation keys |
+| Category | Files | Changes |
+|----------|-------|---------|
+| User Support | 1 | `UserTicketDetail.tsx` - 6 error messages |
+| User Settings | 1 | `useUserSettings.ts` - 6 error messages |
+| Subscription | 1 | `SubscriptionContext.tsx` - 4 error messages |
+| Avatar | 1 | `useAvatarUpload.ts` - 7 error messages |
+| Engineering | 6 | All calculators - ~15 validation/error messages |
+| Admin | 3 | LLM, RateLimit, UserAILimits - 6 error messages |
+| Translations | 1 | LanguageContext - 20+ new keys |
+| Error Library | 1 | errorMessages.ts - 10 new error codes |
 
-**Total: ~15 files modified, 1 new file created**
+**Total: ~15 files modified, 50+ error messages unified**
 
