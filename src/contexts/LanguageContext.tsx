@@ -530,6 +530,8 @@ const translations = {
     'auth.sendAgain': 'Send Again',
     'auth.backToSignIn': 'Back to Sign In',
     'auth.forgotPasswordButton': 'Forgot Password?',
+    'auth.rateLimitTitle': 'Too Many Attempts',
+    'auth.rateLimitDesc': 'Please wait {time} before requesting another reset email.',
     
     // Terms Modal
     'terms.welcomeToAynAI': 'Welcome to AYN AI',
@@ -1157,6 +1159,8 @@ const translations = {
     'auth.sendAgain': 'إرسال مرة أخرى',
     'auth.backToSignIn': 'العودة لتسجيل الدخول',
     'auth.forgotPasswordButton': 'نسيت كلمة المرور؟',
+    'auth.rateLimitTitle': 'محاولات كثيرة جداً',
+    'auth.rateLimitDesc': 'يرجى الانتظار {time} قبل طلب بريد إعادة تعيين آخر.',
     // Terms Modal
     'terms.welcomeToAynAI': 'مرحباً بك في AYN AI',
     'terms.businessPartner': 'شريك أعمالك الذكي',
@@ -1558,6 +1562,8 @@ const translations = {
     'auth.sendAgain': 'Renvoyer',
     'auth.backToSignIn': 'Retour à la connexion',
     'auth.forgotPasswordButton': 'Mot de passe oublié ?',
+    'auth.rateLimitTitle': 'Trop de tentatives',
+    'auth.rateLimitDesc': 'Veuillez attendre {time} avant de demander un autre email de réinitialisation.',
     // Terms Modal
     'terms.welcomeToAynAI': 'Bienvenue sur AYN AI',
     'terms.businessPartner': 'Votre Partenaire IA Business',
