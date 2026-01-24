@@ -40,14 +40,58 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
   const [resetSentToEmail, setResetSentToEmail] = useState('');
   const [resendCooldown, setResendCooldown] = useState(0);
   
+  // Rate limit state
+  const [rateLimitedUntil, setRateLimitedUntil] = useState<number | null>(null);
+  const [rateLimitCountdown, setRateLimitCountdown] = useState(0);
+  
   const { toast } = useToast();
   const { t } = useLanguage();
+  
+  // Rate limit countdown effect
+  const startRateLimitCountdown = (seconds: number) => {
+    setRateLimitedUntil(Date.now() + seconds * 1000);
+    setRateLimitCountdown(seconds);
+    
+    const interval = setInterval(() => {
+      setRateLimitCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          setRateLimitedUntil(null);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+  
+  // Format countdown for display (e.g., "59:45" or "1:00:00")
+  const formatCountdown = (seconds: number): string => {
+    if (seconds >= 3600) {
+      const hours = Math.floor(seconds / 3600);
+      const mins = Math.floor((seconds % 3600) / 60);
+      const secs = seconds % 60;
+      return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const handleForgotPassword = async () => {
     if (!email) {
       toast({
         title: t('auth.emailRequired'),
         description: t('auth.emailRequiredDesc'),
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Check if currently rate limited
+    if (rateLimitedUntil && Date.now() < rateLimitedUntil) {
+      toast({
+        title: t('auth.rateLimitTitle'),
+        description: t('auth.rateLimitDesc').replace('{time}', formatCountdown(rateLimitCountdown)),
         variant: "destructive"
       });
       return;
@@ -61,11 +105,29 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
       });
 
       if (error) {
-        toast({
-          title: t('common.error'),
-          description: error.message,
-          variant: "destructive"
-        });
+        // Check for rate limit error
+        const errorCode = (error as { code?: string }).code;
+        const isRateLimited = 
+          errorCode === 'over_email_send_rate_limit' ||
+          error.message?.toLowerCase().includes('rate limit') ||
+          error.message?.toLowerCase().includes('too many requests') ||
+          (error as { status?: number }).status === 429;
+        
+        if (isRateLimited) {
+          // Start 1-hour countdown (Supabase default rate limit window)
+          startRateLimitCountdown(3600);
+          toast({
+            title: t('auth.rateLimitTitle'),
+            description: t('auth.rateLimitDesc').replace('{time}', '1:00:00'),
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            title: t('common.error'),
+            description: error.message,
+            variant: "destructive"
+          });
+        }
       } else {
         // Also send branded email via Resend (parallel, don't block)
         try {
