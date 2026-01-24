@@ -185,17 +185,43 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
         const code = (error as { code?: string }).code;
         if (code === 'email_not_confirmed' || /email not confirmed/i.test(error.message)) {
           try {
-            await supabase.auth.resend({
+            const { error: resendError } = await supabase.auth.resend({
               type: 'signup',
               email,
               options: { emailRedirectTo: `${window.location.origin}/` }
             });
-            toast({
-              title: t('auth.verifyEmail'),
-              description: t('auth.verifyEmailDesc'),
-            });
+            
+            if (resendError) {
+              // Check for rate limit on resend
+              const resendCode = (resendError as { code?: string }).code;
+              const isRateLimited = 
+                resendCode === 'over_email_send_rate_limit' ||
+                resendError.message?.toLowerCase().includes('rate limit') ||
+                (resendError as { status?: number }).status === 429;
+              
+              if (isRateLimited) {
+                toast({
+                  title: t('auth.verifyEmail'),
+                  description: 'A verification email was already sent. Please check your inbox and spam folder.',
+                });
+              } else {
+                toast({ 
+                  title: t('auth.verificationError'), 
+                  description: t('auth.verificationErrorDesc'), 
+                  variant: 'destructive'
+                });
+              }
+            } else {
+              toast({
+                title: t('auth.verifyEmail'),
+                description: t('auth.verifyEmailDesc'),
+              });
+            }
           } catch (e) {
-            toast({ title: t('auth.verificationError'), description: t('auth.verificationErrorDesc') , variant: 'destructive'});
+            toast({ 
+              title: t('auth.verifyEmail'), 
+              description: 'A verification email was already sent. Please check your inbox and spam folder.'
+            });
           }
         } else {
           // Parse error for user-friendly message
