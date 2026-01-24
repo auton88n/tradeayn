@@ -380,46 +380,12 @@ async function generateExcel(data: DocumentRequest): Promise<Uint8Array> {
   return new Uint8Array(buffer);
 }
 
-// Upload to Supabase Storage
-async function uploadToStorage(
-  supabase: ReturnType<typeof createClient>,
-  data: Uint8Array,
-  filename: string,
-  contentType: string,
-  userId?: string
-): Promise<string> {
-  const bucket = 'documents';
-  const path = `${userId || 'anonymous'}/${filename}`;
-  
-  // Ensure bucket exists
-  const { data: buckets } = await supabase.storage.listBuckets();
-  const bucketExists = buckets?.some(b => b.name === bucket);
-  
-  if (!bucketExists) {
-    await supabase.storage.createBucket(bucket, {
-      public: false,
-      fileSizeLimit: 10485760 // 10MB
-    });
-  }
-  
-  // Upload file
-  const { error: uploadError } = await supabase.storage
-    .from(bucket)
-    .upload(path, data, {
-      contentType,
-      upsert: true
-    });
-  
-  if (uploadError) {
-    console.error('[generate-document] Upload error:', uploadError);
-    throw new Error(`Upload failed: ${uploadError.message}`);
-  }
-  
-  // Create public URL (bucket is public)
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-  const publicUrl = `${supabaseUrl}/storage/v1/object/public/${bucket}/${path}`;
-  
-  return publicUrl;
+// Convert Uint8Array to base64 data URL (bypasses ad-blockers)
+function toDataUrl(data: Uint8Array, mimeType: string): string {
+  // Convert Uint8Array to base64 string
+  const binary = Array.from(data).map(byte => String.fromCharCode(byte)).join('');
+  const base64 = btoa(binary);
+  return `data:${mimeType};base64,${base64}`;
 }
 
 serve(async (req) => {
@@ -478,16 +444,10 @@ serve(async (req) => {
       });
     }
     
-    // Upload to storage
-    const downloadUrl = await uploadToStorage(
-      supabase,
-      fileData,
-      filename,
-      contentType,
-      body.userId
-    );
+    // Convert to base64 data URL (bypasses ad-blockers completely)
+    const downloadUrl = toDataUrl(fileData, contentType);
     
-    console.log(`[generate-document] Document created: ${filename}`);
+    console.log(`[generate-document] Document created as data URL: ${filename} (${Math.round(downloadUrl.length / 1024)}KB)`);
     
     return new Response(JSON.stringify({
       success: true,
