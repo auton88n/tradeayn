@@ -60,17 +60,32 @@ export const extractBestDocumentLink = (content: string): {
 } | null => {
   if (!content) return null;
   
-  // Match document links: 📄 [Title](url) or 📊 [Title](url)
-  // Updated regex to match both http URLs and data URLs
-  const regex = /[📄📊]\s*\[([^\]]+)\]\(((?:https?:\/\/[^\s)]+|data:[^\s)]+))\)/g;
+  // Match document links in these formats:
+  // 1. 📄 [Title](url) or 📊 [Title](url) - with emojis
+  // 2. [Download here](url) or [Download](url) - simple download links
+  const emojiRegex = /[📄📊]\s*\[([^\]]+)\]\(((?:https?:\/\/[^\s)]+|data:[^\s)]+))\)/g;
+  const downloadRegex = /\[([Dd]ownload(?:\s+here)?)\]\(((?:https?:\/\/[^\s)]+|data:[^\s)]+))\)/g;
+  
   const matches: Array<{ title: string; url: string; type: 'pdf' | 'excel' }> = [];
   
+  // Check emoji links first
   let match;
-  while ((match = regex.exec(content)) !== null) {
+  while ((match = emojiRegex.exec(content)) !== null) {
     const url = match[2];
     const isExcel = content.slice(Math.max(0, match.index - 5), match.index + 1).includes('📊') 
                     || url.includes('.xlsx')
                     || url.includes('spreadsheetml.sheet');
+    matches.push({
+      title: match[1],
+      url: url,
+      type: isExcel ? 'excel' : 'pdf'
+    });
+  }
+  
+  // Also check for "Download here" style links
+  while ((match = downloadRegex.exec(content)) !== null) {
+    const url = match[2];
+    const isExcel = url.includes('.xlsx') || url.includes('spreadsheetml.sheet');
     matches.push({
       title: match[1],
       url: url,
