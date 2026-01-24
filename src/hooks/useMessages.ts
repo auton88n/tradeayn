@@ -149,8 +149,8 @@ export const useMessages = (
       console.warn('[useMessages] No session - aborting');
       setIsTyping(false);
       toast({
-        title: "Session Error",
-        description: "Please sign in again to continue.",
+        title: "Session Ended",
+        description: "Your session has ended. Please sign in again to continue.",
         variant: "destructive"
       });
       return;
@@ -161,8 +161,8 @@ export const useMessages = (
       console.warn('[useMessages] Message limit reached');
       setIsTyping(false);
       toast({
-        title: "Limit reached",
-        description: "Start a new chat to continue.",
+        title: "Chat Limit Reached",
+        description: "This conversation has reached its limit. Start a new chat to continue.",
         variant: "destructive"
       });
       return;
@@ -188,8 +188,8 @@ export const useMessages = (
         console.warn('[useMessages] Usage check failed');
         setIsTyping(false);
         toast({
-          title: "Usage Error",
-          description: "Unable to verify usage limits. Please try again.",
+          title: "Usage Check Failed",
+          description: "We couldn't verify your usage. Please try again.",
           variant: "destructive"
         });
         return;
@@ -202,7 +202,7 @@ export const useMessages = (
         setIsTyping(false);
         toast({
           title: "Usage Limit Reached",
-          description: "You've reached your monthly message limit. Please contact support.",
+          description: "You've reached your monthly message limit. Check Settings for details.",
           variant: "destructive"
         });
         return;
@@ -211,8 +211,8 @@ export const useMessages = (
       console.error('[useMessages] Usage check error:', error);
       setIsTyping(false);
       toast({
-        title: "System Error",
-        description: "Unable to process your request. Please try again.",
+        title: "Something Went Wrong",
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive"
       });
       return;

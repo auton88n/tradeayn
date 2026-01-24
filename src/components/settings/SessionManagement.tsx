@@ -54,8 +54,8 @@ export const SessionManagement = ({ userId, userEmail, accessToken }: SessionMan
     } catch (error) {
       console.error('Error sending password reset:', error);
       toast({
-        title: t('common.error'),
-        description: 'Failed to send password reset email',
+        title: 'Reset Email Failed',
+        description: "We couldn't send the reset email. Please try again.",
         variant: 'destructive',
       });
     } finally {

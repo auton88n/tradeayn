@@ -1,7 +1,7 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { Brain, RefreshCw } from 'lucide-react';
 
 interface Props {
   children: ReactNode;
@@ -37,32 +37,36 @@ export class ErrorBoundary extends Component<Props, State> {
         return this.props.fallback;
       }
 
+      const isDev = import.meta.env.DEV;
+
       return (
-        <Card className="border-red-200 bg-red-50">
+        <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-red-700">
-              <AlertTriangle className="w-5 h-5" />
-              Something went wrong
+            <CardTitle className="flex items-center gap-3 text-foreground">
+              <div className="p-2 rounded-full bg-primary/10">
+                <Brain className="w-5 h-5 text-primary" />
+              </div>
+              Oops! AYN hit a snag
             </CardTitle>
-            <CardDescription className="text-red-600">
-              This component encountered an error and has been temporarily disabled to prevent crashes.
+            <CardDescription className="text-muted-foreground">
+              Something unexpected happened, but don't worry - we've got this. Let's get you back on track.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {this.state.error && (
-                <div className="text-xs text-red-600 bg-red-100 p-3 rounded font-mono">
+              {isDev && this.state.error && (
+                <div className="text-xs text-muted-foreground bg-muted/50 p-3 rounded font-mono">
                   {this.state.error.message}
                 </div>
               )}
               <Button 
                 onClick={() => this.setState({ hasError: false, error: undefined })}
-                variant="outline"
+                variant="default"
                 size="sm"
-                className="text-red-700 border-red-300 hover:bg-red-100"
+                className="gap-2"
               >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Try Again
+                <RefreshCw className="w-4 h-4" />
+                Let's Try Again
               </Button>
             </div>
           </CardContent>

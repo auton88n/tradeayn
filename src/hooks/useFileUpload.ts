@@ -46,8 +46,8 @@ export const useFileUpload = (userId: string): UseFileUploadReturn => {
   const validateFile = useCallback((file: File): boolean => {
     if (!ALLOWED_TYPES.includes(file.type)) {
       toast({
-        title: "Invalid File Type",
-        description: "Supported: PDF, Excel, CSV, TXT, JSON, XML, HTML, and images (JPEG, PNG, GIF, WebP, BMP, SVG).",
+        title: "Unsupported File Type",
+        description: "We support PDF, Excel, images, and text files.",
         variant: "destructive"
       });
       return false;
@@ -56,7 +56,7 @@ export const useFileUpload = (userId: string): UseFileUploadReturn => {
     if (file.size > MAX_SIZE) {
       toast({
         title: "File Too Large",
-        description: "Please select a file smaller than 10MB.",
+        description: "Please choose a file smaller than 10MB.",
         variant: "destructive"
       });
       return false;
@@ -150,7 +150,7 @@ export const useFileUpload = (userId: string): UseFileUploadReturn => {
     } catch (error) {
       toast({
         title: "Upload Failed",
-        description: "Failed to upload file. Click retry to try again.",
+        description: "We couldn't upload your file. Please try again.",
         variant: "destructive"
       });
       setUploadProgress(0);
@@ -254,7 +254,7 @@ export const useFileUpload = (userId: string): UseFileUploadReturn => {
       if (entry?.isDirectory) {
         toast({
           title: "Folders Not Supported",
-          description: "Please drag individual files, not folders.",
+          description: "Please upload individual files instead of folders.",
           variant: "destructive"
         });
         return;
@@ -265,7 +265,7 @@ export const useFileUpload = (userId: string): UseFileUploadReturn => {
     
     if (files.length > 1) {
       toast({
-        title: "Multiple Files",
+        title: "One File at a Time",
         description: "Please drop only one file at a time.",
         variant: "destructive"
       });

@@ -92,7 +92,7 @@ const SupportManagement: React.FC = () => {
       setTickets(data || []);
     } catch (error) {
       console.error('Error fetching tickets:', error);
-      toast.error('Failed to fetch tickets');
+      toast.error("Couldn't load tickets. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -189,7 +189,7 @@ const SupportManagement: React.FC = () => {
       toast.success('Status updated');
       fetchTickets();
     } catch (error) {
-      toast.error('Failed to update status');
+      toast.error("Couldn't update status. Please try again.");
     }
   };
 

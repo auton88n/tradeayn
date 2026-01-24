@@ -211,9 +211,14 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
             toast({ title: t('auth.verificationError'), description: t('auth.verificationErrorDesc') , variant: 'destructive'});
           }
         } else {
+          // Parse error for user-friendly message
+          const errorMsg = error.message?.toLowerCase() || '';
+          const friendlyDesc = errorMsg.includes('invalid login') || errorMsg.includes('invalid credentials')
+            ? t('error.invalidCredentialsDesc')
+            : error.message;
           toast({
             title: t('auth.authError'),
-            description: error.message,
+            description: friendlyDesc,
             variant: 'destructive'
           });
         }

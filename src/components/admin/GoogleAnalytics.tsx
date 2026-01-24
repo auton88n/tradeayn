@@ -64,8 +64,8 @@ export function GoogleAnalytics() {
       if (isRefresh) toast.success('Google Analytics data refreshed');
     } catch (err: any) {
       console.error('Error fetching GA data:', err);
-      setError(err.message || 'Failed to fetch Google Analytics data');
-      toast.error('Failed to fetch Google Analytics data');
+      setError('Unable to load analytics data. Please try again.');
+      toast.error('Unable to load analytics. Please try again.');
     } finally {
       setLoading(false);
       setRefreshing(false);

@@ -148,7 +148,7 @@ export const DashboardContainer = ({ user, session, auth, isAdmin, hasDutyAccess
     } catch (err) {
       toast({
         title: "Copy Failed",
-        description: "Failed to copy message to clipboard.",
+        description: "Couldn't copy to clipboard. Please try manually.",
         variant: "destructive"
       });
     }
