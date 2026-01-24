@@ -18,12 +18,19 @@ export interface FlyingSuggestion {
   endPosition: { x: number; y: number };
 }
 
+export interface ResponseBubbleAttachment {
+  url: string;
+  name: string;
+  type: string;
+}
+
 export interface ResponseBubble {
   id: string;
   content: string;
   type: BubbleType;
   isVisible: boolean;
   position: { x: number; y: number };
+  attachment?: ResponseBubbleAttachment;
 }
 
 export interface SuggestionBubble {
@@ -51,7 +58,7 @@ interface UseBubbleAnimationReturn {
     endPosition: { x: number; y: number }
   ) => void;
   completeSuggestionAbsorption: () => void;
-  emitResponseBubble: (content: string, type: BubbleType) => void;
+  emitResponseBubble: (content: string, type: BubbleType, attachment?: ResponseBubbleAttachment) => void;
   clearResponseBubbles: () => void;
   dismissBubble: (id: string) => void;
   emitSuggestion: (content: string, emoji?: string) => void;
@@ -147,7 +154,7 @@ export const useBubbleAnimation = (): UseBubbleAnimationReturn => {
     }, 200);
   }, []);
 
-  const emitResponseBubble = useCallback((content: string, type: BubbleType) => {
+  const emitResponseBubble = useCallback((content: string, type: BubbleType, attachment?: ResponseBubbleAttachment) => {
     const id = `response-${Date.now()}-${bubbleIdRef.current++}`;
     
     const newBubble: ResponseBubble = {
@@ -156,6 +163,7 @@ export const useBubbleAnimation = (): UseBubbleAnimationReturn => {
       type,
       isVisible: true,
       position: { x: 0, y: 0 },
+      attachment,
     };
 
     // Replace all previous bubbles - each AYN response is complete, not a continuation

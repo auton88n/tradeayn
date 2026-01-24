@@ -9,6 +9,7 @@ import {
   DialogContent,
 } from '@/components/ui/dialog';
 import { persistDalleImage } from '@/hooks/useImagePersistence';
+import { isDocumentStorageUrl, openDocumentUrl, toProxyUrl } from '@/lib/documentUrlUtils';
 
 interface MessageFormatterProps {
   content: string;
@@ -366,47 +367,22 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
             hr: () => (
               <hr className="my-4 border-gray-200 dark:border-gray-700" />
             ),
-            // Links - normalize Supabase Storage URLs (signed → public)
+            // Links - route document storage URLs through proxy for reliable downloads
             a: ({ children, href }) => {
-              // Normalize Supabase Storage document URLs to prevent "Invalid JWT" errors
-              const normalizeDocumentUrl = (url: string): string => {
-                if (!url) return url;
-                const SUPABASE_URL = 'https://dfkoxuokfkttjhfjcecx.supabase.co';
-                
-                // Convert signed URLs to public URLs for documents bucket
-                if (url.includes('/storage/v1/object/sign/documents/')) {
-                  const match = url.match(/\/storage\/v1\/object\/sign\/documents\/([^?]+)/);
-                  if (match) {
-                    return `${SUPABASE_URL}/storage/v1/object/public/documents/${match[1]}`;
-                  }
-                }
-                // Strip token from public URLs
-                if (url.includes('/storage/v1/object/public/') && url.includes('?token=')) {
-                  return url.split('?')[0];
-                }
-                return url;
-              };
-              
-              const isStorageUrl = href?.includes('/storage/v1/object/');
-              const normalizedHref = isStorageUrl ? normalizeDocumentUrl(href || '') : href;
+              const isDocUrl = isDocumentStorageUrl(href || '');
+              // For document URLs, use proxy; otherwise keep original href
+              const displayHref = isDocUrl ? toProxyUrl(href || '') : href;
               
               const handleClick = (e: React.MouseEvent) => {
-                if (isStorageUrl && normalizedHref) {
+                if (isDocUrl && href) {
                   e.preventDefault();
-                  // Use anchor-based approach for better browser compatibility
-                  const anchor = document.createElement('a');
-                  anchor.href = normalizedHref;
-                  anchor.target = '_blank';
-                  anchor.rel = 'noopener noreferrer';
-                  document.body.appendChild(anchor);
-                  anchor.click();
-                  document.body.removeChild(anchor);
+                  openDocumentUrl(href);
                 }
               };
               
               return (
                 <a 
-                  href={normalizedHref} 
+                  href={displayHref} 
                   target="_blank" 
                   rel="noopener noreferrer"
                   onClick={handleClick}
