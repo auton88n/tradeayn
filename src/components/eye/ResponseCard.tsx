@@ -15,7 +15,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { persistDalleImage } from '@/hooks/useImagePersistence';
-import { extractBestDocumentLink, toProxyUrl, openDocumentUrl } from '@/lib/documentUrlUtils';
+import { extractBestDocumentLink, openDocumentUrl } from '@/lib/documentUrlUtils';
 
 interface ResponseBubbleAttachment {
   url: string;
@@ -456,24 +456,15 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
                     {documentLink.type === 'excel' ? t('document.excelSpreadsheet') : t('document.pdfDocument')} • {t('common.readyToDownload')}
                   </p>
                 </div>
-                <Button 
-                  asChild
+                <Button
+                  type="button"
                   variant="default"
                   size="sm"
                   className="gap-1.5 shrink-0 shadow-sm"
+                  onClick={() => openDocumentUrl(documentLink.url)}
                 >
-                  <a 
-                    href={toProxyUrl(documentLink.url)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      openDocumentUrl(documentLink.url);
-                    }}
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    {t('common.download')}
-                  </a>
+                  <Download className="w-3.5 h-3.5" />
+                  {t('common.download')}
                 </Button>
               </div>
             </motion.div>

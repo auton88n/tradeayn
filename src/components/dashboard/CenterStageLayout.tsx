@@ -242,13 +242,20 @@ export const CenterStageLayout = ({
     { x: -15, y: 8 },    // Bottom card
   ];
 
+  // During document generation we intentionally keep ONLY the eye thinking UI
+  // (no separate PDF/Excel indicator card).
+  const showThinking = isTyping || isGeneratingDocument;
+  const thinkingTitle = isGeneratingDocument
+    ? 'Generating document…'
+    : undefined;
+
   // Cycle through suggestion cards with glances - only when suggestions visible
   // Uses ref to track index internally, only updates render state occasionally
   useEffect(() => {
     const visibleSuggestions = suggestionBubbles.filter(s => s.isVisible);
     
-    // Stop cycling when no suggestions, typing, or on mobile
-    if (visibleSuggestions.length === 0 || isTyping || isMobile || contextIsTyping) {
+    // Stop cycling when no suggestions, thinking, or on mobile
+    if (visibleSuggestions.length === 0 || showThinking || isMobile || contextIsTyping) {
       gazeIndexRef.current = null;
       setGazeForRender(null);
       return;
@@ -269,7 +276,7 @@ export const CenterStageLayout = ({
     }, 3500); // Slower cycling (was 2500)
 
     return () => clearInterval(cycleInterval);
-  }, [suggestionBubbles, isTyping, isMobile, contextIsTyping]);
+  }, [suggestionBubbles, showThinking, isMobile, contextIsTyping]);
 
   // Fetch dynamic suggestions based on conversation context
   const fetchDynamicSuggestions = useCallback(async (userMessage: string, aynResponse: string, mode: AIMode) => {
@@ -299,7 +306,7 @@ export const CenterStageLayout = ({
   const hasVisibleSuggestions = suggestionBubbles.some(s => s.isVisible);
 
   // AI gaze target - eye looks at individual suggestion cards
-  const gazeTarget = hasVisibleSuggestions && !isTyping && !isMobile
+  const gazeTarget = hasVisibleSuggestions && !showThinking && !isMobile
     ? gazeForRender !== null 
       ? suggestionGazeTargets[gazeForRender] 
       : { x: -12, y: 0 } // Default center-left when not looking at specific card
@@ -551,12 +558,12 @@ export const CenterStageLayout = ({
 
   // Update emotion when typing - only set thinking if not recently set from a response
   useEffect(() => {
-    if (isTyping) {
+    if (showThinking) {
       setIsResponding(true);
       // Don't override the emotion - let it persist from the last response
       // The emotion will naturally change when the next response comes in
     }
-  }, [isTyping, setIsResponding]);
+  }, [showThinking, setIsResponding]);
 
   return (
     <div
@@ -625,7 +632,7 @@ export const CenterStageLayout = ({
 
             {/* Thinking indicator when typing - simplified animation */}
             <AnimatePresence>
-              {isTyping && (
+              {showThinking && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -633,7 +640,10 @@ export const CenterStageLayout = ({
                   transition={{ duration: 0.15 }}
                   className="absolute -bottom-12 left-1/2 -translate-x-1/2 overflow-visible"
                 >
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-ayn-thinking/20 backdrop-blur-sm border border-ayn-thinking/30">
+                  <div
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-ayn-thinking/20 backdrop-blur-sm border border-ayn-thinking/30"
+                    title={thinkingTitle}
+                  >
                     <div className="flex gap-1">
                       {/* CSS-based animation instead of framer-motion */}
                       <div className="w-1.5 h-1.5 rounded-full bg-ayn-thinking animate-bounce-dot" style={{ animationDelay: '0ms' }} />
