@@ -1,37 +1,62 @@
 /**
- * Utility functions for normalizing document URLs from Supabase Storage.
- * Converts signed URLs to public URLs and strips expired tokens.
+ * Utility functions for handling Supabase Storage document URLs
+ * Handles normalization of signed URLs to public URLs and provides
+ * consistent URL handling across the application.
  */
 
-const SUPABASE_URL = 'https://dfkoxuokfkttjhfjcecx.supabase.co';
+const SUPABASE_PROJECT_ID = 'dfkoxuokfkttjhfjcecx';
+const SUPABASE_URL = `https://${SUPABASE_PROJECT_ID}.supabase.co`;
 
 /**
- * Normalizes a Supabase Storage URL by converting signed URLs to public URLs.
- * This prevents "Invalid JWT" errors for public bucket documents.
+ * Converts a document URL to use the proxy endpoint
+ * This bypasses ad-blocker blocking of Supabase domains
+ * 
+ * @param url - The original Supabase Storage URL
+ * @returns Proxy URL through the edge function
+ */
+export const toProxyUrl = (url: string): string => {
+  if (!url) return url;
+  
+  // Extract the path from the URL
+  // Matches: /storage/v1/object/public/documents/...
+  // or: /storage/v1/object/sign/documents/...
+  const pathMatch = url.match(/\/storage\/v1\/object\/(?:public|sign)\/documents\/(.+?)(?:\?|$)/);
+  
+  if (pathMatch && pathMatch[1]) {
+    const filePath = pathMatch[1];
+    return `${SUPABASE_URL}/functions/v1/download-document?path=${encodeURIComponent(filePath)}`;
+  }
+  
+  // If we can't extract the path, return normalized URL as fallback
+  return normalizeDocumentUrl(url);
+};
+
+/**
+ * Normalizes a Supabase Storage document URL to use the public endpoint
+ * This prevents "Invalid JWT" errors when signed URLs expire
  * 
  * @param url - The original URL (may be signed or public)
- * @returns The normalized public URL
+ * @returns Normalized public URL
  */
 export const normalizeDocumentUrl = (url: string): string => {
   if (!url) return url;
   
-  // If it's a signed URL for the documents bucket, convert to public URL
-  // Pattern: /storage/v1/object/sign/documents/... → /storage/v1/object/public/documents/...
-  if (url.includes('/storage/v1/object/sign/documents/')) {
-    // Extract the path after /sign/documents/
-    const match = url.match(/\/storage\/v1\/object\/sign\/documents\/([^?]+)/);
-    if (match) {
-      const filePath = match[1];
-      return `${SUPABASE_URL}/storage/v1/object/public/documents/${filePath}`;
-    }
+  // Convert signed URLs to public URLs
+  // From: /storage/v1/object/sign/documents/... 
+  // To:   /storage/v1/object/public/documents/...
+  let normalized = url.replace(
+    /\/storage\/v1\/object\/sign\/documents\//g,
+    '/storage/v1/object/public/documents/'
+  );
+  
+  // Strip any token query parameter from public URLs
+  // This handles cases where ?token= might still be appended
+  if (normalized.includes('/storage/v1/object/public/')) {
+    const urlParts = normalized.split('?');
+    normalized = urlParts[0];
   }
   
-  // If already a public URL but has token query params, strip them
-  if (url.includes('/storage/v1/object/public/') && url.includes('?token=')) {
-    return url.split('?')[0];
-  }
-  
-  return url;
+  return normalized;
 };
 
 /**
@@ -92,19 +117,22 @@ export const extractBestDocumentLink = (content: string): {
 };
 
 /**
- * Opens a document URL using an anchor-based approach for better browser compatibility.
- * Falls back to window.open if the anchor approach fails.
+ * Opens a document URL in a new tab using the proxy endpoint
+ * This bypasses ad-blocker blocking of Supabase domains
+ * 
+ * @param url - The document URL to open
  */
 export const openDocumentUrl = (url: string): void => {
-  const normalizedUrl = normalizeDocumentUrl(url);
+  // Use proxy URL to bypass ad-blockers
+  const proxyUrl = toProxyUrl(url);
   
-  // Create a temporary anchor element for better browser compatibility
+  // Use anchor-based navigation for better compatibility
   const anchor = document.createElement('a');
-  anchor.href = normalizedUrl;
+  anchor.href = proxyUrl;
   anchor.target = '_blank';
   anchor.rel = 'noopener noreferrer';
   
-  // Some browsers require the element to be in the DOM
+  // Programmatically click the anchor
   document.body.appendChild(anchor);
   anchor.click();
   document.body.removeChild(anchor);

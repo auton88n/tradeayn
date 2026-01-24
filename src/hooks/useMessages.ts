@@ -72,6 +72,8 @@ export const useMessages = (
 ): UseMessagesReturn => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
+  const [isGeneratingDocument, setIsGeneratingDocument] = useState(false);
+  const [documentType, setDocumentType] = useState<'pdf' | 'excel' | null>(null);
   const [lastSuggestedEmotion, setLastSuggestedEmotion] = useState<string | null>(null);
   const [moodPattern, setMoodPattern] = useState<MoodPattern | null>(null);
   const [emotionHistory, setEmotionHistory] = useState<EmotionHistoryEntry[]>([]);
@@ -258,6 +260,16 @@ export const useMessages = (
         return 'chat';
       };
 
+      const detectedIntent = detectIntent();
+      
+      // Set document generation state for visual indicator
+      if (detectedIntent === 'document') {
+        setIsGeneratingDocument(true);
+        // Detect document type from content
+        const isExcel = /excel|spreadsheet|xlsx|جدول/.test(messageContent.toLowerCase());
+        setDocumentType(isExcel ? 'excel' : 'pdf');
+      }
+
       // Build conversation history in ayn-unified format
       const conversationMessages = messages.slice(-5).map(msg => ({
         role: msg.sender === 'user' ? 'user' : 'assistant',
@@ -295,7 +307,7 @@ export const useMessages = (
         },
         body: JSON.stringify({
           messages: conversationMessages,
-          intent: detectIntent(),
+          intent: detectedIntent,
           context,
           stream: false
         })
@@ -304,6 +316,8 @@ export const useMessages = (
       clearTimeout(timeoutId);
 
       setIsTyping(false);
+      setIsGeneratingDocument(false);
+      setDocumentType(null);
 
       // Handle 429 Rate Limit / Daily Limit Response
       if (webhookResponse.status === 429) {
@@ -542,6 +556,8 @@ export const useMessages = (
 
     } catch (error) {
       setIsTyping(false);
+      setIsGeneratingDocument(false);
+      setDocumentType(null);
 
       const isTimeout = error instanceof Error && error.name === 'AbortError';
       
@@ -599,6 +615,8 @@ export const useMessages = (
   return {
     messages,
     isTyping,
+    isGeneratingDocument,
+    documentType,
     lastSuggestedEmotion,
     moodPattern,
     messageCount,

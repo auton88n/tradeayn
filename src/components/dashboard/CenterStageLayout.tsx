@@ -7,6 +7,7 @@ import { UserMessageBubble } from '@/components/eye/UserMessageBubble';
 import { ResponseCard } from '@/components/eye/ResponseCard';
 import { FlyingSuggestionBubble } from '@/components/eye/FlyingSuggestionBubble';
 import { ParticleBurst } from '@/components/eye/ParticleBurst';
+import { DocumentGeneratingCard } from '@/components/eye/DocumentGeneratingCard';
 import { ChatInput } from './ChatInput';
 import { SystemNotificationBanner } from './SystemNotificationBanner';
 import { BetaBadge } from '@/components/ui/BetaBadge';
@@ -34,6 +35,8 @@ interface CenterStageLayoutProps {
   messages: Message[];
   onSendMessage: (content: string, file?: File | null) => Promise<void>;
   isTyping: boolean;
+  isGeneratingDocument?: boolean;
+  documentType?: 'pdf' | 'excel' | null;
   isDisabled: boolean;
   selectedMode: AIMode;
   selectedFile: File | null;
@@ -92,6 +95,8 @@ export const CenterStageLayout = ({
   messages,
   onSendMessage,
   isTyping,
+  isGeneratingDocument = false,
+  documentType = null,
   isDisabled,
   selectedMode,
   selectedFile,
@@ -635,9 +640,24 @@ export const CenterStageLayout = ({
             </AnimatePresence>
           </motion.div>
 
+          {/* Document Generating Card - shows during PDF/Excel generation */}
+          <AnimatePresence>
+            {isGeneratingDocument && (
+              <motion.div
+                className="w-full flex justify-center mt-4"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+              >
+                <DocumentGeneratingCard documentType={documentType || 'pdf'} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* ResponseCard - flows directly below Eye in same column */}
           <AnimatePresence>
-            {responseBubbles.length > 0 && (
+            {responseBubbles.length > 0 && !isGeneratingDocument && (
               <motion.div
                 className="w-full flex justify-center mt-2"
                 style={{ 

@@ -183,6 +183,8 @@ export interface MaintenanceConfig {
 export interface UseMessagesReturn {
   messages: Message[];
   isTyping: boolean;
+  isGeneratingDocument: boolean;
+  documentType: 'pdf' | 'excel' | null;
   lastSuggestedEmotion: string | null;
   moodPattern: MoodPattern | null;
   messageCount: number;
