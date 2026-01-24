@@ -1,75 +1,156 @@
 
-Goal
-- Fix PDF/Excel “Download” so it reliably opens even when the browser blocks direct Supabase Storage URLs.
-- Ensure the “document generating” state stays as-is (it’s already implemented), but make the final “Download” button use the proxy endpoint (download-document edge function) instead of the raw Storage URL.
+# Enhanced "Forgot Password" Flow with Email Confirmation
 
-What I found (why it still fails)
-- Document generation is working server-side:
-  - `ayn-unified` returns `documentUrl` successfully (network shows 200 + a valid public storage URL).
-  - `generate-document` logs show “Document created …pdf”.
-- The failure is on the download step (your answer), and our UI is still opening the Storage URL directly:
-  - `ResponseCard` “Download” button currently uses `anchor.href = documentLink.url` (a `/storage/v1/object/public/...` URL).
-  - `MessageFormatter` link clicks also open `/storage/v1/object/...` URLs directly.
-  - In your network snapshot, there were no browser calls to `/functions/v1/download-document`, which means the proxy is not being used from the UI.
-- The proxy edge function itself works (I tested it directly):
-  - Calling `/functions/v1/download-document?path=...` returns a real PDF with `Content-Type: application/pdf`.
+## Goal
+Add a prominent "Forgot Password" quick-action button in the login modal that:
+1. Pre-fills and displays the user's email for confirmation
+2. Sends password reset emails via Resend for faster delivery
+3. Shows clear confirmation with the email address used
 
-Root cause
-- We created the proxy function + helper utilities, but the “Download” button (and markdown links) are not wired to use `openDocumentUrl()` / `toProxyUrl()`. So the app still triggers the browser’s blocked path.
+## Current State Analysis
 
-Implementation approach (no DB changes)
-A) Wire the ResponseCard download button to the proxy
-1) Update `src/components/eye/ResponseCard.tsx`
-   - Remove the inline “create anchor and open documentLink.url” behavior.
-   - Import and use `openDocumentUrl(documentLink.url)` (from `src/lib/documentUrlUtils.ts`) so it opens:
-     - `.../functions/v1/download-document?path=...`
-   - Also update the visible link (if any) / button behavior so right-click “Open in new tab” also uses the proxy URL (not just onClick). Best practice:
-     - Set the underlying href to `toProxyUrl(documentLink.url)`.
+**Authentication Modal** (`src/components/auth/AuthModal.tsx`):
+- Has a small "Forgot password?" text button between label and password field
+- Uses `supabase.auth.resetPasswordForEmail()` which sends via Supabase's built-in email service
+- Shows a toast notification on success but doesn't confirm which email was used
 
-B) Wire markdown document links to the proxy too (so clicking the 📄 link works)
-2) Update `src/components/MessageFormatter.tsx`
-   - Replace its local `normalizeDocumentUrl()` logic for storage links with:
-     - `isDocumentStorageUrl(href)` and then `toProxyUrl(href)` or `openDocumentUrl(href)`
-   - Behavior:
-     - If link is a document storage URL (documents bucket / .pdf / .xlsx), prevent default and open via proxy.
-     - For normal links, keep existing behavior.
+**Email System**:
+- Resend is already configured (`RESEND_API_KEY` secret exists)
+- `send-email` edge function handles custom branded emails
+- Currently supports: `welcome`, `credit_warning`, `auto_delete_warning`, `payment_receipt`
+- Does NOT have a `password_reset` email type yet
 
-C) Eliminate duplicate/fragile document parsing logic + make attachments the source of truth
-3) Improve “which URL is the real document” selection (prevents wrong link selection in long chats)
-   - `ResponseCard` currently has a large inline `extractBestDocumentLink()` implementation.
-   - Replace it with imports from `src/lib/documentUrlUtils.ts` to keep it consistent everywhere.
+**Supabase Password Reset**:
+- Supabase's `resetPasswordForEmail()` uses Supabase's built-in email templates
+- We can supplement with a branded Resend notification email
 
-4) Ensure the download card can render even if the text content doesn’t contain a markdown link
-   - Right now ResponseCard only knows `content` from `responseBubbles`, not the message attachment metadata that we save in `useMessages`.
-   - Update bubble plumbing so ResponseCard can see attachments:
-     - Update `src/hooks/useBubbleAnimation.ts`:
-       - Extend `ResponseBubble` to include optional `attachment?: { url: string; name: string; type: string }`.
-       - Update `emitResponseBubble()` signature to accept an optional attachment.
-     - Update `src/components/dashboard/CenterStageLayout.tsx`:
-       - When emitting the response bubble from `lastMessage`, pass `lastMessage.attachment`.
-     - Update `src/components/eye/ResponseCard.tsx`:
-       - Prefer rendering the download card from `responses[0].attachment` when it’s a PDF/Excel.
-       - Fall back to `extractBestDocumentLink(combinedContent)` only if there is no attachment.
+---
 
-D) Validation steps
-5) Test end-to-end in the browser
-   - Ask: “Create a PDF about Greenland” (or any topic).
-   - Confirm:
-     - You see the generating card during the request.
-     - The download card appears after completion.
-     - Clicking Download triggers a network request to:
-       - `/functions/v1/download-document?path=...`
-     - PDF opens without “blocked by client” behavior.
+## Implementation Approach
 
-Files to change (expected)
-- src/components/eye/ResponseCard.tsx
-- src/components/MessageFormatter.tsx
-- src/hooks/useBubbleAnimation.ts
-- src/components/dashboard/CenterStageLayout.tsx
-- src/lib/documentUrlUtils.ts (small enhancements only, e.g., avoid double-proxying)
+### Part A: Enhanced AuthModal UI
 
-Notes / edge cases handled
-- If the file truly doesn’t exist in storage, proxy will return 404 cleanly (instead of confusing token/JWT errors).
-- This fix does not depend on ad-blockers being installed; it addresses any client/network rule that blocks direct Storage URLs but still allows Edge Functions.
+**File: `src/components/auth/AuthModal.tsx`**
 
-After you approve this plan, I’ll implement the wiring changes and then we’ll re-test the download button together.
+1. Add a new state for showing a "reset sent" confirmation view:
+   - `resetEmailSent: boolean` - tracks if we should show confirmation
+   - `resetSentToEmail: string` - stores the email address used
+
+2. Add a prominent "Forgot Password" button below the sign-in form:
+   - Styled as a secondary/outline button with a key/lock icon
+   - More visible than the current small text link
+
+3. Create a "Reset Sent" confirmation panel:
+   - Shows a success icon and message
+   - Displays the email address the reset was sent to (masked for security)
+   - "Send Again" button if they didn't receive it
+   - "Back to Sign In" link
+
+4. Update `handleForgotPassword()`:
+   - Call Resend edge function in parallel with Supabase's built-in reset
+   - Set `resetEmailSent = true` and `resetSentToEmail = email` on success
+   - This gives users both the official Supabase link AND a branded notification
+
+### Part B: Add Password Reset Email Template (Resend)
+
+**File: `supabase/functions/send-email/index.ts`**
+
+Add a new email type `password_reset`:
+```typescript
+interface EmailRequest {
+  to: string;
+  emailType: 'welcome' | 'credit_warning' | 'auto_delete_warning' | 
+             'payment_receipt' | 'password_reset';  // Add this
+  data: Record<string, unknown>;
+  userId?: string;
+}
+```
+
+Create `passwordResetTemplate(userName: string, resetLink?: string)`:
+- Branded AYN header/footer
+- Bilingual (EN/AR) content
+- Explains that a reset link was sent
+- Provides security tips
+- Note: The actual reset link comes from Supabase's email; this is a branded notification
+
+**File: `src/lib/email-templates.ts`**
+- Add `password_reset` to `EmailType` union
+- Add interface for password reset email data
+
+### Part C: Add Translation Keys
+
+**File: `src/contexts/LanguageContext.tsx`**
+
+Add new translation keys for all three languages (EN, AR, FR):
+- `auth.resetEmailSentTo` - "Reset link sent to {email}"
+- `auth.checkSpam` - "Don't see it? Check your spam folder."
+- `auth.sendAgain` - "Send Again"
+- `auth.backToSignIn` - "Back to Sign In"
+- `auth.forgotPasswordTitle` - "Reset Password"
+- `auth.forgotPasswordDesc` - "Enter your email to receive a reset link"
+
+---
+
+## Technical Details
+
+### Email Masking Function
+To display the email in confirmation without revealing the full address:
+```typescript
+const maskEmail = (email: string): string => {
+  const [local, domain] = email.split('@');
+  const masked = local.length > 2 
+    ? local[0] + '***' + local.slice(-1)
+    : local[0] + '***';
+  return `${masked}@${domain}`;
+};
+// "john.doe@gmail.com" → "j***e@gmail.com"
+```
+
+### Dual Email Sending
+When user clicks "Send Reset Link":
+1. Call `supabase.auth.resetPasswordForEmail()` (required - contains the actual reset token link)
+2. In parallel, call `send-email` edge function with `emailType: 'password_reset'` (optional branded notification)
+
+This ensures:
+- Users get the official reset link from Supabase
+- They also get a branded email explaining what happened
+- If Resend fails, the Supabase email still works
+
+### UI Flow
+```text
+[Sign In Tab]
+  ├── Email input
+  ├── Password input (with small "Forgot?" link)
+  ├── [Sign In] button
+  └── [🔑 Forgot Password?] button (NEW - prominent)
+         │
+         ▼ (on click, if email entered)
+  [Confirmation View]
+  ├── ✓ Success icon
+  ├── "Reset link sent to j***e@gmail.com"
+  ├── "Check your inbox and spam folder"
+  ├── [Send Again] button (with cooldown)
+  └── [← Back to Sign In] link
+```
+
+---
+
+## Files to Modify
+
+| File | Changes |
+|------|---------|
+| `src/components/auth/AuthModal.tsx` | Add reset confirmation UI, prominent forgot password button, dual email sending |
+| `supabase/functions/send-email/index.ts` | Add `password_reset` email template |
+| `src/lib/email-templates.ts` | Add `password_reset` type |
+| `src/contexts/LanguageContext.tsx` | Add new translation keys (EN, AR, FR) |
+
+---
+
+## UX Improvements
+
+1. **More visible button**: Users won't miss the forgot password option
+2. **Email confirmation**: Users know exactly where the reset was sent
+3. **Faster delivery**: Resend typically delivers in seconds vs. Supabase's variable timing
+4. **Branded experience**: Password reset email matches AYN's visual identity
+5. **Security**: Email is masked in confirmation to protect in screen-sharing scenarios
+
