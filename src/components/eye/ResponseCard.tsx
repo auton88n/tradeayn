@@ -15,11 +15,19 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { persistDalleImage } from '@/hooks/useImagePersistence';
+import { extractBestDocumentLink, toProxyUrl, openDocumentUrl } from '@/lib/documentUrlUtils';
+
+interface ResponseBubbleAttachment {
+  url: string;
+  name: string;
+  type: string;
+}
 
 interface ResponseBubble {
   id: string;
   content: string;
   isVisible: boolean;
+  attachment?: ResponseBubbleAttachment;
 }
 
 interface ResponseCardProps {
@@ -66,63 +74,29 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
     return null;
   }, [combinedContent]);
 
-  // Detect document download link in response - using robust extraction with URL normalization
+  // Detect document download link in response
+  // Priority: 1) attachment metadata (if PDF/Excel), 2) extract from markdown content
   const documentLink = useMemo(() => {
-    // Import the utility inline to avoid circular deps
-    const extractBestDocumentLink = (content: string): {
-      title: string;
-      url: string;
-      type: 'pdf' | 'excel';
-    } | null => {
-      if (!content) return null;
-      
-      const SUPABASE_URL = 'https://dfkoxuokfkttjhfjcecx.supabase.co';
-      
-      // Normalize signed URLs to public URLs
-      const normalizeUrl = (url: string): string => {
-        if (!url) return url;
-        if (url.includes('/storage/v1/object/sign/documents/')) {
-          const match = url.match(/\/storage\/v1\/object\/sign\/documents\/([^?]+)/);
-          if (match) {
-            return `${SUPABASE_URL}/storage/v1/object/public/documents/${match[1]}`;
-          }
-        }
-        if (url.includes('/storage/v1/object/public/') && url.includes('?token=')) {
-          return url.split('?')[0];
-        }
-        return url;
-      };
-      
-      // Match all document links: 📄 [Title](url) or 📊 [Title](url)
-      const regex = /[📄📊]\s*\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
-      const matches: Array<{ title: string; url: string; type: 'pdf' | 'excel' }> = [];
-      
-      let match;
-      while ((match = regex.exec(content)) !== null) {
-        const isExcel = content.slice(Math.max(0, match.index - 5), match.index + 1).includes('📊') 
-                        || match[2].includes('.xlsx');
-        matches.push({
-          title: match[1],
-          url: match[2],
-          type: isExcel ? 'excel' : 'pdf'
-        });
+    // Check attachment first (source of truth from backend)
+    const attachment = visibleResponses[0]?.attachment;
+    if (attachment) {
+      const isPdf = attachment.type.includes('pdf') || attachment.name.endsWith('.pdf');
+      const isExcel = attachment.type.includes('spreadsheet') || 
+                      attachment.type.includes('excel') || 
+                      attachment.name.endsWith('.xlsx') || 
+                      attachment.name.endsWith('.xls');
+      if (isPdf || isExcel) {
+        return {
+          title: attachment.name,
+          url: attachment.url,
+          type: isExcel ? 'excel' as const : 'pdf' as const,
+        };
       }
-      
-      if (matches.length === 0) return null;
-      
-      // Priority: prefer public URLs over signed URLs
-      const publicMatch = matches.find(m => m.url.includes('/storage/v1/object/public/'));
-      if (publicMatch) {
-        return { ...publicMatch, url: normalizeUrl(publicMatch.url) };
-      }
-      
-      // Otherwise take the last match (most recent) and normalize it
-      const lastMatch = matches[matches.length - 1];
-      return { ...lastMatch, url: normalizeUrl(lastMatch.url) };
-    };
+    }
     
+    // Fallback: extract from markdown content
     return extractBestDocumentLink(combinedContent);
-  }, [combinedContent]);
+  }, [combinedContent, visibleResponses]);
 
   const handleDesignThis = useCallback(async () => {
     if (detectedImageUrl) {
@@ -483,22 +457,23 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
                   </p>
                 </div>
                 <Button 
-                  onClick={() => {
-                    // Use anchor-based approach for better browser compatibility
-                    const anchor = document.createElement('a');
-                    anchor.href = documentLink.url;
-                    anchor.target = '_blank';
-                    anchor.rel = 'noopener noreferrer';
-                    document.body.appendChild(anchor);
-                    anchor.click();
-                    document.body.removeChild(anchor);
-                  }}
+                  asChild
                   variant="default"
                   size="sm"
                   className="gap-1.5 shrink-0 shadow-sm"
                 >
-                  <Download className="w-3.5 h-3.5" />
-                  {t('common.download')}
+                  <a 
+                    href={toProxyUrl(documentLink.url)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      openDocumentUrl(documentLink.url);
+                    }}
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    {t('common.download')}
+                  </a>
                 </Button>
               </div>
             </motion.div>

@@ -521,13 +521,21 @@ export const CenterStageLayout = ({
         // Detect exciting keywords and trigger surprise enlargement
         detectExcitement(lastMessage.content);
 
-        // Emit response bubble
+        // Emit response bubble with attachment if present
         const bubbleType = getBubbleType(lastMessage.content);
       
         // Clean leading punctuation and whitespace, emit full response as single bubble
         // ResponseCard handles scrolling for long content - no splitting needed
         const response = lastMessage.content.replace(/^[!?\s]+/, '').trim();
-        emitResponseBubble(response, bubbleType);
+        
+        // Pass attachment metadata to the bubble so ResponseCard can use it
+        const attachment = lastMessage.attachment ? {
+          url: lastMessage.attachment.url,
+          name: lastMessage.attachment.name,
+          type: lastMessage.attachment.type,
+        } : undefined;
+        
+        emitResponseBubble(response, bubbleType, attachment);
         
         // Show dynamic suggestions after response bubble appears (reduced delay)
         setTimeout(async () => {
