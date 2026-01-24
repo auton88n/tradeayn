@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useEngineeringHistory } from '@/hooks/useEngineeringHistory';
 import { calculateFoundation } from '@/lib/engineeringCalculations';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface FoundationCalculatorProps {
   onCalculate: (result: {
@@ -51,6 +52,7 @@ const foundationTypes = [
 ];
 
 export const FoundationCalculator = ({ onCalculate, isCalculating, setIsCalculating, userId }: FoundationCalculatorProps) => {
+  const { t } = useLanguage();
   const { saveCalculation } = useEngineeringHistory(userId);
   
   const [formData, setFormData] = useState({
@@ -84,11 +86,11 @@ export const FoundationCalculator = ({ onCalculate, isCalculating, setIsCalculat
     const bearingCapacity = getBearingCapacity();
 
     if (isNaN(columnLoad) || columnLoad <= 0) {
-      toast.error('Please enter a valid column load');
+      toast.error(t('error.invalidInputDesc'));
       return;
     }
     if (bearingCapacity <= 0) {
-      toast.error('Please enter a valid bearing capacity');
+      toast.error(t('error.invalidInputDesc'));
       return;
     }
 
@@ -129,10 +131,10 @@ export const FoundationCalculator = ({ onCalculate, isCalculating, setIsCalculat
         timestamp: new Date(),
       });
 
-      toast.success('Foundation design complete!');
+      toast.success(t('common.success'));
     } catch (err) {
       console.error('Calculation error:', err);
-      toast.error('Calculation failed. Please try again.');
+      toast.error(t('error.calculationFailedDesc'));
     } finally {
       setIsCalculating(false);
     }

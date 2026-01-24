@@ -26,6 +26,7 @@ import {
   FileText,
   Gift
 } from 'lucide-react';
+import { getErrorMessage, ErrorCodes } from '@/lib/errorMessages';
 
 interface UserLimit {
   id: string;
@@ -84,7 +85,7 @@ export function UserAILimits() {
       setLimits(data || []);
     } catch (error) {
       console.error('Error fetching limits:', error);
-      toast.error('Failed to load user limits');
+      toast.error(getErrorMessage(ErrorCodes.DATA_LOAD_FAILED).description);
     } finally {
       setIsLoading(false);
     }
@@ -127,7 +128,7 @@ export function UserAILimits() {
       toast.success('Limits updated');
     } catch (error) {
       console.error('Error updating limits:', error);
-      toast.error('Failed to update limits');
+      toast.error(getErrorMessage(ErrorCodes.SETTINGS_SAVE_FAILED).description);
     }
   };
 
@@ -152,7 +153,7 @@ export function UserAILimits() {
 
       if (verifyError) {
         console.error('Failed to verify update:', verifyError);
-        toast.error('Update may have failed - please refresh');
+        toast.error(getErrorMessage(ErrorCodes.SETTINGS_SAVE_FAILED).description);
         return;
       }
 
@@ -169,7 +170,7 @@ export function UserAILimits() {
       );
     } catch (error) {
       console.error('Error toggling unlimited:', error);
-      toast.error('Failed to update - please try again');
+      toast.error(getErrorMessage(ErrorCodes.SETTINGS_SAVE_FAILED).description);
     }
   };
 

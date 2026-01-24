@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { getErrorMessage, ErrorCodes } from '@/lib/errorMessages';
 
 // Tier configuration
 export const SUBSCRIPTION_TIERS = {
@@ -128,7 +129,7 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
 
     const priceId = SUBSCRIPTION_TIERS[tier].priceId;
     if (!priceId) {
-      toast.error('Invalid tier selected');
+      toast.error(getErrorMessage(ErrorCodes.INVALID_TIER).description);
       return;
     }
 
@@ -144,7 +145,7 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
       }
     } catch (err) {
       console.error('[SubscriptionContext] Checkout error:', err);
-      toast.error('Failed to start checkout. Please try again.');
+      toast.error(getErrorMessage(ErrorCodes.CHECKOUT_FAILED).description);
     }
   }, []);
 
@@ -159,7 +160,7 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
       }
     } catch (err) {
       console.error('[SubscriptionContext] Portal error:', err);
-      toast.error('Failed to open subscription management. Please try again.');
+      toast.error(getErrorMessage(ErrorCodes.PORTAL_FAILED).description);
     }
   }, []);
 

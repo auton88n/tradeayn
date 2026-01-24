@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useEngineeringHistory } from '@/hooks/useEngineeringHistory';
 import { calculateBeam } from '@/lib/engineeringCalculations';
+import { useLanguage } from '@/contexts/LanguageContext';
 interface BeamCalculatorProps {
   onCalculate: (result: {
     type: 'beam';
@@ -46,6 +47,7 @@ const supportTypes = [
 ];
 
 export const BeamCalculator = ({ onCalculate, isCalculating, setIsCalculating, userId }: BeamCalculatorProps) => {
+  const { t } = useLanguage();
   const { saveCalculation } = useEngineeringHistory(userId);
   
   const [formData, setFormData] = useState({
@@ -71,15 +73,15 @@ export const BeamCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
     const beamWidth = parseFloat(formData.beamWidth);
 
     if (isNaN(span) || span <= 0) {
-      toast.error('Please enter a valid span length');
+      toast.error(t('error.invalidInputDesc'));
       return;
     }
     if (isNaN(deadLoad) || deadLoad < 0) {
-      toast.error('Please enter a valid dead load');
+      toast.error(t('error.invalidInputDesc'));
       return;
     }
     if (isNaN(liveLoad) || liveLoad < 0) {
-      toast.error('Please enter a valid live load');
+      toast.error(t('error.invalidInputDesc'));
       return;
     }
 
@@ -118,10 +120,10 @@ export const BeamCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
         timestamp: new Date(),
       });
 
-      toast.success('Calculation complete!');
+      toast.success(t('common.success'));
     } catch (err) {
       console.error('Calculation error:', err);
-      toast.error('Calculation failed. Please try again.');
+      toast.error(t('error.calculationFailedDesc'));
     } finally {
       setIsCalculating(false);
     }

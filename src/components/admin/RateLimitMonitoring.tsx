@@ -15,6 +15,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { getErrorMessage, ErrorCodes } from '@/lib/errorMessages';
 
 interface RateLimitStat {
   user_id: string;
@@ -59,7 +60,7 @@ export const RateLimitMonitoring = ({ session }: RateLimitMonitoringProps) => {
       setStats(data || []);
     } catch (error) {
       console.error('Error fetching rate limit stats:', error);
-      toast.error('Failed to load rate limit stats');
+      toast.error(getErrorMessage(ErrorCodes.DATA_LOAD_FAILED).description);
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -82,7 +83,7 @@ export const RateLimitMonitoring = ({ session }: RateLimitMonitoringProps) => {
       fetchStats();
     } catch (error) {
       console.error('Error unblocking user:', error);
-      toast.error('Failed to unblock user');
+      toast.error(getErrorMessage(ErrorCodes.GENERIC).description);
     }
   };
 
