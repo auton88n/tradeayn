@@ -1,172 +1,167 @@
 
-# Fix UI Visibility Issues & Create Terms/Privacy Pages
+
+# Fix Support Page Links & Update Email Branding
 
 ## Summary
 
-This plan addresses three distinct issues:
-1. **Ticketing Mockup QR Code** - The QR code displays as a broken grid pattern instead of a recognizable visual
-2. **404 Page Text Visibility** - The description text uses `text-muted-foreground` which is invisible on dark backgrounds
-3. **Missing Legal Pages** - The `/terms` and `/privacy` routes don't exist, causing 404 errors when users click the auth modal links
+Two issues need to be fixed:
+
+1. **Policy pages link to Support page** - The Terms and Privacy pages have "Contact Support" links that go to `/support` (the full Support Center with AI chat, tickets, FAQ). The user wants these to instead scroll to the "Contact Us" form on the landing page.
+
+2. **Password reset email branding needs improvement** - The current email (image 2) has a complex design with gradient header, "YOUR AI BUSINESS PARTNER" tagline, and bilingual content. The preferred design (image 3) is cleaner and simpler:
+   - Dark background throughout
+   - Just bold "AYN" text (no tagline, no gradient)
+   - Simple horizontal line separator
+   - Clean white button
+   - No Arabic text
+   - Simpler, more minimal layout
 
 ---
 
-## Files to Create/Modify
+## Files to Modify
 
-| File | Action | Description |
-|------|--------|-------------|
-| `src/components/services/TicketingMockup.tsx` | Modify | Create a proper QR code pattern with finder patterns |
-| `src/pages/NotFound.tsx` | Modify | Fix text visibility for dark/light mode compatibility |
-| `src/pages/Terms.tsx` | Create | Full Terms of Service page with all 12 sections |
-| `src/pages/Privacy.tsx` | Create | Full Privacy Policy page |
-| `src/App.tsx` | Modify | Add routes for `/terms` and `/privacy` |
-
----
-
-## Part 1: Fix Ticketing Mockup QR Code
-
-**Current Issue**: The QR code uses random dots that look broken/incomplete.
-
-**Solution**: Create a proper QR code visual with:
-- Corner finder patterns (3 squares in corners) - standard QR code requirement
-- Consistent center pattern that looks like actual QR code data
-- Remove randomness that causes the broken appearance
-
-**Changes to `TicketingMockup.tsx`**:
-- Replace the random `qrPattern` generator (lines 334-346) with a static, visually proper QR code pattern
-- The pattern will have 7x7 finder patterns in 3 corners and meaningful-looking data pixels
-
-```typescript
-const qrPattern = useMemo(() => {
-  // Proper QR code pattern with finder patterns in corners
-  return [
-    [true, true, true, true, true, true, true],
-    [true, false, false, false, false, false, true],
-    [true, false, true, true, true, false, true],
-    [true, false, true, true, true, false, true],
-    [true, false, true, true, true, false, true],
-    [true, false, false, false, false, false, true],
-    [true, true, true, true, true, true, true],
-  ];
-}, []);
-```
-
----
-
-## Part 2: Fix 404 Page Text Visibility
-
-**Current Issue**: Line 28 uses `text-muted-foreground` which becomes invisible on dark backgrounds.
-
-**Current code**:
-```tsx
-<p className="text-muted-foreground mb-8 leading-relaxed">
-```
-
-**Fixed code**:
-```tsx
-<p className="text-white/70 dark:text-white/70 mb-8 leading-relaxed">
-```
-
-Also fix the help text at line 52:
-```tsx
-<p className="text-sm text-white/50 dark:text-white/50">
-```
-
-Add explicit background styling to the Card to ensure consistent contrast:
-```tsx
-<Card className="glass text-center p-12 max-w-lg bg-neutral-900/90 dark:bg-neutral-900/90 backdrop-blur-xl border border-white/20">
-```
-
----
-
-## Part 3: Create Terms of Service Page
-
-**New file: `src/pages/Terms.tsx`**
-
-This page will include:
-- Professional header with AYN branding
-- All 12 sections from the TermsModal content (reformatted for full-page reading)
-- Sections cover: Information Collection, Usage, Sharing, Security, Retention, Rights, Transfers, Cookies, Children's Privacy, Updates, No Refunds, AI Disclaimer
-- Bilingual support via translation keys
-- Navigation back to home
-- Professional styling matching the platform design
-
-**Key features**:
-- Reuses the policy content from TermsModal but in a full-page format
-- Includes section anchors for direct linking
-- Responsive layout for all devices
-- Proper dark/light mode support
-
----
-
-## Part 4: Create Privacy Policy Page
-
-**New file: `src/pages/Privacy.tsx`**
-
-This page will include:
-- Same professional design as Terms page
-- Focus on privacy-specific sections (1-10)
-- Contact information for privacy inquiries
-- Links to Terms page for refund/AI disclaimer policies
-- Last updated date display
-
----
-
-## Part 5: Add Routes to App.tsx
-
-**Changes to `src/App.tsx`**:
-- Add lazy imports for Terms and Privacy pages
-- Add routes for `/terms` and `/privacy`
-
-```typescript
-// Add imports
-const Terms = lazy(() => import("./pages/Terms"));
-const Privacy = lazy(() => import("./pages/Privacy"));
-
-// Add routes (before the catch-all)
-<Route path="/terms" element={<PageTransition><Terms /></PageTransition>} />
-<Route path="/privacy" element={<PageTransition><Privacy /></PageTransition>} />
-```
+| File | Changes |
+|------|---------|
+| `src/pages/Terms.tsx` | Change "Contact Support" link from `/support` to `/#contact` |
+| `src/pages/Privacy.tsx` | Change "Contact Support" link from `/support` to `/#contact` |
+| `supabase/functions/auth-send-email/index.ts` | Redesign email template to match the cleaner preferred style |
 
 ---
 
 ## Technical Implementation
 
-### QR Code Fix
+### Part 1: Fix Policy Page Links
 
-The current implementation uses `Math.random()` which generates different patterns on each render. The fix creates a static, visually coherent pattern that resembles a real QR code with proper finder patterns.
+**Terms.tsx (line 222-223):**
+```tsx
+// Before
+<Link to="/support" className="text-sm text-white/50 hover:text-white transition-colors">
+  Contact Support
+</Link>
 
-### Text Visibility Fix
+// After
+<Link to="/#contact" className="text-sm text-white/50 hover:text-white transition-colors">
+  Contact Us
+</Link>
+```
 
-The `text-muted-foreground` class resolves to a gray color that has poor contrast on dark backgrounds. Using `text-white/70` (white at 70% opacity) ensures visibility on both the dark glassmorphic card and darker backgrounds.
+**Privacy.tsx (line 192-193):**
+```tsx
+// Before
+<Link to="/support" className="text-sm text-white/50 hover:text-white transition-colors">
+  Contact Support
+</Link>
 
-### Legal Pages Architecture
+// After
+<Link to="/#contact" className="text-sm text-white/50 hover:text-white transition-colors">
+  Contact Us
+</Link>
+```
 
-Both legal pages will:
-1. Use the same section component structure as TermsModal for consistency
-2. Include a sticky header with navigation
-3. Use scroll-based section highlighting
-4. Support all 3 languages (English, Arabic, French) via translation keys
-5. Include a "Back to Home" button
-6. Display last updated dates
-7. Have proper SEO meta tags
+Using `/#contact` will navigate to the landing page and automatically scroll to the contact section (id="contact").
+
+---
+
+### Part 2: Redesign Password Reset Email Template
+
+The email template in `supabase/functions/auth-send-email/index.ts` will be updated to match the cleaner design shown in image 3.
+
+**Current design (complex):**
+- Gradient purple header with "AYN" and "YOUR AI BUSINESS PARTNER" tagline
+- Bilingual text (English + Arabic)
+- Purple gradient button
+- Multiple info boxes with purple/red borders
+- Complex footer
+
+**New design (clean & minimal like image 3):**
+- Full dark background (`#1a1a1a` or similar)
+- Simple bold "AYN" text in white (no gradient, no tagline)
+- Thin horizontal line separator
+- Clean section headings
+- White/neutral button (not purple gradient)
+- English only (no Arabic)
+- Simple expiry notice
+- Minimal footer
+
+**New Header:**
+```typescript
+const AYN_HEADER = `
+<div style="background: #1a1a1a; padding: 50px 20px 30px; text-align: center;">
+  <h1 style="font-size: 48px; font-weight: 800; letter-spacing: 8px; color: #ffffff; margin: 0;">AYN</h1>
+  <div style="width: 60px; height: 3px; background: #ffffff; margin: 20px auto 0;"></div>
+</div>
+`;
+```
+
+**New Recovery Template:**
+```typescript
+case 'recovery':
+  return {
+    subject: 'Reset your password | AYN',
+    html: wrapEmail(`
+      <div style="padding: 40px 30px; color: #9ca3af;">
+        <h1 style="color: #ffffff; font-size: 28px; margin: 0 0 24px 0; font-weight: 600;">
+          Reset your password
+        </h1>
+        
+        <p style="color: #9ca3af; line-height: 1.7; margin: 0 0 10px 0; font-size: 16px;">
+          We received a request to reset your password for your AYN account.
+        </p>
+        <p style="color: #9ca3af; line-height: 1.7; margin: 0 0 30px 0; font-size: 16px;">
+          Click the button below to create a new password.
+        </p>
+        
+        <div style="text-align: center; margin: 35px 0;">
+          <a href="${confirmationUrl}" style="display: inline-block; background: #f5f5f5; color: #1a1a1a; padding: 16px 48px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">
+            Reset Password
+          </a>
+        </div>
+        
+        <p style="color: #6b7280; font-size: 14px; line-height: 1.7; margin-top: 40px;">
+          This link expires in 1 hour. If you didn't request a password reset, you can safely ignore this email and your password will remain unchanged.
+        </p>
+      </div>
+    `)
+  };
+```
+
+**New Footer:**
+```typescript
+const AYN_FOOTER = `
+<div style="background: #1a1a1a; padding: 25px 20px; text-align: center; border-top: 1px solid rgba(255,255,255,0.05);">
+  <p style="color: #4b5563; font-size: 12px; margin: 0;">
+    © ${new Date().getFullYear()} AYN. All rights reserved.
+  </p>
+</div>
+`;
+```
+
+---
+
+## Key Design Changes for Email
+
+| Element | Current | New (Preferred) |
+|---------|---------|-----------------|
+| Header background | Purple gradient | Solid dark (#1a1a1a) |
+| Logo style | Gradient text + tagline | Plain white bold "AYN" |
+| Separator | None | Simple white line |
+| Button | Purple gradient | White/light neutral |
+| Language | Bilingual (EN+AR) | English only |
+| Footer | Complex with Arabic | Minimal copyright only |
+| Overall feel | Busy, colorful | Clean, minimal, professional |
 
 ---
 
 ## Expected Results
 
-| Issue | Before | After |
-|-------|--------|-------|
-| Ticketing QR Code | Random dots, broken appearance | Proper QR pattern with finder squares |
-| 404 Page Text | Invisible on dark background | Clearly visible in all themes |
-| Terms link (/terms) | 404 error | Full Terms of Service page |
-| Privacy link (/privacy) | 404 error | Full Privacy Policy page |
+After these changes:
 
----
+1. **Policy pages**: The "Contact Support" link will become "Contact Us" and take users directly to the landing page contact form instead of the full Support Center
 
-## Summary
+2. **Password reset emails**: Will have a cleaner, more professional appearance matching image 3:
+   - Simple bold "AYN" header
+   - Clean white button
+   - Minimal text
+   - No Arabic translation
+   - Professional, modern look
 
-This implementation ensures:
-1. All UI elements are visible in both light and dark modes
-2. Users can access full legal documents before signing up
-3. The ticketing mockup displays a professional-looking QR code
-4. The 404 page has proper contrast for readability
