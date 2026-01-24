@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Building, User } from 'lucide-react';
+import { Loader2, Building, User, KeyRound, CheckCircle2, ArrowLeft, Mail } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { PasswordStrengthIndicator } from './PasswordStrengthIndicator';
 
@@ -15,6 +15,16 @@ interface AuthModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
+
+// Mask email for privacy (john.doe@gmail.com → j***e@gmail.com)
+const maskEmail = (email: string): string => {
+  const [local, domain] = email.split('@');
+  if (!domain) return email;
+  const masked = local.length > 2 
+    ? local[0] + '***' + local.slice(-1)
+    : local[0] + '***';
+  return `${masked}@${domain}`;
+};
 
 export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -24,6 +34,11 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
   const [fullName, setFullName] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  
+  // New states for reset confirmation view
+  const [resetEmailSent, setResetEmailSent] = useState(false);
+  const [resetSentToEmail, setResetSentToEmail] = useState('');
+  const [resendCooldown, setResendCooldown] = useState(0);
   
   const { toast } = useToast();
   const { t } = useLanguage();
@@ -40,6 +55,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
 
     setIsResettingPassword(true);
     try {
+      // Call Supabase's built-in reset (required - contains the actual reset link)
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
       });
@@ -51,10 +67,35 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
           variant: "destructive"
         });
       } else {
-        toast({
-          title: t('auth.checkEmail'),
-          description: t('auth.passwordResetSent'),
-        });
+        // Also send branded email via Resend (parallel, don't block)
+        try {
+          await supabase.functions.invoke('send-email', {
+            body: {
+              to: email,
+              emailType: 'password_reset',
+              data: { userName: email.split('@')[0] }
+            }
+          });
+          console.log('[AuthModal] Branded password reset email sent via Resend');
+        } catch (emailError) {
+          console.warn('[AuthModal] Resend email failed (Supabase email still sent):', emailError);
+        }
+
+        // Show confirmation view
+        setResetSentToEmail(email);
+        setResetEmailSent(true);
+        
+        // Start cooldown for resend button
+        setResendCooldown(60);
+        const interval = setInterval(() => {
+          setResendCooldown((prev) => {
+            if (prev <= 1) {
+              clearInterval(interval);
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
       }
     } catch (error) {
       toast({
@@ -65,6 +106,11 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
     } finally {
       setIsResettingPassword(false);
     }
+  };
+
+  const handleBackToSignIn = () => {
+    setResetEmailSent(false);
+    setResetSentToEmail('');
   };
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -216,6 +262,67 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
     }
   };
 
+  // Reset confirmation view
+  if (resetEmailSent) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="bg-neutral-950 border border-white/20 backdrop-blur-xl shadow-2xl sm:max-w-md">
+          <div className="flex flex-col items-center text-center py-6 space-y-6">
+            {/* Success Icon */}
+            <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center">
+              <CheckCircle2 className="w-8 h-8 text-green-500" />
+            </div>
+            
+            {/* Title */}
+            <div className="space-y-2">
+              <h2 className="text-xl font-semibold text-white">
+                {t('auth.resetEmailSentTitle')}
+              </h2>
+              <p className="text-muted-foreground text-sm">
+                {t('auth.resetEmailSentTo').replace('{email}', maskEmail(resetSentToEmail))}
+              </p>
+            </div>
+            
+            {/* Email Icon */}
+            <div className="flex items-center gap-2 bg-neutral-900/50 border border-white/10 rounded-lg px-4 py-3">
+              <Mail className="w-5 h-5 text-primary" />
+              <span className="text-sm text-white/80">{maskEmail(resetSentToEmail)}</span>
+            </div>
+            
+            {/* Check spam notice */}
+            <p className="text-xs text-muted-foreground">
+              {t('auth.checkSpamFolder')}
+            </p>
+            
+            {/* Resend Button */}
+            <Button
+              variant="outline"
+              onClick={handleForgotPassword}
+              disabled={resendCooldown > 0 || isResettingPassword}
+              className="w-full"
+            >
+              {isResettingPassword && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {resendCooldown > 0 
+                ? `${t('auth.sendAgain')} (${resendCooldown}s)`
+                : t('auth.sendAgain')
+              }
+            </Button>
+            
+            {/* Back to Sign In */}
+            <button
+              type="button"
+              onClick={handleBackToSignIn}
+              className="flex items-center gap-2 text-sm text-white/70 hover:text-white transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              {t('auth.backToSignIn')}
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-neutral-950 border border-white/20 backdrop-blur-xl shadow-2xl sm:max-w-md">
@@ -277,6 +384,18 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
               >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {t('auth.signIn')}
+              </Button>
+              
+              {/* Prominent Forgot Password Button */}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleForgotPassword}
+                disabled={isResettingPassword || !email}
+                className="w-full gap-2"
+              >
+                <KeyRound className="w-4 h-4" />
+                {t('auth.forgotPasswordButton')}
               </Button>
             </form>
           </TabsContent>

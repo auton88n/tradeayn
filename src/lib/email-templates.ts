@@ -3,7 +3,7 @@
  * These are used for reference and SSR if needed
  */
 
-export type EmailType = 'welcome' | 'credit_warning' | 'auto_delete_warning' | 'payment_receipt';
+export type EmailType = 'welcome' | 'credit_warning' | 'auto_delete_warning' | 'payment_receipt' | 'password_reset';
 
 export interface WelcomeEmailData {
   userName: string;
@@ -28,11 +28,16 @@ export interface PaymentReceiptEmailData {
   date: string;
 }
 
+export interface PasswordResetEmailData {
+  userName: string;
+}
+
 export type EmailData = 
   | WelcomeEmailData 
   | CreditWarningEmailData 
   | AutoDeleteWarningEmailData 
-  | PaymentReceiptEmailData;
+  | PaymentReceiptEmailData
+  | PasswordResetEmailData;
 
 // AYN branded email header (for reference)
 export const AYN_EMAIL_HEADER = `
@@ -54,6 +59,7 @@ export const EMAIL_SUBJECTS: Record<EmailType, string | ((data: EmailData) => st
   credit_warning: (data) => `⚠️ AYN: Low Credits Alert - Only ${(data as CreditWarningEmailData).creditsLeft} remaining`,
   auto_delete_warning: (data) => `🗑️ AYN: ${(data as AutoDeleteWarningEmailData).itemCount} items will be deleted in ${(data as AutoDeleteWarningEmailData).daysLeft} days`,
   payment_receipt: (data) => `✅ AYN Payment Confirmation - ${(data as PaymentReceiptEmailData).plan}`,
+  password_reset: "🔐 AYN: Password Reset Request | طلب إعادة تعيين كلمة المرور",
 };
 
 // Get subject line for email type

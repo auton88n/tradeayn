@@ -524,6 +524,12 @@ const translations = {
     'auth.termsRequiredSignup': 'Please accept the terms to continue',
     'auth.emailAlreadyRegistered': 'Email Already Registered',
     'auth.emailAlreadyRegisteredDesc': 'This email is already in use. Please sign in or use the password reset option.',
+    'auth.resetEmailSentTitle': 'Reset Link Sent!',
+    'auth.resetEmailSentTo': 'We\'ve sent a password reset link to {email}',
+    'auth.checkSpamFolder': 'Don\'t see it? Check your spam or junk folder.',
+    'auth.sendAgain': 'Send Again',
+    'auth.backToSignIn': 'Back to Sign In',
+    'auth.forgotPasswordButton': 'Forgot Password?',
     
     // Terms Modal
     'terms.welcomeToAynAI': 'Welcome to AYN AI',
@@ -1145,7 +1151,12 @@ const translations = {
     'auth.termsRequiredSignup': 'يرجى قبول الشروط للمتابعة',
     'auth.emailAlreadyRegistered': 'البريد الإلكتروني مسجل مسبقاً',
     'auth.emailAlreadyRegisteredDesc': 'هذا البريد الإلكتروني مستخدم بالفعل. يرجى تسجيل الدخول أو استخدام خيار إعادة تعيين كلمة المرور.',
-    
+    'auth.resetEmailSentTitle': 'تم إرسال رابط إعادة التعيين!',
+    'auth.resetEmailSentTo': 'لقد أرسلنا رابط إعادة تعيين كلمة المرور إلى {email}',
+    'auth.checkSpamFolder': 'لم تجده؟ تحقق من مجلد الرسائل غير المرغوب فيها.',
+    'auth.sendAgain': 'إرسال مرة أخرى',
+    'auth.backToSignIn': 'العودة لتسجيل الدخول',
+    'auth.forgotPasswordButton': 'نسيت كلمة المرور؟',
     // Terms Modal
     'terms.welcomeToAynAI': 'مرحباً بك في AYN AI',
     'terms.businessPartner': 'شريك أعمالك الذكي',
@@ -1541,7 +1552,12 @@ const translations = {
     'auth.termsRequiredSignup': 'Veuillez accepter les conditions pour continuer',
     'auth.emailAlreadyRegistered': 'Email déjà enregistré',
     'auth.emailAlreadyRegisteredDesc': 'Cet email est déjà utilisé. Veuillez vous connecter ou utiliser l\'option de réinitialisation du mot de passe.',
-    
+    'auth.resetEmailSentTitle': 'Lien de réinitialisation envoyé !',
+    'auth.resetEmailSentTo': 'Nous avons envoyé un lien de réinitialisation à {email}',
+    'auth.checkSpamFolder': 'Vous ne le voyez pas ? Vérifiez votre dossier spam.',
+    'auth.sendAgain': 'Renvoyer',
+    'auth.backToSignIn': 'Retour à la connexion',
+    'auth.forgotPasswordButton': 'Mot de passe oublié ?',
     // Terms Modal
     'terms.welcomeToAynAI': 'Bienvenue sur AYN AI',
     'terms.businessPartner': 'Votre Partenaire IA Business',

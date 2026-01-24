@@ -9,7 +9,7 @@ const corsHeaders = {
 
 interface EmailRequest {
   to: string;
-  emailType: 'welcome' | 'credit_warning' | 'auto_delete_warning' | 'payment_receipt';
+  emailType: 'welcome' | 'credit_warning' | 'auto_delete_warning' | 'payment_receipt' | 'password_reset';
   data: Record<string, unknown>;
   userId?: string;
 }
@@ -238,6 +238,67 @@ function paymentReceiptTemplate(userName: string, amount: string, plan: string, 
   };
 }
 
+// Generate password reset notification email template (bilingual)
+function passwordResetTemplate(userName: string): { subject: string; html: string } {
+  const safeName = escapeHtml(userName || 'there');
+  
+  return {
+    subject: "🔐 AYN: Password Reset Request | طلب إعادة تعيين كلمة المرور",
+    html: `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<div style="max-width:600px;margin:0 auto;padding:40px 20px;">
+  ${AYN_HEADER}
+  
+  <div style="background:#f0f9ff;border-left:4px solid #0284c7;padding:16px 20px;margin-bottom:32px;">
+    <p style="font-size:16px;color:#0369a1;margin:0;font-weight:600;">🔐 Password Reset Requested</p>
+  </div>
+  
+  <p style="font-size:18px;color:#333;margin-bottom:16px;">Hi ${safeName},</p>
+  <p style="font-size:16px;color:#666;line-height:1.6;margin-bottom:24px;">
+    We received a request to reset your password. A separate email with your password reset link has been sent.
+  </p>
+  
+  <div style="background:#f9f9f9;border-radius:12px;padding:24px;margin-bottom:24px;">
+    <p style="font-size:14px;color:#374151;margin:0 0 12px;font-weight:600;">🛡️ Security Tips:</p>
+    <ul style="font-size:14px;color:#6b7280;margin:0;padding-left:20px;line-height:1.8;">
+      <li>Never share your password or reset link with anyone</li>
+      <li>Create a strong password with letters, numbers, and symbols</li>
+      <li>The reset link expires in 1 hour for security</li>
+    </ul>
+  </div>
+  
+  <div style="background:#fef3c7;border-radius:8px;padding:16px;margin-bottom:24px;">
+    <p style="font-size:14px;color:#92400e;margin:0;">
+      ⚠️ <strong>Didn't request this?</strong> If you didn't request a password reset, please ignore this email. Your account is secure.
+    </p>
+  </div>
+  
+  <hr style="border:none;border-top:1px solid #eee;margin:32px 0;">
+  
+  <p style="font-size:18px;color:#333;direction:rtl;text-align:right;margin-bottom:16px;">،${safeName} مرحباً</p>
+  <p style="font-size:16px;color:#666;line-height:1.8;direction:rtl;text-align:right;margin-bottom:24px;">
+    تم استلام طلب لإعادة تعيين كلمة المرور الخاصة بك. تم إرسال بريد إلكتروني منفصل يحتوي على رابط إعادة تعيين كلمة المرور.
+  </p>
+  
+  <div style="background:#f9f9f9;border-radius:12px;padding:24px;margin-bottom:24px;direction:rtl;text-align:right;">
+    <p style="font-size:14px;color:#374151;margin:0 0 12px;font-weight:600;">🛡️ نصائح أمنية:</p>
+    <ul style="font-size:14px;color:#6b7280;margin:0;padding-right:20px;line-height:1.8;">
+      <li>لا تشارك كلمة المرور أو رابط إعادة التعيين مع أي شخص</li>
+      <li>أنشئ كلمة مرور قوية تحتوي على أحرف وأرقام ورموز</li>
+      <li>تنتهي صلاحية رابط إعادة التعيين خلال ساعة واحدة للأمان</li>
+    </ul>
+  </div>
+  
+  ${AYN_FOOTER}
+</div>
+</body>
+</html>`
+  };
+}
+
 // Get email template based on type
 function getEmailTemplate(
   emailType: string, 
@@ -265,6 +326,8 @@ function getEmailTemplate(
         data.plan as string,
         data.date as string
       );
+    case 'password_reset':
+      return passwordResetTemplate(data.userName as string);
     default:
       throw new Error(`Unknown email type: ${emailType}`);
   }
