@@ -10,29 +10,19 @@ const hookSecret = rawSecret.includes("whsec_")
   ? rawSecret.split("whsec_").pop() || ""
   : rawSecret;
 
-// AYN branded email header
+// AYN branded email header - clean minimal design
 const AYN_HEADER = `
-<div style="background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%); padding: 40px 20px; text-align: center;">
-  <div style="font-size: 32px; font-weight: bold; background: linear-gradient(135deg, #c084fc, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
-    AYN
-  </div>
-  <div style="color: #9ca3af; font-size: 12px; margin-top: 8px; letter-spacing: 2px;">
-    YOUR AI BUSINESS PARTNER
-  </div>
+<div style="background: #1a1a1a; padding: 50px 20px 30px; text-align: center;">
+  <h1 style="font-size: 48px; font-weight: 800; letter-spacing: 8px; color: #ffffff; margin: 0;">AYN</h1>
+  <div style="width: 60px; height: 3px; background: #ffffff; margin: 20px auto 0;"></div>
 </div>
 `;
 
-// AYN branded email footer
+// AYN branded email footer - minimal
 const AYN_FOOTER = `
-<div style="background: #0a0a0a; padding: 30px 20px; text-align: center; border-top: 1px solid rgba(255,255,255,0.1);">
-  <p style="color: #6b7280; font-size: 12px; margin: 0 0 10px 0;">
+<div style="background: #1a1a1a; padding: 25px 20px; text-align: center; border-top: 1px solid rgba(255,255,255,0.05);">
+  <p style="color: #4b5563; font-size: 12px; margin: 0;">
     © ${new Date().getFullYear()} AYN. All rights reserved.
-  </p>
-  <p style="color: #6b7280; font-size: 11px; margin: 0;">
-    This email was sent because you requested it. If you didn't, you can safely ignore this email.
-  </p>
-  <p style="color: #6b7280; font-size: 11px; margin: 10px 0 0 0; direction: rtl;">
-    تم إرسال هذا البريد الإلكتروني لأنك طلبت ذلك. إذا لم تفعل، يمكنك تجاهل هذا البريد بأمان.
   </p>
 </div>
 `;
@@ -55,15 +45,12 @@ const wrapEmail = (content: string): string => `
 </html>
 `;
 
-// CTA button style
-const ctaButton = (url: string, text: string, textAr: string): string => `
-<div style="text-align: center; margin: 30px 0;">
-  <a href="${url}" style="display: inline-block; background: linear-gradient(135deg, #8b5cf6, #6366f1); color: white; padding: 16px 40px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">
+// CTA button style - clean white button
+const ctaButton = (url: string, text: string): string => `
+<div style="text-align: center; margin: 35px 0;">
+  <a href="${url}" style="display: inline-block; background: #f5f5f5; color: #1a1a1a; padding: 16px 48px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">
     ${text}
   </a>
-  <p style="color: #9ca3af; font-size: 12px; margin-top: 10px; direction: rtl;">
-    ${textAr}
-  </p>
 </div>
 `;
 
@@ -78,172 +65,118 @@ function getTemplate(
   switch (emailType) {
     case 'signup':
       return {
-        subject: '🔐 Confirm your AYN account | تأكيد حسابك في AYN',
+        subject: 'Confirm your AYN account',
         html: wrapEmail(`
-          <div style="padding: 40px 30px; color: #e5e7eb;">
-            <h1 style="color: white; font-size: 24px; margin: 0 0 20px 0; text-align: center;">
-              Welcome to AYN! 🎉
+          <div style="padding: 40px 30px; color: #9ca3af;">
+            <h1 style="color: #ffffff; font-size: 28px; margin: 0 0 24px 0; font-weight: 600;">
+              Welcome to AYN
             </h1>
-            <h2 style="color: #9ca3af; font-size: 18px; margin: 0 0 30px 0; text-align: center; direction: rtl;">
-              !AYN مرحباً بك في
-            </h2>
             
-            <p style="color: #d1d5db; line-height: 1.6; margin: 0 0 15px 0;">
+            <p style="color: #9ca3af; line-height: 1.7; margin: 0 0 10px 0; font-size: 16px;">
               Hi ${userName},
             </p>
-            <p style="color: #d1d5db; line-height: 1.6; margin: 0 0 20px 0;">
-              Thank you for signing up! Please confirm your email address to get started with AYN.
-            </p>
-            <p style="color: #9ca3af; line-height: 1.6; margin: 0 0 20px 0; direction: rtl;">
-              شكراً للتسجيل! يرجى تأكيد بريدك الإلكتروني للبدء في استخدام AYN.
+            <p style="color: #9ca3af; line-height: 1.7; margin: 0 0 30px 0; font-size: 16px;">
+              Thank you for signing up. Please confirm your email address to get started.
             </p>
             
-            ${ctaButton(confirmationUrl, 'Verify Email', 'تأكيد البريد الإلكتروني')}
+            ${ctaButton(confirmationUrl, 'Verify Email')}
             
-            <div style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 8px; padding: 15px; margin-top: 30px;">
-              <p style="color: #a78bfa; font-size: 13px; margin: 0;">
-                ⏰ This link expires in 24 hours.
-              </p>
-              <p style="color: #a78bfa; font-size: 13px; margin: 5px 0 0 0; direction: rtl;">
-                ⏰ ينتهي هذا الرابط خلال 24 ساعة.
-              </p>
-            </div>
+            <p style="color: #6b7280; font-size: 14px; line-height: 1.7; margin-top: 40px;">
+              This link expires in 24 hours. If you didn't create an account, you can safely ignore this email.
+            </p>
           </div>
         `)
       };
 
     case 'recovery':
       return {
-        subject: '🔐 Reset your AYN password | إعادة تعيين كلمة المرور',
+        subject: 'Reset your password | AYN',
         html: wrapEmail(`
-          <div style="padding: 40px 30px; color: #e5e7eb;">
-            <h1 style="color: white; font-size: 24px; margin: 0 0 20px 0; text-align: center;">
-              Reset Your Password
+          <div style="padding: 40px 30px; color: #9ca3af;">
+            <h1 style="color: #ffffff; font-size: 28px; margin: 0 0 24px 0; font-weight: 600;">
+              Reset your password
             </h1>
-            <h2 style="color: #9ca3af; font-size: 18px; margin: 0 0 30px 0; text-align: center; direction: rtl;">
-              إعادة تعيين كلمة المرور
-            </h2>
             
-            <p style="color: #d1d5db; line-height: 1.6; margin: 0 0 15px 0;">
+            <p style="color: #9ca3af; line-height: 1.7; margin: 0 0 10px 0; font-size: 16px;">
               Hi ${userName},
             </p>
-            <p style="color: #d1d5db; line-height: 1.6; margin: 0 0 20px 0;">
+            <p style="color: #9ca3af; line-height: 1.7; margin: 0 0 30px 0; font-size: 16px;">
               We received a request to reset your password. Click the button below to create a new password.
             </p>
-            <p style="color: #9ca3af; line-height: 1.6; margin: 0 0 20px 0; direction: rtl;">
-              تلقينا طلباً لإعادة تعيين كلمة المرور الخاصة بك. انقر على الزر أدناه لإنشاء كلمة مرور جديدة.
+            
+            ${ctaButton(confirmationUrl, 'Reset Password')}
+            
+            <p style="color: #6b7280; font-size: 14px; line-height: 1.7; margin-top: 40px;">
+              This link expires in 1 hour. If you didn't request a password reset, you can safely ignore this email.
             </p>
-            
-            ${ctaButton(confirmationUrl, 'Reset Password', 'إعادة تعيين كلمة المرور')}
-            
-            <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 15px; margin-top: 30px;">
-              <p style="color: #fca5a5; font-size: 13px; margin: 0;">
-                🔒 If you didn't request this, please ignore this email. Your password will remain unchanged.
-              </p>
-              <p style="color: #fca5a5; font-size: 13px; margin: 10px 0 0 0; direction: rtl;">
-                🔒 إذا لم تطلب ذلك، يرجى تجاهل هذا البريد. ستبقى كلمة مرورك كما هي.
-              </p>
-            </div>
-            
-            <div style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 8px; padding: 15px; margin-top: 15px;">
-              <p style="color: #a78bfa; font-size: 13px; margin: 0;">
-                ⏰ This link expires in 1 hour.
-              </p>
-              <p style="color: #a78bfa; font-size: 13px; margin: 5px 0 0 0; direction: rtl;">
-                ⏰ ينتهي هذا الرابط خلال ساعة واحدة.
-              </p>
-            </div>
           </div>
         `)
       };
 
     case 'magiclink':
       return {
-        subject: '🔐 Your AYN login link | رابط تسجيل الدخول',
+        subject: 'Your login link | AYN',
         html: wrapEmail(`
-          <div style="padding: 40px 30px; color: #e5e7eb;">
-            <h1 style="color: white; font-size: 24px; margin: 0 0 20px 0; text-align: center;">
+          <div style="padding: 40px 30px; color: #9ca3af;">
+            <h1 style="color: #ffffff; font-size: 28px; margin: 0 0 24px 0; font-weight: 600;">
               Your Login Link
             </h1>
-            <h2 style="color: #9ca3af; font-size: 18px; margin: 0 0 30px 0; text-align: center; direction: rtl;">
-              رابط تسجيل الدخول
-            </h2>
             
-            <p style="color: #d1d5db; line-height: 1.6; margin: 0 0 15px 0;">
+            <p style="color: #9ca3af; line-height: 1.7; margin: 0 0 10px 0; font-size: 16px;">
               Hi ${userName},
             </p>
-            <p style="color: #d1d5db; line-height: 1.6; margin: 0 0 20px 0;">
+            <p style="color: #9ca3af; line-height: 1.7; margin: 0 0 30px 0; font-size: 16px;">
               Click the button below to securely log in to your AYN account.
             </p>
-            <p style="color: #9ca3af; line-height: 1.6; margin: 0 0 20px 0; direction: rtl;">
-              انقر على الزر أدناه لتسجيل الدخول بأمان إلى حسابك في AYN.
+            
+            ${ctaButton(confirmationUrl, 'Log In')}
+            
+            <p style="color: #6b7280; font-size: 14px; line-height: 1.7; margin-top: 40px;">
+              This link expires in 1 hour and can only be used once.
             </p>
-            
-            ${ctaButton(confirmationUrl, 'Log In to AYN', 'تسجيل الدخول إلى AYN')}
-            
-            <div style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 8px; padding: 15px; margin-top: 30px;">
-              <p style="color: #a78bfa; font-size: 13px; margin: 0;">
-                ⏰ This link expires in 1 hour and can only be used once.
-              </p>
-              <p style="color: #a78bfa; font-size: 13px; margin: 5px 0 0 0; direction: rtl;">
-                ⏰ ينتهي هذا الرابط خلال ساعة واحدة ويمكن استخدامه مرة واحدة فقط.
-              </p>
-            </div>
           </div>
         `)
       };
 
     case 'email_change':
       return {
-        subject: '📧 Confirm your new email | تأكيد بريدك الإلكتروني الجديد',
+        subject: 'Confirm your new email | AYN',
         html: wrapEmail(`
-          <div style="padding: 40px 30px; color: #e5e7eb;">
-            <h1 style="color: white; font-size: 24px; margin: 0 0 20px 0; text-align: center;">
+          <div style="padding: 40px 30px; color: #9ca3af;">
+            <h1 style="color: #ffffff; font-size: 28px; margin: 0 0 24px 0; font-weight: 600;">
               Confirm Your New Email
             </h1>
-            <h2 style="color: #9ca3af; font-size: 18px; margin: 0 0 30px 0; text-align: center; direction: rtl;">
-              تأكيد بريدك الإلكتروني الجديد
-            </h2>
             
-            <p style="color: #d1d5db; line-height: 1.6; margin: 0 0 15px 0;">
+            <p style="color: #9ca3af; line-height: 1.7; margin: 0 0 10px 0; font-size: 16px;">
               Hi ${userName},
             </p>
-            <p style="color: #d1d5db; line-height: 1.6; margin: 0 0 20px 0;">
+            <p style="color: #9ca3af; line-height: 1.7; margin: 0 0 30px 0; font-size: 16px;">
               You requested to change your email address. Please confirm this change by clicking the button below.
             </p>
-            <p style="color: #9ca3af; line-height: 1.6; margin: 0 0 20px 0; direction: rtl;">
-              لقد طلبت تغيير عنوان بريدك الإلكتروني. يرجى تأكيد هذا التغيير بالنقر على الزر أدناه.
+            
+            ${ctaButton(confirmationUrl, 'Confirm Email Change')}
+            
+            <p style="color: #6b7280; font-size: 14px; line-height: 1.7; margin-top: 40px;">
+              If you didn't request this change, please contact support immediately.
             </p>
-            
-            ${ctaButton(confirmationUrl, 'Confirm Email Change', 'تأكيد تغيير البريد الإلكتروني')}
-            
-            <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 15px; margin-top: 30px;">
-              <p style="color: #fca5a5; font-size: 13px; margin: 0;">
-                🔒 If you didn't request this change, please contact support immediately.
-              </p>
-              <p style="color: #fca5a5; font-size: 13px; margin: 10px 0 0 0; direction: rtl;">
-                🔒 إذا لم تطلب هذا التغيير، يرجى الاتصال بالدعم فوراً.
-              </p>
-            </div>
           </div>
         `)
       };
 
     default:
-      // Generic fallback
       return {
-        subject: '🔐 AYN Authentication | مصادقة AYN',
+        subject: 'AYN Authentication',
         html: wrapEmail(`
-          <div style="padding: 40px 30px; color: #e5e7eb;">
-            <h1 style="color: white; font-size: 24px; margin: 0 0 20px 0; text-align: center;">
+          <div style="padding: 40px 30px; color: #9ca3af;">
+            <h1 style="color: #ffffff; font-size: 28px; margin: 0 0 24px 0; font-weight: 600;">
               Complete Your Action
             </h1>
             
-            <p style="color: #d1d5db; line-height: 1.6; margin: 0 0 20px 0;">
+            <p style="color: #9ca3af; line-height: 1.7; margin: 0 0 30px 0; font-size: 16px;">
               Click the button below to continue.
             </p>
             
-            ${ctaButton(confirmationUrl, 'Continue', 'متابعة')}
+            ${ctaButton(confirmationUrl, 'Continue')}
           </div>
         `)
       };

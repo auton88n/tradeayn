@@ -219,8 +219,8 @@ const Terms = () => {
                   Privacy Policy
                 </Link>
                 <span className="text-white/20">•</span>
-                <Link to="/support" className="text-sm text-white/50 hover:text-white transition-colors">
-                  Contact Support
+                <Link to="/#contact" className="text-sm text-white/50 hover:text-white transition-colors">
+                  Contact Us
                 </Link>
               </div>
             </div>
