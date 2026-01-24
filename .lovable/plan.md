@@ -1,204 +1,197 @@
 
-
-# Fix All Remaining Hardcoded Error Messages
+# Add Stripe Webhook Handling & Subscription Email Notifications
 
 ## Overview
-Update 15+ files across the codebase to use the centralized AYN-branded error system from `errorMessages.ts`. This will ensure consistent, user-friendly messaging throughout the entire platform with no mentions of technical infrastructure.
+Implement real-time subscription updates via Stripe webhooks and automated email notifications for subscription lifecycle events (new subscription, renewal, cancellation, upgrade/downgrade).
 
 ---
 
-## Files to Update
+## Architecture
 
-### 1. User Support Components
-
-#### `src/components/support/UserTicketDetail.tsx`
-| Line | Current Message | New Message |
-|------|-----------------|-------------|
-| 99 | `toast.info('You have a new reply from the support team')` | Keep as info, but use: `'You have a new reply!'` |
-| 103 | `toast.error('Failed to load ticket')` | `t('error.dataLoadFailed')` |
-| 138 | `toast.success('Message sent')` | Keep as success |
-| 141 | `toast.error('Failed to send message')` | `t('error.ticketUpdateFailed')` |
-| 159 | `toast.success('Ticket deleted')` | Keep as success |
-| 163 | `toast.error('Failed to delete ticket')` | `t('error.ticketUpdateFailed')` |
-
-#### `src/hooks/useUserSettings.ts`
-| Line | Current Message | New Message |
-|------|-----------------|-------------|
-| 90-94 | `title: 'Error', description: 'Failed to load settings'` | `title: t('error.settingsSaveFailed'), description: t('error.settingsSaveFailedDesc')` |
-| 136-139 | `title: 'Success', description: 'Settings saved successfully'` | Keep success messages |
-| 142-145 | `title: 'Error', description: 'Failed to update settings'` | Use translation keys |
-| 162-165 | `title: 'Success', description: 'Session revoked successfully'` | Keep |
-| 168-171 | `title: 'Error', description: 'Failed to revoke session'` | `t('error.sessionRevokeFailed')` |
-| 189-191 | `title: 'Success', description: 'All devices signed out successfully'` | Keep |
-| 195-198 | `title: 'Error', description: 'Failed to sign out all devices'` | `t('error.signOutAllFailed')` |
-
-### 2. Subscription & Avatar Hooks
-
-#### `src/contexts/SubscriptionContext.tsx`
-| Line | Current Message | New Message |
-|------|-----------------|-------------|
-| 125 | `toast.info('Free tier does not require checkout')` | Keep as info |
-| 131 | `toast.error('Invalid tier selected')` | `t('error.invalidTierSelected')` |
-| 147 | `toast.error('Failed to start checkout. Please try again.')` | `t('error.checkoutFailed')` |
-| 162 | `toast.error('Failed to open subscription management. Please try again.')` | `t('error.portalFailed')` |
-
-#### `src/hooks/useAvatarUpload.ts`
-| Line | Current Message | New Message |
-|------|-----------------|-------------|
-| 20 | `'Please upload a valid image (JPG, PNG, or WebP)'` | `t('error.uploadInvalidTypeDesc')` |
-| 25 | `'Image size must be less than 5MB'` | `t('error.uploadTooLargeDesc')` |
-| 54 | `'You must be logged in to upload an avatar'` | `t('error.sessionExpiredDesc')` |
-| 90 | `'Failed to upload avatar'` | `t('error.uploadFailed')` |
-| 110 | `'An error occurred while uploading'` | `t('error.uploadFailed')` |
-| 119 | `'You must be logged in'` | `t('error.sessionExpiredDesc')` |
-| 148 | `'An error occurred'` | `t('error.generic')` |
-
-### 3. Engineering Calculators
-
-All 5 calculators have the same pattern - validation errors and calculation errors need translation:
-
-#### `src/components/engineering/BeamCalculator.tsx`
-| Line | Current Message | New Message |
-|------|-----------------|-------------|
-| 74 | `'Please enter a valid span length'` | `t('error.invalidInput')` with context |
-| 78 | `'Please enter a valid dead load'` | `t('error.invalidInput')` |
-| 82 | `'Please enter a valid live load'` | `t('error.invalidInput')` |
-| 124 | `'Calculation failed. Please try again.'` | `t('error.calculationFailedDesc')` |
-
-#### `src/components/engineering/FoundationCalculator.tsx`
-| Line | Current Message | New Message |
-|------|-----------------|-------------|
-| 87 | `'Please enter a valid column load'` | `t('error.invalidInput')` |
-| 91 | `'Please enter a valid bearing capacity'` | `t('error.invalidInput')` |
-| 135 | `'Calculation failed. Please try again.'` | `t('error.calculationFailedDesc')` |
-
-#### `src/components/engineering/ColumnCalculator.tsx`
-| Line | Current Message | New Message |
-|------|-----------------|-------------|
-| 80 | `'Calculation failed. Please try again.'` | `t('error.calculationFailedDesc')` |
-
-#### `src/components/engineering/SlabCalculator.tsx`
-| Line | Current Message | New Message |
-|------|-----------------|-------------|
-| 83-97 | Multiple `'Please enter a valid...'` | `t('error.invalidInput')` |
-| 146 | `'Calculation failed. Please try again.'` | `t('error.calculationFailedDesc')` |
-
-#### `src/components/engineering/RetainingWallCalculator.tsx`
-| Line | Current Message | New Message |
-|------|-----------------|-------------|
-| 115 | `'Please enter a valid wall height'` | `t('error.invalidInput')` |
-| 119 | `'Please enter a valid base width'` | `t('error.invalidInput')` |
-| 174 | `'Calculation failed. Please try again.'` | `t('error.calculationFailedDesc')` |
-
-#### `src/components/engineering/ParkingDesigner.tsx`
-| Line | Current Message | New Message |
-|------|-----------------|-------------|
-| 197-200 | `title: "Invalid Boundary", description: ...` | Use translation keys |
-| Various | Export/generation errors | Use translation keys |
-
-### 4. Admin Components
-
-#### `src/components/admin/LLMManagement.tsx`
-| Line | Current Message | New Message |
-|------|-----------------|-------------|
-| 109 | `toast.error('Failed to load LLM models')` | `toast.error(t('error.dataLoadFailed'))` |
-| 135 | `toast.error('Failed to update model')` | `toast.error(t('error.settingsSaveFailed'))` |
-
-#### `src/components/admin/RateLimitMonitoring.tsx`
-| Line | Current Message | New Message |
-|------|-----------------|-------------|
-| 62 | `toast.error('Failed to load rate limit stats')` | `toast.error(t('error.dataLoadFailed'))` |
-| 85 | `toast.error('Failed to unblock user')` | `toast.error(t('error.generic'))` |
-
-#### `src/components/admin/UserAILimits.tsx`
-| Line | Current Message | New Message |
-|------|-----------------|-------------|
-| 87 | `toast.error('Failed to load user limits')` | `toast.error(t('error.dataLoadFailed'))` |
-| 130 | `toast.error('Failed to update limits')` | `toast.error(t('error.settingsSaveFailed'))` |
-| 155-156 | `toast.error('Update may have failed - please refresh')` | `toast.error(t('error.settingsSaveFailed'))` |
-| 172 | `toast.error('Failed to update - please try again')` | `toast.error(t('error.settingsSaveFailed'))` |
-
----
-
-## New Translation Keys to Add
-
-Add these to `src/contexts/LanguageContext.tsx` for all 3 languages:
-
-```typescript
-// New error keys
-'error.invalidInput': 'Invalid Input',
-'error.invalidInputDesc': 'Please check your values and try again.',
-'error.checkoutFailed': 'Checkout Unavailable',
-'error.checkoutFailedDesc': "We couldn't start checkout. Please try again.",
-'error.portalFailed': 'Portal Unavailable', 
-'error.portalFailedDesc': "We couldn't open subscription management. Please try again.",
-'error.invalidTierSelected': 'Invalid Tier',
-'error.invalidTierSelectedDesc': 'Please select a valid subscription tier.',
-'error.sessionRevokeFailed': "Couldn't Revoke Session",
-'error.sessionRevokeFailedDesc': 'The session revocation failed. Please try again.',
-'error.signOutAllFailed': "Couldn't Sign Out All Devices",
-'error.signOutAllFailedDesc': 'Please try again or contact support.',
-'error.dataLoadFailed': "Couldn't Load Data",
-'error.dataLoadFailedDesc': 'Unable to load the requested data. Please try again.',
-'error.ticketLoadFailed': "Couldn't Load Ticket",
-'error.ticketLoadFailedDesc': 'Unable to load ticket details. Please try again.',
-'error.ticketMessageFailed': "Couldn't Send Message",
-'error.ticketMessageFailedDesc': 'Your message wasn\'t sent. Please try again.',
-'error.ticketDeleteFailed': "Couldn't Delete Ticket",
-'error.ticketDeleteFailedDesc': 'The ticket wasn\'t deleted. Please try again.',
-'error.exportFailed': 'Export Failed',
-'error.exportFailedDesc': "We couldn't export your data. Please try again.",
-'error.boundaryInvalid': 'Invalid Boundary',
-'error.boundaryInvalidDesc': 'Please define at least 3 boundary points.',
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           STRIPE WEBHOOK FLOW                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  Stripe Events                      Edge Function                           │
+│  ┌──────────────────┐              ┌──────────────────────────────────┐     │
+│  │ customer.        │──────────────│                                  │     │
+│  │ subscription.    │   POST       │  stripe-webhook                  │     │
+│  │ created          │──────────────│  (verify signature)              │     │
+│  │ updated          │              │                                  │     │
+│  │ deleted          │              │  1. Validate webhook signature   │     │
+│  │ invoice.paid     │              │  2. Parse event type             │     │
+│  │ invoice.failed   │              │  3. Update user_subscriptions    │     │
+│  └──────────────────┘              │  4. Update user_ai_limits        │     │
+│                                    │  5. Send email notification      │     │
+│                                    └──────────────────────────────────┘     │
+│                                                 │                           │
+│                                                 ▼                           │
+│                                    ┌──────────────────────────────────┐     │
+│                                    │  send-email function             │     │
+│                                    │  (subscription_created,         │     │
+│                                    │   subscription_renewed,          │     │
+│                                    │   subscription_canceled,         │     │
+│                                    │   subscription_updated)          │     │
+│                                    └──────────────────────────────────┘     │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Update errorMessages.ts
+## Implementation Steps
 
-Add new error codes to the centralized library:
+### Phase 1: Create Stripe Webhook Edge Function
 
+**New File: `supabase/functions/stripe-webhook/index.ts`**
+
+| Feature | Description |
+|---------|-------------|
+| Signature Verification | Verify Stripe webhook signature using `STRIPE_WEBHOOK_SECRET` |
+| Event Handling | Handle `customer.subscription.*` and `invoice.*` events |
+| Database Sync | Real-time update of `user_subscriptions` and `user_ai_limits` |
+| Email Triggering | Call send-email function for each subscription event |
+| Logging | Comprehensive logging for debugging |
+
+**Handled Events:**
+- `customer.subscription.created` → New subscription email
+- `customer.subscription.updated` → Upgrade/downgrade email (if tier changed)
+- `customer.subscription.deleted` → Cancellation email
+- `invoice.paid` → Renewal confirmation email
+- `invoice.payment_failed` → Payment failed notification
+
+---
+
+### Phase 2: Add Subscription Email Templates
+
+**Update: `supabase/functions/send-email/index.ts`**
+
+Add 4 new email templates:
+
+| Template | Subject | Trigger |
+|----------|---------|---------|
+| `subscription_created` | "🎉 Welcome to AYN [Plan]!" | New subscription |
+| `subscription_renewed` | "✅ AYN Subscription Renewed" | Monthly renewal |
+| `subscription_canceled` | "😢 Your AYN Subscription Has Ended" | Cancellation |
+| `subscription_updated` | "📊 AYN Plan Updated" | Upgrade/downgrade |
+
+Each template will be bilingual (English/Arabic) following the existing AYN brand style.
+
+---
+
+### Phase 3: Update Email Types
+
+**Update: `src/lib/email-templates.ts`**
+
+Add new email types:
 ```typescript
-// Add to ErrorCodes object
-INVALID_INPUT: 'INVALID_INPUT',
-CHECKOUT_FAILED: 'CHECKOUT_FAILED',
-PORTAL_FAILED: 'PORTAL_FAILED',
-INVALID_TIER: 'INVALID_TIER',
-SESSION_REVOKE_FAILED: 'SESSION_REVOKE_FAILED',
-SIGN_OUT_ALL_FAILED: 'SIGN_OUT_ALL_FAILED',
-TICKET_LOAD_FAILED: 'TICKET_LOAD_FAILED',
-TICKET_MESSAGE_FAILED: 'TICKET_MESSAGE_FAILED',
-TICKET_DELETE_FAILED: 'TICKET_DELETE_FAILED',
-EXPORT_FAILED: 'EXPORT_FAILED',
-BOUNDARY_INVALID: 'BOUNDARY_INVALID',
+export type EmailType = 
+  | 'welcome' 
+  | 'credit_warning' 
+  | 'auto_delete_warning' 
+  | 'payment_receipt' 
+  | 'password_reset'
+  | 'subscription_created'
+  | 'subscription_renewed'
+  | 'subscription_canceled'
+  | 'subscription_updated';
 ```
 
 ---
 
-## Implementation Approach
+### Phase 4: Update Supabase Config
 
-For each file, the pattern is:
-1. Import `useLanguage` hook where not already imported
-2. Get `t` function from the hook
-3. Replace hardcoded strings with `t('error.keyName')` calls
-4. For files that don't use React hooks (like utilities), use the `getErrorMessage(ErrorCodes.X).description` pattern
+**Update: `supabase/config.toml`**
 
-For admin components that don't have language context access, use simple branded messages directly without i18n (admin panel is English-only).
+Add webhook function configuration:
+```toml
+[functions.stripe-webhook]
+verify_jwt = false
+```
 
 ---
 
-## Summary of Changes
+### Phase 5: Add useEmail Hook Methods
 
-| Category | Files | Changes |
-|----------|-------|---------|
-| User Support | 1 | `UserTicketDetail.tsx` - 6 error messages |
-| User Settings | 1 | `useUserSettings.ts` - 6 error messages |
-| Subscription | 1 | `SubscriptionContext.tsx` - 4 error messages |
-| Avatar | 1 | `useAvatarUpload.ts` - 7 error messages |
-| Engineering | 6 | All calculators - ~15 validation/error messages |
-| Admin | 3 | LLM, RateLimit, UserAILimits - 6 error messages |
-| Translations | 1 | LanguageContext - 20+ new keys |
-| Error Library | 1 | errorMessages.ts - 10 new error codes |
+**Update: `src/hooks/useEmail.ts`**
 
-**Total: ~15 files modified, 50+ error messages unified**
+Add convenience methods for subscription emails (primarily for admin manual triggers if needed).
 
+---
+
+## Technical Details
+
+### Stripe Webhook Function Structure
+
+```typescript
+// Key logic flow
+1. Verify webhook signature (STRIPE_WEBHOOK_SECRET)
+2. Parse event.type
+3. Extract customer email from event data
+4. Look up user by email in Supabase
+5. Determine tier from product ID (using existing PRODUCT_TO_TIER mapping)
+6. Update user_subscriptions table
+7. Update user_ai_limits table
+8. Send appropriate email notification
+9. Return 200 OK (important for Stripe retry logic)
+```
+
+### Email Template Data Requirements
+
+| Email Type | Required Data |
+|------------|---------------|
+| `subscription_created` | userName, planName, credits, nextBillingDate |
+| `subscription_renewed` | userName, planName, amount, nextBillingDate |
+| `subscription_canceled` | userName, planName, endDate |
+| `subscription_updated` | userName, oldPlan, newPlan, effectiveDate |
+
+---
+
+## Configuration Required
+
+### New Secret Needed
+
+| Secret | Purpose |
+|--------|---------|
+| `STRIPE_WEBHOOK_SECRET` | Verify Stripe webhook signatures |
+
+**User Action Required:** 
+1. Go to Stripe Dashboard → Developers → Webhooks
+2. Add endpoint: `https://dfkoxuokfkttjhfjcecx.supabase.co/functions/v1/stripe-webhook`
+3. Select events: `customer.subscription.*`, `invoice.paid`, `invoice.payment_failed`
+4. Copy the webhook signing secret
+5. Add as `STRIPE_WEBHOOK_SECRET` in Supabase secrets
+
+---
+
+## Files to Create/Modify
+
+| File | Action | Description |
+|------|--------|-------------|
+| `supabase/functions/stripe-webhook/index.ts` | **Create** | New webhook handler |
+| `supabase/functions/send-email/index.ts` | **Modify** | Add 4 subscription email templates |
+| `src/lib/email-templates.ts` | **Modify** | Add new EmailType variants |
+| `src/hooks/useEmail.ts` | **Modify** | Add subscription email methods |
+| `supabase/config.toml` | **Modify** | Add stripe-webhook config |
+
+---
+
+## Security Considerations
+
+1. **Signature Verification** - All webhook requests verified using Stripe signing secret
+2. **No JWT Required** - Webhooks come from Stripe, not authenticated users
+3. **Idempotency** - Handle duplicate events gracefully using event ID tracking
+4. **Error Handling** - Return 200 OK even on partial failures to prevent infinite retries
+
+---
+
+## Summary
+
+This implementation provides:
+
+- **Real-time sync** - Subscription changes in Stripe portal immediately reflected in AYN
+- **User notifications** - Automated emails for all subscription lifecycle events
+- **Reliable updates** - Webhook-based updates don't depend on user logging in
+- **Branded experience** - All emails follow AYN's bilingual design system
+- **Audit trail** - Email logs track all subscription communications
