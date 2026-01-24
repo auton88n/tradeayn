@@ -1,156 +1,148 @@
 
-# Enhanced "Forgot Password" Flow with Email Confirmation
+
+# Base64 Data URLs for Document Generation (Ad-blocker Proof)
 
 ## Goal
-Add a prominent "Forgot Password" quick-action button in the login modal that:
-1. Pre-fills and displays the user's email for confirmation
-2. Sends password reset emails via Resend for faster delivery
-3. Shows clear confirmation with the email address used
+Replace Supabase Storage URLs with inline base64 data URLs for PDF/Excel documents. This completely bypasses ad-blockers since data URLs are embedded content - no external network requests that can be blocked.
 
-## Current State Analysis
+## Current Problem
+Ad-blockers block requests to `supabase.co` domains, causing document downloads to fail even with the proxy workaround. The current flow:
+1. `generate-document` creates PDF/Excel → uploads to Supabase Storage → returns URL
+2. Frontend tries to download from URL → **blocked by ad-blockers**
 
-**Authentication Modal** (`src/components/auth/AuthModal.tsx`):
-- Has a small "Forgot password?" text button between label and password field
-- Uses `supabase.auth.resetPasswordForEmail()` which sends via Supabase's built-in email service
-- Shows a toast notification on success but doesn't confirm which email was used
+## New Approach
+1. `generate-document` creates PDF/Excel → converts to base64 → returns data URL inline
+2. Frontend receives data URL directly → triggers immediate download with no network request
 
-**Email System**:
-- Resend is already configured (`RESEND_API_KEY` secret exists)
-- `send-email` edge function handles custom branded emails
-- Currently supports: `welcome`, `credit_warning`, `auto_delete_warning`, `payment_receipt`
-- Does NOT have a `password_reset` email type yet
-
-**Supabase Password Reset**:
-- Supabase's `resetPasswordForEmail()` uses Supabase's built-in email templates
-- We can supplement with a branded Resend notification email
-
----
-
-## Implementation Approach
-
-### Part A: Enhanced AuthModal UI
-
-**File: `src/components/auth/AuthModal.tsx`**
-
-1. Add a new state for showing a "reset sent" confirmation view:
-   - `resetEmailSent: boolean` - tracks if we should show confirmation
-   - `resetSentToEmail: string` - stores the email address used
-
-2. Add a prominent "Forgot Password" button below the sign-in form:
-   - Styled as a secondary/outline button with a key/lock icon
-   - More visible than the current small text link
-
-3. Create a "Reset Sent" confirmation panel:
-   - Shows a success icon and message
-   - Displays the email address the reset was sent to (masked for security)
-   - "Send Again" button if they didn't receive it
-   - "Back to Sign In" link
-
-4. Update `handleForgotPassword()`:
-   - Call Resend edge function in parallel with Supabase's built-in reset
-   - Set `resetEmailSent = true` and `resetSentToEmail = email` on success
-   - This gives users both the official Supabase link AND a branded notification
-
-### Part B: Add Password Reset Email Template (Resend)
-
-**File: `supabase/functions/send-email/index.ts`**
-
-Add a new email type `password_reset`:
-```typescript
-interface EmailRequest {
-  to: string;
-  emailType: 'welcome' | 'credit_warning' | 'auto_delete_warning' | 
-             'payment_receipt' | 'password_reset';  // Add this
-  data: Record<string, unknown>;
-  userId?: string;
-}
-```
-
-Create `passwordResetTemplate(userName: string, resetLink?: string)`:
-- Branded AYN header/footer
-- Bilingual (EN/AR) content
-- Explains that a reset link was sent
-- Provides security tips
-- Note: The actual reset link comes from Supabase's email; this is a branded notification
-
-**File: `src/lib/email-templates.ts`**
-- Add `password_reset` to `EmailType` union
-- Add interface for password reset email data
-
-### Part C: Add Translation Keys
-
-**File: `src/contexts/LanguageContext.tsx`**
-
-Add new translation keys for all three languages (EN, AR, FR):
-- `auth.resetEmailSentTo` - "Reset link sent to {email}"
-- `auth.checkSpam` - "Don't see it? Check your spam folder."
-- `auth.sendAgain` - "Send Again"
-- `auth.backToSignIn` - "Back to Sign In"
-- `auth.forgotPasswordTitle` - "Reset Password"
-- `auth.forgotPasswordDesc` - "Enter your email to receive a reset link"
-
----
-
-## Technical Details
-
-### Email Masking Function
-To display the email in confirmation without revealing the full address:
-```typescript
-const maskEmail = (email: string): string => {
-  const [local, domain] = email.split('@');
-  const masked = local.length > 2 
-    ? local[0] + '***' + local.slice(-1)
-    : local[0] + '***';
-  return `${masked}@${domain}`;
-};
-// "john.doe@gmail.com" → "j***e@gmail.com"
-```
-
-### Dual Email Sending
-When user clicks "Send Reset Link":
-1. Call `supabase.auth.resetPasswordForEmail()` (required - contains the actual reset token link)
-2. In parallel, call `send-email` edge function with `emailType: 'password_reset'` (optional branded notification)
-
-This ensures:
-- Users get the official reset link from Supabase
-- They also get a branded email explaining what happened
-- If Resend fails, the Supabase email still works
-
-### UI Flow
-```text
-[Sign In Tab]
-  ├── Email input
-  ├── Password input (with small "Forgot?" link)
-  ├── [Sign In] button
-  └── [🔑 Forgot Password?] button (NEW - prominent)
-         │
-         ▼ (on click, if email entered)
-  [Confirmation View]
-  ├── ✓ Success icon
-  ├── "Reset link sent to j***e@gmail.com"
-  ├── "Check your inbox and spam folder"
-  ├── [Send Again] button (with cooldown)
-  └── [← Back to Sign In] link
-```
+**Data URL format:**
+- PDF: `data:application/pdf;base64,JVBERi0xLjQ...`
+- Excel: `data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,UEsDBBQ...`
 
 ---
 
 ## Files to Modify
 
-| File | Changes |
-|------|---------|
-| `src/components/auth/AuthModal.tsx` | Add reset confirmation UI, prominent forgot password button, dual email sending |
-| `supabase/functions/send-email/index.ts` | Add `password_reset` email template |
-| `src/lib/email-templates.ts` | Add `password_reset` type |
-| `src/contexts/LanguageContext.tsx` | Add new translation keys (EN, AR, FR) |
+### 1. `supabase/functions/generate-document/index.ts`
+
+**Remove:**
+- `uploadToStorage()` function (lines 383-423)
+- All Supabase Storage logic
+
+**Add:**
+- Base64 conversion after generating file buffer
+
+**Current flow (lines 481-498):**
+```typescript
+// Upload to storage
+const downloadUrl = await uploadToStorage(supabase, fileData, filename, ...);
+return { success: true, downloadUrl, filename, type, language };
+```
+
+**New flow:**
+```typescript
+// Convert to base64 data URL (no storage needed)
+const base64 = btoa(String.fromCharCode(...fileData));
+const mimeType = body.type === 'pdf' 
+  ? 'application/pdf' 
+  : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+const downloadUrl = `data:${mimeType};base64,${base64}`;
+
+return { success: true, downloadUrl, filename, type, language };
+```
+
+### 2. `src/lib/documentUrlUtils.ts`
+
+**Complete rewrite** - simplify to handle data URLs:
+
+```typescript
+/**
+ * Check if URL is a base64 data URL
+ */
+export const isDataUrl = (url: string): boolean => {
+  return url?.startsWith('data:');
+};
+
+/**
+ * Downloads a document from a data URL or regular URL
+ */
+export const openDocumentUrl = (url: string, filename?: string): void => {
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename || 'document';
+  
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+};
+
+/**
+ * Extract document link from markdown content
+ * Updated to handle data URLs
+ */
+export const extractBestDocumentLink = (content: string): {...} | null => {
+  // Updated regex to match data URLs as well as http URLs
+  ...
+};
+```
+
+### 3. `src/components/eye/ResponseCard.tsx`
+
+**Minor update** - pass filename to download function:
+
+```typescript
+// Line 464: Update onClick handler
+onClick={() => openDocumentUrl(documentLink.url, documentLink.title)}
+```
+
+### 4. `supabase/functions/ayn-unified/index.ts`
+
+**No changes needed** - it already passes through `downloadUrl` from `generate-document` response. The data URL flows through automatically.
+
+### 5. Delete (Optional Cleanup)
+- `supabase/functions/download-document/index.ts` - no longer needed for documents
 
 ---
 
-## UX Improvements
+## Technical Details
 
-1. **More visible button**: Users won't miss the forgot password option
-2. **Email confirmation**: Users know exactly where the reset was sent
-3. **Faster delivery**: Resend typically delivers in seconds vs. Supabase's variable timing
-4. **Branded experience**: Password reset email matches AYN's visual identity
-5. **Security**: Email is masked in confirmation to protect in screen-sharing scenarios
+### Base64 Conversion in Deno
+```typescript
+// Uint8Array to base64 string
+const base64 = btoa(String.fromCharCode(...fileData));
+```
+
+### Size Impact
+| Document | Raw Size | Base64 Size | Acceptable |
+|----------|----------|-------------|------------|
+| 1-3 page PDF | 50-150KB | 67-200KB | ✅ |
+| Excel (50 rows) | 20-50KB | 27-67KB | ✅ |
+| Large report | 500KB | 667KB | ✅ |
+
+Base64 adds ~33% overhead, but typical documents stay well under 1MB.
+
+### Browser Support
+Data URLs are supported in all modern browsers with no size limits for downloads via `<a download>`.
+
+---
+
+## Benefits
+
+1. **100% ad-blocker proof** - data URLs are inline content
+2. **Faster downloads** - no second network request
+3. **No storage costs** - files aren't persisted in Supabase
+4. **Simpler architecture** - remove proxy function and URL normalization
+5. **No expired links** - data URLs contain the actual file
+6. **Works immediately** - no waiting for upload/download
+
+---
+
+## Testing Checklist
+
+1. Request a PDF document via chat ("create a PDF report about...")
+2. Verify download button appears in ResponseCard
+3. Click download - file should save immediately
+4. Test with ad-blocker enabled - should work
+5. Test Excel document generation
+6. Test Arabic (RTL) documents
+7. Verify filename is correct in downloaded file
 
