@@ -1,92 +1,75 @@
 
-## Plan: Fix Download Blocking and Add Document Generation Indicator
+Goal
+- Fix PDF/Excel “Download” so it reliably opens even when the browser blocks direct Supabase Storage URLs.
+- Ensure the “document generating” state stays as-is (it’s already implemented), but make the final “Download” button use the proxy endpoint (download-document edge function) instead of the raw Storage URL.
 
-### Problem Analysis
+What I found (why it still fails)
+- Document generation is working server-side:
+  - `ayn-unified` returns `documentUrl` successfully (network shows 200 + a valid public storage URL).
+  - `generate-document` logs show “Document created …pdf”.
+- The failure is on the download step (your answer), and our UI is still opening the Storage URL directly:
+  - `ResponseCard` “Download” button currently uses `anchor.href = documentLink.url` (a `/storage/v1/object/public/...` URL).
+  - `MessageFormatter` link clicks also open `/storage/v1/object/...` URLs directly.
+  - In your network snapshot, there were no browser calls to `/functions/v1/download-document`, which means the proxy is not being used from the UI.
+- The proxy edge function itself works (I tested it directly):
+  - Calling `/functions/v1/download-document?path=...` returns a real PDF with `Content-Type: application/pdf`.
 
-**Issue 1: ERR_BLOCKED_BY_CLIENT**
-The error `dfkoxuokfkttjhfjcecx.supabase.co is blocked` is caused by **browser extensions** (ad-blockers like uBlock Origin, or privacy tools like Privacy Badger) blocking the Supabase domain. This is NOT a code bug - the URL normalization we implemented is correct. The browser is blocking ALL requests to Supabase, including the download link.
+Root cause
+- We created the proxy function + helper utilities, but the “Download” button (and markdown links) are not wired to use `openDocumentUrl()` / `toProxyUrl()`. So the app still triggers the browser’s blocked path.
 
-**Workaround**: We can implement a **proxy download approach** that routes document downloads through your own domain, avoiding ad-blocker detection of the Supabase domain.
+Implementation approach (no DB changes)
+A) Wire the ResponseCard download button to the proxy
+1) Update `src/components/eye/ResponseCard.tsx`
+   - Remove the inline “create anchor and open documentLink.url” behavior.
+   - Import and use `openDocumentUrl(documentLink.url)` (from `src/lib/documentUrlUtils.ts`) so it opens:
+     - `.../functions/v1/download-document?path=...`
+   - Also update the visible link (if any) / button behavior so right-click “Open in new tab” also uses the proxy URL (not just onClick). Best practice:
+     - Set the underlying href to `toProxyUrl(documentLink.url)`.
 
-**Issue 2: No Document Generation Progress Indicator**
-When a user requests a document (PDF/Excel), there's no visual feedback during the generation process. The user only sees the standard "thinking" indicator, then suddenly a download card appears. For document generation which can take 5-10 seconds, a specific progress indicator would improve UX.
+B) Wire markdown document links to the proxy too (so clicking the 📄 link works)
+2) Update `src/components/MessageFormatter.tsx`
+   - Replace its local `normalizeDocumentUrl()` logic for storage links with:
+     - `isDocumentStorageUrl(href)` and then `toProxyUrl(href)` or `openDocumentUrl(href)`
+   - Behavior:
+     - If link is a document storage URL (documents bucket / .pdf / .xlsx), prevent default and open via proxy.
+     - For normal links, keep existing behavior.
 
----
+C) Eliminate duplicate/fragile document parsing logic + make attachments the source of truth
+3) Improve “which URL is the real document” selection (prevents wrong link selection in long chats)
+   - `ResponseCard` currently has a large inline `extractBestDocumentLink()` implementation.
+   - Replace it with imports from `src/lib/documentUrlUtils.ts` to keep it consistent everywhere.
 
-### Implementation Plan
+4) Ensure the download card can render even if the text content doesn’t contain a markdown link
+   - Right now ResponseCard only knows `content` from `responseBubbles`, not the message attachment metadata that we save in `useMessages`.
+   - Update bubble plumbing so ResponseCard can see attachments:
+     - Update `src/hooks/useBubbleAnimation.ts`:
+       - Extend `ResponseBubble` to include optional `attachment?: { url: string; name: string; type: string }`.
+       - Update `emitResponseBubble()` signature to accept an optional attachment.
+     - Update `src/components/dashboard/CenterStageLayout.tsx`:
+       - When emitting the response bubble from `lastMessage`, pass `lastMessage.attachment`.
+     - Update `src/components/eye/ResponseCard.tsx`:
+       - Prefer rendering the download card from `responses[0].attachment` when it’s a PDF/Excel.
+       - Fall back to `extractBestDocumentLink(combinedContent)` only if there is no attachment.
 
-#### Part 1: Fix Ad-Blocker Blocking (Download Proxy)
+D) Validation steps
+5) Test end-to-end in the browser
+   - Ask: “Create a PDF about Greenland” (or any topic).
+   - Confirm:
+     - You see the generating card during the request.
+     - The download card appears after completion.
+     - Clicking Download triggers a network request to:
+       - `/functions/v1/download-document?path=...`
+     - PDF opens without “blocked by client” behavior.
 
-Create an edge function that proxies document downloads, so the browser never sees the Supabase storage URL directly.
+Files to change (expected)
+- src/components/eye/ResponseCard.tsx
+- src/components/MessageFormatter.tsx
+- src/hooks/useBubbleAnimation.ts
+- src/components/dashboard/CenterStageLayout.tsx
+- src/lib/documentUrlUtils.ts (small enhancements only, e.g., avoid double-proxying)
 
-**Step 1: Create `download-document` Edge Function**
-- Accepts a `path` parameter (e.g., `documents/user-id/filename.pdf`)
-- Fetches the file from Supabase Storage using server-side credentials
-- Returns the file with proper Content-Type and Content-Disposition headers
-- The URL will be `your-domain/functions/v1/download-document?path=...` instead of `supabase.co/storage/...`
+Notes / edge cases handled
+- If the file truly doesn’t exist in storage, proxy will return 404 cleanly (instead of confusing token/JWT errors).
+- This fix does not depend on ad-blockers being installed; it addresses any client/network rule that blocks direct Storage URLs but still allows Edge Functions.
 
-**Step 2: Update Response Handling**
-- In `ayn-unified/index.ts`, return a proxy URL instead of direct Supabase URL
-- The proxy URL uses the edge function endpoint which bypasses ad-blocker domain blocking
-
----
-
-#### Part 2: Add Document Generation Progress Indicator
-
-**Step 3: Add `isGeneratingDocument` State**
-- In `useMessages.ts`, add a new state: `isGeneratingDocument: boolean`
-- Set to `true` when intent is detected as `document` (before sending)
-- Set to `false` when response is received
-
-**Step 4: Create `DocumentGeneratingCard` Component**
-- A visual card that appears during document generation
-- Shows animated progress indicator
-- Displays message like "Generating your PDF..." or "Creating Excel spreadsheet..."
-- Supports multiple languages (EN/AR/FR)
-
-**Step 5: Update `ResponseCard.tsx`**
-- Before showing the download card, check if `isGeneratingDocument` is true
-- If true, show the `DocumentGeneratingCard` instead
-- When generation completes, transition smoothly to the download card
-
-**Step 6: Update `CenterStageLayout.tsx`**
-- Pass `isGeneratingDocument` prop down to `ResponseCard`
-- Detect document intent from user message to trigger the indicator early
-
----
-
-### Technical Details
-
-| Aspect | Details |
-|--------|---------|
-| Files Created | 2 (`download-document` edge function, `DocumentGeneratingCard.tsx`) |
-| Files Modified | 4 (`ayn-unified/index.ts`, `useMessages.ts`, `ResponseCard.tsx`, `CenterStageLayout.tsx`) |
-| Complexity | Medium |
-| Risk | Low - no existing functionality affected |
-
-### Visual Flow After Implementation
-
-```text
-User asks: "Create a PDF about project management"
-    |
-    v
-[Eye shows "thinking" + "Generating your PDF..." card appears]
-    |
-    v
-[Card updates: "Almost ready..." with progress animation]
-    |
-    v
-[Card transforms into Download card with button]
-    |
-    v
-User clicks Download -> Opens via proxy (bypasses ad-blocker)
-```
-
-### About the Ad-Blocker Issue
-
-**Important Note**: The `ERR_BLOCKED_BY_CLIENT` error is caused by browser extensions blocking the Supabase domain. This affects ALL Supabase functionality, not just downloads. If users see this error:
-
-1. **Immediate Workaround**: Disable ad-blocker for your domain
-2. **Our Fix**: The proxy approach routes downloads through your own domain, which ad-blockers typically don't block
-
-The code-level URL normalization we already implemented is correct - signed URLs are properly converted to public URLs. The blocking happens at the network level before the request even reaches Supabase.
+After you approve this plan, I’ll implement the wiring changes and then we’ll re-test the download button together.
