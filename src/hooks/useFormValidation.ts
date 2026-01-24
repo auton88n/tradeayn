@@ -1,23 +1,43 @@
 import { useState, useCallback } from 'react';
 import { z } from 'zod';
 
+// Translation key mappings for validation messages
+export const ValidationMessages = {
+  requiredName: 'form.requiredName',
+  requiredEmail: 'form.requiredEmail',
+  invalidEmail: 'form.invalidEmail',
+  nameTooLong: 'form.nameTooLong',
+  emailTooLong: 'form.emailTooLong',
+  messageTooLong: 'form.messageTooLong',
+  selectIndustry: 'form.selectIndustry',
+  selectAgentType: 'form.selectAgentType',
+  selectBudget: 'form.selectBudget',
+  selectTimeline: 'form.selectTimeline',
+  selectFollowerCount: 'form.selectFollowerCount',
+  selectContentNiche: 'form.selectContentNiche',
+  useCaseRequired: 'form.useCaseRequired',
+  useCaseTooLong: 'form.useCaseTooLong',
+  companyRequired: 'form.companyRequired',
+  processesRequired: 'form.processesRequired',
+} as const;
+
 // Base validation schema for common fields
 export const baseApplicationSchema = z.object({
   fullName: z.string()
     .trim()
-    .min(1, 'Full name is required')
-    .max(100, 'Name must be less than 100 characters'),
+    .min(1, { message: ValidationMessages.requiredName })
+    .max(100, { message: ValidationMessages.nameTooLong }),
   email: z.string()
     .trim()
-    .min(1, 'Email is required')
-    .email('Please enter a valid email address')
-    .max(255, 'Email must be less than 255 characters'),
+    .min(1, { message: ValidationMessages.requiredEmail })
+    .email({ message: ValidationMessages.invalidEmail })
+    .max(255, { message: ValidationMessages.emailTooLong }),
   phone: z.string()
-    .max(20, 'Phone number too long')
+    .max(20, { message: 'form.tooLong' })
     .optional()
     .or(z.literal('')),
   message: z.string()
-    .max(2000, 'Message must be less than 2000 characters')
+    .max(2000, { message: ValidationMessages.messageTooLong })
     .optional()
     .or(z.literal(''))
 });
@@ -27,42 +47,42 @@ export const contentCreatorSchema = baseApplicationSchema.extend({
   instagram: z.string().max(50).optional().or(z.literal('')),
   tiktok: z.string().max(50).optional().or(z.literal('')),
   youtube: z.string().max(100).optional().or(z.literal('')),
-  followerCount: z.string().min(1, 'Please select follower count'),
-  contentNiche: z.string().min(1, 'Please select content niche'),
+  followerCount: z.string().min(1, { message: ValidationMessages.selectFollowerCount }),
+  contentNiche: z.string().min(1, { message: ValidationMessages.selectContentNiche }),
   desiredFeatures: z.string().max(1000).optional().or(z.literal('')),
-  budget: z.string().min(1, 'Please select budget range'),
-  timeline: z.string().min(1, 'Please select timeline')
+  budget: z.string().min(1, { message: ValidationMessages.selectBudget }),
+  timeline: z.string().min(1, { message: ValidationMessages.selectTimeline })
 });
 
 // AI Agents specific schema
 export const aiAgentsSchema = baseApplicationSchema.extend({
   companyName: z.string().max(100).optional().or(z.literal('')),
-  industry: z.string().min(1, 'Please select industry'),
-  agentType: z.string().min(1, 'Please select agent type'),
+  industry: z.string().min(1, { message: ValidationMessages.selectIndustry }),
+  agentType: z.string().min(1, { message: ValidationMessages.selectAgentType }),
   useCase: z.string()
     .trim()
-    .min(1, 'Use case description is required')
-    .max(2000, 'Use case must be less than 2000 characters'),
+    .min(1, { message: ValidationMessages.useCaseRequired })
+    .max(2000, { message: ValidationMessages.useCaseTooLong }),
   integrations: z.string().max(1000).optional().or(z.literal('')),
-  budget: z.string().min(1, 'Please select budget range'),
-  timeline: z.string().min(1, 'Please select timeline')
+  budget: z.string().min(1, { message: ValidationMessages.selectBudget }),
+  timeline: z.string().min(1, { message: ValidationMessages.selectTimeline })
 });
 
 // Automation specific schema
 export const automationSchema = baseApplicationSchema.extend({
   companyName: z.string()
     .trim()
-    .min(1, 'Company name is required')
-    .max(100, 'Company name must be less than 100 characters'),
-  industry: z.string().min(1, 'Please select industry'),
+    .min(1, { message: ValidationMessages.companyRequired })
+    .max(100, { message: 'form.nameTooLong' }),
+  industry: z.string().min(1, { message: ValidationMessages.selectIndustry }),
   currentTools: z.array(z.string()).optional(),
   processesToAutomate: z.string()
     .trim()
-    .min(1, 'Please describe the processes you want to automate')
-    .max(2000, 'Description must be less than 2000 characters'),
+    .min(1, { message: ValidationMessages.processesRequired })
+    .max(2000, { message: 'form.messageTooLong' }),
   painPoints: z.string().max(1000).optional().or(z.literal('')),
-  budget: z.string().min(1, 'Please select budget range'),
-  timeline: z.string().min(1, 'Please select timeline')
+  budget: z.string().min(1, { message: ValidationMessages.selectBudget }),
+  timeline: z.string().min(1, { message: ValidationMessages.selectTimeline })
 });
 
 // AI Employee specific schema
@@ -77,9 +97,17 @@ export const aiEmployeeSchema = baseApplicationSchema.extend({
 
 export type FormErrors<T> = Partial<Record<keyof T, string>>;
 
-export function useFormValidation<T extends z.ZodSchema>(schema: T) {
+export function useFormValidation<T extends z.ZodSchema>(schema: T, translate?: (key: string) => string) {
   const [errors, setErrors] = useState<FormErrors<z.infer<T>>>({});
   const [touched, setTouched] = useState<Partial<Record<keyof z.infer<T>, boolean>>>({});
+
+  // Helper to translate error message if translator provided
+  const translateMessage = useCallback((message: string): string => {
+    if (translate && message.startsWith('form.')) {
+      return translate(message);
+    }
+    return message;
+  }, [translate]);
 
   const validateField = useCallback((field: keyof z.infer<T>, value: unknown, allData: z.infer<T>) => {
     try {
@@ -89,7 +117,7 @@ export function useFormValidation<T extends z.ZodSchema>(schema: T) {
       if (!result.success) {
         const fieldError = result.error.errors.find(e => e.path[0] === field);
         if (fieldError) {
-          setErrors(prev => ({ ...prev, [field]: fieldError.message }));
+          setErrors(prev => ({ ...prev, [field]: translateMessage(fieldError.message) }));
           return false;
         }
       }
@@ -103,7 +131,7 @@ export function useFormValidation<T extends z.ZodSchema>(schema: T) {
     } catch {
       return true;
     }
-  }, [schema]);
+  }, [schema, translateMessage]);
 
   const validateForm = useCallback((data: z.infer<T>): boolean => {
     const result = schema.safeParse(data);
@@ -113,7 +141,7 @@ export function useFormValidation<T extends z.ZodSchema>(schema: T) {
       result.error.errors.forEach(err => {
         const field = err.path[0] as keyof z.infer<T>;
         if (!newErrors[field]) {
-          newErrors[field] = err.message;
+          newErrors[field] = translateMessage(err.message);
         }
       });
       setErrors(newErrors);
@@ -130,7 +158,7 @@ export function useFormValidation<T extends z.ZodSchema>(schema: T) {
     
     setErrors({});
     return true;
-  }, [schema]);
+  }, [schema, translateMessage]);
 
   const handleBlur = useCallback((field: keyof z.infer<T>) => {
     setTouched(prev => ({ ...prev, [field]: true }));
