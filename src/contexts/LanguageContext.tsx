@@ -109,8 +109,98 @@ const translations = {
     // Errors & Messages
     'error.usageLimit': 'Usage Limit Reached',
     'error.usageLimitDesc': 'You\'ve reached your monthly message limit. Please contact support or wait for next month\'s reset.',
-    'error.systemError': 'System Error',
-    'error.systemErrorDesc': 'Unable to process your request. Please try again.',
+    'error.systemError': 'Something Went Wrong',
+    'error.systemErrorDesc': 'An unexpected error occurred. Please try again.',
+    
+    // Authentication Errors
+    'error.invalidCredentials': 'Invalid Credentials',
+    'error.invalidCredentialsDesc': "That email or password didn't match. Double-check and try again?",
+    'error.emailNotVerified': 'Verify Your Email',
+    'error.emailNotVerifiedDesc': 'Check your inbox for a verification link. We can resend it if needed.',
+    'error.sessionExpired': 'Session Ended',
+    'error.sessionExpiredDesc': 'Your session has ended. Please sign in again to continue.',
+    'error.accountLocked': 'Account Temporarily Locked',
+    'error.accountLockedDesc': 'Too many failed attempts. Please try again in a few minutes.',
+    'error.emailExists': 'Email Already Registered',
+    'error.emailExistsDesc': 'This email is already in use. Try signing in or reset your password.',
+    'error.authGeneric': 'Authentication Error',
+    'error.authGenericDesc': "We couldn't sign you in right now. Please try again.",
+    'error.registrationFailed': 'Registration Error',
+    'error.registrationFailedDesc': "We couldn't create your account. Please try again in a moment.",
+
+    // Network & Connection Errors
+    'error.networkOffline': "You're Offline",
+    'error.networkOfflineDesc': 'Check your internet connection and try again.',
+    'error.connectionLost': 'Connection Lost',
+    'error.connectionLostDesc': 'We lost connection to AYN. Reconnecting...',
+    'error.timeout': 'Request Timed Out',
+    'error.timeoutDesc': 'This is taking longer than usual. Please try again.',
+
+    // Rate Limit Errors
+    'error.rateLimitChat': 'Slow Down!',
+    'error.rateLimitChatDesc': "You're sending messages too quickly. Wait a moment and try again.",
+    'error.rateLimitAuth': 'Too Many Attempts',
+    'error.rateLimitAuthDesc': 'Please wait a few minutes before trying again.',
+
+    // File Upload Errors
+    'error.uploadFailed': 'Upload Failed',
+    'error.uploadFailedDesc': "We couldn't upload your file. Please try again.",
+    'error.uploadTooLarge': 'File Too Large',
+    'error.uploadTooLargeDesc': 'Please choose a file smaller than 10MB.',
+    'error.uploadInvalidType': 'Unsupported File Type',
+    'error.uploadInvalidTypeDesc': 'We support PDF, Excel, images, and text files.',
+    'error.foldersNotSupported': 'Folders Not Supported',
+    'error.foldersNotSupportedDesc': 'Please upload individual files instead of folders.',
+    'error.multipleFilesNotSupported': 'One File at a Time',
+    'error.multipleFilesNotSupportedDesc': 'Please drop only one file at a time.',
+
+    // AI & Chat Errors
+    'error.aiUnavailable': 'AYN is Resting',
+    'error.aiUnavailableDesc': "I'm taking a quick break. Please try again in a moment.",
+    'error.chatLimitReached': 'Chat Limit Reached',
+    'error.chatLimitReachedDesc': 'This conversation has reached its limit. Start a new chat to continue.',
+    'error.usageVerification': 'Usage Check Failed',
+    'error.usageVerificationDesc': "We couldn't verify your usage. Please try again.",
+
+    // Document Errors
+    'error.documentGenerationFailed': 'Document Creation Failed',
+    'error.documentGenerationFailedDesc': "We couldn't create your document. Please try again.",
+    'error.downloadFailed': 'Download Failed',
+    'error.downloadFailedDesc': "The download didn't complete. Please try again.",
+
+    // Settings & Profile Errors
+    'error.profileUpdateFailed': "Couldn't Update Profile",
+    'error.profileUpdateFailedDesc': "Your changes weren't saved. Please try again.",
+    'error.passwordResetFailed': 'Reset Email Failed',
+    'error.passwordResetFailedDesc': "We couldn't send the reset email. Please try again.",
+    'error.settingsSaveFailed': 'Settings Not Saved',
+    'error.settingsSaveFailedDesc': "Your changes weren't saved. Please try again.",
+
+    // Support Errors
+    'error.ticketCreationFailed': "Couldn't Create Ticket",
+    'error.ticketCreationFailedDesc': "We couldn't submit your request. Please try again.",
+    'error.ticketUpdateFailed': "Couldn't Update Ticket",
+    'error.ticketUpdateFailedDesc': "The update failed. Please try again.",
+
+    // Engineering Errors
+    'error.calculationFailed': 'Calculation Error',
+    'error.calculationFailedDesc': 'Something went wrong with the calculation. Please check your inputs.',
+    'error.designSaveFailed': "Couldn't Save Design",
+    'error.designSaveFailedDesc': "Your design wasn't saved. Please try again.",
+
+    // Generic/Fallback Errors
+    'error.generic': 'Something Went Wrong',
+    'error.genericDesc': 'An unexpected error occurred. Please try again.',
+    'error.tryAgain': 'Try Again',
+    'error.contactSupport': 'Contact Support',
+    'error.copyFailed': 'Copy Failed',
+    'error.copyFailedDesc': "Couldn't copy to clipboard. Please try manually.",
+    'error.saveWarning': 'Save Warning',
+    'error.saveWarningDesc': 'Your message may not have been saved. Refresh if issues persist.',
+    'error.dataLoadFailed': "Couldn't Load Data",
+    'error.dataLoadFailedDesc': 'Unable to load the requested data. Please try again.',
+    'error.analyticsLoadFailed': 'Unable to Load Analytics',
+    'error.analyticsLoadFailedDesc': 'Unable to load analytics data. Please try again.',
     
     // Common
     'common.signOut': 'Sign Out',
@@ -418,7 +508,7 @@ const translations = {
     'admin.systemVersion': 'System Version',
     'admin.latestStable': 'Latest stable',
     'admin.databaseVersion': 'Database Version',
-    'admin.supabaseHosted': 'Supabase hosted',
+    'admin.cloudHosted': 'Cloud hosted',
     'admin.lastUpdated': 'Last Updated',
     'admin.daysAgo': 'days ago',
     'admin.autoUpdatesEnabled': 'Auto-updates enabled',
@@ -1320,8 +1410,98 @@ const translations = {
     // Errors & Messages
     'error.usageLimit': 'Limite d\'Utilisation Atteinte',
     'error.usageLimitDesc': 'Vous avez atteint votre limite mensuelle. Veuillez contacter le support.',
-    'error.systemError': 'Erreur Système',
-    'error.systemErrorDesc': 'Impossible de traiter votre demande. Veuillez réessayer.',
+    'error.systemError': 'Quelque Chose s\'est Mal Passé',
+    'error.systemErrorDesc': 'Une erreur inattendue s\'est produite. Veuillez réessayer.',
+    
+    // Authentication Errors
+    'error.invalidCredentials': 'Identifiants Invalides',
+    'error.invalidCredentialsDesc': 'Email ou mot de passe incorrect. Vérifiez et réessayez.',
+    'error.emailNotVerified': 'Vérifiez Votre Email',
+    'error.emailNotVerifiedDesc': 'Consultez votre boîte de réception pour le lien de vérification.',
+    'error.sessionExpired': 'Session Terminée',
+    'error.sessionExpiredDesc': 'Votre session a expiré. Veuillez vous reconnecter pour continuer.',
+    'error.accountLocked': 'Compte Temporairement Verrouillé',
+    'error.accountLockedDesc': 'Trop de tentatives. Veuillez réessayer dans quelques minutes.',
+    'error.emailExists': 'Email Déjà Enregistré',
+    'error.emailExistsDesc': 'Cet email est déjà utilisé. Essayez de vous connecter ou réinitialisez votre mot de passe.',
+    'error.authGeneric': 'Erreur d\'Authentification',
+    'error.authGenericDesc': 'Nous n\'avons pas pu vous connecter maintenant. Veuillez réessayer.',
+    'error.registrationFailed': 'Erreur d\'Inscription',
+    'error.registrationFailedDesc': 'Nous n\'avons pas pu créer votre compte. Veuillez réessayer.',
+
+    // Network & Connection Errors
+    'error.networkOffline': 'Vous Êtes Hors Ligne',
+    'error.networkOfflineDesc': 'Vérifiez votre connexion Internet et réessayez.',
+    'error.connectionLost': 'Connexion Perdue',
+    'error.connectionLostDesc': 'Nous avons perdu la connexion avec AYN. Reconnexion...',
+    'error.timeout': 'Délai d\'Attente Dépassé',
+    'error.timeoutDesc': 'Cela prend plus de temps que prévu. Veuillez réessayer.',
+
+    // Rate Limit Errors
+    'error.rateLimitChat': 'Doucement !',
+    'error.rateLimitChatDesc': 'Vous envoyez des messages trop rapidement. Attendez un moment et réessayez.',
+    'error.rateLimitAuth': 'Trop de Tentatives',
+    'error.rateLimitAuthDesc': 'Veuillez attendre quelques minutes avant de réessayer.',
+
+    // File Upload Errors
+    'error.uploadFailed': 'Échec du Téléchargement',
+    'error.uploadFailedDesc': 'Nous n\'avons pas pu télécharger votre fichier. Veuillez réessayer.',
+    'error.uploadTooLarge': 'Fichier Trop Volumineux',
+    'error.uploadTooLargeDesc': 'Veuillez choisir un fichier de moins de 10 Mo.',
+    'error.uploadInvalidType': 'Type de Fichier Non Supporté',
+    'error.uploadInvalidTypeDesc': 'Nous supportons PDF, Excel, images et fichiers texte.',
+    'error.foldersNotSupported': 'Dossiers Non Supportés',
+    'error.foldersNotSupportedDesc': 'Veuillez télécharger des fichiers individuels au lieu de dossiers.',
+    'error.multipleFilesNotSupported': 'Un Fichier à la Fois',
+    'error.multipleFilesNotSupportedDesc': 'Veuillez ne déposer qu\'un seul fichier à la fois.',
+
+    // AI & Chat Errors
+    'error.aiUnavailable': 'AYN se Repose',
+    'error.aiUnavailableDesc': 'Je prends une courte pause. Veuillez réessayer dans un moment.',
+    'error.chatLimitReached': 'Limite de Chat Atteinte',
+    'error.chatLimitReachedDesc': 'Cette conversation a atteint sa limite. Démarrez un nouveau chat pour continuer.',
+    'error.usageVerification': 'Échec de Vérification',
+    'error.usageVerificationDesc': 'Nous n\'avons pas pu vérifier votre utilisation. Veuillez réessayer.',
+
+    // Document Errors
+    'error.documentGenerationFailed': 'Échec de Création du Document',
+    'error.documentGenerationFailedDesc': 'Nous n\'avons pas pu créer votre document. Veuillez réessayer.',
+    'error.downloadFailed': 'Échec du Téléchargement',
+    'error.downloadFailedDesc': 'Le téléchargement n\'a pas abouti. Veuillez réessayer.',
+
+    // Settings & Profile Errors
+    'error.profileUpdateFailed': 'Impossible de Mettre à Jour le Profil',
+    'error.profileUpdateFailedDesc': 'Vos modifications n\'ont pas été enregistrées. Veuillez réessayer.',
+    'error.passwordResetFailed': 'Échec de l\'Email de Réinitialisation',
+    'error.passwordResetFailedDesc': 'Nous n\'avons pas pu envoyer l\'email de réinitialisation. Veuillez réessayer.',
+    'error.settingsSaveFailed': 'Paramètres Non Enregistrés',
+    'error.settingsSaveFailedDesc': 'Vos modifications n\'ont pas été enregistrées. Veuillez réessayer.',
+
+    // Support Errors
+    'error.ticketCreationFailed': 'Impossible de Créer le Ticket',
+    'error.ticketCreationFailedDesc': 'Nous n\'avons pas pu soumettre votre demande. Veuillez réessayer.',
+    'error.ticketUpdateFailed': 'Impossible de Mettre à Jour le Ticket',
+    'error.ticketUpdateFailedDesc': 'La mise à jour a échoué. Veuillez réessayer.',
+
+    // Engineering Errors
+    'error.calculationFailed': 'Erreur de Calcul',
+    'error.calculationFailedDesc': 'Quelque chose s\'est mal passé avec le calcul. Vérifiez vos entrées.',
+    'error.designSaveFailed': 'Impossible d\'Enregistrer le Design',
+    'error.designSaveFailedDesc': 'Votre design n\'a pas été enregistré. Veuillez réessayer.',
+
+    // Generic/Fallback Errors
+    'error.generic': 'Quelque Chose s\'est Mal Passé',
+    'error.genericDesc': 'Une erreur inattendue s\'est produite. Veuillez réessayer.',
+    'error.tryAgain': 'Réessayer',
+    'error.contactSupport': 'Contacter le Support',
+    'error.copyFailed': 'Échec de la Copie',
+    'error.copyFailedDesc': 'Impossible de copier dans le presse-papiers. Veuillez essayer manuellement.',
+    'error.saveWarning': 'Avertissement de Sauvegarde',
+    'error.saveWarningDesc': 'Votre message peut ne pas avoir été enregistré. Actualisez si les problèmes persistent.',
+    'error.dataLoadFailed': 'Impossible de Charger les Données',
+    'error.dataLoadFailedDesc': 'Impossible de charger les données demandées. Veuillez réessayer.',
+    'error.analyticsLoadFailed': 'Impossible de Charger les Analyses',
+    'error.analyticsLoadFailedDesc': 'Impossible de charger les données d\'analyse. Veuillez réessayer.',
     
     // Common
     'common.signOut': 'Déconnexion',

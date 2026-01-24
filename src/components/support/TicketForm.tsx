@@ -115,7 +115,7 @@ const TicketForm: React.FC<TicketFormProps> = ({ onSuccess }) => {
 
     } catch (error) {
       console.error('Ticket creation error:', error);
-      toast.error('Failed to create ticket. Please try again.');
+      toast.error("We couldn't submit your request. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

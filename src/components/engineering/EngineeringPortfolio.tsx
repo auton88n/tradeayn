@@ -85,8 +85,8 @@ const EngineeringPortfolio = ({ userId, onAddToPortfolio }: EngineeringPortfolio
     } catch (error) {
       console.error('Error updating portfolio item:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to update visibility.',
+        title: "Couldn't Update Visibility",
+        description: "Your changes weren't saved. Please try again.",
         variant: 'destructive',
       });
     }
@@ -110,8 +110,8 @@ const EngineeringPortfolio = ({ userId, onAddToPortfolio }: EngineeringPortfolio
     } catch (error) {
       console.error('Error deleting portfolio item:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to remove design.',
+        title: "Couldn't Remove Design",
+        description: "Your design wasn't removed. Please try again.",
         variant: 'destructive',
       });
     }

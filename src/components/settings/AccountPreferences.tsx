@@ -157,8 +157,8 @@ export const AccountPreferences = ({ userId, userEmail, accessToken }: AccountPr
     } catch (error) {
       console.error('Error saving profile:', error);
       toast({
-        title: t('common.error'),
-        description: 'Failed to update profile',
+        title: "Couldn't Update Profile",
+        description: "Your changes weren't saved. Please try again.",
         variant: 'destructive',
       });
     } finally {

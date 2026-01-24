@@ -163,10 +163,9 @@ const ResetPassword = () => {
       }, 2000);
       
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to reset password';
       toast({
-        title: 'Error',
-        description: errorMessage,
+        title: 'Password Reset Failed',
+        description: "We couldn't update your password. Please try again or request a new reset link.",
         variant: 'destructive',
       });
     } finally {

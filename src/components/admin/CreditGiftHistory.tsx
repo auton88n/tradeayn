@@ -63,7 +63,7 @@ export const CreditGiftHistory = () => {
       setGifts(data || []);
     } catch (err) {
       console.error('Error fetching credit gifts:', err);
-      toast.error('Failed to load credit gift history');
+      toast.error("Couldn't load credit gift history. Please try again.");
     } finally {
       setLoading(false);
       setRefreshing(false);
