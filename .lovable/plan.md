@@ -1,224 +1,21 @@
 
 
-# Complete Performance & Email System Optimization Plan
+# Complete Auth Email Migration to Resend (Auth Hooks)
 
-## Executive Summary
+## Summary
 
-This plan addresses two major system improvements:
-1. **Database Performance**: Add missing indexes to eliminate 877,000+ sequential scans
-2. **Email System Migration**: Consolidate emails to Resend while keeping SMTP for two-way communication
+This plan creates a new Supabase Edge Function that intercepts ALL authentication emails (signup, password reset, magic link, email change) and sends them through Resend instead of Supabase's slow default email service. This will reduce email delivery time from 5-30+ seconds to under 5 seconds.
 
 ---
 
-## Part 1: Database Performance Optimization
+## What Gets Fixed
 
-### Problem Analysis
-
-Your Supabase database is slow because critical tables are missing indexes. Every authentication check (which happens on every page load) performs a full table scan instead of an index lookup.
-
-| Table | Sequential Scans | Rows | Impact |
-|-------|-----------------|------|--------|
-| `user_roles` | **877,968** | ~15 | Critical - checked on every page load |
-| `usage_logs` | **4,476** | 2.7M+ | High - affects usage tracking |
-| `user_settings` | **5,323** | Many | Medium - affects settings pages |
-
-### Solution: Create Missing Indexes
-
-**New Migration File**: `supabase/migrations/XXXXXXX_add_performance_indexes.sql`
-
-```sql
--- Critical: user_roles lookups (will reduce 877K scans to near zero)
-CREATE INDEX IF NOT EXISTS idx_user_roles_user_id 
-ON public.user_roles(user_id);
-
--- High: usage_logs lookups on large table
-CREATE INDEX IF NOT EXISTS idx_usage_logs_user_id 
-ON public.usage_logs(user_id);
-
--- Medium: usage_logs date filtering
-CREATE INDEX IF NOT EXISTS idx_usage_logs_created_at 
-ON public.usage_logs(created_at);
-
--- Medium: user_settings lookups
-CREATE INDEX IF NOT EXISTS idx_user_settings_user_id 
-ON public.user_settings(user_id);
-
--- Medium: user_ai_limits lookups
-CREATE INDEX IF NOT EXISTS idx_user_ai_limits_user_id 
-ON public.user_ai_limits(user_id);
-```
-
-### Expected Impact
-- Auth check latency: **~82ms → <5ms** (16x faster)
-- Page load improvement: **~0.5-1 second faster**
-
----
-
-## Part 2: Email System Architecture
-
-### Current State
-
-Your email system currently uses two providers:
-
-| Provider | Edge Functions | Purpose |
-|----------|---------------|---------|
-| **Resend** (fast) | `send-email` | Welcome, credit warnings, subscriptions, password reset notifications |
-| **SMTP/Hostinger** (slow) | 6 functions | Contact forms, support tickets, application emails, admin notifications |
-
-### Target State
-
-Based on your requirements:
-- **Keep SMTP** for emails where you need to receive replies (contact, support, tickets)
-- **Migrate to Resend** for one-way notifications (faster delivery)
-
-| Edge Function | Current | After | Reason |
-|--------------|---------|-------|--------|
-| `send-contact-email` | SMTP | **Keep SMTP** | Need to receive replies at info@aynn.io |
-| `send-ticket-notification` | SMTP | **Keep SMTP** | Support ticket replies |
-| `send-ticket-reply` | SMTP | **Keep SMTP** | Admin replies to users |
-| `send-reply-email` | SMTP | **Keep SMTP** | Application replies |
-| `send-usage-alert` | SMTP | **Migrate to Resend** | One-way notification |
-| `send-application-email` | SMTP | **Migrate to Resend** | One-way confirmations |
-| `admin-notifications` | SMTP | **Migrate to Resend** | One-way admin alerts |
-
----
-
-## Part 3: Migrate Edge Functions to Resend
-
-### 3.1 Migrate `send-usage-alert/index.ts`
-
-**Current**: Uses `SMTPClient` from denomailer (slow TLS handshake)
-**After**: Uses Resend HTTP API (fast)
-
-**Changes**:
-- Remove `SMTPClient` import and initialization
-- Add `import { Resend } from "npm:resend@2.0.0";`
-- Replace SMTP send with `resend.emails.send()`
-- Send from `AYN <noreply@mail.aynn.io>`
-- Keep existing branded HTML templates
-- Keep alert_history deduplication logic
-
-### 3.2 Migrate `send-application-email/index.ts`
-
-**Current**: Sends two emails via SMTP:
-1. Confirmation to applicant
-2. Notification to team
-
-**After**: Both emails via Resend
-
-**Changes**:
-- Remove `SMTPClient` import
-- Add Resend import
-- Confirmation email from `AYN <noreply@mail.aynn.io>` with `Reply-To: info@aynn.io`
-- Team notification from `AYN <noreply@mail.aynn.io>` with `Reply-To: applicant's email` (so team can reply directly)
-- Keep existing branded HTML templates
-
-### 3.3 Migrate `admin-notifications/index.ts`
-
-**Current**: Handles 5 notification types via SMTP:
-- `access_request` - New user awaiting approval
-- `security_alert` - Security events
-- `daily_report` - Daily metrics email
-- `maintenance_announcement` - Sent to all users
-- `pin_change_approval` - PIN change requests
-
-**After**: All via Resend
-
-**Changes**:
-- Remove `SMTPClient` import
-- Add Resend import
-- Keep all existing dark-mode email templates
-- Keep approval token generation for access requests
-- For maintenance announcements: use Resend batch sending (up to 100 per call)
-- Send from `AYN Admin <noreply@mail.aynn.io>`
-- Keep admin_notification_log database logging
-
----
-
-## Part 4: Add Branded Password Change Email
-
-### Current Flow (Settings → Change Password)
-
-```text
-User clicks "Change Password" in Settings
-         │
-         ▼
-supabase.auth.resetPasswordForEmail()
-         │
-         ▼
-Supabase sends default template email
-(Plain, unbranded - but contains the actual reset link)
-```
-
-### New Flow (Matches AuthModal behavior)
-
-```text
-User clicks "Change Password" in Settings
-         │
-         ▼
-supabase.auth.resetPasswordForEmail()
-         │
-    ┌────┴────┐
-    ▼         ▼
-Supabase   Resend branded email
-(reset     (notification with AYN branding)
- link)
-```
-
-**File to Modify**: `src/components/settings/SessionManagement.tsx`
-
-**Change in `handlePasswordChange` function**:
-After the successful Supabase call, add:
-```typescript
-// Also send branded notification via Resend (parallel, non-blocking)
-try {
-  await supabase.functions.invoke('send-email', {
-    body: {
-      to: userEmail,
-      emailType: 'password_reset',
-      data: { userName: userEmail.split('@')[0] }
-    }
-  });
-  console.log('[SessionManagement] Branded password reset email sent via Resend');
-} catch (emailError) {
-  console.warn('[SessionManagement] Resend email failed (Supabase email still sent):', emailError);
-}
-```
-
----
-
-## Part 5: Signup & Password Reset Emails Explained
-
-### Important: Supabase Auth Emails Cannot Be Replaced
-
-Supabase Auth controls these emails because they contain secure tokens:
-
-| Email Type | Sent By | Contains | Can Replace? |
-|------------|---------|----------|--------------|
-| Signup verification | Supabase Auth | Verification link + token | No |
-| Password reset | Supabase Auth | Reset link + token | No |
-| Magic link | Supabase Auth | Login link + token | No |
-
-**What You Can Do**:
-1. Send additional branded notifications via Resend (already implemented for forgot password in AuthModal)
-2. Customize Supabase templates in Dashboard (Authentication → Email Templates)
-
-### Current Implementation
-
-| Flow | Supabase Email | Resend Email |
-|------|---------------|--------------|
-| **Signup** | Verification email (automatic) | Welcome email (via `send-email`) |
-| **Forgot Password** (AuthModal) | Reset link email | Branded notification |
-| **Change Password** (Settings) | Reset link email | **Not yet implemented** (this plan adds it) |
-
-### Customizing Supabase Templates (Optional)
-
-For full branding on the actual link emails:
-1. Go to Supabase Dashboard → Authentication → Email Templates
-2. Edit each template (Confirm signup, Reset password, Magic link, Change email)
-3. Add AYN logo and branding HTML
-
-This ensures the emails with actual links also have your branding.
+| Email Type | Current | After |
+|------------|---------|-------|
+| Signup verification | Slow (5-30s) | Fast (~3s) |
+| Password reset | Slow (5-30s) | Fast (~3s) |
+| Magic link | Slow (5-30s) | Fast (~3s) |
+| Email change | Slow (5-30s) | Fast (~3s) |
 
 ---
 
@@ -226,83 +23,224 @@ This ensures the emails with actual links also have your branding.
 
 | File | Action | Description |
 |------|--------|-------------|
-| `supabase/migrations/[timestamp]_add_performance_indexes.sql` | **Create** | Add database indexes |
-| `supabase/functions/send-usage-alert/index.ts` | **Modify** | Replace SMTP → Resend |
-| `supabase/functions/send-application-email/index.ts` | **Modify** | Replace SMTP → Resend |
-| `supabase/functions/admin-notifications/index.ts` | **Modify** | Replace SMTP → Resend |
-| `src/components/settings/SessionManagement.tsx` | **Modify** | Add branded email call |
+| `supabase/functions/auth-send-email/index.ts` | **Create** | New Auth Hook edge function |
+| `supabase/config.toml` | **Modify** | Add config for new function |
+| `src/components/auth/AuthModal.tsx` | **Modify** | Remove duplicate branded email call (lines 132-144) |
+| `src/components/settings/SessionManagement.tsx` | **Modify** | Remove duplicate branded email call |
+
+---
+
+## Part 1: Create Auth Email Hook Edge Function
+
+**File**: `supabase/functions/auth-send-email/index.ts`
+
+This function will:
+1. Receive webhook from Supabase Auth containing email data and tokens
+2. Verify webhook signature using `standardwebhooks` library (security)
+3. Build the confirmation URL with the token
+4. Render branded AYN email template (bilingual: English + Arabic)
+5. Send via Resend API
+
+### Email Types Handled
+
+| Type | Triggered By | Template |
+|------|-------------|----------|
+| `signup` | User creates account | "Confirm your AYN account" + verification link |
+| `recovery` | Password reset request | "Reset your AYN password" + reset link |
+| `magiclink` | Magic link login | "Your AYN login link" + one-click login |
+| `email_change` | User changes email | "Confirm your new email" + confirmation link |
+
+### Confirmation URL Format
+
+```text
+https://dfkoxuokfkttjhfjcecx.supabase.co/auth/v1/verify?token=${token_hash}&type=${email_action_type}&redirect_to=${redirect_to}
+```
+
+### Key Code Structure
+
+```typescript
+import { Webhook } from "https://esm.sh/standardwebhooks@1.0.0";
+import { Resend } from "npm:resend@2.0.0";
+
+const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const hookSecret = Deno.env.get("SEND_EMAIL_HOOK_SECRET");
+
+Deno.serve(async (req) => {
+  // 1. Verify webhook signature
+  const payload = await req.text();
+  const headers = Object.fromEntries(req.headers);
+  const wh = new Webhook(hookSecret);
+  const { user, email_data } = wh.verify(payload, headers);
+  
+  // 2. Build confirmation URL
+  const confirmationUrl = `https://dfkoxuokfkttjhfjcecx.supabase.co/auth/v1/verify?token=${email_data.token_hash}&type=${email_data.email_action_type}&redirect_to=${email_data.redirect_to}`;
+  
+  // 3. Render branded template based on email_data.email_action_type
+  const { subject, html } = getTemplate(email_data.email_action_type, user, confirmationUrl);
+  
+  // 4. Send via Resend
+  await resend.emails.send({
+    from: "AYN <noreply@mail.aynn.io>",
+    to: user.email,
+    subject,
+    html
+  });
+  
+  return new Response(JSON.stringify({}), { status: 200 });
+});
+```
+
+---
+
+## Part 2: Branded Email Templates
+
+All templates will include:
+- AYN logo header (same as existing `send-email` templates)
+- Bilingual content (English + Arabic)
+- Clear call-to-action button with the confirmation link
+- Security tips section
+- Consistent styling with your brand
+
+### Signup Confirmation Template
+- Subject: "🔐 Confirm your AYN account | تأكيد حسابك في AYN"
+- Big "Verify Email" button with link
+- Welcome message
+- What to expect after verification
+
+### Password Reset Template
+- Subject: "🔐 Reset your AYN password | إعادة تعيين كلمة المرور"
+- Big "Reset Password" button with link
+- Security tips (don't share link, expires in 1 hour)
+- "Didn't request this?" notice
+
+### Magic Link Template
+- Subject: "🔐 Your AYN login link | رابط تسجيل الدخول"
+- Big "Log In" button with link
+- Link expires notice
+- Security warning
+
+### Email Change Template
+- Subject: "📧 Confirm your new email | تأكيد بريدك الإلكتروني الجديد"
+- Big "Confirm Email" button
+- Shows old and new email addresses
+- Security notice
+
+---
+
+## Part 3: Update Config
+
+**File**: `supabase/config.toml`
+
+Add:
+```toml
+[functions.auth-send-email]
+verify_jwt = false
+```
+
+The function doesn't use JWT because it's called by Supabase Auth via webhook, not by users.
+
+---
+
+## Part 4: Remove Duplicate Email Calls
+
+### In `AuthModal.tsx` (handleForgotPassword)
+
+**Remove lines 132-144**:
+```typescript
+// Also send branded email via Resend (parallel, don't block)
+try {
+  await supabase.functions.invoke('send-email', {
+    body: {
+      to: email,
+      emailType: 'password_reset',
+      data: { userName: email.split('@')[0] }
+    }
+  });
+  console.log('[AuthModal] Branded password reset email sent via Resend');
+} catch (emailError) {
+  console.warn('[AuthModal] Resend email failed (Supabase email still sent):', emailError);
+}
+```
+
+**Reason**: The Auth Hook now sends the branded email directly - no need for duplicate.
+
+### In `SessionManagement.tsx` (handlePasswordChange)
+
+**Remove the parallel Resend call** that was added previously.
+
+**Reason**: Same as above - Auth Hook handles it.
+
+---
+
+## Part 5: Manual Configuration Steps (After Deployment)
+
+You'll need to configure the Auth Hook in Supabase Dashboard:
+
+1. **Go to**: Supabase Dashboard → Authentication → Hooks
+2. **Enable**: "Send Email" hook
+3. **Select**: HTTPS (not Postgres)
+4. **Set URL**: `https://dfkoxuokfkttjhfjcecx.supabase.co/functions/v1/auth-send-email`
+5. **Set HTTP Headers**: None required (signature is in standard webhook headers)
+6. **Add Secrets**: Add `SEND_EMAIL_HOOK_SECRET` to Edge Function secrets
+
+The secret format should be: `v1,whsec_YOUR_SECRET_HERE` (you already have this ready)
 
 ---
 
 ## Technical Details
 
-### Resend Code Pattern
+### Webhook Payload Structure
 
-```typescript
-// BEFORE (SMTP - slow, ~500-1000ms)
-import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
-const client = new SMTPClient({
-  connection: {
-    hostname: smtpHost,
-    port: 465,
-    tls: true,
-    auth: { username: smtpUser, password: smtpPass },
+When Supabase Auth triggers the hook, it sends:
+
+```json
+{
+  "user": {
+    "id": "user-uuid",
+    "email": "user@example.com",
+    "user_metadata": { "full_name": "John" }
   },
-});
-await client.send({ from, to, subject, html });
-await client.close();
-
-// AFTER (Resend - fast, ~50-100ms)
-import { Resend } from "npm:resend@2.0.0";
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-await resend.emails.send({
-  from: "AYN <noreply@mail.aynn.io>",
-  to: userEmail,
-  subject: subject,
-  html: emailHtml,
-});
+  "email_data": {
+    "email_action_type": "signup|recovery|magiclink|email_change",
+    "token_hash": "abc123...",
+    "token": "123456",
+    "redirect_to": "https://ayn-insight-forge.lovable.app/",
+    "site_url": "https://ayn-insight-forge.lovable.app"
+  }
+}
 ```
 
-### Sender Addresses
+### Security
 
-| Email Type | From Address | Reply-To |
-|------------|--------------|----------|
-| Usage alerts | `AYN <noreply@mail.aynn.io>` | None |
-| Application (to applicant) | `AYN <noreply@mail.aynn.io>` | `info@aynn.io` |
-| Application (to team) | `AYN <noreply@mail.aynn.io>` | Applicant's email |
-| Admin notifications | `AYN Admin <noreply@mail.aynn.io>` | None |
-| Contact form (SMTP) | `info@aynn.io` | Sender's email |
-| Support tickets (SMTP) | `info@aynn.io` | User's email |
+1. **Webhook Signature**: Uses `standardwebhooks` library to verify the request came from Supabase
+2. **No JWT**: The function is called by Supabase's internal system, not by users
+3. **HTTPS Only**: All communication is encrypted
+
+### Error Handling
+
+- If Resend fails, return error to Supabase (will retry)
+- Log all email attempts for debugging
+- Graceful fallback messages
+
+---
+
+## Expected Results
+
+| Metric | Before | After |
+|--------|--------|-------|
+| Signup email delivery | 5-30 seconds | < 5 seconds |
+| Password reset email | 5-30 seconds | < 5 seconds |
+| Full AYN branding | Only in parallel email | In the actual link email |
+| Duplicate emails | Yes (2 emails for password reset) | No (1 branded email) |
 
 ---
 
 ## Verification Checklist
 
-### After Database Migration:
-- [ ] Run query: `SELECT relname, seq_scan, idx_scan FROM pg_stat_user_tables WHERE relname = 'user_roles'`
-- [ ] Verify `idx_scan` is increasing (indexes being used)
-- [ ] Check auth response times in logs (should be <5ms)
-- [ ] Page load noticeably faster
-
-### After Email Migration:
-- [ ] Test usage alert at 75%/90%/100% triggers
-- [ ] Test service application form submission
-- [ ] Test admin access request notification
-- [ ] Test maintenance announcement (batch send)
-- [ ] Verify all emails have AYN branding
-- [ ] Verify contact form replies still arrive at info@aynn.io
-- [ ] Verify support ticket replies work correctly
-- [ ] Test password change from Settings (should receive 2 emails)
-
----
-
-## Performance Improvements Summary
-
-| Area | Before | After | Improvement |
-|------|--------|-------|-------------|
-| `user_roles` query | ~82ms (seq scan) | <5ms (index) | **16x faster** |
-| Page load | Slow | ~1s faster | Better UX |
-| Usage alert email | ~500-1000ms (SMTP) | ~50-100ms (Resend) | **10x faster** |
-| Application email | ~500-1000ms (SMTP) | ~50-100ms (Resend) | **10x faster** |
-| Admin notifications | ~500-1000ms (SMTP) | ~50-100ms (Resend) | **10x faster** |
+After implementation:
+- [ ] Test signup - receive branded email with verification link within seconds
+- [ ] Test password reset - receive branded email with reset link within seconds
+- [ ] Click links - they should work and redirect correctly
+- [ ] Check no duplicate emails are received
+- [ ] Verify bilingual content renders correctly
 
