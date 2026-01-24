@@ -188,3 +188,6 @@ verify_jwt = false
 
 [functions.download-document]
 verify_jwt = false
+
+[functions.stripe-webhook]
+verify_jwt = false

@@ -9,7 +9,7 @@ const corsHeaders = {
 
 interface EmailRequest {
   to: string;
-  emailType: 'welcome' | 'credit_warning' | 'auto_delete_warning' | 'payment_receipt' | 'password_reset';
+  emailType: 'welcome' | 'credit_warning' | 'auto_delete_warning' | 'payment_receipt' | 'password_reset' | 'subscription_created' | 'subscription_renewed' | 'subscription_canceled' | 'subscription_updated';
   data: Record<string, unknown>;
   userId?: string;
 }
@@ -299,6 +299,267 @@ function passwordResetTemplate(userName: string): { subject: string; html: strin
   };
 }
 
+// Generate subscription created email template (bilingual)
+function subscriptionCreatedTemplate(userName: string, planName: string, credits: number, nextBillingDate: string): { subject: string; html: string } {
+  const safeName = escapeHtml(userName || 'there');
+  const safePlan = escapeHtml(planName);
+  const safeDate = escapeHtml(nextBillingDate);
+  
+  return {
+    subject: `🎉 Welcome to AYN ${safePlan}! | !${safePlan} AYN مرحباً بك في`,
+    html: `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<div style="max-width:600px;margin:0 auto;padding:40px 20px;">
+  ${AYN_HEADER}
+  
+  <div style="background:#dcfce7;border-left:4px solid #22c55e;padding:16px 20px;margin-bottom:32px;">
+    <p style="font-size:16px;color:#166534;margin:0;font-weight:600;">🎉 Welcome to ${safePlan}!</p>
+  </div>
+  
+  <p style="font-size:18px;color:#333;margin-bottom:16px;">Hi ${safeName},</p>
+  <p style="font-size:16px;color:#666;line-height:1.6;margin-bottom:24px;">
+    Thank you for subscribing to AYN ${safePlan}! Your account has been upgraded and all premium features are now active.
+  </p>
+  
+  <div style="background:#f9f9f9;border-radius:12px;padding:24px;margin-bottom:24px;">
+    <table style="width:100%;border-collapse:collapse;">
+      <tr>
+        <td style="padding:12px 0;border-bottom:1px solid #e5e5e5;color:#666;font-size:14px;">Plan</td>
+        <td style="padding:12px 0;border-bottom:1px solid #e5e5e5;color:#333;font-size:14px;text-align:right;font-weight:600;">${safePlan}</td>
+      </tr>
+      <tr>
+        <td style="padding:12px 0;border-bottom:1px solid #e5e5e5;color:#666;font-size:14px;">Monthly Credits</td>
+        <td style="padding:12px 0;border-bottom:1px solid #e5e5e5;color:#333;font-size:14px;text-align:right;font-weight:600;">${credits}</td>
+      </tr>
+      <tr>
+        <td style="padding:12px 0;color:#666;font-size:14px;">Next Billing</td>
+        <td style="padding:12px 0;color:#333;font-size:14px;text-align:right;font-weight:600;">${safeDate}</td>
+      </tr>
+    </table>
+  </div>
+  
+  <div style="background:#f0f9ff;border-radius:8px;padding:16px;margin-bottom:24px;">
+    <p style="font-size:14px;color:#0369a1;margin:0;">
+      🚀 Start exploring your enhanced capabilities now! Your credits have been applied to your account.
+    </p>
+  </div>
+  
+  <hr style="border:none;border-top:1px solid #eee;margin:32px 0;">
+  
+  <p style="font-size:18px;color:#333;direction:rtl;text-align:right;margin-bottom:16px;">،${safeName} مرحباً</p>
+  <p style="font-size:16px;color:#666;line-height:1.8;direction:rtl;text-align:right;margin-bottom:24px;">
+    شكراً لاشتراكك في AYN ${safePlan}! تم ترقية حسابك وجميع الميزات المميزة نشطة الآن.
+  </p>
+  
+  <div style="background:#f9f9f9;border-radius:12px;padding:24px;margin-bottom:24px;direction:rtl;text-align:right;">
+    <p style="font-size:14px;color:#374151;margin:0 0 8px;font-weight:600;">تفاصيل الاشتراك:</p>
+    <p style="font-size:14px;color:#6b7280;margin:0;">الخطة: ${safePlan} | الرصيد الشهري: ${credits} | التجديد التالي: ${safeDate}</p>
+  </div>
+  
+  ${AYN_FOOTER}
+</div>
+</body>
+</html>`
+  };
+}
+
+// Generate subscription renewed email template (bilingual)
+function subscriptionRenewedTemplate(userName: string, planName: string, amount: string, nextBillingDate: string): { subject: string; html: string } {
+  const safeName = escapeHtml(userName || 'there');
+  const safePlan = escapeHtml(planName);
+  const safeAmount = escapeHtml(amount);
+  const safeDate = escapeHtml(nextBillingDate);
+  
+  return {
+    subject: `✅ AYN ${safePlan} Renewed | تم تجديد اشتراكك`,
+    html: `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<div style="max-width:600px;margin:0 auto;padding:40px 20px;">
+  ${AYN_HEADER}
+  
+  <div style="background:#dcfce7;border-left:4px solid #22c55e;padding:16px 20px;margin-bottom:32px;">
+    <p style="font-size:16px;color:#166534;margin:0;font-weight:600;">✅ Subscription Renewed</p>
+  </div>
+  
+  <p style="font-size:18px;color:#333;margin-bottom:16px;">Hi ${safeName},</p>
+  <p style="font-size:16px;color:#666;line-height:1.6;margin-bottom:24px;">
+    Your AYN ${safePlan} subscription has been successfully renewed. Your credits have been reset for the new billing period.
+  </p>
+  
+  <div style="background:#f9f9f9;border-radius:12px;padding:24px;margin-bottom:24px;">
+    <table style="width:100%;border-collapse:collapse;">
+      <tr>
+        <td style="padding:12px 0;border-bottom:1px solid #e5e5e5;color:#666;font-size:14px;">Plan</td>
+        <td style="padding:12px 0;border-bottom:1px solid #e5e5e5;color:#333;font-size:14px;text-align:right;font-weight:600;">${safePlan}</td>
+      </tr>
+      <tr>
+        <td style="padding:12px 0;border-bottom:1px solid #e5e5e5;color:#666;font-size:14px;">Amount Paid</td>
+        <td style="padding:12px 0;border-bottom:1px solid #e5e5e5;color:#333;font-size:14px;text-align:right;font-weight:600;">${safeAmount}</td>
+      </tr>
+      <tr>
+        <td style="padding:12px 0;color:#666;font-size:14px;">Next Billing</td>
+        <td style="padding:12px 0;color:#333;font-size:14px;text-align:right;font-weight:600;">${safeDate}</td>
+      </tr>
+    </table>
+  </div>
+  
+  <div style="background:#f0f9ff;border-radius:8px;padding:16px;margin-bottom:24px;">
+    <p style="font-size:14px;color:#0369a1;margin:0;">
+      🔄 Your monthly credits have been refreshed! Continue enjoying all the premium features.
+    </p>
+  </div>
+  
+  <hr style="border:none;border-top:1px solid #eee;margin:32px 0;">
+  
+  <p style="font-size:18px;color:#333;direction:rtl;text-align:right;margin-bottom:16px;">،${safeName} مرحباً</p>
+  <p style="font-size:16px;color:#666;line-height:1.8;direction:rtl;text-align:right;margin-bottom:24px;">
+    تم تجديد اشتراكك في AYN ${safePlan} بنجاح. تم إعادة تعيين رصيدك لفترة الفوترة الجديدة.
+  </p>
+  
+  ${AYN_FOOTER}
+</div>
+</body>
+</html>`
+  };
+}
+
+// Generate subscription canceled email template (bilingual)
+function subscriptionCanceledTemplate(userName: string, planName: string, endDate: string): { subject: string; html: string } {
+  const safeName = escapeHtml(userName || 'there');
+  const safePlan = escapeHtml(planName);
+  const safeDate = escapeHtml(endDate);
+  
+  return {
+    subject: "😢 Your AYN Subscription Has Ended | انتهى اشتراكك في AYN",
+    html: `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<div style="max-width:600px;margin:0 auto;padding:40px 20px;">
+  ${AYN_HEADER}
+  
+  <div style="background:#fef3c7;border-left:4px solid #f59e0b;padding:16px 20px;margin-bottom:32px;">
+    <p style="font-size:16px;color:#92400e;margin:0;font-weight:600;">😢 Subscription Ended</p>
+  </div>
+  
+  <p style="font-size:18px;color:#333;margin-bottom:16px;">Hi ${safeName},</p>
+  <p style="font-size:16px;color:#666;line-height:1.6;margin-bottom:24px;">
+    Your AYN ${safePlan} subscription has been canceled. Your account has been downgraded to the Free plan.
+  </p>
+  
+  <div style="background:#f9f9f9;border-radius:12px;padding:24px;margin-bottom:24px;">
+    <table style="width:100%;border-collapse:collapse;">
+      <tr>
+        <td style="padding:12px 0;border-bottom:1px solid #e5e5e5;color:#666;font-size:14px;">Previous Plan</td>
+        <td style="padding:12px 0;border-bottom:1px solid #e5e5e5;color:#333;font-size:14px;text-align:right;font-weight:600;">${safePlan}</td>
+      </tr>
+      <tr>
+        <td style="padding:12px 0;border-bottom:1px solid #e5e5e5;color:#666;font-size:14px;">End Date</td>
+        <td style="padding:12px 0;border-bottom:1px solid #e5e5e5;color:#333;font-size:14px;text-align:right;font-weight:600;">${safeDate}</td>
+      </tr>
+      <tr>
+        <td style="padding:12px 0;color:#666;font-size:14px;">Current Plan</td>
+        <td style="padding:12px 0;color:#333;font-size:14px;text-align:right;font-weight:600;">Free (50 credits/month)</td>
+      </tr>
+    </table>
+  </div>
+  
+  <div style="background:#f0f9ff;border-radius:8px;padding:16px;margin-bottom:24px;">
+    <p style="font-size:14px;color:#0369a1;margin:0;">
+      💡 We'd love to have you back! You can resubscribe anytime to regain access to premium features.
+    </p>
+  </div>
+  
+  <hr style="border:none;border-top:1px solid #eee;margin:32px 0;">
+  
+  <p style="font-size:18px;color:#333;direction:rtl;text-align:right;margin-bottom:16px;">،${safeName} مرحباً</p>
+  <p style="font-size:16px;color:#666;line-height:1.8;direction:rtl;text-align:right;margin-bottom:24px;">
+    تم إلغاء اشتراكك في AYN ${safePlan}. تم تخفيض حسابك إلى الخطة المجانية.
+  </p>
+  
+  <div style="background:#f0f9ff;border-radius:8px;padding:16px;margin-bottom:24px;direction:rtl;text-align:right;">
+    <p style="font-size:14px;color:#0369a1;margin:0;">
+      💡 نحب أن تعود! يمكنك إعادة الاشتراك في أي وقت لاستعادة الوصول إلى الميزات المميزة.
+    </p>
+  </div>
+  
+  ${AYN_FOOTER}
+</div>
+</body>
+</html>`
+  };
+}
+
+// Generate subscription updated email template (bilingual)
+function subscriptionUpdatedTemplate(userName: string, oldPlan: string, newPlan: string, effectiveDate: string): { subject: string; html: string } {
+  const safeName = escapeHtml(userName || 'there');
+  const safeOldPlan = escapeHtml(oldPlan);
+  const safeNewPlan = escapeHtml(newPlan);
+  const safeDate = escapeHtml(effectiveDate);
+  
+  return {
+    subject: `📊 AYN Plan Updated to ${safeNewPlan} | تم تحديث خطتك`,
+    html: `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<div style="max-width:600px;margin:0 auto;padding:40px 20px;">
+  ${AYN_HEADER}
+  
+  <div style="background:#dbeafe;border-left:4px solid #3b82f6;padding:16px 20px;margin-bottom:32px;">
+    <p style="font-size:16px;color:#1e40af;margin:0;font-weight:600;">📊 Plan Updated</p>
+  </div>
+  
+  <p style="font-size:18px;color:#333;margin-bottom:16px;">Hi ${safeName},</p>
+  <p style="font-size:16px;color:#666;line-height:1.6;margin-bottom:24px;">
+    Your AYN subscription has been updated. Here are the details of your plan change:
+  </p>
+  
+  <div style="background:#f9f9f9;border-radius:12px;padding:24px;margin-bottom:24px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div style="text-align:center;flex:1;">
+        <p style="font-size:12px;color:#999;margin:0 0 4px;text-transform:uppercase;">Previous</p>
+        <p style="font-size:18px;font-weight:600;color:#666;margin:0;">${safeOldPlan}</p>
+      </div>
+      <div style="padding:0 16px;color:#999;">→</div>
+      <div style="text-align:center;flex:1;">
+        <p style="font-size:12px;color:#999;margin:0 0 4px;text-transform:uppercase;">New</p>
+        <p style="font-size:18px;font-weight:600;color:#22c55e;margin:0;">${safeNewPlan}</p>
+      </div>
+    </div>
+    <p style="font-size:14px;color:#666;margin:16px 0 0;text-align:center;border-top:1px solid #e5e5e5;padding-top:16px;">
+      Effective: ${safeDate}
+    </p>
+  </div>
+  
+  <div style="background:#f0f9ff;border-radius:8px;padding:16px;margin-bottom:24px;">
+    <p style="font-size:14px;color:#0369a1;margin:0;">
+      ✨ Your new plan benefits are now active! Enjoy your updated capabilities.
+    </p>
+  </div>
+  
+  <hr style="border:none;border-top:1px solid #eee;margin:32px 0;">
+  
+  <p style="font-size:18px;color:#333;direction:rtl;text-align:right;margin-bottom:16px;">،${safeName} مرحباً</p>
+  <p style="font-size:16px;color:#666;line-height:1.8;direction:rtl;text-align:right;margin-bottom:24px;">
+    تم تحديث اشتراكك في AYN من ${safeOldPlan} إلى ${safeNewPlan}. مزايا خطتك الجديدة نشطة الآن!
+  </p>
+  
+  ${AYN_FOOTER}
+</div>
+</body>
+</html>`
+  };
+}
+
 // Get email template based on type
 function getEmailTemplate(
   emailType: string, 
@@ -328,6 +589,33 @@ function getEmailTemplate(
       );
     case 'password_reset':
       return passwordResetTemplate(data.userName as string);
+    case 'subscription_created':
+      return subscriptionCreatedTemplate(
+        data.userName as string,
+        data.planName as string,
+        data.credits as number,
+        data.nextBillingDate as string
+      );
+    case 'subscription_renewed':
+      return subscriptionRenewedTemplate(
+        data.userName as string,
+        data.planName as string,
+        data.amount as string,
+        data.nextBillingDate as string
+      );
+    case 'subscription_canceled':
+      return subscriptionCanceledTemplate(
+        data.userName as string,
+        data.planName as string,
+        data.endDate as string
+      );
+    case 'subscription_updated':
+      return subscriptionUpdatedTemplate(
+        data.userName as string,
+        data.oldPlan as string,
+        data.newPlan as string,
+        data.effectiveDate as string
+      );
     default:
       throw new Error(`Unknown email type: ${emailType}`);
   }

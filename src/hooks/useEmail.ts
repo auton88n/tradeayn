@@ -91,11 +91,70 @@ export const useEmail = () => {
     return sendEmail(to, 'payment_receipt', { userName, amount, plan, date }, userId);
   };
 
+  /**
+   * Send subscription created email
+   */
+  const sendSubscriptionCreated = async (
+    to: string,
+    userName: string,
+    planName: string,
+    credits: number,
+    nextBillingDate: string,
+    userId?: string
+  ): Promise<SendEmailResponse> => {
+    return sendEmail(to, 'subscription_created', { userName, planName, credits, nextBillingDate }, userId);
+  };
+
+  /**
+   * Send subscription renewed email
+   */
+  const sendSubscriptionRenewed = async (
+    to: string,
+    userName: string,
+    planName: string,
+    amount: string,
+    nextBillingDate: string,
+    userId?: string
+  ): Promise<SendEmailResponse> => {
+    return sendEmail(to, 'subscription_renewed', { userName, planName, amount, nextBillingDate }, userId);
+  };
+
+  /**
+   * Send subscription canceled email
+   */
+  const sendSubscriptionCanceled = async (
+    to: string,
+    userName: string,
+    planName: string,
+    endDate: string,
+    userId?: string
+  ): Promise<SendEmailResponse> => {
+    return sendEmail(to, 'subscription_canceled', { userName, planName, endDate }, userId);
+  };
+
+  /**
+   * Send subscription updated email (plan change)
+   */
+  const sendSubscriptionUpdated = async (
+    to: string,
+    userName: string,
+    oldPlan: string,
+    newPlan: string,
+    effectiveDate: string,
+    userId?: string
+  ): Promise<SendEmailResponse> => {
+    return sendEmail(to, 'subscription_updated', { userName, oldPlan, newPlan, effectiveDate }, userId);
+  };
+
   return {
     sendEmail,
     sendWelcomeEmail,
     sendCreditWarning,
     sendAutoDeleteWarning,
     sendPaymentReceipt,
+    sendSubscriptionCreated,
+    sendSubscriptionRenewed,
+    sendSubscriptionCanceled,
+    sendSubscriptionUpdated,
   };
 };
