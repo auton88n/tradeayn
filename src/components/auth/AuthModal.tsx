@@ -129,20 +129,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
           });
         }
       } else {
-        // Also send branded email via Resend (parallel, don't block)
-        try {
-          await supabase.functions.invoke('send-email', {
-            body: {
-              to: email,
-              emailType: 'password_reset',
-              data: { userName: email.split('@')[0] }
-            }
-          });
-          console.log('[AuthModal] Branded password reset email sent via Resend');
-        } catch (emailError) {
-          console.warn('[AuthModal] Resend email failed (Supabase email still sent):', emailError);
-        }
-
+        // Auth Hook now handles branded email via Resend - no duplicate needed
         // Show confirmation view
         setResetSentToEmail(email);
         setResetEmailSent(true);
