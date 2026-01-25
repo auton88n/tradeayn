@@ -25,9 +25,9 @@ const roles = [{
   label: 'Social',
   iconColor: 'text-pink-500'
 }];
-const orbitRadius = 160;
+const orbitRadius = 180;
 const AIEmployeeMockup = memo(() => {
-  return <div className="relative w-full h-full min-h-[400px] flex items-center justify-center" dir="ltr">
+  return <div className="relative w-full h-full min-h-[440px] flex items-center justify-center" dir="ltr">
       {/* Background ambient glow - simplified */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <div className="w-64 h-64 bg-cyan-500/20 rounded-full blur-2xl" />
