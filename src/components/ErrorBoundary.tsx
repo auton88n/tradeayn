@@ -26,8 +26,26 @@ export class ErrorBoundary extends Component<Props, State> {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
     
     // Auto-reload on dynamic import failures (stale chunk errors)
-    if (error.message.includes('Failed to fetch dynamically imported module')) {
-      window.location.reload();
+    const message = error?.message || '';
+    const shouldReload =
+      message.includes('Failed to fetch dynamically imported module') ||
+      message.includes('Component is not a function');
+
+    // Prevent infinite refresh loops
+    if (shouldReload) {
+      const key = message.includes('Component is not a function')
+        ? 'ayn_auto_reload_component_not_function'
+        : 'ayn_auto_reload_stale_chunk';
+
+      try {
+        if (!sessionStorage.getItem(key)) {
+          sessionStorage.setItem(key, '1');
+          window.location.reload();
+        }
+      } catch {
+        // If sessionStorage is unavailable, still attempt a single reload.
+        window.location.reload();
+      }
     }
   }
 
@@ -38,6 +56,10 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       const isDev = import.meta.env.DEV;
+      const message = this.state.error?.message || '';
+      const isAutoReloadError =
+        message.includes('Failed to fetch dynamically imported module') ||
+        message.includes('Component is not a function');
 
       return (
         <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
@@ -60,13 +82,19 @@ export class ErrorBoundary extends Component<Props, State> {
                 </div>
               )}
               <Button 
-                onClick={() => this.setState({ hasError: false, error: undefined })}
+                onClick={() => {
+                  if (isAutoReloadError) {
+                    window.location.reload();
+                    return;
+                  }
+                  this.setState({ hasError: false, error: undefined });
+                }}
                 variant="default"
                 size="sm"
                 className="gap-2"
               >
                 <RefreshCw className="w-4 h-4" />
-                Let's Try Again
+                {isAutoReloadError ? 'Reload Page' : "Let's Try Again"}
               </Button>
             </div>
           </CardContent>
