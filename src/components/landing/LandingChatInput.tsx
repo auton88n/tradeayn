@@ -82,9 +82,9 @@ export const LandingChatInput: React.FC<LandingChatInputProps> = ({ onSendAttemp
               onKeyDown={handleKeyDown}
               placeholder=""
               className={cn(
-                "resize-none border-0 bg-transparent p-0 min-h-[44px] max-h-[120px]",
+                "resize-none border-0 bg-transparent p-0 py-[10px] min-h-[44px] max-h-[120px]",
                 "focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0",
-                "text-base placeholder:text-muted-foreground/60"
+                "text-base placeholder:text-muted-foreground/60 leading-normal"
               )}
               rows={1}
             />
@@ -93,8 +93,8 @@ export const LandingChatInput: React.FC<LandingChatInputProps> = ({ onSendAttemp
             {!inputMessage && (
               <div 
                 className={cn(
-                  "absolute top-0 left-0 pointer-events-none text-muted-foreground/50",
-                  "leading-[44px]",
+                  "absolute top-[10px] left-0 pointer-events-none text-muted-foreground/50",
+                  "text-base leading-normal",
                   "transition-opacity duration-200",
                   showPlaceholder ? "opacity-100" : "opacity-0"
                 )}
