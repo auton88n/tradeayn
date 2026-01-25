@@ -88,6 +88,9 @@ interface CenterStageLayoutProps {
   betaMode?: boolean;
   betaFeedbackReward?: number;
   userId?: string;
+  // Feedback modal state (controlled externally)
+  showFeedbackModal?: boolean;
+  setShowFeedbackModal?: (show: boolean) => void;
 }
 
 export const CenterStageLayout = ({
@@ -133,6 +136,8 @@ export const CenterStageLayout = ({
   betaMode,
   betaFeedbackReward,
   userId,
+  showFeedbackModal: showFeedbackModalProp,
+  setShowFeedbackModal: setShowFeedbackModalProp,
 }: CenterStageLayoutProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const eyeStageRef = useRef<HTMLDivElement>(null);
@@ -143,8 +148,10 @@ export const CenterStageLayout = ({
   // Dynamic footer height for bottom padding
   const [footerHeight, setFooterHeight] = useState(112); // Default ~28*4 = 112px
   
-  // Floating feedback modal state
-  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  // Floating feedback modal state - use external if provided, otherwise internal
+  const [internalShowFeedback, setInternalShowFeedback] = useState(false);
+  const showFeedbackModal = showFeedbackModalProp ?? internalShowFeedback;
+  const setShowFeedbackModal = setShowFeedbackModalProp ?? setInternalShowFeedback;
   
   // Gate to only show ResponseCard for actively-sent messages
   // We store the last message id at the moment of sending, to avoid re-processing the previous
