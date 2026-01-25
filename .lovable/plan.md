@@ -1,47 +1,47 @@
 
+# Fix Dark Button Text on Service Pages
 
-## Increase Card Spacing in AI Employee Mockup
+## Problem
+On the service pages (AI Employee, AI Agents, Automation, InfluencerSites, Ticketing), outline buttons like "View All Services", "Detailed Form", and "Close" have dark text that is not visible against the dark backgrounds. The text only becomes visible when hovering.
 
-This plan addresses the cramped layout of the role cards orbiting around the brain in the AI Employee mockup.
-
----
-
-## Current Issue
-
-The role cards around the brain hub are too close together because:
-1. The `orbitRadius` is only `120px` - making the orbit too tight
-2. The container `min-h-[320px]` may not provide enough vertical space for the labels
-
----
+## Root Cause
+The Button component's `outline` variant uses `text-foreground` by default, which shows dark text. On these service pages with `bg-neutral-950` dark backgrounds, the text needs to be explicitly set to white.
 
 ## Solution
+Add `text-white hover:text-white` (or appropriate hover color) to all outline buttons on dark backgrounds across all service pages.
 
-Increase the orbit radius and adjust container sizing to give the cards more breathing room.
+## Files to Modify
 
----
+### 1. AIEmployee.tsx
+- Line 257: "Detailed Form" button - add `text-white hover:text-white`
+- Line 301: "Close" button (modal) - add `text-white hover:text-white`
 
-## Changes
+### 2. AIAgents.tsx  
+- Line 423: "Close" button (modal) - add `text-white hover:text-white`
 
-### File: `src/components/services/AIEmployeeMockup.tsx`
+### 3. Automation.tsx
+- Line 381: "Close" button (modal) - add `text-white hover:text-white`
 
-| Line | Current | Fixed |
-|------|---------|-------|
-| 28 | `const orbitRadius = 120;` | `const orbitRadius = 140;` |
-| 30 | `min-h-[320px]` | `min-h-[360px]` |
-| 47 | `r={orbitRadius}` | Keep (uses variable) |
+### 4. InfluencerSites.tsx
+- Line 265: "View All Services" button - add `text-white hover:text-white`
+- Line 313: "Close" button (modal) - add `text-white hover:text-white`
 
-**Technical Details:**
+### 5. Ticketing.tsx
+- Line 233: "Apply Now" button - add `text-white hover:text-white`
+- Line 343: "Close" button (modal) - add `text-white hover:text-white`
 
-1. **Increase orbit radius from 120px to 140px** - This pushes the cards outward by 20px, creating more separation between them
+## Technical Details
 
-2. **Increase minimum container height from 320px to 360px** - This provides more vertical space to accommodate the larger orbit and prevents label clipping
+```text
+Before:
+<Button variant="outline" className="border-neutral-700 hover:bg-neutral-800">
 
----
+After:
+<Button variant="outline" className="border-neutral-700 hover:bg-neutral-800 text-white hover:text-white">
+```
 
-## Visual Result
+This ensures buttons have white text in their default state and maintain white text on hover, providing consistent visibility on dark backgrounds.
 
-- Cards will be more spread out around the brain
-- Better visual balance and readability
-- Labels won't overlap with adjacent cards
-- The orbital ring SVG automatically adjusts since it uses the `orbitRadius` variable
-
+## Notes
+- CivilEngineering.tsx already has the fix applied (line 432)
+- The AI Agents and Automation pages have "View All Services" buttons that already include `text-white` in their styling
