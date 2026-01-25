@@ -11,10 +11,16 @@ const localStorageMock = {
 global.localStorage = localStorageMock as any;
 
 // Mock crypto.randomUUID
-global.crypto = {
-  ...global.crypto,
-  randomUUID: vi.fn(() => 'test-uuid-' + Math.random().toString(36).substring(7)),
-} as any;
+// In newer jsdom/node versions, `global.crypto` may be a read-only getter.
+// Define it safely so tests don't crash.
+const existingCrypto: any = (globalThis as any).crypto ?? {};
+Object.defineProperty(globalThis, 'crypto', {
+  value: {
+    ...existingCrypto,
+    randomUUID: vi.fn(() => 'test-uuid-' + Math.random().toString(36).substring(7)),
+  },
+  configurable: true,
+});
 
 // Mock navigator
 Object.defineProperty(global.navigator, 'vibrate', {
