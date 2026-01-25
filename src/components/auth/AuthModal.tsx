@@ -134,8 +134,8 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
         setResetSentToEmail(email);
         setResetEmailSent(true);
         
-        // Start cooldown for resend button
-        setResendCooldown(60);
+        // Start cooldown for resend button (10s for testing, can increase to 60s for production)
+        setResendCooldown(10);
         const interval = setInterval(() => {
           setResendCooldown((prev) => {
             if (prev <= 1) {
