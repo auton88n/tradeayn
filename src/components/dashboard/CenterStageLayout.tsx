@@ -181,10 +181,7 @@ export const CenterStageLayout = ({
   const gazeIndexRef = useRef<number | null>(null);
   const [gazeForRender, setGazeForRender] = useState<number | null>(null);
   
-  // Typing content for empathy detection
-  const [typingContent, setTypingContent] = useState<string>('');
-  
-  // Empathy reaction hook - analyzes user typing and triggers eye reactions
+  // Empathy reaction hook - disabled for performance (emotion detection happens on message send via backend)
   const { 
     userEmotion,
     empathyResponse,
@@ -192,10 +189,10 @@ export const CenterStageLayout = ({
     blinkPattern: empathyBlinkPattern,
     colorIntensity: empathyColorIntensity,
     resetEmpathy,
-  } = useEmpathyReaction(typingContent, {
+  } = useEmpathyReaction('', {
     debounceMs: 400,
     minTextLength: 3,
-    enabled: true,
+    enabled: false,
   });
 
   // Measure footer height dynamically for bottom padding
@@ -388,7 +385,6 @@ export const CenterStageLayout = ({
       clearResponseBubbles();
       clearSuggestions();
       resetEmpathy();
-      setTypingContent('');
 
       // Start flying animation
       const inputPos = getInputPosition();
@@ -775,7 +771,7 @@ export const CenterStageLayout = ({
           prefillValue={prefillValue}
           onPrefillConsumed={onPrefillConsumed}
           onLanguageChange={onLanguageChange}
-          onTypingContentChange={setTypingContent}
+          
           hasReachedLimit={hasReachedLimit}
           messageCount={messageCount}
           maxMessages={maxMessages}
