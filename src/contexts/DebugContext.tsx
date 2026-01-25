@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from 'react';
 
 interface LayoutShiftEntry {
   value: number;
@@ -59,11 +59,23 @@ export const DebugContextProvider = ({ children }: DebugProviderProps) => {
   const [isDebugMode, setIsDebugMode] = useState(false);
   const [layoutShifts, setLayoutShifts] = useState<LayoutShiftEntry[]>([]);
   const [clsScore, setClsScore] = useState(0);
+  // Use ref for render counts to avoid triggering re-renders when counting
+  const reRenderCountsRef = useRef<Map<string, number>>(new Map());
   const [reRenderCounts, setReRenderCounts] = useState<Map<string, number>>(new Map());
   const [intersectionTriggers, setIntersectionTriggers] = useState<string[]>([]);
   const [fps, setFps] = useState(60);
   const [isSlowConnection, setIsSlowConnection] = useState(false);
-
+  
+  // Batch update render counts periodically instead of on every render
+  useEffect(() => {
+    if (!isDebugMode) return;
+    
+    const interval = setInterval(() => {
+      setReRenderCounts(new Map(reRenderCountsRef.current));
+    }, 500); // Update display every 500ms
+    
+    return () => clearInterval(interval);
+  }, [isDebugMode]);
   // Detect slow connection
   useEffect(() => {
     const connection = (navigator as any).connection;
@@ -142,15 +154,16 @@ export const DebugContextProvider = ({ children }: DebugProviderProps) => {
     });
   }, []);
 
+  // Increment render count without triggering re-renders (uses ref)
   const incrementRenderCount = useCallback((componentName: string) => {
-    setReRenderCounts(prev => {
-      const newMap = new Map(prev);
-      newMap.set(componentName, (newMap.get(componentName) || 0) + 1);
-      return newMap;
-    });
+    reRenderCountsRef.current.set(
+      componentName, 
+      (reRenderCountsRef.current.get(componentName) || 0) + 1
+    );
   }, []);
 
   const resetRenderCounts = useCallback(() => {
+    reRenderCountsRef.current = new Map();
     setReRenderCounts(new Map());
   }, []);
 

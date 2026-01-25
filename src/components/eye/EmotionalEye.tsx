@@ -64,12 +64,10 @@ const EmotionalEyeComponent = ({
   const isSignificantBlinkRef = useRef(false);
   const isMobile = useIsMobile();
   
-  // Debug render logging
-  useEffect(() => {
-    if (debug?.isDebugMode) {
-      debug.incrementRenderCount('EmotionalEye');
-    }
-  });
+  // Debug render logging - only count, don't trigger re-renders
+  if (debug?.isDebugMode) {
+    debug.incrementRenderCount('EmotionalEye');
+  }
   
   // Performance optimizations - centralized config
   const performanceConfig = usePerformanceMode();
