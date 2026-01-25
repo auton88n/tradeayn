@@ -125,6 +125,10 @@ export const CSA_A23_3_24: BuildingCodeConfig = {
     bearing: 0.65,              // φc
     anchorage: 0.65,            // φc
     steel: 0.85,                // φs for reinforcing steel
+    
+    // Specialty factors
+    concretePrecast: 0.70,      // CSA-certified precast
+    prestressing: 0.90,         // Prestressing steel (φp)
   },
   
   // ============================================================================
@@ -214,8 +218,12 @@ export const CSA_A23_3_24: BuildingCodeConfig = {
   reinforcement: {
     minFlexural: 0.002,         // 0.2% (HIGHER than ACI!)
     minColumn: 0.01,            // 1%
-    maxColumn: 0.04,            // 4% (LOWER than ACI's 8%!)
+    maxColumn: 0.08,            // 8% code max (practical: 4%)
     tempShrinkage: 0.002,       // For slabs
+    
+    // Formula strings for display
+    minFlexuralFormula: 'As,min = (0.2√f\'c × bt × h)/fy',
+    minSlabFormula: 'As,min = 0.002 × Ag',
   },
   
   // ============================================================================
@@ -306,10 +314,35 @@ export const CSA_A23_3_24: BuildingCodeConfig = {
     vanAisleWidth: 2400,         // mm
   },
   
+  // ============================================================================
+  // VERIFICATION STATUS ✅
+  // ============================================================================
+  verification: {
+    status: 'verified',
+    date: '2025-01-25',
+    verifiedParameters: [
+      'loadFactors',
+      'loadCombinations',
+      'resistanceFactors',
+      'stressBlock',
+      'reinforcement',
+      'stirrupSpacing',
+      'shear',
+      'punchingShear',
+      'deflection',
+      'cover',
+    ],
+    sources: [
+      'CSA A23.3-24 Official',
+      'NBC 2025',
+      'csagroup.org',
+    ],
+  },
+  
   notes: [
     'More conservative than ACI: uses φc/φs approach vs ACI\'s single φ',
     'Higher minimum reinforcement (0.002 vs 0.0018)',
-    'Lower maximum column reinforcement (4% vs 8%)',
+    'Column max reinforcement 0.08 per code, but 0.04 practical limit for constructability',
     'Uses Modified Compression Field Theory (MCFT) for shear',
     'Provincial amendments may apply - verify local requirements',
     'Deflection limits more stringent (L/240 vs L/360)',

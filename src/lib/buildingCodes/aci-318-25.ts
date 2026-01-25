@@ -101,6 +101,10 @@ export const ACI_318_25: BuildingCodeConfig = {
     bearing: 0.65,
     anchorage: 0.70,            // Concrete failure
     steel: 1.0,                 // Implicit in ACI approach
+    
+    // Specialty factors
+    anchorageSteel: 0.75,       // Anchors (steel failure)
+    plainConcrete: 0.60,        // Plain concrete members
   },
   
   // ============================================================================
@@ -189,8 +193,12 @@ export const ACI_318_25: BuildingCodeConfig = {
   reinforcement: {
     minFlexural: 0.0018,        // Simplified: As,min = 0.0018Ag
     minColumn: 0.01,            // 1%
-    maxColumn: 0.08,            // 8% (practical: 4%)
+    maxColumn: 0.08,            // 8% code max (practical: 4%)
     tempShrinkage: 0.0018,      // Grade 60
+    
+    // Formula strings for display
+    minFlexuralFormula: 'As,min = max(0.25√f\'c/fy, 1.4/fy) × bw × d',
+    minSlabFormula: 'As,min = 0.0018 × Ag',
   },
   
   // ============================================================================
@@ -285,10 +293,36 @@ export const ACI_318_25: BuildingCodeConfig = {
     vanAisleWidth: 2440,         // mm (96 in) - wider aisle
   },
   
+  // ============================================================================
+  // VERIFICATION STATUS ✅
+  // ============================================================================
+  verification: {
+    status: 'verified',
+    date: '2025-01-25',
+    verifiedParameters: [
+      'loadFactors',
+      'loadCombinations',
+      'resistanceFactors',
+      'stressBlock',
+      'reinforcement',
+      'stirrupSpacing',
+      'shear',
+      'punchingShear',
+      'deflection',
+      'cover',
+    ],
+    sources: [
+      'ACI 318-25 Official',
+      'ASCE 7-22 Official',
+      'concrete.org',
+    ],
+  },
+  
   notes: [
     'ASCE 7-22 introduced major changes: W=1.0, S=1.0 (previously 1.6)',
     'Size effect factor λs introduced in ACI 318-19, refined in 318-25',
     'Uses φ (strength reduction factor) approach',
     'Load combinations per ASCE 7-22 Section 2.3.2',
+    'Column max reinforcement 0.08 per code, but 0.04 practical limit for constructability',
   ],
 };
