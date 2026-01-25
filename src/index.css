@@ -71,6 +71,20 @@
   contain: strict;
 }
 
+/* Performance containment for cards */
+.service-card,
+.response-card,
+.suggestion-card,
+.calculator-card {
+  contain: content;
+}
+
+/* Scroll container optimization */
+.message-scroll-container {
+  contain: strict;
+  content-visibility: auto;
+}
+
 /* Safe area support for notched devices (iPhone, Android) */
 .safe-area-top {
   padding-top: env(safe-area-inset-top);

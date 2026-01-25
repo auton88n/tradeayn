@@ -1,5 +1,5 @@
-import { useRef, useCallback, useEffect, useState } from 'react';
-import { cn } from '@/lib/utils';
+import { useRef, useCallback, useEffect, useState, useMemo } from 'react';
+import { cn, debounce } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EmotionalEye } from '@/components/eye/EmotionalEye';
 import { UserMessageBubble } from '@/components/eye/UserMessageBubble';
@@ -305,6 +305,15 @@ export const CenterStageLayout = ({
     }
   }, []);
 
+  // Debounced suggestion fetcher with callback pattern (reduces API calls for rapid messages)
+  const debouncedFetchAndEmitSuggestions = useMemo(
+    () => debounce(async (userMessage: string, aynResponse: string, mode: AIMode) => {
+      const suggestions = await fetchDynamicSuggestions(userMessage, aynResponse, mode);
+      emitSuggestions(suggestions);
+    }, 1000),
+    [fetchDynamicSuggestions, emitSuggestions]
+  );
+
   // Track visible cards for animations
   const hasVisibleResponses = responseBubbles.some(b => b.isVisible);
   const hasVisibleSuggestions = suggestionBubbles.some(s => s.isVisible);
@@ -549,18 +558,17 @@ export const CenterStageLayout = ({
         
         emitResponseBubble(response, bubbleType, attachment);
         
-        // Show dynamic suggestions after response bubble appears (reduced delay)
-        setTimeout(async () => {
-          const suggestions = await fetchDynamicSuggestions(
+        // Show dynamic suggestions after response bubble appears (debounced to reduce API calls)
+        setTimeout(() => {
+          debouncedFetchAndEmitSuggestions(
             lastUserMessage || 'Hello',
             lastMessage.content,
             selectedMode
           );
-          emitSuggestions(suggestions);
         }, 600);
       }, 50); // Minimal delay for blink
     }
-  }, [messages, lastProcessedMessageContent, lastSuggestedEmotion, setEmotion, setIsResponding, emitResponseBubble, emitSuggestions, triggerBlink, detectExcitement, fetchDynamicSuggestions, lastUserMessage, selectedMode]);
+  }, [messages, lastProcessedMessageContent, lastSuggestedEmotion, setEmotion, setIsResponding, emitResponseBubble, triggerBlink, detectExcitement, debouncedFetchAndEmitSuggestions, lastUserMessage, selectedMode, orchestrateEmotionChange, playSound, bumpActivity]);
 
   // Update emotion when typing - only set thinking if not recently set from a response
   useEffect(() => {
