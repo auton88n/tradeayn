@@ -304,15 +304,23 @@ const Pricing = () => {
                           {/* CTA Button */}
                           <Button
                             onClick={() => handleAction(tier)}
+                            variant={isCurrentPlan && !isSubscribed ? "outline" : "default"}
                             className={cn(
                               'w-full h-12 rounded-xl font-medium transition-all duration-300',
-                              isCurrentPlan 
-                                ? 'bg-card border border-border hover:bg-muted' 
-                                : tierButtonStyles[tier]
+                              isCurrentPlan && !isSubscribed
+                                ? 'border-2 border-primary/50 bg-primary/10 text-primary hover:bg-primary/20 cursor-default' 
+                                : isCurrentPlan && isSubscribed
+                                  ? 'bg-card border border-border hover:bg-muted'
+                                  : tierButtonStyles[tier]
                             )}
-                            disabled={tier === 'free' && !isSubscribed && tier === currentTier}
+                            disabled={false}
                           >
-                            {getButtonText(tier)}
+                            {isCurrentPlan && !isSubscribed ? (
+                              <span className="flex items-center gap-2">
+                                <Check className="w-4 h-4" />
+                                Current Plan
+                              </span>
+                            ) : getButtonText(tier)}
                           </Button>
                         </div>
                       </div>
