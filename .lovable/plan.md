@@ -1,169 +1,89 @@
 
-# Enhanced Emotion Sound Design
 
-## Overview
+# Fix Double Sound and Laggy Message Animation
 
-Create distinctive, emotionally-resonant sounds for each of AYN's 11 emotions using multi-oscillator synthesis. Each emotion will have a unique audio signature that **feels** like that emotion.
+## Problems Identified
 
----
+### 1. Double Sound Effect
+Two sounds play in quick succession when sending a message:
+- **`message-send`** plays immediately when clicking send (ChatInput)
+- **`message-absorb`** plays 350ms later when the bubble reaches the eye (CenterStageLayout)
 
-## Sound Design Philosophy
+This creates a confusing "double tap" audio experience.
 
-### Current Problem
-All emotion sounds use single oscillators with basic configurations - they sound robotic and indistinguishable.
+### 2. Laggy Card Animation
+The timing between visual animation and sound/effects is misaligned:
 
-### Solution
-Use **layered oscillators**, **harmonics**, and **musical intervals** to create sounds that aurally represent each emotion's feeling:
+| Event | Current Timing |
+|-------|----------------|
+| Flying animation starts | 0ms |
+| Absorb sound + effects trigger | 350ms |
+| Flying animation ends | 400ms |
+| Visual status changes to "absorbing" | 500ms |
+| Absorbing animation plays | 500-720ms |
 
-- **Happy**: Major third interval (uplifting)
-- **Sad**: Minor second (melancholic)
-- **Excited**: Rapid ascending arpeggio
-- **Thinking**: Subtle pulsing harmonics
-- **Curious**: Rising question-like inflection
-
----
-
-## New Sound Configurations
-
-### Happy - Warm, Uplifting Chime
-Two notes forming a major third, like a gentle smile.
-```
-Note 1: C5 (523 Hz) → Note 2: E5 (659 Hz)
-Type: Sine with soft attack
-Duration: 0.25s total
-```
-
-### Sad - Descending Minor
-Soft falling notes that convey empathy.
-```
-Note 1: D4 (294 Hz) → Note 2: Db4 (277 Hz)
-Type: Sine, slow attack
-Duration: 0.5s, long decay
-```
-
-### Excited - Quick Triple Rise
-Three rapid ascending notes bursting with energy.
-```
-C5 → E5 → G5 (major arpeggio)
-Type: Bright sine
-Duration: 0.15s per note, overlapping
-```
-
-### Thinking - Pulsing Harmonics
-Subtle oscillation suggesting active thought.
-```
-Base: 349 Hz with LFO modulation
-Type: Triangle with vibrato
-Duration: 0.3s
-```
-
-### Curious - Question Inflection
-Rising pitch that mimics the tone of a question.
-```
-Start: 350 Hz → End: 500 Hz (pitch bend)
-Type: Sine with detune
-Duration: 0.25s
-```
-
-### Frustrated - Tense Dissonance
-Minor second interval creating subtle tension.
-```
-A3 (220 Hz) + Bb3 (233 Hz) simultaneous
-Type: Triangle, short
-Duration: 0.18s
-```
-
-### Mad - Sharp Intensity
-Bold, intense burst with harmonic distortion.
-```
-Low E2 (82 Hz) with square overtones
-Type: Square filtered
-Duration: 0.12s, hard attack
-```
-
-### Bored - Yawn-like Descent
-Slow, drawn-out falling tone.
-```
-200 Hz → 150 Hz pitch slide
-Type: Sine, very slow
-Duration: 0.5s
-```
-
-### Calm - Flowing Harmony
-Gentle, peaceful major chord.
-```
-C4 + E4 + G4 soft blend
-Type: Pure sine
-Duration: 0.35s, long attack
-```
-
-### Comfort - Warm Embrace
-Rich, enveloping sound like a hug.
-```
-G3 (196 Hz) + D4 (294 Hz) perfect fifth
-Type: Sine, soft
-Duration: 0.4s
-```
-
-### Supportive - Encouraging Rise
-Gently ascending melody that feels like encouragement.
-```
-C4 → D4 → E4 gentle steps
-Type: Sine
-Duration: 0.3s total
-```
+The absorb sound plays **before** the card visually starts absorbing, creating a disconnect.
 
 ---
 
-## Technical Implementation
+## Solution
 
-### New Multi-Note Play Method
+### Sound Consolidation
+Remove the `message-send` sound and only use `message-absorb` when the bubble reaches the eye. This creates a single, satisfying "gulp" effect when AYN receives the message.
 
-Add a `playEmotionChord` method to `SoundGenerator` that can:
-1. Play multiple simultaneous notes (chords)
-2. Play sequential notes (melodies/arpeggios)
-3. Apply pitch bends for rising/falling effects
+### Animation Timing Alignment
+Synchronize all events to the actual visual animation:
 
-```typescript
-// New method signature
-playEmotionChord(notes: NoteConfig[]): void
-
-interface NoteConfig {
-  frequency: number;
-  delay: number;      // Start time offset
-  duration: number;
-  gain: number;
-  type: OscillatorType;
-  pitchBend?: { end: number; duration: number };
-}
-```
-
-### Updated Emotion Sound Configs
-
-Replace simple `SoundConfig` with rich `EmotionSoundConfig`:
-
-```typescript
-interface EmotionSoundConfig {
-  notes: NoteConfig[];
-  masterGain: number;
-  filterFreq?: number;
-}
-```
+| Event | New Timing |
+|-------|------------|
+| Flying animation starts | 0ms |
+| Flying animation ends | 400ms |
+| Visual status → "absorbing" | 400ms |
+| Absorb sound + effects trigger | 400ms |
+| Absorbing animation plays | 400-620ms |
 
 ---
 
-## Files to Modify
+## Technical Changes
 
-| File | Changes |
-|------|---------|
-| `src/lib/soundGenerator.ts` | Add `EmotionSoundConfig`, new `playEmotionChord()` method, update `playEmotion()` to use multi-note synthesis |
+### File 1: `src/components/dashboard/ChatInput.tsx`
+**Line ~284**: Remove the `message-send` sound call
+
+```text
+Before:
+  playSound?.('message-send');
+
+After:
+  // Sound removed - consolidated to absorption in CenterStageLayout
+```
+
+### File 2: `src/hooks/useBubbleAnimation.ts`
+**Lines 96-102**: Change timeout from 500ms to 400ms to match actual flying animation duration
+
+```text
+Before:
+  setTimeout(() => { ... }, 500);
+
+After:
+  setTimeout(() => { ... }, 400);
+```
+
+### File 3: `src/components/dashboard/CenterStageLayout.tsx`
+**Line 396**: Change effects timeout from 350ms to 400ms to synchronize with animation completion
+
+```text
+Before:
+  setTimeout(() => { ... }, 350);
+
+After:
+  setTimeout(() => { ... }, 400);
+```
 
 ---
 
 ## Expected Result
 
-Each emotion will have an immediately recognizable, emotionally appropriate sound:
-- Users will **feel** the emotion through audio
-- Sounds will be pleasant and non-intrusive
-- Clear differentiation between emotions
-- Maintains the subtle, refined AYN aesthetic
+- **Single cohesive sound**: One satisfying "absorb" sound when the message enters AYN's eye
+- **Smooth animation**: Card flies smoothly, then seamlessly transitions to absorption
+- **Synchronized feedback**: Sound, visual effects (blink, particles), and animation all trigger together at 400ms
+
