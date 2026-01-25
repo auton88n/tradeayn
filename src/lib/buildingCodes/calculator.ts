@@ -18,9 +18,6 @@ export function getBuildingCode(id: BuildingCodeId): BuildingCodeConfig {
       return ACI_318_25;
     case 'CSA':
       return CSA_A23_3_24;
-    case 'CUSTOM':
-      // Custom codes should be passed explicitly
-      return ACI_318_25; // Default fallback
     default:
       return ACI_318_25;
   }
