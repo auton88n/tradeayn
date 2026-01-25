@@ -1,90 +1,112 @@
 
+## Fix Landing Page Issues
 
-# Fix Duplicate "Forgot Password" and Text Visibility
-
-## The Problem
-
-Based on the screenshot and code analysis, there are two issues:
-
-1. **Duplicate "Forgot Password" elements** - The Sign In form has:
-   - A small text link next to "Password" label (line 444-451)
-   - A prominent button with key icon at the bottom (line 475-484)
-   
-2. **Text visibility concern** - The small link uses `text-white/70` which may appear dark/invisible in certain conditions
-
-## Solution
-
-**Remove the prominent bottom button and keep only the inline link** - This is the standard UX pattern used by most authentication forms (Google, Apple, etc.). The link next to the password field is the expected location.
-
-**Ensure the inline link is always visible** - Update the styling to use explicit white text with proper contrast.
+This plan addresses three issues:
+1. Remove duplicate Privacy Policy from the signup form checkbox
+2. Fix the ticketing mockup's edge/line visual problem  
+3. Improve clarity and visibility of the engineering mockup
 
 ---
 
-## Technical Changes
+## Changes Overview
 
-### File: `src/components/auth/AuthModal.tsx`
+### 1. Remove Privacy Policy Link from Signup Checkbox
+**File: `src/components/auth/AuthModal.tsx`**
 
-**Change 1: Remove the duplicate "Forgot Password" button (lines 474-484)**
+The current signup form has:
+> "I agree to the Terms & Conditions and Privacy Policy"
 
-Delete this entire block:
-```tsx
-{/* Prominent Forgot Password Button */}
-<Button
-  type="button"
-  variant="outline"
-  onClick={handleForgotPassword}
-  disabled={isResettingPassword || !email}
-  className="w-full gap-2 border-white/20 text-white hover:bg-white hover:text-neutral-950 disabled:opacity-50"
->
-  <KeyRound className="w-4 h-4" />
-  {t('auth.forgotPasswordButton')}
-</Button>
-```
+Since users will see the full TermsModal (with the complete Privacy Policy) when they first log in, this creates duplication.
 
-**Change 2: Improve visibility of the inline "Forgot password?" link (lines 444-451)**
+**Change:** Simplify the checkbox label to just reference Terms:
+> "I agree to the Terms & Conditions"
 
-Update the button styling to ensure consistent visibility:
-```tsx
-<button
-  type="button"
-  onClick={handleForgotPassword}
-  disabled={isResettingPassword}
-  className="text-sm text-white hover:text-primary transition-colors disabled:opacity-50"
->
-  {isResettingPassword ? t('auth.forgotPasswordSending') : t('auth.forgotPassword')}
-</button>
-```
-
-Key change: `text-white/70` → `text-white` for guaranteed visibility on the dark modal
+Remove the `{' '}{t('auth.termsAnd')}{' '}` and the Privacy Policy link from lines 567-576.
 
 ---
 
-## Visual Result
+### 2. Fix Ticketing Mockup Edge/Line Issue
+**File: `src/components/services/TicketingMockup.tsx`**
 
-Before:
-```
-Password                    Forgot password?  ← link (hard to see)
-[••••••••                              ]
+The QR code container and grid have visible edge artifacts due to:
+- Gap spacing between grid cells (2px gaps)
+- Rounded corners on tiny cells creating visual inconsistency
 
-        [ Sign In ]
+**Changes:**
+- Remove the gap between QR grid cells (`gap-[2px]` → `gap-0`)
+- Make the QR cells slightly larger for better visibility
+- Add a subtle inner shadow to the QR container to smooth edges
+- Ensure proper border-radius consistency
 
-    🔑 Forgot Password?   ← duplicate button
-```
+---
 
-After:
-```
-Password                    Forgot password?  ← clear white link
-[••••••••                              ]
+### 3. Improve Engineering Mockup Clarity
+**File: `src/components/services/EngineeringMockup.tsx`**
 
-        [ Sign In ]
+The mockup is hard to read due to:
+- Very low opacity on building floors (`from-neutral-900/80`)
+- Faint cyan colors with low contrast (`text-cyan-400`)
+- Small text sizes (`text-[10px]`)
+
+**Changes:**
+- Increase opacity on building floor backgrounds
+- Boost cyan text contrast (from `text-cyan-400` to `text-cyan-300`)
+- Increase font size on key labels from 10px to 11-12px
+- Add stronger glow/shadow to the floating result card
+- Increase contrast on the "Safe Design" indicator
+- Make windows more visible with higher opacity
+
+---
+
+## Technical Details
+
+```text
+┌─────────────────────────────────────────────────────────┐
+│              AuthModal.tsx (Signup Checkbox)            │
+├─────────────────────────────────────────────────────────┤
+│ BEFORE:                                                 │
+│ "I agree to the Terms & Conditions and Privacy Policy"  │
+│                                                         │
+│ AFTER:                                                  │
+│ "I agree to the Terms & Conditions"                     │
+│ (Privacy Policy link removed - covered in TermsModal)   │
+└─────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────┐
+│              TicketingMockup.tsx (QR Fix)               │
+├─────────────────────────────────────────────────────────┤
+│ • Remove gap-[2px] from grid (makes cells flush)        │
+│ • Increase cell size from implicit 2-3px to 4px         │
+│ • Add box-shadow for smoother container edges           │
+│ • Use proper 7×7 grid sizing                            │
+└─────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────┐
+│           EngineeringMockup.tsx (Clarity Fix)           │
+├─────────────────────────────────────────────────────────┤
+│ • Building floors: neutral-800/90 (was /80)             │
+│ • Text color: text-cyan-300 (was cyan-400)              │
+│ • Labels: text-[11px] or [12px] (was [10px])            │
+│ • Windows: opacity 0.6-0.8 (was 0.4-0.8)                │
+│ • Result card: stronger shadow & border                 │
+│ • "Safe Design" indicator: brighter emerald             │
+└─────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Why This Approach
+## Files to Edit
 
-1. **Industry standard** - Single "Forgot password?" link next to password field is the expected UX pattern
-2. **Less visual clutter** - Removes redundant button, cleaner form
-3. **Better accessibility** - Link is now explicitly white, guaranteed visible on dark background
-4. **No functionality loss** - Same action, just one trigger point instead of two
+| File | Change |
+|------|--------|
+| `src/components/auth/AuthModal.tsx` | Remove Privacy Policy link from terms checkbox |
+| `src/components/services/TicketingMockup.tsx` | Fix QR code grid gaps and edge lines |
+| `src/components/services/EngineeringMockup.tsx` | Increase contrast and text clarity |
 
+---
+
+## Expected Result
+
+1. **Signup form** will show a cleaner, non-redundant terms checkbox
+2. **Ticketing mockup** will display a clean QR code without visible edge artifacts
+3. **Engineering mockup** will be crisp and readable with proper contrast for all labels and the building visualization
