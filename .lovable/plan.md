@@ -1,234 +1,90 @@
 
-# Performance Debugging Toolkit Implementation
 
-## Overview
+# Fix Duplicate "Forgot Password" and Text Visibility
 
-This plan implements a comprehensive performance debugging system to identify the exact sources of flickering, layout shifts, and performance issues. The toolkit will be accessible via a keyboard shortcut (D key) and will provide real-time visual feedback on performance problems.
+## The Problem
 
----
+Based on the screenshot and code analysis, there are two issues:
 
-## What Will Be Built
+1. **Duplicate "Forgot Password" elements** - The Sign In form has:
+   - A small text link next to "Password" label (line 444-451)
+   - A prominent button with key icon at the bottom (line 475-484)
+   
+2. **Text visibility concern** - The small link uses `text-white/70` which may appear dark/invisible in certain conditions
 
-### 1. Core Debug Context/Hook
-A centralized `useDebugMode` hook and context that manages the debug state globally across the app.
+## Solution
 
-### 2. Layout Shift Observer
-Uses the PerformanceObserver API to detect and log Cumulative Layout Shift (CLS) events, with visual highlighting of shifting elements.
+**Remove the prominent bottom button and keep only the inline link** - This is the standard UX pattern used by most authentication forms (Google, Apple, etc.). The link next to the password field is the expected location.
 
-### 3. Component Re-render Tracker  
-Instruments key components to log re-renders and identify unnecessary updates during scroll/interaction.
-
-### 4. Visual Debug Overlay
-A floating overlay showing:
-- FPS counter
-- Layout shift score
-- Re-render count
-- Currently animated elements
-- Intersection Observer triggers
-
-### 5. Element Highlighting System
-Visual borders/overlays on:
-- 🔴 Red borders: Elements causing layout shifts
-- 🔵 Blue borders: Lazy-loaded elements
-- 🟢 Green borders: Currently animating elements
-- 🟡 Yellow borders: Intersection Observer triggers
+**Ensure the inline link is always visible** - Update the styling to use explicit white text with proper contrast.
 
 ---
 
-## Files to Create
+## Technical Changes
 
-### `src/contexts/DebugContext.tsx`
-Central debug state management with:
-- `isDebugMode: boolean`
-- `layoutShifts: LayoutShiftEntry[]`
-- `reRenderCounts: Map<string, number>`
-- `intersectionTriggers: Element[]`
-- Keyboard listener for 'D' key toggle
+### File: `src/components/auth/AuthModal.tsx`
 
-### `src/hooks/useDebugMode.ts`  
-Hook to consume debug context and provide helper functions.
+**Change 1: Remove the duplicate "Forgot Password" button (lines 474-484)**
 
-### `src/hooks/useLayoutShiftObserver.ts`
-PerformanceObserver hook that:
-- Monitors `layout-shift` entry type
-- Logs element that shifted with value
-- Adds temporary red border to shifting elements
-- Accumulates CLS score
-
-### `src/hooks/useRenderLogger.ts`
-Hook to track component re-renders:
-- Counts renders per component
-- Logs to console in debug mode
-- Optionally includes props diff
-
-### `src/components/debug/DebugOverlay.tsx`
-Floating panel showing:
-- Current FPS
-- CLS score
-- Re-render counts by component
-- Active animations count
-- Connection quality indicator
-
-### `src/components/debug/DebugProvider.tsx`
-Provider component wrapping the app with debug context and observers.
-
----
-
-## Files to Modify
-
-### `src/App.tsx`
-- Wrap app with `DebugProvider`
-- Conditionally render `DebugOverlay`
-
-### `src/components/ui/lazy-load.tsx`
-- Add blue debug border when debug mode active
-- Log when Intersection Observer triggers
-- Add entry to debug context when element becomes visible
-
-### `src/hooks/useScrollAnimation.ts`
-- Log Intersection Observer triggers in debug mode
-- Add yellow highlight to observed elements
-
-### `src/components/eye/EmotionalEye.tsx`
-- Add render count logging in debug mode
-- Add green animation indicator border
-
-### `src/components/Hero.tsx`
-- Add render count logging
-- Track animation frame counts
-
-### `src/components/LandingPage.tsx`
-- Instrument ScrollReveal with debug logging
-- Track major component re-renders
-
----
-
-## Technical Implementation Details
-
-### Layout Shift Detection
-```typescript
-// src/hooks/useLayoutShiftObserver.ts
-const useLayoutShiftObserver = () => {
-  const { isDebugMode, addLayoutShift } = useDebugMode();
-  
-  useEffect(() => {
-    if (!isDebugMode || !('PerformanceObserver' in window)) return;
-    
-    const observer = new PerformanceObserver((list) => {
-      for (const entry of list.getEntries()) {
-        if (entry.entryType === 'layout-shift' && !entry.hadRecentInput) {
-          const sources = (entry as any).sources || [];
-          sources.forEach((source: any) => {
-            const node = source.node;
-            if (node && node instanceof HTMLElement) {
-              // Add red border
-              node.style.outline = '3px solid red';
-              node.style.outlineOffset = '-3px';
-              setTimeout(() => {
-                node.style.outline = '';
-                node.style.outlineOffset = '';
-              }, 2000);
-              
-              console.warn('[Layout Shift]', {
-                value: entry.value,
-                element: node,
-                tagName: node.tagName,
-                className: node.className,
-                id: node.id
-              });
-            }
-          });
-          addLayoutShift(entry);
-        }
-      }
-    });
-    
-    observer.observe({ type: 'layout-shift', buffered: true });
-    return () => observer.disconnect();
-  }, [isDebugMode]);
-};
+Delete this entire block:
+```tsx
+{/* Prominent Forgot Password Button */}
+<Button
+  type="button"
+  variant="outline"
+  onClick={handleForgotPassword}
+  disabled={isResettingPassword || !email}
+  className="w-full gap-2 border-white/20 text-white hover:bg-white hover:text-neutral-950 disabled:opacity-50"
+>
+  <KeyRound className="w-4 h-4" />
+  {t('auth.forgotPasswordButton')}
+</Button>
 ```
 
-### Debug Overlay UI
-```text
-┌─────────────────────────────┐
-│ 🔧 DEBUG MODE               │
-├─────────────────────────────┤
-│ FPS: 60                     │
-│ CLS: 0.023                  │
-│ Re-renders: 12              │
-├─────────────────────────────┤
-│ Top Re-renders:             │
-│  • EmotionalEye: 8          │
-│  • LazyLoad: 3              │
-│  • ScrollReveal: 1          │
-├─────────────────────────────┤
-│ Recent Shifts: 2            │
-│  • div.service-card         │
-│  • img.hero-bg              │
-└─────────────────────────────┘
+**Change 2: Improve visibility of the inline "Forgot password?" link (lines 444-451)**
+
+Update the button styling to ensure consistent visibility:
+```tsx
+<button
+  type="button"
+  onClick={handleForgotPassword}
+  disabled={isResettingPassword}
+  className="text-sm text-white hover:text-primary transition-colors disabled:opacity-50"
+>
+  {isResettingPassword ? t('auth.forgotPasswordSending') : t('auth.forgotPassword')}
+</button>
 ```
 
-### Keyboard Toggle
-```typescript
-// In DebugProvider
-useEffect(() => {
-  const handleKeyDown = (e: KeyboardEvent) => {
-    // Only trigger on 'D' key, not when typing in inputs
-    if (e.key.toLowerCase() === 'd' && 
-        !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
-      setIsDebugMode(prev => !prev);
-    }
-  };
-  
-  window.addEventListener('keydown', handleKeyDown);
-  return () => window.removeEventListener('keydown', handleKeyDown);
-}, []);
+Key change: `text-white/70` → `text-white` for guaranteed visibility on the dark modal
+
+---
+
+## Visual Result
+
+Before:
+```
+Password                    Forgot password?  ← link (hard to see)
+[••••••••                              ]
+
+        [ Sign In ]
+
+    🔑 Forgot Password?   ← duplicate button
 ```
 
-### Connection Quality Detection
-```typescript
-// Detect slow connections to provide context
-const connection = (navigator as any).connection;
-const isSlowConnection = connection && 
-  (connection.effectiveType === '2g' || 
-   connection.effectiveType === 'slow-2g' ||
-   connection.saveData);
+After:
+```
+Password                    Forgot password?  ← clear white link
+[••••••••                              ]
+
+        [ Sign In ]
 ```
 
 ---
 
-## Visual Indicators Summary
+## Why This Approach
 
-| Element Type | Border Color | When Shown |
-|--------------|--------------|------------|
-| Layout shift source | 🔴 Red (3px solid) | For 2 seconds after shift |
-| Lazy-loaded content | 🔵 Blue (2px dashed) | While loading |
-| Animating elements | 🟢 Green (2px solid) | During animation |
-| IO observed elements | 🟡 Yellow (2px dotted) | When intersection triggers |
+1. **Industry standard** - Single "Forgot password?" link next to password field is the expected UX pattern
+2. **Less visual clutter** - Removes redundant button, cleaner form
+3. **Better accessibility** - Link is now explicitly white, guaranteed visible on dark background
+4. **No functionality loss** - Same action, just one trigger point instead of two
 
----
-
-## Implementation Order
-
-1. **Create DebugContext and Provider** - Foundation for all debug features
-2. **Add Layout Shift Observer** - Most critical for identifying flicker sources
-3. **Add Debug Overlay UI** - Visual feedback panel
-4. **Instrument LazyLoad** - Track lazy loading behavior
-5. **Instrument ScrollAnimation** - Track Intersection Observer triggers
-6. **Add Re-render Logging** - Identify unnecessary re-renders
-7. **Wire up keyboard toggle** - Enable easy on/off switching
-
----
-
-## Expected Outcomes
-
-After implementation, pressing 'D' will:
-1. Show a floating debug panel with real-time metrics
-2. Highlight any element causing layout shifts with a red border
-3. Show blue borders on lazy-loaded elements
-4. Log all Intersection Observer triggers to console
-5. Show re-render counts per component
-6. Make it immediately obvious what's causing flickering
-
-This will identify the exact sources without affecting the normal user experience (debug mode is off by default).
