@@ -14,7 +14,7 @@ import { useEngineeringSession } from '@/contexts/EngineeringSessionContext';
 import { SEO } from '@/components/shared/SEO';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
-import { type BuildingCodeId, DEFAULT_BUILDING_CODE } from '@/lib/buildingCodes';
+import { type BuildingCodeId } from '@/lib/buildingCodes';
 
 // Lazy load calculator components
 const BeamCalculator = lazy(() => import('@/components/engineering/BeamCalculator').then(m => ({ default: m.BeamCalculator })));
@@ -65,7 +65,9 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isCompareOpen, setIsCompareOpen] = useState(false);
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
-  const [selectedBuildingCode, setSelectedBuildingCode] = useState<BuildingCodeId>(DEFAULT_BUILDING_CODE);
+  
+  // Use building code from session context (shared with AI)
+  const { buildingCode: selectedBuildingCode, setBuildingCode: setSelectedBuildingCode } = session;
   
   // Current inputs/outputs for live preview
   const [currentInputs, setCurrentInputs] = useState<Record<string, any>>({});
