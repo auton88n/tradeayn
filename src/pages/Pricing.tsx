@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useSubscription, SUBSCRIPTION_TIERS, SubscriptionTier } from '@/contexts/SubscriptionContext';
-import { SEO } from '@/components/SEO';
+import { SEO } from '@/components/shared/SEO';
 import { cn } from '@/lib/utils';
 
 const tierIcons: Record<SubscriptionTier, React.ReactNode> = {

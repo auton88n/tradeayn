@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { XCircle, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { SEO } from '@/components/SEO';
+import { SEO } from '@/components/shared/SEO';
 
 const SubscriptionCanceled = () => {
   const navigate = useNavigate();

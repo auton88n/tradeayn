@@ -15,7 +15,7 @@ import { BetaFeedbackModal } from './BetaFeedbackModal';
 import { useBubbleAnimation } from '@/hooks/useBubbleAnimation';
 import { useAYNEmotion, AYNEmotion } from '@/contexts/AYNEmotionContext';
 import { useSoundContextOptional } from '@/contexts/SoundContext';
-import { getBubbleType } from '@/utils/emotionMapping';
+import { getBubbleType } from '@/lib/emotionMapping';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { hapticFeedback } from '@/lib/haptics';

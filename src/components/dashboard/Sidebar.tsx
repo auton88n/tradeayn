@@ -11,7 +11,7 @@ import { format } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useSidebar } from '@/components/ui/sidebar';
-import { ThemeToggle } from '@/components/theme-toggle';
+import { ThemeToggle } from '@/components/shared/theme-toggle';
 import { ProfileAvatarUpload } from './ProfileAvatarUpload';
 import { SavedImagesGallery } from './SavedImagesGallery';
 import { CreditUpgradeCard } from './CreditUpgradeCard';

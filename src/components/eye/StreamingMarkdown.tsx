@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, memo } from 'react';
-import { MessageFormatter } from '@/components/MessageFormatter';
+import { MessageFormatter } from '@/components/shared/MessageFormatter';
 import { hapticFeedback } from '@/lib/haptics';
 import { cn } from '@/lib/utils';
 

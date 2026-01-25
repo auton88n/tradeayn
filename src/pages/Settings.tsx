@@ -8,7 +8,7 @@ import { NotificationSettings } from '@/components/settings/NotificationSettings
 import { PrivacySettings } from '@/components/settings/PrivacySettings';
 import { SessionManagement } from '@/components/settings/SessionManagement';
 import { PageLoader } from '@/components/ui/page-loader';
-import { SEO, createBreadcrumbSchema } from '@/components/SEO';
+import { SEO, createBreadcrumbSchema } from '@/components/shared/SEO';
 
 const Settings = () => {
   const navigate = useNavigate();

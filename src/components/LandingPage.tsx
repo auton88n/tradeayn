@@ -6,13 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { AuthModal } from './auth/AuthModal';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { LanguageSwitcher } from './LanguageSwitcher';
-import { ThemeToggle } from './theme-toggle';
+import { LanguageSwitcher } from '@/components/shared/LanguageSwitcher';
+import { ThemeToggle } from '@/components/shared/theme-toggle';
 import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { TypewriterText } from './TypewriterText';
-import { Hero } from './Hero';
+import { TypewriterText } from '@/components/shared/TypewriterText';
+import { Hero } from '@/components/landing/Hero';
 import { z } from 'zod';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -24,7 +24,7 @@ import AutomationFlowMockup from './services/AutomationFlowMockup';
 import AIEmployeeMockup from './services/AIEmployeeMockup';
 import EngineeringMockup from './services/EngineeringMockup';
 import TicketingMockup from './services/TicketingMockup';
-import { SEO, organizationSchema, websiteSchema, softwareApplicationSchema, createFAQSchema } from './SEO';
+import { SEO, organizationSchema, websiteSchema, softwareApplicationSchema, createFAQSchema } from '@/components/shared/SEO';
 import { useDebugContextOptional } from '@/contexts/DebugContext';
 
 // ScrollReveal component - defined outside to prevent recreation on re-renders

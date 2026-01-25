@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
-import { MessageFormatter } from '@/components/MessageFormatter';
+import { MessageFormatter } from '@/components/shared/MessageFormatter';
 
 interface FAQItem {
   id: string;

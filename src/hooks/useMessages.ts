@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
-import { detectLanguage } from '@/utils/languageDetection';
+import { detectLanguage } from '@/lib/languageDetection';
 import type { 
   Message, 
   FileAttachment, 
@@ -382,7 +382,7 @@ export const useMessages = (
         setLastSuggestedEmotion(webhookData.emotion);
       } else {
         // Fallback: analyze response content for emotion if backend didn't provide one
-        const { analyzeResponseEmotion } = await import('@/utils/emotionMapping');
+        const { analyzeResponseEmotion } = await import('@/lib/emotionMapping');
         const fallbackEmotion = analyzeResponseEmotion(response);
         console.log('[useMessages] Fallback emotion:', fallbackEmotion);
         setLastSuggestedEmotion(fallbackEmotion);

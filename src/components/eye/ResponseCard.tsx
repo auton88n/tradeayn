@@ -3,7 +3,7 @@ import { useRef, useState, useEffect, useCallback, memo, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { StreamingMarkdown } from '@/components/eye/StreamingMarkdown';
-import { MessageFormatter } from '@/components/MessageFormatter';
+import { MessageFormatter } from '@/components/shared/MessageFormatter';
 import { hapticFeedback } from '@/lib/haptics';
 import { Copy, Check, ThumbsUp, ThumbsDown, Brain, X, ChevronDown, Palette } from 'lucide-react';
 import {

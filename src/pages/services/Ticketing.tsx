@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { SEO } from '@/components/SEO';
+import { SEO } from '@/components/shared/SEO';
 import TicketingMockup from '@/components/services/TicketingMockup';
 
 const StepCard = memo(({ step, index }: { step: any; index: number }) => (

@@ -1,6 +1,6 @@
 import { User, Session } from '@supabase/supabase-js';
 import { DashboardContainer } from './dashboard/DashboardContainer';
-import { TermsModal } from './TermsModal';
+import { TermsModal } from '@/components/shared/TermsModal';
 import { AdminPinGate } from './admin/AdminPinGate';
 import { useAuth } from '@/hooks/useAuth';
 import { useState, useEffect } from 'react';

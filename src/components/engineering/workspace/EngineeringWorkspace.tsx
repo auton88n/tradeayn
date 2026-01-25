@@ -11,7 +11,7 @@ import { CalculationComparison } from '@/components/engineering/CalculationCompa
 import { SaveDesignDialog } from '@/components/engineering/SaveDesignDialog';
 import { useEngineeringHistory } from '@/hooks/useEngineeringHistory';
 import { useEngineeringSession } from '@/contexts/EngineeringSessionContext';
-import { SEO } from '@/components/SEO';
+import { SEO } from '@/components/shared/SEO';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 
