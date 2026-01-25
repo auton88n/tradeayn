@@ -13,6 +13,7 @@ const placeholders = ["What's on your mind?", "Ask AYN anything...", "How can I 
 export const LandingChatInput: React.FC<LandingChatInputProps> = ({ onSendAttempt }) => {
   const [inputMessage, setInputMessage] = useState('');
   const [currentPlaceholder, setCurrentPlaceholder] = useState(0);
+  const [isFocused, setIsFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Rotate placeholders
@@ -75,7 +76,9 @@ export const LandingChatInput: React.FC<LandingChatInputProps> = ({ onSendAttemp
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={placeholders[currentPlaceholder]}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              placeholder={isFocused ? '' : placeholders[currentPlaceholder]}
               className={cn(
                 "resize-none border-0 bg-transparent p-0 py-[10px] min-h-[44px] max-h-[120px]",
                 "focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0",
