@@ -1,112 +1,90 @@
 
-## Fix Landing Page Issues
 
-This plan addresses three issues:
-1. Remove duplicate Privacy Policy from the signup form checkbox
-2. Fix the ticketing mockup's edge/line visual problem  
-3. Improve clarity and visibility of the engineering mockup
+## Fix Service Card Edge Line Artifacts
+
+The visible "shadow line" on the edge of service cards is caused by anti-aliasing artifacts when semi-transparent backgrounds (`bg-muted/50`) are rendered with large rounded corners (`rounded-3xl`). The browser's sub-pixel rendering creates a faint visible edge where the 50% opacity gray meets the white page background.
 
 ---
 
-## Changes Overview
+## Root Cause
 
-### 1. Remove Privacy Policy Link from Signup Checkbox
-**File: `src/components/auth/AuthModal.tsx`**
-
-The current signup form has:
-> "I agree to the Terms & Conditions and Privacy Policy"
-
-Since users will see the full TermsModal (with the complete Privacy Policy) when they first log in, this creates duplication.
-
-**Change:** Simplify the checkbox label to just reference Terms:
-> "I agree to the Terms & Conditions"
-
-Remove the `{' '}{t('auth.termsAnd')}{' '}` and the Privacy Policy link from lines 567-576.
-
----
-
-### 2. Fix Ticketing Mockup Edge/Line Issue
-**File: `src/components/services/TicketingMockup.tsx`**
-
-The QR code container and grid have visible edge artifacts due to:
-- Gap spacing between grid cells (2px gaps)
-- Rounded corners on tiny cells creating visual inconsistency
-
-**Changes:**
-- Remove the gap between QR grid cells (`gap-[2px]` → `gap-0`)
-- Make the QR cells slightly larger for better visibility
-- Add a subtle inner shadow to the QR container to smooth edges
-- Ensure proper border-radius consistency
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                    The Problem                              │
+├─────────────────────────────────────────────────────────────┤
+│ • bg-muted/50 = 50% transparent light gray                  │
+│ • rounded-3xl = 24px border radius                          │
+│ • When semi-transparent colors meet opaque backgrounds      │
+│   at curved edges, anti-aliasing creates visible artifacts  │
+│ • This appears as a faint "line" around the card edge       │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ---
 
-### 3. Improve Engineering Mockup Clarity
-**File: `src/components/services/EngineeringMockup.tsx`**
+## Solution
 
-The mockup is hard to read due to:
-- Very low opacity on building floors (`from-neutral-900/80`)
-- Faint cyan colors with low contrast (`text-cyan-400`)
-- Small text sizes (`text-[10px]`)
+Replace the semi-transparent `bg-muted/50` with a fully opaque equivalent color that matches the visual appearance without transparency.
 
-**Changes:**
-- Increase opacity on building floor backgrounds
-- Boost cyan text contrast (from `text-cyan-400` to `text-cyan-300`)
-- Increase font size on key labels from 10px to 11-12px
-- Add stronger glow/shadow to the floating result card
-- Increase contrast on the "Safe Design" indicator
-- Make windows more visible with higher opacity
+| Current | Fixed |
+|---------|-------|
+| `bg-muted/50` (semi-transparent) | `bg-[hsl(0,0%,98%)]` in light mode or theme-aware solid background |
+
+The simplest fix is to use CSS variables with solid colors that visually match what `bg-muted/50` produces against the white background, eliminating the anti-aliasing issue entirely.
+
+---
+
+## Changes
+
+### File: `src/components/LandingPage.tsx`
+
+Replace all instances of `bg-muted/50` in the services bento grid with a solid background:
+
+**Option A (Recommended)**: Use a custom solid color class that matches the blended result:
+- Light mode: `bg-muted/50` on white = approximately `#FAFAFA` or `hsl(0 0% 98%)`
+- Replace with: `bg-neutral-50 dark:bg-neutral-900/80`
+
+**Option B**: Use `bg-muted` without transparency (slightly darker but no artifacts)
+
+**Changes to make (5 service cards)**:
+- Line ~571: Content Creator card
+- Line ~600: Automation card  
+- Line ~631: Ticketing card
+- Line ~663: AI Agents card
+- Line ~694: AI Employees card
+
+The Engineering card already uses a different style (`bg-gradient-to-br from-cyan-500/10 to-blue-500/10`) so it's unaffected.
 
 ---
 
 ## Technical Details
 
 ```text
-┌─────────────────────────────────────────────────────────┐
-│              AuthModal.tsx (Signup Checkbox)            │
-├─────────────────────────────────────────────────────────┤
-│ BEFORE:                                                 │
-│ "I agree to the Terms & Conditions and Privacy Policy"  │
-│                                                         │
-│ AFTER:                                                  │
-│ "I agree to the Terms & Conditions"                     │
-│ (Privacy Policy link removed - covered in TermsModal)   │
-└─────────────────────────────────────────────────────────┘
+Before (causes edge lines):
+┌─────────────────────────────────────┐
+│ className="bg-muted/50 rounded-3xl" │
+│                                     │
+│  bg-muted/50 = semi-transparent     │
+│  Anti-aliasing at edges = visible   │
+└─────────────────────────────────────┘
 
-┌─────────────────────────────────────────────────────────┐
-│              TicketingMockup.tsx (QR Fix)               │
-├─────────────────────────────────────────────────────────┤
-│ • Remove gap-[2px] from grid (makes cells flush)        │
-│ • Increase cell size from implicit 2-3px to 4px         │
-│ • Add box-shadow for smoother container edges           │
-│ • Use proper 7×7 grid sizing                            │
-└─────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────┐
-│           EngineeringMockup.tsx (Clarity Fix)           │
-├─────────────────────────────────────────────────────────┤
-│ • Building floors: neutral-800/90 (was /80)             │
-│ • Text color: text-cyan-300 (was cyan-400)              │
-│ • Labels: text-[11px] or [12px] (was [10px])            │
-│ • Windows: opacity 0.6-0.8 (was 0.4-0.8)                │
-│ • Result card: stronger shadow & border                 │
-│ • "Safe Design" indicator: brighter emerald             │
-└─────────────────────────────────────────────────────────┘
+After (clean edges):
+┌───────────────────────────────────────────────────────┐
+│ className="bg-neutral-50 dark:bg-neutral-900/80       │
+│            rounded-3xl"                               │
+│                                                       │
+│  Solid color in light mode = no edge artifacts        │
+│  Slight transparency in dark mode acceptable          │
+└───────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Files to Edit
+## Summary
 
 | File | Change |
 |------|--------|
-| `src/components/auth/AuthModal.tsx` | Remove Privacy Policy link from terms checkbox |
-| `src/components/services/TicketingMockup.tsx` | Fix QR code grid gaps and edge lines |
-| `src/components/services/EngineeringMockup.tsx` | Increase contrast and text clarity |
+| `src/components/LandingPage.tsx` | Replace `bg-muted/50` with `bg-neutral-50 dark:bg-neutral-900/80` on 5 service cards |
 
----
+This eliminates the edge line artifact by using fully opaque backgrounds that don't require anti-aliasing blending at curved corners.
 
-## Expected Result
-
-1. **Signup form** will show a cleaner, non-redundant terms checkbox
-2. **Ticketing mockup** will display a clean QR code without visible edge artifacts
-3. **Engineering mockup** will be crisp and readable with proper contrast for all labels and the building visualization
