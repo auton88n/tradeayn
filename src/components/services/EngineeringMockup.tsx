@@ -33,7 +33,7 @@ const EngineeringMockup = memo(() => {
             
             {/* Main structure - 3D effect */}
             <div className="relative mx-auto" style={{ width: '200px' }}>
-              {/* Building floors - entrance animation only */}
+              {/* Building floors - entrance animation only, 4 windows each */}
               {[0, 1, 2, 3, 4].map((floor) => (
                 <motion.div
                   key={floor}
@@ -43,19 +43,19 @@ const EngineeringMockup = memo(() => {
                   className="relative"
                 >
                   <div 
-                    className="h-16 border-l-2 border-r-2 border-t border-cyan-500/40 bg-gradient-to-b from-neutral-900/90 to-neutral-800/90 backdrop-blur-sm"
+                    className="h-14 border-l-2 border-r-2 border-t border-cyan-500/40 bg-gradient-to-b from-neutral-900/90 to-neutral-800/90 backdrop-blur-sm"
                     style={{
-                      width: `${200 - floor * 8}px`,
-                      marginLeft: `${floor * 4}px`,
+                      width: `${200 - floor * 6}px`,
+                      marginLeft: `${floor * 3}px`,
                     }}
                   >
-                    {/* Windows - static with higher visibility */}
-                    <div className="flex justify-around items-center h-full px-4">
-                      {[...Array(4 - Math.floor(floor / 2))].map((_, i) => (
+                    {/* Windows - always 4 per floor */}
+                    <div className="flex justify-around items-center h-full px-3">
+                      {[0, 1, 2, 3].map((i) => (
                         <div
                           key={i}
-                          className="w-6 h-10 bg-gradient-to-b from-cyan-400/60 to-blue-500/50 rounded-sm"
-                          style={{ opacity: 0.6 + (i % 2) * 0.3 }}
+                          className="w-5 h-8 bg-gradient-to-b from-cyan-400/70 to-blue-500/60 rounded-sm"
+                          style={{ opacity: 0.7 + (i % 2) * 0.2 }}
                         />
                       ))}
                     </div>
