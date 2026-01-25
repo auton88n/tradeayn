@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback, memo } from 'react';
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
 import { useSoundContextOptional } from '@/contexts/SoundContext';
@@ -592,6 +592,27 @@ const EmotionalEyeComponent = ({
             performanceMultiplier={performanceConfig.particleMultiplier}
           />
         )}
+        
+        {/* Emotion Label - shows current emotion state */}
+        <AnimatePresence>
+          {emotion !== 'calm' && (
+            <motion.div
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -5 }}
+              transition={{ delay: 0.3, duration: 0.2 }}
+              className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-background/80 backdrop-blur-sm border border-border/50"
+            >
+              <span className="text-[10px] font-medium text-muted-foreground flex items-center gap-1 whitespace-nowrap">
+                <span 
+                  className="w-1.5 h-1.5 rounded-full" 
+                  style={{ backgroundColor: emotionConfig.color }}
+                />
+                {emotion.charAt(0).toUpperCase() + emotion.slice(1)}
+              </span>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
     </div>
   );
