@@ -385,7 +385,9 @@ const LandingPage = memo(() => {
       <div className="fixed top-4 right-4 z-50 md:hidden">
         <Sheet>
           <SheetTrigger asChild>
-            
+            <Button variant="outline" size="icon" className="rounded-full shadow-lg">
+              <Menu className="h-5 w-5" />
+            </Button>
           </SheetTrigger>
           <SheetContent side="right" className="w-[280px] sm:w-[320px]">
             <div className="flex flex-col gap-6 pt-8">
