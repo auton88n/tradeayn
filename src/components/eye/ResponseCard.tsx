@@ -233,7 +233,8 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
     }
   };
 
-  if (visibleResponses.length === 0) return null;
+  // Hide completely if there's no visible content to show.
+  if (visibleResponses.length === 0 || !combinedContent.trim()) return null;
 
   return (
     <>
