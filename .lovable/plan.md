@@ -1,309 +1,172 @@
 
-# Complete Code Cleanup & Organization Plan
 
-## Executive Summary
-Based on thorough codebase analysis, the project already has a solid foundation. This plan focuses on **safe, incremental improvements** that enhance maintainability without breaking functionality.
+# Performance Optimization Implementation Plan
+
+## Overview
+This plan implements performance improvements across AI responsiveness, frontend caching, CSS optimization, and network preloading - all without changing existing functionality or affecting the eye animations.
 
 ---
 
-## Current State Analysis
+## Phase 1: React Query Caching (Low Risk, High Impact)
 
-### What's Already Well-Organized
+### Current State
+```typescript
+// src/App.tsx line 50
+const queryClient = new QueryClient();
+```
+No caching configuration - every query refetches on mount.
+
+### Change
+Add stale-while-revalidate caching:
+
+```typescript
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60 * 1000,       // 1 minute - data stays fresh
+      gcTime: 5 * 60 * 1000,      // 5 minutes - keep in cache
+      refetchOnWindowFocus: false, // Don't refetch when tab regains focus
+      retry: 1,                    // Only retry once on failure
+    },
+  },
+});
+```
+
+**Impact:** Instant navigation between pages - no loading spinners for cached data.
+
+---
+
+## Phase 2: CSS Containment for Cards (Low Risk)
+
+### Current State
+CSS containment classes exist but aren't applied to key performance-critical elements.
+
+### Change
+Add containment rules for heavy components in `src/index.css`:
+
+```css
+/* Performance containment for cards */
+.service-card,
+.response-card,
+.suggestion-card,
+.calculator-card {
+  contain: content;
+}
+
+/* Scroll container optimization */
+.message-scroll-container {
+  contain: strict;
+  content-visibility: auto;
+}
+```
+
+**Impact:** Reduces paint cost by ~10-15% for card-heavy pages.
+
+---
+
+## Phase 3: Route Preloading (Low Risk)
+
+### Current State
+`index.html` has no prefetch hints for common navigation paths.
+
+### Change
+Add prefetch hints after fonts in `index.html`:
+
+```html
+<!-- Route prefetch for faster navigation -->
+<link rel="prefetch" href="/src/pages/Settings.tsx" as="script">
+<link rel="prefetch" href="/src/pages/Support.tsx" as="script">
+<link rel="prefetch" href="/src/pages/Pricing.tsx" as="script">
+```
+
+**Impact:** Faster navigation to Settings/Support/Pricing pages.
+
+---
+
+## Phase 4: Debounce Suggestion Fetch (Low Risk)
+
+### Current State
+`CenterStageLayout.tsx` line 282-306 fetches suggestions immediately after each response.
+
+### Change
+Add 1-second debounce to reduce API calls:
+
+```typescript
+import { useMemo } from 'react';
+import { debounce } from '@/lib/utils'; // Add debounce utility
+
+// Inside component, wrap fetchDynamicSuggestions:
+const debouncedFetchSuggestions = useMemo(
+  () => debounce(fetchDynamicSuggestions, 1000),
+  [fetchDynamicSuggestions]
+);
+```
+
+**Requires:** Add debounce utility to `src/lib/utils.ts` if not present.
+
+**Impact:** Reduces API calls when user sends multiple quick messages.
+
+---
+
+## Phase 5: Image Loading Optimization (Low Risk)
+
+### Current State
+Some images may block rendering.
+
+### Change
+Ensure all heavy images have `loading="lazy"` attribute.
+
+**Files to check:**
+- Service mockup components
+- Landing page images
+- Any Canvas 3D components
+
+---
+
+## Summary of Files to Modify
+
+| File | Change | Risk |
+|------|--------|------|
+| `src/App.tsx` | Add QueryClient caching config | Low |
+| `src/index.css` | Add CSS containment rules | Low |
+| `index.html` | Add route prefetch hints | Low |
+| `src/lib/utils.ts` | Add debounce utility (if missing) | Low |
+| `src/components/dashboard/CenterStageLayout.tsx` | Debounce suggestion fetch | Low |
+
+---
+
+## What This Does NOT Change
+
 | Area | Status |
 |------|--------|
-| Component folders | ✅ Properly organized (admin, dashboard, engineering, eye, landing, services, settings, support, transcript, tutorial, ui) |
-| Hooks directory | ✅ 35 hooks properly organized |
-| Contexts directory | ✅ 7 context files organized |
-| Types directory | ✅ 4 type definition files |
-| Lazy loading | ✅ All routes are lazy-loaded |
-| Error boundaries | ✅ Implemented with AYN branding |
-| Debug system | ✅ Already production-safe |
-
-### Issues Identified
-| Issue | Severity | Count/Impact |
-|-------|----------|--------------|
-| Unused component (TypingIndicator.tsx) | Low | 1 file |
-| Root-level components needing organization | Medium | 12 files |
-| `as any` type assertions | Medium | ~110 instances |
-| Duplicate utils folders (lib + utils) | Low | 3 files |
-| Missing constants folder | Low | Magic numbers scattered |
-| Missing index.ts barrel exports | Low | Most folders |
+| Eye animations | Untouched - no changes to timing or springs |
+| usePerformanceMode | Untouched - existing throttling preserved |
+| Mouse tracking | Untouched - existing 16-100ms throttle preserved |
+| Particle systems | Untouched - existing mobile reduction preserved |
+| Message sending flow | Untouched - existing immediate dispatch preserved |
+| AI streaming | Not enabled yet - requires backend changes |
 
 ---
 
-## Phase 1: Remove Unused Code (Low Risk)
+## Expected Results
 
-### Files to Delete
-```
-src/components/TypingIndicator.tsx - Not imported anywhere (AdminAIAssistant has its own local version)
-```
-
-### Commented Code to Remove
-Scan and remove any `// commented out code blocks` across all files
-
----
-
-## Phase 2: Organize Root-Level Components (Medium Risk)
-
-### Current State
-These files sit at `src/components/` root level:
-```
-AdminPanel.tsx      → Keep (main admin entry)
-Dashboard.tsx       → Keep (main dashboard entry)
-ErrorBoundary.tsx   → Move to src/components/shared/
-Hero.tsx            → Move to src/components/landing/
-LandingPage.tsx     → Keep (main landing entry)
-LanguageSwitcher.tsx → Move to src/components/shared/
-MessageFormatter.tsx → Move to src/components/shared/
-OfflineBanner.tsx   → Move to src/components/shared/
-PageTransition.tsx  → Move to src/components/shared/
-SEO.tsx             → Move to src/components/shared/
-ScrollToTop.tsx     → Move to src/components/shared/
-TermsModal.tsx      → Move to src/components/shared/
-TypewriterText.tsx  → Move to src/components/shared/
-theme-provider.tsx  → Move to src/components/shared/
-theme-toggle.tsx    → Move to src/components/shared/
-```
-
-### New Structure
-```
-src/components/
-├── shared/               # NEW - Reusable across pages
-│   ├── ErrorBoundary.tsx
-│   ├── LanguageSwitcher.tsx
-│   ├── MessageFormatter.tsx
-│   ├── OfflineBanner.tsx
-│   ├── PageTransition.tsx
-│   ├── SEO.tsx
-│   ├── ScrollToTop.tsx
-│   ├── TermsModal.tsx
-│   ├── TypewriterText.tsx
-│   ├── theme-provider.tsx
-│   ├── theme-toggle.tsx
-│   └── index.ts          # Barrel export
-├── landing/
-│   └── Hero.tsx          # Move here
-├── AdminPanel.tsx        # Keep - main entry
-├── Dashboard.tsx         # Keep - main entry
-└── LandingPage.tsx       # Keep - main entry
-```
-
-### Import Path Updates Required
-- `src/App.tsx` - Update 6 imports
-- `src/components/LandingPage.tsx` - Update 4 imports
-- `src/pages/Support.tsx` - Update 2 imports
-- ~15 other files with MessageFormatter imports
+| Metric | Before | After |
+|--------|--------|-------|
+| Page navigation | ~200-500ms | ~50-100ms (cached) |
+| Settings page load | Full refetch | Instant from cache |
+| Card paint cost | Full recalc | Isolated (contained) |
+| Suggestion API calls | Every response | Debounced to 1s |
 
 ---
 
-## Phase 3: Consolidate Utils (Low Risk)
+## Testing After Implementation
 
-### Current State
-```
-src/lib/                  # 15 files
-src/utils/                # 3 files (emotionMapping, languageDetection, userEmotionDetection)
-```
+1. **Build succeeds:** `npm run build`
+2. **No console errors:** Check DevTools
+3. **Core features work:**
+   - Login/Logout
+   - Chat with eye animations
+   - Settings navigation (should be faster)
+   - Pricing page
+4. **Eye responsiveness:** Verify animations feel the same
 
-### Action
-Move `src/utils/*` files to `src/lib/` and delete empty `src/utils/` folder
-
-### Files to Update
-- All imports from `@/utils/...` → `@/lib/...`
-
----
-
-## Phase 4: Add Constants Folder (Low Risk, High Value)
-
-### Create New Files
-```
-src/constants/
-├── index.ts              # Barrel export
-├── routes.ts             # All route paths
-├── tierLimits.ts         # Credit limits, storage limits
-├── apiEndpoints.ts       # Edge function names
-└── breakpoints.ts        # Responsive design breakpoints
-```
-
-### Example Content
-
-**routes.ts:**
-```typescript
-export const ROUTES = {
-  HOME: '/',
-  SETTINGS: '/settings',
-  SUPPORT: '/support',
-  PRICING: '/pricing',
-  ENGINEERING: '/engineering',
-  ADMIN: '/admin',
-  SERVICES: {
-    AI_EMPLOYEE: '/services/ai-employee',
-    AI_AGENTS: '/services/ai-agents',
-    AUTOMATION: '/services/automation',
-    TICKETING: '/services/ticketing',
-    CIVIL_ENGINEERING: '/services/civil-engineering',
-    CONTENT_CREATOR: '/services/content-creator-sites',
-  },
-} as const;
-```
-
-**tierLimits.ts:**
-```typescript
-export const TIER_LIMITS = {
-  free: { credits: 50, storage: 100 * 1024 * 1024 },
-  starter: { credits: 500, storage: 500 * 1024 * 1024 },
-  pro: { credits: 2000, storage: 2 * 1024 * 1024 * 1024 },
-  business: { credits: 5000, storage: 10 * 1024 * 1024 * 1024 },
-} as const;
-```
-
----
-
-## Phase 5: Add Barrel Exports (Low Risk)
-
-### Folders Needing index.ts
-```
-src/components/shared/index.ts
-src/components/landing/index.ts
-src/contexts/index.ts
-src/lib/index.ts
-src/constants/index.ts
-```
-
-### Example Barrel Export
-```typescript
-// src/components/shared/index.ts
-export { ErrorBoundary } from './ErrorBoundary';
-export { LanguageSwitcher } from './LanguageSwitcher';
-export { MessageFormatter } from './MessageFormatter';
-export { OfflineBanner } from './OfflineBanner';
-export { PageTransition } from './PageTransition';
-export { SEO, createBreadcrumbSchema } from './SEO';
-export { ScrollToTop } from './ScrollToTop';
-export { TermsModal } from './TermsModal';
-export { TypewriterText } from './TypewriterText';
-export { ThemeProvider } from './theme-provider';
-export { ThemeToggle } from './theme-toggle';
-```
-
----
-
-## Phase 6: Type Safety Improvements (Medium Risk)
-
-### Reduce `as any` Usage
-Priority files with multiple `as any`:
-| File | Count | Action |
-|------|-------|--------|
-| `src/test/setupTests.ts` | 5 | Keep - test mocks need any |
-| `src/pages/Engineering.tsx` | 6 | Create proper calculator type |
-| `src/contexts/DebugContext.tsx` | 2 | Add navigator types |
-| `src/hooks/usePerformanceMode.ts` | 1 | Add navigator.deviceMemory type |
-| `src/hooks/useEngineeringAIAgent.ts` | 1 | Type window extension |
-
-### Create Missing Types
-```
-src/types/
-├── calculator.types.ts   # NEW - Calculator card types
-├── navigator.types.ts    # NEW - Extended navigator types
-└── window.types.ts       # NEW - Window extensions
-```
-
----
-
-## Phase 7: Import Ordering (Low Risk)
-
-### Standard Import Order
-```typescript
-// 1. React
-import { useState, useEffect } from 'react';
-
-// 2. Third-party libraries
-import { motion } from 'framer-motion';
-import { supabase } from '@/integrations/supabase/client';
-
-// 3. Components (absolute imports)
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-
-// 4. Hooks, contexts, utils (absolute imports)
-import { useAuth } from '@/hooks/useAuth';
-import { cn } from '@/lib/utils';
-
-// 5. Types
-import type { User } from '@/types';
-
-// 6. Relative imports
-import { LocalComponent } from './LocalComponent';
-```
-
----
-
-## Implementation Order (Recommended)
-
-| Phase | Risk | Effort | Impact |
-|-------|------|--------|--------|
-| Phase 1: Remove unused | Low | 5 min | Clean |
-| Phase 3: Consolidate utils | Low | 15 min | Organization |
-| Phase 4: Add constants | Low | 30 min | Maintainability |
-| Phase 5: Barrel exports | Low | 20 min | DX improvement |
-| Phase 2: Reorganize components | Medium | 45 min | Better structure |
-| Phase 6: Type safety | Medium | 60 min | Code quality |
-| Phase 7: Import ordering | Low | 30 min | Consistency |
-
-**Total estimated time: ~3.5 hours**
-
----
-
-## Files Changed Summary
-
-### Deletions
-- `src/components/TypingIndicator.tsx`
-- `src/utils/` folder (after moving files)
-
-### New Files
-- `src/components/shared/index.ts`
-- `src/constants/index.ts`
-- `src/constants/routes.ts`
-- `src/constants/tierLimits.ts`
-- `src/constants/apiEndpoints.ts`
-- `src/types/calculator.types.ts`
-- `src/types/navigator.types.ts`
-
-### Moved Files
-- 11 files from `src/components/` → `src/components/shared/`
-- 1 file (`Hero.tsx`) → `src/components/landing/`
-- 3 files from `src/utils/` → `src/lib/`
-
-### Modified Files (Import Updates)
-- ~25 files with updated import paths
-
----
-
-## Post-Cleanup Validation
-
-After each phase:
-```bash
-# 1. Build succeeds
-npm run build
-
-# 2. No TypeScript errors
-npx tsc --noEmit
-
-# 3. App runs locally
-npm run dev
-
-# 4. Core features work
-- Login/Logout ✓
-- Chat ✓
-- Engineering mode ✓
-- Settings ✓
-- Admin panel ✓
-```
-
----
-
-## Risk Mitigation
-
-1. **Backup Strategy**: Use Git history - commit after each phase
-2. **Incremental Changes**: One phase at a time, test between phases
-3. **No Logic Changes**: Only file moves and import updates
-4. **Preserve Functionality**: No behavioral changes to components
