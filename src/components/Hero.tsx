@@ -377,10 +377,9 @@ export const Hero = memo(({ onGetStarted }: HeroProps) => {
           <div className="absolute -inset-8 rounded-full blur-2xl pointer-events-none bg-[radial-gradient(circle,_rgba(229,229,229,0.3)_0%,_transparent_70%)] dark:bg-[radial-gradient(circle,_rgba(38,38,38,0.15)_0%,_transparent_70%)]" />
 
           {/* Main eye container - matches EmotionalEye exactly */}
-          <motion.div 
+          {/* Main eye container - static, no continuous animation for performance */}
+          <div 
             className="relative w-[120px] h-[120px] sm:w-[160px] sm:h-[160px] md:w-[200px] md:h-[200px] lg:w-[240px] lg:h-[240px] rounded-full bg-white dark:bg-neutral-900 flex items-center justify-center overflow-hidden shadow-xl"
-            animate={{ scale: [1, 1.01, 1] }}
-            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
           >
             {/* Inner shadow for depth */}
             <div className="absolute inset-2 rounded-full shadow-[inset_0_4px_16px_rgba(0,0,0,0.06)] dark:shadow-[inset_0_4px_16px_rgba(0,0,0,0.25)]" />
@@ -436,7 +435,7 @@ export const Hero = memo(({ onGetStarted }: HeroProps) => {
                 </div>
               </foreignObject>
             </motion.svg>
-          </motion.div>
+          </div>
         </motion.div>
       </motion.div>
 
