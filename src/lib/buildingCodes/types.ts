@@ -1,9 +1,9 @@
 /**
  * Building Code Configuration Types
- * Supports ACI 318-25 (USA), CSA A23.3-24 (Canada), and Custom configurations
+ * Supports ACI 318-25 (USA) and CSA A23.3-24 (Canada)
  */
 
-export type BuildingCodeId = 'ACI' | 'CSA' | 'CUSTOM';
+export type BuildingCodeId = 'ACI' | 'CSA';
 
 export interface LoadFactors {
   dead: number;           // Dead load factor (1.2 ACI, 1.25 CSA)

@@ -91,15 +91,6 @@ export const AVAILABLE_CODES = [
     version: '2024',
     loadCombination: '1.25D + 1.5L',
   },
-  {
-    id: 'CUSTOM' as const,
-    name: 'Custom',
-    fullName: 'User-Defined Parameters',
-    country: 'Other',
-    flag: '⚙️',
-    version: 'N/A',
-    loadCombination: 'User-defined',
-  },
 ];
 
 // Default code

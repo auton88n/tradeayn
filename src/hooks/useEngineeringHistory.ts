@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Json } from '@/integrations/supabase/types';
+import type { BuildingCodeId } from '@/lib/buildingCodes';
 
 export interface CalculationHistoryItem {
   id: string;
@@ -8,6 +9,7 @@ export interface CalculationHistoryItem {
   inputs: Record<string, any>;
   outputs: Record<string, any>;
   ai_analysis: Record<string, any> | null;
+  building_code?: BuildingCodeId;
   created_at: string;
 }
 
@@ -58,17 +60,23 @@ export const useEngineeringHistory = (userId: string | undefined) => {
     calculationType: string,
     inputs: Record<string, any>,
     outputs: Record<string, any>,
-    aiAnalysis?: Record<string, any>
+    aiAnalysis?: Record<string, any>,
+    buildingCode?: BuildingCodeId
   ) => {
     if (!userId) return null;
 
     try {
+      // Include building code in inputs for storage
+      const enrichedInputs = buildingCode 
+        ? { ...inputs, buildingCode } 
+        : inputs;
+
       const { data, error } = await supabase
         .from('calculation_history')
         .insert({
           user_id: userId,
           calculation_type: calculationType,
-          inputs: inputs as Json,
+          inputs: enrichedInputs as Json,
           outputs: outputs as Json,
           ai_analysis: aiAnalysis as Json || null,
         })
@@ -80,8 +88,8 @@ export const useEngineeringHistory = (userId: string | undefined) => {
       // Also log to engineering_activity for AYN context
       await logActivity(
         `${calculationType}_calculation`,
-        generateActivitySummary(calculationType, inputs, outputs),
-        { inputs, outputs, aiAnalysis }
+        generateActivitySummary(calculationType, enrichedInputs, outputs),
+        { inputs: enrichedInputs, outputs, aiAnalysis, buildingCode }
       );
 
       return data;
