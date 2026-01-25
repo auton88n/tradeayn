@@ -43,19 +43,19 @@ const EngineeringMockup = memo(() => {
                   className="relative"
                 >
                   <div 
-                    className="h-16 border-l-2 border-r-2 border-t border-cyan-500/30 bg-gradient-to-b from-neutral-900/80 to-neutral-800/80 backdrop-blur-sm"
+                    className="h-16 border-l-2 border-r-2 border-t border-cyan-500/40 bg-gradient-to-b from-neutral-900/90 to-neutral-800/90 backdrop-blur-sm"
                     style={{
                       width: `${200 - floor * 8}px`,
                       marginLeft: `${floor * 4}px`,
                     }}
                   >
-                    {/* Windows - static with varied opacity */}
+                    {/* Windows - static with higher visibility */}
                     <div className="flex justify-around items-center h-full px-4">
                       {[...Array(4 - Math.floor(floor / 2))].map((_, i) => (
                         <div
                           key={i}
-                          className="w-6 h-10 bg-gradient-to-b from-cyan-400/40 to-blue-500/30 rounded-sm"
-                          style={{ opacity: 0.4 + (i % 2) * 0.4 }}
+                          className="w-6 h-10 bg-gradient-to-b from-cyan-400/60 to-blue-500/50 rounded-sm"
+                          style={{ opacity: 0.6 + (i % 2) * 0.3 }}
                         />
                       ))}
                     </div>
@@ -88,8 +88,8 @@ const EngineeringMockup = memo(() => {
             transition={{ delay: 1 }}
           >
             <div className="flex items-center gap-2">
-              <div className="w-8 h-px bg-cyan-500" />
-              <div className="text-[10px] font-mono text-cyan-400 whitespace-nowrap">
+              <div className="w-8 h-px bg-cyan-400" />
+              <div className="text-[12px] font-mono text-cyan-300 whitespace-nowrap font-medium">
                 h = 15.2m
               </div>
             </div>
@@ -102,8 +102,8 @@ const EngineeringMockup = memo(() => {
             transition={{ delay: 1.1 }}
           >
             <div className="flex flex-col items-center gap-1">
-              <div className="h-4 w-px bg-cyan-500" />
-              <div className="text-[10px] font-mono text-cyan-400">
+              <div className="h-4 w-px bg-cyan-400" />
+              <div className="text-[12px] font-mono text-cyan-300 font-medium">
                 Base: 12.0m × 8.0m
               </div>
             </div>
@@ -117,8 +117,8 @@ const EngineeringMockup = memo(() => {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 1.2 }}
         >
-          <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50" />
-          <div className="text-[8px] font-mono text-emerald-400 mt-1 whitespace-nowrap">OK</div>
+          <div className="w-4 h-4 rounded-full bg-emerald-400 shadow-lg shadow-emerald-400/60" />
+          <div className="text-[10px] font-mono text-emerald-300 mt-1 whitespace-nowrap font-medium">OK</div>
         </motion.div>
         
         {/* Load arrows - static */}
@@ -143,16 +143,17 @@ const EngineeringMockup = memo(() => {
       
       {/* Floating calculation result - static */}
       <motion.div
-        className="absolute bottom-4 right-4 px-3 py-2 rounded-xl bg-neutral-900/90 border border-cyan-500/30 backdrop-blur-sm shadow-lg"
+        className="absolute bottom-4 right-4 px-4 py-3 rounded-xl bg-neutral-900/95 border border-cyan-400/40 backdrop-blur-sm"
+        style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.4), 0 0 20px rgba(34,211,238,0.15)' }}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1.3 }}
       >
-        <div className="text-[10px] font-mono text-cyan-400">
+        <div className="text-[12px] font-mono text-cyan-300 font-medium">
           Mu = 245.8 kN·m
         </div>
-        <div className="text-[10px] font-mono text-emerald-400 flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-emerald-500" />
+        <div className="text-[11px] font-mono text-emerald-300 flex items-center gap-1.5 mt-1">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50" />
           Safe Design
         </div>
       </motion.div>

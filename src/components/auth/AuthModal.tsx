@@ -564,16 +564,6 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                   >
                     {t('auth.termsLink')}
                   </a>
-                  {' '}{t('auth.termsAnd')}{' '}
-                  <a 
-                    href="/privacy" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-cyan-400 hover:underline"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {t('auth.privacyLink')}
-                  </a>
                 </label>
               </div>
 
