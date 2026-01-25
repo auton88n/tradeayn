@@ -307,7 +307,7 @@ export const CenterStageLayout = ({
     () => debounce(async (userMessage: string, aynResponse: string, mode: AIMode) => {
       const suggestions = await fetchDynamicSuggestions(userMessage, aynResponse, mode);
       emitSuggestions(suggestions);
-    }, 1000),
+    }, 300),
     [fetchDynamicSuggestions, emitSuggestions]
   );
 
