@@ -228,49 +228,53 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
     return () => clearInterval(interval);
   }, []);
 
-  // Simplified typing detection with language analysis + empathy callback
+  // Track typing state to only trigger context updates on start/stop
+  const wasTypingRef = useRef(false);
+  
+  // Optimized typing detection - only update context on START/STOP transitions
   useEffect(() => {
-    if (inputMessage.trim()) {
+    const hasContent = inputMessage.trim().length > 0;
+    
+    // Only notify when STARTING to type (first character)
+    if (hasContent && !wasTypingRef.current) {
       setIsUserTyping(true);
       setIsAttentive(true);
       updateActivity();
-      
-      // Notify parent of typing content for empathy detection
-      onTypingContentChange?.(inputMessage);
+      wasTypingRef.current = true;
+    }
+    
+    // Handle empty input - stopped typing
+    if (!hasContent && wasTypingRef.current) {
+      setIsUserTyping(false);
+      setDetectedLang(null);
+      onTypingContentChange?.('');
+      wasTypingRef.current = false;
+    }
 
-      // Detect language after a brief pause
-      if (languageTimeoutRef.current) {
-        clearTimeout(languageTimeoutRef.current);
-      }
+    // Stop typing timeout (debounced)
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    
+    typingTimeoutRef.current = setTimeout(() => {
+      setIsUserTyping(false);
+      wasTypingRef.current = false;
+    }, 1000);
+
+    // Detect language after a brief pause (keep 200ms debounce)
+    if (hasContent) {
+      if (languageTimeoutRef.current) clearTimeout(languageTimeoutRef.current);
+      
       languageTimeoutRef.current = setTimeout(() => {
         if (inputMessage.trim().length > 2) {
           const langResult = detectLanguage(inputMessage);
           setDetectedLang(langResult);
-          if (onLanguageChange) {
-            onLanguageChange(langResult);
-          }
+          onLanguageChange?.(langResult);
         }
       }, 200);
-      
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-      typingTimeoutRef.current = setTimeout(() => {
-        setIsUserTyping(false);
-      }, 1000);
-    } else {
-      setIsUserTyping(false);
-      setDetectedLang(null);
-      // Notify parent that typing stopped
-      onTypingContentChange?.('');
     }
+    
     return () => {
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-      if (languageTimeoutRef.current) {
-        clearTimeout(languageTimeoutRef.current);
-      }
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      if (languageTimeoutRef.current) clearTimeout(languageTimeoutRef.current);
     };
   }, [inputMessage, setIsUserTyping, setIsAttentive, updateActivity, onLanguageChange, onTypingContentChange]);
 
