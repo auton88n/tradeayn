@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, forwardRef, useCallback } from 'rea
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Plus, ChevronDown, ArrowUp, FileText, X, Image as ImageIcon, AlertTriangle, MessageSquarePlus, Loader2, FileImage, FileCode, FileSpreadsheet, FileArchive, FileAudio, FileVideo, File, RefreshCw, Check } from 'lucide-react';
+import { Plus, ChevronDown, ArrowUp, FileText, X, Image as ImageIcon, AlertTriangle, MessageSquarePlus, Loader2, FileImage, FileCode, FileSpreadsheet, FileArchive, FileAudio, FileVideo, File, RefreshCw, Check, Volume2, VolumeX } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
@@ -578,6 +578,22 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
           <div className="flex items-center gap-2">
             <button onClick={handleFileClick} disabled={isDisabled || isUploading} className={cn("p-2 rounded-lg", "hover:bg-muted/60", "transition-all duration-200", "disabled:opacity-50 disabled:cursor-not-allowed")}>
               <Plus className="w-5 h-5 text-muted-foreground" />
+            </button>
+            {/* Sound Toggle Indicator */}
+            <button 
+              onClick={() => soundContext?.toggleEnabled()} 
+              className={cn(
+                "p-2 rounded-lg",
+                "hover:bg-muted/60",
+                "transition-all duration-200"
+              )}
+              title={soundContext?.enabled ? "Sound on - click to mute" : "Sound off - click to enable"}
+            >
+              {soundContext?.enabled ? (
+                <Volume2 className="w-4 h-4 text-muted-foreground" />
+              ) : (
+                <VolumeX className="w-4 h-4 text-muted-foreground/50" />
+              )}
             </button>
           </div>
 
