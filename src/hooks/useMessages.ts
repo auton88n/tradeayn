@@ -61,6 +61,62 @@ const fetchFromSupabase = async (
   return text ? JSON.parse(text) : null;
 };
 
+// Parse SSE stream and call onChunk for each token
+const parseSSEStream = async (
+  response: Response,
+  onChunk: (content: string) => void,
+  onComplete: () => void
+): Promise<string> => {
+  const reader = response.body?.getReader();
+  if (!reader) throw new Error('No response body');
+
+  const decoder = new TextDecoder();
+  let fullContent = '';
+  let buffer = '';
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+
+      // Process complete lines
+      let newlineIndex: number;
+      while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
+        const line = buffer.slice(0, newlineIndex).trim();
+        buffer = buffer.slice(newlineIndex + 1);
+
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6);
+          if (data === '[DONE]') continue;
+
+          try {
+            const parsed = JSON.parse(data);
+            // Handle OpenAI-style streaming format
+            const content = parsed.choices?.[0]?.delta?.content || parsed.content || parsed.text;
+            if (content) {
+              fullContent += content;
+              onChunk(content);
+            }
+          } catch {
+            // If not JSON, treat as raw text content
+            if (data && data !== '[DONE]') {
+              fullContent += data;
+              onChunk(data);
+            }
+          }
+        }
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  onComplete();
+  return fullContent;
+};
+
 export const useMessages = (
   sessionId: string,
   userId: string,
@@ -262,6 +318,9 @@ export const useMessages = (
 
       const detectedIntent = detectIntent();
       
+      // Intents that require non-streaming (return JSON with URLs)
+      const requiresNonStreaming = ['document', 'image'].includes(detectedIntent);
+      
       // Set document generation state for visual indicator
       if (detectedIntent === 'document') {
         setIsGeneratingDocument(true);
@@ -295,7 +354,7 @@ export const useMessages = (
 
       // Call ayn-unified with timeout and retry
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout for streaming
 
       const webhookResponse = await fetchWithRetry(`${SUPABASE_URL}/functions/v1/ayn-unified`, {
         method: 'POST',
@@ -309,18 +368,18 @@ export const useMessages = (
           messages: conversationMessages,
           intent: detectedIntent,
           context,
-          stream: false
+          stream: !requiresNonStreaming // Enable streaming for chat/search/engineering
         })
       });
 
       clearTimeout(timeoutId);
 
-      setIsTyping(false);
-      setIsGeneratingDocument(false);
-      setDocumentType(null);
-
       // Handle 429 Rate Limit / Daily Limit Response
       if (webhookResponse.status === 429) {
+        setIsTyping(false);
+        setIsGeneratingDocument(false);
+        setDocumentType(null);
+        
         const errorData = await webhookResponse.json().catch(() => ({}));
         const isDailyLimit = errorData?.reason === 'daily_limit_reached';
         
@@ -347,6 +406,10 @@ export const useMessages = (
 
       // Handle 403 Premium Feature / Upgrade Required Response
       if (webhookResponse.status === 403) {
+        setIsTyping(false);
+        setIsGeneratingDocument(false);
+        setDocumentType(null);
+        
         const upgradeData = await webhookResponse.json().catch(() => ({}));
         
         // Display the upgrade message as a normal AYN response (not an error)
@@ -365,53 +428,134 @@ export const useMessages = (
         throw new Error(`Webhook call failed: ${webhookResponse.status}`);
       }
 
-      const webhookData = await webhookResponse.json();
+      // Check if response is streaming (SSE) or JSON
+      const contentType = webhookResponse.headers.get('content-type') || '';
+      const isStreaming = contentType.includes('text/event-stream') || contentType.includes('text/plain');
 
-      // Handle ayn-unified response format
-      // Response is: { content, model, wasFallback, intent, emotion } OR { imageUrl, revisedPrompt, model } for images
-      const responseContent = webhookData?.content || webhookData?.response || webhookData?.output || '';
-      
-      // If response is empty, use a warm fallback instead of showing an error
-      const response = responseContent.trim() 
-        ? responseContent 
-        : "Let me think about that differently... Could you try asking again? Sometimes a fresh start helps me give you a better answer! 💭";
+      let response = '';
+      let webhookData: any = null;
 
-      // Extract emotion from backend response - SET IMMEDIATELY for eye to react
-      if (webhookData?.emotion) {
-        console.log('[useMessages] Backend emotion:', webhookData.emotion);
-        setLastSuggestedEmotion(webhookData.emotion);
+      if (isStreaming && !requiresNonStreaming) {
+        // Handle streaming response
+        const aynMessageId = (Date.now() + 1).toString();
+        
+        // Create placeholder message that will be updated
+        const aynMessage: Message = {
+          id: aynMessageId,
+          content: '',
+          sender: 'ayn',
+          timestamp: new Date(),
+          isTyping: true,
+        };
+        
+        // Add placeholder to messages
+        setMessages(prev => {
+          if (prev.some(m => m.id === aynMessage.id)) return prev;
+          return [...prev, aynMessage];
+        });
+
+        try {
+          // Parse stream and update message content progressively
+          response = await parseSSEStream(
+            webhookResponse,
+            (chunk) => {
+              setMessages(prev => prev.map(msg => 
+                msg.id === aynMessageId 
+                  ? { ...msg, content: msg.content + chunk }
+                  : msg
+              ));
+            },
+            () => {
+              // Mark message as complete
+              setMessages(prev => prev.map(msg =>
+                msg.id === aynMessageId
+                  ? { ...msg, isTyping: false, status: 'sent' }
+                  : msg
+              ));
+            }
+          );
+
+          setIsTyping(false);
+          setIsGeneratingDocument(false);
+          setDocumentType(null);
+
+          // Detect emotion from complete response
+          const { analyzeResponseEmotion } = await import('@/lib/emotionMapping');
+          const detectedEmotion = analyzeResponseEmotion(response);
+          console.log('[useMessages] Streaming emotion:', detectedEmotion);
+          setLastSuggestedEmotion(detectedEmotion);
+
+        } catch (streamError) {
+          console.error('[useMessages] Stream error:', streamError);
+          // Update message with error or partial content
+          setMessages(prev => prev.map(msg =>
+            msg.id === aynMessageId
+              ? { 
+                  ...msg, 
+                  content: msg.content || "Hmm, something went wrong. Could you try again? 💭", 
+                  isTyping: false,
+                  status: 'sent'
+                }
+              : msg
+          ));
+          setIsTyping(false);
+          setIsGeneratingDocument(false);
+          setDocumentType(null);
+          return;
+        }
+
       } else {
-        // Fallback: analyze response content for emotion if backend didn't provide one
-        const { analyzeResponseEmotion } = await import('@/lib/emotionMapping');
-        const fallbackEmotion = analyzeResponseEmotion(response);
-        console.log('[useMessages] Fallback emotion:', fallbackEmotion);
-        setLastSuggestedEmotion(fallbackEmotion);
+        // Handle non-streaming JSON response (documents, images, or fallback)
+        setIsTyping(false);
+        setIsGeneratingDocument(false);
+        setDocumentType(null);
+
+        webhookData = await webhookResponse.json();
+
+        // Handle ayn-unified response format
+        const responseContent = webhookData?.content || webhookData?.response || webhookData?.output || '';
+        
+        // If response is empty, use a warm fallback
+        response = responseContent.trim() 
+          ? responseContent 
+          : "Let me think about that differently... Could you try asking again? Sometimes a fresh start helps me give you a better answer! 💭";
+
+        // Extract emotion from backend response
+        if (webhookData?.emotion) {
+          console.log('[useMessages] Backend emotion:', webhookData.emotion);
+          setLastSuggestedEmotion(webhookData.emotion);
+        } else {
+          const { analyzeResponseEmotion } = await import('@/lib/emotionMapping');
+          const fallbackEmotion = analyzeResponseEmotion(response);
+          console.log('[useMessages] Fallback emotion:', fallbackEmotion);
+          setLastSuggestedEmotion(fallbackEmotion);
+        }
+
+        // Extract LAB data if present (for image generation)
+        const labData: LABResponse | undefined = webhookData?.imageUrl ? {
+          json: { image_url: webhookData.imageUrl, revised_prompt: webhookData.revisedPrompt || '' },
+          text: webhookData.revisedPrompt || '',
+          emotion: 'creative',
+          raw: JSON.stringify(webhookData),
+          hasStructuredData: true
+        } : undefined;
+
+        // Create AI response message
+        const aynMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: response,
+          sender: 'ayn',
+          timestamp: new Date(),
+          isTyping: true,
+          ...(labData ? { labData } : {})
+        };
+
+        // Add AYN message with duplicate prevention
+        setMessages(prev => {
+          if (prev.some(m => m.id === aynMessage.id)) return prev;
+          return [...prev, aynMessage];
+        });
       }
-
-      // Extract LAB data if present (for image generation)
-      const labData: LABResponse | undefined = webhookData?.imageUrl ? {
-        json: { image_url: webhookData.imageUrl, revised_prompt: webhookData.revisedPrompt || '' },
-        text: webhookData.revisedPrompt || '',
-        emotion: 'creative',
-        raw: JSON.stringify(webhookData),
-        hasStructuredData: true
-      } : undefined;
-
-      // Create AI response message
-      const aynMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: response,
-        sender: 'ayn',
-        timestamp: new Date(),
-        isTyping: true,
-        ...(labData ? { labData } : {})
-      };
-
-      // Add AYN message with duplicate prevention
-      setMessages(prev => {
-        if (prev.some(m => m.id === aynMessage.id)) return prev;
-        return [...prev, aynMessage];
-      });
 
       // Send desktop notification if tab is hidden
       if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
@@ -419,7 +563,7 @@ export const useMessages = (
           const notification = new Notification('AYN', {
             body: response.length > 100 ? response.substring(0, 100) + '...' : response,
             icon: '/favicon.png',
-            tag: 'ayn-response', // Prevents duplicate notifications
+            tag: 'ayn-response',
           });
           notification.onclick = () => {
             window.focus();
@@ -466,7 +610,6 @@ export const useMessages = (
       }
 
       // THEN: Save both messages to database via direct REST API
-      // CRITICAL: Both objects MUST have identical keys to avoid PGRST102 error
       const saveResponse = await fetch(`${SUPABASE_URL}/rest/v1/messages`, {
         method: 'POST',
         headers: {
@@ -492,7 +635,7 @@ export const useMessages = (
             content: response,
             sender: 'ayn',
             mode_used: selectedMode,
-            // Save document URL as attachment for reliable download (source of truth)
+            // Save document URL as attachment for reliable download
             attachment_url: webhookData?.documentUrl || null,
             attachment_name: webhookData?.documentUrl 
               ? (webhookData?.documentTitle || (webhookData?.documentType === 'excel' ? 'Document.xlsx' : 'Document.pdf'))
@@ -598,7 +741,6 @@ export const useMessages = (
   ]);
 
   // Wrapper to set messages from history with proper flag management
-  // This prevents auto-showing ResponseCard when loading from sidebar
   const setMessagesFromHistory = useCallback((newMessages: Message[]) => {
     setIsLoadingFromHistory(true);
     setMessages(newMessages);
