@@ -1,23 +1,42 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { Link } from 'react-router-dom';
 import influencerWomanBg from '@/assets/influencer-woman-bg.jpg';
 import { Brain, ArrowLeft, ArrowRight, Palette, Smartphone, Zap, Layout, TrendingUp, Globe, Instagram, Play, Heart, Eye, BarChart3, Users, Star, CheckCircle, MessageCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { motion } from 'framer-motion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { SEO, createServiceSchema, createBreadcrumbSchema } from '@/components/SEO';
+import MobileMockup from '@/components/services/MobileMockup';
+
+const FeatureCard = memo(({ feature }: { feature: any }) => (
+  <div className="bg-neutral-900/80 border border-neutral-800 rounded-2xl p-6 hover:border-rose-500/50 transition-all duration-300">
+    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-rose-500/20 to-pink-500/20 flex items-center justify-center mb-4">
+      <feature.icon className="w-6 h-6 text-rose-400" />
+    </div>
+    <h3 className="text-lg font-bold mb-2">{feature.title}</h3>
+    <p className="text-neutral-400 text-sm">{feature.description}</p>
+  </div>
+));
+FeatureCard.displayName = 'FeatureCard';
+
+const ProcessStep = memo(({ step, index }: { step: any; index: number }) => (
+  <div className="text-center">
+    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center text-white font-bold text-xl">
+      {step.step}
+    </div>
+    <h3 className="text-xl font-bold mb-2">{step.title}</h3>
+    <p className="text-neutral-400">{step.description}</p>
+  </div>
+));
+ProcessStep.displayName = 'ProcessStep';
 
 const InfluencerSites = () => {
-  const {
-    language
-  } = useLanguage();
+  const { language } = useLanguage();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -28,7 +47,6 @@ const InfluencerSites = () => {
     message: ''
   });
 
-  // Translations - Improved Arabic with natural, commonly-used phrases
   const t = {
     back: language === 'ar' ? 'عودة' : language === 'fr' ? 'Retour' : 'Back',
     heroTitle: language === 'ar' ? 'مواقع احترافية لصناع المحتوى' : language === 'fr' ? 'Sites Premium pour Créateurs de Contenu' : 'Premium Content Creator Sites',
@@ -65,6 +83,7 @@ const InfluencerSites = () => {
     needMoreOptions: language === 'ar' ? 'تحتاج المزيد؟' : language === 'fr' ? 'Besoin de plus d\'options?' : 'Need more options?',
     detailedForm: language === 'ar' ? 'املأ النموذج المفصل' : language === 'fr' ? 'Remplir le formulaire détaillé' : 'Fill out the detailed form'
   };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.fullName || !formData.email) {
@@ -76,20 +95,17 @@ const InfluencerSites = () => {
     }
     setIsSubmitting(true);
     try {
-      const { error: dbError } = await supabase
-        .from('service_applications')
-        .insert({
-          full_name: formData.fullName,
-          email: formData.email,
-          phone: formData.phone || null,
-          message: formData.message || null,
-          service_type: 'content_creator',
-          status: 'new'
-        });
+      const { error: dbError } = await supabase.from('service_applications').insert({
+        full_name: formData.fullName,
+        email: formData.email,
+        phone: formData.phone || null,
+        message: formData.message || null,
+        service_type: 'content_creator',
+        status: 'new'
+      });
       
       if (dbError) throw dbError;
 
-      // Send email notification (keep using supabase.functions for edge function calls)
       await supabase.functions.invoke('send-application-email', {
         body: {
           applicantName: formData.fullName,
@@ -100,12 +116,7 @@ const InfluencerSites = () => {
         }
       });
       setIsSuccess(true);
-      setFormData({
-        fullName: '',
-        email: '',
-        phone: '',
-        message: ''
-      });
+      setFormData({ fullName: '', email: '', phone: '', message: '' });
     } catch (error) {
       console.error('Submission error:', error);
       toast({
@@ -116,52 +127,28 @@ const InfluencerSites = () => {
       setIsSubmitting(false);
     }
   };
+
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setIsSuccess(false);
   };
-  const features = [{
-    icon: Palette,
-    title: language === 'ar' ? 'تصميم احترافي مخصص' : language === 'fr' ? 'Design Luxueux Personnalisé' : 'Custom Luxury Design',
-    description: language === 'ar' ? 'تصميم فريد يعكس هويتك ويميزك عن الآخرين' : language === 'fr' ? 'Design unique qui reflète votre marque personnelle' : 'Unique design that reflects your personal brand and sets you apart from competitors'
-  }, {
-    icon: Smartphone,
-    title: language === 'ar' ? 'متوافق مع الجوال' : language === 'fr' ? 'Mobile First' : 'Mobile First',
-    description: language === 'ar' ? 'تجربة مثالية على جميع الأجهزة' : language === 'fr' ? 'Expérience parfaite sur tous les appareils' : 'Perfect experience across all devices, from mobile to desktop'
-  }, {
-    icon: Zap,
-    title: language === 'ar' ? 'سرعة عالية' : language === 'fr' ? 'Ultra Rapide' : 'Lightning Fast',
-    description: language === 'ar' ? 'تحميل سريع يبقي الزوار على موقعك' : language === 'fr' ? 'Chargement rapide pour garder les visiteurs engagés' : 'Fast loading keeps visitors engaged and improves your search rankings'
-  }, {
-    icon: Layout,
-    title: language === 'ar' ? 'معرض أعمال احترافي' : language === 'fr' ? 'Portfolio Interactif' : 'Interactive Portfolio',
-    description: language === 'ar' ? 'اعرض أعمالك بشكل احترافي لجذب الشراكات' : language === 'fr' ? 'Présentez votre travail professionnellement' : 'Showcase your work professionally to attract brand partnerships'
-  }, {
-    icon: TrendingUp,
-    title: language === 'ar' ? 'مُحسّن للنتائج' : language === 'fr' ? 'Optimisé Conversion' : 'Conversion Optimized',
-    description: language === 'ar' ? 'صفحات مصممة لتحويل الزوار إلى عملاء' : language === 'fr' ? 'Pages conçues pour convertir les visiteurs' : 'Pages designed to convert visitors into clients and partnerships'
-  }, {
-    icon: Globe,
-    title: language === 'ar' ? 'دعم لغات متعددة' : language === 'fr' ? 'Support Multilingue' : 'Multi-language Support',
-    description: language === 'ar' ? 'وصول عالمي بدعم لغات متعددة' : language === 'fr' ? 'Touchez une audience mondiale' : 'Reach a global audience with multi-language content support'
-  }];
-  const process = [{
-    step: '01',
-    title: language === 'ar' ? 'التعرف' : language === 'fr' ? 'Découverte' : 'Discovery',
-    description: language === 'ar' ? 'نتعرف على هويتك وأهدافك' : language === 'fr' ? 'Nous comprenons votre marque et vos objectifs' : 'We understand your brand and goals'
-  }, {
-    step: '02',
-    title: language === 'ar' ? 'التصميم' : language === 'fr' ? 'Design' : 'Design',
-    description: language === 'ar' ? 'نصمم تجربة فريدة لك' : language === 'fr' ? 'Nous créons une expérience unique pour vous' : 'We craft a unique experience for you'
-  }, {
-    step: '03',
-    title: language === 'ar' ? 'البرمجة' : language === 'fr' ? 'Développement' : 'Development',
-    description: language === 'ar' ? 'نبني موقعك بأحدث التقنيات' : language === 'fr' ? 'Nous construisons avec les dernières technologies' : 'We build with cutting-edge tech'
-  }, {
-    step: '04',
-    title: language === 'ar' ? 'الإطلاق' : language === 'fr' ? 'Lancement' : 'Launch',
-    description: language === 'ar' ? 'نطلق موقعك للعالم' : language === 'fr' ? 'Nous lançons votre site au monde' : 'We launch your site to the world'
-  }];
+
+  const features = [
+    { icon: Palette, title: language === 'ar' ? 'تصميم احترافي مخصص' : language === 'fr' ? 'Design Luxueux Personnalisé' : 'Custom Luxury Design', description: language === 'ar' ? 'تصميم فريد يعكس هويتك ويميزك عن الآخرين' : language === 'fr' ? 'Design unique qui reflète votre marque personnelle' : 'Unique design that reflects your personal brand and sets you apart from competitors' },
+    { icon: Smartphone, title: language === 'ar' ? 'متوافق مع الجوال' : language === 'fr' ? 'Mobile First' : 'Mobile First', description: language === 'ar' ? 'تجربة مثالية على جميع الأجهزة' : language === 'fr' ? 'Expérience parfaite sur tous les appareils' : 'Perfect experience across all devices, from mobile to desktop' },
+    { icon: Zap, title: language === 'ar' ? 'سرعة عالية' : language === 'fr' ? 'Ultra Rapide' : 'Lightning Fast', description: language === 'ar' ? 'تحميل سريع يبقي الزوار على موقعك' : language === 'fr' ? 'Chargement rapide pour garder les visiteurs engagés' : 'Fast loading keeps visitors engaged and improves your search rankings' },
+    { icon: Layout, title: language === 'ar' ? 'معرض أعمال احترافي' : language === 'fr' ? 'Portfolio Interactif' : 'Interactive Portfolio', description: language === 'ar' ? 'اعرض أعمالك بشكل احترافي لجذب الشراكات' : language === 'fr' ? 'Présentez votre travail professionnellement' : 'Showcase your work professionally to attract brand partnerships' },
+    { icon: TrendingUp, title: language === 'ar' ? 'مُحسّن للنتائج' : language === 'fr' ? 'Optimisé Conversion' : 'Conversion Optimized', description: language === 'ar' ? 'صفحات مصممة لتحويل الزوار إلى عملاء' : language === 'fr' ? 'Pages conçues pour convertir les visiteurs' : 'Pages designed to convert visitors into clients and partnerships' },
+    { icon: Globe, title: language === 'ar' ? 'دعم لغات متعددة' : language === 'fr' ? 'Support Multilingue' : 'Multi-language Support', description: language === 'ar' ? 'وصول عالمي بدعم لغات متعددة' : language === 'fr' ? 'Touchez une audience mondiale' : 'Reach a global audience with multi-language content support' }
+  ];
+
+  const process = [
+    { step: '01', title: language === 'ar' ? 'التعرف' : language === 'fr' ? 'Découverte' : 'Discovery', description: language === 'ar' ? 'نتعرف على هويتك وأهدافك' : language === 'fr' ? 'Nous comprenons votre marque et vos objectifs' : 'We understand your brand and goals' },
+    { step: '02', title: language === 'ar' ? 'التصميم' : language === 'fr' ? 'Design' : 'Design', description: language === 'ar' ? 'نصمم تجربة فريدة لك' : language === 'fr' ? 'Nous créons une expérience unique pour vous' : 'We craft a unique experience for you' },
+    { step: '03', title: language === 'ar' ? 'البرمجة' : language === 'fr' ? 'Développement' : 'Development', description: language === 'ar' ? 'نبني موقعك بأحدث التقنيات' : language === 'fr' ? 'Nous construisons avec les dernières technologies' : 'We build with cutting-edge tech' },
+    { step: '04', title: language === 'ar' ? 'الإطلاق' : language === 'fr' ? 'Lancement' : 'Launch', description: language === 'ar' ? 'نطلق موقعك للعالم' : language === 'fr' ? 'Nous lançons votre site au monde' : 'We launch your site to the world' }
+  ];
+
   const breadcrumbSchema = createBreadcrumbSchema([
     { name: 'Home', url: 'https://aynn.io/' },
     { name: 'Services', url: 'https://aynn.io/#services' },
@@ -174,443 +161,163 @@ const InfluencerSites = () => {
     url: 'https://aynn.io/services/content-creator-sites' 
   });
 
-  return <>
-    <SEO
-      title="Premium Websites for Content Creators"
-      description="Luxury websites custom-built for content creators and influencers. Attract more partnerships and elevate your personal brand."
-      canonical="/services/content-creator-sites"
-      keywords="content creator websites, influencer sites, portfolio websites, personal brand, creator economy"
-      jsonLd={{ '@graph': [breadcrumbSchema, serviceSchema] }}
-    />
-    <div className="min-h-screen bg-neutral-950 text-white">
-      {/* Navigation */}
-      <nav className="fixed top-4 md:top-6 left-4 md:left-6 z-50">
-        <Link to="/">
-          <Button variant="ghost" className="gap-2 bg-neutral-900/80 backdrop-blur-xl border border-neutral-800 rounded-full px-4 py-2 hover:bg-neutral-800 text-white">
-            <ArrowLeft className="w-4 h-4" />
-            <span className="hidden sm:inline">{t.back}</span>
-          </Button>
-        </Link>
-      </nav>
-
-      {/* Hero Section */}
-      <section className="pt-24 pb-16 md:pt-32 md:pb-24 px-4 md:px-6">
-        <div className="container mx-auto max-w-6xl">
-          <motion.div initial={{
-          opacity: 0,
-          y: 30
-        }} animate={{
-          opacity: 1,
-          y: 0
-        }} transition={{
-          duration: 0.6
-        }} className="text-center">
-            
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-serif font-bold mb-6 leading-tight">
-              {language === 'ar' ? <>مواقع فاخرة لصنّاع <br /><span className="text-rose-400">المحتوى</span></> : language === 'fr' ? <>Sites Premium pour <br /><span className="text-rose-400">Créateurs</span></> : <>Premium Content Creator<br /><span className="text-rose-400">Sites</span></>}
-            </h1>
-            <p className="text-lg md:text-xl text-neutral-400 max-w-2xl mx-auto mb-8">
-              {t.heroSubtitle}
-            </p>
-            <Button size="lg" className="rounded-full px-8 bg-white text-neutral-950 hover:bg-neutral-200" onClick={() => setIsModalOpen(true)}>
-              {t.startProject}
+  return (
+    <>
+      <SEO
+        title="Premium Websites for Content Creators"
+        description="Luxury websites custom-built for content creators and influencers. Attract more partnerships and elevate your personal brand."
+        canonical="/services/content-creator-sites"
+        keywords="content creator websites, influencer sites, portfolio websites, personal brand, creator economy"
+        jsonLd={{ '@graph': [breadcrumbSchema, serviceSchema] }}
+      />
+      <div className="min-h-screen bg-neutral-950 text-white">
+        {/* Navigation */}
+        <nav className="fixed top-4 md:top-6 left-4 md:left-6 z-50">
+          <Link to="/">
+            <Button variant="ghost" className="gap-2 bg-neutral-900/80 backdrop-blur-xl border border-neutral-800 rounded-full px-4 py-2 hover:bg-neutral-800 text-white">
+              <ArrowLeft className="w-4 h-4" />
+              <span className="hidden sm:inline">{t.back}</span>
             </Button>
-          </motion.div>
-        </div>
-      </section>
+          </Link>
+        </nav>
 
-      {/* What You'll Get - Hero Section Showcase */}
-      <section className="py-16 md:py-24 px-4 md:px-6 bg-neutral-900/50">
-        <div className="container mx-auto max-w-6xl">
-          <motion.div initial={{
-          opacity: 0,
-          y: 20
-        }} whileInView={{
-          opacity: 1,
-          y: 0
-        }} viewport={{
-          once: true
-        }} className="text-center mb-12">
-            <span className="text-sm font-mono text-rose-400 tracking-wider uppercase mb-4 block">
-              {t.whatYoullGet}
-            </span>
-            <h2 className="text-3xl md:text-5xl font-serif font-bold mb-4">
-              {language === 'ar' ? <>قسم رئيسي <span className="text-rose-400">مذهل</span></> : language === 'fr' ? <>Section Hero <span className="text-rose-400">Époustouflante</span></> : <>Stunning <span className="text-rose-400">Hero Section</span></>}
-            </h2>
-            <p className="text-neutral-400 max-w-xl mx-auto">
-              {t.heroDesc}
-            </p>
-          </motion.div>
-
-          {/* Hero Preview Mockup */}
-          <motion.div initial={{
-          opacity: 0,
-          y: 40
-        }} whileInView={{
-          opacity: 1,
-          y: 0
-        }} viewport={{
-          once: true
-        }} transition={{
-          delay: 0.2
-        }} className="relative max-w-4xl mx-auto" dir="ltr">
-            <div className="rounded-2xl overflow-hidden border border-neutral-800 bg-neutral-900 shadow-2xl" dir="ltr">
-              {/* Browser Chrome */}
-              <div className="flex items-center gap-2 px-4 py-3 border-b border-neutral-800 bg-neutral-900">
-                <div className="flex gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-red-500" />
-                  <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                  <div className="w-3 h-3 rounded-full bg-green-500" />
-                </div>
-                <div className="flex-1 mx-4">
-                  <div className="bg-neutral-800 rounded-full px-4 py-1.5 text-xs text-neutral-400 text-center">
-                    sarahjohnason.aynn.io
-                  </div>
-                </div>
-              </div>
-              
-              {/* Hero Content Preview */}
-              <div className="relative aspect-[16/10] bg-gradient-to-br from-neutral-900 via-neutral-950 to-neutral-900 overflow-hidden">
-                {/* Woman Background Image */}
-                <img src={influencerWomanBg} alt="Content creator" className="absolute inset-0 w-full h-full object-cover object-[center_30%] opacity-50" />
-                {/* Background Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-r from-neutral-950 via-neutral-950/80 to-transparent z-10" />
-                
-                {/* Content */}
-                <div className="relative z-20 flex items-center h-full p-4 sm:p-6 md:p-12">
-                  <div className="max-w-md">
-                    <p className="text-rose-400 text-[10px] sm:text-xs md:text-sm font-medium mb-1 md:mb-2">Fashion & Lifestyle Content Creator</p>
-                    <h3 className="text-lg sm:text-2xl md:text-5xl font-bold text-white mb-2 md:mb-4">SARAH JOHNSON</h3>
-                    <p className="text-neutral-400 text-[10px] sm:text-xs md:text-sm mb-3 md:mb-6">
-                      Creating inspiring content that blends high fashion with everyday lifestyle. Join 3M+ followers on this journey.
-                    </p>
-                    <div className="flex gap-2 sm:gap-3 md:gap-4">
-                      <div className="text-center">
-                        <div className="text-sm sm:text-base md:text-xl font-bold text-white">3.2M</div>
-                        <div className="text-[8px] sm:text-[10px] md:text-xs text-neutral-500">Followers</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-sm sm:text-base md:text-xl font-bold text-white">8.5%</div>
-                        <div className="text-[8px] sm:text-[10px] md:text-xs text-neutral-500">Engagement</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-sm sm:text-base md:text-xl font-bold text-white">50+</div>
-                        <div className="text-[8px] sm:text-[10px] md:text-xs text-neutral-500">Brand Deals</div>
-                      </div>
-                    </div>
-                    <Button className="mt-3 md:mt-6 bg-rose-500 hover:bg-rose-600 text-white rounded-full px-3 sm:px-4 md:px-6 text-xs sm:text-sm h-7 sm:h-8 md:h-10">
-                      Collaborate
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Floating Social Icons - Hidden on mobile */}
-                <div className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 hidden sm:flex flex-col gap-4 z-20">
-                  <div className="w-10 h-10 rounded-full bg-neutral-800/80 flex items-center justify-center">
-                    <Instagram className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="w-10 h-10 rounded-full bg-neutral-800/80 flex items-center justify-center">
-                    <Play className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="w-10 h-10 rounded-full bg-neutral-800/80 flex items-center justify-center">
-                    <BarChart3 className="w-5 h-5 text-white" />
-                  </div>
-                </div>
-              </div>
+        {/* Hero Section */}
+        <section className="pt-24 pb-16 md:pt-32 md:pb-24 px-4 md:px-6">
+          <div className="container mx-auto max-w-6xl">
+            <div className="text-center animate-fade-in">
+              <h1 className="text-4xl md:text-6xl lg:text-7xl font-serif font-bold mb-6 leading-tight">
+                {language === 'ar' ? <>مواقع فاخرة لصنّاع <br /><span className="text-rose-400">المحتوى</span></> : language === 'fr' ? <>Sites Premium pour <br /><span className="text-rose-400">Créateurs</span></> : <>Premium Content Creator<br /><span className="text-rose-400">Sites</span></>}
+              </h1>
+              <p className="text-lg md:text-xl text-neutral-400 max-w-2xl mx-auto mb-8">
+                {t.heroSubtitle}
+              </p>
+              <Button size="lg" className="rounded-full px-8 bg-white text-neutral-950 hover:bg-neutral-200" onClick={() => setIsModalOpen(true)}>
+                {t.startProject}
+              </Button>
             </div>
+          </div>
+        </section>
 
-            {/* Floating Stats Cards - Only on larger screens */}
-            
-
-            
-
-            
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Analytics Dashboard Section */}
-      <section className="py-16 md:py-24 px-4 md:px-6">
-        <div className="container mx-auto max-w-6xl">
-          <motion.div initial={{
-          opacity: 0,
-          y: 20
-        }} whileInView={{
-          opacity: 1,
-          y: 0
-        }} viewport={{
-          once: true
-        }} className="text-center mb-12">
-            <span className="text-sm font-mono text-rose-400 tracking-wider uppercase mb-4 block">
-              {t.platformStats}
-            </span>
-            <h2 className="text-3xl md:text-5xl font-serif font-bold mb-4">
-              {language === 'ar' ? <>لوحة <span className="text-rose-400">التحليلات</span></> : language === 'fr' ? <>Tableau de Bord <span className="text-rose-400">Analytique</span></> : <><span className="text-rose-400">Analytics</span> Dashboard</>}
-            </h2>
-            <p className="text-neutral-400 max-w-2xl mx-auto">
-              {t.analyticsDesc}
-            </p>
-          </motion.div>
-
-          {/* Dashboard Preview */}
-          <motion.div initial={{
-          opacity: 0,
-          y: 40
-        }} whileInView={{
-          opacity: 1,
-          y: 0
-        }} viewport={{
-          once: true
-        }} transition={{
-          delay: 0.2
-        }} className="relative max-w-4xl mx-auto" dir="ltr">
-            <div className="rounded-2xl overflow-hidden border border-neutral-800 bg-neutral-900 shadow-2xl p-6 md:p-8" dir="ltr">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-neutral-800/50 rounded-xl p-4">
-                  <p className="text-xs text-neutral-500 mb-1">Total Followers</p>
-                  <p className="text-2xl font-bold text-white">3.2M</p>
-                  <p className="text-xs text-green-400">↑ 12% this month</p>
-                </div>
-                <div className="bg-neutral-800/50 rounded-xl p-4">
-                  <p className="text-xs text-neutral-500 mb-1">Engagement Rate</p>
-                  <p className="text-2xl font-bold text-rose-400">8.5%</p>
-                  <p className="text-xs text-green-400">↑ 2.3% vs avg</p>
-                </div>
-                <div className="bg-neutral-800/50 rounded-xl p-4">
-                  <p className="text-xs text-neutral-500 mb-1">Brand Deals</p>
-                  <p className="text-2xl font-bold text-purple-400">50+</p>
-                  <p className="text-xs text-neutral-500">Completed</p>
-                </div>
-                <div className="bg-neutral-800/50 rounded-xl p-4">
-                  <p className="text-xs text-neutral-500 mb-1">Avg. Views</p>
-                  <p className="text-2xl font-bold text-cyan-400">450K</p>
-                  <p className="text-xs text-green-400">↑ 18% this week</p>
-                </div>
-              </div>
-
-              {/* Chart placeholder */}
-              <div className="bg-neutral-800/50 rounded-xl p-4 h-48 flex items-end gap-2">
-                {[40, 65, 45, 80, 55, 90, 70, 85, 60, 95, 75, 88].map((height, i) => <div key={i} className="flex-1 bg-rose-500/30 rounded-t" style={{
-                height: `${height}%`
-              }}>
-                    <div className="w-full bg-rose-500 rounded-t" style={{
-                  height: '60%'
-                }} />
-                  </div>)}
-              </div>
+        {/* Phone Mockup Section */}
+        <section className="py-16 md:py-24 px-4 md:px-6 bg-neutral-900/50">
+          <div className="container mx-auto max-w-6xl">
+            <div className="text-center mb-12">
+              <span className="text-sm font-mono text-rose-400 tracking-wider uppercase mb-4 block">
+                {t.whatYoullGet}
+              </span>
+              <h2 className="text-3xl md:text-5xl font-serif font-bold mb-4">
+                {language === 'ar' ? <>قسم رئيسي <span className="text-rose-400">مذهل</span></> : language === 'fr' ? <>Section Hero <span className="text-rose-400">Époustouflante</span></> : <>Stunning <span className="text-rose-400">Hero Section</span></>}
+              </h2>
+              <p className="text-neutral-400 max-w-xl mx-auto">{t.heroDesc}</p>
             </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Features Grid */}
-      <section className="py-16 md:py-24 px-4 md:px-6 bg-neutral-900/50">
-        <div className="container mx-auto max-w-6xl">
-          <motion.div initial={{
-          opacity: 0,
-          y: 20
-        }} whileInView={{
-          opacity: 1,
-          y: 0
-        }} viewport={{
-          once: true
-        }} className="text-center mb-12">
-            <span className="text-sm font-mono text-rose-400 tracking-wider uppercase mb-4 block">
-              {t.features}
-            </span>
-            <h2 className="text-3xl md:text-5xl font-serif font-bold mb-4">
-              {language === 'ar' ? <>مميزات <span className="text-rose-400">متميزة</span></> : language === 'fr' ? <>Fonctionnalités <span className="text-rose-400">Premium</span></> : <>Premium <span className="text-rose-400">Features</span></>}
-            </h2>
-            <p className="text-neutral-400 max-w-xl mx-auto">
-              {t.everythingYouNeed}
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((feature, index) => <motion.div key={feature.title} initial={{
-            opacity: 0,
-            y: 20
-          }} whileInView={{
-            opacity: 1,
-            y: 0
-          }} viewport={{
-            once: true
-          }} transition={{
-            delay: index * 0.1
-          }} className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 hover:border-rose-500/30 transition-colors">
-                <div className="w-12 h-12 bg-rose-500/10 rounded-xl flex items-center justify-center mb-4">
-                  <feature.icon className="w-6 h-6 text-rose-400" />
-                </div>
-                <h3 className="text-lg font-bold mb-2">{feature.title}</h3>
-                <p className="text-neutral-400 text-sm">{feature.description}</p>
-              </motion.div>)}
+            <div className="flex justify-center">
+              <MobileMockup />
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* How It Works */}
-      <section className="py-16 md:py-24 px-4 md:px-6">
-        <div className="container mx-auto max-w-6xl">
-          <motion.div initial={{
-          opacity: 0,
-          y: 20
-        }} whileInView={{
-          opacity: 1,
-          y: 0
-        }} viewport={{
-          once: true
-        }} className="text-center mb-12">
-            <span className="text-sm font-mono text-rose-400 tracking-wider uppercase mb-4 block">
-              {t.ourProcess}
-            </span>
-            <h2 className="text-3xl md:text-5xl font-serif font-bold mb-4">
-              {language === 'ar' ? <>كيف <span className="text-rose-400">يعمل</span></> : language === 'fr' ? <>Comment Ça <span className="text-rose-400">Marche</span></> : <>How It <span className="text-rose-400">Works</span></>}
-            </h2>
-            <p className="text-neutral-400 max-w-xl mx-auto">
-              {t.fromConceptToLaunch}
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
-            {process.map((step, index) => <motion.div key={step.step} initial={{
-            opacity: 0,
-            y: 20
-          }} whileInView={{
-            opacity: 1,
-            y: 0
-          }} viewport={{
-            once: true
-          }} transition={{
-            delay: index * 0.1
-          }} className="text-center relative">
-                {index < process.length - 1}
-                <div className="w-16 h-16 bg-rose-500/20 border border-rose-500/30 rounded-2xl mx-auto mb-4 flex items-center justify-center relative z-10">
-                  <span className="text-xl font-bold text-rose-400">{step.step}</span>
-                </div>
-                <h3 className="text-lg font-bold mb-2">{step.title}</h3>
-                <p className="text-neutral-400 text-sm">{step.description}</p>
-              </motion.div>)}
+        {/* Features Grid */}
+        <section className="py-16 md:py-24 px-4 md:px-6">
+          <div className="container mx-auto max-w-6xl">
+            <div className="text-center mb-12">
+              <span className="text-sm font-mono text-rose-400 tracking-wider uppercase mb-4 block">
+                {t.features}
+              </span>
+              <h2 className="text-3xl md:text-5xl font-serif font-bold mb-4">{t.premiumFeatures}</h2>
+              <p className="text-neutral-400 max-w-xl mx-auto">{t.everythingYouNeed}</p>
+            </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {features.map((feature, index) => (
+                <FeatureCard key={index} feature={feature} />
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* CTA Section */}
-      <section className="py-16 md:py-24 px-4 md:px-6 bg-gradient-to-b from-neutral-900 to-neutral-950">
-        <div className="container mx-auto max-w-4xl text-center">
-          <motion.div initial={{
-          opacity: 0,
-          y: 30
-        }} whileInView={{
-          opacity: 1,
-          y: 0
-        }} viewport={{
-          once: true
-        }} transition={{
-          duration: 0.6
-        }}>
-            <h2 className="text-3xl md:text-4xl lg:text-6xl font-serif font-bold mb-6">
-              {language === 'ar' ? <>مستعد <span className="text-rose-400">للتميز؟</span></> : language === 'fr' ? <>Prêt à Vous <span className="text-rose-400">Démarquer?</span></> : <>Ready to <span className="text-rose-400">Stand Out?</span></>}
-            </h2>
-            <p className="text-lg md:text-xl text-neutral-400 max-w-2xl mx-auto mb-8 md:mb-10 px-4">
-              {t.ctaDesc}
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center px-4">
-              <Button size="lg" className="bg-rose-500 hover:bg-rose-600 text-white px-8 md:px-10 py-5 md:py-6 text-base md:text-lg rounded-full w-full sm:w-auto" onClick={() => setIsModalOpen(true)}>
+        {/* How It Works */}
+        <section className="py-16 md:py-24 px-4 md:px-6 bg-neutral-900/50">
+          <div className="container mx-auto max-w-6xl">
+            <div className="text-center mb-12">
+              <span className="text-sm font-mono text-rose-400 tracking-wider uppercase mb-4 block">
+                {t.howItWorks}
+              </span>
+              <h2 className="text-3xl md:text-5xl font-serif font-bold mb-4">{t.ourProcess}</h2>
+              <p className="text-neutral-400 max-w-xl mx-auto">{t.fromConceptToLaunch}</p>
+            </div>
+            <div className="grid md:grid-cols-4 gap-8">
+              {process.map((step, index) => (
+                <ProcessStep key={index} step={step} index={index} />
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="py-16 md:py-24 px-4 md:px-6">
+          <div className="container mx-auto max-w-4xl text-center">
+            <h2 className="text-3xl md:text-5xl font-serif font-bold mb-6">{t.readyToStandOut}</h2>
+            <p className="text-lg text-neutral-400 mb-8">{t.ctaDesc}</p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button size="lg" className="rounded-full px-8 bg-white text-neutral-950 hover:bg-neutral-200" onClick={() => setIsModalOpen(true)}>
                 {t.startYourProject}
               </Button>
-              <Link to="/#services" className="w-full sm:w-auto">
-                <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10 px-8 md:px-10 py-5 md:py-6 text-base md:text-lg rounded-full w-full">
+              <Link to="/#services">
+                <Button size="lg" variant="outline" className="rounded-full px-8 border-neutral-700 hover:bg-neutral-800">
                   {t.viewAllServices}
                 </Button>
               </Link>
             </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="py-8 md:py-12 px-4 md:px-6 border-t border-neutral-800">
-        <div className="container mx-auto max-w-6xl">
-          <div className="flex flex-col items-center gap-6">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-rose-500 flex items-center justify-center">
-                <Brain className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-xl font-bold">AYN</span>
-            </div>
           </div>
-        </div>
-      </footer>
+        </section>
 
-      {/* Application Modal */}
-      <Dialog open={isModalOpen} onOpenChange={handleCloseModal}>
-        <DialogContent className="bg-neutral-900 border-neutral-800 text-white max-w-md">
-          {isSuccess ? <div className="text-center py-8">
-              <div className="w-16 h-16 bg-rose-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-8 h-8 text-rose-400" />
+        {/* Modal */}
+        <Dialog open={isModalOpen} onOpenChange={handleCloseModal}>
+          <DialogContent className="bg-neutral-900 border-neutral-800 text-white max-w-md">
+            {!isSuccess ? (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="text-xl font-bold">{t.formTitle}</DialogTitle>
+                  <DialogDescription className="text-neutral-400">{t.formDesc}</DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+                  <div>
+                    <Label htmlFor="fullName" className="text-white">{t.fullName}</Label>
+                    <Input id="fullName" value={formData.fullName} onChange={e => setFormData({ ...formData, fullName: e.target.value })} required className="bg-neutral-800 border-neutral-700 text-white mt-1" />
+                  </div>
+                  <div>
+                    <Label htmlFor="email" className="text-white">{t.email}</Label>
+                    <Input id="email" type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} required className="bg-neutral-800 border-neutral-700 text-white mt-1" />
+                  </div>
+                  <div>
+                    <Label htmlFor="phone" className="text-white">{t.phone} <span className="text-neutral-500">({t.optional})</span></Label>
+                    <Input id="phone" type="tel" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} className="bg-neutral-800 border-neutral-700 text-white mt-1" />
+                  </div>
+                  <div>
+                    <Label htmlFor="message" className="text-white">{t.message} <span className="text-neutral-500">({t.optional})</span></Label>
+                    <Textarea id="message" value={formData.message} onChange={e => setFormData({ ...formData, message: e.target.value })} className="bg-neutral-800 border-neutral-700 text-white mt-1" rows={3} />
+                  </div>
+                  <Button type="submit" disabled={isSubmitting} className="w-full bg-white text-neutral-950 hover:bg-neutral-200">
+                    {isSubmitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t.submitting}</> : t.submit}
+                  </Button>
+                  <div className="text-center text-sm text-neutral-500">
+                    {t.needMoreOptions}{' '}
+                    <Link to="/services/influencer-sites/apply" className="text-rose-400 hover:underline">{t.detailedForm}</Link>
+                  </div>
+                </form>
+              </>
+            ) : (
+              <div className="text-center py-8">
+                <CheckCircle className="w-16 h-16 text-rose-400 mx-auto mb-4" />
+                <h3 className="text-xl font-bold mb-2">{t.successTitle}</h3>
+                <p className="text-neutral-400 mb-6">{t.successDesc}</p>
+                <Button onClick={handleCloseModal} variant="outline" className="border-neutral-700">{t.close}</Button>
               </div>
-              <h3 className="text-xl font-bold mb-2">{t.successTitle}</h3>
-              <p className="text-neutral-400 mb-6">{t.successDesc}</p>
-              <Button onClick={handleCloseModal} className="bg-rose-500 hover:bg-rose-600">
-                {t.close}
-              </Button>
-            </div> : <>
-              <DialogHeader>
-                <DialogTitle className="text-xl font-serif">{t.formTitle}</DialogTitle>
-                <DialogDescription className="text-neutral-400">{t.formDesc}</DialogDescription>
-              </DialogHeader>
-              
-              <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="creator-modal-fullName">{t.fullName} *</Label>
-                  <Input id="creator-modal-fullName" name="creator-modal-fullName" required value={formData.fullName} onChange={e => setFormData({
-                ...formData,
-                fullName: e.target.value
-              })} className="bg-neutral-800 border-neutral-700 text-white" placeholder={language === 'ar' ? 'اسمك' : language === 'fr' ? 'Votre nom' : 'Your name'} />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="creator-modal-email">{t.email} *</Label>
-                  <Input id="creator-modal-email" name="creator-modal-email" type="email" required value={formData.email} onChange={e => setFormData({
-                ...formData,
-                email: e.target.value
-              })} className="bg-neutral-800 border-neutral-700 text-white" placeholder={language === 'ar' ? 'بريدك@email.com' : 'your@email.com'} />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="creator-modal-phone">{t.phone} ({t.optional})</Label>
-                  <Input id="creator-modal-phone" name="creator-modal-phone" type="tel" value={formData.phone} onChange={e => setFormData({
-                ...formData,
-                phone: e.target.value
-              })} className="bg-neutral-800 border-neutral-700 text-white" placeholder="+1 (555) 000-0000" />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="creator-modal-message">{t.message} ({t.optional})</Label>
-                  <Textarea id="creator-modal-message" name="creator-modal-message" value={formData.message} onChange={e => setFormData({
-                ...formData,
-                message: e.target.value
-              })} className="bg-neutral-800 border-neutral-700 text-white resize-none" placeholder={language === 'ar' ? 'أخبرنا عن احتياجاتك...' : language === 'fr' ? 'Parlez-nous de vos besoins...' : 'Tell us about your needs...'} rows={3} />
-                </div>
-                
-                <Button type="submit" className="w-full bg-rose-500 hover:bg-rose-600" disabled={isSubmitting}>
-                  {isSubmitting ? <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      {t.submitting}
-                    </> : t.submit}
-                </Button>
-                
-                <p className="text-xs text-neutral-500 text-center">
-                  {t.needMoreOptions}{' '}
-                  <Link to="/services/content-creator-sites/apply" className="text-rose-400 hover:underline">
-                    {t.detailedForm}
-                  </Link>
-                </p>
-              </form>
-            </>}
-        </DialogContent>
-      </Dialog>
-    </div>
-  </>;
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
+    </>
+  );
 };
+
 export default InfluencerSites;
