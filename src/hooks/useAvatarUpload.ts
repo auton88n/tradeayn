@@ -41,7 +41,9 @@ export const useAvatarUpload = ({ userId, accessToken }: UseAvatarUploadOptions)
     try {
       return await imageCompression(file, options);
     } catch (error) {
-      console.error('Image compression error:', error);
+      if (import.meta.env.DEV) {
+        console.error('Image compression error:', error);
+      }
       return file;
     }
   };
@@ -87,7 +89,9 @@ export const useAvatarUpload = ({ userId, accessToken }: UseAvatarUploadOptions)
         });
 
       if (uploadError) {
-        console.error('Upload error:', uploadError);
+        if (import.meta.env.DEV) {
+          console.error('Upload error:', uploadError);
+        }
         toast.error(getErrorMessage(ErrorCodes.UPLOAD_FAILED).description);
         return null;
       }
@@ -107,7 +111,9 @@ export const useAvatarUpload = ({ userId, accessToken }: UseAvatarUploadOptions)
       toast.success('Profile photo updated!');
       return publicUrl;
     } catch (error) {
-      console.error('Avatar upload error:', error);
+      if (import.meta.env.DEV) {
+        console.error('Avatar upload error:', error);
+      }
       toast.error(getErrorMessage(ErrorCodes.UPLOAD_FAILED).description);
       return null;
     } finally {
@@ -145,7 +151,9 @@ export const useAvatarUpload = ({ userId, accessToken }: UseAvatarUploadOptions)
       toast.success('Profile photo removed');
       return true;
     } catch (error) {
-      console.error('Avatar removal error:', error);
+      if (import.meta.env.DEV) {
+        console.error('Avatar removal error:', error);
+      }
       toast.error(getErrorMessage(ErrorCodes.GENERIC).description);
       return false;
     } finally {

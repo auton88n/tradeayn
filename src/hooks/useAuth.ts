@@ -53,7 +53,9 @@ const fetchWithRetry = async (
       return await fetchFromSupabase(endpoint, token);
     } catch (error) {
       if (attempt === retries) {
-        console.error(`Auth query failed after ${retries + 1} attempts:`, endpoint, error);
+        if (import.meta.env.DEV) {
+          console.error(`Auth query failed after ${retries + 1} attempts:`, endpoint, error);
+        }
         return null;
       }
       // Wait before retry
@@ -241,7 +243,9 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
         }
 
       } catch (error) {
-        console.error('Auth queries batch failed:', error);
+        if (import.meta.env.DEV) {
+          console.error('Auth queries batch failed:', error);
+        }
       } finally {
         if (isMounted) {
           setIsAuthLoading(false);

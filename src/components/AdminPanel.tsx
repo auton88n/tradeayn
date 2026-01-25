@@ -140,7 +140,9 @@ export const AdminPanel = ({
         await new Promise(r => setTimeout(r, 500));
         return fetchWithRetry(endpoint, retries - 1);
       }
-      console.error(`Failed to fetch ${endpoint}:`, error);
+      if (import.meta.env.DEV) {
+        console.error(`Failed to fetch ${endpoint}:`, error);
+      }
       return [];
     }
   }, [fetchWithAuth]);
@@ -201,7 +203,9 @@ export const AdminPanel = ({
         }));
       }
     } catch (error) {
-      console.error('Error fetching admin data:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error fetching admin data:', error);
+      }
       toast.error('Failed to load admin data');
     } finally {
       setIsLoading(false);
@@ -295,7 +299,9 @@ export const AdminPanel = ({
       }));
       toast.success('Settings updated');
     } catch (error) {
-      console.error('Error updating config:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error updating config:', error);
+      }
       toast.error('Failed to update settings');
     }
   };

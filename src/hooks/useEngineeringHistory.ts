@@ -45,7 +45,9 @@ export const useEngineeringHistory = (userId: string | undefined) => {
         ai_analysis: item.ai_analysis as Record<string, any> | null,
       })));
     } catch (err) {
-      console.error('Error fetching calculation history:', err);
+      if (import.meta.env.DEV) {
+        console.error('Error fetching calculation history:', err);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -84,7 +86,9 @@ export const useEngineeringHistory = (userId: string | undefined) => {
 
       return data;
     } catch (err) {
-      console.error('Error saving calculation:', err);
+      if (import.meta.env.DEV) {
+        console.error('Error saving calculation:', err);
+      }
       return null;
     }
   }, [userId]);
@@ -107,7 +111,9 @@ export const useEngineeringHistory = (userId: string | undefined) => {
           details: details as Json,
         });
     } catch (err) {
-      console.error('Error logging engineering activity:', err);
+      if (import.meta.env.DEV) {
+        console.error('Error logging engineering activity:', err);
+      }
     }
   }, [userId]);
 
@@ -127,7 +133,9 @@ export const useEngineeringHistory = (userId: string | undefined) => {
       setCalculationHistory(prev => prev.filter(c => c.id !== calculationId));
       return true;
     } catch (err) {
-      console.error('Error deleting calculation:', err);
+      if (import.meta.env.DEV) {
+        console.error('Error deleting calculation:', err);
+      }
       return false;
     }
   }, [userId]);

@@ -92,7 +92,9 @@ const TicketForm: React.FC<TicketFormProps> = ({ onSuccess }) => {
           },
         });
       } catch (emailError) {
-        console.error('Failed to send notification email:', emailError);
+        if (import.meta.env.DEV) {
+          console.error('Failed to send notification email:', emailError);
+        }
         // Don't fail the ticket creation if email fails
       }
 
@@ -114,7 +116,9 @@ const TicketForm: React.FC<TicketFormProps> = ({ onSuccess }) => {
       }, 2000);
 
     } catch (error) {
-      console.error('Ticket creation error:', error);
+      if (import.meta.env.DEV) {
+        console.error('Ticket creation error:', error);
+      }
       toast.error("We couldn't submit your request. Please try again.");
     } finally {
       setIsSubmitting(false);

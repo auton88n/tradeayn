@@ -112,7 +112,9 @@ export const persistDalleImage = async (imageUrl: string): Promise<string> => {
 
   // Best-effort: never throw, and cache failures to avoid retry loops
   if (error || data?.error) {
-    console.error('Failed to persist image:', error || data?.error);
+    if (import.meta.env.DEV) {
+      console.error('Failed to persist image:', error || data?.error);
+    }
     urlCache.set(normalizedUrl, normalizedUrl);
     if (normalizedUrl !== imageUrl) urlCache.set(imageUrl, normalizedUrl);
     return normalizedUrl;

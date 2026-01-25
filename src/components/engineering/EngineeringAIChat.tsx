@@ -254,7 +254,9 @@ export const EngineeringAIChat = ({
       setStreamingContent('');
 
     } catch (error) {
-      console.error('AI Chat error:', error);
+      if (import.meta.env.DEV) {
+        console.error('AI Chat error:', error);
+      }
       const errorMessage = error instanceof Error ? error.message : 'Failed to get AI response';
       
       toast({

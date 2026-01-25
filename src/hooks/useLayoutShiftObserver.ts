@@ -7,7 +7,9 @@ export const useLayoutShiftObserver = () => {
   useEffect(() => {
     if (!debug?.isDebugMode || !('PerformanceObserver' in window)) return;
     
-    console.log('[Layout Shift Observer] Started monitoring');
+    if (import.meta.env.DEV) {
+      console.log('[Layout Shift Observer] Started monitoring');
+    }
     
     const observer = new PerformanceObserver((list) => {
       for (const entry of list.getEntries()) {
@@ -21,12 +23,16 @@ export const useLayoutShiftObserver = () => {
     try {
       observer.observe({ type: 'layout-shift', buffered: true });
     } catch (e) {
-      console.warn('[Layout Shift Observer] Not supported in this browser');
+      if (import.meta.env.DEV) {
+        console.warn('[Layout Shift Observer] Not supported in this browser');
+      }
     }
     
     return () => {
       observer.disconnect();
-      console.log('[Layout Shift Observer] Stopped monitoring');
+      if (import.meta.env.DEV) {
+        console.log('[Layout Shift Observer] Stopped monitoring');
+      }
     };
   }, [debug?.isDebugMode, debug?.addLayoutShift]);
 };

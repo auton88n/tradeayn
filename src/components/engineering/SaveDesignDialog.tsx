@@ -174,9 +174,13 @@ export const SaveDesignDialog: React.FC<SaveDesignDialogProps> = ({
           },
           _priority: 2
         });
-        console.log('[SaveDesignDialog] Design saved to user memory for AYN');
+        if (import.meta.env.DEV) {
+          console.log('[SaveDesignDialog] Design saved to user memory for AYN');
+        }
       } catch (memoryError) {
-        console.error('[SaveDesignDialog] Failed to save to memory:', memoryError);
+        if (import.meta.env.DEV) {
+          console.error('[SaveDesignDialog] Failed to save to memory:', memoryError);
+        }
         // Non-blocking - design still saved to portfolio
       }
 
@@ -192,7 +196,9 @@ export const SaveDesignDialog: React.FC<SaveDesignDialogProps> = ({
       setTitle('');
       setDescription('');
     } catch (error) {
-      console.error('Error saving design:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error saving design:', error);
+      }
       toast({
         title: 'Save Failed',
         description: 'Could not save design to portfolio. Please try again.',

@@ -185,7 +185,9 @@ const LandingPage = memo(() => {
         message: contactForm.message.trim()
       });
       if (dbError) {
-        console.error('Database error:', dbError);
+        if (import.meta.env.DEV) {
+          console.error('Database error:', dbError);
+        }
         throw new Error('Failed to save message');
       }
 
@@ -200,7 +202,9 @@ const LandingPage = memo(() => {
         }
       });
       if (emailError) {
-        console.error('Email error:', emailError);
+        if (import.meta.env.DEV) {
+          console.error('Email error:', emailError);
+        }
         // Don't throw - message was saved, just email failed
       }
       setIsSubmitted(true);
@@ -217,7 +221,9 @@ const LandingPage = memo(() => {
       // Reset submitted state after 3 seconds
       setTimeout(() => setIsSubmitted(false), 3000);
     } catch (error) {
-      console.error('Contact form error:', error);
+      if (import.meta.env.DEV) {
+        console.error('Contact form error:', error);
+      }
       toast({
         title: language === 'ar' ? 'خطأ' : 'Error',
         description: language === 'ar' ? 'حدث خطأ. يرجى المحاولة مرة أخرى' : 'Something went wrong. Please try again',

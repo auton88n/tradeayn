@@ -92,7 +92,9 @@ export const GradingResults: React.FC<GradingResultsProps> = ({
         description: `Downloaded ${data.fileName}`,
       });
     } catch (err) {
-      console.error('Export error:', err);
+      if (import.meta.env.DEV) {
+        console.error('Export error:', err);
+      }
       toast({
         title: 'Export failed',
         description: err instanceof Error ? err.message : 'Unknown error',
@@ -133,7 +135,9 @@ export const GradingResults: React.FC<GradingResultsProps> = ({
         description: `Downloaded ${projectName}_Grading_Report.pdf`,
       });
     } catch (err) {
-      console.error('PDF export error:', err);
+      if (import.meta.env.DEV) {
+        console.error('PDF export error:', err);
+      }
       toast({
         title: 'PDF export failed',
         description: err instanceof Error ? err.message : 'Unknown error',

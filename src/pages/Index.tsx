@@ -20,7 +20,9 @@ const Index = () => {
                            window.location.hash.includes('type=recovery');
     
     if (isRecoveryFlow) {
-      console.log('[Index] Recovery flow detected, skipping auth intercept');
+      if (import.meta.env.DEV) {
+        console.log('[Index] Recovery flow detected, skipping auth intercept');
+      }
       return;
     }
 

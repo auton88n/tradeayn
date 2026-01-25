@@ -101,7 +101,9 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
       const { data, error } = await supabase.functions.invoke('check-subscription');
       
       if (error) {
-        console.error('[SubscriptionContext] Error checking subscription:', error);
+        if (import.meta.env.DEV) {
+          console.error('[SubscriptionContext] Error checking subscription:', error);
+        }
         setState(prev => ({ ...prev, isLoading: false }));
         return;
       }
@@ -116,7 +118,9 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
         limits: SUBSCRIPTION_TIERS[tier]?.limits || SUBSCRIPTION_TIERS.free.limits,
       });
     } catch (err) {
-      console.error('[SubscriptionContext] Error:', err);
+      if (import.meta.env.DEV) {
+        console.error('[SubscriptionContext] Error:', err);
+      }
       setState(prev => ({ ...prev, isLoading: false }));
     }
   }, []);
@@ -144,7 +148,9 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
         window.open(data.url, '_blank');
       }
     } catch (err) {
-      console.error('[SubscriptionContext] Checkout error:', err);
+      if (import.meta.env.DEV) {
+        console.error('[SubscriptionContext] Checkout error:', err);
+      }
       toast.error(getErrorMessage(ErrorCodes.CHECKOUT_FAILED).description);
     }
   }, []);
@@ -159,7 +165,9 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
         window.open(data.url, '_blank');
       }
     } catch (err) {
-      console.error('[SubscriptionContext] Portal error:', err);
+      if (import.meta.env.DEV) {
+        console.error('[SubscriptionContext] Portal error:', err);
+      }
       toast.error(getErrorMessage(ErrorCodes.PORTAL_FAILED).description);
     }
   }, []);
