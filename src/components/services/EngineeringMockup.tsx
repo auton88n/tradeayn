@@ -1,6 +1,7 @@
+import { memo } from 'react';
 import { motion } from 'framer-motion';
 
-const EngineeringMockup = () => {
+const EngineeringMockup = memo(() => {
   return (
     <div className="relative w-full h-full min-h-[400px] flex items-center justify-center">
       {/* Background grid pattern */}
@@ -15,13 +16,11 @@ const EngineeringMockup = () => {
         </svg>
       </div>
 
-      {/* 3D Building Visualization */}
+      {/* 3D Building Visualization - Static version for performance */}
       <div className="relative z-10">
-        {/* Main building structure */}
-        <motion.div
+        {/* Main building structure - no infinite rotation */}
+        <div
           className="relative"
-          animate={{ rotateY: [0, 5, 0, -5, 0] }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
           style={{ transformStyle: 'preserve-3d', perspective: '1000px' }}
         >
           {/* Building shadow */}
@@ -34,13 +33,13 @@ const EngineeringMockup = () => {
             
             {/* Main structure - 3D effect */}
             <div className="relative mx-auto" style={{ width: '200px' }}>
-              {/* Building floors */}
+              {/* Building floors - entrance animation only */}
               {[0, 1, 2, 3, 4].map((floor) => (
                 <motion.div
                   key={floor}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: floor * 0.1 + 0.5 }}
+                  transition={{ delay: floor * 0.1 + 0.3, duration: 0.4 }}
                   className="relative"
                 >
                   <div 
@@ -50,20 +49,13 @@ const EngineeringMockup = () => {
                       marginLeft: `${floor * 4}px`,
                     }}
                   >
-                    {/* Windows */}
+                    {/* Windows - static with varied opacity */}
                     <div className="flex justify-around items-center h-full px-4">
                       {[...Array(4 - Math.floor(floor / 2))].map((_, i) => (
-                        <motion.div
+                        <div
                           key={i}
                           className="w-6 h-10 bg-gradient-to-b from-cyan-400/40 to-blue-500/30 rounded-sm"
-                          animate={{ 
-                            opacity: [0.3, 0.8, 0.3],
-                          }}
-                          transition={{ 
-                            duration: 2 + i * 0.5, 
-                            repeat: Infinity,
-                            delay: i * 0.3 + floor * 0.2
-                          }}
+                          style={{ opacity: 0.4 + (i % 2) * 0.4 }}
                         />
                       ))}
                     </div>
@@ -78,7 +70,7 @@ const EngineeringMockup = () => {
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 1 }}
+                transition={{ delay: 0.8 }}
                 className="relative mx-auto"
                 style={{ width: '168px', marginLeft: '16px' }}
               >
@@ -93,7 +85,7 @@ const EngineeringMockup = () => {
             className="absolute -left-16 top-1/2 -translate-y-1/2"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 1.2 }}
+            transition={{ delay: 1 }}
           >
             <div className="flex items-center gap-2">
               <div className="w-8 h-px bg-cyan-500" />
@@ -107,7 +99,7 @@ const EngineeringMockup = () => {
             className="absolute -bottom-8 left-1/2 -translate-x-1/2"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.3 }}
+            transition={{ delay: 1.1 }}
           >
             <div className="flex flex-col items-center gap-1">
               <div className="h-4 w-px bg-cyan-500" />
@@ -116,47 +108,45 @@ const EngineeringMockup = () => {
               </div>
             </div>
           </motion.div>
-        </motion.div>
+        </div>
         
-        {/* Stress indicators */}
+        {/* Stress indicator - static */}
         <motion.div
           className="absolute -right-4 top-1/4"
-          animate={{ 
-            scale: [1, 1.2, 1],
-            opacity: [0.5, 1, 0.5]
-          }}
-          transition={{ duration: 2, repeat: Infinity }}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 1.2 }}
         >
           <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50" />
           <div className="text-[8px] font-mono text-emerald-400 mt-1 whitespace-nowrap">OK</div>
         </motion.div>
         
-        {/* Load arrows */}
+        {/* Load arrows - static */}
         <motion.div
           className="absolute -top-8 left-1/2 -translate-x-1/2 flex gap-4"
-          animate={{ y: [0, 4, 0] }}
-          transition={{ duration: 1.5, repeat: Infinity }}
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.9 }}
         >
           {[0, 1, 2].map((i) => (
-            <motion.div
+            <div
               key={i}
               className="flex flex-col items-center"
-              animate={{ opacity: [0.3, 0.8, 0.3] }}
-              transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
+              style={{ opacity: 0.5 + i * 0.2 }}
             >
               <div className="w-px h-4 bg-orange-500" />
               <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-t-[6px] border-l-transparent border-r-transparent border-t-orange-500" />
-            </motion.div>
+            </div>
           ))}
         </motion.div>
       </div>
       
-      {/* Floating calculation result */}
+      {/* Floating calculation result - static */}
       <motion.div
         className="absolute bottom-4 right-4 px-3 py-2 rounded-xl bg-neutral-900/90 border border-cyan-500/30 backdrop-blur-sm shadow-lg"
         initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: [0, 1, 1, 0], y: [10, 0, 0, -10] }}
-        transition={{ duration: 4, repeat: Infinity, repeatDelay: 2 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.3 }}
       >
         <div className="text-[10px] font-mono text-cyan-400">
           Mu = 245.8 kN·m
@@ -168,6 +158,8 @@ const EngineeringMockup = () => {
       </motion.div>
     </div>
   );
-};
+});
+
+EngineeringMockup.displayName = 'EngineeringMockup';
 
 export default EngineeringMockup;

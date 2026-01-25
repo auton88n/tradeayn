@@ -63,12 +63,10 @@ const LandingPage = () => {
     toast
   } = useToast();
   
-  // Debug render logging
-  useEffect(() => {
-    if (debug?.isDebugMode) {
-      debug.incrementRenderCount('LandingPage');
-    }
-  });
+  // Debug render logging - direct call (no useEffect to avoid infinite loop)
+  if (debug?.isDebugMode) {
+    debug.incrementRenderCount('LandingPage');
+  }
 
   // Hover handlers with collapse delay
   const handleMouseEnter = () => {

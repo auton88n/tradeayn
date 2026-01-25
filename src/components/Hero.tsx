@@ -23,12 +23,10 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
   const [isBlinking, setIsBlinking] = useState(false);
   const previousCardRef = useRef<number | null>(null);
   
-  // Debug render logging
-  useEffect(() => {
-    if (debug?.isDebugMode) {
-      debug.incrementRenderCount('Hero');
-    }
-  });
+  // Debug render logging - direct call (no useEffect to avoid infinite loop)
+  if (debug?.isDebugMode) {
+    debug.incrementRenderCount('Hero');
+  }
 
   // Responsive card positions - mobile uses top/bottom layout to avoid horizontal clipping
   const getCardPositions = () => {
