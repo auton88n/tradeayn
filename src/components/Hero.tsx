@@ -34,21 +34,21 @@ export const Hero = memo(({ onGetStarted }: HeroProps) => {
     if (isMobile) {
       // Tighter positions to prevent clipping on small screens
       return {
-        topLeft: { x: -30, y: -90 },
-        middleLeft: { x: 0, y: -100 },
-        bottomLeft: { x: 30, y: -90 },
-        topRight: { x: -30, y: 90 },
-        middleRight: { x: 0, y: 100 },
-        bottomRight: { x: 30, y: 90 }
+        topLeft: { x: -40, y: -120 },
+        middleLeft: { x: 0, y: -135 },
+        bottomLeft: { x: 40, y: -120 },
+        topRight: { x: -40, y: 120 },
+        middleRight: { x: 0, y: 135 },
+        bottomRight: { x: 40, y: 120 }
       };
     }
     return {
-      topLeft: { x: -180, y: -110 },
-      middleLeft: { x: -210, y: 0 },
-      bottomLeft: { x: -180, y: 110 },
-      topRight: { x: 180, y: -110 },
-      middleRight: { x: 210, y: 0 },
-      bottomRight: { x: 180, y: 110 }
+      topLeft: { x: -220, y: -140 },
+      middleLeft: { x: -260, y: 0 },
+      bottomLeft: { x: -220, y: 140 },
+      topRight: { x: 220, y: -140 },
+      middleRight: { x: 260, y: 0 },
+      bottomRight: { x: 220, y: 140 }
     };
   };
   const cardPositions = getCardPositions();
