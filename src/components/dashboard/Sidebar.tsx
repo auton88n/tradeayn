@@ -389,35 +389,42 @@ export const Sidebar = ({
         )}
 
         
-        {/* New Chat Button */}
-        <SidebarGroup className="flex-shrink-0 px-4 pb-2">
-          <SidebarGroupContent>
-            <Button onClick={onNewChat} className={cn("w-full h-10 rounded-xl", "bg-foreground text-background", "hover:bg-foreground/90", "transition-all duration-300", "disabled:opacity-40")} disabled={!hasAccess}>
-              <Plus className="w-4 h-4 mr-2" />
-              New Chat
-            </Button>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {/* Engineering Button */}
+        {/* Action Buttons - Compact Row */}
         <SidebarGroup className="flex-shrink-0 px-4 pb-3">
           <SidebarGroupContent>
-            <Button 
-              onClick={() => navigate('/engineering')}
-              className={cn(
-                "w-full h-11 rounded-xl gap-2.5 relative overflow-hidden",
-                "bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600",
-                "hover:from-cyan-500 hover:via-blue-500 hover:to-indigo-500",
-                "text-white font-medium shadow-lg shadow-blue-500/25",
-                "hover:shadow-xl hover:shadow-blue-500/30",
-                "transition-colors duration-150",
-                "border-0"
-              )}
-            >
-              <Calculator className="w-4 h-4" />
-              <span>Engineering</span>
-              <Sparkles className="w-3.5 h-3.5 ml-auto animate-pulse" />
-            </Button>
+            <div className="flex gap-2">
+              {/* New Chat Button */}
+              <Button 
+                onClick={onNewChat} 
+                className={cn(
+                  "flex-1 h-9 rounded-lg text-sm",
+                  "bg-foreground text-background",
+                  "hover:bg-foreground/90",
+                  "transition-colors duration-150",
+                  "disabled:opacity-40"
+                )} 
+                disabled={!hasAccess}
+              >
+                <Plus className="w-4 h-4 mr-1.5" />
+                New Chat
+              </Button>
+              
+              {/* Engineering Button */}
+              <Button 
+                onClick={() => navigate('/engineering')}
+                className={cn(
+                  "h-9 px-3 rounded-lg gap-1.5",
+                  "bg-gradient-to-r from-cyan-600 to-blue-600",
+                  "hover:from-cyan-500 hover:to-blue-500",
+                  "text-white text-sm font-medium",
+                  "transition-colors duration-150",
+                  "border-0"
+                )}
+              >
+                <Calculator className="w-4 h-4" />
+                <span className="hidden sm:inline">Eng</span>
+              </Button>
+            </div>
           </SidebarGroupContent>
         </SidebarGroup>
 
