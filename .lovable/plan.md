@@ -1,86 +1,234 @@
 
-Goal: Fix (1) invisible “Send”/button text in the forgot-password flow, and (2) Reset Password page stuck forever on “Validating Reset Link”.
+# Performance Debugging Toolkit Implementation
 
-What’s happening (based on code + your screenshots)
-1) “Send” text is dark/invisible
-- The app’s ThemeProvider default is light, so CSS token `foreground` is near-black.
-- In `AuthModal.tsx`, the forgot-password UI is rendered inside a dark modal (`bg-neutral-950`), but the outline button uses the shared Button variant:
-  - `outline: ... text-foreground ...`
-- In light theme, `text-foreground` is black, so on a dark modal it becomes unreadable (your “Send” / “Send Again” looks “missing”).
+## Overview
 
-2) “Validating Reset Link” can hang indefinitely
-- `src/pages/ResetPassword.tsx` starts with `isValidating=true`.
-- It calls `supabase.auth.getSession().then(...)` with no timeout.
-- If `getSession()` hangs (this can happen in some browsers/lock states), `isValidating` never flips to false → spinner forever (your “hours” symptom).
-- There’s a 3s timeout only for the “waiting for auth event” branch, but not for `getSession()` itself.
+This plan implements a comprehensive performance debugging system to identify the exact sources of flickering, layout shifts, and performance issues. The toolkit will be accessible via a keyboard shortcut (D key) and will provide real-time visual feedback on performance problems.
 
-Implementation plan (code changes)
+---
 
-A) Fix the invisible “Send” text (AuthModal)
-Files:
-- `src/components/auth/AuthModal.tsx`
+## What Will Be Built
 
-Changes:
-1. For every Button shown on the dark modal that currently uses `variant="outline"` (notably:
-   - “Forgot Password?” prominent button
-   - “Send Again” button on the “Reset Link Sent” confirmation screen
-), override the outline styling to be “dark-modal friendly”:
-   - `border-white/20 text-white`
-   - hover: `hover:bg-white hover:text-neutral-950`
-   - keep disabled readable: `disabled:opacity-50`
-2. Keep the global Button component unchanged (we don’t want to break outline buttons elsewhere). This is a scoped fix to AuthModal only.
+### 1. Core Debug Context/Hook
+A centralized `useDebugMode` hook and context that manages the debug state globally across the app.
 
-Why this will fix it:
-- It removes reliance on theme tokens for text color inside a dark modal, so the label is always visible whether the site theme is light or dark.
+### 2. Layout Shift Observer
+Uses the PerformanceObserver API to detect and log Cumulative Layout Shift (CLS) events, with visual highlighting of shifting elements.
 
-B) Make ResetPassword validation reliable (never infinite spinner)
-Files:
-- `src/pages/ResetPassword.tsx`
+### 3. Component Re-render Tracker  
+Instruments key components to log re-renders and identify unnecessary updates during scroll/interaction.
 
-Changes:
-1. Add a “safe session fetch” with timeout:
-   - Wrap `supabase.auth.getSession()` in `Promise.race()` with a timer (e.g., 5–7 seconds).
-   - If it times out, stop validating and show a friendly error state (same “Request New Link” UI).
-2. Add a direct fallback for recovery links:
-   - If URL hash contains `type=recovery` and includes `access_token` + `refresh_token`, attempt:
-     - `supabase.auth.setSession({ access_token, refresh_token })` with a timeout as well.
-   - If successful: set session, stop validating.
-   - If it fails/times out: stop validating and show expired/invalid state.
-3. Add a UI “slow validation” guard (optional but recommended):
-   - After ~8 seconds, swap the validating subtitle to something like:
-     - “This is taking longer than expected. Please try again.”
-   - Provide buttons: “Reload” + “Request New Link”.
-4. Security/UX improvement:
-   - After a session is established, remove the hash tokens from the URL via `history.replaceState` so tokens aren’t left in the address bar.
+### 4. Visual Debug Overlay
+A floating overlay showing:
+- FPS counter
+- Layout shift score
+- Re-render count
+- Currently animated elements
+- Intersection Observer triggers
 
-Why this will fix it:
-- Even if Supabase auth session retrieval deadlocks/hangs, the page will not be stuck: it will time out and guide the user to request a new link.
-- Parsing the hash and setting the session explicitly provides a second path that works even when the auth event doesn’t fire.
+### 5. Element Highlighting System
+Visual borders/overlays on:
+- 🔴 Red borders: Elements causing layout shifts
+- 🔵 Blue borders: Lazy-loaded elements
+- 🟢 Green borders: Currently animating elements
+- 🟡 Yellow borders: Intersection Observer triggers
 
-C) Verification checklist (what we’ll test)
-1. Light theme:
-- Open Auth modal → Forgot Password flow
-- Confirm “Forgot Password?” / “Send Again” labels are readable (no black-on-dark).
+---
 
-2. Password reset happy path:
-- Request reset email
-- Click link → lands on `/reset-password`
-- “Validating” should last only a moment
-- Reset form appears and `updateUser({ password })` succeeds.
+## Files to Create
 
-3. Invalid/expired token:
-- Open an old reset link
-- Should show “Reset Link Expired” within max timeout (no infinite spinner).
+### `src/contexts/DebugContext.tsx`
+Central debug state management with:
+- `isDebugMode: boolean`
+- `layoutShifts: LayoutShiftEntry[]`
+- `reRenderCounts: Map<string, number>`
+- `intersectionTriggers: Element[]`
+- Keyboard listener for 'D' key toggle
 
-4. Cross-domain sanity (important):
-- Request reset from the same domain you’ll open the email link on (e.g., https://aynn.io).
-- If you use multiple domains (preview/published/custom), confirm Supabase Auth “Redirect URLs” includes them; otherwise Supabase can refuse/alter redirects.
+### `src/hooks/useDebugMode.ts`  
+Hook to consume debug context and provide helper functions.
 
-Files we will change
-- `src/components/auth/AuthModal.tsx` (button contrast fixes for dark modal)
-- `src/pages/ResetPassword.tsx` (timeout + hash session fallback + never-stuck validation)
+### `src/hooks/useLayoutShiftObserver.ts`
+PerformanceObserver hook that:
+- Monitors `layout-shift` entry type
+- Logs element that shifted with value
+- Adds temporary red border to shifting elements
+- Accumulates CLS score
 
-Risks / edge cases we’re covering
-- Browser/session storage quirks causing `getSession()` to hang
-- Recovery links that arrive with tokens in hash but no session established yet
-- Users opening links long after creation (expired tokens)
+### `src/hooks/useRenderLogger.ts`
+Hook to track component re-renders:
+- Counts renders per component
+- Logs to console in debug mode
+- Optionally includes props diff
+
+### `src/components/debug/DebugOverlay.tsx`
+Floating panel showing:
+- Current FPS
+- CLS score
+- Re-render counts by component
+- Active animations count
+- Connection quality indicator
+
+### `src/components/debug/DebugProvider.tsx`
+Provider component wrapping the app with debug context and observers.
+
+---
+
+## Files to Modify
+
+### `src/App.tsx`
+- Wrap app with `DebugProvider`
+- Conditionally render `DebugOverlay`
+
+### `src/components/ui/lazy-load.tsx`
+- Add blue debug border when debug mode active
+- Log when Intersection Observer triggers
+- Add entry to debug context when element becomes visible
+
+### `src/hooks/useScrollAnimation.ts`
+- Log Intersection Observer triggers in debug mode
+- Add yellow highlight to observed elements
+
+### `src/components/eye/EmotionalEye.tsx`
+- Add render count logging in debug mode
+- Add green animation indicator border
+
+### `src/components/Hero.tsx`
+- Add render count logging
+- Track animation frame counts
+
+### `src/components/LandingPage.tsx`
+- Instrument ScrollReveal with debug logging
+- Track major component re-renders
+
+---
+
+## Technical Implementation Details
+
+### Layout Shift Detection
+```typescript
+// src/hooks/useLayoutShiftObserver.ts
+const useLayoutShiftObserver = () => {
+  const { isDebugMode, addLayoutShift } = useDebugMode();
+  
+  useEffect(() => {
+    if (!isDebugMode || !('PerformanceObserver' in window)) return;
+    
+    const observer = new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) {
+        if (entry.entryType === 'layout-shift' && !entry.hadRecentInput) {
+          const sources = (entry as any).sources || [];
+          sources.forEach((source: any) => {
+            const node = source.node;
+            if (node && node instanceof HTMLElement) {
+              // Add red border
+              node.style.outline = '3px solid red';
+              node.style.outlineOffset = '-3px';
+              setTimeout(() => {
+                node.style.outline = '';
+                node.style.outlineOffset = '';
+              }, 2000);
+              
+              console.warn('[Layout Shift]', {
+                value: entry.value,
+                element: node,
+                tagName: node.tagName,
+                className: node.className,
+                id: node.id
+              });
+            }
+          });
+          addLayoutShift(entry);
+        }
+      }
+    });
+    
+    observer.observe({ type: 'layout-shift', buffered: true });
+    return () => observer.disconnect();
+  }, [isDebugMode]);
+};
+```
+
+### Debug Overlay UI
+```text
+┌─────────────────────────────┐
+│ 🔧 DEBUG MODE               │
+├─────────────────────────────┤
+│ FPS: 60                     │
+│ CLS: 0.023                  │
+│ Re-renders: 12              │
+├─────────────────────────────┤
+│ Top Re-renders:             │
+│  • EmotionalEye: 8          │
+│  • LazyLoad: 3              │
+│  • ScrollReveal: 1          │
+├─────────────────────────────┤
+│ Recent Shifts: 2            │
+│  • div.service-card         │
+│  • img.hero-bg              │
+└─────────────────────────────┘
+```
+
+### Keyboard Toggle
+```typescript
+// In DebugProvider
+useEffect(() => {
+  const handleKeyDown = (e: KeyboardEvent) => {
+    // Only trigger on 'D' key, not when typing in inputs
+    if (e.key.toLowerCase() === 'd' && 
+        !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
+      setIsDebugMode(prev => !prev);
+    }
+  };
+  
+  window.addEventListener('keydown', handleKeyDown);
+  return () => window.removeEventListener('keydown', handleKeyDown);
+}, []);
+```
+
+### Connection Quality Detection
+```typescript
+// Detect slow connections to provide context
+const connection = (navigator as any).connection;
+const isSlowConnection = connection && 
+  (connection.effectiveType === '2g' || 
+   connection.effectiveType === 'slow-2g' ||
+   connection.saveData);
+```
+
+---
+
+## Visual Indicators Summary
+
+| Element Type | Border Color | When Shown |
+|--------------|--------------|------------|
+| Layout shift source | 🔴 Red (3px solid) | For 2 seconds after shift |
+| Lazy-loaded content | 🔵 Blue (2px dashed) | While loading |
+| Animating elements | 🟢 Green (2px solid) | During animation |
+| IO observed elements | 🟡 Yellow (2px dotted) | When intersection triggers |
+
+---
+
+## Implementation Order
+
+1. **Create DebugContext and Provider** - Foundation for all debug features
+2. **Add Layout Shift Observer** - Most critical for identifying flicker sources
+3. **Add Debug Overlay UI** - Visual feedback panel
+4. **Instrument LazyLoad** - Track lazy loading behavior
+5. **Instrument ScrollAnimation** - Track Intersection Observer triggers
+6. **Add Re-render Logging** - Identify unnecessary re-renders
+7. **Wire up keyboard toggle** - Enable easy on/off switching
+
+---
+
+## Expected Outcomes
+
+After implementation, pressing 'D' will:
+1. Show a floating debug panel with real-time metrics
+2. Highlight any element causing layout shifts with a red border
+3. Show blue borders on lazy-loaded elements
+4. Log all Intersection Observer triggers to console
+5. Show re-render counts per component
+6. Make it immediately obvious what's causing flickering
+
+This will identify the exact sources without affecting the normal user experience (debug mode is off by default).
