@@ -93,7 +93,8 @@ export const LandingChatInput: React.FC<LandingChatInputProps> = ({ onSendAttemp
             {!inputMessage && (
               <div 
                 className={cn(
-                  "absolute top-1/2 -translate-y-1/2 left-0 pointer-events-none text-muted-foreground/50",
+                  "absolute top-0 left-0 pointer-events-none text-muted-foreground/50",
+                  "leading-[44px]",
                   "transition-opacity duration-200",
                   showPlaceholder ? "opacity-100" : "opacity-0"
                 )}
