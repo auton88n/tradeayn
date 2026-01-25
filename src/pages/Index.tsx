@@ -15,6 +15,15 @@ const Index = () => {
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
+    // Skip auth handling if on password reset flow - let ResetPassword page handle it
+    const isRecoveryFlow = window.location.pathname === '/reset-password' ||
+                           window.location.hash.includes('type=recovery');
+    
+    if (isRecoveryFlow) {
+      console.log('[Index] Recovery flow detected, skipping auth intercept');
+      return;
+    }
+
     let mounted = true;
 
     const initializeAuth = async () => {

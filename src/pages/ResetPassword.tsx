@@ -33,6 +33,9 @@ const ResetPassword = () => {
     let isMounted = true;
     let slowTimer: NodeJS.Timeout | null = null;
     
+    // Set a flag indicating recovery flow is in progress
+    localStorage.setItem('password_recovery_in_progress', 'true');
+    
     const validateSession = async () => {
       // Start slow validation timer (8 seconds)
       slowTimer = setTimeout(() => {
@@ -182,8 +185,12 @@ const ResetPassword = () => {
     return () => {
       isMounted = false;
       if (slowTimer) clearTimeout(slowTimer);
+      // Clear recovery flag on unmount if validation failed
+      if (linkExpired) {
+        localStorage.removeItem('password_recovery_in_progress');
+      }
     };
-  }, []);
+  }, [linkExpired]);
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -219,7 +226,8 @@ const ResetPassword = () => {
         description: 'Your password has been updated successfully',
       });
 
-      // Redirect to home after 2 seconds
+      // Clear recovery flag and redirect to home after 2 seconds
+      localStorage.removeItem('password_recovery_in_progress');
       setTimeout(() => {
         navigate('/');
       }, 2000);
