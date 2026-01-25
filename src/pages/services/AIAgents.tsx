@@ -420,7 +420,7 @@ const AIAgents = () => {
                 <CheckCircle2 className="w-16 h-16 text-purple-400 mx-auto mb-4" />
                 <h3 className="text-xl font-bold mb-2">{t.successTitle}</h3>
                 <p className="text-neutral-400 mb-6">{t.successDesc}</p>
-                <Button onClick={handleCloseModal} variant="outline" className="border-neutral-700">{t.close}</Button>
+                <Button onClick={handleCloseModal} variant="outline" className="border-neutral-700 text-white hover:text-white">{t.close}</Button>
               </div>
             )}
           </DialogContent>

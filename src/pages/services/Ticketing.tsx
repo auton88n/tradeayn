@@ -230,7 +230,7 @@ const Ticketing = () => {
                     {t.getStarted}
                   </Button>
                   <Link to="/services/ticketing/apply">
-                    <Button size="lg" variant="outline">
+                    <Button size="lg" variant="outline" className="border-border">
                       {t.applyNow}
                     </Button>
                   </Link>
