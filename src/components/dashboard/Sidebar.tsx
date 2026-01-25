@@ -6,7 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-import { Plus, LogOut, Trash2, Settings, X, MessageSquare, Search, Star, Shield, Brain, ChevronDown, GraduationCap, Loader2, Volume2, VolumeX, Headphones, Sparkles, AlertTriangle } from 'lucide-react';
+import { Plus, LogOut, Trash2, Settings, X, MessageSquare, Search, Star, Shield, Brain, ChevronDown, GraduationCap, Loader2, Volume2, VolumeX, Headphones, Sparkles, AlertTriangle, Calculator } from 'lucide-react';
 import { format } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -394,6 +394,27 @@ export const Sidebar = ({
           </SidebarGroupContent>
         </SidebarGroup>
 
+        {/* Engineering Button */}
+        <SidebarGroup className="flex-shrink-0 px-4 pb-3">
+          <SidebarGroupContent>
+            <Button 
+              onClick={() => navigate('/engineering')}
+              className={cn(
+                "w-full h-11 rounded-xl gap-2.5 relative overflow-hidden",
+                "bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600",
+                "hover:from-cyan-500 hover:via-blue-500 hover:to-indigo-500",
+                "text-white font-medium shadow-lg shadow-blue-500/25",
+                "hover:shadow-xl hover:shadow-blue-500/30",
+                "transition-colors duration-150",
+                "border-0"
+              )}
+            >
+              <Calculator className="w-4 h-4" />
+              <span>Engineering</span>
+              <Sparkles className="w-3.5 h-3.5 ml-auto animate-pulse" />
+            </Button>
+          </SidebarGroupContent>
+        </SidebarGroup>
 
         {/* Search Input */}
         <div className="px-4 pb-3 flex-shrink-0">
