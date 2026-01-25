@@ -1,89 +1,31 @@
 
 
-# Fix Double Sound and Laggy Message Animation
+## Fix Star Icon Visibility with Padding Adjustment
 
-## Problems Identified
+### Problem
+The star icons in the sidebar chat list are being cut off at the edges.
 
-### 1. Double Sound Effect
-Two sounds play in quick succession when sending a message:
-- **`message-send`** plays immediately when clicking send (ChatInput)
-- **`message-absorb`** plays 350ms later when the bubble reaches the eye (CenterStageLayout)
+### Solution
+Add right padding of 6 (`pr-6`) to the chat item container to create more space for the star icon to display fully.
 
-This creates a confusing "double tap" audio experience.
+### Technical Change
 
-### 2. Laggy Card Animation
-The timing between visual animation and sound/effects is misaligned:
+**File:** `src/components/dashboard/Sidebar.tsx` (line 541)
 
-| Event | Current Timing |
-|-------|----------------|
-| Flying animation starts | 0ms |
-| Absorb sound + effects trigger | 350ms |
-| Flying animation ends | 400ms |
-| Visual status changes to "absorbing" | 500ms |
-| Absorbing animation plays | 500-720ms |
+Change the chat item container padding:
+- **Current:** `px-3` (equal left and right padding)
+- **New:** `px-3 pr-6` (keep left padding at 3, increase right padding to 6)
 
-The absorb sound plays **before** the card visually starts absorbing, creating a disconnect.
+```tsx
+// Before
+className={cn("flex-1 h-auto py-3.5 px-3 rounded-xl cursor-pointer", ...)}
 
----
-
-## Solution
-
-### Sound Consolidation
-Remove the `message-send` sound and only use `message-absorb` when the bubble reaches the eye. This creates a single, satisfying "gulp" effect when AYN receives the message.
-
-### Animation Timing Alignment
-Synchronize all events to the actual visual animation:
-
-| Event | New Timing |
-|-------|------------|
-| Flying animation starts | 0ms |
-| Flying animation ends | 400ms |
-| Visual status → "absorbing" | 400ms |
-| Absorb sound + effects trigger | 400ms |
-| Absorbing animation plays | 400-620ms |
-
----
-
-## Technical Changes
-
-### File 1: `src/components/dashboard/ChatInput.tsx`
-**Line ~284**: Remove the `message-send` sound call
-
-```text
-Before:
-  playSound?.('message-send');
-
-After:
-  // Sound removed - consolidated to absorption in CenterStageLayout
+// After  
+className={cn("flex-1 h-auto py-3.5 px-3 pr-6 rounded-xl cursor-pointer", ...)}
 ```
 
-### File 2: `src/hooks/useBubbleAnimation.ts`
-**Lines 96-102**: Change timeout from 500ms to 400ms to match actual flying animation duration
-
-```text
-Before:
-  setTimeout(() => { ... }, 500);
-
-After:
-  setTimeout(() => { ... }, 400);
-```
-
-### File 3: `src/components/dashboard/CenterStageLayout.tsx`
-**Line 396**: Change effects timeout from 350ms to 400ms to synchronize with animation completion
-
-```text
-Before:
-  setTimeout(() => { ... }, 350);
-
-After:
-  setTimeout(() => { ... }, 400);
-```
-
----
-
-## Expected Result
-
-- **Single cohesive sound**: One satisfying "absorb" sound when the message enters AYN's eye
-- **Smooth animation**: Card flies smoothly, then seamlessly transitions to absorption
-- **Synchronized feedback**: Sound, visual effects (blink, particles), and animation all trigger together at 400ms
+### Expected Result
+- Star icon will be fully visible without any clipping
+- Extra 12px (from 12px to 24px) of right padding provides room for the icon
+- Chat title will still truncate properly leaving space for star
 
