@@ -1,166 +1,169 @@
 
-# Performance Optimization Plan: Chat Input, Transcript, and Landing Page
+# Enhanced Emotion Sound Design
 
-## Problems Identified
+## Overview
 
-### 1. Chat Input Typing Lag
-**Root Cause:** Every keystroke triggers multiple operations:
-- `setIsUserTyping(true)` - state update in AYNEmotionContext
-- `setIsAttentive(true)` - state update in AYNEmotionContext  
-- `updateActivity()` - state update in AYNEmotionContext
-- `onTypingContentChange?.(inputMessage)` - propagates to parent (though currently disabled)
-- Two timeout setup/cleanup operations
-- Language detection (debounced at 200ms)
-
-**Solution:** Remove context state updates during typing. The eye doesn't need to react to every keystroke - only when the user stops typing briefly.
-
-### 2. Transcript Scrolling Lag
-**Root Cause:** 
-- The `hover:-translate-y-0.5` CSS class on every message causes layout recalculations during scroll
-- `MessageFormatter` component may trigger expensive re-renders
-- Group hover effects (`opacity-0 group-hover:opacity-100`) force repaints
-
-**Solution:** Add CSS containment to message bubbles and remove per-message hover transforms that trigger during scroll.
-
-### 3. Landing Page Scroll Performance Degradation
-**Root Cause:**
-- Multiple `ScrollReveal` components create IntersectionObservers
-- Each LazyLoad component creates another IntersectionObserver
-- Service cards use `motion.div` with `whileHover` which registers event listeners
-- Many observers competing for attention causes scroll jank after initial fast render
-
-**Solution:** 
-- Add CSS `will-change: transform` to animated elements before they animate
-- Use CSS containment on service cards
-- Reduce observer count by batching LazyLoad components
+Create distinctive, emotionally-resonant sounds for each of AYN's 11 emotions using multi-oscillator synthesis. Each emotion will have a unique audio signature that **feels** like that emotion.
 
 ---
 
-## Implementation Details
+## Sound Design Philosophy
 
-### Step 1: Optimize Chat Input Typing (ChatInput.tsx)
+### Current Problem
+All emotion sounds use single oscillators with basic configurations - they sound robotic and indistinguishable.
 
-Remove the expensive context calls during typing. Only trigger them once when user starts/stops typing:
+### Solution
+Use **layered oscillators**, **harmonics**, and **musical intervals** to create sounds that aurally represent each emotion's feeling:
 
-```typescript
-// Current (lines 232-275): Updates context on EVERY keystroke
-useEffect(() => {
-  if (inputMessage.trim()) {
-    setIsUserTyping(true);      // Called every keystroke
-    setIsAttentive(true);       // Called every keystroke
-    updateActivity();            // Called every keystroke
-    ...
-  }
-}, [inputMessage, ...]);
+- **Happy**: Major third interval (uplifting)
+- **Sad**: Minor second (melancholic)
+- **Excited**: Rapid ascending arpeggio
+- **Thinking**: Subtle pulsing harmonics
+- **Curious**: Rising question-like inflection
 
-// New: Only update context on START/STOP typing transitions
-useEffect(() => {
-  const hasContent = inputMessage.trim().length > 0;
-  
-  // Only notify when STARTING to type (first character)
-  if (hasContent && !wasTypingRef.current) {
-    setIsUserTyping(true);
-    setIsAttentive(true);
-    updateActivity();
-    wasTypingRef.current = true;
-  }
-  
-  // Stop typing timeout
-  if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-  
-  typingTimeoutRef.current = setTimeout(() => {
-    setIsUserTyping(false);
-    wasTypingRef.current = false;
-  }, 1000);
-  
-  // Language detection (keep as-is with 200ms debounce)
-  ...
-}, [inputMessage]);
+---
+
+## New Sound Configurations
+
+### Happy - Warm, Uplifting Chime
+Two notes forming a major third, like a gentle smile.
+```
+Note 1: C5 (523 Hz) → Note 2: E5 (659 Hz)
+Type: Sine with soft attack
+Duration: 0.25s total
 ```
 
-This reduces context updates from ~10 per second to 1-2 per typing session.
-
-### Step 2: Optimize Transcript Message Scrolling (TranscriptMessage.tsx)
-
-Remove the hover transform that causes layout shifts during scroll:
-
-```typescript
-// Current (line 91):
-"hover:-translate-y-0.5",
-
-// Remove this line entirely - it causes layout recalculation during scroll
+### Sad - Descending Minor
+Soft falling notes that convey empathy.
+```
+Note 1: D4 (294 Hz) → Note 2: Db4 (277 Hz)
+Type: Sine, slow attack
+Duration: 0.5s, long decay
 ```
 
-Add CSS containment to prevent scroll-triggered repaints:
-
-```typescript
-// Add to the message bubble className:
-"contain-content",
+### Excited - Quick Triple Rise
+Three rapid ascending notes bursting with energy.
+```
+C5 → E5 → G5 (major arpeggio)
+Type: Bright sine
+Duration: 0.15s per note, overlapping
 ```
 
-### Step 3: Optimize Landing Page Scroll (LandingPage.tsx)
-
-Add `will-change` and containment to service cards to hint GPU acceleration:
-
-```typescript
-// Service card motion.div (line 577):
-// Current:
-<motion.div className="bg-neutral-50 ... overflow-visible"
-
-// Add CSS containment class:
-<motion.div className="bg-neutral-50 ... overflow-visible contain-layout"
+### Thinking - Pulsing Harmonics
+Subtle oscillation suggesting active thought.
+```
+Base: 349 Hz with LFO modulation
+Type: Triangle with vibrato
+Duration: 0.3s
 ```
 
-Also add to index.css:
+### Curious - Question Inflection
+Rising pitch that mimics the tone of a question.
+```
+Start: 350 Hz → End: 500 Hz (pitch bend)
+Type: Sine with detune
+Duration: 0.25s
+```
 
-```css
-.contain-layout {
-  contain: layout style;
+### Frustrated - Tense Dissonance
+Minor second interval creating subtle tension.
+```
+A3 (220 Hz) + Bb3 (233 Hz) simultaneous
+Type: Triangle, short
+Duration: 0.18s
+```
+
+### Mad - Sharp Intensity
+Bold, intense burst with harmonic distortion.
+```
+Low E2 (82 Hz) with square overtones
+Type: Square filtered
+Duration: 0.12s, hard attack
+```
+
+### Bored - Yawn-like Descent
+Slow, drawn-out falling tone.
+```
+200 Hz → 150 Hz pitch slide
+Type: Sine, very slow
+Duration: 0.5s
+```
+
+### Calm - Flowing Harmony
+Gentle, peaceful major chord.
+```
+C4 + E4 + G4 soft blend
+Type: Pure sine
+Duration: 0.35s, long attack
+```
+
+### Comfort - Warm Embrace
+Rich, enveloping sound like a hug.
+```
+G3 (196 Hz) + D4 (294 Hz) perfect fifth
+Type: Sine, soft
+Duration: 0.4s
+```
+
+### Supportive - Encouraging Rise
+Gently ascending melody that feels like encouragement.
+```
+C4 → D4 → E4 gentle steps
+Type: Sine
+Duration: 0.3s total
+```
+
+---
+
+## Technical Implementation
+
+### New Multi-Note Play Method
+
+Add a `playEmotionChord` method to `SoundGenerator` that can:
+1. Play multiple simultaneous notes (chords)
+2. Play sequential notes (melodies/arpeggios)
+3. Apply pitch bends for rising/falling effects
+
+```typescript
+// New method signature
+playEmotionChord(notes: NoteConfig[]): void
+
+interface NoteConfig {
+  frequency: number;
+  delay: number;      // Start time offset
+  duration: number;
+  gain: number;
+  type: OscillatorType;
+  pitchBend?: { end: number; duration: number };
 }
-
-.contain-content {
-  contain: content;
-}
 ```
 
-### Step 4: Optimize ScrollReveal Observers
+### Updated Emotion Sound Configs
 
-The current implementation creates many individual observers. Add cleanup optimization:
+Replace simple `SoundConfig` with rich `EmotionSoundConfig`:
 
 ```typescript
-// useScrollAnimation.ts - Add disconnect on visibility (already done with triggerOnce)
-// No changes needed - the current implementation is correct
+interface EmotionSoundConfig {
+  notes: NoteConfig[];
+  masterGain: number;
+  filterFreq?: number;
+}
 ```
 
 ---
 
 ## Files to Modify
 
-| File | Change |
-|------|--------|
-| `src/components/dashboard/ChatInput.tsx` | Use ref to track typing state, only call context on start/stop |
-| `src/components/transcript/TranscriptMessage.tsx` | Remove `hover:-translate-y-0.5`, add CSS containment |
-| `src/components/LandingPage.tsx` | Add `contain-layout` to service cards |
-| `src/index.css` | Add `.contain-layout` and `.contain-content` utility classes |
+| File | Changes |
+|------|---------|
+| `src/lib/soundGenerator.ts` | Add `EmotionSoundConfig`, new `playEmotionChord()` method, update `playEmotion()` to use multi-note synthesis |
 
 ---
 
-## Expected Performance Improvements
+## Expected Result
 
-| Issue | Before | After |
-|-------|--------|-------|
-| Chat input context updates | ~10/second | 2/session |
-| Transcript scroll repaints | On every hover | None during scroll |
-| Landing scroll observers | Active throughout | Disconnect after trigger |
-
----
-
-## Technical Summary
-
-1. **ChatInput**: Add `wasTypingRef` to track typing state transitions, call `setIsUserTyping`/`setIsAttentive`/`updateActivity` only on first keystroke, not every keystroke.
-
-2. **TranscriptMessage**: Remove the `hover:-translate-y-0.5` transform that triggers layout recalculation during scroll. Add CSS containment.
-
-3. **LandingPage**: Add CSS containment classes to service cards to isolate layout calculations and reduce scroll jank.
-
-4. **CSS Utilities**: Add new containment utility classes for reuse across the app.
+Each emotion will have an immediately recognizable, emotionally appropriate sound:
+- Users will **feel** the emotion through audio
+- Sounds will be pleasant and non-intrusive
+- Clear differentiation between emotions
+- Maintains the subtle, refined AYN aesthetic
