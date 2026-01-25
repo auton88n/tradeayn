@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Mountain, Sparkles, PlusCircle, FileSearch } from 'lucide-react';
-import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SurveyUploader } from '@/components/engineering/SurveyUploader';
 import { GradingRequirements } from '@/components/engineering/GradingRequirements';
@@ -10,7 +9,6 @@ import { DesignReviewMode } from '@/components/engineering/DesignReviewMode';
 import { DesignAnalysisResults } from '@/components/engineering/DesignAnalysisResults';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { Label } from '@/components/ui/label';
 
 interface SurveyPoint {
   id: string;
@@ -46,7 +44,7 @@ interface GradingDesignerPanelProps {
 
 const GradingDesignerPanel: React.FC<GradingDesignerPanelProps> = ({ onInputChange }) => {
   const [activeTab, setActiveTab] = useState('create');
-  const [projectName, setProjectName] = useState('Untitled Project');
+  const projectName = 'Grading Design';
   
   // Create mode state
   const [points, setPoints] = useState<SurveyPoint[]>([]);
@@ -179,13 +177,7 @@ const GradingDesignerPanel: React.FC<GradingDesignerPanelProps> = ({ onInputChan
             <Sparkles className="w-3 h-3 text-primary" />
             <span className="text-xs text-muted-foreground">AI-Powered</span>
           </div>
-          <Label className="text-xs text-muted-foreground">Project Name</Label>
-          <Input
-            value={projectName}
-            onChange={(e) => setProjectName(e.target.value)}
-            className="text-lg font-semibold border-none bg-transparent p-0 h-auto focus-visible:ring-0"
-            placeholder="Project Name"
-          />
+          <h3 className="text-lg font-semibold">Grading Designer</h3>
         </div>
       </div>
 
