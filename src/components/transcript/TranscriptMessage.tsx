@@ -83,12 +83,13 @@ export const TranscriptMessage = ({
         )}
       </div>
 
-      {/* Message Bubble - Premium Styling */}
+      {/* Message Bubble - Premium Styling with CSS Containment */}
       <div
         className={cn(
           "px-4 py-2.5 rounded-2xl text-sm leading-relaxed",
-          "transition-all duration-200 ease-out",
-          "hover:-translate-y-0.5",
+          "transition-colors duration-200 ease-out",
+          // CSS containment for scroll performance
+          "contain-content",
           // Text wrapping
           "whitespace-normal break-words [word-break:break-word] [overflow-wrap:anywhere]",
           // Alignment
