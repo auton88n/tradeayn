@@ -84,6 +84,8 @@ export const DebugContextProvider = ({ children }: DebugProviderProps) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Only trigger on 'D' key, not when typing in inputs
+      // Guard against undefined e.key (can happen with some special keys)
+      if (!e.key) return;
       const target = e.target as HTMLElement;
       if (e.key.toLowerCase() === 'd' && 
           !['INPUT', 'TEXTAREA'].includes(target.tagName) &&
