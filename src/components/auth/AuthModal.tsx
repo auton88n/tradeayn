@@ -379,7 +379,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
               variant="outline"
               onClick={handleForgotPassword}
               disabled={resendCooldown > 0 || isResettingPassword}
-              className="w-full"
+              className="w-full border-white/20 text-white hover:bg-white hover:text-neutral-950 disabled:opacity-50"
             >
               {isResettingPassword && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {resendCooldown > 0 
@@ -472,7 +472,7 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                 variant="outline"
                 onClick={handleForgotPassword}
                 disabled={isResettingPassword || !email}
-                className="w-full gap-2"
+                className="w-full gap-2 border-white/20 text-white hover:bg-white hover:text-neutral-950 disabled:opacity-50"
               >
                 <KeyRound className="w-4 h-4" />
                 {t('auth.forgotPasswordButton')}

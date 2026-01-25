@@ -9,6 +9,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { Lock, Loader2, Eye, EyeOff, AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import { Session } from '@supabase/supabase-js';
 
+// Helper: race a promise against a timeout
+const withTimeout = <T,>(promise: Promise<T>, ms: number, errorMsg: string): Promise<T> => {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error(errorMsg)), ms))
+  ]);
+};
+
 const ResetPassword = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -17,109 +25,163 @@ const ResetPassword = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [isValidating, setIsValidating] = useState(true);
   const [linkExpired, setLinkExpired] = useState(false);
+  const [slowValidation, setSlowValidation] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
     let isMounted = true;
-    let validationTimeout: NodeJS.Timeout | null = null;
+    let slowTimer: NodeJS.Timeout | null = null;
     
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
-        console.log('Auth event:', event, 'Session:', !!currentSession);
-        
-        if (!isMounted) return;
-        
-        if (event === 'PASSWORD_RECOVERY') {
-          console.log('PASSWORD_RECOVERY event received');
-          setSession(currentSession);
-          setLinkExpired(false);
-          setIsValidating(false);
-          if (validationTimeout) clearTimeout(validationTimeout);
-        } else if (event === 'SIGNED_IN' && currentSession) {
-          // User may have been redirected with a valid recovery session
-          console.log('SIGNED_IN event with session');
-          setSession(currentSession);
-          setLinkExpired(false);
-          setIsValidating(false);
-          if (validationTimeout) clearTimeout(validationTimeout);
+    const validateSession = async () => {
+      // Start slow validation timer (8 seconds)
+      slowTimer = setTimeout(() => {
+        if (isMounted && isValidating) {
+          setSlowValidation(true);
         }
-      }
-    );
+      }, 8000);
 
-    // Check URL for error parameters first
-    const urlParams = new URLSearchParams(window.location.search);
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    
-    const urlError = urlParams.get('error') || hashParams.get('error');
-    const errorDescription = urlParams.get('error_description') || hashParams.get('error_description');
-    
-    // Check if we have a recovery token in the URL (hash fragment)
-    const accessToken = hashParams.get('access_token');
-    const tokenType = hashParams.get('type');
-    const hasRecoveryToken = accessToken && tokenType === 'recovery';
-    
-    console.log('URL check - error:', urlError, 'hasRecoveryToken:', hasRecoveryToken);
-    
-    if (urlError || errorDescription?.includes('expired')) {
-      console.log('URL contains error, marking as expired');
-      setLinkExpired(true);
-      setIsValidating(false);
-      return () => {
-        isMounted = false;
-        subscription.unsubscribe();
-        if (validationTimeout) clearTimeout(validationTimeout);
-      };
-    }
-
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session: existingSession }, error }) => {
-      if (!isMounted) return;
+      // Check URL for error parameters first
+      const urlParams = new URLSearchParams(window.location.search);
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
       
-      if (error) {
-        console.error('Session check error:', error);
-        setLinkExpired(true);
-        setIsValidating(false);
+      const urlError = urlParams.get('error') || hashParams.get('error');
+      const errorDescription = urlParams.get('error_description') || hashParams.get('error_description');
+      
+      if (urlError || errorDescription?.includes('expired')) {
+        console.log('[ResetPassword] URL contains error, marking as expired');
+        if (isMounted) {
+          setLinkExpired(true);
+          setIsValidating(false);
+        }
         return;
       }
-      
-      if (existingSession) {
-        console.log('Found existing session');
-        setSession(existingSession);
-        setIsValidating(false);
-      } else if (hasRecoveryToken) {
-        // We have a recovery token but no session yet - wait for auth event
-        console.log('Has recovery token, waiting for auth event...');
-        validationTimeout = setTimeout(() => {
-          if (isMounted) {
-            console.log('Timeout waiting for auth event');
-            // Check session one more time
-            supabase.auth.getSession().then(({ data: { session: finalCheck } }) => {
-              if (isMounted) {
-                if (finalCheck) {
-                  setSession(finalCheck);
-                  setIsValidating(false);
-                } else {
-                  setLinkExpired(true);
-                  setIsValidating(false);
-                }
-              }
-            });
+
+      // Check for recovery token in URL hash
+      const accessToken = hashParams.get('access_token');
+      const refreshToken = hashParams.get('refresh_token');
+      const tokenType = hashParams.get('type');
+      const hasRecoveryToken = accessToken && tokenType === 'recovery';
+
+      console.log('[ResetPassword] Has recovery token:', hasRecoveryToken);
+
+      // Set up auth state listener
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        (event, currentSession) => {
+          console.log('[ResetPassword] Auth event:', event);
+          
+          if (!isMounted) return;
+          
+          if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && currentSession)) {
+            setSession(currentSession);
+            setLinkExpired(false);
+            setIsValidating(false);
+            if (slowTimer) clearTimeout(slowTimer);
+            
+            // Clean URL hash for security
+            if (window.location.hash) {
+              window.history.replaceState(null, '', window.location.pathname);
+            }
           }
+        }
+      );
+
+      try {
+        // Try to get existing session with timeout (5 seconds)
+        const { data: { session: existingSession }, error } = await withTimeout(
+          supabase.auth.getSession(),
+          5000,
+          'Session fetch timeout'
+        );
+
+        if (!isMounted) {
+          subscription.unsubscribe();
+          return;
+        }
+
+        if (error) {
+          console.error('[ResetPassword] Session check error:', error);
+          setLinkExpired(true);
+          setIsValidating(false);
+          subscription.unsubscribe();
+          return;
+        }
+
+        if (existingSession) {
+          console.log('[ResetPassword] Found existing session');
+          setSession(existingSession);
+          setIsValidating(false);
+          if (slowTimer) clearTimeout(slowTimer);
+          subscription.unsubscribe();
+          return;
+        }
+
+        // If we have recovery tokens but no session, try to set session manually
+        if (hasRecoveryToken && refreshToken) {
+          console.log('[ResetPassword] Attempting manual session set...');
+          try {
+            const { data: sessionData, error: setError } = await withTimeout(
+              supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken }),
+              5000,
+              'Set session timeout'
+            );
+
+            if (!isMounted) {
+              subscription.unsubscribe();
+              return;
+            }
+
+            if (setError) {
+              console.error('[ResetPassword] Failed to set session:', setError);
+              setLinkExpired(true);
+              setIsValidating(false);
+            } else if (sessionData.session) {
+              console.log('[ResetPassword] Session set successfully');
+              setSession(sessionData.session);
+              setIsValidating(false);
+              
+              // Clean URL hash for security
+              window.history.replaceState(null, '', window.location.pathname);
+            } else {
+              setLinkExpired(true);
+              setIsValidating(false);
+            }
+          } catch (e) {
+            console.error('[ResetPassword] Manual session set failed:', e);
+            if (isMounted) {
+              setLinkExpired(true);
+              setIsValidating(false);
+            }
+          }
+          subscription.unsubscribe();
+          return;
+        }
+
+        // No session and no recovery token - wait briefly for auth event
+        console.log('[ResetPassword] Waiting for auth event...');
+        setTimeout(() => {
+          if (isMounted && isValidating) {
+            console.log('[ResetPassword] Timeout waiting for auth event');
+            setLinkExpired(true);
+            setIsValidating(false);
+          }
+          subscription.unsubscribe();
         }, 3000);
-      } else {
-        // No session and no recovery token - definitely expired/invalid
-        console.log('No session and no recovery token');
-        setLinkExpired(true);
-        setIsValidating(false);
+
+      } catch (e) {
+        console.error('[ResetPassword] Validation error:', e);
+        if (isMounted) {
+          setLinkExpired(true);
+          setIsValidating(false);
+        }
       }
-    });
+    };
+
+    validateSession();
 
     return () => {
       isMounted = false;
-      subscription.unsubscribe();
-      if (validationTimeout) clearTimeout(validationTimeout);
+      if (slowTimer) clearTimeout(slowTimer);
     };
   }, []);
 
@@ -174,12 +236,15 @@ const ResetPassword = () => {
   };
 
   const handleRequestNewLink = () => {
-    // Navigate to home and show toast to request new link
     toast({
       title: 'Request New Link',
       description: 'Please use the "Forgot Password" option to request a new reset link.',
     });
     navigate('/');
+  };
+
+  const handleReload = () => {
+    window.location.reload();
   };
 
   // Loading state while validating
@@ -193,9 +258,31 @@ const ResetPassword = () => {
             </div>
             <CardTitle className="text-2xl text-center">Validating Reset Link</CardTitle>
             <CardDescription className="text-center">
-              Please wait while we verify your password reset link...
+              {slowValidation 
+                ? "This is taking longer than expected..."
+                : "Please wait while we verify your password reset link..."
+              }
             </CardDescription>
           </CardHeader>
+          {slowValidation && (
+            <CardContent className="space-y-4">
+              <Button 
+                onClick={handleReload} 
+                className="w-full"
+                variant="default"
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Reload Page
+              </Button>
+              <Button 
+                onClick={handleRequestNewLink} 
+                className="w-full"
+                variant="outline"
+              >
+                Request New Link
+              </Button>
+            </CardContent>
+          )}
         </Card>
       </div>
     );
