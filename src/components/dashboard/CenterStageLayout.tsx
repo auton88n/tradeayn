@@ -638,7 +638,7 @@ export const CenterStageLayout = ({
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute -bottom-12 left-1/2 -translate-x-1/2 overflow-visible"
+                  className="absolute -bottom-20 left-1/2 -translate-x-1/2 overflow-visible"
                 >
                   <div
                     className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-ayn-thinking/20 backdrop-blur-sm border border-ayn-thinking/30"
