@@ -387,6 +387,15 @@ button, a, input, textarea, select {
     }
   }
 
+  /* Safari backdrop-blur fix - forces GPU compositing to prevent artifacts */
+  @supports (-webkit-backdrop-filter: blur(1px)) {
+    .backdrop-blur-sm {
+      -webkit-backdrop-filter: blur(4px);
+      backdrop-filter: blur(4px);
+      -webkit-transform: translate3d(0, 0, 0);
+    }
+  }
+
   /* Glass morphism effects */
   .glass {
     background: var(--glass-bg);

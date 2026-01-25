@@ -88,8 +88,8 @@ const EngineeringMockup = memo(() => {
             transition={{ delay: 1 }}
           >
             <div className="flex items-center gap-2">
-              <div className="w-8 h-px bg-cyan-400" />
-              <div className="text-[12px] font-mono text-cyan-300 whitespace-nowrap font-medium">
+              <div className="w-8 h-px bg-cyan-600 dark:bg-cyan-400" />
+              <div className="text-[12px] font-mono text-cyan-600 dark:text-cyan-300 whitespace-nowrap font-medium">
                 h = 15.2m
               </div>
             </div>
@@ -101,7 +101,7 @@ const EngineeringMockup = memo(() => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.1 }}
           >
-            <div className="text-[11px] font-mono text-cyan-300/80 font-medium whitespace-nowrap">
+            <div className="text-[11px] font-mono text-cyan-600/80 dark:text-cyan-300/80 font-medium whitespace-nowrap">
               Base: 12.0m × 8.0m
             </div>
           </motion.div>
@@ -114,8 +114,8 @@ const EngineeringMockup = memo(() => {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 1.2 }}
         >
-          <div className="w-4 h-4 rounded-full bg-emerald-400 shadow-lg shadow-emerald-400/60" />
-          <div className="text-[10px] font-mono text-emerald-300 mt-1 whitespace-nowrap font-medium">OK</div>
+          <div className="w-4 h-4 rounded-full bg-emerald-500 dark:bg-emerald-400 shadow-lg shadow-emerald-500/60 dark:shadow-emerald-400/60" />
+          <div className="text-[10px] font-mono text-emerald-600 dark:text-emerald-300 mt-1 whitespace-nowrap font-medium">OK</div>
         </motion.div>
         
         {/* Load arrows - static */}
@@ -140,17 +140,17 @@ const EngineeringMockup = memo(() => {
       
       {/* Floating calculation result - positioned top-right, higher z-index */}
       <motion.div
-        className="absolute top-4 right-4 z-30 px-4 py-3 rounded-xl bg-neutral-900/95 border border-cyan-400/50 backdrop-blur-sm"
-        style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 0 24px rgba(34,211,238,0.2)' }}
+        className="absolute top-4 right-4 z-30 px-4 py-3 rounded-xl bg-white dark:bg-neutral-900/95 border border-cyan-600/50 dark:border-cyan-400/50 backdrop-blur-sm"
+        style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.15), 0 0 24px rgba(34,211,238,0.1)' }}
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1.3 }}
       >
-        <div className="text-[13px] font-mono text-cyan-200 font-semibold">
+        <div className="text-[13px] font-mono text-cyan-700 dark:text-cyan-200 font-semibold">
           Mu = 245.8 kN·m
         </div>
-        <div className="text-[11px] font-mono text-emerald-300 flex items-center gap-1.5 mt-1">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50" />
+        <div className="text-[11px] font-mono text-emerald-600 dark:text-emerald-300 flex items-center gap-1.5 mt-1">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 dark:bg-emerald-400 shadow-sm shadow-emerald-500/50 dark:shadow-emerald-400/50" />
           Safe Design
         </div>
       </motion.div>
