@@ -50,8 +50,69 @@ export const AccountPreferences = ({ userId, userEmail, accessToken }: AccountPr
   });
 
   useEffect(() => {
-    loadProfile();
-    loadUsageData();
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
+    
+    // Load all data in parallel for faster rendering
+    const loadAllData = async () => {
+      // Parallel fetch - profile and usage together
+      const [profileResult, usageResult] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('contact_person, company_name, business_type, avatar_url')
+          .eq('user_id', userId)
+          .single(),
+        supabase
+          .from('user_ai_limits')
+          .select('current_monthly_messages, monthly_messages, is_unlimited, monthly_reset_at')
+          .eq('user_id', userId)
+          .maybeSingle()
+      ]);
+
+      // Process profile immediately - don't wait for RPC
+      if (profileResult.data) {
+        const profileData = {
+          contact_person: profileResult.data.contact_person || '',
+          company_name: profileResult.data.company_name || '',
+          business_type: profileResult.data.business_type || '',
+          business_context: '', // Will be loaded async
+          avatar_url: profileResult.data.avatar_url || '',
+        };
+        setProfile(profileData);
+        setOriginalProfile(profileData);
+      }
+
+      // Process usage
+      if (usageResult.data) {
+        setUsageData({
+          currentUsage: usageResult.data.current_monthly_messages ?? 0,
+          monthlyLimit: usageResult.data.is_unlimited ? null : (usageResult.data.monthly_messages ?? 50),
+          isUnlimited: usageResult.data.is_unlimited ?? false,
+          resetDate: usageResult.data.monthly_reset_at ?? null,
+        });
+      }
+
+      setLoading(false);
+
+      // Non-blocking: load encrypted business context after UI is ready
+      try {
+        const { data: businessContext } = await supabase
+          .rpc('get_profile_business_context', { _user_id: userId });
+        if (businessContext) {
+          setProfile(prev => {
+            const updated = { ...prev, business_context: businessContext };
+            setOriginalProfile(updated);
+            return updated;
+          });
+        }
+      } catch {
+        // Silent failure - encryption key might not be configured
+      }
+    };
+
+    loadAllData();
   }, [userId]);
 
   // Track unsaved changes
@@ -60,64 +121,22 @@ export const AccountPreferences = ({ userId, userEmail, accessToken }: AccountPr
     registerFormChange('account', hasChanges);
   }, [profile, originalProfile, registerFormChange]);
 
-  const loadProfile = async () => {
-    if (!userId) return;
-
-    try {
-      // Fetch profile data (without plaintext business_context - it's encrypted)
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('contact_person, company_name, business_type, avatar_url')
-        .eq('user_id', userId)
-        .single();
-
-      if (error) throw error;
-      
-      // Fetch decrypted business_context via secure RPC function
-      const { data: businessContext } = await supabase
-        .rpc('get_profile_business_context', { _user_id: userId });
-
-      if (data) {
-        const profileData = {
-          contact_person: data.contact_person || '',
-          company_name: data.company_name || '',
-          business_type: data.business_type || '',
-          business_context: businessContext || '',
-          avatar_url: data.avatar_url || '',
-        };
-        setProfile(profileData);
-        setOriginalProfile(profileData);
-      }
-    } catch (error) {
-      console.error('Error loading profile:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadUsageData = async () => {
-    if (!userId) return;
-
-    try {
-      // Read from user_ai_limits - now using monthly tracking
-      const { data, error } = await supabase
-        .from('user_ai_limits')
-        .select('current_monthly_messages, monthly_messages, is_unlimited, monthly_reset_at')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      if (error) throw error;
-
-      if (data) {
-        setUsageData({
-          currentUsage: data.current_monthly_messages ?? 0,
-          monthlyLimit: data.is_unlimited ? null : (data.monthly_messages ?? 50),
-          isUnlimited: data.is_unlimited ?? false,
-          resetDate: data.monthly_reset_at ?? null,
-        });
-      }
-    } catch (error) {
-      console.error('Error loading usage data:', error);
+  // Function to refresh profile after avatar update
+  const refreshProfile = async () => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('contact_person, company_name, business_type, avatar_url')
+      .eq('user_id', userId)
+      .single();
+    
+    if (data) {
+      setProfile(prev => ({
+        ...prev,
+        contact_person: data.contact_person || '',
+        company_name: data.company_name || '',
+        business_type: data.business_type || '',
+        avatar_url: data.avatar_url || '',
+      }));
     }
   };
 
@@ -329,7 +348,7 @@ export const AccountPreferences = ({ userId, userEmail, accessToken }: AccountPr
         onOpenChange={setShowAvatarUpload}
         currentAvatarUrl={profile.avatar_url}
         onAvatarUpdated={() => {
-          loadProfile();
+          refreshProfile();
           setShowAvatarUpload(false);
         }}
         userId={userId}
