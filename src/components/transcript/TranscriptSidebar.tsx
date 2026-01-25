@@ -26,7 +26,6 @@ const TranscriptContent = ({
   setSearchQuery,
   isSearchFocused,
   setIsSearchFocused,
-  scrollRef,
   currentMode,
   onReply,
   onToggle,
@@ -39,13 +38,29 @@ const TranscriptContent = ({
   setSearchQuery: (q: string) => void;
   isSearchFocused: boolean;
   setIsSearchFocused: (f: boolean) => void;
-  scrollRef: React.RefObject<HTMLDivElement>;
   currentMode?: string;
   onReply?: (quotedContent: string) => void;
   onToggle: (open?: boolean) => void;
   onClear?: () => void;
   handleCopyAll: () => void;
-}) => <div className="flex flex-col h-full bg-gradient-to-b from-background to-background/95">
+}) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when messages change or component mounts
+  useEffect(() => {
+    // Small delay to ensure DOM is ready after render
+    const timer = setTimeout(() => {
+      if (scrollRef.current) {
+        const viewport = scrollRef.current.querySelector('[data-radix-scroll-area-viewport]');
+        if (viewport) {
+          viewport.scrollTop = viewport.scrollHeight;
+        }
+      }
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [filteredMessages]);
+
+  return <div className="flex flex-col h-full bg-gradient-to-b from-background to-background/95">
     {/* Premium Header */}
     <div className="relative">
       {/* Glassmorphism header background */}
@@ -154,6 +169,8 @@ const TranscriptContent = ({
       </div>
     </div>
   </div>;
+};
+
 export const TranscriptSidebar = ({
   messages,
   isOpen,
@@ -167,18 +184,6 @@ export const TranscriptSidebar = ({
   } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  // Auto-scroll to bottom when new messages arrive
-  useEffect(() => {
-    if (scrollRef.current) {
-      // ScrollArea uses a viewport div inside - find it and scroll
-      const viewport = scrollRef.current.querySelector('[data-radix-scroll-area-viewport]');
-      if (viewport) {
-        viewport.scrollTop = viewport.scrollHeight;
-      }
-    }
-  }, [messages]);
 
   // Filter and sort messages chronologically (oldest first)
   const filteredMessages = messages
@@ -212,7 +217,6 @@ export const TranscriptSidebar = ({
     setSearchQuery,
     isSearchFocused,
     setIsSearchFocused,
-    scrollRef,
     currentMode,
     onReply,
     onToggle,
