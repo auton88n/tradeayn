@@ -115,7 +115,7 @@ const CustomerPhone = memo(({ qrPattern }: { qrPattern: boolean[][] }) => {
             {/* QR Code Container */}
             <div 
               className="relative bg-white rounded-xl p-2.5"
-              style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(0,0,0,0.05)' }}
+              style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}
             >
               {/* QR Code Grid - 21x21 realistic pattern */}
               <div className="w-[84px] h-[84px] grid grid-cols-[repeat(21,1fr)] grid-rows-[repeat(21,1fr)] overflow-hidden">
