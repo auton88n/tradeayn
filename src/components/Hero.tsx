@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, memo } from 'react';
 import { Brain } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { motion, useMotionValue, useSpring, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { LandingChatInput } from '@/components/landing/LandingChatInput';
 import { useDebugContextOptional } from '@/contexts/DebugContext';
@@ -53,53 +53,7 @@ export const Hero = memo(({ onGetStarted }: HeroProps) => {
   };
   const cardPositions = getCardPositions();
 
-  // track pointer relative to container center for subtle eye follow with spring physics
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-
-  // Spring physics for smooth, natural eye movement
-  const eyeX = useSpring(mouseX, {
-    stiffness: 150,
-    damping: 20,
-    mass: 0.5
-  });
-  const eyeY = useSpring(mouseY, {
-    stiffness: 150,
-    damping: 20,
-    mass: 0.5
-  });
-
-  // Parallax transforms removed - using pure CSS animations for particles
-  // Throttled mouse tracking for performance
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    let lastUpdate = 0;
-    const throttleMs = 16; // ~60fps
-    
-    function onMove(e: MouseEvent) {
-      const now = Date.now();
-      if (now - lastUpdate < throttleMs) return;
-      lastUpdate = now;
-      
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
-      mouseX.set((e.clientX - cx) * 0.12);
-      mouseY.set((e.clientY - cy) * 0.12);
-    }
-    function onLeave() {
-      mouseX.set(0);
-      mouseY.set(0);
-    }
-    window.addEventListener("mousemove", onMove, { passive: true });
-    window.addEventListener("mouseleave", onLeave);
-    return () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseleave", onLeave);
-    };
-  }, [mouseX, mouseY]);
+  // Mouse tracking removed for performance
 
 
   // Unified animation cycle - 3 second rhythm
@@ -365,11 +319,8 @@ export const Hero = memo(({ onGetStarted }: HeroProps) => {
         </AnimatePresence>
 
         {/* Eye - Clean minimal design matching dashboard EmotionalEye */}
-        <motion.div 
-          style={{ x: eyeX, y: eyeY }}
-          className="relative z-10 flex items-center justify-center group cursor-pointer will-change-transform" 
-          initial={{ scale: 1, opacity: 1 }}
-          animate={{ scale: 1, opacity: 1 }}
+        <div 
+          className="relative z-10 flex items-center justify-center group cursor-pointer" 
           onMouseEnter={() => setIsHovered(true)} 
           onMouseLeave={() => setIsHovered(false)}
         >
@@ -436,7 +387,7 @@ export const Hero = memo(({ onGetStarted }: HeroProps) => {
               </foreignObject>
             </motion.svg>
           </div>
-        </motion.div>
+        </div>
       </motion.div>
 
       {/* Interactive Chat Input */}
