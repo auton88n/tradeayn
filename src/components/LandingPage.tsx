@@ -628,7 +628,7 @@ const LandingPage = memo(() => {
               {/* Ticketing System - Featured Card */}
               <ScrollReveal delay={0.3}>
                 <Link to="/services/ticketing" className="block">
-                  <motion.div className="bg-card/50 border border-border/50 rounded-3xl p-6 md:p-8 min-h-[500px] flex flex-col group cursor-pointer overflow-visible" whileHover={{
+                  <motion.div className="bg-card/50 rounded-3xl p-6 md:p-8 min-h-[500px] flex flex-col group cursor-pointer overflow-visible" whileHover={{
                   y: -4
                 }} transition={{
                   duration: 0.3,
