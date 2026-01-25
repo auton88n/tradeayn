@@ -72,9 +72,9 @@ interface EngineeringAIChatProps {
 const QUICK_ACTIONS: Record<CalculatorType, { label: string; icon: typeof HelpCircle; question: string }[]> = {
   beam: [
     { label: 'Explain the design calculations', icon: Calculator, question: 'Explain why this beam design was chosen. Show me the step-by-step calculations with actual numbers from my inputs.' },
-    { label: 'Check ACI/SBC code compliance', icon: BookOpen, question: 'Does this design comply with ACI 318-19 and Saudi Building Code SBC 304-2018 requirements? Check min/max reinforcement, span/depth ratios, and deflection limits.' },
+    { label: 'Check code compliance', icon: BookOpen, question: 'Does this design comply with the selected building code requirements? Check min/max reinforcement, span/depth ratios, and deflection limits.' },
     { label: 'Optimize for cost', icon: Lightbulb, question: 'How can I optimize this beam design to reduce cost? Analyze concrete and steel quantities and suggest alternatives.' },
-    { label: 'Check shear design', icon: AlertTriangle, question: 'Verify the shear design. Calculate Vc, Vs, and check if stirrup spacing is adequate per ACI 318-19 Section 22.5.' },
+    { label: 'Check shear design', icon: AlertTriangle, question: 'Verify the shear design. Calculate Vc, Vs, and check if stirrup spacing is adequate per the applicable code provisions.' },
     { label: 'Deflection analysis', icon: Zap, question: 'Calculate the expected deflection for this beam. Is it within L/250 for total and L/500 after partitions?' },
   ],
   column: [
