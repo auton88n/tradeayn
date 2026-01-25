@@ -254,7 +254,7 @@ const AIEmployee = () => {
                 {t.startProject}
               </Button>
               <Link to="/services/ai-employee/apply">
-                <Button size="lg" variant="outline" className="rounded-full px-8 border-neutral-700 hover:bg-neutral-800">
+                <Button size="lg" variant="outline" className="rounded-full px-8 border-neutral-700 hover:bg-neutral-800 text-white hover:text-white">
                   {language === 'ar' ? 'النموذج المفصل' : language === 'fr' ? 'Formulaire détaillé' : 'Detailed Form'}
                 </Button>
               </Link>
@@ -298,7 +298,7 @@ const AIEmployee = () => {
                 <CheckCircle className="w-16 h-16 text-cyan-400 mx-auto mb-4" />
                 <h3 className="text-xl font-bold mb-2">{t.successTitle}</h3>
                 <p className="text-neutral-400 mb-6">{t.successDesc}</p>
-                <Button onClick={handleCloseModal} variant="outline" className="border-neutral-700">{t.close}</Button>
+                <Button onClick={handleCloseModal} variant="outline" className="border-neutral-700 text-white hover:text-white">{t.close}</Button>
               </div>
             )}
           </DialogContent>
