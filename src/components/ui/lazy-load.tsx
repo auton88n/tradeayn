@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, ReactNode } from 'react';
+import { useState, useEffect, useRef, ReactNode, memo } from 'react';
 import { useDebugContextOptional } from '@/contexts/DebugContext';
 
 interface LazyLoadProps {
@@ -9,7 +9,7 @@ interface LazyLoadProps {
   debugLabel?: string;
 }
 
-export const LazyLoad = ({ 
+export const LazyLoad = memo(({ 
   children, 
   placeholder = <div className="h-[160px]" />,
   rootMargin = '100px',
@@ -18,7 +18,8 @@ export const LazyLoad = ({
 }: LazyLoadProps) => {
   const [isVisible, setIsVisible] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const debug = useDebugContextOptional();
+  // Store debug ref to avoid re-renders from context changes
+  const debugRef = useRef(useDebugContextOptional());
 
   useEffect(() => {
     const element = ref.current;
@@ -30,7 +31,8 @@ export const LazyLoad = ({
           setIsVisible(true);
           observer.disconnect();
           
-          // Debug logging
+          // Debug logging (read current value)
+          const debug = debugRef.current;
           if (debug?.isDebugMode) {
             debug.addIntersectionTrigger(debugLabel);
             console.log(`[LazyLoad] ${debugLabel} became visible`);
@@ -42,24 +44,17 @@ export const LazyLoad = ({
 
     observer.observe(element);
     return () => observer.disconnect();
-  }, [rootMargin, threshold, debug?.isDebugMode, debugLabel, debug]);
-
-  // Debug border styles
-  const debugStyles = debug?.isDebugMode && !isVisible ? {
-    outline: '2px dashed hsl(210, 100%, 50%)',
-    outlineOffset: '-2px'
-  } : {};
+  }, [rootMargin, threshold, debugLabel]); // Removed debug from deps
 
   return (
     <div 
       ref={ref}
       style={{ 
         contain: 'layout paint',
-        willChange: isVisible ? 'auto' : 'contents',
-        ...debugStyles
+        willChange: isVisible ? 'auto' : 'contents'
       }}
     >
       {isVisible ? children : placeholder}
     </div>
   );
-};
+});

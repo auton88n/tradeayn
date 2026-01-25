@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useDebugContextOptional } from '@/contexts/DebugContext';
 
 interface UseScrollAnimationOptions {
@@ -18,19 +18,18 @@ export const useScrollAnimation = (options: UseScrollAnimationOptions = {}) => {
 
   const ref = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
-  const debug = useDebugContextOptional();
+  // Store debug ref to avoid re-renders from context changes
+  const debugRef = useRef(useDebugContextOptional());
 
   useEffect(() => {
     const element = ref.current;
     if (!element) return;
+    const debug = debugRef.current;
 
     // Add debug yellow border to observed elements
     if (debug?.isDebugMode) {
       element.style.outline = '2px dotted hsl(50, 100%, 50%)';
       element.style.outlineOffset = '-2px';
-    } else {
-      element.style.outline = '';
-      element.style.outlineOffset = '';
     }
 
     const observer = new IntersectionObserver(
@@ -38,14 +37,15 @@ export const useScrollAnimation = (options: UseScrollAnimationOptions = {}) => {
         if (entry.isIntersecting) {
           setIsVisible(true);
           
-          // Debug logging
-          if (debug?.isDebugMode) {
-            debug.addIntersectionTrigger(debugLabel);
+          // Debug logging (read current value from ref)
+          const currentDebug = debugRef.current;
+          if (currentDebug?.isDebugMode) {
+            currentDebug.addIntersectionTrigger(debugLabel);
             console.log(`[ScrollAnimation] ${debugLabel} triggered`);
             // Flash green when triggered
             element.style.outline = '2px solid hsl(120, 100%, 40%)';
             setTimeout(() => {
-              if (debug?.isDebugMode) {
+              if (currentDebug?.isDebugMode) {
                 element.style.outline = '2px dotted hsl(50, 100%, 50%)';
               } else {
                 element.style.outline = '';
@@ -70,7 +70,7 @@ export const useScrollAnimation = (options: UseScrollAnimationOptions = {}) => {
       element.style.outline = '';
       element.style.outlineOffset = '';
     };
-  }, [threshold, rootMargin, triggerOnce, debug?.isDebugMode, debugLabel, debug]);
+  }, [threshold, rootMargin, triggerOnce, debugLabel]); // Removed debug from deps
 
   return [ref, isVisible] as const;
 };

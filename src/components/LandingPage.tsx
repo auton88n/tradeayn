@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, memo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Brain, ArrowRight, CheckCircle, Send, Loader2, Sparkles, Globe, Shield, Menu, ChevronDown, Calculator, Car, Mountain, Ticket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -47,8 +47,9 @@ const ScrollReveal = ({
     </div>;
 };
 
-const LandingPage = () => {
-  const debug = useDebugContextOptional();
+const LandingPage = memo(() => {
+  // Use ref to avoid re-renders from debug context updates
+  const debugRef = useRef(useDebugContextOptional());
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [pendingMessage, setPendingMessage] = useState<string>('');
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
@@ -63,9 +64,9 @@ const LandingPage = () => {
     toast
   } = useToast();
   
-  // Debug render logging - direct call (no useEffect to avoid infinite loop)
-  if (debug?.isDebugMode) {
-    debug.incrementRenderCount('LandingPage');
+  // Debug render logging - use ref to avoid dependency on context
+  if (debugRef.current?.isDebugMode) {
+    debugRef.current.incrementRenderCount('LandingPage');
   }
 
   // Hover handlers with collapse delay
@@ -848,5 +849,5 @@ const LandingPage = () => {
       <AuthModal open={showAuthModal} onOpenChange={setShowAuthModal} />
     </div>
   </>;
-};
+});
 export default LandingPage;
