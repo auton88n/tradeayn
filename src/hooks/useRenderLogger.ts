@@ -22,11 +22,13 @@ export const useRenderLogger = ({
     renderCountRef.current += 1;
     debug.incrementRenderCount(componentName);
     
-    // Log render
-    console.log(`[Render] ${componentName}`, {
-      count: renderCountRef.current,
-      timestamp: new Date().toISOString().split('T')[1].slice(0, 12)
-    });
+    // Log render (only in debug mode which is already gated)
+    if (import.meta.env.DEV) {
+      console.log(`[Render] ${componentName}`, {
+        count: renderCountRef.current,
+        timestamp: new Date().toISOString().split('T')[1].slice(0, 12)
+      });
+    }
     
     // Log changed props if enabled
     if (logProps && props && prevPropsRef.current) {
@@ -41,7 +43,7 @@ export const useRenderLogger = ({
         }
       });
       
-      if (Object.keys(changedProps).length > 0) {
+      if (Object.keys(changedProps).length > 0 && import.meta.env.DEV) {
         console.log(`[Props Changed] ${componentName}`, changedProps);
       }
     }

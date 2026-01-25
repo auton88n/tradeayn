@@ -350,7 +350,9 @@ const UnifiedDesigner: React.FC<{
         description: `${spaces.length} parking spaces created with ${efficiency}% efficiency`,
       });
     } catch (err) {
-      console.error('Layout generation error:', err);
+      if (import.meta.env.DEV) {
+        console.error('Layout generation error:', err);
+      }
       toast({
         title: t('error.calculationFailed'),
         description: t('error.calculationFailedDesc'),
@@ -416,7 +418,9 @@ const UnifiedDesigner: React.FC<{
       session?.trackExport('dxf');
       toast({ title: t('common.success'), description: t('common.readyToDownload') });
     } catch (err) {
-      console.error('DXF export error:', err);
+      if (import.meta.env.DEV) {
+        console.error('DXF export error:', err);
+      }
       toast({ title: t('error.exportFailed'), description: t('error.exportFailedDesc'), variant: "destructive" });
     }
   };
@@ -528,7 +532,9 @@ const UnifiedDesigner: React.FC<{
       session?.trackExport('pdf');
       toast({ title: "PDF Exported", description: "Report downloaded successfully" });
     } catch (err) {
-      console.error('PDF export error:', err);
+      if (import.meta.env.DEV) {
+        console.error('PDF export error:', err);
+      }
       toast({ title: "Export Failed", description: "Could not generate PDF file", variant: "destructive" });
     }
   };

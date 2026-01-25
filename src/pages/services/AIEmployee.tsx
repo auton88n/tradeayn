@@ -115,7 +115,9 @@ const AIEmployee = () => {
       setIsSuccess(true);
       setFormData({ fullName: '', email: '', phone: '', message: '' });
     } catch (error) {
-      console.error('Submission error:', error);
+      if (import.meta.env.DEV) {
+        console.error('Submission error:', error);
+      }
       toast({
         title: language === 'ar' ? 'حدث خطأ. يرجى المحاولة مرة أخرى.' : language === 'fr' ? 'Une erreur s\'est produite. Veuillez réessayer.' : 'Something went wrong. Please try again.',
         variant: 'destructive'

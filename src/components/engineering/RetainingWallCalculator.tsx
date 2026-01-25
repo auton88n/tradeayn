@@ -172,7 +172,9 @@ export const RetainingWallCalculator = ({
 
       toast.success(t('common.success'));
     } catch (err) {
-      console.error('Calculation error:', err);
+      if (import.meta.env.DEV) {
+        console.error('Calculation error:', err);
+      }
       toast.error(t('error.calculationFailedDesc'));
     } finally {
       setIsCalculating(false);

@@ -91,7 +91,9 @@ const SupportManagement: React.FC = () => {
       if (error) throw error;
       setTickets(data || []);
     } catch (error) {
-      console.error('Error fetching tickets:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error fetching tickets:', error);
+      }
       toast.error("Couldn't load tickets. Please try again.");
     } finally {
       setIsLoading(false);

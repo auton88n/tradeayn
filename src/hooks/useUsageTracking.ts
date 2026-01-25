@@ -51,7 +51,9 @@ export const useUsageTracking = (userId: string | null): UsageData & { refreshUs
         });
       }
     } catch (err) {
-      console.error('[useUsageTracking] Error fetching usage:', err);
+      if (import.meta.env.DEV) {
+        console.error('[useUsageTracking] Error fetching usage:', err);
+      }
       setUsageData(prev => ({ ...prev, isLoading: false }));
     }
   }, [userId]);
@@ -96,12 +98,14 @@ export const useUsageTracking = (userId: string | null): UsageData & { refreshUs
           }
         )
         .subscribe((status, err) => {
-          if (status === 'CHANNEL_ERROR' || err) {
+          if ((status === 'CHANNEL_ERROR' || err) && import.meta.env.DEV) {
             console.warn('[useUsageTracking] Real-time subscription unavailable, using polling fallback');
           }
         });
     } catch (err) {
-      console.warn('[useUsageTracking] Failed to setup real-time subscription:', err);
+      if (import.meta.env.DEV) {
+        console.warn('[useUsageTracking] Failed to setup real-time subscription:', err);
+      }
     }
 
     return () => {

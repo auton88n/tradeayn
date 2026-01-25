@@ -108,7 +108,9 @@ export function AICostDashboard() {
         totalCost
       });
     } catch (error) {
-      console.error('Error fetching stats:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error fetching stats:', error);
+      }
       toast.error('Failed to load cost data');
     } finally {
       setIsLoading(false);

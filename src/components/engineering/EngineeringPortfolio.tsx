@@ -55,7 +55,9 @@ const EngineeringPortfolio = ({ userId, onAddToPortfolio }: EngineeringPortfolio
       }));
       setItems(mappedItems);
     } catch (error) {
-      console.error('Error fetching portfolio:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error fetching portfolio:', error);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -83,7 +85,9 @@ const EngineeringPortfolio = ({ userId, onAddToPortfolio }: EngineeringPortfolio
           : 'This design is now private.',
       });
     } catch (error) {
-      console.error('Error updating portfolio item:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error updating portfolio item:', error);
+      }
       toast({
         title: "Couldn't Update Visibility",
         description: "Your changes weren't saved. Please try again.",
@@ -108,7 +112,9 @@ const EngineeringPortfolio = ({ userId, onAddToPortfolio }: EngineeringPortfolio
         description: 'Design removed from portfolio.',
       });
     } catch (error) {
-      console.error('Error deleting portfolio item:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error deleting portfolio item:', error);
+      }
       toast({
         title: "Couldn't Remove Design",
         description: "Your design wasn't removed. Please try again.",

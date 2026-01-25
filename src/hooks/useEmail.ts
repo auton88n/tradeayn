@@ -26,13 +26,17 @@ export const useEmail = () => {
       });
 
       if (error) {
-        console.error('[useEmail] Error sending email:', error);
+        if (import.meta.env.DEV) {
+          console.error('[useEmail] Error sending email:', error);
+        }
         return { success: false, error: error.message };
       }
 
       return { success: true, id: response?.id };
     } catch (err) {
-      console.error('[useEmail] Exception:', err);
+      if (import.meta.env.DEV) {
+        console.error('[useEmail] Exception:', err);
+      }
       return { 
         success: false, 
         error: err instanceof Error ? err.message : 'Unknown error' 

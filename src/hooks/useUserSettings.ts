@@ -87,7 +87,9 @@ export const useUserSettings = (userId: string, accessToken?: string) => {
         setSettings(normalizedSettings);
       }
     } catch (error) {
-      console.error('Error fetching settings:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error fetching settings:', error);
+      }
       const errMsg = getErrorMessage(ErrorCodes.DATA_LOAD_FAILED);
       toast({
         title: errMsg.title,
@@ -119,7 +121,9 @@ export const useUserSettings = (userId: string, accessToken?: string) => {
       }));
       setSessions(normalizedSessions);
     } catch (error) {
-      console.error('Error fetching sessions:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error fetching sessions:', error);
+      }
     }
   };
 
@@ -140,7 +144,9 @@ export const useUserSettings = (userId: string, accessToken?: string) => {
         description: 'Settings saved successfully',
       });
     } catch (error) {
-      console.error('Error updating settings:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error updating settings:', error);
+      }
       const errMsg = getErrorMessage(ErrorCodes.SETTINGS_SAVE_FAILED);
       toast({
         title: errMsg.title,
@@ -167,7 +173,9 @@ export const useUserSettings = (userId: string, accessToken?: string) => {
         description: 'Session revoked successfully',
       });
     } catch (error) {
-      console.error('Error revoking session:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error revoking session:', error);
+      }
       const errMsg = getErrorMessage(ErrorCodes.SESSION_REVOKE_FAILED);
       toast({
         title: errMsg.title,
@@ -195,7 +203,9 @@ export const useUserSettings = (userId: string, accessToken?: string) => {
         description: 'All devices signed out successfully',
       });
     } catch (error) {
-      console.error('Error signing out all devices:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error signing out all devices:', error);
+      }
       const errMsg = getErrorMessage(ErrorCodes.SIGN_OUT_ALL_FAILED);
       toast({
         title: errMsg.title,

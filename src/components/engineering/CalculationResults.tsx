@@ -297,7 +297,9 @@ export const CalculationResults = ({ result, onNewCalculation }: CalculationResu
 
       toast.success('DXF file downloaded!');
     } catch (err) {
-      console.error('DXF export error:', err);
+      if (import.meta.env.DEV) {
+        console.error('DXF export error:', err);
+      }
       toast.error('Failed to export DXF file');
     } finally {
       setIsExportingDXF(false);
@@ -329,7 +331,9 @@ export const CalculationResults = ({ result, onNewCalculation }: CalculationResu
       });
       toast.success('PDF report downloaded!');
     } catch (err) {
-      console.error('PDF export error:', err);
+      if (import.meta.env.DEV) {
+        console.error('PDF export error:', err);
+      }
       toast.error('Failed to export PDF report');
     } finally {
       setIsExportingPDF(false);
@@ -352,7 +356,9 @@ export const CalculationResults = ({ result, onNewCalculation }: CalculationResu
       setAiAnalysis(data);
       toast.success('AI analysis complete!');
     } catch (err) {
-      console.error('AI analysis error:', err);
+      if (import.meta.env.DEV) {
+        console.error('AI analysis error:', err);
+      }
       toast.error('AI analysis failed');
     } finally {
       setIsAnalyzing(false);

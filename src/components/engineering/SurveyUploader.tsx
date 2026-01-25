@@ -65,7 +65,9 @@ export const SurveyUploader: React.FC<SurveyUploaderProps> = ({
         description: `Found ${data.points.length} survey points`,
       });
     } catch (err) {
-      console.error('Error parsing file:', err);
+      if (import.meta.env.DEV) {
+        console.error('Error parsing file:', err);
+      }
       toast({
         title: 'Error parsing file',
         description: err instanceof Error ? err.message : 'Unknown error',

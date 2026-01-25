@@ -78,7 +78,9 @@ const ColumnCalculator: React.FC<ColumnCalculatorProps> = ({
 
       toast.success(t('common.success'));
     } catch (error) {
-      console.error('Calculation error:', error);
+      if (import.meta.env.DEV) {
+        console.error('Calculation error:', error);
+      }
       toast.error(t('error.calculationFailedDesc'));
     } finally {
       setIsCalculating(false);

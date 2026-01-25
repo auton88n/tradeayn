@@ -94,7 +94,9 @@ export const useEngineeringAIAgent = ({
           .order('created_at', { ascending: true });
         
         if (error) {
-          console.error('Error loading engineering messages:', error);
+          if (import.meta.env.DEV) {
+            console.error('Error loading engineering messages:', error);
+          }
           return;
         }
         
@@ -107,7 +109,9 @@ export const useEngineeringAIAgent = ({
           })));
         }
       } catch (err) {
-        console.error('Failed to load engineering messages:', err);
+        if (import.meta.env.DEV) {
+          console.error('Failed to load engineering messages:', err);
+        }
       }
     };
     
@@ -135,13 +139,17 @@ export const useEngineeringAIAgent = ({
         .single();
       
       if (error) {
-        console.error('Error saving message:', error);
+        if (import.meta.env.DEV) {
+          console.error('Error saving message:', error);
+        }
         return null;
       }
       
       return data?.id || null;
     } catch (err) {
-      console.error('Failed to save message:', err);
+      if (import.meta.env.DEV) {
+        console.error('Failed to save message:', err);
+      }
       return null;
     }
   }, [userId, engineeringSessionId]);
@@ -199,11 +207,15 @@ export const useEngineeringAIAgent = ({
           return { success: true, message: 'History opened' };
 
         default:
-          console.warn('Unknown action:', action.tool);
+          if (import.meta.env.DEV) {
+            console.warn('Unknown action:', action.tool);
+          }
           return { success: false, message: `Unknown action: ${action.tool}` };
       }
     } catch (err) {
-      console.error('Action execution error:', err);
+      if (import.meta.env.DEV) {
+        console.error('Action execution error:', err);
+      }
       return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
     }
   }, [onSetInput, onSetMultipleInputs, onCalculate, onSwitchCalculator, onReset, onShowHistory, onSaveDesign, onExportFile, onCompareDesigns]);
@@ -293,7 +305,9 @@ export const useEngineeringAIAgent = ({
       saveMessageToDb(assistantContent, 'ayn');
 
     } catch (err) {
-      console.error('AI agent error:', err);
+      if (import.meta.env.DEV) {
+        console.error('AI agent error:', err);
+      }
       
       const errorContent = err instanceof Error && err.message.includes('rate limit')
         ? 'rate limit reached. please wait a moment and try again.'

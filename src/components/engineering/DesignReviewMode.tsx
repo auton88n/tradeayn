@@ -113,7 +113,9 @@ export const DesignReviewMode: React.FC<DesignReviewModeProps> = ({
               description: `Found ${data.summary.totalPoints} points, ${data.summary.layerCount} layers`,
             });
           } catch (err) {
-            console.error('Parse error:', err);
+            if (import.meta.env.DEV) {
+              console.error('Parse error:', err);
+            }
             toast({
               title: 'Failed to parse file',
               description: err instanceof Error ? err.message : 'Unknown error',
@@ -163,7 +165,9 @@ export const DesignReviewMode: React.FC<DesignReviewModeProps> = ({
               description: `Found ${data.summary.totalPoints} points${levelInfo}`,
             });
           } catch (err) {
-            console.error('PDF parse error:', err);
+            if (import.meta.env.DEV) {
+              console.error('PDF parse error:', err);
+            }
             toast({
               title: 'Failed to parse PDF',
               description: err instanceof Error ? err.message : 'OCR extraction failed',
@@ -178,7 +182,9 @@ export const DesignReviewMode: React.FC<DesignReviewModeProps> = ({
       }
     } catch (err) {
       setIsParsing(false);
-      console.error('File read error:', err);
+      if (import.meta.env.DEV) {
+        console.error('File read error:', err);
+      }
       toast({
         title: 'Failed to read file',
         description: err instanceof Error ? err.message : 'Unknown error',

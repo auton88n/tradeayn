@@ -290,13 +290,17 @@ export const CenterStageLayout = ({
       });
       
       if (error) {
-        console.error('Failed to fetch suggestions:', error);
+        if (import.meta.env.DEV) {
+          console.error('Failed to fetch suggestions:', error);
+        }
         return DEFAULT_SUGGESTIONS;
       }
       
       return data?.suggestions || DEFAULT_SUGGESTIONS;
     } catch (err) {
-      console.error('Error fetching suggestions:', err);
+      if (import.meta.env.DEV) {
+        console.error('Error fetching suggestions:', err);
+      }
       return DEFAULT_SUGGESTIONS;
     }
   }, []);
@@ -358,7 +362,9 @@ export const CenterStageLayout = ({
       
       if (!content.trim() && !file) return;
 
-      console.log('[CenterStageLayout] handleSendWithAnimation called:', { content: content.substring(0, 30) });
+      if (import.meta.env.DEV) {
+        console.log('[CenterStageLayout] handleSendWithAnimation called:', { content: content.substring(0, 30) });
+      }
 
       // Track the user's message for suggestion context
       setLastUserMessage(content);
