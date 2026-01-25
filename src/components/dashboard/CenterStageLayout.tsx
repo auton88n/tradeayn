@@ -242,9 +242,6 @@ export const CenterStageLayout = ({
   // During document generation we intentionally keep ONLY the eye thinking UI
   // (no separate PDF/Excel indicator card).
   const showThinking = isTyping || isGeneratingDocument;
-  const thinkingTitle = isGeneratingDocument
-    ? 'Generating document…'
-    : undefined;
 
   // Cycle through suggestion cards with glances - only when suggestions visible
   // Uses ref to track index internally, only updates render state occasionally
@@ -512,6 +509,13 @@ export const CenterStageLayout = ({
     if (gate.baselineLastMessageId && lastMessage.id === gate.baselineLastMessageId) return;
 
     // Only process new AYN messages
+    // IMPORTANT: ignore the streaming placeholder message (content may be empty while isTyping=true)
+    // to prevent emitting an empty ResponseCard that never updates.
+    if (lastMessage.sender === 'ayn') {
+      if (lastMessage.isTyping) return;
+      if (!lastMessage.content?.trim()) return;
+    }
+
     if (lastMessage.sender === 'ayn' && lastMessage.content !== lastProcessedMessageContent) {
       // Reset the gate after processing
       awaitingLiveResponseRef.current = { active: false, baselineLastMessageId: null };
@@ -564,7 +568,23 @@ export const CenterStageLayout = ({
         }, 600);
       }, 50); // Minimal delay for blink
     }
-  }, [messages, lastProcessedMessageContent, lastSuggestedEmotion, setEmotion, setIsResponding, emitResponseBubble, triggerBlink, detectExcitement, debouncedFetchAndEmitSuggestions, lastUserMessage, selectedMode, orchestrateEmotionChange, playSound, bumpActivity]);
+  }, [
+    messages,
+    isLoadingFromHistory,
+    lastProcessedMessageContent,
+    lastSuggestedEmotion,
+    setEmotion,
+    setIsResponding,
+    emitResponseBubble,
+    triggerBlink,
+    detectExcitement,
+    debouncedFetchAndEmitSuggestions,
+    lastUserMessage,
+    selectedMode,
+    orchestrateEmotionChange,
+    playSound,
+    bumpActivity,
+  ]);
 
   // Update emotion when typing - only set thinking if not recently set from a response
   useEffect(() => {
@@ -640,30 +660,7 @@ export const CenterStageLayout = ({
               {betaMode && <BetaBadge className={isMobile ? "scale-90" : ""} />}
             </div>
 
-            {/* Thinking indicator when typing - simplified animation */}
-            <AnimatePresence>
-              {showThinking && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.15 }}
-                  className="absolute -bottom-20 left-1/2 -translate-x-1/2 overflow-visible"
-                >
-                  <div
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-ayn-thinking/20 backdrop-blur-sm border border-ayn-thinking/30"
-                    title={thinkingTitle}
-                  >
-                    <div className="flex gap-1">
-                      {/* CSS-based animation instead of framer-motion */}
-                      <div className="w-1.5 h-1.5 rounded-full bg-ayn-thinking animate-bounce-dot" style={{ animationDelay: '0ms' }} />
-                      <div className="w-1.5 h-1.5 rounded-full bg-ayn-thinking animate-bounce-dot" style={{ animationDelay: '150ms' }} />
-                      <div className="w-1.5 h-1.5 rounded-full bg-ayn-thinking animate-bounce-dot" style={{ animationDelay: '300ms' }} />
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {/* Thinking bubble removed per UX request */}
           </motion.div>
 
           {/* ResponseCard - flows directly below Eye in same column */}
