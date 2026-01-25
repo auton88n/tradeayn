@@ -145,8 +145,10 @@ export const Sidebar = ({
   const [subscriptionTier, setSubscriptionTier] = useState<string>('free');
   
   useEffect(() => {
+    if (!userId) return;
+    
+    // Non-blocking fetch
     const fetchTier = async () => {
-      if (!userId) return;
       try {
         const { data } = await supabase
           .from('user_subscriptions')
@@ -156,8 +158,8 @@ export const Sidebar = ({
         if (data?.subscription_tier) {
           setSubscriptionTier(data.subscription_tier);
         }
-      } catch (err) {
-        console.error('Failed to fetch subscription tier:', err);
+      } catch {
+        // Silent failure - default to free
       }
     };
     fetchTier();
