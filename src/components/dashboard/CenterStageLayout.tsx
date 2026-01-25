@@ -10,7 +10,7 @@ import { ParticleBurst } from '@/components/eye/ParticleBurst';
 import { ChatInput } from './ChatInput';
 import { SystemNotificationBanner } from './SystemNotificationBanner';
 import { BetaBadge } from '@/components/ui/BetaBadge';
-import { FloatingFeedbackButton } from './FloatingFeedbackButton';
+
 import { BetaFeedbackModal } from './BetaFeedbackModal';
 import { useBubbleAnimation } from '@/hooks/useBubbleAnimation';
 import { useAYNEmotion, AYNEmotion } from '@/contexts/AYNEmotionContext';
@@ -785,14 +785,7 @@ export const CenterStageLayout = ({
         />
       </div>
 
-      {/* Floating Feedback Button - Only show when beta mode is enabled */}
-      {betaMode && userId && (
-        <FloatingFeedbackButton
-          userId={userId}
-          rewardAmount={betaFeedbackReward || 5}
-          onOpenFeedback={() => setShowFeedbackModal(true)}
-        />
-      )}
+      {/* Floating Feedback Button removed - now in sidebar */}
 
       {/* Beta Feedback Modal */}
       {userId && (
