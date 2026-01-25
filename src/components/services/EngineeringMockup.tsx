@@ -96,16 +96,13 @@ const EngineeringMockup = memo(() => {
           </motion.div>
           
           <motion.div
-            className="absolute -bottom-8 left-1/2 -translate-x-1/2"
+            className="absolute -bottom-6 left-1/2 -translate-x-1/2"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.1 }}
           >
-            <div className="flex flex-col items-center gap-1">
-              <div className="h-4 w-px bg-cyan-400" />
-              <div className="text-[12px] font-mono text-cyan-300 font-medium">
-                Base: 12.0m × 8.0m
-              </div>
+            <div className="text-[11px] font-mono text-cyan-300/80 font-medium whitespace-nowrap">
+              Base: 12.0m × 8.0m
             </div>
           </motion.div>
         </div>
@@ -141,15 +138,15 @@ const EngineeringMockup = memo(() => {
         </motion.div>
       </div>
       
-      {/* Floating calculation result - static */}
+      {/* Floating calculation result - positioned top-right, higher z-index */}
       <motion.div
-        className="absolute bottom-4 right-4 px-4 py-3 rounded-xl bg-neutral-900/95 border border-cyan-400/40 backdrop-blur-sm"
-        style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.4), 0 0 20px rgba(34,211,238,0.15)' }}
-        initial={{ opacity: 0, y: 10 }}
+        className="absolute top-4 right-4 z-30 px-4 py-3 rounded-xl bg-neutral-900/95 border border-cyan-400/50 backdrop-blur-sm"
+        style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 0 24px rgba(34,211,238,0.2)' }}
+        initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1.3 }}
       >
-        <div className="text-[12px] font-mono text-cyan-300 font-medium">
+        <div className="text-[13px] font-mono text-cyan-200 font-semibold">
           Mu = 245.8 kN·m
         </div>
         <div className="text-[11px] font-mono text-emerald-300 flex items-center gap-1.5 mt-1">
