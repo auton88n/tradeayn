@@ -79,6 +79,8 @@ export const AVAILABLE_CODES = [
     fullName: 'American Concrete Institute',
     country: 'United States',
     flag: '🇺🇸',
+    version: '2025',
+    loadCombination: '1.2D + 1.6L',
   },
   {
     id: 'CSA' as const,
@@ -86,6 +88,8 @@ export const AVAILABLE_CODES = [
     fullName: 'Canadian Standards Association',
     country: 'Canada',
     flag: '🇨🇦',
+    version: '2024',
+    loadCombination: '1.25D + 1.5L',
   },
   {
     id: 'CUSTOM' as const,
@@ -93,6 +97,8 @@ export const AVAILABLE_CODES = [
     fullName: 'User-Defined Parameters',
     country: 'Other',
     flag: '⚙️',
+    version: 'N/A',
+    loadCombination: 'User-defined',
   },
 ];
 

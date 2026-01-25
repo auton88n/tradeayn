@@ -15,6 +15,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { BuildingCodeSelector } from '@/components/engineering/BuildingCodeSelector';
+import { type BuildingCodeId } from '@/lib/buildingCodes';
 
 export type CalculatorType = 'beam' | 'foundation' | 'column' | 'slab' | 'retaining_wall' | 'parking' | 'grading' | null;
 
@@ -94,6 +96,8 @@ interface CalculatorSidebarProps {
   isCollapsed: boolean;
   onToggleCollapse: () => void;
   onNavigate?: (path: string) => void;
+  selectedBuildingCode: BuildingCodeId;
+  onBuildingCodeChange: (code: BuildingCodeId) => void;
 }
 
 export const CalculatorSidebar: React.FC<CalculatorSidebarProps> = ({
@@ -102,6 +106,8 @@ export const CalculatorSidebar: React.FC<CalculatorSidebarProps> = ({
   isCollapsed,
   onToggleCollapse,
   onNavigate,
+  selectedBuildingCode,
+  onBuildingCodeChange,
 }) => {
   return (
     <TooltipProvider delayDuration={0}>
@@ -128,6 +134,37 @@ export const CalculatorSidebar: React.FC<CalculatorSidebarProps> = ({
               <h2 className="font-semibold text-sm">Engineering</h2>
               <p className="text-xs text-muted-foreground">Calculators</p>
             </motion.div>
+          )}
+        </div>
+
+        {/* Building Code Selector */}
+        <div className={cn("px-2 py-3 border-b border-border/50", isCollapsed && "px-1")}>
+          {isCollapsed ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <BuildingCodeSelector
+                    selectedCode={selectedBuildingCode}
+                    onCodeChange={onBuildingCodeChange}
+                    isCollapsed={true}
+                  />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="font-medium">
+                Building Code: {selectedBuildingCode}
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 px-1">
+                Design Standard
+              </p>
+              <BuildingCodeSelector
+                selectedCode={selectedBuildingCode}
+                onCodeChange={onBuildingCodeChange}
+                isCollapsed={false}
+              />
+            </>
           )}
         </div>
 
