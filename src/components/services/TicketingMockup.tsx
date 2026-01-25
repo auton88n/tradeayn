@@ -114,11 +114,11 @@ const CustomerPhone = memo(({ qrPattern }: { qrPattern: boolean[][] }) => {
             
             {/* QR Code Container */}
             <div 
-              className="relative bg-white rounded-xl p-3"
+              className="relative bg-white rounded-xl p-2.5"
               style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(0,0,0,0.05)' }}
             >
-              {/* QR Code Grid - Static, no gaps for clean edges */}
-              <div className="w-[84px] h-[84px] grid grid-cols-7 grid-rows-7 relative overflow-hidden rounded-sm">
+              {/* QR Code Grid - 21x21 realistic pattern */}
+              <div className="w-[84px] h-[84px] grid grid-cols-[repeat(21,1fr)] grid-rows-[repeat(21,1fr)] overflow-hidden">
                 {qrPattern.map((row, rowIdx) => 
                   row.map((filled, colIdx) => (
                     <div
@@ -153,16 +153,58 @@ const CustomerPhone = memo(({ qrPattern }: { qrPattern: boolean[][] }) => {
 CustomerPhone.displayName = 'CustomerPhone';
 
 const TicketingMockup = memo(() => {
-  // Static QR code pattern with proper finder patterns in corners
-  const qrPattern = useMemo(() => [
-    [true, true, true, true, true, true, true],
-    [true, false, false, false, false, false, true],
-    [true, false, true, true, true, false, true],
-    [true, false, true, false, true, false, false],
-    [true, false, true, true, true, false, true],
-    [true, false, false, false, false, false, true],
-    [true, true, true, true, true, true, true],
-  ], []);
+  // Realistic QR code pattern - 21x21 with proper finder patterns
+  const qrPattern = useMemo(() => {
+    // Standard QR finder pattern (7x7) in top-left, top-right, bottom-left corners
+    const pattern: boolean[][] = Array(21).fill(null).map(() => Array(21).fill(false));
+    
+    // Helper to draw finder pattern at position
+    const drawFinder = (startRow: number, startCol: number) => {
+      for (let r = 0; r < 7; r++) {
+        for (let c = 0; c < 7; c++) {
+          // Outer border, inner border, center
+          const isOuter = r === 0 || r === 6 || c === 0 || c === 6;
+          const isInner = r >= 2 && r <= 4 && c >= 2 && c <= 4;
+          pattern[startRow + r][startCol + c] = isOuter || isInner;
+        }
+      }
+    };
+    
+    // Draw 3 finder patterns
+    drawFinder(0, 0);   // Top-left
+    drawFinder(0, 14);  // Top-right
+    drawFinder(14, 0);  // Bottom-left
+    
+    // Timing patterns (alternating dots between finders)
+    for (let i = 8; i < 13; i++) {
+      pattern[6][i] = i % 2 === 0;
+      pattern[i][6] = i % 2 === 0;
+    }
+    
+    // Alignment pattern (5x5) at bottom-right area
+    for (let r = 16; r <= 20; r++) {
+      for (let c = 16; c <= 20; c++) {
+        const dr = r - 18, dc = c - 18;
+        pattern[r][c] = (Math.abs(dr) === 2 || Math.abs(dc) === 2) || (dr === 0 && dc === 0);
+      }
+    }
+    
+    // Random-looking data modules in the data area
+    const dataSeeds = [
+      [8, 0], [8, 1], [9, 0], [10, 2], [8, 4], [9, 5], [11, 0], [12, 1], [12, 3],
+      [0, 8], [1, 9], [2, 8], [3, 10], [4, 8], [5, 9], [0, 11], [1, 12], [3, 12],
+      [8, 8], [9, 9], [10, 10], [8, 11], [9, 12], [11, 9], [12, 11], [10, 13],
+      [8, 14], [8, 16], [9, 15], [10, 17], [11, 14], [12, 16], [13, 18],
+      [14, 9], [15, 8], [16, 10], [17, 9], [18, 8], [19, 11], [20, 10],
+      [14, 14], [15, 15], [13, 13], [20, 20]
+    ];
+    
+    dataSeeds.forEach(([r, c]) => {
+      if (r < 21 && c < 21 && !pattern[r][c]) pattern[r][c] = true;
+    });
+    
+    return pattern;
+  }, []);
 
   return (
     <div className="relative w-full h-full min-h-[400px] flex items-center justify-center overflow-hidden">
