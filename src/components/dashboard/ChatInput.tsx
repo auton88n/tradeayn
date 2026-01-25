@@ -281,7 +281,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
   const handleSend = useCallback(() => {
     if (!inputMessage.trim() && !selectedFile) return;
     if (isDisabled || isUploading) return;
-    playSound?.('message-send');
+    // Sound removed - consolidated to absorption in CenterStageLayout
     bumpActivity(); // Increase activity level on message send
     onSend(inputMessage.trim(), selectedFile);
     setInputMessage('');

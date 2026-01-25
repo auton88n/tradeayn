@@ -392,7 +392,7 @@ export const CenterStageLayout = ({
       // This prevents the 350ms delay from causing lost messages
       onSendMessage(content, file);
 
-      // Animation effects run in parallel (non-blocking)
+      // Animation effects run in parallel (non-blocking) - synced with 400ms flying animation
       setTimeout(() => {
         triggerBlink();
         triggerAbsorption();
@@ -410,7 +410,7 @@ export const CenterStageLayout = ({
 
         // Clear file after animation completes
         onRemoveFile();
-      }, 350);
+      }, 400);
     },
     [
       isUploading,
