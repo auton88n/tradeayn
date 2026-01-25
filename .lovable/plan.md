@@ -1,90 +1,106 @@
 
 
-## Fix Service Card Edge Line Artifacts
+## Fix Text Visibility Issues (Without Removing Visual Effects)
 
-The visible "shadow line" on the edge of service cards is caused by anti-aliasing artifacts when semi-transparent backgrounds (`bg-muted/50`) are rendered with large rounded corners (`rounded-3xl`). The browser's sub-pixel rendering creates a faint visible edge where the 50% opacity gray meets the white page background.
-
----
-
-## Root Cause
-
-```text
-┌─────────────────────────────────────────────────────────────┐
-│                    The Problem                              │
-├─────────────────────────────────────────────────────────────┤
-│ • bg-muted/50 = 50% transparent light gray                  │
-│ • rounded-3xl = 24px border radius                          │
-│ • When semi-transparent colors meet opaque backgrounds      │
-│   at curved edges, anti-aliasing creates visible artifacts  │
-│ • This appears as a faint "line" around the card edge       │
-└─────────────────────────────────────────────────────────────┘
-```
+This plan addresses text visibility issues across light and dark modes while **preserving all beautiful visual effects** like blurs, glows, and gradients.
 
 ---
 
-## Solution
+## Strategy
 
-Replace the semi-transparent `bg-muted/50` with a fully opaque equivalent color that matches the visual appearance without transparency.
-
-| Current | Fixed |
-|---------|-------|
-| `bg-muted/50` (semi-transparent) | `bg-[hsl(0,0%,98%)]` in light mode or theme-aware solid background |
-
-The simplest fix is to use CSS variables with solid colors that visually match what `bg-muted/50` produces against the white background, eliminating the anti-aliasing issue entirely.
+Instead of removing `backdrop-blur` or `blur-2xl` effects, we will:
+1. Add Safari-specific CSS properties to fix rendering artifacts
+2. Add theme-aware text color classes (`text-color dark:text-color`)
+3. Keep all existing visual styling
 
 ---
 
 ## Changes
 
-### File: `src/components/LandingPage.tsx`
+### File 1: `src/index.css`
 
-Replace all instances of `bg-muted/50` in the services bento grid with a solid background:
+Add Safari-specific CSS fix for backdrop-blur artifacts (no visual change, just prevents the "black thing"):
 
-**Option A (Recommended)**: Use a custom solid color class that matches the blended result:
-- Light mode: `bg-muted/50` on white = approximately `#FAFAFA` or `hsl(0 0% 98%)`
-- Replace with: `bg-neutral-50 dark:bg-neutral-900/80`
+```css
+/* Safari backdrop-blur fix - add after existing backdrop-blur styles */
+@supports (-webkit-backdrop-filter: blur(1px)) {
+  .backdrop-blur-sm {
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+    -webkit-transform: translate3d(0, 0, 0);
+  }
+}
+```
 
-**Option B**: Use `bg-muted` without transparency (slightly darker but no artifacts)
-
-**Changes to make (5 service cards)**:
-- Line ~571: Content Creator card
-- Line ~600: Automation card  
-- Line ~631: Ticketing card
-- Line ~663: AI Agents card
-- Line ~694: AI Employees card
-
-The Engineering card already uses a different style (`bg-gradient-to-br from-cyan-500/10 to-blue-500/10`) so it's unaffected.
+This forces Safari to use GPU compositing without removing any blur effects.
 
 ---
 
-## Technical Details
+### File 2: `src/components/services/EngineeringMockup.tsx`
 
-```text
-Before (causes edge lines):
-┌─────────────────────────────────────┐
-│ className="bg-muted/50 rounded-3xl" │
-│                                     │
-│  bg-muted/50 = semi-transparent     │
-│  Anti-aliasing at edges = visible   │
-└─────────────────────────────────────┘
+**Text visibility fixes only** (keeping all visual effects):
 
-After (clean edges):
-┌───────────────────────────────────────────────────────┐
-│ className="bg-neutral-50 dark:bg-neutral-900/80       │
-│            rounded-3xl"                               │
-│                                                       │
-│  Solid color in light mode = no edge artifacts        │
-│  Slight transparency in dark mode acceptable          │
-└───────────────────────────────────────────────────────┘
-```
+| Line | Current | Fixed |
+|------|---------|-------|
+| 92 | `text-cyan-300` | `text-cyan-600 dark:text-cyan-300` |
+| 104 | `text-cyan-300/80` | `text-cyan-600/80 dark:text-cyan-300/80` |
+| 118 | `text-emerald-300` | `text-emerald-600 dark:text-emerald-300` |
+| 149 | `text-cyan-200` | `text-cyan-700 dark:text-cyan-200` |
+| 152 | `text-emerald-300` | `text-emerald-600 dark:text-emerald-300` |
+
+---
+
+### File 3: `src/components/services/AutomationFlowMockup.tsx`
+
+**Fix indicator dots** (invisible white on white in light mode):
+
+| Line | Current | Fixed |
+|------|---------|-------|
+| 22 | `bg-white dark:bg-gray-200` | `bg-neutral-700 dark:bg-white` |
+| 40 | `bg-white dark:bg-gray-200` | `bg-neutral-700 dark:bg-white` |
+
+---
+
+### File 4: `src/components/services/AIEmployeeMockup.tsx`
+
+**Fix role labels** (icon colors may not be visible in light mode on light bg):
+
+| Line | Current | Fixed |
+|------|---------|-------|
+| 91 | `${role.iconColor}` | `text-foreground/80` |
+
+---
+
+### File 5: `src/components/services/DeviceMockups.tsx`
+
+**Improve chat bubble text contrast**:
+
+| Line | Current | Fixed |
+|------|---------|-------|
+| 59 | `text-muted-foreground` | `text-foreground/70` |
+
+---
+
+## What Stays Unchanged
+
+| Element | Why Keep |
+|---------|----------|
+| `blur-2xl` on Hero glow | Beautiful soft halo effect |
+| `backdrop-blur-sm` on cards | Glass morphism effect |
+| All gradient backgrounds | Visual richness |
+| All shadows and glows | Depth and dimension |
 
 ---
 
 ## Summary
 
-| File | Change |
-|------|--------|
-| `src/components/LandingPage.tsx` | Replace `bg-muted/50` with `bg-neutral-50 dark:bg-neutral-900/80` on 5 service cards |
+| File | Changes | Visual Impact |
+|------|---------|---------------|
+| `src/index.css` | Safari CSS fix | None (just prevents artifacts) |
+| `EngineeringMockup.tsx` | Theme-aware text colors | Text visible in both modes |
+| `AutomationFlowMockup.tsx` | Dark dots in light mode | Dots visible on white |
+| `AIEmployeeMockup.tsx` | Theme-aware labels | Labels visible in both modes |
+| `DeviceMockups.tsx` | Better text contrast | Chat bubble text readable |
 
-This eliminates the edge line artifact by using fully opaque backgrounds that don't require anti-aliasing blending at curved corners.
+All visual effects remain intact. Only text colors are adjusted for proper contrast in both light and dark modes.
 
