@@ -42,7 +42,7 @@ const AdminLaptop = memo(() => {
           {/* Ticket List - Static */}
           <div className="space-y-1.5">
             {existingTickets.map((ticket, i) => (
-              <div key={i} className="flex items-center gap-2 px-2 py-1.5 text-[11px] bg-zinc-900/50 rounded-md">
+              <div key={i} className="flex items-center gap-2 px-2 py-1.5 text-[11px] bg-zinc-900 rounded-md">
                 {ticket.scanned ? (
                   <Check className="w-3 h-3 text-green-500/60 flex-shrink-0" />
                 ) : (
