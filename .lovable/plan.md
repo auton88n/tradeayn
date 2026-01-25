@@ -1,167 +1,86 @@
 
+Goal: Fix (1) invisible “Send”/button text in the forgot-password flow, and (2) Reset Password page stuck forever on “Validating Reset Link”.
 
-# Fix Support Page Links & Update Email Branding
+What’s happening (based on code + your screenshots)
+1) “Send” text is dark/invisible
+- The app’s ThemeProvider default is light, so CSS token `foreground` is near-black.
+- In `AuthModal.tsx`, the forgot-password UI is rendered inside a dark modal (`bg-neutral-950`), but the outline button uses the shared Button variant:
+  - `outline: ... text-foreground ...`
+- In light theme, `text-foreground` is black, so on a dark modal it becomes unreadable (your “Send” / “Send Again” looks “missing”).
 
-## Summary
+2) “Validating Reset Link” can hang indefinitely
+- `src/pages/ResetPassword.tsx` starts with `isValidating=true`.
+- It calls `supabase.auth.getSession().then(...)` with no timeout.
+- If `getSession()` hangs (this can happen in some browsers/lock states), `isValidating` never flips to false → spinner forever (your “hours” symptom).
+- There’s a 3s timeout only for the “waiting for auth event” branch, but not for `getSession()` itself.
 
-Two issues need to be fixed:
+Implementation plan (code changes)
 
-1. **Policy pages link to Support page** - The Terms and Privacy pages have "Contact Support" links that go to `/support` (the full Support Center with AI chat, tickets, FAQ). The user wants these to instead scroll to the "Contact Us" form on the landing page.
+A) Fix the invisible “Send” text (AuthModal)
+Files:
+- `src/components/auth/AuthModal.tsx`
 
-2. **Password reset email branding needs improvement** - The current email (image 2) has a complex design with gradient header, "YOUR AI BUSINESS PARTNER" tagline, and bilingual content. The preferred design (image 3) is cleaner and simpler:
-   - Dark background throughout
-   - Just bold "AYN" text (no tagline, no gradient)
-   - Simple horizontal line separator
-   - Clean white button
-   - No Arabic text
-   - Simpler, more minimal layout
+Changes:
+1. For every Button shown on the dark modal that currently uses `variant="outline"` (notably:
+   - “Forgot Password?” prominent button
+   - “Send Again” button on the “Reset Link Sent” confirmation screen
+), override the outline styling to be “dark-modal friendly”:
+   - `border-white/20 text-white`
+   - hover: `hover:bg-white hover:text-neutral-950`
+   - keep disabled readable: `disabled:opacity-50`
+2. Keep the global Button component unchanged (we don’t want to break outline buttons elsewhere). This is a scoped fix to AuthModal only.
 
----
+Why this will fix it:
+- It removes reliance on theme tokens for text color inside a dark modal, so the label is always visible whether the site theme is light or dark.
 
-## Files to Modify
+B) Make ResetPassword validation reliable (never infinite spinner)
+Files:
+- `src/pages/ResetPassword.tsx`
 
-| File | Changes |
-|------|---------|
-| `src/pages/Terms.tsx` | Change "Contact Support" link from `/support` to `/#contact` |
-| `src/pages/Privacy.tsx` | Change "Contact Support" link from `/support` to `/#contact` |
-| `supabase/functions/auth-send-email/index.ts` | Redesign email template to match the cleaner preferred style |
+Changes:
+1. Add a “safe session fetch” with timeout:
+   - Wrap `supabase.auth.getSession()` in `Promise.race()` with a timer (e.g., 5–7 seconds).
+   - If it times out, stop validating and show a friendly error state (same “Request New Link” UI).
+2. Add a direct fallback for recovery links:
+   - If URL hash contains `type=recovery` and includes `access_token` + `refresh_token`, attempt:
+     - `supabase.auth.setSession({ access_token, refresh_token })` with a timeout as well.
+   - If successful: set session, stop validating.
+   - If it fails/times out: stop validating and show expired/invalid state.
+3. Add a UI “slow validation” guard (optional but recommended):
+   - After ~8 seconds, swap the validating subtitle to something like:
+     - “This is taking longer than expected. Please try again.”
+   - Provide buttons: “Reload” + “Request New Link”.
+4. Security/UX improvement:
+   - After a session is established, remove the hash tokens from the URL via `history.replaceState` so tokens aren’t left in the address bar.
 
----
+Why this will fix it:
+- Even if Supabase auth session retrieval deadlocks/hangs, the page will not be stuck: it will time out and guide the user to request a new link.
+- Parsing the hash and setting the session explicitly provides a second path that works even when the auth event doesn’t fire.
 
-## Technical Implementation
+C) Verification checklist (what we’ll test)
+1. Light theme:
+- Open Auth modal → Forgot Password flow
+- Confirm “Forgot Password?” / “Send Again” labels are readable (no black-on-dark).
 
-### Part 1: Fix Policy Page Links
+2. Password reset happy path:
+- Request reset email
+- Click link → lands on `/reset-password`
+- “Validating” should last only a moment
+- Reset form appears and `updateUser({ password })` succeeds.
 
-**Terms.tsx (line 222-223):**
-```tsx
-// Before
-<Link to="/support" className="text-sm text-white/50 hover:text-white transition-colors">
-  Contact Support
-</Link>
+3. Invalid/expired token:
+- Open an old reset link
+- Should show “Reset Link Expired” within max timeout (no infinite spinner).
 
-// After
-<Link to="/#contact" className="text-sm text-white/50 hover:text-white transition-colors">
-  Contact Us
-</Link>
-```
+4. Cross-domain sanity (important):
+- Request reset from the same domain you’ll open the email link on (e.g., https://aynn.io).
+- If you use multiple domains (preview/published/custom), confirm Supabase Auth “Redirect URLs” includes them; otherwise Supabase can refuse/alter redirects.
 
-**Privacy.tsx (line 192-193):**
-```tsx
-// Before
-<Link to="/support" className="text-sm text-white/50 hover:text-white transition-colors">
-  Contact Support
-</Link>
+Files we will change
+- `src/components/auth/AuthModal.tsx` (button contrast fixes for dark modal)
+- `src/pages/ResetPassword.tsx` (timeout + hash session fallback + never-stuck validation)
 
-// After
-<Link to="/#contact" className="text-sm text-white/50 hover:text-white transition-colors">
-  Contact Us
-</Link>
-```
-
-Using `/#contact` will navigate to the landing page and automatically scroll to the contact section (id="contact").
-
----
-
-### Part 2: Redesign Password Reset Email Template
-
-The email template in `supabase/functions/auth-send-email/index.ts` will be updated to match the cleaner design shown in image 3.
-
-**Current design (complex):**
-- Gradient purple header with "AYN" and "YOUR AI BUSINESS PARTNER" tagline
-- Bilingual text (English + Arabic)
-- Purple gradient button
-- Multiple info boxes with purple/red borders
-- Complex footer
-
-**New design (clean & minimal like image 3):**
-- Full dark background (`#1a1a1a` or similar)
-- Simple bold "AYN" text in white (no gradient, no tagline)
-- Thin horizontal line separator
-- Clean section headings
-- White/neutral button (not purple gradient)
-- English only (no Arabic)
-- Simple expiry notice
-- Minimal footer
-
-**New Header:**
-```typescript
-const AYN_HEADER = `
-<div style="background: #1a1a1a; padding: 50px 20px 30px; text-align: center;">
-  <h1 style="font-size: 48px; font-weight: 800; letter-spacing: 8px; color: #ffffff; margin: 0;">AYN</h1>
-  <div style="width: 60px; height: 3px; background: #ffffff; margin: 20px auto 0;"></div>
-</div>
-`;
-```
-
-**New Recovery Template:**
-```typescript
-case 'recovery':
-  return {
-    subject: 'Reset your password | AYN',
-    html: wrapEmail(`
-      <div style="padding: 40px 30px; color: #9ca3af;">
-        <h1 style="color: #ffffff; font-size: 28px; margin: 0 0 24px 0; font-weight: 600;">
-          Reset your password
-        </h1>
-        
-        <p style="color: #9ca3af; line-height: 1.7; margin: 0 0 10px 0; font-size: 16px;">
-          We received a request to reset your password for your AYN account.
-        </p>
-        <p style="color: #9ca3af; line-height: 1.7; margin: 0 0 30px 0; font-size: 16px;">
-          Click the button below to create a new password.
-        </p>
-        
-        <div style="text-align: center; margin: 35px 0;">
-          <a href="${confirmationUrl}" style="display: inline-block; background: #f5f5f5; color: #1a1a1a; padding: 16px 48px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">
-            Reset Password
-          </a>
-        </div>
-        
-        <p style="color: #6b7280; font-size: 14px; line-height: 1.7; margin-top: 40px;">
-          This link expires in 1 hour. If you didn't request a password reset, you can safely ignore this email and your password will remain unchanged.
-        </p>
-      </div>
-    `)
-  };
-```
-
-**New Footer:**
-```typescript
-const AYN_FOOTER = `
-<div style="background: #1a1a1a; padding: 25px 20px; text-align: center; border-top: 1px solid rgba(255,255,255,0.05);">
-  <p style="color: #4b5563; font-size: 12px; margin: 0;">
-    © ${new Date().getFullYear()} AYN. All rights reserved.
-  </p>
-</div>
-`;
-```
-
----
-
-## Key Design Changes for Email
-
-| Element | Current | New (Preferred) |
-|---------|---------|-----------------|
-| Header background | Purple gradient | Solid dark (#1a1a1a) |
-| Logo style | Gradient text + tagline | Plain white bold "AYN" |
-| Separator | None | Simple white line |
-| Button | Purple gradient | White/light neutral |
-| Language | Bilingual (EN+AR) | English only |
-| Footer | Complex with Arabic | Minimal copyright only |
-| Overall feel | Busy, colorful | Clean, minimal, professional |
-
----
-
-## Expected Results
-
-After these changes:
-
-1. **Policy pages**: The "Contact Support" link will become "Contact Us" and take users directly to the landing page contact form instead of the full Support Center
-
-2. **Password reset emails**: Will have a cleaner, more professional appearance matching image 3:
-   - Simple bold "AYN" header
-   - Clean white button
-   - Minimal text
-   - No Arabic translation
-   - Professional, modern look
-
+Risks / edge cases we’re covering
+- Browser/session storage quirks causing `getSession()` to hang
+- Recovery links that arrive with tokens in hash but no session established yet
+- Users opening links long after creation (expired tokens)
