@@ -127,11 +127,28 @@ export interface ShearDesign {
 }
 
 export interface StirrupSpacing {
+  // Along length (longitudinal)
   alongLength: string;      // Formula for spacing along length
-  maxSpacing: number;       // Maximum spacing in mm
+  maxSpacing: number;       // Maximum spacing in mm (600mm / 24 in.)
   dFactor: number;          // Factor of d for spacing (0.5 ACI, 0.7 CSA)
-  reducedMaxSpacing?: number; // Reduced max when high shear (300mm)
-  reducedDFactor?: number;   // Reduced factor when high shear (0.25)
+  
+  // Across width (transverse) - ACI Table 9.7.6.2.2
+  acrossWidth?: string;     // Formula for spacing across width
+  acrossWidthMax?: number;  // Maximum spacing across width in mm
+  acrossWidthDFactor?: number; // Factor of d for across width (1.0 ACI)
+  
+  // Prestressed beams (ACI specific)
+  prestressed?: {
+    alongLength: string;    // min(3h/4, 24 in.) = min(0.75h, 600mm)
+    acrossWidth: string;    // min(3h/2, 24 in.) = min(1.5h, 600mm)
+    hFactorAlong: number;   // 0.75
+    hFactorAcross: number;  // 1.5
+    maxSpacing: number;     // 600mm (24 in.)
+  };
+  
+  // Reduced spacing for high shear (Vs > 4√f'c × bw × d)
+  reducedMaxSpacing?: number; // Reduced max when high shear (300mm / 12 in.)
+  reducedDFactor?: number;    // Reduced factor when high shear (0.25 = d/4)
 }
 
 export interface DeflectionLimits {
