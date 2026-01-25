@@ -660,7 +660,6 @@ export const CenterStageLayout = ({
                       <div className="w-1.5 h-1.5 rounded-full bg-ayn-thinking animate-bounce-dot" style={{ animationDelay: '150ms' }} />
                       <div className="w-1.5 h-1.5 rounded-full bg-ayn-thinking animate-bounce-dot" style={{ animationDelay: '300ms' }} />
                     </div>
-                    <span className="text-xs text-ayn-thinking whitespace-nowrap">Thinking...</span>
                   </div>
                 </motion.div>
               )}
