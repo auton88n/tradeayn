@@ -56,7 +56,7 @@ const DeviceMockups = memo(() => {
           <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center">
             <span className="text-[8px]">🤖</span>
           </div>
-          <p className="text-[9px] text-muted-foreground">How can I help?</p>
+          <p className="text-[9px] text-foreground/70">How can I help?</p>
         </div>
       </div>
     </div>

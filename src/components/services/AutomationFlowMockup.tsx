@@ -19,7 +19,7 @@ const AutomationFlowMockup = memo(() => {
           <div className="absolute inset-0 bg-gradient-to-r from-amber-300 to-violet-300 dark:from-amber-600 dark:to-violet-600 rounded-full" />
           {/* Static indicator dot */}
           <div 
-            className="absolute w-1.5 md:w-2 h-1.5 md:h-2 bg-white dark:bg-gray-200 rounded-full shadow-md top-1/2 -translate-y-1/2"
+            className="absolute w-1.5 md:w-2 h-1.5 md:h-2 bg-neutral-700 dark:bg-white rounded-full shadow-md top-1/2 -translate-y-1/2"
             style={{ left: '40%' }}
           />
         </div>
@@ -37,7 +37,7 @@ const AutomationFlowMockup = memo(() => {
           <div className="absolute inset-0 bg-gradient-to-r from-violet-300 to-emerald-300 dark:from-violet-600 dark:to-emerald-600 rounded-full" />
           {/* Static indicator dot */}
           <div 
-            className="absolute w-1.5 md:w-2 h-1.5 md:h-2 bg-white dark:bg-gray-200 rounded-full shadow-md top-1/2 -translate-y-1/2"
+            className="absolute w-1.5 md:w-2 h-1.5 md:h-2 bg-neutral-700 dark:bg-white rounded-full shadow-md top-1/2 -translate-y-1/2"
             style={{ left: '60%' }}
           />
         </div>

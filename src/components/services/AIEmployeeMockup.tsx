@@ -88,7 +88,7 @@ const AIEmployeeMockup = memo(() => {
 
               {/* Label */}
               <div className="absolute -bottom-6 left-1/2 -translate-x-1/2">
-                <span className={`text-[11px] font-semibold whitespace-nowrap ${role.iconColor} drop-shadow-sm`}>{role.label}</span>
+                <span className="text-[11px] font-semibold whitespace-nowrap text-foreground/80 drop-shadow-sm">{role.label}</span>
               </div>
             </div>
           </div>;
