@@ -30,7 +30,7 @@ interface EngineeringAIPanelProps {
 const QUICK_ACTIONS: Record<CalculatorType, { label: string; question: string }[]> = {
   beam: [
     { label: 'Explain design', question: 'Explain why this beam design was chosen and the key calculations' },
-    { label: 'Check code', question: 'Does this design comply with ACI 318 and Saudi Building Code requirements?' },
+    { label: 'Check code', question: 'Does this design comply with the selected building code (ACI 318-25 or CSA A23.3-24) requirements?' },
     { label: 'Optimize', question: 'How can I optimize this beam design to reduce cost or improve performance?' },
   ],
   column: [

@@ -1,5 +1,5 @@
 // Comprehensive Engineering Knowledge Base
-// Based on ACI 318-19, Eurocode 2, and Saudi Building Code (SBC 304-2018)
+// Based on ACI 318-25 (USA) and CSA A23.3-24 (Canada)
 
 export const ENGINEERING_KNOWLEDGE = {
   concrete: {
