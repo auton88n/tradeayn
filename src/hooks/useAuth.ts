@@ -253,10 +253,8 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
       }
     };
 
-    // Small delay to ensure token is propagated
-    const timer = setTimeout(() => {
-      runQueries();
-    }, 100);
+    // Run immediately - no delay needed
+    runQueries();
 
     // Track device (non-blocking)
     if (!hasTrackedDevice.current) {
@@ -266,7 +264,6 @@ export const useAuth = (user: User, session: Session): UseAuthReturn => {
 
     return () => {
       isMounted = false;
-      clearTimeout(timer);
     };
   }, [user?.id, session?.access_token]);
 

@@ -63,55 +63,44 @@ export const useUsageTracking = (userId: string | null): UsageData & { refreshUs
     fetchUsage();
   }, [fetchUsage]);
 
-  // Real-time subscription for usage updates on user_ai_limits
+  // Real-time subscription for usage updates - with stable channel name
   useEffect(() => {
     if (!userId) return;
 
-    let channel: ReturnType<typeof supabase.channel> | null = null;
-
-    try {
-      channel = supabase
-        .channel(`usage-tracking-${userId}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'user_ai_limits',
-            filter: `user_id=eq.${userId}`
-          },
-          (payload) => {
-            const newData = payload.new as {
-              current_monthly_messages: number | null;
-              monthly_messages: number | null;
-              is_unlimited: boolean | null;
-              monthly_reset_at: string | null;
-            };
-            
-            setUsageData(prev => ({
-              ...prev,
-              currentUsage: newData.current_monthly_messages || 0,
-              monthlyLimit: newData.is_unlimited ? null : (newData.monthly_messages || 50),
-              isUnlimited: newData.is_unlimited || false,
-              resetDate: newData.monthly_reset_at
-            }));
-          }
-        )
-        .subscribe((status, err) => {
-          if ((status === 'CHANNEL_ERROR' || err) && import.meta.env.DEV) {
-            console.warn('[useUsageTracking] Real-time subscription unavailable, using polling fallback');
-          }
-        });
-    } catch (err) {
-      if (import.meta.env.DEV) {
-        console.warn('[useUsageTracking] Failed to setup real-time subscription:', err);
-      }
-    }
+    // Use a stable channel name that won't cause reconnections
+    const channelName = `usage-${userId.slice(0, 8)}`;
+    
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'user_ai_limits',
+          filter: `user_id=eq.${userId}`
+        },
+        (payload) => {
+          const newData = payload.new as {
+            current_monthly_messages: number | null;
+            monthly_messages: number | null;
+            is_unlimited: boolean | null;
+            monthly_reset_at: string | null;
+          };
+          
+          setUsageData(prev => ({
+            ...prev,
+            currentUsage: newData.current_monthly_messages || 0,
+            monthlyLimit: newData.is_unlimited ? null : (newData.monthly_messages || 50),
+            isUnlimited: newData.is_unlimited || false,
+            resetDate: newData.monthly_reset_at
+          }));
+        }
+      )
+      .subscribe();
 
     return () => {
-      if (channel) {
-        supabase.removeChannel(channel);
-      }
+      supabase.removeChannel(channel);
     };
   }, [userId]);
 
