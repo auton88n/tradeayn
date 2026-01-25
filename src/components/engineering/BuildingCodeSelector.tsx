@@ -31,7 +31,7 @@ export const BuildingCodeSelector: React.FC<BuildingCodeSelectorProps> = ({
           variant="outline"
           size="sm"
           className={cn(
-            "w-full justify-between gap-2 bg-background/50 border-border/50 hover:bg-white/10",
+            "w-full justify-between gap-2 bg-background/80 border-border/50 hover:bg-accent hover:text-accent-foreground",
             isCollapsed && "justify-center px-2"
           )}
         >
