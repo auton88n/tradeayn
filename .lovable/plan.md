@@ -1,47 +1,111 @@
 
-# Fix Dark Button Text on Service Pages
+# Password Reset Flow Fix Plan
 
-## Problem
-On the service pages (AI Employee, AI Agents, Automation, InfluencerSites, Ticketing), outline buttons like "View All Services", "Detailed Form", and "Close" have dark text that is not visible against the dark backgrounds. The text only becomes visible when hovering.
+## Problem Analysis
 
-## Root Cause
-The Button component's `outline` variant uses `text-foreground` by default, which shows dark text. On these service pages with `bg-neutral-950` dark backgrounds, the text needs to be explicitly set to white.
+From the auth logs and code review, I've identified the following issues:
 
-## Solution
-Add `text-white hover:text-white` (or appropriate hover color) to all outline buttons on dark backgrounds across all service pages.
+### Issue 1: Race Condition with Global Auth Listener
+When a user clicks the password reset link from their email:
+1. The link redirects to `/reset-password` with recovery tokens
+2. Supabase validates the token and fires a global `SIGNED_IN` event
+3. The **Index page** (`/`) has its own `onAuthStateChange` listener that catches this event
+4. If the Index page processes this event before the ResetPassword page does, the user gets shown the Dashboard (with the AYN eye and chat input) instead of the password reset form
+
+### Issue 2: Link Already Used
+The auth logs show:
+```
+"error":"One-time token not found"
+"msg":"403: Email link is invalid or has expired"
+```
+This indicates the recovery link was clicked twice or the token was already consumed. After the first successful validation, subsequent clicks show the expired link error.
+
+## Proposed Solution
+
+### Step 1: Protect the `/reset-password` Route from Auth Listener Interference
+Modify the `Index.tsx` to detect when a password recovery flow is in progress and NOT intercept the auth state, allowing the ResetPassword page to handle it.
+
+**Logic:**
+- Check if the current URL path is `/reset-password` 
+- If yes, don't redirect to Dashboard even if a session exists
+- Let the ResetPassword page handle the `PASSWORD_RECOVERY` event
+
+### Step 2: Improve ResetPassword Page Session Detection
+The ResetPassword page should:
+1. Use a flag/localStorage to indicate it's handling a recovery flow
+2. Prioritize the `PASSWORD_RECOVERY` event over `SIGNED_IN`
+3. Clear URL tokens immediately after extracting them (already done)
+4. Show the password form immediately when a valid session exists from recovery
+
+### Step 3: Add Route-Level Protection
+Create a check in the App.tsx or Index.tsx to detect when user arrives at `/reset-password` with recovery tokens and prevent automatic Dashboard redirect.
+
+## Technical Implementation
+
+### File: `src/pages/Index.tsx`
+```tsx
+useEffect(() => {
+  // Skip Dashboard redirect if on password reset flow
+  const isRecoveryFlow = window.location.pathname === '/reset-password' ||
+                         window.location.hash.includes('type=recovery');
+  
+  if (isRecoveryFlow) {
+    console.log('[Index] Recovery flow detected, skipping auth intercept');
+    return; // Don't set up listener - let ResetPassword handle it
+  }
+  
+  // ... existing auth listener code
+}, []);
+```
+
+### File: `src/pages/ResetPassword.tsx`
+1. Ensure the page checks for session first before showing expired state
+2. Add a "recovering" flag to localStorage to prevent other pages from redirecting
+3. Clear the flag after successful password update
+
+### Flow Diagram
+
+```text
+User clicks email link
+        |
+        v
+/reset-password?token=xxx#access_token=yyy&type=recovery
+        |
+        v
+ResetPassword.tsx loads
+        |
+        +---> Parses tokens from URL
+        |
+        +---> Sets session via Supabase
+        |
+        v
+Shows password reset form (NOT Dashboard)
+        |
+        v
+User enters new password
+        |
+        v
+Password updated -> Redirect to /
+```
 
 ## Files to Modify
 
-### 1. AIEmployee.tsx
-- Line 257: "Detailed Form" button - add `text-white hover:text-white`
-- Line 301: "Close" button (modal) - add `text-white hover:text-white`
+| File | Change |
+|------|--------|
+| `src/pages/Index.tsx` | Add recovery flow detection to skip Dashboard redirect |
+| `src/pages/ResetPassword.tsx` | Improve session detection priority and add recovery flag |
 
-### 2. AIAgents.tsx  
-- Line 423: "Close" button (modal) - add `text-white hover:text-white`
+## Testing Checklist
 
-### 3. Automation.tsx
-- Line 381: "Close" button (modal) - add `text-white hover:text-white`
+1. Request password reset from AuthModal
+2. Click email link -> Should show password reset form (NOT Dashboard with eye)
+3. Enter new password -> Should succeed and redirect to home
+4. Clicking expired link -> Should show "Link Expired" message
+5. Normal login flow should still work correctly
 
-### 4. InfluencerSites.tsx
-- Line 265: "View All Services" button - add `text-white hover:text-white`
-- Line 313: "Close" button (modal) - add `text-white hover:text-white`
+## Edge Cases Handled
 
-### 5. Ticketing.tsx
-- Line 233: "Apply Now" button - add `text-white hover:text-white`
-- Line 343: "Close" button (modal) - add `text-white hover:text-white`
-
-## Technical Details
-
-```text
-Before:
-<Button variant="outline" className="border-neutral-700 hover:bg-neutral-800">
-
-After:
-<Button variant="outline" className="border-neutral-700 hover:bg-neutral-800 text-white hover:text-white">
-```
-
-This ensures buttons have white text in their default state and maintain white text on hover, providing consistent visibility on dark backgrounds.
-
-## Notes
-- CivilEngineering.tsx already has the fix applied (line 432)
-- The AI Agents and Automation pages have "View All Services" buttons that already include `text-white` in their styling
+- User already logged in when clicking reset link -> Still shows password reset form
+- Token already used -> Shows expired message with option to request new link  
+- Slow network -> Shows "Validating" spinner with reload option after 8 seconds
+- User clicks link twice rapidly -> Second click shows expired (expected behavior)
