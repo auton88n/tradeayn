@@ -51,7 +51,7 @@ interface EngineeringBottomChatProps {
 const placeholders = [
   "Design a beam for 6m span with 20kN/m load...",
   "Optimize this for cost efficiency...",
-  "Check Saudi Building Code compliance...",
+  "Check ACI/CSA code compliance...",
   "Compare 300mm vs 400mm width...",
   "What's the required reinforcement?",
 ];

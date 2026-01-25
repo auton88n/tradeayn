@@ -145,17 +145,17 @@ const USER_PERSONAS: UserPersona[] = [
       'Switches to Arabic language',
       'Expects RTL text alignment',
       'Uses Arabic numerals sometimes',
-      'Expects local building codes (SBC)'
+      'Expects international building codes (ACI/CSA)'
     ],
     expectedFrustrations: [
       'Mixed LTR/RTL content',
       'Untranslated technical terms',
-      'Missing Saudi Building Code option'
+      'Missing building code options'
     ],
     successCriteria: [
       'Full Arabic translation available',
       'RTL layout works correctly',
-      'Local standards supported'
+      'International standards supported (ACI/CSA)'
     ]
   }
 ];

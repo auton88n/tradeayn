@@ -179,7 +179,7 @@ const Engineering = () => {
     <>
       <SEO 
         title="Civil Engineering Calculator | Structural Design Tool"
-        description="Professional civil engineering calculator for beam design, foundation design, and structural analysis. Saudi Building Code compliant calculations."
+        description="Professional civil engineering calculator for beam design, foundation design, and structural analysis. ACI 318-25 and CSA A23.3-24 compliant calculations."
       />
       
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
