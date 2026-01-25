@@ -26,45 +26,45 @@ interface SoundConfig {
 }
 
 const SOUND_CONFIGS: Record<SoundType, SoundConfig> = {
-  // Mode sounds - distinct and noticeable (+50% gain)
-  'mode-general': { type: 'sine', frequency: 440, duration: 0.15, gain: 0.12, attack: 0.01, decay: 0.14 },
-  'mode-research': { type: 'triangle', frequency: 523, duration: 0.12, gain: 0.11, attack: 0.01, decay: 0.11, detune: 5 },
-  'mode-pdf': { type: 'sine', frequency: 392, duration: 0.1, gain: 0.09, attack: 0.02, decay: 0.08 },
-  'mode-vision': { type: 'sine', frequency: 587, duration: 0.18, gain: 0.11, attack: 0.01, decay: 0.17, filterFreq: 2000 },
-  'mode-civil': { type: 'square', frequency: 330, duration: 0.08, gain: 0.06, attack: 0.01, decay: 0.07, filterFreq: 1500 },
+  // Mode sounds - loud and distinct
+  'mode-general': { type: 'sine', frequency: 440, duration: 0.15, gain: 0.25, attack: 0.01, decay: 0.14 },
+  'mode-research': { type: 'triangle', frequency: 523, duration: 0.12, gain: 0.22, attack: 0.01, decay: 0.11, detune: 5 },
+  'mode-pdf': { type: 'sine', frequency: 392, duration: 0.1, gain: 0.20, attack: 0.02, decay: 0.08 },
+  'mode-vision': { type: 'sine', frequency: 587, duration: 0.18, gain: 0.22, attack: 0.01, decay: 0.17, filterFreq: 2000 },
+  'mode-civil': { type: 'square', frequency: 330, duration: 0.08, gain: 0.15, attack: 0.01, decay: 0.07, filterFreq: 1500 },
   
-  // Emotion sounds - audible and distinct (+50% gain)
-  'emotion-calm': { type: 'sine', frequency: 261, duration: 0.2, gain: 0.06, attack: 0.05, decay: 0.15 },
-  'emotion-happy': { type: 'sine', frequency: 523, duration: 0.15, gain: 0.09, attack: 0.01, decay: 0.14 },
-  'emotion-thinking': { type: 'triangle', frequency: 349, duration: 0.25, gain: 0.08, attack: 0.02, decay: 0.23 },
-  'emotion-excited': { type: 'sawtooth', frequency: 622, duration: 0.12, gain: 0.08, attack: 0.01, decay: 0.11, filterFreq: 3000 },
-  'emotion-curious': { type: 'sine', frequency: 466, duration: 0.18, gain: 0.08, attack: 0.02, decay: 0.16, detune: 10 },
-  'emotion-frustrated': { type: 'triangle', frequency: 220, duration: 0.2, gain: 0.06, attack: 0.03, decay: 0.17 },
-  'emotion-sad': { type: 'sine', frequency: 196, duration: 0.4, gain: 0.08, attack: 0.1, decay: 0.3 },
-  'emotion-mad': { type: 'square', frequency: 165, duration: 0.15, gain: 0.09, attack: 0.01, decay: 0.14, filterFreq: 1200 },
-  'emotion-bored': { type: 'sine', frequency: 175, duration: 0.35, gain: 0.05, attack: 0.15, decay: 0.2 },
+  // Emotion sounds - audible and clear
+  'emotion-calm': { type: 'sine', frequency: 261, duration: 0.2, gain: 0.15, attack: 0.05, decay: 0.15 },
+  'emotion-happy': { type: 'sine', frequency: 523, duration: 0.15, gain: 0.20, attack: 0.01, decay: 0.14 },
+  'emotion-thinking': { type: 'triangle', frequency: 349, duration: 0.25, gain: 0.18, attack: 0.02, decay: 0.23 },
+  'emotion-excited': { type: 'sawtooth', frequency: 622, duration: 0.12, gain: 0.18, attack: 0.01, decay: 0.11, filterFreq: 3000 },
+  'emotion-curious': { type: 'sine', frequency: 466, duration: 0.18, gain: 0.18, attack: 0.02, decay: 0.16, detune: 10 },
+  'emotion-frustrated': { type: 'triangle', frequency: 220, duration: 0.2, gain: 0.15, attack: 0.03, decay: 0.17 },
+  'emotion-sad': { type: 'sine', frequency: 196, duration: 0.4, gain: 0.18, attack: 0.1, decay: 0.3 },
+  'emotion-mad': { type: 'square', frequency: 165, duration: 0.15, gain: 0.18, attack: 0.01, decay: 0.14, filterFreq: 1200 },
+  'emotion-bored': { type: 'sine', frequency: 175, duration: 0.35, gain: 0.12, attack: 0.15, decay: 0.2 },
   
-  // Interaction sounds - clear and noticeable (+50% gain)
-  'message-send': { type: 'sine', frequency: 880, duration: 0.1, gain: 0.09, attack: 0.01, decay: 0.09 },
-  'message-absorb': { type: 'sine', frequency: 330, duration: 0.15, gain: 0.08, attack: 0.01, decay: 0.14 },
-  'response-received': { type: 'sine', frequency: 659, duration: 0.12, gain: 0.10, attack: 0.01, decay: 0.11 },
-  'suggestion-click': { type: 'sine', frequency: 740, duration: 0.06, gain: 0.08, attack: 0.005, decay: 0.055 },
-  // Blink sounds - subtle but audible (+30% gain for gentle feedback)
-  'blink': { type: 'sine', frequency: 200, duration: 0.18, gain: 0.025, attack: 0.08, decay: 0.10 },
-  'blink-open': { type: 'sine', frequency: 240, duration: 0.06, gain: 0.018, attack: 0.01, decay: 0.05 },
+  // Interaction sounds - clear and prominent
+  'message-send': { type: 'sine', frequency: 880, duration: 0.1, gain: 0.22, attack: 0.01, decay: 0.09 },
+  'message-absorb': { type: 'sine', frequency: 330, duration: 0.15, gain: 0.18, attack: 0.01, decay: 0.14 },
+  'response-received': { type: 'sine', frequency: 659, duration: 0.12, gain: 0.25, attack: 0.01, decay: 0.11 },
+  'suggestion-click': { type: 'sine', frequency: 740, duration: 0.06, gain: 0.20, attack: 0.005, decay: 0.055 },
+  // Blink sounds - subtle but audible
+  'blink': { type: 'sine', frequency: 200, duration: 0.18, gain: 0.06, attack: 0.08, decay: 0.10 },
+  'blink-open': { type: 'sine', frequency: 240, duration: 0.06, gain: 0.04, attack: 0.01, decay: 0.05 },
   
-  // Conversational sounds - clear and audible (+50% gain)
-  'understanding': { type: 'sine', frequency: 392, duration: 0.25, gain: 0.09, attack: 0.05, decay: 0.2, detune: 3 },
-  'empathy': { type: 'sine', frequency: 294, duration: 0.35, gain: 0.09, attack: 0.08, decay: 0.27 },
-  'anticipation': { type: 'sine', frequency: 440, duration: 0.15, gain: 0.08, attack: 0.02, decay: 0.13, detune: 8 },
-  'recognition': { type: 'triangle', frequency: 523, duration: 0.1, gain: 0.08, attack: 0.01, decay: 0.09 },
-  'comfort': { type: 'sine', frequency: 262, duration: 0.4, gain: 0.09, attack: 0.1, decay: 0.3 },
+  // Conversational sounds - clear and audible
+  'understanding': { type: 'sine', frequency: 392, duration: 0.25, gain: 0.20, attack: 0.05, decay: 0.2, detune: 3 },
+  'empathy': { type: 'sine', frequency: 294, duration: 0.35, gain: 0.20, attack: 0.08, decay: 0.27 },
+  'anticipation': { type: 'sine', frequency: 440, duration: 0.15, gain: 0.18, attack: 0.02, decay: 0.13, detune: 8 },
+  'recognition': { type: 'triangle', frequency: 523, duration: 0.1, gain: 0.18, attack: 0.01, decay: 0.09 },
+  'comfort': { type: 'sine', frequency: 262, duration: 0.4, gain: 0.20, attack: 0.1, decay: 0.3 },
   
-  // Typing context sounds - audible feedback (+50% gain)
-  'listening': { type: 'sine', frequency: 330, duration: 0.12, gain: 0.08, attack: 0.03, decay: 0.09 },
-  'attentive-blink': { type: 'sine', frequency: 494, duration: 0.06, gain: 0.06, attack: 0.01, decay: 0.05 },
-  'thoughtful-blink': { type: 'sine', frequency: 262, duration: 0.15, gain: 0.06, attack: 0.04, decay: 0.11 },
-  'processing': { type: 'triangle', frequency: 370, duration: 0.2, gain: 0.08, attack: 0.05, decay: 0.15, detune: 5 },
+  // Typing context sounds - audible feedback
+  'listening': { type: 'sine', frequency: 330, duration: 0.12, gain: 0.18, attack: 0.03, decay: 0.09 },
+  'attentive-blink': { type: 'sine', frequency: 494, duration: 0.06, gain: 0.15, attack: 0.01, decay: 0.05 },
+  'thoughtful-blink': { type: 'sine', frequency: 262, duration: 0.15, gain: 0.15, attack: 0.04, decay: 0.11 },
+  'processing': { type: 'triangle', frequency: 370, duration: 0.2, gain: 0.18, attack: 0.05, decay: 0.15, detune: 5 },
 };
 
 // Global unlock state for iOS AudioContext
