@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, memo } from 'react';
 import { Brain } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from 'framer-motion';
+import { motion, useMotionValue, useSpring, AnimatePresence } from 'framer-motion';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { LandingChatInput } from '@/components/landing/LandingChatInput';
 import { useDebugContextOptional } from '@/contexts/DebugContext';
@@ -12,10 +12,11 @@ interface HeroProps {
 const CARDS_EN = ["Always watching over you.", "I understand context.", "Ready when you are.", "Let me handle that.", "Optimizing your workflow.", "Done. What's next?"];
 const CARDS_AR = ["معك في كل خطوة.", "أفهم ما تحتاجه.", "جاهز لخدمتك.", "اترك الأمر لي.", "أُنجز المهام بذكاء.", "تمّ. ماذا بعد؟"];
 
-export const Hero = ({ onGetStarted }: HeroProps) => {
+export const Hero = memo(({ onGetStarted }: HeroProps) => {
   const { language } = useLanguage();
   const isMobile = useIsMobile();
-  const debug = useDebugContextOptional();
+  // Use ref to avoid re-renders from debug context updates
+  const debugRef = useRef(useDebugContextOptional());
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isHovered, setIsHovered] = useState(false);
   const [visibleCardIndex, setVisibleCardIndex] = useState<number | null>(null);
@@ -23,9 +24,9 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
   const [isBlinking, setIsBlinking] = useState(false);
   const previousCardRef = useRef<number | null>(null);
   
-  // Debug render logging - direct call (no useEffect to avoid infinite loop)
-  if (debug?.isDebugMode) {
-    debug.incrementRenderCount('Hero');
+  // Debug render logging - use ref to avoid dependency on context
+  if (debugRef.current?.isDebugMode) {
+    debugRef.current.incrementRenderCount('Hero');
   }
 
   // Responsive card positions - mobile uses top/bottom layout to avoid horizontal clipping
@@ -442,4 +443,4 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
       {/* Interactive Chat Input */}
       <LandingChatInput onSendAttempt={(message) => onGetStarted(message)} />
     </section>;
-};
+});
