@@ -21,7 +21,7 @@ const AdminLaptop = memo(() => {
   return (
     <div className="relative">
       {/* Laptop Frame - MacBook style */}
-      <div className="w-72 bg-gradient-to-b from-zinc-700 to-zinc-800 rounded-t-xl p-1 shadow-2xl border border-zinc-600/50">
+      <div className="w-72 bg-gradient-to-b from-zinc-700 to-zinc-800 rounded-t-xl p-1 shadow-2xl border border-zinc-600">
         {/* Camera notch */}
         <div className="absolute top-1 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-zinc-900 border border-zinc-700" />
         
@@ -83,7 +83,7 @@ const CustomerPhone = memo(({ qrPattern }: { qrPattern: boolean[][] }) => {
   return (
     <div className="relative">
       {/* Phone Frame */}
-      <div className="relative w-40 h-72 bg-gradient-to-b from-zinc-800 to-zinc-900 rounded-[2rem] shadow-2xl border border-zinc-700/50 overflow-hidden">
+      <div className="relative w-40 h-72 bg-gradient-to-b from-zinc-800 to-zinc-900 rounded-[2rem] shadow-2xl border border-zinc-700 overflow-hidden">
         {/* Phone shine */}
         <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent pointer-events-none" />
         
@@ -141,11 +141,6 @@ const CustomerPhone = memo(({ qrPattern }: { qrPattern: boolean[][] }) => {
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-24 h-1 bg-white/30 rounded-full" />
         </div>
       </div>
-      
-      {/* Phone Glow */}
-      <div
-        className="absolute -inset-4 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-[2.5rem] blur-2xl -z-10"
-      />
     </div>
   );
 });
