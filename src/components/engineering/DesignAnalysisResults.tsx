@@ -204,7 +204,7 @@ export const DesignAnalysisResults: React.FC<DesignAnalysisResultsProps> = ({
                 </span>
                 <Badge className="bg-green-500">
                   <DollarSign className="h-3 w-3 mr-1" />
-                  Save up to {result.aiOptimizations.totalPotentialSavings?.toLocaleString()} SAR
+                  Save up to ${result.aiOptimizations.totalPotentialSavings?.toLocaleString()}
                 </Badge>
               </CardTitle>
             </CardHeader>
@@ -229,7 +229,7 @@ export const DesignAnalysisResults: React.FC<DesignAnalysisResultsProps> = ({
                     </div>
                     <div className="flex items-center gap-4">
                       <span className="text-green-500 font-semibold">
-                        +{opt.costSavings?.toLocaleString()} SAR
+                        +${opt.costSavings?.toLocaleString()}
                       </span>
                       {expandedOptimization === idx ? (
                         <ChevronUp className="h-4 w-4" />
@@ -332,7 +332,7 @@ export const DesignAnalysisResults: React.FC<DesignAnalysisResultsProps> = ({
                     <p className="text-sm text-muted-foreground capitalize">
                       {key.replace(/([A-Z])/g, ' $1').trim()}
                     </p>
-                    <p className="text-lg font-semibold">{value.toLocaleString()} SAR</p>
+                    <p className="text-lg font-semibold">${value.toLocaleString()}</p>
                   </div>
                 )
               ))}
@@ -340,7 +340,7 @@ export const DesignAnalysisResults: React.FC<DesignAnalysisResultsProps> = ({
             <div className="mt-4 pt-4 border-t flex items-center justify-between">
               <span className="text-lg font-medium">Total Estimated Cost</span>
               <span className="text-2xl font-bold text-primary">
-                {result.costEstimates.totalCurrentCost.toLocaleString()} SAR
+                ${result.costEstimates.totalCurrentCost.toLocaleString()}
               </span>
             </div>
           </CardContent>

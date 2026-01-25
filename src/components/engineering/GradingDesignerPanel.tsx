@@ -153,7 +153,7 @@ const GradingDesignerPanel: React.FC<GradingDesignerPanelProps> = ({ onInputChan
 
       toast({
         title: 'Optimizations applied!',
-        description: `Saved ${data.comparison.improvement.costSavings.toLocaleString()} SAR. DXF downloaded.`,
+        description: `Saved $${data.comparison.improvement.costSavings.toLocaleString()}. DXF downloaded.`,
       });
     } catch (err) {
       console.error('Optimization error:', err);

@@ -28,13 +28,21 @@ interface TerrainAnalysis {
   maxY: number;
 }
 
-// Saudi earthwork prices
-const EARTHWORK_PRICES = {
-  excavation: 25,      // SAR/m³
-  fill: 35,            // SAR/m³ (imported material)
-  compaction: 8,       // SAR/m³
-  disposal: 15,        // SAR/m³ (off-site)
-  surveyingPerHectare: 2500,  // SAR per hectare
+interface EarthworkPrices {
+  excavation: number;
+  fill: number;
+  compaction: number;
+  disposal: number;
+  surveyingPerHectare: number;
+}
+
+// Default earthwork prices (USD/m³) - can be overridden by user
+const DEFAULT_EARTHWORK_PRICES: EarthworkPrices = {
+  excavation: 45,           // USD/m³
+  fill: 55,                 // USD/m³ (imported material)
+  compaction: 12,           // USD/m³
+  disposal: 25,             // USD/m³ (off-site)
+  surveyingPerHectare: 800, // USD per hectare
 };
 
 serve(async (req) => {
@@ -47,15 +55,28 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured');
     }
 
-    const { points, terrainAnalysis, requirements } = await req.json();
+    const { 
+      points, 
+      terrainAnalysis, 
+      requirements, 
+      earthworkPrices, 
+      currency = 'USD' 
+    } = await req.json();
     
     if (!points || points.length === 0) {
       throw new Error('No survey points provided');
     }
 
+    // Use user-provided prices or defaults
+    const EARTHWORK_PRICES: EarthworkPrices = {
+      ...DEFAULT_EARTHWORK_PRICES,
+      ...(earthworkPrices || {})
+    };
+
     console.log(`Generating grading design for ${points.length} points`);
     console.log('Requirements:', requirements);
     console.log('Terrain analysis:', terrainAnalysis);
+    console.log('Currency:', currency);
 
     // Create a summary of the terrain for the AI
     const terrainSummary = `
@@ -117,7 +138,7 @@ IMPORTANT REQUIREMENTS:
 2. Ensure proper drainage (min 1% slope away from structures)
 3. Account for compaction factor (typically 10-15% for fill)
 4. Provide adequate slopes for storm water management
-5. Consider Saudi building code requirements
+5. Follow standard civil engineering grading practices
 
 Return ONLY valid JSON, no additional text.`;
 
@@ -216,6 +237,7 @@ Return ONLY valid JSON, no additional text.`;
       costBreakdown,
       totalCost: Math.round(totalCost),
       prices: EARTHWORK_PRICES,
+      currency,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

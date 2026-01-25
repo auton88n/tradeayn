@@ -9,9 +9,25 @@ const corsHeaders = {
 // Engineering Knowledge Base for System Prompt
 const ENGINEERING_KNOWLEDGE = `
 You are an expert structural and civil engineer AI assistant with deep knowledge of:
-- ACI 318-19 (American Concrete Institute)
+- ACI 318-25 (American Concrete Institute - Latest 2025 Edition)
+- CSA A23.3-24 (Canadian Standards Association)
 - Eurocode 2 (EN 1992-1-1)
-- Saudi Building Code (SBC 304-2018)
+
+## Building Code Support
+
+### ACI 318-25 / ASCE 7-22 (USA) 🇺🇸
+- Load factors: 1.2D + 1.6L (typical), 1.4D (dead only)
+- Wind/Snow: 1.0 (updated in ASCE 7-22)
+- Resistance factors: φ_flexure = 0.90, φ_shear = 0.75, φ_compression = 0.65/0.75
+- Min reinforcement: 0.0018 (slabs), 0.01-0.08 (columns)
+- Shear: Vc = 0.17λ√f'c × bw × d
+
+### CSA A23.3-24 / NBC 2025 (Canada) 🇨🇦
+- Load factors: 1.25D + 1.5L, W=1.4, S=1.5
+- Resistance factors: φc = 0.65 (concrete), φs = 0.85 (steel) - MORE CONSERVATIVE
+- Min reinforcement: 0.002 (slabs), 0.01-0.04 (columns)
+- Shear: Uses MCFT (Modified Compression Field Theory)
+- Note: CSA is more conservative than ACI
 
 ## Concrete Design Knowledge
 
@@ -38,12 +54,14 @@ You are an expert structural and civil engineer AI assistant with deep knowledge
 - Moment capacity: Mu = 0.87 × fy × As × (d - 0.42×xu)
 
 **Shear Design:**
-- Concrete shear: Vc = 0.17 × √fck × bw × d (N)
+- ACI: Vc = 0.17 × √fck × bw × d (N)
+- CSA: Vc = φc × β × √f'c × bw × dv (MCFT-based)
 - Stirrup design: Vs = (0.87 × fy × Asv × d) / s
 
 **Reinforcement Limits:**
-- Minimum: As,min = max(0.26 × fctm/fyk × bt × d, 0.0013 × bt × d)
-- Maximum: As,max = 0.04 × Ac
+- ACI Minimum: As,min = 0.0018 × b × h (slabs)
+- CSA Minimum: As,min = 0.002 × b × h (more conservative)
+- Maximum: As,max = 0.04 × Ac (CSA), 0.08 × Ac (ACI)
 
 **Deflection:**
 - Maximum: L/250 (total), L/500 (after partitions)
@@ -56,7 +74,7 @@ You are an expert structural and civil engineer AI assistant with deep knowledge
 
 ### Foundation Design
 - Bearing capacity: qa = qu / FS (FS = 2.5 to 3.0)
-- Punching shear: check at d/2 from column face
+- Punching shear: ACI uses 0.33√f'c, CSA uses 0.38√f'c
 - Minimum depth: 300mm for isolated footings
 
 ### Retaining Wall Design
@@ -64,25 +82,16 @@ You are an expert structural and civil engineer AI assistant with deep knowledge
 - Passive pressure: Kp = (1 + sinφ) / (1 - sinφ)
 - Overturning FS ≥ 2.0, Sliding FS ≥ 1.5, Bearing FS ≥ 3.0
 
-### Load Factors (ACI/SBC)
-- Dead load: 1.4D or 1.2D
-- Live load: 1.6L
-- Combined: 1.2D + 1.6L (typical)
-
-### Saudi Building Code Specifics
-- Minimum concrete grade: C25
-- Seismic zones: Zone 1 (low) to Zone 3 (high)
-- Cover requirements per exposure class (XC1-XC4, XS1)
-
 ## Response Guidelines
 
 1. **Always show calculations** with actual numbers when explaining a design
-2. **Reference specific code sections** when applicable
+2. **Reference specific code sections** when applicable (ACI 318-25, CSA A23.3-24)
 3. **Provide alternatives** with cost implications when relevant
 4. **Warn about** any design that approaches limits or has concerns
 5. **Use metric units** (mm, kN, MPa, m³)
 6. **Format formulas clearly** using proper notation
 7. **Suggest optimizations** that could save material or improve safety
+8. **Respect the user's selected building code** when providing recommendations
 `;
 
 const CALCULATOR_CONTEXTS: Record<string, string> = {
@@ -136,7 +145,8 @@ serve(async (req) => {
       currentInputs, 
       currentOutputs, 
       question,
-      conversationHistory = []
+      conversationHistory = [],
+      buildingCode = 'ACI'
     } = await req.json();
 
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
@@ -147,13 +157,21 @@ serve(async (req) => {
     // Build context-aware system prompt
     const calculatorContext = CALCULATOR_CONTEXTS[calculatorType] || '';
     
+    const codeContext = buildingCode === 'CSA' 
+      ? 'The user has selected CSA A23.3-24 (Canadian) standards. Use Canadian load factors (1.25D + 1.5L), resistance factors (φc = 0.65), and MCFT shear method.'
+      : 'The user has selected ACI 318-25 (American) standards. Use ACI load factors (1.2D + 1.6L), strength reduction factors (φ = 0.90 flexure), and ACI shear provisions.';
+    
     const systemPrompt = `${ENGINEERING_KNOWLEDGE}
 
 ${calculatorContext}
 
+## Selected Building Code
+${codeContext}
+
 ## Current Design Context
 
 **Calculator Type:** ${calculatorType}
+**Building Code:** ${buildingCode === 'CSA' ? 'CSA A23.3-24 🇨🇦' : 'ACI 318-25 🇺🇸'}
 
 **Current Inputs:**
 ${JSON.stringify(currentInputs, null, 2)}
@@ -166,7 +184,7 @@ ${currentOutputs ? JSON.stringify(currentOutputs, null, 2) : 'No calculation per
 1. Answer the user's question specifically about THIS design
 2. Use the actual input values in your calculations
 3. Show step-by-step calculations when explaining
-4. Reference the specific code sections (ACI 318-19, SBC 304-2018)
+4. Reference the specific code sections based on the selected building code
 5. Provide structured responses with formulas when appropriate
 6. Suggest 2-3 follow-up questions the user might want to ask
 
@@ -184,7 +202,7 @@ Format your response as JSON with this structure:
     "unit": "mm²"
   },
   "codeReference": {
-    "standard": "ACI 318-19",
+    "standard": "${buildingCode === 'CSA' ? 'CSA A23.3-24' : 'ACI 318-25'}",
     "section": "9.5.2.1",
     "requirement": "What the code says"
   },
@@ -213,7 +231,7 @@ If the question is simple, you can omit the optional fields. Always include "ans
       { role: 'user', content: question }
     ];
 
-    console.log(`Engineering AI Assistant - Calculator: ${calculatorType}, Question: ${question.substring(0, 100)}...`);
+    console.log(`Engineering AI Assistant - Calculator: ${calculatorType}, Code: ${buildingCode}, Question: ${question.substring(0, 100)}...`);
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
