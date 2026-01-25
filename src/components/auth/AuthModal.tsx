@@ -441,11 +441,11 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
               <div className="space-y-2">
                 <div className="flex items-center justify-between rtl:flex-row-reverse">
                   <Label htmlFor="signin-password" className="auth-label">{t('auth.password')}</Label>
-                <button
+                  <button
                     type="button"
                     onClick={handleForgotPassword}
                     disabled={isResettingPassword}
-                    className="text-sm text-white hover:text-primary transition-colors disabled:opacity-50"
+                    className="text-sm text-white/80 hover:text-white hover:underline transition-colors disabled:opacity-50"
                   >
                     {isResettingPassword ? t('auth.forgotPasswordSending') : t('auth.forgotPassword')}
                   </button>
