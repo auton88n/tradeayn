@@ -3,6 +3,7 @@ import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
 import { useSoundContextOptional } from '@/contexts/SoundContext';
+import { useDebugContextOptional } from '@/contexts/DebugContext';
 
 import { useIdleDetection } from '@/hooks/useIdleDetection';
 import { useEyeGestures } from '@/hooks/useEyeGestures';
@@ -53,6 +54,7 @@ const EmotionalEyeComponent = ({
     activityLevel,
   } = useAYNEmotion();
   const soundContext = useSoundContextOptional();
+  const debug = useDebugContextOptional();
   const [isHovered, setIsHovered] = useState(false);
   const lastBlinkRef = useRef(Date.now());
   const idleBlinkIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -61,6 +63,13 @@ const EmotionalEyeComponent = ({
   // Track if current blink is "significant" (user-triggered) vs idle blink
   const isSignificantBlinkRef = useRef(false);
   const isMobile = useIsMobile();
+  
+  // Debug render logging
+  useEffect(() => {
+    if (debug?.isDebugMode) {
+      debug.incrementRenderCount('EmotionalEye');
+    }
+  });
   
   // Performance optimizations - centralized config
   const performanceConfig = usePerformanceMode();

@@ -4,21 +4,31 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from 'framer-motion';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { LandingChatInput } from '@/components/landing/LandingChatInput';
+import { useDebugContextOptional } from '@/contexts/DebugContext';
 
 interface HeroProps {
   onGetStarted: (prefillMessage?: string) => void;
 }
 const CARDS_EN = ["Always watching over you.", "I understand context.", "Ready when you are.", "Let me handle that.", "Optimizing your workflow.", "Done. What's next?"];
 const CARDS_AR = ["معك في كل خطوة.", "أفهم ما تحتاجه.", "جاهز لخدمتك.", "اترك الأمر لي.", "أُنجز المهام بذكاء.", "تمّ. ماذا بعد؟"];
+
 export const Hero = ({ onGetStarted }: HeroProps) => {
   const { language } = useLanguage();
   const isMobile = useIsMobile();
+  const debug = useDebugContextOptional();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isHovered, setIsHovered] = useState(false);
   const [visibleCardIndex, setVisibleCardIndex] = useState<number | null>(null);
   const [absorptionPulse, setAbsorptionPulse] = useState(false);
   const [isBlinking, setIsBlinking] = useState(false);
   const previousCardRef = useRef<number | null>(null);
+  
+  // Debug render logging
+  useEffect(() => {
+    if (debug?.isDebugMode) {
+      debug.incrementRenderCount('Hero');
+    }
+  });
 
   // Responsive card positions - mobile uses top/bottom layout to avoid horizontal clipping
   const getCardPositions = () => {
