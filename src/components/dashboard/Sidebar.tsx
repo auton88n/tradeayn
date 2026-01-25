@@ -393,11 +393,11 @@ export const Sidebar = ({
         <SidebarGroup className="flex-shrink-0 px-4 pb-3">
           <SidebarGroupContent>
             <div className="flex gap-2">
-              {/* New Chat Button */}
+              {/* New Chat Button - Compact */}
               <Button 
                 onClick={onNewChat} 
                 className={cn(
-                  "flex-1 h-9 rounded-lg text-sm",
+                  "h-9 px-3 rounded-lg",
                   "bg-foreground text-background",
                   "hover:bg-foreground/90",
                   "transition-colors duration-150",
@@ -405,15 +405,14 @@ export const Sidebar = ({
                 )} 
                 disabled={!hasAccess}
               >
-                <Plus className="w-4 h-4 mr-1.5" />
-                New Chat
+                <Plus className="w-4 h-4" />
               </Button>
               
-              {/* Engineering Button */}
+              {/* Engineering Button - Full Width */}
               <Button 
                 onClick={() => navigate('/engineering')}
                 className={cn(
-                  "h-9 px-3 rounded-lg gap-1.5",
+                  "flex-1 h-9 rounded-lg gap-2",
                   "bg-gradient-to-r from-cyan-600 to-blue-600",
                   "hover:from-cyan-500 hover:to-blue-500",
                   "text-white text-sm font-medium",
@@ -422,7 +421,7 @@ export const Sidebar = ({
                 )}
               >
                 <Calculator className="w-4 h-4" />
-                <span className="hidden sm:inline">Eng</span>
+                Engineering
               </Button>
             </div>
           </SidebarGroupContent>
