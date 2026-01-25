@@ -63,6 +63,10 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
       });
     }, 1000);
   };
+
+  // Client-side fallback when Supabase returns a 429 without an explicit retry window.
+  // Keep this short for testing; in production you can raise it if needed.
+  const PASSWORD_RESET_RATE_LIMIT_SECONDS = 60;
   
   // Format countdown for display (e.g., "59:45" or "1:00:00")
   const formatCountdown = (seconds: number): string => {
@@ -114,11 +118,12 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
           (error as { status?: number }).status === 429;
         
         if (isRateLimited) {
-          // Start 1-hour countdown (Supabase default rate limit window)
-          startRateLimitCountdown(3600);
+          // Start a short countdown so testing isn't blocked for an hour.
+          // Supabase may still enforce its own server-side limits.
+          startRateLimitCountdown(PASSWORD_RESET_RATE_LIMIT_SECONDS);
           toast({
             title: t('auth.rateLimitTitle'),
-            description: t('auth.rateLimitDesc').replace('{time}', '1:00:00'),
+            description: t('auth.rateLimitDesc').replace('{time}', formatCountdown(PASSWORD_RESET_RATE_LIMIT_SECONDS)),
             variant: "destructive"
           });
         } else {
