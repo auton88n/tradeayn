@@ -209,10 +209,27 @@ export const ACI_318_25: BuildingCodeConfig = {
   // STIRRUP SPACING ✅ VERIFIED (Table 9.7.6.2.2)
   // ============================================================================
   stirrupSpacing: {
+    // Nonprestressed beams - along length
     alongLength: 'min(d/2, 600 mm)',
-    maxSpacing: 600,
-    dFactor: 0.5,  // d/2
-    reducedMaxSpacing: 300,  // When Vs > 4√f'c × bw × d
+    maxSpacing: 600,        // 24 in. = 600 mm
+    dFactor: 0.5,           // d/2
+    
+    // Nonprestressed beams - across width
+    acrossWidth: 'min(d, 600 mm)',
+    acrossWidthMax: 600,    // 24 in. = 600 mm
+    acrossWidthDFactor: 1.0, // d
+    
+    // Prestressed beams (ACI 318-25 Table 9.7.6.2.2)
+    prestressed: {
+      alongLength: 'min(0.75h, 600 mm)',  // min(3h/4, 24 in.)
+      acrossWidth: 'min(1.5h, 600 mm)',   // min(3h/2, 24 in.)
+      hFactorAlong: 0.75,    // 3h/4
+      hFactorAcross: 1.5,    // 3h/2
+      maxSpacing: 600,       // 24 in. = 600 mm
+    },
+    
+    // Reduced spacing when Vs > 4√f'c × bw × d
+    reducedMaxSpacing: 300,  // 12 in. = 300 mm
     reducedDFactor: 0.25,    // d/4 in high shear
   },
   

@@ -233,14 +233,25 @@ export const CSA_A23_3_24: BuildingCodeConfig = {
   },
   
   // ============================================================================
-  // STIRRUP SPACING ✅ VERIFIED
+  // STIRRUP SPACING ✅ VERIFIED (Clause 11.3.8.1)
   // ============================================================================
   stirrupSpacing: {
+    // Along length - CSA uses dv (effective shear depth)
     alongLength: 'min(0.7dv, 600 mm)',
-    maxSpacing: 600,
-    dFactor: 0.7,  // 0.7dv (different from ACI's d/2)
+    maxSpacing: 600,        // 600 mm maximum
+    dFactor: 0.7,           // 0.7dv (different from ACI's d/2)
+    
+    // Across width - same as along length for CSA
+    acrossWidth: 'min(0.7dv, 600 mm)',
+    acrossWidthMax: 600,
+    acrossWidthDFactor: 0.7,
+    
+    // CSA does not have separate prestressed spacing rules
+    // Uses the same 0.7dv requirement
+    
+    // Reduced spacing for high shear
     reducedMaxSpacing: 300,
-    reducedDFactor: 0.35,  // Reduced for high shear
+    reducedDFactor: 0.35,   // 0.35dv for high shear
   },
   
   // ============================================================================
