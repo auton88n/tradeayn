@@ -99,6 +99,12 @@ export interface ResistanceFactors {
   bearing: number;           // φ for bearing (0.65 both)
   anchorage: number;         // φ for anchorage (0.70 ACI)
   steel: number;             // φs for steel (0.85 CSA, 1.0 ACI implicit)
+  
+  // Specialty factors (optional)
+  anchorageSteel?: number;    // ACI: 0.75 (anchors steel failure)
+  plainConcrete?: number;     // ACI: 0.60 (plain concrete members)
+  concretePrecast?: number;   // CSA: 0.70 (CSA-certified precast)
+  prestressing?: number;      // CSA: 0.90 (prestressing steel φp)
 }
 
 export interface StressBlockParams {
@@ -111,8 +117,12 @@ export interface StressBlockParams {
 export interface ReinforcementLimits {
   minFlexural: number;      // Min flexural reinforcement ratio (0.0018 ACI, 0.002 CSA)
   minColumn: number;        // Min column reinforcement (0.01 both)
-  maxColumn: number;        // Max column reinforcement (0.08 ACI, 0.04 CSA)
+  maxColumn: number;        // Max column reinforcement (0.08 ACI code max, 0.04 practical)
   tempShrinkage: number;    // Temperature/shrinkage steel ratio
+  
+  // Formula strings for display
+  minFlexuralFormula?: string;  // Full formula for beam minimum reinforcement
+  minSlabFormula?: string;      // Formula for slab minimum reinforcement
 }
 
 export interface ShearDesign {
@@ -189,6 +199,19 @@ export interface ParkingAccessibility {
 }
 
 // ============================================================================
+// VERIFICATION STATUS TRACKING
+// ============================================================================
+
+export type VerificationStatusLevel = 'verified' | 'high_confidence' | 'user_configurable';
+
+export interface VerificationStatus {
+  status: VerificationStatusLevel;
+  date: string;
+  verifiedParameters: string[];
+  sources?: string[];
+}
+
+// ============================================================================
 // MAIN BUILDING CODE CONFIG (EXTENDED)
 // ============================================================================
 
@@ -215,11 +238,14 @@ export interface BuildingCodeConfig {
   stability: StabilityFactors;
   parking: ParkingAccessibility;
   
-  // NEW: Extended configuration
+  // Extended configuration
   loadCombinations: LoadCombination[];
   codeReferences: CodeReferences;
   designWarnings: DesignWarningThresholds;
   developmentLength: DevelopmentLengthFactors;
+  
+  // Verification tracking
+  verification?: VerificationStatus;
   
   notes?: string[];
 }
