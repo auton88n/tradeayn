@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, forwardRef, useCallback } from 'rea
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Plus, ChevronDown, ArrowUp, FileText, X, Image as ImageIcon, AlertTriangle, MessageSquarePlus, Loader2, FileImage, FileCode, FileSpreadsheet, FileArchive, FileAudio, FileVideo, File, RefreshCw, Check, Volume2, VolumeX } from 'lucide-react';
+import { Plus, ChevronDown, ArrowUp, FileText, X, Image as ImageIcon, AlertTriangle, MessageSquarePlus, Loader2, FileImage, FileCode, FileSpreadsheet, FileArchive, FileAudio, FileVideo, File, RefreshCw, Check, Volume2, VolumeX, Brain } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
@@ -630,7 +630,9 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
                       })}
                     </div>
                   ) : (
-                    <span className="text-sm">🧠</span>
+                    <div className="w-5 h-5 rounded bg-foreground flex items-center justify-center">
+                      <Brain className="w-3 h-3 text-background" />
+                    </div>
                   )}
                   <span className="text-sm font-medium text-foreground">{selectedMode}</span>
                   <ChevronDown className="w-3.5 h-3.5 text-muted-foreground ml-0.5" />
@@ -674,7 +676,9 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
           ) : (
             // Single mode - just show a simple label
             <div className="h-9 px-3 rounded-xl flex items-center gap-2 text-muted-foreground">
-              <span className="text-sm">🧠</span>
+              <div className="w-5 h-5 rounded bg-foreground flex items-center justify-center">
+                <Brain className="w-3 h-3 text-background" />
+              </div>
               <span className="text-sm font-medium">AYN</span>
             </div>
           )}
