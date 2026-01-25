@@ -20,12 +20,12 @@ interface BetaFeedbackModalProps {
 }
 
 const FEATURES = [
-  { id: 'ai_chat', label: 'AI Chat' },
-  { id: 'engineering', label: 'Engineering Calculators' },
-  { id: 'support', label: 'Support System' },
-  { id: 'design_analysis', label: 'Design Analysis' },
-  { id: 'file_upload', label: 'File Upload' },
-  { id: 'modes', label: 'AI Modes' },
+  { id: 'ai_chat', labelKey: 'beta.feature.aiChat' },
+  { id: 'engineering', labelKey: 'beta.feature.engineering' },
+  { id: 'support', labelKey: 'beta.feature.support' },
+  { id: 'design_analysis', labelKey: 'beta.feature.designAnalysis' },
+  { id: 'file_upload', labelKey: 'beta.feature.fileUpload' },
+  { id: 'modes', labelKey: 'beta.feature.modes' },
 ];
 
 export const BetaFeedbackModal = ({ 
@@ -55,7 +55,7 @@ export const BetaFeedbackModal = ({
 
   const handleSubmit = async () => {
     if (rating === 0) {
-      toast.error('Please provide a rating');
+      toast.error(t('beta.provideRating'));
       return;
     }
 
@@ -131,9 +131,9 @@ export const BetaFeedbackModal = ({
               >
                 <Sparkles className="w-10 h-10 text-white" />
               </motion.div>
-              <h3 className="text-2xl font-bold text-foreground mb-2">Thank You!</h3>
+              <h3 className="text-2xl font-bold text-foreground mb-2">{t('beta.thankYou')}</h3>
               <p className="text-muted-foreground text-center mb-4">
-                Your feedback helps us improve AYN
+                {t('beta.feedbackHelps')}
               </p>
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
@@ -142,11 +142,11 @@ export const BetaFeedbackModal = ({
                 className="px-4 py-2 bg-gradient-to-r from-purple-500/20 to-fuchsia-500/20 rounded-full"
               >
                 <span className="text-lg font-bold bg-gradient-to-r from-purple-500 to-fuchsia-500 bg-clip-text text-transparent">
-                  +{rewardAmount} Credits Added!
+                  +{rewardAmount} {t('beta.creditsAdded')}
                 </span>
               </motion.div>
               <Button onClick={handleClose} className="mt-6">
-                Continue Using AYN
+                {t('beta.continueUsing')}
               </Button>
             </motion.div>
           ) : (
@@ -159,13 +159,13 @@ export const BetaFeedbackModal = ({
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-purple-500" />
-                  Share Your Beta Experience
+                  {t('beta.title')}
                 </DialogTitle>
                 <DialogDescription className="flex items-center gap-2">
-                  Complete this survey to earn
+                  {t('beta.earnCredits')}
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-purple-500/20 to-fuchsia-500/20 rounded-full text-purple-600 dark:text-purple-400 font-medium">
                     <Gift className="w-3 h-3" />
-                    {rewardAmount} bonus credits
+                    {rewardAmount} {t('beta.bonusCredits')}
                   </span>
                 </DialogDescription>
               </DialogHeader>
@@ -173,7 +173,7 @@ export const BetaFeedbackModal = ({
               <div className="space-y-6 py-4">
                 {/* Rating */}
                 <div className="space-y-2">
-                  <Label>Overall Experience *</Label>
+                  <Label>{t('beta.overallExperience')} *</Label>
                   <div className="flex gap-1">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <button
@@ -199,7 +199,7 @@ export const BetaFeedbackModal = ({
 
                 {/* Favorite Features */}
                 <div className="space-y-2">
-                  <Label>What features do you love? (select all that apply)</Label>
+                  <Label>{t('beta.featuresLove')}</Label>
                   <div className="grid grid-cols-2 gap-2">
                     {FEATURES.map((feature) => (
                       <label
@@ -215,7 +215,7 @@ export const BetaFeedbackModal = ({
                           checked={selectedFeatures.includes(feature.id)}
                           onCheckedChange={() => handleFeatureToggle(feature.id)}
                         />
-                        <span className="text-sm">{feature.label}</span>
+                        <span className="text-sm">{t(feature.labelKey)}</span>
                       </label>
                     ))}
                   </div>
@@ -223,12 +223,12 @@ export const BetaFeedbackModal = ({
 
                 {/* Improvements */}
                 <div className="space-y-2">
-                  <Label htmlFor="improvements">What could be improved?</Label>
+                  <Label htmlFor="improvements">{t('beta.whatImproved')}</Label>
                   <Textarea
                     id="improvements"
                     value={improvements}
                     onChange={(e) => setImprovements(e.target.value)}
-                    placeholder="Share your suggestions..."
+                    placeholder={t('beta.shareSuggestions')}
                     className="resize-none"
                     rows={2}
                   />
@@ -236,12 +236,12 @@ export const BetaFeedbackModal = ({
 
                 {/* Bugs */}
                 <div className="space-y-2">
-                  <Label htmlFor="bugs">Any bugs encountered?</Label>
+                  <Label htmlFor="bugs">{t('beta.anyBugs')}</Label>
                   <Textarea
                     id="bugs"
                     value={bugs}
                     onChange={(e) => setBugs(e.target.value)}
-                    placeholder="Describe any issues you've faced..."
+                    placeholder={t('beta.describeBugs')}
                     className="resize-none"
                     rows={2}
                   />
@@ -249,7 +249,7 @@ export const BetaFeedbackModal = ({
 
                 {/* Would Recommend */}
                 <div className="space-y-2">
-                  <Label>Would you recommend AYN to others?</Label>
+                  <Label>{t('beta.wouldRecommend')}</Label>
                   <div className="flex gap-3">
                     <Button
                       type="button"
@@ -261,7 +261,7 @@ export const BetaFeedbackModal = ({
                       )}
                     >
                       <ThumbsUp className="w-4 h-4 mr-2" />
-                      Yes
+                      {t('beta.yes')}
                     </Button>
                     <Button
                       type="button"
@@ -273,7 +273,7 @@ export const BetaFeedbackModal = ({
                       )}
                     >
                       <ThumbsDown className="w-4 h-4 mr-2" />
-                      Not Yet
+                      {t('beta.notYet')}
                     </Button>
                   </div>
                 </div>
@@ -281,7 +281,7 @@ export const BetaFeedbackModal = ({
 
               <div className="flex justify-end gap-2 pt-4 border-t">
                 <Button variant="outline" onClick={handleClose} disabled={isSubmitting}>
-                  Maybe Later
+                  {t('beta.maybeLater')}
                 </Button>
                 <Button
                   onClick={handleSubmit}
@@ -293,7 +293,7 @@ export const BetaFeedbackModal = ({
                   ) : (
                     <Gift className="w-4 h-4 mr-2" />
                   )}
-                  Submit & Earn Credits
+                  {t('beta.submitEarn')}
                 </Button>
               </div>
             </motion.div>
