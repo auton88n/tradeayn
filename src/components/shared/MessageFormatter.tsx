@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { cn } from '@/lib/utils';
@@ -15,6 +15,12 @@ interface MessageFormatterProps {
   content: string;
   className?: string;
 }
+
+// Detect if content contains Arabic/RTL text
+const hasArabicText = (text: string): boolean => {
+  // Arabic Unicode ranges
+  return /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(text);
+};
 
 // Remove outer code fence wrapping if entire content is a single code block
 const unwrapCodeFences = (text: string): string => {
@@ -238,9 +244,19 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
 
   const processedContent = preprocessContent(sanitizedContent);
 
+  // Detect RTL for Arabic content
+  const isRTL = useMemo(() => hasArabicText(processedContent), [processedContent]);
+
   return (
     <>
-      <div className={cn("space-y-4 leading-relaxed break-words", className)}>
+      <div 
+        className={cn("space-y-4 leading-relaxed break-words", className)}
+        dir={isRTL ? 'rtl' : 'ltr'}
+        style={{ 
+          fontFamily: isRTL ? "'Noto Sans Arabic', 'Segoe UI', system-ui, sans-serif" : undefined,
+          textAlign: isRTL ? 'right' : undefined,
+        }}
+      >
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           components={{

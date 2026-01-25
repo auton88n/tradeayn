@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, memo } from 'react';
+import { useState, useEffect, useCallback, memo, useMemo } from 'react';
 import { MessageFormatter } from '@/components/shared/MessageFormatter';
 import { hapticFeedback } from '@/lib/haptics';
 import { cn } from '@/lib/utils';
@@ -11,6 +11,47 @@ interface StreamingMarkdownProps {
   enableHaptics?: boolean;
 }
 
+// Detect if content contains Arabic/RTL text
+const hasArabicText = (text: string): boolean => {
+  // Arabic Unicode range: \u0600-\u06FF (Arabic), \u0750-\u077F (Arabic Supplement)
+  return /[\u0600-\u06FF\u0750-\u077F]/.test(text);
+};
+
+// Split content into words while preserving Arabic word integrity
+const splitIntoWords = (content: string): string[] => {
+  // Use Unicode-aware word boundary splitting
+  // This keeps Arabic words together and preserves whitespace
+  const segments: string[] = [];
+  let currentWord = '';
+  let currentWhitespace = '';
+  
+  for (let i = 0; i < content.length; i++) {
+    const char = content[i];
+    
+    if (/\s/.test(char)) {
+      // Whitespace character
+      if (currentWord) {
+        segments.push(currentWord);
+        currentWord = '';
+      }
+      currentWhitespace += char;
+    } else {
+      // Non-whitespace character
+      if (currentWhitespace) {
+        segments.push(currentWhitespace);
+        currentWhitespace = '';
+      }
+      currentWord += char;
+    }
+  }
+  
+  // Don't forget the last segment
+  if (currentWord) segments.push(currentWord);
+  if (currentWhitespace) segments.push(currentWhitespace);
+  
+  return segments;
+};
+
 export const StreamingMarkdown = memo(({
   content,
   speed = 35,
@@ -22,11 +63,14 @@ export const StreamingMarkdown = memo(({
   const [isComplete, setIsComplete] = useState(false);
   const [isSkipped, setIsSkipped] = useState(false);
 
-  // Split content preserving whitespace and markdown
-  const words = content.split(/(\s+)/);
+  // Check if content has Arabic text for RTL handling
+  const isRTL = useMemo(() => hasArabicText(content), [content]);
+
+  // Split content preserving word integrity (important for Arabic)
+  const words = useMemo(() => splitIntoWords(content), [content]);
   const totalWords = words.filter(w => w.trim()).length;
 
-  // Get visible content
+  // Get visible content - join complete words only
   const visibleContent = isSkipped 
     ? content 
     : words.slice(0, displayedWordCount).join('');
@@ -81,16 +125,30 @@ export const StreamingMarkdown = memo(({
     <div 
       className={cn("cursor-pointer", className)}
       onClick={handleSkip}
+      dir={isRTL ? 'rtl' : 'ltr'}
     >
-      <div className="inline">
+      <div 
+        className="inline"
+        style={{ 
+          fontFamily: isRTL ? "'Noto Sans Arabic', 'Segoe UI', system-ui, sans-serif" : undefined,
+        }}
+      >
         <MessageFormatter 
           content={visibleContent}
-          className="text-sm text-foreground/90 leading-relaxed"
+          className={cn(
+            "text-sm text-foreground/90 leading-relaxed",
+            isRTL && "text-right"
+          )}
         />
         
         {/* Blinking cursor while streaming - inline with text */}
         {!isComplete && displayedWordCount > 0 && (
-          <span className="inline-block w-0.5 h-4 ml-0.5 align-middle bg-primary/60 animate-pulse" />
+          <span 
+            className={cn(
+              "inline-block w-0.5 h-4 align-middle bg-primary/60 animate-pulse",
+              isRTL ? "mr-0.5" : "ml-0.5"
+            )} 
+          />
         )}
       </div>
       
