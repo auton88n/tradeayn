@@ -159,7 +159,6 @@ const AISupportChat: React.FC<AISupportChatProps> = ({ onNeedTicket }) => {
                   <span className="w-2 h-2 bg-primary/60 rounded-full animate-[pulse_1s_ease-in-out_infinite]" />
                   <span className="w-2 h-2 bg-primary/60 rounded-full animate-[pulse_1s_ease-in-out_infinite_150ms]" />
                   <span className="w-2 h-2 bg-primary/60 rounded-full animate-[pulse_1s_ease-in-out_infinite_300ms]" />
-                  <span className="text-xs text-muted-foreground ml-1.5">Thinking...</span>
                 </div>
               </div>
             </motion.div>
