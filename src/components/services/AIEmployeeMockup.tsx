@@ -47,15 +47,15 @@ const AIEmployeeMockup = memo(() => {
         <circle cx="50%" cy="50%" r={orbitRadius} fill="none" stroke="url(#orbitGradient)" strokeWidth="1" strokeDasharray="4 8" className="opacity-60" />
       </svg>
 
-      {/* Central Brain Hub - simplified, no infinite animation */}
+      {/* Central Brain Hub - fully static for performance */}
       <div className="absolute z-20 flex items-center justify-center">
-        {/* Outer ring - CSS animation */}
-        <div className="absolute w-28 h-28 rounded-full border border-cyan-400/20 animate-spin-slow" style={{
+        {/* Outer ring - static */}
+        <div className="absolute w-28 h-28 rounded-full border border-cyan-400/20" style={{
         background: 'linear-gradient(135deg, rgba(34, 211, 238, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%)'
       }} />
         
-        {/* Inner glow ring - CSS pulse */}
-        <div className="absolute w-24 h-24 rounded-full animate-pulse-slow" style={{
+        {/* Inner glow ring - static */}
+        <div className="absolute w-24 h-24 rounded-full" style={{
         background: 'radial-gradient(circle, rgba(34, 211, 238, 0.2) 0%, transparent 70%)',
         boxShadow: '0 0 40px rgba(34, 211, 238, 0.3)'
       }} />
