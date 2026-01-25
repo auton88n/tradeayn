@@ -47,7 +47,16 @@ const SubscriptionCanceled = lazy(() => import("./pages/SubscriptionCanceled"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60 * 1000,        // 1 minute - data stays fresh
+      gcTime: 5 * 60 * 1000,       // 5 minutes - keep in cache
+      refetchOnWindowFocus: false, // Don't refetch when tab regains focus
+      retry: 1,                    // Only retry once on failure
+    },
+  },
+});
 
 const AnimatedRoutes = () => {
   const location = useLocation();
