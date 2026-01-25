@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useCallback, useMemo, ReactNode } from 'react';
+import React, { createContext, useContext, useCallback, useMemo, useState, ReactNode } from 'react';
 import { useActionTracker, TrackedAction } from '@/hooks/useActionTracker';
+import { type BuildingCodeId, AVAILABLE_CODES, DEFAULT_BUILDING_CODE, getBuildingCodeConfig } from '@/lib/buildingCodes';
 
 interface CalculatorState {
   inputs: Record<string, any>;
@@ -12,6 +13,10 @@ interface EngineeringSessionContextValue {
   currentCalculator: string | null;
   currentInputs: Record<string, any>;
   currentOutputs: Record<string, any> | null;
+  
+  // Building code
+  buildingCode: BuildingCodeId;
+  setBuildingCode: (code: BuildingCodeId) => void;
   
   // All calculator states
   calculatorStates: Record<string, CalculatorState>;
@@ -48,6 +53,19 @@ export interface AIContext {
   currentInputs: Record<string, any>;
   currentOutputs: Record<string, any> | null;
   allCalculatorStates: Record<string, CalculatorState>;
+  buildingCode: {
+    id: BuildingCodeId;
+    name: string;
+    fullName: string;
+    version: string;
+    loadCombination: string;
+    resistanceFactors: {
+      flexure: number;
+      shear: number;
+      compressionTied: number;
+      compressionSpiral: number;
+    };
+  };
   recentActions: {
     type: string;
     timestamp: string;
@@ -69,6 +87,7 @@ interface EngineeringSessionProviderProps {
 
 export const EngineeringSessionProvider: React.FC<EngineeringSessionProviderProps> = ({ children }) => {
   const actionTracker = useActionTracker();
+  const [buildingCode, setBuildingCode] = useState<BuildingCodeId>(DEFAULT_BUILDING_CODE);
 
   const getCurrentState = useCallback((): CalculatorState | null => {
     return actionTracker.getCurrentCalculatorState();
@@ -78,12 +97,21 @@ export const EngineeringSessionProvider: React.FC<EngineeringSessionProviderProp
     const currentState = getCurrentState();
     const summary = actionTracker.getSessionSummary();
     const recentActions = actionTracker.getRecentActions(20);
+    const codeConfig = getBuildingCodeConfig(buildingCode);
 
     return {
       currentCalculator: actionTracker.currentCalculator,
       currentInputs: currentState?.inputs || {},
       currentOutputs: currentState?.outputs || null,
       allCalculatorStates: actionTracker.calculatorStates,
+      buildingCode: {
+        id: buildingCode,
+        name: codeConfig.name,
+        fullName: codeConfig.fullName,
+        version: codeConfig.version,
+        loadCombination: codeConfig.loadCombination,
+        resistanceFactors: codeConfig.resistanceFactors,
+      },
       recentActions: recentActions.map(action => ({
         type: action.type,
         timestamp: action.timestamp.toISOString(),
@@ -96,7 +124,7 @@ export const EngineeringSessionProvider: React.FC<EngineeringSessionProviderProp
         calculationsRun: summary.calculationsRun,
       },
     };
-  }, [actionTracker, getCurrentState]);
+  }, [actionTracker, getCurrentState, buildingCode]);
 
   const value = useMemo<EngineeringSessionContextValue>(() => {
     const currentState = getCurrentState();
@@ -106,6 +134,10 @@ export const EngineeringSessionProvider: React.FC<EngineeringSessionProviderProp
       currentCalculator: actionTracker.currentCalculator,
       currentInputs: currentState?.inputs || {},
       currentOutputs: currentState?.outputs || null,
+      
+      // Building code
+      buildingCode,
+      setBuildingCode,
       
       // All calculator states
       calculatorStates: actionTracker.calculatorStates,
@@ -129,7 +161,7 @@ export const EngineeringSessionProvider: React.FC<EngineeringSessionProviderProp
       // AI context
       getAIContext,
     };
-  }, [actionTracker, getCurrentState, getAIContext]);
+  }, [actionTracker, getCurrentState, getAIContext, buildingCode]);
 
   return (
     <EngineeringSessionContext.Provider value={value}>

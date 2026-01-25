@@ -104,3 +104,23 @@ export const AVAILABLE_CODES = [
 
 // Default code
 export const DEFAULT_BUILDING_CODE = 'ACI' as const;
+
+// Get full building code config for AI context
+import { ACI_318_25 } from './aci-318-25';
+import { CSA_A23_3_24 } from './csa-a23-3-24';
+import type { BuildingCodeId } from './types';
+
+export const getBuildingCodeConfig = (codeId: BuildingCodeId) => {
+  const codeInfo = AVAILABLE_CODES.find(c => c.id === codeId) || AVAILABLE_CODES[0];
+  const config = codeId === 'CSA' ? CSA_A23_3_24 : ACI_318_25;
+  
+  return {
+    id: codeId,
+    name: codeInfo.name,
+    fullName: codeInfo.fullName,
+    version: codeInfo.version,
+    loadCombination: codeInfo.loadCombination,
+    resistanceFactors: config.resistanceFactors,
+    loadFactors: config.loadFactors,
+  };
+};
