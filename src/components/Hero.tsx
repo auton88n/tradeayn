@@ -68,13 +68,7 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
     mass: 0.5
   });
 
-  // Parallax transforms for floating particles (reduced to 3 for performance)
-  const parallax1X = useTransform(mouseX, v => v * 0.02);
-  const parallax1Y = useTransform(mouseY, v => v * 0.02);
-  const parallax2X = useTransform(mouseX, v => v * 0.03);
-  const parallax2Y = useTransform(mouseY, v => v * 0.03);
-  const parallax3X = useTransform(mouseX, v => v * 0.015);
-  const parallax3Y = useTransform(mouseY, v => v * 0.015);
+  // Parallax transforms removed - using pure CSS animations for particles
   // Throttled mouse tracking for performance
   useEffect(() => {
     const el = containerRef.current;
@@ -207,35 +201,24 @@ export const Hero = ({ onGetStarted }: HeroProps) => {
         <div className="absolute w-[200px] h-[200px] sm:w-[280px] sm:h-[280px] md:w-[360px] md:h-[360px] lg:w-[480px] lg:h-[480px] rounded-full -z-10 pointer-events-none
                         bg-gradient-to-b from-transparent via-muted/30 to-transparent" />
 
-        {/* Floating particles - Phase 4: 2.0s delay */}
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 2.0, ease: "easeOut" }}
-          className="absolute inset-0 pointer-events-none overflow-visible hidden md:block will-change-transform"
-        >
-          {/* Particle 1 */}
-          <motion.div 
-            className="absolute w-2 h-2 rounded-full bg-foreground/15" 
-            style={{ top: '20%', left: '30%', x: parallax1X, y: parallax1Y }}
-            animate={{ y: [0, -15, 0], opacity: [0.3, 0.5, 0.3] }}
-            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+        {/* Floating particles - Static with CSS animations for performance */}
+        <div className="absolute inset-0 pointer-events-none overflow-visible hidden md:block">
+          {/* Particle 1 - CSS animation */}
+          <div 
+            className="absolute w-2 h-2 rounded-full bg-foreground/15 animate-[float-slow_8s_ease-in-out_infinite]" 
+            style={{ top: '20%', left: '30%' }}
           />
-          {/* Particle 2 */}
-          <motion.div 
-            className="absolute w-2.5 h-2.5 rounded-full bg-foreground/10" 
-            style={{ top: '15%', right: '25%', x: parallax2X, y: parallax2Y }}
-            animate={{ y: [0, 12, 0], opacity: [0.2, 0.4, 0.2] }}
-            transition={{ duration: 9, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+          {/* Particle 2 - CSS animation */}
+          <div 
+            className="absolute w-2.5 h-2.5 rounded-full bg-foreground/10 animate-[float-slow_9s_ease-in-out_infinite_1s]" 
+            style={{ top: '15%', right: '25%' }}
           />
-          {/* Particle 3 */}
-          <motion.div 
-            className="absolute w-1.5 h-1.5 rounded-full bg-foreground/12" 
-            style={{ bottom: '25%', left: '20%', x: parallax3X, y: parallax3Y }}
-            animate={{ y: [0, -10, 0], opacity: [0.4, 0.6, 0.4] }}
-            transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+          {/* Particle 3 - CSS animation */}
+          <div 
+            className="absolute w-1.5 h-1.5 rounded-full bg-foreground/12 animate-[float-slow_7s_ease-in-out_infinite_2s]" 
+            style={{ bottom: '25%', left: '20%' }}
           />
-        </motion.div>
+        </div>
 
         {/* Cards - optimized animations without blur filters - visible on all devices */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none will-change-transform overflow-visible">

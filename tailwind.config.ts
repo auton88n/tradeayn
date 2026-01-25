@@ -249,6 +249,10 @@ export default {
 			'eye-breathe': {
 				'0%, 100%': { transform: 'scale(1)' },
 				'50%': { transform: 'scale(1.03)' }
+			},
+			'float-slow': {
+				'0%, 100%': { transform: 'translateY(0)', opacity: '0.3' },
+				'50%': { transform: 'translateY(-12px)', opacity: '0.5' }
 			}
     		},
 		animation: {
