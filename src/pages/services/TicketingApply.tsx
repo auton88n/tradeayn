@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { SEO } from '@/components/SEO';
+import { SEO } from '@/components/shared/SEO';
 import { motion } from 'framer-motion';
 
 const TicketingApply = () => {

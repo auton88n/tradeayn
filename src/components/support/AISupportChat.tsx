@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { MessageFormatter } from '@/components/MessageFormatter';
+import { MessageFormatter } from '@/components/shared/MessageFormatter';
 
 interface Message {
   id: string;

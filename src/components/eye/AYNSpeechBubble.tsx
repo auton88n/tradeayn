@@ -2,8 +2,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useRef, useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Brain, Copy, Check } from 'lucide-react';
-import { MessageFormatter } from '@/components/MessageFormatter';
-import type { BubbleType } from '@/utils/emotionMapping';
+import { MessageFormatter } from '@/components/shared/MessageFormatter';
+import type { BubbleType } from '@/lib/emotionMapping';
 
 interface AYNSpeechBubbleProps {
   id: string;

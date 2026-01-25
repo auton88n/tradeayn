@@ -5,7 +5,7 @@ import { CheckCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useSubscription, SUBSCRIPTION_TIERS } from '@/contexts/SubscriptionContext';
-import { SEO } from '@/components/SEO';
+import { SEO } from '@/components/shared/SEO';
 
 const SubscriptionSuccess = () => {
   const navigate = useNavigate();

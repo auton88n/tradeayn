@@ -28,7 +28,7 @@ import { CalculationComparison } from '@/components/engineering/CalculationCompa
 import EngineeringPortfolio from '@/components/engineering/EngineeringPortfolio';
 
 import { useEngineeringHistory } from '@/hooks/useEngineeringHistory';
-import { SEO } from '@/components/SEO';
+import { SEO } from '@/components/shared/SEO';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { CalculatorType as AICalculatorType } from '@/lib/engineeringKnowledge';

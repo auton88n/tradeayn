@@ -23,7 +23,7 @@ import { useMessages } from '@/hooks/useMessages';
 import { useTutorial } from '@/hooks/useTutorial';
 import { useUsageTracking } from '@/hooks/useUsageTracking';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
-import { analyzeResponseEmotion } from '@/utils/emotionMapping';
+import { analyzeResponseEmotion } from '@/lib/emotionMapping';
 import { hapticFeedback } from '@/lib/haptics';
 
 // Import icons for modes

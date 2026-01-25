@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { SEO, createServiceSchema, createBreadcrumbSchema } from '@/components/SEO';
+import { SEO, createServiceSchema, createBreadcrumbSchema } from '@/components/shared/SEO';
 
 const RoleCard = memo(({ role, index }: { role: any; index: number }) => (
   <div className="bg-neutral-900/80 border border-neutral-800 rounded-2xl p-6 hover:border-cyan-500/50 transition-all duration-300 group">

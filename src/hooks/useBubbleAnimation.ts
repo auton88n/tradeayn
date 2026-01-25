@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useMemo } from 'react';
-import type { BubbleType } from '@/utils/emotionMapping';
+import type { BubbleType } from '@/lib/emotionMapping';
 
 export interface FlyingBubble {
   id: string;

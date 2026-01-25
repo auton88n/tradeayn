@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { Brain, ArrowLeft, MessageSquare, FileText, HelpCircle, Clock, Ticket, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { ThemeToggle } from '@/components/theme-toggle';
-import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { ThemeToggle } from '@/components/shared/theme-toggle';
+import { LanguageSwitcher } from '@/components/shared/LanguageSwitcher';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -14,7 +14,7 @@ import FAQBrowser from '@/components/support/FAQBrowser';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
-import { SEO, createBreadcrumbSchema, createFAQSchema } from '@/components/SEO';
+import { SEO, createBreadcrumbSchema, createFAQSchema } from '@/components/shared/SEO';
 
 interface SupportTicket {
   id: string;

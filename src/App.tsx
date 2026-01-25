@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
-import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeProvider } from "@/components/shared/theme-provider";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AYNEmotionProvider } from "@/contexts/AYNEmotionContext";
 import { SoundProvider } from "@/contexts/SoundContext";
@@ -12,11 +12,11 @@ import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { DebugProvider } from "@/components/debug/DebugProvider";
 
 import { PageLoader } from "@/components/ui/page-loader";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { OfflineBanner } from "@/components/OfflineBanner";
+import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
+import { OfflineBanner } from "@/components/shared/OfflineBanner";
 import { AnimatePresence } from 'framer-motion';
-import PageTransition from "@/components/PageTransition";
-import { ScrollToTop } from "@/components/ScrollToTop";
+import PageTransition from "@/components/shared/PageTransition";
+import { ScrollToTop } from "@/components/shared/ScrollToTop";
 import { useVisitorTracking } from "@/hooks/useVisitorTracking";
 import { HelmetProvider } from 'react-helmet-async';
 

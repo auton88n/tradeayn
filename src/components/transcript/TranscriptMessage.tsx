@@ -1,7 +1,7 @@
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Brain, User, Copy, Check, Reply } from 'lucide-react';
-import { MessageFormatter } from '@/components/MessageFormatter';
+import { MessageFormatter } from '@/components/shared/MessageFormatter';
 import { useState } from 'react';
 import type { AYNEmotion } from '@/contexts/AYNEmotionContext';
 

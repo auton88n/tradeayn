@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { SEO, createServiceSchema, createBreadcrumbSchema } from '@/components/SEO';
+import { SEO, createServiceSchema, createBreadcrumbSchema } from '@/components/shared/SEO';
 import AutomationFlowMockup from '@/components/services/AutomationFlowMockup';
 
 const AutomationCard = memo(({ automation, t }: { automation: any; t: any }) => (

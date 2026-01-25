@@ -8,7 +8,7 @@ import { ArrowLeft, Send, Trash2, Brain, User, Shield } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { MessageFormatter } from '@/components/MessageFormatter';
+import { MessageFormatter } from '@/components/shared/MessageFormatter';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 interface UserTicketDetailProps {

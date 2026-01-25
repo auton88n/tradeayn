@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Shield, ArrowLeft, Lock } from 'lucide-react';
-import { SEO } from '@/components/SEO';
+import { SEO } from '@/components/shared/SEO';
 
 const PolicySection = ({ number, title, children }: { number: string; title: string; children: React.ReactNode }) => (
   <div className="space-y-4" id={`section-${number}`}>

@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
 import { useSoundContextOptional } from '@/contexts/SoundContext';
-import { detectLanguage, DetectedLanguage } from '@/utils/languageDetection';
+import { detectLanguage, DetectedLanguage } from '@/lib/languageDetection';
 import type { AIMode } from '@/types/dashboard.types';
 
 interface Suggestion {
