@@ -550,12 +550,12 @@ return <SidebarMenuItem key={chat.sessionId} className={cn("relative", index > 0
                                     {chat.title}
                                   </span>
                                 </div>
-                                <div className="flex items-center gap-1.5 flex-shrink-0">
+                                <div className="flex items-center gap-1 flex-shrink-0">
                                   <span className="text-[11px] text-muted-foreground">
                                     {formatCompactTime(new Date(chat.timestamp))}
                                   </span>
-                                  <button onClick={e => togglePin(chat.sessionId, e)} className={cn("p-1 rounded-md transition-all duration-200", "opacity-0 group-hover:opacity-100", isPinned && "opacity-100", isPinned ? "text-amber-500 hover:text-amber-600" : "text-muted-foreground/40 hover:text-muted-foreground")}>
-                                    <Star className={cn("w-3.5 h-3.5", isPinned && "fill-amber-500")} />
+                                  <button onClick={e => togglePin(chat.sessionId, e)} className={cn("w-5 h-5 flex items-center justify-center rounded transition-all duration-200", "opacity-0 group-hover:opacity-100", isPinned && "opacity-100", isPinned ? "text-amber-500 hover:text-amber-600" : "text-muted-foreground/40 hover:text-muted-foreground")}>
+                                    <Star className={cn("w-3 h-3", isPinned && "fill-amber-500")} />
                                   </button>
                                 </div>
                               </div>
