@@ -25,25 +25,30 @@ import AIEmployeeMockup from './services/AIEmployeeMockup';
 import EngineeringMockup from './services/EngineeringMockup';
 import TicketingMockup from './services/TicketingMockup';
 import { SEO, organizationSchema, websiteSchema, softwareApplicationSchema, createFAQSchema } from './SEO';
+import { useDebugContextOptional } from '@/contexts/DebugContext';
 
 // ScrollReveal component - defined outside to prevent recreation on re-renders
 const ScrollReveal = ({
   children,
   direction = 'up',
-  delay = 0
+  delay = 0,
+  debugLabel = 'ScrollReveal'
 }: {
   children: React.ReactNode;
   direction?: 'up' | 'left' | 'right' | 'scale';
   delay?: number;
+  debugLabel?: string;
 }) => {
-  const [ref, isVisible] = useScrollAnimation();
+  const [ref, isVisible] = useScrollAnimation({ debugLabel });
   return <div ref={ref as React.RefObject<HTMLDivElement>} className={cn('scroll-animate', direction === 'left' && 'scroll-animate-left', direction === 'right' && 'scroll-animate-right', direction === 'scale' && 'scroll-animate-scale', isVisible && 'visible')} style={{
     transitionDelay: `${delay}s`
   }}>
       {children}
     </div>;
 };
+
 const LandingPage = () => {
+  const debug = useDebugContextOptional();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [pendingMessage, setPendingMessage] = useState<string>('');
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
@@ -57,6 +62,13 @@ const LandingPage = () => {
   const {
     toast
   } = useToast();
+  
+  // Debug render logging
+  useEffect(() => {
+    if (debug?.isDebugMode) {
+      debug.incrementRenderCount('LandingPage');
+    }
+  });
 
   // Hover handlers with collapse delay
   const handleMouseEnter = () => {

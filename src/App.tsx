@@ -9,6 +9,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AYNEmotionProvider } from "@/contexts/AYNEmotionContext";
 import { SoundProvider } from "@/contexts/SoundContext";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
+import { DebugProvider } from "@/components/debug/DebugProvider";
 
 import { PageLoader } from "@/components/ui/page-loader";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -96,19 +97,21 @@ const App = () => (
           <AYNEmotionProvider>
             <SoundProvider>
               <SubscriptionProvider>
-                <TooltipProvider>
-                  <OfflineBanner />
-                  <Toaster />
-                  <Sonner />
-                  <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-                    <ScrollToTop />
-                    <ErrorBoundary>
-                      <Suspense fallback={<PageLoader />}>
-                        <AnimatedRoutes />
-                      </Suspense>
-                    </ErrorBoundary>
-                  </BrowserRouter>
-                </TooltipProvider>
+                <DebugProvider>
+                  <TooltipProvider>
+                    <OfflineBanner />
+                    <Toaster />
+                    <Sonner />
+                    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                      <ScrollToTop />
+                      <ErrorBoundary>
+                        <Suspense fallback={<PageLoader />}>
+                          <AnimatedRoutes />
+                        </Suspense>
+                      </ErrorBoundary>
+                    </BrowserRouter>
+                  </TooltipProvider>
+                </DebugProvider>
               </SubscriptionProvider>
             </SoundProvider>
           </AYNEmotionProvider>
