@@ -1,137 +1,221 @@
 
-
-# Performance Optimization Implementation Plan
+# AI Streaming Optimization & Input Lock Implementation Plan
 
 ## Overview
-This plan implements performance improvements across AI responsiveness, frontend caching, CSS optimization, and network preloading - all without changing existing functionality or affecting the eye animations.
+This plan implements two related features:
+1. **AI Streaming**: Show AI responses token-by-token as they arrive (reduces perceived latency from 3-5s to <500ms)
+2. **Input Lock**: Disable message input while AI is responding (prevents duplicate sends)
 
 ---
 
-## Phase 1: React Query Caching (Low Risk, High Impact)
+## Current State Analysis
 
-### Current State
+### Backend (`ayn-unified`)
+| Capability | Status |
+|------------|--------|
+| Streaming support | ✅ Already implemented (lines 1116-1125) |
+| SSE format | ✅ Returns `text/event-stream` when `stream: true` |
+| Non-streaming fallback | ✅ Returns JSON when `stream: false` |
+
+### Frontend (`useMessages.ts`)
+| Current State | Issue |
+|---------------|-------|
+| `stream: false` (line 312) | Waits for full response before showing |
+| `setIsTyping(false)` immediately | Not synchronized with streaming end |
+| No SSE parsing | Cannot handle token-by-token updates |
+
+### Input (`ChatInput.tsx`)
+| Current State | Issue |
+|---------------|-------|
+| `isDisabled` prop exists (line 149) | Not connected to `isTyping` state |
+| Only checks `isDisabled || isUploading` (line 279) | Doesn't prevent sends while AI responds |
+
+---
+
+## Implementation Details
+
+### Phase 1: Connect Input Lock to `isTyping` State
+
+**File: `src/components/dashboard/CenterStageLayout.tsx`**
+
+Pass `isTyping` to `ChatInput` to disable input while AI is responding:
+
 ```typescript
-// src/App.tsx line 50
-const queryClient = new QueryClient();
+// Line ~757: Add isTyping to ChatInput props
+<ChatInput
+  ref={inputRef}
+  onSend={handleSendWithAnimation}
+  isDisabled={isDisabled || isTyping || maintenanceConfig?.enabled}  // ADD isTyping here
+  // ... rest of props
+/>
 ```
-No caching configuration - every query refetches on mount.
 
-### Change
-Add stale-while-revalidate caching:
+**Result:** User cannot send messages while `isTyping` is true (AI responding).
+
+---
+
+### Phase 2: Enable Streaming in Frontend
+
+**File: `src/hooks/useMessages.ts`**
+
+#### 2a. Change to streaming mode (line 312)
+```typescript
+body: JSON.stringify({
+  messages: conversationMessages,
+  intent: detectedIntent,
+  context,
+  stream: true  // Change from false to true
+})
+```
+
+#### 2b. Add SSE parsing function
+Add helper to parse Server-Sent Events:
 
 ```typescript
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 60 * 1000,       // 1 minute - data stays fresh
-      gcTime: 5 * 60 * 1000,      // 5 minutes - keep in cache
-      refetchOnWindowFocus: false, // Don't refetch when tab regains focus
-      retry: 1,                    // Only retry once on failure
+// Parse SSE stream and call onChunk for each token
+const parseSSEStream = async (
+  response: Response,
+  onChunk: (content: string) => void,
+  onComplete: () => void
+): Promise<string> => {
+  const reader = response.body?.getReader();
+  if (!reader) throw new Error('No response body');
+
+  const decoder = new TextDecoder();
+  let fullContent = '';
+  let buffer = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+
+    // Process complete lines
+    let newlineIndex: number;
+    while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
+      const line = buffer.slice(0, newlineIndex).trim();
+      buffer = buffer.slice(newlineIndex + 1);
+
+      if (line.startsWith('data: ')) {
+        const data = line.slice(6);
+        if (data === '[DONE]') continue;
+
+        try {
+          const parsed = JSON.parse(data);
+          const content = parsed.choices?.[0]?.delta?.content;
+          if (content) {
+            fullContent += content;
+            onChunk(content);
+          }
+        } catch {
+          // Ignore parse errors for partial chunks
+        }
+      }
+    }
+  }
+
+  onComplete();
+  return fullContent;
+};
+```
+
+#### 2c. Update `sendMessage` function to handle streaming
+
+Replace the current fetch + JSON parsing (lines 300-320) with streaming logic:
+
+```typescript
+// After the POST request setup...
+const webhookResponse = await fetchWithRetry(/* ... stream: true ... */);
+
+// For streaming responses, parse SSE
+if (webhookResponse.headers.get('content-type')?.includes('text/event-stream')) {
+  // Create placeholder message that will be updated
+  const aynMessageId = (Date.now() + 1).toString();
+  const aynMessage: Message = {
+    id: aynMessageId,
+    content: '',
+    sender: 'ayn',
+    timestamp: new Date(),
+    isTyping: true,
+  };
+  
+  setMessages(prev => [...prev, aynMessage]);
+
+  // Parse stream and update message content progressively
+  const fullContent = await parseSSEStream(
+    webhookResponse,
+    (chunk) => {
+      setMessages(prev => prev.map(msg => 
+        msg.id === aynMessageId 
+          ? { ...msg, content: msg.content + chunk }
+          : msg
+      ));
     },
-  },
-});
-```
+    () => {
+      // Mark message as complete
+      setMessages(prev => prev.map(msg =>
+        msg.id === aynMessageId
+          ? { ...msg, isTyping: false, status: 'sent' }
+          : msg
+      ));
+      setIsTyping(false);
+    }
+  );
 
-**Impact:** Instant navigation between pages - no loading spinners for cached data.
-
----
-
-## Phase 2: CSS Containment for Cards (Low Risk)
-
-### Current State
-CSS containment classes exist but aren't applied to key performance-critical elements.
-
-### Change
-Add containment rules for heavy components in `src/index.css`:
-
-```css
-/* Performance containment for cards */
-.service-card,
-.response-card,
-.suggestion-card,
-.calculator-card {
-  contain: content;
-}
-
-/* Scroll container optimization */
-.message-scroll-container {
-  contain: strict;
-  content-visibility: auto;
+  // Detect emotion from complete response
+  const { analyzeResponseEmotion } = await import('@/lib/emotionMapping');
+  setLastSuggestedEmotion(analyzeResponseEmotion(fullContent));
+} else {
+  // Fallback to non-streaming (for document/image intents)
+  // ... existing JSON parsing logic ...
 }
 ```
 
-**Impact:** Reduces paint cost by ~10-15% for card-heavy pages.
-
 ---
 
-## Phase 3: Route Preloading (Low Risk)
+### Phase 3: Handle Special Cases
 
-### Current State
-`index.html` has no prefetch hints for common navigation paths.
-
-### Change
-Add prefetch hints after fonts in `index.html`:
-
-```html
-<!-- Route prefetch for faster navigation -->
-<link rel="prefetch" href="/src/pages/Settings.tsx" as="script">
-<link rel="prefetch" href="/src/pages/Support.tsx" as="script">
-<link rel="prefetch" href="/src/pages/Pricing.tsx" as="script">
-```
-
-**Impact:** Faster navigation to Settings/Support/Pricing pages.
-
----
-
-## Phase 4: Debounce Suggestion Fetch (Low Risk)
-
-### Current State
-`CenterStageLayout.tsx` line 282-306 fetches suggestions immediately after each response.
-
-### Change
-Add 1-second debounce to reduce API calls:
+#### 3a. Document Generation (Keep non-streaming)
+Documents and images should NOT stream since they return JSON with URLs:
 
 ```typescript
-import { useMemo } from 'react';
-import { debounce } from '@/lib/utils'; // Add debounce utility
+// Detect if intent requires non-streaming
+const requiresNonStreaming = ['document', 'image'].includes(detectedIntent);
 
-// Inside component, wrap fetchDynamicSuggestions:
-const debouncedFetchSuggestions = useMemo(
-  () => debounce(fetchDynamicSuggestions, 1000),
-  [fetchDynamicSuggestions]
-);
+body: JSON.stringify({
+  messages: conversationMessages,
+  intent: detectedIntent,
+  context,
+  stream: !requiresNonStreaming  // Don't stream for documents/images
+})
 ```
 
-**Requires:** Add debounce utility to `src/lib/utils.ts` if not present.
+#### 3b. Error Handling for Streaming
+Add abort controller cleanup and error handling:
 
-**Impact:** Reduces API calls when user sends multiple quick messages.
-
----
-
-## Phase 5: Image Loading Optimization (Low Risk)
-
-### Current State
-Some images may block rendering.
-
-### Change
-Ensure all heavy images have `loading="lazy"` attribute.
-
-**Files to check:**
-- Service mockup components
-- Landing page images
-- Any Canvas 3D components
+```typescript
+// If stream fails mid-way, show friendly message
+try {
+  const fullContent = await parseSSEStream(/* ... */);
+} catch (streamError) {
+  setMessages(prev => prev.map(msg =>
+    msg.id === aynMessageId
+      ? { ...msg, content: msg.content || "Hmm, something went wrong. Try again?", isTyping: false }
+      : msg
+  ));
+  setIsTyping(false);
+}
+```
 
 ---
 
-## Summary of Files to Modify
+## Files to Modify
 
-| File | Change | Risk |
-|------|--------|------|
-| `src/App.tsx` | Add QueryClient caching config | Low |
-| `src/index.css` | Add CSS containment rules | Low |
-| `index.html` | Add route prefetch hints | Low |
-| `src/lib/utils.ts` | Add debounce utility (if missing) | Low |
-| `src/components/dashboard/CenterStageLayout.tsx` | Debounce suggestion fetch | Low |
+| File | Changes | Risk |
+|------|---------|------|
+| `src/hooks/useMessages.ts` | Add SSE parser, enable streaming, update message progressively | Medium |
+| `src/components/dashboard/CenterStageLayout.tsx` | Pass `isTyping` to ChatInput's `isDisabled` | Low |
 
 ---
 
@@ -139,12 +223,12 @@ Ensure all heavy images have `loading="lazy"` attribute.
 
 | Area | Status |
 |------|--------|
-| Eye animations | Untouched - no changes to timing or springs |
-| usePerformanceMode | Untouched - existing throttling preserved |
-| Mouse tracking | Untouched - existing 16-100ms throttle preserved |
-| Particle systems | Untouched - existing mobile reduction preserved |
-| Message sending flow | Untouched - existing immediate dispatch preserved |
-| AI streaming | Not enabled yet - requires backend changes |
+| Eye animations | Untouched - `isTyping` still triggers thinking state |
+| Emotion detection | Works on complete response (unchanged) |
+| Document generation | Stays non-streaming (returns JSON with URL) |
+| Image generation | Stays non-streaming (returns JSON with URL) |
+| Backend edge function | No changes needed - already supports streaming |
+| Message persistence | Unchanged - saves to DB after complete |
 
 ---
 
@@ -152,21 +236,56 @@ Ensure all heavy images have `loading="lazy"` attribute.
 
 | Metric | Before | After |
 |--------|--------|-------|
-| Page navigation | ~200-500ms | ~50-100ms (cached) |
-| Settings page load | Full refetch | Instant from cache |
-| Card paint cost | Full recalc | Isolated (contained) |
-| Suggestion API calls | Every response | Debounced to 1s |
+| Time to first token | 2-4 seconds | <500ms |
+| Perceived response time | Wait for full response | See text appear immediately |
+| Double-send prevention | Not prevented | ✅ Input locked during response |
+| Eye "thinking" state | Shows until done | Shows until streaming completes |
 
 ---
 
-## Testing After Implementation
+## Visual Behavior
 
-1. **Build succeeds:** `npm run build`
-2. **No console errors:** Check DevTools
-3. **Core features work:**
-   - Login/Logout
-   - Chat with eye animations
-   - Settings navigation (should be faster)
-   - Pricing page
-4. **Eye responsiveness:** Verify animations feel the same
+### Before (Current)
+```
+User sends message → [2-4s blank wait] → Full response appears
+```
 
+### After (With Streaming)
+```
+User sends message → [200ms] → First words appear → 
+  [words stream in] → Response complete
+```
+
+### Input Lock Flow
+```
+User types → Sends message → 
+  [Input disabled + thinking state] → 
+  AI responds (streaming) → 
+  [Response complete] → Input re-enabled
+```
+
+---
+
+## Testing Checklist
+
+1. **Send a chat message** → See response stream in word-by-word
+2. **Try to send while AI responds** → Input should be disabled
+3. **Generate a PDF** → Should still work (non-streaming fallback)
+4. **Generate an image** → Should still work (non-streaming fallback)
+5. **Network error mid-stream** → Should show friendly error message
+6. **Eye animations** → Should show "thinking" during stream, emotion after
+
+---
+
+## Technical Notes
+
+### Why This Is Safe
+1. **Backend already supports streaming** - No edge function changes needed
+2. **Input lock uses existing `isDisabled` prop** - Well-tested pattern
+3. **Fallback to non-streaming** - Documents/images work as before
+4. **Progressive updates** - Uses React's batched state updates for performance
+
+### Performance Considerations
+- SSE parsing happens in a tight loop but yields on each `reader.read()`
+- Message updates are batched by React's scheduler
+- No additional API calls required
