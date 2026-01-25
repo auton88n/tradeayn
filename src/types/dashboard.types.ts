@@ -330,4 +330,6 @@ export interface SidebarProps {
   onAdminPanelClick?: () => void;
   onStartTutorial?: () => void;
   isTutorialProfileStep?: boolean;
+  onOpenFeedback?: () => void;
+  betaFeedbackReward?: number;
 }

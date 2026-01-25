@@ -117,7 +117,9 @@ export const Sidebar = ({
   hasDutyAccess,
   onAdminPanelClick,
   onStartTutorial,
-  isTutorialProfileStep
+  isTutorialProfileStep,
+  onOpenFeedback,
+  betaFeedbackReward = 5
 }: SidebarProps) => {
   const {
     toggleSidebar
@@ -378,6 +380,9 @@ export const Sidebar = ({
                 isUnlimited={isUnlimitedFromHook}
                 resetDate={resetFromHook}
                 currentTier={subscriptionTier}
+                userId={userId}
+                onOpenFeedback={onOpenFeedback}
+                rewardAmount={betaFeedbackReward}
               />
             </SidebarGroupContent>
           </SidebarGroup>

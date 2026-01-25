@@ -272,6 +272,7 @@ const DashboardContent = ({
   const { open, setOpen, openMobile, setOpenMobile, isMobile, toggleSidebar } = useSidebar();
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [replyPrefill, setReplyPrefill] = useState<string>('');
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const { setEmotion, setIsResponding } = useAYNEmotion();
   
   // Tutorial system
@@ -438,6 +439,8 @@ const DashboardContent = ({
           onAdminPanelClick={onAdminPanelClick}
               onStartTutorial={tutorial.startTutorial}
               isTutorialProfileStep={tutorial.isActive && tutorial.currentStepData?.id === 'profile'}
+              onOpenFeedback={() => setShowFeedbackModal(true)}
+              betaFeedbackReward={betaConfig?.feedbackReward}
             />
           </div>
         </ShadcnSidebar>
@@ -567,6 +570,8 @@ const DashboardContent = ({
           betaMode={betaConfig?.enabled}
           betaFeedbackReward={betaConfig?.feedbackReward}
           userId={user.id}
+          showFeedbackModal={showFeedbackModal}
+          setShowFeedbackModal={setShowFeedbackModal}
         />
       </main>
 

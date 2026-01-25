@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Sparkles, Infinity, Zap, Crown, ArrowRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Sparkles, Infinity, Zap, Crown, ArrowRight, Gift } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { differenceInDays, differenceInHours } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
 
 interface CreditUpgradeCardProps {
   currentUsage: number;
@@ -12,6 +14,9 @@ interface CreditUpgradeCardProps {
   isUnlimited?: boolean;
   resetDate: string | null;
   currentTier?: string;
+  userId?: string;
+  onOpenFeedback?: () => void;
+  rewardAmount?: number;
 }
 
 export const CreditUpgradeCard = ({
@@ -20,13 +25,43 @@ export const CreditUpgradeCard = ({
   isUnlimited = false,
   resetDate,
   currentTier = 'free',
+  userId,
+  onOpenFeedback,
+  rewardAmount = 5,
 }: CreditUpgradeCardProps) => {
   const navigate = useNavigate();
   const [displayCount, setDisplayCount] = useState(currentUsage);
+  const [hasSubmittedFeedback, setHasSubmittedFeedback] = useState<boolean | null>(null);
   const showUpgrade = currentTier === 'free' && !isUnlimited;
   
   const limit = monthlyLimit ?? 50;
   const creditsLeft = isUnlimited ? 999 : Math.max(0, limit - currentUsage);
+
+  // Check if user has already submitted feedback
+  useEffect(() => {
+    if (!userId) return;
+    
+    const checkFeedbackStatus = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('beta_feedback')
+          .select('id')
+          .eq('user_id', userId)
+          .limit(1);
+
+        if (error) {
+          console.error('Error checking feedback status:', error);
+          return;
+        }
+
+        setHasSubmittedFeedback(data && data.length > 0);
+      } catch (err) {
+        console.error('Error checking feedback status:', err);
+      }
+    };
+
+    checkFeedbackStatus();
+  }, [userId]);
 
   // Animate count changes
   useEffect(() => {
@@ -63,6 +98,7 @@ export const CreditUpgradeCard = ({
 
   const percentage = isUnlimited ? 100 : Math.min((currentUsage / limit) * 100, 100);
   const isLow = !isUnlimited && creditsLeft < (limit * 0.2);
+  const showEarnButton = userId && onOpenFeedback && hasSubmittedFeedback === false;
 
   return (
     <motion.div
@@ -136,8 +172,37 @@ export const CreditUpgradeCard = ({
         )}
       </div>
 
+      {/* Earn Credits Button */}
+      <AnimatePresence>
+        {showEarnButton && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <Button
+              onClick={onOpenFeedback}
+              size="sm"
+              className={cn(
+                "w-full mt-2.5 h-9 rounded-lg gap-2",
+                "bg-gradient-to-r from-purple-500 via-fuchsia-500 to-pink-500",
+                "hover:from-purple-600 hover:via-fuchsia-600 hover:to-pink-600",
+                "text-white font-medium",
+                "shadow-sm hover:shadow-md shadow-purple-500/20",
+                "transition-all duration-150"
+              )}
+            >
+              <Gift className="w-4 h-4" />
+              <span>Earn +{rewardAmount} Credits</span>
+              <Sparkles className="w-3.5 h-3.5 text-yellow-200" />
+            </Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Upgrade Link for Free Tier */}
-      {showUpgrade && (
+      {showUpgrade && !showEarnButton && (
         <motion.button
           onClick={() => navigate('/pricing')}
           initial={{ opacity: 0 }}
