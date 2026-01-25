@@ -60,7 +60,7 @@ export const BuildingCodeSelector: React.FC<BuildingCodeSelectorProps> = ({
           <DropdownMenuItem
             key={code.id}
             onClick={() => onCodeChange(code.id)}
-            className="flex items-start gap-3 p-3 cursor-pointer focus:bg-muted"
+            className="flex items-start gap-3 p-3 cursor-pointer hover:bg-white/10 focus:bg-white/10"
           >
             <div className="text-xl">{code.flag}</div>
             <div className="flex-1 min-w-0">
