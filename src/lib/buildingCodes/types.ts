@@ -5,6 +5,82 @@
 
 export type BuildingCodeId = 'ACI' | 'CSA';
 
+// ============================================================================
+// LOAD COMBINATIONS
+// ============================================================================
+
+export type LoadCombinationPurpose = 
+  | 'dead_only' 
+  | 'gravity' 
+  | 'wind' 
+  | 'seismic' 
+  | 'wind_uplift' 
+  | 'seismic_overturning'
+  | 'snow';
+
+export interface LoadCombination {
+  id: string;                    // "LC1", "LC2", etc.
+  formula: string;               // "1.2D + 1.6L + 0.5S"
+  purpose: LoadCombinationPurpose;
+  description?: string;          // Human-readable description
+}
+
+// ============================================================================
+// CODE SECTION REFERENCES
+// ============================================================================
+
+export interface CodeReferences {
+  loadCombinations: string;      // "ASCE 7-22 Section 2.3.2"
+  phiFactors: string;            // "Table 21.2.1"
+  stressBlock: string;           // "Section 22.2.2.4.1"
+  minReinforcement: string;      // "Sections 9.6.1.2, 7.6.1.1"
+  shearDesign: string;           // "Chapter 22, Table 22.5.5.1"
+  stirrupSpacing: string;        // "Table 9.7.6.2.2"
+  punchingShear: string;         // "Table 22.6.5.2"
+  deflection: string;            // "Table 24.2.2"
+  cover: string;                 // "Table 20.5.1.3.1"
+  developmentLength: string;     // "Chapter 25"
+  sizeEffect?: string;           // "Section 22.5.5.1.3"
+}
+
+// ============================================================================
+// DESIGN WARNINGS
+// ============================================================================
+
+export type DesignWarningSeverity = 'warning' | 'critical';
+
+export interface DesignWarning {
+  id: string;
+  condition: string;             // "ρ < ρmin"
+  message: string;               // "BRITTLE FAILURE RISK - Increase reinforcement..."
+  severity: DesignWarningSeverity;
+}
+
+export interface DesignWarningThresholds {
+  brittleFailure: DesignWarning;
+  overReinforced: DesignWarning;
+  congestion: DesignWarning & { minSpacing: number };
+  coverInadequate: DesignWarning;
+  shearFailure: DesignWarning;
+  deflectionExceeded: DesignWarning;
+}
+
+// ============================================================================
+// DEVELOPMENT LENGTH PARAMETERS
+// ============================================================================
+
+export interface DevelopmentLengthFactors {
+  tensionFormula: string;        // Full formula string for display
+  compressionFormula: string;    // Full formula string for display
+  lapSpliceMultiplier: number;   // 1.3 for Class B
+  minimumTension: number;        // mm (e.g., 300)
+  minimumCompression: number;    // mm (e.g., 200)
+}
+
+// ============================================================================
+// EXISTING INTERFACES (EXTENDED)
+// ============================================================================
+
 export interface LoadFactors {
   dead: number;           // Dead load factor (1.2 ACI, 1.25 CSA)
   deadOnly: number;       // Dead load only case (1.4 ACI)
@@ -46,12 +122,16 @@ export interface ShearDesign {
   maxVsCoefficient: number; // Max shear reinforcement coefficient
   lambda: number;           // Lightweight concrete factor (1.0 normal)
   sizeEffectFormula?: string; // Size effect calculation
+  betaWithStirrups?: number;  // β for CSA with stirrups
+  betaWithoutStirrups?: ((d: number) => number); // β for CSA without stirrups
 }
 
 export interface StirrupSpacing {
   alongLength: string;      // Formula for spacing along length
   maxSpacing: number;       // Maximum spacing in mm
   dFactor: number;          // Factor of d for spacing (0.5 ACI, 0.7 CSA)
+  reducedMaxSpacing?: number; // Reduced max when high shear (300mm)
+  reducedDFactor?: number;   // Reduced factor when high shear (0.25)
 }
 
 export interface DeflectionLimits {
@@ -91,6 +171,10 @@ export interface ParkingAccessibility {
   vanAisleWidth?: number;   // mm
 }
 
+// ============================================================================
+// MAIN BUILDING CODE CONFIG (EXTENDED)
+// ============================================================================
+
 export interface BuildingCodeConfig {
   id: BuildingCodeId;
   name: string;
@@ -101,6 +185,7 @@ export interface BuildingCodeConfig {
   releaseDate?: string;
   officialSource?: string;
   
+  // Core parameters
   loadFactors: LoadFactors;
   resistanceFactors: ResistanceFactors;
   stressBlock: StressBlockParams;
@@ -113,10 +198,19 @@ export interface BuildingCodeConfig {
   stability: StabilityFactors;
   parking: ParkingAccessibility;
   
+  // NEW: Extended configuration
+  loadCombinations: LoadCombination[];
+  codeReferences: CodeReferences;
+  designWarnings: DesignWarningThresholds;
+  developmentLength: DevelopmentLengthFactors;
+  
   notes?: string[];
 }
 
-// User's custom code configuration (partial, merged with base)
+// ============================================================================
+// USER CUSTOM CODE CONFIGURATION
+// ============================================================================
+
 export interface CustomCodeConfig {
   baseCode: 'ACI' | 'CSA';
   name: string;
@@ -128,7 +222,10 @@ export interface CustomCodeConfig {
   }>;
 }
 
-// Earthwork pricing configuration (for grading designer)
+// ============================================================================
+// EARTHWORK PRICING
+// ============================================================================
+
 export interface EarthworkPricing {
   excavation: number;       // per m³
   fill: number;             // per m³
@@ -138,7 +235,6 @@ export interface EarthworkPricing {
   currency: string;         // USD, CAD, etc.
 }
 
-// Default earthwork pricing by region
 export const DEFAULT_EARTHWORK_PRICING: Record<string, EarthworkPricing> = {
   USD: {
     excavation: 45,
@@ -157,3 +253,14 @@ export const DEFAULT_EARTHWORK_PRICING: Record<string, EarthworkPricing> = {
     currency: 'CAD',
   },
 };
+
+// ============================================================================
+// DESIGN CHECK RESULT TYPE
+// ============================================================================
+
+export interface DesignCheckResult {
+  passed: boolean;
+  warnings: DesignWarning[];
+  utilizationRatio?: number;
+  codeReference?: string;
+}

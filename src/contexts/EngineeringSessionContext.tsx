@@ -58,13 +58,14 @@ export interface AIContext {
     name: string;
     fullName: string;
     version: string;
-    loadCombination: string;
+    loadCombinations: Array<{ id: string; formula: string; purpose: string }>;
     resistanceFactors: {
       flexure: number;
       shear: number;
       compressionTied: number;
       compressionSpiral: number;
     };
+    codeReferences: { [key: string]: string };
   };
   recentActions: {
     type: string;
@@ -109,8 +110,9 @@ export const EngineeringSessionProvider: React.FC<EngineeringSessionProviderProp
         name: codeConfig.name,
         fullName: codeConfig.fullName,
         version: codeConfig.version,
-        loadCombination: codeConfig.loadCombination,
+        loadCombinations: codeConfig.loadCombinations,
         resistanceFactors: codeConfig.resistanceFactors,
+        codeReferences: codeConfig.codeReferences as unknown as { [key: string]: string },
       },
       recentActions: recentActions.map(action => ({
         type: action.type,

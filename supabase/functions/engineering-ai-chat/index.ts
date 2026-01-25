@@ -5,341 +5,258 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Comprehensive Engineering Knowledge Base
-const ENGINEERING_KNOWLEDGE = `
-You are an expert structural and civil engineer AI assistant with comprehensive knowledge of international building codes and design standards.
+// Dynamic building code knowledge generator
+function generateBuildingCodeKnowledge(buildingCode: { id: string; name?: string } | null) {
+  const codeId = buildingCode?.id || 'ACI';
+  
+  if (codeId === 'CSA') {
+    return `
+# ═══════════════════════════════════════════════════════════════
+# ACTIVE BUILDING CODE: CSA A23.3-24 / NBC 2025 (Canada)
+# ═══════════════════════════════════════════════════════════════
 
-## Your Expertise Includes:
-- **ACI 318-25** (American Concrete Institute Building Code - USA)
-- **CSA A23.3-24** (Canadian Standards Association - Canada)
-- **Eurocode 2** (EN 1992-1-1) - Design of Concrete Structures
-- **ASCE 7-22** - Minimum Design Loads and Associated Criteria
+Version: June 2024 (8th edition)
+Official Source: www.csagroup.org
 
-## Concrete Design Knowledge
+## LOAD FACTORS (NBC 2025 Division B Part 4)
+| Load Type | Factor |
+|-----------|--------|
+| Dead Load (D only) | 1.4 |
+| Dead Load (combined) | 1.25 |
+| Live Load (L) | 1.5 |
+| Wind Load (W) | 1.4 |
+| Snow Load (S) | 1.5 |
+| Seismic Load (E) | 1.0 |
 
-### Material Properties Table
-| Grade | fck (MPa) | fcd (MPa) | fctm (MPa) | Ec (GPa) | εcu |
-|-------|-----------|-----------|------------|----------|-----|
-| C20   | 20        | 13.33     | 2.21       | 30       | 0.0035 |
-| C25   | 25        | 16.67     | 2.56       | 31       | 0.0035 |
-| C30   | 30        | 20.00     | 2.90       | 33       | 0.0035 |
-| C35   | 35        | 23.33     | 3.21       | 34       | 0.0035 |
-| C40   | 40        | 26.67     | 3.51       | 35       | 0.0035 |
-| C45   | 45        | 30.00     | 3.80       | 36       | 0.0035 |
+## LOAD COMBINATIONS (Use EXACTLY)
+- U = 1.4D
+- U = 1.25D + 1.5L
+- U = 1.25D + 1.5S
+- U = 1.25D + 1.5L + 0.5S
+- U = 1.0D + 1.0E + 0.5L + 0.25S
+- U = 1.25D + 1.4W
+- U = 0.9D + 1.4W (for uplift)
+- U = 0.9D + 1.0E (for seismic overturning)
 
-### Steel Reinforcement Properties
-| Grade  | fy (MPa) | Es (GPa) | εy      | fu (MPa) |
-|--------|----------|----------|---------|----------|
-| Fy420  | 420      | 200      | 0.0021  | 620      |
-| Fy500  | 500      | 200      | 0.0025  | 650      |
-| Fy550  | 550      | 200      | 0.00275 | 700      |
+## RESISTANCE FACTORS (Clause 8.4) ⚠️ MORE CONSERVATIVE THAN ACI
+| Component | Factor |
+|-----------|--------|
+| Concrete (φc) | 0.65 |
+| Steel (φs) | 0.85 |
+| Spiral columns | 0.75 |
+
+⚠️ CSA requires ~38% MORE steel than ACI for same design!
+
+## STRESS BLOCK PARAMETERS (Linear formulas)
+- α₁ = 0.85 - 0.0015 × f'c (minimum 0.67)
+- β₁ = 0.97 - 0.0025 × f'c (minimum 0.67)
+
+## MINIMUM REINFORCEMENT (Clause 10)
+- Beams: As,min = (0.2√f'c × bt × h)/fy
+- Slabs: ρmin = 0.002 ⚠️ HIGHER than ACI (0.0018)
+- Columns min: ρmin = 0.01
+- Columns max: ρmax = 0.04 ⚠️ LOWER than ACI (0.08)
+
+## SHEAR DESIGN - MCFT Method (Chapter 11)
+⚠️ Uses Modified Compression Field Theory (DIFFERENT from ACI)
+
+WITH minimum stirrups:
+  Vc = φc × λ × β × √f'c × bw × dv
+  Where β = 0.18
+
+WITHOUT minimum stirrups:
+  β = 230/(1000 + dv)
+
+Maximum spacing: min(0.7dv, 600 mm)
+Note: CSA uses dv (shear depth), not d
+
+## DEFLECTION LIMITS (Clause 9) ⚠️ MORE STRINGENT
+| Condition | Limit |
+|-----------|-------|
+| Immediate | L/240 (vs ACI L/360) |
+| After partitions | L/480 |
+
+## CONCRETE PROPERTIES
+- Ec = 4500√f'c (MPa) ⚠️ LOWER than ACI (4700)
+- Minimum f'c: 20 MPa
+
+## CODE REFERENCES FOR CITATIONS
+- Load factors: NBC 2025 Division B Part 4
+- φ factors: CSA A23.3-24 Clause 8.4
+- Min reinforcement: CSA A23.3-24 Clause 10.5
+- Shear (MCFT): CSA A23.3-24 Chapter 11
+- Deflection: CSA A23.3-24 Clause 9
+`;
+  }
+  
+  // Default: ACI
+  return `
+# ═══════════════════════════════════════════════════════════════
+# ACTIVE BUILDING CODE: ACI 318-25 / ASCE 7-22 (United States)
+# ═══════════════════════════════════════════════════════════════
+
+Version: July 2025
+Official Source: www.concrete.org
+
+## LOAD FACTORS (ASCE 7-22) ⚠️ MAJOR CHANGES FROM PREVIOUS VERSIONS
+| Load Type | Factor | Note |
+|-----------|--------|------|
+| Dead Load (D only) | 1.4 | |
+| Dead Load (combined) | 1.2 | |
+| Live Load (L) | 1.6 | |
+| Wind Load (W) | 1.0 | ⚠️ Changed from 1.6! |
+| Snow Load (S) | 1.0 | ⚠️ Changed from 1.6! |
+| Seismic Load (E) | 1.0 | |
+| Roof Live (Lr) | 1.6 | |
+
+## LOAD COMBINATIONS (ASCE 7-22 Section 2.3.2 - Use EXACTLY)
+- U = 1.4D
+- U = 1.2D + 1.6L + 0.5(Lr or S)
+- U = 1.2D + 1.0W + 0.5L + 0.5(Lr or S)
+- U = 1.2D + 1.0E + 0.5L + 0.2S
+- U = 0.9D + 1.0W (for wind uplift)
+- U = 0.9D + 1.0E (for seismic overturning)
+
+## STRENGTH REDUCTION FACTORS (Table 21.2.1)
+| Component | φ |
+|-----------|---|
+| Flexure (tension-controlled) | 0.90 |
+| Shear and torsion | 0.75 |
+| Compression (tied columns) | 0.65 |
+| Compression (spiral columns) | 0.75 |
+| Bearing | 0.65 |
+
+## STRESS BLOCK PARAMETERS (Section 22.2.2.4.1)
+- α₁ = 0.85 (constant)
+- β₁:
+  • If f'c ≤ 28 MPa: β₁ = 0.85
+  • If 28 < f'c < 55 MPa: β₁ = 0.85 - 0.05(f'c - 28)/7
+  • If f'c ≥ 55 MPa: β₁ = 0.65
+
+## MINIMUM REINFORCEMENT (Sections 9.6.1.2, 7.6.1.1)
+- Beams: As,min = max(0.25√f'c/fy, 1.4/fy) × bw × d
+- Slabs: ρmin = 0.0018 (Grade 60)
+- Columns min: ρmin = 0.01 (1%)
+- Columns max: ρmax = 0.08 (8%, but practically 4%)
+
+## SHEAR DESIGN (Chapter 22, Table 22.5.5.1)
+WITH minimum stirrups:
+  Vc = (0.17λ√f'c) × bw × d
+
+Size effect factor (Section 22.5.5.1.3):
+  λs = √(2/(1+0.004d)) ≤ 1.0
+
+Maximum stirrup spacing (Table 9.7.6.2.2):
+  Standard: min(d/2, 600 mm)
+  High shear (Vs > 4√f'c × bw × d): min(d/4, 300 mm)
+
+## DEFLECTION LIMITS (Table 24.2.2)
+| Condition | Limit |
+|-----------|-------|
+| Floor (immediate) | L/360 |
+| Roof (immediate) | L/180 |
+| After partitions | L/480 |
+
+## CONCRETE PROPERTIES
+- Ec = 4700√f'c (MPa)
+- Minimum f'c: 17 MPa
+
+## DEVELOPMENT LENGTH (Chapter 25)
+- Tension: ld = (fy × ψt × ψe × ψs × ψg × db)/(25λ√f'c) ≥ 300mm
+- Compression: ldc = (fy × ψr × db)/(50λ√f'c) ≥ 200mm
+- Lap splice (Class B): 1.3 × ld
+
+## CODE REFERENCES FOR CITATIONS
+- Load combinations: ASCE 7-22 Section 2.3.2
+- φ factors: ACI 318-25 Table 21.2.1
+- Stress block: ACI 318-25 Section 22.2.2.4.1
+- Min reinforcement: ACI 318-25 Sections 9.6.1.2, 7.6.1.1
+- Shear design: ACI 318-25 Chapter 22, Table 22.5.5.1
+- Stirrup spacing: ACI 318-25 Table 9.7.6.2.2
+- Punching shear: ACI 318-25 Table 22.6.5.2
+- Deflection: ACI 318-25 Table 24.2.2
+- Cover: ACI 318-25 Table 20.5.1.3.1
+- Development length: ACI 318-25 Chapter 25
+`;
+}
+
+const BASE_ENGINEERING_KNOWLEDGE = `
+## Material Properties
+
+### Concrete Grades
+| Grade | fck (MPa) | Ec (GPa) |
+|-------|-----------|----------|
+| C20 | 20 | 30 |
+| C25 | 25 | 31 |
+| C30 | 30 | 33 |
+| C35 | 35 | 34 |
+| C40 | 40 | 35 |
+
+### Steel Reinforcement
+| Grade | fy (MPa) | Es (GPa) |
+|-------|----------|----------|
+| Fy420 | 420 | 200 |
+| Fy500 | 500 | 200 |
 
 ### Standard Bar Areas (mm²)
-| Ø8  | Ø10 | Ø12 | Ø14 | Ø16 | Ø18 | Ø20 | Ø22 | Ø25 | Ø28 | Ø32 |
-|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|
-| 50  | 79  | 113 | 154 | 201 | 254 | 314 | 380 | 491 | 616 | 804 |
+| Ø8 | Ø10 | Ø12 | Ø14 | Ø16 | Ø18 | Ø20 | Ø22 | Ø25 | Ø28 | Ø32 |
+|----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|
+| 50 | 79 | 113 | 154 | 201 | 254 | 314 | 380 | 491 | 616 | 804 |
 
-## Key Design Formulas
+## DESIGN WARNINGS - Always Check These
 
-### Flexural Design (ACI 318-19)
-- **Required steel area:** As = Mu / (φ × fy × (d - a/2))
-  - where a = As × fy / (0.85 × f'c × b)
-- **Lever arm (approximate):** z ≈ 0.9d for under-reinforced sections
-- **Neutral axis depth:** c = a / β1
-  - β1 = 0.85 for f'c ≤ 28 MPa
-  - β1 = 0.85 - 0.05(f'c - 28)/7 for 28 < f'c ≤ 56 MPa
-- **Moment capacity:** φMn = φ × As × fy × (d - a/2), φ = 0.9
+⚠️ ρ < ρmin → "BRITTLE FAILURE RISK - Increase reinforcement"
+⚠️ ρ > ρmax → "OVER-REINFORCED - Compression failure before tension yielding"
+⚠️ Bar spacing < 25mm → "CONGESTION - Difficult concrete placement"
+⚠️ Cover < minimum → "DURABILITY ISSUE - Inadequate protection"
+⚠️ Vu > φVn → "SHEAR FAILURE - Must provide stirrups"
+⚠️ Δ > allowable → "EXCESSIVE DEFLECTION - Increase depth"
 
-### Minimum Reinforcement (ACI 318-19 Section 9.6.1)
-- **As,min = max(0.25√f'c/fy × bw × d, 1.4/fy × bw × d)**
-- For slabs: As,min = 0.0018 × b × h (for fy = 420 MPa)
+## Rules of Thumb (Preliminary Design)
+- Beam depth: h ≈ L/12 to L/16 for simple spans
+- Slab thickness: h ≈ L/24 to L/30 for one-way
+- Column size: Minimum 300mm × 300mm
+- Reinforcement ratio: Aim for 1-2% for economy
+- Stirrup spacing: Typically 100-300mm
 
-### Maximum Reinforcement
-- ρmax = 0.85 × β1 × f'c/fy × (0.003/(0.003 + 0.004))
-- Or simply ensure εt ≥ 0.004 for tension-controlled sections
+## RESPONSE GUIDELINES
 
-### Shear Design (ACI 318-19 Section 22.5)
-- **Concrete shear capacity:** Vc = 0.17λ√f'c × bw × d (N)
-- **Simplified:** Vc = λ√f'c × bw × d / 6 (MPa units)
-- **Steel shear:** Vs = Av × fyt × d / s
-- **Maximum stirrup spacing:**
-  - When Vs ≤ 0.33√f'c × bw × d: s ≤ d/2 or 600mm
-  - When Vs > 0.33√f'c × bw × d: s ≤ d/4 or 300mm
+1. **Always cite the code section**:
+   ✓ Good: "Per ACI 318-25 Table 21.2.1, φ = 0.90 for flexure..."
+   ✗ Bad: "The reduction factor is 0.90..."
 
-### Deflection Limits (ACI 318-19 Table 24.2.2)
-| Member | Condition | Limit |
-|--------|-----------|-------|
-| Floors | Not supporting partitions | L/240 |
-| Floors | Supporting partitions | L/480 |
-| Roofs | Not supporting partitions | L/180 |
-| Roofs | Supporting partitions | L/240 |
+2. **Show step-by-step calculations**:
+   ✓ Good: "Mu = 1.2D + 1.6L = 1.2(20) + 1.6(30) = 72 kNm"
+   ✗ Bad: "You need 72 kNm capacity"
 
-### Span/Depth Ratios (ACI 318-19 Table 7.3.1.1)
-| Support Condition | Solid One-Way | Beams |
-|-------------------|---------------|-------|
-| Simply supported  | L/20          | L/16  |
-| One end continuous| L/24          | L/18.5|
-| Both ends continuous | L/28       | L/21  |
-| Cantilever        | L/10          | L/8   |
+3. **Use the EXACT load factors from the active code**
 
-## Foundation Design
+4. **Warn about failures immediately**:
+   "⚠️ DESIGN FAILS [check name] - [issue] - [fix suggestion]"
 
-### Bearing Capacity (Terzaghi's Equation)
-- qu = c'Nc + q'Nq + 0.5γBNγ (for strip footings)
-- qu = 1.3c'Nc + q'Nq + 0.4γBNγ (for square footings)
-- Allowable: qa = qu / FS (FS = 2.5 to 3.0)
+5. **End with professional review reminder**:
+   "Professional engineer review required for final design."
 
-### Punching Shear (ACI 318-19 Section 22.6.5)
-- Critical section at d/2 from column face
-- Vc = 0.33λ√f'c × bo × d (for square columns)
-- Vc = min of three equations for rectangular columns
-- bo = perimeter of critical section
-
-### Development Length (ACI 318-19 Section 25.4)
-- ld = (fy × ψt × ψe × ψs × ψg × db) / (2.1λ√f'c) × Modification factors
-
-## Retaining Wall Design
-
-### Earth Pressure Coefficients
-- **Active (Rankine):** Ka = (1 - sinφ) / (1 + sinφ) = tan²(45° - φ/2)
-- **Passive:** Kp = (1 + sinφ) / (1 - sinφ) = tan²(45° + φ/2)
-- **At-rest:** Ko = 1 - sinφ (for normally consolidated soils)
-
-### Stability Requirements
-| Check | Minimum Factor of Safety |
-|-------|-------------------------|
-| Overturning | ≥ 2.0 |
-| Sliding | ≥ 1.5 |
-| Bearing | ≥ 3.0 |
-
-### Water Pressure
-- Horizontal pressure: pw = γw × h
-- Always provide drainage behind walls to reduce lateral pressure
-
-## Column Design
-
-### Slenderness Effects (ACI 318-19 Section 6.2.5)
-- Slenderness ratio: klu/r
-- r = 0.3h for rectangular, 0.25D for circular
-- Short column: klu/r < 22 for braced, klu/r < 22 for unbraced (simplified)
-- Moment magnification required if klu/r > limits
-
-### P-M Interaction
-- Points on interaction diagram:
-  - Pure compression: Po = 0.85f'c(Ag - Ast) + fyAst
-  - Balanced: εs = εy when εc = 0.003
-  - Pure bending: Mn = As × fy × (d - a/2)
-
-## CSA A23.3-24 Specifics (Canada)
-
-- Load factors: 1.25D + 1.5L (vs ACI's 1.2D + 1.6L)
-- Resistance factors: φc = 0.65 for concrete, φs = 0.85 for steel
-- Uses α1 and β1 stress block parameters (functions of f'c)
-- Different minimum reinforcement requirements than ACI
-- More conservative punching shear provisions
-
-## Response Guidelines
-
-1. **Always show calculations** with actual numbers from the user's inputs
-2. **Reference specific code sections** (e.g., "per ACI 318-19 Section 9.6.1.2")
-3. **Provide step-by-step solutions** that can be verified
-4. **Warn about any design concerns** (approaching limits, unusual conditions)
-5. **Use metric units** (mm, kN, MPa, m³) consistently
-6. **Suggest optimizations** when possible (cost, performance, constructability)
-7. **Compare with code limits** and show utilization ratios
-8. **Offer alternatives** with pros/cons when relevant
-
-## Important Reminders
-
-- Always check minimum reinforcement requirements
-- Consider constructability (bar spacing, congestion)
-- Account for durability (cover, crack control)
-- Verify load combinations are correct
-- Consider serviceability (deflection, cracking)
+6. **Compare codes when asked**:
+   Show numerical differences between ACI and CSA
 `;
 
 const CALCULATOR_CONTEXTS: Record<string, string> = {
-  beam: `
-## BEAM DESIGN CONTEXT
-
-The user is working with a **Reinforced Concrete Beam Design** calculator.
-
-**Typical Inputs:**
-- Span length (L)
-- Dead load (DL) and Live load (LL) in kN/m²
-- Tributary width for load calculation
-- Beam width (b) and depth (d)
-- Concrete grade (f'c) and Steel grade (fy)
-- Support conditions (simply supported, continuous, cantilever)
-- Exposure class for cover determination
-
-**Key Outputs:**
-- Required moment capacity (Mu)
-- Main reinforcement (bottom bars)
-- Top reinforcement (if continuous)
-- Stirrup design (diameter, spacing)
-- Deflection check
-- Material quantities (concrete, steel)
-
-**Critical Design Checks:**
-1. Flexural capacity: φMn ≥ Mu
-2. Shear capacity: φVn ≥ Vu
-3. Minimum reinforcement: As ≥ As,min
-4. Maximum reinforcement: εt ≥ 0.004
-5. Deflection: Δ ≤ Δallowable
-6. Crack width: w ≤ wmax
-7. Development/anchorage length
-`,
-
-  column: `
-## COLUMN DESIGN CONTEXT
-
-The user is working with a **Reinforced Concrete Column Design** calculator.
-
-**Typical Inputs:**
-- Axial load (Pu)
-- Moments (Mux, Muy) - uniaxial or biaxial
-- Column dimensions (b × h or diameter D)
-- Unbraced length (lu)
-- End conditions (fixed, pinned)
-- Concrete and steel grades
-
-**Key Outputs:**
-- Required reinforcement ratio
-- Bar layout (number and diameter)
-- Tie/spiral design
-- Slenderness check
-- P-M interaction verification
-- Capacity utilization
-
-**Critical Design Checks:**
-1. Slenderness: klu/r < limits
-2. P-M interaction: Point inside diagram
-3. Biaxial bending: Bresler's equation
-4. Minimum steel: ρg ≥ 0.01
-5. Maximum steel: ρg ≤ 0.08 (0.06 at splices)
-6. Tie spacing requirements
-`,
-
-  foundation: `
-## FOUNDATION DESIGN CONTEXT
-
-The user is working with an **Isolated Footing Design** calculator.
-
-**Typical Inputs:**
-- Column load (P) and moments (Mx, My)
-- Soil bearing capacity (qa)
-- Column dimensions
-- Concrete and steel grades
-- Groundwater level
-
-**Key Outputs:**
-- Footing dimensions (L × B × D)
-- Bearing pressure distribution
-- Flexural reinforcement (both directions)
-- One-way shear check
-- Punching shear check
-- Development length verification
-
-**Critical Design Checks:**
-1. Bearing pressure: q ≤ qa
-2. Eccentricity: e ≤ B/6 (no tension)
-3. One-way shear: φVc ≥ Vu at d from face
-4. Punching shear: φVc ≥ Vu at d/2 perimeter
-5. Flexural capacity at critical sections
-6. Minimum reinforcement in both directions
-`,
-
-  slab: `
-## SLAB DESIGN CONTEXT
-
-The user is working with a **Reinforced Concrete Slab Design** calculator.
-
-**Typical Inputs:**
-- Slab dimensions (L1 × L2)
-- Live and dead loads
-- Slab type (one-way, two-way, flat slab)
-- Support conditions
-- Edge conditions (beams, walls)
-
-**Key Outputs:**
-- Slab thickness (h)
-- Reinforcement in both directions
-- Temperature/shrinkage steel
-- Deflection estimate
-- Punching shear (for flat slabs)
-
-**Critical Design Checks:**
-1. Minimum thickness for deflection (ACI Table 7.3.1.1)
-2. One-way vs two-way behavior (aspect ratio)
-3. Moment coefficients (DDM or EFM)
-4. Minimum reinforcement: As,min = 0.0018bh
-5. Maximum spacing: s ≤ 2h or 450mm
-6. Punching shear at columns (flat slabs)
-`,
-
-  retaining_wall: `
-## RETAINING WALL DESIGN CONTEXT
-
-The user is working with a **Cantilever Retaining Wall** calculator.
-
-**Typical Inputs:**
-- Wall height (H)
-- Backfill properties (γ, φ, c)
-- Surcharge load (q)
-- Base soil bearing capacity
-- Water table depth
-- Seismic zone
-
-**Key Outputs:**
-- Wall dimensions (stem, base, toe, heel)
-- Stability factors (overturning, sliding, bearing)
-- Stem reinforcement
-- Base reinforcement
-- Drainage requirements
-
-**Critical Design Checks:**
-1. Overturning: FOS ≥ 2.0
-2. Sliding: FOS ≥ 1.5
-3. Bearing: FOS ≥ 3.0
-4. Stem flexure at base
-5. Heel and toe flexure
-6. Shear in stem
-7. Settlement considerations
-`,
-
-  grading: `
-## AI GRADING DESIGN CONTEXT
-
-The user is working with an **AI-Powered Grading Designer**.
-
-**Typical Inputs:**
-- Survey points (NGL elevations)
-- Site boundaries
-- Drainage requirements
-- Design constraints
-- Cost parameters
-
-**Key Outputs:**
-- Finished grade levels (FGL)
-- Cut/fill volumes
-- Balance analysis
-- Drainage paths
-- DXF drawing export
-- Cost estimate
-
-**Critical Design Checks:**
-1. Minimum drainage slopes (1-2%)
-2. Cut/fill balance optimization
-3. Haul distance minimization
-4. Compaction zone identification
-5. Erosion control requirements
-6. Utility clearances
-`
+  beam: `## BEAM DESIGN CONTEXT
+Key checks: Flexural capacity, Shear capacity, Min/max reinforcement, Deflection, Development length`,
+  column: `## COLUMN DESIGN CONTEXT
+Key checks: Slenderness, P-M interaction, Min/max steel (1-8% ACI, 1-4% CSA), Tie spacing`,
+  foundation: `## FOUNDATION DESIGN CONTEXT
+Key checks: Bearing pressure, One-way shear, Punching shear, Flexure, Development length`,
+  slab: `## SLAB DESIGN CONTEXT
+Key checks: Minimum thickness, Reinforcement both directions, Max spacing (2h or 450mm), Punching shear`,
+  retaining_wall: `## RETAINING WALL DESIGN CONTEXT
+Key checks: Overturning FOS ≥ 2.0, Sliding FOS ≥ 1.5, Bearing FOS ≥ 3.0, Stem/base reinforcement`,
+  grading: `## GRADING DESIGN CONTEXT
+Key outputs: Cut/fill volumes, Drainage paths, Cost estimate, DXF export`,
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -352,7 +269,8 @@ serve(async (req) => {
       question,
       messages: userMessages = [],
       conversationHistory = [],
-      stream = true
+      stream = true,
+      buildingCode = null
     } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
@@ -360,10 +278,15 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    // Build context-aware system prompt
+    // Build dynamic system prompt based on active building code
+    const codeKnowledge = generateBuildingCodeKnowledge(buildingCode);
     const calculatorContext = CALCULATOR_CONTEXTS[calculatorType] || '';
     
-    const systemPrompt = `${ENGINEERING_KNOWLEDGE}
+    const systemPrompt = `You are an expert structural engineer AI assistant.
+
+${codeKnowledge}
+
+${BASE_ENGINEERING_KNOWLEDGE}
 
 ${calculatorContext}
 
@@ -376,37 +299,17 @@ ${calculatorContext}
 ${JSON.stringify(currentInputs, null, 2)}
 \`\`\`
 
-**Calculation Results (if available):**
+**Calculation Results:**
 \`\`\`json
 ${currentOutputs ? JSON.stringify(currentOutputs, null, 2) : 'No calculation performed yet'}
 \`\`\`
 
-## Your Task
-
-You are assisting an engineer with their ${(calculatorType || 'engineering').replace('_', ' ')} design. 
-
-1. **Answer their specific question** using the actual input values provided
-2. **Show step-by-step calculations** with real numbers
-3. **Reference specific code sections** when applicable (e.g., "per ACI 318-19 Section 9.6.1.2")
-4. **Provide clear conclusions** and recommendations
-5. **Warn about any concerns** if the design approaches limits
-6. **Use markdown formatting** for clarity (tables, code blocks, lists)
-7. **Be concise but complete** - engineers value precision
-
-If the user asks about optimization, provide specific alternatives with:
-- Dimensional changes and their impact
-- Material quantity differences
-- Cost implications when relevant
-- Code compliance verification
-
-Remember: You're talking to a practicing engineer who needs accurate, actionable information.
+Remember: Cite specific code sections, show calculations with real numbers, warn about any failures.
 `;
 
-    // Handle both old format (question + conversationHistory) and new format (messages array)
     let messages: Array<{ role: string; content: string }>;
     
     if (userMessages && userMessages.length > 0) {
-      // New format: messages array passed directly
       messages = [
         { role: 'system', content: systemPrompt },
         ...userMessages.map((msg: { role: string; content: string }) => ({
@@ -415,7 +318,6 @@ Remember: You're talking to a practicing engineer who needs accurate, actionable
         }))
       ];
     } else if (question) {
-      // Old format: question with optional conversationHistory
       messages = [
         { role: 'system', content: systemPrompt },
         ...conversationHistory.map((msg: { role: string; content: string }) => ({
@@ -428,9 +330,8 @@ Remember: You're talking to a practicing engineer who needs accurate, actionable
       throw new Error('No question or messages provided');
     }
 
-    // Get last user message for logging
     const lastUserMessage = messages.filter(m => m.role === 'user').pop()?.content || '';
-    console.log(`Engineering AI Chat - Calculator: ${calculatorType || 'unknown'}, Question: ${lastUserMessage.substring(0, 100)}...`);
+    console.log(`Engineering AI - Code: ${buildingCode?.id || 'ACI'}, Calculator: ${calculatorType || 'unknown'}`);
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -442,7 +343,7 @@ Remember: You're talking to a practicing engineer who needs accurate, actionable
         model: 'google/gemini-3-flash-preview',
         messages,
         stream: stream,
-        max_tokens: 1024,
+        max_tokens: 1500,
         temperature: 0.7,
       }),
     });
@@ -465,14 +366,12 @@ Remember: You're talking to a practicing engineer who needs accurate, actionable
       throw new Error(`AI Gateway error: ${response.status}`);
     }
 
-    // Return streaming response
     if (stream) {
       return new Response(response.body, {
         headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
       });
     }
 
-    // Non-streaming response
     const data = await response.json();
     const content = data.choices[0].message.content;
 
