@@ -33,13 +33,22 @@ export type {
   ParkingAccessibility,
   CustomCodeConfig,
   EarthworkPricing,
+  // New types
+  LoadCombination,
+  LoadCombinationPurpose,
+  CodeReferences,
+  DesignWarning,
+  DesignWarningSeverity,
+  DesignWarningThresholds,
+  DevelopmentLengthFactors,
+  DesignCheckResult,
 } from './types';
 
 export { DEFAULT_EARTHWORK_PRICING } from './types';
 
 // Code Configurations
 export { ACI_318_25, getACIBeta1 } from './aci-318-25';
-export { CSA_A23_3_24, getCSAAlpha1, getCSABeta1 } from './csa-a23-3-24';
+export { CSA_A23_3_24, getCSAAlpha1, getCSABeta1, getCSABetaWithoutStirrups } from './csa-a23-3-24';
 
 // Geotechnical
 export {
@@ -56,6 +65,7 @@ export type { GeotechnicalConfig } from './geotechnical';
 export {
   getBuildingCode,
   getFactoredLoad,
+  getApplicableLoadCombinations,
   getStressBlockParams,
   getShearStrength,
   getPunchingShearStrength,
@@ -68,7 +78,15 @@ export {
   getLoadCombinationText,
   getCodeReferenceText,
   getResistanceFactorText,
+  getCodeReference,
   compareCodeParameters,
+  // New functions
+  getSizeEffectFactor,
+  getShearDepth,
+  getDevelopmentLengthTension,
+  getDevelopmentLengthCompression,
+  getLapSpliceLength,
+  checkDesignWarnings,
 } from './calculator';
 
 // Available building codes list (for UI dropdowns)
@@ -99,19 +117,39 @@ export const DEFAULT_BUILDING_CODE = 'ACI' as const;
 // Get full building code config for AI context
 import { ACI_318_25 } from './aci-318-25';
 import { CSA_A23_3_24 } from './csa-a23-3-24';
-import type { BuildingCodeId } from './types';
+import type { BuildingCodeId, BuildingCodeConfig } from './types';
 
-export const getBuildingCodeConfig = (codeId: BuildingCodeId) => {
-  const codeInfo = AVAILABLE_CODES.find(c => c.id === codeId) || AVAILABLE_CODES[0];
-  const config = codeId === 'CSA' ? CSA_A23_3_24 : ACI_318_25;
+export const getBuildingCodeConfig = (codeId: BuildingCodeId): BuildingCodeConfig => {
+  return codeId === 'CSA' ? CSA_A23_3_24 : ACI_318_25;
+};
+
+/**
+ * Get full building code details for AI context generation
+ */
+export const getFullBuildingCodeContext = (codeId: BuildingCodeId) => {
+  const config = getBuildingCodeConfig(codeId);
   
   return {
-    id: codeId,
-    name: codeInfo.name,
-    fullName: codeInfo.fullName,
-    version: codeInfo.version,
-    loadCombination: codeInfo.loadCombination,
-    resistanceFactors: config.resistanceFactors,
+    id: config.id,
+    name: config.name,
+    fullName: config.fullName,
+    version: config.version,
+    country: config.country,
+    flag: config.flag,
+    releaseDate: config.releaseDate,
+    officialSource: config.officialSource,
     loadFactors: config.loadFactors,
+    loadCombinations: config.loadCombinations,
+    resistanceFactors: config.resistanceFactors,
+    codeReferences: config.codeReferences,
+    designWarnings: config.designWarnings,
+    developmentLength: config.developmentLength,
+    reinforcement: config.reinforcement,
+    shear: config.shear,
+    stirrupSpacing: config.stirrupSpacing,
+    deflection: config.deflection,
+    concrete: config.concrete,
+    cover: config.cover,
+    notes: config.notes,
   };
 };
