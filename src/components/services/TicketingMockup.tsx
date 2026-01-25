@@ -1,5 +1,4 @@
 import { memo, useMemo } from 'react';
-import { motion } from 'framer-motion';
 import { Check, Ticket, Users, TrendingUp } from 'lucide-react';
 
 interface TicketRow {
@@ -203,13 +202,10 @@ const TicketingMockup = memo(() => {
 
   return (
     <div className="relative w-full h-full min-h-[400px] flex items-center justify-center overflow-hidden">
-      {/* Centered overlapping layout - scaled down on mobile */}
+      {/* Centered overlapping layout - scaled down on mobile, fully static */}
       <div className="flex items-center justify-center scale-[0.65] sm:scale-75 md:scale-90 lg:scale-100 origin-center">
         {/* Laptop - Left/Back with 3D tilt */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.1, duration: 0.4 }}
+        <div
           className="relative z-10"
           style={{ 
             transform: 'perspective(800px) rotateY(-10deg) rotateX(4deg)',
@@ -217,17 +213,12 @@ const TicketingMockup = memo(() => {
           }}
         >
           <AdminLaptop />
-        </motion.div>
+        </div>
 
         {/* Phone - Right/Front, overlapping laptop */}
-        <motion.div 
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.2, duration: 0.4 }}
-          className="relative z-20"
-        >
+        <div className="relative z-20">
           <CustomerPhone qrPattern={qrPattern} />
-        </motion.div>
+        </div>
       </div>
     </div>
   );

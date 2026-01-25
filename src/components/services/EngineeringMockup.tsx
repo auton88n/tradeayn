@@ -1,5 +1,4 @@
 import { memo } from 'react';
-import { motion } from 'framer-motion';
 
 const EngineeringMockup = memo(() => {
   return (
@@ -16,9 +15,8 @@ const EngineeringMockup = memo(() => {
         </svg>
       </div>
 
-      {/* 3D Building Visualization - Static version for performance */}
+      {/* 3D Building Visualization - Fully static for performance */}
       <div className="relative z-10">
-        {/* Main building structure - no infinite rotation */}
         <div
           className="relative"
           style={{ transformStyle: 'preserve-3d', perspective: '1000px' }}
@@ -31,19 +29,12 @@ const EngineeringMockup = memo(() => {
             {/* Foundation */}
             <div className="w-56 h-4 bg-gradient-to-r from-neutral-700 via-neutral-600 to-neutral-700 rounded-sm mx-auto" />
             
-            {/* Main structure - 3D effect */}
+            {/* Main structure - Static floors */}
             <div className="relative mx-auto" style={{ width: '200px' }}>
-              {/* Building floors - entrance animation only, 4 windows each */}
               {[0, 1, 2, 3, 4].map((floor) => (
-                <motion.div
-                  key={floor}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: floor * 0.1 + 0.3, duration: 0.4 }}
-                  className="relative"
-                >
+                <div key={floor} className="relative">
                   <div 
-                    className="h-14 border-l-2 border-r-2 border-t border-cyan-500/40 bg-gradient-to-b from-neutral-900/90 to-neutral-800/90 backdrop-blur-sm"
+                    className="h-14 border-l-2 border-r-2 border-t border-cyan-500/40 bg-gradient-to-b from-neutral-900/90 to-neutral-800/90"
                     style={{
                       width: `${200 - floor * 6}px`,
                       marginLeft: `${floor * 3}px`,
@@ -63,68 +54,45 @@ const EngineeringMockup = memo(() => {
                     {/* Floor separator */}
                     <div className="absolute bottom-0 left-0 right-0 h-px bg-cyan-500/20" />
                   </div>
-                </motion.div>
+                </div>
               ))}
               
               {/* Roof */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.8 }}
+              <div
                 className="relative mx-auto"
                 style={{ width: '168px', marginLeft: '16px' }}
               >
                 <div className="h-8 bg-gradient-to-b from-cyan-600/30 to-neutral-800 border-t-2 border-cyan-500/50" />
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-20 h-4 bg-gradient-to-b from-cyan-500/40 to-cyan-600/20 rounded-t-lg" />
-              </motion.div>
+              </div>
             </div>
           </div>
           
           {/* Structural annotations */}
-          <motion.div
-            className="absolute -left-16 top-1/2 -translate-y-1/2"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 1 }}
-          >
+          <div className="absolute -left-16 top-1/2 -translate-y-1/2">
             <div className="flex items-center gap-2">
               <div className="w-8 h-px bg-cyan-600 dark:bg-cyan-400" />
               <div className="text-[12px] font-mono text-cyan-600 dark:text-cyan-300 whitespace-nowrap font-medium">
                 h = 15.2m
               </div>
             </div>
-          </motion.div>
+          </div>
           
-          <motion.div
-            className="absolute -bottom-6 left-1/2 -translate-x-1/2"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.1 }}
-          >
+          <div className="absolute -bottom-6 left-1/2 -translate-x-1/2">
             <div className="text-[11px] font-mono text-cyan-600/80 dark:text-cyan-300/80 font-medium whitespace-nowrap">
               Base: 12.0m × 8.0m
             </div>
-          </motion.div>
+          </div>
         </div>
         
         {/* Stress indicator - static */}
-        <motion.div
-          className="absolute -right-4 top-1/4"
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 1.2 }}
-        >
+        <div className="absolute -right-4 top-1/4">
           <div className="w-4 h-4 rounded-full bg-emerald-500 dark:bg-emerald-400 shadow-lg shadow-emerald-500/60 dark:shadow-emerald-400/60" />
           <div className="text-[10px] font-mono text-emerald-600 dark:text-emerald-300 mt-1 whitespace-nowrap font-medium">OK</div>
-        </motion.div>
+        </div>
         
         {/* Load arrows - static */}
-        <motion.div
-          className="absolute -top-8 left-1/2 -translate-x-1/2 flex gap-4"
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.9 }}
-        >
+        <div className="absolute -top-8 left-1/2 -translate-x-1/2 flex gap-4">
           {[0, 1, 2].map((i) => (
             <div
               key={i}
@@ -135,16 +103,13 @@ const EngineeringMockup = memo(() => {
               <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-t-[6px] border-l-transparent border-r-transparent border-t-orange-500" />
             </div>
           ))}
-        </motion.div>
+        </div>
       </div>
       
-      {/* Floating calculation result - positioned top-right, higher z-index */}
-      <motion.div
-        className="absolute top-4 right-4 z-30 px-4 py-3 rounded-xl bg-white dark:bg-neutral-900/95 border border-cyan-600/50 dark:border-cyan-400/50 backdrop-blur-sm"
+      {/* Floating calculation result - static */}
+      <div
+        className="absolute top-4 right-4 z-30 px-4 py-3 rounded-xl bg-white dark:bg-neutral-900/95 border border-cyan-600/50 dark:border-cyan-400/50"
         style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.15), 0 0 24px rgba(34,211,238,0.1)' }}
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.3 }}
       >
         <div className="text-[13px] font-mono text-cyan-700 dark:text-cyan-200 font-semibold">
           Mu = 245.8 kN·m
@@ -153,7 +118,7 @@ const EngineeringMockup = memo(() => {
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 dark:bg-emerald-400 shadow-sm shadow-emerald-500/50 dark:shadow-emerald-400/50" />
           Safe Design
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 });
