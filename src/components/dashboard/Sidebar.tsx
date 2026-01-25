@@ -501,7 +501,7 @@ export const Sidebar = ({
         {/* Scrollable Chat List */}
         <div className="flex-1 overflow-hidden">
           <ScrollArea className="h-full">
-            <div className="py-1 px-1 pr-2">
+            <div className="py-1 px-2 pr-3">
               <SidebarMenu className="space-y-0.5">
               {isLoadingChats ? (
                 // Skeleton UI - 5 placeholder items
@@ -538,7 +538,7 @@ return <SidebarMenuItem key={chat.sessionId} className={cn("relative", index > 0
                         e.preventDefault();
                         if (!showChatSelection) onLoadChat(chat);
                       }
-                    }} className={cn("flex-1 h-auto py-3.5 px-3 rounded-xl overflow-hidden cursor-pointer", "hover:bg-muted/50 hover:shadow-sm", "border border-transparent hover:border-border/40", "active:scale-[0.98]", "transition-all duration-200 ease-out", isPinned && "bg-muted/30 border-border/30")}>
+                    }} className={cn("flex-1 h-auto py-3.5 px-3 rounded-xl cursor-pointer", "hover:bg-muted/50 hover:shadow-sm", "border border-transparent hover:border-border/40", "active:scale-[0.98]", "transition-all duration-200 ease-out", isPinned && "bg-muted/30 border-border/30")}>
                             <div className="w-full min-w-0 overflow-hidden space-y-2">
                               {/* Row 1: Icon + Title + Time + Star */}
                               <div className="flex items-center justify-between gap-2">
