@@ -630,9 +630,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
                       })}
                     </div>
                   ) : (
-                    <div className="w-5 h-5 rounded-full bg-black flex items-center justify-center">
-                      <Brain className="w-3.5 h-3.5 text-white/90" />
-                    </div>
+                    <Brain className="w-5 h-5 text-foreground" />
                   )}
                   <span className="text-sm font-medium text-foreground">{selectedMode}</span>
                   <ChevronDown className="w-3.5 h-3.5 text-muted-foreground ml-0.5" />
@@ -676,9 +674,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
           ) : (
             // Single mode - just show a simple label
             <div className="h-9 px-3 rounded-xl flex items-center gap-2 text-muted-foreground">
-              <div className="w-5 h-5 rounded-full bg-black flex items-center justify-center">
-                <Brain className="w-3.5 h-3.5 text-white/90" />
-              </div>
+              <Brain className="w-5 h-5 text-foreground" />
               <span className="text-sm font-medium">AYN</span>
             </div>
           )}
