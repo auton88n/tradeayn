@@ -27,13 +27,12 @@ const DefaultPlaceholder = ({ minHeight }: { minHeight: string }) => (
 export const LazyLoad = memo(({ 
   children, 
   placeholder,
-  rootMargin = '200px', // Increased margin for earlier loading
-  threshold = 0.01, // Lower threshold for earlier trigger
+  rootMargin = '400px', // Even larger margin - load way before visible
+  threshold = 0,
   debugLabel = 'LazyLoad',
   minHeight = '200px'
 }: LazyLoadProps) => {
   const [isVisible, setIsVisible] = useState(false);
-  const [hasLoaded, setHasLoaded] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   // Store debug ref to avoid re-renders from context changes
   const debugRef = useRef(useDebugContextOptional());
@@ -46,10 +45,6 @@ export const LazyLoad = memo(({
       ([entry]) => {
         if (entry.isIntersecting) {
           setIsVisible(true);
-          // Small delay to ensure smooth transition
-          requestAnimationFrame(() => {
-            setHasLoaded(true);
-          });
           observer.disconnect();
           
           // Debug logging (read current value)
@@ -75,17 +70,9 @@ export const LazyLoad = memo(({
       ref={ref}
       style={{ 
         contain: 'layout style',
-        minHeight: hasLoaded ? 'auto' : minHeight,
       }}
-      className="transition-opacity duration-300"
     >
-      {isVisible ? (
-        <div className={hasLoaded ? 'opacity-100' : 'opacity-0'} style={{ transition: 'opacity 0.3s ease-out' }}>
-          {children}
-        </div>
-      ) : (
-        placeholderContent
-      )}
+      {isVisible ? children : placeholderContent}
     </div>
   );
 });
