@@ -13,17 +13,12 @@ const placeholders = ["What's on your mind?", "Ask AYN anything...", "How can I 
 export const LandingChatInput: React.FC<LandingChatInputProps> = ({ onSendAttempt }) => {
   const [inputMessage, setInputMessage] = useState('');
   const [currentPlaceholder, setCurrentPlaceholder] = useState(0);
-  const [showPlaceholder, setShowPlaceholder] = useState(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Rotate placeholders
   useEffect(() => {
     const interval = setInterval(() => {
-      setShowPlaceholder(false);
-      setTimeout(() => {
-        setCurrentPlaceholder((prev) => (prev + 1) % placeholders.length);
-        setShowPlaceholder(true);
-      }, 200);
+      setCurrentPlaceholder((prev) => (prev + 1) % placeholders.length);
     }, 4000);
     return () => clearInterval(interval);
   }, []);
@@ -80,7 +75,7 @@ export const LandingChatInput: React.FC<LandingChatInputProps> = ({ onSendAttemp
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder=""
+              placeholder={placeholders[currentPlaceholder]}
               className={cn(
                 "resize-none border-0 bg-transparent p-0 py-[10px] min-h-[44px] max-h-[120px]",
                 "focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0",
@@ -88,20 +83,6 @@ export const LandingChatInput: React.FC<LandingChatInputProps> = ({ onSendAttemp
               )}
               rows={1}
             />
-            
-            {/* Animated placeholder */}
-            {!inputMessage && (
-              <div 
-                className={cn(
-                  "absolute top-[10px] left-0 pointer-events-none text-muted-foreground/50",
-                  "text-base leading-normal",
-                  "transition-opacity duration-200",
-                  showPlaceholder ? "opacity-100" : "opacity-0"
-                )}
-              >
-                {placeholders[currentPlaceholder]}
-              </div>
-            )}
           </div>
 
           {/* Send Button - Only shows when there's text */}
