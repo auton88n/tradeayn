@@ -24,6 +24,18 @@
     <meta name="robots" content="index, follow" />
     <meta name="application-name" content="AYN AI" />
 
+    <!-- Geo Tags for Saudi Arabia -->
+    <meta name="geo.region" content="SA" />
+    <meta name="geo.placename" content="Riyadh" />
+    <meta name="geo.position" content="24.7136;46.6753" />
+    <meta name="ICBM" content="24.7136, 46.6753" />
+
+    <!-- Alternate Languages (hreflang) -->
+    <link rel="alternate" hreflang="en" href="https://aynn.io/" />
+    <link rel="alternate" hreflang="ar" href="https://aynn.io/" />
+    <link rel="alternate" hreflang="fr" href="https://aynn.io/" />
+    <link rel="alternate" hreflang="x-default" href="https://aynn.io/" />
+
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://aynn.io/" />
@@ -53,6 +65,63 @@
     <link rel="prefetch" href="/src/pages/Settings.tsx" as="script">
     <link rel="prefetch" href="/src/pages/Support.tsx" as="script">
     <link rel="prefetch" href="/src/pages/Pricing.tsx" as="script">
+
+    <!-- Enhanced JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "AYN AI",
+      "alternateName": ["AYN", "عين AI", "عين"],
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web Browser",
+      "offers": {
+        "@type": "AggregateOffer",
+        "priceCurrency": "USD",
+        "lowPrice": "0",
+        "highPrice": "79",
+        "offerCount": "5"
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "ratingCount": "30000"
+      },
+      "inLanguage": ["en", "ar", "fr"],
+      "description": "AYN AI is an intelligent AI assistant platform designed for Saudi Arabia with bilingual Arabic and English support. Features include AI employees, document generation, data analysis, and business automation.",
+      "url": "https://aynn.io",
+      "image": "https://aynn.io/og-image.png",
+      "provider": {
+        "@type": "Organization",
+        "name": "AYN AI",
+        "url": "https://aynn.io"
+      }
+    }
+    </script>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "AYN AI",
+      "alternateName": ["AYN", "عين AI"],
+      "url": "https://aynn.io",
+      "logo": "https://aynn.io/ayn-logo.png",
+      "description": "Intelligent AI assistant platform - مساعد الذكاء الاصطناعي الذكي",
+      "foundingDate": "2024",
+      "address": {
+        "@type": "PostalAddress",
+        "addressCountry": "SA",
+        "addressLocality": "Riyadh"
+      },
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "customer support",
+        "url": "https://aynn.io/support",
+        "availableLanguage": ["English", "Arabic", "French"]
+      }
+    }
+    </script>
     
   
   

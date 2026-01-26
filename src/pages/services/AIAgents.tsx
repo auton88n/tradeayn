@@ -204,6 +204,7 @@ const AIAgents = () => {
         canonical="/services/ai-agents"
         keywords="AI agents, chatbots, customer support AI, lead qualification, business AI"
         jsonLd={{ '@graph': [breadcrumbSchema, serviceSchema] }}
+        language={language as 'en' | 'ar' | 'fr'}
       />
       <div className="min-h-screen bg-neutral-950 text-white">
         {/* Back Button */}

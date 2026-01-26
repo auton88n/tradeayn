@@ -183,7 +183,8 @@ const CivilEngineering = () => {
         description="Professional structural calculators for columns, beams, slabs, foundations, and retaining walls. Features 3D visualization and AI-powered analysis." 
         canonical="/services/civil-engineering" 
         keywords="civil engineering, structural calculator, beam calculator, column design, foundation calculator, 3D visualization, DXF export" 
-        jsonLd={{ '@graph': [breadcrumbSchema, serviceSchema] }} 
+        jsonLd={{ '@graph': [breadcrumbSchema, serviceSchema] }}
+        language={language as 'en' | 'ar' | 'fr'}
       />
       
       <div className="min-h-screen bg-neutral-950 text-white">

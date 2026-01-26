@@ -206,6 +206,7 @@ const Automation = () => {
         canonical="/services/automation"
         keywords="business automation, workflow automation, process automation, productivity, efficiency"
         jsonLd={{ '@graph': [breadcrumbSchema, serviceSchema] }}
+        language={language as 'en' | 'ar' | 'fr'}
       />
       <div className="min-h-screen bg-neutral-950 text-white">
         {/* Back Button */}

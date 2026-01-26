@@ -195,6 +195,7 @@ const Ticketing = () => {
         canonical="/services/ticketing"
         keywords="ticketing system, QR code tickets, event management, mobile scanning, ticket validation"
         jsonLd={breadcrumbSchema}
+        language={language as 'en' | 'ar' | 'fr'}
       />
       
       <div className="min-h-screen bg-background">
