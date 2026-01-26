@@ -422,3 +422,36 @@ export const getFriendlyError = (error: unknown): ErrorMessage => {
   const code = parseErrorToCode(error);
   return getErrorMessage(code);
 };
+
+// ============================================
+// AI Chat Handling Messages (AYN personality)
+// ============================================
+
+/**
+ * Friendly handling messages that maintain AYN's personality
+ * Used instead of technical error messages to keep the experience natural
+ */
+export const HANDLING_MESSAGES = [
+  "hmm, let me think about that differently...",
+  "one sec, gathering my thoughts...",
+  "i got a little distracted! could you try that again?",
+  "let me take another look at this...",
+  "oops, my brain glitched! try once more?",
+  "still processing... want to try again?",
+  "that was tricky! let's give it another shot.",
+  "my circuits got tangled there. mind trying again?",
+];
+
+/**
+ * Get a random friendly handling message for errors
+ * Maintains AYN's helpful, casual personality
+ */
+export const getHandlingMessage = (): string => {
+  const index = Math.floor(Math.random() * HANDLING_MESSAGES.length);
+  return HANDLING_MESSAGES[index];
+};
+
+/**
+ * Friendly rate limit message
+ */
+export const RATE_LIMIT_MESSAGE = "whoa, too fast! give me a moment to catch up...";

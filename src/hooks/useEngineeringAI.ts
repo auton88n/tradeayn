@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { AIEngineeringResponse, CalculatorType } from '@/lib/engineeringKnowledge';
-import { toast } from '@/hooks/use-toast';
+import { getHandlingMessage } from '@/lib/errorMessages';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -76,16 +76,15 @@ export const useEngineeringAI = ({
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to get AI response';
       setError(errorMessage);
-      toast({
-        title: "AI Error",
-        description: errorMessage,
-        variant: "destructive"
-      });
 
-      // Add error message to chat
+      if (import.meta.env.DEV) {
+        console.error('AI error:', err);
+      }
+
+      // Add friendly handling message to chat (no toast)
       const errorAssistantMessage: Message = {
         role: 'assistant',
-        content: "I apologize, but I encountered an error. Please try again or rephrase your question.",
+        content: getHandlingMessage(),
         timestamp: new Date()
       };
       setMessages(prev => [...prev, errorAssistantMessage]);
