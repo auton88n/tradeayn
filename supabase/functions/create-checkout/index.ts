@@ -66,6 +66,8 @@ serve(async (req) => {
         },
       ],
       mode: "subscription",
+      // Enable Apple Pay, Google Pay, and card payments automatically
+      payment_method_types: ['card'],
       success_url: `${origin}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/subscription-canceled`,
       metadata: {

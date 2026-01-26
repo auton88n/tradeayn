@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Check, Crown, Zap, Building2, Sparkles, ArrowLeft, Loader2, Shield, CreditCard, ChevronDown, Brain, Star, X } from 'lucide-react';
+import { Check, Crown, Zap, Building2, Sparkles, ArrowLeft, Loader2, Shield, CreditCard, ChevronDown, Brain, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -28,7 +27,7 @@ const tierAccentColors: Record<SubscriptionTier, string> = {
   starter: 'from-blue-500/20 to-blue-600/10',
   pro: 'from-purple-500/20 to-purple-600/10',
   business: 'from-amber-500/20 to-amber-600/10',
-  enterprise: 'from-yellow-400/20 to-amber-500/10',
+  enterprise: 'from-slate-400/20 to-cyan-500/10',
 };
 
 const tierGlowColors: Record<SubscriptionTier, string> = {
@@ -36,7 +35,7 @@ const tierGlowColors: Record<SubscriptionTier, string> = {
   starter: 'group-hover:shadow-[0_0_50px_-10px_rgba(59,130,246,0.4)]',
   pro: 'shadow-[0_0_60px_-10px_rgba(139,92,246,0.3)] group-hover:shadow-[0_0_80px_-10px_rgba(139,92,246,0.5)]',
   business: 'group-hover:shadow-[0_0_50px_-10px_rgba(245,158,11,0.4)]',
-  enterprise: 'group-hover:shadow-[0_0_60px_-10px_rgba(250,204,21,0.4)]',
+  enterprise: 'group-hover:shadow-[0_0_60px_-10px_rgba(148,163,184,0.4)]',
 };
 
 const tierCheckColors: Record<SubscriptionTier, string> = {
@@ -44,7 +43,7 @@ const tierCheckColors: Record<SubscriptionTier, string> = {
   starter: 'bg-blue-500',
   pro: 'bg-purple-500',
   business: 'bg-amber-500',
-  enterprise: 'bg-yellow-500',
+  enterprise: 'bg-cyan-500',
 };
 
 const tierButtonStyles: Record<SubscriptionTier, string> = {
@@ -52,7 +51,7 @@ const tierButtonStyles: Record<SubscriptionTier, string> = {
   starter: 'bg-blue-500 hover:bg-blue-600 text-white',
   pro: 'bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white',
   business: 'bg-amber-500 hover:bg-amber-600 text-white',
-  enterprise: 'bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-500 hover:to-amber-600 text-black font-semibold',
+  enterprise: 'bg-gradient-to-r from-slate-400 to-cyan-500 hover:from-slate-500 hover:to-cyan-600 text-white font-semibold',
 };
 
 const faqItems = [
@@ -82,7 +81,7 @@ const faqItems = [
   },
   {
     question: 'What is included in Enterprise?',
-    answer: 'Enterprise plans include custom credit limits, dedicated account manager, tailored AI solutions, and 24/7 priority support. Contact our sales team to discuss your needs.'
+    answer: 'Enterprise plans include custom credit limits, tailored AI solutions, and 24/7 priority support. Contact our sales team to discuss your needs.'
   }
 ];
 
@@ -169,44 +168,17 @@ const Pricing = () => {
       />
       
       <div className="min-h-screen bg-background relative overflow-hidden">
-        {/* Animated Background */}
+        {/* Static Background - No animations for performance */}
         <div className="fixed inset-0 -z-10 overflow-hidden">
-          <motion.div 
-            className="absolute top-20 left-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[100px]"
-            animate={{ 
-              x: [0, 30, 0],
-              y: [0, -20, 0],
-              scale: [1, 1.1, 1]
-            }}
-            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-          />
-          <motion.div 
-            className="absolute bottom-20 right-1/4 w-[400px] h-[400px] bg-blue-500/10 rounded-full blur-[100px]"
-            animate={{ 
-              x: [0, -20, 0],
-              y: [0, 30, 0],
-              scale: [1.1, 1, 1.1]
-            }}
-            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-          />
-          <motion.div 
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-amber-500/5 rounded-full blur-[120px]"
-            animate={{ 
-              scale: [1, 1.2, 1],
-              opacity: [0.5, 0.3, 0.5]
-            }}
-            transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-          />
+          <div className="absolute top-20 left-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[100px]" />
+          <div className="absolute bottom-20 right-1/4 w-[400px] h-[400px] bg-blue-500/10 rounded-full blur-[100px]" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-amber-500/5 rounded-full blur-[120px]" />
           <div className="absolute inset-0 bg-noise opacity-[0.02]" />
         </div>
 
         <div className="container max-w-7xl mx-auto px-4 py-12 relative z-10">
           {/* Back Button */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.4 }}
-          >
+          <div className="animate-fade-in">
             <Button
               variant="ghost"
               onClick={() => navigate('/')}
@@ -215,24 +187,14 @@ const Pricing = () => {
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Home
             </Button>
-          </motion.div>
+          </div>
           
           {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-16"
-          >
+          <div className="text-center mb-16 animate-fade-in">
             {/* Brain Logo */}
-            <motion.div 
-              className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-foreground mb-8"
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-            >
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-foreground mb-8">
               <Brain className="w-12 h-12 text-background" />
-            </motion.div>
+            </div>
             
             <h1 className="text-4xl md:text-6xl font-display font-bold mb-6 tracking-tight">
               Choose Your Plan
@@ -242,7 +204,7 @@ const Pricing = () => {
               <br className="hidden md:block" />
               Upgrade or downgrade anytime.
             </p>
-          </motion.div>
+          </div>
 
           {/* Loading State */}
           {isLoading ? (
@@ -260,39 +222,34 @@ const Pricing = () => {
                   const isEnterprise = tier === 'enterprise';
                   
                   return (
-                    <motion.div
+                    <div
                       key={tier}
-                      initial={{ opacity: 0, y: 30 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 + 0.3, duration: 0.5 }}
-                      className="relative group"
+                      className="relative group animate-fade-in"
+                      style={{ 
+                        animationDelay: `${index * 100}ms`,
+                        contain: 'content'
+                      }}
                     >
                       {/* Popular Badge */}
-                      <AnimatePresence>
-                        {isPopular && (
-                          <motion.div
-                            initial={{ opacity: 0, y: -10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="absolute -top-4 left-1/2 -translate-x-1/2 z-10"
-                          >
-                            <Badge className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-4 py-1.5 text-sm font-medium shadow-lg">
-                              <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-                              Most Popular
-                            </Badge>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
+                      {isPopular && (
+                        <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
+                          <Badge className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-4 py-1.5 text-sm font-medium shadow-lg">
+                            <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                            Most Popular
+                          </Badge>
+                        </div>
+                      )}
 
                       {/* Card */}
                       <div
                         className={cn(
-                          'relative p-6 h-full flex flex-col rounded-3xl transition-all duration-500',
+                          'relative p-6 h-full flex flex-col rounded-3xl transition-all duration-300',
                           'bg-card/40 backdrop-blur-xl',
                           'border border-white/10 dark:border-white/5',
-                          'hover:scale-[1.02] hover:border-white/20 dark:hover:border-white/10',
+                          'hover:border-white/20 dark:hover:border-white/10',
                           tierGlowColors[tier],
                           isCurrentPlan && 'ring-2 ring-primary',
-                          isEnterprise && 'border-yellow-400/30 dark:border-yellow-400/20'
+                          isEnterprise && 'border-cyan-400/30 dark:border-cyan-400/20'
                         )}
                       >
                         {/* Gradient Overlay */}
@@ -318,7 +275,7 @@ const Pricing = () => {
                               tier === 'starter' && 'bg-blue-500/10',
                               tier === 'pro' && 'bg-purple-500/10',
                               tier === 'business' && 'bg-amber-500/10',
-                              tier === 'enterprise' && 'bg-yellow-500/10'
+                              tier === 'enterprise' && 'bg-cyan-500/10'
                             )}>
                               {tierIcons[tier]}
                             </div>
@@ -353,16 +310,10 @@ const Pricing = () => {
                             )}
                           </div>
 
-                          {/* Features */}
+                          {/* Features - No individual animations */}
                           <ul className="space-y-3 mb-6 flex-grow">
                             {config.features.map((feature, i) => (
-                              <motion.li 
-                                key={i} 
-                                className="flex items-start gap-2.5"
-                                initial={{ opacity: 0, x: -10 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: index * 0.1 + i * 0.05 + 0.5 }}
-                              >
+                              <li key={i} className="flex items-start gap-2.5">
                                 <div className={cn(
                                   'w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5',
                                   tierCheckColors[tier]
@@ -370,7 +321,7 @@ const Pricing = () => {
                                   <Check className="w-2.5 h-2.5 text-white" />
                                 </div>
                                 <span className="text-sm text-foreground/80">{feature}</span>
-                              </motion.li>
+                              </li>
                             ))}
                           </ul>
 
@@ -397,18 +348,13 @@ const Pricing = () => {
                           </Button>
                         </div>
                       </div>
-                    </motion.div>
+                    </div>
                   );
                 })}
               </div>
 
               {/* Trust Indicators */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.8 }}
-                className="flex flex-wrap items-center justify-center gap-6 md:gap-12 text-sm text-muted-foreground mb-6"
-              >
+              <div className="flex flex-wrap items-center justify-center gap-6 md:gap-12 text-sm text-muted-foreground mb-6 animate-fade-in">
                 <div className="flex items-center gap-2">
                   <Shield className="w-5 h-5" />
                   <span>Secure Payments</span>
@@ -421,27 +367,17 @@ const Pricing = () => {
                   <Shield className="w-5 h-5" />
                   <span>No Hidden Fees</span>
                 </div>
-              </motion.div>
+              </div>
 
               {/* Policy Note */}
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.9 }}
-                className="text-center text-xs text-muted-foreground/70 mb-20"
-              >
+              <p className="text-center text-xs text-muted-foreground/70 mb-20 animate-fade-in">
                 By subscribing, you agree to our Terms of Service and No Refund Policy.
-              </motion.p>
+              </p>
             </>
           )}
 
           {/* FAQ Section */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1 }}
-            className="max-w-2xl mx-auto"
-          >
+          <div className="max-w-2xl mx-auto animate-fade-in">
             <h2 className="text-2xl md:text-3xl font-semibold text-center mb-8">
               Frequently Asked Questions
             </h2>
@@ -469,7 +405,7 @@ const Pricing = () => {
                 </Collapsible>
               ))}
             </div>
-          </motion.div>
+          </div>
         </div>
 
         {/* Enterprise Contact Modal */}
@@ -477,7 +413,7 @@ const Pricing = () => {
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <Star className="w-5 h-5 text-yellow-500" />
+                <Star className="w-5 h-5 text-cyan-500" />
                 Enterprise Inquiry
               </DialogTitle>
               <DialogDescription>
@@ -523,7 +459,7 @@ const Pricing = () => {
                   Cancel
                 </Button>
                 <Button
-                  className="flex-1 bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-500 hover:to-amber-600 text-black font-semibold"
+                  className="flex-1 bg-gradient-to-r from-slate-400 to-cyan-500 hover:from-slate-500 hover:to-cyan-600 text-white font-semibold"
                   onClick={handleEnterpriseSubmit}
                   disabled={isSubmitting}
                 >
