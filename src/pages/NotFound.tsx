@@ -41,7 +41,7 @@ const NotFound = () => {
           
           <Button 
             onClick={() => window.location.href = "/"}
-            className="bg-gradient-primary hover:scale-105 transition-all neon-purple"
+            className="bg-gradient-primary hover:scale-105 transition-all neon-purple text-white"
           >
             <Home className="w-4 h-4 mr-2" />
             {t('notFound.returnHome')}
