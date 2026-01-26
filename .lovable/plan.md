@@ -1,119 +1,138 @@
 
-# Pricing Page Visual Fix: Colors & Most Popular Badge
 
-## Issues Identified
+# Tutorial Content Updates, Pricing Card Fixes & Color Swap
 
-### 1. "Most Popular" Badge Not Showing Properly
-The badge is positioned with `-top-4` but gets clipped. The Pro card needs:
-- Extra top margin on the card wrapper to make room for the badge
-- Ensure `overflow-visible` is set on parent containers
+## Summary
 
-### 2. Color Scheme Issues
-Current colors don't look cohesive. The plan is to create a more unified, premium color palette:
+This plan addresses three main issues:
 
-| Tier | Current | New Colors |
-|------|---------|------------|
-| Free | Muted gray | Neutral/slate tones |
-| Starter | Blue | Keep blue but more vibrant |
-| Pro | Purple | Richer purple gradient |
-| Business | Amber | Golden amber |
-| Enterprise | Slate/Cyan | Premium silver/white |
+1. **Tutorial Updates** - Shorten descriptions and update illustrations to match current UI
+2. **Pro Card Badge Fix** - Fix "Most Popular" badge being clipped at the top  
+3. **Pricing Color Swap** - Business becomes Emerald/Green, Enterprise gets Amber/Gold colors
 
 ---
 
-## Implementation Details
+## 1. Tutorial Description Updates
 
-### Fix 1: Most Popular Badge Visibility
+Shorten all tutorial step descriptions to be more concise:
 
-Update the card wrapper for the Pro tier to have extra top margin:
+| Step | Current Description | New (Shorter) Description |
+|------|---------------------|---------------------------|
+| **Meet AYN** | Long explanation about emotional response and tasks | "Your intelligent AI companion for conversations, documents, and engineering tools." |
+| **Emotional Intelligence** | Full 11-emotion bulleted list | "AYN shows 11 emotions through eye color — from Calm (blue) to Curious (magenta)." |
+| **Empathetic Responses** | Detailed explanation of ember particles | "When you share emotions, AYN responds with warmth and genuine care." |
+| **Start a Conversation** | Explanation of modes | "Type your message below. Use the mode selector for specialized help." |
+| **Generate Documents** | Mentions credit costs | "AYN creates stunning PDFs and Excel files. Just ask!" |
+| **Upload & Analyze Files** | Detailed capability list | "Upload documents or images using the + button for analysis." |
+| **Your Credits** | Explanation of reset logic | "Track usage in the sidebar. Free: 5/day, Paid: monthly allowance." |
+| **Engineering Tools** | Full 7-tool bulleted list | "Access 7 professional calculators with 3D visualization and AI analysis." |
+| **Your Sidebar** | Explanation of pinning/searching | "Access chat history, start new conversations, and search past chats." |
+| **Your Profile** | List of settings | "Click your avatar to access settings, subscriptions, or sign out." |
+
+---
+
+## 2. Tutorial Illustration Updates
+
+The current illustrations need updates to better match the actual UI design. Here are the specific changes:
+
+### A. ChatIllustration (chat step)
+Update to match current ChatInput design:
+- Add the "Eng" and "New" buttons row below the input
+- Update placeholder text style
+- Match current rounded corners and padding
+
+### B. NavigationIllustration (navigation step)
+Update to match current Sidebar design:
+- Add "Eng" button alongside "New Chat" 
+- Update the header to show "AYN AI" with status dot
+- Add proper search bar styling
+
+### C. CreditsIllustration (credits step)
+Update to match current CreditUpgradeCard:
+- Show the circular progress indicator style
+- Update layout to match compact card design
+
+### D. ProfileIllustration (profile step)
+Update to match current profile dropdown:
+- Add "Upgrade Plan" option with purple gradient
+- Add "Tutorial" and "Support" options
+- Match current styling with icon backgrounds
+
+### E. EngineeringIllustration (engineering step)
+Update to show all 7 tools:
+- Add more calculator options (Slab, Retaining Wall, Grading, Parking)
+- Update styling to match current design
+
+---
+
+## 3. Pro Card Badge Fix
+
+### Problem
+The "Most Popular" badge on the Pro card is clipped at the top due to `contain: 'content'` CSS property being applied to all cards.
+
+### Solution
+Remove `contain: 'content'` from the Pro card so the badge can overflow properly:
 
 ```tsx
-<div
-  key={tier}
-  className={cn(
-    "relative group animate-fade-in",
-    isPopular && "mt-6"  // Add top margin for badge space
-  )}
->
+// Current (line 233-234):
+style={{ 
+  animationDelay: `${index * 100}ms`,
+  contain: 'content'
+}}
+
+// Updated - Conditionally remove contain for popular card:
+style={{ 
+  animationDelay: `${index * 100}ms`,
+  contain: isPopular ? undefined : 'content'
+}}
 ```
 
-Also ensure the badge has proper z-index and shadow for visibility:
+Also add `overflow-visible` to the card wrapper:
 
 ```tsx
-{isPopular && (
-  <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20">
-    <Badge className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-4 py-1.5 text-sm font-medium shadow-lg shadow-purple-500/30 border border-purple-400/30">
-      <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-      Most Popular
-    </Badge>
-  </div>
+className={cn(
+  "relative group animate-fade-in overflow-visible",
+  isPopular && "mt-6"
 )}
 ```
 
-### Fix 2: Unified Color Palette
+---
 
-Update color mappings for a more premium, cohesive look:
+## 4. Pricing Card Color Swap
+
+### Current vs New Colors
+
+| Tier | Current | New |
+|------|---------|-----|
+| **Business** | Amber/Orange | **Emerald/Green** |
+| **Enterprise** | Slate/Silver | **Amber/Orange** (current Business) |
+
+### Specific Color Changes
 
 ```typescript
-const tierAccentColors: Record<SubscriptionTier, string> = {
-  free: 'from-slate-500/15 to-slate-600/5',
-  starter: 'from-sky-500/20 to-blue-600/10',
-  pro: 'from-violet-500/25 to-purple-600/15',
-  business: 'from-amber-400/20 to-orange-500/10',
-  enterprise: 'from-slate-300/20 to-slate-400/10',
-};
+// tierAccentColors
+business: 'from-emerald-500/20 to-green-600/10',   // Was amber
+enterprise: 'from-amber-400/20 to-orange-500/10',  // Was slate
 
-const tierGlowColors: Record<SubscriptionTier, string> = {
-  free: 'hover:shadow-[0_0_30px_-10px_rgba(100,116,139,0.3)]',
-  starter: 'hover:shadow-[0_0_40px_-10px_rgba(14,165,233,0.4)]',
-  pro: 'shadow-[0_0_50px_-10px_rgba(139,92,246,0.4)] hover:shadow-[0_0_70px_-10px_rgba(139,92,246,0.5)]',
-  business: 'hover:shadow-[0_0_40px_-10px_rgba(251,191,36,0.4)]',
-  enterprise: 'hover:shadow-[0_0_40px_-10px_rgba(226,232,240,0.3)]',
-};
+// tierGlowColors  
+business: 'hover:shadow-[0_0_40px_-10px_rgba(16,185,129,0.4)]',   // Emerald glow
+enterprise: 'hover:shadow-[0_0_40px_-10px_rgba(251,191,36,0.4)]', // Amber glow
 
-const tierCheckColors: Record<SubscriptionTier, string> = {
-  free: 'bg-slate-500',
-  starter: 'bg-sky-500',
-  pro: 'bg-violet-500',
-  business: 'bg-amber-500',
-  enterprise: 'bg-slate-400',
-};
+// tierCheckColors
+business: 'bg-emerald-500',   // Was amber
+enterprise: 'bg-amber-500',   // Was slate
 
-const tierButtonStyles: Record<SubscriptionTier, string> = {
-  free: 'bg-slate-600 hover:bg-slate-500 text-white',
-  starter: 'bg-sky-500 hover:bg-sky-600 text-white',
-  pro: 'bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white shadow-lg shadow-purple-500/25',
-  business: 'bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white',
-  enterprise: 'bg-gradient-to-r from-slate-200 to-slate-300 hover:from-slate-300 hover:to-slate-400 text-slate-800 font-semibold',
-};
-```
+// tierButtonStyles
+business: 'bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white',
+enterprise: 'bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white',
 
-### Fix 3: Icon Background Colors
+// Icon backgrounds
+tier === 'business' && 'bg-emerald-500/10',
+tier === 'enterprise' && 'bg-amber-400/10',
 
-Update to match new palette:
-
-```tsx
-tier === 'free' && 'bg-slate-500/10',
-tier === 'starter' && 'bg-sky-500/10',
-tier === 'pro' && 'bg-violet-500/10',
-tier === 'business' && 'bg-amber-400/10',
-tier === 'enterprise' && 'bg-slate-400/10'
-```
-
-### Fix 4: Pro Card Highlight Border
-
-Add special border to Pro card to emphasize "Most Popular":
-
-```tsx
-isPopular && 'ring-2 ring-purple-500/50 border-purple-400/30'
-```
-
-### Fix 5: Enterprise Card Premium Look
-
-Give Enterprise a premium silver/platinum appearance with subtle gradient border:
-
-```tsx
-isEnterprise && 'border-slate-400/40 dark:border-slate-500/30'
+// Border styling
+isBusiness && 'border-emerald-400/30 dark:border-emerald-500/20'
+// Remove special enterprise border, or add amber variant
 ```
 
 ---
@@ -122,22 +141,30 @@ isEnterprise && 'border-slate-400/40 dark:border-slate-500/30'
 
 | File | Changes |
 |------|---------|
-| `src/pages/Pricing.tsx` | Update all color mappings, add margin for badge visibility, enhance Pro card highlighting |
+| `src/types/tutorial.types.ts` | Shorten all tutorial step descriptions |
+| `src/components/tutorial/TutorialIllustrations.tsx` | Update ChatIllustration, NavigationIllustration, CreditsIllustration, ProfileIllustration, EngineeringIllustration to match current UI |
+| `src/pages/Pricing.tsx` | Fix Pro card overflow issue, swap Business/Enterprise colors |
 
 ---
 
 ## Visual Summary
 
-### Before → After
+### Tutorial Changes
+- All 10 steps get shorter, punchier descriptions
+- "Generate Documents" now says "AYN creates stunning PDFs and Excel files. Just ask!" (no credit costs)
+- Illustrations updated to match current sidebar, chat input, and profile menu designs
 
-- **Free**: Dull gray → Clean slate
-- **Starter**: Basic blue → Vibrant sky blue  
-- **Pro**: Standard purple → Rich violet with glow + highlighted border
-- **Business**: Amber → Golden gradient
-- **Enterprise**: Cyan mixed → Premium silver/platinum
+### Pricing Page After Changes
 
-### Most Popular Badge
-- Add `mt-6` margin to Pro card wrapper
-- Increase z-index to `z-20`
-- Add purple glow shadow for emphasis
-- Add subtle border for definition
+| Tier | Color Theme |
+|------|-------------|
+| Free | Slate (unchanged) |
+| Starter | Sky Blue (unchanged) |
+| Pro | Violet/Purple (unchanged, badge fixed) |
+| **Business** | **Emerald Green** (was amber) |
+| **Enterprise** | **Amber/Gold** (was slate) |
+
+### Pro Card Badge
+- "Most Popular" badge will display fully without clipping
+- Achieved by removing `contain: content` from Pro card specifically
+
