@@ -1,339 +1,268 @@
 
-# Enhanced Admin AI Assistant - Operations Control Center
+# Platform Updates: Enterprise Tier, Tutorial & Services Refinement
 
 ## Summary
 
-Upgrade the Admin AI Assistant to a powerful system operations control center with real-time metrics, executable actions, and comprehensive system awareness. The AI will have access to **operational and technical data only** - explicitly excluding sensitive business data like subscribers, revenue, and payment information.
+This plan covers three main updates:
+1. **Enterprise Tier**: Add a new "Contact Sales" tier that submits to the existing `contact_messages` table (viewable in admin)
+2. **Services Clarification**: Update what AYN can do vs what requires contacting the AYN team
+3. **Identity Refinement**: AYN only explains the "eye" meaning when asked
 
 ---
 
-## Security Boundaries
+## 1. Enterprise Tier Implementation
 
-### AI HAS Access To (Operational Data)
-| Data Category | Tables/Sources | Purpose |
-|--------------|----------------|---------|
-| Test Results | `test_results`, `test_runs`, `stress_test_metrics` | System reliability monitoring |
-| LLM Performance | `llm_usage_logs`, `llm_failures`, `llm_models` | AI health and fallback rates |
-| Rate Limits | `api_rate_limits` | Blocked users, violations |
-| Security Logs | `security_logs`, `threat_detection` | Security events (no emails) |
-| Support Tickets | `support_tickets` (status/count only) | Pending issues count |
-| Engineering Activity | `engineering_activity` | Calculator usage stats |
-| System Health | `webhook_health_metrics`, `system_status` | Uptime and health |
-| User Counts | `access_grants` (counts only) | Active/total users (no details) |
+### New Tier Configuration
 
-### AI DOES NOT Have Access To (Sensitive Data)
-| Excluded Data | Reason |
-|---------------|--------|
-| `user_subscriptions` | Revenue/payment data |
-| `credit_gifts` | Financial transactions |
-| `profiles` (personal details) | PII protection |
-| User emails | Privacy |
-| Payment history | Financial data |
-| Subscription tiers per user | Business intelligence |
+The Enterprise card will NOT have a Stripe integration - it submits a contact request to the `contact_messages` table with a special identifier.
 
----
+| Tier | Price | Button | Action |
+|------|-------|--------|--------|
+| Free | $0 | Get Started | Current behavior |
+| Starter | $9 | Upgrade | Stripe checkout |
+| Pro | $29 | Upgrade | Stripe checkout |
+| Business | $79 | Upgrade | Stripe checkout |
+| **Enterprise** | Contact Us | Contact Sales | Opens modal, submits to `contact_messages` |
 
-## Files to Modify
+### Enterprise Features (Updated - No "Custom integrations")
+
+```typescript
+enterprise: {
+  name: 'Enterprise',
+  price: -1, // -1 indicates "Contact Us"
+  priceId: null,
+  productId: null,
+  limits: { monthlyCredits: -1, monthlyEngineering: -1 },
+  features: [
+    'Custom credit allocation',
+    'Tailored AI solutions',
+    'Dedicated account manager',
+    '24/7 priority support'
+  ],
+}
+```
+
+### Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/components/admin/AdminAIAssistant.tsx` | Add stats panel, action execution, markdown rendering, dynamic suggestions |
-| `supabase/functions/admin-ai-assistant/index.ts` | Expanded operational context, updated prompt with boundaries, action handlers |
+| `src/contexts/SubscriptionContext.tsx` | Add Enterprise tier to `SUBSCRIPTION_TIERS` |
+| `src/pages/Pricing.tsx` | Add Enterprise card with contact modal, update grid to 5 columns |
+
+### Enterprise Contact Modal
+
+When user clicks "Contact Sales", open a modal with:
+- Company Name (required)
+- Contact Email (required)  
+- Message/Requirements (optional)
+
+On submit, insert into `contact_messages`:
+```typescript
+await supabase.from('contact_messages').insert({
+  name: companyName,
+  email: email,
+  message: `[ENTERPRISE INQUIRY]\n\n${requirements || 'User requested Enterprise pricing'}`
+});
+```
+
+The prefix `[ENTERPRISE INQUIRY]` allows easy filtering in admin support.
 
 ---
 
-## Implementation Details
+## 2. Admin Contact Messages View
 
-### 1. Backend: Expanded Context Queries (Edge Function)
+Currently, `contact_messages` are NOT displayed in the admin panel. I need to create a simple viewer or add them to an existing tab.
 
-Add operational data queries while explicitly avoiding sensitive tables:
+### Option: Add to Support Management
 
-```typescript
-// Test results stats (last 24 hours)
-const { data: testResults } = await supabase
-  .from('test_results')
-  .select('status, test_suite, created_at')
-  .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+Add a new tab/section in `SupportManagement.tsx` to show contact messages, OR create a separate component. The simplest approach is to add a "Contact Messages" section to the existing Support tab.
 
-// Calculate test pass rate
-const testStats = {
-  total: testResults?.length || 0,
-  passed: testResults?.filter(t => t.status === 'passed').length || 0,
-  failed: testResults?.filter(t => t.status === 'failed').length || 0,
-  passRate: testResults?.length > 0 
-    ? ((testResults.filter(t => t.status === 'passed').length / testResults.length) * 100).toFixed(1) + '%'
-    : '0%',
-  bySuite: {} // Group by test_suite
-};
+### Files to Modify
 
-// Support tickets (counts only, no personal data)
-const { count: openTickets } = await supabase
-  .from('support_tickets')
-  .select('*', { count: 'exact', head: true })
-  .eq('status', 'open');
+| File | Changes |
+|------|---------|
+| `src/components/admin/SupportManagement.tsx` | Add toggle between "Tickets" and "Contact Messages" views |
 
-const { count: pendingTickets } = await supabase
-  .from('support_tickets')
-  .select('*', { count: 'exact', head: true })
-  .eq('status', 'pending');
+### Implementation
 
-// Security events (high severity, no emails)
-const { data: securityEvents } = await supabase
-  .from('security_logs')
-  .select('action, severity, created_at, details')
-  .in('severity', ['high', 'critical'])
-  .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
-  .order('created_at', { ascending: false })
-  .limit(10);
-
-// Engineering calculator usage
-const { data: engineeringStats } = await supabase
-  .from('engineering_activity')
-  .select('activity_type, created_at')
-  .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
-
-// System health metrics
-const { data: healthMetrics } = await supabase
-  .from('webhook_health_metrics')
-  .select('success_count, failure_count, avg_response_time, created_at')
-  .order('created_at', { ascending: false })
-  .limit(1)
-  .single();
-```
-
-### 2. Backend: Updated System Prompt with Boundaries
-
-```typescript
-const ADMIN_SYSTEM_PROMPT = `You are AYN Admin Assistant, helping admins manage system operations.
-
-SYSTEM ACCESS (What you CAN see):
-- Test results and pass rates
-- LLM usage, costs, failures, and fallback rates
-- Rate limit violations and blocked users
-- Security logs and threat detection (action types, not personal data)
-- Support ticket counts (open/pending/closed)
-- Engineering calculator usage statistics
-- System health and uptime metrics
-- User counts (total/active only)
-
-SECURITY BOUNDARIES (What you CANNOT access):
-- Individual user emails or personal details
-- Subscription/payment information
-- Revenue data
-- User profiles with PII
-- Financial transactions
-
-AVAILABLE ACTIONS:
-- [ACTION:unblock_user:user_id] - Remove rate limit block from user
-- [ACTION:run_tests:suite_name] - Trigger test suite (api, security, calculator, all)
-- [ACTION:refresh_stats] - Refresh system metrics
-- [ACTION:view_section:section_name] - Navigate to admin section
-- [ACTION:clear_failures:hours] - Clear old failure logs
-
-RESPONSE GUIDELINES:
-- Use markdown formatting for clarity (tables, lists, code blocks)
-- Be proactive: suggest actions when issues are detected
-- Keep responses concise but actionable
-- Include specific numbers and percentages
-- Never attempt to access or discuss revenue/subscription data
-- If asked about sensitive data, explain you don't have access`;
-```
-
-### 3. Frontend: Stats Panel with Live Metrics
-
-Add a collapsible header showing real-time operational health:
-
+Add a simple toggle at the top:
 ```text
-+--------------------------------------------------------------------+
-|  AYN Admin Assistant                           [Gemini Flash]      |
-+--------------------------------------------------------------------+
-|  [Collapsible Stats Panel]                                         |
-|  +------------------+  +------------------+  +------------------+  |
-|  |  System Health   |  |  Test Pass Rate  |  |  Blocked Users   |  |
-|  |      98.2%       |  |      91.8%       |  |        2         |  |
-|  +------------------+  +------------------+  +------------------+  |
-|  +------------------+  +------------------+  +------------------+  |
-|  |  Open Tickets    |  |  LLM Fallbacks   |  |  Calc Usage 24h  |  |
-|  |       5          |  |      3.2%        |  |       47         |  |
-|  +------------------+  +------------------+  +------------------+  |
-+--------------------------------------------------------------------+
+[Tickets] [Contact Messages]
 ```
 
-### 4. Frontend: Functional Action Execution
+When "Contact Messages" is selected, fetch from `contact_messages` table and display similar card layout.
 
-Replace placeholder with real implementations:
+---
+
+## 3. Pricing Page Updates
+
+### Updated Tier Features
 
 ```typescript
-const executeAction = async (action: { type: string; params: string }) => {
-  try {
-    switch (action.type) {
-      case 'unblock_user':
-        await supabase.rpc('admin_unblock_user', { 
-          p_user_id: action.params 
-        });
-        toast.success('User unblocked successfully');
-        break;
-        
-      case 'run_tests':
-        const { data: session } = await supabase.auth.getSession();
-        await fetch(`${SUPABASE_URL}/functions/v1/ai-comprehensive-tester`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session?.access_token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ suite: action.params })
-        });
-        toast.success(`Running ${action.params} tests...`);
-        break;
-        
-      case 'refresh_stats':
-        await fetchStats();
-        toast.success('Stats refreshed');
-        break;
-        
-      case 'view_section':
-        // Emit event to navigate within admin panel
-        window.dispatchEvent(new CustomEvent('admin-navigate', { 
-          detail: action.params 
-        }));
-        break;
-    }
-    
-    // Refresh stats after action
-    fetchStats();
-  } catch (error) {
-    toast.error(`Action failed: ${error.message}`);
-  }
-};
+// SubscriptionContext.tsx updates
+free: {
+  features: ['5 credits/day', '10 engineering calcs', 'Basic support'],
+},
+starter: {
+  limits: { monthlyCredits: 500, monthlyEngineering: 50 },
+  features: ['500 credits/month', '50 engineering calcs', 'PDF & Excel generation', 'Email support'],
+},
+pro: {
+  features: ['1,000 credits/month', '200 engineering calcs', 'PDF & Excel generation', 'Priority support'],
+},
+business: {
+  limits: { monthlyCredits: 3000, monthlyEngineering: 500 },
+  features: ['3,000 credits/month', '500 engineering calcs', 'PDF & Excel generation', 'Priority support'],
+  // REMOVED: 'Team features', 'Unlimited engineering'
+},
 ```
 
-### 5. Frontend: Dynamic Quick Suggestions
+### Pricing Grid Layout
 
-Context-aware suggestions based on system state:
-
-```typescript
-const getQuickSuggestions = () => {
-  const suggestions = [
-    { icon: Activity, text: "Check system health" },
-    { icon: TestTube, text: "Show test pass rates" },
-  ];
-  
-  // Add conditional suggestions
-  if (stats.blockedUsers > 0) {
-    suggestions.push({ 
-      icon: UserCheck, 
-      text: `Unblock ${stats.blockedUsers} rate-limited users` 
-    });
-  }
-  
-  if (stats.openTickets > 0) {
-    suggestions.push({ 
-      icon: Ticket, 
-      text: `${stats.openTickets} open support tickets` 
-    });
-  }
-  
-  if (stats.failureRate > 5) {
-    suggestions.push({ 
-      icon: AlertTriangle, 
-      text: "Why is the failure rate high?" 
-    });
-  }
-  
-  return suggestions.slice(0, 6); // Max 6 suggestions
-};
-```
-
-### 6. Frontend: Markdown Rendering for AI Responses
-
-Use react-markdown for proper formatting:
-
+Change from 4-column to 5-column responsive grid:
 ```tsx
-import ReactMarkdown from 'react-markdown';
-
-// In ChatMessage component
-<div className="prose prose-sm dark:prose-invert max-w-none">
-  <ReactMarkdown>
-    {message.content}
-  </ReactMarkdown>
-</div>
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
 ```
+
+### Enterprise Card Styling
+
+- Distinct gradient: Gold/platinum styling (`from-gradient-to-br from-amber-400/20 to-yellow-600/10`)
+- "Contact Us" instead of price
+- Tagline: "Tailored for your business"
 
 ---
 
-## Stats Panel Component Design
-
-```tsx
-interface QuickStats {
-  systemHealth: number;      // % uptime
-  testPassRate: number;      // % pass rate
-  blockedUsers: number;      // count
-  openTickets: number;       // count
-  llmFallbackRate: number;   // %
-  calcUsage24h: number;      // count
-}
-
-const StatsPanel = ({ stats, onStatClick }: Props) => (
-  <Collapsible defaultOpen>
-    <CollapsibleTrigger className="flex items-center gap-2">
-      <Activity className="w-4 h-4" />
-      <span>Live System Stats</span>
-    </CollapsibleTrigger>
-    <CollapsibleContent>
-      <div className="grid grid-cols-3 gap-2 mt-2">
-        <StatCard 
-          label="System Health"
-          value={`${stats.systemHealth}%`}
-          status={stats.systemHealth > 95 ? 'green' : stats.systemHealth > 80 ? 'yellow' : 'red'}
-          onClick={() => onStatClick("Tell me about system health")}
-        />
-        {/* More stat cards... */}
-      </div>
-    </CollapsibleContent>
-  </Collapsible>
-);
-```
-
----
-
-## Response Format Enhancement
-
-The edge function will return enhanced data:
+## 4. Updated FAQ Items
 
 ```typescript
-return new Response(JSON.stringify({
-  content,           // AI response text
-  actions,           // Parsed actions from response
-  contextData,       // Full context (for debugging)
-  quickStats: {      // Pre-calculated stats for UI
-    systemHealth: calculateHealthScore(contextData),
-    testPassRate: contextData.testStats?.passRate || 0,
-    blockedUsers: contextData.rateLimits?.blockedUsers || 0,
-    openTickets: contextData.tickets?.open || 0,
-    llmFallbackRate: parseFloat(contextData.llmUsage24h?.fallbackRate) || 0,
-    calcUsage24h: contextData.engineering?.total || 0
+const faqItems = [
+  {
+    question: 'What are credits?',
+    answer: 'Credits are used for AI interactions. Free users get 5 credits per day (resets daily). Paid users receive their full monthly allowance upfront.'
+  },
+  {
+    question: 'What is PDF & Excel generation?',
+    answer: 'Paid users can ask AYN to generate professional documents. PDF generation costs 30 credits and Excel costs 25 credits.'
+  },
+  {
+    question: 'Can I upgrade or downgrade anytime?',
+    answer: 'Yes! You can change your plan at any time. Upgrades take effect immediately, and downgrades take effect at the end of your billing cycle.'
+  },
+  {
+    question: 'What happens if I run out of credits?',
+    answer: 'Free users wait until the next day for credits to reset. Paid users need to wait until their monthly reset or upgrade to a higher plan.'
+  },
+  {
+    question: 'Is there a free trial?',
+    answer: 'Our Free tier gives you 5 credits per day to try AYN - no credit card required.'
+  },
+  {
+    question: 'What is your refund policy?',
+    answer: 'All payments are final and non-refundable. You can cancel anytime and keep access until the end of your billing period.'
+  },
+  {
+    question: 'What is included in Enterprise?',
+    answer: 'Enterprise plans include custom credit limits, dedicated account manager, tailored AI solutions, and 24/7 priority support. Contact our sales team to discuss your needs.'
   }
-}));
+];
 ```
 
 ---
 
-## UI Improvements
+## 5. Tutorial Updates
 
-1. **Model Badge**: Change from "GPT-4" to "Gemini Flash" (accurate)
-2. **Stats Auto-Refresh**: Poll every 30 seconds
-3. **Click-to-Query**: Clicking a stat card asks the AI about it
-4. **Loading States**: Show skeleton loaders during stat fetch
-5. **Action Confirmation**: Confirm before executing destructive actions
+### Updated TUTORIAL_STEPS
+
+| Step | Title | Description |
+|------|-------|-------------|
+| meet-ayn | Meet AYN | "AYN is your intelligent AI companion. The eye responds emotionally to your conversations and helps with daily tasks, documents, and engineering calculations." |
+| emotions | Emotional Intelligence | Full list of 11 emotions with colors (Calm=Blue, Comfort=Rose, Supportive=Beige, Happy=Gold, Excited=Coral, Thinking=Indigo, Curious=Magenta, Sad=Lavender, Frustrated=Orange, Mad=Crimson, Bored=Slate) |
+| empathy | Empathetic Responses | Keep current |
+| chat | Start a Conversation | Keep current |
+| **documents** | **Generate Documents** | **NEW**: "Paid users can generate professional PDFs (30 credits) and Excel files (25 credits). Just ask AYN to create a document for you." |
+| files | Upload & Analyze Files | Keep current |
+| credits | Your Credits | "Free users get 5 credits per day (resets daily). Paid users receive their monthly allowance upfront." |
+| engineering | Engineering Tools | "Access 7 professional calculators: Beam, Column, Slab, Foundation, Retaining Wall, AI Grading, and Parking Designer. All include 3D visualization and AI analysis." |
+| navigation | Your Sidebar | Keep current |
+| profile | Your Profile | Keep current |
+
+### Files to Modify
+
+| File | Changes |
+|------|---------|
+| `src/types/tutorial.types.ts` | Update TUTORIAL_STEPS with new content, add documents step |
+
+---
+
+## 6. AYN Identity Update (System Prompt)
+
+### Current Behavior
+AYN may explain "AYN means eye in Arabic" proactively.
+
+### New Behavior
+AYN only explains the meaning when directly asked. The system prompt should be updated to:
+
+```
+You are AYN, an AI assistant by the AYN Team.
+- Only explain that "AYN" means "eye" in Arabic if the user asks about your name's meaning.
+- Do not proactively mention the eye metaphor or meaning.
+```
+
+### Services AYN Can Provide Directly
+- Chat assistance (general questions, analysis)
+- Engineering tools (7 calculators)
+- PDF generation (paid users, 30 credits)
+- Excel generation (paid users, 25 credits)
+- File analysis
+
+### Services Requiring Contact with AYN Team
+- AI Employees
+- Custom AI Agents  
+- Process Automation
+- Content Creator Sites
+- Smart Ticketing System
+
+When users ask about these services, AYN should explain them but direct users to contact the AYN team to discuss and implement.
+
+### Files to Modify
+
+| File | Changes |
+|------|---------|
+| `supabase/functions/ayn-unified/index.ts` | Update system prompt to not proactively explain "eye" meaning |
+
+---
+
+## Files Summary
+
+| File | Type | Changes |
+|------|------|---------|
+| `src/contexts/SubscriptionContext.tsx` | Edit | Add Enterprise tier, update limits for all tiers |
+| `src/pages/Pricing.tsx` | Edit | Add Enterprise card with contact modal, 5-column grid, updated FAQ |
+| `src/types/tutorial.types.ts` | Edit | Update tutorial steps with new content |
+| `src/components/admin/SupportManagement.tsx` | Edit | Add toggle for "Contact Messages" view |
+| `supabase/functions/ayn-unified/index.ts` | Edit | Update system prompt regarding name explanation |
+| `supabase/functions/check-subscription/index.ts` | Edit | Sync tier limits with frontend |
 
 ---
 
 ## Technical Notes
 
-- Stats refresh interval: 30 seconds via `useEffect` with cleanup
-- Action execution includes try/catch with toast feedback
-- Markdown rendering uses existing `react-markdown` package
-- No access to `user_subscriptions`, `credit_gifts`, or `profiles` tables
-- Security logs are sanitized to remove email/PII before sending to AI
-- User IDs are shown for actions but never personal details
+### Enterprise Contact Flow
+```text
+User clicks "Contact Sales"
+    ↓
+Modal opens with form (Company, Email, Message)
+    ↓
+Submit inserts to contact_messages with "[ENTERPRISE INQUIRY]" prefix
+    ↓
+Toast: "Thank you! Our team will contact you within 24 hours"
+    ↓
+Admin sees it in Support → Contact Messages tab
+```
+
+### Tier Limits Sync
+Frontend (`SubscriptionContext.tsx`) and backend (`check-subscription/index.ts`) must have matching values:
+- Free: 5 credits/day (special handling for daily reset)
+- Starter: 500/month, 50 engineering
+- Pro: 1000/month, 200 engineering
+- Business: 3000/month, 500 engineering
