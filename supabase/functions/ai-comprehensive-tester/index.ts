@@ -163,15 +163,27 @@ function generateTestCases(endpoint: string): TestCase[] {
     ],
     
     'generate-grading-design': [
-      { name: 'Basic grading', input: { surveyPoints: [{x: 0, y: 0, z: 100}, {x: 10, y: 0, z: 101}, {x: 0, y: 10, z: 99}], targetSlope: 2, minCover: 0.3 }, category: 'valid', expectedBehavior: 'Returns design' },
+      { name: 'Basic grading', input: { 
+        points: [{id: 'P1', x: 0, y: 0, z: 100}, {id: 'P2', x: 10, y: 0, z: 101}, {id: 'P3', x: 0, y: 10, z: 99}, {id: 'P4', x: 10, y: 10, z: 100}], 
+        terrainAnalysis: { minElevation: 99, maxElevation: 101, elevationRange: 2, avgElevation: 100, pointCount: 4, estimatedArea: 100, minX: 0, maxX: 10, minY: 0, maxY: 10 },
+        requirements: 'Standard site grading'
+      }, category: 'valid', expectedBehavior: 'Returns design' },
     ],
     
     'generate-grading-dxf': [
-      { name: 'Basic DXF', input: { designResult: { cutVolume: 100, fillVolume: 80, contours: [] }, projectName: 'Test' }, category: 'valid', expectedBehavior: 'Returns DXF content' },
+      { name: 'Basic DXF', input: { 
+        points: [{id: 'P1', x: 0, y: 0, z: 100, fgl: 100.5, cutFill: -0.5}, {id: 'P2', x: 10, y: 0, z: 101, fgl: 100.5, cutFill: 0.5}],
+        design: { designElevation: 100.5, totalCutVolume: 50, totalFillVolume: 50 },
+        projectName: 'Test Project'
+      }, category: 'valid', expectedBehavior: 'Returns DXF content' },
+    ],
+    
+    'send-contact-email': [
+      { name: 'Valid contact', input: { name: 'Test User', email: 'test@example.com', message: 'This is a test message from the automated tester.' }, category: 'valid', expectedBehavior: 'Sends email or returns success' },
     ],
     
     'measure-ux': [
-      { name: 'Basic measurement', input: {}, category: 'valid', expectedBehavior: 'Returns UX metrics' },
+      { name: 'Basic measurement', input: { page: '/test', metrics: { loadTime: 500 } }, category: 'valid', expectedBehavior: 'Returns UX metrics' },
     ],
   };
   
