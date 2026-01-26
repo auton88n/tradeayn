@@ -231,7 +231,7 @@ const Pricing = () => {
                       style={{ 
                         animationDelay: `${index * 100}ms`,
                         contain: isPopular ? undefined : 'content',
-                        minHeight: isPopular ? undefined : '420px'
+                        minHeight: '420px'
                       }}
                     >
                       {/* Popular Badge */}
