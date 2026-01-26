@@ -26,32 +26,32 @@ const tierAccentColors: Record<SubscriptionTier, string> = {
   free: 'from-slate-500/15 to-slate-600/5',
   starter: 'from-sky-500/20 to-blue-600/10',
   pro: 'from-violet-500/25 to-purple-600/15',
-  business: 'from-amber-400/20 to-orange-500/10',
-  enterprise: 'from-slate-300/20 to-slate-400/10',
+  business: 'from-emerald-500/20 to-green-600/10',
+  enterprise: 'from-amber-400/20 to-orange-500/10',
 };
 
 const tierGlowColors: Record<SubscriptionTier, string> = {
   free: 'hover:shadow-[0_0_30px_-10px_rgba(100,116,139,0.3)]',
   starter: 'hover:shadow-[0_0_40px_-10px_rgba(14,165,233,0.4)]',
   pro: 'shadow-[0_0_50px_-10px_rgba(139,92,246,0.4)] hover:shadow-[0_0_70px_-10px_rgba(139,92,246,0.5)]',
-  business: 'hover:shadow-[0_0_40px_-10px_rgba(251,191,36,0.4)]',
-  enterprise: 'hover:shadow-[0_0_40px_-10px_rgba(226,232,240,0.3)]',
+  business: 'hover:shadow-[0_0_40px_-10px_rgba(16,185,129,0.4)]',
+  enterprise: 'hover:shadow-[0_0_40px_-10px_rgba(251,191,36,0.4)]',
 };
 
 const tierCheckColors: Record<SubscriptionTier, string> = {
   free: 'bg-slate-500',
   starter: 'bg-sky-500',
   pro: 'bg-violet-500',
-  business: 'bg-amber-500',
-  enterprise: 'bg-slate-400',
+  business: 'bg-emerald-500',
+  enterprise: 'bg-amber-500',
 };
 
 const tierButtonStyles: Record<SubscriptionTier, string> = {
   free: 'bg-slate-600 hover:bg-slate-500 text-white',
   starter: 'bg-sky-500 hover:bg-sky-600 text-white',
   pro: 'bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white shadow-lg shadow-purple-500/25',
-  business: 'bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white',
-  enterprise: 'bg-gradient-to-r from-slate-200 to-slate-300 hover:from-slate-300 hover:to-slate-400 text-slate-800 font-semibold',
+  business: 'bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white',
+  enterprise: 'bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white',
 };
 
 const faqItems = [
@@ -221,16 +221,16 @@ const Pricing = () => {
                   const isPopular = tier === 'pro';
                   const isEnterprise = tier === 'enterprise';
                   
-                  return (
+                    return (
                     <div
                       key={tier}
                       className={cn(
-                        "relative group animate-fade-in",
+                        "relative group animate-fade-in overflow-visible",
                         isPopular && "mt-6"
                       )}
                       style={{ 
                         animationDelay: `${index * 100}ms`,
-                        contain: 'content'
+                        contain: isPopular ? undefined : 'content'
                       }}
                     >
                       {/* Popular Badge */}
@@ -253,7 +253,8 @@ const Pricing = () => {
                           tierGlowColors[tier],
                           isCurrentPlan && 'ring-2 ring-primary',
                           isPopular && 'ring-2 ring-purple-500/50 border-purple-400/30',
-                          isEnterprise && 'border-slate-400/40 dark:border-slate-500/30'
+                          tier === 'business' && 'border-emerald-400/30 dark:border-emerald-500/20',
+                          isEnterprise && 'border-amber-400/40 dark:border-amber-500/30'
                         )}
                       >
                         {/* Gradient Overlay */}
@@ -278,8 +279,8 @@ const Pricing = () => {
                               tier === 'free' && 'bg-slate-500/10',
                               tier === 'starter' && 'bg-sky-500/10',
                               tier === 'pro' && 'bg-violet-500/10',
-                              tier === 'business' && 'bg-amber-400/10',
-                              tier === 'enterprise' && 'bg-slate-400/10'
+                              tier === 'business' && 'bg-emerald-500/10',
+                              tier === 'enterprise' && 'bg-amber-400/10'
                             )}>
                               {tierIcons[tier]}
                             </div>
