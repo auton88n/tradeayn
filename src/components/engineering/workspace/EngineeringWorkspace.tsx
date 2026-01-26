@@ -10,7 +10,7 @@ import { CalculationHistoryModal } from '@/components/engineering/CalculationHis
 import { CalculationComparison } from '@/components/engineering/CalculationComparison';
 import { SaveDesignDialog } from '@/components/engineering/SaveDesignDialog';
 import { useEngineeringHistory } from '@/hooks/useEngineeringHistory';
-import { useEngineeringSession } from '@/contexts/EngineeringSessionContext';
+import { useEngineeringSessionOptional } from '@/contexts/EngineeringSessionContext';
 import { SEO } from '@/components/shared/SEO';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -57,7 +57,7 @@ const LoadingFallback = () => (
 
 export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ userId }) => {
   const navigate = useNavigate();
-  const session = useEngineeringSession();
+  const session = useEngineeringSessionOptional();
   const [selectedCalculator, setSelectedCalculator] = useState<CalculatorType>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [calculationResult, setCalculationResult] = useState<CalculationResult | null>(null);
@@ -66,8 +66,12 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
   const [isCompareOpen, setIsCompareOpen] = useState(false);
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
   
-  // Use building code from session context (shared with AI)
-  const { buildingCode: selectedBuildingCode, setBuildingCode: setSelectedBuildingCode } = session;
+  // Fallback building code state for when session is not available
+  const [localBuildingCode, setLocalBuildingCode] = useState<BuildingCodeId>('ACI');
+  
+  // Use building code from session context if available, otherwise use local state
+  const selectedBuildingCode = session?.buildingCode ?? localBuildingCode;
+  const setSelectedBuildingCode = session?.setBuildingCode ?? setLocalBuildingCode;
   
   // Current inputs/outputs for live preview
   const [currentInputs, setCurrentInputs] = useState<Record<string, any>>({});
@@ -77,15 +81,17 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
 
   // Track calculator switches for AYN
   useEffect(() => {
-    if (selectedCalculator) {
+    if (selectedCalculator && session) {
       session.trackCalculatorSwitch(selectedCalculator);
     }
   }, [selectedCalculator, session]);
 
   // Expose context to AI agent via window
   useEffect(() => {
-    (window as any).__engineeringSessionContext = session.getAIContext;
-    return () => { delete (window as any).__engineeringSessionContext; };
+    if (session) {
+      (window as any).__engineeringSessionContext = session.getAIContext;
+      return () => { delete (window as any).__engineeringSessionContext; };
+    }
   }, [session]);
 
   // Track session start time for memory saving
@@ -95,7 +101,7 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
   // Save session summary to user memory on unmount (for AYN context)
   useEffect(() => {
     return () => {
-      if (userId && !hasSavedSessionRef.current) {
+      if (userId && !hasSavedSessionRef.current && session) {
         const context = session.getAIContext();
         const sessionDuration = Math.round((Date.now() - sessionStartRef.current) / 1000);
         
@@ -515,7 +521,7 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
           inputs={currentInputs}
           outputs={currentOutputs}
           onSaved={() => {
-            session.trackSave(`${selectedCalculator} design`);
+            session?.trackSave(`${selectedCalculator} design`);
           }}
         />
       </div>
