@@ -91,32 +91,35 @@ function detectResponseEmotion(content: string): string {
     frustrated: 0, supportive: 0, comfort: 0, sad: 0, mad: 0, bored: 0
   };
   
-  // EXCITED - high energy positive (strong indicators)
+  // EXCITED - high energy positive (strong indicators) - weight 4
   const excitedPatterns = [
     /amazing/g, /incredible/g, /fantastic/g, /wonderful/g, /excellent/g,
     /brilliant/g, /outstanding/g, /wow/g, /awesome/g, /great news/g,
-    /congratulations/g, /well done/g, /great job/g, /nailed it/g, /perfect/g,
-    /love it/g, /so cool/g, /exciting/g, /can't wait/g, /thrilled/g,
+    /congratulations/g, /congrats/g, /well done/g, /great job/g, /nailed it/g,
+    /perfect/g, /love it/g, /so cool/g, /exciting/g, /can't wait/g, /thrilled/g,
     /best day/g, /celebrate/g, /thrilling/g, /fired up/g, /pumped/g,
-    /🎉/g, /🎊/g, /✨/g, /🚀/g, /🔥/g, /💪/g,
-    /مذهل/g, /رائع جداً/g, /متحمس/g, /ممتاز/g, /عظيم/g
+    /superb/g, /magnificent/g, /spectacular/g, /extraordinary/g, /phenomenal/g,
+    /marvelous/g, /terrific/g, /fabulous/g, /stellar/g, /epic/g,
+    /absolutely love/g, /so excited/g, /super happy/g, /overjoyed/g,
+    /🎉/g, /🎊/g, /✨/g, /🚀/g, /🔥/g, /💪/g, /🤩/g, /😍/g, /🥳/g,
+    /مذهل/g, /رائع جداً/g, /متحمس/g, /ممتاز/g, /عظيم/g, /خرافي/g
   ];
-  excitedPatterns.forEach(p => { const m = lower.match(p); if (m) scores.excited += m.length * 3; });
+  excitedPatterns.forEach(p => { const m = lower.match(p); if (m) scores.excited += m.length * 4; });
   
-  // HAPPY - positive but calmer
+  // HAPPY - positive but calmer - weight 2
   const happyPatterns = [
     /glad/g, /happy to/g, /happy/g, /pleased/g, /good/g, /nice/g, /great/g,
     /sure thing/g, /of course/g, /absolutely/g, /definitely/g, /yes/g,
     /done/g, /completed/g, /success/g, /worked/g, /fixed/g, /solved/g,
     /here you go/g, /there you go/g, /enjoy/g, /hope this helps/g,
-    /you're welcome/g, /my pleasure/g, /no problem/g, /delighted/g,
+    /you're welcome/g, /my pleasure/g, /delighted/g,
     /thank you/g, /thanks/g, /appreciate/g, /grateful/g,
     /😊/g, /👍/g, /😄/g, /🙂/g,
     /رائع/g, /تمام/g, /حسناً/g, /جيد/g, /مرحباً/g, /سعيد/g
   ];
   happyPatterns.forEach(p => { const m = lower.match(p); if (m) scores.happy += m.length * 2; });
   
-  // THINKING - analytical/processing
+  // THINKING - analytical/processing - weight 2
   const thinkingPatterns = [
     /let me/g, /i'll/g, /checking/g, /looking/g, /analyzing/g,
     /processing/g, /calculating/g, /considering/g, /evaluating/g, /researching/g,
@@ -130,19 +133,21 @@ function detectResponseEmotion(content: string): string {
   ];
   thinkingPatterns.forEach(p => { const m = lower.match(p); if (m) scores.thinking += m.length * 2; });
   
-  // CURIOUS - interested/questioning
+  // CURIOUS - interested/questioning - weight 4
   const curiousPatterns = [
     /interesting/g, /fascinating/g, /intriguing/g, /curious/g, /wonder/g,
     /tell me more/g, /what about/g, /how about/g, /what if/g, /have you tried/g,
     /have you considered/g, /could you explain/g, /i'd love to know/g,
     /explore/g, /discover/g, /learn more/g, /dig into/g, /investigate/g,
-    /that's neat/g, /cool idea/g, /huh/g, /oh really/g,
+    /that's neat/g, /cool idea/g, /huh/g, /oh really/g, /really\?/g,
+    /i wonder/g, /makes me curious/g, /want to know/g, /keen to/g,
+    /mind sharing/g, /can you tell/g, /would love to hear/g,
+    /🤔/g, /🧐/g, /👀/g,
     /مثير للاهتمام/g, /أتساءل/g, /ما رأيك/g, /أخبرني/g, /فضولي/g
   ];
-  curiousPatterns.forEach(p => { const m = lower.match(p); if (m) scores.curious += m.length * 2; });
-  // Don't count question marks as curious - too generic
+  curiousPatterns.forEach(p => { const m = lower.match(p); if (m) scores.curious += m.length * 4; });
   
-  // SUPPORTIVE - empathetic, here to help
+  // SUPPORTIVE - empathetic, here to help - weight 4
   const supportivePatterns = [
     /here to help/g, /i'm here/g, /i understand/g, /i get it/g, /makes sense/g,
     /you're not alone/g, /we can/g, /let's work/g, /together/g, /support/g,
@@ -153,9 +158,9 @@ function detectResponseEmotion(content: string): string {
     /stay strong/g, /hang in there/g, /rooting for/g,
     /أنا هنا/g, /أفهمك/g, /معك/g, /سأساعدك/g, /لا تيأس/g
   ];
-  supportivePatterns.forEach(p => { const m = lower.match(p); if (m) scores.supportive += m.length * 3; });
+  supportivePatterns.forEach(p => { const m = lower.match(p); if (m) scores.supportive += m.length * 4; });
   
-  // COMFORT - reassuring
+  // COMFORT - reassuring - weight 4
   const comfortPatterns = [
     /don't worry/g, /no worries/g, /it's okay/g, /it's fine/g, /no problem/g,
     /take your time/g, /no rush/g, /you've got this/g, /you can do/g,
@@ -164,52 +169,64 @@ function detectResponseEmotion(content: string): string {
     /understandable/g, /natural to/g, /common/g, /many people/g,
     /mistake happens/g, /everyone makes/g, /part of/g, /learning/g,
     /not the end/g, /work out/g, /solution/g, /figure it out/g,
+    /it's alright/g, /that's okay/g, /perfectly normal/g, /don't stress/g,
+    /easy does it/g, /one step/g, /at a time/g, /you'll be fine/g,
+    /💚/g, /🤗/g, /💙/g,
     /لا تقلق/g, /لا مشكلة/g, /خذ وقتك/g, /كل شيء سيكون/g, /استرخ/g
   ];
-  comfortPatterns.forEach(p => { const m = lower.match(p); if (m) scores.comfort += m.length * 3; });
+  comfortPatterns.forEach(p => { const m = lower.match(p); if (m) scores.comfort += m.length * 4; });
   
-  // FRUSTRATED - difficulty, issues (but not giving up)
+  // FRUSTRATED - difficulty, issues (but not giving up) - weight 3
   const frustratedPatterns = [
     /unfortunately/g, /however/g, /issue/g, /problem/g,
     /difficult/g, /challenging/g, /tricky/g, /complex/g, /complicated/g,
     /error/g, /failed/g, /unable/g, /can't seem/g, /cannot/g, /couldn't/g,
     /doesn't work/g, /not working/g, /broken/g, /stuck/g,
     /limitation/g, /constraint/g, /obstacle/g, /hurdle/g,
+    /struggling/g, /tough/g, /hard to/g, /not easy/g, /troublesome/g,
+    /keep trying/g, /no luck/g, /hitting a wall/g, /dead end/g,
+    /😤/g, /😓/g,
     /للأسف/g, /لا أستطيع/g, /مشكلة/g, /صعب/g, /معقد/g
   ];
-  // Removed "but" and "can't" - too generic
-  frustratedPatterns.forEach(p => { const m = lower.match(p); if (m) scores.frustrated += m.length * 2; });
+  frustratedPatterns.forEach(p => { const m = lower.match(p); if (m) scores.frustrated += m.length * 3; });
   
-  // SAD - apologetic, bad news
+  // SAD - apologetic, bad news - weight 3
   const sadPatterns = [
     /sorry to hear/g, /i'm sorry/g, /so sorry/g, /apologize/g, /apologies/g, 
-    /regret/g, /sad to/g, /unfortunately/g, /bad news/g, /i'm afraid/g, 
+    /regret/g, /sad to/g, /bad news/g, /i'm afraid/g, 
     /disappointed/g, /miss/g, /lost/g, /gone/g, /heartbreaking/g,
     /condolences/g, /sympathy/g, /tough time/g, /hard time/g,
     /feel for you/g, /my heart/g, /sending/g, /warmth/g,
+    /😢/g, /😔/g, /💔/g,
     /آسف/g, /حزين/g, /أعتذر/g, /للأسف/g, /مؤسف/g
   ];
-  sadPatterns.forEach(p => { const m = lower.match(p); if (m) scores.sad += m.length * 2; });
+  sadPatterns.forEach(p => { const m = lower.match(p); if (m) scores.sad += m.length * 3; });
   
-  // MAD - strong anger (rare for AI but included)
+  // MAD - strong anger (rare for AI but included) - weight 4
   const madPatterns = [
     /angry/g, /furious/g, /outrageous/g, /unacceptable/g, /ridiculous/g,
     /terrible/g, /awful/g, /worst/g, /hate/g, /absurd/g,
     /infuriating/g, /frustrating/g, /annoying/g, /irritating/g,
+    /outraged/g, /livid/g, /enraged/g, /seething/g,
+    /this is wrong/g, /not acceptable/g, /disgraceful/g,
+    /😡/g, /🤬/g, /💢/g,
     /غاضب/g, /مستفز/g, /سخيف/g
   ];
-  madPatterns.forEach(p => { const m = lower.match(p); if (m) scores.mad += m.length * 3; });
+  madPatterns.forEach(p => { const m = lower.match(p); if (m) scores.mad += m.length * 4; });
   
-  // BORED - low energy (rare for AI)
+  // BORED - low energy (rare for AI) - weight 3
   const boredPatterns = [
     /whatever/g, /i guess/g, /if you say/g, /meh/g, /boring/g,
     /dull/g, /same old/g, /nothing new/g, /routine/g, /mundane/g,
-    /as usual/g, /again/g, /repetitive/g,
+    /as usual/g, /again/g, /repetitive/g, /monotonous/g, /tedious/g,
+    /not exciting/g, /plain/g, /ordinary/g, /uninteresting/g,
+    /yawn/g, /ho hum/g, /blah/g,
+    /😑/g, /😴/g, /🥱/g,
     /ممل/g, /عادي/g, /روتيني/g
   ];
-  boredPatterns.forEach(p => { const m = lower.match(p); if (m) scores.bored += m.length * 2; });
+  boredPatterns.forEach(p => { const m = lower.match(p); if (m) scores.bored += m.length * 3; });
   
-  // CALM - baseline greeting/neutral (add some weak indicators)
+  // CALM - baseline greeting/neutral (add some weak indicators) - weight 1
   const calmPatterns = [
     /^hello$/g, /^hi$/g, /^hey$/g, /^hi there$/g, /greetings/g,
     /how can i/g, /how may i/g, /what can i/g
@@ -227,8 +244,8 @@ function detectResponseEmotion(content: string): string {
     }
   }
   
-  // Only return non-calm if score is significant (threshold of 2)
-  const result = maxScore >= 2 ? maxEmotion : 'calm';
+  // Lower threshold to 1 for better detection
+  const result = maxScore >= 1 ? maxEmotion : 'calm';
   console.log('[ayn-unified] Emotion detected:', result, 'scores:', JSON.stringify(scores));
   return result;
 }
