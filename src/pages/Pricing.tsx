@@ -214,7 +214,7 @@ const Pricing = () => {
           ) : (
             <>
               {/* Pricing Cards - 5 columns */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5 mb-12">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5 mb-12 items-stretch">
                 {displayTiers.map((tier, index) => {
                   const config = SUBSCRIPTION_TIERS[tier];
                   const isCurrentPlan = tier === currentTier;
@@ -225,12 +225,13 @@ const Pricing = () => {
                     <div
                       key={tier}
                       className={cn(
-                        "relative group animate-fade-in overflow-visible",
+                        "relative group animate-fade-in overflow-visible flex",
                         isPopular && "mt-6"
                       )}
                       style={{ 
                         animationDelay: `${index * 100}ms`,
-                        contain: isPopular ? undefined : 'content'
+                        contain: isPopular ? undefined : 'content',
+                        minHeight: isPopular ? undefined : '420px'
                       }}
                     >
                       {/* Popular Badge */}
@@ -246,7 +247,7 @@ const Pricing = () => {
                       {/* Card */}
                       <div
                         className={cn(
-                          'relative p-6 h-full flex flex-col rounded-3xl transition-all duration-300',
+                          'relative p-6 w-full flex flex-col rounded-3xl transition-all duration-300',
                           'bg-card/40 backdrop-blur-xl',
                           'border border-white/10 dark:border-white/5',
                           'hover:border-white/20 dark:hover:border-white/10',
