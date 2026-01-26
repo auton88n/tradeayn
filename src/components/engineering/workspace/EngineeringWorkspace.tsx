@@ -148,7 +148,7 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
       setCalculationResult(null);
     } else {
       // If at calculator selection, go back to services page
-      navigate('/services/civil-engineering');
+      navigate('/');
     }
   };
 
