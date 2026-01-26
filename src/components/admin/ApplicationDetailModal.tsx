@@ -105,16 +105,16 @@ export const ApplicationDetailModal = ({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader>
-          <div className="flex items-start justify-between">
-            <div>
+        <DialogHeader className="pr-8">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0 flex-1">
               <DialogTitle className="text-xl">{application.full_name}</DialogTitle>
               <p className="text-sm text-muted-foreground mt-1">
                 {getServiceLabel(application.service_type)}
               </p>
             </div>
             <Select value={application.status} onValueChange={handleStatusChange}>
-              <SelectTrigger className={`w-[140px] ${statusConfig?.color}`}>
+              <SelectTrigger className={`w-[140px] shrink-0 ${statusConfig?.color}`}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
