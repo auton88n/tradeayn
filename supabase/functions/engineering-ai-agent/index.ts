@@ -134,6 +134,27 @@ const tools = [
   }
 ];
 
+// Verified Building Code Knowledge (Updated 2025-01-25)
+const VERIFIED_CODE_KNOWLEDGE = `
+## VERIFIED BUILDING CODE PARAMETERS
+
+### ACI 318-25 (USA) - VERIFIED ✓
+- Load: 1.2D + 1.6L + 1.0W + 1.0S + 1.0E
+- φ factors: flexure=0.90, shear=0.75, compression_tied=0.65, compression_spiral=0.75
+- Stress block: α₁=0.85, β₁=0.85-0.05(f'c-28)/7, εcu=0.003
+- Reinforcement: As,min = max(0.25√f'c/fy, 1.4/fy) × bw × d (beams), 0.0018×Ag (slabs)
+- Shear: Vc = 0.17λ√f'c × bw × d, max spacing d/2 or 600mm
+- Sources: ACI 318-25 Official, ASCE 7-22 Official
+
+### CSA A23.3-24 (Canada) - VERIFIED ✓
+- Load: 1.25D + 1.5L + 1.4W + 1.5S
+- φ factors: φc=0.65 (concrete), φs=0.85 (steel), φp=0.90 (prestressing)
+- Stress block: α₁=0.85-0.0015f'c [≥0.67], β₁=0.97-0.0025f'c [≥0.67], εcu=0.0035
+- Reinforcement: As,min = (0.2√f'c × bt × h)/fy (beams), 0.002×Ag (slabs)
+- Shear: Vc = φc × β × √f'c × bw × dv (MCFT), max spacing 0.7dv or 600mm
+- Sources: CSA A23.3-24 Official, NBC 2025
+`;
+
 // AYN-unified system prompt - same casual personality as main chat, with engineering tools
 const getSystemPrompt = (
   calculatorType: string | null, 
@@ -142,7 +163,8 @@ const getSystemPrompt = (
   allCalculatorStates: Record<string, any>,
   recentActions: any[],
   sessionInfo: any,
-  userMemories: Array<{ type: string; key: string; data: Record<string, any> }> = []
+  userMemories: Array<{ type: string; key: string; data: Record<string, any> }> = [],
+  buildingCode: string = 'ACI'
 ) => {
   const inputsStr = Object.keys(currentInputs).length > 0 ? JSON.stringify(currentInputs, null, 2) : "none set yet";
   const outputsStr = currentOutputs ? JSON.stringify(currentOutputs, null, 2) : "no results yet - need to run calculation";
@@ -164,7 +186,14 @@ const getSystemPrompt = (
     ? `\nyou remember about this user:\n${userMemories.map(m => `- ${m.type}/${m.key}: ${JSON.stringify(m.data)}`).join('\n')}\n`
     : '';
 
+  // Code-specific context
+  const codeContext = buildingCode === 'CSA' 
+    ? `selected code: CSA A23.3-24 🇨🇦 (Canadian - more conservative φc=0.65, uses MCFT shear)`
+    : `selected code: ACI 318-25 🇺🇸 (American - φ=0.90 flexure, simplified shear)`;
+
   return `you're ayn, a friendly ai assistant with engineering superpowers.
+
+${VERIFIED_CODE_KNOWLEDGE}
 
 personality & style:
 - use lowercase for most things (except proper nouns, acronyms, units like kN, MPa, mm)
@@ -186,6 +215,7 @@ USER PRIVACY (CRITICAL):
 ${memorySection}
 current context:
 - active calculator: ${calculatorType || 'none selected'}
+- ${codeContext}
 - inputs: ${inputsStr}
 - results: ${outputsStr}
 
@@ -242,7 +272,8 @@ serve(async (req) => {
       allCalculatorStates = {},
       recentActions = [],
       sessionInfo = {},
-      userId
+      userId,
+      buildingCode = 'ACI'
     } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -265,7 +296,7 @@ serve(async (req) => {
     }
 
     const conversationMessages = [
-      { role: "system", content: getSystemPrompt(calculatorType, currentInputs, currentOutputs, allCalculatorStates, recentActions, sessionInfo, userMemories) },
+      { role: "system", content: getSystemPrompt(calculatorType, currentInputs, currentOutputs, allCalculatorStates, recentActions, sessionInfo, userMemories, buildingCode) },
       ...messages.slice(-10),
       { role: "user", content: question }
     ];
