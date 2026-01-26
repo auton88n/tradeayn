@@ -18,7 +18,8 @@ import {
   Eye,
   Reply,
   XCircle,
-  Inbox
+  Inbox,
+  MailOpen
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,9 +28,11 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import TicketDetailModal from './TicketDetailModal';
+import ContactMessagesView from './ContactMessagesView';
 
 interface Ticket {
   id: string;
@@ -67,6 +70,7 @@ const itemVariants = {
 const ITEMS_PER_PAGE = 15;
 
 const SupportManagement: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<string>('tickets');
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -207,34 +211,52 @@ const SupportManagement: React.FC = () => {
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-2xl font-serif">Support Tickets</CardTitle>
+            <CardTitle className="text-2xl font-serif">Support & Messages</CardTitle>
             <CardDescription>
-              {filteredTickets.length} ticket{filteredTickets.length !== 1 ? 's' : ''} found
+              Manage support tickets and contact messages
             </CardDescription>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={exportToCSV}
-              className="gap-2"
-            >
-              <Download className="h-4 w-4" />
-              Export CSV
-            </Button>
-            <Button 
-              variant="outline" 
-              size="icon" 
-              onClick={fetchTickets}
-              disabled={isLoading}
-            >
-              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            </Button>
           </div>
         </div>
       </CardHeader>
 
       <CardContent className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-2 max-w-md">
+            <TabsTrigger value="tickets" className="gap-2">
+              <MessageSquare className="h-4 w-4" />
+              Tickets ({tickets.length})
+            </TabsTrigger>
+            <TabsTrigger value="messages" className="gap-2">
+              <MailOpen className="h-4 w-4" />
+              Contact Messages
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="messages" className="mt-6">
+            <ContactMessagesView />
+          </TabsContent>
+
+          <TabsContent value="tickets" className="mt-6 space-y-6">
+            {/* Ticket Export/Refresh buttons */}
+            <div className="flex items-center justify-end gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={exportToCSV}
+                className="gap-2"
+              >
+                <Download className="h-4 w-4" />
+                Export CSV
+              </Button>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={fetchTickets}
+                disabled={isLoading}
+              >
+                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {[
@@ -486,16 +508,18 @@ const SupportManagement: React.FC = () => {
             </div>
           </div>
         )}
+          </TabsContent>
+        </Tabs>
       </CardContent>
 
-        {/* Ticket Detail Modal */}
-        {selectedTicket && (
-          <TicketDetailModal
-            ticket={selectedTicket as { id: string; user_id: string | null; guest_email: string | null; guest_name: string | null; subject: string; category: 'general' | 'billing' | 'technical' | 'feature_request' | 'bug_report'; priority: 'low' | 'medium' | 'high' | 'urgent'; status: 'open' | 'in_progress' | 'waiting_reply' | 'resolved' | 'closed'; created_at: string; updated_at: string; }}
-            isOpen={!!selectedTicket}
-            onClose={() => setSelectedTicket(null)}
-            onUpdate={fetchTickets}
-          />
+      {/* Ticket Detail Modal */}
+      {selectedTicket && (
+        <TicketDetailModal
+          ticket={selectedTicket as { id: string; user_id: string | null; guest_email: string | null; guest_name: string | null; subject: string; category: 'general' | 'billing' | 'technical' | 'feature_request' | 'bug_report'; priority: 'low' | 'medium' | 'high' | 'urgent'; status: 'open' | 'in_progress' | 'waiting_reply' | 'resolved' | 'closed'; created_at: string; updated_at: string; }}
+          isOpen={!!selectedTicket}
+          onClose={() => setSelectedTicket(null)}
+          onUpdate={fetchTickets}
+        />
       )}
     </Card>
   );

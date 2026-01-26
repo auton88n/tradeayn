@@ -5,11 +5,12 @@
 
 export const TIER_LIMITS = {
   free: {
-    credits: 50,
+    credits: 5, // per day
     storage: 100 * 1024 * 1024, // 100MB in bytes
     retention: 30, // days
     maxSessions: 10,
     maxUploadsPerDay: 5,
+    isDaily: true,
   },
   starter: {
     credits: 500,
@@ -19,15 +20,22 @@ export const TIER_LIMITS = {
     maxUploadsPerDay: 20,
   },
   pro: {
-    credits: 2000,
+    credits: 1000,
     storage: 2 * 1024 * 1024 * 1024, // 2GB
     retention: 365,
     maxSessions: 200,
     maxUploadsPerDay: 50,
   },
   business: {
-    credits: 5000,
+    credits: 3000,
     storage: 10 * 1024 * 1024 * 1024, // 10GB
+    retention: -1, // unlimited
+    maxSessions: -1, // unlimited
+    maxUploadsPerDay: -1, // unlimited
+  },
+  enterprise: {
+    credits: -1, // custom
+    storage: -1, // custom
     retention: -1, // unlimited
     maxSessions: -1, // unlimited
     maxUploadsPerDay: -1, // unlimited

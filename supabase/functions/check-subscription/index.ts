@@ -9,10 +9,10 @@ const corsHeaders = {
 
 // Tier configuration matching frontend
 const TIER_LIMITS = {
-  free: { monthlyCredits: 50, monthlyEngineering: 10 },
-  starter: { monthlyCredits: 200, monthlyEngineering: 50 },
+  free: { monthlyCredits: 5, monthlyEngineering: 10, isDaily: true },
+  starter: { monthlyCredits: 500, monthlyEngineering: 50 },
   pro: { monthlyCredits: 1000, monthlyEngineering: 200 },
-  business: { monthlyCredits: 5000, monthlyEngineering: 9999 }, // 9999 = effectively unlimited
+  business: { monthlyCredits: 3000, monthlyEngineering: 500 },
 };
 
 const PRODUCT_TO_TIER: Record<string, keyof typeof TIER_LIMITS> = {

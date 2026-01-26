@@ -10,16 +10,16 @@ export const SUBSCRIPTION_TIERS = {
     price: 0,
     priceId: null,
     productId: null,
-    limits: { monthlyCredits: 50, monthlyEngineering: 10 },
-    features: ['50 credits/month', '10 engineering calcs', 'Basic support'],
+    limits: { monthlyCredits: 5, monthlyEngineering: 10, isDaily: true },
+    features: ['5 credits/day', '10 engineering calcs', 'Basic support'],
   },
   starter: {
     name: 'Starter',
     price: 9,
     priceId: 'price_1SsEOZDBJlSjDe8ADVHgJugk',
     productId: 'prod_TpuCGCGKRjz1QR',
-    limits: { monthlyCredits: 200, monthlyEngineering: 50 },
-    features: ['200 credits/month', '50 engineering calcs', 'Email support'],
+    limits: { monthlyCredits: 500, monthlyEngineering: 50 },
+    features: ['500 credits/month', '50 engineering calcs', 'PDF & Excel generation', 'Email support'],
   },
   pro: {
     name: 'Pro',
@@ -27,15 +27,23 @@ export const SUBSCRIPTION_TIERS = {
     priceId: 'price_1SsEP3DBJlSjDe8AednfTBY4',
     productId: 'prod_TpuDZjjDGHOFfO',
     limits: { monthlyCredits: 1000, monthlyEngineering: 200 },
-    features: ['1,000 credits/month', '200 engineering calcs', 'Priority support'],
+    features: ['1,000 credits/month', '200 engineering calcs', 'PDF & Excel generation', 'Priority support'],
   },
   business: {
     name: 'Business',
     price: 79,
     priceId: 'price_1SsEPKDBJlSjDe8AoLaqnZYP',
     productId: 'prod_TpuDQFgkmlTXAH',
-    limits: { monthlyCredits: 5000, monthlyEngineering: -1 },
-    features: ['5,000 credits/month', 'Unlimited engineering', 'Team features', 'Priority support'],
+    limits: { monthlyCredits: 3000, monthlyEngineering: 500 },
+    features: ['3,000 credits/month', '500 engineering calcs', 'PDF & Excel generation', 'Priority support'],
+  },
+  enterprise: {
+    name: 'Enterprise',
+    price: -1, // -1 indicates "Contact Us"
+    priceId: null,
+    productId: null,
+    limits: { monthlyCredits: -1, monthlyEngineering: -1 },
+    features: ['Custom credit allocation', 'Tailored AI solutions', 'Dedicated account manager', '24/7 priority support'],
   },
 } as const;
 
@@ -51,6 +59,7 @@ interface SubscriptionState {
   limits: {
     monthlyCredits: number;
     monthlyEngineering: number;
+    isDaily?: boolean;
   };
 }
 
@@ -126,8 +135,8 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
   }, []);
 
   const startCheckout = useCallback(async (tier: SubscriptionTier) => {
-    if (tier === 'free') {
-      toast.info('Free tier does not require checkout');
+    if (tier === 'free' || tier === 'enterprise') {
+      if (tier === 'free') toast.info('Free tier does not require checkout');
       return;
     }
 
