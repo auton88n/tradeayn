@@ -23,35 +23,35 @@ const tierIcons: Record<SubscriptionTier, React.ReactNode> = {
 };
 
 const tierAccentColors: Record<SubscriptionTier, string> = {
-  free: 'from-muted-foreground/20 to-muted-foreground/10',
-  starter: 'from-blue-500/20 to-blue-600/10',
-  pro: 'from-purple-500/20 to-purple-600/10',
-  business: 'from-amber-500/20 to-amber-600/10',
-  enterprise: 'from-slate-400/20 to-cyan-500/10',
+  free: 'from-slate-500/15 to-slate-600/5',
+  starter: 'from-sky-500/20 to-blue-600/10',
+  pro: 'from-violet-500/25 to-purple-600/15',
+  business: 'from-amber-400/20 to-orange-500/10',
+  enterprise: 'from-slate-300/20 to-slate-400/10',
 };
 
 const tierGlowColors: Record<SubscriptionTier, string> = {
-  free: 'group-hover:shadow-[0_0_40px_-10px_hsl(var(--muted-foreground)/0.3)]',
-  starter: 'group-hover:shadow-[0_0_50px_-10px_rgba(59,130,246,0.4)]',
-  pro: 'shadow-[0_0_60px_-10px_rgba(139,92,246,0.3)] group-hover:shadow-[0_0_80px_-10px_rgba(139,92,246,0.5)]',
-  business: 'group-hover:shadow-[0_0_50px_-10px_rgba(245,158,11,0.4)]',
-  enterprise: 'group-hover:shadow-[0_0_60px_-10px_rgba(148,163,184,0.4)]',
+  free: 'hover:shadow-[0_0_30px_-10px_rgba(100,116,139,0.3)]',
+  starter: 'hover:shadow-[0_0_40px_-10px_rgba(14,165,233,0.4)]',
+  pro: 'shadow-[0_0_50px_-10px_rgba(139,92,246,0.4)] hover:shadow-[0_0_70px_-10px_rgba(139,92,246,0.5)]',
+  business: 'hover:shadow-[0_0_40px_-10px_rgba(251,191,36,0.4)]',
+  enterprise: 'hover:shadow-[0_0_40px_-10px_rgba(226,232,240,0.3)]',
 };
 
 const tierCheckColors: Record<SubscriptionTier, string> = {
-  free: 'bg-muted-foreground',
-  starter: 'bg-blue-500',
-  pro: 'bg-purple-500',
+  free: 'bg-slate-500',
+  starter: 'bg-sky-500',
+  pro: 'bg-violet-500',
   business: 'bg-amber-500',
-  enterprise: 'bg-cyan-500',
+  enterprise: 'bg-slate-400',
 };
 
 const tierButtonStyles: Record<SubscriptionTier, string> = {
-  free: 'bg-muted hover:bg-muted/80 text-foreground',
-  starter: 'bg-blue-500 hover:bg-blue-600 text-white',
-  pro: 'bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white',
-  business: 'bg-amber-500 hover:bg-amber-600 text-white',
-  enterprise: 'bg-gradient-to-r from-slate-400 to-cyan-500 hover:from-slate-500 hover:to-cyan-600 text-white font-semibold',
+  free: 'bg-slate-600 hover:bg-slate-500 text-white',
+  starter: 'bg-sky-500 hover:bg-sky-600 text-white',
+  pro: 'bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white shadow-lg shadow-purple-500/25',
+  business: 'bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white',
+  enterprise: 'bg-gradient-to-r from-slate-200 to-slate-300 hover:from-slate-300 hover:to-slate-400 text-slate-800 font-semibold',
 };
 
 const faqItems = [
@@ -224,7 +224,10 @@ const Pricing = () => {
                   return (
                     <div
                       key={tier}
-                      className="relative group animate-fade-in"
+                      className={cn(
+                        "relative group animate-fade-in",
+                        isPopular && "mt-6"
+                      )}
                       style={{ 
                         animationDelay: `${index * 100}ms`,
                         contain: 'content'
@@ -232,8 +235,8 @@ const Pricing = () => {
                     >
                       {/* Popular Badge */}
                       {isPopular && (
-                        <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
-                          <Badge className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-4 py-1.5 text-sm font-medium shadow-lg">
+                        <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20">
+                          <Badge className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-4 py-1.5 text-sm font-medium shadow-lg shadow-purple-500/30 border border-purple-400/30">
                             <Sparkles className="w-3.5 h-3.5 mr-1.5" />
                             Most Popular
                           </Badge>
@@ -249,7 +252,8 @@ const Pricing = () => {
                           'hover:border-white/20 dark:hover:border-white/10',
                           tierGlowColors[tier],
                           isCurrentPlan && 'ring-2 ring-primary',
-                          isEnterprise && 'border-cyan-400/30 dark:border-cyan-400/20'
+                          isPopular && 'ring-2 ring-purple-500/50 border-purple-400/30',
+                          isEnterprise && 'border-slate-400/40 dark:border-slate-500/30'
                         )}
                       >
                         {/* Gradient Overlay */}
@@ -271,11 +275,11 @@ const Pricing = () => {
                           <div className="flex items-center gap-3 mb-5">
                             <div className={cn(
                               'p-2.5 rounded-xl transition-colors',
-                              tier === 'free' && 'bg-muted-foreground/10',
-                              tier === 'starter' && 'bg-blue-500/10',
-                              tier === 'pro' && 'bg-purple-500/10',
-                              tier === 'business' && 'bg-amber-500/10',
-                              tier === 'enterprise' && 'bg-cyan-500/10'
+                              tier === 'free' && 'bg-slate-500/10',
+                              tier === 'starter' && 'bg-sky-500/10',
+                              tier === 'pro' && 'bg-violet-500/10',
+                              tier === 'business' && 'bg-amber-400/10',
+                              tier === 'enterprise' && 'bg-slate-400/10'
                             )}>
                               {tierIcons[tier]}
                             </div>
