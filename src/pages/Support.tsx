@@ -150,6 +150,7 @@ const Support = () => {
         canonical="/support"
         keywords="AYN support, help center, FAQ, customer support, AI assistant help"
         jsonLd={jsonLdData}
+        language={language as 'en' | 'ar' | 'fr'}
       />
       <div className="min-h-screen bg-background">
       {/* Header */}

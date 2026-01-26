@@ -9,6 +9,7 @@ interface SEOProps {
   noIndex?: boolean;
   jsonLd?: object;
   keywords?: string;
+  language?: 'en' | 'ar' | 'fr';
 }
 
 const SITE_URL = 'https://aynn.io';
@@ -23,9 +24,11 @@ export const SEO = ({
   noIndex = false,
   jsonLd,
   keywords,
+  language = 'en',
 }: SEOProps) => {
   const fullTitle = title.includes('AYN') ? title : `${title} | AYN`;
   const canonicalUrl = canonical ? `${SITE_URL}${canonical}` : undefined;
+  const ogLocale = language === 'ar' ? 'ar_SA' : language === 'fr' ? 'fr_FR' : 'en_US';
 
   return (
     <Helmet>
@@ -43,7 +46,10 @@ export const SEO = ({
       <meta property="og:image" content={image} />
       {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
       <meta property="og:site_name" content="AYN" />
-      <meta property="og:locale" content="en_US" />
+      <meta property="og:locale" content={ogLocale} />
+      <meta property="og:locale:alternate" content="en_US" />
+      <meta property="og:locale:alternate" content="ar_SA" />
+      <meta property="og:locale:alternate" content="fr_FR" />
 
       {/* Twitter Card */}
       <meta name="twitter:card" content="summary_large_image" />

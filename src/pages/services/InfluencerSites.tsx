@@ -169,6 +169,7 @@ const InfluencerSites = () => {
         canonical="/services/content-creator-sites"
         keywords="content creator websites, influencer sites, portfolio websites, personal brand, creator economy"
         jsonLd={{ '@graph': [breadcrumbSchema, serviceSchema] }}
+        language={language as 'en' | 'ar' | 'fr'}
       />
       <div className="min-h-screen bg-neutral-950 text-white">
         {/* Navigation */}

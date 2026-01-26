@@ -170,6 +170,7 @@ const AIEmployee = () => {
         canonical="/services/ai-employee"
         keywords="AI employees, virtual employees, AI workers, 24/7 support, business automation"
         jsonLd={{ '@graph': [breadcrumbSchema, serviceSchema] }}
+        language={language as 'en' | 'ar' | 'fr'}
       />
       <div className="min-h-screen bg-neutral-950 text-white">
         {/* Navigation */}

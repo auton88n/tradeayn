@@ -164,6 +164,8 @@ const Pricing = () => {
       <SEO 
         title="Pricing - AYN"
         description="Choose the perfect plan for your needs. From free to enterprise, we have options for everyone."
+        canonical="/pricing"
+        keywords="AYN pricing, AI assistant pricing, business AI plans, subscription plans"
         noIndex={true}
       />
       
