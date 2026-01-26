@@ -1,19 +1,26 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, Crown, Zap, Building2, Sparkles, ArrowLeft, Loader2, Shield, CreditCard, RefreshCw, ChevronDown, Brain } from 'lucide-react';
+import { Check, Crown, Zap, Building2, Sparkles, ArrowLeft, Loader2, Shield, CreditCard, ChevronDown, Brain, Star, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { useSubscription, SUBSCRIPTION_TIERS, SubscriptionTier } from '@/contexts/SubscriptionContext';
 import { SEO } from '@/components/shared/SEO';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const tierIcons: Record<SubscriptionTier, React.ReactNode> = {
   free: <Sparkles className="w-6 h-6" />,
   starter: <Zap className="w-6 h-6" />,
   pro: <Crown className="w-6 h-6" />,
   business: <Building2 className="w-6 h-6" />,
+  enterprise: <Star className="w-6 h-6" />,
 };
 
 const tierAccentColors: Record<SubscriptionTier, string> = {
@@ -21,6 +28,7 @@ const tierAccentColors: Record<SubscriptionTier, string> = {
   starter: 'from-blue-500/20 to-blue-600/10',
   pro: 'from-purple-500/20 to-purple-600/10',
   business: 'from-amber-500/20 to-amber-600/10',
+  enterprise: 'from-yellow-400/20 to-amber-500/10',
 };
 
 const tierGlowColors: Record<SubscriptionTier, string> = {
@@ -28,6 +36,7 @@ const tierGlowColors: Record<SubscriptionTier, string> = {
   starter: 'group-hover:shadow-[0_0_50px_-10px_rgba(59,130,246,0.4)]',
   pro: 'shadow-[0_0_60px_-10px_rgba(139,92,246,0.3)] group-hover:shadow-[0_0_80px_-10px_rgba(139,92,246,0.5)]',
   business: 'group-hover:shadow-[0_0_50px_-10px_rgba(245,158,11,0.4)]',
+  enterprise: 'group-hover:shadow-[0_0_60px_-10px_rgba(250,204,21,0.4)]',
 };
 
 const tierCheckColors: Record<SubscriptionTier, string> = {
@@ -35,6 +44,7 @@ const tierCheckColors: Record<SubscriptionTier, string> = {
   starter: 'bg-blue-500',
   pro: 'bg-purple-500',
   business: 'bg-amber-500',
+  enterprise: 'bg-yellow-500',
 };
 
 const tierButtonStyles: Record<SubscriptionTier, string> = {
@@ -42,28 +52,37 @@ const tierButtonStyles: Record<SubscriptionTier, string> = {
   starter: 'bg-blue-500 hover:bg-blue-600 text-white',
   pro: 'bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white',
   business: 'bg-amber-500 hover:bg-amber-600 text-white',
+  enterprise: 'bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-500 hover:to-amber-600 text-black font-semibold',
 };
 
 const faqItems = [
   {
     question: 'What are credits?',
-    answer: 'Credits are used for AI interactions. Each message or query uses 1 credit. Your credits reset at the beginning of each billing cycle.'
+    answer: 'Credits are used for AI interactions. Free users get 5 credits per day (resets daily). Paid users receive their full monthly allowance upfront.'
+  },
+  {
+    question: 'What is PDF & Excel generation?',
+    answer: 'Paid users can ask AYN to generate professional documents. PDF generation costs 30 credits and Excel costs 25 credits.'
   },
   {
     question: 'Can I upgrade or downgrade anytime?',
-    answer: 'Yes! You can change your plan at any time. Upgrades take effect immediately, and downgrades take effect at the end of your current billing cycle.'
+    answer: 'Yes! You can change your plan at any time. Upgrades take effect immediately, and downgrades take effect at the end of your billing cycle.'
   },
   {
     question: 'What happens if I run out of credits?',
-    answer: "You'll need to wait until your credits reset or upgrade to a higher plan for more monthly credits."
+    answer: 'Free users wait until the next day for credits to reset. Paid users need to wait until their monthly reset or upgrade to a higher plan.'
   },
   {
     question: 'Is there a free trial?',
-    answer: 'Our Free tier gives you 50 credits per month to try AYN. No credit card required to get started.'
+    answer: 'Our Free tier gives you 5 credits per day to try AYN - no credit card required.'
   },
   {
     question: 'What is your refund policy?',
-    answer: 'All payments are final and non-refundable. You can cancel your subscription at any time, and it will remain active until the end of your current billing period. No partial refunds are provided for unused time or credits.'
+    answer: 'All payments are final and non-refundable. You can cancel anytime and keep access until the end of your billing period.'
+  },
+  {
+    question: 'What is included in Enterprise?',
+    answer: 'Enterprise plans include custom credit limits, dedicated account manager, tailored AI solutions, and 24/7 priority support. Contact our sales team to discuss your needs.'
   }
 ];
 
@@ -71,8 +90,16 @@ const Pricing = () => {
   const navigate = useNavigate();
   const { tier: currentTier, isLoading, isSubscribed, startCheckout, openCustomerPortal } = useSubscription();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [showEnterpriseModal, setShowEnterpriseModal] = useState(false);
+  const [enterpriseForm, setEnterpriseForm] = useState({ companyName: '', email: '', requirements: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleAction = (tier: SubscriptionTier) => {
+    if (tier === 'enterprise') {
+      setShowEnterpriseModal(true);
+      return;
+    }
+
     if (tier === currentTier) {
       if (isSubscribed) {
         openCustomerPortal();
@@ -90,18 +117,48 @@ const Pricing = () => {
     startCheckout(tier);
   };
 
+  const handleEnterpriseSubmit = async () => {
+    if (!enterpriseForm.companyName || !enterpriseForm.email) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase.from('contact_messages').insert({
+        name: enterpriseForm.companyName,
+        email: enterpriseForm.email,
+        message: `[ENTERPRISE INQUIRY]\n\n${enterpriseForm.requirements || 'User requested Enterprise pricing information'}`
+      });
+
+      if (error) throw error;
+
+      toast.success('Thank you! Our team will contact you within 24 hours.');
+      setShowEnterpriseModal(false);
+      setEnterpriseForm({ companyName: '', email: '', requirements: '' });
+    } catch (error) {
+      if (import.meta.env.DEV) console.error('Enterprise inquiry error:', error);
+      toast.error('Something went wrong. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const getButtonText = (tier: SubscriptionTier) => {
+    if (tier === 'enterprise') return 'Contact Sales';
     if (tier === currentTier) {
       return isSubscribed ? 'Manage Plan' : 'Current Plan';
     }
     if (tier === 'free') {
       return isSubscribed ? 'Downgrade' : 'Get Started';
     }
-    const tierOrder: SubscriptionTier[] = ['free', 'starter', 'pro', 'business'];
+    const tierOrder: SubscriptionTier[] = ['free', 'starter', 'pro', 'business', 'enterprise'];
     const currentIndex = tierOrder.indexOf(currentTier);
     const targetIndex = tierOrder.indexOf(tier);
     return targetIndex > currentIndex ? 'Upgrade' : 'Switch Plan';
   };
+
+  const displayTiers: SubscriptionTier[] = ['free', 'starter', 'pro', 'business', 'enterprise'];
 
   return (
     <>
@@ -194,12 +251,13 @@ const Pricing = () => {
             </div>
           ) : (
             <>
-              {/* Pricing Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-                {(Object.keys(SUBSCRIPTION_TIERS) as SubscriptionTier[]).map((tier, index) => {
+              {/* Pricing Cards - 5 columns */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5 mb-12">
+                {displayTiers.map((tier, index) => {
                   const config = SUBSCRIPTION_TIERS[tier];
                   const isCurrentPlan = tier === currentTier;
                   const isPopular = tier === 'pro';
+                  const isEnterprise = tier === 'enterprise';
                   
                   return (
                     <motion.div
@@ -228,12 +286,13 @@ const Pricing = () => {
                       {/* Card */}
                       <div
                         className={cn(
-                          'relative p-8 h-full flex flex-col rounded-3xl transition-all duration-500',
+                          'relative p-6 h-full flex flex-col rounded-3xl transition-all duration-500',
                           'bg-card/40 backdrop-blur-xl',
                           'border border-white/10 dark:border-white/5',
                           'hover:scale-[1.02] hover:border-white/20 dark:hover:border-white/10',
                           tierGlowColors[tier],
-                          isCurrentPlan && 'ring-2 ring-primary'
+                          isCurrentPlan && 'ring-2 ring-primary',
+                          isEnterprise && 'border-yellow-400/30 dark:border-yellow-400/20'
                         )}
                       >
                         {/* Gradient Overlay */}
@@ -252,49 +311,63 @@ const Pricing = () => {
                         {/* Content */}
                         <div className="relative z-10 flex flex-col h-full">
                           {/* Icon & Name */}
-                          <div className="flex items-center gap-3 mb-6">
+                          <div className="flex items-center gap-3 mb-5">
                             <div className={cn(
-                              'p-3 rounded-xl transition-colors',
+                              'p-2.5 rounded-xl transition-colors',
                               tier === 'free' && 'bg-muted-foreground/10',
                               tier === 'starter' && 'bg-blue-500/10',
                               tier === 'pro' && 'bg-purple-500/10',
-                              tier === 'business' && 'bg-amber-500/10'
+                              tier === 'business' && 'bg-amber-500/10',
+                              tier === 'enterprise' && 'bg-yellow-500/10'
                             )}>
                               {tierIcons[tier]}
                             </div>
-                            <h3 className="text-xl font-semibold">{config.name}</h3>
+                            <h3 className="text-lg font-semibold">{config.name}</h3>
                           </div>
 
                           {/* Price */}
-                          <div className="mb-8">
-                            <div className="flex items-baseline gap-1">
-                              <span className="text-5xl md:text-6xl font-display font-bold tracking-tight">
-                                ${config.price}
-                              </span>
-                              <span className="text-muted-foreground text-lg">/month</span>
-                            </div>
-                            {tier !== 'free' && (
-                              <p className="text-xs text-muted-foreground mt-2">
-                                Billed monthly. Cancel anytime.
-                              </p>
+                          <div className="mb-6">
+                            {isEnterprise ? (
+                              <>
+                                <span className="text-3xl font-display font-bold tracking-tight">
+                                  Contact Us
+                                </span>
+                                <p className="text-xs text-muted-foreground mt-2">
+                                  Tailored for your business
+                                </p>
+                              </>
+                            ) : (
+                              <>
+                                <div className="flex items-baseline gap-1">
+                                  <span className="text-4xl font-display font-bold tracking-tight">
+                                    ${config.price}
+                                  </span>
+                                  <span className="text-muted-foreground text-base">/month</span>
+                                </div>
+                                {tier !== 'free' && (
+                                  <p className="text-xs text-muted-foreground mt-2">
+                                    Billed monthly. Cancel anytime.
+                                  </p>
+                                )}
+                              </>
                             )}
                           </div>
 
                           {/* Features */}
-                          <ul className="space-y-4 mb-8 flex-grow">
+                          <ul className="space-y-3 mb-6 flex-grow">
                             {config.features.map((feature, i) => (
                               <motion.li 
                                 key={i} 
-                                className="flex items-start gap-3"
+                                className="flex items-start gap-2.5"
                                 initial={{ opacity: 0, x: -10 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: index * 0.1 + i * 0.05 + 0.5 }}
                               >
                                 <div className={cn(
-                                  'w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5',
+                                  'w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5',
                                   tierCheckColors[tier]
                                 )}>
-                                  <Check className="w-3 h-3 text-white" />
+                                  <Check className="w-2.5 h-2.5 text-white" />
                                 </div>
                                 <span className="text-sm text-foreground/80">{feature}</span>
                               </motion.li>
@@ -306,7 +379,7 @@ const Pricing = () => {
                             onClick={() => handleAction(tier)}
                             variant={isCurrentPlan && !isSubscribed ? "outline" : "default"}
                             className={cn(
-                              'w-full h-12 rounded-xl font-medium transition-all duration-300',
+                              'w-full h-11 rounded-xl font-medium transition-all duration-300',
                               isCurrentPlan && !isSubscribed
                                 ? 'border-2 border-primary/50 bg-primary/10 text-primary hover:bg-primary/20 cursor-default' 
                                 : isCurrentPlan && isSubscribed
@@ -398,6 +471,68 @@ const Pricing = () => {
             </div>
           </motion.div>
         </div>
+
+        {/* Enterprise Contact Modal */}
+        <Dialog open={showEnterpriseModal} onOpenChange={setShowEnterpriseModal}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Star className="w-5 h-5 text-yellow-500" />
+                Enterprise Inquiry
+              </DialogTitle>
+              <DialogDescription>
+                Tell us about your business needs and we'll create a custom plan for you.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 pt-4">
+              <div className="space-y-2">
+                <Label htmlFor="companyName">Company Name *</Label>
+                <Input
+                  id="companyName"
+                  placeholder="Your company name"
+                  value={enterpriseForm.companyName}
+                  onChange={(e) => setEnterpriseForm(prev => ({ ...prev, companyName: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Contact Email *</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="you@company.com"
+                  value={enterpriseForm.email}
+                  onChange={(e) => setEnterpriseForm(prev => ({ ...prev, email: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="requirements">Requirements (optional)</Label>
+                <Textarea
+                  id="requirements"
+                  placeholder="Tell us about your specific needs..."
+                  rows={4}
+                  value={enterpriseForm.requirements}
+                  onChange={(e) => setEnterpriseForm(prev => ({ ...prev, requirements: e.target.value }))}
+                />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setShowEnterpriseModal(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="flex-1 bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-500 hover:to-amber-600 text-black font-semibold"
+                  onClick={handleEnterpriseSubmit}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Submit'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </>
   );
