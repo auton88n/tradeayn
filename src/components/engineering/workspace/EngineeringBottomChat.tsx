@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowUp, 
@@ -27,6 +27,44 @@ import { useEngineeringAIAgent, type ChatMessage } from '@/hooks/useEngineeringA
 import { AIActionChip } from './AIActionChip';
 import ReactMarkdown from 'react-markdown';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
+// Memoized message bubble for scroll performance
+const MessageBubble = memo(({ msg, index }: { msg: ChatMessage; index: number }) => (
+  <div
+    className={cn(
+      "flex flex-col gap-2",
+      msg.role === 'user' ? 'items-end' : 'items-start'
+    )}
+    style={{ contain: 'content' }}
+  >
+    <div
+      className={cn(
+        "max-w-[85%] rounded-2xl px-4 py-2.5",
+        msg.role === 'user'
+          ? "bg-foreground text-background"
+          : "bg-muted"
+      )}
+    >
+      {msg.role === 'assistant' ? (
+        <div className="prose prose-sm dark:prose-invert max-w-none">
+          <ReactMarkdown>{msg.content}</ReactMarkdown>
+        </div>
+      ) : (
+        <p className="text-sm">{msg.content}</p>
+      )}
+    </div>
+    
+    {/* Action chips for assistant messages */}
+    {msg.role === 'assistant' && msg.actions && msg.actions.length > 0 && (
+      <div className="flex flex-wrap gap-1.5 max-w-[85%]">
+        {msg.actions.map((action, j) => (
+          <AIActionChip key={j} action={action} />
+        ))}
+      </div>
+    )}
+  </div>
+));
+MessageBubble.displayName = 'MessageBubble';
 
 interface EngineeringBottomChatProps {
   onCalculate: () => void;
@@ -322,42 +360,17 @@ export const EngineeringBottomChat: React.FC<EngineeringBottomChatProps> = ({
                     </button>
                   </div>
                 </div>
-                <ScrollArea className="h-[280px]">
-                  <div className="p-4 space-y-4 flex flex-col">
+                <ScrollArea className="h-[280px]" style={{ contain: 'strict' }}>
+                  <div 
+                    className="p-4 space-y-4 flex flex-col"
+                    style={{ contentVisibility: 'auto', containIntrinsicSize: '0 500px' }}
+                  >
                     {messages.map((msg, i) => (
-                      <div
-                        key={i}
-                        className={cn(
-                          "flex flex-col gap-2",
-                          msg.role === 'user' ? 'items-end' : 'items-start'
-                        )}
-                      >
-                        <div
-                          className={cn(
-                            "max-w-[85%] rounded-2xl px-4 py-2.5",
-                            msg.role === 'user'
-                              ? "bg-foreground text-background"
-                              : "bg-muted"
-                          )}
-                        >
-                          {msg.role === 'assistant' ? (
-                            <div className="prose prose-sm dark:prose-invert max-w-none">
-                              <ReactMarkdown>{msg.content}</ReactMarkdown>
-                            </div>
-                          ) : (
-                            <p className="text-sm">{msg.content}</p>
-                          )}
-                        </div>
-                        
-                        {/* Action chips for assistant messages */}
-                        {msg.role === 'assistant' && msg.actions && msg.actions.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5 max-w-[85%]">
-                            {msg.actions.map((action, j) => (
-                              <AIActionChip key={j} action={action} />
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                      <MessageBubble 
+                        key={`${msg.role}-${i}`} 
+                        msg={msg} 
+                        index={i} 
+                      />
                     ))}
                     {isLoading && (
                       <div className="flex justify-start">
