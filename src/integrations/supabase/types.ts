@@ -2325,6 +2325,7 @@ export type Database = {
         Args: { p_endpoint?: string; p_user_id: string }
         Returns: undefined
       }
+      admin_view_contact_with_logging: { Args: never; Returns: boolean }
       check_api_rate_limit: {
         Args: {
           p_endpoint: string
@@ -2653,6 +2654,7 @@ export type Database = {
       }
       validate_session_security: { Args: never; Returns: boolean }
       validate_system_security: { Args: never; Returns: Json }
+      verify_encryption_configured: { Args: never; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "user" | "duty"
