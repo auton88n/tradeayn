@@ -1,268 +1,268 @@
 
-# Platform Updates: Enterprise Tier, Tutorial & Services Refinement
+# Pricing Page Updates: Engineering Limits, Apple Pay, Enterprise Styling & Performance
 
 ## Summary
 
-This plan covers three main updates:
-1. **Enterprise Tier**: Add a new "Contact Sales" tier that submits to the existing `contact_messages` table (viewable in admin)
-2. **Services Clarification**: Update what AYN can do vs what requires contacting the AYN team
-3. **Identity Refinement**: AYN only explains the "eye" meaning when asked
+This plan addresses five key requests:
+1. **Engineering Calculation Limits**: Update to Free=1/month, Starter=10, Pro=50, Business=100
+2. **Apple Pay Implementation**: Enable Apple Pay/Google Pay via Stripe Checkout
+3. **Enterprise Card Color**: Differentiate from Business tier with new color scheme
+4. **Remove "Dedicated account manager"**: From Enterprise features
+5. **Performance Optimization**: Fix laggy scrolling and heavy page load
 
 ---
 
-## 1. Enterprise Tier Implementation
+## 1. Engineering Calculation Limit Updates
 
-### New Tier Configuration
+### New Values
 
-The Enterprise card will NOT have a Stripe integration - it submits a contact request to the `contact_messages` table with a special identifier.
-
-| Tier | Price | Button | Action |
-|------|-------|--------|--------|
-| Free | $0 | Get Started | Current behavior |
-| Starter | $9 | Upgrade | Stripe checkout |
-| Pro | $29 | Upgrade | Stripe checkout |
-| Business | $79 | Upgrade | Stripe checkout |
-| **Enterprise** | Contact Us | Contact Sales | Opens modal, submits to `contact_messages` |
-
-### Enterprise Features (Updated - No "Custom integrations")
-
-```typescript
-enterprise: {
-  name: 'Enterprise',
-  price: -1, // -1 indicates "Contact Us"
-  priceId: null,
-  productId: null,
-  limits: { monthlyCredits: -1, monthlyEngineering: -1 },
-  features: [
-    'Custom credit allocation',
-    'Tailored AI solutions',
-    'Dedicated account manager',
-    '24/7 priority support'
-  ],
-}
-```
+| Tier | Current Engineering | New Engineering |
+|------|---------------------|-----------------|
+| Free | 10/month | **1/month** |
+| Starter | 50/month | **10/month** |
+| Pro | 200/month | **50/month** |
+| Business | 500/month | **100/month** |
 
 ### Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/contexts/SubscriptionContext.tsx` | Add Enterprise tier to `SUBSCRIPTION_TIERS` |
-| `src/pages/Pricing.tsx` | Add Enterprise card with contact modal, update grid to 5 columns |
+| `src/contexts/SubscriptionContext.tsx` | Update `monthlyEngineering` values and feature text |
+| `src/constants/tierLimits.ts` | Sync engineering limits |
+| `supabase/functions/check-subscription/index.ts` | Update `TIER_LIMITS` backend config |
 
-### Enterprise Contact Modal
+### Code Changes
 
-When user clicks "Contact Sales", open a modal with:
-- Company Name (required)
-- Contact Email (required)  
-- Message/Requirements (optional)
-
-On submit, insert into `contact_messages`:
 ```typescript
-await supabase.from('contact_messages').insert({
-  name: companyName,
-  email: email,
-  message: `[ENTERPRISE INQUIRY]\n\n${requirements || 'User requested Enterprise pricing'}`
-});
+// SubscriptionContext.tsx - Updated limits
+free: {
+  limits: { monthlyCredits: 5, monthlyEngineering: 1, isDaily: true },
+  features: ['5 credits/day', '1 engineering calc/month', 'Basic support'],
+},
+starter: {
+  limits: { monthlyCredits: 500, monthlyEngineering: 10 },
+  features: ['500 credits/month', '10 engineering calcs', 'PDF & Excel generation', 'Email support'],
+},
+pro: {
+  limits: { monthlyCredits: 1000, monthlyEngineering: 50 },
+  features: ['1,000 credits/month', '50 engineering calcs', 'PDF & Excel generation', 'Priority support'],
+},
+business: {
+  limits: { monthlyCredits: 3000, monthlyEngineering: 100 },
+  features: ['3,000 credits/month', '100 engineering calcs', 'PDF & Excel generation', 'Priority support'],
+},
 ```
-
-The prefix `[ENTERPRISE INQUIRY]` allows easy filtering in admin support.
 
 ---
 
-## 2. Admin Contact Messages View
+## 2. Apple Pay Implementation
 
-Currently, `contact_messages` are NOT displayed in the admin panel. I need to create a simple viewer or add them to an existing tab.
-
-### Option: Add to Support Management
-
-Add a new tab/section in `SupportManagement.tsx` to show contact messages, OR create a separate component. The simplest approach is to add a "Contact Messages" section to the existing Support tab.
-
-### Files to Modify
-
-| File | Changes |
-|------|---------|
-| `src/components/admin/SupportManagement.tsx` | Add toggle between "Tickets" and "Contact Messages" views |
+Apple Pay and Google Pay are automatically available through Stripe Checkout when the `payment_method_types` parameter includes `'card'` **or is omitted entirely** (Stripe's default behavior enables wallets).
 
 ### Implementation
 
-Add a simple toggle at the top:
-```text
-[Tickets] [Contact Messages]
-```
-
-When "Contact Messages" is selected, fetch from `contact_messages` table and display similar card layout.
-
----
-
-## 3. Pricing Page Updates
-
-### Updated Tier Features
+Update `create-checkout` edge function to explicitly enable payment method types:
 
 ```typescript
-// SubscriptionContext.tsx updates
-free: {
-  features: ['5 credits/day', '10 engineering calcs', 'Basic support'],
-},
-starter: {
-  limits: { monthlyCredits: 500, monthlyEngineering: 50 },
-  features: ['500 credits/month', '50 engineering calcs', 'PDF & Excel generation', 'Email support'],
-},
-pro: {
-  features: ['1,000 credits/month', '200 engineering calcs', 'PDF & Excel generation', 'Priority support'],
-},
-business: {
-  limits: { monthlyCredits: 3000, monthlyEngineering: 500 },
-  features: ['3,000 credits/month', '500 engineering calcs', 'PDF & Excel generation', 'Priority support'],
-  // REMOVED: 'Team features', 'Unlimited engineering'
-},
+// supabase/functions/create-checkout/index.ts
+const session = await stripe.checkout.sessions.create({
+  customer: customerId,
+  customer_email: customerId ? undefined : user.email,
+  line_items: [{ price: priceId, quantity: 1 }],
+  mode: "subscription",
+  // Enable Apple Pay, Google Pay, and card payments
+  payment_method_types: ['card'],  // Stripe automatically shows Apple/Google Pay when available
+  success_url: `${origin}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
+  cancel_url: `${origin}/subscription-canceled`,
+  metadata: { user_id: user.id },
+});
 ```
 
-### Pricing Grid Layout
-
-Change from 4-column to 5-column responsive grid:
-```tsx
-<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-```
-
-### Enterprise Card Styling
-
-- Distinct gradient: Gold/platinum styling (`from-gradient-to-br from-amber-400/20 to-yellow-600/10`)
-- "Contact Us" instead of price
-- Tagline: "Tailored for your business"
+**Important Notes:**
+- Apple Pay appears automatically in Stripe Checkout on Safari (iOS/macOS) when the user has Apple Pay set up
+- Google Pay appears automatically on Chrome/Android when the user has Google Pay set up
+- No additional configuration needed - Stripe handles wallet detection automatically
+- For testing: Use Stripe's test mode with real Apple Pay in Safari
 
 ---
 
-## 4. Updated FAQ Items
+## 3. Enterprise Card Color Change
+
+### Current Styling (Too Similar to Business)
+- Enterprise uses `from-yellow-400/20 to-amber-500/10` (gold tones)
+- Business uses `from-amber-500/20 to-amber-600/10` (amber tones)
+- Both appear similar in color
+
+### New Enterprise Styling (Platinum/Silver)
+
+Change Enterprise to a distinctive platinum/silver/cyan theme:
 
 ```typescript
-const faqItems = [
-  {
-    question: 'What are credits?',
-    answer: 'Credits are used for AI interactions. Free users get 5 credits per day (resets daily). Paid users receive their full monthly allowance upfront.'
-  },
-  {
-    question: 'What is PDF & Excel generation?',
-    answer: 'Paid users can ask AYN to generate professional documents. PDF generation costs 30 credits and Excel costs 25 credits.'
-  },
-  {
-    question: 'Can I upgrade or downgrade anytime?',
-    answer: 'Yes! You can change your plan at any time. Upgrades take effect immediately, and downgrades take effect at the end of your billing cycle.'
-  },
-  {
-    question: 'What happens if I run out of credits?',
-    answer: 'Free users wait until the next day for credits to reset. Paid users need to wait until their monthly reset or upgrade to a higher plan.'
-  },
-  {
-    question: 'Is there a free trial?',
-    answer: 'Our Free tier gives you 5 credits per day to try AYN - no credit card required.'
-  },
-  {
-    question: 'What is your refund policy?',
-    answer: 'All payments are final and non-refundable. You can cancel anytime and keep access until the end of your billing period.'
-  },
-  {
-    question: 'What is included in Enterprise?',
-    answer: 'Enterprise plans include custom credit limits, dedicated account manager, tailored AI solutions, and 24/7 priority support. Contact our sales team to discuss your needs.'
-  }
-];
+// Pricing.tsx - Updated color maps
+const tierAccentColors: Record<SubscriptionTier, string> = {
+  // ... other tiers unchanged
+  enterprise: 'from-slate-400/20 to-cyan-500/10',  // Platinum/Cyan gradient
+};
+
+const tierGlowColors: Record<SubscriptionTier, string> = {
+  // ... other tiers unchanged
+  enterprise: 'group-hover:shadow-[0_0_60px_-10px_rgba(148,163,184,0.4)]',  // Slate glow
+};
+
+const tierCheckColors: Record<SubscriptionTier, string> = {
+  // ... other tiers unchanged
+  enterprise: 'bg-cyan-500',  // Cyan checkmarks
+};
+
+const tierButtonStyles: Record<SubscriptionTier, string> = {
+  // ... other tiers unchanged
+  enterprise: 'bg-gradient-to-r from-slate-400 to-cyan-500 hover:from-slate-500 hover:to-cyan-600 text-white font-semibold',
+};
+```
+
+Also update the icon background in the card:
+```typescript
+tier === 'enterprise' && 'bg-cyan-500/10'
+```
+
+And the border styling:
+```typescript
+isEnterprise && 'border-cyan-400/30 dark:border-cyan-400/20'
 ```
 
 ---
 
-## 5. Tutorial Updates
+## 4. Remove "Dedicated account manager" from Enterprise
 
-### Updated TUTORIAL_STEPS
+### Current Enterprise Features
+```typescript
+features: ['Custom credit allocation', 'Tailored AI solutions', 'Dedicated account manager', '24/7 priority support']
+```
 
-| Step | Title | Description |
-|------|-------|-------------|
-| meet-ayn | Meet AYN | "AYN is your intelligent AI companion. The eye responds emotionally to your conversations and helps with daily tasks, documents, and engineering calculations." |
-| emotions | Emotional Intelligence | Full list of 11 emotions with colors (Calm=Blue, Comfort=Rose, Supportive=Beige, Happy=Gold, Excited=Coral, Thinking=Indigo, Curious=Magenta, Sad=Lavender, Frustrated=Orange, Mad=Crimson, Bored=Slate) |
-| empathy | Empathetic Responses | Keep current |
-| chat | Start a Conversation | Keep current |
-| **documents** | **Generate Documents** | **NEW**: "Paid users can generate professional PDFs (30 credits) and Excel files (25 credits). Just ask AYN to create a document for you." |
-| files | Upload & Analyze Files | Keep current |
-| credits | Your Credits | "Free users get 5 credits per day (resets daily). Paid users receive their monthly allowance upfront." |
-| engineering | Engineering Tools | "Access 7 professional calculators: Beam, Column, Slab, Foundation, Retaining Wall, AI Grading, and Parking Designer. All include 3D visualization and AI analysis." |
-| navigation | Your Sidebar | Keep current |
-| profile | Your Profile | Keep current |
+### Updated Enterprise Features
+```typescript
+features: ['Custom credit allocation', 'Tailored AI solutions', '24/7 priority support']
+```
 
-### Files to Modify
-
-| File | Changes |
-|------|---------|
-| `src/types/tutorial.types.ts` | Update TUTORIAL_STEPS with new content, add documents step |
+### Also Update FAQ
+Update the Enterprise FAQ answer to remove mention of dedicated account manager:
+```typescript
+{
+  question: 'What is included in Enterprise?',
+  answer: 'Enterprise plans include custom credit limits, tailored AI solutions, and 24/7 priority support. Contact our sales team to discuss your needs.'
+}
+```
 
 ---
 
-## 6. AYN Identity Update (System Prompt)
+## 5. Performance Optimization
 
-### Current Behavior
-AYN may explain "AYN means eye in Arabic" proactively.
+The page is laggy due to heavy framer-motion animations. Here are the optimizations:
 
-### New Behavior
-AYN only explains the meaning when directly asked. The system prompt should be updated to:
+### A. Remove Infinite Background Animations
 
+The three animated background blobs use `repeat: Infinity` which causes continuous re-renders and GPU strain.
+
+**Solution**: Change to static positioning or single-run animations:
+
+```typescript
+// Before: Infinite animations
+<motion.div 
+  animate={{ x: [0, 30, 0], y: [0, -20, 0], scale: [1, 1.1, 1] }}
+  transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+/>
+
+// After: Static or reduced animation
+<div className="absolute top-20 left-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[100px]" />
 ```
-You are AYN, an AI assistant by the AYN Team.
-- Only explain that "AYN" means "eye" in Arabic if the user asks about your name's meaning.
-- Do not proactively mention the eye metaphor or meaning.
+
+### B. Reduce Feature List Animations
+
+Each feature item has staggered animations which cause layout calculations:
+
+```typescript
+// Before: Individual item animations
+<motion.li 
+  initial={{ opacity: 0, x: -10 }}
+  animate={{ opacity: 1, x: 0 }}
+  transition={{ delay: index * 0.1 + i * 0.05 + 0.5 }}
+>
+
+// After: Remove individual item animations, keep card-level only
+<li className="flex items-start gap-2.5">
 ```
 
-### Services AYN Can Provide Directly
-- Chat assistance (general questions, analysis)
-- Engineering tools (7 calculators)
-- PDF generation (paid users, 30 credits)
-- Excel generation (paid users, 25 credits)
-- File analysis
+### C. Simplify Card Hover Effects
 
-### Services Requiring Contact with AYN Team
-- AI Employees
-- Custom AI Agents  
-- Process Automation
-- Content Creator Sites
-- Smart Ticketing System
+Remove `hover:scale-[1.02]` which triggers expensive layout recalculations:
 
-When users ask about these services, AYN should explain them but direct users to contact the AYN team to discuss and implement.
+```typescript
+// Remove from card classes
+'hover:scale-[1.02]'  // Remove this
+```
 
-### Files to Modify
+### D. Add CSS Containment
 
-| File | Changes |
-|------|---------|
-| `supabase/functions/ayn-unified/index.ts` | Update system prompt to not proactively explain "eye" meaning |
+Add `contain: content` to cards for rendering isolation:
+
+```typescript
+// Add to card wrapper
+style={{ contain: 'content' }}
+```
+
+### E. Use `will-change` Sparingly
+
+Remove or minimize `will-change` properties that consume GPU memory.
 
 ---
 
 ## Files Summary
 
-| File | Type | Changes |
-|------|------|---------|
-| `src/contexts/SubscriptionContext.tsx` | Edit | Add Enterprise tier, update limits for all tiers |
-| `src/pages/Pricing.tsx` | Edit | Add Enterprise card with contact modal, 5-column grid, updated FAQ |
-| `src/types/tutorial.types.ts` | Edit | Update tutorial steps with new content |
-| `src/components/admin/SupportManagement.tsx` | Edit | Add toggle for "Contact Messages" view |
-| `supabase/functions/ayn-unified/index.ts` | Edit | Update system prompt regarding name explanation |
-| `supabase/functions/check-subscription/index.ts` | Edit | Sync tier limits with frontend |
+| File | Changes |
+|------|---------|
+| `src/contexts/SubscriptionContext.tsx` | Update engineering limits and features for all tiers, remove "Dedicated account manager" from Enterprise |
+| `src/constants/tierLimits.ts` | Sync engineering limits (1, 10, 50, 100) |
+| `src/pages/Pricing.tsx` | New Enterprise colors (platinum/cyan), remove background infinite animations, reduce feature animations, update FAQ |
+| `supabase/functions/create-checkout/index.ts` | Add `payment_method_types: ['card']` for Apple Pay |
+| `supabase/functions/check-subscription/index.ts` | Update TIER_LIMITS engineering values |
+
+---
+
+## Visual Change Summary
+
+### Enterprise Card (New Look)
+- **Gradient**: Platinum/Cyan (`from-slate-400/20 to-cyan-500/10`)
+- **Glow**: Slate gray (`rgba(148,163,184,0.4)`)
+- **Checkmarks**: Cyan (`bg-cyan-500`)
+- **Button**: Slate-to-cyan gradient with white text
+- **Border**: Cyan accent (`border-cyan-400/30`)
+
+### Performance Improvements
+- Remove 3 infinite background animations
+- Remove ~25 individual feature item animations (5 tiers × 4-5 features)
+- Remove hover scale transforms on cards
+- Add CSS containment for layout isolation
 
 ---
 
 ## Technical Notes
 
-### Enterprise Contact Flow
-```text
-User clicks "Contact Sales"
-    ↓
-Modal opens with form (Company, Email, Message)
-    ↓
-Submit inserts to contact_messages with "[ENTERPRISE INQUIRY]" prefix
-    ↓
-Toast: "Thank you! Our team will contact you within 24 hours"
-    ↓
-Admin sees it in Support → Contact Messages tab
-```
+### Apple Pay Requirements
+- Stripe automatically displays Apple Pay when:
+  1. User is on Safari (iOS/macOS)
+  2. User has Apple Pay configured on their device
+  3. Session is over HTTPS (production)
+- No domain verification needed for Stripe Checkout (only for Stripe Elements)
+- Test with real Apple Pay in Stripe test mode on a real Apple device
 
-### Tier Limits Sync
-Frontend (`SubscriptionContext.tsx`) and backend (`check-subscription/index.ts`) must have matching values:
-- Free: 5 credits/day (special handling for daily reset)
-- Starter: 500/month, 50 engineering
-- Pro: 1000/month, 200 engineering
-- Business: 3000/month, 500 engineering
+### Backend Sync
+Frontend and backend TIER_LIMITS must match:
+```typescript
+// check-subscription/index.ts
+const TIER_LIMITS = {
+  free: { monthlyCredits: 5, monthlyEngineering: 1, isDaily: true },
+  starter: { monthlyCredits: 500, monthlyEngineering: 10 },
+  pro: { monthlyCredits: 1000, monthlyEngineering: 50 },
+  business: { monthlyCredits: 3000, monthlyEngineering: 100 },
+};
+```
