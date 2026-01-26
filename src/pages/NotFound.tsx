@@ -33,7 +33,7 @@ const NotFound = () => {
           <Button 
             onClick={() => window.history.back()}
             variant="outline"
-            className="glass glass-hover"
+            className="glass glass-hover text-white"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             {t('notFound.goBack')}
