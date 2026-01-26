@@ -1,166 +1,82 @@
 
-# Friendly Error Handling Plan
-## Replace Technical Errors with AYN-style Handling Messages
-
----
+# Fix Engineering Back Button Navigation
 
 ## Summary
 
-Replace all technical error messages in the Engineering AI components with friendly, personality-driven "handling messages" that maintain AYN's helpful persona even when things go wrong.
+Update the "Back" button in the Engineering Workspace to navigate to the AYN dashboard (`/`) instead of the Civil Engineering service page (`/services/civil-engineering`).
 
 ---
 
-## Current Issues
+## Current Behavior
 
-| Location | Current Behavior |
-|----------|-----------------|
-| `useEngineeringAI.ts` | Shows toast: "AI Error" with raw error message |
-| `useEngineeringAI.ts` | Chat shows: "I apologize, but I encountered an error..." |
-| `useEngineeringAIAgent.ts` | Shows: "sorry, i encountered an error. please try again." |
-| Various calculators | Use `toast.error()` with raw error text |
+When at the calculator selection screen (no calculator open), clicking "Back" navigates to:
+```
+/services/civil-engineering
+```
 
----
+## Expected Behavior
 
-## Solution: Friendly Handling Messages
-
-Create randomized, personality-driven responses that make errors feel like natural conversation pauses:
-
-```text
-HANDLING_MESSAGES = [
-  "hmm, let me think about that differently...",
-  "one sec, gathering my thoughts...",
-  "i got a little distracted! could you try that again?",
-  "let me take another look at this...",
-  "oops, my brain glitched! try once more?",
-  "still processing... want to try again?",
-  "that was tricky! let's give it another shot.",
-]
+The "Back" button should navigate to the main AYN dashboard:
+```
+/
 ```
 
 ---
 
-## Files to Modify
+## File to Modify
 
-| File | Changes |
-|------|---------|
-| `src/lib/errorMessages.ts` | Add `HANDLING_MESSAGES` array and `getHandlingMessage()` function |
-| `src/hooks/useEngineeringAI.ts` | Remove error toast, use friendly handling message in chat |
-| `src/hooks/useEngineeringAIAgent.ts` | Use `getHandlingMessage()` instead of static error text |
-| `src/components/engineering/EngineeringAIPanel.tsx` | Ensure error states use friendly messages (if any) |
+| File | Change |
+|------|--------|
+| `src/components/engineering/workspace/EngineeringWorkspace.tsx` | Update line 151 from `/services/civil-engineering` to `/` |
 
 ---
 
-## Implementation Details
+## Implementation
 
-### 1. Add Handling Messages to Error Library
+**Line 142-153 (handleBack function):**
 
 ```text
-// src/lib/errorMessages.ts
+Before:
+const handleBack = () => {
+  if (selectedCalculator) {
+    setSelectedCalculator(null);
+    setCurrentInputs({});
+    setCurrentOutputs(null);
+    setCalculationResult(null);
+  } else {
+    navigate('/services/civil-engineering');  // ← Wrong destination
+  }
+};
 
-// Friendly handling messages that maintain AYN's personality
-export const HANDLING_MESSAGES = [
-  "hmm, let me think about that differently...",
-  "one sec, gathering my thoughts...",
-  "i got a little distracted! could you try that again?",
-  "let me take another look at this...",
-  "oops, my brain glitched! try once more?",
-  "still processing... want to try again?",
-  "that was tricky! let's give it another shot.",
-  "my circuits got tangled there. mind trying again?",
-];
-
-/**
- * Get a random friendly handling message for errors
- * Maintains AYN's helpful, casual personality
- */
-export const getHandlingMessage = (): string => {
-  const index = Math.floor(Math.random() * HANDLING_MESSAGES.length);
-  return HANDLING_MESSAGES[index];
+After:
+const handleBack = () => {
+  if (selectedCalculator) {
+    setSelectedCalculator(null);
+    setCurrentInputs({});
+    setCurrentOutputs(null);
+    setCalculationResult(null);
+  } else {
+    navigate('/');  // ← Navigate to AYN dashboard
+  }
 };
 ```
 
-### 2. Update useEngineeringAI.ts
+---
 
-**Before:**
-```text
-toast({
-  title: "AI Error",
-  description: errorMessage,
-  variant: "destructive"
-});
+## Optional Enhancement
 
-const errorAssistantMessage: Message = {
-  role: 'assistant',
-  content: "I apologize, but I encountered an error...",
-```
+Import and use the centralized route constant for type-safety:
 
-**After:**
-```text
-// Remove toast entirely - let the chat handle it naturally
+```typescript
+import { ROUTES } from '@/constants/routes';
 
-const errorAssistantMessage: Message = {
-  role: 'assistant',
-  content: getHandlingMessage(),
-```
-
-### 3. Update useEngineeringAIAgent.ts
-
-**Before (lines 307-320):**
-```text
-} catch (err) {
-  if (import.meta.env.DEV) {
-    console.error('AI agent error:', err);
-  }
-  
-  const errorContent = err instanceof Error && err.message.includes('rate limit')
-    ? 'rate limit reached. please wait a moment and try again.'
-    : 'sorry, i encountered an error. please try again.';
-```
-
-**After:**
-```text
-} catch (err) {
-  if (import.meta.env.DEV) {
-    console.error('AI agent error:', err);
-  }
-  
-  // Use friendly handling message that maintains personality
-  const errorContent = err instanceof Error && err.message.includes('rate limit')
-    ? 'whoa, too fast! give me a moment to catch up...'
-    : getHandlingMessage();
+// Then in handleBack:
+navigate(ROUTES.HOME);
 ```
 
 ---
 
-## Key Changes Summary
+## Expected Result
 
-1. **No Error Toasts**: Remove destructive toast notifications from AI chat flows - errors are handled inline as chat messages
-
-2. **Randomized Messages**: Each error shows a different friendly message, making the experience feel more natural
-
-3. **Rate Limit Special Case**: Keep a specific friendly message for rate limits since users need to know to wait
-
-4. **Console Logging Preserved**: Dev-mode console.error statements remain for debugging
-
----
-
-## Expected User Experience
-
-**Before:**
-- Red error toast appears: "AI Error: Network timeout"
-- Chat shows: "I apologize, but I encountered an error..."
-
-**After:**
-- No toast interruption
-- Chat shows (randomly): "hmm, let me think about that differently..."
-- User naturally retries, feels like a conversation pause
-
----
-
-## Testing Checklist
-
-- [ ] AI errors show randomized handling messages (no "error" word visible)
-- [ ] No destructive toasts appear during AI chat
-- [ ] Rate limit shows specific "too fast" message
-- [ ] Console logs still appear in dev mode for debugging
-- [ ] Messages feel natural and match AYN's lowercase, casual style
+- Clicking "Back" from a calculator → returns to calculator selection
+- Clicking "Back" from calculator selection → returns to AYN dashboard (`/`)
