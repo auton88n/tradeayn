@@ -38,10 +38,33 @@ serve(async (req) => {
   }
 
   try {
-    const body = await req.json();
+    // Defensive body parsing to handle malformed requests during concurrent execution
+    let body: Record<string, unknown> = {};
+    try {
+      body = await req.json();
+    } catch {
+      return new Response(JSON.stringify({ 
+        error: 'Invalid JSON body',
+        validationFailed: true 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
     
     // Handle both formats: { inputs: {...} } OR {...} directly
-    const rawInputs = body.inputs || body;
+    const rawInputs = body?.inputs || body || {};
+    
+    // Validate we have inputs
+    if (!rawInputs || Object.keys(rawInputs).length === 0) {
+      return new Response(JSON.stringify({ 
+        error: 'No input data provided',
+        validationFailed: true 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
     
     // Validate all required numeric fields
     const validations = [
