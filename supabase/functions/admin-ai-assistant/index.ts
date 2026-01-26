@@ -6,30 +6,69 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Admin AI system prompt
-const ADMIN_SYSTEM_PROMPT = `you're an ai assistant helping admins manage the ayn platform. you have access to:
-- user data and activity logs
-- llm usage and cost data
-- rate limit information
-- system health metrics
-- security logs
+// Admin AI system prompt with security boundaries
+const ADMIN_SYSTEM_PROMPT = `You are AYN Admin Assistant, helping admins manage system operations.
 
-be helpful and proactive:
-- explain issues clearly
-- suggest actionable solutions
-- offer to perform actions when appropriate
-- keep responses concise but informative
+SYSTEM ACCESS (What you CAN see):
+- Test results and pass rates by suite
+- LLM usage, costs, failures, and fallback rates
+- Rate limit violations and blocked users
+- Security logs and threat detection (action types only, no personal data)
+- Support ticket counts (open/pending/closed)
+- Engineering calculator usage statistics
+- System health and uptime metrics
+- User counts (total/active only)
 
-when suggesting actions, format them as:
-[ACTION:action_type:params] - description
+SECURITY BOUNDARIES (What you CANNOT access):
+- Individual user emails or personal details
+- Subscription/payment information
+- Revenue data
+- User profiles with PII
+- Financial transactions
+- Credit gift details
 
-available actions:
-- [ACTION:unblock_user:user_id] - unblock a rate-limited user
-- [ACTION:set_limit:user_id:limit_type:value] - set user's daily limit
-- [ACTION:toggle_model:model_id:enabled] - enable/disable an llm model
-- [ACTION:send_alert:type:message] - send admin notification
+AVAILABLE ACTIONS (use exact format):
+- [ACTION:unblock_user:user_id] - Remove rate limit block from user
+- [ACTION:run_tests:suite_name] - Trigger test suite (api, security, calculator, comprehensive)
+- [ACTION:refresh_stats] - Refresh system metrics
+- [ACTION:view_section:section_name] - Navigate to admin section (users, llm, tests, security, support)
+- [ACTION:clear_failures:hours] - Clear old failure logs
 
-always be helpful and explain your reasoning.`;
+RESPONSE GUIDELINES:
+- Use markdown formatting for clarity (tables, lists, code blocks)
+- Be proactive: suggest actions when issues are detected
+- Keep responses concise but actionable
+- Include specific numbers and percentages
+- Never attempt to access or discuss revenue/subscription data
+- If asked about sensitive data, politely explain you don't have access
+- When showing blocked users, include their user_id for action buttons`;
+
+// Helper to calculate system health score
+function calculateHealthScore(data: Record<string, unknown>): number {
+  let score = 100;
+  
+  // Deduct for test failures
+  const testStats = data.testStats as { passRate?: string } | undefined;
+  if (testStats?.passRate) {
+    const passRate = parseFloat(testStats.passRate);
+    if (passRate < 90) score -= (90 - passRate);
+  }
+  
+  // Deduct for high fallback rate
+  const llmUsage = data.llmUsage24h as { fallbackRate?: string } | undefined;
+  if (llmUsage?.fallbackRate) {
+    const fallbackRate = parseFloat(llmUsage.fallbackRate);
+    if (fallbackRate > 5) score -= (fallbackRate - 5) * 2;
+  }
+  
+  // Deduct for blocked users
+  const rateLimits = data.rateLimits as { blockedUsers?: number } | undefined;
+  if (rateLimits?.blockedUsers && rateLimits.blockedUsers > 0) {
+    score -= rateLimits.blockedUsers * 2;
+  }
+  
+  return Math.max(0, Math.min(100, Math.round(score * 10) / 10));
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -84,37 +123,41 @@ serve(async (req) => {
       });
     }
 
-    // Gather context data based on the question
-    let contextData: Record<string, unknown> = {};
+    // Gather comprehensive operational context (NO sensitive data)
+    const contextData: Record<string, unknown> = {};
+    const now24hAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
-    // Get recent LLM usage stats
+    // 1. LLM usage stats
     const { data: usageStats } = await supabase
       .from('llm_usage_logs')
-      .select('intent_type, was_fallback, created_at')
-      .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+      .select('intent_type, was_fallback, cost_sar, created_at')
+      .gte('created_at', now24hAgo)
       .order('created_at', { ascending: false })
-      .limit(100);
+      .limit(200);
 
     if (usageStats) {
       const intentCounts: Record<string, number> = {};
       let fallbackCount = 0;
-      usageStats.forEach((log: { intent_type: string; was_fallback: boolean }) => {
+      let totalCost = 0;
+      usageStats.forEach((log: { intent_type: string; was_fallback: boolean; cost_sar: number | null }) => {
         intentCounts[log.intent_type] = (intentCounts[log.intent_type] || 0) + 1;
         if (log.was_fallback) fallbackCount++;
+        totalCost += log.cost_sar || 0;
       });
       contextData.llmUsage24h = {
         total: usageStats.length,
         byIntent: intentCounts,
         fallbackCount,
-        fallbackRate: usageStats.length > 0 ? (fallbackCount / usageStats.length * 100).toFixed(1) + '%' : '0%'
+        fallbackRate: usageStats.length > 0 ? (fallbackCount / usageStats.length * 100).toFixed(1) + '%' : '0%',
+        totalCostSAR: totalCost.toFixed(2)
       };
     }
 
-    // Get recent failures
+    // 2. LLM failures
     const { data: failures } = await supabase
       .from('llm_failures')
       .select('error_type, error_message, created_at')
-      .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+      .gte('created_at', now24hAgo)
       .order('created_at', { ascending: false })
       .limit(20);
 
@@ -126,25 +169,36 @@ serve(async (req) => {
       contextData.failures24h = {
         total: failures.length,
         byType: failureCounts,
-        recent: failures.slice(0, 5)
+        recent: failures.slice(0, 5).map(f => ({ type: f.error_type, time: f.created_at }))
       };
     }
 
-    // Get rate limit stats
+    // 3. Rate limit stats
     const { data: rateLimits } = await supabase
       .from('api_rate_limits')
       .select('user_id, endpoint, request_count, blocked_until, violation_count')
       .order('violation_count', { ascending: false })
-      .limit(10);
+      .limit(20);
 
     if (rateLimits) {
+      const blockedUsers = rateLimits.filter((r: { blocked_until: string | null }) => 
+        r.blocked_until && new Date(r.blocked_until) > new Date()
+      );
       contextData.rateLimits = {
-        blockedUsers: rateLimits.filter((r: { blocked_until: string | null }) => r.blocked_until && new Date(r.blocked_until) > new Date()).length,
-        topViolators: rateLimits.slice(0, 5)
+        blockedUsers: blockedUsers.length,
+        blockedList: blockedUsers.slice(0, 5).map((r: { user_id: string; endpoint: string; blocked_until: string }) => ({
+          userId: r.user_id,
+          endpoint: r.endpoint,
+          until: r.blocked_until
+        })),
+        topViolators: rateLimits.slice(0, 5).map((r: { user_id: string; violation_count: number }) => ({
+          userId: r.user_id,
+          violations: r.violation_count
+        }))
       };
     }
 
-    // Get user count stats
+    // 4. User counts (totals only - NO personal data)
     const { count: totalUsers } = await supabase
       .from('access_grants')
       .select('*', { count: 'exact', head: true });
@@ -159,13 +213,132 @@ serve(async (req) => {
       active: activeUsers || 0
     };
 
+    // 5. Test results (last 24h)
+    const { data: testResults } = await supabase
+      .from('test_results')
+      .select('status, test_suite, test_name, created_at')
+      .gte('created_at', now24hAgo)
+      .order('created_at', { ascending: false })
+      .limit(200);
+
+    if (testResults) {
+      const passed = testResults.filter((t: { status: string }) => t.status === 'passed').length;
+      const failed = testResults.filter((t: { status: string }) => t.status === 'failed').length;
+      const bySuite: Record<string, { passed: number; failed: number }> = {};
+      
+      testResults.forEach((t: { test_suite: string; status: string }) => {
+        if (!bySuite[t.test_suite]) bySuite[t.test_suite] = { passed: 0, failed: 0 };
+        if (t.status === 'passed') bySuite[t.test_suite].passed++;
+        else if (t.status === 'failed') bySuite[t.test_suite].failed++;
+      });
+
+      contextData.testStats = {
+        total: testResults.length,
+        passed,
+        failed,
+        passRate: testResults.length > 0 ? ((passed / testResults.length) * 100).toFixed(1) + '%' : '0%',
+        bySuite,
+        recentFailures: testResults
+          .filter((t: { status: string }) => t.status === 'failed')
+          .slice(0, 5)
+          .map((t: { test_name: string; test_suite: string }) => ({ name: t.test_name, suite: t.test_suite }))
+      };
+    }
+
+    // 6. Support tickets (counts only - NO personal data)
+    const { count: openTickets } = await supabase
+      .from('support_tickets')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'open');
+
+    const { count: pendingTickets } = await supabase
+      .from('support_tickets')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'pending');
+
+    const { count: closedTickets } = await supabase
+      .from('support_tickets')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'closed');
+
+    contextData.tickets = {
+      open: openTickets || 0,
+      pending: pendingTickets || 0,
+      closed: closedTickets || 0
+    };
+
+    // 7. Security logs (actions only - NO emails/PII)
+    const { data: securityLogs } = await supabase
+      .from('security_logs')
+      .select('action, severity, created_at')
+      .in('severity', ['high', 'critical'])
+      .gte('created_at', now24hAgo)
+      .order('created_at', { ascending: false })
+      .limit(15);
+
+    if (securityLogs) {
+      const bySeverity: Record<string, number> = { high: 0, critical: 0 };
+      securityLogs.forEach((log: { severity: string }) => {
+        bySeverity[log.severity] = (bySeverity[log.severity] || 0) + 1;
+      });
+      contextData.security = {
+        alertCount: securityLogs.length,
+        bySeverity,
+        recentAlerts: securityLogs.slice(0, 5).map((log: { action: string; severity: string; created_at: string }) => ({
+          action: log.action,
+          severity: log.severity,
+          time: log.created_at
+        }))
+      };
+    }
+
+    // 8. Engineering calculator usage
+    const { data: engineeringActivity } = await supabase
+      .from('engineering_activity')
+      .select('activity_type, created_at')
+      .gte('created_at', now24hAgo)
+      .limit(100);
+
+    if (engineeringActivity) {
+      const byType: Record<string, number> = {};
+      engineeringActivity.forEach((a: { activity_type: string }) => {
+        byType[a.activity_type] = (byType[a.activity_type] || 0) + 1;
+      });
+      contextData.engineering = {
+        total: engineeringActivity.length,
+        byType
+      };
+    }
+
+    // 9. Webhook health metrics
+    const { data: healthMetrics } = await supabase
+      .from('webhook_health_metrics')
+      .select('success_count, failure_count, avg_response_time, created_at')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (healthMetrics) {
+      const total = (healthMetrics.success_count || 0) + (healthMetrics.failure_count || 0);
+      contextData.webhookHealth = {
+        successRate: total > 0 ? ((healthMetrics.success_count / total) * 100).toFixed(1) + '%' : '100%',
+        avgResponseTime: healthMetrics.avg_response_time || 0,
+        lastCheck: healthMetrics.created_at
+      };
+    }
+
+    // Calculate overall system health
+    const systemHealth = calculateHealthScore(contextData);
+
     // Build messages for AI
     const messages = [
       { role: 'system', content: ADMIN_SYSTEM_PROMPT },
       { 
         role: 'user', 
-        content: `Context data:
+        content: `Current System Context (last 24 hours):
 ${JSON.stringify(contextData, null, 2)}
+
+System Health Score: ${systemHealth}%
 
 Admin question: ${message}` 
       }
@@ -187,7 +360,7 @@ Admin question: ${message}`
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'google/gemini-3-flash-preview',
         messages,
       }),
     });
@@ -206,7 +379,7 @@ Admin question: ${message}`
 
     // Parse actions from response
     const actionRegex = /\[ACTION:([^:]+):([^\]]+)\]/g;
-    const actions: Array<{ type: string; params: string; description?: string }> = [];
+    const actions: Array<{ type: string; params: string }> = [];
     let match;
     while ((match = actionRegex.exec(content)) !== null) {
       actions.push({
@@ -233,10 +406,25 @@ Admin question: ${message}`
       console.error('Failed to log conversation:', logError);
     }
 
+    // Return enhanced response with quick stats
+    const testStats = contextData.testStats as { passRate?: string } | undefined;
+    const llmUsage = contextData.llmUsage24h as { fallbackRate?: string } | undefined;
+    const rateLimitsData = contextData.rateLimits as { blockedUsers?: number } | undefined;
+    const ticketsData = contextData.tickets as { open?: number } | undefined;
+    const engineeringData = contextData.engineering as { total?: number } | undefined;
+
     return new Response(JSON.stringify({
       content,
       actions,
-      contextData
+      contextData,
+      quickStats: {
+        systemHealth,
+        testPassRate: parseFloat(testStats?.passRate || '0'),
+        blockedUsers: rateLimitsData?.blockedUsers || 0,
+        openTickets: ticketsData?.open || 0,
+        llmFallbackRate: parseFloat(llmUsage?.fallbackRate || '0'),
+        calcUsage24h: engineeringData?.total || 0
+      }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });

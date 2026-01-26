@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -7,18 +7,21 @@ import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
 import { 
   Bot, 
-  Send, 
   Sparkles,
   Trash2,
   Zap,
   TrendingUp,
   Users,
   AlertCircle,
-  ArrowUp
+  ArrowUp,
+  TestTube,
+  ShieldCheck
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { AdminStatsPanel, QuickStats } from './AdminStatsPanel';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -27,12 +30,7 @@ interface Message {
   timestamp?: Date;
 }
 
-const QUICK_SUGGESTIONS = [
-  { icon: TrendingUp, text: "Show AI cost breakdown" },
-  { icon: Users, text: "List users with high usage" },
-  { icon: AlertCircle, text: "Check system health" },
-  { icon: Zap, text: "Why is fallback rate high?" },
-];
+const SUPABASE_URL = 'https://dfkoxuokfkttjhfjcecx.supabase.co';
 
 // Typing indicator dots
 const TypingIndicator = () => (
@@ -56,7 +54,7 @@ const TypingIndicator = () => (
   </div>
 );
 
-// Message component
+// Message component with markdown support
 const ChatMessage = ({ 
   message, 
   onExecuteAction 
@@ -76,9 +74,49 @@ const ChatMessage = ({
             : "bg-muted border border-border"
         )}
       >
-        <p className="text-sm leading-relaxed whitespace-pre-wrap">
-          {message.content}
-        </p>
+        {isUser ? (
+          <p className="text-sm leading-relaxed whitespace-pre-wrap">
+            {message.content}
+          </p>
+        ) : (
+          <div className="prose prose-sm dark:prose-invert max-w-none">
+            <ReactMarkdown
+              components={{
+                p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                ul: ({ children }) => <ul className="list-disc pl-4 mb-2">{children}</ul>,
+                ol: ({ children }) => <ol className="list-decimal pl-4 mb-2">{children}</ol>,
+                li: ({ children }) => <li className="mb-1">{children}</li>,
+                code: ({ children }) => (
+                  <code className="bg-background/50 px-1.5 py-0.5 rounded text-xs font-mono">
+                    {children}
+                  </code>
+                ),
+                pre: ({ children }) => (
+                  <pre className="bg-background/50 p-2 rounded-lg overflow-x-auto text-xs">
+                    {children}
+                  </pre>
+                ),
+                table: ({ children }) => (
+                  <div className="overflow-x-auto my-2">
+                    <table className="min-w-full text-xs border-collapse">
+                      {children}
+                    </table>
+                  </div>
+                ),
+                th: ({ children }) => (
+                  <th className="border border-border px-2 py-1 bg-muted font-medium text-left">
+                    {children}
+                  </th>
+                ),
+                td: ({ children }) => (
+                  <td className="border border-border px-2 py-1">{children}</td>
+                ),
+              }}
+            >
+              {message.content.replace(/\[ACTION:[^\]]+\]/g, '')}
+            </ReactMarkdown>
+          </div>
+        )}
         
         {message.timestamp && (
           <p className={cn(
@@ -113,14 +151,55 @@ export function AdminAIAssistant() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: "Hey! I'm your admin assistant. Ask me anything about the system - user issues, costs, model health, whatever you need help with.",
+      content: "Hey! I'm your admin operations assistant. I can see system health, test results, rate limits, and more. Ask me anything about platform operations or click a stat to dive deeper.",
       timestamp: new Date()
     }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [stats, setStats] = useState<QuickStats | null>(null);
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Fetch stats on mount and periodically
+  const fetchStats = useCallback(async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      // Quick ping to get stats from a simple message
+      const response = await fetch(
+        `${SUPABASE_URL}/functions/v1/admin-ai-assistant`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ message: 'quick stats check' })
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.quickStats) {
+          setStats(data.quickStats);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch stats:', error);
+    } finally {
+      setIsLoadingStats(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchStats();
+    // Refresh stats every 30 seconds
+    const interval = setInterval(fetchStats, 30000);
+    return () => clearInterval(interval);
+  }, [fetchStats]);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -154,7 +233,7 @@ export function AdminAIAssistant() {
       }
 
       const response = await fetch(
-        'https://dfkoxuokfkttjhfjcecx.supabase.co/functions/v1/admin-ai-assistant',
+        `${SUPABASE_URL}/functions/v1/admin-ai-assistant`,
         {
           method: 'POST',
           headers: {
@@ -170,6 +249,11 @@ export function AdminAIAssistant() {
       }
 
       const data = await response.json();
+      
+      // Update stats if returned
+      if (data.quickStats) {
+        setStats(data.quickStats);
+      }
       
       setMessages(prev => [...prev, {
         role: 'assistant',
@@ -190,13 +274,61 @@ export function AdminAIAssistant() {
   };
 
   const executeAction = async (action: { type: string; params: string }) => {
-    toast.info(`Executing: ${action.type}`);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Not authenticated');
+        return;
+      }
+
+      switch (action.type) {
+        case 'unblock_user':
+          const { error: unblockError } = await supabase.rpc('admin_unblock_user', { 
+            p_user_id: action.params 
+          });
+          if (unblockError) throw unblockError;
+          toast.success('User unblocked successfully');
+          break;
+          
+        case 'run_tests':
+          await fetch(`${SUPABASE_URL}/functions/v1/ai-comprehensive-tester`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ suite: action.params })
+          });
+          toast.success(`Running ${action.params} tests...`);
+          break;
+          
+        case 'refresh_stats':
+          await fetchStats();
+          toast.success('Stats refreshed');
+          break;
+          
+        case 'view_section':
+          window.dispatchEvent(new CustomEvent('admin-navigate', { 
+            detail: action.params 
+          }));
+          break;
+          
+        default:
+          toast.info(`Action: ${action.type}`);
+      }
+      
+      // Refresh stats after action
+      fetchStats();
+    } catch (error) {
+      console.error('Action failed:', error);
+      toast.error(`Action failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   };
 
   const clearChat = () => {
     setMessages([{
       role: 'assistant',
-      content: "Hey! I'm your admin assistant. Ask me anything about the system - user issues, costs, model health, whatever you need help with.",
+      content: "Hey! I'm your admin operations assistant. I can see system health, test results, rate limits, and more. Ask me anything about platform operations or click a stat to dive deeper.",
       timestamp: new Date()
     }]);
   };
@@ -216,6 +348,41 @@ export function AdminAIAssistant() {
     }
   };
 
+  // Dynamic quick suggestions based on stats
+  const getQuickSuggestions = () => {
+    const suggestions = [
+      { icon: TrendingUp, text: "Show AI cost breakdown" },
+      { icon: TestTube, text: "Show test results" },
+    ];
+    
+    if (stats?.blockedUsers && stats.blockedUsers > 0) {
+      suggestions.push({ 
+        icon: Users, 
+        text: `Unblock ${stats.blockedUsers} rate-limited users` 
+      });
+    }
+    
+    if (stats?.openTickets && stats.openTickets > 0) {
+      suggestions.push({ 
+        icon: AlertCircle, 
+        text: `${stats.openTickets} open tickets - show details` 
+      });
+    }
+    
+    if (stats?.llmFallbackRate && stats.llmFallbackRate > 5) {
+      suggestions.push({ 
+        icon: Zap, 
+        text: "Why is fallback rate high?" 
+      });
+    }
+
+    suggestions.push({ icon: ShieldCheck, text: "Check security alerts" });
+    
+    return suggestions.slice(0, 6);
+  };
+
+  const quickSuggestions = getQuickSuggestions();
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -226,13 +393,13 @@ export function AdminAIAssistant() {
           </div>
           <div>
             <h2 className="text-lg font-semibold flex items-center gap-2">
-              AI Admin Assistant
+              AYN Admin Assistant
               <Badge variant="secondary" className="text-[10px] font-normal">
-                GPT-4
+                Gemini Flash
               </Badge>
             </h2>
             <p className="text-sm text-muted-foreground">
-              System insights and troubleshooting
+              System operations & insights
             </p>
           </div>
         </div>
@@ -250,9 +417,17 @@ export function AdminAIAssistant() {
 
       {/* Chat Card */}
       <Card className="border border-border bg-card overflow-hidden">
+        {/* Stats Panel */}
+        <AdminStatsPanel 
+          stats={stats} 
+          isLoading={isLoadingStats}
+          onStatClick={sendMessage}
+          onRefresh={fetchStats}
+        />
+
         {/* Messages */}
         <CardContent className="p-0">
-          <ScrollArea className="h-[400px]" ref={scrollRef}>
+          <ScrollArea className="h-[350px]" ref={scrollRef}>
             <div className="p-4 space-y-4">
               {messages.map((msg, i) => (
                 <ChatMessage 
@@ -277,7 +452,7 @@ export function AdminAIAssistant() {
             <div className="px-4 pb-4">
               <p className="text-xs text-muted-foreground mb-2">Quick actions:</p>
               <div className="flex flex-wrap gap-2">
-                {QUICK_SUGGESTIONS.map((suggestion, i) => (
+                {quickSuggestions.map((suggestion, i) => (
                   <button
                     key={i}
                     onClick={() => sendMessage(suggestion.text)}
@@ -291,13 +466,13 @@ export function AdminAIAssistant() {
             </div>
           )}
 
-          {/* Input Area - Similar to ChatInput */}
+          {/* Input Area */}
           <div className="p-3 border-t border-border">
             <div className="relative bg-muted/50 border border-border rounded-xl overflow-hidden">
               <div className="flex items-end gap-2 p-2">
                 <Textarea
                   ref={textareaRef}
-                  placeholder="Ask about users, costs, issues..."
+                  placeholder="Ask about system health, tests, rate limits..."
                   value={input}
                   onChange={handleTextareaChange}
                   onKeyDown={handleKeyPress}
