@@ -33,7 +33,7 @@ export type {
   ParkingAccessibility,
   CustomCodeConfig,
   EarthworkPricing,
-  // New types
+  // Extended types
   LoadCombination,
   LoadCombinationPurpose,
   CodeReferences,
@@ -42,6 +42,9 @@ export type {
   DesignWarningThresholds,
   DevelopmentLengthFactors,
   DesignCheckResult,
+  // Verification types
+  VerificationStatus,
+  VerificationStatusLevel,
 } from './types';
 
 export { DEFAULT_EARTHWORK_PRICING } from './types';
