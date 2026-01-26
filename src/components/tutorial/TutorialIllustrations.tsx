@@ -108,13 +108,13 @@ export const EmotionsIllustration = () => {
 
 export const ChatIllustration = () => (
   <div className="w-full h-full flex items-center justify-center px-4">
-    <div className="w-full max-w-md">
+    <div className="w-full max-w-md space-y-3">
       {/* Chat input mockup - matching actual design */}
       <div className="bg-muted/30 rounded-2xl p-4 border border-border/30 shadow-xl">
         {/* Text area */}
         <div className="mb-3">
           <div className="text-sm text-muted-foreground">
-            What business challenge are you facing?
+            Ask me anything...
           </div>
         </div>
         
@@ -128,7 +128,7 @@ export const ChatIllustration = () => (
           {/* Right side */}
           <div className="flex items-center gap-2">
             {/* Mode selector */}
-            <div className="flex items-center gap-1 px-3 py-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-1 px-3 py-2 text-sm text-muted-foreground bg-muted/50 rounded-lg">
               General
               <ChevronDown className="w-4 h-4" />
             </div>
@@ -142,6 +142,18 @@ export const ChatIllustration = () => (
               <ArrowUp className="w-5 h-5 text-background" />
             </motion.div>
           </div>
+        </div>
+      </div>
+      
+      {/* Eng + New buttons row */}
+      <div className="flex gap-2 justify-center">
+        <div className="h-9 px-4 bg-muted/50 text-foreground rounded-lg flex items-center justify-center gap-1.5 text-xs font-medium border border-border/50">
+          <Calculator className="w-3.5 h-3.5" />
+          Eng
+        </div>
+        <div className="h-9 px-4 bg-foreground text-background rounded-lg flex items-center justify-center gap-1.5 text-xs font-medium">
+          <Plus className="w-3.5 h-3.5" />
+          New
         </div>
       </div>
     </div>
@@ -191,23 +203,29 @@ export const NavigationIllustration = () => (
         </div>
       </div>
       
-      {/* New Chat Button */}
-      <div className="p-2">
+      {/* Button Row - Eng + New */}
+      <div className="p-2 flex gap-1.5">
         <motion.div 
-          className="w-full py-2 px-3 bg-foreground text-background rounded-full flex items-center justify-center gap-1.5 text-xs font-medium"
+          className="flex-1 h-9 bg-muted/50 text-foreground rounded-lg flex items-center justify-center gap-1 text-xs font-medium border border-border/50"
+        >
+          <Calculator className="w-3 h-3" />
+          Eng
+        </motion.div>
+        <motion.div 
+          className="flex-1 h-9 bg-foreground text-background rounded-lg flex items-center justify-center gap-1 text-xs font-medium"
           animate={{ scale: [1, 1.02, 1] }}
           transition={{ duration: 2, repeat: Infinity }}
         >
           <Plus className="w-3 h-3" />
-          New Chat
+          New
         </motion.div>
       </div>
       
       {/* Search */}
       <div className="px-2 pb-2">
-        <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-full border border-border/50 text-muted-foreground text-xs">
+        <div className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg border border-border/50 text-muted-foreground text-xs bg-muted/30">
           <Search className="w-3 h-3" />
-          Search...
+          Search chats...
         </div>
       </div>
       
@@ -439,61 +457,56 @@ export const MicroBehaviorsIllustration = () => (
 export const CreditsIllustration = () => (
   <div className="w-full h-full flex items-center justify-center">
     <div className="w-56 bg-background rounded-xl border border-border/50 shadow-lg overflow-hidden p-4">
-      {/* Header */}
-      <div className="flex items-center gap-2 mb-4">
-        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-          <Zap className="w-4 h-4 text-primary" />
+      {/* Header with circular progress */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+            <Zap className="w-4 h-4 text-primary" />
+          </div>
+          <div>
+            <div className="font-semibold text-sm">Credits</div>
+            <div className="text-[10px] text-muted-foreground">Free Plan</div>
+          </div>
         </div>
-        <div>
-          <div className="font-semibold text-sm">Monthly Credits</div>
-          <div className="text-[10px] text-muted-foreground">Resets Jan 1</div>
+        
+        {/* Circular progress */}
+        <div className="relative w-12 h-12">
+          <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+            <circle cx="18" cy="18" r="14" fill="none" stroke="currentColor" strokeWidth="3" className="text-muted/30" />
+            <motion.circle 
+              cx="18" cy="18" r="14" fill="none" strokeWidth="3" 
+              className="text-primary"
+              strokeDasharray="88"
+              initial={{ strokeDashoffset: 88 }}
+              animate={{ strokeDashoffset: 22 }}
+              transition={{ duration: 1, delay: 0.3 }}
+              strokeLinecap="round"
+            />
+          </svg>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-[10px] font-bold">3/5</span>
+          </div>
         </div>
       </div>
       
-      {/* Usage display */}
-      <div className="space-y-3">
-        {/* Progress bar */}
-        <div className="space-y-1.5">
-          <div className="flex justify-between text-xs">
-            <span className="text-muted-foreground">Used</span>
-            <span className="font-medium">24 / 100</span>
-          </div>
-          <div className="h-2 bg-muted rounded-full overflow-hidden">
-            <motion.div
-              className="h-full bg-gradient-to-r from-primary to-primary/80 rounded-full"
-              initial={{ width: 0 }}
-              animate={{ width: '24%' }}
-              transition={{ duration: 1, delay: 0.3 }}
-            />
-          </div>
+      {/* Usage info */}
+      <div className="space-y-2">
+        <div className="flex justify-between items-center text-xs">
+          <span className="text-muted-foreground">Today's Usage</span>
+          <span className="font-medium">2 remaining</span>
         </div>
         
-        {/* Stats */}
-        <div className="grid grid-cols-2 gap-2">
-          <div className="bg-muted/30 rounded-lg p-2 text-center">
-            <div className="text-lg font-bold text-primary">76</div>
-            <div className="text-[9px] text-muted-foreground">Remaining</div>
-          </div>
-          <div className="bg-muted/30 rounded-lg p-2 text-center">
-            <div className="text-lg font-bold text-green-500">✓</div>
-            <div className="text-[9px] text-muted-foreground">Active</div>
-          </div>
+        <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+          <motion.div
+            className="h-full bg-gradient-to-r from-primary to-primary/80 rounded-full"
+            initial={{ width: 0 }}
+            animate={{ width: '60%' }}
+            transition={{ duration: 1, delay: 0.3 }}
+          />
         </div>
         
-        {/* Color states */}
-        <div className="flex justify-center gap-2 pt-1">
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 rounded-full bg-primary" />
-            <span className="text-[8px] text-muted-foreground">Normal</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 rounded-full bg-amber-500" />
-            <span className="text-[8px] text-muted-foreground">Warning</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 rounded-full bg-red-500" />
-            <span className="text-[8px] text-muted-foreground">Low</span>
-          </div>
+        <div className="text-[10px] text-muted-foreground text-center pt-1">
+          Resets daily at midnight
         </div>
       </div>
     </div>
@@ -502,28 +515,42 @@ export const CreditsIllustration = () => (
 
 export const ProfileIllustration = () => (
   <div className="w-full h-full flex items-center justify-center">
-    <div className="w-48 bg-muted/30 rounded-xl border border-border/50 p-3 shadow-lg">
+    <div className="w-52 bg-muted/30 rounded-xl border border-border/50 p-3 shadow-lg">
+      {/* User Info */}
       <div className="flex items-center gap-3 mb-3 pb-3 border-b border-border/30">
         <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
           <User className="w-5 h-5 text-primary" />
         </div>
         <div>
           <p className="text-sm font-medium">Your Name</p>
-          <p className="text-[10px] text-muted-foreground">Company</p>
+          <p className="text-[10px] text-muted-foreground">Free Plan</p>
         </div>
       </div>
       
+      {/* Menu Items */}
       <div className="space-y-1">
+        {/* Upgrade Button */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex items-center gap-2 px-2 py-2 rounded-lg bg-gradient-to-r from-violet-500/20 to-purple-500/20 border border-violet-500/30 text-xs font-medium"
+        >
+          <Zap className="w-3 h-3 text-violet-500" />
+          <span className="text-violet-600 dark:text-violet-400">Upgrade Plan</span>
+        </motion.div>
+        
         {[
           { icon: Settings, label: 'Settings' },
-          { icon: LogOut, label: 'Sign Out' },
+          { icon: HelpCircle, label: 'Tutorial' },
+          { icon: MessageSquare, label: 'Support' },
+          { icon: LogOut, label: 'Sign Out', danger: true },
         ].map((item, i) => (
           <motion.div
             key={item.label}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: i * 0.1 }}
-            className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-muted-foreground hover:bg-muted/50"
+            className={`flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs ${item.danger ? 'text-red-500 hover:bg-red-500/10' : 'text-muted-foreground hover:bg-muted/50'}`}
           >
             <item.icon className="w-3 h-3" />
             {item.label}
@@ -549,26 +576,30 @@ export const EngineeringIllustration = () => (
           </div>
           <div>
             <div className="font-semibold text-xs">Engineering Tools</div>
-            <div className="text-[10px] text-muted-foreground">Structural Design</div>
+            <div className="text-[10px] text-muted-foreground">7 Professional Calculators</div>
           </div>
         </div>
         
-        {/* Calculator options */}
-        <div className="p-2 space-y-1.5">
+        {/* Calculator options - All 7 tools */}
+        <div className="p-2 grid grid-cols-2 gap-1.5">
           {[
-            { icon: Layers, label: 'Beam Calculator', color: 'text-cyan-500' },
-            { icon: Building2, label: 'Column Design', color: 'text-blue-500' },
-            { icon: Calculator, label: 'Foundation', color: 'text-indigo-500' },
+            { icon: Layers, label: 'Beam', color: 'text-cyan-500' },
+            { icon: Building2, label: 'Column', color: 'text-blue-500' },
+            { icon: Calculator, label: 'Slab', color: 'text-indigo-500' },
+            { icon: Layers, label: 'Foundation', color: 'text-violet-500' },
+            { icon: Building2, label: 'Retaining', color: 'text-purple-500' },
+            { icon: Ruler, label: 'Grading', color: 'text-emerald-500' },
+            { icon: Calculator, label: 'Parking', color: 'text-amber-500' },
           ].map((item, i) => (
             <motion.div
               key={item.label}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.15 }}
-              className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: i * 0.08 }}
+              className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
             >
-              <item.icon className={`w-4 h-4 ${item.color}`} />
-              <span className="text-xs font-medium">{item.label}</span>
+              <item.icon className={`w-3 h-3 ${item.color}`} />
+              <span className="text-[10px] font-medium">{item.label}</span>
             </motion.div>
           ))}
         </div>
@@ -580,27 +611,17 @@ export const EngineeringIllustration = () => (
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
         >
-          <div className="bg-muted/20 rounded-lg p-2 space-y-1">
-            <div className="flex justify-between text-[10px]">
-              <span className="text-muted-foreground">Moment Capacity</span>
-              <span className="font-mono text-cyan-500">245.8 kN·m</span>
+          <div className="bg-muted/20 rounded-lg p-2 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded bg-cyan-500/20 flex items-center justify-center">
+                <Eye className="w-3 h-3 text-cyan-500" />
+              </div>
+              <span className="text-[10px]">3D Visualization</span>
             </div>
-            <div className="flex justify-between text-[10px]">
-              <span className="text-muted-foreground">Status</span>
-              <span className="text-emerald-500 font-medium">✓ Safe</span>
-            </div>
+            <span className="text-emerald-500 text-[10px] font-medium">✓ Ready</span>
           </div>
         </motion.div>
       </div>
-      
-      {/* Floating 3D indicator */}
-      <motion.div
-        className="absolute -right-4 -bottom-2 w-12 h-12 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-500/30 border border-cyan-500/30 flex items-center justify-center shadow-lg"
-        animate={{ rotate: [0, 5, 0, -5, 0] }}
-        transition={{ duration: 4, repeat: Infinity }}
-      >
-        <Ruler className="w-6 h-6 text-cyan-400" />
-      </motion.div>
     </div>
   </div>
 );
