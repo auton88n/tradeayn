@@ -140,14 +140,15 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
   }, []);
 
   const handleBack = () => {
-    if (calculationResult) {
-      setCalculationResult(null);
-    } else if (selectedCalculator) {
+    if (selectedCalculator) {
+      // If in a calculator, go back to selection
       setSelectedCalculator(null);
       setCurrentInputs({});
       setCurrentOutputs(null);
+      setCalculationResult(null);
     } else {
-      navigate('/');
+      // If at calculator selection, go back to services page
+      navigate('/services/civil-engineering');
     }
   };
 
