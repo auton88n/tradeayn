@@ -45,7 +45,8 @@ interface UserLimit {
   bonus_credits: number | null;
   monthly_messages: number | null;
   current_monthly_messages: number | null;
-  email?: string;
+  // Joined from profiles
+  display_name?: string;
 }
 
 const containerVariants = {
@@ -76,13 +77,33 @@ export function UserAILimits() {
 
   const fetchLimits = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch limits
+      const { data: limitsData, error: limitsError } = await supabase
         .from('user_ai_limits')
         .select('*')
         .order('current_daily_messages', { ascending: false });
 
-      if (error) throw error;
-      setLimits(data || []);
+      if (limitsError) throw limitsError;
+
+      // Fetch profiles to get names
+      const userIds = limitsData?.map(l => l.user_id) || [];
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('user_id, contact_person, company_name')
+        .in('user_id', userIds);
+
+      // Create a map for quick lookup
+      const profileMap = new Map(
+        profilesData?.map(p => [p.user_id, p.contact_person || p.company_name]) || []
+      );
+
+      // Merge the data
+      const mergedLimits = (limitsData || []).map(limit => ({
+        ...limit,
+        display_name: profileMap.get(limit.user_id) || undefined
+      }));
+
+      setLimits(mergedLimits);
     } catch (error) {
       console.error('Error fetching limits:', error);
       toast.error(getErrorMessage(ErrorCodes.DATA_LOAD_FAILED).description);
@@ -185,9 +206,11 @@ export function UserAILimits() {
     return 'text-emerald-500';
   };
 
-  const filteredLimits = limits.filter((l: UserLimit) => 
-    l.user_id.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredLimits = limits.filter((l: UserLimit) => {
+    const query = searchQuery.toLowerCase();
+    return l.user_id.toLowerCase().includes(query) || 
+           (l.display_name?.toLowerCase().includes(query) ?? false);
+  });
 
   const unlimitedCount = limits.filter(l => l.is_unlimited).length;
   const atLimitCount = limits.filter(l => 
@@ -242,7 +265,7 @@ export function UserAILimits() {
       <motion.div variants={itemVariants} className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
-          placeholder="Search by user ID..."
+          placeholder="Search by name or user ID..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-10 bg-muted/30 border-border/50"
@@ -304,7 +327,13 @@ export function UserAILimits() {
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-3">
-                            <p className="font-mono text-sm truncate">{user.user_id.substring(0, 8)}...</p>
+                            <p className="font-medium text-sm truncate max-w-[200px]">
+                              {user.display_name || (
+                                <span className="font-mono text-muted-foreground">
+                                  {user.user_id.substring(0, 8)}...
+                                </span>
+                              )}
+                            </p>
                             {user.is_unlimited && (
                               <Badge variant="default" className="bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
                                 <InfinityIcon className="w-3 h-3 mr-1" />
