@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect, useImperativeHandle, forwardRef } from 'react';
 import { motion } from 'framer-motion';
-import { Calculator, Info, Loader2 } from 'lucide-react';
+import { Calculator, Info, Loader2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,6 +16,11 @@ import { cn } from '@/lib/utils';
 import { useEngineeringHistory } from '@/hooks/useEngineeringHistory';
 import { calculateBeam } from '@/lib/engineeringCalculations';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useEngineeringSessionOptional } from '@/contexts/EngineeringSessionContext';
+import { beamValidationRules, validateInput, validateAllInputs } from '@/lib/inputValidation';
+import { getCodeInfoText } from '@/lib/designValidation';
+import { FormError } from '@/components/ui/form-error';
+
 interface BeamCalculatorProps {
   onCalculate: (result: {
     type: 'beam';
@@ -26,7 +31,23 @@ interface BeamCalculatorProps {
   isCalculating: boolean;
   setIsCalculating: (value: boolean) => void;
   userId?: string;
+  onReset?: () => void;
 }
+
+export interface BeamCalculatorRef {
+  reset: () => void;
+}
+
+const defaultFormData = {
+  span: '6.0',
+  deadLoad: '15.0',
+  liveLoad: '10.0',
+  beamWidth: '300',
+  concreteGrade: 'C30',
+  steelGrade: 'Fy420',
+  supportType: 'simply_supported',
+  exposureClass: 'XC1',
+};
 
 const concreteGrades = [
   { value: 'C25', fck: 25, label: 'C25 (25 MPa)' },
@@ -46,27 +67,54 @@ const supportTypes = [
   { value: 'cantilever', label: 'Cantilever', momentFactor: 2 },
 ];
 
-export const BeamCalculator = ({ onCalculate, isCalculating, setIsCalculating, userId }: BeamCalculatorProps) => {
+export const BeamCalculator = forwardRef<BeamCalculatorRef, BeamCalculatorProps>(
+  ({ onCalculate, isCalculating, setIsCalculating, userId, onReset }, ref) => {
   const { t } = useLanguage();
   const { saveCalculation } = useEngineeringHistory(userId);
+  const session = useEngineeringSessionOptional();
+  const buildingCode = session?.buildingCode || 'ACI';
   
-  const [formData, setFormData] = useState({
-    span: '6.0',
-    deadLoad: '15.0',
-    liveLoad: '10.0',
-    beamWidth: '300',
-    concreteGrade: 'C30',
-    steelGrade: 'Fy420',
-    supportType: 'simply_supported',
-    exposureClass: 'XC1',
-  });
+  const [formData, setFormData] = useState(defaultFormData);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Expose reset method via ref
+  useImperativeHandle(ref, () => ({
+    reset: () => {
+      setFormData(defaultFormData);
+      setErrors({});
+      onReset?.();
+    },
+  }));
+
+  // Get dynamic code info
+  const codeInfo = getCodeInfoText(buildingCode);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Real-time validation
+    const rule = beamValidationRules[field];
+    if (rule && value !== '') {
+      const result = validateInput(value, rule);
+      setErrors(prev => {
+        if (result.isValid) {
+          const { [field]: _, ...rest } = prev;
+          return rest;
+        }
+        return { ...prev, [field]: result.error || '' };
+      });
+    }
   };
 
   const handleCalculate = async () => {
-    // Validate inputs
+    // Validate all inputs
+    const allErrors = validateAllInputs(formData, beamValidationRules);
+    if (Object.keys(allErrors).length > 0) {
+      setErrors(allErrors);
+      toast.error('Please fix validation errors before calculating');
+      return;
+    }
+
     const span = parseFloat(formData.span);
     const deadLoad = parseFloat(formData.deadLoad);
     const liveLoad = parseFloat(formData.liveLoad);
@@ -76,19 +124,11 @@ export const BeamCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
       toast.error(t('error.invalidInputDesc'));
       return;
     }
-    if (isNaN(deadLoad) || deadLoad < 0) {
-      toast.error(t('error.invalidInputDesc'));
-      return;
-    }
-    if (isNaN(liveLoad) || liveLoad < 0) {
-      toast.error(t('error.invalidInputDesc'));
-      return;
-    }
 
     setIsCalculating(true);
 
     try {
-      // Client-side calculation for instant results
+      // Client-side calculation with building code
       const data = calculateBeam({
         span,
         deadLoad,
@@ -97,6 +137,7 @@ export const BeamCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
         concreteGrade: formData.concreteGrade,
         steelGrade: formData.steelGrade,
         supportType: formData.supportType,
+        buildingCode,
       });
 
       const inputs = {
@@ -108,6 +149,7 @@ export const BeamCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
         steelGrade: formData.steelGrade,
         supportType: formData.supportType,
         exposureClass: formData.exposureClass,
+        buildingCode,
       };
 
       // Save to history (non-blocking)
@@ -164,8 +206,11 @@ export const BeamCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
                   value={formData.span}
                   onChange={(e) => handleInputChange('span', e.target.value)}
                   step="0.1"
-                  min="0"
+                  min="0.5"
+                  max="30"
+                  className={errors.span ? 'border-destructive' : ''}
                 />
+                <FormError message={errors.span} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="beamWidth">Beam Width (mm)</Label>
@@ -176,8 +221,11 @@ export const BeamCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
                   value={formData.beamWidth}
                   onChange={(e) => handleInputChange('beamWidth', e.target.value)}
                   step="25"
-                  min="200"
+                  min="150"
+                  max="2000"
+                  className={errors.beamWidth ? 'border-destructive' : ''}
                 />
+                <FormError message={errors.beamWidth} />
               </div>
             </div>
           </div>
@@ -198,7 +246,10 @@ export const BeamCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
                   onChange={(e) => handleInputChange('deadLoad', e.target.value)}
                   step="0.5"
                   min="0"
+                  max="500"
+                  className={errors.deadLoad ? 'border-destructive' : ''}
                 />
+                <FormError message={errors.deadLoad} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="liveLoad">Live Load (kN/m)</Label>
@@ -210,7 +261,10 @@ export const BeamCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
                   onChange={(e) => handleInputChange('liveLoad', e.target.value)}
                   step="0.5"
                   min="0"
+                  max="500"
+                  className={errors.liveLoad ? 'border-destructive' : ''}
                 />
+                <FormError message={errors.liveLoad} />
               </div>
             </div>
           </div>
@@ -276,25 +330,38 @@ export const BeamCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
             </div>
           </div>
 
-          {/* Info Box */}
+          {/* Info Box - Dynamic based on building code */}
           <div className={cn(
             "flex items-start gap-3 p-4 rounded-xl",
-            "bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800"
+            buildingCode === 'CSA' 
+              ? "bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800"
+              : "bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800"
           )}>
-            <Info className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
-            <div className="text-sm text-blue-700 dark:text-blue-300">
-              <p className="font-medium mb-1">Calculation Method</p>
-              <p className="text-blue-600 dark:text-blue-400">
-                Uses ACI 318 / Eurocode 2 methods with load factors: 1.4 DL + 1.6 LL. 
-                Results are for reference only - professional verification required.
+            <Info className={cn(
+              "w-5 h-5 shrink-0 mt-0.5",
+              buildingCode === 'CSA' ? "text-red-500" : "text-blue-500"
+            )} />
+            <div className={cn(
+              "text-sm",
+              buildingCode === 'CSA' ? "text-red-700 dark:text-red-300" : "text-blue-700 dark:text-blue-300"
+            )}>
+              <p className="font-medium mb-1">Calculation Method: {codeInfo.name}</p>
+              <p className={buildingCode === 'CSA' ? "text-red-600 dark:text-red-400" : "text-blue-600 dark:text-blue-400"}>
+                Load factors: {codeInfo.factors} • Resistance: {codeInfo.phi}
               </p>
+              {buildingCode === 'CSA' && (
+                <p className="text-xs mt-1 flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3" />
+                  {codeInfo.note}
+                </p>
+              )}
             </div>
           </div>
 
           {/* Calculate Button */}
           <Button
             onClick={handleCalculate}
-            disabled={isCalculating}
+            disabled={isCalculating || Object.keys(errors).length > 0}
             className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
           >
             {isCalculating ? (
@@ -313,4 +380,6 @@ export const BeamCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
       </motion.div>
     </div>
   );
-};
+});
+
+BeamCalculator.displayName = 'BeamCalculator';

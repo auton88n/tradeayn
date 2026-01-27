@@ -73,9 +73,15 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
   const selectedBuildingCode = session?.buildingCode ?? localBuildingCode;
   const setSelectedBuildingCode = session?.setBuildingCode ?? setLocalBuildingCode;
   
+  // Track previous building code for auto-recalculation
+  const prevBuildingCodeRef = useRef(selectedBuildingCode);
+  
   // Current inputs/outputs for live preview
   const [currentInputs, setCurrentInputs] = useState<Record<string, any>>({});
   const [currentOutputs, setCurrentOutputs] = useState<Record<string, any> | null>(null);
+  
+  // Reset key to force calculator re-render on reset
+  const [resetKey, setResetKey] = useState(0);
 
   const { calculationHistory } = useEngineeringHistory(userId);
 
@@ -163,7 +169,10 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
     setCurrentInputs({});
     setCurrentOutputs(null);
     setCalculationResult(null);
-  }, []);
+    // Increment reset key to force calculator re-render with default values
+    setResetKey(prev => prev + 1);
+    session?.trackReset();
+  }, [session]);
 
   // AI Agent control functions
   const handleSetInput = useCallback((field: string, value: any) => {
@@ -181,7 +190,7 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
     setCalculationResult(null);
   }, []);
 
-  // Render calculator form
+  // Render calculator form with reset key
   const renderCalculatorForm = () => {
     const commonProps = {
       onCalculate: handleCalculationComplete,
@@ -189,6 +198,8 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
       setIsCalculating,
       userId,
       onInputChange: handleInputChange,
+      onReset: handleReset,
+      key: resetKey, // Force re-render on reset
     };
 
     switch (selectedCalculator) {
