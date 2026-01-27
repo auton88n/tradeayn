@@ -1,7 +1,35 @@
 /**
  * Client-side engineering calculations for instant results
- * Ported from edge functions - pure math, no network calls
+ * Supports ACI 318-25 and CSA A23.3-24 building codes
  */
+
+import type { BuildingCodeId } from '@/lib/buildingCodes';
+
+// ============ CODE-SPECIFIC PARAMETERS ============
+interface CodeParameters {
+  loadFactors: { dead: number; live: number };
+  resistanceFactors: { flexure: number; shear: number; steel: number };
+  minRho: number;
+  name: string;
+}
+
+const getCodeParameters = (buildingCode: BuildingCodeId): CodeParameters => {
+  if (buildingCode === 'CSA') {
+    return {
+      loadFactors: { dead: 1.25, live: 1.5 },
+      resistanceFactors: { flexure: 0.65, shear: 0.65, steel: 0.85 },
+      minRho: 0.002,
+      name: 'CSA A23.3-24',
+    };
+  }
+  // Default: ACI 318-25
+  return {
+    loadFactors: { dead: 1.2, live: 1.6 },
+    resistanceFactors: { flexure: 0.90, shear: 0.75, steel: 1.0 },
+    minRho: 0.0018,
+    name: 'ACI 318-25',
+  };
+};
 
 // ============ BEAM CALCULATOR ============
 export interface BeamInputs {
@@ -12,6 +40,7 @@ export interface BeamInputs {
   concreteGrade: string;
   steelGrade: string;
   supportType: string;
+  buildingCode?: BuildingCodeId;
 }
 
 export interface BeamOutputs {
@@ -35,10 +64,16 @@ export interface BeamOutputs {
   formworkArea: number;
   fck: number;
   fy: number;
+  buildingCode: string;
+  loadFactorsUsed: string;
+  resistanceFactorUsed: number;
 }
 
 export function calculateBeam(inputs: BeamInputs): BeamOutputs {
-  const { span, deadLoad, liveLoad, beamWidth, concreteGrade, steelGrade, supportType } = inputs;
+  const { span, deadLoad, liveLoad, beamWidth, concreteGrade, steelGrade, supportType, buildingCode = 'ACI' } = inputs;
+
+  // Get code-specific parameters
+  const codeParams = getCodeParameters(buildingCode);
 
   const concreteProps: Record<string, number> = { C25: 25, C30: 30, C35: 35, C40: 40 };
   const steelProps: Record<string, number> = { Fy420: 420, Fy500: 500 };
@@ -53,7 +88,8 @@ export function calculateBeam(inputs: BeamInputs): BeamOutputs {
   };
   const momentFactor = momentFactors[supportType] || 8;
 
-  const factoredLoad = 1.4 * deadLoad + 1.6 * liveLoad;
+  // Use code-specific load factors
+  const factoredLoad = codeParams.loadFactors.dead * deadLoad + codeParams.loadFactors.live * liveLoad;
   const maxMoment = (factoredLoad * span * span) / momentFactor;
   const maxShear = supportType === 'cantilever' ? factoredLoad * span : (factoredLoad * span) / 2;
 
@@ -70,7 +106,22 @@ export function calculateBeam(inputs: BeamInputs): BeamOutputs {
   const roundedDepth = Math.ceil(totalDepth / 25) * 25;
 
   const d = roundedDepth - cover - stirrupDia - 10;
-  const Ast = Mu / (0.87 * fy * 0.9 * d);
+  
+  // Use code-specific resistance factor for steel calculation
+  // CSA: Mr = φc × φs × As × fy × (d - a/2) → requires MORE steel for same moment
+  // ACI: Mn = As × fy × (d - a/2), then φMn ≥ Mu → φ applied after
+  const phiFlex = codeParams.resistanceFactors.flexure;
+  const phiSteel = codeParams.resistanceFactors.steel;
+  
+  // For CSA, we need to account for both φc and φs
+  // Simplified: Ast = Mu / (φc × φs × fy × 0.9 × d) for CSA
+  // For ACI: Ast = Mu / (φ × fy × 0.9 × d) but φ is applied to capacity, so use 0.87fy
+  const effectivePhi = buildingCode === 'CSA' ? phiFlex * phiSteel : 0.87;
+  const Ast = Mu / (effectivePhi * fy * 0.9 * d);
+
+  // Check minimum reinforcement
+  const AstMin = codeParams.minRho * width * d;
+  const AstDesign = Math.max(Ast, AstMin);
 
   const barSizes = [12, 16, 20, 25, 32];
   let selectedBar = 20;
@@ -78,17 +129,19 @@ export function calculateBeam(inputs: BeamInputs): BeamOutputs {
 
   for (const dia of barSizes) {
     const areaPerBar = Math.PI * dia * dia / 4;
-    const barsNeeded = Math.ceil(Ast / areaPerBar);
-    if (barsNeeded >= 2 && barsNeeded <= 6) {
+    const barsNeeded = Math.ceil(AstDesign / areaPerBar);
+    if (barsNeeded >= 2 && barsNeeded <= 8) {
       selectedBar = dia;
       numberOfBars = barsNeeded;
       break;
     }
   }
 
+  // Shear with code-specific resistance factor
   const Vu = maxShear * 1000;
+  const phiShear = codeParams.resistanceFactors.shear;
   const Vc = 0.17 * Math.sqrt(fck) * width * d;
-  const Vs = Math.max(0, Vu / 0.75 - Vc);
+  const Vs = Math.max(0, Vu / phiShear - Vc);
 
   const Asv = Math.PI * stirrupDia * stirrupDia / 4 * 2;
   const stirrupSpacing = Vs > 0
@@ -115,7 +168,7 @@ export function calculateBeam(inputs: BeamInputs): BeamOutputs {
     mainReinforcement: `${numberOfBars}Ø${selectedBar}`,
     numberOfBars,
     barDiameter: selectedBar,
-    requiredAs: Math.round(Ast),
+    requiredAs: Math.round(AstDesign),
     providedAs: Math.round(numberOfBars * Math.PI * selectedBar * selectedBar / 4),
     stirrups: `Ø${stirrupDia}@${roundedSpacing}mm`,
     stirrupDia,
@@ -125,6 +178,9 @@ export function calculateBeam(inputs: BeamInputs): BeamOutputs {
     formworkArea: Math.round(formworkArea * 100) / 100,
     fck,
     fy,
+    buildingCode: codeParams.name,
+    loadFactorsUsed: `${codeParams.loadFactors.dead}D + ${codeParams.loadFactors.live}L`,
+    resistanceFactorUsed: phiFlex,
   };
 }
 
@@ -139,10 +195,14 @@ export interface SlabInputs {
   slabType: string;
   supportCondition: string;
   cover: number;
+  buildingCode?: BuildingCodeId;
 }
 
 export function calculateSlab(inputs: SlabInputs) {
-  const { longSpan, shortSpan, deadLoad, liveLoad, concreteGrade, steelGrade, slabType, supportCondition, cover } = inputs;
+  const { longSpan, shortSpan, deadLoad, liveLoad, concreteGrade, steelGrade, slabType, supportCondition, cover, buildingCode = 'ACI' } = inputs;
+
+  // Get code-specific parameters
+  const codeParams = getCodeParameters(buildingCode);
 
   const concreteProps: Record<string, number> = { C25: 25, C30: 30, C35: 35, C40: 40 };
   const steelProps: Record<string, number> = { Fy420: 420, Fy500: 500 };
@@ -153,7 +213,9 @@ export function calculateSlab(inputs: SlabInputs) {
   const Lx = shortSpan * 1000;
   const Ly = longSpan * 1000;
   const spanRatio = Ly / Lx;
-  const Wu = 1.4 * deadLoad + 1.6 * liveLoad;
+  
+  // Use code-specific load factors
+  const Wu = codeParams.loadFactors.dead * deadLoad + codeParams.loadFactors.live * liveLoad;
 
   const deflectionCoeffs: Record<string, number> = {
     simply_supported: 20,
@@ -354,6 +416,8 @@ export function calculateSlab(inputs: SlabInputs) {
     concreteVolume,
     steelWeight,
     formworkArea: (Lx / 1000) * (Ly / 1000),
+    buildingCode: codeParams.name,
+    loadFactorsUsed: `${codeParams.loadFactors.dead}D + ${codeParams.loadFactors.live}L`,
     serviceabilityChecks: {
       deflection: {
         immediate: parseFloat(deltaImmediate.toFixed(2)),
