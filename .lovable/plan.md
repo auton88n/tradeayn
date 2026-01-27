@@ -1,273 +1,369 @@
 
+# Complete AYNN Fix Plan - Critical, High, and Medium Priority Issues
 
-# Complete SEO Implementation & Full Multilingual Translation (Revised)
+## Executive Summary
 
-## Overview
-
-This plan implements:
-1. **SEO Optimization** - Maximize Google visibility for AYN AI-related searches
-2. **Complete Translations** - Full website translation in Arabic, English, and French
-
-**Security Note**: We will NOT expose sensitive routes (admin, settings, apply forms, reset-password) in robots.txt or sitemap.xml.
+This plan addresses 14 identified issues across the AYNN platform, organized by priority. The fixes span engineering calculators, chat functionality, authentication, form validation, and accessibility improvements.
 
 ---
 
-## Phase 1: Technical SEO Improvements
+## CRITICAL PRIORITY FIXES
 
-### 1.1 Keep robots.txt Clean (No Sensitive Paths)
+### 1. CSA Resistance Factor Bug (Code Safety Issue)
 
-Keep it simple - don't reveal what paths exist:
+**Problem**: Engineering calculators show identical reinforcement for both ACI and CSA codes, but CSA requires more steel due to lower resistance factors.
 
-```text
-User-agent: Googlebot
-Allow: /
+**Current State Analysis**:
+- Building code configuration exists in `src/lib/buildingCodes/csa-a23-3-24.ts` with correct φc = 0.65
+- However, `src/lib/engineeringCalculations.ts` uses hardcoded formulas without building code parameters
+- Line 56: `const factoredLoad = 1.4 * deadLoad + 1.6 * liveLoad` - ACI factors only
+- Line 73: `const Ast = Mu / (0.87 * fy * 0.9 * d)` - No resistance factor applied
 
-User-agent: Bingbot
-Allow: /
+**Files to Modify**:
+- `src/lib/engineeringCalculations.ts` (beam, slab, column, foundation, retaining wall functions)
+- `src/components/engineering/BeamCalculator.tsx` (pass building code to calculation)
+- Similar updates to all 5 calculator components
 
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
-
-User-agent: *
-Allow: /
-
-# Sitemap
-Sitemap: https://aynn.io/sitemap.xml
-```
-
-### 1.2 Keep sitemap.xml Public-Only
-
-Only include public marketing pages (no /apply routes, no /terms, no /privacy):
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://aynn.io/</loc>
-    <lastmod>2026-01-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
-  </url>
-  <url>
-    <loc>https://aynn.io/pricing</loc>
-    <lastmod>2026-01-26</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://aynn.io/services/ai-employee</loc>
-    <lastmod>2026-01-26</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://aynn.io/services/ai-agents</loc>
-    <lastmod>2026-01-26</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://aynn.io/services/automation</loc>
-    <lastmod>2026-01-26</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://aynn.io/services/ticketing</loc>
-    <lastmod>2026-01-26</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://aynn.io/services/civil-engineering</loc>
-    <lastmod>2026-01-26</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://aynn.io/services/content-creator-sites</loc>
-    <lastmod>2026-01-26</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://aynn.io/engineering</loc>
-    <lastmod>2026-01-26</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://aynn.io/support</loc>
-    <lastmod>2026-01-26</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-</urlset>
-```
-
-### 1.3 Enhance index.html Meta Tags
-
-Add geo tags, hreflang, and enhanced structured data:
-
-```html
-<!-- Geo Tags for Saudi Arabia -->
-<meta name="geo.region" content="SA" />
-<meta name="geo.placename" content="Riyadh" />
-<meta name="geo.position" content="24.7136;46.6753" />
-<meta name="ICBM" content="24.7136, 46.6753" />
-
-<!-- Alternate Languages (hreflang) -->
-<link rel="alternate" hreflang="en" href="https://aynn.io/" />
-<link rel="alternate" hreflang="ar" href="https://aynn.io/" />
-<link rel="alternate" hreflang="fr" href="https://aynn.io/" />
-<link rel="alternate" hreflang="x-default" href="https://aynn.io/" />
-
-<!-- Enhanced JSON-LD -->
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  "name": "AYN AI",
-  "alternateName": ["AYN", "عين AI", "عين"],
-  "applicationCategory": "BusinessApplication",
-  "operatingSystem": "Web Browser",
-  "offers": {
-    "@type": "AggregateOffer",
-    "priceCurrency": "USD",
-    "lowPrice": "0",
-    "highPrice": "79",
-    "offerCount": "5"
-  },
-  "aggregateRating": {
-    "@type": "AggregateRating",
-    "ratingValue": "4.8",
-    "ratingCount": "30000"
-  },
-  "inLanguage": ["en", "ar", "fr"],
-  "description": "AYN AI is an intelligent AI assistant platform designed for Saudi Arabia with bilingual Arabic and English support.",
-  "url": "https://aynn.io",
-  "image": "https://aynn.io/og-image.png"
-}
-</script>
-
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  "name": "AYN AI",
-  "alternateName": ["AYN", "عين AI"],
-  "url": "https://aynn.io",
-  "logo": "https://aynn.io/ayn-logo.png",
-  "description": "Intelligent AI assistant platform - مساعد الذكاء الاصطناعي الذكي",
-  "foundingDate": "2024",
-  "address": {
-    "@type": "PostalAddress",
-    "addressCountry": "SA",
-    "addressLocality": "Riyadh"
-  },
-  "contactPoint": {
-    "@type": "ContactPoint",
-    "contactType": "customer support",
-    "url": "https://aynn.io/support",
-    "availableLanguage": ["English", "Arabic", "French"]
-  }
-}
-</script>
-```
-
----
-
-## Phase 2: Translation System Expansion
-
-### 2.1 Add Missing Translation Keys to LanguageContext.tsx
-
-Add approximately 510 new translation keys covering:
-
-| Section | Keys per Language |
-|---------|------------------|
-| Pricing Page | 35 keys |
-| Service Pages (6) | 300 keys |
-| Support Page | 40 keys |
-| Engineering | 60 keys |
-| Common/Shared | 25 keys |
-| Legal Pages | 50 keys |
-
-### 2.2 Refactor Service Pages
-
-Migrate from inline translations to centralized `t()` function:
-
-**Current Pattern (to replace):**
+**Implementation**:
 ```typescript
-const t = {
-  back: language === 'ar' ? 'عودة' : language === 'fr' ? 'Retour' : 'Back',
-  heroTitle: language === 'ar' ? 'موظفين...' : ...
+// Add buildingCode parameter to all calculate functions
+export function calculateBeam(inputs: BeamInputs, buildingCode: 'ACI' | 'CSA' = 'ACI'): BeamOutputs {
+  // Use code-specific factors
+  const loadFactors = buildingCode === 'CSA' 
+    ? { dead: 1.25, live: 1.5 }  // CSA
+    : { dead: 1.2, live: 1.6 };  // ACI
+    
+  const resistanceFactor = buildingCode === 'CSA' ? 0.65 : 0.90;
+  
+  const factoredLoad = loadFactors.dead * deadLoad + loadFactors.live * liveLoad;
+  const Ast = Mu / (resistanceFactor * 0.87 * fy * 0.9 * d);
+  // ... rest of calculation
+}
+```
+
+---
+
+### 2. Form Validation - Accepts Invalid Values
+
+**Problem**: Calculator forms accept negative, zero, and impossibly large values without error messages.
+
+**Current State Analysis**:
+- `BeamCalculator.tsx` has minimal validation (lines 75-86)
+- Uses `min="0"` HTML attribute but no real enforcement or error display
+- No maximum value checks for engineering reality
+
+**Files to Modify**:
+- `src/components/engineering/BeamCalculator.tsx`
+- `src/components/engineering/ColumnCalculator.tsx`
+- `src/components/engineering/SlabCalculator.tsx`
+- `src/components/engineering/FoundationCalculator.tsx`
+- `src/components/engineering/RetainingWallCalculator.tsx`
+
+**Implementation**:
+```typescript
+// Add validation state
+const [errors, setErrors] = useState<Record<string, string>>({});
+
+// Add validation function
+const validateInput = (field: string, value: number): string | null => {
+  const rules: Record<string, { min: number; max: number; unit: string }> = {
+    span: { min: 0.5, max: 50, unit: 'm' },
+    beamWidth: { min: 150, max: 2000, unit: 'mm' },
+    deadLoad: { min: 0.1, max: 500, unit: 'kN/m' },
+    liveLoad: { min: 0, max: 500, unit: 'kN/m' },
+  };
+  
+  const rule = rules[field];
+  if (!rule) return null;
+  
+  if (value < rule.min) return `Must be at least ${rule.min} ${rule.unit}`;
+  if (value > rule.max) return `Cannot exceed ${rule.max} ${rule.unit}`;
+  return null;
 };
-```
 
-**New Pattern:**
-```typescript
-const { t } = useLanguage();
-// Usage: t('services.aiEmployee.back')
+// Display inline errors under each input
+{errors.span && <p className="text-red-500 text-xs mt-1">{errors.span}</p>}
 ```
 
 ---
 
-## Phase 3: SEO Component Enhancements
+### 3. Chat Messages Not Displaying
 
-### 3.1 Add Language Support to SEO.tsx
+**Problem**: Messages don't appear in the chat interface after sending.
 
+**Current State Analysis**:
+- `useMessages.ts` correctly adds messages to state (lines 288-291)
+- Messages are loaded from database on session change (lines 140-193)
+- Streaming works correctly with progressive content updates
+
+**Investigation Required**:
+The code appears correct. This may be a rendering issue in:
+- `DashboardContainer.tsx` - how messages are passed to display component
+- `CenterStageLayout.tsx` - message rendering logic
+
+**Files to Check/Modify**:
+- `src/components/dashboard/DashboardContainer.tsx`
+- `src/components/dashboard/CenterStageLayout.tsx`
+- Verify message state is being passed correctly through component hierarchy
+
+---
+
+### 4. Reset Button Not Working
+
+**Problem**: Reset button doesn't clear calculator form values.
+
+**Current State Analysis**:
+- `EngineeringWorkspace.tsx` has `handleReset` (lines 162-166) that clears context state
+- But individual calculators like `BeamCalculator.tsx` maintain their own `formData` state (line 53)
+- The reset function only clears context, not the local form state
+
+**Files to Modify**:
+- `src/components/engineering/workspace/EngineeringWorkspace.tsx`
+- All 5 calculator components
+
+**Implementation**:
+Option A - Lift state to parent (preferred):
 ```typescript
-interface SEOProps {
-  // ... existing props
-  language?: 'en' | 'ar' | 'fr';
+// Pass reset callback to calculators
+<BeamCalculator 
+  {...commonProps} 
+  onReset={() => setFormData(defaultFormData)}
+/>
+```
+
+Option B - Add ref-based reset:
+```typescript
+// In calculator
+useImperativeHandle(ref, () => ({
+  reset: () => setFormData(defaultFormData)
+}));
+```
+
+---
+
+## HIGH PRIORITY FIXES
+
+### 5. Hardcoded "Calculation Method" Messages
+
+**Problem**: Info box shows "Uses ACI 318 / Eurocode 2 methods with load factors: 1.4 DL + 1.6 LL" regardless of selected code.
+
+**Location**: `BeamCalculator.tsx` lines 286-290
+
+**Files to Modify**:
+- All 5 calculator components (same pattern)
+
+**Implementation**:
+```typescript
+// Get building code from context
+const session = useEngineeringSessionOptional();
+const buildingCode = session?.buildingCode || 'ACI';
+
+// Dynamic info text
+const codeInfo = buildingCode === 'CSA' ? {
+  name: 'CSA A23.3-24 / NBCC 2020',
+  factors: '1.25D + 1.5L',
+  phi: 'φc = 0.65'
+} : {
+  name: 'ACI 318-25 / ASCE 7-22',
+  factors: '1.2D + 1.6L',
+  phi: 'φ = 0.90'
+};
+
+// In JSX
+<p className="text-blue-600 dark:text-blue-400">
+  Uses {codeInfo.name} with load factors: {codeInfo.factors}, {codeInfo.phi}.
+  Results are for reference only.
+</p>
+```
+
+---
+
+### 6. Automatic Recalculation on Code Change
+
+**Files to Modify**:
+- `src/components/engineering/workspace/EngineeringWorkspace.tsx`
+
+**Implementation**:
+```typescript
+// Watch for building code changes
+useEffect(() => {
+  if (session?.buildingCode && calculationResult) {
+    // Show notification
+    toast.info(`Design code changed to ${session.buildingCode === 'CSA' ? 'CSA A23.3-24' : 'ACI 318-25'}. Recalculating...`);
+    
+    // Trigger recalculation with current inputs
+    if (selectedCalculator && currentInputs) {
+      handleCalculationComplete(/* recalculate with new code */);
+    }
+  }
+}, [session?.buildingCode]);
+```
+
+---
+
+### 7. Code-Specific Info Panel
+
+**Files to Modify**:
+- `src/components/engineering/BuildingCodeSelector.tsx` - add expandable info
+
+**Implementation**:
+Add a collapsible panel below the dropdown showing:
+- Load combinations (1.2D + 1.6L vs 1.25D + 1.5L)
+- Resistance factors (φ = 0.90 vs φc = 0.65)
+- Code section references
+
+---
+
+### 8. Design Validation Warnings
+
+**Files to Create**:
+- `src/lib/designValidation.ts`
+
+**Files to Modify**:
+- `src/components/engineering/CalculationResults.tsx`
+
+**Implementation**:
+```typescript
+interface DesignWarning {
+  severity: 'critical' | 'warning' | 'info';
+  title: string;
+  message: string;
+  codeRef?: string;
+  action?: string;
 }
 
-// Add locale meta tags
-<meta property="og:locale" content={
-  language === 'ar' ? 'ar_SA' : 
-  language === 'fr' ? 'fr_FR' : 'en_US'
-} />
+export function validateBeamDesign(inputs, outputs, code): DesignWarning[] {
+  const warnings: DesignWarning[] = [];
+  
+  // Check minimum reinforcement
+  const minRho = code === 'CSA' ? 0.002 : 0.0018;
+  const actualRho = outputs.requiredAs / (inputs.beamWidth * outputs.effectiveDepth);
+  
+  if (actualRho < minRho) {
+    warnings.push({
+      severity: 'critical',
+      title: 'Brittle Failure Risk',
+      message: `ρ = ${actualRho.toFixed(4)} < ρmin = ${minRho}`,
+      codeRef: code === 'CSA' ? 'Clause 10.5' : 'Section 7.6.1.1',
+      action: 'Increase steel to minimum required'
+    });
+  }
+  
+  // ... 5 more validation checks
+  return warnings;
+}
 ```
 
 ---
 
-## Files to Modify
+### 9. Code Section Citations in Results
 
-| File | Changes |
-|------|---------|
-| `public/robots.txt` | Keep clean, no sensitive paths exposed |
-| `public/sitemap.xml` | Update lastmod dates, keep public routes only |
-| `index.html` | Add geo tags, hreflang, enhanced JSON-LD |
-| `src/contexts/LanguageContext.tsx` | Add ~510 new translation keys (EN, AR, FR) |
-| `src/components/shared/SEO.tsx` | Add language prop, locale meta tags |
-| `src/pages/Pricing.tsx` | Replace hardcoded text with t() calls |
-| `src/pages/services/AIEmployee.tsx` | Migrate to centralized translations |
-| `src/pages/services/AIAgents.tsx` | Migrate to centralized translations |
-| `src/pages/services/Automation.tsx` | Migrate to centralized translations |
-| `src/pages/services/Ticketing.tsx` | Migrate to centralized translations |
-| `src/pages/services/CivilEngineering.tsx` | Migrate to centralized translations |
-| `src/pages/services/InfluencerSites.tsx` | Migrate to centralized translations |
-| `src/pages/Support.tsx` | Add SEO component, verify translations |
-| `src/pages/Engineering.tsx` | Add SEO component, verify translations |
+**Files to Modify**:
+- `src/components/engineering/CalculationResults.tsx`
+
+**Implementation**:
+Add a "Code References" section to results display:
+```tsx
+<div className="mt-4 p-3 bg-muted rounded-lg">
+  <h4 className="text-sm font-semibold mb-2">Code References</h4>
+  <ul className="text-xs text-muted-foreground space-y-1">
+    <li>Load Factors: {code === 'CSA' ? 'NBCC 2020 Part 4' : 'ASCE 7-22 Section 2.3.2'}</li>
+    <li>Resistance Factors: {code === 'CSA' ? 'CSA A23.3-24 Clause 8.4' : 'ACI 318-25 Table 21.2.1'}</li>
+    <li>Minimum Reinforcement: {code === 'CSA' ? 'Clause 10.5' : 'Section 7.6.1.1'}</li>
+  </ul>
+</div>
+```
 
 ---
 
-## Implementation Priority
+## MEDIUM PRIORITY FIXES
 
-1. **High Priority (SEO Impact)**
-   - Update `index.html` with geo tags, hreflang, JSON-LD
-   - Update `sitemap.xml` with fresh lastmod dates
-   - Keep `robots.txt` clean
+### 10. Login Error Messages
 
-2. **Medium Priority (User Experience)**
-   - Add Pricing page translations
-   - Migrate service pages to centralized translations
+**Current State**: Error handling exists in `AuthModal.tsx` (lines 232-241) - toast notifications ARE being shown.
 
-3. **Lower Priority (Completeness)**
-   - Engineering page translations
-   - Support page translations
-   - Remaining translation keys
+**Verification Needed**: The code shows proper error handling. May need to test if toasts are visible or if there's a timing issue.
 
+---
+
+### 11. Broken Service Pages
+
+**Current State**: All service routes ARE defined in `App.tsx` (lines 74-87).
+
+**Analysis**: Routes exist for:
+- `/services/ai-employee`
+- `/services/content-creator-sites`
+- `/services/ai-agents`
+- `/services/automation`
+- `/services/ticketing`
+- `/services/civil-engineering`
+
+There is NO `/services` index page - this is expected (individual service pages only).
+
+---
+
+### 12. Accessibility - DialogDescription
+
+**Current State**: Many dialogs already have `DialogDescription` (found in 25 files).
+
+**Files That Need Updating**:
+Search showed some dialogs may be missing descriptions. Need to audit and add where missing.
+
+---
+
+### 13. Success Messages
+
+**Files to Modify**:
+- Contact forms in landing page
+- Application forms in service pages
+
+Add toast notifications after successful form submissions.
+
+---
+
+### 14. Security - Token Storage
+
+**Current State**: Auth tokens in localStorage is the Supabase default behavior.
+
+**Recommendation**: This is a known trade-off. HTTP-only cookies require server-side changes to Supabase configuration. Document as accepted risk for current MVP or plan for future enhancement.
+
+---
+
+## Implementation Order
+
+1. **Sprint 1 (Critical)**:
+   - CSA resistance factors in calculations
+   - Form validation with error messages
+   - Reset button functionality
+   - Chat message display investigation
+
+2. **Sprint 2 (High)**:
+   - Dynamic calculation method info
+   - Auto-recalculation on code change
+   - Design validation warnings
+   - Code citations in results
+
+3. **Sprint 3 (Medium)**:
+   - Accessibility audit
+   - Success messages
+   - Security improvements documentation
+
+---
+
+## Files Summary
+
+| Priority | Files to Modify |
+|----------|----------------|
+| Critical | `src/lib/engineeringCalculations.ts`, 5 calculator components, `useMessages.ts`, `EngineeringWorkspace.tsx` |
+| High | `BuildingCodeSelector.tsx`, `CalculationResults.tsx`, new `designValidation.ts` |
+| Medium | Various dialog components, form handlers |
+
+---
+
+## Technical Notes
+
+- The building code system is well-architected with `BuildingCodeConfig` types
+- Resistance factors are correctly defined in code configurations
+- The gap is that calculations don't USE the configuration - they have hardcoded ACI values
+- Engineering session context properly tracks building code selection
+- Fix requires passing `buildingCode` through the component/calculation pipeline
