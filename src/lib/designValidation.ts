@@ -180,7 +180,7 @@ export function getCodeReferences(code: BuildingCodeId): {
 } {
   if (code === 'CSA') {
     return {
-      loadFactors: 'NBC 2025 Division B Part 4',
+      loadFactors: 'NBCC 2020 Division B Part 4',
       resistanceFactors: 'CSA A23.3-24 Clause 8.4',
       minReinforcement: 'CSA A23.3-24 Clause 10.5',
       shear: 'CSA A23.3-24 Chapter 11 (MCFT)',
@@ -208,7 +208,7 @@ export function getCodeInfoText(code: BuildingCodeId): {
       name: 'CSA A23.3-24 / NBCC 2020',
       factors: '1.25D + 1.5L',
       phi: 'φc = 0.65, φs = 0.85',
-      note: 'CSA is more conservative than ACI - expect 30-40% more reinforcement',
+      note: 'Using NBCC 2020. NBCC 2025 available - verify adoption with local building dept.',
     };
   }
   return {

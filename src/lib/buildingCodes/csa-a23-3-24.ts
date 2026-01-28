@@ -1,12 +1,12 @@
 /**
- * CSA A23.3-24 / NBC 2025 Building Code Configuration
+ * CSA A23.3-24 / NBCC 2020 Building Code Configuration
  * Canadian Standards Association - Design of Concrete Structures
  * 
  * Official Sources:
  * - https://www.csagroup.org/
  * - https://nrc.canada.ca/ (National Building Code)
  * 
- * ✅ VERIFIED against official CSA A23.3-24 and NBC 2025 standards
+ * ✅ VERIFIED against official CSA A23.3-24 with NBCC 2020
  */
 
 import type { BuildingCodeConfig } from './types';
@@ -41,14 +41,14 @@ export const CSA_A23_3_24: BuildingCodeConfig = {
   id: 'CSA',
   name: 'CSA A23.3-24',
   fullName: 'Canadian Standards Association - Design of Concrete Structures',
-  version: 'CSA A23.3-24 / NBC 2025',
+  version: 'CSA A23.3-24 / NBCC 2020',
   country: 'Canada',
   flag: '🇨🇦',
   releaseDate: 'June 2024',
   officialSource: 'https://www.csagroup.org/',
   
   // ============================================================================
-  // LOAD FACTORS (NBC 2025) ✅ VERIFIED
+  // LOAD FACTORS (NBCC 2020) ✅ VERIFIED
   // ============================================================================
   loadFactors: {
     dead: 1.25,                 // Ultimate Limit State
@@ -61,7 +61,7 @@ export const CSA_A23_3_24: BuildingCodeConfig = {
   },
   
   // ============================================================================
-  // LOAD COMBINATIONS (NBC 2025 Division B Part 4) ✅ VERIFIED
+  // LOAD COMBINATIONS (NBCC 2020 Division B Part 4) ✅ VERIFIED
   // ============================================================================
   loadCombinations: [
     { 
@@ -135,7 +135,7 @@ export const CSA_A23_3_24: BuildingCodeConfig = {
   // CODE SECTION REFERENCES ✅ VERIFIED
   // ============================================================================
   codeReferences: {
-    loadCombinations: 'NBC 2025 Division B Part 4',
+    loadCombinations: 'NBCC 2020 Division B Part 4',
     phiFactors: 'CSA A23.3-24 Clause 8.4',
     stressBlock: 'CSA A23.3-24 Clause 10.1.7',
     minReinforcement: 'CSA A23.3-24 Clause 10.5',
@@ -334,12 +334,13 @@ export const CSA_A23_3_24: BuildingCodeConfig = {
     ],
     sources: [
       'CSA A23.3-24 Official',
-      'NBC 2025',
+      'NBCC 2020',
       'csagroup.org',
     ],
   },
   
   notes: [
+    'Using NBCC 2020 (currently adopted across Canada). NBCC 2025 published late 2025; verify adoption status with local building department.',
     'More conservative than ACI: uses φc/φs approach vs ACI\'s single φ',
     'Higher minimum reinforcement (0.002 vs 0.0018)',
     'Column max reinforcement 0.08 per code, but 0.04 practical limit for constructability',
