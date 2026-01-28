@@ -498,10 +498,10 @@ export const Sidebar = ({
             </Button>
           </div>}
 
-        {/* Scrollable Chat List */}
-        <div className="flex-1 overflow-hidden">
+        {/* Scrollable Chat List - min-height prevents layout shift */}
+        <div className="flex-1 overflow-hidden min-h-[200px]">
           <ScrollArea className="h-full">
-            <div className="py-1 px-1 pr-2">
+            <div className="py-1 px-1 pr-2 min-h-[180px]">
               <SidebarMenu className="space-y-0.5">
               {isLoadingChats ? (
                 // Skeleton UI - 5 placeholder items

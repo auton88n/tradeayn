@@ -228,6 +228,7 @@ export interface UseChatSessionReturn {
   setShowChatSelection: (show: boolean) => void;
   loadRecentChats: () => Promise<void>;
   startNewChat: () => void;
+  ensureSessionId: () => string;
   loadChat: (chatHistory: ChatHistory) => Message[];
   deleteSelectedChats: () => Promise<void>;
   deleteAllChats: () => Promise<void>;

@@ -116,7 +116,7 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
     }
   }, [userId, session]);
 
-  // Start a new chat session
+  // Start a new chat session (only called explicitly by user)
   const startNewChat = useCallback(() => {
     const newSessionId = crypto.randomUUID();
     setCurrentSessionId(newSessionId);
@@ -126,6 +126,16 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
       description: 'You can now start a fresh conversation with AYN.',
     });
   }, [toast]);
+
+  // Ensure we have a valid session ID (generate one if empty, but DON'T change existing)
+  const ensureSessionId = useCallback(() => {
+    if (!currentSessionId) {
+      const newId = crypto.randomUUID();
+      setCurrentSessionId(newId);
+      return newId;
+    }
+    return currentSessionId;
+  }, [currentSessionId]);
 
   // Load an existing chat
   const loadChat = useCallback((chatHistory: ChatHistory): Message[] => {
@@ -265,9 +275,11 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
       // Mark as initialized immediately to prevent duplicate calls
       lastInitializedUserId.current = userId;
       
-      // Skip if no session available
+      // Skip if no session available - only set new ID if we don't have one
       if (!session) {
-        setCurrentSessionId(crypto.randomUUID());
+        if (!currentSessionId) {
+          setCurrentSessionId(crypto.randomUUID());
+        }
         setIsLoadingChats(false);
         return;
       }
@@ -306,11 +318,14 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
         // Check if aborted after fetch
         if (controller.signal.aborted) return;
         
-        // Set current session ID
-        if (latestSessionData && latestSessionData.length > 0 && latestSessionData[0].session_id) {
-          setCurrentSessionId(latestSessionData[0].session_id);
-        } else {
-          setCurrentSessionId(crypto.randomUUID());
+        // Set current session ID - ONLY if not already set
+        // This prevents overwriting a session that was just started but has no DB messages yet
+        if (!currentSessionId) {
+          if (latestSessionData && latestSessionData.length > 0 && latestSessionData[0].session_id) {
+            setCurrentSessionId(latestSessionData[0].session_id);
+          } else {
+            setCurrentSessionId(crypto.randomUUID());
+          }
         }
         
         // Create a map of session_id to stored title
@@ -392,7 +407,10 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
           return;
         }
         console.error('[useChatSession] Initialization error:', error);
-        setCurrentSessionId(crypto.randomUUID());
+        // Only set new session ID on error if we don't have one
+        if (!currentSessionId) {
+          setCurrentSessionId(crypto.randomUUID());
+        }
         setRecentChats([]);
       } finally {
         if (!controller.signal.aborted) {
@@ -416,6 +434,7 @@ export const useChatSession = (userId: string, session: Session | null): UseChat
     setShowChatSelection,
     loadRecentChats,
     startNewChat,
+    ensureSessionId,
     loadChat,
     deleteSelectedChats,
     deleteAllChats,
