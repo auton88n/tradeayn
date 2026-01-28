@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useCallback, useMemo, useState, ReactNode } from 'react';
 import { useActionTracker, TrackedAction } from '@/hooks/useActionTracker';
 import { type BuildingCodeId, type NBCCVersion, AVAILABLE_CODES, DEFAULT_BUILDING_CODE, getBuildingCodeConfig } from '@/lib/buildingCodes';
+import { type GradingRegion } from '@/lib/gradingStandards';
 
 interface CalculatorState {
   inputs: Record<string, any>;
@@ -19,6 +20,10 @@ interface EngineeringSessionContextValue {
   setBuildingCode: (code: BuildingCodeId) => void;
   nbccVersion: NBCCVersion;
   setNbccVersion: (version: NBCCVersion) => void;
+  
+  // Grading region
+  gradingRegion: GradingRegion;
+  setGradingRegion: (region: GradingRegion) => void;
   
   // All calculator states
   calculatorStates: Record<string, CalculatorState>;
@@ -92,6 +97,7 @@ export const EngineeringSessionProvider: React.FC<EngineeringSessionProviderProp
   const actionTracker = useActionTracker();
   const [buildingCode, setBuildingCode] = useState<BuildingCodeId>(DEFAULT_BUILDING_CODE);
   const [nbccVersion, setNbccVersion] = useState<NBCCVersion>('2020');
+  const [gradingRegion, setGradingRegion] = useState<GradingRegion>('USA');
 
   const getCurrentState = useCallback((): CalculatorState | null => {
     return actionTracker.getCurrentCalculatorState();
@@ -146,6 +152,10 @@ export const EngineeringSessionProvider: React.FC<EngineeringSessionProviderProp
       nbccVersion,
       setNbccVersion,
       
+      // Grading region
+      gradingRegion,
+      setGradingRegion,
+      
       // All calculator states
       calculatorStates: actionTracker.calculatorStates,
       
@@ -168,7 +178,7 @@ export const EngineeringSessionProvider: React.FC<EngineeringSessionProviderProp
       // AI context
       getAIContext,
     };
-  }, [actionTracker, getCurrentState, getAIContext, buildingCode, nbccVersion]);
+  }, [actionTracker, getCurrentState, getAIContext, buildingCode, nbccVersion, gradingRegion]);
 
   return (
     <EngineeringSessionContext.Provider value={value}>
