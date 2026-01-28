@@ -1,257 +1,314 @@
 
-# Remove Saudi Arabia References & Update AI Knowledge for USA/Canada Only
+
+# Fix Chat UI Bugs: Auto-Scroll & Message Ordering
 
 ## Summary
 
-This plan removes all Saudi Arabia building code references (SBC 304, MOT, SAR currency, Saudi cities) from the entire codebase and updates all AI systems to only reference USA (ACI 318-25) and Canada (CSA A23.3-24) standards. It also removes cost estimation logic that uses Saudi Riyal (SAR) pricing.
+This plan fixes two critical chat usability issues across all engineering chat components:
+1. **Forced auto-scroll** prevents users from reading message history
+2. **Message ordering** can sometimes appear reversed due to rapid state updates
+
+---
+
+## Root Cause Analysis
+
+### Bug 1: Auto-Scroll Forces User Down
+
+**Current problematic pattern (found in 5 files):**
+
+```text
+EngineeringBottomChat.tsx (line 173):
+  useEffect(() => {
+    if (isExpanded) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, isExpanded]);  ← Scrolls on EVERY message change
+
+EngineeringAIChat.tsx (line 135):
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, streamingContent]);  ← Same issue
+
+EngineeringAIPanel.tsx (line 87):
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);  ← Same issue
+
+AICalculatorAssistant.tsx (line 122):
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatMessages, streamingContent]);  ← Same issue
+```
+
+**Problem**: Scroll triggers on ANY `messages` array change, not just when NEW messages are added. User scrolls up to read history and gets yanked back to bottom.
+
+### Bug 2: Message Order Appears Wrong
+
+**Current pattern in useEngineeringAIAgent.ts (lines 264-303):**
+
+```text
+1. setMessages(prev => [...prev, userMessage]);   ← User message added
+2. setIsLoading(true);
+3. await supabase.functions.invoke(...)           ← AI call
+4. setMessages(prev => [...prev, assistantMessage]); ← AI message added
+```
+
+**Problem**: While the logic is correct, React's state batching and rapid updates can cause visual flickering where messages appear to swap positions momentarily.
+
+---
+
+## Solution Design
+
+### Fix 1: Smart Auto-Scroll
+
+Implement "scroll intent detection" - only auto-scroll if user is near the bottom. If user scrolls up to read history, respect their position.
+
+**New logic:**
+
+```text
++---------------------------+
+| User scrolls up to read   |
+| history                   |
++------------+--------------+
+             |
+             v
++---------------------------+
+| Detect user is > 100px    |
+| from bottom               |
++------------+--------------+
+             |
+             v
++---------------------------+
+| Set shouldAutoScroll =    |
+| false                     |
++------------+--------------+
+             |
+             v
++---------------------------+
+| New message arrives       |
++------------+--------------+
+             |
+             v
++---------------------------+
+| Check shouldAutoScroll    |
+| → If false: DO NOT scroll |
+| → If true: scroll to msg  |
++---------------------------+
+```
+
+### Fix 2: Guaranteed Message Order
+
+Add a small delay after adding user message to ensure React has committed the state before the AI response arrives. Also use `messages.length` instead of full array to trigger scroll only on additions.
 
 ---
 
 ## Files to Modify
 
-### 1. Frontend Library - Engineering Knowledge Base
+### 1. EngineeringBottomChat.tsx
 
-**`src/lib/engineeringKnowledge.ts`**
+**Lines 123-177** - Add smart scroll logic:
 
-Remove the entire `saudiBuildingCode` section (lines 203-228):
 ```typescript
-// DELETE THIS ENTIRE SECTION:
-saudiBuildingCode: {
-  version: "SBC 304-2018",
-  requirements: {
-    concreteGradeMin: 25,
-    coverForExposure: "SBC Table 7.7.1",
-    seismicZones: { Riyadh, Jeddah, Dammam, Makkah, Madinah },
-    fireRating: {...}
-  },
-  loadRequirements: {
-    windSpeed: { Riyadh, Jeddah, coastal }
+// Add new state
+const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+const scrollAreaRef = useRef<HTMLDivElement>(null);
+const prevMessageCountRef = useRef(0);
+
+// Add scroll detection handler
+const handleScroll = useCallback(() => {
+  const viewport = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+  if (!viewport) return;
+  
+  const { scrollTop, scrollHeight, clientHeight } = viewport;
+  const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+  setShouldAutoScroll(isNearBottom);
+}, []);
+
+// Replace existing scroll useEffect
+useEffect(() => {
+  // Only scroll when NEW messages are added (not on every change)
+  if (messages.length > prevMessageCountRef.current && shouldAutoScroll && isExpanded) {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }
-}
+  prevMessageCountRef.current = messages.length;
+}, [messages.length, shouldAutoScroll, isExpanded]);
 ```
 
-Add new regional grading standards knowledge (USA EPA/OSHA/IBC, Canada CSA/CCME/NBCC) to match the gradingStandards.ts file.
+**Update ScrollArea JSX (line 363):**
 
-### 2. Frontend Library - AYN Personality
-
-**`src/lib/aynPersonality.ts`**
-
-Update line 86 - change default building code reference:
-```typescript
-// BEFORE:
-- building code requirements (${engineeringContext?.buildingCode || 'SBC/IBC'})
-
-// AFTER:
-- building code requirements (${engineeringContext?.buildingCode || 'ACI 318-25/CSA A23.3-24'})
+```tsx
+<ScrollArea 
+  ref={scrollAreaRef}
+  className="h-[280px]" 
+  style={{ contain: 'strict' }}
+  onScrollCapture={handleScroll}
+>
 ```
 
-Update line 158 - remove 'sbc' from engineering keywords:
-```typescript
-// BEFORE:
-'engineering', 'civil', 'construction', 'building code', 'sbc', 'ibc'
+### 2. EngineeringAIChat.tsx
 
-// AFTER:
-'engineering', 'civil', 'construction', 'building code', 'aci', 'csa', 'ibc'
+**Lines 130-137** - Same pattern:
+
+```typescript
+const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+const prevMessageCountRef = useRef(0);
+
+const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+  const target = e.currentTarget;
+  const isNearBottom = target.scrollHeight - target.scrollTop - target.clientHeight < 100;
+  setShouldAutoScroll(isNearBottom);
+}, []);
+
+useEffect(() => {
+  const newMessageAdded = messages.length > prevMessageCountRef.current;
+  const isStreaming = streamingContent.length > 0;
+  
+  if ((newMessageAdded || isStreaming) && shouldAutoScroll) {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }
+  prevMessageCountRef.current = messages.length;
+}, [messages.length, streamingContent, shouldAutoScroll]);
 ```
 
-### 3. Frontend Hook - Messages
+### 3. EngineeringAIPanel.tsx
 
-**`src/hooks/useMessages.ts`**
+**Lines 76-89** - Same pattern:
 
-Update line 346 - remove SBC default building code:
 ```typescript
-// BEFORE:
-buildingCode: userProfile?.business_type ? 'SBC 304-2018' : undefined,
+const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+const prevMessageCountRef = useRef(0);
 
-// AFTER:
-buildingCode: userProfile?.business_type ? 'ACI 318-25' : undefined,
+useEffect(() => {
+  if (messages.length > prevMessageCountRef.current && shouldAutoScroll) {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }
+  prevMessageCountRef.current = messages.length;
+}, [messages.length, shouldAutoScroll]);
 ```
 
-### 4. Frontend Component - Engineering Benchmark
+### 4. AICalculatorAssistant.tsx
 
-**`src/components/admin/test-results/EngineeringBenchmark.tsx`**
+**Lines 117-124** - Same pattern:
 
-Update line 44 - replace SBC_304 with CSA:
 ```typescript
-// BEFORE:
-standardsCompliance: { ACI_318: boolean; EUROCODE_2: boolean; SBC_304: boolean };
+const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+const prevMessageCountRef = useRef(0);
 
-// AFTER:
-standardsCompliance: { ACI_318: boolean; CSA_A23_3: boolean; EUROCODE_2: boolean };
+useEffect(() => {
+  const newMessageAdded = chatMessages.length > prevMessageCountRef.current;
+  const isStreaming = streamingContent.length > 0;
+  
+  if ((newMessageAdded || isStreaming) && shouldAutoScroll) {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }
+  prevMessageCountRef.current = chatMessages.length;
+}, [chatMessages.length, streamingContent, shouldAutoScroll]);
+```
+
+### 5. useEngineeringAIAgent.ts
+
+**Lines 248-304** - Add guaranteed order with sequence numbers:
+
+```typescript
+// Add sequence counter
+const messageSequenceRef = useRef(0);
+
+const sendMessage = useCallback(async (question: string) => {
+  if (!question.trim() || isLoading) return;
+
+  // Cancel any ongoing request
+  if (abortControllerRef.current) {
+    abortControllerRef.current.abort();
+  }
+  abortControllerRef.current = new AbortController();
+
+  // Increment sequence for ordering
+  const userSequence = ++messageSequenceRef.current;
+
+  const userMessage: ChatMessage = {
+    role: 'user',
+    content: question.trim(),
+    timestamp: new Date(),
+    id: `user-${userSequence}`,  // Stable unique ID
+  };
+
+  // Add user message FIRST
+  setMessages(prev => [...prev, userMessage]);
+  setIsLoading(true);
+
+  // Small delay to ensure React commits user message to DOM
+  await new Promise(resolve => setTimeout(resolve, 50));
+
+  // Save user message to database (non-blocking)
+  saveMessageToDb(question.trim(), 'user');
+
+  try {
+    // ... existing AI call logic ...
+
+    const aiSequence = ++messageSequenceRef.current;
+    const assistantMessage: ChatMessage = {
+      role: 'assistant',
+      content: assistantContent,
+      timestamp: new Date(),
+      id: `assistant-${aiSequence}`,  // Stable unique ID
+      actions: executedActions,
+    };
+
+    setMessages(prev => [...prev, assistantMessage]);
+    // ...
+  }
+  // ... error handling ...
+}, [/* deps */]);
 ```
 
 ---
 
-## Edge Functions to Update
+## Behavior After Fix
 
-### 5. Main AI Chat - ayn-unified
+### Auto-Scroll
 
-**`supabase/functions/ayn-unified/index.ts`**
+| Scenario | Before | After |
+|----------|--------|-------|
+| User scrolls up to read history | Chat yanks back to bottom | Stays where user scrolled |
+| User is near bottom (< 100px) | - | New messages auto-scroll |
+| User scrolls back to bottom | - | Auto-scroll re-enables |
+| New message while scrolled up | Forces scroll down | No forced scroll, badge shows unread |
 
-Update line 343 - replace SBC reference with USA/Canada codes:
-```typescript
-// BEFORE:
-- building codes: ${context.buildingCode || 'SBC 304 (Saudi), ACI 318, IBC'}
+### Message Ordering
 
-// AFTER:
-- building codes: ${context.buildingCode || 'ACI 318-25 (USA), CSA A23.3-24 (Canada)'}
-```
-
-Add regional grading standards knowledge to the engineering mode prompt:
-```
-GRADING STANDARDS (USA/Canada):
-
-USA Standards:
-- Storm Water: EPA 2022 CGP - permits required ≥1 acre
-- Excavation: OSHA 29 CFR 1926 Subpart P
-  * Stable rock: 90°, Type A: 53°, Type B: 45°, Type C: 34°
-- Drainage: IBC 2024 Section 1804.4
-  * Foundation: 5% slope for 10ft, Max fill: 50% (2:1)
-- Compaction: ASTM D698/D1557 - 95% Standard Proctor
-
-CANADA Standards:
-- Storm Water: Provincial permits ~0.4 hectares
-- Excavation: Provincial OHS - max unprotected 1.5m
-- Drainage: NBCC 2025
-  * Foundation: 5% slope for 1.8m, Max fill: 33% (3:1)
-- Compaction: CSA A23.1:24 with frost protection
-
-Apply standards based on user's selected region.
-```
-
-### 6. Engineering AI Agent
-
-**`supabase/functions/engineering-ai-agent/index.ts`**
-
-Update line 247 - replace SBC with CSA:
-```typescript
-// BEFORE:
-- reference codes (ACI 318, SBC 304, Eurocode 2) when relevant
-
-// AFTER:
-- reference codes (ACI 318-25, CSA A23.3-24, Eurocode 2) when relevant
-```
-
-### 7. Engineering AI Analysis - Remove SAR Cost Estimation
-
-**`supabase/functions/engineering-ai-analysis/index.ts`**
-
-Remove all cost estimation logic (lines 69-79 and 105-114) that uses SAR pricing. Remove the entire `costEstimate` array generation:
-
-```typescript
-// DELETE these sections:
-// Cost estimate (Saudi Riyal)
-const concretePrice = inputs.concreteGrade === 'C30' ? 310 : 280;
-const concreteCost = outputs.concreteVolume * concretePrice;
-const steelCost = outputs.steelWeight * 2.7; // ~2700 SAR/ton
-...
-```
-
-Update the return type to not include costEstimate, or return an empty array.
-
-### 8. Engineering AI Validator
-
-**`supabase/functions/engineering-ai-validator/index.ts`**
-
-Update lines 61-63 and 1064-1067 and 1102-1105 - replace SBC_304 with CSA_A23_3:
-```typescript
-// BEFORE:
-standardsCompliance: {
-  ACI_318: boolean;
-  EUROCODE_2: boolean;
-  SBC_304: boolean;
-};
-
-// AFTER:
-standardsCompliance: {
-  ACI_318: boolean;
-  CSA_A23_3: boolean;
-  EUROCODE_2: boolean;
-};
-```
-
-### 9. AI UX Tester
-
-**`supabase/functions/ai-ux-tester/index.ts`**
-
-Update lines 94-103 - change Saudi persona to Canadian:
-```typescript
-// BEFORE:
-{
-  id: 'arabic_engineer',
-  name: 'مهندس سعودي',
-  description: 'Saudi engineer preferring Arabic interface',
-  ...
-}
-
-// AFTER:
-{
-  id: 'canadian_engineer',
-  name: 'Canadian Engineer',
-  description: 'Canadian engineer using CSA standards',
-  language: 'en',
-  expertise: 'intermediate',
-  patience: 'medium',
-  deviceType: 'desktop',
-  typingSpeed: 45,
-  readingSpeed: 280,
-}
-```
+| Scenario | Before | After |
+|----------|--------|-------|
+| User sends message | Sometimes flickers | Appears immediately, stable |
+| AI responds | Sometimes appears first | Always appears AFTER user |
+| Rapid messages | Order can swap | Order guaranteed by sequence |
 
 ---
 
-## Changes Summary Table
+## Testing Checklist
 
-| File | Change Type | Description |
-|------|-------------|-------------|
-| `src/lib/engineeringKnowledge.ts` | Delete section | Remove entire `saudiBuildingCode` object |
-| `src/lib/aynPersonality.ts` | Update text | Replace SBC with ACI/CSA references |
-| `src/hooks/useMessages.ts` | Update default | Change default building code from SBC to ACI |
-| `src/components/admin/.../EngineeringBenchmark.tsx` | Update type | Replace SBC_304 with CSA_A23_3 |
-| `supabase/functions/ayn-unified/index.ts` | Update prompt | Add USA/Canada grading standards, remove SBC |
-| `supabase/functions/engineering-ai-agent/index.ts` | Update prompt | Replace SBC with CSA references |
-| `supabase/functions/engineering-ai-analysis/index.ts` | Remove logic | Delete SAR cost estimation entirely |
-| `supabase/functions/engineering-ai-validator/index.ts` | Update type | Replace SBC_304 with CSA_A23_3 |
-| `supabase/functions/ai-ux-tester/index.ts` | Update persona | Change Saudi persona to Canadian |
+After implementation:
 
----
+**Auto-scroll behavior:**
+- Scroll up in chat history → stays in place (no jump)
+- Scroll to bottom → new messages auto-scroll
+- Send message while scrolled up → user message appears, no forced scroll
+- With streaming content → scrolls smoothly during stream if near bottom
 
-## AI Knowledge Updates
-
-All engineering AI systems will be updated to include:
-
-1. **Structural Codes**: ACI 318-25 (USA) and CSA A23.3-24 (Canada) only
-2. **Load Codes**: ASCE 7-22 (USA) and NBCC 2020/2025 (Canada)
-3. **Grading Standards**:
-   - USA: EPA 2022 CGP, OSHA 29 CFR 1926, IBC 2024, ASTM D698/D1557
-   - Canada: Provincial OHS, NBCC 2025, CSA A23.1:24
-4. **Slope Limits**:
-   - USA: Max fill 50% (2:1), Foundation 5% for 10ft
-   - Canada: Max fill 33% (3:1), Foundation 5% for 1.8m
+**Message ordering:**
+- User sends message → appears immediately in correct position
+- AI responds → appears AFTER user message
+- Send 5 messages rapidly → all in correct chronological order
+- Reload page → messages still in correct order from database
 
 ---
 
-## Deployment Notes
+## Summary
 
-- 6 edge functions require redeployment after changes
-- No database schema changes required
-- Frontend changes will take effect immediately after build
-- Existing calculations remain unaffected (SBC compliance field will be unused)
+| Component | Change |
+|-----------|--------|
+| EngineeringBottomChat.tsx | Add `shouldAutoScroll` state + scroll detection + message count tracking |
+| EngineeringAIChat.tsx | Same pattern |
+| EngineeringAIPanel.tsx | Same pattern |
+| AICalculatorAssistant.tsx | Same pattern |
+| useEngineeringAIAgent.ts | Add 50ms delay after user message + sequence-based IDs |
 
----
-
-## Effort Estimate
-
-| Task | Time |
-|------|------|
-| Update engineeringKnowledge.ts | 15 min |
-| Update aynPersonality.ts | 10 min |
-| Update useMessages.ts | 5 min |
-| Update EngineeringBenchmark.tsx | 10 min |
-| Update ayn-unified edge function | 30 min |
-| Update engineering-ai-agent | 10 min |
-| Update engineering-ai-analysis | 20 min |
-| Update engineering-ai-validator | 15 min |
-| Update ai-ux-tester | 10 min |
-| Testing | 30 min |
-| **Total** | **~2.5 hours** |
