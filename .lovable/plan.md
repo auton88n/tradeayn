@@ -1,68 +1,103 @@
 
 
-# Simple NBCC 2020/2025 Notice - 15 Minute Fix
+# Add NBCC Version Dropdown for CSA Code Selection
 
-## What's Already Correct ✅
-- `getCodeInfoText()` in `designValidation.ts` already shows "CSA A23.3-24 / NBCC 2020"
-- All 5 calculator info boxes already use this dynamic text
+## Current State
+- `BuildingCodeSelector` allows switching between ACI and CSA
+- No option to select between NBCC 2020 and NBCC 2025 when CSA is chosen
+- Just a static note mentioning NBCC 2025 exists
 
-## What Needs Fixing
+## Proposed Solution
+Add a secondary dropdown that appears **only when CSA is selected**, allowing users to choose between NBCC 2020 (default/recommended) and NBCC 2025.
 
-Only **2 small changes** needed:
+---
 
-### 1. Update `src/lib/buildingCodes/csa-a23-3-24.ts`
+## Implementation
 
-Change "NBC 2025" references to "NBCC 2020":
+### 1. Add NBCC Version Type and State
 
-| Line | Current | New |
-|------|---------|-----|
-| 2 | `CSA A23.3-24 / NBC 2025` | `CSA A23.3-24 / NBCC 2020` |
-| 9 | `CSA A23.3-24 and NBC 2025 standards` | `CSA A23.3-24 with NBCC 2020` |
-| 44 | `version: 'CSA A23.3-24 / NBC 2025'` | `version: 'CSA A23.3-24 / NBCC 2020'` |
-| 51 | Comment: `// LOAD FACTORS (NBC 2025)` | `// LOAD FACTORS (NBCC 2020)` |
-| 64 | Comment: `// LOAD COMBINATIONS (NBC 2025...)` | `// LOAD COMBINATIONS (NBCC 2020...)` |
-| 138 | `loadCombinations: 'NBC 2025 Division B Part 4'` | `loadCombinations: 'NBCC 2020 Division B Part 4'` |
-| 337-339 | sources array includes 'NBC 2025' | Replace with 'NBCC 2020' |
+**File**: `src/lib/buildingCodes/types.ts`
 
-Also add one note to the notes array:
+Add new type:
 ```typescript
-notes: [
-  'Using NBCC 2020 (currently adopted across Canada). NBCC 2025 published late 2025; verify adoption status with local building department.',
-  // ... existing notes
-]
+export type NBCCVersion = '2020' | '2025';
 ```
 
-### 2. Update `src/lib/designValidation.ts`
+### 2. Add NBCC State to Session Context
 
-Update `getCodeReferences()` and `getCodeInfoText()`:
+**File**: `src/contexts/EngineeringSessionContext.tsx`
 
-**Line 182** - Change:
+Add state:
 ```typescript
-loadFactors: 'NBCC 2020 Division B Part 4',  // was NBC 2025
+const [nbccVersion, setNbccVersion] = useState<NBCCVersion>('2020');
 ```
 
-**Line 211-212** - Add NBCC 2025 note:
+Add to context value:
 ```typescript
-return {
-  name: 'CSA A23.3-24 / NBCC 2020',
-  factors: '1.25D + 1.5L',
-  phi: 'φc = 0.65, φs = 0.85',
-  note: 'Using NBCC 2020. NBCC 2025 available - verify adoption with local building dept.',
-};
+nbccVersion,
+setNbccVersion,
 ```
 
-## Result
-- Calculator info boxes will show: "Using NBCC 2020. NBCC 2025 available - verify adoption with local building dept."
-- Legally safe (NBCC 2020 is currently adopted everywhere in Canada)
-- Honest about NBCC 2025 existence
-- No UI component changes needed
+### 3. Update BuildingCodeSelector with Secondary Dropdown
+
+**File**: `src/components/engineering/BuildingCodeSelector.tsx`
+
+When CSA is selected, show a second dropdown below:
+
+```
++------------------------------------------+
+| 🇨🇦 CSA                              ▼  |  <- Existing dropdown
++------------------------------------------+
+
++------------------------------------------+
+| NBCC Edition                             |
+| +--------------------------------------+ |
+| | ✓ NBCC 2020 (Recommended)         ▼ | |  <- NEW dropdown (only for CSA)
+| +--------------------------------------+ |
+|                                          |
+| Options:                                 |
+| ✓ NBCC 2020 (Recommended)                |
+|   Currently adopted across Canada        |
+|                                          |
+| ⏱ NBCC 2025 (New)                        |
+|   Provincial adoption pending            |
++------------------------------------------+
+```
+
+When NBCC 2025 is selected, show warning:
+```
+[⚠️ Warning Box]
+Verify NBCC 2025 has been adopted in your 
+jurisdiction before using for permits.
+```
+
+### 4. Update Calculator Info Boxes
+
+When CSA + NBCC 2025 is selected, show amber warning instead of the standard note.
+
+---
 
 ## Files to Modify
+
 | File | Changes |
 |------|---------|
-| `src/lib/buildingCodes/csa-a23-3-24.ts` | Replace "NBC 2025" with "NBCC 2020" (~8 places), add note |
-| `src/lib/designValidation.ts` | Update note text in `getCodeInfoText()`, fix reference in `getCodeReferences()` |
+| `src/lib/buildingCodes/types.ts` | Add `NBCCVersion` type |
+| `src/contexts/EngineeringSessionContext.tsx` | Add `nbccVersion` state + setter |
+| `src/components/engineering/BuildingCodeSelector.tsx` | Add NBCC version dropdown when CSA selected |
+
+---
+
+## UI Behavior
+
+1. User selects **ACI** → No NBCC dropdown shown
+2. User selects **CSA** → NBCC dropdown appears below with:
+   - **NBCC 2020 (Recommended)** - green checkmark, default
+   - **NBCC 2025 (New)** - amber clock icon
+3. Selecting NBCC 2025 shows jurisdiction warning
+4. Calculator info boxes update dynamically based on selection
+
+---
 
 ## Effort
-~15 minutes total
+~1 hour implementation
 
