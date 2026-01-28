@@ -46,60 +46,48 @@ const TranscriptContent = ({
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Smart auto-scroll (prevents forcing user down when reading history)
-  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
-  const prevMessageCountRef = useRef(0);
-  const hasInitializedRef = useRef(false);
+  // Using a ref avoids stale closure issues during rapid updates
+  const shouldAutoScrollRef = useRef(true);
+  const prevMessageCountRef = useRef(messages.length);
 
-  const updateShouldAutoScroll = useCallback(() => {
-    const viewport = scrollRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+  // Update the ref whenever user scrolls
+  const handleScroll = useCallback(() => {
+    const viewport = scrollRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement | null;
     if (!viewport) return;
 
     const { scrollTop, scrollHeight, clientHeight } = viewport;
     const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
-    setShouldAutoScroll(isNearBottom);
+    shouldAutoScrollRef.current = isNearBottom;
   }, []);
 
-  const scrollToBottom = useCallback((behavior: ScrollBehavior) => {
-    const viewport = scrollRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement | null;
-    if (!viewport) return;
-    if (behavior === 'smooth') {
-      // Smooth behavior via scrolling the viewport itself
-      viewport.scrollTo({ top: viewport.scrollHeight, behavior: 'smooth' });
-    } else {
-      viewport.scrollTop = viewport.scrollHeight;
-    }
-  }, []);
-
-  // Bind scroll listener to the ScrollArea viewport (Radix)
+  // Attach scroll listener once
   useEffect(() => {
     const viewport = scrollRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement | null;
     if (!viewport) return;
 
-    viewport.addEventListener('scroll', updateShouldAutoScroll, { passive: true });
-    updateShouldAutoScroll();
-    return () => viewport.removeEventListener('scroll', updateShouldAutoScroll);
-  }, [updateShouldAutoScroll]);
-
-  // Initial scroll to bottom once on mount/open (matches previous behavior)
-  useEffect(() => {
-    if (hasInitializedRef.current) return;
-    hasInitializedRef.current = true;
-    prevMessageCountRef.current = messages.length;
-    requestAnimationFrame(() => scrollToBottom('auto'));
-  }, [messages.length, scrollToBottom]);
+    viewport.addEventListener('scroll', handleScroll, { passive: true });
+    // Initialize based on current position
+    handleScroll();
+    return () => viewport.removeEventListener('scroll', handleScroll);
+  }, [handleScroll]);
 
   // Smart auto-scroll: only when NEW messages are added AND user is near bottom
   useEffect(() => {
     const newMessageAdded = messages.length > prevMessageCountRef.current;
+    prevMessageCountRef.current = messages.length;
 
     // If user is searching, never auto-scroll (it disrupts browsing)
-    if (!searchQuery && newMessageAdded && shouldAutoScroll) {
-      requestAnimationFrame(() => scrollToBottom('smooth'));
-    }
+    if (searchQuery) return;
 
-    prevMessageCountRef.current = messages.length;
-  }, [messages.length, searchQuery, shouldAutoScroll, scrollToBottom]);
+    if (newMessageAdded && shouldAutoScrollRef.current) {
+      requestAnimationFrame(() => {
+        const viewport = scrollRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement | null;
+        if (viewport) {
+          viewport.scrollTo({ top: viewport.scrollHeight, behavior: 'smooth' });
+        }
+      });
+    }
+  }, [messages.length, searchQuery]);
 
   return <div className="flex flex-col h-full bg-gradient-to-b from-background to-background/95">
     {/* Premium Header */}
