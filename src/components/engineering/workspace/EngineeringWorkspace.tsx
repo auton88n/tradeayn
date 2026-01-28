@@ -14,7 +14,7 @@ import { useEngineeringSessionOptional } from '@/contexts/EngineeringSessionCont
 import { SEO } from '@/components/shared/SEO';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
-import { type BuildingCodeId } from '@/lib/buildingCodes';
+import { type BuildingCodeId, type NBCCVersion } from '@/lib/buildingCodes';
 
 // Lazy load calculator components
 const BeamCalculator = lazy(() => import('@/components/engineering/BeamCalculator').then(m => ({ default: m.BeamCalculator })));
@@ -68,10 +68,13 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
   
   // Fallback building code state for when session is not available
   const [localBuildingCode, setLocalBuildingCode] = useState<BuildingCodeId>('ACI');
+  const [localNbccVersion, setLocalNbccVersion] = useState<NBCCVersion>('2020');
   
   // Use building code from session context if available, otherwise use local state
   const selectedBuildingCode = session?.buildingCode ?? localBuildingCode;
   const setSelectedBuildingCode = session?.setBuildingCode ?? setLocalBuildingCode;
+  const nbccVersion = session?.nbccVersion ?? localNbccVersion;
+  const setNbccVersion = session?.setNbccVersion ?? setLocalNbccVersion;
   
   // Track previous building code for auto-recalculation
   const prevBuildingCodeRef = useRef(selectedBuildingCode);
@@ -440,6 +443,8 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
             onNavigate={navigate}
             selectedBuildingCode={selectedBuildingCode}
             onBuildingCodeChange={setSelectedBuildingCode}
+            nbccVersion={nbccVersion}
+            onNbccVersionChange={setNbccVersion}
           />
 
           {/* Workspace */}

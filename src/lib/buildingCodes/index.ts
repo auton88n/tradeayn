@@ -19,6 +19,7 @@
 // Types
 export type {
   BuildingCodeId,
+  NBCCVersion,
   BuildingCodeConfig,
   LoadFactors,
   ResistanceFactors,

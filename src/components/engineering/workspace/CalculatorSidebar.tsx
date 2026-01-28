@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { BuildingCodeSelector } from '@/components/engineering/BuildingCodeSelector';
-import { type BuildingCodeId } from '@/lib/buildingCodes';
+import { type BuildingCodeId, type NBCCVersion } from '@/lib/buildingCodes';
 
 export type CalculatorType = 'beam' | 'foundation' | 'column' | 'slab' | 'retaining_wall' | 'parking' | 'grading' | null;
 
@@ -98,6 +98,8 @@ interface CalculatorSidebarProps {
   onNavigate?: (path: string) => void;
   selectedBuildingCode: BuildingCodeId;
   onBuildingCodeChange: (code: BuildingCodeId) => void;
+  nbccVersion: NBCCVersion;
+  onNbccVersionChange: (version: NBCCVersion) => void;
 }
 
 export const CalculatorSidebar: React.FC<CalculatorSidebarProps> = ({
@@ -108,6 +110,8 @@ export const CalculatorSidebar: React.FC<CalculatorSidebarProps> = ({
   onNavigate,
   selectedBuildingCode,
   onBuildingCodeChange,
+  nbccVersion,
+  onNbccVersionChange,
 }) => {
   return (
     <TooltipProvider delayDuration={0}>
@@ -146,6 +150,8 @@ export const CalculatorSidebar: React.FC<CalculatorSidebarProps> = ({
                   <BuildingCodeSelector
                     selectedCode={selectedBuildingCode}
                     onCodeChange={onBuildingCodeChange}
+                    nbccVersion={nbccVersion}
+                    onNbccVersionChange={onNbccVersionChange}
                     isCollapsed={true}
                   />
                 </div>
@@ -162,6 +168,8 @@ export const CalculatorSidebar: React.FC<CalculatorSidebarProps> = ({
               <BuildingCodeSelector
                 selectedCode={selectedBuildingCode}
                 onCodeChange={onBuildingCodeChange}
+                nbccVersion={nbccVersion}
+                onNbccVersionChange={onNbccVersionChange}
                 isCollapsed={false}
               />
             </>

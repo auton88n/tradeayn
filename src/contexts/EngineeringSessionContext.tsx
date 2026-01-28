@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useCallback, useMemo, useState, ReactNode } from 'react';
 import { useActionTracker, TrackedAction } from '@/hooks/useActionTracker';
-import { type BuildingCodeId, AVAILABLE_CODES, DEFAULT_BUILDING_CODE, getBuildingCodeConfig } from '@/lib/buildingCodes';
+import { type BuildingCodeId, type NBCCVersion, AVAILABLE_CODES, DEFAULT_BUILDING_CODE, getBuildingCodeConfig } from '@/lib/buildingCodes';
 
 interface CalculatorState {
   inputs: Record<string, any>;
@@ -17,6 +17,8 @@ interface EngineeringSessionContextValue {
   // Building code
   buildingCode: BuildingCodeId;
   setBuildingCode: (code: BuildingCodeId) => void;
+  nbccVersion: NBCCVersion;
+  setNbccVersion: (version: NBCCVersion) => void;
   
   // All calculator states
   calculatorStates: Record<string, CalculatorState>;
@@ -89,6 +91,7 @@ interface EngineeringSessionProviderProps {
 export const EngineeringSessionProvider: React.FC<EngineeringSessionProviderProps> = ({ children }) => {
   const actionTracker = useActionTracker();
   const [buildingCode, setBuildingCode] = useState<BuildingCodeId>(DEFAULT_BUILDING_CODE);
+  const [nbccVersion, setNbccVersion] = useState<NBCCVersion>('2020');
 
   const getCurrentState = useCallback((): CalculatorState | null => {
     return actionTracker.getCurrentCalculatorState();
@@ -140,6 +143,8 @@ export const EngineeringSessionProvider: React.FC<EngineeringSessionProviderProp
       // Building code
       buildingCode,
       setBuildingCode,
+      nbccVersion,
+      setNbccVersion,
       
       // All calculator states
       calculatorStates: actionTracker.calculatorStates,
@@ -163,7 +168,7 @@ export const EngineeringSessionProvider: React.FC<EngineeringSessionProviderProp
       // AI context
       getAIContext,
     };
-  }, [actionTracker, getCurrentState, getAIContext, buildingCode]);
+  }, [actionTracker, getCurrentState, getAIContext, buildingCode, nbccVersion]);
 
   return (
     <EngineeringSessionContext.Provider value={value}>
