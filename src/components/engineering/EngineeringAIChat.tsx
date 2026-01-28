@@ -127,14 +127,34 @@ export const EngineeringAIChat = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [streamingContent, setStreamingContent] = useState('');
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const prevMessageCountRef = useRef(0);
 
   const quickActions = QUICK_ACTIONS[calculatorType] || QUICK_ACTIONS.beam;
 
+  // Scroll detection handler
+  const handleScroll = useCallback(() => {
+    const viewport = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+    if (!viewport) return;
+    
+    const { scrollTop, scrollHeight, clientHeight } = viewport;
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+    setShouldAutoScroll(isNearBottom);
+  }, []);
+
+  // Smart auto-scroll: only when NEW messages are added and user is near bottom
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, streamingContent]);
+    const newMessageAdded = messages.length > prevMessageCountRef.current;
+    const isStreaming = streamingContent.length > 0;
+    
+    if ((newMessageAdded || isStreaming) && shouldAutoScroll) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+    prevMessageCountRef.current = messages.length;
+  }, [messages.length, streamingContent, shouldAutoScroll]);
 
   useEffect(() => {
     if (isOpen) {
@@ -355,7 +375,12 @@ export const EngineeringAIChat = ({
       </div>
 
       {/* Messages Area */}
-      <ScrollArea className="flex-1 p-4">
+      <ScrollArea 
+        ref={scrollAreaRef}
+        className="flex-1 p-4"
+        style={{ contain: 'strict' }}
+        onScrollCapture={handleScroll}
+      >
         {messages.length === 0 && !streamingContent ? (
           <div className="space-y-6">
             {/* Welcome Message */}

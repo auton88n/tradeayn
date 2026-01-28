@@ -118,10 +118,20 @@ export const AICalculatorAssistant: React.FC<AICalculatorAssistantProps> = ({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const lastAnalyzedInputs = useRef<string>('');
 
-  // Scroll to bottom of chat
+  // Smart auto-scroll state
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+  const prevMessageCountRef = useRef(0);
+
+  // Smart auto-scroll: only when NEW messages are added and user is near bottom
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [chatMessages, streamingContent]);
+    const newMessageAdded = chatMessages.length > prevMessageCountRef.current;
+    const isStreaming = streamingContent.length > 0;
+    
+    if ((newMessageAdded || isStreaming) && shouldAutoScroll) {
+      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+    prevMessageCountRef.current = chatMessages.length;
+  }, [chatMessages.length, streamingContent, shouldAutoScroll]);
 
   // Auto-resize textarea
   useEffect(() => {

@@ -66,6 +66,7 @@ export const useEngineeringAIAgent = ({
   const [currentAction, setCurrentAction] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const messageSequenceRef = useRef(0);
   
   // Use external session ID or generate one for engineering
   const engineeringSessionId = useMemo(() => {
@@ -255,14 +256,22 @@ export const useEngineeringAIAgent = ({
     }
     abortControllerRef.current = new AbortController();
 
+    // Increment sequence for guaranteed ordering
+    const userSequence = ++messageSequenceRef.current;
+
     const userMessage: ChatMessage = {
       role: 'user',
       content: question.trim(),
       timestamp: new Date(),
+      id: `user-${userSequence}`,
     };
 
+    // Add user message FIRST
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
+
+    // Small delay to ensure React commits user message to DOM before AI response
+    await new Promise(resolve => setTimeout(resolve, 50));
 
     // Save user message to database (non-blocking)
     saveMessageToDb(question.trim(), 'user');
@@ -292,11 +301,13 @@ export const useEngineeringAIAgent = ({
         executedActions = await executeActions(data.actions);
       }
 
-      const assistantContent = data.answer || 'done!';
+      const assistantContent = data.answer || 'Done! I executed the requested actions.';
+      const aiSequence = ++messageSequenceRef.current;
       const assistantMessage: ChatMessage = {
         role: 'assistant',
         content: assistantContent,
         timestamp: new Date(),
+        id: `assistant-${aiSequence}`,
         actions: executedActions,
       };
 

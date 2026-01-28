@@ -84,9 +84,16 @@ export const EngineeringAIPanel = ({
 
   const quickActions = QUICK_ACTIONS[calculatorType] || QUICK_ACTIONS.beam;
 
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+  const prevMessageCountRef = useRef(0);
+
+  // Smart auto-scroll: only when NEW messages are added and user is near bottom
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    if (messages.length > prevMessageCountRef.current && shouldAutoScroll) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+    prevMessageCountRef.current = messages.length;
+  }, [messages.length, shouldAutoScroll]);
 
   useEffect(() => {
     if (isVisible) {
