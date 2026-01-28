@@ -42,6 +42,8 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
   const dialogContentRef = useRef<HTMLDivElement>(null);
   const [isScrollable, setIsScrollable] = useState(false);
   const [isAtBottom, setIsAtBottom] = useState(true);
+  // Use a ref so streaming updates can't race with state updates and force-scroll the user
+  const shouldAutoScrollRef = useRef(true);
   const [copied, setCopied] = useState(false);
   const [feedback, setFeedback] = useState<'up' | 'down' | null>(null);
   const [isStreaming, setIsStreaming] = useState(true);
@@ -49,6 +51,7 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
   const [isExpanded, setIsExpanded] = useState(false);
   const [dialogScrollable, setDialogScrollable] = useState(false);
   const [dialogAtBottom, setDialogAtBottom] = useState(true);
+  const dialogShouldAutoScrollRef = useRef(true);
 
   const visibleResponses = responses.filter(r => r.isVisible);
   const currentResponseId = visibleResponses[0]?.id;
@@ -180,10 +183,11 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
       
       const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 10;
       setIsAtBottom(atBottom);
+      shouldAutoScrollRef.current = atBottom;
     };
 
     checkScrollState();
-    el.addEventListener('scroll', checkScrollState);
+    el.addEventListener('scroll', checkScrollState, { passive: true });
     
     // Re-check when content changes
     const resizeObserver = new ResizeObserver(checkScrollState);
@@ -198,10 +202,15 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
   // Auto-scroll to bottom when new content arrives
   useEffect(() => {
     const el = contentRef.current;
-    if (el && isAtBottom) {
-      el.scrollTop = el.scrollHeight;
+    // IMPORTANT: use ref to avoid stale isAtBottom during rapid streaming updates
+    if (el && shouldAutoScrollRef.current) {
+      // Use rAF so scroll happens after layout updates
+      requestAnimationFrame(() => {
+        if (!contentRef.current) return;
+        contentRef.current.scrollTop = contentRef.current.scrollHeight;
+      });
     }
-  }, [combinedContent, isAtBottom]);
+  }, [combinedContent]);
 
   // Dialog scroll state
   useEffect(() => {
@@ -213,10 +222,11 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
       setDialogScrollable(scrollable);
       const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 10;
       setDialogAtBottom(atBottom);
+      dialogShouldAutoScrollRef.current = atBottom;
     };
 
     checkDialogScroll();
-    el.addEventListener('scroll', checkDialogScroll);
+    el.addEventListener('scroll', checkDialogScroll, { passive: true });
     const resizeObserver = new ResizeObserver(checkDialogScroll);
     resizeObserver.observe(el);
 
