@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, forwardRef, useImperativeHandle, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Building2, Info, Loader2 } from 'lucide-react';
+import { Building2, Info, Loader2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,6 +16,9 @@ import { cn } from '@/lib/utils';
 import { useEngineeringHistory } from '@/hooks/useEngineeringHistory';
 import { calculateFoundation } from '@/lib/engineeringCalculations';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { foundationValidationRules, validateField, hasErrors } from '@/lib/inputValidation';
+import { useEngineeringSessionOptional } from '@/contexts/EngineeringSessionContext';
+import type { BuildingCodeId } from '@/lib/buildingCodes/types';
 
 interface FoundationCalculatorProps {
   onCalculate: (result: {
@@ -27,6 +30,7 @@ interface FoundationCalculatorProps {
   isCalculating: boolean;
   setIsCalculating: (value: boolean) => void;
   userId?: string;
+  resetKey?: number;
 }
 
 const soilTypes = [
@@ -51,26 +55,91 @@ const foundationTypes = [
   { value: 'strip', label: 'Strip Footing' },
 ];
 
-export const FoundationCalculator = ({ onCalculate, isCalculating, setIsCalculating, userId }: FoundationCalculatorProps) => {
+const getDefaultFormData = () => ({
+  columnLoad: '800',
+  momentX: '0',
+  momentY: '0',
+  columnWidth: '400',
+  columnDepth: '400',
+  soilType: 'stiff_clay',
+  customBearing: '',
+  concreteGrade: 'C30',
+  foundationType: 'isolated',
+  groundwaterDepth: '',
+  embedmentDepth: '1.0',
+});
+
+// Helper component for form errors
+const FormError = ({ message }: { message?: string }) => {
+  if (!message) return null;
+  return <p className="text-destructive text-xs mt-1">{message}</p>;
+};
+
+// Get code-specific info
+const getCodeInfo = (buildingCode: BuildingCodeId) => {
+  if (buildingCode === 'CSA') {
+    return {
+      name: 'CSA A23.3-24 / NBCC 2020',
+      factors: '1.25D + 1.5L',
+      phi: 'φc = 0.65',
+      isCSA: true,
+    };
+  }
+  return {
+    name: 'ACI 318-25 / ASCE 7-22',
+    factors: '1.2D + 1.6L',
+    phi: 'φ = 0.75 (shear)',
+    isCSA: false,
+  };
+};
+
+export interface FoundationCalculatorRef {
+  reset: () => void;
+}
+
+export const FoundationCalculator = forwardRef<FoundationCalculatorRef, FoundationCalculatorProps>(
+  ({ onCalculate, isCalculating, setIsCalculating, userId, resetKey }, ref) => {
   const { t } = useLanguage();
   const { saveCalculation } = useEngineeringHistory(userId);
+  const session = useEngineeringSessionOptional();
+  const buildingCode: BuildingCodeId = (session?.buildingCode as BuildingCodeId) || 'ACI';
+  const codeInfo = getCodeInfo(buildingCode);
   
-  const [formData, setFormData] = useState({
-    columnLoad: '800',
-    momentX: '0',
-    momentY: '0',
-    columnWidth: '400',
-    columnDepth: '400',
-    soilType: 'stiff_clay',
-    customBearing: '',
-    concreteGrade: 'C30',
-    foundationType: 'isolated',
-    groundwaterDepth: '',
-    embedmentDepth: '1.0',
-  });
+  const [formData, setFormData] = useState(getDefaultFormData());
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Reset form when resetKey changes
+  useEffect(() => {
+    if (resetKey !== undefined) {
+      setFormData(getDefaultFormData());
+      setErrors({});
+    }
+  }, [resetKey]);
+
+  // Expose reset method via ref
+  useImperativeHandle(ref, () => ({
+    reset: () => {
+      setFormData(getDefaultFormData());
+      setErrors({});
+    }
+  }));
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Validate on change
+    const numValue = parseFloat(value);
+    const rule = foundationValidationRules[field];
+    if (rule && !isNaN(numValue)) {
+      const error = validateField(numValue, rule);
+      setErrors(prev => {
+        if (error) {
+          return { ...prev, [field]: error };
+        }
+        const { [field]: _, ...rest } = prev;
+        return rest;
+      });
+    }
   };
 
   const getBearingCapacity = () => {
@@ -80,8 +149,27 @@ export const FoundationCalculator = ({ onCalculate, isCalculating, setIsCalculat
     return soilTypes.find(s => s.value === formData.soilType)?.bearing || 150;
   };
 
+  const validateAllInputs = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    
+    Object.entries(foundationValidationRules).forEach(([field, rule]) => {
+      const value = parseFloat(formData[field as keyof typeof formData] as string);
+      if (!isNaN(value)) {
+        const error = validateField(value, rule);
+        if (error) newErrors[field] = error;
+      }
+    });
+    
+    setErrors(newErrors);
+    return !hasErrors(newErrors);
+  };
+
   const handleCalculate = async () => {
-    // Validate inputs
+    if (!validateAllInputs()) {
+      toast.error(t('error.invalidInputDesc'));
+      return;
+    }
+
     const columnLoad = parseFloat(formData.columnLoad);
     const bearingCapacity = getBearingCapacity();
 
@@ -97,7 +185,7 @@ export const FoundationCalculator = ({ onCalculate, isCalculating, setIsCalculat
     setIsCalculating(true);
 
     try {
-      // Client-side calculation for instant results
+      // Client-side calculation with building code
       const data = calculateFoundation({
         columnLoad,
         momentX: parseFloat(formData.momentX) || 0,
@@ -106,7 +194,7 @@ export const FoundationCalculator = ({ onCalculate, isCalculating, setIsCalculat
         columnDepth: parseFloat(formData.columnDepth),
         bearingCapacity,
         concreteGrade: formData.concreteGrade,
-      });
+      }, buildingCode);
 
       const inputs = {
         columnLoad,
@@ -119,6 +207,7 @@ export const FoundationCalculator = ({ onCalculate, isCalculating, setIsCalculat
         concreteGrade: formData.concreteGrade,
         foundationType: formData.foundationType,
         embedmentDepth: parseFloat(formData.embedmentDepth) || 1.0,
+        buildingCode,
       };
 
       // Save to history (non-blocking)
@@ -176,7 +265,9 @@ export const FoundationCalculator = ({ onCalculate, isCalculating, setIsCalculat
                   onChange={(e) => handleInputChange('columnLoad', e.target.value)}
                   step="10"
                   min="0"
+                  className={errors.columnLoad ? 'border-destructive' : ''}
                 />
+                <FormError message={errors.columnLoad} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="momentX">Moment X (kN·m)</Label>
@@ -187,7 +278,9 @@ export const FoundationCalculator = ({ onCalculate, isCalculating, setIsCalculat
                   value={formData.momentX}
                   onChange={(e) => handleInputChange('momentX', e.target.value)}
                   step="5"
+                  className={errors.momentX ? 'border-destructive' : ''}
                 />
+                <FormError message={errors.momentX} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="momentY">Moment Y (kN·m)</Label>
@@ -198,7 +291,9 @@ export const FoundationCalculator = ({ onCalculate, isCalculating, setIsCalculat
                   value={formData.momentY}
                   onChange={(e) => handleInputChange('momentY', e.target.value)}
                   step="5"
+                  className={errors.momentY ? 'border-destructive' : ''}
                 />
+                <FormError message={errors.momentY} />
               </div>
             </div>
           </div>
@@ -219,7 +314,9 @@ export const FoundationCalculator = ({ onCalculate, isCalculating, setIsCalculat
                   onChange={(e) => handleInputChange('columnWidth', e.target.value)}
                   step="25"
                   min="200"
+                  className={errors.columnWidth ? 'border-destructive' : ''}
                 />
+                <FormError message={errors.columnWidth} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="columnDepth">Column Depth (mm)</Label>
@@ -231,7 +328,9 @@ export const FoundationCalculator = ({ onCalculate, isCalculating, setIsCalculat
                   onChange={(e) => handleInputChange('columnDepth', e.target.value)}
                   step="25"
                   min="200"
+                  className={errors.columnDepth ? 'border-destructive' : ''}
                 />
+                <FormError message={errors.columnDepth} />
               </div>
             </div>
           </div>
@@ -281,7 +380,9 @@ export const FoundationCalculator = ({ onCalculate, isCalculating, setIsCalculat
                   onChange={(e) => handleInputChange('embedmentDepth', e.target.value)}
                   step="0.1"
                   min="0.5"
+                  className={errors.embedmentDepth ? 'border-destructive' : ''}
                 />
+                <FormError message={errors.embedmentDepth} />
               </div>
             </div>
           </div>
@@ -325,18 +426,29 @@ export const FoundationCalculator = ({ onCalculate, isCalculating, setIsCalculat
             </div>
           </div>
 
-          {/* Info Box */}
+          {/* Dynamic Info Box based on building code */}
           <div className={cn(
-            "flex items-start gap-3 p-4 rounded-xl",
-            "bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800"
+            "flex items-start gap-3 p-4 rounded-xl border",
+            codeInfo.isCSA 
+              ? "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800"
+              : "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800"
           )}>
-            <Info className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+            {codeInfo.isCSA ? (
+              <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+            ) : (
+              <Info className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+            )}
             <div className="text-sm text-amber-700 dark:text-amber-300">
-              <p className="font-medium mb-1">Design Assumptions</p>
+              <p className="font-medium mb-1">Design Code: {codeInfo.name}</p>
               <p className="text-amber-600 dark:text-amber-400">
-                Uses bearing capacity theory with factor of safety = 3.0. 
-                Punching shear checked at d/2 from column face.
+                Load factors: {codeInfo.factors}, {codeInfo.phi}. 
+                Bearing capacity FOS = 3.0. Punching shear at d/2 from column.
               </p>
+              {codeInfo.isCSA && (
+                <p className="text-amber-600 dark:text-amber-400 mt-1">
+                  ⚠️ CSA uses lower resistance factors - expect larger footing
+                </p>
+              )}
             </div>
           </div>
 
@@ -362,4 +474,8 @@ export const FoundationCalculator = ({ onCalculate, isCalculating, setIsCalculat
       </motion.div>
     </div>
   );
-};
+});
+
+FoundationCalculator.displayName = 'FoundationCalculator';
+
+export default FoundationCalculator;
