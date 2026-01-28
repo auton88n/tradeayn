@@ -124,6 +124,20 @@ export const EngineeringBottomChat: React.FC<EngineeringBottomChatProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const actionsMenuRef = useRef<HTMLDivElement>(null);
 
+  // Smart auto-scroll state (prevents forcing user down when reading history)
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const prevMessageCountRef = useRef(0);
+
+  const handleScroll = useCallback(() => {
+    const viewport = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+    if (!viewport) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = viewport;
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+    setShouldAutoScroll(isNearBottom);
+  }, []);
+
   // AI Agent hook
   const {
     messages,
@@ -169,12 +183,32 @@ export const EngineeringBottomChat: React.FC<EngineeringBottomChatProps> = ({
     }
   }, [input]);
 
-  // Scroll to bottom when messages change
+  // Bind scroll listener to the ScrollArea viewport (Radix)
   useEffect(() => {
-    if (isExpanded) {
+    if (!isExpanded) return;
+    const viewport = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement | null;
+    if (!viewport) return;
+
+    viewport.addEventListener('scroll', handleScroll, { passive: true });
+    // Initialize shouldAutoScroll based on initial position
+    handleScroll();
+
+    return () => viewport.removeEventListener('scroll', handleScroll);
+  }, [handleScroll, isExpanded]);
+
+  // Smart auto-scroll: only when NEW messages are added AND user is near bottom
+  useEffect(() => {
+    if (!isExpanded) {
+      prevMessageCountRef.current = messages.length;
+      return;
+    }
+
+    const newMessageAdded = messages.length > prevMessageCountRef.current;
+    if (newMessageAdded && shouldAutoScroll) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages, isExpanded]);
+    prevMessageCountRef.current = messages.length;
+  }, [messages.length, shouldAutoScroll, isExpanded]);
 
   // Auto-expand when there are messages
   useEffect(() => {
@@ -360,14 +394,14 @@ export const EngineeringBottomChat: React.FC<EngineeringBottomChatProps> = ({
                     </button>
                   </div>
                 </div>
-                <ScrollArea className="h-[280px]" style={{ contain: 'strict' }}>
+                <ScrollArea ref={scrollAreaRef} className="h-[280px]" style={{ contain: 'strict' }}>
                   <div 
                     className="p-4 space-y-4 flex flex-col"
                     style={{ contentVisibility: 'auto', containIntrinsicSize: '0 500px' }}
                   >
                     {messages.map((msg, i) => (
                       <MessageBubble 
-                        key={`${msg.role}-${i}`} 
+                        key={msg.id ?? `${msg.role}-${i}`} 
                         msg={msg} 
                         index={i} 
                       />

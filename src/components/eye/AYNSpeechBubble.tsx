@@ -23,6 +23,8 @@ export const AYNSpeechBubble = ({
   const contentRef = useRef<HTMLDivElement>(null);
   const [isScrollable, setIsScrollable] = useState(false);
   const [isAtBottom, setIsAtBottom] = useState(true);
+  // Ref avoids race conditions during rapid content updates
+  const shouldAutoScrollRef = useRef(true);
   const [copied, setCopied] = useState(false);
 
   // Clean content - remove leading punctuation and whitespace
@@ -49,10 +51,11 @@ export const AYNSpeechBubble = ({
       
       const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 10;
       setIsAtBottom(atBottom);
+      shouldAutoScrollRef.current = atBottom;
     };
 
     checkScrollState();
-    el.addEventListener('scroll', checkScrollState);
+    el.addEventListener('scroll', checkScrollState, { passive: true });
     
     // Re-check when content changes
     const resizeObserver = new ResizeObserver(checkScrollState);
@@ -67,10 +70,13 @@ export const AYNSpeechBubble = ({
   // Auto-scroll to bottom when new content arrives
   useEffect(() => {
     const el = contentRef.current;
-    if (el && isAtBottom) {
-      el.scrollTop = el.scrollHeight;
+    if (el && shouldAutoScrollRef.current) {
+      requestAnimationFrame(() => {
+        if (!contentRef.current) return;
+        contentRef.current.scrollTop = contentRef.current.scrollHeight;
+      });
     }
-  }, [cleanedContent, isAtBottom]);
+  }, [cleanedContent]);
 
   return (
     <AnimatePresence>
