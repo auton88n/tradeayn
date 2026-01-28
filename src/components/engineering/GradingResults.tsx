@@ -1,5 +1,5 @@
 import React, { useRef, useState, useCallback } from 'react';
-import { Download, TrendingUp, TrendingDown, DollarSign, FileText, AlertTriangle, FileDown } from 'lucide-react';
+import { Download, TrendingUp, TrendingDown, FileText, AlertTriangle, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -49,8 +49,8 @@ interface CostBreakdown {
 
 interface GradingResultsProps {
   design: GradingDesign | null;
-  costBreakdown: CostBreakdown | null;
-  totalCost: number;
+  costBreakdown?: CostBreakdown | null;
+  totalCost?: number;
   fglPoints: Point[];
   projectName: string;
 }
@@ -228,27 +228,6 @@ export const GradingResults: React.FC<GradingResultsProps> = ({
             </div>
           </Card>
 
-          {/* Cost Breakdown */}
-          {costBreakdown && (
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <DollarSign className="w-5 h-5 text-green-500" />
-                Cost Estimate (USD)
-              </h3>
-              <div className="space-y-3">
-                {Object.entries(costBreakdown).map(([key, value]) => (
-                  <div key={key} className="flex justify-between items-center py-2 border-b border-border/50 last:border-0">
-                    <span className="capitalize">{key.replace(/_/g, ' ')}</span>
-                    <span className="font-medium">${value.toLocaleString()}</span>
-                  </div>
-                ))}
-                <div className="flex justify-between items-center pt-3 border-t-2 border-primary">
-                  <span className="font-semibold text-lg">Total Estimated Cost</span>
-                  <span className="font-bold text-xl text-primary">${totalCost.toLocaleString()}</span>
-                </div>
-              </div>
-            </Card>
-          )}
         </TabsContent>
 
         {/* Elevation Profile Tab */}
@@ -332,8 +311,6 @@ export const GradingResults: React.FC<GradingResultsProps> = ({
         <GradingPDFReport
           ref={pdfRef}
           design={design}
-          costBreakdown={costBreakdown}
-          totalCost={totalCost}
           fglPoints={fglPoints}
           projectName={projectName}
         />

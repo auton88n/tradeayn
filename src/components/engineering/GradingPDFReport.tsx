@@ -31,8 +31,8 @@ interface CostBreakdown {
 
 interface GradingPDFReportProps {
   design: GradingDesign;
-  costBreakdown: CostBreakdown | null;
-  totalCost: number;
+  costBreakdown?: CostBreakdown | null;
+  totalCost?: number;
   fglPoints: Point[];
   projectName: string;
 }
@@ -758,26 +758,6 @@ export const GradingPDFReport = forwardRef<HTMLDivElement, GradingPDFReportProps
             </div>
           </div>
 
-          {/* Cost Breakdown (compact) */}
-          {costBreakdown && (
-            <div className="mb-4">
-              <h2 className="text-lg font-bold text-slate-800 border-b-2 border-slate-300 pb-1 mb-2">
-                COST ESTIMATE (SAR)
-              </h2>
-              <div className="grid grid-cols-3 gap-x-4 text-sm">
-                {Object.entries(costBreakdown).map(([key, value]) => (
-                  <div key={key} className="flex justify-between py-1 border-b border-slate-200">
-                    <span className="capitalize text-slate-600 text-xs">{key.replace(/_/g, ' ')}</span>
-                    <span className="font-medium text-xs">{value.toLocaleString()}</span>
-                  </div>
-                ))}
-                <div className="col-span-3 flex justify-between py-2 border-t-2 border-slate-800 mt-1">
-                  <span className="font-bold">Total Estimated Cost</span>
-                  <span className="font-bold text-lg">{totalCost.toLocaleString()} SAR</span>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Footer */}
           <div className="absolute bottom-6 left-8 right-8">

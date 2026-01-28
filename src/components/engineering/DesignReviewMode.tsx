@@ -403,8 +403,8 @@ export const DesignReviewMode: React.FC<DesignReviewModeProps> = ({
               },
               {
                 id: 'suggestOptimizations',
-                label: 'Suggest Cost Optimizations',
-                description: 'AI-powered suggestions to reduce costs and improve design',
+                label: 'Suggest Optimizations',
+                description: 'AI-powered suggestions to improve design efficiency',
                 icon: Lightbulb,
                 iconColor: 'text-yellow-500',
                 checked: analysisOptions.suggestOptimizations,
@@ -419,8 +419,8 @@ export const DesignReviewMode: React.FC<DesignReviewModeProps> = ({
               },
               {
                 id: 'checkCompliance',
-                label: 'Verify Saudi Code Compliance',
-                description: 'Check against MOT standards for road grades, compaction requirements',
+                label: 'Verify Regional Code Compliance',
+                description: 'Check against USA (OSHA/IBC) or Canada (CSA/NBCC) standards',
                 icon: Shield,
                 iconColor: 'text-emerald-500',
                 checked: analysisOptions.checkCompliance,
