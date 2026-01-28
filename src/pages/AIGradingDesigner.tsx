@@ -9,11 +9,13 @@ import { SurveyUploader } from '@/components/engineering/SurveyUploader';
 import { GradingRequirements } from '@/components/engineering/GradingRequirements';
 import { TerrainVisualization3D } from '@/components/engineering/TerrainVisualization3D';
 import { GradingResults } from '@/components/engineering/GradingResults';
+import { GradingComplianceDisplay } from '@/components/engineering/GradingComplianceDisplay';
 import { DesignReviewMode } from '@/components/engineering/DesignReviewMode';
 import { DesignAnalysisResults } from '@/components/engineering/DesignAnalysisResults';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { SEO } from '@/components/shared/SEO';
+import { type GradingRegion } from '@/lib/gradingStandards';
 
 interface SurveyPoint {
   id: string;
@@ -57,6 +59,7 @@ const AIGradingDesigner: React.FC = () => {
   const [costBreakdown, setCostBreakdown] = useState<CostBreakdown>(null);
   const [totalCost, setTotalCost] = useState(0);
   const [fglPoints, setFglPoints] = useState<SurveyPoint[]>([]);
+  const [gradingRegion, setGradingRegion] = useState<GradingRegion>('USA');
 
   // Review mode state
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -79,7 +82,12 @@ const AIGradingDesigner: React.FC = () => {
     setIsGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke('generate-grading-design', {
-        body: { points, terrainAnalysis, requirements: requirements || 'Standard site grading for construction with proper drainage' }
+        body: { 
+          points, 
+          terrainAnalysis, 
+          requirements: requirements || 'Standard site grading for construction with proper drainage',
+          region: gradingRegion,
+        }
       });
 
       if (error) throw error;
@@ -212,6 +220,8 @@ const AIGradingDesigner: React.FC = () => {
                       onGenerate={handleGenerateDesign}
                       isGenerating={isGenerating}
                       hasPoints={points.length > 0}
+                      region={gradingRegion}
+                      onRegionChange={setGradingRegion}
                     />
                   </motion.div>
                 </div>
@@ -219,8 +229,18 @@ const AIGradingDesigner: React.FC = () => {
                   <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
                     <TerrainVisualization3D points={fglPoints.length > 0 ? fglPoints : points} showFGL={fglPoints.length > 0} />
                   </motion.div>
-                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="space-y-4">
                     <GradingResults design={design} costBreakdown={costBreakdown} totalCost={totalCost} fglPoints={fglPoints} projectName={projectName} />
+                    {design && (
+                      <GradingComplianceDisplay
+                        region={gradingRegion}
+                        disturbedAreaAcres={terrainAnalysis ? terrainAnalysis.estimatedArea / 4046.86 : 0}
+                        designSlopes={{
+                          foundation: design.slopePercentage,
+                          fill: design.slopePercentage,
+                        }}
+                      />
+                    )}
                   </motion.div>
                 </div>
               </div>
