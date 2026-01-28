@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, forwardRef, useImperativeHandle, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Calculator, Info, Loader2, AlertTriangle, Ruler, Mountain, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,9 @@ import { useEngineeringHistory } from '@/hooks/useEngineeringHistory';
 import { calculateRetainingWall } from '@/lib/engineeringCalculations';
 import { InputSection } from './ui/InputSection';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { retainingWallValidationRules, validateField, hasErrors } from '@/lib/inputValidation';
+import { useEngineeringSessionOptional } from '@/contexts/EngineeringSessionContext';
+import type { BuildingCodeId } from '@/lib/buildingCodes/types';
 
 interface RetainingWallCalculatorProps {
   onCalculate: (result: {
@@ -28,6 +31,7 @@ interface RetainingWallCalculatorProps {
   isCalculating: boolean;
   setIsCalculating: (value: boolean) => void;
   userId?: string;
+  resetKey?: number;
 }
 
 const concreteGrades = [
@@ -50,29 +54,75 @@ const soilTypes = [
   { value: 'gravel', label: 'Sandy Gravel', unitWeight: 20, friction: 35 },
 ];
 
-export const RetainingWallCalculator = ({ 
-  onCalculate, 
-  isCalculating, 
-  setIsCalculating, 
-  userId 
-}: RetainingWallCalculatorProps) => {
+const getDefaultFormData = () => ({
+  wallHeight: '3.0',
+  stemThicknessTop: '250',
+  stemThicknessBottom: '400',
+  baseWidth: '1800',
+  baseThickness: '400',
+  toeWidth: '200',
+  soilType: 'medium_sand',
+  surchargeLoad: '10',
+  concreteGrade: 'C30',
+  steelGrade: 'Fy420',
+  allowableBearingPressure: '150',
+  backfillSlope: '0',
+});
+
+// Helper component for form errors
+const FormError = ({ message }: { message?: string }) => {
+  if (!message) return null;
+  return <p className="text-destructive text-xs mt-1">{message}</p>;
+};
+
+// Get code-specific info
+const getCodeInfo = (buildingCode: BuildingCodeId) => {
+  if (buildingCode === 'CSA') {
+    return {
+      name: 'CSA A23.3-24 / NBCC 2020',
+      factors: '1.25D + 1.5L',
+      phi: 'φc = 0.65',
+      isCSA: true,
+    };
+  }
+  return {
+    name: 'ACI 318-25 / ASCE 7-22',
+    factors: '1.2D + 1.6L',
+    phi: 'φ = 0.90',
+    isCSA: false,
+  };
+};
+
+export interface RetainingWallCalculatorRef {
+  reset: () => void;
+}
+
+export const RetainingWallCalculator = forwardRef<RetainingWallCalculatorRef, RetainingWallCalculatorProps>(
+  ({ onCalculate, isCalculating, setIsCalculating, userId, resetKey }, ref) => {
   const { t } = useLanguage();
   const { saveCalculation } = useEngineeringHistory(userId);
+  const session = useEngineeringSessionOptional();
+  const buildingCode: BuildingCodeId = (session?.buildingCode as BuildingCodeId) || 'ACI';
+  const codeInfo = getCodeInfo(buildingCode);
   
-  const [formData, setFormData] = useState({
-    wallHeight: '3.0',
-    stemThicknessTop: '250',
-    stemThicknessBottom: '400',
-    baseWidth: '1800',
-    baseThickness: '400',
-    toeWidth: '200',
-    soilType: 'medium_sand',
-    surchargeLoad: '10',
-    concreteGrade: 'C30',
-    steelGrade: 'Fy420',
-    allowableBearingPressure: '150',
-    backfillSlope: '0',
-  });
+  const [formData, setFormData] = useState(getDefaultFormData());
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Reset form when resetKey changes
+  useEffect(() => {
+    if (resetKey !== undefined) {
+      setFormData(getDefaultFormData());
+      setErrors({});
+    }
+  }, [resetKey]);
+
+  // Expose reset method via ref
+  useImperativeHandle(ref, () => ({
+    reset: () => {
+      setFormData(getDefaultFormData());
+      setErrors({});
+    }
+  }));
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => {
@@ -94,6 +144,20 @@ export const RetainingWallCalculator = ({
       
       return updated;
     });
+    
+    // Validate on change
+    const numValue = parseFloat(value);
+    const rule = retainingWallValidationRules[field];
+    if (rule && !isNaN(numValue)) {
+      const error = validateField(numValue, rule);
+      setErrors(prev => {
+        if (error) {
+          return { ...prev, [field]: error };
+        }
+        const { [field]: _, ...rest } = prev;
+        return rest;
+      });
+    }
   };
 
   const handleSoilTypeChange = (value: string) => {
@@ -102,7 +166,27 @@ export const RetainingWallCalculator = ({
 
   const selectedSoil = soilTypes.find(s => s.value === formData.soilType) || soilTypes[1];
 
+  const validateAllInputs = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    
+    Object.entries(retainingWallValidationRules).forEach(([field, rule]) => {
+      const value = parseFloat(formData[field as keyof typeof formData] as string);
+      if (!isNaN(value)) {
+        const error = validateField(value, rule);
+        if (error) newErrors[field] = error;
+      }
+    });
+    
+    setErrors(newErrors);
+    return !hasErrors(newErrors);
+  };
+
   const handleCalculate = async () => {
+    if (!validateAllInputs()) {
+      toast.error(t('error.invalidInputDesc'));
+      return;
+    }
+
     const wallHeight = parseFloat(formData.wallHeight);
     const stemThicknessTop = parseFloat(formData.stemThicknessTop);
     const stemThicknessBottom = parseFloat(formData.stemThicknessBottom);
@@ -125,7 +209,7 @@ export const RetainingWallCalculator = ({
     setIsCalculating(true);
 
     try {
-      // Client-side calculation for instant results
+      // Client-side calculation with building code
       const data = calculateRetainingWall({
         wallHeight,
         stemThicknessTop,
@@ -140,7 +224,7 @@ export const RetainingWallCalculator = ({
         steelGrade: formData.steelGrade,
         allowableBearingPressure,
         backfillSlope,
-      });
+      }, buildingCode);
 
       const result = {
         type: 'retaining_wall' as const,
@@ -159,6 +243,7 @@ export const RetainingWallCalculator = ({
           steelGrade: formData.steelGrade,
           allowableBearingPressure,
           backfillSlope,
+          buildingCode,
         },
         outputs: data,
         timestamp: new Date(),
@@ -209,7 +294,9 @@ export const RetainingWallCalculator = ({
               placeholder="3.0"
               value={formData.wallHeight}
               onChange={(e) => handleInputChange('wallHeight', e.target.value)}
+              className={errors.wallHeight ? 'border-destructive' : ''}
             />
+            <FormError message={errors.wallHeight} />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -221,7 +308,9 @@ export const RetainingWallCalculator = ({
                 placeholder="250"
                 value={formData.stemThicknessTop}
                 onChange={(e) => handleInputChange('stemThicknessTop', e.target.value)}
+                className={errors.stemThicknessTop ? 'border-destructive' : ''}
               />
+              <FormError message={errors.stemThicknessTop} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="stemThicknessBottom">Stem Bottom (mm)</Label>
@@ -231,7 +320,9 @@ export const RetainingWallCalculator = ({
                 placeholder="400"
                 value={formData.stemThicknessBottom}
                 onChange={(e) => handleInputChange('stemThicknessBottom', e.target.value)}
+                className={errors.stemThicknessBottom ? 'border-destructive' : ''}
               />
+              <FormError message={errors.stemThicknessBottom} />
             </div>
           </div>
 
@@ -244,7 +335,9 @@ export const RetainingWallCalculator = ({
                 placeholder="1800"
                 value={formData.baseWidth}
                 onChange={(e) => handleInputChange('baseWidth', e.target.value)}
+                className={errors.baseWidth ? 'border-destructive' : ''}
               />
+              <FormError message={errors.baseWidth} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="baseThickness">Base Thick (mm)</Label>
@@ -254,7 +347,9 @@ export const RetainingWallCalculator = ({
                 placeholder="400"
                 value={formData.baseThickness}
                 onChange={(e) => handleInputChange('baseThickness', e.target.value)}
+                className={errors.baseThickness ? 'border-destructive' : ''}
               />
+              <FormError message={errors.baseThickness} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="toeWidth">Toe Width (mm)</Label>
@@ -264,7 +359,9 @@ export const RetainingWallCalculator = ({
                 placeholder="200"
                 value={formData.toeWidth}
                 onChange={(e) => handleInputChange('toeWidth', e.target.value)}
+                className={errors.toeWidth ? 'border-destructive' : ''}
               />
+              <FormError message={errors.toeWidth} />
             </div>
           </div>
 
@@ -276,7 +373,9 @@ export const RetainingWallCalculator = ({
               placeholder="0"
               value={formData.backfillSlope}
               onChange={(e) => handleInputChange('backfillSlope', e.target.value)}
+              className={errors.backfillSlope ? 'border-destructive' : ''}
             />
+            <FormError message={errors.backfillSlope} />
           </div>
         </InputSection>
 
@@ -307,7 +406,9 @@ export const RetainingWallCalculator = ({
                 placeholder="10"
                 value={formData.surchargeLoad}
                 onChange={(e) => handleInputChange('surchargeLoad', e.target.value)}
+                className={errors.surchargeLoad ? 'border-destructive' : ''}
               />
+              <FormError message={errors.surchargeLoad} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="allowableBearingPressure">Bearing Cap. (kN/m²)</Label>
@@ -317,7 +418,9 @@ export const RetainingWallCalculator = ({
                 placeholder="150"
                 value={formData.allowableBearingPressure}
                 onChange={(e) => handleInputChange('allowableBearingPressure', e.target.value)}
+                className={errors.allowableBearingPressure ? 'border-destructive' : ''}
               />
+              <FormError message={errors.allowableBearingPressure} />
             </div>
           </div>
         </InputSection>
@@ -363,15 +466,25 @@ export const RetainingWallCalculator = ({
             </div>
           </div>
 
-          {/* Info Box */}
+          {/* Dynamic Info Box based on building code */}
           <div className={cn(
-            "p-3 rounded-lg bg-amber-500/10 border border-amber-500/30",
-            "flex items-start gap-2 text-sm"
+            "p-3 rounded-lg border",
+            codeInfo.isCSA 
+              ? "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800"
+              : "bg-amber-500/10 border-amber-500/30"
           )}>
-            <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
-            <div className="text-muted-foreground">
-              <p className="font-medium text-foreground">Stability Requirements</p>
-              <p>FOS Overturning ≥ 2.0, Sliding ≥ 1.5, Bearing ≥ 3.0</p>
+            <div className="flex items-start gap-2 text-sm">
+              <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
+              <div className="text-muted-foreground">
+                <p className="font-medium text-foreground">Design Code: {codeInfo.name}</p>
+                <p>Load factors: {codeInfo.factors}, {codeInfo.phi}</p>
+                <p>FOS Overturning ≥ 2.0, Sliding ≥ 1.5, Bearing ≥ 3.0</p>
+                {codeInfo.isCSA && (
+                  <p className="text-amber-600 dark:text-amber-400 mt-1">
+                    ⚠️ CSA uses lower resistance factors - expect more reinforcement
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </InputSection>
@@ -396,6 +509,8 @@ export const RetainingWallCalculator = ({
       </Button>
     </motion.div>
   );
-};
+});
+
+RetainingWallCalculator.displayName = 'RetainingWallCalculator';
 
 export default RetainingWallCalculator;

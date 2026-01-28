@@ -447,13 +447,17 @@ export interface ColumnInputs {
   steelGrade: string;
   coverThickness: number;
   columnType: string;
+  buildingCode?: BuildingCodeId;
 }
 
-export function calculateColumn(inputs: ColumnInputs) {
+export function calculateColumn(inputs: ColumnInputs, buildingCode: BuildingCodeId = 'ACI') {
   const {
     axialLoad, momentX, momentY, columnWidth, columnDepth, columnHeight,
     concreteGrade, steelGrade, coverThickness
   } = inputs;
+  
+  // Get code-specific parameters
+  const codeParams = getCodeParameters(buildingCode);
 
   const fck = parseInt(concreteGrade.replace('C', ''));
   const fy = parseInt(steelGrade);
@@ -584,11 +588,15 @@ export interface FoundationInputs {
   columnDepth: number;
   bearingCapacity: number;
   concreteGrade: string;
+  buildingCode?: BuildingCodeId;
 }
 
-export function calculateFoundation(inputs: FoundationInputs) {
+export function calculateFoundation(inputs: FoundationInputs, buildingCode: BuildingCodeId = 'ACI') {
   const { columnLoad, momentX, momentY, columnWidth, columnDepth, bearingCapacity, concreteGrade } = inputs;
 
+  // Get code-specific parameters
+  const codeParams = getCodeParameters(buildingCode);
+  
   const concreteProps: Record<string, number> = { C25: 25, C30: 30, C35: 35 };
   const fck = concreteProps[concreteGrade] || 30;
   const fy = 420;
@@ -686,14 +694,18 @@ export interface RetainingWallInputs {
   waterTableDepth?: number;
   backfillSlope?: number;
   allowableBearingPressure: number;
+  buildingCode?: BuildingCodeId;
 }
 
-export function calculateRetainingWall(inputs: RetainingWallInputs) {
+export function calculateRetainingWall(inputs: RetainingWallInputs, buildingCode: BuildingCodeId = 'ACI') {
   const {
     wallHeight, stemThicknessTop, stemThicknessBottom, baseWidth, baseThickness,
     toeWidth, soilUnitWeight, soilFrictionAngle, surchargeLoad, concreteGrade,
     steelGrade, backfillSlope, allowableBearingPressure
   } = inputs;
+
+  // Get code-specific parameters
+  const codeParams = getCodeParameters(buildingCode);
 
   const concreteProps: Record<string, number> = { C25: 25, C30: 30, C35: 35, C40: 40 };
   const steelProps: Record<string, number> = { Fy420: 420, Fy500: 500 };

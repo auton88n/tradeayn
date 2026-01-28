@@ -103,6 +103,17 @@ export function validateInput(
   return { isValid: true };
 }
 
+// Alias for backwards compatibility
+export const validateField = (value: number, rule: ValidationRule): string | null => {
+  const result = validateInput(value, rule);
+  return result.isValid ? null : (result.error || 'Invalid value');
+};
+
+// Check if errors object has any errors
+export const hasErrors = (errors: Record<string, string>): boolean => {
+  return Object.keys(errors).length > 0;
+};
+
 /**
  * Validate all inputs against their rules
  */

@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, forwardRef, useImperativeHandle, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calculator, Info, Loader2, Ruler, Weight, Layers } from 'lucide-react';
+import { Calculator, Info, Loader2, Ruler, Weight, Layers, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,6 +17,9 @@ import { useEngineeringHistory } from '@/hooks/useEngineeringHistory';
 import { calculateSlab } from '@/lib/engineeringCalculations';
 import { InputSection } from './ui/InputSection';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { slabValidationRules, validateField, hasErrors } from '@/lib/inputValidation';
+import { useEngineeringSessionOptional } from '@/contexts/EngineeringSessionContext';
+import type { BuildingCodeId } from '@/lib/buildingCodes/types';
 
 interface SlabCalculatorProps {
   onCalculate: (result: {
@@ -28,6 +31,7 @@ interface SlabCalculatorProps {
   isCalculating: boolean;
   setIsCalculating: (value: boolean) => void;
   userId?: string;
+  resetKey?: number;
 }
 
 const concreteGrades = [
@@ -54,27 +58,112 @@ const supportConditions = [
   { value: 'all_edges_continuous', label: 'All Edges Continuous' },
 ];
 
-export const SlabCalculator = ({ onCalculate, isCalculating, setIsCalculating, userId }: SlabCalculatorProps) => {
+const getDefaultFormData = () => ({
+  longSpan: '6.0',
+  shortSpan: '4.0',
+  deadLoad: '5.0',
+  liveLoad: '3.0',
+  concreteGrade: 'C30',
+  steelGrade: 'Fy420',
+  slabType: 'two_way',
+  supportCondition: 'simply_supported',
+  cover: '25',
+});
+
+// Helper component for form errors
+const FormError = ({ message }: { message?: string }) => {
+  if (!message) return null;
+  return <p className="text-destructive text-xs mt-1">{message}</p>;
+};
+
+// Get code-specific info
+const getCodeInfo = (buildingCode: BuildingCodeId) => {
+  if (buildingCode === 'CSA') {
+    return {
+      name: 'CSA A23.3-24 / NBCC 2020',
+      factors: '1.25D + 1.5L',
+      phi: 'φc = 0.65',
+      isCSA: true,
+    };
+  }
+  return {
+    name: 'ACI 318-25 / ASCE 7-22',
+    factors: '1.2D + 1.6L',
+    phi: 'φ = 0.90',
+    isCSA: false,
+  };
+};
+
+export interface SlabCalculatorRef {
+  reset: () => void;
+}
+
+export const SlabCalculator = forwardRef<SlabCalculatorRef, SlabCalculatorProps>(
+  ({ onCalculate, isCalculating, setIsCalculating, userId, resetKey }, ref) => {
   const { t } = useLanguage();
   const { saveCalculation } = useEngineeringHistory(userId);
+  const session = useEngineeringSessionOptional();
+  const buildingCode: BuildingCodeId = (session?.buildingCode as BuildingCodeId) || 'ACI';
+  const codeInfo = getCodeInfo(buildingCode);
   
-  const [formData, setFormData] = useState({
-    longSpan: '6.0',
-    shortSpan: '4.0',
-    deadLoad: '5.0',
-    liveLoad: '3.0',
-    concreteGrade: 'C30',
-    steelGrade: 'Fy420',
-    slabType: 'two_way',
-    supportCondition: 'simply_supported',
-    cover: '25',
-  });
+  const [formData, setFormData] = useState(getDefaultFormData());
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Reset form when resetKey changes
+  useEffect(() => {
+    if (resetKey !== undefined) {
+      setFormData(getDefaultFormData());
+      setErrors({});
+    }
+  }, [resetKey]);
+
+  // Expose reset method via ref
+  useImperativeHandle(ref, () => ({
+    reset: () => {
+      setFormData(getDefaultFormData());
+      setErrors({});
+    }
+  }));
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Validate on change
+    const numValue = parseFloat(value);
+    const rule = slabValidationRules[field];
+    if (rule && !isNaN(numValue)) {
+      const error = validateField(numValue, rule);
+      setErrors(prev => {
+        if (error) {
+          return { ...prev, [field]: error };
+        }
+        const { [field]: _, ...rest } = prev;
+        return rest;
+      });
+    }
+  };
+
+  const validateAllInputs = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    
+    Object.entries(slabValidationRules).forEach(([field, rule]) => {
+      const value = parseFloat(formData[field as keyof typeof formData] as string);
+      if (!isNaN(value)) {
+        const error = validateField(value, rule);
+        if (error) newErrors[field] = error;
+      }
+    });
+    
+    setErrors(newErrors);
+    return !hasErrors(newErrors);
   };
 
   const handleCalculate = async () => {
+    if (!validateAllInputs()) {
+      toast.error(t('error.invalidInputDesc'));
+      return;
+    }
+
     const longSpan = parseFloat(formData.longSpan);
     const shortSpan = parseFloat(formData.shortSpan);
     const deadLoad = parseFloat(formData.deadLoad);
@@ -89,19 +178,11 @@ export const SlabCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
       toast.error(t('error.invalidInputDesc'));
       return;
     }
-    if (isNaN(deadLoad) || deadLoad < 0) {
-      toast.error(t('error.invalidInputDesc'));
-      return;
-    }
-    if (isNaN(liveLoad) || liveLoad < 0) {
-      toast.error(t('error.invalidInputDesc'));
-      return;
-    }
 
     setIsCalculating(true);
 
     try {
-      // Client-side calculation for instant results
+      // Client-side calculation with building code
       const data = calculateSlab({
         longSpan,
         shortSpan,
@@ -112,6 +193,7 @@ export const SlabCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
         slabType: formData.slabType,
         supportCondition: formData.supportCondition,
         cover,
+        buildingCode,
       });
 
       const result = {
@@ -126,6 +208,7 @@ export const SlabCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
           slabType: formData.slabType,
           supportCondition: formData.supportCondition,
           cover,
+          buildingCode,
         },
         outputs: data,
         timestamp: new Date(),
@@ -186,7 +269,9 @@ export const SlabCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
                 placeholder="6.0"
                 value={formData.longSpan}
                 onChange={(e) => handleInputChange('longSpan', e.target.value)}
+                className={errors.longSpan ? 'border-destructive' : ''}
               />
+              <FormError message={errors.longSpan} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="shortSpan">Short Span (m)</Label>
@@ -197,7 +282,9 @@ export const SlabCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
                 placeholder="4.0"
                 value={formData.shortSpan}
                 onChange={(e) => handleInputChange('shortSpan', e.target.value)}
+                className={errors.shortSpan ? 'border-destructive' : ''}
               />
+              <FormError message={errors.shortSpan} />
             </div>
           </div>
           
@@ -257,7 +344,9 @@ export const SlabCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
               placeholder="25"
               value={formData.cover}
               onChange={(e) => handleInputChange('cover', e.target.value)}
+              className={errors.cover ? 'border-destructive' : ''}
             />
+            <FormError message={errors.cover} />
           </div>
         </InputSection>
 
@@ -273,7 +362,9 @@ export const SlabCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
                 placeholder="5.0"
                 value={formData.deadLoad}
                 onChange={(e) => handleInputChange('deadLoad', e.target.value)}
+                className={errors.deadLoad ? 'border-destructive' : ''}
               />
+              <FormError message={errors.deadLoad} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="liveLoad">Live Load (kN/m²)</Label>
@@ -284,7 +375,9 @@ export const SlabCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
                 placeholder="3.0"
                 value={formData.liveLoad}
                 onChange={(e) => handleInputChange('liveLoad', e.target.value)}
+                className={errors.liveLoad ? 'border-destructive' : ''}
               />
+              <FormError message={errors.liveLoad} />
             </div>
           </div>
         </InputSection>
@@ -330,15 +423,28 @@ export const SlabCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
             </div>
           </div>
 
-          {/* Info Box */}
+          {/* Dynamic Info Box based on building code */}
           <div className={cn(
-            "p-3 rounded-lg bg-muted/50 border border-border",
-            "flex items-start gap-2 text-sm"
+            "p-3 rounded-lg border",
+            codeInfo.isCSA 
+              ? "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800"
+              : "bg-muted/50 border-border"
           )}>
-            <Info className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
-            <div className="text-muted-foreground">
-              <p className="font-medium text-foreground">Design Standards</p>
-              <p>Calculations follow ACI 318 and Eurocode 2 provisions for slab design.</p>
+            <div className="flex items-start gap-2 text-sm">
+              {codeInfo.isCSA ? (
+                <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
+              ) : (
+                <Info className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
+              )}
+              <div className="text-muted-foreground">
+                <p className="font-medium text-foreground">Design Code: {codeInfo.name}</p>
+                <p>Load factors: {codeInfo.factors}, {codeInfo.phi}</p>
+                {codeInfo.isCSA && (
+                  <p className="text-amber-600 dark:text-amber-400 mt-1">
+                    ⚠️ CSA requires ~38% more reinforcement than ACI
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </InputSection>
@@ -363,6 +469,8 @@ export const SlabCalculator = ({ onCalculate, isCalculating, setIsCalculating, u
       </Button>
     </motion.div>
   );
-};
+});
+
+SlabCalculator.displayName = 'SlabCalculator';
 
 export default SlabCalculator;
