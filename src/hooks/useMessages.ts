@@ -343,7 +343,7 @@ export const useMessages = (
 
       // Build context for ayn-unified
       const context: Record<string, unknown> = {
-        buildingCode: userProfile?.business_type ? 'SBC 304-2018' : undefined,
+        buildingCode: userProfile?.business_type ? 'ACI 318-25' : undefined,
         fileContext: attachment ? {
           name: attachment.name,
           type: attachment.type,

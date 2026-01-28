@@ -200,29 +200,40 @@ export const ENGINEERING_KNOWLEDGE = {
     }
   },
   
-  saudiBuildingCode: {
-    version: "SBC 304-2018",
-    requirements: {
-      concreteGradeMin: 25, // MPa
-      coverForExposure: "SBC Table 7.7.1",
-      seismicZones: { 
-        Riyadh: "Zone 2A", 
-        Jeddah: "Zone 3", 
-        Dammam: "Zone 1",
-        Makkah: "Zone 3",
-        Madinah: "Zone 2B"
+  // Regional Grading Standards (USA/Canada)
+  gradingStandards: {
+    USA: {
+      stormWater: "EPA 2022 CGP - permits required ≥1 acre disturbed",
+      excavation: {
+        standard: "OSHA 29 CFR 1926 Subpart P",
+        slopes: { stableRock: 90, typeA: 53, typeB: 45, typeC: 34 }
       },
-      fireRating: {
-        residential: 1, // hours
-        commercial: 2,
-        industrial: 3
+      drainage: {
+        standard: "IBC 2024 Section 1804.4",
+        foundationSlope: 5, // % for 10 feet
+        maxFillSlope: 50 // 2:1
+      },
+      compaction: {
+        standard: "ASTM D698/D1557",
+        structuralFill: 95, // % Standard Proctor
+        underPavements: 98
       }
     },
-    loadRequirements: {
-      windSpeed: { 
-        Riyadh: 40, // m/s
-        Jeddah: 45,
-        coastal: 50
+    CANADA: {
+      stormWater: "Provincial permits ~0.4 hectares",
+      excavation: {
+        standard: "Provincial OHS",
+        maxUnprotectedDepth: 1.5 // meters
+      },
+      drainage: {
+        standard: "NBCC 2025",
+        foundationSlope: 5, // % for 1.8m
+        maxFillSlope: 33 // 3:1
+      },
+      compaction: {
+        standard: "CSA A23.1:24",
+        structuralFill: 95,
+        frostProtection: true
       }
     }
   }

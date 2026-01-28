@@ -66,17 +66,7 @@ function generateAnalysis(type: string, inputs: any, outputs: any) {
     }
     optimizations.push('Use prefabricated stirrups for faster construction');
 
-    // Cost estimate (Saudi Riyal)
-    const concretePrice = inputs.concreteGrade === 'C30' ? 310 : 280;
-    const concreteCost = outputs.concreteVolume * concretePrice;
-    const steelCost = outputs.steelWeight * 2.7; // ~2700 SAR/ton
-    const formworkCost = outputs.formworkArea * 85;
-    const laborCost = outputs.concreteVolume * 45 + outputs.steelWeight * 0.35;
-
-    costEstimate.push({ item: 'Concrete', cost: Math.round(concreteCost) });
-    costEstimate.push({ item: 'Steel', cost: Math.round(steelCost) });
-    costEstimate.push({ item: 'Formwork', cost: Math.round(formworkCost) });
-    costEstimate.push({ item: 'Labor', cost: Math.round(laborCost) });
+    // Cost estimation removed - pricing varies by region
 
   } else if (type === 'foundation') {
     // Compliance checks
@@ -102,16 +92,7 @@ function generateAnalysis(type: string, inputs: any, outputs: any) {
     }
     optimizations.push('Use lean concrete blinding (50mm) below footing');
 
-    // Cost estimate
-    const concreteCost = outputs.concreteVolume * 310;
-    const steelCost = outputs.steelWeight * 2.7;
-    const excavationCost = outputs.area * 1.5 * 25; // 1.5m depth, 25 SAR/m³
-    const laborCost = outputs.concreteVolume * 45;
-
-    costEstimate.push({ item: 'Concrete', cost: Math.round(concreteCost) });
-    costEstimate.push({ item: 'Steel', cost: Math.round(steelCost) });
-    costEstimate.push({ item: 'Excavation', cost: Math.round(excavationCost) });
-    costEstimate.push({ item: 'Labor', cost: Math.round(laborCost) });
+    // Cost estimation removed - pricing varies by region
   }
 
   return { compliance, optimizations, costEstimate };
