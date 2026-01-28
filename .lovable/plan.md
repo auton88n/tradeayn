@@ -1,200 +1,242 @@
 
-# Remove Saudi Code & Cost Estimation + Improve AI Grading Knowledge
+# Remove Saudi Arabia References & Update AI Knowledge for USA/Canada Only
 
 ## Summary
-This plan addresses three key changes:
-1. Remove Saudi code references - only keep USA and Canada
-2. Remove cost estimation features (unreliable numbers)
-3. Update AI edge functions to understand regional grading codes and formulas
+
+This plan removes all Saudi Arabia building code references (SBC 304, MOT, SAR currency, Saudi cities) from the entire codebase and updates all AI systems to only reference USA (ACI 318-25) and Canada (CSA A23.3-24) standards. It also removes cost estimation logic that uses Saudi Riyal (SAR) pricing.
 
 ---
 
 ## Files to Modify
 
-### 1. Frontend - Remove Saudi Code Option
+### 1. Frontend Library - Engineering Knowledge Base
 
-**`src/components/engineering/DesignReviewMode.tsx`**
-- Line 420-428: Change "Verify Saudi Code Compliance" to "Verify Regional Code Compliance"
-- Update description from "Check against MOT standards" to "Check against USA (OSHA/IBC) or Canada (CSA/NBCC) standards"
+**`src/lib/engineeringKnowledge.ts`**
 
-### 2. Frontend - Remove Cost Display
-
-**`src/components/engineering/GradingResults.tsx`**
-- Lines 231-251: Remove the entire Cost Breakdown card section
-- Remove `DollarSign` icon import (line 2)
-- Keep the volume summary and design parameters (those are useful)
-
-**`src/components/engineering/GradingPDFReport.tsx`**
-- Lines 761-780: Remove the "COST ESTIMATE (SAR)" section from PDF
-- Keep the component props but don't render cost breakdown
-- Update props interface to make cost props optional (lines 32-35)
-
-**`src/components/engineering/GradingDesignerPanel.tsx`**
-- Lines 57-58: Remove `costBreakdown` and `totalCost` state
-- Lines 101-103: Remove cost-related state updates from response
-- Lines 221-227: Remove cost props from `GradingResults` component
-
-### 3. Edge Functions - Remove Cost Calculation & Add Regional Knowledge
-
-**`supabase/functions/generate-grading-design/index.ts`**
-- Remove `EarthworkPrices` interface (lines 31-37)
-- Remove `DEFAULT_EARTHWORK_PRICES` constant (lines 39-46)
-- Remove cost calculation logic (lines 191-204)
-- Update AI prompt to include regional grading standards knowledge:
-
-**New AI Prompt Structure:**
-```
-REGIONAL GRADING STANDARDS (verified January 2026):
-
-USA Standards:
-- Storm Water: EPA 2022 CGP - permits required ≥1 acre disturbed
-- Excavation: OSHA 29 CFR 1926 Subpart P
-  * Stable rock: 90° vertical
-  * Type A soil: 53° (3/4:1 ratio)
-  * Type B soil: 45° (1:1 ratio)
-  * Type C soil: 34° (1.5:1 ratio)
-- Drainage: IBC 2024 Section 1804.4
-  * Foundation: 5% slope for 10 feet minimum
-  * Impervious surfaces: 2% slope for 10 feet
-  * Maximum fill slope: 50% (2:1)
-- Compaction: ASTM D698 (Standard Proctor), D1557 (Modified)
-  * Structural fill: 95% Standard Proctor
-  * Under pavements: 95-98% Modified Proctor
-  * Utility trenches: 90-95%
-
-CANADA Standards:
-- Storm Water: Provincial/Municipal permits ~0.4 hectares
-- Excavation: Provincial OHS (similar to OSHA)
-  * Unprotected depth limit: 1.5m (vs 5 feet USA)
-- Drainage: NBCC 2025
-  * Foundation: 5% slope for 1.8m minimum
-  * Minimum site slope: 1-2%
-  * Maximum fill slope: 33% (3:1) - more conservative than USA
-- Compaction: CSA A23.1:24 + ASTM
-  * Similar to USA with frost protection considerations
-
-Apply the appropriate standards based on the user's selected region: {region}
-```
-
-- Return response without cost fields (keep design, fglPoints)
-
-**`supabase/functions/analyze-autocad-design/index.ts`**
-- Lines 221-245: Update `checkCompliance` section to use regional standards instead of Saudi MOT
-- Lines 297-338: Update AI prompt to reference USA/Canada instead of Saudi
-- Lines 375-386: Remove cost estimates calculation
-- Remove SAR currency references throughout
-
-**Updated Compliance Check Logic:**
+Remove the entire `saudiBuildingCode` section (lines 203-228):
 ```typescript
-if (options.checkCompliance && region) {
-  const slopes = calculateSlopes(designPoints);
-  
-  if (region === 'USA') {
-    // IBC 2024 Section 1804.4 checks
-    const steepFillSlopes = slopes.filter(s => s.percentage > 50);
-    if (steepFillSlopes.length > 0) {
-      problems.push({
-        severity: 'critical',
-        type: 'code_violation',
-        message: `${steepFillSlopes.length} locations exceed 50% (2:1) maximum fill slope per IBC 2024`,
-        impact: 'Non-compliant - consider retaining wall'
-      });
-    }
-  } else if (region === 'CANADA') {
-    // NBCC 2025 checks
-    const steepFillSlopes = slopes.filter(s => s.percentage > 33);
-    if (steepFillSlopes.length > 0) {
-      problems.push({
-        severity: 'critical',
-        type: 'code_violation',
-        message: `${steepFillSlopes.length} locations exceed 33% (3:1) maximum fill slope per NBCC 2025`,
-        impact: 'Non-compliant - consider retaining wall'
-      });
-    }
+// DELETE THIS ENTIRE SECTION:
+saudiBuildingCode: {
+  version: "SBC 304-2018",
+  requirements: {
+    concreteGradeMin: 25,
+    coverForExposure: "SBC Table 7.7.1",
+    seismicZones: { Riyadh, Jeddah, Dammam, Makkah, Madinah },
+    fireRating: {...}
+  },
+  loadRequirements: {
+    windSpeed: { Riyadh, Jeddah, coastal }
   }
 }
 ```
 
-### 4. Update Type Definitions
+Add new regional grading standards knowledge (USA EPA/OSHA/IBC, Canada CSA/CCME/NBCC) to match the gradingStandards.ts file.
 
-**`src/components/engineering/GradingResults.tsx`**
-- Make `costBreakdown` and `totalCost` optional in props:
+### 2. Frontend Library - AYN Personality
+
+**`src/lib/aynPersonality.ts`**
+
+Update line 86 - change default building code reference:
 ```typescript
-interface GradingResultsProps {
-  design: GradingDesign | null;
-  costBreakdown?: CostBreakdown | null;  // Now optional
-  totalCost?: number;                    // Now optional
-  fglPoints: Point[];
-  projectName: string;
+// BEFORE:
+- building code requirements (${engineeringContext?.buildingCode || 'SBC/IBC'})
+
+// AFTER:
+- building code requirements (${engineeringContext?.buildingCode || 'ACI 318-25/CSA A23.3-24'})
+```
+
+Update line 158 - remove 'sbc' from engineering keywords:
+```typescript
+// BEFORE:
+'engineering', 'civil', 'construction', 'building code', 'sbc', 'ibc'
+
+// AFTER:
+'engineering', 'civil', 'construction', 'building code', 'aci', 'csa', 'ibc'
+```
+
+### 3. Frontend Hook - Messages
+
+**`src/hooks/useMessages.ts`**
+
+Update line 346 - remove SBC default building code:
+```typescript
+// BEFORE:
+buildingCode: userProfile?.business_type ? 'SBC 304-2018' : undefined,
+
+// AFTER:
+buildingCode: userProfile?.business_type ? 'ACI 318-25' : undefined,
+```
+
+### 4. Frontend Component - Engineering Benchmark
+
+**`src/components/admin/test-results/EngineeringBenchmark.tsx`**
+
+Update line 44 - replace SBC_304 with CSA:
+```typescript
+// BEFORE:
+standardsCompliance: { ACI_318: boolean; EUROCODE_2: boolean; SBC_304: boolean };
+
+// AFTER:
+standardsCompliance: { ACI_318: boolean; CSA_A23_3: boolean; EUROCODE_2: boolean };
+```
+
+---
+
+## Edge Functions to Update
+
+### 5. Main AI Chat - ayn-unified
+
+**`supabase/functions/ayn-unified/index.ts`**
+
+Update line 343 - replace SBC reference with USA/Canada codes:
+```typescript
+// BEFORE:
+- building codes: ${context.buildingCode || 'SBC 304 (Saudi), ACI 318, IBC'}
+
+// AFTER:
+- building codes: ${context.buildingCode || 'ACI 318-25 (USA), CSA A23.3-24 (Canada)'}
+```
+
+Add regional grading standards knowledge to the engineering mode prompt:
+```
+GRADING STANDARDS (USA/Canada):
+
+USA Standards:
+- Storm Water: EPA 2022 CGP - permits required ≥1 acre
+- Excavation: OSHA 29 CFR 1926 Subpart P
+  * Stable rock: 90°, Type A: 53°, Type B: 45°, Type C: 34°
+- Drainage: IBC 2024 Section 1804.4
+  * Foundation: 5% slope for 10ft, Max fill: 50% (2:1)
+- Compaction: ASTM D698/D1557 - 95% Standard Proctor
+
+CANADA Standards:
+- Storm Water: Provincial permits ~0.4 hectares
+- Excavation: Provincial OHS - max unprotected 1.5m
+- Drainage: NBCC 2025
+  * Foundation: 5% slope for 1.8m, Max fill: 33% (3:1)
+- Compaction: CSA A23.1:24 with frost protection
+
+Apply standards based on user's selected region.
+```
+
+### 6. Engineering AI Agent
+
+**`supabase/functions/engineering-ai-agent/index.ts`**
+
+Update line 247 - replace SBC with CSA:
+```typescript
+// BEFORE:
+- reference codes (ACI 318, SBC 304, Eurocode 2) when relevant
+
+// AFTER:
+- reference codes (ACI 318-25, CSA A23.3-24, Eurocode 2) when relevant
+```
+
+### 7. Engineering AI Analysis - Remove SAR Cost Estimation
+
+**`supabase/functions/engineering-ai-analysis/index.ts`**
+
+Remove all cost estimation logic (lines 69-79 and 105-114) that uses SAR pricing. Remove the entire `costEstimate` array generation:
+
+```typescript
+// DELETE these sections:
+// Cost estimate (Saudi Riyal)
+const concretePrice = inputs.concreteGrade === 'C30' ? 310 : 280;
+const concreteCost = outputs.concreteVolume * concretePrice;
+const steelCost = outputs.steelWeight * 2.7; // ~2700 SAR/ton
+...
+```
+
+Update the return type to not include costEstimate, or return an empty array.
+
+### 8. Engineering AI Validator
+
+**`supabase/functions/engineering-ai-validator/index.ts`**
+
+Update lines 61-63 and 1064-1067 and 1102-1105 - replace SBC_304 with CSA_A23_3:
+```typescript
+// BEFORE:
+standardsCompliance: {
+  ACI_318: boolean;
+  EUROCODE_2: boolean;
+  SBC_304: boolean;
+};
+
+// AFTER:
+standardsCompliance: {
+  ACI_318: boolean;
+  CSA_A23_3: boolean;
+  EUROCODE_2: boolean;
+};
+```
+
+### 9. AI UX Tester
+
+**`supabase/functions/ai-ux-tester/index.ts`**
+
+Update lines 94-103 - change Saudi persona to Canadian:
+```typescript
+// BEFORE:
+{
+  id: 'arabic_engineer',
+  name: 'مهندس سعودي',
+  description: 'Saudi engineer preferring Arabic interface',
+  ...
+}
+
+// AFTER:
+{
+  id: 'canadian_engineer',
+  name: 'Canadian Engineer',
+  description: 'Canadian engineer using CSA standards',
+  language: 'en',
+  expertise: 'intermediate',
+  patience: 'medium',
+  deviceType: 'desktop',
+  typingSpeed: 45,
+  readingSpeed: 280,
 }
 ```
 
 ---
 
-## Visual Changes
+## Changes Summary Table
 
-### Before (Analysis Options)
-```
-✓ Calculate Cut/Fill Volumes
-✓ Find Design Problems  
-✓ Suggest Cost Optimizations
-✓ Check Drainage Adequacy
-✓ Verify Saudi Code Compliance  ← REMOVE
-```
-
-### After (Analysis Options)
-```
-✓ Calculate Cut/Fill Volumes
-✓ Find Design Problems  
-✓ Suggest Optimizations          ← Rename (remove "Cost")
-✓ Check Drainage Adequacy
-✓ Verify Regional Code Compliance ← NEW (USA/Canada based on region)
-```
-
-### Cost Section - REMOVED
-The "Cost Estimate (USD)" card in results will be completely removed since the prices are not accurate.
+| File | Change Type | Description |
+|------|-------------|-------------|
+| `src/lib/engineeringKnowledge.ts` | Delete section | Remove entire `saudiBuildingCode` object |
+| `src/lib/aynPersonality.ts` | Update text | Replace SBC with ACI/CSA references |
+| `src/hooks/useMessages.ts` | Update default | Change default building code from SBC to ACI |
+| `src/components/admin/.../EngineeringBenchmark.tsx` | Update type | Replace SBC_304 with CSA_A23_3 |
+| `supabase/functions/ayn-unified/index.ts` | Update prompt | Add USA/Canada grading standards, remove SBC |
+| `supabase/functions/engineering-ai-agent/index.ts` | Update prompt | Replace SBC with CSA references |
+| `supabase/functions/engineering-ai-analysis/index.ts` | Remove logic | Delete SAR cost estimation entirely |
+| `supabase/functions/engineering-ai-validator/index.ts` | Update type | Replace SBC_304 with CSA_A23_3 |
+| `supabase/functions/ai-ux-tester/index.ts` | Update persona | Change Saudi persona to Canadian |
 
 ---
 
-## AI Knowledge Enhancement
+## AI Knowledge Updates
 
-The edge functions will be updated with comprehensive knowledge of:
+All engineering AI systems will be updated to include:
 
-| Standard | USA | Canada |
-|----------|-----|--------|
-| Permit Trigger | ≥1 acre (EPA CGP) | ≥0.4 ha (Provincial) |
-| Max Fill Slope | 50% (2:1) | 33% (3:1) |
-| Foundation Drainage | 5% for 10 ft | 5% for 1.8m |
-| Excavation Protection | >5 ft | >1.5m |
-| Compaction Standard | ASTM D698/D1557 | CSA A23.1:24 |
-
-This knowledge will be embedded in the AI prompts so the AI can:
-1. Apply correct slope limits based on region
-2. Reference correct code sections in recommendations
-3. Flag violations according to regional standards
-4. Provide region-specific drainage recommendations
+1. **Structural Codes**: ACI 318-25 (USA) and CSA A23.3-24 (Canada) only
+2. **Load Codes**: ASCE 7-22 (USA) and NBCC 2020/2025 (Canada)
+3. **Grading Standards**:
+   - USA: EPA 2022 CGP, OSHA 29 CFR 1926, IBC 2024, ASTM D698/D1557
+   - Canada: Provincial OHS, NBCC 2025, CSA A23.1:24
+4. **Slope Limits**:
+   - USA: Max fill 50% (2:1), Foundation 5% for 10ft
+   - Canada: Max fill 33% (3:1), Foundation 5% for 1.8m
 
 ---
 
-## Files Summary
+## Deployment Notes
 
-| File | Changes |
-|------|---------|
-| `src/components/engineering/DesignReviewMode.tsx` | Update compliance label from Saudi to Regional |
-| `src/components/engineering/GradingResults.tsx` | Remove cost breakdown section |
-| `src/components/engineering/GradingPDFReport.tsx` | Remove cost section from PDF |
-| `src/components/engineering/GradingDesignerPanel.tsx` | Remove cost state and props |
-| `supabase/functions/generate-grading-design/index.ts` | Remove cost calc, add regional standards to AI prompt |
-| `supabase/functions/analyze-autocad-design/index.ts` | Replace Saudi with USA/Canada compliance, remove costs |
-
----
-
-## Implementation Notes
-
-1. **Edge function changes require redeployment** - Functions will be deployed automatically
-2. **No database changes** - All changes are frontend and edge function only
-3. **Existing data unaffected** - Old designs will still display (cost fields just won't show)
-4. **Region parameter** - Already being passed from frontend to edge functions
+- 6 edge functions require redeployment after changes
+- No database schema changes required
+- Frontend changes will take effect immediately after build
+- Existing calculations remain unaffected (SBC compliance field will be unused)
 
 ---
 
@@ -202,11 +244,14 @@ This knowledge will be embedded in the AI prompts so the AI can:
 
 | Task | Time |
 |------|------|
-| Update DesignReviewMode | 15 min |
-| Remove cost from GradingResults | 20 min |
-| Remove cost from GradingPDFReport | 20 min |
-| Update GradingDesignerPanel | 15 min |
-| Update generate-grading-design function | 45 min |
-| Update analyze-autocad-design function | 45 min |
+| Update engineeringKnowledge.ts | 15 min |
+| Update aynPersonality.ts | 10 min |
+| Update useMessages.ts | 5 min |
+| Update EngineeringBenchmark.tsx | 10 min |
+| Update ayn-unified edge function | 30 min |
+| Update engineering-ai-agent | 10 min |
+| Update engineering-ai-analysis | 20 min |
+| Update engineering-ai-validator | 15 min |
+| Update ai-ux-tester | 10 min |
 | Testing | 30 min |
-| **Total** | **~3 hours** |
+| **Total** | **~2.5 hours** |
