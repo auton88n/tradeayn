@@ -36,7 +36,6 @@ interface TerrainAnalysis {
 
 // Using component-compatible types
 type GradingDesign = Parameters<typeof GradingResults>[0]['design'];
-type CostBreakdown = Parameters<typeof GradingResults>[0]['costBreakdown'];
 type AnalysisResult = Parameters<typeof DesignAnalysisResults>[0]['result'];
 type Optimization = Parameters<typeof DesignAnalysisResults>[0]['onApplyOptimizations'] extends (optimizations: infer T) => void ? T extends Array<infer O> ? O : never : never;
 
@@ -54,8 +53,6 @@ const GradingDesignerPanel: React.FC<GradingDesignerPanelProps> = ({ onInputChan
   const [requirements, setRequirements] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [design, setDesign] = useState<GradingDesign>(null);
-  const [costBreakdown, setCostBreakdown] = useState<CostBreakdown>(null);
-  const [totalCost, setTotalCost] = useState(0);
   const [fglPoints, setFglPoints] = useState<SurveyPoint[]>([]);
   const [gradingRegion, setGradingRegion] = useState<GradingRegion>('USA');
 
@@ -99,8 +96,6 @@ const GradingDesignerPanel: React.FC<GradingDesignerPanelProps> = ({ onInputChan
       if (!data.success) throw new Error(data.error);
 
       setDesign(data.design);
-      setCostBreakdown(data.costBreakdown);
-      setTotalCost(data.totalCost);
       setFglPoints(data.fglPoints);
 
       // Update inputs to trigger preview update
@@ -220,8 +215,6 @@ const GradingDesignerPanel: React.FC<GradingDesignerPanelProps> = ({ onInputChan
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="space-y-4">
               <GradingResults 
                 design={design} 
-                costBreakdown={costBreakdown} 
-                totalCost={totalCost} 
                 fglPoints={fglPoints} 
                 projectName={projectName} 
               />

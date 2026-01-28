@@ -28,21 +28,65 @@ interface TerrainAnalysis {
   maxY: number;
 }
 
-interface EarthworkPrices {
-  excavation: number;
-  fill: number;
-  compaction: number;
-  disposal: number;
-  surveyingPerHectare: number;
-}
+// Regional grading standards for AI knowledge
+const REGIONAL_STANDARDS = {
+  USA: `
+USA GRADING STANDARDS (verified January 2026):
 
-// Default earthwork prices (USD/m³) - can be overridden by user
-const DEFAULT_EARTHWORK_PRICES: EarthworkPrices = {
-  excavation: 45,           // USD/m³
-  fill: 55,                 // USD/m³ (imported material)
-  compaction: 12,           // USD/m³
-  disposal: 25,             // USD/m³ (off-site)
-  surveyingPerHectare: 800, // USD per hectare
+STORM WATER MANAGEMENT:
+- EPA 2022 CGP (Construction General Permit)
+- Permit required for sites ≥1 acre (0.4 hectares) of disturbed land
+- SWPPP (Stormwater Pollution Prevention Plan) required
+- Reference: 40 CFR 122.26
+
+EXCAVATION SAFETY (OSHA 29 CFR 1926 Subpart P):
+- Maximum allowable slopes by soil type:
+  * Stable rock: 90° (vertical)
+  * Type A soil: 53° (3/4H:1V ratio)
+  * Type B soil: 45° (1H:1V ratio)
+  * Type C soil: 34° (1.5H:1V ratio)
+- Excavations >5 feet deep require protective systems
+
+DRAINAGE REQUIREMENTS (IBC 2024 Section 1804.4):
+- Foundation drainage: Minimum 5% slope for 10 feet from building
+- Impervious surfaces: Minimum 2% slope for 10 feet
+- Maximum fill slope: 50% (2:1 ratio)
+- Swales: Minimum 1% longitudinal slope
+
+COMPACTION STANDARDS (ASTM D698/D1557):
+- Structural fill: 95% Standard Proctor (ASTM D698)
+- Under pavements: 95-98% Modified Proctor (ASTM D1557)
+- Utility trenches: 90-95% Standard Proctor
+- Subgrade: 95% Standard Proctor minimum
+`,
+  CANADA: `
+CANADA GRADING STANDARDS (verified January 2026):
+
+STORM WATER MANAGEMENT:
+- Provincial/Municipal permits required (~0.4 hectares typical threshold)
+- Environmental Compliance Approval (ECA) in Ontario
+- CCME Guidelines for stormwater management
+- Reference: Provincial environmental regulations
+
+EXCAVATION SAFETY (Provincial OHS):
+- Similar to OSHA requirements
+- Maximum unprotected depth: 1.5 meters (vs 5 feet in USA)
+- Protective systems required beyond 1.5m depth
+- Reference: Provincial Occupational Health and Safety Acts
+
+DRAINAGE REQUIREMENTS (NBCC 2025):
+- Foundation drainage: Minimum 5% slope for 1.8 meters from building
+- Minimum site slope: 1-2% for surface drainage
+- Maximum fill slope: 33% (3:1 ratio) - MORE CONSERVATIVE than USA
+- Frost protection depth varies by region (1.2m to 2.4m)
+
+COMPACTION STANDARDS (CSA A23.1:24):
+- Structural fill: 95% Standard Proctor
+- Under pavements: 95-98% Modified Proctor
+- Utility trenches: 90-95% Standard Proctor
+- Additional frost protection considerations required
+- Reference: CSA A23.1:24 (14th edition, June 2024)
+`
 };
 
 serve(async (req) => {
@@ -58,25 +102,20 @@ serve(async (req) => {
     const { 
       points, 
       terrainAnalysis, 
-      requirements, 
-      earthworkPrices, 
-      currency = 'USD' 
+      requirements,
+      region = 'USA'
     } = await req.json();
     
     if (!points || points.length === 0) {
       throw new Error('No survey points provided');
     }
 
-    // Use user-provided prices or defaults
-    const EARTHWORK_PRICES: EarthworkPrices = {
-      ...DEFAULT_EARTHWORK_PRICES,
-      ...(earthworkPrices || {})
-    };
-
-    console.log(`Generating grading design for ${points.length} points`);
+    console.log(`Generating grading design for ${points.length} points, region: ${region}`);
     console.log('Requirements:', requirements);
     console.log('Terrain analysis:', terrainAnalysis);
-    console.log('Currency:', currency);
+
+    // Get regional standards for AI context
+    const regionalStandards = REGIONAL_STANDARDS[region as keyof typeof REGIONAL_STANDARDS] || REGIONAL_STANDARDS.USA;
 
     // Create a summary of the terrain for the AI
     const terrainSummary = `
@@ -94,7 +133,10 @@ Site Terrain Summary:
       ? points.filter((_: SurveyPoint, i: number) => i % Math.ceil(points.length / 50) === 0)
       : points;
 
-    const prompt = `You are a civil engineering grading design expert. Analyze this site survey and generate an optimal grading design.
+    const prompt = `You are a civil engineering grading design expert with deep knowledge of regional building codes and standards.
+
+APPLICABLE REGIONAL STANDARDS (${region}):
+${regionalStandards}
 
 ${terrainSummary}
 
@@ -104,11 +146,12 @@ ${samplePoints.map((p: SurveyPoint) => `Point ${p.id}: (${p.x}, ${p.y}) Elev: ${
 User Requirements:
 ${requirements || 'Standard site grading for construction with proper drainage'}
 
-CRITICAL DESIGN CONSTRAINT:
-The design elevation MUST be very close to the average terrain elevation (${terrainAnalysis.avgElevation}m).
-Balance cut and fill volumes to minimize import/export of material.
-Target net earthwork as close to ZERO as possible.
-The design elevation should typically be within ±0.3m of ${terrainAnalysis.avgElevation}m unless user requirements explicitly demand a specific elevation.
+CRITICAL DESIGN CONSTRAINTS:
+1. The design elevation MUST be very close to the average terrain elevation (${terrainAnalysis.avgElevation}m) to balance cut and fill volumes.
+2. Target net earthwork as close to ZERO as possible to minimize import/export of material.
+3. The design elevation should typically be within ±0.3m of ${terrainAnalysis.avgElevation}m unless user requirements explicitly demand a specific elevation.
+4. APPLY THE ${region} STANDARDS listed above for all slope limits, drainage requirements, and compaction specifications.
+5. Flag any potential code violations based on the regional standards.
 
 Generate a grading design with the following JSON structure:
 {
@@ -128,17 +171,21 @@ Generate a grading design with the following JSON structure:
   "totalCutVolume": <total cut in m³>,
   "totalFillVolume": <total fill in m³>,
   "netVolume": <MUST be close to zero - positive = excess cut, negative = fill needed>,
-  "designNotes": ["<important design consideration 1>", "<design note 2>"],
-  "drainageRecommendations": "<drainage design recommendation>",
-  "compactionRequirements": "<compaction specifications>"
+  "designNotes": [
+    "<include specific ${region} code references in your notes>",
+    "<flag any potential compliance issues with regional standards>",
+    "<design consideration>"
+  ],
+  "drainageRecommendations": "<region-specific drainage design recommendation with code reference>",
+  "compactionRequirements": "<region-specific compaction specifications with standard reference>"
 }
 
 IMPORTANT REQUIREMENTS:
 1. BALANCE CUT AND FILL - The design elevation must minimize net earthwork. Total cut should approximately equal total fill.
-2. Ensure proper drainage (min 1% slope away from structures)
+2. Ensure proper drainage per ${region} standards (${region === 'USA' ? 'min 5% slope for 10 ft from foundation per IBC 2024' : 'min 5% slope for 1.8m from foundation per NBCC 2025'})
 3. Account for compaction factor (typically 10-15% for fill)
-4. Provide adequate slopes for storm water management
-5. Follow standard civil engineering grading practices
+4. Maximum fill slope: ${region === 'USA' ? '50% (2:1) per IBC 2024' : '33% (3:1) per NBCC 2025'}
+5. Follow ${region} civil engineering grading practices and CITE SPECIFIC CODE SECTIONS in your recommendations
 
 Return ONLY valid JSON, no additional text.`;
 
@@ -153,7 +200,7 @@ Return ONLY valid JSON, no additional text.`;
         messages: [
           { 
             role: 'system', 
-            content: 'You are a professional civil engineer specializing in site grading and earthwork design. Always respond with valid JSON only.'
+            content: `You are a professional civil engineer specializing in site grading and earthwork design with expertise in ${region} building codes and standards. Always respond with valid JSON only. Always cite specific code sections (e.g., "IBC 2024 Section 1804.4" or "NBCC 2025 Section 9.14") when making recommendations.`
           },
           { role: 'user', content: prompt }
         ],
@@ -188,21 +235,6 @@ Return ONLY valid JSON, no additional text.`;
       throw new Error('Failed to parse grading design from AI');
     }
 
-    // Calculate costs
-    const cutVolume = designResult.totalCutVolume || 0;
-    const fillVolume = designResult.totalFillVolume || 0;
-    const netVolume = designResult.netVolume || (cutVolume - fillVolume);
-    
-    const costBreakdown = {
-      excavation: cutVolume * EARTHWORK_PRICES.excavation,
-      fill: fillVolume * EARTHWORK_PRICES.fill,
-      compaction: fillVolume * EARTHWORK_PRICES.compaction,
-      disposal: netVolume > 0 ? netVolume * EARTHWORK_PRICES.disposal : 0,
-      surveying: (terrainAnalysis.estimatedArea / 10000) * EARTHWORK_PRICES.surveyingPerHectare,
-    };
-
-    const totalCost = Object.values(costBreakdown).reduce((a, b) => a + b, 0);
-
     // Generate FGL points based on design
     const fglPoints = points.map((p: SurveyPoint) => {
       // Calculate FGL based on design elevation and slope
@@ -234,10 +266,7 @@ Return ONLY valid JSON, no additional text.`;
       success: true,
       design: designResult,
       fglPoints,
-      costBreakdown,
-      totalCost: Math.round(totalCost),
-      prices: EARTHWORK_PRICES,
-      currency,
+      region,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

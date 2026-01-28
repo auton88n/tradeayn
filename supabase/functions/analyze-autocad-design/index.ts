@@ -30,9 +30,42 @@ interface Problem {
   location?: string;
 }
 
+// Regional grading standards for compliance checking
+const REGIONAL_STANDARDS = {
+  USA: {
+    name: 'USA',
+    maxRoadGrade: 8, // IBC/AASHTO
+    maxFillSlope: 50, // 2:1 ratio = 50%
+    minDrainageSlope: 1,
+    minFoundationSlope: 5,
+    maxUnprotectedExcavation: 5, // feet
+    codeReferences: {
+      roadGrade: 'IBC 2024 / AASHTO',
+      fillSlope: 'IBC 2024 Section 1804.4',
+      drainage: 'IBC 2024 Section 1804.4',
+      excavation: 'OSHA 29 CFR 1926 Subpart P',
+      compaction: 'ASTM D698/D1557',
+    }
+  },
+  CANADA: {
+    name: 'Canada',
+    maxRoadGrade: 8, // Similar to USA
+    maxFillSlope: 33, // 3:1 ratio = 33% (more conservative)
+    minDrainageSlope: 1,
+    minFoundationSlope: 5,
+    maxUnprotectedExcavation: 1.5, // meters
+    codeReferences: {
+      roadGrade: 'NBCC 2025 / TAC Guidelines',
+      fillSlope: 'NBCC 2025 Section 9.14',
+      drainage: 'NBCC 2025 Section 9.14',
+      excavation: 'Provincial OHS Regulations',
+      compaction: 'CSA A23.1:24',
+    }
+  }
+};
+
 // Calculate cell area using simple grid estimation
 function estimateCellArea(point: Point, allPoints: Point[]): number {
-  // Find nearest neighbors and estimate cell area
   const distances = allPoints
     .filter(p => p.id !== point.id)
     .map(p => ({
@@ -41,9 +74,8 @@ function estimateCellArea(point: Point, allPoints: Point[]): number {
     }))
     .sort((a, b) => a.dist - b.dist);
   
-  if (distances.length < 2) return 100; // Default 10m x 10m cell
+  if (distances.length < 2) return 100;
   
-  // Use average of two nearest neighbor distances as cell size
   const avgDist = (distances[0].dist + distances[1].dist) / 2;
   return avgDist * avgDist;
 }
@@ -85,7 +117,7 @@ function calculateVolumes(nglPoints: Point[], designPoints: Point[]): {
     const designPt = findNearestPoint(nglPt, designPoints);
     if (!designPt) return;
     
-    const diff = nglPt.z - designPt.z; // Positive = cut, Negative = fill
+    const diff = nglPt.z - designPt.z;
     const cellArea = estimateCellArea(nglPt, nglPoints);
     const volume = Math.abs(diff) * cellArea;
     
@@ -121,7 +153,6 @@ function calculateSlopes(points: Point[]): Array<{
 }> {
   const slopes: Array<{ from: Point; to: Point; percentage: number; direction: string; station: string }> = [];
   
-  // Sort points by X coordinate to find sequential pairs
   const sortedPoints = [...points].sort((a, b) => a.x - b.x);
   
   for (let i = 0; i < sortedPoints.length - 1; i++) {
@@ -146,14 +177,16 @@ function calculateSlopes(points: Point[]): Array<{
   return slopes;
 }
 
-// Analyze design for problems
+// Analyze design for problems with regional standards
 function analyzeDesign(
   nglPoints: Point[], 
   designPoints: Point[], 
   volumes: { cutVolume: number; fillVolume: number; netVolume: number; balanceRatio: number },
-  options: AnalysisOptions
+  options: AnalysisOptions,
+  region: string = 'USA'
 ): Problem[] {
   const problems: Problem[] = [];
+  const standards = REGIONAL_STANDARDS[region as keyof typeof REGIONAL_STANDARDS] || REGIONAL_STANDARDS.USA;
   
   if (options.findProblems) {
     // Check earthwork balance
@@ -166,7 +199,7 @@ function analyzeDesign(
         severity: 'critical',
         type: 'unbalanced_earthwork',
         message: `Poor cut/fill balance (${(volumes.balanceRatio * 100).toFixed(0)}%). ${excess}`,
-        impact: `Cost impact: ${Math.abs(volumes.netVolume) * 50} SAR for material transport`
+        impact: 'Significant material import/export costs'
       });
     } else if (volumes.balanceRatio < 0.85) {
       problems.push({
@@ -179,10 +212,9 @@ function analyzeDesign(
   }
   
   if (options.checkDrainage) {
-    // Check slopes
     const slopes = calculateSlopes(designPoints.length > 0 ? designPoints : nglPoints);
     
-    // Find steep slopes
+    // Find steep slopes exceeding regional limits
     const steepSlopes = slopes.filter(s => s.percentage > 6);
     steepSlopes.forEach(slope => {
       problems.push({
@@ -206,39 +238,49 @@ function analyzeDesign(
       });
     });
     
-    // Check for minimum drainage slope (1%)
-    const insufficientDrainage = slopes.filter(s => s.percentage > 0 && s.percentage < 1);
+    // Check for minimum drainage slope
+    const insufficientDrainage = slopes.filter(s => s.percentage > 0 && s.percentage < standards.minDrainageSlope);
     if (insufficientDrainage.length > slopes.length * 0.3) {
       problems.push({
         severity: 'warning',
         type: 'drainage_concern',
-        message: 'Multiple areas have slopes below 1% minimum for drainage',
+        message: `Multiple areas have slopes below ${standards.minDrainageSlope}% minimum for drainage per ${standards.codeReferences.drainage}`,
         impact: 'May cause ponding and drainage issues'
       });
     }
   }
   
   if (options.checkCompliance) {
-    // Saudi code compliance checks
     const slopes = calculateSlopes(designPoints.length > 0 ? designPoints : nglPoints);
     
-    // Road grade limits (MOT standards)
-    const excessiveGrades = slopes.filter(s => s.percentage > 8);
+    // Road grade limits per regional standards
+    const excessiveGrades = slopes.filter(s => s.percentage > standards.maxRoadGrade);
     if (excessiveGrades.length > 0) {
       problems.push({
         severity: 'critical',
         type: 'code_violation',
-        message: `${excessiveGrades.length} locations exceed 8% maximum road grade (Saudi MOT standard)`,
-        impact: 'Non-compliant with Saudi transportation standards'
+        message: `${excessiveGrades.length} locations exceed ${standards.maxRoadGrade}% maximum road grade per ${standards.codeReferences.roadGrade}`,
+        impact: `Non-compliant with ${standards.name} transportation standards`
       });
     }
     
-    // Check for adequate compaction zones
+    // Fill slope limits - REGIONAL DIFFERENCE (USA: 50%, Canada: 33%)
+    const steepFillSlopes = slopes.filter(s => s.percentage > standards.maxFillSlope);
+    if (steepFillSlopes.length > 0) {
+      problems.push({
+        severity: 'critical',
+        type: 'code_violation',
+        message: `${steepFillSlopes.length} locations exceed ${standards.maxFillSlope}% (${standards.maxFillSlope === 50 ? '2:1' : '3:1'}) maximum fill slope per ${standards.codeReferences.fillSlope}`,
+        impact: 'Non-compliant - consider retaining wall or re-grading'
+      });
+    }
+    
+    // Compaction requirements for large fill volumes
     if (volumes.fillVolume > 500) {
       problems.push({
         severity: 'info',
         type: 'compaction_note',
-        message: `Large fill volume (${volumes.fillVolume.toFixed(0)} m³) requires 95% Proctor compaction`,
+        message: `Large fill volume (${volumes.fillVolume.toFixed(0)} m³) requires 95% Proctor compaction per ${standards.codeReferences.compaction}`,
         impact: 'Ensure proper compaction testing is specified'
       });
     }
@@ -256,10 +298,13 @@ serve(async (req) => {
     const { 
       parsedData, 
       analysisOptions, 
-      userRequirements 
+      userRequirements,
+      region = 'USA'
     } = await req.json();
     
-    console.log('Analyzing design with options:', analysisOptions);
+    console.log('Analyzing design with options:', analysisOptions, 'region:', region);
+    
+    const standards = REGIONAL_STANDARDS[region as keyof typeof REGIONAL_STANDARDS] || REGIONAL_STANDARDS.USA;
     
     const nglPoints: Point[] = parsedData.nglPoints || [];
     const designPoints: Point[] = parsedData.designPoints || [];
@@ -275,8 +320,8 @@ serve(async (req) => {
       console.log(`Calculated volumes - Cut: ${volumes.cutVolume.toFixed(1)}, Fill: ${volumes.fillVolume.toFixed(1)}`);
     }
     
-    // Analyze design for problems
-    const problems = analyzeDesign(nglPoints, designPoints, volumes, analysisOptions);
+    // Analyze design for problems using regional standards
+    const problems = analyzeDesign(nglPoints, designPoints, volumes, analysisOptions, region);
     console.log(`Found ${problems.length} problems`);
     
     // Prepare AI optimization request
@@ -294,7 +339,14 @@ serve(async (req) => {
           ? designPoints.reduce((sum, p) => sum + p.z, 0) / designPoints.length 
           : avgNGL;
         
-        const aiPrompt = `You are a senior civil engineer reviewing a grading design for a Saudi Arabian project.
+        const aiPrompt = `You are a senior civil engineer reviewing a grading design for a ${standards.name} project. Apply ${standards.name} building codes and standards in your analysis.
+
+APPLICABLE REGIONAL STANDARDS:
+- Road Grade Limit: ${standards.maxRoadGrade}% per ${standards.codeReferences.roadGrade}
+- Maximum Fill Slope: ${standards.maxFillSlope}% per ${standards.codeReferences.fillSlope}
+- Minimum Drainage Slope: ${standards.minDrainageSlope}% per ${standards.codeReferences.drainage}
+- Excavation Safety: ${standards.codeReferences.excavation}
+- Compaction: ${standards.codeReferences.compaction}
 
 DESIGN DATA:
 - Total NGL (existing ground) points: ${nglPoints.length}
@@ -312,29 +364,27 @@ ${problems.length > 0 ? problems.map(p => `- [${p.severity.toUpperCase()}] ${p.m
 USER REQUIREMENTS:
 "${userRequirements || 'Standard site grading optimization'}"
 
-Analyze this design and provide optimization suggestions.
+Analyze this design and provide optimization suggestions. CITE SPECIFIC ${standards.name} CODE SECTIONS in your recommendations.
 
 Return ONLY valid JSON (no markdown) with this structure:
 {
   "designRating": <1-10 rating>,
-  "ratingExplanation": "<brief explanation of rating>",
+  "ratingExplanation": "<brief explanation of rating with code compliance assessment>",
   "optimizations": [
     {
       "title": "<short title>",
-      "action": "<specific action to take, e.g., 'Raise design elevations by 0.25m from station 50 to 100'>",
+      "action": "<specific action to take with code reference, e.g., 'Reduce slopes to comply with ${standards.codeReferences.fillSlope}'>",
       "expectedResult": {
         "newCutVolume": <estimated new cut volume>,
         "newFillVolume": <estimated new fill volume>,
         "newBalance": <new balance percentage>
       },
-      "costSavings": <estimated SAR savings>,
-      "savingsExplanation": "<why this saves money>",
-      "implementationNotes": ["<note 1>", "<note 2>"]
+      "implementationNotes": ["<note 1 with code reference>", "<note 2>"]
     }
   ],
-  "totalPotentialSavings": <total SAR>,
   "implementationTime": "<estimated time to implement changes>",
-  "priorityActions": ["<action 1>", "<action 2>"]
+  "priorityActions": ["<action 1 with code reference>", "<action 2>"],
+  "complianceNotes": "<summary of ${standards.name} code compliance status>"
 }`;
 
         try {
@@ -357,7 +407,6 @@ Return ONLY valid JSON (no markdown) with this structure:
             const content = data.choices[0]?.message?.content;
             
             if (content) {
-              // Clean markdown if present
               const cleanedContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
               aiOptimizations = JSON.parse(cleanedContent);
               designRating = aiOptimizations.designRating || 5;
@@ -370,20 +419,6 @@ Return ONLY valid JSON (no markdown) with this structure:
         }
       }
     }
-    
-    // Calculate cost estimates
-    const costEstimates = {
-      currentCosts: {
-        excavation: volumes.cutVolume * 25,
-        fill: volumes.fillVolume * 35,
-        compaction: volumes.fillVolume * 8,
-        disposal: volumes.netVolume > 0 ? volumes.netVolume * 15 : 0,
-        import: volumes.netVolume < 0 ? Math.abs(volumes.netVolume) * 75 : 0,
-      },
-      totalCurrentCost: 0,
-    };
-    
-    costEstimates.totalCurrentCost = Object.values(costEstimates.currentCosts).reduce((a, b) => a + b, 0);
     
     return new Response(JSON.stringify({
       success: true,
@@ -402,8 +437,9 @@ Return ONLY valid JSON (no markdown) with this structure:
           info: problems.filter(p => p.severity === 'info').length,
         },
         designRating,
-        costEstimates,
         aiOptimizations,
+        region,
+        appliedStandards: standards.codeReferences,
         pointCount: {
           ngl: nglPoints.length,
           design: designPoints.length,
