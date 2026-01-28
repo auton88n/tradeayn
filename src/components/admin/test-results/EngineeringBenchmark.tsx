@@ -41,7 +41,7 @@ interface ValidationResult {
   calculator: string;
   overallAccuracy: number;
   grade: string;
-  standardsCompliance: { ACI_318: boolean; EUROCODE_2: boolean; SBC_304: boolean };
+  standardsCompliance: { ACI_318: boolean; CSA_A23_3: boolean; EUROCODE_2: boolean };
   checks: ValidationCheck[];
   testResults: TestCaseResult[];
   issues: string[];

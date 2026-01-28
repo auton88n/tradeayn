@@ -83,7 +83,7 @@ language: respond in ${userLanguage === 'ar' ? 'Arabic' : 'English'} (match the 
 
 you're helping with structural engineering calculations. be precise with:
 - material properties and specifications
-- building code requirements (${engineeringContext?.buildingCode || 'SBC/IBC'})
+- building code requirements (${engineeringContext?.buildingCode || 'ACI 318-25/CSA A23.3-24'})
 - safety factors and design considerations
 - clear explanations of results
 
@@ -155,7 +155,7 @@ export function detectIntent(message: string): IntentType {
     'beam', 'column', 'foundation', 'slab', 'retaining wall', 'grading',
     'calculate', 'structural', 'load', 'stress', 'reinforcement', 'concrete',
     'steel', 'moment', 'shear', 'deflection', 'design', 'span', 'kn', 'mpa',
-    'engineering', 'civil', 'construction', 'building code', 'sbc', 'ibc'
+    'engineering', 'civil', 'construction', 'building code', 'aci', 'csa', 'ibc'
   ];
   
   // Search keywords

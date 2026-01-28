@@ -59,8 +59,8 @@ interface ValidationResult {
   overallAccuracy: number;
   standardsCompliance: {
     ACI_318: boolean;
+    CSA_A23_3: boolean;
     EUROCODE_2: boolean;
-    SBC_304: boolean;
   };
   checks: ValidationCheck[];
   testResults: TestCaseResult[];
@@ -1062,8 +1062,8 @@ async function validateCalculator(calculatorType: string): Promise<ValidationRes
     overallAccuracy: Math.round(overallAccuracy * 10) / 10,
     standardsCompliance: {
       ACI_318: criticalIssues.filter(c => c.standard.includes('ACI')).length === 0,
-      EUROCODE_2: true,
-      SBC_304: true
+      CSA_A23_3: true,
+      EUROCODE_2: true
     },
     checks: allChecks,
     testResults,
@@ -1100,8 +1100,8 @@ serve(async (req) => {
       criticalIssues: results.flatMap(r => r.checks).filter(c => !c.passed && c.severity === 'critical').length,
       standardsCompliance: {
         ACI_318: results.every(r => r.standardsCompliance.ACI_318),
-        EUROCODE_2: results.every(r => r.standardsCompliance.EUROCODE_2),
-        SBC_304: results.every(r => r.standardsCompliance.SBC_304)
+        CSA_A23_3: results.every(r => r.standardsCompliance.CSA_A23_3),
+        EUROCODE_2: results.every(r => r.standardsCompliance.EUROCODE_2)
       },
       overallGrade: avgAccuracy >= 95 ? 'A' : avgAccuracy >= 85 ? 'B' : avgAccuracy >= 75 ? 'C' : 'D',
       topSuggestions: allSuggestions.slice(0, 5)
