@@ -69,24 +69,25 @@ export const TranscriptMessage = ({
             {content}
           </p>
         </div>
-      </div>
 
-      {/* Copy button */}
-      <button
-        onClick={handleCopy}
-        className={cn(
-          "p-1.5 rounded-md shrink-0 self-end mb-2",
-          "opacity-0 group-hover:opacity-100",
-          "hover:bg-muted transition-all"
-        )}
-        title="Copy"
-      >
-        {copied ? (
-          <Check className="w-3.5 h-3.5 text-green-500" />
-        ) : (
-          <Copy className="w-3.5 h-3.5 text-muted-foreground" />
-        )}
-      </button>
+        {/* Copy button - underneath the bubble */}
+        <button
+          onClick={handleCopy}
+          className={cn(
+            "flex items-center gap-1 mt-1 p-1 rounded-md",
+            "opacity-0 group-hover:opacity-100",
+            "hover:bg-muted/50 transition-all",
+            isUser ? "ml-auto" : "mr-auto"
+          )}
+          title="Copy"
+        >
+          {copied ? (
+            <Check className="w-3.5 h-3.5 text-green-500" />
+          ) : (
+            <Copy className="w-3.5 h-3.5 text-muted-foreground" />
+          )}
+        </button>
+      </div>
     </div>
   );
 };
