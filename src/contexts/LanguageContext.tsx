@@ -1962,12 +1962,18 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
   }, []);
 
   useEffect(() => {
-    // Only set the language attribute for accessibility/SEO
+    // Update document direction and language for public pages (Landing, Services, Pricing)
+    // Dashboard overrides this with its own dir="ltr" container
     document.documentElement.lang = language;
-    // Do NOT set dir="rtl" on document - RTL is handled per-component
-    // MessageFormatter and StreamingMarkdown detect Arabic content
-    // and apply RTL styling only to their content areas
-  }, [language]);
+    document.documentElement.dir = direction;
+    
+    // Add/remove RTL class for global styling hooks
+    if (language === 'ar') {
+      document.documentElement.classList.add('rtl');
+    } else {
+      document.documentElement.classList.remove('rtl');
+    }
+  }, [language, direction]);
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
