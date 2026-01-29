@@ -499,9 +499,9 @@ export const Sidebar = ({
           </div>}
 
         {/* Scrollable Chat List - min-height prevents layout shift */}
-        <div className="flex-1 overflow-hidden min-h-[200px]">
+        <div className="flex-1 min-h-0 overflow-hidden">
           <ScrollArea className="h-full">
-            <div className="py-1 px-1 pr-2 min-h-[180px]">
+            <div className="py-1 px-3">
               <SidebarMenu className="space-y-0.5">
               {isLoadingChats ? (
                 // Skeleton UI - 5 placeholder items
@@ -546,7 +546,7 @@ return <SidebarMenuItem key={chat.sessionId} className={cn("relative", index > 0
                                   <div className="w-6 h-6 rounded-full bg-muted/60 flex items-center justify-center flex-shrink-0">
                                     <MessageSquare className="w-3.5 h-3.5 text-foreground/50" />
                                   </div>
-                                  <span className="text-sm font-medium truncate text-foreground">
+                                  <span className="text-sm font-medium truncate text-foreground max-w-[140px]">
                                     {chat.title}
                                   </span>
                                 </div>
@@ -554,7 +554,7 @@ return <SidebarMenuItem key={chat.sessionId} className={cn("relative", index > 0
                                   <span className="text-[11px] text-muted-foreground">
                                     {formatCompactTime(new Date(chat.timestamp))}
                                   </span>
-                                  <button onClick={e => togglePin(chat.sessionId, e)} className={cn("w-5 h-5 flex items-center justify-center rounded transition-all duration-200", "opacity-0 group-hover:opacity-100", isPinned && "opacity-100", isPinned ? "text-amber-500 hover:text-amber-600" : "text-muted-foreground/40 hover:text-muted-foreground")}>
+                                  <button onClick={e => togglePin(chat.sessionId, e)} className={cn("w-5 h-5 flex items-center justify-center rounded transition-all duration-200", "opacity-60 hover:opacity-100", isPinned && "opacity-100", isPinned ? "text-amber-500 hover:text-amber-600" : "text-muted-foreground/40 hover:text-muted-foreground")}>
                                     <Star className={cn("w-3 h-3", isPinned && "fill-amber-500")} />
                                   </button>
                                 </div>
