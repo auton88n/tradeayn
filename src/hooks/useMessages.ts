@@ -274,9 +274,9 @@ export const useMessages = (
       return;
     }
 
-    // Create user message
+    // Create user message with UUID for robust deduplication
     const userMessage: Message = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       content: content || (attachment ? `📎 ${attachment.name}` : ''),
       sender: 'user',
       timestamp: new Date(),
@@ -384,7 +384,7 @@ export const useMessages = (
         const isDailyLimit = errorData?.reason === 'daily_limit_reached';
         
         const errorMessage: Message = {
-          id: (Date.now() + 1).toString(),
+          id: crypto.randomUUID(),
           content: isDailyLimit 
             ? "You've reached your daily message limit. Your limit will reset tomorrow. Check your usage in Settings."
             : "You're sending messages too quickly. Please wait a moment before trying again.",
@@ -437,7 +437,7 @@ export const useMessages = (
 
       if (isStreaming && !requiresNonStreaming) {
         // Handle streaming response
-        const aynMessageId = (Date.now() + 1).toString();
+        const aynMessageId = crypto.randomUUID();
         
         // Create placeholder message that will be updated
         const aynMessage: Message = {
@@ -542,7 +542,7 @@ export const useMessages = (
 
         // Create AI response message
         const aynMessage: Message = {
-          id: (Date.now() + 1).toString(),
+          id: crypto.randomUUID(),
           content: response,
           sender: 'ayn',
           timestamp: new Date(),
@@ -717,7 +717,7 @@ export const useMessages = (
       const randomMessage = friendlyResponses[Math.floor(Math.random() * friendlyResponses.length)];
       
       const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
+        id: crypto.randomUUID(),
         content: randomMessage,
         sender: 'ayn',
         timestamp: new Date(),
