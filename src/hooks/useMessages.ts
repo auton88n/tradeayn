@@ -368,26 +368,44 @@ export const useMessages = (
           messages: conversationMessages,
           intent: detectedIntent,
           context,
-          stream: !requiresNonStreaming // Enable streaming for chat/search/engineering
+          stream: !requiresNonStreaming, // Enable streaming for chat/search/engineering
+          sessionId // Server-side enforcement of 100 message per chat limit
         })
       });
 
       clearTimeout(timeoutId);
 
-      // Handle 429 Rate Limit / Daily Limit Response
+      // Handle 429 Rate Limit / Daily Limit / Chat Limit Response
       if (webhookResponse.status === 429) {
         setIsTyping(false);
         setIsGeneratingDocument(false);
         setDocumentType(null);
         
         const errorData = await webhookResponse.json().catch(() => ({}));
-        const isDailyLimit = errorData?.reason === 'daily_limit_reached';
+        const isChatLimit = errorData?.chatLimitExceeded === true;
+        const isDailyLimit = errorData?.reason === 'daily_limit_reached' || errorData?.limitExceeded === true;
+        
+        let errorContent: string;
+        let toastTitle: string;
+        let toastDescription: string;
+        
+        if (isChatLimit) {
+          errorContent = "This chat has reached its 100 message limit. Please start a new chat to continue our conversation.";
+          toastTitle = "Chat Limit Reached";
+          toastDescription = "This chat has 100 messages. Start a new chat to continue.";
+        } else if (isDailyLimit) {
+          errorContent = "You've reached your daily message limit. Your limit will reset tomorrow. Check your usage in Settings.";
+          toastTitle = "Daily Limit Reached";
+          toastDescription = "You've used all your messages for today. Limit resets tomorrow.";
+        } else {
+          errorContent = "You're sending messages too quickly. Please wait a moment before trying again.";
+          toastTitle = "Rate Limit Reached";
+          toastDescription = "You're sending messages too quickly. Please wait before trying again.";
+        }
         
         const errorMessage: Message = {
           id: crypto.randomUUID(),
-          content: isDailyLimit 
-            ? "You've reached your daily message limit. Your limit will reset tomorrow. Check your usage in Settings."
-            : "You're sending messages too quickly. Please wait a moment before trying again.",
+          content: errorContent,
           sender: 'ayn',
           timestamp: new Date(),
           status: 'error'
@@ -395,10 +413,8 @@ export const useMessages = (
         setMessages(prev => [...prev, errorMessage]);
         
         toast({
-          title: isDailyLimit ? "Daily Limit Reached" : "Rate Limit Reached",
-          description: isDailyLimit 
-            ? "You've used all your messages for today. Limit resets tomorrow."
-            : "You're sending messages too quickly. Please wait before trying again.",
+          title: toastTitle,
+          description: toastDescription,
           variant: "destructive"
         });
         return;
