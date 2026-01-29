@@ -39,14 +39,15 @@ const ScrollReveal = ({
   delay?: number;
   debugLabel?: string;
 }) => {
-  const [ref, isVisible] = useScrollAnimation({ debugLabel });
+  const [ref, isVisible] = useScrollAnimation({
+    debugLabel
+  });
   return <div ref={ref as React.RefObject<HTMLDivElement>} className={cn('scroll-animate', direction === 'left' && 'scroll-animate-left', direction === 'right' && 'scroll-animate-right', direction === 'scale' && 'scroll-animate-scale', isVisible && 'visible')} style={{
     transitionDelay: `${delay}s`
   }}>
       {children}
     </div>;
 };
-
 const LandingPage = memo(() => {
   // Use ref to avoid re-renders from debug context updates
   const debugRef = useRef(useDebugContextOptional());
@@ -63,7 +64,7 @@ const LandingPage = memo(() => {
   const {
     toast
   } = useToast();
-  
+
   // Debug render logging - use ref to avoid dependency on context
   if (debugRef.current?.isDebugMode) {
     debugRef.current.incrementRenderCount('LandingPage');
@@ -272,88 +273,49 @@ const LandingPage = memo(() => {
     mockup: <LazyLoad minHeight="300px" debugLabel="TicketingMockup"><TicketingMockup /></LazyLoad>
   }];
   // FAQ Schema for rich snippets
-  const faqSchema = createFAQSchema([
-    { 
-      question: "What is AYN AI?", 
-      answer: "AYN AI is a perceptive artificial intelligence platform that learns your habits, understands your goals, and helps you succeed. It offers AI employees, custom AI agents, and business automation tools." 
-    },
-    { 
-      question: "How does AYN AI learn my preferences?", 
-      answer: "AYN AI uses advanced machine learning to analyze your interactions, understand your communication style, and adapt to your workflow patterns over time." 
-    },
-    { 
-      question: "What services does AYN AI offer?", 
-      answer: "AYN AI offers AI employees for 24/7 customer support, custom AI agents for business automation, content creator websites, smart ticketing systems, and engineering calculation tools." 
-    },
-    { 
-      question: "Is AYN AI available in Arabic?", 
-      answer: "Yes! AYN AI (عين) is fully multilingual with native support for Arabic, English, and French, making it ideal for Middle Eastern and international businesses." 
-    }
-  ]);
-
+  const faqSchema = createFAQSchema([{
+    question: "What is AYN AI?",
+    answer: "AYN AI is a perceptive artificial intelligence platform that learns your habits, understands your goals, and helps you succeed. It offers AI employees, custom AI agents, and business automation tools."
+  }, {
+    question: "How does AYN AI learn my preferences?",
+    answer: "AYN AI uses advanced machine learning to analyze your interactions, understand your communication style, and adapt to your workflow patterns over time."
+  }, {
+    question: "What services does AYN AI offer?",
+    answer: "AYN AI offers AI employees for 24/7 customer support, custom AI agents for business automation, content creator websites, smart ticketing systems, and engineering calculation tools."
+  }, {
+    question: "Is AYN AI available in Arabic?",
+    answer: "Yes! AYN AI (عين) is fully multilingual with native support for Arabic, English, and French, making it ideal for Middle Eastern and international businesses."
+  }]);
   return <>
-    <SEO
-      title="AYN AI - Personal AI Assistant That Learns You | Smart AI Platform"
-      description="AYN AI is a perceptive artificial intelligence that learns your habits, understands your goals, and helps you succeed. AI employees, custom AI agents, business automation, and more."
-      canonical="/"
-      keywords="AYN AI, AYN artificial intelligence, personal AI assistant, AI that learns you, perceptive AI, smart AI platform, AI employees, AI agents, business automation, Arabic AI assistant, عين AI, machine learning assistant, AI productivity tools, custom AI bots, virtual employees"
-      jsonLd={{ '@graph': [organizationSchema, websiteSchema, softwareApplicationSchema, faqSchema] }}
-    />
+    <SEO title="AYN AI - Personal AI Assistant That Learns You | Smart AI Platform" description="AYN AI is a perceptive artificial intelligence that learns your habits, understands your goals, and helps you succeed. AI employees, custom AI agents, business automation, and more." canonical="/" keywords="AYN AI, AYN artificial intelligence, personal AI assistant, AI that learns you, perceptive AI, smart AI platform, AI employees, AI agents, business automation, Arabic AI assistant, عين AI, machine learning assistant, AI productivity tools, custom AI bots, virtual employees" jsonLd={{
+      '@graph': [organizationSchema, websiteSchema, softwareApplicationSchema, faqSchema]
+    }} />
     <div className="min-h-screen bg-background scroll-smooth">
       {/* Vertical Dropdown Navigation */}
       <nav className="fixed top-4 md:top-6 left-4 md:left-6 z-50 animate-fade-in">
         <div className="relative">
           {/* Logo Pill - Always visible, acts as trigger - CSS transitions instead of springs */}
-          <div 
-            ref={menuRef} 
-            onMouseEnter={handleMouseEnter} 
-            onMouseLeave={handleMouseLeave} 
-            className="flex items-center gap-2 px-3 py-2.5 bg-card border border-border rounded-full shadow-2xl cursor-pointer"
-          >
+          <div ref={menuRef} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} className="flex items-center gap-2 px-3 py-2.5 bg-card border border-border rounded-full shadow-2xl cursor-pointer">
             <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-foreground flex items-center justify-center">
               <Brain className="w-4 h-4 md:w-5 md:h-5 text-background" />
             </div>
-            <span 
-              className={cn(
-                "text-lg md:text-xl font-bold tracking-tight overflow-hidden whitespace-nowrap transition-all duration-200",
-                isMenuExpanded ? "w-auto opacity-100" : "w-0 opacity-0"
-              )}
-            >
+            <span className={cn("text-lg md:text-xl font-bold tracking-tight overflow-hidden whitespace-nowrap transition-all duration-200", isMenuExpanded ? "w-auto opacity-100" : "w-0 opacity-0")}>
               AYN
             </span>
-            <ChevronDown 
-              className={cn(
-                "w-4 h-4 text-muted-foreground transition-transform duration-200",
-                isMenuExpanded && "rotate-180"
-              )} 
-            />
+            <ChevronDown className={cn("w-4 h-4 text-muted-foreground transition-transform duration-200", isMenuExpanded && "rotate-180")} />
           </div>
 
           {/* Dropdown Panel - CSS transitions instead of springs */}
-          {isMenuExpanded && (
-            <div 
-              className="absolute top-full left-0 mt-2 min-w-[200px] bg-card border border-border rounded-2xl shadow-2xl overflow-hidden animate-fade-in" 
-              onMouseEnter={handleMouseEnter} 
-              onMouseLeave={handleMouseLeave}
-            >
+          {isMenuExpanded && <div className="absolute top-full left-0 mt-2 min-w-[200px] bg-card border border-border rounded-2xl shadow-2xl overflow-hidden animate-fade-in" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
               {/* Navigation Links */}
               <div className="p-2">
-                <button 
-                  onClick={() => scrollToSection('about')} 
-                  className="w-full text-left px-4 py-2.5 rounded-xl hover:bg-muted transition-colors text-sm font-medium"
-                >
+                <button onClick={() => scrollToSection('about')} className="w-full text-left px-4 py-2.5 rounded-xl hover:bg-muted transition-colors text-sm font-medium">
                   {language === 'ar' ? 'عن AYN' : language === 'fr' ? 'À Propos' : 'About'}
                 </button>
-                <button 
-                  onClick={() => scrollToSection('services')} 
-                  className="w-full text-left px-4 py-2.5 rounded-xl hover:bg-muted transition-colors text-sm font-medium"
-                >
+                <button onClick={() => scrollToSection('services')} className="w-full text-left px-4 py-2.5 rounded-xl hover:bg-muted transition-colors text-sm font-medium">
                   {language === 'ar' ? 'خدماتنا' : language === 'fr' ? 'Services' : 'Services'}
                 </button>
-                <button 
-                  onClick={() => scrollToSection('contact')} 
-                  className="w-full text-left px-4 py-2.5 rounded-xl hover:bg-muted transition-colors text-sm font-medium"
-                >
+                <button onClick={() => scrollToSection('contact')} className="w-full text-left px-4 py-2.5 rounded-xl hover:bg-muted transition-colors text-sm font-medium">
                   {language === 'ar' ? 'تواصل معنا' : language === 'fr' ? 'Contact' : 'Contact'}
                 </button>
               </div>
@@ -372,18 +334,14 @@ const LandingPage = memo(() => {
 
               {/* CTA Button */}
               <div className="p-3">
-                <Button 
-                  onClick={() => {
-                    setIsMenuExpanded(false);
-                    setShowAuthModal(true);
-                  }} 
-                  className="w-full rounded-xl"
-                >
+                <Button onClick={() => {
+                setIsMenuExpanded(false);
+                setShowAuthModal(true);
+              }} className="w-full rounded-xl">
                   {t('nav.getStarted')}
                 </Button>
               </div>
-            </div>
-          )}
+            </div>}
         </div>
       </nav>
 
@@ -391,9 +349,7 @@ const LandingPage = memo(() => {
       <div className="fixed top-4 right-4 z-50 md:hidden">
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="outline" size="icon" className="rounded-full shadow-lg">
-              <Menu className="h-5 w-5" />
-            </Button>
+            
           </SheetTrigger>
           <SheetContent side="right" className="w-[280px] sm:w-[320px]">
             <div className="flex flex-col gap-6 pt-8">
@@ -437,12 +393,12 @@ const LandingPage = memo(() => {
 
       {/* Hero Section - Premium AI Eye Experience */}
       <Hero onGetStarted={prefillMessage => {
-      if (prefillMessage) {
-        setPendingMessage(prefillMessage);
-        localStorage.setItem('ayn_pending_message', prefillMessage);
-      }
-      setShowAuthModal(true);
-    }} />
+        if (prefillMessage) {
+          setPendingMessage(prefillMessage);
+          localStorage.setItem('ayn_pending_message', prefillMessage);
+        }
+        setShowAuthModal(true);
+      }} />
 
       {/* About AYN - Value Proposition Section */}
       <section id="about" className="py-16 md:py-32 px-4 md:px-6">
@@ -575,11 +531,11 @@ const LandingPage = memo(() => {
               <ScrollReveal>
                 <Link to={`/services/${services[0].slug}`} className="block">
                   <motion.div className="bg-neutral-50 dark:bg-neutral-900/80 rounded-3xl p-6 md:p-8 min-h-[320px] lg:min-h-[380px] flex flex-col group cursor-pointer overflow-visible contain-layout" whileHover={{
-                  y: -4
-                }} transition={{
-                  duration: 0.3,
-                  ease: [0.32, 0.72, 0, 1]
-                }}>
+                    y: -4
+                  }} transition={{
+                    duration: 0.3,
+                    ease: [0.32, 0.72, 0, 1]
+                  }}>
                     <div className="mb-4">
                       
                       <h3 className="text-xl md:text-2xl font-bold mt-2 group-hover:text-primary transition-colors">
@@ -604,11 +560,11 @@ const LandingPage = memo(() => {
               <ScrollReveal delay={0.2}>
                 <Link to={`/services/${services[2].slug}`} className="block">
                   <motion.div className="bg-neutral-50 dark:bg-neutral-900/80 rounded-3xl p-6 md:p-8 min-h-[280px] group cursor-pointer contain-layout" whileHover={{
-                  y: -4
-                }} transition={{
-                  duration: 0.3,
-                  ease: [0.32, 0.72, 0, 1]
-                }}>
+                    y: -4
+                  }} transition={{
+                    duration: 0.3,
+                    ease: [0.32, 0.72, 0, 1]
+                  }}>
                     <div className="flex flex-col gap-4">
                       <div>
                         
@@ -635,11 +591,11 @@ const LandingPage = memo(() => {
               <ScrollReveal delay={0.3}>
                 <Link to="/services/ticketing" className="block">
                   <motion.div className="bg-neutral-50 dark:bg-neutral-900/80 rounded-3xl p-6 md:p-8 min-h-[500px] flex flex-col group cursor-pointer overflow-visible contain-layout" whileHover={{
-                  y: -4
-                }} transition={{
-                  duration: 0.3,
-                  ease: [0.32, 0.72, 0, 1]
-                }}>
+                    y: -4
+                  }} transition={{
+                    duration: 0.3,
+                    ease: [0.32, 0.72, 0, 1]
+                  }}>
                     <div className="mb-4">
                       <span className="text-xs font-mono text-purple-500 tracking-wider">NEW</span>
                       <h3 className="text-xl md:text-2xl font-bold mt-2 group-hover:text-purple-500 transition-colors">
@@ -667,11 +623,11 @@ const LandingPage = memo(() => {
               <ScrollReveal delay={0.1}>
                 <Link to={`/services/${services[1].slug}`} className="block">
                   <motion.div className="bg-neutral-50 dark:bg-neutral-900/80 rounded-3xl p-6 md:p-8 min-h-[280px] group cursor-pointer contain-layout" whileHover={{
-                  y: -4
-                }} transition={{
-                  duration: 0.3,
-                  ease: [0.32, 0.72, 0, 1]
-                }}>
+                    y: -4
+                  }} transition={{
+                    duration: 0.3,
+                    ease: [0.32, 0.72, 0, 1]
+                  }}>
                     <div className="flex flex-col gap-4">
                       <div>
                         
@@ -698,11 +654,11 @@ const LandingPage = memo(() => {
               <ScrollReveal delay={0.3}>
                 <Link to={`/services/${services[3].slug}`} className="block">
                   <motion.div className="bg-neutral-50 dark:bg-neutral-900/80 rounded-3xl p-6 md:p-8 min-h-[280px] group cursor-pointer overflow-visible contain-layout" whileHover={{
-                  y: -4
-                }} transition={{
-                  duration: 0.3,
-                  ease: [0.32, 0.72, 0, 1]
-                }}>
+                    y: -4
+                  }} transition={{
+                    duration: 0.3,
+                    ease: [0.32, 0.72, 0, 1]
+                  }}>
                     <div className="flex flex-col gap-4">
                       <div>
                         <h3 className="text-xl md:text-2xl font-bold mt-2 group-hover:text-primary transition-colors">
@@ -728,11 +684,11 @@ const LandingPage = memo(() => {
               <ScrollReveal delay={0.4}>
                 <Link to="/engineering" className="block">
                   <motion.div className="bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/20 rounded-3xl p-6 md:p-8 min-h-[320px] lg:min-h-[380px] flex flex-col group cursor-pointer overflow-visible contain-layout" whileHover={{
-                  y: -4
-                }} transition={{
-                  duration: 0.3,
-                  ease: [0.32, 0.72, 0, 1]
-                }}>
+                    y: -4
+                  }} transition={{
+                    duration: 0.3,
+                    ease: [0.32, 0.72, 0, 1]
+                  }}>
                     <div className="mb-4">
                       <span className="text-xs font-mono text-cyan-500 tracking-wider">NEW</span>
                       <h3 className="text-xl md:text-2xl font-bold mt-2 group-hover:text-cyan-500 transition-colors">
@@ -776,8 +732,8 @@ const LandingPage = memo(() => {
 
           <ScrollReveal delay={0.2}>
             {isSubmitted ?
-          // Success state
-          <div className="text-center py-20 animate-scale-fade-in">
+            // Success state
+            <div className="text-center py-20 animate-scale-fade-in">
                 <div className="w-16 h-16 rounded-full bg-foreground mx-auto mb-6 flex items-center justify-center">
                   <CheckCircle className="w-8 h-8 text-background" />
                 </div>
@@ -788,17 +744,17 @@ const LandingPage = memo(() => {
                   {language === 'ar' ? 'سنرد عليك خلال 24 ساعة' : language === 'fr' ? 'Nous vous contacterons dans 24 heures' : "We'll be in touch within 24 hours"}
                 </p>
               </div> :
-          // Contact form
-          <form onSubmit={handleContactSubmit} className="space-y-6">
+            // Contact form
+            <form onSubmit={handleContactSubmit} className="space-y-6">
                 {/* Name input */}
                 <div className="space-y-2 group">
                   <label htmlFor="name" className="text-sm font-mono uppercase tracking-wider text-muted-foreground">
                     {language === 'ar' ? 'الاسم' : language === 'fr' ? 'Nom' : 'Name'}
                   </label>
                   <Input id="name" type="text" value={contactForm.name} onChange={e => setContactForm({
-                ...contactForm,
-                name: e.target.value
-              })} placeholder={language === 'ar' ? 'الاسم الكامل' : language === 'fr' ? 'Votre nom complet' : 'Your full name'} className={cn("h-14 bg-transparent border-2 border-border rounded-none text-base transition-all duration-300", "focus:border-foreground focus:ring-0", "group-hover:border-muted-foreground", contactErrors.name && "border-destructive")} disabled={isSubmitting} />
+                  ...contactForm,
+                  name: e.target.value
+                })} placeholder={language === 'ar' ? 'الاسم الكامل' : language === 'fr' ? 'Votre nom complet' : 'Your full name'} className={cn("h-14 bg-transparent border-2 border-border rounded-none text-base transition-all duration-300", "focus:border-foreground focus:ring-0", "group-hover:border-muted-foreground", contactErrors.name && "border-destructive")} disabled={isSubmitting} />
                   {contactErrors.name && <p className="text-sm text-destructive animate-slide-down-fade">{contactErrors.name}</p>}
                 </div>
 
@@ -808,9 +764,9 @@ const LandingPage = memo(() => {
                     {language === 'ar' ? 'البريد الإلكتروني' : language === 'fr' ? 'Email' : 'Email'}
                   </label>
                   <Input id="email" type="email" value={contactForm.email} onChange={e => setContactForm({
-                ...contactForm,
-                email: e.target.value
-              })} placeholder={language === 'ar' ? 'بريدك الإلكتروني' : language === 'fr' ? 'votre@email.com' : 'your@email.com'} className={cn("h-14 bg-transparent border-2 border-border rounded-none text-base transition-all duration-300", "focus:border-foreground focus:ring-0", "group-hover:border-muted-foreground", contactErrors.email && "border-destructive")} disabled={isSubmitting} />
+                  ...contactForm,
+                  email: e.target.value
+                })} placeholder={language === 'ar' ? 'بريدك الإلكتروني' : language === 'fr' ? 'votre@email.com' : 'your@email.com'} className={cn("h-14 bg-transparent border-2 border-border rounded-none text-base transition-all duration-300", "focus:border-foreground focus:ring-0", "group-hover:border-muted-foreground", contactErrors.email && "border-destructive")} disabled={isSubmitting} />
                   {contactErrors.email && <p className="text-sm text-destructive animate-slide-down-fade">{contactErrors.email}</p>}
                 </div>
 
@@ -820,9 +776,9 @@ const LandingPage = memo(() => {
                     {language === 'ar' ? 'الرسالة' : language === 'fr' ? 'Message' : 'Message'}
                   </label>
                   <Textarea id="message" value={contactForm.message} onChange={e => setContactForm({
-                ...contactForm,
-                message: e.target.value
-              })} placeholder={language === 'ar' ? 'كيف يمكننا مساعدتك؟' : language === 'fr' ? 'Parlez-nous de votre projet...' : 'Tell us about your project...'} rows={6} className={cn("bg-transparent border-2 border-border rounded-none text-base transition-all duration-300 resize-none", "focus:border-foreground focus:ring-0", "group-hover:border-muted-foreground", contactErrors.message && "border-destructive")} disabled={isSubmitting} />
+                  ...contactForm,
+                  message: e.target.value
+                })} placeholder={language === 'ar' ? 'كيف يمكننا مساعدتك؟' : language === 'fr' ? 'Parlez-nous de votre projet...' : 'Tell us about your project...'} rows={6} className={cn("bg-transparent border-2 border-border rounded-none text-base transition-all duration-300 resize-none", "focus:border-foreground focus:ring-0", "group-hover:border-muted-foreground", contactErrors.message && "border-destructive")} disabled={isSubmitting} />
                   {contactErrors.message && <p className="text-sm text-destructive animate-slide-down-fade">{contactErrors.message}</p>}
                 </div>
 
