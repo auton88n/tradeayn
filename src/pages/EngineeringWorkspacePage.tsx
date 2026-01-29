@@ -4,9 +4,12 @@ import { HardHat } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { EngineeringWorkspace } from '@/components/engineering/workspace/EngineeringWorkspace';
 import { EngineeringSessionProvider } from '@/contexts/EngineeringSessionContext';
+import { useIsMobile } from '@/hooks/use-mobile';
+import MobileBlockScreen from '@/components/engineering/MobileBlockScreen';
 
 const EngineeringWorkspacePage = () => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [userId, setUserId] = useState<string | undefined>();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
@@ -37,6 +40,7 @@ const EngineeringWorkspacePage = () => {
     }
   }, [isCheckingAuth, userId, navigate]);
 
+  // Show loading state while checking auth
   if (isCheckingAuth || !userId) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center">
@@ -45,6 +49,11 @@ const EngineeringWorkspacePage = () => {
         </div>
       </div>
     );
+  }
+
+  // Block mobile access - show friendly message
+  if (isMobile) {
+    return <MobileBlockScreen />;
   }
 
   return (
