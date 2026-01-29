@@ -107,6 +107,28 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
         return;
       }
 
+      // Check sessionStorage cache (5 min TTL)
+      const cached = sessionStorage.getItem('subscription_cache');
+      if (cached) {
+        try {
+          const { data, timestamp } = JSON.parse(cached);
+          if (Date.now() - timestamp < 5 * 60 * 1000) {
+            const tier = (data?.tier || 'free') as SubscriptionTier;
+            setState({
+              isLoading: false,
+              isSubscribed: data?.subscribed || false,
+              tier,
+              productId: data?.product_id || null,
+              subscriptionEnd: data?.subscription_end || null,
+              limits: SUBSCRIPTION_TIERS[tier]?.limits || SUBSCRIPTION_TIERS.free.limits,
+            });
+            return;
+          }
+        } catch {
+          sessionStorage.removeItem('subscription_cache');
+        }
+      }
+
       const { data, error } = await supabase.functions.invoke('check-subscription');
       
       if (error) {
@@ -116,6 +138,12 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
         setState(prev => ({ ...prev, isLoading: false }));
         return;
       }
+
+      // Cache the response
+      sessionStorage.setItem('subscription_cache', JSON.stringify({
+        data,
+        timestamp: Date.now(),
+      }));
 
       const tier = (data?.tier || 'free') as SubscriptionTier;
       setState({

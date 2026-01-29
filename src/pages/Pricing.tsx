@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Check, Crown, Zap, Building2, Sparkles, ArrowLeft, Loader2, Shield, CreditCard, ChevronDown, Brain, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -13,7 +14,6 @@ import { SEO } from '@/components/shared/SEO';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-
 const tierIcons: Record<SubscriptionTier, React.ReactNode> = {
   free: <Sparkles className="w-6 h-6" />,
   starter: <Zap className="w-6 h-6" />,
@@ -180,7 +180,7 @@ const Pricing = () => {
 
         <div className="container max-w-7xl mx-auto px-4 py-12 relative z-10">
           {/* Back Button */}
-          <div className="animate-fade-in">
+          <div>
             <Button
               variant="ghost"
               onClick={() => navigate('/')}
@@ -192,7 +192,7 @@ const Pricing = () => {
           </div>
           
           {/* Header */}
-          <div className="text-center mb-16 animate-fade-in">
+          <div className="text-center mb-16">
             {/* Brain Logo */}
             <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-foreground mb-8">
               <Brain className="w-12 h-12 text-background" />
@@ -208,10 +208,12 @@ const Pricing = () => {
             </p>
           </div>
 
-          {/* Loading State */}
+          {/* Loading State - Skeleton Grid */}
           {isLoading ? (
-            <div className="flex items-center justify-center py-20">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5 mb-12">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-[420px] rounded-3xl" />
+              ))}
             </div>
           ) : (
             <>
@@ -227,11 +229,10 @@ const Pricing = () => {
                     <div
                       key={tier}
                       className={cn(
-                        "relative group animate-fade-in overflow-visible flex",
+                        "relative group overflow-visible flex transition-transform duration-200 hover:scale-[1.02]",
                         isPopular && "mt-6"
                       )}
                       style={{ 
-                        animationDelay: `${index * 100}ms`,
                         contain: isPopular ? undefined : 'content',
                         minHeight: '420px'
                       }}
@@ -362,7 +363,7 @@ const Pricing = () => {
               </div>
 
               {/* Trust Indicators */}
-              <div className="flex flex-wrap items-center justify-center gap-6 md:gap-12 text-sm text-muted-foreground mb-6 animate-fade-in">
+              <div className="flex flex-wrap items-center justify-center gap-6 md:gap-12 text-sm text-muted-foreground mb-6">
                 <div className="flex items-center gap-2">
                   <Shield className="w-5 h-5" />
                   <span>Secure Payments</span>
@@ -378,14 +379,14 @@ const Pricing = () => {
               </div>
 
               {/* Policy Note */}
-              <p className="text-center text-xs text-muted-foreground/70 mb-20 animate-fade-in">
+              <p className="text-center text-xs text-muted-foreground/70 mb-20">
                 By subscribing, you agree to our Terms of Service and No Refund Policy.
               </p>
             </>
           )}
 
           {/* FAQ Section */}
-          <div className="max-w-2xl mx-auto animate-fade-in">
+          <div className="max-w-2xl mx-auto">
             <h2 className="text-2xl md:text-3xl font-semibold text-center mb-8">
               Frequently Asked Questions
             </h2>

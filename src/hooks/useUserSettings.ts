@@ -34,20 +34,27 @@ export const useUserSettings = (userId: string, accessToken?: string) => {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
 
-  const fetchSettings = async () => {
+  const fetchAllData = async () => {
     if (!userId || !accessToken) {
       setLoading(false);
       return;
     }
 
     try {
-      const data = await supabaseApi.get<UserSettings[]>(
-        `user_settings?user_id=eq.${userId}`,
-        accessToken
-      );
+      // Parallel fetch: settings + sessions
+      const [settingsData, sessionsData] = await Promise.all([
+        supabaseApi.get<UserSettings[]>(
+          `user_settings?user_id=eq.${userId}`,
+          accessToken
+        ),
+        supabaseApi.get<DeviceSession[]>(
+          `device_fingerprints?user_id=eq.${userId}&order=last_seen.desc`,
+          accessToken
+        )
+      ]);
 
-      if (!data || data.length === 0) {
-        // No settings exist, create default settings
+      // Process settings
+      if (!settingsData || settingsData.length === 0) {
         const newSettings = await supabaseApi.post<UserSettings[]>(
           'user_settings',
           accessToken,
@@ -56,7 +63,7 @@ export const useUserSettings = (userId: string, accessToken?: string) => {
 
         if (newSettings && newSettings.length > 0) {
           const created = newSettings[0];
-          const normalizedNewSettings: UserSettings = {
+          setSettings({
             id: created.id,
             user_id: created.user_id,
             email_system_alerts: created.email_system_alerts ?? true,
@@ -67,12 +74,11 @@ export const useUserSettings = (userId: string, accessToken?: string) => {
             desktop_notifications: created.desktop_notifications ?? false,
             allow_personalization: created.allow_personalization ?? false,
             store_chat_history: created.store_chat_history ?? true,
-          };
-          setSettings(normalizedNewSettings);
+          });
         }
       } else {
-        const fetched = data[0];
-        const normalizedSettings: UserSettings = {
+        const fetched = settingsData[0];
+        setSettings({
           id: fetched.id,
           user_id: fetched.user_id,
           email_system_alerts: fetched.email_system_alerts ?? true,
@@ -83,9 +89,20 @@ export const useUserSettings = (userId: string, accessToken?: string) => {
           desktop_notifications: fetched.desktop_notifications ?? false,
           allow_personalization: fetched.allow_personalization ?? false,
           store_chat_history: fetched.store_chat_history ?? true,
-        };
-        setSettings(normalizedSettings);
+        });
       }
+
+      // Process sessions
+      const normalizedSessions: DeviceSession[] = (sessionsData || []).map((session: DeviceSession) => ({
+        id: session.id,
+        fingerprint_hash: session.fingerprint_hash,
+        device_info: session.device_info as Record<string, unknown> | null,
+        first_seen: session.first_seen,
+        last_seen: session.last_seen,
+        login_count: session.login_count ?? 0,
+        is_trusted: session.is_trusted ?? false,
+      }));
+      setSessions(normalizedSessions);
     } catch (error) {
       if (import.meta.env.DEV) {
         console.error('Error fetching settings:', error);
@@ -101,7 +118,7 @@ export const useUserSettings = (userId: string, accessToken?: string) => {
     }
   };
 
-  const fetchSessions = async () => {
+  const refetchSessions = async () => {
     if (!userId || !accessToken) return;
 
     try {
@@ -217,8 +234,7 @@ export const useUserSettings = (userId: string, accessToken?: string) => {
 
   useEffect(() => {
     if (userId && accessToken) {
-      fetchSettings();
-      fetchSessions();
+      fetchAllData();
     }
   }, [userId, accessToken]);
 
@@ -230,6 +246,6 @@ export const useUserSettings = (userId: string, accessToken?: string) => {
     updateSettings,
     revokeSession,
     signOutAllDevices,
-    refetchSessions: fetchSessions,
+    refetchSessions,
   };
 };

@@ -63,37 +63,52 @@ const AnimatedRoutes = () => {
   
   // Track page visits for analytics
   useVisitorTracking();
+
+  // Fast routes skip animation for instant navigation
+  const fastRoutes = ['/settings', '/pricing'];
+  const isFastRoute = fastRoutes.some(route => location.pathname.startsWith(route));
   
+  const routes = (
+    <Routes location={location} key={isFastRoute ? 'fast' : location.pathname}>
+      <Route path="/" element={<PageTransition><Index /></PageTransition>} />
+      {/* Fast routes - no animation wrapper */}
+      <Route path="/settings" element={<Settings />} />
+      <Route path="/pricing" element={<Pricing />} />
+      
+      <Route path="/reset-password" element={<PageTransition><ResetPassword /></PageTransition>} />
+      
+      <Route path="/services/ai-employee" element={<PageTransition><AIEmployee /></PageTransition>} />
+      <Route path="/services/ai-employee/apply" element={<PageTransition><AIEmployeeApply /></PageTransition>} />
+      <Route path="/services/content-creator-sites" element={<PageTransition><InfluencerSites /></PageTransition>} />
+      <Route path="/services/content-creator-sites/apply" element={<PageTransition><InfluencerSitesApply /></PageTransition>} />
+      <Route path="/services/ai-agents" element={<PageTransition><AIAgents /></PageTransition>} />
+      <Route path="/services/ai-agents/apply" element={<PageTransition><AIAgentsApply /></PageTransition>} />
+      <Route path="/services/automation" element={<PageTransition><Automation /></PageTransition>} />
+      <Route path="/services/automation/apply" element={<PageTransition><AutomationApply /></PageTransition>} />
+      <Route path="/services/ticketing" element={<PageTransition><Ticketing /></PageTransition>} />
+      <Route path="/services/ticketing/apply" element={<PageTransition><TicketingApply /></PageTransition>} />
+      <Route path="/support" element={<PageTransition><Support /></PageTransition>} />
+      <Route path="/engineering" element={<PageTransition><Engineering /></PageTransition>} />
+      <Route path="/engineering/grading" element={<PageTransition><AIGradingDesigner /></PageTransition>} />
+      <Route path="/services/civil-engineering" element={<PageTransition><CivilEngineering /></PageTransition>} />
+      <Route path="/approval-result" element={<PageTransition><ApprovalResult /></PageTransition>} />
+      <Route path="/subscription-success" element={<PageTransition><SubscriptionSuccess /></PageTransition>} />
+      <Route path="/subscription-canceled" element={<PageTransition><SubscriptionCanceled /></PageTransition>} />
+      <Route path="/terms" element={<PageTransition><Terms /></PageTransition>} />
+      <Route path="/privacy" element={<PageTransition><Privacy /></PageTransition>} />
+      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+      <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
+    </Routes>
+  );
+
+  // Skip AnimatePresence for fast routes
+  if (isFastRoute) {
+    return routes;
+  }
+
   return (
     <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<PageTransition><Index /></PageTransition>} />
-        <Route path="/settings" element={<PageTransition><Settings /></PageTransition>} />
-        <Route path="/reset-password" element={<PageTransition><ResetPassword /></PageTransition>} />
-        
-        <Route path="/services/ai-employee" element={<PageTransition><AIEmployee /></PageTransition>} />
-        <Route path="/services/ai-employee/apply" element={<PageTransition><AIEmployeeApply /></PageTransition>} />
-        <Route path="/services/content-creator-sites" element={<PageTransition><InfluencerSites /></PageTransition>} />
-        <Route path="/services/content-creator-sites/apply" element={<PageTransition><InfluencerSitesApply /></PageTransition>} />
-        <Route path="/services/ai-agents" element={<PageTransition><AIAgents /></PageTransition>} />
-        <Route path="/services/ai-agents/apply" element={<PageTransition><AIAgentsApply /></PageTransition>} />
-        <Route path="/services/automation" element={<PageTransition><Automation /></PageTransition>} />
-        <Route path="/services/automation/apply" element={<PageTransition><AutomationApply /></PageTransition>} />
-        <Route path="/services/ticketing" element={<PageTransition><Ticketing /></PageTransition>} />
-        <Route path="/services/ticketing/apply" element={<PageTransition><TicketingApply /></PageTransition>} />
-        <Route path="/support" element={<PageTransition><Support /></PageTransition>} />
-        <Route path="/engineering" element={<PageTransition><Engineering /></PageTransition>} />
-        <Route path="/engineering/grading" element={<PageTransition><AIGradingDesigner /></PageTransition>} />
-        <Route path="/services/civil-engineering" element={<PageTransition><CivilEngineering /></PageTransition>} />
-        <Route path="/approval-result" element={<PageTransition><ApprovalResult /></PageTransition>} />
-        <Route path="/pricing" element={<PageTransition><Pricing /></PageTransition>} />
-        <Route path="/subscription-success" element={<PageTransition><SubscriptionSuccess /></PageTransition>} />
-        <Route path="/subscription-canceled" element={<PageTransition><SubscriptionCanceled /></PageTransition>} />
-        <Route path="/terms" element={<PageTransition><Terms /></PageTransition>} />
-        <Route path="/privacy" element={<PageTransition><Privacy /></PageTransition>} />
-        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-        <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
-      </Routes>
+      {routes}
     </AnimatePresence>
   );
 };
