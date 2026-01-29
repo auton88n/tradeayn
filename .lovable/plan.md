@@ -1,91 +1,107 @@
 
-# Fix Build Error and Scope RTL to Response Content Only
 
-## Issues Found
+# Restore RTL Support for Landing Page & Services Pages
 
-### 1. Build Error in dialog.tsx
-The `DialogDescription` component has an empty function body that returns nothing (`void`), causing a TypeScript error:
-```tsx
-// Line 48-51 - BROKEN
-const DialogDescription = React.forwardRef<...>(({
-  className,
-  ...props
-}, ref) => {});  // Empty! Returns void
-```
+## Problem
 
-### 2. RTL Applied to Entire Dashboard
-When Arabic is selected as the language, the `LanguageContext` sets `document.documentElement.dir = 'rtl'` which flips the entire UI layout. However, based on your design:
-- The **dashboard layout** should always remain **LTR** (left-to-right)
-- Only the **AI response content** should use RTL when Arabic text is detected
+My previous fix removed global RTL support entirely, which broke RTL on:
+- **Landing Page** - Should support RTL when Arabic is selected
+- **Services Pages** - Should support RTL when Arabic is selected
 
-The good news: `MessageFormatter` and `StreamingMarkdown` already detect Arabic text and apply RTL styling **only to their content**. We just need to stop the global RTL from being applied.
+However, the **Dashboard** (after sign-in) should always stay LTR as intended.
+
+---
+
+## Current State
+
+| Component | Current Behavior | Expected Behavior |
+|-----------|------------------|-------------------|
+| LandingPage | Always LTR ❌ | Respects language direction |
+| Services Pages | Always LTR ❌ | Respects language direction |
+| Dashboard | Has `dir="ltr"` hardcoded ✅ | Always LTR |
+| AI Response Content | Auto-detects Arabic ✅ | RTL for Arabic text |
 
 ---
 
 ## Solution
 
-### Part 1: Fix DialogDescription Build Error
+### Approach: Restore Global RTL, Dashboard Overrides It
 
-Restore the proper JSX return in `dialog.tsx`:
+1. **Restore global RTL in LanguageContext** - Set `document.dir` and RTL class when Arabic is selected
+2. **Dashboard already has protection** - Line 195 has `<div dir="ltr">` which will override the global setting
 
-```tsx
-// Before (broken):
-const DialogDescription = React.forwardRef<...>(({
-  className,
-  ...props
-}, ref) => {});
+This is the simplest approach because:
+- Dashboard already explicitly sets `dir="ltr"` on its root container
+- Public pages (Landing, Services) will inherit the document direction
+- No changes needed to Landing or Services pages
 
-// After (fixed):
-const DialogDescription = React.forwardRef<...>(({
-  className,
-  ...props
-}, ref) => (
-  <DialogPrimitive.Description
-    ref={ref}
-    className={cn("text-sm text-muted-foreground leading-relaxed", className)}
-    {...props}
-  />
-));
-```
+---
 
-### Part 2: Remove Global RTL Direction
+## Implementation
 
-Update `LanguageContext.tsx` to **not** apply `dir="rtl"` to the document:
+### File: `src/contexts/LanguageContext.tsx`
 
-```tsx
-// Before (lines 1964-1975):
+**Restore the global direction logic:**
+
+```typescript
+// Current (broken):
 useEffect(() => {
   document.documentElement.lang = language;
-  document.documentElement.dir = direction;  // ❌ Remove this
+  // Do NOT set dir="rtl" on document...
+}, [language]);
+
+// Fixed:
+useEffect(() => {
+  // Update document direction and language for public pages
+  document.documentElement.lang = language;
+  document.documentElement.dir = direction;
   
+  // Add/remove RTL class for global styling
   if (language === 'ar') {
-    document.documentElement.classList.add('rtl');  // ❌ Remove this
+    document.documentElement.classList.add('rtl');
   } else {
     document.documentElement.classList.remove('rtl');
   }
 }, [language, direction]);
-
-// After:
-useEffect(() => {
-  // Only set the language attribute for accessibility/SEO
-  document.documentElement.lang = language;
-  // Do NOT set dir="rtl" on document - RTL is handled per-component
-  // MessageFormatter and StreamingMarkdown detect Arabic content
-  // and apply RTL styling only to their content areas
-}, [language]);
 ```
 
 ---
 
-## How RTL Works After This Fix
+## How It Works After Fix
 
-| Component | RTL Behavior |
-|-----------|--------------|
-| Dashboard Layout (Sidebar, Header) | Always LTR - consistent design |
-| AI Response Content | Auto-detects Arabic → applies RTL styling |
-| MessageFormatter | Has `hasArabicText()` → sets `dir="rtl"` on content div |
-| StreamingMarkdown | Has `hasArabicText()` → applies RTL to streamed text |
-| Chat Input | User can type Arabic, flows naturally |
+```text
+┌─────────────────────────────────────────────────────────────┐
+│  document.documentElement                                    │
+│  dir="rtl" (when Arabic selected)                           │
+│  ┌─────────────────────────────────────────────────────────┐│
+│  │  Landing Page / Services Pages                          ││
+│  │  → Inherits dir="rtl" from document                    ││
+│  │  → Text flows right-to-left                            ││
+│  │  → Layout flips naturally                               ││
+│  └─────────────────────────────────────────────────────────┘│
+│  ┌─────────────────────────────────────────────────────────┐│
+│  │  Dashboard (after sign-in)                              ││
+│  │  <div dir="ltr"> ← Explicit override                   ││
+│  │  → Layout stays left-to-right                          ││
+│  │  ┌────────────────────────────────────────────────────┐ ││
+│  │  │  AI Response Card                                  │ ││
+│  │  │  <div dir="rtl"> ← Auto-detected for Arabic text  │ ││
+│  │  └────────────────────────────────────────────────────┘ ││
+│  └─────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Result
+
+| Page | When English | When Arabic |
+|------|-------------|-------------|
+| Landing Page | LTR layout | RTL layout ✅ |
+| Services Pages | LTR layout | RTL layout ✅ |
+| Pricing | LTR layout | RTL layout ✅ |
+| Dashboard | LTR layout | LTR layout (forced) ✅ |
+| AI Response | LTR text | RTL text (auto) ✅ |
 
 ---
 
@@ -93,15 +109,7 @@ useEffect(() => {
 
 | File | Change |
 |------|--------|
-| `src/components/ui/dialog.tsx` | Fix DialogDescription to return proper JSX |
-| `src/contexts/LanguageContext.tsx` | Remove `document.dir` and RTL class application |
+| `src/contexts/LanguageContext.tsx` | Restore `document.dir = direction` and RTL class toggle |
 
----
+This is a 1-file fix that restores RTL support for all public pages while keeping the Dashboard protected with its existing `dir="ltr"` override.
 
-## Result
-
-- Build error fixed
-- Dashboard always shows LTR layout (buttons, sidebar on left, etc.)
-- When user sends Arabic message, AI response displays in RTL with proper Arabic font
-- Language switcher still works for translations (Arabic labels/text in UI elements)
-- Screenshot issue (reversed layout) will be resolved
