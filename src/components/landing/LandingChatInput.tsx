@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowUp, Plus, ChevronDown, Brain } from 'lucide-react';
+import { ArrowUp, Plus, Brain } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -125,17 +125,15 @@ export const LandingChatInput: React.FC<LandingChatInputProps> = ({ onSendAttemp
             <Plus className="w-5 h-5" />
           </button>
 
-          {/* Mode Selector (visual only) */}
+          {/* AYN Label */}
           <div
             className={cn(
               "flex items-center gap-1.5 px-3 py-1.5 rounded-lg",
-              "text-sm text-muted-foreground",
-              "hover:bg-muted/50 transition-colors cursor-default"
+              "text-sm text-muted-foreground"
             )}
           >
             <Brain className="w-4 h-4" />
-            <span>General</span>
-            <ChevronDown className="w-3.5 h-3.5 opacity-60" />
+            <span>AYN</span>
           </div>
         </div>
       </div>
