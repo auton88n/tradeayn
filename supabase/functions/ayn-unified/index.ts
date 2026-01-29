@@ -891,7 +891,7 @@ serve(async (req) => {
       console.log('[ayn-unified] User authenticated:', userId.substring(0, 8) + '...');
     }
 
-    const { messages, intent: forcedIntent, context = {}, stream = true } = await req.json();
+    const { messages, intent: forcedIntent, context = {}, stream = true, sessionId } = await req.json();
 
     if (!messages || !Array.isArray(messages)) {
       return new Response(JSON.stringify({ error: 'Messages array required' }), {
@@ -904,6 +904,32 @@ serve(async (req) => {
     const lastMessage = messages[messages.length - 1]?.content || '';
     const intent = forcedIntent || detectIntent(lastMessage);
     console.log(`Detected intent: ${intent}`);
+
+    // === SERVER-SIDE CHAT LIMIT ENFORCEMENT ===
+    // Enforce 100 messages per chat session to prevent abuse and manage context
+    const MAX_MESSAGES_PER_CHAT = 100;
+    
+    if (sessionId && !isInternalCall) {
+      const { count, error: countError } = await supabase
+        .from('messages')
+        .select('id', { count: 'exact', head: true })
+        .eq('session_id', sessionId)
+        .eq('user_id', userId);
+      
+      if (!countError && count !== null && count >= MAX_MESSAGES_PER_CHAT) {
+        console.log(`[ayn-unified] Chat limit reached: ${count}/${MAX_MESSAGES_PER_CHAT} for session ${sessionId}`);
+        return new Response(JSON.stringify({ 
+          error: 'Chat limit reached',
+          message: 'This chat has reached the 100 message limit. Please start a new chat to continue.',
+          chatLimitExceeded: true,
+          messageCount: count,
+          limit: MAX_MESSAGES_PER_CHAT
+        }), {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+    }
 
     // PARALLEL DB OPERATIONS - Critical for 30K user scale (saves 200-300ms)
     const [limitCheck, userContext] = await Promise.all([
