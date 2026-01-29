@@ -325,7 +325,7 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
                 {isStreaming ? (
                   <StreamingMarkdown 
                     content={combinedContent}
-                    speed={50}
+                    speed={20}
                     onComplete={handleStreamComplete}
                     enableHaptics={isMobile}
                     className="text-sm text-foreground leading-relaxed [&_pre]:max-w-full [&_pre]:overflow-x-auto [&_pre]:bg-muted [&_pre]:rounded-lg [&_pre]:p-3"

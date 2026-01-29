@@ -54,7 +54,7 @@ const splitIntoWords = (content: string): string[] => {
 
 export const StreamingMarkdown = memo(({
   content,
-  speed = 35,
+  speed = 15,
   onComplete,
   className,
   enableHaptics = true,
@@ -83,7 +83,7 @@ export const StreamingMarkdown = memo(({
       const timer = setTimeout(() => {
         setDisplayedWordCount(prev => {
           // Batch 3 words per update for smoother performance
-          const next = Math.min(prev + 3, words.length);
+          const next = Math.min(prev + 5, words.length);
           
           // Haptic pulse every 30 words (reduced frequency)
           if (enableHaptics && Math.floor(next / 30) > Math.floor(prev / 30)) {
