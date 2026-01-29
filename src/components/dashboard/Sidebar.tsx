@@ -139,7 +139,7 @@ export const Sidebar = ({
   const [showSupportWidget, setShowSupportWidget] = useState(false);
   
   // Fetch credits data directly via hook
-  const { currentUsage: usageFromHook, monthlyLimit: limitFromHook, isUnlimited: isUnlimitedFromHook, resetDate: resetFromHook, isLoading: isUsageLoading } = useUsageTracking(userId ?? null);
+  const { currentUsage: usageFromHook, monthlyLimit: limitFromHook, bonusCredits: bonusFromHook, isUnlimited: isUnlimitedFromHook, resetDate: resetFromHook, isLoading: isUsageLoading } = useUsageTracking(userId ?? null);
   
   // Fetch user subscription tier
   const [subscriptionTier, setSubscriptionTier] = useState<string>('free');
@@ -379,6 +379,7 @@ export const Sidebar = ({
               <CreditUpgradeCard 
                 currentUsage={usageFromHook}
                 monthlyLimit={limitFromHook}
+                bonusCredits={bonusFromHook}
                 isUnlimited={isUnlimitedFromHook}
                 resetDate={resetFromHook}
                 currentTier={subscriptionTier}

@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 interface CreditUpgradeCardProps {
   currentUsage: number;
   monthlyLimit?: number | null;
+  bonusCredits?: number;
   isUnlimited?: boolean;
   resetDate: string | null;
   currentTier?: string;
@@ -22,6 +23,7 @@ interface CreditUpgradeCardProps {
 export const CreditUpgradeCard = ({
   currentUsage,
   monthlyLimit,
+  bonusCredits = 0,
   isUnlimited = false,
   resetDate,
   currentTier = 'free',
@@ -34,8 +36,10 @@ export const CreditUpgradeCard = ({
   const [hasSubmittedFeedback, setHasSubmittedFeedback] = useState<boolean | null>(null);
   const showUpgrade = currentTier === 'free' && !isUnlimited;
   
-  const limit = monthlyLimit ?? 50;
-  const creditsLeft = isUnlimited ? 999 : Math.max(0, limit - currentUsage);
+  // Total limit includes base monthly limit + bonus credits
+  const baseLimit = monthlyLimit ?? 50;
+  const totalLimit = baseLimit + bonusCredits;
+  const creditsLeft = isUnlimited ? 999 : Math.max(0, totalLimit - currentUsage);
 
   // Check if user has already submitted feedback
   useEffect(() => {
@@ -96,8 +100,8 @@ export const CreditUpgradeCard = ({
     return hours > 0 ? `${hours}h` : 'Soon';
   }, [resetDate]);
 
-  const percentage = isUnlimited ? 100 : Math.min((currentUsage / limit) * 100, 100);
-  const isLow = !isUnlimited && creditsLeft < (limit * 0.2);
+  const percentage = isUnlimited ? 100 : Math.min((currentUsage / totalLimit) * 100, 100);
+  const isLow = !isUnlimited && creditsLeft < (totalLimit * 0.2);
   const showEarnButton = userId && onOpenFeedback && hasSubmittedFeedback === false;
 
   return (
