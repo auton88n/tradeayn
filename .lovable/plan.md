@@ -1,81 +1,102 @@
 
 
-# Fix Chat List Clipping and Layout Stability
+# Fix AI Grammar/Capitalization and Response Speed
 
 ## Problem Summary
 
-From your screenshot, I can see:
-1. **Timestamps cut off** - "15h", "Yesterday", "Jan 23" are being clipped on the right edge
-2. **Star icon hidden** - The star button is there but invisible (only shows on hover)
-3. **Layout keeps changing** - The chat list height isn't stable
+1. **Lowercase Only Responses**: The AI system prompt explicitly tells AYN to use "friendly, lowercase" style - this is a design choice that needs to be changed to proper grammar
+2. **Slow Response Feeling**: The streaming speed is 50ms per batch of 3 words (150ms total), making users feel bored while waiting
 
-## Root Cause
-
-The chat item layout has conflicting constraints:
-- The ScrollArea adds its own scrollbar space (~6px)
-- The inner div has `pr-2` which reduces right padding
-- The title section uses `flex-1` which pushes the timestamp/star too far right
-- The star is set to `opacity-0` by default (only visible on hover)
+---
 
 ## Solution
 
-### 1. Fix Right-Side Clipping
+### Part 1: Fix Grammar & Capitalization
 
-Increase padding on the scroll content and reduce the title's maximum width:
+Update the system prompt in `ayn-unified/index.ts` to use proper grammar:
 
-```tsx
-// Current (line 504):
-<div className="py-1 px-1 pr-2 min-h-[180px]">
-
-// Fixed:
-<div className="py-1 px-3">
+**Before (line 324-328):**
+```
+STYLE:
+- be concise: 1-3 sentences for simple questions, bullet points for complex (max 5-6)
+- match user's message length and energy
+- friendly, lowercase, contractions (it's, gonna), light humor
+- respond in ${isArabic ? 'Arabic (العربية)' : "user's language"}
 ```
 
-And add explicit max-width to the title so it doesn't squeeze the timestamp:
-
-```tsx
-// Current (line 549):
-<span className="text-sm font-medium truncate text-foreground">
-
-// Fixed - add explicit max-width:
-<span className="text-sm font-medium truncate text-foreground max-w-[140px]">
+**After:**
+```
+STYLE:
+- Use proper grammar with correct capitalization (start sentences with capital letters)
+- Be concise: 1-3 sentences for simple questions, bullet points for complex (max 5-6)
+- Match user's message length and energy
+- Friendly tone with contractions (it's, gonna), light humor
+- Respond in ${isArabic ? 'Arabic (العربية)' : "user's language"}
 ```
 
-### 2. Make Star Always Visible
+**Also update identity examples (lines 289-293, 330-333):**
+```
+// Before:
+"i'm AYN, built by the AYN Team to help you out"
+"it's from the Arabic word عين"
 
-Currently the star has `opacity-0 group-hover:opacity-100` which hides it by default. Change to always show it but muted:
-
-```tsx
-// Current (line 557):
-"opacity-0 group-hover:opacity-100"
-
-// Fixed - always visible but subtle:
-"opacity-60 hover:opacity-100"
+// After:
+"I'm AYN, built by the AYN Team to help you out"
+"It's from the Arabic word عين"
 ```
 
-### 3. Fix Layout Stability
+---
 
-Replace the min-height hack with proper flex containment:
+### Part 2: Speed Up Response Display
 
-```tsx
-// Current (line 502):
-<div className="flex-1 overflow-hidden min-h-[200px]">
+Update streaming speed in two files:
 
-// Fixed - proper flex pattern:
-<div className="flex-1 min-h-0 overflow-hidden">
+**`StreamingMarkdown.tsx` - Default speed:**
+```typescript
+// Before (line 57):
+speed = 35,
+
+// After - faster default:
+speed = 15,
 ```
 
-## Files to Change
+**`ResponseCard.tsx` - Actual usage:**
+```typescript
+// Before (line 328):
+speed={50}
+
+// After - faster display:
+speed={20}
+```
+
+**Also increase word batch size for smoother feel:**
+```typescript
+// StreamingMarkdown.tsx line 86
+// Before:
+const next = Math.min(prev + 3, words.length);
+
+// After - batch 5 words at a time:
+const next = Math.min(prev + 5, words.length);
+```
+
+---
+
+## Technical Changes Summary
 
 | File | Change |
 |------|--------|
-| `src/components/dashboard/Sidebar.tsx` | Fix padding, max-width, star opacity, and flex container |
+| `supabase/functions/ayn-unified/index.ts` | Update system prompt to use proper capitalization, fix example responses |
+| `src/components/eye/StreamingMarkdown.tsx` | Reduce default speed from 35ms to 15ms, batch 5 words instead of 3 |
+| `src/components/eye/ResponseCard.tsx` | Reduce speed from 50ms to 20ms |
 
-## Visual Result
+---
+
+## Expected Results
 
 | Before | After |
 |--------|-------|
-| Timestamps clipped | Full timestamp visible ("15h", "Yesterday") |
-| Star hidden until hover | Star always visible (muted) |
-| Layout jumps on load | Stable flex container |
+| "i'm ayn, built by the ayn team" | "I'm AYN, built by the AYN Team" |
+| "it's from the arabic word عين" | "It's from the Arabic word عين" |
+| ~150ms per 3 words (slow feel) | ~100ms per 5 words (snappy feel) |
+| Users feel bored waiting | Responses appear 2.5x faster |
 
