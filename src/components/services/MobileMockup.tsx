@@ -65,7 +65,7 @@ const MobileMockup = memo(() => {
               {/* CTA Button */}
               <button className="flex items-center gap-1.5 bg-white text-neutral-900 rounded-full px-4 py-1.5 text-[9px] font-medium shadow-lg mb-3">
                 <Mail className="w-3 h-3" />
-                Work With Me
+                Collaborate
               </button>
 
               {/* Social Icons */}
