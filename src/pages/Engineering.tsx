@@ -28,6 +28,7 @@ import { CalculationComparison } from '@/components/engineering/CalculationCompa
 import EngineeringPortfolio from '@/components/engineering/EngineeringPortfolio';
 
 import { useEngineeringHistory } from '@/hooks/useEngineeringHistory';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { SEO } from '@/components/shared/SEO';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -42,69 +43,9 @@ interface CalculationResult {
   timestamp: Date;
 }
 
-const calculatorOptions = [
-  {
-    id: 'grading' as const,
-    title: 'AI Grading Designer',
-    description: 'Upload survey data, AI generates cut/fill design with DXF export',
-    icon: Mountain,
-    gradient: 'from-emerald-500 to-teal-500',
-    available: true,
-    isPage: true,
-    path: '/engineering/grading',
-  },
-  {
-    id: 'beam' as const,
-    title: 'Beam Design',
-    description: 'Calculate reinforced concrete beam dimensions and reinforcement',
-    icon: Columns3,
-    gradient: 'from-blue-500 to-cyan-500',
-    available: true,
-  },
-  {
-    id: 'foundation' as const,
-    title: 'Foundation Design',
-    description: 'Design isolated footings based on soil bearing capacity',
-    icon: Building2,
-    gradient: 'from-amber-500 to-orange-500',
-    available: true,
-  },
-  {
-    id: 'column' as const,
-    title: 'Column Design',
-    description: 'Axial load capacity and biaxial bending analysis',
-    icon: Box,
-    gradient: 'from-purple-500 to-pink-500',
-    available: true,
-  },
-  {
-    id: 'slab' as const,
-    title: 'Slab Design',
-    description: 'Design one-way and two-way slabs with mesh reinforcement',
-    icon: Calculator,
-    gradient: 'from-green-500 to-emerald-500',
-    available: true,
-  },
-  {
-    id: 'retaining_wall' as const,
-    title: 'Retaining Wall',
-    description: 'Cantilever wall design with lateral earth pressure analysis',
-    icon: Building2,
-    gradient: 'from-rose-500 to-orange-500',
-    available: true,
-  },
-  {
-    id: 'parking' as const,
-    title: 'Car Parking Designer',
-    description: 'Simple rectangular or custom polygon boundaries with AI optimization',
-    icon: Car,
-    gradient: 'from-indigo-500 to-violet-500',
-    available: true,
-  },
-];
-
 const Engineering = () => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [selectedCalculator, setSelectedCalculator] = useState<CalculatorType>(null);
   const [calculationResult, setCalculationResult] = useState<CalculationResult | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
@@ -114,6 +55,67 @@ const Engineering = () => {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   
   const { calculationHistory, fetchHistory } = useEngineeringHistory(userId);
+
+  const calculatorOptions = [
+    {
+      id: 'grading' as const,
+      title: t('engineering.tools.grading'),
+      description: t('engineering.tools.gradingDesc'),
+      icon: Mountain,
+      gradient: 'from-emerald-500 to-teal-500',
+      available: true,
+      isPage: true,
+      path: '/engineering/grading',
+    },
+    {
+      id: 'beam' as const,
+      title: t('engineering.tools.beam'),
+      description: t('engineering.tools.beamDesc'),
+      icon: Columns3,
+      gradient: 'from-blue-500 to-cyan-500',
+      available: true,
+    },
+    {
+      id: 'foundation' as const,
+      title: t('engineering.tools.foundation'),
+      description: t('engineering.tools.foundationDesc'),
+      icon: Building2,
+      gradient: 'from-amber-500 to-orange-500',
+      available: true,
+    },
+    {
+      id: 'column' as const,
+      title: t('engineering.tools.column'),
+      description: t('engineering.tools.columnDesc'),
+      icon: Box,
+      gradient: 'from-purple-500 to-pink-500',
+      available: true,
+    },
+    {
+      id: 'slab' as const,
+      title: t('engineering.tools.slab'),
+      description: t('engineering.tools.slabDesc'),
+      icon: Calculator,
+      gradient: 'from-green-500 to-emerald-500',
+      available: true,
+    },
+    {
+      id: 'retaining_wall' as const,
+      title: t('engineering.tools.retainingWall'),
+      description: t('engineering.tools.retainingWallDesc'),
+      icon: Building2,
+      gradient: 'from-rose-500 to-orange-500',
+      available: true,
+    },
+    {
+      id: 'parking' as const,
+      title: t('engineering.tools.parking'),
+      description: t('engineering.tools.parkingDesc'),
+      icon: Car,
+      gradient: 'from-indigo-500 to-violet-500',
+      available: true,
+    },
+  ];
 
   // Check authentication on mount
   useEffect(() => {
@@ -195,7 +197,7 @@ const Engineering = () => {
                   className="gap-2"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  Back
+                  {t('engineering.back')}
                 </Button>
                 <div className="h-6 w-px bg-border" />
                 <div className="flex items-center gap-3">
@@ -203,11 +205,11 @@ const Engineering = () => {
                     <HardHat className="w-5 h-5" />
                   </div>
                   <div>
-                    <h1 className="text-lg font-bold">Civil Engineering Calculator</h1>
+                    <h1 className="text-lg font-bold">{t('engineering.title')}</h1>
                     <p className="text-xs text-muted-foreground">
                       {selectedCalculator 
                         ? calculatorOptions.find(c => c.id === selectedCalculator)?.title 
-                        : 'Structural Design Tools'}
+                        : t('engineering.subtitle')}
                     </p>
                   </div>
                 </div>
@@ -223,7 +225,7 @@ const Engineering = () => {
                   title={calculationHistory.length < 2 ? "Need at least 2 calculations to compare" : "Compare calculations"}
                 >
                   <GitCompare className="w-4 h-4" />
-                  Compare
+                  {t('engineering.compare')}
                 </Button>
                 <Button 
                   variant="outline" 
@@ -233,11 +235,11 @@ const Engineering = () => {
                   disabled={!userId}
                 >
                   <History className="w-4 h-4" />
-                  History
+                  {t('engineering.history')}
                 </Button>
                 <Button variant="outline" size="sm" className="gap-2" disabled>
                   <FileDown className="w-4 h-4" />
-                  Export
+                  {t('engineering.export')}
                 </Button>
               </div>
             </div>
@@ -265,14 +267,13 @@ const Engineering = () => {
                     className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4"
                   >
                     <Sparkles className="w-4 h-4" />
-                    AI-Powered Structural Analysis
+                    {t('engineering.aiPowered')}
                   </motion.div>
                   <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                    Professional Engineering Calculations
+                    {t('engineering.professionalCalcs')}
                   </h2>
                   <p className="text-muted-foreground max-w-2xl mx-auto">
-                    Design reinforced concrete structures with real engineering formulas, 
-                    3D visualization, and DXF export capabilities.
+                    {t('engineering.description')}
                   </p>
                 </div>
 
@@ -312,7 +313,7 @@ const Engineering = () => {
                       
                       {!calc.available && (
                         <span className="absolute top-4 right-4 px-2 py-1 text-xs font-medium bg-muted rounded-full">
-                          Coming Soon
+                          {t('engineering.comingSoon')}
                         </span>
                       )}
                       {(calc as any).badge && (
@@ -332,9 +333,9 @@ const Engineering = () => {
                   className="mt-16 grid md:grid-cols-3 gap-6 max-w-4xl mx-auto"
                 >
                   {[
-                    { title: '3D Visualization', desc: 'Interactive beam and foundation models' },
-                    { title: 'DXF Export', desc: 'Download CAD-ready drawings' },
-                    { title: 'AI Analysis', desc: 'Smart design recommendations' },
+                    { title: t('engineering.features.3dViz'), desc: t('engineering.features.3dVizDesc') },
+                    { title: t('engineering.features.dxfExport'), desc: t('engineering.features.dxfExportDesc') },
+                    { title: t('engineering.features.aiAnalysis'), desc: t('engineering.features.aiAnalysisDesc') },
                   ].map((feature, i) => (
                     <div key={i} className="text-center p-4">
                       <h4 className="font-semibold mb-1">{feature.title}</h4>
