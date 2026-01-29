@@ -6,7 +6,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-import { Plus, LogOut, Trash2, Settings, X, MessageSquare, Search, Star, Shield, Brain, ChevronDown, GraduationCap, Loader2, Volume2, VolumeX, Headphones, Sparkles, AlertTriangle, Calculator } from 'lucide-react';
+import { Plus, LogOut, Trash2, Settings, X, MessageSquare, Search, Star, Shield, Brain, ChevronDown, GraduationCap, Loader2, Volume2, VolumeX, Headphones, Sparkles, AlertTriangle, Calculator, Monitor } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -125,6 +126,7 @@ export const Sidebar = ({
     toggleSidebar
   } = useSidebar();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const soundContext = useSoundContextOptional();
   const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState('');
@@ -398,7 +400,19 @@ export const Sidebar = ({
             <div className="flex gap-2">
               {/* Engineering Button */}
               <Button 
-                onClick={() => navigate('/engineering')}
+                onClick={() => {
+                  if (isMobile) {
+                    toast({
+                      title: 'Larger Screen Required',
+                      description: 'Engineering tools require a tablet or desktop for the best experience.',
+                      action: (
+                        <Monitor className="w-5 h-5 text-cyan-500" />
+                      ),
+                    });
+                  } else {
+                    navigate('/engineering');
+                  }
+                }}
                 className={cn(
                   "flex-1 h-9 rounded-lg gap-1.5",
                   "bg-gradient-to-r from-cyan-600 to-blue-600",
