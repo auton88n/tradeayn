@@ -110,8 +110,8 @@ const SupportWidget: React.FC<SupportWidgetProps> = ({ open, onClose }) => {
                   </TabsList>
                 </div>
 
-                <div className="flex-1 overflow-hidden">
-                  <TabsContent value="chat" className="h-full m-0 p-0">
+                <div className="flex-1 min-h-0 overflow-hidden">
+                  <TabsContent value="chat" className="h-full m-0 p-0 data-[state=active]:flex data-[state=active]:flex-col">
                     <AISupportChat onNeedTicket={() => setActiveTab('ticket')} />
                   </TabsContent>
                   <TabsContent value="ticket" className="h-full m-0 p-0">
