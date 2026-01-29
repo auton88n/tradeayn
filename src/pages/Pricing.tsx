@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useSubscription, SUBSCRIPTION_TIERS, SubscriptionTier } from '@/contexts/SubscriptionContext';
-import { useLanguage } from '@/contexts/LanguageContext';
 import { SEO } from '@/components/shared/SEO';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -55,24 +54,44 @@ const tierButtonStyles: Record<SubscriptionTier, string> = {
   enterprise: 'bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white',
 };
 
+const faqItems = [
+  {
+    question: 'What are credits?',
+    answer: 'Credits are used for AI interactions. Free users get 5 credits per day (resets daily). Paid users receive their full monthly allowance upfront.'
+  },
+  {
+    question: 'What is PDF & Excel generation?',
+    answer: 'Paid users can ask AYN to generate professional documents. PDF generation costs 30 credits and Excel costs 25 credits.'
+  },
+  {
+    question: 'Can I upgrade or downgrade anytime?',
+    answer: 'Yes! You can change your plan at any time. Upgrades take effect immediately, and downgrades take effect at the end of your billing cycle.'
+  },
+  {
+    question: 'What happens if I run out of credits?',
+    answer: 'Free users wait until the next day for credits to reset. Paid users need to wait until their monthly reset or upgrade to a higher plan.'
+  },
+  {
+    question: 'Is there a free trial?',
+    answer: 'Our Free tier gives you 5 credits per day to try AYN - no credit card required.'
+  },
+  {
+    question: 'What is your refund policy?',
+    answer: 'All payments are final and non-refundable. You can cancel anytime and keep access until the end of your billing period.'
+  },
+  {
+    question: 'What is included in Enterprise?',
+    answer: 'Enterprise plans include custom credit limits, tailored AI solutions, and 24/7 priority support. Contact our sales team to discuss your needs.'
+  }
+];
+
 const Pricing = () => {
   const navigate = useNavigate();
   const { tier: currentTier, isLoading, isSubscribed, startCheckout, openCustomerPortal } = useSubscription();
-  const { t } = useLanguage();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [showEnterpriseModal, setShowEnterpriseModal] = useState(false);
   const [enterpriseForm, setEnterpriseForm] = useState({ companyName: '', email: '', requirements: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const faqItems = [
-    { question: t('pricing.faq.whatAreCredits'), answer: t('pricing.faq.whatAreCreditsAnswer') },
-    { question: t('pricing.faq.pdfExcel'), answer: t('pricing.faq.pdfExcelAnswer') },
-    { question: t('pricing.faq.upgradeDowngrade'), answer: t('pricing.faq.upgradeDowngradeAnswer') },
-    { question: t('pricing.faq.runOutCredits'), answer: t('pricing.faq.runOutCreditsAnswer') },
-    { question: t('pricing.faq.freeTrial'), answer: t('pricing.faq.freeTrialAnswer') },
-    { question: t('pricing.faq.refundPolicy'), answer: t('pricing.faq.refundPolicyAnswer') },
-    { question: t('pricing.faq.enterprise'), answer: t('pricing.faq.enterpriseAnswer') }
-  ];
 
   const handleAction = (tier: SubscriptionTier) => {
     if (tier === 'enterprise') {
@@ -99,7 +118,7 @@ const Pricing = () => {
 
   const handleEnterpriseSubmit = async () => {
     if (!enterpriseForm.companyName || !enterpriseForm.email) {
-      toast.error(t('pricing.enterprise.fillRequired'));
+      toast.error('Please fill in all required fields');
       return;
     }
 
@@ -113,29 +132,29 @@ const Pricing = () => {
 
       if (error) throw error;
 
-      toast.success(t('pricing.enterprise.success'));
+      toast.success('Thank you! Our team will contact you within 24 hours.');
       setShowEnterpriseModal(false);
       setEnterpriseForm({ companyName: '', email: '', requirements: '' });
     } catch (error) {
       if (import.meta.env.DEV) console.error('Enterprise inquiry error:', error);
-      toast.error(t('pricing.enterprise.error'));
+      toast.error('Something went wrong. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const getButtonText = (tier: SubscriptionTier) => {
-    if (tier === 'enterprise') return t('pricing.contactSales');
+    if (tier === 'enterprise') return 'Contact Sales';
     if (tier === currentTier) {
-      return isSubscribed ? t('pricing.managePlan') : t('pricing.currentPlan');
+      return isSubscribed ? 'Manage Plan' : 'Current Plan';
     }
     if (tier === 'free') {
-      return isSubscribed ? t('pricing.downgrade') : t('pricing.getStarted');
+      return isSubscribed ? 'Downgrade' : 'Get Started';
     }
     const tierOrder: SubscriptionTier[] = ['free', 'starter', 'pro', 'business', 'enterprise'];
     const currentIndex = tierOrder.indexOf(currentTier);
     const targetIndex = tierOrder.indexOf(tier);
-    return targetIndex > currentIndex ? t('pricing.upgrade') : t('pricing.switchPlan');
+    return targetIndex > currentIndex ? 'Upgrade' : 'Switch Plan';
   };
 
   const displayTiers: SubscriptionTier[] = ['free', 'starter', 'pro', 'business', 'enterprise'];
@@ -168,7 +187,7 @@ const Pricing = () => {
               className="mb-8 hover:bg-card/50 backdrop-blur-sm"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              {t('pricing.backToHome')}
+              Back to Home
             </Button>
           </div>
           
@@ -180,12 +199,12 @@ const Pricing = () => {
             </div>
             
             <h1 className="text-4xl md:text-6xl font-display font-bold mb-6 tracking-tight">
-              {t('pricing.title')}
+              Choose Your Plan
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-              {t('pricing.subtitle')}
+              Unlock the full power of AYN. All plans include access to core features.
               <br className="hidden md:block" />
-              {t('pricing.upgradeAnytime')}
+              Upgrade or downgrade anytime.
             </p>
           </div>
 
@@ -222,7 +241,7 @@ const Pricing = () => {
                         <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20">
                           <Badge className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-4 py-1.5 text-sm font-medium shadow-lg shadow-purple-500/30 border border-purple-400/30">
                             <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-                            {t('pricing.mostPopular')}
+                            Most Popular
                           </Badge>
                         </div>
                       )}
@@ -250,7 +269,7 @@ const Pricing = () => {
                         {/* Current Plan Badge */}
                         {isCurrentPlan && (
                           <Badge className="absolute top-4 right-4 bg-primary text-primary-foreground text-xs">
-                            {t('pricing.yourPlan')}
+                            Your Plan
                           </Badge>
                         )}
 
@@ -276,10 +295,10 @@ const Pricing = () => {
                             {isEnterprise ? (
                               <>
                                 <span className="text-3xl font-display font-bold tracking-tight">
-                                  {t('pricing.contactUs')}
+                                  Contact Us
                                 </span>
                                 <p className="text-xs text-muted-foreground mt-2">
-                                  {t('pricing.tailored')}
+                                  Tailored for your business
                                 </p>
                               </>
                             ) : (
@@ -288,11 +307,11 @@ const Pricing = () => {
                                   <span className="text-4xl font-display font-bold tracking-tight">
                                     ${config.price}
                                   </span>
-                                  <span className="text-muted-foreground text-base">{t('pricing.perMonth')}</span>
+                                  <span className="text-muted-foreground text-base">/month</span>
                                 </div>
                                 {tier !== 'free' && (
                                   <p className="text-xs text-muted-foreground mt-2">
-                                    {t('pricing.billedMonthly')}
+                                    Billed monthly. Cancel anytime.
                                   </p>
                                 )}
                               </>
@@ -331,7 +350,7 @@ const Pricing = () => {
                             {isCurrentPlan && !isSubscribed ? (
                               <span className="flex items-center gap-2">
                                 <Check className="w-4 h-4" />
-                                {t('pricing.currentPlan')}
+                                Current Plan
                               </span>
                             ) : getButtonText(tier)}
                           </Button>
@@ -346,21 +365,21 @@ const Pricing = () => {
               <div className="flex flex-wrap items-center justify-center gap-6 md:gap-12 text-sm text-muted-foreground mb-6 animate-fade-in">
                 <div className="flex items-center gap-2">
                   <Shield className="w-5 h-5" />
-                  <span>{t('pricing.securePayments')}</span>
+                  <span>Secure Payments</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <CreditCard className="w-5 h-5" />
-                  <span>{t('pricing.cancelAnytime')}</span>
+                  <span>Cancel Anytime</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Shield className="w-5 h-5" />
-                  <span>{t('pricing.noHiddenFees')}</span>
+                  <span>No Hidden Fees</span>
                 </div>
               </div>
 
               {/* Policy Note */}
               <p className="text-center text-xs text-muted-foreground/70 mb-20 animate-fade-in">
-                {t('pricing.policyNote')}
+                By subscribing, you agree to our Terms of Service and No Refund Policy.
               </p>
             </>
           )}
@@ -368,7 +387,7 @@ const Pricing = () => {
           {/* FAQ Section */}
           <div className="max-w-2xl mx-auto animate-fade-in">
             <h2 className="text-2xl md:text-3xl font-semibold text-center mb-8">
-              {t('pricing.faq')}
+              Frequently Asked Questions
             </h2>
             <div className="space-y-3">
               {faqItems.map((item, index) => (
@@ -403,24 +422,24 @@ const Pricing = () => {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Star className="w-5 h-5 text-cyan-500" />
-                {t('pricing.enterprise.title')}
+                Enterprise Inquiry
               </DialogTitle>
               <DialogDescription>
-                {t('pricing.enterprise.subtitle')}
+                Tell us about your business needs and we'll create a custom plan for you.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 pt-4">
               <div className="space-y-2">
-                <Label htmlFor="companyName">{t('pricing.enterprise.companyName')} *</Label>
+                <Label htmlFor="companyName">Company Name *</Label>
                 <Input
                   id="companyName"
-                  placeholder={t('pricing.enterprise.companyName')}
+                  placeholder="Your company name"
                   value={enterpriseForm.companyName}
                   onChange={(e) => setEnterpriseForm(prev => ({ ...prev, companyName: e.target.value }))}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">{t('pricing.enterprise.email')} *</Label>
+                <Label htmlFor="email">Contact Email *</Label>
                 <Input
                   id="email"
                   type="email"
@@ -430,10 +449,10 @@ const Pricing = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="requirements">{t('pricing.enterprise.requirements')}</Label>
+                <Label htmlFor="requirements">Requirements (optional)</Label>
                 <Textarea
                   id="requirements"
-                  placeholder={t('pricing.enterprise.requirementsPlaceholder')}
+                  placeholder="Tell us about your specific needs..."
                   rows={4}
                   value={enterpriseForm.requirements}
                   onChange={(e) => setEnterpriseForm(prev => ({ ...prev, requirements: e.target.value }))}
@@ -445,14 +464,14 @@ const Pricing = () => {
                   className="flex-1"
                   onClick={() => setShowEnterpriseModal(false)}
                 >
-                  {t('pricing.enterprise.cancel')}
+                  Cancel
                 </Button>
                 <Button
                   className="flex-1 bg-gradient-to-r from-slate-400 to-cyan-500 hover:from-slate-500 hover:to-cyan-600 text-white font-semibold"
                   onClick={handleEnterpriseSubmit}
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : t('pricing.enterprise.submit')}
+                  {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Submit'}
                 </Button>
               </div>
             </div>

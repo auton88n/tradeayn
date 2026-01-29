@@ -5,14 +5,13 @@ import { Sparkles, Zap, Infinity, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, differenceInDays } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useLanguage } from '@/contexts/LanguageContext';
 
 interface UsageCardProps {
   currentUsage: number;
-  monthlyLimit?: number | null;
-  dailyLimit?: number | null;
+  monthlyLimit?: number | null; // null = unlimited
+  dailyLimit?: number | null; // deprecated, use monthlyLimit
   isUnlimited?: boolean;
-  resetDate: string | null;
+  resetDate: string | null; // ISO date string
   compact?: boolean;
 }
 
@@ -24,17 +23,19 @@ export const UsageCard = ({
   resetDate,
   compact = false
 }: UsageCardProps) => {
-  const { t } = useLanguage();
+  // Support both props during migration (prefer monthlyLimit)
   const limit = monthlyLimit ?? dailyLimit ?? null;
   const prevUsageRef = useRef(currentUsage);
   const [showPulse, setShowPulse] = useState(false);
   const [displayCount, setDisplayCount] = useState(currentUsage);
 
+  // Animate counter on usage change
   useEffect(() => {
     if (currentUsage !== prevUsageRef.current) {
       setShowPulse(true);
       const timeout = setTimeout(() => setShowPulse(false), 600);
       
+      // Animate counter
       const start = prevUsageRef.current;
       const end = currentUsage;
       const duration = 400;
@@ -43,7 +44,7 @@ export const UsageCard = ({
       const animate = () => {
         const elapsed = Date.now() - startTime;
         const progress = Math.min(elapsed / duration, 1);
-        const eased = 1 - Math.pow(1 - progress, 3);
+        const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
         setDisplayCount(Math.round(start + (end - start) * eased));
         
         if (progress < 1) {
@@ -80,6 +81,7 @@ export const UsageCard = ({
       formattedTime = days > 7 ? format(reset, 'MMM d') : `${days}d`;
     }
 
+    // Color based on usage percentage
     let color = 'text-emerald-500';
     let bg = 'bg-emerald-500';
     if (limit) {
@@ -92,11 +94,12 @@ export const UsageCard = ({
       }
     }
 
+    // Check if credits are running low (less than 20% remaining)
     const remainingPct = limit ? ((limit - currentUsage) / limit) * 100 : 100;
     
     return {
       percentage: pct,
-      hoursUntilReset: days,
+      hoursUntilReset: days, // now actually days
       formattedResetTime: formattedTime,
       statusColor: color,
       statusBg: bg,
@@ -121,6 +124,7 @@ export const UsageCard = ({
               animate={showPulse ? { scale: [1, 1.02, 1] } : {}}
               transition={{ duration: 0.3 }}
             >
+              {/* Pulse effect */}
               <AnimatePresence>
                 {showPulse && (
                   <motion.div 
@@ -133,6 +137,7 @@ export const UsageCard = ({
                 )}
               </AnimatePresence>
               
+              {/* Main content */}
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   {isUnlimited ? (
@@ -146,7 +151,7 @@ export const UsageCard = ({
                       <Zap className={cn("w-3.5 h-3.5", statusColor)} />
                     </div>
                   )}
-                  <span className="text-sm font-medium text-foreground">{t('usage.title')}</span>
+                  <span className="text-sm font-medium text-foreground">HOO Credit</span>
                 </div>
                 
                 <div className="flex items-center gap-1.5">
@@ -157,20 +162,21 @@ export const UsageCard = ({
                     {displayCount}
                   </motion.span>
                   <span className="text-xs text-muted-foreground">
-                    {isUnlimited ? t('usage.credits') : `/ ${limit}`}
+                    {isUnlimited ? 'credits' : `/ ${limit}`}
                   </span>
                 </div>
               </div>
               
+              {/* Progress or Unlimited indicator */}
               {isUnlimited ? (
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-primary/10">
                     <Infinity className="w-3 h-3 text-primary" />
-                    <span className="text-xs font-medium text-primary">{t('usage.unlimited')}</span>
+                    <span className="text-xs font-medium text-primary">Unlimited</span>
                   </div>
                   {resetDate && (
                     <span className="text-[10px] text-muted-foreground">
-                      {t('usage.resetsIn')} {formattedResetTime}
+                      Resets in {formattedResetTime}
                     </span>
                   )}
                 </div>
@@ -182,8 +188,8 @@ export const UsageCard = ({
                     indicatorClassName={statusBg}
                   />
                   <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                    <span>{creditsLeft} {t('usage.left')}</span>
-                    {resetDate && <span>{t('usage.resetsIn')} {formattedResetTime}</span>}
+                    <span>{creditsLeft} left</span>
+                    {resetDate && <span>Resets in {formattedResetTime}</span>}
                   </div>
                 </div>
               )}
@@ -191,10 +197,10 @@ export const UsageCard = ({
           </TooltipTrigger>
           <TooltipContent side="right" className="max-w-[200px]">
             <div className="space-y-1">
-              <p className="font-medium">{isUnlimited ? t('usage.unlimitedPlan') : t('usage.title')}</p>
+              <p className="font-medium">{isUnlimited ? 'Unlimited Plan' : 'Daily HOO Credits'}</p>
               <p className="text-xs text-muted-foreground">
-                {currentUsage} {t('usage.messagesSent')}
-                {resetDate && ` • ${t('usage.resetsIn')} ${hoursUntilReset}d`}
+                {currentUsage} messages sent
+                {resetDate && ` • Resets in ${hoursUntilReset}h`}
               </p>
             </div>
           </TooltipContent>
@@ -203,6 +209,7 @@ export const UsageCard = ({
     );
   }
 
+  // Determine status level for legend
   const statusLevel = useMemo(() => {
     if (!limit) return 'normal';
     if (percentage >= 90) return 'low';
@@ -210,6 +217,7 @@ export const UsageCard = ({
     return 'normal';
   }, [percentage, limit]);
 
+  // Full size card (non-compact)
   return (
     <motion.div 
       className={cn(
@@ -231,21 +239,23 @@ export const UsageCard = ({
         )}
       </AnimatePresence>
 
+      {/* Header */}
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-full bg-muted dark:bg-neutral-800 flex items-center justify-center">
           <Zap className="w-5 h-5 text-primary dark:text-white" />
         </div>
         <div>
-          <p className="text-base font-semibold text-foreground">{t('usage.title')}</p>
+          <p className="text-base font-semibold text-foreground">Daily HOO Credits</p>
           {resetDate && (
-            <p className="text-xs text-muted-foreground">{t('usage.resetsIn')} {formattedResetTime}</p>
+            <p className="text-xs text-muted-foreground">Resets in {formattedResetTime}</p>
           )}
         </div>
       </div>
 
+      {/* Usage Row */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">{t('usage.used')}</span>
+          <span className="text-sm text-muted-foreground">Used</span>
           <span className="text-base font-semibold text-foreground tabular-nums">
             <motion.span key={displayCount}>{displayCount}</motion.span>
             <span className="text-muted-foreground mx-1">/</span>
@@ -253,6 +263,7 @@ export const UsageCard = ({
           </span>
         </div>
         
+        {/* Progress Bar */}
         <div className={`h-2 rounded-full bg-muted dark:bg-neutral-800 overflow-hidden ${isLow ? 'animate-pulse' : ''}`}>
           <motion.div 
             className={`h-full rounded-full ${isLow ? 'bg-gradient-to-r from-red-500 via-red-400 to-amber-500' : 'bg-gradient-to-r from-blue-500 via-purple-500 to-purple-600'}`}
@@ -263,21 +274,23 @@ export const UsageCard = ({
         </div>
       </div>
 
+      {/* Stats Boxes */}
       <div className="grid grid-cols-2 gap-3">
         <div className="p-3 rounded-xl bg-muted/80 dark:bg-neutral-800/80 text-center">
           <p className="text-2xl font-bold text-foreground tabular-nums">
             {isUnlimited ? '∞' : creditsLeft}
           </p>
-          <p className="text-xs text-muted-foreground mt-0.5">{t('usage.remaining')}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Remaining</p>
         </div>
         <div className="p-3 rounded-xl bg-muted/80 dark:bg-neutral-800/80 text-center">
           <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto">
             <div className="w-3 h-3 rounded-full bg-emerald-500" />
           </div>
-          <p className="text-xs text-muted-foreground mt-1.5">{t('usage.active')}</p>
+          <p className="text-xs text-muted-foreground mt-1.5">Active</p>
         </div>
       </div>
 
+      {/* Status Legend */}
       <div className="flex items-center justify-center gap-4 pt-1">
         <div className="flex items-center gap-1.5">
           <div className={cn(
@@ -287,7 +300,7 @@ export const UsageCard = ({
           <span className={cn(
             "text-xs",
             statusLevel === 'normal' ? "text-foreground" : "text-muted-foreground"
-          )}>{t('usage.normal')}</span>
+          )}>Normal</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className={cn(
@@ -297,7 +310,7 @@ export const UsageCard = ({
           <span className={cn(
             "text-xs",
             statusLevel === 'warning' ? "text-amber-500" : "text-muted-foreground"
-          )}>{t('usage.warning')}</span>
+          )}>Warning</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className={cn(
@@ -307,7 +320,7 @@ export const UsageCard = ({
           <span className={cn(
             "text-xs",
             statusLevel === 'low' ? "text-red-500" : "text-muted-foreground"
-          )}>{t('usage.low')}</span>
+          )}>Low</span>
         </div>
       </div>
     </motion.div>

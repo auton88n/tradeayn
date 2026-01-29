@@ -2,11 +2,9 @@ import { motion } from 'framer-motion';
 import { Monitor, Tablet, HardHat, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { useLanguage } from '@/contexts/LanguageContext';
 
 const MobileBlockScreen = () => {
   const navigate = useNavigate();
-  const { t } = useLanguage();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center px-6">
@@ -40,7 +38,7 @@ const MobileBlockScreen = () => {
               transition={{ delay: 0.2 }}
               className="text-2xl font-bold mb-3"
             >
-              {t('engineering.mobile.title')}
+              Larger Screen Required
             </motion.h1>
 
             {/* Description */}
@@ -50,7 +48,7 @@ const MobileBlockScreen = () => {
               transition={{ delay: 0.3 }}
               className="text-muted-foreground mb-8"
             >
-              {t('engineering.mobile.description')}
+              Our engineering tools feature complex 3D visualizations and detailed calculators that require a tablet or desktop screen for the best experience.
             </motion.p>
 
             {/* Device Icons */}
@@ -64,13 +62,13 @@ const MobileBlockScreen = () => {
                 <div className="w-14 h-14 rounded-xl bg-muted/50 flex items-center justify-center">
                   <Tablet className="w-6 h-6 text-cyan-500" />
                 </div>
-                <span className="text-xs text-muted-foreground">{t('engineering.mobile.tablet')}</span>
+                <span className="text-xs text-muted-foreground">Tablet</span>
               </div>
               <div className="flex flex-col items-center gap-2">
                 <div className="w-14 h-14 rounded-xl bg-muted/50 flex items-center justify-center">
                   <Monitor className="w-6 h-6 text-cyan-500" />
                 </div>
-                <span className="text-xs text-muted-foreground">{t('engineering.mobile.desktop')}</span>
+                <span className="text-xs text-muted-foreground">Desktop</span>
               </div>
             </motion.div>
 
@@ -86,7 +84,7 @@ const MobileBlockScreen = () => {
                 className="gap-2"
               >
                 <ArrowLeft className="w-4 h-4" />
-                {t('engineering.mobile.backToDashboard')}
+                Back to Dashboard
               </Button>
             </motion.div>
 
@@ -101,7 +99,7 @@ const MobileBlockScreen = () => {
                 href="/services/civil-engineering"
                 className="text-xs text-cyan-500 hover:text-cyan-400 underline underline-offset-2"
               >
-                {t('engineering.mobile.learnMore')}
+                Learn more about our engineering tools
               </a>
             </motion.div>
           </div>
