@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 import { useUsageTracking } from '@/hooks/useUsageTracking';
+import { usePinnedChats } from '@/hooks/usePinnedChats';
 import { supabase } from '@/integrations/supabase/client';
 
 // Moved outside to prevent recreation on each render
@@ -132,13 +133,12 @@ export const Sidebar = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [profilePopoverOpen, setProfilePopoverOpen] = useState(false);
-  const [pinnedChats, setPinnedChats] = useState<Set<string>>(() => {
-    const stored = localStorage.getItem('pinnedChats');
-    return stored ? new Set(JSON.parse(stored)) : new Set();
-  });
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isDeletingAll, setIsDeletingAll] = useState(false);
   const [showSupportWidget, setShowSupportWidget] = useState(false);
+  
+  // Use database-synced pinned chats hook instead of localStorage
+  const { pinnedChats, togglePin } = usePinnedChats(userId, accessToken);
   
   // Fetch credits data directly via hook
   const { currentUsage: usageFromHook, monthlyLimit: limitFromHook, bonusCredits: bonusFromHook, isUnlimited: isUnlimitedFromHook, resetDate: resetFromHook, isLoading: isUsageLoading } = useUsageTracking(userId ?? null);
