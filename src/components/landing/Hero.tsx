@@ -43,12 +43,12 @@ export const Hero = memo(({ onGetStarted }: HeroProps) => {
       };
     }
     return {
-      topLeft: { x: -190, y: -120 },
-      middleLeft: { x: -210, y: 0 },
-      bottomLeft: { x: -190, y: 120 },
-      topRight: { x: 190, y: -120 },
-      middleRight: { x: 210, y: 0 },
-      bottomRight: { x: 190, y: 120 }
+      topLeft: { x: -220, y: -130 },
+      middleLeft: { x: -270, y: 0 },
+      bottomLeft: { x: -220, y: 130 },
+      topRight: { x: 220, y: -130 },
+      middleRight: { x: 270, y: 0 },
+      bottomRight: { x: 220, y: 130 }
     };
   };
   const cardPositions = getCardPositions();
