@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 interface UsageData {
   currentUsage: number;
   monthlyLimit: number | null;
+  bonusCredits: number;
   isUnlimited: boolean;
   resetDate: string | null;
   isLoading: boolean;
@@ -13,6 +14,7 @@ export const useUsageTracking = (userId: string | null): UsageData & { refreshUs
   const [usageData, setUsageData] = useState<UsageData>({
     currentUsage: 0,
     monthlyLimit: null,
+    bonusCredits: 0,
     isUnlimited: false,
     resetDate: null,
     isLoading: true
@@ -25,10 +27,10 @@ export const useUsageTracking = (userId: string | null): UsageData & { refreshUs
     }
     
     try {
-      // Read from user_ai_limits - now using monthly tracking
+      // Read from user_ai_limits - now using monthly tracking with bonus credits
       const { data, error } = await supabase
         .from('user_ai_limits')
-        .select('current_monthly_messages, monthly_messages, is_unlimited, monthly_reset_at')
+        .select('current_monthly_messages, monthly_messages, bonus_credits, is_unlimited, monthly_reset_at')
         .eq('user_id', userId)
         .maybeSingle();
 
@@ -36,6 +38,7 @@ export const useUsageTracking = (userId: string | null): UsageData & { refreshUs
         setUsageData({
           currentUsage: data.current_monthly_messages || 0,
           monthlyLimit: data.is_unlimited ? null : (data.monthly_messages || 50),
+          bonusCredits: data.bonus_credits || 0,
           isUnlimited: data.is_unlimited || false,
           resetDate: data.monthly_reset_at,
           isLoading: false
@@ -45,6 +48,7 @@ export const useUsageTracking = (userId: string | null): UsageData & { refreshUs
         setUsageData({
           currentUsage: 0,
           monthlyLimit: 50, // Default free tier limit
+          bonusCredits: 0,
           isUnlimited: false,
           resetDate: null,
           isLoading: false
@@ -84,6 +88,7 @@ export const useUsageTracking = (userId: string | null): UsageData & { refreshUs
           const newData = payload.new as {
             current_monthly_messages: number | null;
             monthly_messages: number | null;
+            bonus_credits: number | null;
             is_unlimited: boolean | null;
             monthly_reset_at: string | null;
           };
@@ -92,6 +97,7 @@ export const useUsageTracking = (userId: string | null): UsageData & { refreshUs
             ...prev,
             currentUsage: newData.current_monthly_messages || 0,
             monthlyLimit: newData.is_unlimited ? null : (newData.monthly_messages || 50),
+            bonusCredits: newData.bonus_credits || 0,
             isUnlimited: newData.is_unlimited || false,
             resetDate: newData.monthly_reset_at
           }));
