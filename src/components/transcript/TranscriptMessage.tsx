@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Copy, Check } from 'lucide-react';
+import { Copy, Check, User, Brain } from 'lucide-react';
 import { useState } from 'react';
 
 interface TranscriptMessageProps {
@@ -35,7 +35,11 @@ export const TranscriptMessage = ({
           ? "bg-primary text-primary-foreground" 
           : "bg-foreground text-background"
       )}>
-        {isUser ? 'Y' : 'A'}
+        {isUser ? (
+          <User className="w-4 h-4" />
+        ) : (
+          <Brain className="w-4 h-4" />
+        )}
       </div>
 
       {/* Content */}
