@@ -579,69 +579,11 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
             </div>
           )}
 
-          {/* Mode Selector - only show if multiple modes */}
-          {modes && modes.length > 1 ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="h-9 px-3 rounded-xl border border-border/40 flex items-center gap-2 bg-background/80 backdrop-blur-sm hover:bg-muted/50 hover:border-border/60 transition-all duration-200 shadow-sm">
-                  {modes?.find(m => m.name === selectedMode)?.icon ? (
-                    <div className={cn(
-                      "p-1 rounded-lg",
-                      "bg-primary/10"
-                    )}>
-                      {React.createElement(modes.find(m => m.name === selectedMode)!.icon, { 
-                        className: cn("w-4 h-4", modes.find(m => m.name === selectedMode)?.color) 
-                      })}
-                    </div>
-                  ) : (
-                    <Brain className="w-5 h-5 text-foreground" />
-                  )}
-                  <span className="text-sm font-medium text-foreground">{selectedMode}</span>
-                  <ChevronDown className="w-3.5 h-3.5 text-muted-foreground ml-0.5" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent 
-                align="end" 
-                className="min-w-[240px] p-2 bg-background/95 backdrop-blur-xl border border-border/50 rounded-xl shadow-xl"
-              >
-                {modes?.map((mode) => (
-                  <DropdownMenuItem
-                    key={mode.name}
-                    onClick={() => {
-                      onModeChange(mode.name as AIMode);
-                      playModeChange?.(mode.name);
-                    }}
-                    className={cn(
-                      "flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-colors focus:bg-muted/50",
-                      selectedMode === mode.name ? "bg-muted/70" : "hover:bg-muted/40"
-                    )}
-                  >
-                    <div className={cn(
-                      "p-2 rounded-lg shrink-0",
-                      "bg-gradient-to-br from-primary/20 to-primary/10"
-                    )}>
-                      {React.createElement(mode.icon, { className: cn("w-5 h-5", mode.color) })}
-                    </div>
-                    <div className="flex flex-col flex-1 min-w-0">
-                      <span className="font-semibold text-foreground">{mode.translatedName}</span>
-                      {mode.description && (
-                        <span className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{mode.description}</span>
-                      )}
-                    </div>
-                    {selectedMode === mode.name && (
-                      <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                    )}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            // Single mode - just show a simple label
-            <div className="h-9 px-3 rounded-xl flex items-center gap-2 text-muted-foreground">
-              <Brain className="w-5 h-5 text-foreground" />
-              <span className="text-sm font-medium">AYN</span>
-            </div>
-          )}
+          {/* AYN Mode Label - no dropdown */}
+          <div className="h-9 px-3 rounded-xl flex items-center gap-2 text-muted-foreground">
+            <Brain className="w-5 h-5 text-foreground" />
+            <span className="text-sm font-medium">AYN</span>
+          </div>
         </div>
       </div>
 
