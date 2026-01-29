@@ -1,47 +1,54 @@
 
 
-# Chat Transcript Avatar Improvements
+# Chat Transcript Improvements
 
-## Problem
-The current transcript message avatars are confusing:
-- **User messages** show "Y" (unclear meaning)
-- **AYN messages** show "A" instead of the Brain icon used everywhere else in the app
+## Issues to Fix
 
-## Solution
-Update the `TranscriptMessage` component to use proper icons:
-- **User**: Replace "Y" with a `User` icon from Lucide
-- **AYN**: Replace "A" with the `Brain` icon to match AYN's brand identity
+1. **Remove confusing date headers** - The "Today" and "Yesterday" labels are distracting and add clutter
+2. **Fix stuck scrolling** - The sticky date headers are interfering with smooth scrolling
+3. **Add confirmation dialog** - Prevent accidental clearing of chat history
 
-## Visual Changes
+## What the Clear Button Does
 
-| Current | New |
-|---------|-----|
-| Black circle with "Y" | Primary color circle with User icon |
-| Black circle with "A" | Dark circle with Brain icon |
+Good news: The Clear button is properly connected! When clicked, it:
+- Starts a new chat session (`chatSession.startNewChat()`)
+- Clears all messages from the current view (`messagesHook.setMessages([])`)
+
+So clearing the transcript does actually clear your current chat and start fresh.
+
+## Changes
+
+### 1. Remove Date Grouping
+- Remove the "Today", "Yesterday", and date headers completely
+- Display messages in a simple chronological list
+- This eliminates visual clutter and the scrolling issue
+
+### 2. Add Clear Confirmation Dialog
+Add an AlertDialog that appears when clicking "Clear" asking:
+> **Clear chat history?**
+> This will clear all messages and start a new chat. This action cannot be undone.
+> 
+> [Cancel] [Clear]
 
 ---
 
 ## Technical Details
 
-### File: `src/components/transcript/TranscriptMessage.tsx`
+### File: `src/components/transcript/TranscriptSidebar.tsx`
 
-**Changes:**
-1. Import `User` and `Brain` icons from `lucide-react`
-2. Replace text-based avatars with icon-based avatars:
-   - User: `<User className="w-4 h-4" />`
-   - AYN: `<Brain className="w-4 h-4" />`
+**Remove date grouping:**
+- Remove `groupMessagesByDate` function and `formatDateHeader` function
+- Remove `isToday`, `isYesterday`, `isSameDay` imports from date-fns
+- Render `filteredMessages` directly without grouping
+- Remove the sticky date header elements
 
-```tsx
-// Before
-{isUser ? 'Y' : 'A'}
+**Add confirmation dialog:**
+- Import AlertDialog components from `@/components/ui/alert-dialog`
+- Add state: `const [showClearConfirm, setShowClearConfirm] = useState(false)`
+- Wrap Clear button to open dialog instead of calling `onClear` directly
+- Add AlertDialog with Cancel and Confirm actions
 
-// After
-{isUser ? (
-  <User className="w-4 h-4" />
-) : (
-  <Brain className="w-4 h-4" />
-)}
-```
-
-This is a minimal, focused change that aligns the transcript with AYN's visual identity used across the rest of the application.
+**Fix scrolling:**
+- Removing sticky headers will resolve the scroll interference
+- Keep the existing scroll logic which is otherwise well-implemented
 
