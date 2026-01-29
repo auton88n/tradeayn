@@ -334,43 +334,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
       {/* Main container */}
       <div className={cn("relative bg-background/95 backdrop-blur-xl border border-border rounded-2xl shadow-lg overflow-hidden transition-all duration-300", isDragOver && "border-primary shadow-xl", isInputFocused && "border-border/80 shadow-xl")}>
         
-        {/* Suggestions row - inside card, above input */}
-        <AnimatePresence>
-          {visibleSuggestions.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2 }}
-              className="px-3 pt-3 pb-1 border-b border-border/30"
-            >
-              <div className="flex flex-wrap gap-2 justify-center">
-                {visibleSuggestions.map((suggestion, index) => (
-                  <motion.button
-                    key={suggestion.id}
-                    onClick={(e) => handleSuggestionClickInternal(suggestion, e)}
-                    className={cn(
-                      "flex items-center gap-1.5",
-                      "px-3 py-1.5",
-                      "bg-muted/50 hover:bg-muted",
-                      "border border-border/50 hover:border-border",
-                      "rounded-xl",
-                      "text-xs font-medium",
-                      "transition-all duration-150",
-                      "active:scale-95"
-                    )}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: index * 0.05 }}
-                  >
-                    <span>{suggestion.emoji}</span>
-                    <span className="line-clamp-1 max-w-[120px]">{suggestion.content}</span>
-                  </motion.button>
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* Suggestions row removed per user request */}
         
         {/* Drag overlay - INSIDE the card container for proper sizing */}
         <AnimatePresence>
