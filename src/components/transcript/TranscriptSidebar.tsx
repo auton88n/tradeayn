@@ -7,7 +7,16 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { TranscriptMessage } from './TranscriptMessage';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { format, isToday, isYesterday, isSameDay } from 'date-fns';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import type { Message } from '@/types/dashboard.types';
 
 interface TranscriptSidebarProps {
@@ -19,30 +28,6 @@ interface TranscriptSidebarProps {
   onReply?: (quotedContent: string) => void;
 }
 
-// Group messages by date
-const groupMessagesByDate = (messages: Message[]) => {
-  const groups: { date: Date; messages: Message[] }[] = [];
-  
-  messages.forEach((msg) => {
-    const msgDate = msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp);
-    const lastGroup = groups[groups.length - 1];
-    
-    if (lastGroup && isSameDay(lastGroup.date, msgDate)) {
-      lastGroup.messages.push(msg);
-    } else {
-      groups.push({ date: msgDate, messages: [msg] });
-    }
-  });
-  
-  return groups;
-};
-
-const formatDateHeader = (date: Date) => {
-  if (isToday(date)) return 'Today';
-  if (isYesterday(date)) return 'Yesterday';
-  return format(date, 'MMMM d, yyyy');
-};
-
 export const TranscriptSidebar = ({
   messages,
   isOpen,
@@ -51,6 +36,7 @@ export const TranscriptSidebar = ({
 }: TranscriptSidebarProps) => {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
 
@@ -65,9 +51,6 @@ export const TranscriptSidebar = ({
       }),
     [messages, searchQuery]
   );
-
-  // Group messages by date
-  const groupedMessages = useMemo(() => groupMessagesByDate(filteredMessages), [filteredMessages]);
 
   // Scroll handling
   const handleScroll = useCallback(() => {
@@ -111,6 +94,16 @@ export const TranscriptSidebar = ({
     } catch {
       toast({ title: 'Copy failed', variant: 'destructive' });
     }
+  };
+
+  // Handle clear with confirmation
+  const handleClearClick = () => {
+    setShowClearConfirm(true);
+  };
+
+  const handleClearConfirm = () => {
+    setShowClearConfirm(false);
+    onClear?.();
   };
 
   return (
@@ -194,7 +187,7 @@ export const TranscriptSidebar = ({
               {/* Messages */}
               <ScrollArea className="flex-1" ref={scrollRef}>
                 <div className="p-2">
-                  {groupedMessages.length === 0 ? (
+                  {filteredMessages.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-16 text-center">
                       <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4">
                         <MessageSquare className="w-5 h-5 text-muted-foreground" />
@@ -207,29 +200,13 @@ export const TranscriptSidebar = ({
                       </p>
                     </div>
                   ) : (
-                    groupedMessages.map((group, groupIndex) => (
-                      <div key={groupIndex}>
-                        {/* Date header */}
-                        <div className="sticky top-0 z-10 py-2 px-3">
-                          <div className="flex items-center gap-2">
-                            <div className="h-px flex-1 bg-border" />
-                            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                              {formatDateHeader(group.date)}
-                            </span>
-                            <div className="h-px flex-1 bg-border" />
-                          </div>
-                        </div>
-
-                        {/* Messages for this date */}
-                        {group.messages.map((msg) => (
-                          <TranscriptMessage
-                            key={msg.id}
-                            content={msg.content}
-                            sender={msg.sender}
-                            timestamp={msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp)}
-                          />
-                        ))}
-                      </div>
+                    filteredMessages.map((msg) => (
+                      <TranscriptMessage
+                        key={msg.id}
+                        content={msg.content}
+                        sender={msg.sender}
+                        timestamp={msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp)}
+                      />
                     ))
                   )}
                 </div>
@@ -274,7 +251,7 @@ export const TranscriptSidebar = ({
                     variant="outline"
                     size="sm"
                     className="flex-1 h-10 rounded-xl text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                    onClick={onClear}
+                    onClick={handleClearClick}
                     disabled={messages.length === 0}
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
@@ -286,6 +263,24 @@ export const TranscriptSidebar = ({
           </>
         )}
       </AnimatePresence>
+
+      {/* Clear Confirmation Dialog */}
+      <AlertDialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear chat history?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will clear all messages and start a new chat. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleClearConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Clear
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };
