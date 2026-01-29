@@ -2326,6 +2326,7 @@ export type Database = {
         Returns: undefined
       }
       admin_view_contact_with_logging: { Args: never; Returns: boolean }
+      backfill_missing_session_titles: { Args: never; Returns: number }
       check_api_rate_limit: {
         Args: {
           p_endpoint: string
