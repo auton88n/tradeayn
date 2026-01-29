@@ -1,17 +1,19 @@
 import { memo } from 'react';
 import { Mail, Instagram, TrendingUp, Users, Heart, Eye } from 'lucide-react';
 import influencerBg from '@/assets/influencer-woman-bg.jpg';
-
-const stats = [
-  { value: '3.2M', label: 'Followers' },
-  { value: '8.5%', label: 'Engagement' },
-  { value: '50+', label: 'Brand Deals' }
-];
+const stats = [{
+  value: '3.2M',
+  label: 'Followers'
+}, {
+  value: '8.5%',
+  label: 'Engagement'
+}, {
+  value: '50+',
+  label: 'Brand Deals'
+}];
 const navDots = [0, 1, 2, 3, 4];
-
 const MobileMockup = memo(() => {
-  return (
-    <div className="relative flex justify-center items-center py-4 px-4 md:px-8 lg:px-16" dir="ltr">
+  return <div className="relative flex justify-center items-center py-4 px-4 md:px-8 lg:px-16" dir="ltr">
       {/* Phone-Centric Layout Container - Always LTR to prevent card position changes */}
       <div className="relative mx-auto" dir="ltr">
         {/* iPhone Frame - Center (Smaller) */}
@@ -22,20 +24,12 @@ const MobileMockup = memo(() => {
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 md:w-24 h-5 md:h-6 bg-neutral-900 rounded-b-xl md:rounded-b-2xl z-10" />
             
             {/* Status Bar */}
-            <div className="flex justify-between items-center px-6 pt-2 text-[9px] text-neutral-500 relative z-20">
-              <span>9:41</span>
-              <div className="flex gap-1">
-                <div className="w-3 h-1.5 bg-neutral-700 rounded-sm" />
-                <div className="w-3 h-1.5 bg-neutral-700 rounded-sm" />
-                <div className="w-4 h-1.5 bg-neutral-700 rounded-sm" />
-              </div>
-            </div>
+            
             
             {/* Background Image */}
-            <div 
-              className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40"
-              style={{ backgroundImage: `url(${influencerBg})` }}
-            />
+            <div className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40" style={{
+            backgroundImage: `url(${influencerBg})`
+          }} />
             <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/70 to-neutral-950/30" />
             
             {/* Main Content */}
@@ -62,12 +56,10 @@ const MobileMockup = memo(() => {
 
               {/* Stats Row */}
               <div className="flex gap-1.5 mb-3 w-full px-1">
-                {stats.map((stat, i) => (
-                  <div key={i} className="flex-1 bg-neutral-800/70 rounded-lg py-2 px-1.5 text-center border border-neutral-700/40">
+                {stats.map((stat, i) => <div key={i} className="flex-1 bg-neutral-800/70 rounded-lg py-2 px-1.5 text-center border border-neutral-700/40">
                     <p className="text-white font-serif text-[11px] font-medium">{stat.value}</p>
                     <p className="text-neutral-500 text-[5px] uppercase tracking-wide">{stat.label}</p>
-                  </div>
-                ))}
+                  </div>)}
               </div>
 
               {/* CTA Button */}
@@ -99,9 +91,7 @@ const MobileMockup = memo(() => {
 
             {/* Navigation Dots - Right Side */}
             <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-2">
-              {navDots.map((_, i) => (
-                <div key={i} className={`rounded-full ${i === 0 ? 'w-1.5 h-1.5 bg-rose-400' : 'w-1 h-1 bg-neutral-600'}`} />
-              ))}
+              {navDots.map((_, i) => <div key={i} className={`rounded-full ${i === 0 ? 'w-1.5 h-1.5 bg-rose-400' : 'w-1 h-1 bg-neutral-600'}`} />)}
             </div>
           </div>
         </div>
@@ -196,10 +186,7 @@ const MobileMockup = memo(() => {
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 });
-
 MobileMockup.displayName = 'MobileMockup';
-
 export default MobileMockup;
