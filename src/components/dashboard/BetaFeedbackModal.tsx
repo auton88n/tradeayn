@@ -113,7 +113,9 @@ export const BetaFeedbackModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[calc(100%-2rem)] max-w-lg mx-auto max-h-[85vh] overflow-y-auto p-4 sm:p-6 rounded-xl"
+        aria-describedby="feedback-description"
+      >
         <AnimatePresence mode="wait">
           {step === 'success' ? (
             <motion.div
@@ -170,11 +172,11 @@ export const BetaFeedbackModal = ({
                 </DialogDescription>
               </DialogHeader>
 
-              <div className="space-y-6 py-4">
+              <div className="space-y-5 py-4" id="feedback-description">
                 {/* Rating */}
                 <div className="space-y-2">
                   <Label>{t('beta.overallExperience')} *</Label>
-                  <div className="flex gap-1">
+                  <div className="flex gap-1 justify-center sm:justify-start">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <button
                         key={star}
@@ -182,11 +184,11 @@ export const BetaFeedbackModal = ({
                         onMouseEnter={() => setHoveredRating(star)}
                         onMouseLeave={() => setHoveredRating(0)}
                         onClick={() => setRating(star)}
-                        className="p-1 transition-transform hover:scale-110"
+                        className="p-1.5 transition-transform hover:scale-110 touch-manipulation"
                       >
                         <Star
                           className={cn(
-                            "w-8 h-8 transition-colors",
+                            "w-9 h-9 sm:w-8 sm:h-8 transition-colors",
                             (hoveredRating || rating) >= star
                               ? "fill-yellow-400 text-yellow-400"
                               : "text-muted-foreground"
@@ -200,12 +202,12 @@ export const BetaFeedbackModal = ({
                 {/* Favorite Features */}
                 <div className="space-y-2">
                   <Label>{t('beta.featuresLove')}</Label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {FEATURES.map((feature) => (
                       <label
                         key={feature.id}
                         className={cn(
-                          "flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-colors",
+                          "flex items-center gap-2 p-3 sm:p-2 rounded-lg border cursor-pointer transition-colors touch-manipulation min-h-[44px]",
                           selectedFeatures.includes(feature.id)
                             ? "border-purple-500 bg-purple-500/10"
                             : "border-border hover:bg-muted/50"
@@ -214,6 +216,7 @@ export const BetaFeedbackModal = ({
                         <Checkbox
                           checked={selectedFeatures.includes(feature.id)}
                           onCheckedChange={() => handleFeatureToggle(feature.id)}
+                          className="h-5 w-5"
                         />
                         <span className="text-sm">{t(feature.labelKey)}</span>
                       </label>
@@ -250,13 +253,13 @@ export const BetaFeedbackModal = ({
                 {/* Would Recommend */}
                 <div className="space-y-2">
                   <Label>{t('beta.wouldRecommend')}</Label>
-                  <div className="flex gap-3">
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                     <Button
                       type="button"
                       variant={wouldRecommend === true ? "default" : "outline"}
                       onClick={() => setWouldRecommend(true)}
                       className={cn(
-                        "flex-1",
+                        "flex-1 min-h-[44px] touch-manipulation",
                         wouldRecommend === true && "bg-green-500 hover:bg-green-600"
                       )}
                     >
@@ -268,7 +271,7 @@ export const BetaFeedbackModal = ({
                       variant={wouldRecommend === false ? "default" : "outline"}
                       onClick={() => setWouldRecommend(false)}
                       className={cn(
-                        "flex-1",
+                        "flex-1 min-h-[44px] touch-manipulation",
                         wouldRecommend === false && "bg-red-500 hover:bg-red-600"
                       )}
                     >
@@ -279,14 +282,19 @@ export const BetaFeedbackModal = ({
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-4 border-t">
-                <Button variant="outline" onClick={handleClose} disabled={isSubmitting}>
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-4 border-t">
+                <Button 
+                  variant="outline" 
+                  onClick={handleClose} 
+                  disabled={isSubmitting}
+                  className="min-h-[44px] touch-manipulation"
+                >
                   {t('beta.maybeLater')}
                 </Button>
                 <Button
                   onClick={handleSubmit}
                   disabled={isSubmitting || rating === 0}
-                  className="bg-gradient-to-r from-purple-500 to-fuchsia-500 hover:from-purple-600 hover:to-fuchsia-600"
+                  className="bg-gradient-to-r from-purple-500 to-fuchsia-500 hover:from-purple-600 hover:to-fuchsia-600 min-h-[44px] touch-manipulation"
                 >
                   {isSubmitting ? (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
