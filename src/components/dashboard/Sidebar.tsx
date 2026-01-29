@@ -307,19 +307,7 @@ export const Sidebar = ({
     if (diffDays === 1) return 'Yesterday';
     return format(date, 'MMM d');
   };
-  const togglePin = (sessionId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setPinnedChats(prev => {
-      const newPinned = new Set(prev);
-      if (newPinned.has(sessionId)) {
-        newPinned.delete(sessionId);
-      } else {
-        newPinned.add(sessionId);
-      }
-      localStorage.setItem('pinnedChats', JSON.stringify([...newPinned]));
-      return newPinned;
-    });
-  };
+  // togglePin is now provided by usePinnedChats hook (line 141)
   const filteredAndSortedChats = React.useMemo(() => {
     let filtered = recentChats;
     if (searchQuery.trim()) {
