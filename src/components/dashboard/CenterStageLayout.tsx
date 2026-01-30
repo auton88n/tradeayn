@@ -512,30 +512,44 @@ export const CenterStageLayout = ({
   useEffect(() => {
     let isMounted = true; // Guard against unmounted state updates
     
-    if (messages.length === 0) return;
+    if (messages.length === 0) {
+      return () => { isMounted = false; };
+    }
 
     // Skip processing historical messages - only process new responses
-    if (isLoadingFromHistory) return;
+    if (isLoadingFromHistory) {
+      return () => { isMounted = false; };
+    }
 
     const gate = awaitingLiveResponseRef.current;
 
     // Skip if not awaiting a live response (prevents auto-show on chat switch / during send animation)
-    if (!gate.active) return;
+    if (!gate.active) {
+      return () => { isMounted = false; };
+    }
 
     const lastMessage = messages[messages.length - 1];
     
     // Safety check - ensure message exists and has required properties
-    if (!lastMessage || !lastMessage.id) return;
+    if (!lastMessage || !lastMessage.id) {
+      return () => { isMounted = false; };
+    }
 
     // If the last message hasn't changed since we started the send, it's the old response — ignore it.
-    if (gate.baselineLastMessageId && lastMessage.id === gate.baselineLastMessageId) return;
+    if (gate.baselineLastMessageId && lastMessage.id === gate.baselineLastMessageId) {
+      return () => { isMounted = false; };
+    }
 
     // Only process new AYN messages
     // IMPORTANT: ignore the streaming placeholder message (content may be empty while isTyping=true)
     // to prevent emitting an empty ResponseCard that never updates.
     if (lastMessage.sender === 'ayn') {
-      if (lastMessage.isTyping) return;
-      if (!lastMessage.content?.trim()) return;
+      if (lastMessage.isTyping) {
+        return () => { isMounted = false; };
+      }
+      if (!lastMessage.content?.trim()) {
+        return () => { isMounted = false; };
+      }
     }
 
     if (lastMessage.sender === 'ayn' && lastMessage.content !== lastProcessedMessageContent) {
