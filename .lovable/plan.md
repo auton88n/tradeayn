@@ -1,83 +1,98 @@
 
-# Fix Plan: ResponseCard Dialog UI Issues
+# Fix Plan: Chat History Markdown Rendering
 
-## Issues to Address
+## Problem Identified
 
-1. **X button and thumbs-down overlapping** - The default dialog close button (X) overlaps with the feedback buttons in the header
-2. **Add proper scrolling for longer answers** - Ensure the expanded reading mode properly scrolls for long content
+From your screenshot, the Chat History sidebar is showing raw markdown syntax (`**Geopolitics:**` with asterisks visible) instead of properly formatted text (bold "Geopolitics:"). This is because the `TranscriptMessage` component displays content as plain text instead of parsing markdown.
+
+The "scroll to bottom" feature already exists in the TranscriptSidebar - there's a "Jump to latest" button that appears when you scroll up.
 
 ---
 
 ## Solution
 
-### Option A (Recommended): Remove like/dislike from the expanded dialog header
-
-Since feedback is already available in the inline card, duplicating it in the expanded view creates visual clutter and positioning conflicts. The cleaner approach is to remove the feedback buttons from the expanded dialog header while keeping Copy and X.
+Update the `TranscriptMessage` component to use `MessageFormatter` for rendering content, which properly handles:
+- Bold text (`**text**`)
+- Bullet points and lists
+- Links
+- Code blocks
+- And other markdown syntax
 
 ---
 
 ## Technical Changes
 
-### File: `src/components/eye/ResponseCard.tsx`
+### File: `src/components/transcript/TranscriptMessage.tsx`
 
-**Change 1: Remove feedback buttons from the expanded dialog header (lines 491-512)**
+**Change 1: Import MessageFormatter**
 
-Remove the thumbs up and thumbs down buttons from the dialog header section:
+Add import at the top:
+```tsx
+import { MessageFormatter } from '@/components/shared/MessageFormatter';
+```
+
+**Change 2: Replace plain text with formatted markdown**
+
+Replace the plain `<p>` tag with `MessageFormatter`:
 
 ```tsx
-// Before (lines 472-513):
-<div className="flex items-center gap-1">
-  <button onClick={copyContent} ... />
-  <button onClick={() => handleFeedback('up')} ... />  // REMOVE
-  <button onClick={() => handleFeedback('down')} ... /> // REMOVE
-</div>
+// Before (line 68-70):
+<p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+  {content}
+</p>
 
 // After:
-<div className="flex items-center gap-1">
-  <button onClick={copyContent} ... />
-  {/* Feedback removed - available in inline card */}
+<div className="text-sm leading-relaxed break-words [&_p]:mb-1 [&_p:last-child]:mb-0 [&_ul]:my-1 [&_li]:pb-0">
+  <MessageFormatter content={content} />
 </div>
 ```
 
-**Change 2: Add scrolling constraints for the expanded dialog content (lines 517-524)**
+The additional CSS classes ensure compact spacing within the chat bubble:
+- `[&_p]:mb-1` - Reduce paragraph margin for tighter layout
+- `[&_ul]:my-1` - Compact list margins
+- `[&_li]:pb-0` - Remove list item padding
 
-Ensure proper scrolling works for very long content:
+**Change 3: Update copy handler to strip markdown**
 
-```tsx
-// Update the dialog content wrapper
-<div 
-  ref={dialogContentRef}
-  className={cn(
-    "flex-1 overflow-y-auto overflow-x-hidden",
-    "px-5 sm:px-8 py-6",
-    "[-webkit-overflow-scrolling:touch]",
-    "min-h-0" // ADD: Ensures flex child can shrink and scroll
-  )}
->
-```
-
-**Change 3: Reduce header right padding since feedback buttons removed**
+Update the copy function to convert markdown to plain text (similar to ResponseCard):
 
 ```tsx
-// Line 464: Update pr-12 to pr-14 or adjust as needed for the X button only
-<DialogHeader className="flex-shrink-0 px-5 sm:px-6 py-4 border-b border-border bg-background pr-14">
+// Add helper function
+const markdownToPlainText = (markdown: string): string => {
+  let text = markdown;
+  text = text.replace(/^#{1,6}\s+/gm, '');
+  text = text.replace(/\*\*(.+?)\*\*/g, '$1');
+  text = text.replace(/__(.+?)__/g, '$1');
+  text = text.replace(/^\s*[-*+]\s+/gm, '• ');
+  text = text.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+  return text.trim();
+};
+
+// Update handleCopy
+const handleCopy = async () => {
+  const plainText = markdownToPlainText(content);
+  await navigator.clipboard.writeText(plainText);
+  setCopied(true);
+  setTimeout(() => setCopied(false), 2000);
+};
 ```
 
 ---
 
-## Summary of Changes
+## Summary
 
-| Location | Change |
-|----------|--------|
-| Lines 491-512 | Remove thumbs up/down buttons from dialog header |
-| Line 520 | Add `min-h-0` to ensure proper flex scrolling |
-| Line 464 | Adjust header padding for cleaner X button spacing |
+| File | Change |
+|------|--------|
+| `src/components/transcript/TranscriptMessage.tsx` | Import and use MessageFormatter for content rendering |
+| Same file | Add compact styling classes for chat bubble layout |
+| Same file | Update copy to strip markdown syntax |
 
 ---
 
 ## Result
 
-- Clean dialog header with only Copy button and X close
-- Feedback buttons remain in the inline card where users naturally interact first
-- Proper scrolling for long responses in expanded mode
-- No visual overlap between controls
+- Bold text will render properly (not show asterisks)
+- Bullet points will display correctly
+- Links will be clickable
+- Code will be styled
+- The "Jump to latest" button already works when scrolled up
