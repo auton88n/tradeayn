@@ -464,6 +464,10 @@ export type Database = {
           is_published: boolean | null
           is_verified: boolean | null
           profile_image_url: string | null
+          show_instagram: boolean | null
+          show_tiktok: boolean | null
+          show_twitter: boolean | null
+          show_youtube: boolean | null
           tiktok_handle: string | null
           twitter_handle: string | null
           updated_at: string | null
@@ -483,6 +487,10 @@ export type Database = {
           is_published?: boolean | null
           is_verified?: boolean | null
           profile_image_url?: string | null
+          show_instagram?: boolean | null
+          show_tiktok?: boolean | null
+          show_twitter?: boolean | null
+          show_youtube?: boolean | null
           tiktok_handle?: string | null
           twitter_handle?: string | null
           updated_at?: string | null
@@ -502,6 +510,10 @@ export type Database = {
           is_published?: boolean | null
           is_verified?: boolean | null
           profile_image_url?: string | null
+          show_instagram?: boolean | null
+          show_tiktok?: boolean | null
+          show_twitter?: boolean | null
+          show_youtube?: boolean | null
           tiktok_handle?: string | null
           twitter_handle?: string | null
           updated_at?: string | null
@@ -2481,6 +2493,10 @@ export type Database = {
       get_profile_business_context: {
         Args: { _user_id: string; p_encryption_key?: string }
         Returns: string
+      }
+      get_public_creator_profile: {
+        Args: { p_creator_id: string }
+        Returns: Json
       }
       get_rate_limit_stats: {
         Args: never
