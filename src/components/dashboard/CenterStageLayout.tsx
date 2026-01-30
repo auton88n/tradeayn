@@ -510,6 +510,8 @@ export const CenterStageLayout = ({
   // Process AYN responses and emit speech bubbles + suggestions
   // Skip if loading from history OR not awaiting a live response
   useEffect(() => {
+    let isMounted = true; // Guard against unmounted state updates
+    
     if (messages.length === 0) return;
 
     // Skip processing historical messages - only process new responses
@@ -521,6 +523,9 @@ export const CenterStageLayout = ({
     if (!gate.active) return;
 
     const lastMessage = messages[messages.length - 1];
+    
+    // Safety check - ensure message exists and has required properties
+    if (!lastMessage || !lastMessage.id) return;
 
     // If the last message hasn't changed since we started the send, it's the old response — ignore it.
     if (gate.baselineLastMessageId && lastMessage.id === gate.baselineLastMessageId) return;
@@ -541,50 +546,70 @@ export const CenterStageLayout = ({
       // Blink before responding (like landing page)
       triggerBlink();
       
+      // Capture values for closure to prevent stale references
+      const messageContent = lastMessage.content;
+      const messageAttachment = lastMessage.attachment;
+      
       // After blink, use backend emotion and emit bubbles
       setTimeout(() => {
-        // BACKEND-ONLY: Use backend-suggested emotion, fallback to 'calm'
-        const validEmotions: AYNEmotion[] = ['calm', 'happy', 'excited', 'thinking', 'frustrated', 'curious', 'sad', 'mad', 'bored', 'comfort', 'supportive'];
-        const emotion = lastSuggestedEmotion && validEmotions.includes(lastSuggestedEmotion as AYNEmotion) 
-          ? lastSuggestedEmotion as AYNEmotion 
-          : 'calm';
-        // Use orchestrator for synchronized response emotion
-        orchestrateEmotionChange(emotion);
-        playSound?.('response-received');
-        setIsResponding(false);
-        bumpActivity(); // Increase activity on AI response
+        // Guard against unmounted component
+        if (!isMounted) return;
         
-        // Haptic feedback handled by orchestrator
-        
-        // Detect exciting keywords and trigger surprise enlargement
-        detectExcitement(lastMessage.content);
+        try {
+          // Safety check - ensure content still exists
+          if (!messageContent?.trim()) return;
+          
+          // BACKEND-ONLY: Use backend-suggested emotion, fallback to 'calm'
+          const validEmotions: AYNEmotion[] = ['calm', 'happy', 'excited', 'thinking', 'frustrated', 'curious', 'sad', 'mad', 'bored', 'comfort', 'supportive'];
+          const emotion = lastSuggestedEmotion && validEmotions.includes(lastSuggestedEmotion as AYNEmotion) 
+            ? lastSuggestedEmotion as AYNEmotion 
+            : 'calm';
+          // Use orchestrator for synchronized response emotion
+          orchestrateEmotionChange(emotion);
+          playSound?.('response-received');
+          setIsResponding(false);
+          bumpActivity(); // Increase activity on AI response
+          
+          // Haptic feedback handled by orchestrator
+          
+          // Detect exciting keywords and trigger surprise enlargement
+          detectExcitement(messageContent);
 
-        // Emit response bubble with attachment if present
-        const bubbleType = getBubbleType(lastMessage.content);
-      
-        // Clean leading punctuation and whitespace, emit full response as single bubble
-        // ResponseCard handles scrolling for long content - no splitting needed
-        const response = lastMessage.content.replace(/^[!?\s]+/, '').trim();
+          // Emit response bubble with attachment if present
+          const bubbleType = getBubbleType(messageContent);
         
-        // Pass attachment metadata to the bubble so ResponseCard can use it
-        const attachment = lastMessage.attachment ? {
-          url: lastMessage.attachment.url,
-          name: lastMessage.attachment.name,
-          type: lastMessage.attachment.type,
-        } : undefined;
-        
-        emitResponseBubble(response, bubbleType, attachment);
-        
-        // Show dynamic suggestions after response bubble appears (debounced to reduce API calls)
-        setTimeout(() => {
-          debouncedFetchAndEmitSuggestions(
-            lastUserMessage || 'Hello',
-            lastMessage.content,
-            selectedMode
-          );
-        }, 600);
+          // Clean leading punctuation and whitespace, emit full response as single bubble
+          // ResponseCard handles scrolling for long content - no splitting needed
+          const response = (messageContent || '').replace(/^[!?\s]+/, '').trim();
+          
+          // Don't emit empty bubbles
+          if (!response) return;
+          
+          // Pass attachment metadata to the bubble so ResponseCard can use it
+          const attachment = messageAttachment ? {
+            url: messageAttachment.url,
+            name: messageAttachment.name,
+            type: messageAttachment.type,
+          } : undefined;
+          
+          emitResponseBubble(response, bubbleType, attachment);
+          
+          // Show dynamic suggestions after response bubble appears (debounced to reduce API calls)
+          setTimeout(() => {
+            if (!isMounted) return;
+            debouncedFetchAndEmitSuggestions(
+              lastUserMessage || 'Hello',
+              messageContent,
+              selectedMode
+            );
+          }, 600);
+        } catch (error) {
+          console.error('[CenterStageLayout] Error processing response:', error);
+        }
       }, 50); // Minimal delay for blink
     }
+    
+    return () => { isMounted = false; };
   }, [
     messages,
     isLoadingFromHistory,
@@ -699,6 +724,7 @@ export const CenterStageLayout = ({
                   onDismiss={clearResponseBubbles}
                   variant="inline"
                   showPointer={false}
+                  sessionId={currentSessionId}
                 />
               </motion.div>
             )}
