@@ -1,101 +1,67 @@
 
-# Fix Plan: Intermittent ResponseCard Display
+# Fix Plan: ResponseCard Dialog UI Issues
 
-## Problem Identified
+## Issues to Address
 
-The ResponseCard appears inconsistently (sometimes shows, sometimes doesn't) due to a **cleanup timing issue** in the response processing `useEffect`.
-
-### Root Cause
-
-The effect has many dependencies beyond just `messages`:
-
-```javascript
-[
-  messages,              // ← this is the trigger
-  isLoadingFromHistory,
-  lastSuggestedEmotion,  // ← changes during streaming!
-  setEmotion,
-  setIsResponding,
-  emitResponseBubble,
-  triggerBlink,
-  detectExcitement,
-  debouncedFetchAndEmitSuggestions,
-  lastUserMessage,       // ← changes when user sends
-  selectedMode,
-  orchestrateEmotionChange,
-  playSound,
-  bumpActivity,
-]
-```
-
-When **any** of these dependencies change after the timeout is scheduled but before it fires, React:
-1. Runs the cleanup function → `clearTimeout(timeoutId)` cancels the pending emission
-2. Re-runs the effect → but now `lastProcessedAynMessageIdRef.current` already equals the message ID
-3. The ID check fails → processing block is skipped
-4. **Result: `emitResponseBubble` never called**
-
-### Why It's Intermittent
-
-- **Works**: Dependencies stay stable for the 50ms window → timeout fires → card appears
-- **Fails**: `lastSuggestedEmotion` or another dependency updates within 50ms → timeout canceled → no card
+1. **X button and thumbs-down overlapping** - The default dialog close button (X) overlaps with the feedback buttons in the header
+2. **Add proper scrolling for longer answers** - Ensure the expanded reading mode properly scrolls for long content
 
 ---
 
 ## Solution
 
-**Move the timeout logic outside the effect's cleanup scope** by using a ref to track the timeout ID and only clearing it when we intentionally want to cancel (session change, messages cleared), not on every effect re-run.
+### Option A (Recommended): Remove like/dislike from the expanded dialog header
 
-### Technical Changes
+Since feedback is already available in the inline card, duplicating it in the expanded view creates visual clutter and positioning conflicts. The cleaner approach is to remove the feedback buttons from the expanded dialog header while keeping Copy and X.
 
-**File: `src/components/dashboard/CenterStageLayout.tsx`**
+---
 
-1. **Add a persistent timeout ref** (near line 167):
-   ```tsx
-   const responseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-   ```
+## Technical Changes
 
-2. **Store timeout in ref instead of local variable** (around line 557):
-   ```tsx
-   // Before:
-   const timeoutId = setTimeout(() => { ... }, 50);
-   return () => { clearTimeout(timeoutId); ... };
-   
-   // After:
-   responseTimeoutRef.current = setTimeout(() => { ... }, 50);
-   // No cleanup that clears this timeout on dependency changes
-   ```
+### File: `src/components/eye/ResponseCard.tsx`
 
-3. **Remove the cleanup function that clears the timeout** from this effect:
-   - The current cleanup cancels legitimate pending emissions
-   - Instead, only clear the timeout in explicit reset scenarios
+**Change 1: Remove feedback buttons from the expanded dialog header (lines 491-512)**
 
-4. **Clear timeout only in intentional reset locations**:
-   - Messages cleared effect (line 236-245)
-   - Session change effect (line 249-256)
-   - Start of `handleSendWithAnimation` (line 406)
-   
-   Add to each:
-   ```tsx
-   if (responseTimeoutRef.current) {
-     clearTimeout(responseTimeoutRef.current);
-     responseTimeoutRef.current = null;
-   }
-   ```
+Remove the thumbs up and thumbs down buttons from the dialog header section:
 
-5. **Keep `responseProcessingRef.active = false`** in the timeout callback after emission completes (not in cleanup):
-   ```tsx
-   setTimeout(() => {
-     try {
-       // ... emit bubble ...
-       emitResponseBubble(response, bubbleType, attachment);
-       
-       // Mark processing complete AFTER emission
-       responseProcessingRef.current.active = false;
-       
-       // ... suggestion fetch ...
-     } catch (error) { ... }
-   }, 50);
-   ```
+```tsx
+// Before (lines 472-513):
+<div className="flex items-center gap-1">
+  <button onClick={copyContent} ... />
+  <button onClick={() => handleFeedback('up')} ... />  // REMOVE
+  <button onClick={() => handleFeedback('down')} ... /> // REMOVE
+</div>
+
+// After:
+<div className="flex items-center gap-1">
+  <button onClick={copyContent} ... />
+  {/* Feedback removed - available in inline card */}
+</div>
+```
+
+**Change 2: Add scrolling constraints for the expanded dialog content (lines 517-524)**
+
+Ensure proper scrolling works for very long content:
+
+```tsx
+// Update the dialog content wrapper
+<div 
+  ref={dialogContentRef}
+  className={cn(
+    "flex-1 overflow-y-auto overflow-x-hidden",
+    "px-5 sm:px-8 py-6",
+    "[-webkit-overflow-scrolling:touch]",
+    "min-h-0" // ADD: Ensures flex child can shrink and scroll
+  )}
+>
+```
+
+**Change 3: Reduce header right padding since feedback buttons removed**
+
+```tsx
+// Line 464: Update pr-12 to pr-14 or adjust as needed for the X button only
+<DialogHeader className="flex-shrink-0 px-5 sm:px-6 py-4 border-b border-border bg-background pr-14">
+```
 
 ---
 
@@ -103,19 +69,15 @@ When **any** of these dependencies change after the timeout is scheduled but bef
 
 | Location | Change |
 |----------|--------|
-| Line ~167 | Add `responseTimeoutRef = useRef<NodeJS.Timeout \| null>(null)` |
-| Line ~240 | Add timeout clear in "messages cleared" effect |
-| Line ~253 | Add timeout clear in "session change" effect |
-| Line ~406 | Add timeout clear in `handleSendWithAnimation` |
-| Line ~557 | Use `responseTimeoutRef.current = setTimeout(...)` |
-| Line ~595 | Move `responseProcessingRef.current.active = false` after bubble emission |
-| Line ~613-616 | Remove the cleanup function entirely from this effect |
+| Lines 491-512 | Remove thumbs up/down buttons from dialog header |
+| Line 520 | Add `min-h-0` to ensure proper flex scrolling |
+| Line 464 | Adjust header padding for cleaner X button spacing |
 
 ---
 
-## Why This Will Work
+## Result
 
-1. **Timeout persists across dependency changes**: Using a ref means React's cleanup doesn't cancel the emission
-2. **Intentional cancellation only**: Timeout is only cleared when we truly want to reset (new send, session switch, messages cleared)
-3. **ID-based deduplication still works**: The `lastProcessedAynMessageIdRef` prevents duplicate processing
-4. **No race conditions**: The 50ms timeout will always complete unless explicitly canceled
+- Clean dialog header with only Copy button and X close
+- Feedback buttons remain in the inline card where users naturally interact first
+- Proper scrolling for long responses in expanded mode
+- No visual overlap between controls
