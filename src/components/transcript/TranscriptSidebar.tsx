@@ -168,54 +168,46 @@ export const TranscriptSidebar = ({
                 </div>
               </div>
 
-              {/* Messages container with floating scroll button */}
-              <div className="relative flex-1">
-                <ScrollArea className="h-full" ref={scrollRef}>
-                  <div className="p-2">
-                    {filteredMessages.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center py-16 text-center">
-                        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4">
-                          <MessageSquare className="w-5 h-5 text-muted-foreground" />
-                        </div>
-                        <p className="font-medium text-sm mb-1">
-                          {searchQuery ? 'No results' : 'No messages yet'}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {searchQuery ? 'Try different keywords' : 'Start chatting with AYN'}
-                        </p>
+              {/* Messages */}
+              <ScrollArea className="flex-1" ref={scrollRef}>
+                <div className="p-2">
+                  {filteredMessages.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16 text-center">
+                      <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4">
+                        <MessageSquare className="w-5 h-5 text-muted-foreground" />
                       </div>
-                    ) : (
-                      filteredMessages.map((msg) => (
-                        <TranscriptMessage
-                          key={msg.id}
-                          content={msg.content}
-                          sender={msg.sender}
-                          timestamp={msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp)}
-                        />
-                      ))
-                    )}
-                  </div>
-                </ScrollArea>
-
-                {/* Floating scroll to bottom button */}
-                {messages.length > 0 && (
-                  <button
-                    onClick={scrollToBottom}
-                    className={cn(
-                      "absolute bottom-4 left-1/2 -translate-x-1/2",
-                      "w-10 h-10 rounded-full",
-                      "bg-foreground/10 hover:bg-foreground/20",
-                      "flex items-center justify-center",
-                      "transition-all duration-200 hover:scale-105"
-                    )}
-                  >
-                    <ChevronDown className="w-5 h-5" />
-                  </button>
-                )}
-              </div>
+                      <p className="font-medium text-sm mb-1">
+                        {searchQuery ? 'No results' : 'No messages yet'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {searchQuery ? 'Try different keywords' : 'Start chatting with AYN'}
+                      </p>
+                    </div>
+                  ) : (
+                    filteredMessages.map((msg) => (
+                      <TranscriptMessage
+                        key={msg.id}
+                        content={msg.content}
+                        sender={msg.sender}
+                        timestamp={msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp)}
+                      />
+                    ))
+                  )}
+                </div>
+              </ScrollArea>
 
               {/* Footer actions */}
-              <div className="p-3 border-t border-border flex items-center gap-2">
+              <div className="p-3 border-t border-border flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 h-10 rounded-xl"
+                  onClick={scrollToBottom}
+                  disabled={messages.length === 0}
+                >
+                  <ChevronDown className="w-4 h-4 mr-2" />
+                  Latest
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"
