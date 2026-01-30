@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Session } from '@supabase/supabase-js';
 import { supabaseApi } from '@/lib/supabaseApi';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -187,6 +188,18 @@ export const ApplicationManagement = ({ session, applications, onRefresh }: Appl
     if (app.status === 'new') {
       handleStatusChange(app.id, 'reviewed');
     }
+    
+    // Security: Log individual application detail access
+    supabase.from('security_logs').insert({
+      action: 'service_application_detail_view',
+      details: {
+        application_id: app.id,
+        email_masked: app.email.substring(0, 2) + '***@' + app.email.split('@')[1],
+        timestamp: new Date().toISOString()
+      },
+      severity: 'high'
+    });
+    
     setSelectedApplication(app);
   };
 
