@@ -194,7 +194,8 @@ export const CenterStageLayout = ({
     clearSuggestions,
   } = useBubbleAnimation();
 
-  const [lastProcessedMessageContent, setLastProcessedMessageContent] = useState<string | null>(null);
+  // Ref-based guard to track already-processed AYN message IDs (prevents re-render race condition)
+  const lastProcessedAynMessageIdRef = useRef<string | null>(null);
   const [showParticleBurst, setShowParticleBurst] = useState(false);
   const [burstPosition, setBurstPosition] = useState({ x: 0, y: 0 });
   const [lastUserMessage, setLastUserMessage] = useState<string>('');
@@ -235,11 +236,12 @@ export const CenterStageLayout = ({
     if (messages.length === 0) {
       clearResponseBubbles();
       clearSuggestions();
-      setLastProcessedMessageContent(null);
+      lastProcessedAynMessageIdRef.current = null;
       setLastUserMessage('');
       setEmotion('calm');
       setIsResponding(false);
       awaitingLiveResponseRef.current = { active: false, baselineLastMessageId: null };
+      responseProcessingRef.current.active = false;
     }
   }, [messages.length, clearResponseBubbles, clearSuggestions, setEmotion, setIsResponding]);
 
@@ -248,8 +250,9 @@ export const CenterStageLayout = ({
     if (currentSessionId) {
       clearResponseBubbles();
       clearSuggestions();
-      setLastProcessedMessageContent(null);
+      lastProcessedAynMessageIdRef.current = null;
       awaitingLiveResponseRef.current = { active: false, baselineLastMessageId: null };
+      responseProcessingRef.current.active = false;
     }
   }, [currentSessionId, clearResponseBubbles, clearSuggestions]);
 
@@ -532,10 +535,13 @@ export const CenterStageLayout = ({
       if (!lastMessage.content?.trim()) return;
     }
 
-    if (lastMessage.sender === 'ayn' && lastMessage.content !== lastProcessedMessageContent) {
+    // Use message ID for deduplication (ref-based to avoid re-render race condition)
+    if (lastMessage.sender === 'ayn' && lastMessage.id !== lastProcessedAynMessageIdRef.current) {
+      // Mark as processed IMMEDIATELY via ref (no state update = no effect restart)
+      lastProcessedAynMessageIdRef.current = lastMessage.id;
+      
       // Reset the gate after processing
       awaitingLiveResponseRef.current = { active: false, baselineLastMessageId: null };
-      setLastProcessedMessageContent(lastMessage.content);
       
       // Mark response processing as active (for nested suggestion timeout)
       responseProcessingRef.current.active = true;
@@ -548,8 +554,6 @@ export const CenterStageLayout = ({
       const messageAttachment = lastMessage.attachment;
       
       // After blink, use backend emotion and emit bubbles
-      // No isMounted check needed - the gate already prevents duplicate processing
-      // and a re-render is not an unmount
       const timeoutId = setTimeout(() => {
         try {
           // Safety check - ensure content still exists
@@ -614,7 +618,6 @@ export const CenterStageLayout = ({
   }, [
     messages,
     isLoadingFromHistory,
-    lastProcessedMessageContent,
     lastSuggestedEmotion,
     setEmotion,
     setIsResponding,
