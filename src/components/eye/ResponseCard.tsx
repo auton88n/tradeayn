@@ -461,7 +461,7 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
           )}
         >
           {/* Header */}
-          <DialogHeader className="flex-shrink-0 px-5 sm:px-6 py-4 border-b border-border bg-background pr-14">
+          <DialogHeader className="flex-shrink-0 px-5 sm:px-6 py-4 border-b border-border bg-background pr-20">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 rounded-lg bg-muted">
