@@ -1,98 +1,82 @@
 
-# Fix Plan: Chat History Markdown Rendering
 
-## Problem Identified
+# Fix Plan: Always Show "Jump to Latest" Button
 
-From your screenshot, the Chat History sidebar is showing raw markdown syntax (`**Geopolitics:**` with asterisks visible) instead of properly formatted text (bold "Geopolitics:"). This is because the `TranscriptMessage` component displays content as plain text instead of parsing markdown.
+## Problem
 
-The "scroll to bottom" feature already exists in the TranscriptSidebar - there's a "Jump to latest" button that appears when you scroll up.
+The "Jump to latest" button in the Chat History sidebar is hidden by default. It only appears when you scroll up more than 200 pixels from the bottom. Since the sidebar auto-scrolls to the bottom when opened, users never see this button.
 
 ---
 
 ## Solution
 
-Update the `TranscriptMessage` component to use `MessageFormatter` for rendering content, which properly handles:
-- Bold text (`**text**`)
-- Bullet points and lists
-- Links
-- Code blocks
-- And other markdown syntax
+Make the "Jump to latest" button always visible in the footer area (next to Copy All and Clear buttons), so users can always click it to scroll to the most recent messages.
 
 ---
 
 ## Technical Changes
 
-### File: `src/components/transcript/TranscriptMessage.tsx`
+### File: `src/components/transcript/TranscriptSidebar.tsx`
 
-**Change 1: Import MessageFormatter**
+**Change 1: Remove the conditional floating button (lines 215-235)**
 
-Add import at the top:
-```tsx
-import { MessageFormatter } from '@/components/shared/MessageFormatter';
-```
+Delete the `AnimatePresence` block with the floating "Jump to latest" button that only shows conditionally.
 
-**Change 2: Replace plain text with formatted markdown**
+**Change 2: Add "Jump to Latest" button to the footer**
 
-Replace the plain `<p>` tag with `MessageFormatter`:
+Add a permanent button in the footer actions section:
 
 ```tsx
-// Before (line 68-70):
-<p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
-  {content}
-</p>
-
-// After:
-<div className="text-sm leading-relaxed break-words [&_p]:mb-1 [&_p:last-child]:mb-0 [&_ul]:my-1 [&_li]:pb-0">
-  <MessageFormatter content={content} />
+{/* Footer actions */}
+<div className="p-3 border-t border-border flex gap-2">
+  <Button
+    variant="outline"
+    size="sm"
+    className="flex-1 h-10 rounded-xl"
+    onClick={scrollToBottom}
+    disabled={messages.length === 0}
+  >
+    <ChevronDown className="w-4 h-4 mr-2" />
+    Jump to Latest
+  </Button>
+  <Button
+    variant="outline"
+    size="sm"
+    className="flex-1 h-10 rounded-xl"
+    onClick={handleCopyAll}
+    disabled={messages.length === 0}
+  >
+    <Copy className="w-4 h-4 mr-2" />
+    Copy All
+  </Button>
+  {onClear && (
+    <Button ... />
+  )}
 </div>
 ```
 
-The additional CSS classes ensure compact spacing within the chat bubble:
-- `[&_p]:mb-1` - Reduce paragraph margin for tighter layout
-- `[&_ul]:my-1` - Compact list margins
-- `[&_li]:pb-0` - Remove list item padding
+**Change 3: Cleanup unused state/handlers**
 
-**Change 3: Update copy handler to strip markdown**
-
-Update the copy function to convert markdown to plain text (similar to ResponseCard):
-
-```tsx
-// Add helper function
-const markdownToPlainText = (markdown: string): string => {
-  let text = markdown;
-  text = text.replace(/^#{1,6}\s+/gm, '');
-  text = text.replace(/\*\*(.+?)\*\*/g, '$1');
-  text = text.replace(/__(.+?)__/g, '$1');
-  text = text.replace(/^\s*[-*+]\s+/gm, '• ');
-  text = text.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
-  return text.trim();
-};
-
-// Update handleCopy
-const handleCopy = async () => {
-  const plainText = markdownToPlainText(content);
-  await navigator.clipboard.writeText(plainText);
-  setCopied(true);
-  setTimeout(() => setCopied(false), 2000);
-};
-```
+Remove the now-unused:
+- `showScrollButton` state (line 41)
+- `handleScroll` callback (lines 55-61)
+- Scroll event listener effect (lines 63-68)
 
 ---
 
 ## Summary
 
-| File | Change |
-|------|--------|
-| `src/components/transcript/TranscriptMessage.tsx` | Import and use MessageFormatter for content rendering |
-| Same file | Add compact styling classes for chat bubble layout |
-| Same file | Update copy to strip markdown syntax |
+| Location | Change |
+|----------|--------|
+| Lines 215-235 | Remove floating conditional button |
+| Lines 238-261 | Add "Jump to Latest" as first button in footer |
+| Lines 41, 55-68 | Remove unused scroll detection code |
 
 ---
 
 ## Result
 
-- Bold text will render properly (not show asterisks)
-- Bullet points will display correctly
-- Links will be clickable
-- Code will be styled
-- The "Jump to latest" button already works when scrolled up
+- "Jump to Latest" button is always visible in the footer
+- Users can click it anytime to scroll to the newest message
+- Cleaner code without unnecessary scroll detection logic
+
