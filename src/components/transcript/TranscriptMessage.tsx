@@ -2,12 +2,27 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Copy, Check, User, Brain } from 'lucide-react';
 import { useState } from 'react';
+import { MessageFormatter } from '@/components/shared/MessageFormatter';
 
 interface TranscriptMessageProps {
   content: string;
   sender: 'user' | 'ayn';
   timestamp: Date;
 }
+
+// Helper to strip markdown for clipboard
+const markdownToPlainText = (markdown: string): string => {
+  let text = markdown;
+  text = text.replace(/^#{1,6}\s+/gm, '');
+  text = text.replace(/\*\*(.+?)\*\*/g, '$1');
+  text = text.replace(/__(.+?)__/g, '$1');
+  text = text.replace(/\*(.+?)\*/g, '$1');
+  text = text.replace(/_(.+?)_/g, '$1');
+  text = text.replace(/^\s*[-*+]\s+/gm, '• ');
+  text = text.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+  text = text.replace(/`(.+?)`/g, '$1');
+  return text.trim();
+};
 
 export const TranscriptMessage = ({
   content,
@@ -18,7 +33,8 @@ export const TranscriptMessage = ({
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(content);
+    const plainText = markdownToPlainText(content);
+    await navigator.clipboard.writeText(plainText);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -65,9 +81,9 @@ export const TranscriptMessage = ({
             ? "bg-primary text-primary-foreground rounded-br-sm" 
             : "bg-muted text-foreground rounded-bl-sm"
         )}>
-          <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
-            {content}
-          </p>
+          <div className="text-sm leading-relaxed break-words [&_p]:mb-1 [&_p:last-child]:mb-0 [&_ul]:my-1 [&_ol]:my-1 [&_li]:pb-0 [&_li]:pl-3 [&_li]:before:text-sm">
+            <MessageFormatter content={content} />
+          </div>
         </div>
 
         {/* Copy button - underneath the bubble */}
