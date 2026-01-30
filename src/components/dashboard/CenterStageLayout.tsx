@@ -69,6 +69,7 @@ interface CenterStageLayoutProps {
   // Usage tracking props
   currentUsage?: number;
   dailyLimit?: number | null;
+  bonusCredits?: number;
   isUnlimited?: boolean;
   usageResetDate?: string | null;
   // Flag to prevent auto-showing historical messages
@@ -128,6 +129,7 @@ export const CenterStageLayout = ({
   onRetryUpload,
   currentUsage,
   dailyLimit,
+  bonusCredits = 0,
   isUnlimited,
   usageResetDate,
   isLoadingFromHistory,
@@ -161,6 +163,14 @@ export const CenterStageLayout = ({
     baselineLastMessageId: null,
   });
   const isMobile = useIsMobile();
+  
+  // Calculate if credits are exhausted (user can't send more messages)
+  const creditsExhausted = useMemo(() => {
+    if (isUnlimited) return false;
+    if (dailyLimit === null || dailyLimit === undefined) return false;
+    const totalLimit = dailyLimit + bonusCredits;
+    return (currentUsage ?? 0) >= totalLimit;
+  }, [isUnlimited, dailyLimit, bonusCredits, currentUsage]);
   const { setEmotion, setEmotionWithSource, triggerAbsorption, triggerBlink, setIsResponding, detectExcitement, isUserTyping: contextIsTyping, triggerPulse, bumpActivity } = useAYNEmotion();
   const soundContext = useSoundContextOptional();
   const playSound = soundContext?.playSound;
@@ -753,7 +763,7 @@ export const CenterStageLayout = ({
           onSend={handleSendWithAnimation}
           suggestions={suggestionBubbles}
           onSuggestionClick={handleSuggestionClick}
-          isDisabled={isDisabled || isTyping || maintenanceConfig?.enabled}
+          isDisabled={isDisabled || isTyping || maintenanceConfig?.enabled || creditsExhausted}
           selectedMode={selectedMode}
           selectedFile={selectedFile}
           isUploading={isUploading}
@@ -782,6 +792,7 @@ export const CenterStageLayout = ({
           uploadFailed={uploadFailed}
           onRetryUpload={onRetryUpload}
           maintenanceActive={maintenanceConfig?.enabled}
+          creditsExhausted={creditsExhausted}
         />
       </div>
 
