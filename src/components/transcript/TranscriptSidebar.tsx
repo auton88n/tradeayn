@@ -199,34 +199,34 @@ export const TranscriptSidebar = ({
               {/* Footer actions */}
               <div className="p-3 border-t border-border flex gap-2">
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
-                  className="flex-1 h-10 rounded-xl"
+                  className="flex-1 h-9 rounded-lg bg-muted/50 hover:bg-muted text-xs font-medium"
                   onClick={scrollToBottom}
                   disabled={messages.length === 0}
                 >
-                  <ChevronDown className="w-4 h-4 mr-2" />
+                  <ChevronDown className="w-3.5 h-3.5 mr-1.5" />
                   Latest
                 </Button>
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
-                  className="flex-1 h-10 rounded-xl"
+                  className="flex-1 h-9 rounded-lg bg-muted/50 hover:bg-muted text-xs font-medium"
                   onClick={handleCopyAll}
                   disabled={messages.length === 0}
                 >
-                  <Copy className="w-4 h-4 mr-2" />
-                  Copy All
+                  <Copy className="w-3.5 h-3.5 mr-1.5" />
+                  Copy
                 </Button>
                 {onClear && (
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
-                    className="flex-1 h-10 rounded-xl text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                    className="flex-1 h-9 rounded-lg bg-destructive/10 hover:bg-destructive/20 text-destructive text-xs font-medium"
                     onClick={handleClearClick}
                     disabled={messages.length === 0}
                   >
-                    <Trash2 className="w-4 h-4 mr-2" />
+                    <Trash2 className="w-3.5 h-3.5 mr-1.5" />
                     Clear
                   </Button>
                 )}
