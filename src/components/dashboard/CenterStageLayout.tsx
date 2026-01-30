@@ -162,6 +162,10 @@ export const CenterStageLayout = ({
     active: false,
     baselineLastMessageId: null,
   });
+  
+  // Ref to track if a response processing cycle is active (survives re-renders)
+  const responseProcessingRef = useRef<{ active: boolean }>({ active: false });
+  
   const isMobile = useIsMobile();
   
   // Calculate if credits are exhausted (user can't send more messages)
@@ -510,52 +514,31 @@ export const CenterStageLayout = ({
   // Process AYN responses and emit speech bubbles + suggestions
   // Skip if loading from history OR not awaiting a live response
   useEffect(() => {
-    let isMounted = true; // Guard against unmounted state updates
-    
-    if (messages.length === 0) {
-      return () => { isMounted = false; };
-    }
-
-    // Skip processing historical messages - only process new responses
-    if (isLoadingFromHistory) {
-      return () => { isMounted = false; };
-    }
+    // Early returns - no cleanup needed since no async work started
+    if (messages.length === 0) return;
+    if (isLoadingFromHistory) return;
 
     const gate = awaitingLiveResponseRef.current;
-
-    // Skip if not awaiting a live response (prevents auto-show on chat switch / during send animation)
-    if (!gate.active) {
-      return () => { isMounted = false; };
-    }
+    if (!gate.active) return;
 
     const lastMessage = messages[messages.length - 1];
-    
-    // Safety check - ensure message exists and has required properties
-    if (!lastMessage || !lastMessage.id) {
-      return () => { isMounted = false; };
-    }
-
-    // If the last message hasn't changed since we started the send, it's the old response — ignore it.
-    if (gate.baselineLastMessageId && lastMessage.id === gate.baselineLastMessageId) {
-      return () => { isMounted = false; };
-    }
+    if (!lastMessage || !lastMessage.id) return;
+    if (gate.baselineLastMessageId && lastMessage.id === gate.baselineLastMessageId) return;
 
     // Only process new AYN messages
     // IMPORTANT: ignore the streaming placeholder message (content may be empty while isTyping=true)
-    // to prevent emitting an empty ResponseCard that never updates.
     if (lastMessage.sender === 'ayn') {
-      if (lastMessage.isTyping) {
-        return () => { isMounted = false; };
-      }
-      if (!lastMessage.content?.trim()) {
-        return () => { isMounted = false; };
-      }
+      if (lastMessage.isTyping) return;
+      if (!lastMessage.content?.trim()) return;
     }
 
     if (lastMessage.sender === 'ayn' && lastMessage.content !== lastProcessedMessageContent) {
       // Reset the gate after processing
       awaitingLiveResponseRef.current = { active: false, baselineLastMessageId: null };
       setLastProcessedMessageContent(lastMessage.content);
+      
+      // Mark response processing as active (for nested suggestion timeout)
+      responseProcessingRef.current.active = true;
       
       // Blink before responding (like landing page)
       triggerBlink();
@@ -565,10 +548,9 @@ export const CenterStageLayout = ({
       const messageAttachment = lastMessage.attachment;
       
       // After blink, use backend emotion and emit bubbles
-      setTimeout(() => {
-        // Guard against unmounted component
-        if (!isMounted) return;
-        
+      // No isMounted check needed - the gate already prevents duplicate processing
+      // and a re-render is not an unmount
+      const timeoutId = setTimeout(() => {
         try {
           // Safety check - ensure content still exists
           if (!messageContent?.trim()) return;
@@ -609,8 +591,9 @@ export const CenterStageLayout = ({
           emitResponseBubble(response, bubbleType, attachment);
           
           // Show dynamic suggestions after response bubble appears (debounced to reduce API calls)
+          // Use ref to check if we're still in the same processing cycle
           setTimeout(() => {
-            if (!isMounted) return;
+            if (!responseProcessingRef.current.active) return;
             debouncedFetchAndEmitSuggestions(
               lastUserMessage || 'Hello',
               messageContent,
@@ -621,9 +604,13 @@ export const CenterStageLayout = ({
           console.error('[CenterStageLayout] Error processing response:', error);
         }
       }, 50); // Minimal delay for blink
+      
+      // Cleanup: cancel timeout and mark processing as inactive
+      return () => {
+        clearTimeout(timeoutId);
+        responseProcessingRef.current.active = false;
+      };
     }
-    
-    return () => { isMounted = false; };
   }, [
     messages,
     isLoadingFromHistory,
