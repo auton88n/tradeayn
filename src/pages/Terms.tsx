@@ -209,6 +209,34 @@ const Terms = () => {
                   "By using AYN, you acknowledge and fully accept these limitations"
                 ]} />
               </PolicySection>
+
+              <PolicySection number="13" title="ENGINEERING AI DISCLAIMER">
+                <div className="flex items-center gap-2 mb-4 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+                  <AlertTriangle className="w-5 h-5 text-amber-500" />
+                  <p className="text-amber-400 font-medium">AYNN engineering tools provide reference information only.</p>
+                </div>
+                <SubSection title="Engineering Tool Limitations">
+                  <BulletList items={[
+                    "All structural designs and calculations require review by a licensed Professional Engineer before use",
+                    "AYNN does not provide cost estimates - contact local suppliers for pricing",
+                    "Engineering tools are for reference only - not for construction documents",
+                    "Users must verify local building code adoption with Authority Having Jurisdiction",
+                    "Users assume all risks from using AI-generated engineering information"
+                  ]} />
+                </SubSection>
+                <SubSection title="Liability Limitation">
+                  <p className="text-white/60 mb-3">
+                    <strong>AYNN and its operators are not liable for:</strong>
+                  </p>
+                  <BulletList items={[
+                    "Errors in calculations or design recommendations",
+                    "Structural design failures or safety issues",
+                    "Building code violations or non-compliance",
+                    "Construction defects or project delays",
+                    "Any financial losses or damages arising from use of engineering tools"
+                  ]} />
+                </SubSection>
+              </PolicySection>
             </div>
 
             {/* Footer */}

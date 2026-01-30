@@ -125,8 +125,8 @@ export const AIResponseCard = ({ response, onQuickReply }: AIResponseCardProps) 
                     <div key={i} className="bg-muted/30 rounded-lg p-3 space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-medium text-foreground">{alt.description}</span>
-                        <Badge variant={alt.costImpact > 0 ? 'destructive' : 'secondary'} className="text-xs">
-                          {alt.costImpact > 0 ? '+' : ''}{alt.costImpact} SAR
+                        <Badge variant="outline" className="text-xs">
+                          {alt.costImpact > 0 ? 'Higher cost' : alt.costImpact < 0 ? 'Lower cost' : 'Similar cost'}
                         </Badge>
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-xs">
