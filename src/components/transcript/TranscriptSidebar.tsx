@@ -38,7 +38,6 @@ export const TranscriptSidebar = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [showScrollButton, setShowScrollButton] = useState(false);
 
   // Filter and sort messages chronologically (oldest first)
   const filteredMessages = useMemo(() => 
@@ -51,21 +50,6 @@ export const TranscriptSidebar = ({
       }),
     [messages, searchQuery]
   );
-
-  // Scroll handling
-  const handleScroll = useCallback(() => {
-    const viewport = scrollRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement | null;
-    if (!viewport) return;
-    const { scrollTop, scrollHeight, clientHeight } = viewport;
-    setShowScrollButton(scrollHeight - scrollTop - clientHeight > 200);
-  }, []);
-
-  useEffect(() => {
-    const viewport = scrollRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement | null;
-    if (!viewport) return;
-    viewport.addEventListener('scroll', handleScroll, { passive: true });
-    return () => viewport.removeEventListener('scroll', handleScroll);
-  }, [handleScroll]);
 
   // Scroll to bottom
   const scrollToBottom = useCallback(() => {
@@ -212,30 +196,18 @@ export const TranscriptSidebar = ({
                 </div>
               </ScrollArea>
 
-              {/* Scroll to bottom button */}
-              <AnimatePresence>
-                {showScrollButton && (
-                  <motion.button
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    onClick={scrollToBottom}
-                    className={cn(
-                      "absolute bottom-24 left-1/2 -translate-x-1/2",
-                      "px-3 py-1.5 rounded-full",
-                      "bg-foreground text-background text-xs font-medium",
-                      "flex items-center gap-1.5 shadow-lg",
-                      "hover:scale-105 transition-transform"
-                    )}
-                  >
-                    <ChevronDown className="w-3.5 h-3.5" />
-                    Jump to latest
-                  </motion.button>
-                )}
-              </AnimatePresence>
-
               {/* Footer actions */}
               <div className="p-3 border-t border-border flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 h-10 rounded-xl"
+                  onClick={scrollToBottom}
+                  disabled={messages.length === 0}
+                >
+                  <ChevronDown className="w-4 h-4 mr-2" />
+                  Latest
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"
