@@ -266,50 +266,52 @@ export const BetaFeedbackModal = ({
                 </div>
 
                 {/* Would Recommend */}
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <Label>{t('beta.wouldRecommend')}</Label>
                   <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                    <Button
+                    <button
                       type="button"
-                      variant={wouldRecommend === true ? "default" : "outline"}
                       onClick={() => setWouldRecommend(true)}
                       className={cn(
-                        "flex-1 min-h-[44px] touch-manipulation",
-                        wouldRecommend === true && "bg-green-500 hover:bg-green-600"
+                        "flex-1 min-h-[48px] rounded-xl border-2 transition-all duration-200 flex items-center justify-center gap-2 font-medium touch-manipulation",
+                        wouldRecommend === true 
+                          ? "bg-emerald-500/20 border-emerald-500 text-emerald-400" 
+                          : "border-muted-foreground/30 text-muted-foreground hover:border-emerald-500/50 hover:text-emerald-400"
                       )}
                     >
-                      <ThumbsUp className="w-4 h-4 mr-2" />
+                      <ThumbsUp className="w-4 h-4" />
                       {t('beta.yes')}
-                    </Button>
-                    <Button
+                    </button>
+                    <button
                       type="button"
-                      variant={wouldRecommend === false ? "default" : "outline"}
                       onClick={() => setWouldRecommend(false)}
                       className={cn(
-                        "flex-1 min-h-[44px] touch-manipulation",
-                        wouldRecommend === false && "bg-red-500 hover:bg-red-600"
+                        "flex-1 min-h-[48px] rounded-xl border-2 transition-all duration-200 flex items-center justify-center gap-2 font-medium touch-manipulation",
+                        wouldRecommend === false 
+                          ? "bg-orange-500/20 border-orange-500 text-orange-400" 
+                          : "border-muted-foreground/30 text-muted-foreground hover:border-orange-500/50 hover:text-orange-400"
                       )}
                     >
-                      <ThumbsDown className="w-4 h-4 mr-2" />
+                      <ThumbsDown className="w-4 h-4" />
                       {t('beta.notYet')}
-                    </Button>
+                    </button>
                   </div>
                 </div>
               </div>
 
-              <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-4 border-t">
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-5 border-t border-border/50">
                 <Button 
-                  variant="outline" 
+                  variant="ghost" 
                   onClick={handleClose} 
                   disabled={isSubmitting}
-                  className="min-h-[44px] touch-manipulation"
+                  className="min-h-[46px] touch-manipulation text-muted-foreground hover:text-foreground"
                 >
                   {t('beta.maybeLater')}
                 </Button>
                 <Button
                   onClick={handleSubmit}
                   disabled={isSubmitting || rating === 0}
-                  className="bg-gradient-to-r from-purple-500 to-fuchsia-500 hover:from-purple-600 hover:to-fuchsia-600 min-h-[44px] touch-manipulation"
+                  className="bg-gradient-to-r from-purple-500 to-fuchsia-500 hover:from-purple-600 hover:to-fuchsia-600 min-h-[46px] touch-manipulation shadow-lg shadow-purple-500/25 disabled:opacity-50 disabled:shadow-none"
                 >
                   {isSubmitting ? (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
