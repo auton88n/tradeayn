@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { AlertCircle, Clock, X, Wrench } from 'lucide-react';
@@ -34,6 +34,16 @@ export const SystemNotificationBanner = ({
 }: SystemNotificationBannerProps) => {
   const [isDismissed, setIsDismissed] = useState(false);
   const [preNoticeDismissed, setPreNoticeDismissed] = useState(false);
+
+  // Auto-dismiss usage warning after 5 seconds
+  useEffect(() => {
+    if (!isDismissed && !isUnlimited && dailyLimit !== null && dailyLimit !== undefined) {
+      const timer = setTimeout(() => {
+        setIsDismissed(true);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [isDismissed, isUnlimited, dailyLimit]);
 
   // Priority 1: Active Maintenance (NOT dismissible, blocks chat)
   if (maintenanceConfig?.enabled) {
@@ -151,17 +161,14 @@ export const SystemNotificationBanner = ({
             "flex items-center justify-center gap-2 px-4 py-2.5 mx-4 mb-2",
             "rounded-xl border backdrop-blur-sm",
             "text-sm font-medium",
-            // Color variations based on urgency
-            isUrgent && "bg-destructive/10 border-destructive/30 text-destructive",
-            isWarning && "bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400",
+            // Soft, neutral styling - non-alarming
+            isUrgent && "bg-muted/60 border-border text-muted-foreground",
+            isWarning && "bg-muted/50 border-border/80 text-muted-foreground",
             !isUrgent && !isWarning && "bg-muted/50 border-border/50 text-muted-foreground",
             className
           )}
         >
-          <AlertCircle className={cn(
-            "w-4 h-4 shrink-0",
-            isUrgent && "animate-pulse"
-          )} />
+          <AlertCircle className="w-4 h-4 shrink-0" />
           <span className="flex-1 text-center">
             {remaining} message{remaining !== 1 ? 's' : ''} remaining • Resets in {formattedResetTime}
           </span>
