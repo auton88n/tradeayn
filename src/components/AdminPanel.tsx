@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { ArrowLeft, Sun, Moon, RefreshCw, Loader2, Sparkles } from 'lucide-react';
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
+import { supabase } from '@/integrations/supabase/client';
 import { AdminSidebar, AdminTabId } from '@/components/admin/AdminSidebar';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { UserManagement } from '@/components/admin/UserManagement';
@@ -168,6 +169,18 @@ export const AdminPanel = ({
       const messagesData = results[2].status === 'fulfilled' ? results[2].value as { id: string; }[] : [];
       const configData = results[3].status === 'fulfilled' ? results[3].value as { key: string; value: unknown; }[] : [];
       const applicationsData = results[4].status === 'fulfilled' ? results[4].value as ServiceApplication[] : [];
+
+      // Security: Log access to service applications
+      if (applicationsData.length > 0) {
+        supabase.from('security_logs').insert({
+          action: 'service_applications_view',
+          details: { 
+            count: applicationsData.length,
+            timestamp: new Date().toISOString()
+          },
+          severity: 'high'
+        });
+      }
 
       const profilesMap = new Map(profilesData.map(p => [p.user_id, p]));
       const usersWithProfiles: AccessGrantWithProfile[] = usersData.map((user: AccessGrantWithProfile) => ({

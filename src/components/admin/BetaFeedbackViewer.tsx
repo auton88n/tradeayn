@@ -38,6 +38,15 @@ export const BetaFeedbackViewer = () => {
 
       if (error) throw error;
       setFeedback(data || []);
+      
+      // Security: Log admin access to beta feedback
+      if (data && data.length > 0) {
+        supabase.from('security_logs').insert({
+          action: 'beta_feedback_view',
+          details: { count: data.length, timestamp: new Date().toISOString() },
+          severity: 'medium'
+        });
+      }
     } catch (err) {
       console.error('Error fetching feedback:', err);
       toast.error('Failed to load feedback');
