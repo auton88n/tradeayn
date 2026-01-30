@@ -461,7 +461,7 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
           )}
         >
           {/* Header */}
-          <DialogHeader className="flex-shrink-0 px-5 sm:px-6 py-4 border-b border-border bg-background pr-12">
+          <DialogHeader className="flex-shrink-0 px-5 sm:px-6 py-4 border-b border-border bg-background pr-14">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 rounded-lg bg-muted">
@@ -487,29 +487,6 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
                     </>
                   )}
                 </button>
-                
-                <button 
-                  onClick={() => handleFeedback('up')}
-                  className={cn(
-                    "p-1.5 rounded-lg transition-colors",
-                    feedback === 'up' 
-                      ? "text-foreground bg-muted" 
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  )}
-                >
-                  <ThumbsUp size={16} />
-                </button>
-                <button 
-                  onClick={() => handleFeedback('down')}
-                  className={cn(
-                    "p-1.5 rounded-lg transition-colors",
-                    feedback === 'down' 
-                      ? "text-foreground bg-muted" 
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  )}
-                >
-                  <ThumbsDown size={16} />
-                </button>
               </div>
             </div>
           </DialogHeader>
@@ -518,7 +495,7 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
           <div 
             ref={dialogContentRef}
             className={cn(
-              "flex-1 overflow-y-auto overflow-x-hidden",
+              "flex-1 overflow-y-auto overflow-x-hidden min-h-0",
               "px-5 sm:px-8 py-6",
               "[-webkit-overflow-scrolling:touch]"
             )}
