@@ -92,6 +92,8 @@ interface CenterStageLayoutProps {
   // Feedback modal state (controlled externally)
   showFeedbackModal?: boolean;
   setShowFeedbackModal?: (show: boolean) => void;
+  // Credit refresh callback
+  onCreditsUpdated?: () => void;
 }
 
 export const CenterStageLayout = ({
@@ -140,6 +142,7 @@ export const CenterStageLayout = ({
   userId,
   showFeedbackModal: showFeedbackModalProp,
   setShowFeedbackModal: setShowFeedbackModalProp,
+  onCreditsUpdated,
 }: CenterStageLayoutProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const eyeStageRef = useRef<HTMLDivElement>(null);
@@ -855,6 +858,7 @@ export const CenterStageLayout = ({
           onClose={() => setShowFeedbackModal(false)}
           userId={userId}
           rewardAmount={betaFeedbackReward || 5}
+          onCreditsUpdated={onCreditsUpdated}
         />
       )}
     </div>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -17,6 +17,7 @@ interface BetaFeedbackModalProps {
   userId: string;
   rewardAmount: number;
   onSuccess?: () => void;
+  onCreditsUpdated?: () => void;
 }
 
 const FEATURES = [
@@ -33,7 +34,8 @@ export const BetaFeedbackModal = ({
   onClose, 
   userId, 
   rewardAmount,
-  onSuccess 
+  onSuccess,
+  onCreditsUpdated
 }: BetaFeedbackModalProps) => {
   const { t } = useLanguage();
   const [step, setStep] = useState<'form' | 'success'>('form');
@@ -86,6 +88,9 @@ export const BetaFeedbackModal = ({
 
       if (creditsError) throw creditsError;
 
+      // Trigger immediate credit refresh
+      onCreditsUpdated?.();
+
       setStep('success');
       onSuccess?.();
     } catch (err) {
@@ -110,6 +115,16 @@ export const BetaFeedbackModal = ({
     }
     onClose();
   };
+
+  // Auto-close modal 3 seconds after success
+  useEffect(() => {
+    if (step === 'success') {
+      const timer = setTimeout(() => {
+        handleClose();
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [step]);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
