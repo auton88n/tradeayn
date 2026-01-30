@@ -2,12 +2,13 @@ import React, { useState, useRef, useEffect, forwardRef, useCallback } from 'rea
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Plus, ChevronDown, ArrowUp, FileText, X, Image as ImageIcon, AlertTriangle, MessageSquarePlus, Loader2, FileImage, FileCode, FileSpreadsheet, FileArchive, FileAudio, FileVideo, File, RefreshCw, Check, Volume2, VolumeX, Brain, Sparkles } from 'lucide-react';
+import { Plus, ChevronDown, ArrowUp, FileText, X, Image as ImageIcon, AlertTriangle, MessageSquarePlus, Loader2, FileImage, FileCode, FileSpreadsheet, FileArchive, FileAudio, FileVideo, File, RefreshCw, Check, Volume2, VolumeX, Brain, Sparkles, Mic, MicOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
 import { useSoundContextOptional } from '@/contexts/SoundContext';
 import { detectLanguage, DetectedLanguage } from '@/lib/languageDetection';
+import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 import type { AIMode } from '@/types/dashboard.types';
 
 interface Suggestion {
@@ -202,6 +203,18 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
   const soundContext = useSoundContextOptional();
   const playSound = soundContext?.playSound;
   const playModeChange = soundContext?.playModeChange;
+  
+  // Voice-to-text integration
+  const {
+    isSupported: voiceSupported,
+    isListening: isVoiceListening,
+    transcript: voiceTranscript,
+    interimTranscript: voiceInterim,
+    error: voiceError,
+    startListening: startVoice,
+    stopListening: stopVoice,
+    resetTranscript: resetVoice,
+  } = useSpeechRecognition();
 
   // Handle prefilled input
   useEffect(() => {
@@ -222,6 +235,38 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
       if (onPrefillConsumed) onPrefillConsumed();
     }
   }, [prefillValue, onPrefillConsumed]);
+
+  // Voice transcript integration - append transcript to input as it comes in
+  useEffect(() => {
+    if (voiceTranscript || voiceInterim) {
+      const displayText = voiceTranscript + (voiceInterim ? voiceInterim : '');
+      setInputMessage(displayText);
+      setShowPlaceholder(!displayText);
+      
+      // Auto-resize textarea
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto';
+        textareaRef.current.style.height = Math.max(44, Math.min(textareaRef.current.scrollHeight, 200)) + 'px';
+      }
+    }
+  }, [voiceTranscript, voiceInterim]);
+
+  // Trigger AYN eye attention when voice listening starts
+  useEffect(() => {
+    if (isVoiceListening) {
+      triggerAttentionBlink();
+      setIsAttentive(true);
+    }
+  }, [isVoiceListening, triggerAttentionBlink, setIsAttentive]);
+
+  // Handle voice toggle
+  const handleVoiceToggle = useCallback(() => {
+    if (isVoiceListening) {
+      stopVoice();
+    } else {
+      startVoice();
+    }
+  }, [isVoiceListening, startVoice, stopVoice]);
 
   // Rotate placeholders
   useEffect(() => {
@@ -578,6 +623,44 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
             <button onClick={handleFileClick} disabled={isDisabled || isUploading} className={cn("p-2 rounded-lg", "hover:bg-muted/60", "transition-all duration-200", "disabled:opacity-50 disabled:cursor-not-allowed")}>
               <Plus className="w-5 h-5 text-muted-foreground" />
             </button>
+            
+            {/* Voice Input Button - only show if supported */}
+            {voiceSupported && (
+              <button 
+                onClick={handleVoiceToggle}
+                disabled={isDisabled || isUploading}
+                className={cn(
+                  "relative p-2 rounded-lg",
+                  "transition-all duration-200",
+                  "disabled:opacity-50 disabled:cursor-not-allowed",
+                  isVoiceListening 
+                    ? "bg-red-500/20 hover:bg-red-500/30" 
+                    : "hover:bg-muted/60"
+                )}
+                title={isVoiceListening ? "Stop voice input" : "Start voice input"}
+              >
+                {isVoiceListening ? (
+                  <>
+                    {/* Pulsing animation when listening */}
+                    <motion.div
+                      className="absolute inset-0 rounded-lg bg-red-500/30"
+                      animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.2, 0.5] }}
+                      transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                    />
+                    <Mic className="w-4 h-4 text-red-500 relative z-10" />
+                    {/* Recording indicator dot */}
+                    <motion.span 
+                      className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full z-10"
+                      animate={{ opacity: [1, 0.5, 1] }}
+                      transition={{ duration: 0.8, repeat: Infinity }}
+                    />
+                  </>
+                ) : (
+                  <Mic className="w-4 h-4 text-muted-foreground" />
+                )}
+              </button>
+            )}
+            
             {/* Sound Toggle Indicator */}
             <button 
               onClick={() => soundContext?.toggleEnabled()} 
