@@ -197,16 +197,15 @@ export const TranscriptSidebar = ({
               </ScrollArea>
 
               {/* Footer actions */}
-              <div className="p-3 border-t border-border flex gap-2">
+              <div className="p-3 border-t border-border flex items-center gap-2">
                 <Button
                   variant="outline"
-                  size="sm"
-                  className="flex-1 h-10 rounded-xl"
+                  size="icon"
+                  className="h-10 w-10 rounded-full bg-foreground/10 border-0 hover:bg-foreground/20 shrink-0"
                   onClick={scrollToBottom}
                   disabled={messages.length === 0}
                 >
-                  <ChevronDown className="w-4 h-4 mr-2" />
-                  Latest
+                  <ChevronDown className="w-5 h-5" />
                 </Button>
                 <Button
                   variant="outline"
