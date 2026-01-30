@@ -96,6 +96,19 @@ export const SubscriptionManagement = () => {
         .from('profiles')
         .select('user_id, company_name, contact_person');
 
+      // Security: Log admin bulk access to profiles
+      if (profiles && profiles.length > 0) {
+        supabase.from('security_logs').insert({
+          action: 'admin_profiles_bulk_access',
+          details: {
+            count: profiles.length,
+            context: 'subscription_management',
+            timestamp: new Date().toISOString()
+          },
+          severity: 'high'
+        });
+      }
+
       const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
 
       const enrichedSubs: UserSubscription[] = (subs || []).map(sub => ({
