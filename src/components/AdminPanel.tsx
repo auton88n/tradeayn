@@ -182,6 +182,19 @@ export const AdminPanel = ({
         });
       }
 
+      // Security: Log admin bulk access to profiles
+      if (profilesData.length > 0) {
+        supabase.from('security_logs').insert({
+          action: 'admin_profiles_bulk_access',
+          details: {
+            count: profilesData.length,
+            context: 'admin_panel',
+            timestamp: new Date().toISOString()
+          },
+          severity: 'high'
+        });
+      }
+
       const profilesMap = new Map(profilesData.map(p => [p.user_id, p]));
       const usersWithProfiles: AccessGrantWithProfile[] = usersData.map((user: AccessGrantWithProfile) => ({
         ...user,
