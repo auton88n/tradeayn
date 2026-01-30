@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, forwardRef, useCallback } from 'rea
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Plus, ChevronDown, ArrowUp, FileText, X, Image as ImageIcon, AlertTriangle, MessageSquarePlus, Loader2, FileImage, FileCode, FileSpreadsheet, FileArchive, FileAudio, FileVideo, File, RefreshCw, Check, Volume2, VolumeX, Brain } from 'lucide-react';
+import { Plus, ChevronDown, ArrowUp, FileText, X, Image as ImageIcon, AlertTriangle, MessageSquarePlus, Loader2, FileImage, FileCode, FileSpreadsheet, FileArchive, FileAudio, FileVideo, File, RefreshCw, Check, Volume2, VolumeX, Brain, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAYNEmotion } from '@/contexts/AYNEmotionContext';
@@ -62,6 +62,8 @@ interface ChatInputProps {
   onRetryUpload?: () => void;
   // Maintenance mode
   maintenanceActive?: boolean;
+  // Credits exhausted - blocks sending
+  creditsExhausted?: boolean;
 }
 // Default modes - only used as fallback
 const defaultModes = [{
@@ -171,6 +173,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
   uploadFailed = false,
   onRetryUpload,
   maintenanceActive = false,
+  creditsExhausted = false,
 }, ref) => {
   const [inputMessage, setInputMessage] = useState('');
   const visibleSuggestions = suggestions.filter(s => s.isVisible);
@@ -352,7 +355,7 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
 
         {/* Limit reached overlay */}
         <AnimatePresence>
-          {hasReachedLimit && !maintenanceActive && (
+          {hasReachedLimit && !maintenanceActive && !creditsExhausted && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -368,6 +371,34 @@ export const ChatInput = forwardRef<HTMLDivElement, ChatInputProps>(({
                   New Chat
                 </Button>
               )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Credits exhausted overlay */}
+        <AnimatePresence>
+          {creditsExhausted && !maintenanceActive && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-background/95 backdrop-blur-sm flex flex-col items-center justify-center gap-3 z-20 rounded-2xl px-4"
+            >
+              <div className="flex items-center gap-2 text-amber-500">
+                <AlertTriangle className="w-5 h-5" />
+                <span className="font-medium">Credits Exhausted</span>
+              </div>
+              <p className="text-sm text-muted-foreground text-center">
+                You've used all your credits for this period.
+              </p>
+              <Button 
+                onClick={() => window.location.href = '/pricing'} 
+                size="sm" 
+                className="gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white border-0"
+              >
+                <Sparkles className="w-4 h-4" />
+                Upgrade Plan
+              </Button>
             </motion.div>
           )}
         </AnimatePresence>

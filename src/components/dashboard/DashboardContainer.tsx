@@ -562,6 +562,7 @@ const DashboardContent = ({
           onRetryUpload={fileUpload.retryUpload}
           currentUsage={usageTracking.currentUsage}
           dailyLimit={usageTracking.monthlyLimit}
+          bonusCredits={usageTracking.bonusCredits}
           isUnlimited={usageTracking.isUnlimited}
           usageResetDate={usageTracking.resetDate}
           isLoadingFromHistory={messagesHook.isLoadingFromHistory}
