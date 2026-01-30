@@ -15,7 +15,8 @@ import {
   ChevronsRight,
   CreditCard,
   Gift,
-  Sparkles
+  Sparkles,
+  ThumbsUp
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -36,7 +37,8 @@ export type AdminTabId =
   | 'test-results'
   | 'subscriptions'
   | 'credit-history'
-  | 'beta-feedback';
+  | 'beta-feedback'
+  | 'message-feedback';
 
 interface AdminSection {
   id: AdminTabId;
@@ -62,6 +64,7 @@ const aiSections: AdminSection[] = [
   { id: 'ai-costs', title: 'AI Costs', shortTitle: 'Cost', icon: DollarSign, gradient: 'from-emerald-500 to-teal-500', adminOnly: true },
   { id: 'ai-limits', title: 'AI Limits', shortTitle: 'Lim', icon: Gauge, gradient: 'from-yellow-500 to-amber-500', adminOnly: true },
   { id: 'ai-assistant', title: 'AI Assistant', shortTitle: 'Asst', icon: Bot, gradient: 'from-cyan-500 to-blue-500', adminOnly: true },
+  { id: 'message-feedback', title: 'Message Feedback', shortTitle: 'Fdbk', icon: ThumbsUp, gradient: 'from-rose-500 to-pink-500', adminOnly: true },
   { id: 'subscriptions', title: 'Subscriptions', shortTitle: 'Subs', icon: CreditCard, gradient: 'from-indigo-500 to-violet-500', adminOnly: true },
   { id: 'credit-history', title: 'Credit History', shortTitle: 'Gift', icon: Gift, gradient: 'from-purple-500 to-fuchsia-500', adminOnly: true },
   { id: 'beta-feedback', title: 'Beta Feedback', shortTitle: 'Beta', icon: Sparkles, gradient: 'from-amber-500 to-yellow-500', adminOnly: true },

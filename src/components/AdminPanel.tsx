@@ -23,6 +23,7 @@ import TestResultsDashboard from '@/components/admin/TestResultsDashboard';
 import { SubscriptionManagement } from '@/components/admin/SubscriptionManagement';
 import { CreditGiftHistory } from '@/components/admin/CreditGiftHistory';
 import { BetaFeedbackViewer } from '@/components/admin/BetaFeedbackViewer';
+import { MessageFeedbackViewer } from '@/components/admin/MessageFeedbackViewer';
 
 // Supabase config
 const SUPABASE_URL = 'https://dfkoxuokfkttjhfjcecx.supabase.co' as const;
@@ -416,6 +417,7 @@ export const AdminPanel = ({
                     {activeTab === 'subscriptions' && <SubscriptionManagement />}
                     {activeTab === 'credit-history' && <CreditGiftHistory />}
                     {activeTab === 'beta-feedback' && <BetaFeedbackViewer />}
+                    {activeTab === 'message-feedback' && <MessageFeedbackViewer />}
                     {activeTab === 'test-results' && <TestResultsDashboard />}
                   </ErrorBoundary>
                 </motion.div>
