@@ -1,82 +1,77 @@
 
+# Plan: Soften Banner Colors + Auto-Hide After 5 Seconds
 
-# Fix Plan: Always Show "Jump to Latest" Button
+## What We're Fixing
 
-## Problem
-
-The "Jump to latest" button in the Chat History sidebar is hidden by default. It only appears when you scroll up more than 200 pixels from the bottom. Since the sidebar auto-scrolls to the bottom when opened, users never see this button.
-
----
-
-## Solution
-
-Make the "Jump to latest" button always visible in the footer area (next to Copy All and Clear buttons), so users can always click it to scroll to the most recent messages.
+1. **Red/destructive styling** feels too alarming and negative
+2. **Banner stays visible** until manually dismissed - should auto-disappear after 5 seconds
 
 ---
 
 ## Technical Changes
 
-### File: `src/components/transcript/TranscriptSidebar.tsx`
+### File: `src/components/dashboard/SystemNotificationBanner.tsx`
 
-**Change 1: Remove the conditional floating button (lines 215-235)**
+**Change 1: Add useEffect for auto-dismiss timer**
 
-Delete the `AnimatePresence` block with the floating "Jump to latest" button that only shows conditionally.
-
-**Change 2: Add "Jump to Latest" button to the footer**
-
-Add a permanent button in the footer actions section:
+Add a `useEffect` hook that automatically sets `isDismissed` to `true` after 5 seconds:
 
 ```tsx
-{/* Footer actions */}
-<div className="p-3 border-t border-border flex gap-2">
-  <Button
-    variant="outline"
-    size="sm"
-    className="flex-1 h-10 rounded-xl"
-    onClick={scrollToBottom}
-    disabled={messages.length === 0}
-  >
-    <ChevronDown className="w-4 h-4 mr-2" />
-    Jump to Latest
-  </Button>
-  <Button
-    variant="outline"
-    size="sm"
-    className="flex-1 h-10 rounded-xl"
-    onClick={handleCopyAll}
-    disabled={messages.length === 0}
-  >
-    <Copy className="w-4 h-4 mr-2" />
-    Copy All
-  </Button>
-  {onClear && (
-    <Button ... />
-  )}
-</div>
+import { useState, useEffect } from 'react';
+
+// Inside the component, add:
+useEffect(() => {
+  // Auto-dismiss usage warning after 5 seconds
+  if (!isDismissed && !isUnlimited && dailyLimit !== null) {
+    const timer = setTimeout(() => {
+      setIsDismissed(true);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }
+}, [isDismissed, isUnlimited, dailyLimit]);
 ```
 
-**Change 3: Cleanup unused state/handlers**
+**Change 2: Replace red styling with soft amber/muted tones (lines 155-157)**
 
-Remove the now-unused:
-- `showScrollButton` state (line 41)
-- `handleScroll` callback (lines 55-61)
-- Scroll event listener effect (lines 63-68)
+```tsx
+// Before:
+isUrgent && "bg-destructive/10 border-destructive/30 text-destructive",
+isWarning && "bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400",
+
+// After - Use softer, neutral tones:
+isUrgent && "bg-muted/60 border-border text-muted-foreground",
+isWarning && "bg-muted/50 border-border/80 text-muted-foreground",
+```
+
+**Change 3: Remove the pulsing animation (lines 161-164)**
+
+```tsx
+// Before:
+<AlertCircle className={cn(
+  "w-4 h-4 shrink-0",
+  isUrgent && "animate-pulse"
+)} />
+
+// After - No animation:
+<AlertCircle className="w-4 h-4 shrink-0" />
+```
 
 ---
 
 ## Summary
 
-| Location | Change |
-|----------|--------|
-| Lines 215-235 | Remove floating conditional button |
-| Lines 238-261 | Add "Jump to Latest" as first button in footer |
-| Lines 41, 55-68 | Remove unused scroll detection code |
+| Change | Before | After |
+|--------|--------|-------|
+| Color (urgent) | Red/destructive | Soft muted gray |
+| Color (warning) | Amber | Soft muted gray |
+| Animation | Pulsing icon | No animation |
+| Duration | Stays until dismissed | Auto-hides after 5 seconds |
 
 ---
 
 ## Result
 
-- "Jump to Latest" button is always visible in the footer
-- Users can click it anytime to scroll to the newest message
-- Cleaner code without unnecessary scroll detection logic
-
+- Banner appears briefly (5 seconds) then fades away
+- Neutral, non-alarming colors
+- Users are informed without feeling punished
+- Still has X button for immediate dismiss if needed
