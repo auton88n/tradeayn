@@ -1,157 +1,76 @@
 
-# Fix Plan: ResponseCard Not Appearing After Safety Guards
+Goal: Restore the ResponseCard display reliably (no “snag”, no missing card) by fixing the new race condition introduced by updating `lastProcessedMessageContent` state inside the same `useEffect` that schedules the response emission.
 
-## Problem Analysis
+What’s actually broken right now
+- In `src/components/dashboard/CenterStageLayout.tsx`, the “Process AYN responses” effect does this sequence:
+  1) Detects a new AYN message
+  2) Calls `setLastProcessedMessageContent(lastMessage.content)` (state update)
+  3) Schedules `setTimeout(...emitResponseBubble...)`
+  4) Returns a cleanup that `clearTimeout(timeoutId)`
+- Because `lastProcessedMessageContent` is in the effect dependency array, step (2) immediately causes the effect to re-run.
+- React runs the cleanup from the previous run before running the new one, so the scheduled timeout is cleared before it fires.
+- Result: `emitResponseBubble(...)` never runs → `responseBubbles` stays empty → ResponseCard never appears.
 
-The ResponseCard stopped appearing after I added safety guards in the previous fix. The root cause is a **race condition** between state updates and the setTimeout callback.
+High-confidence fix approach
+Replace the “already processed” tracking from state (which triggers re-renders/effect restarts) to a ref keyed on message identity (which does not trigger re-renders). This prevents the “cleanup clears timeout before it runs” loop.
 
-### What's Happening
+Implementation steps (code changes)
+1) CenterStageLayout: Replace `lastProcessedMessageContent` state with a ref-based guard
+   - Add a ref, for example:
+     - `const lastProcessedAynMessageIdRef = useRef<string | null>(null);`
+   - Remove:
+     - `const [lastProcessedMessageContent, setLastProcessedMessageContent] = useState<string | null>(null);`
+   - Update all resets that currently call `setLastProcessedMessageContent(null)` to instead set:
+     - `lastProcessedAynMessageIdRef.current = null;`
+     - (These resets exist in the “messages cleared” effect and “currentSessionId changed” effect.)
 
-```text
-┌─────────────────────────────────────────────────────────────────────┐
-│ Effect Run #1 (isTyping=false, content matches condition)           │
-├─────────────────────────────────────────────────────────────────────┤
-│ 1. let isMounted = true;                                            │
-│ 2. Pass all early return checks ✓                                   │
-│ 3. Enter processing block                                           │
-│ 4. setLastProcessedMessageContent(content) ← triggers re-render!    │
-│ 5. setTimeout(() => { if(!isMounted) return; ... }, 50)             │
-│ 6. return () => { isMounted = false; }                              │
-└─────────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼ React re-renders immediately
-┌─────────────────────────────────────────────────────────────────────┐
-│ Cleanup runs: isMounted = false (from Effect Run #1)                │
-└─────────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼ 50ms later
-┌─────────────────────────────────────────────────────────────────────┐
-│ setTimeout callback: if (!isMounted) return; ← EXITS EARLY!         │
-│ emitResponseBubble() NEVER CALLED                                   │
-└─────────────────────────────────────────────────────────────────────┘
-```
+2) CenterStageLayout: Update the processing condition to compare message IDs (not content)
+   - Current:
+     - `if (lastMessage.sender === 'ayn' && lastMessage.content !== lastProcessedMessageContent) { ... }`
+   - Change to:
+     - `if (lastMessage.sender === 'ayn' && lastMessage.id !== lastProcessedAynMessageIdRef.current) { ... }`
+   - Then set the ref immediately when you decide to process:
+     - `lastProcessedAynMessageIdRef.current = lastMessage.id;`
+   - Important: do NOT call any state setter that is included in this effect’s dependency list before the timeout executes.
 
-The state update `setLastProcessedMessageContent(lastMessage.content)` causes React to schedule a re-render. When the effect re-runs (because dependencies changed), React first runs the **cleanup function** from the previous effect run, which sets `isMounted = false`. By the time the `setTimeout` fires 50ms later, `isMounted` is already `false`.
+3) CenterStageLayout: Remove `lastProcessedMessageContent` from the effect dependency array
+   - Because it will no longer exist.
+   - This prevents the immediate effect restart cycle.
 
----
+4) CenterStageLayout: Keep timeout cleanup, but ensure it only cancels real superseded work
+   - With the state update removed, the effect should not re-run immediately anymore, so clearing the timeout in cleanup becomes safe again.
+   - Optional safety improvement:
+     - Store a `processingToken` in a ref (incrementing number) and only allow the timeout callback to emit if it matches the latest token. This avoids edge cases where multiple message updates happen quickly.
 
-## Solution
+5) CenterStageLayout: Make `responseProcessingRef` lifecycle robust (prevents stale suggestions)
+   - Set `responseProcessingRef.current.active = false` at the start of sending a new message (in `handleSendWithAnimation`) and when switching sessions (currentSessionId effect).
+   - This ensures old delayed suggestion fetches don’t fire after a new message/session.
 
-Use a **ref** instead of a local variable for the mount guard. This way, the flag persists across effect runs and isn't affected by cleanup functions from the same logical operation.
+6) Add minimal DEV-only logs to confirm the fix (optional but recommended while stabilizing)
+   - Log when:
+     - gate is active
+     - lastMessage isTyping transitions
+     - processing starts (message id)
+     - emitResponseBubble is called
+   - This makes it immediately visible if the app is skipping processing due to gate/id checks.
 
-Additionally, we need to separate the "processing started" flag from the "component unmounted" flag. The current logic incorrectly treats a re-render as an unmount.
+Files to change
+- src/components/dashboard/CenterStageLayout.tsx
+  - Replace `lastProcessedMessageContent` state with `lastProcessedAynMessageIdRef`
+  - Update processing condition and resets
+  - Update effect dependencies
+  - Optionally harden `responseProcessingRef` reset
 
----
+Testing checklist (end-to-end)
+1) Send a message, wait for AYN to finish streaming:
+   - ResponseCard should appear consistently.
+2) Send multiple messages quickly:
+   - Each should produce a ResponseCard.
+3) Switch chats while AYN is responding:
+   - No ErrorBoundary crash; old ResponseCard should not “auto-show” in the new chat.
+4) Verify the original “rzan” scenario:
+   - No “Oops! snag” and ResponseCard visible every time.
 
-## Technical Changes
-
-### File: `src/components/dashboard/CenterStageLayout.tsx`
-
-**Change 1: Use a ref for tracking the processing callback**
-
-Instead of relying on `isMounted` which gets invalidated on re-render, use a `timeoutId` ref to cancel the timeout if truly needed, and remove the `isMounted` check inside setTimeout since the component isn't actually unmounting:
-
-```tsx
-// Before (buggy)
-useEffect(() => {
-  let isMounted = true;
-  
-  // ... checks ...
-  
-  setTimeout(() => {
-    if (!isMounted) return;  // ← This exits because cleanup ran!
-    emitResponseBubble(...);
-  }, 50);
-  
-  return () => { isMounted = false; };
-}, [...]);
-
-// After (fixed)
-useEffect(() => {
-  // ... checks ...
-  
-  if (lastMessage.sender === 'ayn' && lastMessage.content !== lastProcessedMessageContent) {
-    awaitingLiveResponseRef.current = { active: false, baselineLastMessageId: null };
-    setLastProcessedMessageContent(lastMessage.content);
-    triggerBlink();
-    
-    const messageContent = lastMessage.content;
-    const messageAttachment = lastMessage.attachment;
-    
-    // Use queueMicrotask + setTimeout to ensure this runs after React's synchronous updates
-    // No isMounted check needed - the gate ref already prevents duplicate processing
-    const timeoutId = setTimeout(() => {
-      try {
-        if (!messageContent?.trim()) return;
-        
-        // ... rest of processing ...
-        
-        emitResponseBubble(response, bubbleType, attachment);
-      } catch (error) {
-        console.error('[CenterStageLayout] Error processing response:', error);
-      }
-    }, 50);
-    
-    return () => clearTimeout(timeoutId);
-  }
-  
-  // No cleanup needed for early returns - nothing to clean up
-}, [...]);
-```
-
-**Change 2: Remove isMounted checks from early returns**
-
-Early returns don't need cleanup functions since they don't start any async operations:
-
-```tsx
-// Before
-if (messages.length === 0) {
-  return () => { isMounted = false; };
-}
-
-// After  
-if (messages.length === 0) return;
-```
-
-**Change 3: Keep isMounted check for the nested suggestion timeout**
-
-The inner setTimeout for suggestions should still check if the component is mounted, but we need to use a ref that survives re-renders:
-
-```tsx
-// Add at component level (near line 161)
-const responseProcessingRef = useRef<{ active: boolean }>({ active: false });
-
-// In the effect, use this ref
-responseProcessingRef.current.active = true;
-
-setTimeout(() => {
-  // Inner suggestion fetch - check if we're still in the same processing cycle
-  if (!responseProcessingRef.current.active) return;
-  debouncedFetchAndEmitSuggestions(...);
-}, 600);
-```
-
----
-
-## Summary of Changes
-
-| Location | Change |
-|----------|--------|
-| Line ~161 | Add `responseProcessingRef` to track active processing |
-| Lines 515-541 | Remove cleanup functions from early returns |
-| Line 557 | Set `responseProcessingRef.current.active = true` when processing starts |
-| Line 570 | Remove `if (!isMounted) return;` check |
-| Line 612-613 | Change to check `responseProcessingRef.current.active` |
-| Line 626 | Return cleanup that sets `responseProcessingRef.current.active = false` |
-
----
-
-## Why This Works
-
-1. **Early returns** don't need cleanup - they haven't started any async work
-2. **Processing block** uses the `awaitingLiveResponseRef` gate to prevent duplicate processing (already there)
-3. **setTimeout callback** doesn't need an isMounted check because:
-   - The gate already ensures we only process once
-   - If the component truly unmounts, React's error boundaries will catch any issues
-   - A re-render is not an unmount
-4. **Nested suggestion timeout** uses a ref that persists across renders
+Why this will work
+- The root cause is the effect restarting itself via a dependency-changing state update; moving “processed tracking” to a ref removes that trigger.
+- With no immediate restart, the scheduled timeout is not cleared before it fires, so `emitResponseBubble` executes and the ResponseCard renders as designed.
