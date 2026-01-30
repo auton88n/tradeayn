@@ -462,32 +462,11 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
         >
           {/* Header */}
           <DialogHeader className="flex-shrink-0 px-5 sm:px-6 py-4 border-b border-border bg-background pr-20">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-lg bg-muted">
-                  <Brain className="w-5 h-5 text-foreground" />
-                </div>
-                <DialogTitle className="text-base font-medium">AYN Response</DialogTitle>
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-lg bg-muted">
+                <Brain className="w-5 h-5 text-foreground" />
               </div>
-              
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={copyContent}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {copied ? (
-                    <>
-                      <Check size={14} className="text-green-600" />
-                      <span className="hidden sm:inline text-green-600">Copied</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy size={14} />
-                      <span className="hidden sm:inline">Copy</span>
-                    </>
-                  )}
-                </button>
-              </div>
+              <DialogTitle className="text-base font-medium">AYN Response</DialogTitle>
             </div>
           </DialogHeader>
           
