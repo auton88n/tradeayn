@@ -166,6 +166,9 @@ export const CenterStageLayout = ({
   // Ref to track if a response processing cycle is active (survives re-renders)
   const responseProcessingRef = useRef<{ active: boolean }>({ active: false });
   
+  // Persistent timeout ref - prevents cleanup from canceling legitimate pending emissions
+  const responseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
   const isMobile = useIsMobile();
   
   // Calculate if credits are exhausted (user can't send more messages)
@@ -234,6 +237,11 @@ export const CenterStageLayout = ({
   // Reset all visual state when messages are cleared (new chat started)
   useEffect(() => {
     if (messages.length === 0) {
+      // Clear any pending response timeout
+      if (responseTimeoutRef.current) {
+        clearTimeout(responseTimeoutRef.current);
+        responseTimeoutRef.current = null;
+      }
       clearResponseBubbles();
       clearSuggestions();
       lastProcessedAynMessageIdRef.current = null;
@@ -248,6 +256,11 @@ export const CenterStageLayout = ({
   // Clear visual state when switching chat sessions
   useEffect(() => {
     if (currentSessionId) {
+      // Clear any pending response timeout
+      if (responseTimeoutRef.current) {
+        clearTimeout(responseTimeoutRef.current);
+        responseTimeoutRef.current = null;
+      }
       clearResponseBubbles();
       clearSuggestions();
       lastProcessedAynMessageIdRef.current = null;
@@ -402,6 +415,12 @@ export const CenterStageLayout = ({
         baselineLastMessageId: messages[messages.length - 1]?.id ?? null,
       };
 
+      // Clear any pending response timeout from previous message
+      if (responseTimeoutRef.current) {
+        clearTimeout(responseTimeoutRef.current);
+        responseTimeoutRef.current = null;
+      }
+      
       // Clear previous response bubbles, suggestions, and reset empathy state
       clearResponseBubbles();
       clearSuggestions();
@@ -553,8 +572,8 @@ export const CenterStageLayout = ({
       const messageContent = lastMessage.content;
       const messageAttachment = lastMessage.attachment;
       
-      // After blink, use backend emotion and emit bubbles
-      const timeoutId = setTimeout(() => {
+      // Store timeout in ref so it persists across effect re-runs (dependency changes won't cancel it)
+      responseTimeoutRef.current = setTimeout(() => {
         try {
           // Safety check - ensure content still exists
           if (!messageContent?.trim()) return;
@@ -569,6 +588,10 @@ export const CenterStageLayout = ({
           playSound?.('response-received');
           setIsResponding(false);
           bumpActivity(); // Increase activity on AI response
+          
+          // Mark processing complete AFTER emission succeeds
+          responseProcessingRef.current.active = false;
+          responseTimeoutRef.current = null;
           
           // Haptic feedback handled by orchestrator
           
@@ -595,9 +618,7 @@ export const CenterStageLayout = ({
           emitResponseBubble(response, bubbleType, attachment);
           
           // Show dynamic suggestions after response bubble appears (debounced to reduce API calls)
-          // Use ref to check if we're still in the same processing cycle
           setTimeout(() => {
-            if (!responseProcessingRef.current.active) return;
             debouncedFetchAndEmitSuggestions(
               lastUserMessage || 'Hello',
               messageContent,
@@ -606,14 +627,13 @@ export const CenterStageLayout = ({
           }, 600);
         } catch (error) {
           console.error('[CenterStageLayout] Error processing response:', error);
+          responseProcessingRef.current.active = false;
+          responseTimeoutRef.current = null;
         }
       }, 50); // Minimal delay for blink
       
-      // Cleanup: cancel timeout and mark processing as inactive
-      return () => {
-        clearTimeout(timeoutId);
-        responseProcessingRef.current.active = false;
-      };
+      // NO cleanup that clears timeout - timeout is managed via ref and only cleared intentionally
+      // (in handleSendWithAnimation, session change, or messages cleared)
     }
   }, [
     messages,
