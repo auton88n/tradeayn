@@ -1,76 +1,121 @@
 
-Goal: Restore the ResponseCard display reliably (no “snag”, no missing card) by fixing the new race condition introduced by updating `lastProcessedMessageContent` state inside the same `useEffect` that schedules the response emission.
+# Fix Plan: Intermittent ResponseCard Display
 
-What’s actually broken right now
-- In `src/components/dashboard/CenterStageLayout.tsx`, the “Process AYN responses” effect does this sequence:
-  1) Detects a new AYN message
-  2) Calls `setLastProcessedMessageContent(lastMessage.content)` (state update)
-  3) Schedules `setTimeout(...emitResponseBubble...)`
-  4) Returns a cleanup that `clearTimeout(timeoutId)`
-- Because `lastProcessedMessageContent` is in the effect dependency array, step (2) immediately causes the effect to re-run.
-- React runs the cleanup from the previous run before running the new one, so the scheduled timeout is cleared before it fires.
-- Result: `emitResponseBubble(...)` never runs → `responseBubbles` stays empty → ResponseCard never appears.
+## Problem Identified
 
-High-confidence fix approach
-Replace the “already processed” tracking from state (which triggers re-renders/effect restarts) to a ref keyed on message identity (which does not trigger re-renders). This prevents the “cleanup clears timeout before it runs” loop.
+The ResponseCard appears inconsistently (sometimes shows, sometimes doesn't) due to a **cleanup timing issue** in the response processing `useEffect`.
 
-Implementation steps (code changes)
-1) CenterStageLayout: Replace `lastProcessedMessageContent` state with a ref-based guard
-   - Add a ref, for example:
-     - `const lastProcessedAynMessageIdRef = useRef<string | null>(null);`
-   - Remove:
-     - `const [lastProcessedMessageContent, setLastProcessedMessageContent] = useState<string | null>(null);`
-   - Update all resets that currently call `setLastProcessedMessageContent(null)` to instead set:
-     - `lastProcessedAynMessageIdRef.current = null;`
-     - (These resets exist in the “messages cleared” effect and “currentSessionId changed” effect.)
+### Root Cause
 
-2) CenterStageLayout: Update the processing condition to compare message IDs (not content)
-   - Current:
-     - `if (lastMessage.sender === 'ayn' && lastMessage.content !== lastProcessedMessageContent) { ... }`
-   - Change to:
-     - `if (lastMessage.sender === 'ayn' && lastMessage.id !== lastProcessedAynMessageIdRef.current) { ... }`
-   - Then set the ref immediately when you decide to process:
-     - `lastProcessedAynMessageIdRef.current = lastMessage.id;`
-   - Important: do NOT call any state setter that is included in this effect’s dependency list before the timeout executes.
+The effect has many dependencies beyond just `messages`:
 
-3) CenterStageLayout: Remove `lastProcessedMessageContent` from the effect dependency array
-   - Because it will no longer exist.
-   - This prevents the immediate effect restart cycle.
+```javascript
+[
+  messages,              // ← this is the trigger
+  isLoadingFromHistory,
+  lastSuggestedEmotion,  // ← changes during streaming!
+  setEmotion,
+  setIsResponding,
+  emitResponseBubble,
+  triggerBlink,
+  detectExcitement,
+  debouncedFetchAndEmitSuggestions,
+  lastUserMessage,       // ← changes when user sends
+  selectedMode,
+  orchestrateEmotionChange,
+  playSound,
+  bumpActivity,
+]
+```
 
-4) CenterStageLayout: Keep timeout cleanup, but ensure it only cancels real superseded work
-   - With the state update removed, the effect should not re-run immediately anymore, so clearing the timeout in cleanup becomes safe again.
-   - Optional safety improvement:
-     - Store a `processingToken` in a ref (incrementing number) and only allow the timeout callback to emit if it matches the latest token. This avoids edge cases where multiple message updates happen quickly.
+When **any** of these dependencies change after the timeout is scheduled but before it fires, React:
+1. Runs the cleanup function → `clearTimeout(timeoutId)` cancels the pending emission
+2. Re-runs the effect → but now `lastProcessedAynMessageIdRef.current` already equals the message ID
+3. The ID check fails → processing block is skipped
+4. **Result: `emitResponseBubble` never called**
 
-5) CenterStageLayout: Make `responseProcessingRef` lifecycle robust (prevents stale suggestions)
-   - Set `responseProcessingRef.current.active = false` at the start of sending a new message (in `handleSendWithAnimation`) and when switching sessions (currentSessionId effect).
-   - This ensures old delayed suggestion fetches don’t fire after a new message/session.
+### Why It's Intermittent
 
-6) Add minimal DEV-only logs to confirm the fix (optional but recommended while stabilizing)
-   - Log when:
-     - gate is active
-     - lastMessage isTyping transitions
-     - processing starts (message id)
-     - emitResponseBubble is called
-   - This makes it immediately visible if the app is skipping processing due to gate/id checks.
+- **Works**: Dependencies stay stable for the 50ms window → timeout fires → card appears
+- **Fails**: `lastSuggestedEmotion` or another dependency updates within 50ms → timeout canceled → no card
 
-Files to change
-- src/components/dashboard/CenterStageLayout.tsx
-  - Replace `lastProcessedMessageContent` state with `lastProcessedAynMessageIdRef`
-  - Update processing condition and resets
-  - Update effect dependencies
-  - Optionally harden `responseProcessingRef` reset
+---
 
-Testing checklist (end-to-end)
-1) Send a message, wait for AYN to finish streaming:
-   - ResponseCard should appear consistently.
-2) Send multiple messages quickly:
-   - Each should produce a ResponseCard.
-3) Switch chats while AYN is responding:
-   - No ErrorBoundary crash; old ResponseCard should not “auto-show” in the new chat.
-4) Verify the original “rzan” scenario:
-   - No “Oops! snag” and ResponseCard visible every time.
+## Solution
 
-Why this will work
-- The root cause is the effect restarting itself via a dependency-changing state update; moving “processed tracking” to a ref removes that trigger.
-- With no immediate restart, the scheduled timeout is not cleared before it fires, so `emitResponseBubble` executes and the ResponseCard renders as designed.
+**Move the timeout logic outside the effect's cleanup scope** by using a ref to track the timeout ID and only clearing it when we intentionally want to cancel (session change, messages cleared), not on every effect re-run.
+
+### Technical Changes
+
+**File: `src/components/dashboard/CenterStageLayout.tsx`**
+
+1. **Add a persistent timeout ref** (near line 167):
+   ```tsx
+   const responseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+   ```
+
+2. **Store timeout in ref instead of local variable** (around line 557):
+   ```tsx
+   // Before:
+   const timeoutId = setTimeout(() => { ... }, 50);
+   return () => { clearTimeout(timeoutId); ... };
+   
+   // After:
+   responseTimeoutRef.current = setTimeout(() => { ... }, 50);
+   // No cleanup that clears this timeout on dependency changes
+   ```
+
+3. **Remove the cleanup function that clears the timeout** from this effect:
+   - The current cleanup cancels legitimate pending emissions
+   - Instead, only clear the timeout in explicit reset scenarios
+
+4. **Clear timeout only in intentional reset locations**:
+   - Messages cleared effect (line 236-245)
+   - Session change effect (line 249-256)
+   - Start of `handleSendWithAnimation` (line 406)
+   
+   Add to each:
+   ```tsx
+   if (responseTimeoutRef.current) {
+     clearTimeout(responseTimeoutRef.current);
+     responseTimeoutRef.current = null;
+   }
+   ```
+
+5. **Keep `responseProcessingRef.active = false`** in the timeout callback after emission completes (not in cleanup):
+   ```tsx
+   setTimeout(() => {
+     try {
+       // ... emit bubble ...
+       emitResponseBubble(response, bubbleType, attachment);
+       
+       // Mark processing complete AFTER emission
+       responseProcessingRef.current.active = false;
+       
+       // ... suggestion fetch ...
+     } catch (error) { ... }
+   }, 50);
+   ```
+
+---
+
+## Summary of Changes
+
+| Location | Change |
+|----------|--------|
+| Line ~167 | Add `responseTimeoutRef = useRef<NodeJS.Timeout \| null>(null)` |
+| Line ~240 | Add timeout clear in "messages cleared" effect |
+| Line ~253 | Add timeout clear in "session change" effect |
+| Line ~406 | Add timeout clear in `handleSendWithAnimation` |
+| Line ~557 | Use `responseTimeoutRef.current = setTimeout(...)` |
+| Line ~595 | Move `responseProcessingRef.current.active = false` after bubble emission |
+| Line ~613-616 | Remove the cleanup function entirely from this effect |
+
+---
+
+## Why This Will Work
+
+1. **Timeout persists across dependency changes**: Using a ref means React's cleanup doesn't cancel the emission
+2. **Intentional cancellation only**: Timeout is only cleared when we truly want to reset (new send, session switch, messages cleared)
+3. **ID-based deduplication still works**: The `lastProcessedAynMessageIdRef` prevents duplicate processing
+4. **No race conditions**: The 50ms timeout will always complete unless explicitly canceled
