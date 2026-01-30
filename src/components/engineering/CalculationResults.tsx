@@ -8,7 +8,7 @@ import {
   Box,
   Ruler,
   Weight,
-  DollarSign,
+  Package,
   CheckCircle2,
   AlertTriangle,
   Loader2,
@@ -175,74 +175,37 @@ const Column2DCrossSection: React.FC<{
   );
 };
 
-// Material Cost Breakdown Table for PDF
-const MaterialCostTable: React.FC<{
+// Material Quantities Display (no cost estimates for legal protection)
+const MaterialQuantitiesDisplay: React.FC<{
   concreteVolume: number;
   steelWeight: number;
   formworkArea?: number;
-  type: string;
-}> = ({ concreteVolume, steelWeight, formworkArea, type }) => {
-  // Saudi Arabia material prices (approximate SAR)
-  const concretePricePerM3 = 350; // SAR per m³
-  const steelPricePerKg = 4.5; // SAR per kg
-  const formworkPricePerM2 = 85; // SAR per m²
-  
-  const concreteCost = concreteVolume * concretePricePerM3;
-  const steelCost = steelWeight * steelPricePerKg;
-  const formworkCost = (formworkArea || 0) * formworkPricePerM2;
-  const laborCost = (concreteCost + steelCost) * 0.35; // ~35% labor
-  const totalCost = concreteCost + steelCost + formworkCost + laborCost;
-
+}> = ({ concreteVolume, steelWeight, formworkArea }) => {
   return (
     <div className="bg-card rounded-lg border border-border p-3 mt-3">
       <h4 className="text-sm font-semibold mb-2 flex items-center gap-1.5">
-        <DollarSign className="w-4 h-4 text-green-500" />
-        Estimated Material Costs (SAR)
+        <Package className="w-4 h-4 text-blue-500" />
+        Material Quantities
       </h4>
-      <table className="w-full text-xs">
-        <thead>
-          <tr className="border-b border-border">
-            <th className="text-left py-1 text-muted-foreground">Material</th>
-            <th className="text-right py-1 text-muted-foreground">Quantity</th>
-            <th className="text-right py-1 text-muted-foreground">Unit Price</th>
-            <th className="text-right py-1 text-muted-foreground">Cost</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr className="border-b border-border/50">
-            <td className="py-1">Concrete (C30)</td>
-            <td className="text-right">{concreteVolume.toFixed(2)} m³</td>
-            <td className="text-right">{concretePricePerM3} /m³</td>
-            <td className="text-right font-medium">{concreteCost.toFixed(0)}</td>
-          </tr>
-          <tr className="border-b border-border/50">
-            <td className="py-1">Steel Reinforcement</td>
-            <td className="text-right">{steelWeight.toFixed(1)} kg</td>
-            <td className="text-right">{steelPricePerKg} /kg</td>
-            <td className="text-right font-medium">{steelCost.toFixed(0)}</td>
-          </tr>
-          {formworkArea && formworkArea > 0 && (
-            <tr className="border-b border-border/50">
-              <td className="py-1">Formwork</td>
-              <td className="text-right">{formworkArea.toFixed(2)} m²</td>
-              <td className="text-right">{formworkPricePerM2} /m²</td>
-              <td className="text-right font-medium">{formworkCost.toFixed(0)}</td>
-            </tr>
-          )}
-          <tr className="border-b border-border/50">
-            <td className="py-1">Labor (~35%)</td>
-            <td className="text-right">-</td>
-            <td className="text-right">-</td>
-            <td className="text-right font-medium">{laborCost.toFixed(0)}</td>
-          </tr>
-          <tr className="font-bold">
-            <td className="py-1.5">Total Estimated</td>
-            <td></td>
-            <td></td>
-            <td className="text-right text-green-600">{totalCost.toFixed(0)} SAR</td>
-          </tr>
-        </tbody>
-      </table>
+      <div className="grid grid-cols-3 gap-4 text-sm">
+        <div>
+          <span className="text-muted-foreground">Concrete:</span>
+          <span className="ml-2 font-medium">{concreteVolume.toFixed(2)} m³</span>
+        </div>
+        <div>
+          <span className="text-muted-foreground">Steel:</span>
+          <span className="ml-2 font-medium">{steelWeight.toFixed(0)} kg</span>
+        </div>
+        {formworkArea && formworkArea > 0 && (
+          <div>
+            <span className="text-muted-foreground">Formwork:</span>
+            <span className="ml-2 font-medium">{formworkArea.toFixed(1)} m²</span>
+          </div>
+        )}
+      </div>
+      <p className="text-xs text-muted-foreground mt-2">
+        Contact local suppliers for current pricing.
+      </p>
     </div>
   );
 };
@@ -265,7 +228,6 @@ export const CalculationResults = ({ result, onNewCalculation }: CalculationResu
   const [aiAnalysis, setAiAnalysis] = useState<{
     compliance: string[];
     optimizations: string[];
-    costEstimate: { item: string; cost: number }[];
   } | null>(null);
 
   const outputs = result.outputs as Record<string, unknown>;
@@ -592,13 +554,12 @@ export const CalculationResults = ({ result, onNewCalculation }: CalculationResu
               )}
             </div>
             
-            {/* Material Cost Breakdown - Only for structural types */}
+            {/* Material Quantities - Only for structural types */}
             {result.type !== 'parking' && (
-              <MaterialCostTable
+              <MaterialQuantitiesDisplay
                 concreteVolume={(outputs.concreteVolume || 0) as number}
                 steelWeight={(outputs.steelWeight || 0) as number}
                 formworkArea={(outputs.formworkArea || 0) as number}
-                type={result.type || 'beam'}
               />
             )}
           </div>
@@ -723,7 +684,7 @@ export const CalculationResults = ({ result, onNewCalculation }: CalculationResu
           {result.type !== 'parking' && (
             <div className="bg-card rounded-2xl border border-border p-6 shadow-lg">
               <div className="flex items-center gap-2 mb-4">
-                <DollarSign className="w-5 h-5 text-green-500" />
+                <Package className="w-5 h-5 text-blue-500" />
                 <h3 className="text-lg font-semibold">Material Quantities</h3>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -792,25 +753,18 @@ export const CalculationResults = ({ result, onNewCalculation }: CalculationResu
               </ul>
             </div>
 
-            {/* Cost Estimate */}
+            {/* Material Quantities Summary */}
             <div>
               <h4 className="font-medium mb-3 flex items-center gap-2">
-                <DollarSign className="w-4 h-4 text-green-500" />
-                Cost Estimate (SAR)
+                <Package className="w-4 h-4 text-blue-500" />
+                Material Quantities
               </h4>
-              <ul className="space-y-2">
-                {aiAnalysis.costEstimate.map((item, i) => (
-                  <li key={i} className="text-sm flex items-center justify-between">
-                    <span>{item.item}</span>
-                    <span className="font-medium">{item.cost.toLocaleString()}</span>
-                  </li>
-                ))}
-                <li className="text-sm flex items-center justify-between pt-2 border-t border-purple-200 dark:border-purple-700">
-                  <span className="font-semibold">Total</span>
-                  <span className="font-bold">
-                    {aiAnalysis.costEstimate.reduce((sum, item) => sum + item.cost, 0).toLocaleString()}
-                  </span>
-                </li>
+              <p className="text-sm text-muted-foreground mb-2">
+                Contact local suppliers for current pricing.
+              </p>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li>• Concrete volume and steel weight shown in results above</li>
+                <li>• Request quotes from multiple suppliers for best pricing</li>
               </ul>
             </div>
           </div>
