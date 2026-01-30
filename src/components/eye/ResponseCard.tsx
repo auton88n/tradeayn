@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import { StreamingMarkdown } from '@/components/eye/StreamingMarkdown';
 import { MessageFormatter } from '@/components/shared/MessageFormatter';
 import { hapticFeedback } from '@/lib/haptics';
-import { Copy, Check, ThumbsUp, ThumbsDown, Brain, X, ChevronDown, Palette } from 'lucide-react';
+import { Copy, Check, ThumbsUp, ThumbsDown, Brain, X, ChevronDown, Palette, Maximize2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -13,6 +13,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { persistDalleImage } from '@/hooks/useImagePersistence';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface ResponseBubbleAttachment {
   url: string;
@@ -33,9 +35,10 @@ interface ResponseCardProps {
   onDismiss?: () => void;
   variant?: 'inline' | 'sheet';
   showPointer?: boolean;
+  sessionId?: string;
 }
 
-const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant = 'inline', showPointer = true }: ResponseCardProps) => {
+const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant = 'inline', showPointer = true, sessionId }: ResponseCardProps) => {
   const navigate = useNavigate();
   
   const contentRef = useRef<HTMLDivElement>(null);
@@ -157,9 +160,33 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
     }
   };
 
-  const handleFeedback = (type: 'up' | 'down') => {
+  const handleFeedback = async (type: 'up' | 'down') => {
     hapticFeedback('light');
-    setFeedback(prev => prev === type ? null : type);
+    const newFeedback = feedback === type ? null : type;
+    setFeedback(newFeedback);
+    
+    // Persist feedback to database
+    if (newFeedback) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        const rating = type === 'up' ? 'positive' : 'negative';
+        const preview = combinedContent.slice(0, 200) + (combinedContent.length > 200 ? '...' : '');
+        
+        const { error } = await supabase
+          .from('message_ratings')
+          .insert({
+            user_id: user?.id || null,
+            session_id: sessionId || null,
+            message_preview: preview,
+            rating
+          });
+        
+        if (error) throw error;
+        toast.success(type === 'up' ? 'Thanks for the feedback!' : 'We\'ll work on improving');
+      } catch (err) {
+        console.error('Failed to save feedback:', err);
+      }
+    }
   };
 
   const handleExpand = () => {
@@ -393,6 +420,14 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
                 aria-label="Not helpful"
               >
                 <ThumbsDown size={18} />
+              </button>
+              
+              <button
+                onClick={handleExpand}
+                className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                aria-label="Expand"
+              >
+                <Maximize2 size={18} />
               </button>
               
               {detectedImageUrl && (
