@@ -573,6 +573,7 @@ const DashboardContent = ({
           userId={user.id}
           showFeedbackModal={showFeedbackModal}
           setShowFeedbackModal={setShowFeedbackModal}
+          onCreditsUpdated={usageTracking.refreshUsage}
         />
       </main>
 
