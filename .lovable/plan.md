@@ -1,89 +1,61 @@
 
-# Fix PDF Download - Data URL Not Working in Markdown Links
+
+# Fix ResponseCard Not Showing for Document Generation
 
 ## Problem Identified
 
-The PDF generation is **working correctly** on the backend (generating a 14KB base64 data URL), but the download fails because:
+After thorough investigation, I found the root cause of why the ResponseCard doesn't show for PDF generation responses:
 
-1. **Data URLs are too long for markdown links** - A 14KB base64 PDF data URL embedded in `[Title](data:application/pdf;base64,...)` format creates parsing issues
-2. **ReactMarkdown can't reliably parse 14,000+ character URLs** inside link syntax
-3. **The link gets corrupted** and instead of downloading the PDF, it redirects to the app's base URL
-
-## Solution: Separate Document URL from Message Content
-
-Instead of embedding the massive data URL inside the markdown text, we should:
-
-1. **Keep the data URL in a separate field** (already exists as `documentUrl` in the response)
-2. **Show a styled download button** in the UI when a document is available
-3. **Use the `openDocumentUrl` function** directly with the attachment URL
-
-## Implementation Plan
-
-### Part 1: Update ayn-unified Response Format
-
-**File:** `supabase/functions/ayn-unified/index.ts`
-
-Change the success message to NOT include the data URL in the markdown. Instead, use a placeholder or simple text:
-
-```text
-Before (broken):
-📄 [Greenland Report](data:application/pdf;base64,JVBERi0...)
-
-After (fixed):
-Document created successfully!
-
-📄 **Greenland Report** - Click the download button below
-
-_(30 credits used • 70 remaining)_
+In `useMessages.ts`, when creating the AYN message for non-streaming responses (like documents), the message is created with:
+```typescript
+isTyping: true
 ```
 
-The actual download URL stays in the response JSON (`documentUrl` field) and is rendered by the UI as a separate button.
+However, unlike the streaming path which sets `isTyping: false` after stream completion, the non-streaming path never updates this flag.
 
-### Part 2: Update ResponseCard to Show Download Button
-
-**File:** `src/components/eye/ResponseCard.tsx`
-
-Add a document download button that appears when the response includes a document attachment:
-
-- Check if `visibleResponses[0]?.attachment` has a document type
-- Show a styled download button with the document icon
-- Use `openDocumentUrl(attachment.url, attachment.name)` on click
-
-### Part 3: Update useMessages to Pass Document Attachment
-
-**File:** `src/hooks/useMessages.ts`
-
-Ensure the document URL from the webhook response is properly saved as an attachment:
-
-- Already saves `attachment_url` from `webhookData?.documentUrl` 
-- Verify it's being passed correctly to the ResponseCard
-
-### Part 4: Add Document Download Button Component
-
-**File:** `src/components/eye/DocumentDownloadButton.tsx` (new)
-
-Create a reusable download button component:
-
-```text
-┌────────────────────────────────────────┐
-│  📄  Greenland Report.pdf    [Download]│
-└────────────────────────────────────────┘
+Then in `CenterStageLayout.tsx`, the response processing effect has an early return:
+```typescript
+if (lastMessage.isTyping) return;
 ```
 
-Features:
-- Shows document icon (PDF or Excel)
-- Displays filename
-- Download button triggers `openDocumentUrl()`
-- Clean styling matching the response card
+This causes the effect to skip processing the document response message, so `emitResponseBubble()` is never called, and the ResponseCard never appears.
 
-## Files to Modify
+## Solution
 
-| File | Action | Purpose |
-|------|--------|---------|
-| `supabase/functions/ayn-unified/index.ts` | Modify | Remove data URL from markdown, keep in JSON field |
-| `src/components/eye/ResponseCard.tsx` | Modify | Show download button when document attachment exists |
-| `src/components/eye/DocumentDownloadButton.tsx` | Create | Styled download button component |
-| `src/hooks/useMessages.ts` | Verify | Ensure attachment is passed correctly |
+Update the non-streaming message path in `useMessages.ts` to set `isTyping: false` instead of `true` since the response is already complete (not being streamed).
+
+## File Changes
+
+### `src/hooks/useMessages.ts`
+
+**Change:** Set `isTyping: false` for non-streaming responses since the content is complete
+
+**Location:** Around line 571
+
+```typescript
+// Before
+const aynMessage: Message = {
+  id: crypto.randomUUID(),
+  content: response,
+  sender: 'ayn',
+  timestamp: new Date(),
+  isTyping: true,  // <-- Wrong for non-streaming
+  ...(labData ? { labData } : {}),
+  ...(documentAttachment ? { attachment: documentAttachment } : {})
+};
+
+// After
+const aynMessage: Message = {
+  id: crypto.randomUUID(),
+  content: response,
+  sender: 'ayn',
+  timestamp: new Date(),
+  isTyping: false,  // <-- Non-streaming = already complete
+  status: 'sent',   // Also add status for consistency
+  ...(labData ? { labData } : {}),
+  ...(documentAttachment ? { attachment: documentAttachment } : {})
+};
+```
 
 ## Technical Flow After Fix
 
@@ -92,50 +64,45 @@ User: "Create a PDF about Greenland"
                 │
                 ▼
 ┌─────────────────────────────────────────┐
-│  ayn-unified edge function              │
-│  ─────────────────────────────────────  │
-│  1. Generate PDF → data:application/... │
-│  2. Return JSON:                        │
-│     {                                   │
-│       content: "Document created! 📄",  │
-│       documentUrl: "data:...",          │  ← Separate field
-│       documentType: "pdf"               │
-│     }                                   │
+│  ayn-unified returns JSON (non-stream)  │
+│  with documentUrl, documentName, etc.   │
 └─────────────────────────────────────────┘
                 │
                 ▼
 ┌─────────────────────────────────────────┐
 │  useMessages.ts                         │
 │  ─────────────────────────────────────  │
-│  Save response with:                    │
-│  - content: "Document created! 📄"      │
-│  - attachment_url: "data:..."           │
-│  - attachment_type: "application/pdf"   │
+│  Creates message with:                  │
+│  - isTyping: false   ← FIXED            │
+│  - status: 'sent'                       │
+│  - attachment: { url, name, type }      │
 └─────────────────────────────────────────┘
                 │
                 ▼
 ┌─────────────────────────────────────────┐
-│  ResponseCard.tsx                       │
+│  CenterStageLayout.tsx                  │
 │  ─────────────────────────────────────  │
-│  Render:                                │
-│  ┌─────────────────────────────────┐    │
-│  │ Document created successfully!  │    │
-│  │                                 │    │
-│  │ ┌───────────────────────────┐   │    │
-│  │ │ 📄 Greenland.pdf [⬇️]     │   │    │ ← Download button
-│  │ └───────────────────────────┘   │    │
-│  │                                 │    │
-│  │ (30 credits • 70 remaining)    │    │
-│  └─────────────────────────────────┘    │
+│  Effect sees:                           │
+│  - lastMessage.sender === 'ayn' ✓       │
+│  - lastMessage.isTyping === false ✓     │
+│  - lastMessage.content has text ✓       │
+│                                         │
+│  → Calls emitResponseBubble()           │
+│  → ResponseCard appears with download   │
 └─────────────────────────────────────────┘
-                │
-                ▼
-User clicks [⬇️] → openDocumentUrl() → Browser downloads PDF
 ```
 
 ## Why This Works
 
-1. **Data URL stays intact** - Not embedded in markdown, so no parsing issues
-2. **Clean user experience** - Dedicated download button is clearer than a text link
-3. **Works with ad-blockers** - Data URLs bypass network requests entirely
-4. **Preserves existing logic** - `openDocumentUrl()` already handles data URLs correctly
+1. **Streaming responses** start with `isTyping: true` and get updated to `false` after stream completes
+2. **Non-streaming responses** (documents, images) are complete on arrival and should be `isTyping: false` immediately
+3. The `CenterStageLayout` effect correctly filters out incomplete messages using `isTyping`, but now it will process completed non-streaming messages properly
+
+## Summary
+
+| File | Change |
+|------|--------|
+| `src/hooks/useMessages.ts` | Set `isTyping: false` for non-streaming AYN messages |
+
+This is a one-line fix that will restore ResponseCard display for PDF/Excel document generation.
+
