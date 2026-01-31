@@ -1,143 +1,141 @@
 
-# Security Hardening Plan: Profiles Table Access Logging
+# Fix PDF Download - Data URL Not Working in Markdown Links
 
-## Issue Summary
+## Problem Identified
 
-The security scanner has flagged that the `profiles` table contains sensitive business contact information (company names, contact persons, business context) that could be harvested by competitors if RLS policies are misconfigured or bypassed.
+The PDF generation is **working correctly** on the backend (generating a 14KB base64 data URL), but the download fails because:
 
-## Current Protection Status
+1. **Data URLs are too long for markdown links** - A 14KB base64 PDF data URL embedded in `[Title](data:application/pdf;base64,...)` format creates parsing issues
+2. **ReactMarkdown can't reliably parse 14,000+ character URLs** inside link syntax
+3. **The link gets corrupted** and instead of downloading the PDF, it redirects to the app's base URL
 
-| Security Layer | Status | Notes |
-|----------------|--------|-------|
-| RLS Enabled | ✅ Yes | All users blocked except owner/admin |
-| Anonymous Access | ✅ Blocked | `Block anonymous profiles access` policy |
-| User Isolation | ✅ Working | `profiles_select_own` restricts to own profile |
-| Admin Access | ✅ Controlled | `has_role()` check required |
-| UPDATE/DELETE Logging | ✅ Working | Triggers log all modifications |
-| **SELECT Logging** | ❌ Missing | No audit trail for bulk data reads |
+## Solution: Separate Document URL from Message Content
 
-## The Gap
+Instead of embedding the massive data URL inside the markdown text, we should:
 
-When admins fetch profiles data (e.g., in `SubscriptionManagement.tsx`, `UserManagement.tsx`), there's no audit trail because:
-- PostgreSQL doesn't support SELECT triggers
-- Application-level logging wasn't added for these admin views
+1. **Keep the data URL in a separate field** (already exists as `documentUrl` in the response)
+2. **Show a styled download button** in the UI when a document is available
+3. **Use the `openDocumentUrl` function** directly with the attachment URL
 
-## Fix: Add Application-Level Audit Logging
+## Implementation Plan
 
-### Part 1: SubscriptionManagement.tsx
+### Part 1: Update ayn-unified Response Format
 
-Add logging after fetching profiles:
+**File:** `supabase/functions/ayn-unified/index.ts`
 
-```typescript
-// In fetchSubscriptions function, after profiles are fetched:
-const { data: profiles } = await supabase
-  .from('profiles')
-  .select('user_id, company_name, contact_person');
+Change the success message to NOT include the data URL in the markdown. Instead, use a placeholder or simple text:
 
-// Add audit logging
-if (profiles && profiles.length > 0) {
-  supabase.from('security_logs').insert({
-    action: 'admin_profiles_bulk_access',
-    details: {
-      count: profiles.length,
-      context: 'subscription_management',
-      timestamp: new Date().toISOString()
-    },
-    severity: 'high'
-  });
-}
+```text
+Before (broken):
+📄 [Greenland Report](data:application/pdf;base64,JVBERi0...)
+
+After (fixed):
+Document created successfully!
+
+📄 **Greenland Report** - Click the download button below
+
+_(30 credits used • 70 remaining)_
 ```
 
-### Part 2: AdminPanel.tsx
+The actual download URL stays in the response JSON (`documentUrl` field) and is rendered by the UI as a separate button.
 
-Add logging in the fetchData function after profiles are accessed via user joins:
+### Part 2: Update ResponseCard to Show Download Button
 
-```typescript
-// After fetching users with profiles (existing code enriches with profiles)
-// Add audit logging
-supabase.from('security_logs').insert({
-  action: 'admin_profiles_bulk_access',
-  details: {
-    context: 'admin_panel',
-    timestamp: new Date().toISOString()
-  },
-  severity: 'high'
-});
+**File:** `src/components/eye/ResponseCard.tsx`
+
+Add a document download button that appears when the response includes a document attachment:
+
+- Check if `visibleResponses[0]?.attachment` has a document type
+- Show a styled download button with the document icon
+- Use `openDocumentUrl(attachment.url, attachment.name)` on click
+
+### Part 3: Update useMessages to Pass Document Attachment
+
+**File:** `src/hooks/useMessages.ts`
+
+Ensure the document URL from the webhook response is properly saved as an attachment:
+
+- Already saves `attachment_url` from `webhookData?.documentUrl` 
+- Verify it's being passed correctly to the ResponseCard
+
+### Part 4: Add Document Download Button Component
+
+**File:** `src/components/eye/DocumentDownloadButton.tsx` (new)
+
+Create a reusable download button component:
+
+```text
+┌────────────────────────────────────────┐
+│  📄  Greenland Report.pdf    [Download]│
+└────────────────────────────────────────┘
 ```
 
-### Part 3: Update Security Finding Status
-
-After implementing the fix, mark the finding as resolved:
-
-```typescript
-{
-  operation: "update",
-  internal_id: "profiles_table_public_exposure",
-  finding: {
-    ignore: true,
-    ignore_reason: "RLS policies properly restrict access: users can only view own profile (profiles_select_own), admins require has_role() check (profiles_admin_select_with_audit), anonymous access is blocked. UPDATE/DELETE operations logged via database triggers. Application-level audit logging added for admin bulk SELECT operations in SubscriptionManagement.tsx and AdminPanel.tsx. All profile access is now tracked in security_logs table."
-  }
-}
-```
-
----
+Features:
+- Shows document icon (PDF or Excel)
+- Displays filename
+- Download button triggers `openDocumentUrl()`
+- Clean styling matching the response card
 
 ## Files to Modify
 
-| File | Change |
-|------|--------|
-| `src/components/admin/SubscriptionManagement.tsx` | Add audit logging after profiles fetch |
-| `src/components/AdminPanel.tsx` | Add audit logging for profile access |
+| File | Action | Purpose |
+|------|--------|---------|
+| `supabase/functions/ayn-unified/index.ts` | Modify | Remove data URL from markdown, keep in JSON field |
+| `src/components/eye/ResponseCard.tsx` | Modify | Show download button when document attachment exists |
+| `src/components/eye/DocumentDownloadButton.tsx` | Create | Styled download button component |
+| `src/hooks/useMessages.ts` | Verify | Ensure attachment is passed correctly |
 
----
+## Technical Flow After Fix
 
-## Security Improvements
-
-| Before | After |
-|--------|-------|
-| RLS blocks unauthorized access | ✅ Same |
-| Admin bulk SELECT not logged | Admin bulk SELECT logged to security_logs |
-| No visibility into data harvesting attempts | Full audit trail of all profile access |
-
----
-
-## Expected Audit Log Entries
-
-After implementation:
-
-```json
-{
-  "action": "admin_profiles_bulk_access",
-  "details": {
-    "count": 47,
-    "context": "subscription_management",
-    "timestamp": "2026-01-30T21:45:00.000Z"
-  },
-  "severity": "high",
-  "user_id": "admin-uuid"
-}
+```text
+User: "Create a PDF about Greenland"
+                │
+                ▼
+┌─────────────────────────────────────────┐
+│  ayn-unified edge function              │
+│  ─────────────────────────────────────  │
+│  1. Generate PDF → data:application/... │
+│  2. Return JSON:                        │
+│     {                                   │
+│       content: "Document created! 📄",  │
+│       documentUrl: "data:...",          │  ← Separate field
+│       documentType: "pdf"               │
+│     }                                   │
+└─────────────────────────────────────────┘
+                │
+                ▼
+┌─────────────────────────────────────────┐
+│  useMessages.ts                         │
+│  ─────────────────────────────────────  │
+│  Save response with:                    │
+│  - content: "Document created! 📄"      │
+│  - attachment_url: "data:..."           │
+│  - attachment_type: "application/pdf"   │
+└─────────────────────────────────────────┘
+                │
+                ▼
+┌─────────────────────────────────────────┐
+│  ResponseCard.tsx                       │
+│  ─────────────────────────────────────  │
+│  Render:                                │
+│  ┌─────────────────────────────────┐    │
+│  │ Document created successfully!  │    │
+│  │                                 │    │
+│  │ ┌───────────────────────────┐   │    │
+│  │ │ 📄 Greenland.pdf [⬇️]     │   │    │ ← Download button
+│  │ └───────────────────────────┘   │    │
+│  │                                 │    │
+│  │ (30 credits • 70 remaining)    │    │
+│  └─────────────────────────────────┘    │
+└─────────────────────────────────────────┘
+                │
+                ▼
+User clicks [⬇️] → openDocumentUrl() → Browser downloads PDF
 ```
 
-This provides:
-- **WHO** accessed the data (user_id from auth)
-- **WHEN** they accessed it (timestamp)
-- **WHAT** context (which admin view)
-- **HOW MUCH** data was accessed (count)
+## Why This Works
 
----
-
-## Why This Finding Is Valid But Low Risk
-
-1. **Valid concerns:**
-   - Profiles contain business contact information
-   - If admin account is compromised, bulk data could be harvested
-
-2. **Why it's low risk:**
-   - RLS policies are correctly configured
-   - Admin access requires role verification via `has_role()`
-   - Database triggers already log modifications
-   - Only missing piece is SELECT audit logging
-
-3. **After fix:**
-   - Complete audit trail for all profile access
-   - Security team can detect anomalous bulk data access patterns
+1. **Data URL stays intact** - Not embedded in markdown, so no parsing issues
+2. **Clean user experience** - Dedicated download button is clearer than a text link
+3. **Works with ad-blockers** - Data URLs bypass network requests entirely
+4. **Preserves existing logic** - `openDocumentUrl()` already handles data URLs correctly
