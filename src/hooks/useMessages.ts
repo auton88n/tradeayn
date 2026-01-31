@@ -568,7 +568,8 @@ export const useMessages = (
           content: response,
           sender: 'ayn',
           timestamp: new Date(),
-          isTyping: true,
+          isTyping: false,
+          status: 'sent',
           ...(labData ? { labData } : {}),
           ...(documentAttachment ? { attachment: documentAttachment } : {})
         };
