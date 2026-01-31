@@ -21,7 +21,7 @@ interface FeedbackEntry {
   additional_comments: string | null;
   credits_awarded: number | null;
   submitted_at: string | null;
-  user_email?: string;
+  user_name?: string;
 }
 
 export const BetaFeedbackViewer = () => {
@@ -31,19 +31,42 @@ export const BetaFeedbackViewer = () => {
 
   const fetchFeedback = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch feedback
+      const { data: feedbackData, error: feedbackError } = await supabase
         .from('beta_feedback')
         .select('*')
         .order('submitted_at', { ascending: false });
 
-      if (error) throw error;
-      setFeedback(data || []);
+      if (feedbackError) throw feedbackError;
+
+      // Get unique user IDs
+      const userIds = [...new Set((feedbackData || []).map(f => f.user_id))];
+
+      // Fetch profiles for these users
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('user_id, contact_person, company_name')
+        .in('user_id', userIds);
+
+      // Create a map of user_id to name
+      const userNameMap = new Map<string, string>();
+      (profilesData || []).forEach(p => {
+        userNameMap.set(p.user_id, p.contact_person || p.company_name || '');
+      });
+
+      // Merge feedback with user names
+      const enrichedFeedback: FeedbackEntry[] = (feedbackData || []).map(f => ({
+        ...f,
+        user_name: userNameMap.get(f.user_id) || undefined
+      }));
+
+      setFeedback(enrichedFeedback);
       
       // Security: Log admin access to beta feedback
-      if (data && data.length > 0) {
+      if (feedbackData && feedbackData.length > 0) {
         supabase.from('security_logs').insert({
           action: 'beta_feedback_view',
-          details: { count: data.length, timestamp: new Date().toISOString() },
+          details: { count: feedbackData.length, timestamp: new Date().toISOString() },
           severity: 'medium'
         });
       }
@@ -261,7 +284,7 @@ export const BetaFeedbackViewer = () => {
                       {/* Credits Awarded */}
                       <div className="mt-3 pt-3 border-t flex items-center justify-between">
                         <span className="text-xs text-muted-foreground">
-                          User: {entry.user_id.slice(0, 8)}...
+                          User: {entry.user_name || entry.user_id.slice(0, 8) + '...'}
                         </span>
                         {entry.credits_awarded && (
                           <Badge variant="secondary" className="text-xs bg-purple-500/10 text-purple-600">
