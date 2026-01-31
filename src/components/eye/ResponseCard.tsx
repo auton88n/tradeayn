@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import { persistDalleImage } from '@/hooks/useImagePersistence';
 import { supabase } from '@/integrations/supabase/client';
+import { DocumentDownloadButton } from './DocumentDownloadButton';
 import { toast } from 'sonner';
 
 interface ResponseBubbleAttachment {
@@ -76,6 +77,24 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
     
     return null;
   }, [combinedContent]);
+
+  // Detect document attachment from responses
+  const documentAttachment = useMemo(() => {
+    const firstResponse = visibleResponses[0];
+    if (!firstResponse?.attachment) return null;
+    
+    const { url, name, type } = firstResponse.attachment;
+    // Check if it's a document type (PDF or Excel)
+    const isDocument = 
+      type === 'pdf' || 
+      type === 'excel' ||
+      type === 'application/pdf' ||
+      type?.includes('spreadsheet') ||
+      url?.startsWith('data:application/pdf') ||
+      url?.startsWith('data:application/vnd.openxmlformats');
+    
+    return isDocument ? { url, name, type } : null;
+  }, [visibleResponses]);
 
   // Document links are now rendered inline by MessageFormatter - no separate card needed
 
@@ -365,6 +384,17 @@ const ResponseCardComponent = ({ responses, isMobile = false, onDismiss, variant
                 )}
               </motion.div>
             </AnimatePresence>
+
+            {/* Document download button - rendered separately from markdown */}
+            {documentAttachment && (
+              <div className="px-3 pb-2">
+                <DocumentDownloadButton
+                  url={documentAttachment.url}
+                  name={documentAttachment.name}
+                  type={documentAttachment.type}
+                />
+              </div>
+            )}
           </div>
 
           {/* Fade gradient when scrollable */}

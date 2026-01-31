@@ -755,14 +755,18 @@ serve(async (req) => {
           console.error('Failed to log document usage:', logError);
         }
         
-        // Return friendly response with download link and credit info
+        // Return friendly response WITHOUT embedding data URL in markdown
+        // The download URL stays in JSON field, rendered by UI as separate button
         const docLang = documentData.language || language;
         const emoji = docType === 'excel' ? '📊' : '📄';
         const newCreditsRemaining = creditsRemaining - creditCost;
+        const docTypeName = docType === 'excel' ? 'Excel' : 'PDF';
+        
+        // Clean message without embedded data URL (which breaks markdown parsing)
         const successMessages: Record<string, string> = {
-          ar: `تم إنشاء المستند بنجاح!\n\n${emoji} [${documentData.title}](${downloadUrl})\n\n_(${creditCost} رصيد مخصوم • ${newCreditsRemaining} متبقي)_`,
-          fr: `Document créé avec succès!\n\n${emoji} [${documentData.title}](${downloadUrl})\n\n_(${creditCost} crédits déduits • ${newCreditsRemaining} restants)_`,
-          en: `Document created successfully!\n\n${emoji} [${documentData.title}](${downloadUrl})\n\n_(${creditCost} credits used • ${newCreditsRemaining} remaining)_`
+          ar: `تم إنشاء المستند بنجاح! ${emoji}\n\n**${documentData.title}**\n\nاضغط زر التحميل أدناه لتنزيل الملف.\n\n_(${creditCost} رصيد مخصوم • ${newCreditsRemaining} متبقي)_`,
+          fr: `Document créé avec succès! ${emoji}\n\n**${documentData.title}**\n\nCliquez sur le bouton de téléchargement ci-dessous.\n\n_(${creditCost} crédits déduits • ${newCreditsRemaining} restants)_`,
+          en: `Document created successfully! ${emoji}\n\n**${documentData.title}**\n\nClick the download button below to get your ${docTypeName}.\n\n_(${creditCost} credits used • ${newCreditsRemaining} remaining)_`
         };
         
         return new Response(JSON.stringify({
@@ -771,7 +775,8 @@ serve(async (req) => {
           wasFallback: llmResult.wasFallback,
           intent: 'document',
           documentUrl: downloadUrl,
-          documentType: docType
+          documentType: docType,
+          documentName: filename || `${documentData.title}.${docType === 'excel' ? 'xlsx' : 'pdf'}`
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
