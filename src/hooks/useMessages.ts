@@ -556,14 +556,21 @@ export const useMessages = (
           hasStructuredData: true
         } : undefined;
 
-        // Create AI response message
+        // Create AI response message with document attachment if present
+        const documentAttachment = webhookData?.documentUrl ? {
+          url: webhookData.documentUrl,
+          name: webhookData.documentName || `Document.${webhookData.documentType === 'excel' ? 'xlsx' : 'pdf'}`,
+          type: webhookData.documentType || 'pdf'
+        } : undefined;
+
         const aynMessage: Message = {
           id: crypto.randomUUID(),
           content: response,
           sender: 'ayn',
           timestamp: new Date(),
           isTyping: true,
-          ...(labData ? { labData } : {})
+          ...(labData ? { labData } : {}),
+          ...(documentAttachment ? { attachment: documentAttachment } : {})
         };
 
         // Add AYN message with duplicate prevention
