@@ -30,9 +30,11 @@ const roles = [{
 
 const AIEmployeeMockup = memo(() => {
   const isMobile = useIsMobile();
-  const orbitRadius = isMobile ? 120 : 210;
+  const orbitRadius = isMobile ? 100 : 210;
   
-  return <div className="relative w-full h-full min-h-[400px] md:min-h-[520px] flex items-center justify-center" dir="ltr">
+  return <div className="relative w-full h-full min-h-[400px] md:min-h-[520px] flex items-center justify-center overflow-hidden" dir="ltr">
+    {/* Responsive scaling wrapper to prevent overflow */}
+    <div className="scale-[0.75] sm:scale-[0.85] md:scale-100 origin-center">
       {/* Background ambient glow - simplified */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <div className="w-64 h-64 bg-cyan-500/20 rounded-full blur-2xl" />
@@ -103,6 +105,7 @@ const AIEmployeeMockup = memo(() => {
       <div className="absolute -bottom-2 right-0 z-30">
         
       </div>
+    </div>
     </div>;
 });
 AIEmployeeMockup.displayName = 'AIEmployeeMockup';
