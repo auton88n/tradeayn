@@ -54,24 +54,24 @@ const AIEmployeeMockup = memo(() => {
 
       {/* Central Brain Hub - fully static for performance */}
       <div className="relative z-20 flex items-center justify-center" style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%)', position: 'absolute' }}>
-        {/* Outer ring - static */}
-        <div className="absolute w-28 h-28 rounded-full border border-cyan-400/20" style={{
-        background: 'linear-gradient(135deg, rgba(34, 211, 238, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%)'
+        {/* Outer ring - darker */}
+        <div className="absolute w-28 h-28 rounded-full border-2 border-cyan-500/40" style={{
+        background: 'linear-gradient(135deg, rgba(34, 211, 238, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%)'
       }} />
         
-        {/* Inner glow ring - static */}
+        {/* Inner glow ring - more vibrant */}
         <div className="absolute w-24 h-24 rounded-full" style={{
-        background: 'radial-gradient(circle, rgba(34, 211, 238, 0.2) 0%, transparent 70%)',
-        boxShadow: '0 0 40px rgba(34, 211, 238, 0.3)'
+        background: 'radial-gradient(circle, rgba(34, 211, 238, 0.4) 0%, transparent 70%)',
+        boxShadow: '0 0 50px rgba(34, 211, 238, 0.5)'
       }} />
 
-        {/* Brain container */}
+        {/* Brain container - darker and more saturated */}
         <div className="relative w-20 h-20 rounded-full flex items-center justify-center" style={{
-        background: 'linear-gradient(135deg, rgba(34, 211, 238, 0.25) 0%, rgba(139, 92, 246, 0.25) 100%)',
-        border: '1px solid rgba(34, 211, 238, 0.5)',
-        boxShadow: '0 8px 32px rgba(34, 211, 238, 0.35)'
+        background: 'linear-gradient(135deg, rgba(34, 211, 238, 0.5) 0%, rgba(139, 92, 246, 0.5) 100%)',
+        border: '2px solid rgba(34, 211, 238, 0.7)',
+        boxShadow: '0 8px 40px rgba(34, 211, 238, 0.5), inset 0 0 20px rgba(34, 211, 238, 0.2)'
       }}>
-          <Brain className="w-10 h-10 text-cyan-400" strokeWidth={1.5} />
+          <Brain className="w-10 h-10 text-cyan-300" strokeWidth={1.5} />
         </div>
       </div>
 
