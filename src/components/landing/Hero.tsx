@@ -44,10 +44,10 @@ export const Hero = memo(({ onGetStarted }: HeroProps) => {
     }
     return {
       topLeft: { x: -160, y: -100 },
-      middleLeft: { x: -190, y: 0 },
+      middleLeft: { x: -220, y: 0 },
       bottomLeft: { x: -160, y: 100 },
       topRight: { x: 160, y: -100 },
-      middleRight: { x: 190, y: 0 },
+      middleRight: { x: 220, y: 0 },
       bottomRight: { x: 160, y: 100 }
     };
   };
