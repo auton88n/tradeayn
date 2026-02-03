@@ -199,32 +199,21 @@ export const SubscriptionManagement = () => {
     try {
       const tierData = SUBSCRIPTION_TIERS[newTier as keyof typeof SUBSCRIPTION_TIERS];
       
-      if (editingUser.hasSubscriptionRecord && editingUser.subscription) {
-        // UPDATE existing subscription record
-        const { error } = await supabase
-          .from('user_subscriptions')
-          .update({ 
-            subscription_tier: newTier,
-            status: newTier === 'free' ? 'inactive' : 'active',
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', editingUser.subscription.id);
+      // Use upsert for robustness - handles both new and existing records
+      // Only set core tier fields, never overwrite Stripe fields
+      const { error } = await supabase
+        .from('user_subscriptions')
+        .upsert({ 
+          user_id: editingUser.user_id,
+          subscription_tier: newTier,
+          status: newTier === 'free' ? 'inactive' : 'active',
+          updated_at: new Date().toISOString()
+        }, { 
+          onConflict: 'user_id',
+          ignoreDuplicates: false 
+        });
 
-        if (error) throw error;
-      } else {
-        // INSERT new subscription record for user without one
-        const { error } = await supabase
-          .from('user_subscriptions')
-          .insert({ 
-            user_id: editingUser.user_id,
-            subscription_tier: newTier,
-            status: newTier === 'free' ? 'inactive' : 'active',
-            stripe_customer_id: null, // Admin override - no Stripe
-            stripe_subscription_id: null,
-          });
-
-        if (error) throw error;
-      }
+      if (error) throw error;
 
       // UPSERT user_ai_limits to set credit limits
       if (tierData) {
@@ -240,11 +229,7 @@ export const SubscriptionManagement = () => {
         if (limitsError) throw limitsError;
       }
 
-      toast.success(
-        editingUser.hasSubscriptionRecord 
-          ? `User tier updated to ${tierData?.name || newTier}`
-          : `Subscription created: ${tierData?.name || newTier}`
-      );
+      toast.success(`Tier set to ${tierData?.name || newTier}`);
       setEditingUser(null);
       fetchSubscriptions();
     } catch (error) {
