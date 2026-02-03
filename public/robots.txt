@@ -1,17 +1,23 @@
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
+# AYN AI - Robots.txt
+# https://aynn.io
 
 User-agent: *
 Allow: /
 
-# Sitemap
+# Disallow private/authenticated pages
+Disallow: /admin
+Disallow: /settings
+Disallow: /reset-password
+Disallow: /approval-result
+Disallow: /subscription-success
+Disallow: /subscription-canceled
+
+# Disallow application forms (contain user data)
+Disallow: /services/ai-employee/apply
+Disallow: /services/ai-agents/apply
+Disallow: /services/automation/apply
+Disallow: /services/ticketing/apply
+Disallow: /services/content-creator-sites/apply
+
+# Sitemap location
 Sitemap: https://aynn.io/sitemap.xml
