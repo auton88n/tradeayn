@@ -1,89 +1,65 @@
 
-## What’s actually broken (root cause)
-Your tier change *is* hitting the database, but the UI always shows “No Record” and then the “Create Subscription” action fails.
 
-From the network log, the request is:
-- `POST /rest/v1/user_subscriptions` → **409 duplicate key**
-- Message: `duplicate key value violates unique constraint "user_subscriptions_user_id_key"`
+# Fix: Replace Lovable Icon with AYN Brain in Google Search
 
-That means: **the subscription row already exists** for that user, but the UI thinks it doesn’t.
+## Problem
 
-Why the UI thinks it doesn’t:
-- `SubscriptionManagement.tsx` loads all subscriptions with:
-  - `supabase.from('user_subscriptions').select('*')`
-- Your RLS policies currently allow:
-  - users to `SELECT` their own subscription
-  - admins to `INSERT/UPDATE`
-- But you do **not** have an **admin SELECT policy** on `user_subscriptions`.
+Google Search is showing the Lovable heart icon instead of your AYN brain favicon because:
 
-So for admins:
-- `SELECT * FROM user_subscriptions` returns **0 rows** (blocked by RLS)
-- UI marks everyone as `No Record`
-- Then it tries an `INSERT`
-- DB rejects it because the row already exists → 409
-- Because the subscription insert fails, the follow-up `user_ai_limits.upsert(...)` never runs either
+1. **`index.html` line 18** points to an external Google Storage URL for the favicon - this external file is the Lovable heart icon
+2. Your correct brain favicon already exists at `public/favicon.png` but isn't being used
+3. Google has cached the old Lovable favicon
 
-## Fix strategy (make everything work reliably)
-We’ll fix this in two layers:
+## Solution
 
-### A) Database (RLS): allow admins to read subscriptions
-Add a **SELECT policy** for admins on `public.user_subscriptions`, using the existing `has_role(auth.uid(), 'admin'::app_role)` function.
+### 1. Update index.html favicon references
 
-SQL migration content:
-```sql
-CREATE POLICY "Admins can select all user subscriptions"
-ON public.user_subscriptions
-FOR SELECT
-TO authenticated
-USING (has_role(auth.uid(), 'admin'::app_role));
+Change the favicon link from the external URL to your local file:
+
+```html
+<!-- FROM (line 18): -->
+<link rel="icon" type="image/png" href="https://storage.googleapis.com/gpt-engineer-file-uploads/...">
+
+<!-- TO: -->
+<link rel="icon" type="image/png" href="/favicon.png">
 ```
 
-Optional but recommended for completeness:
-- Add an admin SELECT policy to `user_ai_limits` as well (useful for any admin screens that may need to read limits):
-```sql
-CREATE POLICY "Admins can select all user_ai_limits"
-ON public.user_ai_limits
-FOR SELECT
-TO authenticated
-USING (has_role(auth.uid(), 'admin'::app_role));
+Also add a standard `.ico` format favicon for broader compatibility:
+
+```html
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon.png">
 ```
-(Your `user_ai_limits` table already has other admin policies, but adding explicit admin SELECT avoids future “admin can’t see data” surprises.)
 
-### B) Frontend: stop failing on duplicates (make “Set Tier” robust)
-Even after adding admin SELECT, race conditions can still happen (or the UI state can be stale). So we’ll also make the “create subscription” path safe:
+### 2. Add favicon.ico file
 
-In `handleSetOrOverrideTier`:
-1. Replace the `insert(...)` branch with an **upsert** on `user_id` (or handle 409 by falling back to update).
-2. Ensure the upsert payload **does not include** `stripe_customer_id` / `stripe_subscription_id` so we never accidentally overwrite Stripe-linked users.
-   - Payload should be only: `{ user_id, subscription_tier, status }`
-3. After success:
-   - call `fetchSubscriptions()` (already done)
-   - close dialog (already done)
-   - show a more accurate toast (“Saved” rather than “Created”) if it was an upsert
+Create a standard `favicon.ico` in the public folder (convert from your existing PNG) for maximum browser/search engine compatibility.
 
-This makes tier setting work even if the UI thought the record didn’t exist.
+### 3. Update JSON-LD logo references
 
-## How we’ll verify it’s fixed (end-to-end)
-1. Open the admin subscription screen.
-2. Click “Refresh”.
-   - You should now see users with existing subscription records showing their tier badge (not “No Record”).
-3. Pick a user that previously showed “No Record” but actually has a subscription (like the one causing 409).
-4. Set tier to Pro and save.
-   - Expected:
-     - no 409
-     - tier badge updates after refresh
-     - `user_ai_limits` is updated/upserted accordingly
-5. Confirm in Network tab:
-   - `GET /user_subscriptions` returns rows (previously it was effectively empty for admin due to RLS)
-   - `POST/PATCH /user_subscriptions` succeeds (200/201/204)
-   - `POST /user_ai_limits?on_conflict=user_id` succeeds
+Line 110 references a non-existent file:
+```json
+"logo": "https://aynn.io/ayn-logo.png"
+```
 
-## Notes / risks
-- This change intentionally allows admins to view all subscription rows. That’s required for the admin dashboard to work.
-- We keep non-admin users restricted to “own row only” via the existing policy.
-- Frontend robustness ensures you don’t get stuck again if the subscription record already exists.
+Change to:
+```json
+"logo": "https://aynn.io/favicon.png"
+```
 
-## Implementation checklist (what I will do after you approve)
-1. Add the new RLS SELECT policy(ies) via a Supabase migration.
-2. Update `src/components/admin/SubscriptionManagement.tsx` to use upsert (or fallback update) instead of plain insert for “no record” users.
-3. Validate in the preview using network logs and UI refresh to confirm tiers render and persist correctly.
+## After Publishing
+
+Google takes **days to weeks** to update cached favicons. To speed this up:
+
+1. Use [Google Search Console](https://search.google.com/search-console) to request re-indexing of your homepage
+2. Optionally submit a manual favicon update request
+
+## Files to modify
+
+| File | Change |
+|------|--------|
+| `index.html` | Update favicon `<link>` tags to use `/favicon.png` |
+| `index.html` | Fix JSON-LD logo URL |
+| `public/` | Add `favicon.ico` (converted from PNG) |
+
