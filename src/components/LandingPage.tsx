@@ -545,7 +545,7 @@ const LandingPage = memo(() => {
                         {services[0].description}
                       </p>
                     </div>
-                    <div className="flex-1 flex items-center justify-center overflow-visible">
+                    <div className="flex-1 flex items-center justify-center overflow-hidden">
                       {services[0].mockup}
                     </div>
                     <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors mt-4">
@@ -653,7 +653,7 @@ const LandingPage = memo(() => {
               {/* Bottom Right - AI Employees */}
               <ScrollReveal delay={0.3}>
                 <Link to={`/services/${services[3].slug}`} className="block">
-                  <motion.div className="bg-neutral-50 dark:bg-neutral-900/80 rounded-3xl p-6 md:p-8 min-h-[280px] group cursor-pointer overflow-hidden contain-layout" whileHover={{
+                  <motion.div className="bg-neutral-50 dark:bg-neutral-900/80 rounded-3xl p-6 md:p-8 min-h-[480px] group cursor-pointer overflow-hidden contain-layout" whileHover={{
                     y: -4
                   }} transition={{
                     duration: 0.3,
@@ -668,7 +668,7 @@ const LandingPage = memo(() => {
                           {services[3].description}
                         </p>
                       </div>
-                      <div className="flex-1 flex items-center justify-center h-[120px] overflow-visible">
+                      <div className="flex-1 flex items-center justify-center min-h-[280px]">
                         {services[3].mockup}
                       </div>
                       <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
