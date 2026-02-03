@@ -55,23 +55,23 @@ const AIEmployeeMockup = memo(() => {
       {/* Central Brain Hub - fully static for performance */}
       <div className="relative z-20 flex items-center justify-center" style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%)', position: 'absolute' }}>
         {/* Outer ring - darker */}
-        <div className="absolute w-28 h-28 rounded-full border-2 border-cyan-500/40" style={{
-        background: 'linear-gradient(135deg, rgba(34, 211, 238, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%)'
+        <div className="absolute w-28 h-28 rounded-full border-2 border-blue-500/50" style={{
+        background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.25) 0%, rgba(99, 102, 241, 0.25) 100%)'
       }} />
         
         {/* Inner glow ring - more vibrant */}
         <div className="absolute w-24 h-24 rounded-full" style={{
-        background: 'radial-gradient(circle, rgba(34, 211, 238, 0.4) 0%, transparent 70%)',
-        boxShadow: '0 0 50px rgba(34, 211, 238, 0.5)'
+        background: 'radial-gradient(circle, rgba(59, 130, 246, 0.5) 0%, transparent 70%)',
+        boxShadow: '0 0 50px rgba(59, 130, 246, 0.4)'
       }} />
 
-        {/* Brain container - darker and more saturated */}
+        {/* Brain container - darker blue */}
         <div className="relative w-20 h-20 rounded-full flex items-center justify-center" style={{
-        background: 'linear-gradient(135deg, rgba(34, 211, 238, 0.5) 0%, rgba(139, 92, 246, 0.5) 100%)',
-        border: '2px solid rgba(34, 211, 238, 0.7)',
-        boxShadow: '0 8px 40px rgba(34, 211, 238, 0.5), inset 0 0 20px rgba(34, 211, 238, 0.2)'
+        background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.7) 0%, rgba(99, 102, 241, 0.7) 100%)',
+        border: '2px solid rgba(59, 130, 246, 0.8)',
+        boxShadow: '0 8px 40px rgba(59, 130, 246, 0.5), inset 0 0 20px rgba(59, 130, 246, 0.3)'
       }}>
-          <Brain className="w-10 h-10 text-cyan-300" strokeWidth={1.5} />
+          <Brain className="w-10 h-10 text-blue-100" strokeWidth={1.5} />
         </div>
       </div>
 
