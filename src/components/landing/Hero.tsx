@@ -29,17 +29,17 @@ export const Hero = memo(({ onGetStarted }: HeroProps) => {
     debugRef.current.incrementRenderCount('Hero');
   }
 
-  // Responsive card positions - mobile uses top/bottom layout to avoid horizontal clipping
+  // Responsive card positions - mobile uses tighter positions to prevent clipping
   const getCardPositions = () => {
     if (isMobile) {
-      // Tighter positions to prevent clipping on small screens
+      // Tighter positions to prevent clipping on small screens (320px+)
       return {
-        topLeft: { x: -35, y: -105 },
-        middleLeft: { x: 0, y: -115 },
-        bottomLeft: { x: 35, y: -105 },
-        topRight: { x: -35, y: 105 },
-        middleRight: { x: 0, y: 115 },
-        bottomRight: { x: 35, y: 105 }
+        topLeft: { x: -20, y: -85 },
+        middleLeft: { x: 0, y: -95 },
+        bottomLeft: { x: 20, y: -85 },
+        topRight: { x: -20, y: 85 },
+        middleRight: { x: 0, y: 95 },
+        bottomRight: { x: 20, y: 85 }
       };
     }
     return {

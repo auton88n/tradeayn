@@ -13,7 +13,7 @@ const stats = [{
 }];
 const navDots = [0, 1, 2, 3, 4];
 const MobileMockup = memo(() => {
-  return <div className="relative flex justify-center items-center py-4 px-4 md:px-8 lg:px-16" dir="ltr">
+  return <div className="relative flex justify-center items-center py-4 px-4 md:px-8 lg:px-16 overflow-hidden" dir="ltr">
       {/* Phone-Centric Layout Container - Always LTR to prevent card position changes */}
       <div className="relative mx-auto" dir="ltr">
         {/* iPhone Frame - Center (Smaller) */}
@@ -96,8 +96,8 @@ const MobileMockup = memo(() => {
           </div>
         </div>
 
-        {/* Instagram Card - Top Right */}
-        <div className="absolute top-4 right-[-60px] md:right-[-90px] lg:right-[-110px] bg-neutral-900/95 shadow-xl rounded-lg p-1.5 md:p-2 border border-neutral-800 z-20 hidden sm:block hover:scale-105 transition-transform">
+        {/* Instagram Card - Top Right - Hidden on small screens to prevent overflow */}
+        <div className="absolute top-4 right-[-40px] md:right-[-70px] lg:right-[-110px] bg-neutral-900/95 shadow-xl rounded-lg p-1.5 md:p-2 border border-neutral-800 z-20 hidden md:block hover:scale-105 transition-transform">
           <div className="flex items-center gap-1 mb-1">
             <div className="w-5 h-5 md:w-6 md:h-6 rounded-md bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 flex items-center justify-center">
               <Instagram className="w-2.5 h-2.5 md:w-3 md:h-3 text-white" />
@@ -123,8 +123,8 @@ const MobileMockup = memo(() => {
           </div>
         </div>
 
-        {/* Engagement Card - Bottom Right */}
-        <div className="absolute bottom-20 right-[-50px] md:right-[-70px] lg:right-[-90px] bg-neutral-900/95 shadow-lg rounded-md p-1 md:p-1.5 border border-neutral-800 z-20 hidden sm:block hover:scale-105 transition-transform">
+        {/* Engagement Card - Bottom Right - Hidden on small screens to prevent overflow */}
+        <div className="absolute bottom-20 right-[-30px] md:right-[-50px] lg:right-[-90px] bg-neutral-900/95 shadow-lg rounded-md p-1 md:p-1.5 border border-neutral-800 z-20 hidden md:block hover:scale-105 transition-transform">
           <div className="flex items-center gap-1">
             <div className="w-4 h-4 md:w-5 md:h-5 rounded-full bg-emerald-500/20 flex items-center justify-center">
               <TrendingUp className="w-2 h-2 md:w-2.5 md:h-2.5 text-emerald-400" />
@@ -142,8 +142,8 @@ const MobileMockup = memo(() => {
           <p className="text-[7px] md:text-[8px] text-neutral-300 whitespace-nowrap">Top 5% Engagement</p>
         </div>
 
-        {/* TikTok Card - Top Left */}
-        <div className="absolute top-[-8px] left-[-60px] md:left-[-90px] lg:left-[-110px] bg-neutral-900/95 shadow-xl rounded-lg p-1.5 md:p-2 border border-neutral-800 z-20 hidden md:block hover:scale-105 transition-transform">
+        {/* TikTok Card - Top Left - Hidden on small screens to prevent overflow */}
+        <div className="absolute top-[-8px] left-[-40px] md:left-[-70px] lg:left-[-110px] bg-neutral-900/95 shadow-xl rounded-lg p-1.5 md:p-2 border border-neutral-800 z-20 hidden md:block hover:scale-105 transition-transform">
           <div className="flex items-center gap-1 mb-1">
             <div className="w-5 h-5 md:w-6 md:h-6 rounded-md bg-neutral-800 flex items-center justify-center">
               <svg className="w-2.5 h-2.5 md:w-3 md:h-3 text-white" viewBox="0 0 24 24" fill="currentColor">
@@ -171,8 +171,8 @@ const MobileMockup = memo(() => {
           </div>
         </div>
 
-        {/* Demographics Card - Bottom Left */}
-        <div className="absolute bottom-14 left-[-55px] md:left-[-75px] lg:left-[-95px] bg-neutral-900/95 shadow-lg rounded-lg p-1.5 md:p-2 border border-neutral-800 z-20 hidden lg:block hover:scale-105 transition-transform">
+        {/* Demographics Card - Bottom Left - Hidden on smaller screens to prevent overflow */}
+        <div className="absolute bottom-14 left-[-35px] md:left-[-55px] lg:left-[-95px] bg-neutral-900/95 shadow-lg rounded-lg p-1.5 md:p-2 border border-neutral-800 z-20 hidden lg:block hover:scale-105 transition-transform">
           <p className="text-white font-semibold text-[7px] md:text-[8px] mb-1">Audience Demographics</p>
           <div className="flex gap-1">
             <div className="bg-neutral-800/70 rounded-md px-1 md:px-1.5 py-0.5 text-center">

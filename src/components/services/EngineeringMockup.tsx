@@ -2,6 +2,7 @@ import { memo } from 'react';
 
 const EngineeringMockup = memo(() => {
   return (
+    <div className="overflow-hidden w-full h-full">
     <div className="relative w-full h-full min-h-[400px] flex items-center justify-center">
       {/* Background grid pattern */}
       <div className="absolute inset-0 opacity-20">
@@ -68,8 +69,8 @@ const EngineeringMockup = memo(() => {
             </div>
           </div>
           
-          {/* Structural annotations */}
-          <div className="absolute -left-16 top-1/2 -translate-y-1/2">
+          {/* Structural annotations - hidden on mobile to prevent overflow */}
+          <div className="absolute -left-16 top-1/2 -translate-y-1/2 hidden md:block">
             <div className="flex items-center gap-2">
               <div className="w-8 h-px bg-cyan-600 dark:bg-cyan-400" />
               <div className="text-[12px] font-mono text-cyan-600 dark:text-cyan-300 whitespace-nowrap font-medium">
@@ -85,8 +86,8 @@ const EngineeringMockup = memo(() => {
           </div>
         </div>
         
-        {/* Stress indicator - static */}
-        <div className="absolute -right-4 top-1/4">
+        {/* Stress indicator - static, hidden on mobile to prevent overflow */}
+        <div className="absolute -right-4 top-1/4 hidden md:block">
           <div className="w-4 h-4 rounded-full bg-emerald-500 dark:bg-emerald-400 shadow-lg shadow-emerald-500/60 dark:shadow-emerald-400/60" />
           <div className="text-[10px] font-mono text-emerald-600 dark:text-emerald-300 mt-1 whitespace-nowrap font-medium">OK</div>
         </div>
@@ -119,6 +120,7 @@ const EngineeringMockup = memo(() => {
           Safe Design
         </div>
       </div>
+    </div>
     </div>
   );
 });

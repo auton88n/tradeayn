@@ -202,8 +202,8 @@ const TicketingMockup = memo(() => {
 
   return (
     <div className="relative w-full h-full min-h-[400px] flex items-center justify-center overflow-hidden">
-      {/* Centered overlapping layout - scaled down on mobile, fully static */}
-      <div className="flex items-center justify-center scale-[0.65] sm:scale-75 md:scale-90 lg:scale-100 origin-center">
+      {/* Centered overlapping layout - scaled down further on mobile to prevent overflow */}
+      <div className="flex items-center justify-center scale-[0.55] sm:scale-[0.65] md:scale-90 lg:scale-100 origin-center">
         {/* Laptop - Left/Back with 3D tilt */}
         <div
           className="relative z-10"
