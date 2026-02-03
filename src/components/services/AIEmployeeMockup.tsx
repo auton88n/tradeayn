@@ -32,18 +32,16 @@ const AIEmployeeMockup = memo(() => {
   const isMobile = useIsMobile();
   const orbitRadius = isMobile ? 100 : 210;
   
-  return <div className="relative w-full h-full min-h-[400px] md:min-h-[520px] flex items-center justify-center overflow-hidden" dir="ltr">
+  return <div className="relative w-full h-full min-h-[400px] md:min-h-[520px] flex items-center justify-center" dir="ltr">
     {/* Responsive scaling wrapper to prevent overflow */}
-    <div className="scale-[0.75] sm:scale-[0.85] md:scale-100 origin-center">
+    <div className="relative scale-[0.75] sm:scale-[0.85] md:scale-100 origin-center">
       {/* Background ambient glow - simplified */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}>
         <div className="w-64 h-64 bg-cyan-500/20 rounded-full blur-2xl" />
       </div>
 
       {/* Orbital path ring */}
-      <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{
-      zIndex: 0
-    }}>
+      <svg className="absolute pointer-events-none" style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%)', width: orbitRadius * 2 + 60, height: orbitRadius * 2 + 60, zIndex: 0 }}>
         <defs>
           <linearGradient id="orbitGradient" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="rgb(34, 211, 238)" stopOpacity="0.15" />
@@ -55,7 +53,7 @@ const AIEmployeeMockup = memo(() => {
       </svg>
 
       {/* Central Brain Hub - fully static for performance */}
-      <div className="absolute z-20 flex items-center justify-center">
+      <div className="relative z-20 flex items-center justify-center" style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%)', position: 'absolute' }}>
         {/* Outer ring - static */}
         <div className="absolute w-28 h-28 rounded-full border border-cyan-400/20" style={{
         background: 'linear-gradient(135deg, rgba(34, 211, 238, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%)'
