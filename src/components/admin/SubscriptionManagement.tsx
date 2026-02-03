@@ -21,7 +21,9 @@ import {
   Sparkles,
   UserCheck,
   RefreshCw,
-  Calendar
+  Calendar,
+  Plus,
+  AlertCircle
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
@@ -37,21 +39,32 @@ interface UserSubscription {
   status: string;
   current_period_end: string | null;
   created_at: string;
-  user_email?: string;
-  profile?: {
-    company_name: string | null;
-    contact_person: string | null;
-  } | null;
+}
+
+interface ProfileData {
+  user_id: string;
+  company_name: string | null;
+  contact_person: string | null;
+}
+
+// Merged user data showing ALL users with optional subscription
+interface MergedUserData {
+  user_id: string;
+  company_name: string | null;
+  contact_person: string | null;
+  subscription: UserSubscription | null;
+  hasSubscriptionRecord: boolean;
 }
 
 interface RevenueMetrics {
   totalMRR: number;
   totalSubscribers: number;
+  totalUsers: number;
   freeUsers: number;
   starterUsers: number;
   proUsers: number;
   businessUsers: number;
-  churnRate: number;
+  noRecordUsers: number;
 }
 
 const tierConfig: Record<string, { icon: React.ElementType; color: string; bg: string }> = {
@@ -62,39 +75,35 @@ const tierConfig: Record<string, { icon: React.ElementType; color: string; bg: s
 };
 
 export const SubscriptionManagement = () => {
-  const [subscriptions, setSubscriptions] = useState<UserSubscription[]>([]);
+  const [mergedUsers, setMergedUsers] = useState<MergedUserData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterTier, setFilterTier] = useState<string>('all');
-  const [editingUser, setEditingUser] = useState<UserSubscription | null>(null);
+  const [editingUser, setEditingUser] = useState<MergedUserData | null>(null);
   const [newTier, setNewTier] = useState<TierKey>('free');
   const [isUpdating, setIsUpdating] = useState(false);
 
   const [metrics, setMetrics] = useState<RevenueMetrics>({
     totalMRR: 0,
     totalSubscribers: 0,
+    totalUsers: 0,
     freeUsers: 0,
     starterUsers: 0,
     proUsers: 0,
     businessUsers: 0,
-    churnRate: 0,
+    noRecordUsers: 0,
   });
 
   const fetchSubscriptions = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Fetch subscriptions with user emails
-      const { data: subs, error: subsError } = await supabase
-        .from('user_subscriptions')
-        .select('*')
+      // Fetch ALL profiles (all users in the system)
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, company_name, contact_person')
         .order('created_at', { ascending: false });
 
-      if (subsError) throw subsError;
-
-      // Fetch profiles
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('user_id, company_name, contact_person');
+      if (profilesError) throw profilesError;
 
       // Security: Log admin bulk access to profiles
       if (profiles && profiles.length > 0) {
@@ -109,32 +118,53 @@ export const SubscriptionManagement = () => {
         });
       }
 
-      const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+      // Fetch existing subscriptions
+      const { data: subs, error: subsError } = await supabase
+        .from('user_subscriptions')
+        .select('*');
 
-      const enrichedSubs: UserSubscription[] = (subs || []).map(sub => ({
-        id: sub.id,
-        user_id: sub.user_id,
-        stripe_customer_id: sub.stripe_customer_id,
-        stripe_subscription_id: sub.stripe_subscription_id,
-        subscription_tier: sub.subscription_tier || 'free',
-        status: sub.status || 'inactive',
-        current_period_end: sub.current_period_end,
-        created_at: sub.created_at || new Date().toISOString(),
-        profile: profileMap.get(sub.user_id) || null,
+      if (subsError) throw subsError;
+
+      // Create a map of subscriptions by user_id
+      const subscriptionMap = new Map<string, UserSubscription>(
+        (subs || []).map(sub => [sub.user_id, {
+          id: sub.id,
+          user_id: sub.user_id,
+          stripe_customer_id: sub.stripe_customer_id,
+          stripe_subscription_id: sub.stripe_subscription_id,
+          subscription_tier: sub.subscription_tier || 'free',
+          status: sub.status || 'inactive',
+          current_period_end: sub.current_period_end,
+          created_at: sub.created_at || new Date().toISOString(),
+        }])
+      );
+
+      // Merge profiles with subscriptions (LEFT JOIN logic)
+      const merged: MergedUserData[] = (profiles || []).map((profile: ProfileData) => ({
+        user_id: profile.user_id,
+        company_name: profile.company_name,
+        contact_person: profile.contact_person,
+        subscription: subscriptionMap.get(profile.user_id) || null,
+        hasSubscriptionRecord: subscriptionMap.has(profile.user_id),
       }));
 
-      setSubscriptions(enrichedSubs);
+      setMergedUsers(merged);
 
       // Calculate metrics
       const tierCounts = { free: 0, starter: 0, pro: 0, business: 0 };
       let mrr = 0;
+      let noRecordCount = 0;
 
-      enrichedSubs.forEach(sub => {
-        const tier = sub.subscription_tier as TierKey;
+      merged.forEach(user => {
+        if (!user.hasSubscriptionRecord) {
+          noRecordCount++;
+          return;
+        }
+        const tier = user.subscription?.subscription_tier as TierKey;
         if (tier in tierCounts) {
           tierCounts[tier as keyof typeof tierCounts]++;
           const tierData = SUBSCRIPTION_TIERS[tier as keyof typeof SUBSCRIPTION_TIERS];
-          if (sub.status === 'active' && tier !== 'free' && tierData) {
+          if (user.subscription?.status === 'active' && tier !== 'free' && tierData) {
             mrr += tierData.price || 0;
           }
         }
@@ -142,12 +172,13 @@ export const SubscriptionManagement = () => {
 
       setMetrics({
         totalMRR: mrr,
-        totalSubscribers: enrichedSubs.filter(s => s.status === 'active' && s.subscription_tier !== 'free').length,
+        totalSubscribers: merged.filter(u => u.subscription?.status === 'active' && u.subscription?.subscription_tier !== 'free').length,
+        totalUsers: merged.length,
         freeUsers: tierCounts.free,
         starterUsers: tierCounts.starter,
         proUsers: tierCounts.pro,
         businessUsers: tierCounts.business,
-        churnRate: 0,
+        noRecordUsers: noRecordCount,
       });
     } catch (error) {
       console.error('Error fetching subscriptions:', error);
@@ -161,38 +192,59 @@ export const SubscriptionManagement = () => {
     fetchSubscriptions();
   }, [fetchSubscriptions]);
 
-  const handleOverrideTier = async () => {
+  const handleSetOrOverrideTier = async () => {
     if (!editingUser) return;
     setIsUpdating(true);
 
     try {
-      const { error } = await supabase
-        .from('user_subscriptions')
-        .update({ 
-          subscription_tier: newTier,
-          status: newTier === 'free' ? 'inactive' : 'active',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', editingUser.id);
-
-      if (error) throw error;
-
-      // Also update user_ai_limits
       const tierData = SUBSCRIPTION_TIERS[newTier as keyof typeof SUBSCRIPTION_TIERS];
+      
+      if (editingUser.hasSubscriptionRecord && editingUser.subscription) {
+        // UPDATE existing subscription record
+        const { error } = await supabase
+          .from('user_subscriptions')
+          .update({ 
+            subscription_tier: newTier,
+            status: newTier === 'free' ? 'inactive' : 'active',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', editingUser.subscription.id);
+
+        if (error) throw error;
+      } else {
+        // INSERT new subscription record for user without one
+        const { error } = await supabase
+          .from('user_subscriptions')
+          .insert({ 
+            user_id: editingUser.user_id,
+            subscription_tier: newTier,
+            status: newTier === 'free' ? 'inactive' : 'active',
+            stripe_customer_id: null, // Admin override - no Stripe
+            stripe_subscription_id: null,
+          });
+
+        if (error) throw error;
+      }
+
+      // UPSERT user_ai_limits to set credit limits
       if (tierData) {
         const { error: limitsError } = await supabase
           .from('user_ai_limits')
-          .update({
+          .upsert({
+            user_id: editingUser.user_id,
             monthly_messages: tierData.limits.monthlyCredits,
             monthly_engineering: tierData.limits.monthlyEngineering,
             updated_at: new Date().toISOString()
-          })
-          .eq('user_id', editingUser.user_id);
+          }, { onConflict: 'user_id' });
 
         if (limitsError) throw limitsError;
       }
 
-      toast.success(`User tier updated to ${tierData?.name || newTier}`);
+      toast.success(
+        editingUser.hasSubscriptionRecord 
+          ? `User tier updated to ${tierData?.name || newTier}`
+          : `Subscription created: ${tierData?.name || newTier}`
+      );
       setEditingUser(null);
       fetchSubscriptions();
     } catch (error) {
@@ -203,13 +255,15 @@ export const SubscriptionManagement = () => {
     }
   };
 
-  const filteredSubscriptions = subscriptions.filter(sub => {
+  const filteredUsers = mergedUsers.filter(user => {
     const matchesSearch = 
-      sub.user_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      sub.profile?.company_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      sub.profile?.contact_person?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesTier = filterTier === 'all' || sub.subscription_tier === filterTier;
-    return matchesSearch && matchesTier;
+      user.user_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.company_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.contact_person?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    if (filterTier === 'all') return matchesSearch;
+    if (filterTier === 'no-record') return matchesSearch && !user.hasSubscriptionRecord;
+    return matchesSearch && user.subscription?.subscription_tier === filterTier;
   });
 
   const metricCards = [
@@ -222,6 +276,14 @@ export const SubscriptionManagement = () => {
       iconBg: 'bg-emerald-500/10'
     },
     { 
+      label: 'Total Users', 
+      value: metrics.totalUsers, 
+      icon: Users, 
+      gradient: 'from-slate-500/20 to-slate-600/5',
+      iconColor: 'text-slate-500',
+      iconBg: 'bg-slate-500/10'
+    },
+    { 
       label: 'Paid Subscribers', 
       value: metrics.totalSubscribers, 
       icon: UserCheck, 
@@ -230,20 +292,12 @@ export const SubscriptionManagement = () => {
       iconBg: 'bg-blue-500/10'
     },
     { 
-      label: 'Pro Users', 
-      value: metrics.proUsers, 
-      icon: Sparkles, 
-      gradient: 'from-purple-500/20 to-purple-600/5',
-      iconColor: 'text-purple-500',
-      iconBg: 'bg-purple-500/10'
-    },
-    { 
-      label: 'Business Users', 
-      value: metrics.businessUsers, 
-      icon: Crown, 
-      gradient: 'from-amber-500/20 to-amber-600/5',
-      iconColor: 'text-amber-500',
-      iconBg: 'bg-amber-500/10'
+      label: 'No Record', 
+      value: metrics.noRecordUsers, 
+      icon: AlertCircle, 
+      gradient: 'from-orange-500/20 to-orange-600/5',
+      iconColor: 'text-orange-500',
+      iconBg: 'bg-orange-500/10'
     },
   ];
 
@@ -294,7 +348,7 @@ export const SubscriptionManagement = () => {
                 : tier === 'starter' ? metrics.starterUsers 
                 : tier === 'pro' ? metrics.proUsers 
                 : metrics.businessUsers;
-              const total = subscriptions.length || 1;
+              const total = metrics.totalUsers || 1;
               const percentage = ((count / total) * 100).toFixed(1);
               
               return (
@@ -321,6 +375,9 @@ export const SubscriptionManagement = () => {
                 <CreditCard className="w-4 h-4 text-primary" />
               </div>
               User Subscriptions
+              <Badge variant="secondary" className="ml-2">
+                {metrics.totalUsers} users
+              </Badge>
             </CardTitle>
             <Button 
               variant="ghost" 
@@ -344,11 +401,12 @@ export const SubscriptionManagement = () => {
               />
             </div>
             <Select value={filterTier} onValueChange={setFilterTier}>
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="w-[160px]">
                 <SelectValue placeholder="Filter tier" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Tiers</SelectItem>
+                <SelectItem value="all">All Users</SelectItem>
+                <SelectItem value="no-record">No Record</SelectItem>
                 <SelectItem value="free">Free</SelectItem>
                 <SelectItem value="starter">Starter</SelectItem>
                 <SelectItem value="pro">Pro</SelectItem>
@@ -360,69 +418,101 @@ export const SubscriptionManagement = () => {
         <CardContent>
           <ScrollArea className="h-[400px]">
             <div className="space-y-2">
-              {filteredSubscriptions.length === 0 ? (
+              {filteredUsers.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
                   <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p>No subscriptions found</p>
+                  <p>No users found</p>
                 </div>
               ) : (
-                filteredSubscriptions.map((sub) => {
-                  const tier = sub.subscription_tier as keyof typeof tierConfig;
-                  const config = tierConfig[tier] || tierConfig.free;
-                  const Icon = config.icon;
+                filteredUsers.map((user) => {
+                  const tier = user.subscription?.subscription_tier as keyof typeof tierConfig;
+                  const config = user.hasSubscriptionRecord ? (tierConfig[tier] || tierConfig.free) : null;
+                  const Icon = config?.icon || AlertCircle;
                   
                   return (
                     <div
-                      key={sub.id}
+                      key={user.user_id}
                       className="flex items-center justify-between p-4 rounded-xl bg-muted/30 hover:bg-muted/50 border border-transparent hover:border-border/50 transition-colors"
                     >
                       <div className="flex items-center gap-3">
                         <Avatar className="w-10 h-10">
                           <AvatarFallback className="bg-primary/10 text-primary text-sm">
-                            {(sub.profile?.company_name || sub.profile?.contact_person || 'U').charAt(0).toUpperCase()}
+                            {(user.company_name || user.contact_person || 'U').charAt(0).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                         <div>
                           <p className="font-medium text-sm">
-                            {sub.profile?.company_name || sub.profile?.contact_person || sub.user_id.slice(0, 8)}
+                            {user.company_name || user.contact_person || user.user_id.slice(0, 8)}
                           </p>
                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <Calendar className="w-3 h-3" />
-                            {sub.current_period_end 
-                              ? `Renews ${format(new Date(sub.current_period_end), 'MMM d, yyyy')}`
-                              : 'No billing date'
-                            }
+                            {user.hasSubscriptionRecord ? (
+                              <>
+                                <Calendar className="w-3 h-3" />
+                                {user.subscription?.current_period_end 
+                                  ? `Renews ${format(new Date(user.subscription.current_period_end), 'MMM d, yyyy')}`
+                                  : 'No billing date'
+                                }
+                              </>
+                            ) : (
+                              <span className="text-orange-500">No subscription record</span>
+                            )}
                           </div>
                         </div>
                       </div>
                       
                       <div className="flex items-center gap-3">
-                        <Badge 
-                          variant="secondary" 
-                          className={`${config.bg} ${config.color} border-0 gap-1.5`}
-                        >
-                          <Icon className="w-3 h-3" />
-                          {tier.charAt(0).toUpperCase() + tier.slice(1)}
-                        </Badge>
-                        <Badge 
-                          variant={sub.status === 'active' ? 'default' : 'secondary'}
-                          className={sub.status === 'active' 
-                            ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' 
-                            : 'bg-muted text-muted-foreground'
-                          }
-                        >
-                          {sub.status}
-                        </Badge>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setEditingUser(sub);
-                            setNewTier(sub.subscription_tier as TierKey);
-                          }}
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </Button>
+                        {user.hasSubscriptionRecord ? (
+                          <>
+                            <Badge 
+                              variant="secondary" 
+                              className={`${config?.bg} ${config?.color} border-0 gap-1.5`}
+                            >
+                              <Icon className="w-3 h-3" />
+                              {tier.charAt(0).toUpperCase() + tier.slice(1)}
+                            </Badge>
+                            <Badge 
+                              variant={user.subscription?.status === 'active' ? 'default' : 'secondary'}
+                              className={user.subscription?.status === 'active' 
+                                ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' 
+                                : 'bg-muted text-muted-foreground'
+                              }
+                            >
+                              {user.subscription?.status}
+                            </Badge>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setEditingUser(user);
+                                setNewTier((user.subscription?.subscription_tier || 'free') as TierKey);
+                              }}
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <Badge 
+                              variant="outline" 
+                              className="border-orange-500/30 text-orange-500 gap-1.5"
+                            >
+                              <AlertCircle className="w-3 h-3" />
+                              No Record
+                            </Badge>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="gap-1.5 border-primary/30 text-primary hover:bg-primary/10"
+                              onClick={() => {
+                                setEditingUser(user);
+                                setNewTier('free');
+                              }}
+                            >
+                              <Plus className="w-4 h-4" />
+                              Set Tier
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </div>
                   );
@@ -433,19 +523,32 @@ export const SubscriptionManagement = () => {
         </CardContent>
       </Card>
 
-      {/* Edit Tier Dialog */}
+      {/* Edit/Set Tier Dialog */}
       <Dialog open={!!editingUser} onOpenChange={() => setEditingUser(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Override Subscription Tier</DialogTitle>
+            <DialogTitle>
+              {editingUser?.hasSubscriptionRecord 
+                ? 'Override Subscription Tier' 
+                : 'Set Subscription Tier'
+              }
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>User</Label>
               <p className="text-sm text-muted-foreground">
-                {editingUser?.profile?.company_name || editingUser?.profile?.contact_person || editingUser?.user_id}
+                {editingUser?.company_name || editingUser?.contact_person || editingUser?.user_id}
               </p>
             </div>
+            {editingUser?.hasSubscriptionRecord && (
+              <div className="space-y-2">
+                <Label>Current Tier</Label>
+                <p className="text-sm text-muted-foreground capitalize">
+                  {editingUser?.subscription?.subscription_tier || 'None'}
+                </p>
+              </div>
+            )}
             <div className="space-y-2">
               <Label>New Tier</Label>
               <Select value={newTier} onValueChange={(v) => setNewTier(v as TierKey)}>
@@ -462,16 +565,23 @@ export const SubscriptionManagement = () => {
               </Select>
             </div>
             <p className="text-xs text-muted-foreground">
-              This will manually override the user's subscription tier and update their credit limits.
-              Use with caution - this bypasses Stripe billing.
+              {editingUser?.hasSubscriptionRecord 
+                ? 'This will manually override the user\'s subscription tier and update their credit limits. Use with caution - this bypasses Stripe billing.'
+                : 'This will create a new subscription record for this user and set their credit limits. No Stripe billing will be created.'
+              }
             </p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditingUser(null)}>
               Cancel
             </Button>
-            <Button onClick={handleOverrideTier} disabled={isUpdating}>
-              {isUpdating ? 'Updating...' : 'Save Override'}
+            <Button onClick={handleSetOrOverrideTier} disabled={isUpdating}>
+              {isUpdating 
+                ? 'Saving...' 
+                : editingUser?.hasSubscriptionRecord 
+                  ? 'Save Override' 
+                  : 'Create Subscription'
+              }
             </Button>
           </DialogFooter>
         </DialogContent>
