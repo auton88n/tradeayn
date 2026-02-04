@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { type BuildingCodeId, type NBCCVersion } from '@/lib/buildingCodes';
 import { toast } from 'sonner';
+import generatePDF, { Margin } from 'react-to-pdf';
 
 // Lazy load calculator components
 const BeamCalculator = lazy(() => import('@/components/engineering/BeamCalculator').then(m => ({ default: m.BeamCalculator })));
@@ -197,7 +198,7 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
     setCalculationResult(null);
   }, []);
 
-  // Export PDF handler - generates professional engineering report
+  // Export PDF handler - generates professional engineering report with direct download
   const handleExportPDF = useCallback(async () => {
     if (!selectedCalculator) {
       toast.error('Please select a calculator first');
@@ -211,6 +212,16 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
     try {
       toast.loading('Generating PDF report...', { id: 'pdf-export' });
       
+      // Create a temporary container for the PDF content
+      const tempDiv = document.createElement('div');
+      tempDiv.id = 'pdf-report-temp';
+      tempDiv.style.position = 'absolute';
+      tempDiv.style.left = '-9999px';
+      tempDiv.style.top = '0';
+      tempDiv.style.width = '210mm';
+      tempDiv.style.background = 'white';
+      
+      // Fetch HTML from edge function
       const { data, error } = await supabase.functions.invoke('generate-engineering-pdf', {
         body: {
           type: selectedCalculator,
@@ -222,20 +233,36 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
       });
 
       if (error) throw error;
-
-      // Create a new window with the HTML content for printing/saving as PDF
-      const printWindow = window.open('', '_blank');
-      if (printWindow) {
-        printWindow.document.write(data.html);
-        printWindow.document.close();
-        
-        // Give the browser time to render, then trigger print
-        setTimeout(() => {
-          printWindow.print();
-        }, 500);
+      
+      // Parse and inject HTML content
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(data.html, 'text/html');
+      const pageContent = doc.querySelector('.page');
+      if (pageContent) {
+        tempDiv.innerHTML = pageContent.outerHTML;
+      } else {
+        tempDiv.innerHTML = doc.body.innerHTML;
       }
+      document.body.appendChild(tempDiv);
+      
+      // Generate and download PDF directly
+      await generatePDF(() => tempDiv, {
+        filename: `${selectedCalculator}-design-${Date.now().toString(36).toUpperCase()}.pdf`,
+        page: {
+          margin: Margin.MEDIUM,
+          format: 'A4',
+          orientation: 'portrait',
+        },
+        canvas: {
+          mimeType: 'image/jpeg',
+          qualityRatio: 0.98,
+        },
+      });
+      
+      // Cleanup
+      document.body.removeChild(tempDiv);
 
-      toast.success('PDF report generated', { id: 'pdf-export' });
+      toast.success('PDF report downloaded', { id: 'pdf-export' });
       session?.trackExport?.('pdf');
     } catch (error) {
       console.error('PDF export error:', error);

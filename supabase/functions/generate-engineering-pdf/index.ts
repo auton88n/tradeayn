@@ -351,7 +351,7 @@ function generatePDFHTML(params: {
     /* Header */
     .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #2563eb; padding-bottom: 15px; margin-bottom: 20px; }
     .logo-section { display: flex; align-items: center; gap: 12px; }
-    .logo { width: 50px; height: 50px; background: linear-gradient(135deg, #2563eb, #06b6d4); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: bold; font-size: 18px; }
+    .logo { width: 50px; height: 50px; background: #1a1a1a; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
     .company-name { font-size: 20px; font-weight: 700; color: #1a1a1a; }
     .company-tagline { font-size: 10px; color: #666; }
     .report-meta { text-align: right; font-size: 10px; color: #666; }
@@ -416,7 +416,19 @@ function generatePDFHTML(params: {
     <!-- Header -->
     <div class="header">
       <div class="logo-section">
-        <div class="logo">AYN</div>
+        <div class="logo">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/>
+            <path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/>
+            <path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/>
+            <path d="M17.599 6.5a3 3 0 0 0 .399-1.375"/>
+            <path d="M6.003 5.125A3 3 0 0 0 6.401 6.5"/>
+            <path d="M3.477 10.896a4 4 0 0 1 .585-.396"/>
+            <path d="M19.938 10.5a4 4 0 0 1 .585.396"/>
+            <path d="M6 18a4 4 0 0 1-1.967-.516"/>
+            <path d="M19.967 17.484A4 4 0 0 1 18 18"/>
+          </svg>
+        </div>
         <div>
           <div class="company-name">AYN Engineering</div>
           <div class="company-tagline">AI-Powered Structural Design</div>
