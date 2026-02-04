@@ -5,6 +5,85 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Layer color codes (AutoCAD ACI colors)
+const LAYER_COLORS = {
+  OUTLINE: 7,        // White
+  DIMENSIONS: 3,     // Green
+  REINFORCEMENT: 1,  // Red
+  STIRRUPS: 5,       // Blue
+  TEXT: 7,           // White
+  COLUMN: 4,         // Cyan
+  SITE_BOUNDARY: 7,  // White
+  PARKING_STALLS: 3, // Green
+  PARKING_AISLES: 5, // Blue
+  PARKING_ADA: 1,    // Red
+  PARKING_EV: 6,     // Magenta
+  PARKING_TEXT: 7,   // White
+  TITLE_BLOCK: 7,    // White
+};
+
+// Generate DXF header with layer definitions
+function generateDXFHeader(layers: string[]): string {
+  let header = `0
+SECTION
+2
+HEADER
+9
+$ACADVER
+1
+AC1015
+9
+$INSUNITS
+70
+4
+0
+ENDSEC
+0
+SECTION
+2
+TABLES
+0
+TABLE
+2
+LAYER
+`;
+
+  // Add layer definitions
+  for (const layer of layers) {
+    const color = LAYER_COLORS[layer as keyof typeof LAYER_COLORS] || 7;
+    header += `0
+LAYER
+2
+${layer}
+70
+0
+62
+${color}
+6
+CONTINUOUS
+`;
+  }
+
+  header += `0
+ENDTAB
+0
+ENDSEC
+0
+SECTION
+2
+ENTITIES
+`;
+
+  return header;
+}
+
+function generateDXFFooter(): string {
+  return `0
+ENDSEC
+0
+EOF`;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -21,6 +100,12 @@ serve(async (req) => {
       dxfContent = generateFoundationDXF(inputs, outputs);
     } else if (type === 'parking') {
       dxfContent = generateParkingDXF(inputs, outputs);
+    } else if (type === 'column') {
+      dxfContent = generateColumnDXF(inputs, outputs);
+    } else if (type === 'slab') {
+      dxfContent = generateSlabDXF(inputs, outputs);
+    } else if (type === 'retaining_wall') {
+      dxfContent = generateRetainingWallDXF(inputs, outputs);
     }
 
     return new Response(JSON.stringify({ dxfContent }), {
@@ -481,22 +566,156 @@ ${siteLength / 2}
 Parking Layout: ${totalSpaces} Total | ${accessibleSpaces} ADA | ${evSpaces} EV
 `;
 
+  const layers = ['SITE_BOUNDARY', 'PARKING_SPACE', 'ACCESSIBLE_SPACE', 'EV_SPACE', 'COMPACT_SPACE', 'AISLE', 'SUMMARY'];
+  return generateDXFHeader(layers) + entities + generateDXFFooter();
+}
+
+function generateColumnDXF(inputs: any, outputs: any): string {
+  const width = outputs.width || inputs.width || 400;
+  const depth = outputs.depth || inputs.depth || 400;
+  const cover = inputs.cover || 40;
+  const mainBars = outputs.mainBars || '8Ø20';
+  const ties = outputs.ties || 'Ø10@200';
+
+  let entities = '';
+
+  // Column outline (rectangle)
+  entities += drawRectangle(0, 0, width, depth, 'OUTLINE');
+
+  // Inner cover line (dashed in actual CAD)
+  entities += drawRectangle(cover, cover, width - 2 * cover, depth - 2 * cover, 'REINFORCEMENT');
+
+  // Dimension text
+  entities += drawText(width / 2, -30, `${width} mm`, 12, 'DIMENSIONS');
+  entities += drawText(width + 30, depth / 2, `${depth} mm`, 12, 'DIMENSIONS');
+
+  // Reinforcement annotation
+  entities += drawText(width / 2, depth + 40, `Main: ${mainBars}`, 10, 'REINFORCEMENT');
+  entities += drawText(width / 2, depth + 60, `Ties: ${ties}`, 10, 'STIRRUPS');
+
+  // Title
+  entities += drawText(width / 2, -60, 'COLUMN CROSS-SECTION', 14, 'TITLE_BLOCK');
+
+  const layers = ['OUTLINE', 'DIMENSIONS', 'REINFORCEMENT', 'STIRRUPS', 'TITLE_BLOCK'];
+  return generateDXFHeader(layers) + entities + generateDXFFooter();
+}
+
+function generateSlabDXF(inputs: any, outputs: any): string {
+  const longSpan = (inputs.longSpan || 6) * 1000;
+  const shortSpan = (inputs.shortSpan || 4) * 1000;
+  const thickness = outputs.thickness || 200;
+  const bottomBarLong = outputs.bottomBarLong || 'Ø12@150';
+  const bottomBarShort = outputs.bottomBarShort || 'Ø10@200';
+
+  let entities = '';
+
+  // Slab outline in plan view
+  entities += drawRectangle(0, 0, longSpan, shortSpan, 'OUTLINE');
+
+  // Grid lines to represent reinforcement direction
+  const spacing = 500; // Symbolic spacing
+  for (let x = spacing; x < longSpan; x += spacing) {
+    entities += drawLine(x, 0, x, shortSpan, 'REINFORCEMENT');
+  }
+  for (let y = spacing; y < shortSpan; y += spacing) {
+    entities += drawLine(0, y, longSpan, y, 'REINFORCEMENT');
+  }
+
+  // Dimension text
+  entities += drawText(longSpan / 2, -50, `${longSpan / 1000}m (Long Span)`, 20, 'DIMENSIONS');
+  entities += drawText(longSpan + 50, shortSpan / 2, `${shortSpan / 1000}m (Short Span)`, 20, 'DIMENSIONS');
+
+  // Reinforcement annotation
+  entities += drawText(longSpan / 2, shortSpan + 80, `Bottom Long: ${bottomBarLong}`, 16, 'TEXT');
+  entities += drawText(longSpan / 2, shortSpan + 120, `Bottom Short: ${bottomBarShort}`, 16, 'TEXT');
+
+  // Title
+  entities += drawText(longSpan / 2, -120, 'SLAB REINFORCEMENT PLAN', 24, 'TITLE_BLOCK');
+
+  const layers = ['OUTLINE', 'DIMENSIONS', 'REINFORCEMENT', 'TEXT', 'TITLE_BLOCK'];
+  return generateDXFHeader(layers) + entities + generateDXFFooter();
+}
+
+function generateRetainingWallDXF(inputs: any, outputs: any): string {
+  const wallHeight = (inputs.wallHeight || 3) * 1000;
+  const stemThicknessTop = outputs.stemThicknessTop || 300;
+  const stemThicknessBottom = outputs.stemThicknessBottom || 500;
+  const baseWidth = outputs.baseWidth || 2500;
+  const baseThickness = outputs.baseThickness || 400;
+  const toeWidth = outputs.toeWidth || 600;
+
+  let entities = '';
+
+  // Base (footing)
+  entities += drawRectangle(0, 0, baseWidth, baseThickness, 'OUTLINE');
+
+  // Stem (tapered)
+  const heelWidth = baseWidth - toeWidth - stemThicknessBottom;
+  const stemStartX = toeWidth;
+  
+  // Stem left edge (vertical from base to top)
+  entities += drawLine(stemStartX, baseThickness, stemStartX + (stemThicknessBottom - stemThicknessTop) / 2, baseThickness + wallHeight, 'OUTLINE');
+  
+  // Stem right edge (vertical from base to top)
+  entities += drawLine(stemStartX + stemThicknessBottom, baseThickness, stemStartX + (stemThicknessBottom + stemThicknessTop) / 2, baseThickness + wallHeight, 'OUTLINE');
+  
+  // Stem top
+  entities += drawLine(
+    stemStartX + (stemThicknessBottom - stemThicknessTop) / 2, 
+    baseThickness + wallHeight, 
+    stemStartX + (stemThicknessBottom + stemThicknessTop) / 2, 
+    baseThickness + wallHeight, 
+    'OUTLINE'
+  );
+
+  // Dimension annotations
+  entities += drawText(baseWidth / 2, -50, `Base: ${baseWidth}mm`, 16, 'DIMENSIONS');
+  entities += drawText(-80, baseThickness + wallHeight / 2, `H: ${wallHeight / 1000}m`, 16, 'DIMENSIONS');
+  entities += drawText(baseWidth / 2, baseThickness + wallHeight + 50, `Stem: ${stemThicknessTop}-${stemThicknessBottom}mm`, 14, 'DIMENSIONS');
+
+  // Title
+  entities += drawText(baseWidth / 2, -120, 'RETAINING WALL SECTION', 20, 'TITLE_BLOCK');
+
+  const layers = ['OUTLINE', 'DIMENSIONS', 'REINFORCEMENT', 'TITLE_BLOCK'];
+  return generateDXFHeader(layers) + entities + generateDXFFooter();
+}
+
+// Helper functions for drawing primitives
+function drawLine(x1: number, y1: number, x2: number, y2: number, layer: string): string {
   return `0
-SECTION
-2
-HEADER
-9
-$ACADVER
+LINE
+8
+${layer}
+10
+${x1}
+20
+${y1}
+11
+${x2}
+21
+${y2}
+`;
+}
+
+function drawRectangle(x: number, y: number, width: number, height: number, layer: string): string {
+  return drawLine(x, y, x + width, y, layer) +
+         drawLine(x + width, y, x + width, y + height, layer) +
+         drawLine(x + width, y + height, x, y + height, layer) +
+         drawLine(x, y + height, x, y, layer);
+}
+
+function drawText(x: number, y: number, text: string, height: number, layer: string): string {
+  return `0
+TEXT
+8
+${layer}
+10
+${x}
+20
+${y}
+40
+${height}
 1
-AC1015
-0
-ENDSEC
-0
-SECTION
-2
-ENTITIES
-${entities}0
-ENDSEC
-0
-EOF`;
+${text}
+`;
 }

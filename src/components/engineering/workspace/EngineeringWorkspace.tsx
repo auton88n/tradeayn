@@ -15,6 +15,7 @@ import { SEO } from '@/components/shared/SEO';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { type BuildingCodeId, type NBCCVersion } from '@/lib/buildingCodes';
+import { toast } from 'sonner';
 
 // Lazy load calculator components
 const BeamCalculator = lazy(() => import('@/components/engineering/BeamCalculator').then(m => ({ default: m.BeamCalculator })));
@@ -192,6 +193,95 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
     setCurrentOutputs(null);
     setCalculationResult(null);
   }, []);
+
+  // Export PDF handler - generates professional engineering report
+  const handleExportPDF = useCallback(async () => {
+    if (!selectedCalculator) {
+      toast.error('Please select a calculator first');
+      return;
+    }
+    if (!currentOutputs && !calculationResult) {
+      toast.error('Please run a calculation first');
+      return;
+    }
+
+    try {
+      toast.loading('Generating PDF report...', { id: 'pdf-export' });
+      
+      const { data, error } = await supabase.functions.invoke('generate-engineering-pdf', {
+        body: {
+          type: selectedCalculator,
+          inputs: currentInputs,
+          outputs: currentOutputs || calculationResult?.outputs || {},
+          buildingCode: selectedBuildingCode,
+          projectName: `${selectedCalculator.charAt(0).toUpperCase() + selectedCalculator.slice(1).replace('_', ' ')} Design`,
+        }
+      });
+
+      if (error) throw error;
+
+      // Create a new window with the HTML content for printing/saving as PDF
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(data.html);
+        printWindow.document.close();
+        
+        // Give the browser time to render, then trigger print
+        setTimeout(() => {
+          printWindow.print();
+        }, 500);
+      }
+
+      toast.success('PDF report generated', { id: 'pdf-export' });
+      session?.trackExport?.('pdf');
+    } catch (error) {
+      console.error('PDF export error:', error);
+      toast.error('Failed to generate PDF', { id: 'pdf-export' });
+    }
+  }, [selectedCalculator, currentInputs, currentOutputs, calculationResult, selectedBuildingCode, session]);
+
+  // Export DXF handler - generates CAD drawing
+  const handleExportDXF = useCallback(async () => {
+    if (!selectedCalculator) {
+      toast.error('Please select a calculator first');
+      return;
+    }
+    if (!currentOutputs && !calculationResult) {
+      toast.error('Please run a calculation first');
+      return;
+    }
+
+    try {
+      toast.loading('Generating DXF file...', { id: 'dxf-export' });
+      
+      const { data, error } = await supabase.functions.invoke('generate-dxf', {
+        body: {
+          type: selectedCalculator,
+          inputs: currentInputs,
+          outputs: currentOutputs || calculationResult?.outputs || {},
+        }
+      });
+
+      if (error) throw error;
+
+      // Create and download the DXF file
+      const blob = new Blob([data.dxfContent], { type: 'application/dxf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${selectedCalculator}-design-${Date.now().toString(36).toUpperCase()}.dxf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast.success('DXF file downloaded', { id: 'dxf-export' });
+      session?.trackExport?.('dxf');
+    } catch (error) {
+      console.error('DXF export error:', error);
+      toast.error('Failed to generate DXF', { id: 'dxf-export' });
+    }
+  }, [selectedCalculator, currentInputs, currentOutputs, calculationResult, session]);
 
   // Render calculator form with reset key
   const renderCalculatorForm = () => {
@@ -488,6 +578,8 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
           onHistory={() => setIsHistoryOpen(true)}
           onReset={handleReset}
           onSave={() => setIsSaveDialogOpen(true)}
+          onExportPDF={handleExportPDF}
+          onExportDXF={handleExportDXF}
           isCalculating={isCalculating}
           hasResults={!!calculationResult || !!currentOutputs}
           canCompare={calculationHistory.length >= 2}
