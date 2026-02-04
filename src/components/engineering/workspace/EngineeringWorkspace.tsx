@@ -234,15 +234,30 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
 
       if (error) throw error;
       
-      // Parse and inject HTML content
+      // Parse and inject HTML content with styles
       const parser = new DOMParser();
       const doc = parser.parseFromString(data.html, 'text/html');
+      
+      // Extract styles from the head
+      const styleContent = doc.querySelector('style');
       const pageContent = doc.querySelector('.page');
-      if (pageContent) {
-        tempDiv.innerHTML = pageContent.outerHTML;
-      } else {
-        tempDiv.innerHTML = doc.body.innerHTML;
+      
+      // Build the content with styles included
+      let htmlContent = '';
+      
+      // Add the styles first
+      if (styleContent) {
+        htmlContent += styleContent.outerHTML;
       }
+      
+      // Add the page content
+      if (pageContent) {
+        htmlContent += pageContent.outerHTML;
+      } else {
+        htmlContent += doc.body.innerHTML;
+      }
+      
+      tempDiv.innerHTML = htmlContent;
       document.body.appendChild(tempDiv);
       
       // Generate and download PDF directly
