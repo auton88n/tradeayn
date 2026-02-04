@@ -388,9 +388,9 @@ function generatePDFHTML(params: {
     .status-adequate { background: #dcfce7; border: 2px solid #16a34a; }
     .status-review-box { background: #fef3c7; border: 2px solid #d97706; }
     .status-inadequate { background: #fee2e2; border: 2px solid #dc2626; }
-    .status-icon { font-size: 36px; margin-bottom: 8px; }
-    .status-text { font-size: 16px; font-weight: 700; }
-    .status-subtext { font-size: 11px; color: #666; margin-top: 5px; }
+    .status-icon { font-size: 36px; margin-bottom: 8px; display: block; width: 100%; }
+    .status-text { font-size: 16px; font-weight: 700; display: block; width: 100%; }
+    .status-subtext { font-size: 11px; color: #666; margin-top: 5px; display: block; width: 100%; }
     
     /* Disclaimer Box */
     .disclaimer { background: #fef2f2; border: 2px solid #dc2626; border-radius: 8px; padding: 15px; margin: 20px 0; }
@@ -402,9 +402,14 @@ function generatePDFHTML(params: {
     .footer-brand { font-weight: 600; color: #1a1a1a; }
     
     /* Signature Line */
-    .signature-section { margin-top: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+    .signature-section { margin-top: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; page-break-inside: avoid; }
     .signature-box { border-top: 1px solid #1a1a1a; padding-top: 8px; }
     .signature-label { font-size: 10px; color: #666; }
+    
+    /* Prevent page break issues */
+    .section { page-break-inside: avoid; break-inside: avoid; }
+    .status-box { page-break-inside: avoid; break-inside: avoid; }
+    .disclaimer { page-break-inside: avoid; break-inside: avoid; }
     
     @media print {
       .page { width: 100%; min-height: auto; padding: 15mm; }
@@ -531,9 +536,9 @@ function generatePDFHTML(params: {
     <div class="section">
       <h2 class="section-header">4. DESIGN STATUS</h2>
       <div class="status-box ${hasFail ? 'status-inadequate' : hasReview ? 'status-review-box' : 'status-adequate'}">
-        <div class="status-icon">${hasFail ? '✗' : hasReview ? '⚠' : '✓'}</div>
-        <div class="status-text">${hasFail ? 'DESIGN INADEQUATE' : hasReview ? 'DESIGN REQUIRES REVIEW' : 'DESIGN ADEQUATE'}</div>
-        <div class="status-subtext">${hasFail ? 'Some code requirements not satisfied - revision required' : hasReview ? 'Some items require professional engineering review' : `All code requirements satisfied per ${codeRef.name}`}</div>
+        <div class="status-icon" style="font-size: 36px; margin-bottom: 8px; display: block; width: 100%;">${hasFail ? '✗' : hasReview ? '⚠' : '✓'}</div>
+        <div class="status-text" style="font-size: 16px; font-weight: 700; display: block; width: 100%;">${hasFail ? 'DESIGN INADEQUATE' : hasReview ? 'DESIGN REQUIRES REVIEW' : 'DESIGN ADEQUATE'}</div>
+        <div class="status-subtext" style="font-size: 11px; color: #666; margin-top: 5px; display: block; width: 100%;">${hasFail ? 'Some code requirements not satisfied - revision required' : hasReview ? 'Some items require professional engineering review' : `All code requirements satisfied per ${codeRef.name}`}</div>
       </div>
     </div>
     
