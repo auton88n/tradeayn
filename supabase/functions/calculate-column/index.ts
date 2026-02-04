@@ -227,6 +227,115 @@ serve(async (req) => {
     // Design status
     const isAdequate = utilizationRatio <= 100 && reinforcementRatio <= 4 && reinforcementRatio >= 0.2;
     
+    // ========================================
+    // M-N INTERACTION CURVE GENERATION
+    // ========================================
+    const epsilon_cu = 0.0035; // Ultimate concrete strain
+    const epsilon_y = fyd / 200000; // Yield strain
+    const Es = 200000; // Steel modulus (MPa)
+    
+    interface InteractionPoint {
+      P: number;
+      M: number;
+      type: 'compression' | 'balanced' | 'tension';
+    }
+    
+    const interactionCurve: InteractionPoint[] = [];
+    
+    // Pure compression point (P0, M=0)
+    const P0 = 0.8 * (0.85 * fcd * b * h + AsProvided * fyd) / 1000;
+    interactionCurve.push({ P: P0, M: 0, type: 'compression' });
+    
+    // Balanced neutral axis depth
+    const cBalanced = d * epsilon_cu / (epsilon_cu + epsilon_y);
+    
+    // Generate points by varying neutral axis depth c
+    const cValues = [
+      h * 1.5,      // Above pure compression
+      h,            // Full depth
+      0.9 * h,
+      0.8 * h,
+      0.7 * h,
+      0.6 * h,
+      cBalanced,    // Balanced point
+      0.5 * d,
+      0.4 * d,
+      0.3 * d,
+      0.2 * d,
+      0.15 * d,
+      0.1 * d,
+      0.05 * d,
+    ];
+    
+    for (const c of cValues) {
+      if (c <= 0) continue;
+      
+      // Calculate strains
+      const epsilon_s = epsilon_cu * (d - c) / c;  // Tension steel strain
+      const epsilon_sPrime = c > dPrime ? epsilon_cu * (c - dPrime) / c : 0;  // Compression steel strain
+      
+      // Steel stresses (capped at yield, can be negative for tension)
+      const fs = Math.min(Math.abs(epsilon_s) * Es, fyd) * Math.sign(epsilon_s);
+      const fsPrime = Math.min(Math.abs(epsilon_sPrime) * Es, fyd);
+      
+      // Stress block depth
+      const beta1 = 0.8; // For fck <= 50 MPa
+      const a = beta1 * c;
+      
+      // Concrete compression force
+      const Cc = 0.85 * fcd * b * Math.min(a, h);
+      
+      // Steel forces (assuming equal distribution on tension/compression faces)
+      const AsPrime = AsProvided / 2; // Compression steel area
+      const As = AsProvided / 2;      // Tension steel area
+      const Cs = AsPrime * fsPrime;   // Compression steel force
+      const Ts = As * Math.abs(fs);   // Tension steel force (positive)
+      
+      // Axial capacity
+      let Pn: number;
+      if (fs >= 0) {
+        // Compression in tension steel
+        Pn = (Cc + Cs + Ts) / 1000;
+      } else {
+        // Tension in tension steel
+        Pn = (Cc + Cs - Ts) / 1000;
+      }
+      
+      // Moment about centroid
+      const yc = h / 2;  // Distance from top to centroid
+      const yCc = Math.min(a, h) / 2;  // Distance from top to concrete force
+      const Mn = (
+        Cc * (yc - yCc) +
+        Cs * (yc - dPrime) +
+        Ts * (d - yc)
+      ) / 1e6;
+      
+      // Determine zone type
+      const isBalancedPt = Math.abs(c - cBalanced) < 10;
+      const type: 'compression' | 'balanced' | 'tension' = 
+        isBalancedPt ? 'balanced' : (c > cBalanced ? 'compression' : 'tension');
+      
+      if (Pn >= 0 && Mn >= 0) {
+        interactionCurve.push({ P: Pn, M: Mn, type });
+      }
+    }
+    
+    // Pure bending point (P=0, M0)
+    // Simplified: use tension-controlled section
+    const aFlexure = (AsProvided / 2) * fyd / (0.85 * fcd * b);
+    const M0 = (AsProvided / 2) * fyd * (d - aFlexure / 2) / 1e6;
+    interactionCurve.push({ P: 0, M: M0, type: 'tension' });
+    
+    // Sort curve points by axial load descending for proper plotting
+    interactionCurve.sort((a, b) => b.P - a.P);
+    
+    // Find balanced point values
+    const balancedPoint = interactionCurve.find(p => p.type === 'balanced') || 
+                          { P: 0, M: 0 };
+    
+    // Resultant applied moment for biaxial case
+    const appliedMoment = Math.sqrt(Mdx * Mdx + Mdy * Mdy);
+    
     console.log('Column calculation completed:', {
       axialLoad,
       columnWidth,
@@ -234,7 +343,8 @@ serve(async (req) => {
       AsRequired,
       AsProvided,
       utilizationRatio,
-      isSlender
+      isSlender,
+      interactionCurvePoints: interactionCurve.length
     });
 
     return new Response(JSON.stringify({
@@ -281,6 +391,14 @@ serve(async (req) => {
       // Status
       isAdequate,
       designStatus: isAdequate ? 'ADEQUATE' : 'INADEQUATE',
+      
+      // M-N Interaction Diagram Data
+      interactionCurve,
+      appliedP: axialLoad,
+      appliedM: appliedMoment,
+      balancedPoint: { P: balancedPoint.P, M: balancedPoint.M },
+      pureCompression: P0,
+      pureBending: M0,
       
       // Warnings
       warnings: [

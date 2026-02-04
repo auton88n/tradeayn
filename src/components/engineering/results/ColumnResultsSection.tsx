@@ -1,6 +1,7 @@
 import React from 'react';
 import { ResultRow } from './ResultRow';
 import { DesignCheckItem, DesignCheck } from './DesignCheckItem';
+import { InteractionDiagram, type InteractionPoint } from './InteractionDiagram';
 import { Separator } from '@/components/ui/separator';
 import { type BuildingCodeId } from '@/lib/buildingCodes';
 
@@ -33,6 +34,11 @@ export const ColumnResultsSection: React.FC<ColumnResultsSectionProps> = ({
   const mainBars = outputs.mainBars || outputs.mainReinforcement || '-';
   const ties = outputs.ties || outputs.stirrups || '-';
   const utilizationRatio = Number(outputs.utilizationRatio) || 0;
+  
+  // Interaction diagram data
+  const interactionCurve = outputs.interactionCurve as InteractionPoint[] | undefined;
+  const appliedP = Number(outputs.appliedP) || axialLoad;
+  const appliedM = Number(outputs.appliedM) || 0;
   
   // Slenderness
   const slendernessRatio = height / Math.min(width, depth);
@@ -102,13 +108,26 @@ export const ColumnResultsSection: React.FC<ColumnResultsSectionProps> = ({
           />
           {momentCapacity > 0 && (
             <ResultRow label="Moment Capacity" value={momentCapacity.toFixed(2)} unit="kN·m" />
-          )}
+        )}
           <ResultRow 
             label="Utilization Ratio" 
             value={`${(utilizationRatio * 100).toFixed(1)}%`}
           />
         </div>
       </div>
+
+      {/* M-N Interaction Diagram */}
+      {interactionCurve && interactionCurve.length > 0 && (
+        <>
+          <Separator />
+          <InteractionDiagram
+            curvePoints={interactionCurve}
+            appliedP={appliedP}
+            appliedM={appliedM}
+            buildingCode={buildingCode}
+          />
+        </>
+      )}
 
       <Separator />
 
