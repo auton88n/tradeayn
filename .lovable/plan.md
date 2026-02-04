@@ -1,20 +1,159 @@
-## ✅ COMPLETED: Save to Portfolio Dialog Data Fix
 
-### Summary
-Fixed the Save to Portfolio dialog not receiving calculator data by adding `onInputChange` prop synchronization to all calculators.
 
-### Files Modified
-- `src/components/engineering/BeamCalculator.tsx` - Added `onInputChange` prop + useEffect sync
-- `src/components/engineering/FoundationCalculator.tsx` - Added `onInputChange` prop + useEffect sync
-- `src/components/engineering/SlabCalculator.tsx` - Added `onInputChange` prop + useEffect sync
-- `src/components/engineering/RetainingWallCalculator.tsx` - Added `onInputChange` prop + useEffect sync
+## Revised: Professional PDF Export (Without Calculation Details)
 
-### Technical Changes
-1. Added `onInputChange?: (inputs: Record<string, any>) => void` to props interface
-2. Destructured `onInputChange` from props
-3. Added `useEffect` that syncs parsed form data to parent on mount and on every change
+### Your Concern (Addressed)
+You want to keep the calculation engine proprietary. The PDF will show **WHAT** was calculated, not **HOW** it was calculated.
 
-### Result
-- Dialog now shows actual input values (span, loads, dimensions)
-- Portfolio saves complete calculation data
-- Pattern matches existing ColumnCalculator implementation
+### Updated PDF Content Structure
+
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│                    STRUCTURAL DESIGN REPORT                      │
+│                                                                  │
+│  Project: Residential Building - Beam B1                        │
+│  Date: 2026-02-04 14:30                                         │
+│  Code: CSA A23.3-24                                             │
+│  Engineer: _________________ (P.Eng. signature line)            │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  1. DESIGN PARAMETERS                                           │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │ Span Length          │ 6.0 m                            │    │
+│  │ Dead Load            │ 15.0 kN/m                        │    │
+│  │ Live Load            │ 10.0 kN/m                        │    │
+│  │ Beam Width           │ 300 mm                           │    │
+│  │ Concrete Grade       │ C30 (f'c = 30 MPa)               │    │
+│  │ Steel Grade          │ Grade 420 (fy = 420 MPa)         │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│                                                                  │
+│  2. DESIGN RESULTS                                              │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │ Optimized Depth      │ 650 mm                           │    │
+│  │ Effective Depth      │ 610 mm                           │    │
+│  │ Main Reinforcement   │ 7Ø25 (As = 3,436 mm²)            │    │
+│  │ Stirrups             │ Ø10 @ 150 mm c/c                 │    │
+│  │ Concrete Volume      │ 1.17 m³                          │    │
+│  │ Steel Weight         │ 87.5 kg                          │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│                                                                  │
+│  3. CODE COMPLIANCE CHECKS                                      │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │ Flexural Capacity         │ ✓ PASS │ Ratio: 0.85        │    │
+│  │ Shear Capacity            │ ✓ PASS │ Ratio: 0.72        │    │
+│  │ Minimum Reinforcement     │ ✓ PASS │ CSA 10.5.1.2       │    │
+│  │ Maximum Reinforcement     │ ✓ PASS │ CSA 10.5.2         │    │
+│  │ Deflection Limit          │ ✓ PASS │ L/360              │    │
+│  │ Bar Spacing               │ ✓ PASS │ ≥ 25mm             │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│                                                                  │
+│  4. DESIGN STATUS                                               │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │                                                         │    │
+│  │              ✓ DESIGN ADEQUATE                          │    │
+│  │                                                         │    │
+│  │   All code requirements satisfied per CSA A23.3-24      │    │
+│  │                                                         │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│                                                                  │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │  ⚠️ PROFESSIONAL VERIFICATION REQUIRED                  │    │
+│  │                                                         │    │
+│  │  This report is a preliminary design aid. All results   │    │
+│  │  must be independently verified by a licensed P.Eng.    │    │
+│  │  or PE before use in construction documents.            │    │
+│  │                                                         │    │
+│  │  AYN is a design optimization tool, not a replacement   │    │
+│  │  for professional engineering judgment.                 │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│                                                                  │
+├─────────────────────────────────────────────────────────────────┤
+│  Generated by AYN | aynn.io | 2026-02-04 14:30:45              │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### What's INCLUDED (Safe to Show)
+
+| Section | Content | Why Safe |
+|---------|---------|----------|
+| Design Parameters | User inputs (span, loads, dimensions) | User already entered these |
+| Design Results | Final dimensions, reinforcement | This is the deliverable |
+| Code Compliance | Pass/Fail with code sections | Shows compliance, not method |
+| Utilization Ratios | 0.85, 0.72, etc. | Common in engineering reports |
+| Design Status | Adequate/Inadequate | Clear outcome |
+| PE Disclaimer | Verification warning | Required legally |
+
+### What's EXCLUDED (Protects IP)
+
+| Removed | Reason |
+|---------|--------|
+| Step-by-step formulas | Exposes calculation methodology |
+| Intermediate values | Shows internal algorithm |
+| Optimization logic | Proprietary AI decisions |
+| Iteration details | Reveals how depth was optimized |
+
+---
+
+### Files to Create/Modify
+
+| File | Action | Description |
+|------|--------|-------------|
+| `supabase/functions/generate-engineering-pdf/index.ts` | CREATE | Simplified PDF without formulas |
+| `supabase/functions/generate-dxf/index.ts` | UPDATE | Add proper CAD layers |
+| `src/components/engineering/workspace/EngineeringWorkspace.tsx` | UPDATE | Connect export handlers |
+
+---
+
+### PDF Report Sections (Final)
+
+1. **Header**
+   - Project name/description
+   - Date and timestamp
+   - Building code reference
+   - P.Eng. signature line
+
+2. **Design Parameters Table**
+   - All user inputs with units
+   - Material properties (f'c, fy)
+   - Geometry dimensions
+
+3. **Design Results Table**
+   - Optimized dimensions
+   - Reinforcement schedule
+   - Material quantities
+
+4. **Code Compliance Checks**
+   - Check name
+   - PASS/FAIL status
+   - Utilization ratio (optional)
+   - Code section reference (e.g., "CSA 10.5.1.2")
+
+5. **Design Status**
+   - Large "✓ ADEQUATE" or "✗ INADEQUATE"
+   - Summary statement
+
+6. **PE Disclaimer (Red Box)**
+   - Professional verification required
+   - AYN is design aid only
+
+7. **Footer**
+   - AYN branding
+   - Timestamp
+   - Page number
+
+---
+
+### Technical Approach
+
+The edge function will:
+1. Receive `{ type, inputs, outputs, buildingCode }` from frontend
+2. Format inputs into parameter table
+3. Format outputs into results table
+4. Generate compliance check rows from output flags
+5. Add PE disclaimer and branding
+6. Return base64 PDF for download
+
+No calculation logic exposed - only the **results** that the user needs for their PE review.
+
