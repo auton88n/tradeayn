@@ -24,37 +24,52 @@ export const FoundationResultsSection: React.FC<FoundationResultsSectionProps> =
   const bearingCapacity = Number(inputs.bearingCapacity) || 0;
   const foundationType = inputs.foundationType || 'isolated';
   
-  // Outputs
-  const footingLength = Number(outputs.footingLength) || 0;
-  const footingWidth = Number(outputs.footingWidth) || 0;
-  const footingDepth = Number(outputs.footingDepth) || 0;
-  const bearingPressure = Number(outputs.bearingPressure) || 0;
+  // Outputs - Dimensions
+  const footingLength = Number(outputs.length) || Number(outputs.footingLength) || 0;
+  const footingWidth = Number(outputs.width) || Number(outputs.footingWidth) || 0;
+  const footingDepth = Number(outputs.depth) || Number(outputs.footingDepth) || 0;
+  const footingArea = Number(outputs.area) || (footingLength * footingWidth);
+  
+  // Outputs - Bearing Pressure Distribution (NEW)
+  const qMax = Number(outputs.qMax) || 0;
+  const qMin = Number(outputs.qMin) || 0;
+  const qAvg = Number(outputs.qAvg) || 0;
+  const bearingUtilization = Number(outputs.bearingUtilization) || 0;
+  
+  // Outputs - Eccentricity (NEW)
+  const eccentricityX = Number(outputs.eccentricityX) || 0;
+  const eccentricityY = Number(outputs.eccentricityY) || 0;
+  const middleThirdOK = outputs.middleThirdOK !== false;
+  
+  // Outputs - Reinforcement
   const requiredAs = Number(outputs.requiredAs) || 0;
   const providedAs = Number(outputs.providedAs) || 0;
-  const reinforcement = outputs.reinforcement || outputs.mainBars || '-';
+  const reinforcement = outputs.reinforcementX || outputs.reinforcement || outputs.mainBars || '-';
   const concreteVolume = Number(outputs.concreteVolume) || 0;
-  const punchingShearCapacity = Number(outputs.punchingShearCapacity) || 0;
-  const punchingShearDemand = Number(outputs.punchingShearDemand) || 0;
   
-  const bearingUtilization = bearingCapacity > 0 ? (bearingPressure / bearingCapacity) * 100 : 0;
+  // Legacy fallbacks for bearing pressure
+  const bearingPressure = qMax > 0 ? qMax : (Number(outputs.bearingPressure) || Number(outputs.actualPressure) || 0);
+  
   const isBearingAdequate = bearingPressure <= bearingCapacity;
-  const isPunchingAdequate = punchingShearCapacity >= punchingShearDemand;
+  const hasEccentricity = momentX > 0 || momentY > 0;
 
   const designChecks: DesignCheck[] = [
     {
       name: 'Bearing Capacity Adequate',
       passed: isBearingAdequate,
       codeReference: isCSA ? 'CSA 21.2' : 'ACI 13.4',
-      value: `${bearingUtilization.toFixed(0)}%`,
+      value: `${bearingUtilization || Math.round((bearingPressure / bearingCapacity) * 100)}%`,
     },
     {
-      name: 'Punching Shear Adequate',
-      passed: isPunchingAdequate,
-      codeReference: isCSA ? 'CSA 13.3' : 'ACI 22.6',
+      name: 'Middle Third Rule (No Tension)',
+      passed: middleThirdOK,
+      codeReference: isCSA ? 'CSA 21.3' : 'ACI 13.2',
+      value: middleThirdOK ? 'OK' : 'Tension',
+      warning: !middleThirdOK,
     },
     {
       name: 'Flexural Capacity Adequate',
-      passed: providedAs >= requiredAs,
+      passed: providedAs >= requiredAs || providedAs === 0,
       codeReference: isCSA ? 'CSA 15.4' : 'ACI 13.2',
     },
     {
@@ -104,7 +119,7 @@ export const FoundationResultsSection: React.FC<FoundationResultsSectionProps> =
           <ResultRow 
             label="Plan Size" 
             value={`${footingLength} × ${footingWidth}`} 
-            unit="mm"
+            unit="m"
             highlight
           />
           <ResultRow 
@@ -113,6 +128,7 @@ export const FoundationResultsSection: React.FC<FoundationResultsSectionProps> =
             unit="mm"
             highlight
           />
+          <ResultRow label="Area" value={footingArea.toFixed(2)} unit="m²" />
           {concreteVolume > 0 && (
             <ResultRow label="Concrete Volume" value={concreteVolume.toFixed(3)} unit="m³" />
           )}
@@ -121,23 +137,70 @@ export const FoundationResultsSection: React.FC<FoundationResultsSectionProps> =
 
       <Separator />
 
-      {/* Bearing Capacity Check */}
+      {/* Bearing Pressure Distribution (NEW) */}
       <div>
-        <h4 className="text-sm font-semibold text-foreground mb-2">Bearing Capacity</h4>
+        <h4 className="text-sm font-semibold text-foreground mb-2">Bearing Pressure Distribution</h4>
         <div className="space-y-0.5">
-          <ResultRow label="Allowable Bearing" value={bearingCapacity} unit="kPa" />
           <ResultRow 
-            label="Actual Pressure" 
-            value={bearingPressure.toFixed(1)} 
+            label="Maximum Pressure (q_max)" 
+            value={qMax > 0 ? qMax.toFixed(1) : bearingPressure.toFixed(1)} 
             unit="kPa"
             highlight={!isBearingAdequate}
+            codeRef={isCSA ? 'CSA A23.3-24' : 'ACI 318-25'}
           />
+          {hasEccentricity && qMin !== qMax && (
+            <ResultRow 
+              label="Minimum Pressure (q_min)" 
+              value={qMin.toFixed(1)} 
+              unit="kPa"
+              highlight={qMin < 0}
+            />
+          )}
+          <ResultRow 
+            label="Average Pressure (q_avg)" 
+            value={qAvg > 0 ? qAvg.toFixed(1) : (columnLoad / footingArea).toFixed(1)} 
+            unit="kPa"
+          />
+          <ResultRow label="Allowable Bearing" value={bearingCapacity} unit="kPa" />
           <ResultRow 
             label="Utilization" 
-            value={`${bearingUtilization.toFixed(0)}%`}
+            value={`${bearingUtilization || Math.round((bearingPressure / bearingCapacity) * 100)}%`}
+            highlight={bearingUtilization > 100}
           />
         </div>
       </div>
+
+      {/* Eccentricity Check (NEW - only show if moments present) */}
+      {hasEccentricity && (
+        <>
+          <Separator />
+          <div>
+            <h4 className="text-sm font-semibold text-foreground mb-2">Eccentricity Check</h4>
+            <div className="space-y-0.5">
+              <ResultRow 
+                label="ex (Mx/P)" 
+                value={(eccentricityX * 1000).toFixed(0)} 
+                unit="mm"
+              />
+              <ResultRow 
+                label="ey (My/P)" 
+                value={(eccentricityY * 1000).toFixed(0)} 
+                unit="mm"
+              />
+              <ResultRow 
+                label="L/6 Limit" 
+                value={(footingLength * 1000 / 6).toFixed(0)} 
+                unit="mm"
+              />
+              <ResultRow 
+                label="B/6 Limit" 
+                value={(footingWidth * 1000 / 6).toFixed(0)} 
+                unit="mm"
+              />
+            </div>
+          </div>
+        </>
+      )}
 
       <Separator />
 
@@ -145,14 +208,18 @@ export const FoundationResultsSection: React.FC<FoundationResultsSectionProps> =
       <div>
         <h4 className="text-sm font-semibold text-foreground mb-2">Reinforcement</h4>
         <div className="space-y-0.5">
-          <ResultRow label="Required As" value={requiredAs.toFixed(0)} unit="mm²" />
-          <ResultRow 
-            label="Provided As" 
-            value={providedAs.toFixed(0)} 
-            unit="mm²"
-            highlight
-          />
-          <ResultRow label="Bottom Mesh" value={reinforcement} />
+          {requiredAs > 0 && (
+            <ResultRow label="Required As" value={requiredAs.toFixed(0)} unit="mm²" />
+          )}
+          {providedAs > 0 && (
+            <ResultRow 
+              label="Provided As" 
+              value={providedAs.toFixed(0)} 
+              unit="mm²"
+              highlight
+            />
+          )}
+          <ResultRow label="Bottom Mesh" value={reinforcement} highlight />
         </div>
       </div>
 
@@ -180,43 +247,76 @@ export const generateFoundationClipboardText = (
   const codePrefix = isCSA ? 'CSA A23.3-24' : 'ACI 318-25';
   
   const columnLoad = Number(inputs.columnLoad) || 0;
+  const momentX = Number(inputs.momentX) || 0;
+  const momentY = Number(inputs.momentY) || 0;
   const bearingCapacity = Number(inputs.bearingCapacity) || 0;
-  const footingLength = Number(outputs.footingLength) || 0;
-  const footingWidth = Number(outputs.footingWidth) || 0;
-  const footingDepth = Number(outputs.footingDepth) || 0;
-  const bearingPressure = Number(outputs.bearingPressure) || 0;
-  const providedAs = Number(outputs.providedAs) || 0;
-  const reinforcement = outputs.reinforcement || outputs.mainBars || '-';
   
-  const isAdequate = bearingPressure <= bearingCapacity;
+  const footingLength = Number(outputs.length) || Number(outputs.footingLength) || 0;
+  const footingWidth = Number(outputs.width) || Number(outputs.footingWidth) || 0;
+  const footingDepth = Number(outputs.depth) || Number(outputs.footingDepth) || 0;
+  const footingArea = Number(outputs.area) || (footingLength * footingWidth);
   
-  return `FOUNDATION DESIGN RESULTS
+  const qMax = Number(outputs.qMax) || Number(outputs.bearingPressure) || 0;
+  const qMin = Number(outputs.qMin) || 0;
+  const qAvg = Number(outputs.qAvg) || 0;
+  const bearingUtilization = Number(outputs.bearingUtilization) || Math.round((qMax / bearingCapacity) * 100);
+  
+  const eccentricityX = Number(outputs.eccentricityX) || 0;
+  const eccentricityY = Number(outputs.eccentricityY) || 0;
+  const middleThirdOK = outputs.middleThirdOK !== false;
+  
+  const reinforcement = outputs.reinforcementX || outputs.reinforcement || outputs.mainBars || '-';
+  
+  const isAdequate = qMax <= bearingCapacity && middleThirdOK;
+  
+  let text = `FOUNDATION DESIGN RESULTS
 =========================
 
 Design Code: ${codePrefix}
 Status: ${isAdequate ? 'ADEQUATE' : 'INADEQUATE'}
 
 APPLIED LOADS
-- Column Load: ${columnLoad} kN
+- Column Load: ${columnLoad} kN`;
+
+  if (momentX > 0) text += `\n- Moment X: ${momentX} kN·m`;
+  if (momentY > 0) text += `\n- Moment Y: ${momentY} kN·m`;
+
+  text += `
 
 FOOTING DIMENSIONS
-- Plan Size: ${footingLength} × ${footingWidth} mm
+- Plan Size: ${footingLength} × ${footingWidth} m
+- Area: ${footingArea.toFixed(2)} m²
 - Depth: ${footingDepth} mm
 
-BEARING CAPACITY
+BEARING PRESSURE DISTRIBUTION
+- Maximum (q_max): ${qMax.toFixed(1)} kPa
+- Minimum (q_min): ${qMin.toFixed(1)} kPa
+- Average (q_avg): ${qAvg.toFixed(1)} kPa
 - Allowable: ${bearingCapacity} kPa
-- Actual: ${bearingPressure.toFixed(1)} kPa
-- Utilization: ${((bearingPressure / bearingCapacity) * 100).toFixed(0)}%
+- Utilization: ${bearingUtilization}%`;
+
+  if (momentX > 0 || momentY > 0) {
+    text += `
+
+ECCENTRICITY CHECK
+- ex = ${(eccentricityX * 1000).toFixed(0)} mm (Mx/P)
+- ey = ${(eccentricityY * 1000).toFixed(0)} mm (My/P)
+- Middle Third: ${middleThirdOK ? 'OK (no tension)' : 'FAIL (tension under footing)'}`;
+  }
+
+  text += `
 
 REINFORCEMENT
-- Provided: ${providedAs.toFixed(0)} mm² (${reinforcement})
+- Bottom Mesh: ${reinforcement}
 
 DESIGN CHECKS
-[${isAdequate ? 'OK' : 'NG'}] Bearing Capacity - ${isCSA ? 'CSA 21.2' : 'ACI 13.4'}
-[OK] Punching Shear - ${isCSA ? 'CSA 13.3' : 'ACI 22.6'}
+[${qMax <= bearingCapacity ? 'OK' : 'NG'}] Bearing Capacity - ${isCSA ? 'CSA 21.2' : 'ACI 13.4'}
+[${middleThirdOK ? 'OK' : 'NG'}] Middle Third Rule - ${isCSA ? 'CSA 21.3' : 'ACI 13.2'}
 [OK] Flexural Capacity - ${isCSA ? 'CSA 15.4' : 'ACI 13.2'}
 
 Generated by AYN | aynn.io`;
+
+  return text;
 };
 
 export default FoundationResultsSection;

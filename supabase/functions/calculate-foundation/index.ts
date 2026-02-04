@@ -92,36 +92,71 @@ serve(async (req) => {
     const momentY = Number(rawInputs.momentY) || 0;
     const columnWidth = Number(rawInputs.columnWidth);
     const columnDepth = Number(rawInputs.columnDepth);
-    const bearingCapacity = Number(rawInputs.bearingCapacity);
+    const bearingCapacity = Number(rawInputs.bearingCapacity); // Assume input is ALLOWABLE bearing capacity
     const concreteGrade = rawInputs.concreteGrade || 'C30';
 
     const concreteProps: Record<string, number> = { C25: 25, C30: 30, C35: 35 };
     const fck = concreteProps[concreteGrade] || 30;
     const fy = 420;
 
-    // Required area based on bearing capacity (with FOS = 1.5 for service loads)
-    const allowableBearing = bearingCapacity / 1.5;
-    const requiredArea = columnLoad / allowableBearing;
+    // === CORRECTED FOUNDATION SIZING WITH ECCENTRICITY ===
     
-    // Calculate footing size (square or rectangular)
-    let length = Math.sqrt(requiredArea);
+    // 1. Calculate eccentricities (e = M/P)
+    const ex = momentX > 0 && columnLoad > 0 ? momentX / columnLoad : 0;
+    const ey = momentY > 0 && columnLoad > 0 ? momentY / columnLoad : 0;
+
+    // 2. Initial estimate based on uniform pressure (with 20% margin)
+    let length = Math.sqrt(columnLoad / bearingCapacity) * 1.2;
     let width = length;
     
-    // Adjust for moments (eccentricity)
-    if (momentX > 0 || momentY > 0) {
-      const ex = columnLoad > 0 ? momentX / columnLoad : 0;
-      const ey = columnLoad > 0 ? momentY / columnLoad : 0;
-      length = Math.max(length, 6 * ex + columnWidth / 1000);
-      width = Math.max(width, 6 * ey + columnDepth / 1000);
-    }
+    // Ensure minimum size based on column dimensions (footing > column)
+    const minLength = (columnWidth / 1000) + 0.4; // 200mm projection each side
+    const minWidth = (columnDepth / 1000) + 0.4;
+    length = Math.max(length, minLength);
+    width = Math.max(width, minWidth);
+
+    // 3. Iterate to find size where q_max <= q_allowable
+    // q_max = (P/A) × (1 + 6*ex/L + 6*ey/B)
+    let qMax = 0;
+    let qMin = 0;
+    let qAvg = 0;
     
-    // Round up to 100mm increments
+    for (let i = 0; i < 30; i++) {
+      const area = length * width;
+      qAvg = columnLoad / area;
+      
+      // Maximum pressure with biaxial eccentricity
+      qMax = qAvg * (1 + 6 * ex / length + 6 * ey / width);
+      qMin = qAvg * (1 - 6 * ex / length - 6 * ey / width);
+      
+      if (qMax <= bearingCapacity) break;
+      
+      // Increase both dimensions proportionally
+      const factor = Math.sqrt(qMax / bearingCapacity);
+      length = length * factor;
+      width = width * factor;
+    }
+
+    // 4. Ensure middle third rule (no tension under footing)
+    // For no tension: e < L/6, therefore L > 6e
+    length = Math.max(length, 6 * ex);
+    width = Math.max(width, 6 * ey);
+
+    // 5. Round up to 100mm increments
     length = Math.ceil(length * 10) / 10;
     width = Math.ceil(width * 10) / 10;
+    
+    // 6. Recalculate final pressures with rounded dimensions
     const area = length * width;
-
-    // Check actual bearing pressure
-    const actualPressure = columnLoad / area;
+    qAvg = columnLoad / area;
+    qMax = qAvg * (1 + 6 * ex / length + 6 * ey / width);
+    qMin = qAvg * (1 - 6 * ex / length - 6 * ey / width);
+    
+    // Middle third check (no tension if qMin >= 0)
+    const middleThirdOK = qMin >= 0;
+    
+    // Bearing utilization based on maximum pressure
+    const bearingUtilization = (qMax / bearingCapacity) * 100;
     
     // Punching shear check to determine depth
     const cover = 75;
@@ -168,7 +203,15 @@ serve(async (req) => {
     const steelWeightY = numberOfBars * (width - 0.1) * barArea * 7850 / 1e9;
     const totalSteelWeight = steelWeightX + steelWeightY;
 
-    console.log('Foundation calculation completed:', { columnLoad, length, width, roundedDepth });
+    console.log('Foundation calculation completed:', { 
+      columnLoad, 
+      length, 
+      width, 
+      roundedDepth,
+      qMax: Math.round(qMax * 10) / 10,
+      qMin: Math.round(qMin * 10) / 10,
+      middleThirdOK
+    });
 
     return new Response(JSON.stringify({
       // Dimensions
@@ -181,10 +224,21 @@ serve(async (req) => {
       columnWidth,
       columnDepth,
       
-      // Bearing
-      allowableBearing: Math.round(allowableBearing),
-      actualPressure: Math.round(actualPressure * 10) / 10,
-      bearingRatio: Math.round((actualPressure / allowableBearing) * 100),
+      // Bearing pressure distribution (NEW)
+      qMax: Math.round(qMax * 10) / 10,
+      qMin: Math.round(qMin * 10) / 10,
+      qAvg: Math.round(qAvg * 10) / 10,
+      allowableBearing: bearingCapacity,
+      bearingUtilization: Math.round(bearingUtilization),
+      
+      // Eccentricity values (NEW)
+      eccentricityX: Math.round(ex * 1000) / 1000,
+      eccentricityY: Math.round(ey * 1000) / 1000,
+      middleThirdOK,
+      
+      // Legacy fields for backward compatibility
+      actualPressure: Math.round(qMax * 10) / 10, // Use qMax for safety
+      bearingRatio: Math.round(bearingUtilization),
       
       // Reinforcement
       reinforcementX: `${numberOfBars}Ø${barDia}@${roundedSpacing}mm`,
