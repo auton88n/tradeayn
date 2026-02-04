@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera, Text } from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera, Text, Billboard } from '@react-three/drei';
 import * as THREE from 'three';
 import { cn } from '@/lib/utils';
 import { Box, Layers } from 'lucide-react';
@@ -40,24 +40,23 @@ const AnimatedLoadArrow: React.FC<{
   );
 };
 
-// Dimension Label Component
+// Dimension Label Component - Uses Billboard to always face camera
 const DimensionLabel: React.FC<{
   position: [number, number, number];
   text: string;
-  rotation?: [number, number, number];
-}> = ({ position, text, rotation = [0, 0, 0] }) => (
-  <Text
-    position={position}
-    rotation={rotation}
-    fontSize={0.18}
-    color="#22c55e"
-    anchorX="center"
-    anchorY="middle"
-    outlineWidth={0.01}
-    outlineColor="#000000"
-  >
-    {text}
-  </Text>
+}> = ({ position, text }) => (
+  <Billboard position={position} follow={true}>
+    <Text
+      fontSize={0.18}
+      color="#22c55e"
+      anchorX="center"
+      anchorY="middle"
+      outlineWidth={0.01}
+      outlineColor="#000000"
+    >
+      {text}
+    </Text>
+  </Billboard>
 );
 
 // 2D Plan View
@@ -250,7 +249,6 @@ const FoundationMesh: React.FC<{
           <DimensionLabel 
             position={[fL/2 + 0.35, -fD/2 - 0.35, 0]} 
             text={`${(foundationWidth/1000).toFixed(2)} m`}
-            rotation={[0, -Math.PI/2, 0]}
           />
           {/* Depth label */}
           <DimensionLabel 
