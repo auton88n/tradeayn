@@ -35,6 +35,9 @@ const RetainingWallVisualization3D = lazy(() => import('@/components/engineering
 const ParkingVisualization3D = lazy(() => import('@/components/engineering/ParkingVisualization3D').then(m => ({ default: m.ParkingVisualization3D })));
 const TerrainVisualization3D = lazy(() => import('@/components/engineering/TerrainVisualization3D').then(m => ({ default: m.TerrainVisualization3D })));
 
+// Lazy load results panel
+const DetailedResultsPanel = lazy(() => import('@/components/engineering/results/DetailedResultsPanel'));
+
 interface CalculationResult {
   type: CalculatorType;
   inputs: Record<string, number | string>;
@@ -553,6 +556,18 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
                   <div className="max-w-4xl mx-auto space-y-6">
                     {/* Calculator Form */}
                     {renderCalculatorForm()}
+                    
+                    {/* Detailed Results Panel - Shows when outputs exist */}
+                    {currentOutputs && selectedCalculator && (
+                      <Suspense fallback={<LoadingFallback />}>
+                        <DetailedResultsPanel
+                          calculatorType={selectedCalculator}
+                          inputs={currentInputs}
+                          outputs={currentOutputs}
+                          buildingCode={selectedBuildingCode}
+                        />
+                      </Suspense>
+                    )}
                     
                     {/* 3D Visualization - skip for parking since it has its own */}
                     {selectedCalculator !== 'parking' && selectedCalculator !== 'column' && (
