@@ -115,7 +115,6 @@ export const SlabResultsSection: React.FC<SlabResultsSectionProps> = ({
             label="Factored Load" 
             value={factoredLoad.toFixed(2)} 
             unit="kN/m²"
-            formula={`(${dlFactor} × ${deadLoad.toFixed(1)}) + (${llFactor} × ${liveLoad.toFixed(1)})`}
             highlight
           />
           {maxMoment > 0 && (
