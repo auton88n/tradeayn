@@ -1,64 +1,126 @@
 
 
-## Plan: Fix PDF Drawing Parser for Gemini 3 Flash
+## Fix: Save to Portfolio Dialog Not Receiving Calculator Data
 
-### Problem Summary
-The `parse-pdf-drawing` edge function was migrated from OpenAI GPT-4o to Gemini 3 Flash via the Lovable AI Gateway. However, the image format used is **incorrect for PDF files**. The code uses:
-```typescript
-{ type: "image_url", image_url: { url: "data:application/pdf;base64,..." } }
+### Problem Analysis
+
+The Save to Portfolio dialog shows zeros because the workspace's `currentInputs` and `currentOutputs` state variables are **not being updated** by most calculators.
+
+```text
+Data Flow (Current - Broken):
+
+┌──────────────────┐     ┌────────────────────────┐     ┌─────────────────────┐
+│ BeamCalculator   │     │ EngineeringWorkspace   │     │ SaveDesignDialog    │
+│                  │     │                        │     │                     │
+│ formData = {     │     │ currentInputs = {}     │────►│ inputs = {} (EMPTY) │
+│   span: '6.0',   │  ✗  │ currentOutputs = null  │     │ outputs = null      │
+│   deadLoad: '15' │ ──► │                        │     │                     │
+│ }                │     │ (never receives data)  │     │ Shows 0m, 0 kN/m    │
+└──────────────────┘     └────────────────────────┘     └─────────────────────┘
 ```
 
-This `image_url` format works for images (PNG, JPEG) but **not for PDFs**. PDFs require the newer `file` type format supported by OpenAI-compatible APIs.
+**Root Cause:** 
+- The workspace passes `onInputChange` callback to calculators (line 203)
+- **BeamCalculator** doesn't have `onInputChange` in its props interface and never calls it
+- **FoundationCalculator**, **SlabCalculator**, **RetainingWallCalculator** - same issue
+- Only **ColumnCalculator** and **GradingDesigner** properly call `onInputChange?.(newInputs)`
 
 ### Solution
 
-Update the message format in `parse-pdf-drawing` to use the correct `file` type for PDF content:
+Update each calculator to:
+1. Add `onInputChange?: (inputs: Record<string, any>) => void` to its props interface
+2. Call `onInputChange?.(inputs)` when form data changes
+3. Also sync inputs when component mounts (to pass default values)
 
 ```text
-Before (incorrect for PDFs):
-┌─────────────────────────────────────┐
-│  type: "image_url"                  │
-│  image_url: {                       │
-│    url: "data:application/pdf;..."  │
-│  }                                  │
-└─────────────────────────────────────┘
+Data Flow (Fixed):
 
-After (correct for PDFs):
-┌─────────────────────────────────────┐
-│  type: "file"                       │
-│  file: {                            │
-│    filename: "drawing.pdf"          │
-│    file_data: "data:application/..."|
-│  }                                  │
-└─────────────────────────────────────┘
+┌──────────────────┐     ┌────────────────────────┐     ┌─────────────────────┐
+│ BeamCalculator   │     │ EngineeringWorkspace   │     │ SaveDesignDialog    │
+│                  │     │                        │     │                     │
+│ formData = {     │     │ currentInputs = {      │────►│ inputs = {          │
+│   span: '6.0',   │ ──► │   span: 6.0,           │     │   span: 6.0, ...    │
+│   deadLoad: '15' │  ✓  │   deadLoad: 15, ...    │     │ }                   │
+│ }                │     │ }                      │     │                     │
+│                  │     │                        │     │                     │
+│ onInputChange?.  │     │ currentOutputs = {     │────►│ outputs = {         │
+│   (formData)     │     │   totalDepth: 650,...  │     │   totalDepth: 650   │
+│                  │     │ }                      │     │ }                   │
+└──────────────────┘     └────────────────────────┘     └─────────────────────┘
 ```
 
-### Technical Changes
-
-**File: `supabase/functions/parse-pdf-drawing/index.ts`**
-
-1. **Update CORS headers** - Add all required headers for Lovable AI Gateway compatibility
-
-2. **Change message format** (lines 116-129) - Replace `image_url` format with `file` format:
-   - Change `type: "image_url"` to `type: "file"`
-   - Replace `image_url: { url: ... }` with `file: { filename: fileName, file_data: ... }`
-
-3. **Keep existing functionality** - All parsing logic, fallback extraction, and terrain analysis remain unchanged
+---
 
 ### Files to Modify
+
 | File | Changes |
 |------|---------|
-| `supabase/functions/parse-pdf-drawing/index.ts` | Update message format from `image_url` to `file` type |
+| `src/components/engineering/BeamCalculator.tsx` | Add `onInputChange` prop, call it on input changes + mount |
+| `src/components/engineering/FoundationCalculator.tsx` | Add `onInputChange` prop, call it on input changes + mount |
+| `src/components/engineering/SlabCalculator.tsx` | Add `onInputChange` prop, call it on input changes + mount |
+| `src/components/engineering/RetainingWallCalculator.tsx` | Add `onInputChange` prop, call it on input changes + mount |
+
+---
+
+### Technical Implementation Details
+
+**For each calculator, the pattern is:**
+
+1. **Update Props Interface**
+```typescript
+interface BeamCalculatorProps {
+  // ... existing props
+  onInputChange?: (inputs: Record<string, any>) => void;
+}
+```
+
+2. **Extract prop in component**
+```typescript
+const BeamCalculator = forwardRef<BeamCalculatorRef, BeamCalculatorProps>(
+  ({ onCalculate, isCalculating, setIsCalculating, userId, onReset, onInputChange }, ref) => {
+```
+
+3. **Call on mount to sync default values**
+```typescript
+useEffect(() => {
+  const inputs = {
+    span: parseFloat(formData.span),
+    deadLoad: parseFloat(formData.deadLoad),
+    // ... all fields
+  };
+  onInputChange?.(inputs);
+}, []);
+```
+
+4. **Call on every input change**
+```typescript
+const handleInputChange = (field: string, value: string) => {
+  const newFormData = { ...formData, [field]: value };
+  setFormData(newFormData);
+  
+  // Sync to parent
+  onInputChange?.({
+    span: parseFloat(newFormData.span),
+    deadLoad: parseFloat(newFormData.deadLoad),
+    // ... all fields as numbers
+  });
+};
+```
+
+---
 
 ### Expected Outcome
-- PDF engineering drawings will be properly analyzed by Gemini 3 Flash
-- Survey points, elevations (NGL/FGL), and coordinate data will be extracted
-- Confidence scoring will work correctly
-- Error handling for rate limits (429) and credits (402) remains in place
 
-### Testing
-After implementation:
-1. Upload a PDF engineering drawing in the Design Review mode
-2. Verify the parsing succeeds and extracts points/elevations
-3. Check console logs for any errors from the Lovable AI Gateway
+After fix:
+- Dialog shows **Span: 6m** (actual input value)
+- Dialog shows **Load: 25 kN/m** (dead + live)
+- Dialog shows **Size: 300x650mm** (from outputs)
+- Dialog shows **Reinforcement: 7Ø25** (from outputs)
+- Portfolio saves complete data for history
+
+### Notes
+- The `ColumnCalculator` already implements this pattern correctly (line 106)
+- No changes needed to `SaveDesignDialog.tsx` - it correctly reads `inputs` and `outputs` props
+- No changes needed to `EngineeringWorkspace.tsx` - it already passes `onInputChange` callback
+- The `ParkingDesigner` uses a different approach (passes data directly to dialog) so no changes needed there
 
