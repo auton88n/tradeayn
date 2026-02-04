@@ -32,6 +32,7 @@ interface BeamCalculatorProps {
   setIsCalculating: (value: boolean) => void;
   userId?: string;
   onReset?: () => void;
+  onInputChange?: (inputs: Record<string, any>) => void;
 }
 
 export interface BeamCalculatorRef {
@@ -68,7 +69,7 @@ const supportTypes = [
 ];
 
 export const BeamCalculator = forwardRef<BeamCalculatorRef, BeamCalculatorProps>(
-  ({ onCalculate, isCalculating, setIsCalculating, userId, onReset }, ref) => {
+  ({ onCalculate, isCalculating, setIsCalculating, userId, onReset, onInputChange }, ref) => {
   const { t } = useLanguage();
   const { saveCalculation } = useEngineeringHistory(userId);
   const session = useEngineeringSessionOptional();
@@ -85,6 +86,22 @@ export const BeamCalculator = forwardRef<BeamCalculatorRef, BeamCalculatorProps>
       onReset?.();
     },
   }));
+
+  // Sync inputs to parent on mount and when formData changes
+  useEffect(() => {
+    const inputs = {
+      span: parseFloat(formData.span) || 0,
+      deadLoad: parseFloat(formData.deadLoad) || 0,
+      liveLoad: parseFloat(formData.liveLoad) || 0,
+      beamWidth: parseFloat(formData.beamWidth) || 0,
+      concreteGrade: formData.concreteGrade,
+      steelGrade: formData.steelGrade,
+      supportType: formData.supportType,
+      exposureClass: formData.exposureClass,
+      buildingCode,
+    };
+    onInputChange?.(inputs);
+  }, [formData, buildingCode, onInputChange]);
 
   // Get dynamic code info
   const codeInfo = getCodeInfoText(buildingCode);

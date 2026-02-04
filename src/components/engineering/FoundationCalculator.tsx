@@ -31,6 +31,7 @@ interface FoundationCalculatorProps {
   setIsCalculating: (value: boolean) => void;
   userId?: string;
   resetKey?: number;
+  onInputChange?: (inputs: Record<string, any>) => void;
 }
 
 const soilTypes = [
@@ -98,7 +99,7 @@ export interface FoundationCalculatorRef {
 }
 
 export const FoundationCalculator = forwardRef<FoundationCalculatorRef, FoundationCalculatorProps>(
-  ({ onCalculate, isCalculating, setIsCalculating, userId, resetKey }, ref) => {
+  ({ onCalculate, isCalculating, setIsCalculating, userId, resetKey, onInputChange }, ref) => {
   const { t } = useLanguage();
   const { saveCalculation } = useEngineeringHistory(userId);
   const session = useEngineeringSessionOptional();
@@ -124,6 +125,31 @@ export const FoundationCalculator = forwardRef<FoundationCalculatorRef, Foundati
     }
   }));
 
+  const getBearingCapacity = () => {
+    if (formData.soilType === 'custom') {
+      return parseFloat(formData.customBearing) || 0;
+    }
+    return soilTypes.find(s => s.value === formData.soilType)?.bearing || 150;
+  };
+
+  // Sync inputs to parent on mount and when formData changes
+  useEffect(() => {
+    const inputs = {
+      columnLoad: parseFloat(formData.columnLoad) || 0,
+      momentX: parseFloat(formData.momentX) || 0,
+      momentY: parseFloat(formData.momentY) || 0,
+      columnWidth: parseFloat(formData.columnWidth) || 0,
+      columnDepth: parseFloat(formData.columnDepth) || 0,
+      bearingCapacity: getBearingCapacity(),
+      soilType: formData.soilType,
+      concreteGrade: formData.concreteGrade,
+      foundationType: formData.foundationType,
+      embedmentDepth: parseFloat(formData.embedmentDepth) || 1.0,
+      buildingCode,
+    };
+    onInputChange?.(inputs);
+  }, [formData, buildingCode, onInputChange]);
+
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     
@@ -140,13 +166,6 @@ export const FoundationCalculator = forwardRef<FoundationCalculatorRef, Foundati
         return rest;
       });
     }
-  };
-
-  const getBearingCapacity = () => {
-    if (formData.soilType === 'custom') {
-      return parseFloat(formData.customBearing) || 0;
-    }
-    return soilTypes.find(s => s.value === formData.soilType)?.bearing || 150;
   };
 
   const validateAllInputs = (): boolean => {
