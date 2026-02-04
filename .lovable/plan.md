@@ -1,56 +1,64 @@
 
 
-# Bring Cards Closer to the Eye
+## Plan: Fix PDF Drawing Parser for Gemini 3 Flash
 
-## Summary
-This plan reduces the distance of the floating response cards from the central eye in the Hero section, creating a tighter, more cohesive visual grouping.
-
-## Current vs Proposed Positions
-
-### Desktop (large screens)
-```text
-Current:
-  topLeft:     { x: -220, y: -130 }
-  middleLeft:  { x: -270, y: 0 }
-  bottomLeft:  { x: -220, y: 130 }
-  topRight:    { x: 220, y: -130 }
-  middleRight: { x: 270, y: 0 }
-  bottomRight: { x: 220, y: 130 }
-
-Proposed (approx 30% closer):
-  topLeft:     { x: -160, y: -100 }
-  middleLeft:  { x: -190, y: 0 }
-  bottomLeft:  { x: -160, y: 100 }
-  topRight:    { x: 160, y: -100 }
-  middleRight: { x: 190, y: 0 }
-  bottomRight: { x: 160, y: 100 }
+### Problem Summary
+The `parse-pdf-drawing` edge function was migrated from OpenAI GPT-4o to Gemini 3 Flash via the Lovable AI Gateway. However, the image format used is **incorrect for PDF files**. The code uses:
+```typescript
+{ type: "image_url", image_url: { url: "data:application/pdf;base64,..." } }
 ```
 
-### Mobile (small screens)
-```text
-Current:
-  topLeft:     { x: -20, y: -85 }
-  middleLeft:  { x: 0, y: -95 }
-  bottomLeft:  { x: 20, y: -85 }
-  topRight:    { x: -20, y: 85 }
-  middleRight: { x: 0, y: 95 }
-  bottomRight: { x: 20, y: 85 }
+This `image_url` format works for images (PNG, JPEG) but **not for PDFs**. PDFs require the newer `file` type format supported by OpenAI-compatible APIs.
 
-Proposed (slightly closer):
-  topLeft:     { x: -15, y: -70 }
-  middleLeft:  { x: 0, y: -80 }
-  bottomLeft:  { x: 15, y: -70 }
-  topRight:    { x: -15, y: 70 }
-  middleRight: { x: 0, y: 80 }
-  bottomRight: { x: 15, y: 70 }
+### Solution
+
+Update the message format in `parse-pdf-drawing` to use the correct `file` type for PDF content:
+
+```text
+Before (incorrect for PDFs):
+┌─────────────────────────────────────┐
+│  type: "image_url"                  │
+│  image_url: {                       │
+│    url: "data:application/pdf;..."  │
+│  }                                  │
+└─────────────────────────────────────┘
+
+After (correct for PDFs):
+┌─────────────────────────────────────┐
+│  type: "file"                       │
+│  file: {                            │
+│    filename: "drawing.pdf"          │
+│    file_data: "data:application/..."|
+│  }                                  │
+└─────────────────────────────────────┘
 ```
 
-## File to Modify
+### Technical Changes
 
+**File: `supabase/functions/parse-pdf-drawing/index.ts`**
+
+1. **Update CORS headers** - Add all required headers for Lovable AI Gateway compatibility
+
+2. **Change message format** (lines 116-129) - Replace `image_url` format with `file` format:
+   - Change `type: "image_url"` to `type: "file"`
+   - Replace `image_url: { url: ... }` with `file: { filename: fileName, file_data: ... }`
+
+3. **Keep existing functionality** - All parsing logic, fallback extraction, and terrain analysis remain unchanged
+
+### Files to Modify
 | File | Changes |
 |------|---------|
-| `src/components/landing/Hero.tsx` | Update `getCardPositions()` function with reduced offset values |
+| `supabase/functions/parse-pdf-drawing/index.ts` | Update message format from `image_url` to `file` type |
 
-## Visual Effect
-The cards will appear approximately 30% closer to the central eye on desktop, creating a tighter "orbit" around the brain icon while still maintaining clear visual separation.
+### Expected Outcome
+- PDF engineering drawings will be properly analyzed by Gemini 3 Flash
+- Survey points, elevations (NGL/FGL), and coordinate data will be extracted
+- Confidence scoring will work correctly
+- Error handling for rate limits (429) and credits (402) remains in place
+
+### Testing
+After implementation:
+1. Upload a PDF engineering drawing in the Design Review mode
+2. Verify the parsing succeeds and extracts points/elevations
+3. Check console logs for any errors from the Lovable AI Gateway
 
