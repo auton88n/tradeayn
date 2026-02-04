@@ -1,112 +1,119 @@
 
-# Fix M-N Interaction Diagram Display in Column Calculator
+# Fix Column Results Display and M-N Interaction Diagram Issues
 
-## Problem Analysis
+## Summary
 
-The M-N Interaction Diagram is not displaying in the Column calculator results even though:
-1. The `generateInteractionCurve` function exists and generates curve data
-2. The `InteractionDiagram` component is properly imported
-3. The conditional render checks `interactionCurve && interactionCurve.length > 0`
-
-## Root Cause
-
-After code analysis, I identified two issues:
-
-### Issue 1: Recharts Data Binding Problem
-The `ComposedChart` component is rendering but the chart appears empty because:
-- The `Line` component uses `data={chartData}` with its own data array
-- The `XAxis` and `YAxis` don't have `data` bound, so they default to empty domains
-- The `Scatter` component uses a different data array (`appliedLoadData`)
-
-When using independent data sources in Recharts, the axes need to be explicitly configured with calculated domains, which they are (`domain={[0, maxM]}`), but the issue is that the chart needs a base data array OR all components need to properly work with `type="number"` axes.
-
-### Issue 2: Data Not Being Rendered to Axes
-The Line component with `type="monotone"` and separate data array may not properly bind to the number-based axes without a reference dataset at the chart level.
+Two related issues need to be fixed in the Column calculator results display:
+1. **Dimensions showing "0 × 0 mm"** - The inputs aren't being correctly passed or read in the results panel
+2. **M-N Interaction Diagram not visible** - A YAxis dataKey mismatch is preventing proper chart rendering
 
 ---
 
-## Solution
+## Issue 1: Column Dimensions Display Bug
 
-### Fix 1: Add Base Data Array to ComposedChart
+### Root Cause
+In `ColumnResultsSection.tsx`, the code tries to read dimensions from `inputs.columnWidth` but the values may not be present when the panel renders. The issue is a data synchronization problem between:
+- The calculation result's `inputs` object
+- The workspace's `currentInputs` state
 
-Add a `data` prop directly to `ComposedChart` with all chart points (both curve and applied load) to ensure axes properly recognize the data ranges:
+When `DetailedResultsPanel` renders, it receives `inputs` from `currentInputs` state, but this might be empty or stale if the calculator's `onInputChange` prop wasn't called before the calculation completed.
 
-**File**: `src/components/engineering/results/InteractionDiagram.tsx`
+### Solution
+Update `ColumnResultsSection.tsx` to also check the calculation outputs for dimension values. The `calculateColumn()` function receives these values but doesn't return them in outputs. We have two options:
 
+**Option A (Quick fix):** In `ColumnResultsSection.tsx`, add additional fallback checks to extract dimensions from any available source including the `outputs` object's derived values like `grossArea`.
+
+**Option B (Proper fix):** Ensure the Column calculator syncs its inputs to the workspace before calculation completes. This is already done via `onInputChange`, but we should also include dimensions in the outputs from `calculateColumn()`.
+
+**Recommended: Option B** - Add `width` and `depth` to the calculation outputs so they're always available.
+
+### Files to Modify
+| File | Change |
+|------|--------|
+| `src/lib/engineeringCalculations.ts` | Add `width` and `depth` to column calculation return object |
+| `src/components/engineering/results/ColumnResultsSection.tsx` | Simplify dimension extraction since values will be in outputs |
+
+---
+
+## Issue 2: M-N Interaction Diagram Not Rendering
+
+### Root Cause
+In `InteractionDiagram.tsx`, there's a mismatch between axis configuration and data:
+
+1. **YAxis Configuration**: Uses `dataKey="P"` (line 153)
+2. **Chart Data**: Has property `curveP` (not `P`) from the data transformation (line 105)
+
+For Recharts `ComposedChart` with `type="number"` axes, the YAxis `dataKey` should match the data property being plotted, OR the axes should not specify a dataKey and instead rely on the domain calculations.
+
+### Solution
+Remove `dataKey="P"` from the YAxis since it's a number-type axis and the data doesn't have a `P` property (it has `curveP`). The Line component already correctly uses `dataKey="curveP"`.
+
+### Files to Modify
+| File | Change |
+|------|--------|
+| `src/components/engineering/results/InteractionDiagram.tsx` | Remove `dataKey` from YAxis, keep domain calculation |
+
+---
+
+## Implementation Steps
+
+### Step 1: Fix Column Outputs
+**File:** `src/lib/engineeringCalculations.ts`
+
+Add the input dimensions to the return object (around line 554-590):
 ```typescript
-// Combine all data for chart reference
-const allData = useMemo(() => {
-  const curveData = chartData.map(point => ({
-    M: point.M,
-    curveP: point.P,
-    type: point.type,
-  }));
-  // Add applied point separately so we can style it differently
-  return curveData;
-}, [chartData]);
+return {
+  // Add these new properties:
+  width: b,      // Column width in mm
+  depth: h,      // Column depth in mm
+  height: columnHeight,  // Column height in mm
+  
+  // ... existing properties
+  grossArea: Ac,
+  // ...
+};
 ```
 
-Then update the ComposedChart:
-```tsx
-<ComposedChart
-  data={allData}
-  margin={{ top: 20, right: 30, bottom: 25, left: 15 }}
->
-```
+### Step 2: Fix Interaction Diagram YAxis
+**File:** `src/components/engineering/results/InteractionDiagram.tsx`
 
-### Fix 2: Update Line and Scatter Rendering
-
-Update the Line component to use the chart's data instead of a separate data array:
-```tsx
-<Line
-  type="monotone"
-  dataKey="curveP"
-  stroke="hsl(var(--primary))"
-  strokeWidth={2}
-  dot={...}
-  name="Capacity Envelope"
-  isAnimationActive={false}
+Update the YAxis to remove the incorrect dataKey:
+```typescript
+<YAxis
+  type="number"
+  name="Axial"
+  domain={[0, maxP]}
+  tickFormatter={(v) => v.toFixed(0)}
+  // ... keep other props
 />
 ```
 
-For the applied load point, use a separate Scatter with its data array (which works correctly with number axes).
+### Step 3: Simplify ColumnResultsSection
+**File:** `src/components/engineering/results/ColumnResultsSection.tsx`
 
-### Fix 3: Ensure interactionCurve is Always Returned
-
-Add a fallback in `ColumnResultsSection` to always show the diagram (potentially with a "no data" message if curve is empty), and add debug logging in development to verify data flow.
-
----
-
-## Implementation Plan
-
-### Step 1: Update InteractionDiagram.tsx
-
-| Change | Description |
-|--------|-------------|
-| Add `data` prop to `ComposedChart` | Bind the chart data directly to the ComposedChart component |
-| Remove separate `data` array from `Line` | Let it use the parent chart's data |
-| Keep `Scatter` with its own data | Applied load point renders separately |
-| Fix axis tick formatting | Ensure proper number formatting |
-
-### Step 2: Add Fallback Rendering
-
-If `interactionCurve` is undefined or empty, show a placeholder message or debug indicator to help diagnose future issues.
+Update dimension extraction to prioritize outputs:
+```typescript
+const width = Number(outputs.width) || Number(inputs.columnWidth) || Number(inputs.width) || 0;
+const depth = Number(outputs.depth) || Number(inputs.columnDepth) || Number(inputs.depth) || 0;
+const height = Number(outputs.height) || Number(inputs.columnHeight) || Number(inputs.height) || 0;
+```
 
 ---
 
-## Files to Modify
+## Expected Results
 
-| File | Changes |
-|------|---------|
-| `src/components/engineering/results/InteractionDiagram.tsx` | Fix Recharts data binding, add data to ComposedChart |
-| `src/components/engineering/results/ColumnResultsSection.tsx` | Add fallback for empty interaction curve (optional debug) |
+| Issue | Before | After |
+|-------|--------|-------|
+| Column Dimensions | Shows "0 × 0 mm" | Shows actual values like "400 × 400 mm" |
+| M-N Diagram | Not visible / blank chart | Capacity curve displays with dots and applied load star |
+| Adequacy Status | Not shown | Green/red status indicator visible |
 
 ---
 
-## Expected Result
-
-| Before | After |
-|--------|-------|
-| M-N diagram not visible | Capacity envelope curve displays correctly |
-| No load point plotted | Applied load star marker visible |
-| No adequacy indication | Green/red status showing ADEQUATE/INADEQUATE |
+## Testing Checklist
+- [ ] Run a Column calculation with default values (400×400 mm)
+- [ ] Verify dimensions display correctly in results panel
+- [ ] Verify M-N Interaction Diagram shows the capacity envelope curve
+- [ ] Verify the applied load point (star marker) appears on the diagram
+- [ ] Verify the ADEQUATE/INADEQUATE status message displays below the diagram
+- [ ] Test with different column sizes to confirm dynamic updates
