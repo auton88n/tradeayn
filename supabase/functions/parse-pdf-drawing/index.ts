@@ -3,7 +3,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
 interface ExtractedPoint {
@@ -121,9 +121,10 @@ IMPORTANT:
                 text: `Analyze this engineering drawing/PDF and extract all survey points, elevation levels (NGL and FGL), and any coordinate information. Focus on finding point coordinates and their associated elevations. Return the data in the JSON format specified.`
               },
               {
-                type: "image_url",
-                image_url: {
-                  url: pdfBase64.startsWith('data:') ? pdfBase64 : `data:application/pdf;base64,${pdfBase64}`
+                type: "file",
+                file: {
+                  filename: fileName || "drawing.pdf",
+                  file_data: pdfBase64.startsWith('data:') ? pdfBase64 : `data:application/pdf;base64,${pdfBase64}`
                 }
               }
             ]
