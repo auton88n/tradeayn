@@ -346,7 +346,24 @@ function generatePDFHTML(params: {
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 11pt; line-height: 1.4; color: #1a1a1a; background: #fff; }
-    .page { width: 210mm; min-height: 297mm; padding: 20mm; margin: 0 auto; background: #fff; }
+    
+    /* Multi-page layout - explicit A4 sizing to prevent content cut-off */
+    .page { 
+      width: 210mm; 
+      height: 297mm; 
+      padding: 20mm; 
+      margin: 0; 
+      background: #fff; 
+      display: flex;
+      flex-direction: column;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+    .page:not(:last-child) { 
+      page-break-after: always; 
+      margin-bottom: 0;
+    }
+    .page-body { flex: 1; }
     
     /* Header */
     .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #2563eb; padding-bottom: 15px; margin-bottom: 20px; }
@@ -398,182 +415,213 @@ function generatePDFHTML(params: {
     .disclaimer-text { font-size: 10px; color: #7f1d1d; line-height: 1.5; }
     
     /* Footer */
-    .footer { margin-top: 30px; padding-top: 15px; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; font-size: 9px; color: #666; }
+    .footer { margin-top: auto; padding-top: 15px; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; font-size: 9px; color: #666; }
     .footer-brand { font-weight: 600; color: #1a1a1a; }
     
     /* Signature Line */
-    .signature-section { margin-top: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; page-break-inside: avoid; }
+    .signature-section { margin-top: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
     .signature-box { border-top: 1px solid #1a1a1a; padding-top: 8px; }
     .signature-label { font-size: 10px; color: #666; }
     
-    /* Prevent page break issues */
-    .section { page-break-inside: avoid; break-inside: avoid; }
-    .status-box { page-break-inside: avoid; break-inside: avoid; }
-    .disclaimer { page-break-inside: avoid; break-inside: avoid; }
+    /* Page header for continuation */
+    .page-header-mini { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #2563eb; padding-bottom: 10px; margin-bottom: 15px; font-size: 10px; color: #666; }
+    .page-header-mini .logo-mini { width: 30px; height: 30px; background: #1a1a1a; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
     
     @media print {
-      .page { width: 100%; min-height: auto; padding: 15mm; }
+      .page { width: 100%; height: auto; min-height: auto; padding: 15mm; }
     }
   </style>
 </head>
 <body>
+  <!-- PAGE 1: Header, Design Parameters, Results, Compliance -->
   <div class="page">
-    <!-- Header -->
-    <div class="header">
-      <div class="logo-section">
-        <div class="logo">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/>
-            <path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/>
-            <path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/>
-            <path d="M17.599 6.5a3 3 0 0 0 .399-1.375"/>
-            <path d="M6.003 5.125A3 3 0 0 0 6.401 6.5"/>
-            <path d="M3.477 10.896a4 4 0 0 1 .585-.396"/>
-            <path d="M19.938 10.5a4 4 0 0 1 .585.396"/>
-            <path d="M6 18a4 4 0 0 1-1.967-.516"/>
-            <path d="M19.967 17.484A4 4 0 0 1 18 18"/>
-          </svg>
+    <div class="page-body">
+      <!-- Header -->
+      <div class="header">
+        <div class="logo-section">
+          <div class="logo">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/>
+              <path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/>
+              <path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/>
+              <path d="M17.599 6.5a3 3 0 0 0 .399-1.375"/>
+              <path d="M6.003 5.125A3 3 0 0 0 6.401 6.5"/>
+              <path d="M3.477 10.896a4 4 0 0 1 .585-.396"/>
+              <path d="M19.938 10.5a4 4 0 0 1 .585.396"/>
+              <path d="M6 18a4 4 0 0 1-1.967-.516"/>
+              <path d="M19.967 17.484A4 4 0 0 1 18 18"/>
+            </svg>
+          </div>
+          <div>
+            <div class="company-name">AYN Engineering</div>
+            <div class="company-tagline">AI-Powered Structural Design</div>
+          </div>
         </div>
-        <div>
-          <div class="company-name">AYN Engineering</div>
-          <div class="company-tagline">AI-Powered Structural Design</div>
-        </div>
-      </div>
-      <div class="report-meta">
-        <div class="report-number">Report: ${reportNumber}</div>
-        <div>Date: ${formattedDate}</div>
-        <div>Time: ${formattedTime}</div>
-      </div>
-    </div>
-    
-    <!-- Title Section -->
-    <div class="title-section">
-      <h1 class="title">${getTypeTitle(type)}</h1>
-      <div class="project-info">
-        <div class="info-box">
-          <div class="info-label">Project</div>
-          <div class="info-value">${projectName || 'Untitled Design'}</div>
-        </div>
-        <div class="info-box">
-          <div class="info-label">Design Code</div>
-          <div class="info-value">${codeRef.name}</div>
+        <div class="report-meta">
+          <div class="report-number">Report: ${reportNumber}</div>
+          <div>Date: ${formattedDate}</div>
+          <div>Time: ${formattedTime}</div>
         </div>
       </div>
-    </div>
-    
-    <!-- Design Parameters -->
-    <div class="section">
-      <h2 class="section-header">1. DESIGN PARAMETERS</h2>
-      <table>
-        <thead>
-          <tr>
-            <th style="width: 45%">Parameter</th>
-            <th style="width: 30%">Value</th>
-            <th style="width: 25%">Unit</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${inputRows.map(row => `
+      
+      <!-- Title Section -->
+      <div class="title-section">
+        <h1 class="title">${getTypeTitle(type)}</h1>
+        <div class="project-info">
+          <div class="info-box">
+            <div class="info-label">Project</div>
+            <div class="info-value">${projectName || 'Untitled Design'}</div>
+          </div>
+          <div class="info-box">
+            <div class="info-label">Design Code</div>
+            <div class="info-value">${codeRef.name}</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Design Parameters -->
+      <div class="section">
+        <h2 class="section-header">1. DESIGN PARAMETERS</h2>
+        <table>
+          <thead>
             <tr>
-              <td>${row.param}</td>
-              <td class="value-cell">${row.value}</td>
-              <td class="unit-cell">${row.unit}</td>
+              <th style="width: 45%">Parameter</th>
+              <th style="width: 30%">Value</th>
+              <th style="width: 25%">Unit</th>
             </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    </div>
-    
-    <!-- Design Results -->
-    <div class="section">
-      <h2 class="section-header">2. DESIGN RESULTS</h2>
-      <table>
-        <thead>
-          <tr>
-            <th style="width: 45%">Parameter</th>
-            <th style="width: 30%">Value</th>
-            <th style="width: 25%">Unit</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${resultRows.map(row => `
+          </thead>
+          <tbody>
+            ${inputRows.map(row => `
+              <tr>
+                <td>${row.param}</td>
+                <td class="value-cell">${row.value}</td>
+                <td class="unit-cell">${row.unit}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Design Results -->
+      <div class="section">
+        <h2 class="section-header">2. DESIGN RESULTS</h2>
+        <table>
+          <thead>
             <tr>
-              <td>${row.param}</td>
-              <td class="value-cell">${row.value}</td>
-              <td class="unit-cell">${row.unit}</td>
+              <th style="width: 45%">Parameter</th>
+              <th style="width: 30%">Value</th>
+              <th style="width: 25%">Unit</th>
             </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    </div>
-    
-    <!-- Code Compliance Checks -->
-    <div class="section">
-      <h2 class="section-header">3. CODE COMPLIANCE CHECKS</h2>
-      <table>
-        <thead>
-          <tr>
-            <th style="width: 35%">Check</th>
-            <th style="width: 15%">Status</th>
-            <th style="width: 25%">Criteria</th>
-            <th style="width: 25%">Reference</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${complianceChecks.map(check => `
+          </thead>
+          <tbody>
+            ${resultRows.map(row => `
+              <tr>
+                <td>${row.param}</td>
+                <td class="value-cell">${row.value}</td>
+                <td class="unit-cell">${row.unit}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Code Compliance Checks -->
+      <div class="section">
+        <h2 class="section-header">3. CODE COMPLIANCE CHECKS</h2>
+        <table>
+          <thead>
             <tr>
-              <td>${check.check}</td>
-              <td class="${check.status === 'PASS' ? 'status-pass' : check.status === 'FAIL' ? 'status-fail' : check.status === 'REVIEW' ? 'status-review' : 'status-na'}">${check.status === 'PASS' ? '✓ PASS' : check.status === 'FAIL' ? '✗ FAIL' : check.status === 'REVIEW' ? '⚠ REVIEW' : 'N/A'}</td>
-              <td class="value-cell">${check.ratio}</td>
-              <td class="unit-cell">${codeRef.name.split(' ')[0]} ${check.section}</td>
+              <th style="width: 35%">Check</th>
+              <th style="width: 15%">Status</th>
+              <th style="width: 25%">Criteria</th>
+              <th style="width: 25%">Reference</th>
             </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    </div>
-    
-    <!-- Design Status -->
-    <div class="section">
-      <h2 class="section-header">4. DESIGN STATUS</h2>
-      <div class="status-box ${hasFail ? 'status-inadequate' : hasReview ? 'status-review-box' : 'status-adequate'}">
-        <div class="status-icon" style="font-size: 36px; margin-bottom: 8px; display: block; width: 100%;">${hasFail ? '✗' : hasReview ? '⚠' : '✓'}</div>
-        <div class="status-text" style="font-size: 16px; font-weight: 700; display: block; width: 100%;">${hasFail ? 'DESIGN INADEQUATE' : hasReview ? 'DESIGN REQUIRES REVIEW' : 'DESIGN ADEQUATE'}</div>
-        <div class="status-subtext" style="font-size: 11px; color: #666; margin-top: 5px; display: block; width: 100%;">${hasFail ? 'Some code requirements not satisfied - revision required' : hasReview ? 'Some items require professional engineering review' : `All code requirements satisfied per ${codeRef.name}`}</div>
+          </thead>
+          <tbody>
+            ${complianceChecks.map(check => `
+              <tr>
+                <td>${check.check}</td>
+                <td class="${check.status === 'PASS' ? 'status-pass' : check.status === 'FAIL' ? 'status-fail' : check.status === 'REVIEW' ? 'status-review' : 'status-na'}">${check.status === 'PASS' ? '✓ PASS' : check.status === 'FAIL' ? '✗ FAIL' : check.status === 'REVIEW' ? '⚠ REVIEW' : 'N/A'}</td>
+                <td class="value-cell">${check.ratio}</td>
+                <td class="unit-cell">${codeRef.name.split(' ')[0]} ${check.section}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
       </div>
     </div>
     
-    <!-- PE Disclaimer -->
-    <div class="disclaimer">
-      <div class="disclaimer-header">
-        <span>⚠️</span>
-        <span>PROFESSIONAL VERIFICATION REQUIRED</span>
-      </div>
-      <div class="disclaimer-text">
-        This report is a preliminary design aid generated by AYN Engineering software. All results, dimensions, 
-        and reinforcement details must be independently verified by a licensed Professional Engineer (P.Eng. in Canada 
-        or PE in the United States) before use in construction documents. AYN is a design optimization tool and does 
-        not replace professional engineering judgment. The engineer of record assumes full responsibility for the 
-        final design.
-      </div>
-    </div>
-    
-    <!-- Signature Section -->
-    <div class="signature-section">
-      <div class="signature-box">
-        <div class="signature-label">Prepared By: ___________________________</div>
-      </div>
-      <div class="signature-box">
-        <div class="signature-label">Reviewed By (P.Eng./PE): ___________________________</div>
-      </div>
-    </div>
-    
-    <!-- Footer -->
+    <!-- Footer Page 1 -->
     <div class="footer">
       <div>
         <span class="footer-brand">Generated by AYN</span> | aynn.io
       </div>
       <div>
-        ${formattedDate} ${formattedTime} | Version 1.0
+        Page 1 of 2 | ${formattedDate}
+      </div>
+    </div>
+  </div>
+  
+  <!-- PAGE 2: Design Status, Disclaimer, Signatures -->
+  <div class="page">
+    <div class="page-body">
+      <!-- Mini header for page 2 -->
+      <div class="page-header-mini">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div class="logo-mini">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/>
+              <path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/>
+            </svg>
+          </div>
+          <span style="font-weight: 600; color: #1a1a1a;">${getTypeTitle(type)}</span>
+        </div>
+        <div>Report: ${reportNumber}</div>
+      </div>
+      
+      <!-- Design Status -->
+      <div class="section">
+        <h2 class="section-header">4. DESIGN STATUS</h2>
+        <div class="status-box ${hasFail ? 'status-inadequate' : hasReview ? 'status-review-box' : 'status-adequate'}">
+          <div class="status-icon" style="font-size: 36px; margin-bottom: 8px; display: block; width: 100%;">${hasFail ? '✗' : hasReview ? '⚠' : '✓'}</div>
+          <div class="status-text" style="font-size: 16px; font-weight: 700; display: block; width: 100%;">${hasFail ? 'DESIGN INADEQUATE' : hasReview ? 'DESIGN REQUIRES REVIEW' : 'DESIGN ADEQUATE'}</div>
+          <div class="status-subtext" style="font-size: 11px; color: #666; margin-top: 5px; display: block; width: 100%;">${hasFail ? 'Some code requirements not satisfied - revision required' : hasReview ? 'Some items require professional engineering review' : `All code requirements satisfied per ${codeRef.name}`}</div>
+        </div>
+      </div>
+      
+      <!-- PE Disclaimer -->
+      <div class="disclaimer">
+        <div class="disclaimer-header">
+          <span>⚠️</span>
+          <span>PROFESSIONAL VERIFICATION REQUIRED</span>
+        </div>
+        <div class="disclaimer-text">
+          This report is a preliminary design aid generated by AYN Engineering software. All results, dimensions, 
+          and reinforcement details must be independently verified by a licensed Professional Engineer (P.Eng. in Canada 
+          or PE in the United States) before use in construction documents. AYN is a design optimization tool and does 
+          not replace professional engineering judgment. The engineer of record assumes full responsibility for the 
+          final design.
+        </div>
+      </div>
+      
+      <!-- Signature Section -->
+      <div class="signature-section">
+        <div class="signature-box">
+          <div class="signature-label">Prepared By: ___________________________</div>
+        </div>
+        <div class="signature-box">
+          <div class="signature-label">Reviewed By (P.Eng./PE): ___________________________</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Footer Page 2 -->
+    <div class="footer">
+      <div>
+        <span class="footer-brand">Generated by AYN</span> | aynn.io
+      </div>
+      <div>
+        Page 2 of 2 | ${formattedDate} ${formattedTime} | Version 1.0
       </div>
     </div>
   </div>
