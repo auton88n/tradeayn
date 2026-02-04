@@ -2,6 +2,7 @@
 export { DetailedResultsPanel } from './DetailedResultsPanel';
 export { ResultRow } from './ResultRow';
 export { DesignCheckItem, type DesignCheck } from './DesignCheckItem';
+export { InteractionDiagram, type InteractionPoint } from './InteractionDiagram';
 export { BeamResultsSection, generateBeamClipboardText } from './BeamResultsSection';
 export { ColumnResultsSection, generateColumnClipboardText } from './ColumnResultsSection';
 export { SlabResultsSection, generateSlabClipboardText } from './SlabResultsSection';
