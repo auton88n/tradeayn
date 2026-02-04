@@ -1,104 +1,160 @@
 
 
-## 10/10 Production Readiness Plan for AYN Engineering Platform
+## Fix PDF Export: Brain Logo and Direct Download
 
-This plan addresses all remaining issues identified in the verification report to achieve 10/10 production readiness.
+This plan addresses two issues with the PDF export functionality:
 
----
-
-### Current Status Analysis
-
-| Feature | Status | Root Cause |
-|---------|--------|------------|
-| M-N Interaction Diagram | Implemented but hidden | Data not flowing from edge function to UI |
-| PDF Export | Implemented but hidden | Buried in "+" dropdown menu |
-| DXF Export | Implemented | Buried in "+" dropdown menu |
-| Column 0×0mm display | Bug | Using `outputs.width` instead of `inputs.width` |
-| Reinforcement ratio 0.00% | Bug | Value parsing issue with decimal format |
-| Save dialog zeros | Fixed | Data sync pattern already implemented |
+1. **Logo shows blue "AYN" box instead of the brain logo**
+2. **PDF opens in a new blank tab instead of downloading directly**
 
 ---
 
-### Implementation Plan
+### Root Cause Analysis
 
-#### 1. Make PDF and DXF Export Buttons Visible
-
-**Problem**: Export buttons are hidden in a "+" dropdown menu, making them hard to find.
-
-**Solution**: Add prominent "Export PDF" and "Export DXF" buttons directly to the toolbar.
-
-**File**: `src/components/engineering/workspace/EngineeringBottomChat.tsx`
-
-**Changes**:
-- Move PDF and DXF buttons from `secondaryActions` dropdown to main toolbar row
-- Add visible icon buttons with tooltips for Export PDF and Export DXF
-- Keep them conditionally shown only when `hasResults` is true
+| Issue | Location | Problem |
+|-------|----------|---------|
+| Wrong logo | `supabase/functions/generate-engineering-pdf/index.ts` lines 354, 419 | Hardcoded CSS box with "AYN" text and blue gradient |
+| Opens new tab | `src/components/engineering/workspace/EngineeringWorkspace.tsx` lines 226-236 | Uses `window.open()` + `print()` instead of direct download |
 
 ---
 
-#### 2. Fix M-N Interaction Diagram Visibility
+### Solution Overview
 
-**Problem**: The diagram component exists but data may not be reaching it through the workspace.
+**Approach 1 (Recommended)**: Use `react-to-pdf` library like `ParkingDesigner.tsx` and `CalculationResults.tsx` already do - this provides direct PDF download
 
-**Root Cause Investigation**:
-- Edge function returns `interactionCurve` but it may not be passed to `currentOutputs`
-- The `ColumnResultsSection` correctly checks for the data
+**Approach 2**: Modify the edge function to return actual PDF bytes and use jsPDF with embedded logo
 
-**Solution**: Ensure the edge function is deployed and the data flows correctly:
-
-**Files to verify/fix**:
-1. `supabase/functions/calculate-column/index.ts` - Already returns interaction data
-2. `src/components/engineering/ColumnCalculator.tsx` - Verify outputs are passed correctly
-3. `src/lib/engineeringCalculations.ts` - Check if local calculation also generates curve
-
-**Action**: The issue is that when using the client-side `calculateColumn()` function instead of the edge function, the interaction curve data isn't being generated. Need to add the curve generation to the client-side calculation OR ensure edge function is always used.
+I recommend Approach 1 because:
+- The library is already installed and used elsewhere
+- Provides true direct download
+- No need to embed images in edge functions
 
 ---
 
-#### 3. Fix Column Display Issue (0 × 0 mm)
+### Implementation Details
 
-**Problem**: Column size shows as "0 × 0 mm" in results.
+#### 1. Update Edge Function Logo (for print preview)
 
-**Location**: `src/components/engineering/results/ColumnResultsSection.tsx` lines 22-23
+**File**: `supabase/functions/generate-engineering-pdf/index.ts`
 
-**Current Code**:
-```typescript
-const width = Number(inputs.width) || 0;
-const depth = Number(inputs.depth) || 0;
+Replace the blue box logo with an SVG brain icon matching the brand:
+
+```css
+/* Current (line 354) */
+.logo { width: 50px; height: 50px; background: linear-gradient(135deg, #2563eb, #06b6d4); ... }
+
+/* New - Black circle with white brain icon */
+.logo { 
+  width: 50px; 
+  height: 50px; 
+  background: #1a1a1a; 
+  border-radius: 50%; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+}
 ```
 
-**Issue**: The column calculator uses `columnWidth` and `columnDepth` as input field names, not `width` and `depth`.
+Replace the HTML (line 419):
+```html
+<!-- Current -->
+<div class="logo">AYN</div>
 
-**Fix**:
-```typescript
-const width = Number(inputs.columnWidth) || Number(inputs.width) || 0;
-const depth = Number(inputs.columnDepth) || Number(inputs.depth) || 0;
+<!-- New - SVG brain icon -->
+<div class="logo">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+    <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/>
+    <path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/>
+    <path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/>
+    <path d="M17.599 6.5a3 3 0 0 0 .399-1.375"/>
+    <path d="M6.003 5.125A3 3 0 0 0 6.401 6.5"/>
+    <path d="M3.477 10.896a4 4 0 0 1 .585-.396"/>
+    <path d="M19.938 10.5a4 4 0 0 1 .585.396"/>
+    <path d="M6 18a4 4 0 0 1-1.967-.516"/>
+    <path d="M19.967 17.484A4 4 0 0 1 18 18"/>
+  </svg>
+</div>
 ```
 
 ---
 
-#### 4. Fix Reinforcement Ratio Display (0.00%)
+#### 2. Change PDF Export to Direct Download
 
-**Problem**: Reinforcement ratio shows as 0.00% when it should have a value.
+**File**: `src/components/engineering/workspace/EngineeringWorkspace.tsx`
 
-**Location**: `src/components/engineering/results/ColumnResultsSection.tsx` line 31
+Replace the current `handleExportPDF` implementation (lines 201-244) with `react-to-pdf` approach:
 
-**Current Code**:
 ```typescript
-const reinforcementRatio = Number(outputs.reinforcementRatio) || 0;
+import generatePDF, { Margin } from 'react-to-pdf';
+
+const handleExportPDF = useCallback(async () => {
+  if (!selectedCalculator) {
+    toast.error('Please select a calculator first');
+    return;
+  }
+  if (!currentOutputs && !calculationResult) {
+    toast.error('Please run a calculation first');
+    return;
+  }
+
+  try {
+    toast.loading('Generating PDF report...', { id: 'pdf-export' });
+    
+    // Create a temporary container with the report HTML
+    const tempDiv = document.createElement('div');
+    tempDiv.id = 'pdf-report-temp';
+    tempDiv.style.position = 'absolute';
+    tempDiv.style.left = '-9999px';
+    
+    // Fetch HTML from edge function
+    const { data, error } = await supabase.functions.invoke('generate-engineering-pdf', {
+      body: {
+        type: selectedCalculator,
+        inputs: currentInputs,
+        outputs: currentOutputs || calculationResult?.outputs || {},
+        buildingCode: selectedBuildingCode,
+        projectName: `${selectedCalculator.charAt(0).toUpperCase() + selectedCalculator.slice(1).replace('_', ' ')} Design`,
+      }
+    });
+
+    if (error) throw error;
+    
+    // Parse and inject HTML content
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(data.html, 'text/html');
+    const pageContent = doc.querySelector('.page');
+    if (pageContent) {
+      tempDiv.innerHTML = pageContent.outerHTML;
+    } else {
+      tempDiv.innerHTML = data.html;
+    }
+    document.body.appendChild(tempDiv);
+    
+    // Generate and download PDF directly
+    await generatePDF(() => tempDiv, {
+      filename: `${selectedCalculator}-design-${Date.now().toString(36).toUpperCase()}.pdf`,
+      page: {
+        margin: Margin.MEDIUM,
+        format: 'A4',
+        orientation: 'portrait',
+      },
+      canvas: {
+        mimeType: 'image/jpeg',
+        qualityRatio: 0.98,
+      },
+    });
+    
+    // Cleanup
+    document.body.removeChild(tempDiv);
+    
+    toast.success('PDF report downloaded', { id: 'pdf-export' });
+    session?.trackExport?.('pdf');
+  } catch (error) {
+    console.error('PDF export error:', error);
+    toast.error('Failed to generate PDF', { id: 'pdf-export' });
+  }
+}, [selectedCalculator, currentInputs, currentOutputs, calculationResult, selectedBuildingCode, session]);
 ```
-
-**Issue**: The edge function returns `reinforcementRatio` as a string like "2.45" (percentage), but the UI multiplies by 100 again.
-
-**Root Cause**: The edge function returns `reinforcementRatio: reinforcementRatio.toFixed(2)` which is already in decimal format (e.g., "0.02" for 2%). The UI then does `(reinforcementRatio * 100).toFixed(2)%` which would give "2.00%".
-
-**Action**: Verify the return format from edge function and adjust parsing accordingly. The function returns as decimal (0.02), UI correctly multiplies by 100.
-
----
-
-#### 5. Ensure Edge Function Deployment
-
-**Action**: Deploy the `calculate-column` edge function to ensure the interaction diagram data is available.
 
 ---
 
@@ -106,165 +162,28 @@ const reinforcementRatio = Number(outputs.reinforcementRatio) || 0;
 
 | File | Changes |
 |------|---------|
-| `src/components/engineering/workspace/EngineeringBottomChat.tsx` | Add visible PDF/DXF export buttons to toolbar |
-| `src/components/engineering/results/ColumnResultsSection.tsx` | Fix input field name mapping for width/depth |
-| `src/lib/engineeringCalculations.ts` | Add interaction curve generation to client-side column calculation |
+| `supabase/functions/generate-engineering-pdf/index.ts` | Update CSS logo style and replace "AYN" box with brain SVG icon |
+| `src/components/engineering/workspace/EngineeringWorkspace.tsx` | Replace `window.open()` + `print()` with `react-to-pdf` direct download |
 
 ---
 
-### Technical Details
+### Expected Behavior After Fix
 
-#### 1. EngineeringBottomChat.tsx - Add Visible Export Buttons
-
-Add to toolbar row (around line 522):
-
-```tsx
-{/* Left: Main Action Buttons */}
-<div className="flex items-center gap-1">
-  {/* Calculate Button */}
-  <Button variant="ghost" size="sm" onClick={onCalculate} ... />
-  
-  {/* Reset Button */}
-  {onReset && <Button variant="ghost" size="sm" onClick={onReset} ... />}
-  
-  {/* NEW: Export PDF - Visible when results exist */}
-  {hasResults && onExportPDF && (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onExportPDF}
-            className="h-7 px-2.5 text-xs gap-1.5"
-          >
-            <FileText className="w-3.5 h-3.5" />
-            PDF
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Export PDF Report</TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  )}
-  
-  {/* NEW: Export DXF - Visible when results exist */}
-  {hasResults && onExportDXF && (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onExportDXF}
-            className="h-7 px-2.5 text-xs gap-1.5"
-          >
-            <FileDown className="w-3.5 h-3.5" />
-            DXF
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Export CAD Drawing</TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  )}
-  
-  {/* History Button */}
-  <Button variant="ghost" size="sm" onClick={onHistory} ... />
-</div>
-```
-
-Remove PDF and DXF from `secondaryActions` array (keep only Save and Compare).
+| Before | After |
+|--------|-------|
+| Blue gradient box with "AYN" text | Black circle with white brain icon |
+| Opens `about:blank` tab with print dialog | Downloads PDF file directly to device |
+| User must manually "Save as PDF" from print | Automatic file download with proper filename |
 
 ---
 
-#### 2. ColumnResultsSection.tsx - Fix Input Field Names
+### Technical Notes
 
-Update lines 22-24:
+1. **react-to-pdf** is already installed (version ^3.0.0) and used in `ParkingDesigner.tsx` and `CalculationResults.tsx`
 
-```typescript
-// Extract values - handle both naming conventions
-const width = Number(inputs.columnWidth) || Number(inputs.width) || Number(outputs.width) || 0;
-const depth = Number(inputs.columnDepth) || Number(inputs.depth) || Number(outputs.depth) || 0;
-const height = Number(inputs.columnHeight) || Number(inputs.height) || 0;
-```
+2. The brain SVG matches the Lucide `Brain` icon used throughout the app
 
----
+3. The edge function HTML will continue to work for any fallback/print scenarios, but with the correct branding
 
-#### 3. Add Interaction Curve to Client-Side Calculation
-
-The `calculateColumn` function in `engineeringCalculations.ts` needs to generate interaction curve data for cases when the edge function isn't used.
-
-Add helper function:
-
-```typescript
-function generateInteractionCurve(
-  b: number,      // Width (mm)
-  h: number,      // Depth (mm)
-  As: number,     // Steel area (mm²)
-  fcd: number,    // Design concrete strength (MPa)
-  fyd: number,    // Design steel strength (MPa)
-  cover: number   // Cover (mm)
-): Array<{ P: number; M: number; type: string }> {
-  const points = [];
-  const d = h - cover - 10;
-  const dPrime = cover + 10;
-  const epsilon_cu = 0.0035;
-  const epsilon_y = fyd / 200000;
-  const beta1 = 0.8;
-  
-  // Pure compression
-  const P0 = 0.8 * (0.85 * fcd * b * h + As * fyd) / 1000;
-  points.push({ P: P0, M: 0, type: 'compression' });
-  
-  // Varying neutral axis depths
-  const cValues = [h, 0.9*h, 0.8*h, 0.7*h, 0.6*h, 
-                   d * epsilon_cu / (epsilon_cu + epsilon_y), // balanced
-                   0.5*d, 0.4*d, 0.3*d, 0.2*d, 0.1*d];
-  
-  for (const c of cValues) {
-    // ... calculate Pn and Mn for each c value
-    points.push({ P: Pn, M: Mn, type: getZoneType(c, d) });
-  }
-  
-  return points;
-}
-```
-
----
-
-### Implementation Order
-
-1. **Fix Column display issues** (ColumnResultsSection.tsx) - Quick fix
-2. **Add visible export buttons** (EngineeringBottomChat.tsx) - UI improvement
-3. **Deploy edge function** - Ensure interaction data is returned
-4. **Add client-side interaction curve** (engineeringCalculations.ts) - Fallback
-5. **Test end-to-end** - Verify all features work
-
----
-
-### Expected Outcome
-
-After implementation:
-
-| Feature | Before | After |
-|---------|--------|-------|
-| M-N Interaction Diagram | Hidden/broken | Visible chart with capacity curve and load point |
-| PDF Export | Hidden in menu | Visible "PDF" button in toolbar |
-| DXF Export | Hidden in menu | Visible "DXF" button in toolbar |
-| Column dimensions | 0 × 0 mm | 400 × 400 mm (correct values) |
-| Reinforcement ratio | 0.00% | 2.45% (correct percentage) |
-
----
-
-### Verification Checklist
-
-After implementation, verify:
-
-- [ ] Column calculator shows correct dimensions (e.g., 400 × 400 mm)
-- [ ] Reinforcement ratio displays correctly (e.g., 2.45%)
-- [ ] M-N Interaction Diagram appears with capacity curve
-- [ ] Applied load point (star) is plotted on diagram
-- [ ] "ADEQUATE" or "INADEQUATE" status shows correctly
-- [ ] PDF export button is visible and works
-- [ ] DXF export button is visible and works
-- [ ] All 7 calculators have working results panels
+4. PDF filename will be auto-generated like: `beam-design-A1B2C3.pdf`
 
