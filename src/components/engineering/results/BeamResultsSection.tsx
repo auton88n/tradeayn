@@ -89,7 +89,6 @@ export const BeamResultsSection: React.FC<BeamResultsSectionProps> = ({
             label="Factored Load" 
             value={factoredLoad.toFixed(2)} 
             unit="kN/m"
-            formula={`(${dlFactor} × ${deadLoad.toFixed(1)}) + (${llFactor} × ${liveLoad.toFixed(1)})`}
             codeRef={isCSA ? 'CSA A23.3-24, 8.3.2' : 'ASCE 7-22'}
             highlight
           />
@@ -106,13 +105,11 @@ export const BeamResultsSection: React.FC<BeamResultsSectionProps> = ({
             label="Maximum Moment" 
             value={maxMoment.toFixed(2)} 
             unit="kN·m"
-            formula={`wL²/8 = ${factoredLoad.toFixed(2)} × ${span}² / 8`}
           />
           <ResultRow 
             label="Maximum Shear" 
             value={maxShear.toFixed(2)} 
             unit="kN"
-            formula={`wL/2 = ${factoredLoad.toFixed(2)} × ${span} / 2`}
           />
           <ResultRow 
             label="Beam Size" 
