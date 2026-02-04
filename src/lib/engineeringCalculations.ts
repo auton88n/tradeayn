@@ -552,6 +552,10 @@ export function calculateColumn(inputs: ColumnInputs, buildingCode: BuildingCode
   const appliedM = Math.sqrt(Mdx * Mdx + Mdy * Mdy);
 
   return {
+    // Include input dimensions for display
+    width: b,
+    depth: h,
+    height: columnHeight,
     grossArea: Ac,
     effectiveDepthX: d,
     effectiveDepthY: h - cover - 10,

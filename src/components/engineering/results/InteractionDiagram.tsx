@@ -150,7 +150,6 @@ export const InteractionDiagram: React.FC<InteractionDiagramProps> = ({
             />
             <YAxis
               type="number"
-              dataKey="P"
               name="Axial"
               domain={[0, maxP]}
               tickFormatter={(v) => v.toFixed(0)}
