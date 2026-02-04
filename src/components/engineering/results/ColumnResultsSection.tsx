@@ -118,17 +118,21 @@ export const ColumnResultsSection: React.FC<ColumnResultsSectionProps> = ({
       </div>
 
       {/* M-N Interaction Diagram */}
-      {interactionCurve && interactionCurve.length > 0 && (
-        <>
-          <Separator />
+      <>
+        <Separator />
+        {interactionCurve && interactionCurve.length > 0 ? (
           <InteractionDiagram
             curvePoints={interactionCurve}
             appliedP={appliedP}
             appliedM={appliedM}
             buildingCode={buildingCode}
           />
-        </>
-      )}
+        ) : (
+          <div className="text-sm text-muted-foreground p-4 text-center bg-muted/20 rounded-lg">
+            M-N Interaction Diagram data not available
+          </div>
+        )}
+      </>
 
       <Separator />
 

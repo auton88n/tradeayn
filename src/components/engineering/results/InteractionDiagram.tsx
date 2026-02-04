@@ -101,9 +101,9 @@ export const InteractionDiagram: React.FC<InteractionDiagramProps> = ({
   const chartData = useMemo(() => {
     const sorted = [...curvePoints].sort((a, b) => a.M - b.M);
     return sorted.map(point => ({
-      ...point,
+      M: point.M,
       curveP: point.P,
-      curveM: point.M,
+      type: point.type,
     }));
   }, [curvePoints]);
   
@@ -130,6 +130,7 @@ export const InteractionDiagram: React.FC<InteractionDiagramProps> = ({
       <div className="h-[280px] w-full bg-muted/20 rounded-lg p-2">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
+            data={chartData}
             margin={{ top: 20, right: 30, bottom: 25, left: 15 }}
           >
             <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
@@ -164,7 +165,6 @@ export const InteractionDiagram: React.FC<InteractionDiagramProps> = ({
             
             {/* Capacity envelope curve */}
             <Line
-              data={chartData}
               type="monotone"
               dataKey="curveP"
               stroke="hsl(var(--primary))"
@@ -178,7 +178,7 @@ export const InteractionDiagram: React.FC<InteractionDiagramProps> = ({
                     : 'hsl(145, 65%, 45%)';
                 return (
                   <circle
-                    key={`dot-${payload.M}-${payload.P}`}
+                    key={`dot-${payload.M}-${payload.curveP}`}
                     cx={cx}
                     cy={cy}
                     r={4}
