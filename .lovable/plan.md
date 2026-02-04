@@ -1,68 +1,104 @@
 
 
-## M-N Interaction Diagram for Column Calculator
+## 10/10 Production Readiness Plan for AYN Engineering Platform
 
-### Overview
-
-Add a professional axial-moment interaction diagram to the column results section, providing engineers with instant visual confirmation of design adequacy. The diagram will display the column capacity envelope with the applied load point plotted for immediate verification.
+This plan addresses all remaining issues identified in the verification report to achieve 10/10 production readiness.
 
 ---
 
-### Visual Design
+### Current Status Analysis
 
-```text
-┌──────────────────────────────────────────────────────────────────┐
-│  M-N Interaction Diagram                                         │
-│                                                                   │
-│  Pn (kN)                                                          │
-│    │                                                              │
-│ P0 ├─●─────────────────  ← Pure Compression (P0)                  │
-│    │   ●                                                          │
-│    │     ●                                                        │
-│    │       ●  Capacity Curve                                      │
-│    │         ●                                                    │
-│ Pd ├─────────────★───●──  ← Applied Load Point (Pd, Md)           │
-│    │               ●                                              │
-│    │             ●  ← Balanced Point (Pb, Mb)                     │
-│    │           ●                                                  │
-│    │         ●                                                    │
-│    │       ●                                                      │
-│    │     ●                                                        │
-│    │   ●                                                          │
-│  0 └───────────────────────────────────────────── Mn (kN·m)       │
-│    0                Mb                      M0                    │
-│                                                                   │
-│  Legend:  ● Capacity Curve   ★ Applied Load   ─ Balanced Point    │
-│                                                                   │
-│  Status: ✓ INSIDE CAPACITY ENVELOPE - ADEQUATE                   │
-└──────────────────────────────────────────────────────────────────┘
+| Feature | Status | Root Cause |
+|---------|--------|------------|
+| M-N Interaction Diagram | Implemented but hidden | Data not flowing from edge function to UI |
+| PDF Export | Implemented but hidden | Buried in "+" dropdown menu |
+| DXF Export | Implemented | Buried in "+" dropdown menu |
+| Column 0×0mm display | Bug | Using `outputs.width` instead of `inputs.width` |
+| Reinforcement ratio 0.00% | Bug | Value parsing issue with decimal format |
+| Save dialog zeros | Fixed | Data sync pattern already implemented |
+
+---
+
+### Implementation Plan
+
+#### 1. Make PDF and DXF Export Buttons Visible
+
+**Problem**: Export buttons are hidden in a "+" dropdown menu, making them hard to find.
+
+**Solution**: Add prominent "Export PDF" and "Export DXF" buttons directly to the toolbar.
+
+**File**: `src/components/engineering/workspace/EngineeringBottomChat.tsx`
+
+**Changes**:
+- Move PDF and DXF buttons from `secondaryActions` dropdown to main toolbar row
+- Add visible icon buttons with tooltips for Export PDF and Export DXF
+- Keep them conditionally shown only when `hasResults` is true
+
+---
+
+#### 2. Fix M-N Interaction Diagram Visibility
+
+**Problem**: The diagram component exists but data may not be reaching it through the workspace.
+
+**Root Cause Investigation**:
+- Edge function returns `interactionCurve` but it may not be passed to `currentOutputs`
+- The `ColumnResultsSection` correctly checks for the data
+
+**Solution**: Ensure the edge function is deployed and the data flows correctly:
+
+**Files to verify/fix**:
+1. `supabase/functions/calculate-column/index.ts` - Already returns interaction data
+2. `src/components/engineering/ColumnCalculator.tsx` - Verify outputs are passed correctly
+3. `src/lib/engineeringCalculations.ts` - Check if local calculation also generates curve
+
+**Action**: The issue is that when using the client-side `calculateColumn()` function instead of the edge function, the interaction curve data isn't being generated. Need to add the curve generation to the client-side calculation OR ensure edge function is always used.
+
+---
+
+#### 3. Fix Column Display Issue (0 × 0 mm)
+
+**Problem**: Column size shows as "0 × 0 mm" in results.
+
+**Location**: `src/components/engineering/results/ColumnResultsSection.tsx` lines 22-23
+
+**Current Code**:
+```typescript
+const width = Number(inputs.width) || 0;
+const depth = Number(inputs.depth) || 0;
+```
+
+**Issue**: The column calculator uses `columnWidth` and `columnDepth` as input field names, not `width` and `depth`.
+
+**Fix**:
+```typescript
+const width = Number(inputs.columnWidth) || Number(inputs.width) || 0;
+const depth = Number(inputs.columnDepth) || Number(inputs.depth) || 0;
 ```
 
 ---
 
-### Technical Approach
+#### 4. Fix Reinforcement Ratio Display (0.00%)
 
-**Backend Enhancement** - Update the column calculation to generate interaction curve points:
+**Problem**: Reinforcement ratio shows as 0.00% when it should have a value.
 
-1. **Generate 15-20 points** along the capacity envelope:
-   - Pure compression point (P0, M=0)
-   - Points in compression-controlled zone
-   - Balanced failure point (Pb, Mb)
-   - Points in tension-controlled zone
-   - Pure bending point (P=0, M0)
+**Location**: `src/components/engineering/results/ColumnResultsSection.tsx` line 31
 
-2. **Calculation methodology** (simplified for rectangular sections):
-   - Vary neutral axis depth `c` from full depth to zero
-   - For each `c`, calculate corresponding Pn and Mn
-   - Apply phi factors based on strain conditions (CSA/ACI)
+**Current Code**:
+```typescript
+const reinforcementRatio = Number(outputs.reinforcementRatio) || 0;
+```
 
-**Frontend Component** - Create InteractionDiagram using recharts:
+**Issue**: The edge function returns `reinforcementRatio` as a string like "2.45" (percentage), but the UI multiplies by 100 again.
 
-1. **ScatterChart** with capacity curve as connected points
-2. **Applied load point** as distinct marker (star)
-3. **Reference lines** for balanced point
-4. **Color-coded zones**: compression (blue), tension (orange)
-5. **Status indicator** based on point location
+**Root Cause**: The edge function returns `reinforcementRatio: reinforcementRatio.toFixed(2)` which is already in decimal format (e.g., "0.02" for 2%). The UI then does `(reinforcementRatio * 100).toFixed(2)%` which would give "2.00%".
+
+**Action**: Verify the return format from edge function and adjust parsing accordingly. The function returns as decimal (0.02), UI correctly multiplies by 100.
+
+---
+
+#### 5. Ensure Edge Function Deployment
+
+**Action**: Deploy the `calculate-column` edge function to ensure the interaction diagram data is available.
 
 ---
 
@@ -70,22 +106,96 @@ Add a professional axial-moment interaction diagram to the column results sectio
 
 | File | Changes |
 |------|---------|
-| `src/lib/engineeringCalculations.ts` | Add `generateInteractionCurve()` function and include curve data in `calculateColumn()` output |
-| `src/components/engineering/results/ColumnResultsSection.tsx` | Import and render new `InteractionDiagram` component |
-| `src/components/engineering/results/InteractionDiagram.tsx` | **NEW** - Recharts-based M-N diagram component |
-| `src/components/engineering/results/index.ts` | Export new component |
+| `src/components/engineering/workspace/EngineeringBottomChat.tsx` | Add visible PDF/DXF export buttons to toolbar |
+| `src/components/engineering/results/ColumnResultsSection.tsx` | Fix input field name mapping for width/depth |
+| `src/lib/engineeringCalculations.ts` | Add interaction curve generation to client-side column calculation |
 
 ---
 
-### Interaction Curve Generation Logic
+### Technical Details
+
+#### 1. EngineeringBottomChat.tsx - Add Visible Export Buttons
+
+Add to toolbar row (around line 522):
+
+```tsx
+{/* Left: Main Action Buttons */}
+<div className="flex items-center gap-1">
+  {/* Calculate Button */}
+  <Button variant="ghost" size="sm" onClick={onCalculate} ... />
+  
+  {/* Reset Button */}
+  {onReset && <Button variant="ghost" size="sm" onClick={onReset} ... />}
+  
+  {/* NEW: Export PDF - Visible when results exist */}
+  {hasResults && onExportPDF && (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onExportPDF}
+            className="h-7 px-2.5 text-xs gap-1.5"
+          >
+            <FileText className="w-3.5 h-3.5" />
+            PDF
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Export PDF Report</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  )}
+  
+  {/* NEW: Export DXF - Visible when results exist */}
+  {hasResults && onExportDXF && (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onExportDXF}
+            className="h-7 px-2.5 text-xs gap-1.5"
+          >
+            <FileDown className="w-3.5 h-3.5" />
+            DXF
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Export CAD Drawing</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  )}
+  
+  {/* History Button */}
+  <Button variant="ghost" size="sm" onClick={onHistory} ... />
+</div>
+```
+
+Remove PDF and DXF from `secondaryActions` array (keep only Save and Compare).
+
+---
+
+#### 2. ColumnResultsSection.tsx - Fix Input Field Names
+
+Update lines 22-24:
 
 ```typescript
-interface InteractionPoint {
-  P: number;  // Axial capacity (kN)
-  M: number;  // Moment capacity (kN·m)
-  type: 'compression' | 'balanced' | 'tension';
-}
+// Extract values - handle both naming conventions
+const width = Number(inputs.columnWidth) || Number(inputs.width) || Number(outputs.width) || 0;
+const depth = Number(inputs.columnDepth) || Number(inputs.depth) || Number(outputs.depth) || 0;
+const height = Number(inputs.columnHeight) || Number(inputs.height) || 0;
+```
 
+---
+
+#### 3. Add Interaction Curve to Client-Side Calculation
+
+The `calculateColumn` function in `engineeringCalculations.ts` needs to generate interaction curve data for cases when the edge function isn't used.
+
+Add helper function:
+
+```typescript
 function generateInteractionCurve(
   b: number,      // Width (mm)
   h: number,      // Depth (mm)
@@ -93,259 +203,68 @@ function generateInteractionCurve(
   fcd: number,    // Design concrete strength (MPa)
   fyd: number,    // Design steel strength (MPa)
   cover: number   // Cover (mm)
-): InteractionPoint[] {
-  const points: InteractionPoint[] = [];
-  const d = h - cover - 10;  // Effective depth
-  const dPrime = cover + 10; // Compression steel depth
-  const epsilon_cu = 0.0035; // Ultimate concrete strain
-  const epsilon_y = fyd / 200000; // Yield strain
+): Array<{ P: number; M: number; type: string }> {
+  const points = [];
+  const d = h - cover - 10;
+  const dPrime = cover + 10;
+  const epsilon_cu = 0.0035;
+  const epsilon_y = fyd / 200000;
+  const beta1 = 0.8;
   
-  // Pure compression (c → ∞)
+  // Pure compression
   const P0 = 0.8 * (0.85 * fcd * b * h + As * fyd) / 1000;
   points.push({ P: P0, M: 0, type: 'compression' });
   
-  // Vary c from h to 0
-  const cValues = [
-    h, 0.9*h, 0.8*h, 0.7*h,  // Compression zone
-    d * epsilon_cu / (epsilon_cu + epsilon_y),  // Balanced
-    0.5*d, 0.4*d, 0.3*d, 0.2*d, 0.1*d, 0.05*d  // Tension zone
-  ];
+  // Varying neutral axis depths
+  const cValues = [h, 0.9*h, 0.8*h, 0.7*h, 0.6*h, 
+                   d * epsilon_cu / (epsilon_cu + epsilon_y), // balanced
+                   0.5*d, 0.4*d, 0.3*d, 0.2*d, 0.1*d];
   
   for (const c of cValues) {
-    // Calculate strains
-    const epsilon_s = epsilon_cu * (d - c) / c;
-    const epsilon_sPrime = epsilon_cu * (c - dPrime) / c;
-    
-    // Steel stresses (capped at yield)
-    const fs = Math.min(epsilon_s * 200000, fyd);
-    const fsPrime = Math.min(epsilon_sPrime * 200000, fyd);
-    
-    // Forces
-    const a = 0.8 * c; // Stress block depth
-    const Cc = 0.85 * fcd * b * Math.min(a, h);
-    const Cs = (As / 2) * fsPrime;
-    const Ts = (As / 2) * fs;
-    
-    // Axial and moment
-    const Pn = (Cc + Cs - Ts) / 1000;
-    const Mn = (Cc * (h/2 - a/2) + Cs * (h/2 - dPrime) + Ts * (d - h/2)) / 1e6;
-    
-    const isBalanced = Math.abs(c - d * epsilon_cu / (epsilon_cu + epsilon_y)) < 5;
-    points.push({
-      P: Math.max(Pn, 0),
-      M: Math.max(Mn, 0),
-      type: isBalanced ? 'balanced' : (c > d * 0.6 ? 'compression' : 'tension')
-    });
+    // ... calculate Pn and Mn for each c value
+    points.push({ P: Pn, M: Mn, type: getZoneType(c, d) });
   }
   
-  // Pure bending (P = 0)
-  // ... calculate M0
-  
-  return points.filter(p => p.P >= 0 && p.M >= 0);
+  return points;
 }
-```
-
----
-
-### InteractionDiagram Component
-
-```tsx
-// src/components/engineering/results/InteractionDiagram.tsx
-
-import React from 'react';
-import {
-  ScatterChart, Scatter, XAxis, YAxis, CartesianGrid,
-  Tooltip, Legend, ResponsiveContainer, ReferenceLine, Cell
-} from 'recharts';
-import { CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
-
-interface Props {
-  curvePoints: Array<{ P: number; M: number; type: string }>;
-  appliedP: number;  // Applied axial load (kN)
-  appliedM: number;  // Applied moment (kN·m)
-  buildingCode: 'CSA' | 'ACI';
-}
-
-export const InteractionDiagram: React.FC<Props> = ({
-  curvePoints, appliedP, appliedM, buildingCode
-}) => {
-  // Determine if load point is inside capacity envelope
-  const isAdequate = checkInsideEnvelope(curvePoints, appliedP, appliedM);
-  
-  // Find balanced point
-  const balancedPoint = curvePoints.find(p => p.type === 'balanced');
-  
-  return (
-    <div className="space-y-3">
-      <h4 className="text-sm font-semibold text-foreground">
-        M-N Interaction Diagram
-      </h4>
-      
-      <div className="h-[280px] w-full">
-        <ResponsiveContainer>
-          <ScatterChart margin={{ top: 20, right: 30, bottom: 20, left: 20 }}>
-            <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-            <XAxis
-              type="number"
-              dataKey="M"
-              name="Moment"
-              unit=" kN·m"
-              domain={[0, 'auto']}
-            />
-            <YAxis
-              type="number"
-              dataKey="P"
-              name="Axial"
-              unit=" kN"
-              domain={[0, 'auto']}
-            />
-            
-            {/* Capacity curve */}
-            <Scatter
-              name="Capacity Envelope"
-              data={curvePoints}
-              line={{ stroke: '#3b82f6', strokeWidth: 2 }}
-              fill="#3b82f6"
-              shape="circle"
-            >
-              {curvePoints.map((entry, i) => (
-                <Cell
-                  key={i}
-                  fill={entry.type === 'compression' ? '#3b82f6' : 
-                        entry.type === 'balanced' ? '#f59e0b' : '#22c55e'}
-                />
-              ))}
-            </Scatter>
-            
-            {/* Applied load point */}
-            <Scatter
-              name="Applied Load"
-              data={[{ P: appliedP, M: appliedM }]}
-              fill="#ef4444"
-              shape="star"
-            />
-            
-            {/* Balanced point reference */}
-            {balancedPoint && (
-              <ReferenceLine
-                y={balancedPoint.P}
-                stroke="#f59e0b"
-                strokeDasharray="5 5"
-                label="Balanced"
-              />
-            )}
-            
-            <Tooltip />
-            <Legend />
-          </ScatterChart>
-        </ResponsiveContainer>
-      </div>
-      
-      {/* Status indicator */}
-      <div className={cn(
-        "flex items-center gap-2 p-2 rounded-lg text-sm",
-        isAdequate 
-          ? "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400"
-          : "bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400"
-      )}>
-        {isAdequate ? (
-          <>
-            <CheckCircle className="w-4 h-4" />
-            Load point INSIDE capacity envelope - ADEQUATE
-          </>
-        ) : (
-          <>
-            <XCircle className="w-4 h-4" />
-            Load point OUTSIDE capacity envelope - INADEQUATE
-          </>
-        )}
-      </div>
-    </div>
-  );
-};
-```
-
----
-
-### Data Flow
-
-```text
-ColumnCalculator
-    │
-    ▼
-calculateColumn() ───► Returns outputs including:
-    │                   - interactionCurve: InteractionPoint[]
-    │                   - appliedP: number
-    │                   - appliedM: number
-    ▼
-ColumnResultsSection
-    │
-    ▼
-InteractionDiagram ───► Renders recharts ScatterChart
-                        with capacity curve and load point
-```
-
----
-
-### Updated Column Outputs
-
-Add to `calculateColumn()` return object:
-
-```typescript
-return {
-  // ... existing outputs ...
-  
-  // Interaction diagram data
-  interactionCurve: generateInteractionCurve(b, h, AsProvided, fcd, fyd, cover),
-  appliedP: axialLoad,
-  appliedM: Math.sqrt(Mdx * Mdx + Mdy * Mdy), // Resultant moment for biaxial
-  balancedPoint: { P: Pb, M: Mb },
-  pureCompression: P0,
-  pureBending: M0,
-};
-```
-
----
-
-### Integration into ColumnResultsSection
-
-Add after the "Load Analysis" section:
-
-```tsx
-{/* Interaction Diagram */}
-{outputs.interactionCurve && outputs.interactionCurve.length > 0 && (
-  <>
-    <Separator />
-    <InteractionDiagram
-      curvePoints={outputs.interactionCurve}
-      appliedP={axialLoad}
-      appliedM={Number(outputs.designMomentX) || 0}
-      buildingCode={buildingCode}
-    />
-  </>
-)}
 ```
 
 ---
 
 ### Implementation Order
 
-1. Create `InteractionDiagram.tsx` component with recharts visualization
-2. Add `generateInteractionCurve()` helper function to `engineeringCalculations.ts`
-3. Update `calculateColumn()` to include interaction curve data in output
-4. Update `ColumnResultsSection.tsx` to render the diagram
-5. Export from `index.ts`
-6. Test with various load combinations
+1. **Fix Column display issues** (ColumnResultsSection.tsx) - Quick fix
+2. **Add visible export buttons** (EngineeringBottomChat.tsx) - UI improvement
+3. **Deploy edge function** - Ensure interaction data is returned
+4. **Add client-side interaction curve** (engineeringCalculations.ts) - Fallback
+5. **Test end-to-end** - Verify all features work
 
 ---
 
 ### Expected Outcome
 
-After implementation, engineers will see:
+After implementation:
 
-- Visual capacity envelope showing safe design region
-- Applied load point clearly marked
-- Instant pass/fail indication
-- Color-coded zones (compression/balanced/tension)
-- Professional diagram suitable for reports
+| Feature | Before | After |
+|---------|--------|-------|
+| M-N Interaction Diagram | Hidden/broken | Visible chart with capacity curve and load point |
+| PDF Export | Hidden in menu | Visible "PDF" button in toolbar |
+| DXF Export | Hidden in menu | Visible "DXF" button in toolbar |
+| Column dimensions | 0 × 0 mm | 400 × 400 mm (correct values) |
+| Reinforcement ratio | 0.00% | 2.45% (correct percentage) |
+
+---
+
+### Verification Checklist
+
+After implementation, verify:
+
+- [ ] Column calculator shows correct dimensions (e.g., 400 × 400 mm)
+- [ ] Reinforcement ratio displays correctly (e.g., 2.45%)
+- [ ] M-N Interaction Diagram appears with capacity curve
+- [ ] Applied load point (star) is plotted on diagram
+- [ ] "ADEQUATE" or "INADEQUATE" status shows correctly
+- [ ] PDF export button is visible and works
+- [ ] DXF export button is visible and works
+- [ ] All 7 calculators have working results panels
 
