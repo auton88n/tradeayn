@@ -18,20 +18,21 @@ export const ColumnResultsSection: React.FC<ColumnResultsSectionProps> = ({
 }) => {
   const isCSA = buildingCode === 'CSA';
   
-  // Extract values
-  const width = Number(inputs.width) || 0;
-  const depth = Number(inputs.depth) || 0;
-  const height = Number(inputs.height) || 0;
+  // Extract values - handle both naming conventions (columnWidth vs width)
+  const width = Number(inputs.columnWidth) || Number(inputs.width) || Number(outputs.width) || 0;
+  const depth = Number(inputs.columnDepth) || Number(inputs.depth) || Number(outputs.depth) || 0;
+  const height = Number(inputs.columnHeight) || Number(inputs.height) || 0;
   const axialLoad = Number(inputs.axialLoad) || 0;
   const columnType = inputs.columnType || 'tied';
   
-  // Outputs
+  // Outputs - handle different return formats
   const axialCapacity = Number(outputs.axialCapacity) || 0;
   const momentCapacity = Number(outputs.momentCapacity) || 0;
+  // reinforcementRatio from calculation is already in decimal form (e.g., 2.45 for 2.45%)
   const reinforcementRatio = Number(outputs.reinforcementRatio) || 0;
-  const requiredAs = Number(outputs.requiredAs) || 0;
-  const providedAs = Number(outputs.providedAs) || 0;
-  const mainBars = outputs.mainBars || outputs.mainReinforcement || '-';
+  const requiredAs = Number(outputs.requiredAs) || Number(outputs.steelAreaRequired) || 0;
+  const providedAs = Number(outputs.providedAs) || Number(outputs.steelAreaProvided) || 0;
+  const mainBars = outputs.mainBars || outputs.mainReinforcement || outputs.barArrangement || '-';
   const ties = outputs.ties || outputs.stirrups || '-';
   const utilizationRatio = Number(outputs.utilizationRatio) || 0;
   
@@ -60,9 +61,9 @@ export const ColumnResultsSection: React.FC<ColumnResultsSectionProps> = ({
     },
     {
       name: 'Reinforcement Ratio',
-      passed: reinforcementRatio >= 0.01 && reinforcementRatio <= 0.04,
+      passed: reinforcementRatio >= 1 && reinforcementRatio <= 4,
       codeReference: isCSA ? 'CSA 10.9.1' : 'ACI 10.6.1',
-      value: `ρ = ${(reinforcementRatio * 100).toFixed(2)}%`,
+      value: `ρ = ${reinforcementRatio.toFixed(2)}%`,
     },
     {
       name: 'Tie Spacing Adequate',
@@ -165,7 +166,7 @@ export const ColumnResultsSection: React.FC<ColumnResultsSectionProps> = ({
           <ResultRow label="Ties/Spirals" value={ties} />
           <ResultRow 
             label="Reinforcement Ratio" 
-            value={`${(reinforcementRatio * 100).toFixed(2)}%`}
+            value={`${reinforcementRatio.toFixed(2)}%`}
             codeRef={isCSA ? 'CSA 10.9.1' : 'ACI 10.6.1'}
           />
         </div>
