@@ -1,142 +1,68 @@
 
 
-## Critical Foundation Calculator Safety Fixes
+## M-N Interaction Diagram for Column Calculator
 
-### Issues Identified
+### Overview
 
-After analyzing the edge function (`calculate-foundation/index.ts`), I found **4 critical safety issues**:
-
----
-
-### Issue 1: FOS Applied Backwards (CRITICAL)
-
-**Current Code (Line 102-104):**
-```typescript
-const allowableBearing = bearingCapacity / 1.5;  // WRONG!
-const requiredArea = columnLoad / allowableBearing;
-```
-
-**Problem:** The code DIVIDES by 1.5, making the allowable bearing LOWER than input, resulting in LARGER footings. But then the actual pressure check on line 124 uses:
-```typescript
-const actualPressure = columnLoad / area;
-```
-
-This is inconsistent - if input is already allowable bearing (common practice), dividing by 1.5 again is over-conservative. But if input is ultimate bearing, the calculation is correct.
-
-**Your Test Case:**
-- Input: P = 1500 kN, q_allow = 200 kPa
-- Current: allowable = 200/1.5 = 133 kPa → Area = 1500/133 = 11.3 m²
-- Output shows: 1.4m × 3.4m = 4.76 m² ← **DOES NOT MATCH**
-
-This suggests the calculator may be using moments incorrectly to REDUCE dimensions.
+Add a professional axial-moment interaction diagram to the column results section, providing engineers with instant visual confirmation of design adequacy. The diagram will display the column capacity envelope with the applied load point plotted for immediate verification.
 
 ---
 
-### Issue 2: Moment/Eccentricity Logic is WRONG (CRITICAL)
+### Visual Design
 
-**Current Code (Lines 110-116):**
-```typescript
-if (momentX > 0 || momentY > 0) {
-  const ex = columnLoad > 0 ? momentX / columnLoad : 0;
-  const ey = columnLoad > 0 ? momentY / columnLoad : 0;
-  length = Math.max(length, 6 * ex + columnWidth / 1000);
-  width = Math.max(width, 6 * ey + columnDepth / 1000);
-}
+```text
+┌──────────────────────────────────────────────────────────────────┐
+│  M-N Interaction Diagram                                         │
+│                                                                   │
+│  Pn (kN)                                                          │
+│    │                                                              │
+│ P0 ├─●─────────────────  ← Pure Compression (P0)                  │
+│    │   ●                                                          │
+│    │     ●                                                        │
+│    │       ●  Capacity Curve                                      │
+│    │         ●                                                    │
+│ Pd ├─────────────★───●──  ← Applied Load Point (Pd, Md)           │
+│    │               ●                                              │
+│    │             ●  ← Balanced Point (Pb, Mb)                     │
+│    │           ●                                                  │
+│    │         ●                                                    │
+│    │       ●                                                      │
+│    │     ●                                                        │
+│    │   ●                                                          │
+│  0 └───────────────────────────────────────────── Mn (kN·m)       │
+│    0                Mb                      M0                    │
+│                                                                   │
+│  Legend:  ● Capacity Curve   ★ Applied Load   ─ Balanced Point    │
+│                                                                   │
+│  Status: ✓ INSIDE CAPACITY ENVELOPE - ADEQUATE                   │
+└──────────────────────────────────────────────────────────────────┘
 ```
-
-**Problems:**
-1. `6 * ex` is the "middle third rule" check (e < L/6), but this sets minimum L = 6e, which is correct for preventing tension
-2. However, this ONLY ensures e < L/6, it does NOT account for increased bearing pressure due to eccentricity
-3. Maximum bearing pressure should be: `q_max = (P/A) × (1 + 6e/L)` but this is never calculated
-4. The actual pressure check only uses `P/A` (uniform pressure assumption)
-
-**With Your Inputs:**
-- P = 1500 kN, Mx = 100 kN·m, My = 50 kN·m
-- ex = 100/1500 = 0.067 m, ey = 50/1500 = 0.033 m
-- Minimum L = 6 × 0.067 = 0.4 m (tiny!)
-- Minimum W = 6 × 0.033 = 0.2 m (tiny!)
-
-The moments barely affect the size because the eccentricities are small relative to the base area calculation.
 
 ---
 
-### Issue 3: Maximum Bearing Pressure Not Calculated
+### Technical Approach
 
-**Should Calculate:**
-```
-q_max = (P/A) × (1 + 6*ex/L + 6*ey/B)
-q_min = (P/A) × (1 - 6*ex/L - 6*ey/B)
-```
+**Backend Enhancement** - Update the column calculation to generate interaction curve points:
 
-**Current:** Only calculates `q_avg = P/A` and ignores moment effects on pressure distribution.
+1. **Generate 15-20 points** along the capacity envelope:
+   - Pure compression point (P0, M=0)
+   - Points in compression-controlled zone
+   - Balanced failure point (Pb, Mb)
+   - Points in tension-controlled zone
+   - Pure bending point (P=0, M0)
 
----
+2. **Calculation methodology** (simplified for rectangular sections):
+   - Vary neutral axis depth `c` from full depth to zero
+   - For each `c`, calculate corresponding Pn and Mn
+   - Apply phi factors based on strain conditions (CSA/ACI)
 
-### Issue 4: No Eccentricity Limit Warning
+**Frontend Component** - Create InteractionDiagram using recharts:
 
-The calculator doesn't warn when:
-- `ex > L/6` (tension under footing - not allowed for soil)
-- `ey > B/6` (tension under footing)
-
----
-
-### Recommended Fixes
-
-#### Fix 1: Correct Bearing Pressure Calculation
-
-```typescript
-// Calculate eccentricities
-const ex = momentX / columnLoad;
-const ey = momentY / columnLoad;
-
-// Initial size based on uniform pressure
-let length = Math.sqrt(columnLoad / bearingCapacity);
-let width = length;
-
-// Iterate to find size where q_max <= q_allowable
-// q_max = (P/A) * (1 + 6*ex/L + 6*ey/B)
-let iterations = 0;
-while (iterations < 20) {
-  const qMax = (columnLoad / (length * width)) * 
-               (1 + 6 * ex / length + 6 * ey / width);
-  
-  if (qMax <= bearingCapacity) break;
-  
-  // Increase dimensions
-  length *= 1.1;
-  width *= 1.1;
-  iterations++;
-}
-
-// Ensure middle third rule (no tension)
-length = Math.max(length, 6 * ex);
-width = Math.max(width, 6 * ey);
-```
-
-#### Fix 2: Return Pressure Distribution Values
-
-```typescript
-return {
-  // ... existing outputs ...
-  
-  // Bearing pressure distribution
-  qMax: Math.round(qMax * 10) / 10,
-  qMin: Math.round(qMin * 10) / 10,
-  qAvg: Math.round(qAvg * 10) / 10,
-  
-  // Eccentricity checks
-  eccentricityX: Math.round(ex * 1000) / 1000,
-  eccentricityY: Math.round(ey * 1000) / 1000,
-  middleThirdOK: ex < length/6 && ey < width/6,
-}
-```
-
-#### Fix 3: Update Results Panel
-
-Add to `FoundationResultsSection.tsx`:
-- **Bearing Pressure Distribution**: Show q_max, q_min, q_avg
-- **Eccentricity Check**: Show ex, ey with middle third status
-- **Design Check**: Add "Load within middle third" check
+1. **ScatterChart** with capacity curve as connected points
+2. **Applied load point** as distinct marker (star)
+3. **Reference lines** for balanced point
+4. **Color-coded zones**: compression (blue), tension (orange)
+5. **Status indicator** based on point location
 
 ---
 
@@ -144,104 +70,282 @@ Add to `FoundationResultsSection.tsx`:
 
 | File | Changes |
 |------|---------|
-| `supabase/functions/calculate-foundation/index.ts` | Fix bearing pressure calculation with eccentricity |
-| `src/components/engineering/results/FoundationResultsSection.tsx` | Display q_max, q_min, eccentricity values |
+| `src/lib/engineeringCalculations.ts` | Add `generateInteractionCurve()` function and include curve data in `calculateColumn()` output |
+| `src/components/engineering/results/ColumnResultsSection.tsx` | Import and render new `InteractionDiagram` component |
+| `src/components/engineering/results/InteractionDiagram.tsx` | **NEW** - Recharts-based M-N diagram component |
+| `src/components/engineering/results/index.ts` | Export new component |
 
 ---
 
-### Updated Edge Function Logic
+### Interaction Curve Generation Logic
 
 ```typescript
-// === CORRECTED FOUNDATION SIZING ===
-
-// 1. Calculate eccentricities
-const ex = momentX > 0 && columnLoad > 0 ? momentX / columnLoad : 0;
-const ey = momentY > 0 && columnLoad > 0 ? momentY / columnLoad : 0;
-
-// 2. Initial estimate (uniform pressure)
-let length = Math.sqrt(columnLoad / bearingCapacity) * 1.2; // 20% margin
-let width = length;
-
-// 3. Iterate to satisfy q_max <= q_allowable
-for (let i = 0; i < 25; i++) {
-  const area = length * width;
-  const qUniform = columnLoad / area;
-  
-  // Maximum pressure with biaxial eccentricity
-  const qMax = qUniform * (1 + 6 * ex / length + 6 * ey / width);
-  
-  if (qMax <= bearingCapacity) break;
-  
-  // Increase both dimensions proportionally
-  const factor = Math.sqrt(qMax / bearingCapacity);
-  length = Math.ceil(length * factor * 10) / 10;
-  width = Math.ceil(width * factor * 10) / 10;
+interface InteractionPoint {
+  P: number;  // Axial capacity (kN)
+  M: number;  // Moment capacity (kN·m)
+  type: 'compression' | 'balanced' | 'tension';
 }
 
-// 4. Ensure middle third rule (no tension under footing)
-length = Math.max(length, 6 * ex);
-width = Math.max(width, 6 * ey);
-
-// 5. Round to 100mm increments
-length = Math.ceil(length * 10) / 10;
-width = Math.ceil(width * 10) / 10;
-
-// 6. Calculate final pressures
-const area = length * width;
-const qAvg = columnLoad / area;
-const qMax = qAvg * (1 + 6 * ex / length + 6 * ey / width);
-const qMin = qAvg * (1 - 6 * ex / length - 6 * ey / width);
-const middleThirdOK = qMin >= 0;
+function generateInteractionCurve(
+  b: number,      // Width (mm)
+  h: number,      // Depth (mm)
+  As: number,     // Steel area (mm²)
+  fcd: number,    // Design concrete strength (MPa)
+  fyd: number,    // Design steel strength (MPa)
+  cover: number   // Cover (mm)
+): InteractionPoint[] {
+  const points: InteractionPoint[] = [];
+  const d = h - cover - 10;  // Effective depth
+  const dPrime = cover + 10; // Compression steel depth
+  const epsilon_cu = 0.0035; // Ultimate concrete strain
+  const epsilon_y = fyd / 200000; // Yield strain
+  
+  // Pure compression (c → ∞)
+  const P0 = 0.8 * (0.85 * fcd * b * h + As * fyd) / 1000;
+  points.push({ P: P0, M: 0, type: 'compression' });
+  
+  // Vary c from h to 0
+  const cValues = [
+    h, 0.9*h, 0.8*h, 0.7*h,  // Compression zone
+    d * epsilon_cu / (epsilon_cu + epsilon_y),  // Balanced
+    0.5*d, 0.4*d, 0.3*d, 0.2*d, 0.1*d, 0.05*d  // Tension zone
+  ];
+  
+  for (const c of cValues) {
+    // Calculate strains
+    const epsilon_s = epsilon_cu * (d - c) / c;
+    const epsilon_sPrime = epsilon_cu * (c - dPrime) / c;
+    
+    // Steel stresses (capped at yield)
+    const fs = Math.min(epsilon_s * 200000, fyd);
+    const fsPrime = Math.min(epsilon_sPrime * 200000, fyd);
+    
+    // Forces
+    const a = 0.8 * c; // Stress block depth
+    const Cc = 0.85 * fcd * b * Math.min(a, h);
+    const Cs = (As / 2) * fsPrime;
+    const Ts = (As / 2) * fs;
+    
+    // Axial and moment
+    const Pn = (Cc + Cs - Ts) / 1000;
+    const Mn = (Cc * (h/2 - a/2) + Cs * (h/2 - dPrime) + Ts * (d - h/2)) / 1e6;
+    
+    const isBalanced = Math.abs(c - d * epsilon_cu / (epsilon_cu + epsilon_y)) < 5;
+    points.push({
+      P: Math.max(Pn, 0),
+      M: Math.max(Mn, 0),
+      type: isBalanced ? 'balanced' : (c > d * 0.6 ? 'compression' : 'tension')
+    });
+  }
+  
+  // Pure bending (P = 0)
+  // ... calculate M0
+  
+  return points.filter(p => p.P >= 0 && p.M >= 0);
+}
 ```
 
 ---
 
-### Updated Results Section Display
+### InteractionDiagram Component
 
-**New "Bearing Pressure" section:**
-```
-BEARING PRESSURE DISTRIBUTION
-- Maximum Pressure (q_max): 185.4 kPa [CSA 21.2]
-- Minimum Pressure (q_min): 102.6 kPa
-- Average Pressure (q_avg): 144.0 kPa
-- Allowable Bearing: 200 kPa
-- Utilization: 93%
+```tsx
+// src/components/engineering/results/InteractionDiagram.tsx
 
-ECCENTRICITY CHECK
-- ex = 0.067 m (Mx/P)
-- ey = 0.033 m (My/P)
-- Middle Third: OK (no tension)
+import React from 'react';
+import {
+  ScatterChart, Scatter, XAxis, YAxis, CartesianGrid,
+  Tooltip, Legend, ResponsiveContainer, ReferenceLine, Cell
+} from 'recharts';
+import { CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+
+interface Props {
+  curvePoints: Array<{ P: number; M: number; type: string }>;
+  appliedP: number;  // Applied axial load (kN)
+  appliedM: number;  // Applied moment (kN·m)
+  buildingCode: 'CSA' | 'ACI';
+}
+
+export const InteractionDiagram: React.FC<Props> = ({
+  curvePoints, appliedP, appliedM, buildingCode
+}) => {
+  // Determine if load point is inside capacity envelope
+  const isAdequate = checkInsideEnvelope(curvePoints, appliedP, appliedM);
+  
+  // Find balanced point
+  const balancedPoint = curvePoints.find(p => p.type === 'balanced');
+  
+  return (
+    <div className="space-y-3">
+      <h4 className="text-sm font-semibold text-foreground">
+        M-N Interaction Diagram
+      </h4>
+      
+      <div className="h-[280px] w-full">
+        <ResponsiveContainer>
+          <ScatterChart margin={{ top: 20, right: 30, bottom: 20, left: 20 }}>
+            <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+            <XAxis
+              type="number"
+              dataKey="M"
+              name="Moment"
+              unit=" kN·m"
+              domain={[0, 'auto']}
+            />
+            <YAxis
+              type="number"
+              dataKey="P"
+              name="Axial"
+              unit=" kN"
+              domain={[0, 'auto']}
+            />
+            
+            {/* Capacity curve */}
+            <Scatter
+              name="Capacity Envelope"
+              data={curvePoints}
+              line={{ stroke: '#3b82f6', strokeWidth: 2 }}
+              fill="#3b82f6"
+              shape="circle"
+            >
+              {curvePoints.map((entry, i) => (
+                <Cell
+                  key={i}
+                  fill={entry.type === 'compression' ? '#3b82f6' : 
+                        entry.type === 'balanced' ? '#f59e0b' : '#22c55e'}
+                />
+              ))}
+            </Scatter>
+            
+            {/* Applied load point */}
+            <Scatter
+              name="Applied Load"
+              data={[{ P: appliedP, M: appliedM }]}
+              fill="#ef4444"
+              shape="star"
+            />
+            
+            {/* Balanced point reference */}
+            {balancedPoint && (
+              <ReferenceLine
+                y={balancedPoint.P}
+                stroke="#f59e0b"
+                strokeDasharray="5 5"
+                label="Balanced"
+              />
+            )}
+            
+            <Tooltip />
+            <Legend />
+          </ScatterChart>
+        </ResponsiveContainer>
+      </div>
+      
+      {/* Status indicator */}
+      <div className={cn(
+        "flex items-center gap-2 p-2 rounded-lg text-sm",
+        isAdequate 
+          ? "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400"
+          : "bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400"
+      )}>
+        {isAdequate ? (
+          <>
+            <CheckCircle className="w-4 h-4" />
+            Load point INSIDE capacity envelope - ADEQUATE
+          </>
+        ) : (
+          <>
+            <XCircle className="w-4 h-4" />
+            Load point OUTSIDE capacity envelope - INADEQUATE
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
 ```
 
 ---
 
-### Verification with Your Test Case
+### Data Flow
 
-**Inputs:**
-- P = 1500 kN
-- Mx = 100 kN·m, My = 50 kN·m
-- q_allow = 200 kPa
+```text
+ColumnCalculator
+    │
+    ▼
+calculateColumn() ───► Returns outputs including:
+    │                   - interactionCurve: InteractionPoint[]
+    │                   - appliedP: number
+    │                   - appliedM: number
+    ▼
+ColumnResultsSection
+    │
+    ▼
+InteractionDiagram ───► Renders recharts ScatterChart
+                        with capacity curve and load point
+```
 
-**Expected with Correct Logic:**
-- ex = 100/1500 = 0.067 m
-- ey = 50/1500 = 0.033 m
-- Start: L = W = sqrt(1500/200) = 2.74 m
-- Check q_max = (1500/7.5) * (1 + 6×0.067/2.74 + 6×0.033/2.74)
-- q_max = 200 × (1 + 0.146 + 0.072) = 200 × 1.218 = 243.6 kPa > 200 ← FAIL
-- Increase to L = W = 3.0 m → Area = 9.0 m²
-- q_max = (1500/9) × 1.218 = 203 kPa ← Still over
-- Increase to L = W = 3.1 m → Area = 9.6 m²
-- q_max = (1500/9.6) × 1.21 = 189 kPa ← OK
+---
 
-**Correct Output:** ~3.1m × 3.1m = 9.6 m² (not 4.76 m²)
+### Updated Column Outputs
+
+Add to `calculateColumn()` return object:
+
+```typescript
+return {
+  // ... existing outputs ...
+  
+  // Interaction diagram data
+  interactionCurve: generateInteractionCurve(b, h, AsProvided, fcd, fyd, cover),
+  appliedP: axialLoad,
+  appliedM: Math.sqrt(Mdx * Mdx + Mdy * Mdy), // Resultant moment for biaxial
+  balancedPoint: { P: Pb, M: Mb },
+  pureCompression: P0,
+  pureBending: M0,
+};
+```
+
+---
+
+### Integration into ColumnResultsSection
+
+Add after the "Load Analysis" section:
+
+```tsx
+{/* Interaction Diagram */}
+{outputs.interactionCurve && outputs.interactionCurve.length > 0 && (
+  <>
+    <Separator />
+    <InteractionDiagram
+      curvePoints={outputs.interactionCurve}
+      appliedP={axialLoad}
+      appliedM={Number(outputs.designMomentX) || 0}
+      buildingCode={buildingCode}
+    />
+  </>
+)}
+```
 
 ---
 
 ### Implementation Order
 
-1. Update `calculate-foundation/index.ts` with correct eccentricity logic
-2. Add q_max, q_min, eccentricity values to response
-3. Update `FoundationResultsSection.tsx` to display new values
-4. Add "Middle Third Check" to design checks
-5. Deploy and test with the user's test case
+1. Create `InteractionDiagram.tsx` component with recharts visualization
+2. Add `generateInteractionCurve()` helper function to `engineeringCalculations.ts`
+3. Update `calculateColumn()` to include interaction curve data in output
+4. Update `ColumnResultsSection.tsx` to render the diagram
+5. Export from `index.ts`
+6. Test with various load combinations
+
+---
+
+### Expected Outcome
+
+After implementation, engineers will see:
+
+- Visual capacity envelope showing safe design region
+- Applied load point clearly marked
+- Instant pass/fail indication
+- Color-coded zones (compression/balanced/tension)
+- Professional diagram suitable for reports
 
