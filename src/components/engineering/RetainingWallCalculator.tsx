@@ -32,6 +32,7 @@ interface RetainingWallCalculatorProps {
   setIsCalculating: (value: boolean) => void;
   userId?: string;
   resetKey?: number;
+  onInputChange?: (inputs: Record<string, any>) => void;
 }
 
 const concreteGrades = [
@@ -98,7 +99,7 @@ export interface RetainingWallCalculatorRef {
 }
 
 export const RetainingWallCalculator = forwardRef<RetainingWallCalculatorRef, RetainingWallCalculatorProps>(
-  ({ onCalculate, isCalculating, setIsCalculating, userId, resetKey }, ref) => {
+  ({ onCalculate, isCalculating, setIsCalculating, userId, resetKey, onInputChange }, ref) => {
   const { t } = useLanguage();
   const { saveCalculation } = useEngineeringHistory(userId);
   const session = useEngineeringSessionOptional();
@@ -123,6 +124,30 @@ export const RetainingWallCalculator = forwardRef<RetainingWallCalculatorRef, Re
       setErrors({});
     }
   }));
+
+  const selectedSoil = soilTypes.find(s => s.value === formData.soilType) || soilTypes[1];
+
+  // Sync inputs to parent on mount and when formData changes
+  useEffect(() => {
+    const inputs = {
+      wallHeight: parseFloat(formData.wallHeight) || 0,
+      stemThicknessTop: parseFloat(formData.stemThicknessTop) || 0,
+      stemThicknessBottom: parseFloat(formData.stemThicknessBottom) || 0,
+      baseWidth: parseFloat(formData.baseWidth) || 0,
+      baseThickness: parseFloat(formData.baseThickness) || 0,
+      toeWidth: parseFloat(formData.toeWidth) || 0,
+      soilType: formData.soilType,
+      soilUnitWeight: selectedSoil.unitWeight,
+      soilFrictionAngle: selectedSoil.friction,
+      surchargeLoad: parseFloat(formData.surchargeLoad) || 0,
+      concreteGrade: formData.concreteGrade,
+      steelGrade: formData.steelGrade,
+      allowableBearingPressure: parseFloat(formData.allowableBearingPressure) || 0,
+      backfillSlope: parseFloat(formData.backfillSlope) || 0,
+      buildingCode,
+    };
+    onInputChange?.(inputs);
+  }, [formData, buildingCode, selectedSoil, onInputChange]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => {
@@ -163,8 +188,6 @@ export const RetainingWallCalculator = forwardRef<RetainingWallCalculatorRef, Re
   const handleSoilTypeChange = (value: string) => {
     setFormData(prev => ({ ...prev, soilType: value }));
   };
-
-  const selectedSoil = soilTypes.find(s => s.value === formData.soilType) || soilTypes[1];
 
   const validateAllInputs = (): boolean => {
     const newErrors: Record<string, string> = {};

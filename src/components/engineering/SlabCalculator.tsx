@@ -32,6 +32,7 @@ interface SlabCalculatorProps {
   setIsCalculating: (value: boolean) => void;
   userId?: string;
   resetKey?: number;
+  onInputChange?: (inputs: Record<string, any>) => void;
 }
 
 const concreteGrades = [
@@ -99,7 +100,7 @@ export interface SlabCalculatorRef {
 }
 
 export const SlabCalculator = forwardRef<SlabCalculatorRef, SlabCalculatorProps>(
-  ({ onCalculate, isCalculating, setIsCalculating, userId, resetKey }, ref) => {
+  ({ onCalculate, isCalculating, setIsCalculating, userId, resetKey, onInputChange }, ref) => {
   const { t } = useLanguage();
   const { saveCalculation } = useEngineeringHistory(userId);
   const session = useEngineeringSessionOptional();
@@ -124,6 +125,23 @@ export const SlabCalculator = forwardRef<SlabCalculatorRef, SlabCalculatorProps>
       setErrors({});
     }
   }));
+
+  // Sync inputs to parent on mount and when formData changes
+  useEffect(() => {
+    const inputs = {
+      longSpan: parseFloat(formData.longSpan) || 0,
+      shortSpan: parseFloat(formData.shortSpan) || 0,
+      deadLoad: parseFloat(formData.deadLoad) || 0,
+      liveLoad: parseFloat(formData.liveLoad) || 0,
+      concreteGrade: formData.concreteGrade,
+      steelGrade: formData.steelGrade,
+      slabType: formData.slabType,
+      supportCondition: formData.supportCondition,
+      cover: parseFloat(formData.cover) || 0,
+      buildingCode,
+    };
+    onInputChange?.(inputs);
+  }, [formData, buildingCode, onInputChange]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
