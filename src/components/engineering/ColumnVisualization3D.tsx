@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera, Text } from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera, Text, Billboard } from '@react-three/drei';
 import * as THREE from 'three';
 import { cn } from '@/lib/utils';
 import { Box, Layers } from 'lucide-react';
@@ -52,24 +52,23 @@ const AnimatedAxialLoad: React.FC<{
   );
 };
 
-// Dimension Label Component
+// Dimension Label Component - Uses Billboard to always face camera
 const DimensionLabel: React.FC<{
   position: [number, number, number];
   text: string;
-  rotation?: [number, number, number];
-}> = ({ position, text, rotation = [0, 0, 0] }) => (
-  <Text
-    position={position}
-    rotation={rotation}
-    fontSize={0.12}
-    color="#22c55e"
-    anchorX="center"
-    anchorY="middle"
-    outlineWidth={0.008}
-    outlineColor="#000000"
-  >
-    {text}
-  </Text>
+}> = ({ position, text }) => (
+  <Billboard position={position} follow={true}>
+    <Text
+      fontSize={0.12}
+      color="#22c55e"
+      anchorX="center"
+      anchorY="middle"
+      outlineWidth={0.008}
+      outlineColor="#000000"
+    >
+      {text}
+    </Text>
+  </Billboard>
 );
 
 // 2D Cross-Section View
@@ -266,13 +265,11 @@ const ColumnMesh: React.FC<{
           <DimensionLabel 
             position={[w/2 + 0.25, -0.25, 0]} 
             text={`${depth} mm`}
-            rotation={[0, -Math.PI/2, 0]}
           />
           {/* Height label */}
           <DimensionLabel 
             position={[w/2 + 0.25, h/2, d/2 + 0.25]} 
             text={`${height} mm`}
-            rotation={[0, 0, -Math.PI/2]}
           />
         </>
       )}
