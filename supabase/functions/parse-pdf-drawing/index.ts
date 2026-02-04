@@ -48,9 +48,9 @@ serve(async (req) => {
     
     console.log(`Processing PDF: ${fileName}, base64 length: ${pdfBase64.length}`);
     
-    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openAIApiKey) {
-      throw new Error('OPENAI_API_KEY is not configured');
+    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+    if (!lovableApiKey) {
+      throw new Error('LOVABLE_API_KEY is not configured');
     }
 
     // Use OpenAI with vision capabilities to analyze the PDF drawing
@@ -99,14 +99,15 @@ IMPORTANT:
 - Be thorough - every elevation number matters for volume calculations
 - Always provide confidence scores for each extracted value`;
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    // Use Lovable AI Gateway with Gemini 3 Flash for vision analysis
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${openAIApiKey}`,
+        Authorization: `Bearer ${lovableApiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o",
+        model: "google/gemini-3-flash-preview",
         messages: [
           { 
             role: "system", 
@@ -134,13 +135,13 @@ IMPORTANT:
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
+      console.error("Lovable AI gateway error:", response.status, errorText);
       
       if (response.status === 429) {
         throw new Error("Rate limit exceeded. Please try again in a moment.");
       }
       if (response.status === 402) {
-        throw new Error("AI credits exhausted. Please add credits to continue.");
+        throw new Error("AI credits exhausted. Please add credits to your Lovable workspace.");
       }
       throw new Error(`AI processing failed: ${response.status}`);
     }
