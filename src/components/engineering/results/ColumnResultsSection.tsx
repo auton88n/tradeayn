@@ -18,10 +18,10 @@ export const ColumnResultsSection: React.FC<ColumnResultsSectionProps> = ({
 }) => {
   const isCSA = buildingCode === 'CSA';
   
-  // Extract values - handle both naming conventions (columnWidth vs width)
-  const width = Number(inputs.columnWidth) || Number(inputs.width) || Number(outputs.width) || 0;
-  const depth = Number(inputs.columnDepth) || Number(inputs.depth) || Number(outputs.depth) || 0;
-  const height = Number(inputs.columnHeight) || Number(inputs.height) || 0;
+  // Extract values - prioritize outputs (always available) then fallback to inputs
+  const width = Number(outputs.width) || Number(inputs.columnWidth) || Number(inputs.width) || 0;
+  const depth = Number(outputs.depth) || Number(inputs.columnDepth) || Number(inputs.depth) || 0;
+  const height = Number(outputs.height) || Number(inputs.columnHeight) || Number(inputs.height) || 0;
   const axialLoad = Number(inputs.axialLoad) || 0;
   const columnType = inputs.columnType || 'tied';
   
