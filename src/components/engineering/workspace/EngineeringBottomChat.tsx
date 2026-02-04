@@ -279,10 +279,8 @@ export const EngineeringBottomChat: React.FC<EngineeringBottomChatProps> = ({
     setShowActionsMenu(false);
   };
 
-  // Secondary actions for dropdown menu
+  // Secondary actions for dropdown menu (PDF and DXF moved to main toolbar)
   const secondaryActions = [
-    { icon: FileDown, label: 'Export DXF', onClick: onExportDXF, show: !!onExportDXF && hasResults },
-    { icon: FileText, label: 'Export PDF', onClick: onExportPDF, show: !!onExportPDF && hasResults },
     { icon: Save, label: 'Save Design', onClick: onSave, show: !!onSave && hasResults },
     { icon: GitCompare, label: 'Compare', onClick: onCompare, show: canCompare },
   ].filter(item => item.show !== false);
@@ -546,6 +544,46 @@ export const EngineeringBottomChat: React.FC<EngineeringBottomChatProps> = ({
                   <RotateCcw className="w-3.5 h-3.5" />
                   Reset
                 </Button>
+              )}
+
+              {/* Export PDF Button - Visible when results exist */}
+              {hasResults && onExportPDF && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={onExportPDF}
+                        className="h-7 px-2.5 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
+                      >
+                        <FileText className="w-3.5 h-3.5" />
+                        PDF
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Export PDF Report</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+
+              {/* Export DXF Button - Visible when results exist */}
+              {hasResults && onExportDXF && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={onExportDXF}
+                        className="h-7 px-2.5 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
+                      >
+                        <FileDown className="w-3.5 h-3.5" />
+                        DXF
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Export CAD Drawing</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
 
               {/* History Button */}

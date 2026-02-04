@@ -544,6 +544,13 @@ export function calculateColumn(inputs: ColumnInputs, buildingCode: BuildingCode
 
   const isAdequate = utilizationRatio <= 100 && reinforcementRatio <= 4 && reinforcementRatio >= 0.2;
 
+  // Generate M-N interaction curve for visualization
+  const interactionCurve = generateInteractionCurve(b, h, AsProvided, fcd, fyd, cover);
+  
+  // Calculate applied moment for interaction diagram
+  const appliedP = axialLoad;
+  const appliedM = Math.sqrt(Mdx * Mdx + Mdy * Mdy);
+
   return {
     grossArea: Ac,
     effectiveDepthX: d,
@@ -571,12 +578,116 @@ export function calculateColumn(inputs: ColumnInputs, buildingCode: BuildingCode
     designSteelStrength: fyd.toFixed(1),
     isAdequate,
     designStatus: isAdequate ? 'ADEQUATE' : 'INADEQUATE',
+    // Interaction diagram data
+    interactionCurve,
+    appliedP,
+    appliedM: parseFloat(appliedM.toFixed(1)),
     warnings: [
       ...(isSlender ? ['Column is slender - second order effects included'] : []),
       ...(reinforcementRatio > 3 ? ['High reinforcement ratio - consider increasing section'] : []),
       ...(utilizationRatio > 90 ? ['High utilization - consider increasing section or reinforcement'] : [])
     ]
   };
+}
+
+// Helper function to generate M-N interaction curve points
+function generateInteractionCurve(
+  b: number,      // Width (mm)
+  h: number,      // Depth (mm)
+  As: number,     // Total steel area (mm²)
+  fcd: number,    // Design concrete strength (MPa)
+  fyd: number,    // Design steel strength (MPa)
+  cover: number   // Cover (mm)
+): Array<{ P: number; M: number; type: string }> {
+  const points: Array<{ P: number; M: number; type: string }> = [];
+  
+  const d = h - cover - 10;           // Effective depth to tension steel
+  const dPrime = cover + 10;          // Depth to compression steel
+  const epsilon_cu = 0.0035;          // Ultimate concrete strain
+  const epsilon_y = fyd / 200000;     // Yield strain
+  const beta1 = 0.8;                  // Stress block factor
+  
+  // Assume steel is distributed 50% on each face (tension/compression)
+  const AsHalf = As / 2;
+  
+  // Pure compression point (c → ∞, all concrete and steel in compression)
+  const P0 = 0.8 * (0.85 * fcd * b * h + As * fyd) / 1000;
+  points.push({ P: P0, M: 0, type: 'compression' });
+  
+  // Calculate balanced neutral axis depth
+  const cBalanced = d * epsilon_cu / (epsilon_cu + epsilon_y);
+  
+  // Neutral axis depths to calculate points along the curve
+  const cValues = [
+    h * 1.0,           // Near pure compression
+    h * 0.9,
+    h * 0.8,
+    h * 0.7,
+    h * 0.6,
+    cBalanced * 1.1,   // Just above balanced
+    cBalanced,         // Balanced point
+    cBalanced * 0.8,   // Below balanced (tension-controlled)
+    d * 0.5,
+    d * 0.4,
+    d * 0.3,
+    d * 0.2,
+    d * 0.15,
+    d * 0.1,
+    d * 0.05,          // Near pure bending
+  ];
+  
+  const yc = h / 2; // Centroid of section
+  
+  for (const c of cValues) {
+    if (c <= 0) continue;
+    
+    // Calculate strains
+    const epsilon_s = epsilon_cu * (d - c) / c;           // Tension steel strain
+    const epsilon_sPrime = epsilon_cu * (c - dPrime) / c; // Compression steel strain
+    
+    // Steel stresses (capped at yield)
+    const fs = Math.sign(epsilon_s) * Math.min(Math.abs(epsilon_s) * 200000, fyd);
+    const fsPrime = Math.min(Math.abs(epsilon_sPrime) * 200000, fyd);
+    
+    // Stress block depth
+    const a = beta1 * c;
+    const aEffective = Math.min(a, h);
+    
+    // Forces
+    const Cc = 0.85 * fcd * b * aEffective;  // Concrete compression
+    const Cs = AsHalf * (epsilon_sPrime > 0 ? fsPrime : 0); // Compression steel
+    const Ts = AsHalf * (epsilon_s > 0 ? fs : 0);           // Tension steel force
+    
+    // Axial capacity (kN)
+    const Pn = (Cc + Cs - Ts) / 1000;
+    
+    // Moment about centroid (kN·m)
+    const yCc = aEffective / 2;  // Location of concrete force from top
+    const Mn = (
+      Cc * (yc - yCc) + 
+      Cs * (yc - dPrime) + 
+      Ts * (d - yc)
+    ) / 1e6;
+    
+    // Determine zone type
+    const isBalanced = Math.abs(c - cBalanced) < 10;
+    const type = isBalanced ? 'balanced' : (c > cBalanced ? 'compression' : 'tension');
+    
+    if (Pn >= 0 && Mn >= 0) {
+      points.push({ P: parseFloat(Pn.toFixed(1)), M: parseFloat(Mn.toFixed(1)), type });
+    }
+  }
+  
+  // Pure bending point (P ≈ 0)
+  // Simplified: at very small c, moment approaches pure bending capacity
+  const aMin = AsHalf * fyd / (0.85 * fcd * b);
+  const M0 = AsHalf * fyd * (d - aMin / 2) / 1e6;
+  points.push({ P: 0, M: parseFloat(M0.toFixed(1)), type: 'tension' });
+  
+  // Sort by P descending for proper curve drawing
+  points.sort((a, b) => b.P - a.P);
+  
+  return points;
 }
 
 // ============ FOUNDATION CALCULATOR ============
