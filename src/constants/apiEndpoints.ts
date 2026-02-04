@@ -23,6 +23,7 @@ export const API_ENDPOINTS = {
   CALCULATE_SLAB: 'calculate-slab',
   CALCULATE_RETAINING_WALL: 'calculate-retaining-wall',
   GENERATE_DXF: 'generate-dxf',
+  GENERATE_ENGINEERING_PDF: 'generate-engineering-pdf',
   GENERATE_GRADING_DESIGN: 'generate-grading-design',
   GENERATE_GRADING_DXF: 'generate-grading-dxf',
   PARSE_SURVEY_FILE: 'parse-survey-file',
