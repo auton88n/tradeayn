@@ -240,7 +240,8 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
       
       // Extract styles from the head
       const styleContent = doc.querySelector('style');
-      const pageContent = doc.querySelector('.page');
+      // Extract ALL pages (multi-page support)
+      const pageElements = doc.querySelectorAll('.page');
       
       // Build the content with styles included
       let htmlContent = '';
@@ -250,9 +251,11 @@ export const EngineeringWorkspace: React.FC<EngineeringWorkspaceProps> = ({ user
         htmlContent += styleContent.outerHTML;
       }
       
-      // Add the page content
-      if (pageContent) {
-        htmlContent += pageContent.outerHTML;
+      // Add all page content (supports multi-page PDFs)
+      if (pageElements.length > 0) {
+        pageElements.forEach(page => {
+          htmlContent += page.outerHTML;
+        });
       } else {
         htmlContent += doc.body.innerHTML;
       }
