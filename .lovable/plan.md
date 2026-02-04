@@ -1,110 +1,112 @@
 
 
-## Fix PDF Export Styling Issue
+## Fix PDF Export Rendering Issues
 
 ### Problem Analysis
 
-The PDF export appears as plain unstyled text because:
+The PDF export has two visible issues:
 
-1. **Edge function returns**: Complete HTML document with CSS in `<style>` tag inside `<head>`
-2. **Client code does**: Extracts only `.page` div content, discarding the `<head>` with all styles
-3. **Result**: PDF is generated from HTML without any CSS styling
+1. **Design Status Box Incomplete**: The green box under "4. DESIGN STATUS" shows only the checkmark icon, but the text "DESIGN ADEQUATE" and subtext are missing
+2. **Duplicate Content with Black Bar**: A page break creates a black bar, followed by duplicated content (Design Status box and Disclaimer)
 
-```text
-Edge Function Returns:
-┌─────────────────────────────────┐
-│ <html>                          │
-│   <head>                        │
-│     <style>                     │  ← CSS STYLES HERE
-│       .page { ... }             │
-│       .logo { ... }             │
-│       table { ... }             │
-│     </style>                    │
-│   </head>                       │
-│   <body>                        │
-│     <div class="page">...</div> │  ← WE ONLY EXTRACT THIS
-│   </body>                       │
-│ </html>                         │
-└─────────────────────────────────┘
+### Root Cause
 
-Current Code (broken):
-  const pageContent = doc.querySelector('.page');
-  tempDiv.innerHTML = pageContent.outerHTML;  // NO STYLES!
+The `react-to-pdf` library uses `html2canvas` under the hood, which:
+- Has issues with certain CSS properties when content exceeds page height
+- Creates awkward page breaks that can split elements or duplicate content
+- May not render nested divs correctly in some scenarios
+
+The `.status-box` HTML structure:
+```html
+<div class="status-box status-adequate">
+  <div class="status-icon">✓</div>
+  <div class="status-text">DESIGN ADEQUATE</div>
+  <div class="status-subtext">All code requirements satisfied per ACI 318-25</div>
+</div>
 ```
+
+The CSS shows `text-align: center` but the child divs may not inherit or display correctly in the canvas render.
 
 ---
 
 ### Solution
 
-Inject **both the styles and the page content** into the temporary div. Extract the `<style>` tag content and create a new `<style>` element in the temp div.
+**Approach 1: Inline styles for status box elements**
 
-**File**: `src/components/engineering/workspace/EngineeringWorkspace.tsx`
+Force visibility by adding explicit inline styles that `html2canvas` handles better:
 
-**Current Code** (lines 237-245):
-```typescript
-const parser = new DOMParser();
-const doc = parser.parseFromString(data.html, 'text/html');
-const pageContent = doc.querySelector('.page');
-if (pageContent) {
-  tempDiv.innerHTML = pageContent.outerHTML;
-} else {
-  tempDiv.innerHTML = doc.body.innerHTML;
-}
+**File**: `supabase/functions/generate-engineering-pdf/index.ts`
+
+Update the status box HTML (lines 533-537):
+```html
+<div class="status-box ${hasFail ? 'status-inadequate' : hasReview ? 'status-review-box' : 'status-adequate'}">
+  <div style="font-size: 36px; margin-bottom: 8px; display: block;">${hasFail ? '✗' : hasReview ? '⚠' : '✓'}</div>
+  <div style="font-size: 16px; font-weight: 700; display: block;">${hasFail ? 'DESIGN INADEQUATE' : hasReview ? 'DESIGN REQUIRES REVIEW' : 'DESIGN ADEQUATE'}</div>
+  <div style="font-size: 11px; color: #666; margin-top: 5px; display: block;">${hasFail ? 'Some code requirements not satisfied - revision required' : hasReview ? 'Some items require professional engineering review' : `All code requirements satisfied per ${codeRef.name}`}</div>
+</div>
 ```
 
-**Fixed Code**:
-```typescript
-const parser = new DOMParser();
-const doc = parser.parseFromString(data.html, 'text/html');
+**Approach 2: Add page break prevention**
 
-// Extract styles from the head
-const styleContent = doc.querySelector('style');
-const pageContent = doc.querySelector('.page');
+Add CSS to prevent awkward page breaks and limit page height:
 
-// Build the content with styles included
-let htmlContent = '';
+```css
+.section { page-break-inside: avoid; break-inside: avoid; }
+.status-box { page-break-inside: avoid; break-inside: avoid; }
+.disclaimer { page-break-inside: avoid; break-inside: avoid; }
+.page { overflow: hidden; }
+```
 
-// Add the styles first
-if (styleContent) {
-  htmlContent += styleContent.outerHTML;
-}
+**Approach 3: Use CSS display: block explicitly**
 
-// Add the page content
-if (pageContent) {
-  htmlContent += pageContent.outerHTML;
-} else {
-  htmlContent += doc.body.innerHTML;
-}
+Update the CSS classes to be more explicit:
 
-tempDiv.innerHTML = htmlContent;
+```css
+.status-icon { font-size: 36px; margin-bottom: 8px; display: block; }
+.status-text { font-size: 16px; font-weight: 700; display: block; }
+.status-subtext { font-size: 11px; color: #666; margin-top: 5px; display: block; }
 ```
 
 ---
 
-### How This Fixes the Issue
+### Recommended Implementation
 
-```text
-After Fix:
-┌─────────────────────────────────────────┐
-│ tempDiv.innerHTML = :                   │
-│                                         │
-│   <style>                               │  ← STYLES INCLUDED
-│     .page { ... }                       │
-│     .logo { ... }                       │
-│     table { ... }                       │
-│   </style>                              │
-│                                         │
-│   <div class="page">                    │  ← PAGE CONTENT
-│     <div class="header">                │
-│       <div class="logo">🧠</div>        │
-│       ...                               │
-│     </div>                              │
-│     ...                                 │
-│   </div>                                │
-│                                         │
-└─────────────────────────────────────────┘
+Apply all three approaches for maximum compatibility:
 
-Result: react-to-pdf captures styled content → Professional PDF
+| File | Change |
+|------|--------|
+| `supabase/functions/generate-engineering-pdf/index.ts` | Add `display: block` to status-icon, status-text, status-subtext CSS classes |
+| `supabase/functions/generate-engineering-pdf/index.ts` | Add `page-break-inside: avoid` to sections |
+| `supabase/functions/generate-engineering-pdf/index.ts` | Add inline styles as fallback for critical visibility |
+
+---
+
+### CSS Updates (lines 391-393)
+
+Current:
+```css
+.status-icon { font-size: 36px; margin-bottom: 8px; }
+.status-text { font-size: 16px; font-weight: 700; }
+.status-subtext { font-size: 11px; color: #666; margin-top: 5px; }
+```
+
+Updated:
+```css
+.status-icon { font-size: 36px; margin-bottom: 8px; display: block; width: 100%; }
+.status-text { font-size: 16px; font-weight: 700; display: block; width: 100%; }
+.status-subtext { font-size: 11px; color: #666; margin-top: 5px; display: block; width: 100%; }
+```
+
+---
+
+### Additional CSS for Page Breaks (add after line 407)
+
+```css
+/* Prevent page break issues */
+.section { page-break-inside: avoid; }
+.status-box { page-break-inside: avoid; }
+.disclaimer { page-break-inside: avoid; }
+.signature-section { page-break-inside: avoid; }
 ```
 
 ---
@@ -113,11 +115,9 @@ Result: react-to-pdf captures styled content → Professional PDF
 
 | Before | After |
 |--------|-------|
-| Plain text, no formatting | Professional styled layout |
-| No logo visible | Black circle with white brain icon |
-| No borders or colors | Tables with borders, colored headers |
-| No visual hierarchy | Clear sections with blue headings |
-| Missing disclaimer styling | Red bordered disclaimer box |
+| Only checkmark visible in green box | Full "DESIGN ADEQUATE" text visible |
+| Black bar page break | Clean page flow without duplication |
+| Duplicate disclaimer | Single disclaimer at correct position |
 
 ---
 
@@ -125,5 +125,5 @@ Result: react-to-pdf captures styled content → Professional PDF
 
 | File | Changes |
 |------|---------|
-| `src/components/engineering/workspace/EngineeringWorkspace.tsx` | Extract and include `<style>` content alongside `.page` content |
+| `supabase/functions/generate-engineering-pdf/index.ts` | Add `display: block` to status elements, add page break prevention CSS |
 
