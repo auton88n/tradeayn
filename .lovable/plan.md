@@ -1,67 +1,105 @@
 
-# Fix 3D Visualization Labels Appearing Mirrored/Reversed
+# Fix M-N Interaction Diagram Display in Column Calculator
 
-## Problem
+## Problem Analysis
 
-The dimension labels in the foundation (and other) 3D visualizations show mirrored/reversed text like:
-- "m 0e.S" instead of "2.90 m"
-- "mm.08ε" instead of "300 mm"
+The M-N Interaction Diagram is not displaying in the Column calculator results even though:
+1. The `generateInteractionCurve` function exists and generates curve data
+2. The `InteractionDiagram` component is properly imported
+3. The conditional render checks `interactionCurve && interactionCurve.length > 0`
 
-This happens because the labels are positioned at fixed coordinates in 3D space. When the camera auto-rotates around the model, you view the text from behind, making it appear reversed.
+## Root Cause
+
+After code analysis, I identified two issues:
+
+### Issue 1: Recharts Data Binding Problem
+The `ComposedChart` component is rendering but the chart appears empty because:
+- The `Line` component uses `data={chartData}` with its own data array
+- The `XAxis` and `YAxis` don't have `data` bound, so they default to empty domains
+- The `Scatter` component uses a different data array (`appliedLoadData`)
+
+When using independent data sources in Recharts, the axes need to be explicitly configured with calculated domains, which they are (`domain={[0, maxM]}`), but the issue is that the chart needs a base data array OR all components need to properly work with `type="number"` axes.
+
+### Issue 2: Data Not Being Rendered to Axes
+The Line component with `type="monotone"` and separate data array may not properly bind to the number-based axes without a reference dataset at the chart level.
+
+---
 
 ## Solution
 
-Use the `Billboard` component from `@react-three/drei` to wrap each dimension label. This makes labels always face the camera regardless of viewing angle.
+### Fix 1: Add Base Data Array to ComposedChart
 
----
+Add a `data` prop directly to `ComposedChart` with all chart points (both curve and applied load) to ensure axes properly recognize the data ranges:
 
-## Technical Details
-
-The `Billboard` component from drei automatically rotates its children to face the camera. We'll wrap the `Text` component inside a `Billboard` to ensure labels are always readable.
-
-### Files to Modify
-
-| File | Change |
-|------|--------|
-| `src/components/engineering/FoundationVisualization3D.tsx` | Wrap DimensionLabel content in Billboard |
-| `src/components/engineering/ColumnVisualization3D.tsx` | Wrap DimensionLabel content in Billboard |
-| `src/components/engineering/RetainingWallVisualization3D.tsx` | Wrap DimensionLabel content in Billboard |
-
----
-
-### Implementation
-
-**Update the DimensionLabel component in each file:**
+**File**: `src/components/engineering/results/InteractionDiagram.tsx`
 
 ```typescript
-// Import Billboard from drei
-import { OrbitControls, PerspectiveCamera, Text, Billboard } from '@react-three/drei';
-
-// Update DimensionLabel component
-const DimensionLabel: React.FC<{
-  position: [number, number, number];
-  text: string;
-}> = ({ position, text }) => (
-  <Billboard position={position} follow={true}>
-    <Text
-      fontSize={0.18}
-      color="#22c55e"
-      anchorX="center"
-      anchorY="middle"
-      outlineWidth={0.01}
-      outlineColor="#000000"
-    >
-      {text}
-    </Text>
-  </Billboard>
-);
+// Combine all data for chart reference
+const allData = useMemo(() => {
+  const curveData = chartData.map(point => ({
+    M: point.M,
+    curveP: point.P,
+    type: point.type,
+  }));
+  // Add applied point separately so we can style it differently
+  return curveData;
+}, [chartData]);
 ```
 
-Key changes:
-1. Import `Billboard` from `@react-three/drei`
-2. Wrap the `Text` inside a `Billboard` component
-3. Move the `position` prop to the `Billboard` (the parent)
-4. Remove the `rotation` prop since Billboard handles orientation automatically
+Then update the ComposedChart:
+```tsx
+<ComposedChart
+  data={allData}
+  margin={{ top: 20, right: 30, bottom: 25, left: 15 }}
+>
+```
+
+### Fix 2: Update Line and Scatter Rendering
+
+Update the Line component to use the chart's data instead of a separate data array:
+```tsx
+<Line
+  type="monotone"
+  dataKey="curveP"
+  stroke="hsl(var(--primary))"
+  strokeWidth={2}
+  dot={...}
+  name="Capacity Envelope"
+  isAnimationActive={false}
+/>
+```
+
+For the applied load point, use a separate Scatter with its data array (which works correctly with number axes).
+
+### Fix 3: Ensure interactionCurve is Always Returned
+
+Add a fallback in `ColumnResultsSection` to always show the diagram (potentially with a "no data" message if curve is empty), and add debug logging in development to verify data flow.
+
+---
+
+## Implementation Plan
+
+### Step 1: Update InteractionDiagram.tsx
+
+| Change | Description |
+|--------|-------------|
+| Add `data` prop to `ComposedChart` | Bind the chart data directly to the ComposedChart component |
+| Remove separate `data` array from `Line` | Let it use the parent chart's data |
+| Keep `Scatter` with its own data | Applied load point renders separately |
+| Fix axis tick formatting | Ensure proper number formatting |
+
+### Step 2: Add Fallback Rendering
+
+If `interactionCurve` is undefined or empty, show a placeholder message or debug indicator to help diagnose future issues.
+
+---
+
+## Files to Modify
+
+| File | Changes |
+|------|---------|
+| `src/components/engineering/results/InteractionDiagram.tsx` | Fix Recharts data binding, add data to ComposedChart |
+| `src/components/engineering/results/ColumnResultsSection.tsx` | Add fallback for empty interaction curve (optional debug) |
 
 ---
 
@@ -69,6 +107,6 @@ Key changes:
 
 | Before | After |
 |--------|-------|
-| Text appears mirrored from certain camera angles | Text always faces the camera and reads correctly |
-| "m 0e.S" when viewing from behind | "2.90 m" from all angles |
-| Labels hard to read during auto-rotation | Labels always readable |
+| M-N diagram not visible | Capacity envelope curve displays correctly |
+| No load point plotted | Applied load star marker visible |
+| No adequacy indication | Green/red status showing ADEQUATE/INADEQUATE |
