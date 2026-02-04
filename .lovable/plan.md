@@ -1,129 +1,114 @@
 
+  <goal>
+    Stop the PDF from cutting the “Design Status” box (and other blocks) between pages. The export should paginate cleanly so each major block stays fully on one page.
+  </goal>
 
-## Fix PDF Export Rendering Issues
+  <what-is-happening>
+    <summary>
+      The current export uses react-to-pdf (html2canvas) which renders one tall “screenshot” of the whole report and then slices it into A4 pages. That slicing can happen through any element (like the green status box), regardless of CSS page-break rules.
+    </summary>
+    <evidence-from-screenshot>
+      The status box is being split exactly at the page slice boundary: the top portion (checkmark) lands on page 1, while the rest of the box lands on page 2.
+    </evidence-from-screenshot>
+  </what-is-happening>
 
-### Problem Analysis
+  <solution-overview>
+    <approach>
+      Force “real” pagination by restructuring the report HTML into multiple explicit A4-sized <div class="page"> containers (Page 1 and Page 2). This aligns the canvas slicing boundary with the boundary between pages, preventing any single box from being cut in half.
+    </approach>
+    <why-this-works>
+      Instead of one long .page, we’ll return two (or more) fixed-height pages. The generator will capture both pages, and the PDF slicer will cut between them (not through them).
+    </why-this-works>
+  </solution-overview>
 
-The PDF export has two visible issues:
+  <implementation-steps>
+    <step number="1">
+      <title>Update the edge function to output multiple pages</title>
+      <files>
+        <file>supabase/functions/generate-engineering-pdf/index.ts</file>
+      </files>
+      <changes>
+        <item>
+          Change the returned HTML structure from a single:
+          <code>
+            &lt;div class="page"&gt;...all content...&lt;/div&gt;
+          </code>
+          into two pages:
+          <code>
+            &lt;div class="page"&gt;...Header + Title + Sections 1–3...&lt;/div&gt;
+            &lt;div class="page"&gt;...Section 4 + Disclaimer + Signatures + Footer...&lt;/div&gt;
+          </code>
+        </item>
+        <item>
+          Keep the “Design Status” box together by placing it entirely on Page 2 (so it can’t straddle a page boundary).
+        </item>
+        <item>
+          Add/adjust CSS so each page is a true A4 canvas target:
+          <code>
+            .page { width: 210mm; height: 297mm; padding: 20mm; background: #fff; }
+            .page:not(:last-child) { page-break-after: always; }
+          </code>
+        </item>
+        <item>
+          (Optional but recommended) Make each page layout more stable by using flex so the footer can sit at the bottom without weird spacing:
+          <code>
+            .page { display: flex; flex-direction: column; }
+            .page-body { flex: 1; }
+          </code>
+          Then wrap page content in <code>.page-body</code> and keep the footer at the bottom.
+        </item>
+      </changes>
+    </step>
 
-1. **Design Status Box Incomplete**: The green box under "4. DESIGN STATUS" shows only the checkmark icon, but the text "DESIGN ADEQUATE" and subtext are missing
-2. **Duplicate Content with Black Bar**: A page break creates a black bar, followed by duplicated content (Design Status box and Disclaimer)
+    <step number="2">
+      <title>Update the client export code to include all pages (not just the first)</title>
+      <files>
+        <file>src/components/engineering/workspace/EngineeringWorkspace.tsx</file>
+      </files>
+      <changes>
+        <item>
+          The current code only extracts the first <code>.page</code>:
+          <code>doc.querySelector('.page')</code>
+        </item>
+        <item>
+          Update it to extract *all* pages:
+          <code>doc.querySelectorAll('.page')</code>
+          and concatenate their <code>outerHTML</code> so page 1 + page 2 both render into the temporary container.
+        </item>
+        <item>
+          Keep the existing “include &lt;style&gt; tag” logic so styling remains intact.
+        </item>
+      </changes>
+    </step>
 
-### Root Cause
+    <step number="3">
+      <title>Deploy and verify</title>
+      <changes>
+        <item>Deploy the updated <code>generate-engineering-pdf</code> edge function.</item>
+        <item>Export a PDF from /engineering and confirm the status box is not cut between pages.</item>
+      </changes>
+    </step>
+  </implementation-steps>
 
-The `react-to-pdf` library uses `html2canvas` under the hood, which:
-- Has issues with certain CSS properties when content exceeds page height
-- Creates awkward page breaks that can split elements or duplicate content
-- May not render nested divs correctly in some scenarios
+  <acceptance-criteria>
+    <item>The green “DESIGN ADEQUATE” status box appears fully on a single page (not split).</item>
+    <item>The red disclaimer box is not split across pages.</item>
+    <item>The PDF downloads directly (no new blank tab) and contains all pages of the report.</item>
+    <item>Branding (brain logo) and styling remain correct.</item>
+  </acceptance-criteria>
 
-The `.status-box` HTML structure:
-```html
-<div class="status-box status-adequate">
-  <div class="status-icon">✓</div>
-  <div class="status-text">DESIGN ADEQUATE</div>
-  <div class="status-subtext">All code requirements satisfied per ACI 318-25</div>
-</div>
-```
+  <edge-cases-and-notes>
+    <item>
+      If a future calculator generates more rows/content (e.g., large tables), we may need to introduce true dynamic pagination (more than 2 pages). This plan solves the current issue by guaranteeing the last blocks render on a new page.
+    </item>
+    <item>
+      CSS properties like <code>page-break-inside: avoid</code> help for browser printing, but do not reliably stop html2canvas slicing. Explicit multi-page containers are the practical workaround without adding new PDF libraries/services.
+    </item>
+  </edge-cases-and-notes>
 
-The CSS shows `text-align: center` but the child divs may not inherit or display correctly in the canvas render.
-
----
-
-### Solution
-
-**Approach 1: Inline styles for status box elements**
-
-Force visibility by adding explicit inline styles that `html2canvas` handles better:
-
-**File**: `supabase/functions/generate-engineering-pdf/index.ts`
-
-Update the status box HTML (lines 533-537):
-```html
-<div class="status-box ${hasFail ? 'status-inadequate' : hasReview ? 'status-review-box' : 'status-adequate'}">
-  <div style="font-size: 36px; margin-bottom: 8px; display: block;">${hasFail ? '✗' : hasReview ? '⚠' : '✓'}</div>
-  <div style="font-size: 16px; font-weight: 700; display: block;">${hasFail ? 'DESIGN INADEQUATE' : hasReview ? 'DESIGN REQUIRES REVIEW' : 'DESIGN ADEQUATE'}</div>
-  <div style="font-size: 11px; color: #666; margin-top: 5px; display: block;">${hasFail ? 'Some code requirements not satisfied - revision required' : hasReview ? 'Some items require professional engineering review' : `All code requirements satisfied per ${codeRef.name}`}</div>
-</div>
-```
-
-**Approach 2: Add page break prevention**
-
-Add CSS to prevent awkward page breaks and limit page height:
-
-```css
-.section { page-break-inside: avoid; break-inside: avoid; }
-.status-box { page-break-inside: avoid; break-inside: avoid; }
-.disclaimer { page-break-inside: avoid; break-inside: avoid; }
-.page { overflow: hidden; }
-```
-
-**Approach 3: Use CSS display: block explicitly**
-
-Update the CSS classes to be more explicit:
-
-```css
-.status-icon { font-size: 36px; margin-bottom: 8px; display: block; }
-.status-text { font-size: 16px; font-weight: 700; display: block; }
-.status-subtext { font-size: 11px; color: #666; margin-top: 5px; display: block; }
-```
-
----
-
-### Recommended Implementation
-
-Apply all three approaches for maximum compatibility:
-
-| File | Change |
-|------|--------|
-| `supabase/functions/generate-engineering-pdf/index.ts` | Add `display: block` to status-icon, status-text, status-subtext CSS classes |
-| `supabase/functions/generate-engineering-pdf/index.ts` | Add `page-break-inside: avoid` to sections |
-| `supabase/functions/generate-engineering-pdf/index.ts` | Add inline styles as fallback for critical visibility |
-
----
-
-### CSS Updates (lines 391-393)
-
-Current:
-```css
-.status-icon { font-size: 36px; margin-bottom: 8px; }
-.status-text { font-size: 16px; font-weight: 700; }
-.status-subtext { font-size: 11px; color: #666; margin-top: 5px; }
-```
-
-Updated:
-```css
-.status-icon { font-size: 36px; margin-bottom: 8px; display: block; width: 100%; }
-.status-text { font-size: 16px; font-weight: 700; display: block; width: 100%; }
-.status-subtext { font-size: 11px; color: #666; margin-top: 5px; display: block; width: 100%; }
-```
-
----
-
-### Additional CSS for Page Breaks (add after line 407)
-
-```css
-/* Prevent page break issues */
-.section { page-break-inside: avoid; }
-.status-box { page-break-inside: avoid; }
-.disclaimer { page-break-inside: avoid; }
-.signature-section { page-break-inside: avoid; }
-```
-
----
-
-### Expected Result
-
-| Before | After |
-|--------|-------|
-| Only checkmark visible in green box | Full "DESIGN ADEQUATE" text visible |
-| Black bar page break | Clean page flow without duplication |
-| Duplicate disclaimer | Single disclaimer at correct position |
-
----
-
-### Files to Modify
-
-| File | Changes |
-|------|---------|
-| `supabase/functions/generate-engineering-pdf/index.ts` | Add `display: block` to status elements, add page break prevention CSS |
-
+  <next-ideas (optional)>
+    <item>Add a “High quality (print)” export option that uses a hidden iframe + browser print engine for perfect pagination (still requires user to save).</item>
+    <item>Add page numbers (Page X of Y) and repeat a compact header on page 2+.</item>
+    <item>Add a “Report preview” modal before download.</item>
+    <item>End-to-end test: run export for Beam/Column/Foundation to confirm multi-page layout remains consistent.</item>
+  </next-ideas>
