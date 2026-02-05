@@ -1,13 +1,11 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
 import { supabaseApi } from '@/lib/supabaseApi';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { 
@@ -25,7 +23,6 @@ import {
   MoreVertical,
   UserCheck,
   UserX,
-  Edit,
   Trash2,
   Filter,
   CheckSquare,
@@ -36,7 +33,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { EditLimitModal } from './EditLimitModal';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Profile {
   company_name: string | null;
@@ -86,8 +83,6 @@ export const UserManagement = ({ session, allUsers, onRefresh }: UserManagementP
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'pending' | 'revoked'>('all');
   const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'duty' | 'user'>('all');
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
-  const [editingUser, setEditingUser] = useState<AccessGrantWithProfile | null>(null);
-  const [bulkEditUsers, setBulkEditUsers] = useState<AccessGrantWithProfile[]>([]);
   const [userRoles, setUserRoles] = useState<Map<string, string>>(new Map());
   const [changingRole, setChangingRole] = useState<string | null>(null);
 
@@ -196,103 +191,6 @@ export const UserManagement = ({ session, allUsers, onRefresh }: UserManagementP
     }
   };
 
-  const handleUpdateLimit = async (payload: { tier: string; customLimit: number | null; useCustomLimit: boolean }) => {
-    if (!editingUser) return;
-    
-    try {
-      const tierData = (await import('@/contexts/SubscriptionContext')).SUBSCRIPTION_TIERS;
-      const tier = tierData[payload.tier as keyof typeof tierData];
-      const effectiveLimit = payload.useCustomLimit ? payload.customLimit : tier?.limits.monthlyCredits;
-
-      // Update access_grants with the effective limit
-      await supabaseApi.patch(
-        `access_grants?user_id=eq.${editingUser.user_id}`,
-        session.access_token,
-        { monthly_limit: effectiveLimit }
-      );
-
-      // Also update user_subscriptions tier
-      const { error: subError } = await supabase
-        .from('user_subscriptions')
-        .upsert({
-          user_id: editingUser.user_id,
-          subscription_tier: payload.tier,
-          status: payload.tier === 'free' ? 'inactive' : 'active',
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'user_id' });
-
-      if (subError) console.error('Error updating subscription:', subError);
-
-      // Update user_ai_limits
-      const { error: limitsError } = await supabase
-        .from('user_ai_limits')
-        .upsert({
-          user_id: editingUser.user_id,
-          monthly_messages: effectiveLimit,
-          monthly_engineering: tier?.limits.monthlyEngineering || 1,
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'user_id' });
-
-      if (limitsError) console.error('Error updating AI limits:', limitsError);
-
-      toast.success('Subscription updated');
-      setEditingUser(null);
-      onRefresh();
-    } catch (error) {
-      console.error('Error updating subscription:', error);
-      toast.error('Failed to update subscription');
-    }
-  };
-
-  const handleBulkUpdateLimit = async (payload: { tier: string; customLimit: number | null; useCustomLimit: boolean }) => {
-    if (bulkEditUsers.length === 0) return;
-    
-    try {
-      const tierData = (await import('@/contexts/SubscriptionContext')).SUBSCRIPTION_TIERS;
-      const tier = tierData[payload.tier as keyof typeof tierData];
-      const effectiveLimit = payload.useCustomLimit ? payload.customLimit : tier?.limits.monthlyCredits;
-
-      // Update each user individually (REST API doesn't support IN clause easily)
-      await Promise.all(
-        bulkEditUsers.map(async (u) => {
-          // Update access_grants
-          await supabaseApi.patch(
-            `access_grants?user_id=eq.${u.user_id}`,
-            session.access_token,
-            { monthly_limit: effectiveLimit }
-          );
-          
-          // Update user_subscriptions
-          await supabase
-            .from('user_subscriptions')
-            .upsert({
-              user_id: u.user_id,
-              subscription_tier: payload.tier,
-              status: payload.tier === 'free' ? 'inactive' : 'active',
-              updated_at: new Date().toISOString()
-            }, { onConflict: 'user_id' });
-
-          // Update user_ai_limits
-          await supabase
-            .from('user_ai_limits')
-            .upsert({
-              user_id: u.user_id,
-              monthly_messages: effectiveLimit,
-              monthly_engineering: tier?.limits.monthlyEngineering || 1,
-              updated_at: new Date().toISOString()
-            }, { onConflict: 'user_id' });
-        })
-      );
-      toast.success(`Updated ${bulkEditUsers.length} user subscriptions`);
-      setBulkEditUsers([]);
-      setSelectedUsers(new Set());
-      onRefresh();
-    } catch (error) {
-      console.error('Error updating subscriptions:', error);
-      toast.error('Failed to update subscriptions');
-    }
-  };
-
   // Handle role change using secure RPC
   const handleRoleChange = async (userId: string, newRole: 'admin' | 'duty' | 'user') => {
     setChangingRole(userId);
@@ -395,11 +293,6 @@ export const UserManagement = ({ session, allUsers, onRefresh }: UserManagementP
     URL.revokeObjectURL(url);
   };
 
-  const getUsagePercent = (usage: number | null, limit: number | null) => {
-    if (!limit || !usage) return 0;
-    return Math.min((usage / limit) * 100, 100);
-  };
-
   // Render a single user card
   const renderUserCard = (user: AccessGrantWithProfile) => {
     const role = userRoles.get(user.user_id) || 'user';
@@ -445,20 +338,6 @@ export const UserManagement = ({ session, allUsers, onRefresh }: UserManagementP
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Usage Progress */}
-          <div className="w-28 hidden sm:block">
-            <div className="flex justify-between text-xs mb-1">
-              <span>{user.current_month_usage ?? 0}</span>
-              <span className="text-muted-foreground">
-                {user.monthly_limit || '∞'}
-              </span>
-            </div>
-            <Progress 
-              value={getUsagePercent(user.current_month_usage, user.monthly_limit)} 
-              className="h-1.5"
-            />
-          </div>
-
           {/* Role Badge - Clickable dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -516,10 +395,6 @@ export const UserManagement = ({ session, allUsers, onRefresh }: UserManagementP
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setEditingUser(user)}>
-                <Edit className="w-4 h-4 mr-2" />
-                Edit Limit
-              </DropdownMenuItem>
               {user.is_active ? (
                 <DropdownMenuItem onClick={() => handleDeactivate(user.user_id)}>
                   <UserX className="w-4 h-4 mr-2" />
@@ -564,13 +439,6 @@ export const UserManagement = ({ session, allUsers, onRefresh }: UserManagementP
                     <DropdownMenuItem onClick={() => handleBulkAction('deactivate')}>
                       <UserX className="w-4 h-4 mr-2" />
                       Deactivate All
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => {
-                      const users = allUsers.filter(u => selectedUsers.has(u.user_id));
-                      setBulkEditUsers(users);
-                    }}>
-                      <Edit className="w-4 h-4 mr-2" />
-                      Edit Limits
                     </DropdownMenuItem>
                     <DropdownMenuItem 
                       onClick={() => handleBulkAction('delete')}
@@ -724,37 +592,6 @@ export const UserManagement = ({ session, allUsers, onRefresh }: UserManagementP
           </ScrollArea>
         </CardContent>
       </Card>
-
-      {/* Edit Limit Modal - Single User */}
-      {editingUser && (
-        <EditLimitModal
-          isOpen={true}
-          onClose={() => setEditingUser(null)}
-          onConfirm={handleUpdateLimit}
-          users={[{
-            user_id: editingUser.user_id,
-            company_name: editingUser.profiles?.company_name ?? undefined,
-            current_month_usage: editingUser.current_month_usage ?? 0,
-            monthly_limit: editingUser.monthly_limit,
-          }]}
-        />
-      )}
-
-      {/* Edit Limit Modal - Bulk */}
-      {bulkEditUsers.length > 0 && (
-        <EditLimitModal
-          isOpen={true}
-          onClose={() => setBulkEditUsers([])}
-          onConfirm={handleBulkUpdateLimit}
-          users={bulkEditUsers.map(u => ({
-            user_id: u.user_id,
-            company_name: u.profiles?.company_name ?? undefined,
-            current_month_usage: u.current_month_usage ?? 0,
-            monthly_limit: u.monthly_limit,
-          }))}
-          isBulk
-        />
-      )}
     </>
   );
 };
