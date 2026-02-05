@@ -196,45 +196,100 @@ export const UserManagement = ({ session, allUsers, onRefresh }: UserManagementP
     }
   };
 
-  const handleUpdateLimit = async (newLimit: number | null) => {
+  const handleUpdateLimit = async (payload: { tier: string; customLimit: number | null; useCustomLimit: boolean }) => {
     if (!editingUser) return;
     
     try {
+      const tierData = (await import('@/contexts/SubscriptionContext')).SUBSCRIPTION_TIERS;
+      const tier = tierData[payload.tier as keyof typeof tierData];
+      const effectiveLimit = payload.useCustomLimit ? payload.customLimit : tier?.limits.monthlyCredits;
+
+      // Update access_grants with the effective limit
       await supabaseApi.patch(
         `access_grants?user_id=eq.${editingUser.user_id}`,
         session.access_token,
-        { monthly_limit: newLimit }
+        { monthly_limit: effectiveLimit }
       );
-      toast.success('Limit updated');
+
+      // Also update user_subscriptions tier
+      const { error: subError } = await supabase
+        .from('user_subscriptions')
+        .upsert({
+          user_id: editingUser.user_id,
+          subscription_tier: payload.tier,
+          status: payload.tier === 'free' ? 'inactive' : 'active',
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id' });
+
+      if (subError) console.error('Error updating subscription:', subError);
+
+      // Update user_ai_limits
+      const { error: limitsError } = await supabase
+        .from('user_ai_limits')
+        .upsert({
+          user_id: editingUser.user_id,
+          monthly_messages: effectiveLimit,
+          monthly_engineering: tier?.limits.monthlyEngineering || 1,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id' });
+
+      if (limitsError) console.error('Error updating AI limits:', limitsError);
+
+      toast.success('Subscription updated');
       setEditingUser(null);
       onRefresh();
     } catch (error) {
-      console.error('Error updating limit:', error);
-      toast.error('Failed to update limit');
+      console.error('Error updating subscription:', error);
+      toast.error('Failed to update subscription');
     }
   };
 
-  const handleBulkUpdateLimit = async (newLimit: number | null) => {
+  const handleBulkUpdateLimit = async (payload: { tier: string; customLimit: number | null; useCustomLimit: boolean }) => {
     if (bulkEditUsers.length === 0) return;
     
     try {
+      const tierData = (await import('@/contexts/SubscriptionContext')).SUBSCRIPTION_TIERS;
+      const tier = tierData[payload.tier as keyof typeof tierData];
+      const effectiveLimit = payload.useCustomLimit ? payload.customLimit : tier?.limits.monthlyCredits;
+
       // Update each user individually (REST API doesn't support IN clause easily)
       await Promise.all(
-        bulkEditUsers.map(u => 
-          supabaseApi.patch(
+        bulkEditUsers.map(async (u) => {
+          // Update access_grants
+          await supabaseApi.patch(
             `access_grants?user_id=eq.${u.user_id}`,
             session.access_token,
-            { monthly_limit: newLimit }
-          )
-        )
+            { monthly_limit: effectiveLimit }
+          );
+          
+          // Update user_subscriptions
+          await supabase
+            .from('user_subscriptions')
+            .upsert({
+              user_id: u.user_id,
+              subscription_tier: payload.tier,
+              status: payload.tier === 'free' ? 'inactive' : 'active',
+              updated_at: new Date().toISOString()
+            }, { onConflict: 'user_id' });
+
+          // Update user_ai_limits
+          await supabase
+            .from('user_ai_limits')
+            .upsert({
+              user_id: u.user_id,
+              monthly_messages: effectiveLimit,
+              monthly_engineering: tier?.limits.monthlyEngineering || 1,
+              updated_at: new Date().toISOString()
+            }, { onConflict: 'user_id' });
+        })
       );
-      toast.success(`Updated ${bulkEditUsers.length} users`);
+      toast.success(`Updated ${bulkEditUsers.length} user subscriptions`);
       setBulkEditUsers([]);
       setSelectedUsers(new Set());
       onRefresh();
     } catch (error) {
-      console.error('Error updating limits:', error);
-      toast.error('Failed to update limits');
+      console.error('Error updating subscriptions:', error);
+      toast.error('Failed to update subscriptions');
     }
   };
 
