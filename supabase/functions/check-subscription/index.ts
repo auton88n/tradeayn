@@ -13,6 +13,8 @@ const TIER_LIMITS = {
   starter: { monthlyCredits: 500, monthlyEngineering: 10 },
   pro: { monthlyCredits: 1000, monthlyEngineering: 50 },
   business: { monthlyCredits: 3000, monthlyEngineering: 100 },
+  enterprise: { monthlyCredits: -1, monthlyEngineering: -1 },
+  unlimited: { monthlyCredits: -1, monthlyEngineering: -1 },
 };
 
 const PRODUCT_TO_TIER: Record<string, keyof typeof TIER_LIMITS> = {
@@ -61,14 +63,35 @@ serve(async (req) => {
     if (customers.data.length === 0) {
       logStep("No Stripe customer found, setting free tier");
       
-      // Ensure user has free tier limits
-      await supabaseClient
-        .from('user_ai_limits')
-        .upsert({
-          user_id: user.id,
-          monthly_messages: TIER_LIMITS.free.monthlyCredits,
-          monthly_engineering: TIER_LIMITS.free.monthlyEngineering,
-        }, { onConflict: 'user_id' });
+    // Check if user has admin-assigned tier (enterprise/unlimited) - don't overwrite
+    const { data: existingSub } = await supabaseClient
+      .from('user_subscriptions')
+      .select('subscription_tier')
+      .eq('user_id', user.id)
+      .single();
+    
+    if (existingSub?.subscription_tier === 'unlimited' || existingSub?.subscription_tier === 'enterprise') {
+      logStep("Preserving admin-assigned tier", { tier: existingSub.subscription_tier });
+      return new Response(JSON.stringify({ 
+        subscribed: true,
+        tier: existingSub.subscription_tier,
+        product_id: null,
+        subscription_end: null,
+        limits: TIER_LIMITS[existingSub.subscription_tier as keyof typeof TIER_LIMITS],
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+    
+    // Set free tier for regular users
+    await supabaseClient
+      .from('user_ai_limits')
+      .upsert({
+        user_id: user.id,
+        monthly_messages: TIER_LIMITS.free.dailyCredits,
+        monthly_engineering: TIER_LIMITS.free.dailyEngineering,
+      }, { onConflict: 'user_id' });
 
       return new Response(JSON.stringify({ 
         subscribed: false,
@@ -83,6 +106,27 @@ serve(async (req) => {
 
     const customerId = customers.data[0].id;
     logStep("Found Stripe customer", { customerId });
+
+  // Check if user has admin-assigned tier (enterprise/unlimited) - preserve it
+  const { data: existingSubscription } = await supabaseClient
+    .from('user_subscriptions')
+    .select('subscription_tier')
+    .eq('user_id', user.id)
+    .single();
+  
+  if (existingSubscription?.subscription_tier === 'unlimited' || existingSubscription?.subscription_tier === 'enterprise') {
+    logStep("Preserving admin-assigned tier", { tier: existingSubscription.subscription_tier });
+    return new Response(JSON.stringify({ 
+      subscribed: true,
+      tier: existingSubscription.subscription_tier,
+      product_id: null,
+      subscription_end: null,
+      limits: TIER_LIMITS[existingSubscription.subscription_tier as keyof typeof TIER_LIMITS],
+    }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200,
+    });
+  }
 
     // Check for active subscriptions
     const subscriptions = await stripe.subscriptions.list({
