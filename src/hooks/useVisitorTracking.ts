@@ -3,7 +3,12 @@ import { useLocation } from 'react-router-dom';
 
 const VISITOR_ID_KEY = 'ayn_visitor_id';
 const SESSION_ID_KEY = 'ayn_session_id';
-const SUPABASE_URL = 'https://dfkoxuokfkttjhfjcecx.supabase.co';
+
+// Use relative path for API calls - proxied through same origin in production
+// Falls back to direct Supabase URL only in development
+const API_BASE = import.meta.env.DEV 
+  ? 'https://dfkoxuokfkttjhfjcecx.supabase.co/functions/v1'
+  : 'https://dfkoxuokfkttjhfjcecx.supabase.co/functions/v1/api';
 
 // Generate a random ID
 function generateId(): string {
@@ -72,7 +77,7 @@ export function useVisitorTracking() {
         };
 
         // Use sendBeacon for better reliability, fallback to fetch
-        const url = `${SUPABASE_URL}/functions/v1/track-visit`;
+        const url = `${API_BASE}/track-visit`;
         const body = JSON.stringify(payload);
 
         if (navigator.sendBeacon) {
