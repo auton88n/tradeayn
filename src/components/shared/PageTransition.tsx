@@ -28,16 +28,17 @@ const pageTransition: Transition = {
 
 export const PageTransition = ({ children }: PageTransitionProps) => {
   return (
-    <motion.div
-      initial="initial"
-      animate="animate"
-      exit="exit"
-      variants={pageVariants}
-      transition={pageTransition}
-      className="w-full min-h-screen"
-    >
-      {children}
-    </motion.div>
+    <div className="w-full min-h-screen bg-background">
+      <motion.div
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        variants={pageVariants}
+        transition={pageTransition}
+      >
+        {children}
+      </motion.div>
+    </div>
   );
 };
 

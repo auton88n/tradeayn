@@ -145,10 +145,12 @@
         var isDark = theme === 'dark' || 
           ((!theme || theme === 'system') && 
            window.matchMedia('(prefers-color-scheme: dark)').matches);
+        var bgColor = isDark ? 'hsl(0 0% 4%)' : 'hsl(0 0% 100%)';
         document.documentElement.classList.add(isDark ? 'dark' : 'light');
         document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
-        // Set body background immediately to prevent flash
-        document.body.style.backgroundColor = isDark ? '#0a0a0a' : '#ffffff';
+        // Set background on html immediately (body may not exist yet in head script)
+        document.documentElement.style.backgroundColor = bgColor;
+        if (document.body) document.body.style.backgroundColor = bgColor;
       } catch (e) {
         document.documentElement.classList.add('light');
       }
