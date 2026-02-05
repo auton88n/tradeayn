@@ -129,6 +129,11 @@ html, body {
   scroll-behavior: smooth;
 }
 
+/* Ensure html background matches theme to prevent gaps during animations */
+html {
+  background-color: hsl(var(--background));
+}
+
 /* Ensure smooth scrolling and better mobile behavior */
 html {
   scroll-behavior: smooth;
