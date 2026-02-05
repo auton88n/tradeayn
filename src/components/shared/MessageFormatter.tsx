@@ -274,15 +274,15 @@ export function MessageFormatter({ content, className }: MessageFormatterProps) 
             ),
             // Unordered lists with styled bullets
             ul: ({ children }) => (
-              <ul className="space-y-2.5 my-4 first:mt-0 last:mb-0 pl-1 list-none">{children}</ul>
+              <ul className="space-y-2.5 my-4 first:mt-0 last:mb-0 ps-1 list-none">{children}</ul>
             ),
             // Ordered lists with styled markers
             ol: ({ children }) => (
-              <ol className="space-y-2.5 my-4 first:mt-0 last:mb-0 pl-5 list-decimal list-outside marker:text-primary/70 marker:font-medium">{children}</ol>
+              <ol className="space-y-2.5 my-4 first:mt-0 last:mb-0 ps-5 list-decimal list-outside marker:text-primary/70 marker:font-medium">{children}</ol>
             ),
             // List items with custom bullet styling
             li: ({ children }) => (
-              <li className="relative pl-5 leading-relaxed pb-1 break-words [overflow-wrap:anywhere] [&>p]:inline [&>p]:m-0 before:content-['•'] before:absolute before:left-0 before:text-primary/70 before:font-bold before:text-lg [ol>&]:before:content-none [ol>&]:pl-0">{children}</li>
+              <li className="relative ps-5 leading-relaxed pb-1 break-words [overflow-wrap:anywhere] [&>p]:inline [&>p]:m-0 before:content-['•'] before:absolute before:start-0 before:text-primary/70 before:font-bold before:text-lg [ol>&]:before:content-none [ol>&]:ps-0">{children}</li>
             ),
             // Paragraphs with improved spacing
             p: ({ children }) => (
