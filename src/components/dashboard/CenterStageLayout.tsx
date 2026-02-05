@@ -68,7 +68,7 @@ interface CenterStageLayoutProps {
   onRetryUpload?: () => void;
   // Usage tracking props
   currentUsage?: number;
-  dailyLimit?: number | null;
+  limit?: number | null;
   bonusCredits?: number;
   isUnlimited?: boolean;
   usageResetDate?: string | null;
@@ -130,7 +130,7 @@ export const CenterStageLayout = ({
   uploadFailed,
   onRetryUpload,
   currentUsage,
-  dailyLimit,
+  limit,
   bonusCredits = 0,
   isUnlimited,
   usageResetDate,
@@ -177,10 +177,10 @@ export const CenterStageLayout = ({
   // Calculate if credits are exhausted (user can't send more messages)
   const creditsExhausted = useMemo(() => {
     if (isUnlimited) return false;
-    if (dailyLimit === null || dailyLimit === undefined) return false;
-    const totalLimit = dailyLimit + bonusCredits;
+    if (limit === null || limit === undefined) return false;
+    const totalLimit = limit + bonusCredits;
     return (currentUsage ?? 0) >= totalLimit;
-  }, [isUnlimited, dailyLimit, bonusCredits, currentUsage]);
+  }, [isUnlimited, limit, bonusCredits, currentUsage]);
   const { setEmotion, setEmotionWithSource, triggerAbsorption, triggerBlink, setIsResponding, detectExcitement, isUserTyping: contextIsTyping, triggerPulse, bumpActivity } = useAYNEmotion();
   const soundContext = useSoundContextOptional();
   const playSound = soundContext?.playSound;
@@ -806,7 +806,7 @@ export const CenterStageLayout = ({
         <SystemNotificationBanner
           maintenanceConfig={maintenanceConfig}
           currentUsage={currentUsage ?? 0}
-          dailyLimit={dailyLimit ?? null}
+          dailyLimit={limit ?? null}
           isUnlimited={isUnlimited ?? false}
           usageResetDate={usageResetDate ?? null}
         />

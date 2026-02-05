@@ -9,7 +9,7 @@ const corsHeaders = {
 
 // Tier configuration matching frontend
 const TIER_LIMITS = {
-  free: { monthlyCredits: 5, monthlyEngineering: 1, isDaily: true },
+  free: { dailyCredits: 5, dailyEngineering: 1, isDaily: true },
   starter: { monthlyCredits: 500, monthlyEngineering: 10 },
   pro: { monthlyCredits: 1000, monthlyEngineering: 50 },
   business: { monthlyCredits: 3000, monthlyEngineering: 100 },
@@ -112,7 +112,7 @@ serve(async (req) => {
 
     const limits = TIER_LIMITS[tier];
 
-    // Update user_subscriptions table
+    // Update user_subscriptions table (tier tracking)
     await supabaseClient
       .from('user_subscriptions')
       .upsert({
@@ -125,15 +125,27 @@ serve(async (req) => {
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id' });
 
-    // Update user_ai_limits with new tier limits
-    await supabaseClient
-      .from('user_ai_limits')
-      .upsert({
-        user_id: user.id,
-        monthly_messages: limits.monthlyCredits,
-        monthly_engineering: limits.monthlyEngineering,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'user_id' });
+    // Update user_ai_limits with tier-appropriate limits
+    // Free tier: daily limits | Paid tiers: monthly limits
+    if (limits.isDaily) {
+      await supabaseClient
+        .from('user_ai_limits')
+        .upsert({
+          user_id: user.id,
+          daily_messages: limits.dailyCredits,
+          daily_engineering: limits.dailyEngineering,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'user_id' });
+    } else {
+      await supabaseClient
+        .from('user_ai_limits')
+        .upsert({
+          user_id: user.id,
+          monthly_messages: limits.monthlyCredits,
+          monthly_engineering: limits.monthlyEngineering,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'user_id' });
+    }
 
     logStep("Database updated", { tier, limits });
 
